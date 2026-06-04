@@ -6,24 +6,30 @@ can lower into a small homogeneous numeric circuit.
 Run the browser-free checks:
 
 ```sh
-npm test
+bun test
 ```
 
 Serve the smallest browser demo:
 
 ```sh
-npm run serve
+bun start
 ```
 
-Then open `http://localhost:8765/numeric-ui-rectangles.html`.
+Then open the URL printed by Bun.
+
+Run strict TypeScript and type-aware lint checks:
+
+```sh
+bun check
+```
 
 The folder is split by responsibility:
 
 ```txt
-numeric-ui-core.mjs            universal numeric vocabulary and tensor backend
-numeric-ui-atoms.mjs           broad browser-free expressivity proof
-numeric-ui-rectangles.mjs      tiny rectangle app and browser adapter
-numeric-ui-rectangles.test.mjs browser-free rectangle behavior checks
+numeric-ui-core.ts            universal numeric vocabulary and tensor backend
+numeric-ui-atoms.test.ts      broad browser-free expressivity proof
+numeric-ui-rectangles.ts      tiny rectangle app and browser adapter
+numeric-ui-rectangles.test.ts browser-free rectangle behavior checks
 numeric-ui-rectangles.html     four rectangle slots and CSS
 ```
 

@@ -3,7 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node numeric-ui-atoms.mjs && node numeric-ui-rectangles.test.mjs",
-    "serve": "python3 -m http.server 8765"
+    "start": "bun ./numeric-ui-rectangles.html",
+    "check": "tsgo && oxlint --type-aware *.ts",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@typescript/native-preview": "latest",
+    "oxlint": "latest",
+    "oxlint-tsgolint": "latest",
+    "typescript": "^6.0.2"
   }
 }
