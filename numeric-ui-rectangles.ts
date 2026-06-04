@@ -33,11 +33,11 @@ export const sourceField = {
   size: 7,
 }
 
-type RectangleProjection = {
-  left: Wire
-  top: Wire
-  width: Wire
-  height: Wire
+const geometryFields = ['left', 'top', 'width', 'height'] as const
+
+type RectangleGeometry = Record<(typeof geometryFields)[number], Wire>
+
+type RectangleProjection = RectangleGeometry & {
   visible: Wire
 }
 
@@ -45,13 +45,6 @@ type RectangleOutput = {
   focusedPlusOne: Wire
   clickActive: Wire
   rectangles: RectangleProjection[]
-}
-
-type GridRectangle = {
-  left: Wire
-  top: Wire
-  width: Wire
-  height: Wire
 }
 
 export function compileRectangleCircuit() {
@@ -62,7 +55,7 @@ export function compileRectangleCircuit() {
   const fullWidth = circuit.affine([[sourceField.viewportWidth, 1], [sourceField.gap, -2]])
   const fullHeight = circuit.affine([[sourceField.viewportHeight, 1], [sourceField.gap, -2]])
 
-  const grid: GridRectangle[] = []
+  const grid: RectangleGeometry[] = []
   const hit: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
     const column = item % 2
@@ -92,38 +85,24 @@ export function compileRectangleCircuit() {
   const targetPlusOne = circuit.affine(winner.map((wire, item) => [wire, item + 1]))
 
   const gridMode = emitEqualForInteger(circuit, sourceField.focusedPlusOne, zero)
-  const clickOnGrid = emitMultiply(circuit, sourceField.clickActive, gridMode)
-  const focusFromGrid = emitSelect(circuit, hasHit, targetPlusOne, sourceField.focusedPlusOne)
-  const focusAfterGridClick = emitSelect(circuit, clickOnGrid, focusFromGrid, sourceField.focusedPlusOne)
-  const clickWhileFocused = emitMultiply(
-    circuit,
-    sourceField.clickActive,
-    circuit.affine([[gridMode, -1]], 1),
-  )
-  const focusedPlusOne = emitSelect(circuit, clickWhileFocused, zero, focusAfterGridClick)
+  const focusFromGrid = emitSelect(circuit, hasHit, targetPlusOne, zero)
+  const focusAfterClick = emitSelect(circuit, gridMode, focusFromGrid, zero)
+  const focusedPlusOne = emitSelect(circuit, sourceField.clickActive, focusAfterClick, sourceField.focusedPlusOne)
 
   const nextGridMode = emitEqualForInteger(circuit, focusedPlusOne, zero)
   const rectangles: RectangleProjection[] = []
   for (let item = 0; item < itemCount; item++) {
     const gridRectangle = grid[item]!
     const thisFocused = emitEqualForInteger(circuit, focusedPlusOne, circuit.affine([], item + 1))
+    const project = (gridValue: Wire, focusedValue: Wire) => circuit.affine([
+      [emitMultiply(circuit, nextGridMode, gridValue), 1],
+      [emitMultiply(circuit, thisFocused, focusedValue), 1],
+    ])
     rectangles.push({
-      left: circuit.affine([
-        [emitMultiply(circuit, nextGridMode, gridRectangle.left), 1],
-        [emitMultiply(circuit, thisFocused, sourceField.gap), 1],
-      ]),
-      top: circuit.affine([
-        [emitMultiply(circuit, nextGridMode, gridRectangle.top), 1],
-        [emitMultiply(circuit, thisFocused, sourceField.gap), 1],
-      ]),
-      width: circuit.affine([
-        [emitMultiply(circuit, nextGridMode, gridRectangle.width), 1],
-        [emitMultiply(circuit, thisFocused, fullWidth), 1],
-      ]),
-      height: circuit.affine([
-        [emitMultiply(circuit, nextGridMode, gridRectangle.height), 1],
-        [emitMultiply(circuit, thisFocused, fullHeight), 1],
-      ]),
+      left: project(gridRectangle.left, sourceField.gap),
+      top: project(gridRectangle.top, sourceField.gap),
+      width: project(gridRectangle.width, fullWidth),
+      height: project(gridRectangle.height, fullHeight),
       visible: circuit.affine([[nextGridMode, 1], [thisFocused, 1]]),
     })
   }
@@ -196,10 +175,7 @@ export function mountRectangleDemo(document: Document, window: Window) {
     for (let item = 0; item < itemCount; item++) {
       const rectangle = rectangles[item]!
       const projection = machine.output.rectangles[item]!
-      rectangle.style.left = `${values[projection.left]}px`
-      rectangle.style.top = `${values[projection.top]}px`
-      rectangle.style.width = `${values[projection.width]}px`
-      rectangle.style.height = `${values[projection.height]}px`
+      for (const field of geometryFields) rectangle.style[field] = `${values[projection[field]]}px`
       rectangle.style.opacity = `${values[projection.visible]}`
       rectangle.style.pointerEvents = values[projection.visible] === 1 ? 'auto' : 'none'
     }
@@ -236,10 +212,7 @@ function validateRectangleOutputWires(output: RectangleOutput, wireCount: number
   assertWire(output.focusedPlusOne, wireCount)
   assertWire(output.clickActive, wireCount)
   for (const rectangle of output.rectangles) {
-    assertWire(rectangle.left, wireCount)
-    assertWire(rectangle.top, wireCount)
-    assertWire(rectangle.width, wireCount)
-    assertWire(rectangle.height, wireCount)
+    for (const field of geometryFields) assertWire(rectangle[field], wireCount)
     assertWire(rectangle.visible, wireCount)
   }
 }
@@ -250,10 +223,7 @@ function validateRectangleOutput(values: Float64Array, output: RectangleOutput) 
   invariant(values[output.clickActive] === 0, 'click latch must reset after refresh')
   let visibleCount = 0
   for (const rectangle of output.rectangles) {
-    assertNonNegativeFinite(values[rectangle.left], 'rectangle left')
-    assertNonNegativeFinite(values[rectangle.top], 'rectangle top')
-    assertNonNegativeFinite(values[rectangle.width], 'rectangle width')
-    assertNonNegativeFinite(values[rectangle.height], 'rectangle height')
+    for (const field of geometryFields) assertNonNegativeFinite(values[rectangle[field]], `rectangle ${field}`)
     const visibility = values[rectangle.visible]
     assertBoolean(visibility, 'rectangle visibility')
     visibleCount += visibility
