@@ -31,12 +31,17 @@ numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
 photo-gallery.ts              tiny photo gallery and browser adapter
 photo-gallery.test.ts         browser-free gallery behavior checks
-photo-gallery.html            four photo slots and CSS
+photo-gallery.html            twelve fixed photo constants and CSS
+photo-gallery.css             fixed presentation and photo bindings
+photo-gallery-00..11.webp     twelve fixed image constants
 ```
 
-The photo gallery switches between a four-slot grid and a focused view. The
-browser adapter records numeric click coordinates and projects numeric
-rectangle outputs. At startup, the fixed circuit compiles into dense gated
+The photo gallery switches between a twelve-slot grid and a lightbox with a
+main photo, a fixed strip containing all twelve thumbnails, previous/next controls, and close
+behavior. The browser adapter records numeric click or keyboard signals and
+projects numeric geometry, visibility, and focus outputs. Each photo and its
+caption are fixed constants permanently attached to one DOM slot. At startup,
+the fixed circuit compiles into dense gated
 layers. Each refresh evaluates those same numeric layers without item-specific
 runtime loops or runtime branching between atom kinds. Each layer reads all
 values available so far, produces only its new values, and appends them:
@@ -53,6 +58,15 @@ projected output after every refresh. It also compares every tensor
 wire against a small readable atom interpreter as a development assertion;
 rendering consumes only the tensor result. The dense matrices are intentionally
 naive for now so the runtime shape stays obvious.
+
+The measured dense tensor footprints are:
+
+```txt
+four-photo focus demo: source 10, width 326, layers 35
+                       matrix cells 101,798, bias cells 632, bytes 819,440
+photo lightbox:         source 24, width 1,492, layers 33
+                       matrix cells 2,124,956, bias cells 2,936, bytes 17,023,136
+```
 
 The persistent source table is a fixed `Float64Array`. Immutable constants and
 changing underivable facts share that table. Derived values are temporary
@@ -73,7 +87,7 @@ The tests compile and check:
 ```txt
 signed multiplication, min, max, and clamp
 continuous rectangle hit and overlap resolution
-responsive four-slot layout and focus behavior
+responsive twelve-slot gallery and lightbox behavior
 contiguous next-state and render-output blocks
 four expanded spring substeps per lane
 ```

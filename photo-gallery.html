@@ -3,53 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Photo Gallery</title>
-  <style>
-    html {
-      background: #111318;
-      color: #e7e9ee;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-    #canvas {
-      position: fixed;
-      inset: 0;
-      cursor: pointer;
-    }
-    .rectangle {
-      position: absolute;
-      border-radius: 18px;
-      box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%), 0 18px 48px rgb(0 0 0 / 25%);
-      pointer-events: none;
-    }
-    .rectangle:nth-child(1) { background: #ff6b6b; }
-    .rectangle:nth-child(2) { background: #f7b731; }
-    .rectangle:nth-child(3) { background: #45aaf2; }
-    .rectangle:nth-child(4) { background: #a55eea; }
-    #readout {
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      padding: 9px 12px;
-      border: 1px solid rgb(255 255 255 / 15%);
-      border-radius: 10px;
-      background: rgb(0 0 0 / 45%);
-      color: rgb(255 255 255 / 78%);
-      font-size: 12px;
-      pointer-events: none;
-    }
-  </style>
+  <title>Numeric Photo Lightbox</title>
+  <link rel="stylesheet" href="./photo-gallery.css">
 </head>
 <body>
   <div id="canvas">
-    <div class="rectangle"></div>
-    <div class="rectangle"></div>
-    <div class="rectangle"></div>
-    <div class="rectangle"></div>
+    <div id="backdrop"></div>
+    <div class="photo image-0"><span>Misty Lake</span></div>
+    <div class="photo image-1"><span>Desert Light</span></div>
+    <div class="photo image-2"><span>Pacific Edge</span></div>
+    <div class="photo image-3"><span>Midnight City</span></div>
+    <div class="photo image-4"><span>Forest Path</span></div>
+    <div class="photo image-5"><span>Alpine Dawn</span></div>
+    <div class="photo image-6"><span>Amalfi Morning</span></div>
+    <div class="photo image-7"><span>North Falls</span></div>
+    <div class="photo image-8"><span>Lavender Hour</span></div>
+    <div class="photo image-9"><span>Concrete Curve</span></div>
+    <div class="photo image-10"><span>Blue Lagoon</span></div>
+    <div class="photo image-11"><span>Autumn Road</span></div>
+    <div class="thumbnail image-0"></div>
+    <div class="thumbnail image-1"></div>
+    <div class="thumbnail image-2"></div>
+    <div class="thumbnail image-3"></div>
+    <div class="thumbnail image-4"></div>
+    <div class="thumbnail image-5"></div>
+    <div class="thumbnail image-6"></div>
+    <div class="thumbnail image-7"></div>
+    <div class="thumbnail image-8"></div>
+    <div class="thumbnail image-9"></div>
+    <div class="thumbnail image-10"></div>
+    <div class="thumbnail image-11"></div>
+    <div id="previous" class="control">&larr;</div>
+    <div id="next" class="control">&rarr;</div>
   </div>
+  <div id="hint">click a photo · arrows navigate · escape closes</div>
   <div id="readout"></div>
   <script type="module" src="./photo-gallery.ts"></script>
 </body>
