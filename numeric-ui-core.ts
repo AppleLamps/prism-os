@@ -24,6 +24,7 @@ export type TensorLayer = {
 
 export type TensorProgram = {
   layers: TensorLayer[]
+  sourceSize: number
   width: number
 }
 
@@ -98,7 +99,7 @@ export class Circuit {
       }
       layers.push(layer)
     }
-    return {layers, width}
+    return {layers, sourceSize: this.sourceSize, width}
   }
 
   stats() {
@@ -134,7 +135,7 @@ export function evaluateOperationStream(source: Float64Array, circuit: Circuit):
 }
 
 export function evaluateTensorProgram(source: Float64Array, program: TensorProgram): Float64Array {
-  invariant(source.length <= program.width, 'source table is wider than the tensor program')
+  invariant(source.length === program.sourceSize, 'source table has the wrong length')
   const {layers, width} = program
   const values = new Float64Array(width)
   const left = new Float64Array(width)
@@ -243,6 +244,7 @@ export function validateCircuit(circuit: Circuit): number {
 
 export function validateTensorProgram(circuit: Circuit, program: TensorProgram) {
   const {layers, width} = program
+  invariant(program.sourceSize === circuit.sourceSize, 'tensor source size mismatch')
   invariant(width === circuit.sourceSize + circuit.operations.length, 'tensor width mismatch')
   const available = new Uint8Array(width)
   const writeCount = new Uint8Array(width)

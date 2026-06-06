@@ -1,19 +1,12 @@
 import {
   Circuit,
   type Wire,
-  assertBoolean,
   assertFiniteValues,
-  assertInteger,
-  assertIntegerBetween,
   assertNonNegativeFinite,
-  assertNonNegativeInteger,
   assertWire,
-  emitAnd,
-  emitEqualForInteger,
-  emitGreaterThanForInteger,
-  emitGreaterThanOrEqualForInteger,
+  emitMinimum,
   emitMultiply,
-  emitSelect,
+  emitRelu,
   invariant,
   validateCircuit,
   validateTensorEvaluation,
@@ -29,8 +22,8 @@ export const sourceField = {
   clickActive: 3,
   clickX: 4,
   clickY: 5,
-  focusedPlusOne: 6, // 0 = grid; otherwise item index + 1
-  size: 7,
+  focusStart: 6,
+  size: 10,
 }
 
 const geometryFields = ['left', 'top', 'width', 'height'] as const
@@ -42,18 +35,28 @@ type RectangleProjection = RectangleGeometry & {
 }
 
 type RectangleOutput = {
-  focusedPlusOne: Wire
+  focus: Wire[]
   clickActive: Wire
   rectangles: RectangleProjection[]
+}
+
+export function focusField(item: number) {
+  return sourceField.focusStart + item
 }
 
 export function compileRectangleCircuit() {
   const circuit = new Circuit(sourceField.size)
   const zero = circuit.affine([])
-  const gridWidth = circuit.affine([[sourceField.viewportWidth, 0.5], [sourceField.gap, -1.5]])
-  const gridHeight = circuit.affine([[sourceField.viewportHeight, 0.5], [sourceField.gap, -1.5]])
-  const fullWidth = circuit.affine([[sourceField.viewportWidth, 1], [sourceField.gap, -2]])
-  const fullHeight = circuit.affine([[sourceField.viewportHeight, 1], [sourceField.gap, -2]])
+  const gridWidth = emitRelu(
+    circuit,
+    circuit.affine([[sourceField.viewportWidth, 0.5], [sourceField.gap, -1.5]]),
+  )
+  const gridHeight = emitRelu(
+    circuit,
+    circuit.affine([[sourceField.viewportHeight, 0.5], [sourceField.gap, -1.5]]),
+  )
+  const fullWidth = emitRelu(circuit, circuit.affine([[sourceField.viewportWidth, 1], [sourceField.gap, -2]]))
+  const fullHeight = emitRelu(circuit, circuit.affine([[sourceField.viewportHeight, 1], [sourceField.gap, -2]]))
 
   const grid: RectangleGeometry[] = []
   const hit: Wire[] = []
@@ -65,37 +68,51 @@ export function compileRectangleCircuit() {
     const right = circuit.affine([[left, 1], [gridWidth, 1]])
     const bottom = circuit.affine([[top, 1], [gridHeight, 1]])
     grid.push({left, top, width: gridWidth, height: gridHeight})
-    hit.push(emitAnd(circuit, [
-      emitGreaterThanOrEqualForInteger(circuit, sourceField.clickX, left),
-      emitGreaterThanForInteger(circuit, right, sourceField.clickX),
-      emitGreaterThanOrEqualForInteger(circuit, sourceField.clickY, top),
-      emitGreaterThanForInteger(circuit, bottom, sourceField.clickY),
-    ]))
+    const horizontalDistance = emitMinimum(
+      circuit,
+      circuit.affine([[sourceField.clickX, 1], [left, -1]]),
+      circuit.affine([[right, 1], [sourceField.clickX, -1]]),
+    )
+    const verticalDistance = emitMinimum(
+      circuit,
+      circuit.affine([[sourceField.clickY, 1], [top, -1]]),
+      circuit.affine([[bottom, 1], [sourceField.clickY, -1]]),
+    )
+    hit.push(emitClampZeroOne(circuit, emitMinimum(circuit, horizontalDistance, verticalDistance)))
   }
 
+  // Higher slots suppress lower slots when hit regions overlap. Fractional
+  // activations remain smooth; ordinary interior clicks produce exact 0/1.
   const winner: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
-    const survives = [hit[item]!]
+    let survives = hit[item]!
     for (let higher = item + 1; higher < itemCount; higher++) {
-      survives.push(circuit.affine([[hit[higher]!, -1]], 1))
+      survives = emitMultiply(circuit, survives, circuit.affine([[hit[higher]!, -1]], 1))
     }
-    winner.push(emitAnd(circuit, survives))
+    winner.push(survives)
   }
-  const hasHit = circuit.affine(winner.map(wire => [wire, 1]))
-  const targetPlusOne = circuit.affine(winner.map((wire, item) => [wire, item + 1]))
 
-  const gridMode = emitEqualForInteger(circuit, sourceField.focusedPlusOne, zero)
-  const focusFromGrid = emitSelect(circuit, hasHit, targetPlusOne, zero)
-  const focusAfterClick = emitSelect(circuit, gridMode, focusFromGrid, zero)
-  const focusedPlusOne = emitSelect(circuit, sourceField.clickActive, focusAfterClick, sourceField.focusedPlusOne)
+  const previousFocus = Array.from({length: itemCount}, (_, item) => focusField(item))
+  const previousFocusMass = circuit.affine(previousFocus.map(wire => [wire, 1]))
+  const gridMass = emitClampZeroOne(circuit, circuit.affine([[previousFocusMass, -1]], 1))
+  const clickInactive = circuit.affine([[sourceField.clickActive, -1]], 1)
+  const nextFocus = previousFocus.map((focus, item) => circuit.affine([
+    [emitMultiply(circuit, clickInactive, focus), 1],
+    [emitMultiply(
+      circuit,
+      sourceField.clickActive,
+      emitMultiply(circuit, gridMass, winner[item]!),
+    ), 1],
+  ]))
 
-  const nextGridMode = emitEqualForInteger(circuit, focusedPlusOne, zero)
+  const nextFocusMass = circuit.affine(nextFocus.map(wire => [wire, 1]))
+  const nextGridMass = emitClampZeroOne(circuit, circuit.affine([[nextFocusMass, -1]], 1))
   const rectangles: RectangleProjection[] = []
   for (let item = 0; item < itemCount; item++) {
     const gridRectangle = grid[item]!
-    const thisFocused = emitEqualForInteger(circuit, focusedPlusOne, circuit.affine([], item + 1))
+    const thisFocused = nextFocus[item]!
     const project = (gridValue: Wire, focusedValue: Wire) => circuit.affine([
-      [emitMultiply(circuit, nextGridMode, gridValue), 1],
+      [emitMultiply(circuit, nextGridMass, gridValue), 1],
       [emitMultiply(circuit, thisFocused, focusedValue), 1],
     ])
     rectangles.push({
@@ -103,14 +120,14 @@ export function compileRectangleCircuit() {
       top: project(gridRectangle.top, sourceField.gap),
       width: project(gridRectangle.width, fullWidth),
       height: project(gridRectangle.height, fullHeight),
-      visible: circuit.affine([[nextGridMode, 1], [thisFocused, 1]]),
+      visible: circuit.affine([[nextGridMass, 1], [thisFocused, 1]]),
     })
   }
 
   return {
     circuit,
     output: {
-      focusedPlusOne,
+      focus: nextFocus,
       clickActive: zero,
       rectangles,
     },
@@ -138,14 +155,16 @@ export function createRectangleMachine({checkTensorEvaluation = true}: {checkTen
       const values = circuit.evaluateTensor(source)
       if (checkTensorEvaluation) validateTensorEvaluation(source, circuit, values)
       validateRectangleOutput(values, output)
-      source[sourceField.focusedPlusOne] = values[output.focusedPlusOne]!
+      for (let item = 0; item < itemCount; item++) {
+        source[focusField(item)] = values[output.focus[item]!]!
+      }
       source[sourceField.clickActive] = values[output.clickActive]!
       return values
     },
     click(x: number, y: number) {
       source[sourceField.clickActive] = 1
-      source[sourceField.clickX] = Math.floor(x)
-      source[sourceField.clickY] = Math.floor(y)
+      source[sourceField.clickX] = x
+      source[sourceField.clickY] = y
     },
   }
 }
@@ -180,10 +199,14 @@ export function mountRectangleDemo(document: Document, window: Window) {
       rectangle.style.pointerEvents = values[projection.visible] === 1 ? 'auto' : 'none'
     }
 
-    const focusedPlusOne = machine.source[sourceField.focusedPlusOne]
+    const focus = Array.from({length: itemCount}, (_, item) => machine.source[focusField(item)]!)
+    const focusedItem = focus.indexOf(Math.max(...focus))
+    const focusAmount = focus[focusedItem]!
     readoutElement.textContent =
       `table cells ${machine.source.length} | layers ${machine.tensorProgram.layers.length} | weights ${weightCount} | ` +
-      (focusedPlusOne === 0 ? 'grid: click a rectangle' : `focused rectangle ${focusedPlusOne}: click to return`)
+      (focusAmount === 0
+        ? 'grid: click a rectangle'
+        : `focus rectangle ${focusedItem + 1}: ${focusAmount.toFixed(2)} | click to return`)
   }
 
   window.addEventListener('click', (event: MouseEvent) => {
@@ -199,17 +222,23 @@ function validateRectangleSource(values: unknown) {
   invariant(values instanceof Float64Array, 'source table must be a Float64Array')
   invariant(values.length === sourceField.size, 'source table has the wrong length')
   assertFiniteValues(values, 'source table')
-  assertNonNegativeInteger(values[sourceField.viewportWidth], 'viewport width')
-  assertNonNegativeInteger(values[sourceField.viewportHeight], 'viewport height')
-  assertNonNegativeInteger(values[sourceField.gap], 'gap')
-  assertBoolean(values[sourceField.clickActive], 'click latch')
-  assertInteger(values[sourceField.clickX], 'click x')
-  assertInteger(values[sourceField.clickY], 'click y')
-  assertIntegerBetween(values[sourceField.focusedPlusOne], 0, itemCount, 'focused rectangle')
+  assertNonNegativeFinite(values[sourceField.viewportWidth], 'viewport width')
+  assertNonNegativeFinite(values[sourceField.viewportHeight], 'viewport height')
+  assertNonNegativeFinite(values[sourceField.gap], 'gap')
+  assertUnitInterval(values[sourceField.clickActive], 'click latch')
+  invariant(Number.isFinite(values[sourceField.clickX]), 'click x must be finite')
+  invariant(Number.isFinite(values[sourceField.clickY]), 'click y must be finite')
+  let focusMass = 0
+  for (let item = 0; item < itemCount; item++) {
+    const focus = values[focusField(item)]
+    assertUnitInterval(focus, `focus ${item}`)
+    focusMass += focus
+  }
+  invariant(focusMass <= 1 + 1e-9, 'focus mass must not exceed 1')
 }
 
 function validateRectangleOutputWires(output: RectangleOutput, wireCount: number) {
-  assertWire(output.focusedPlusOne, wireCount)
+  for (const focus of output.focus) assertWire(focus, wireCount)
   assertWire(output.clickActive, wireCount)
   for (const rectangle of output.rectangles) {
     for (const field of geometryFields) assertWire(rectangle[field], wireCount)
@@ -219,17 +248,29 @@ function validateRectangleOutputWires(output: RectangleOutput, wireCount: number
 
 function validateRectangleOutput(values: Float64Array, output: RectangleOutput) {
   assertFiniteValues(values, 'tensor output')
-  assertIntegerBetween(values[output.focusedPlusOne], 0, itemCount, 'next focused rectangle')
   invariant(values[output.clickActive] === 0, 'click latch must reset after refresh')
-  let visibleCount = 0
+  let focusMass = 0
+  for (let item = 0; item < itemCount; item++) {
+    const focus = values[output.focus[item]!]
+    assertUnitInterval(focus, `next focus ${item}`)
+    focusMass += focus
+  }
+  invariant(focusMass <= 1 + 1e-9, 'next focus mass must not exceed 1')
   for (const rectangle of output.rectangles) {
     for (const field of geometryFields) assertNonNegativeFinite(values[rectangle[field]], `rectangle ${field}`)
     const visibility = values[rectangle.visible]
-    assertBoolean(visibility, 'rectangle visibility')
-    visibleCount += visibility
+    assertUnitInterval(visibility, 'rectangle visibility')
   }
-  const expectedVisibleCount = values[output.focusedPlusOne] === 0 ? itemCount : 1
-  invariant(visibleCount === expectedVisibleCount, 'visible rectangle count mismatch')
+}
+
+function emitClampZeroOne(circuit: Circuit, value: Wire): Wire {
+  const positive = emitRelu(circuit, value)
+  const aboveOne = emitRelu(circuit, circuit.affine([[value, 1]], -1))
+  return circuit.affine([[positive, 1], [aboveOne, -1]])
+}
+
+function assertUnitInterval(value: number | undefined, label: string): asserts value is number {
+  invariant(value !== undefined && Number.isFinite(value) && value >= 0 && value <= 1, `${label} must be within 0..1`)
 }
 
 if (typeof document !== 'undefined' && typeof window !== 'undefined') {

@@ -1,17 +1,12 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {createRectangleMachine, itemCount, sourceField} from './numeric-ui-rectangles.ts'
+import {createRectangleMachine, focusField, itemCount} from './numeric-ui-rectangles.ts'
 
 const viewportWidth = 1280
 const viewportHeight = 720
 const gap = 24
-const machine = createRectangleMachine()
 
-function step() {
-  return machine.step(viewportWidth, viewportHeight)
-}
-
-function projectRectangles(values: Float64Array) {
+function projectRectangles(machine: ReturnType<typeof createRectangleMachine>, values: Float64Array) {
   return machine.output.rectangles.map(rectangle => ({
     left: values[rectangle.left]!,
     top: values[rectangle.top]!,
@@ -21,9 +16,13 @@ function projectRectangles(values: Float64Array) {
   }))
 }
 
-function assertGrid(values: Float64Array) {
-  assert.equal(machine.source[sourceField.focusedPlusOne], 0)
-  assert.deepEqual(projectRectangles(values), [
+function readFocus(machine: ReturnType<typeof createRectangleMachine>) {
+  return Array.from({length: itemCount}, (_, item) => machine.source[focusField(item)]!)
+}
+
+function assertGrid(machine: ReturnType<typeof createRectangleMachine>, values: Float64Array) {
+  assert.deepEqual(readFocus(machine), [0, 0, 0, 0])
+  assert.deepEqual(projectRectangles(machine, values), [
     {left: 24, top: 24, width: 604, height: 324, visible: 1},
     {left: 652, top: 24, width: 604, height: 324, visible: 1},
     {left: 24, top: 372, width: 604, height: 324, visible: 1},
@@ -31,26 +30,67 @@ function assertGrid(values: Float64Array) {
   ])
 }
 
-test('grid rectangles focus and return to the grid', () => {
-  let values = step()
-  assertGrid(values)
+test('interior clicks focus each rectangle and the next click returns to the grid', () => {
+  const machine = createRectangleMachine()
+  let values = machine.step(viewportWidth, viewportHeight)
+  assertGrid(machine, values)
 
   for (let item = 0; item < itemCount; item++) {
-    const gridRectangle = projectRectangles(values)[item]!
-    machine.click(gridRectangle.left, gridRectangle.top)
-    values = step()
-    assert.equal(machine.source[sourceField.focusedPlusOne], item + 1)
+    const gridRectangle = projectRectangles(machine, values)[item]!
+    machine.click(
+      gridRectangle.left + gridRectangle.width / 2,
+      gridRectangle.top + gridRectangle.height / 2,
+    )
+    values = machine.step(viewportWidth, viewportHeight)
+    assert.deepEqual(readFocus(machine), Array.from({length: itemCount}, (_, index) => Number(index === item)))
     assert.deepEqual(
-      projectRectangles(values),
+      projectRectangles(machine, values),
       Array.from({length: itemCount}, (_, rectangle) => rectangle === item
         ? {left: gap, top: gap, width: 1232, height: 672, visible: 1}
         : {left: 0, top: 0, width: 0, height: 0, visible: 0}),
     )
 
     machine.click(0, 0)
-    values = step()
-    assertGrid(values)
+    values = machine.step(viewportWidth, viewportHeight)
+    assertGrid(machine, values)
+  }
+})
+
+test('odd viewport dimensions support exact interior focus and soft boundary focus', () => {
+  const machine = createRectangleMachine()
+  let values = machine.step(1281, 721)
+  const rectangles = projectRectangles(machine, values)
+  assert.deepEqual(rectangles[1], {left: 652.5, top: 24, width: 604.5, height: 324.5, visible: 1})
+
+  const second = rectangles[1]
+  machine.click(second.left + second.width / 2, second.top + second.height / 2)
+  values = machine.step(1281, 721)
+  assert.deepEqual(readFocus(machine), [0, 1, 0, 0])
+
+  machine.click(0, 0)
+  values = machine.step(1281, 721)
+  assert.deepEqual(readFocus(machine), [0, 0, 0, 0])
+
+  const first = projectRectangles(machine, values)[0]!
+  machine.click(first.left + 0.5, first.top + first.height / 2)
+  machine.step(1281, 721)
+  assert.deepEqual(readFocus(machine), [0.5, 0, 0, 0])
+})
+
+test('tiny viewports clamp rectangle dimensions and cannot produce a hit', () => {
+  const machine = createRectangleMachine()
+  let values = machine.step(40, 40)
+  const rectangles = projectRectangles(machine, values)
+  for (const rectangle of rectangles) {
+    assert.equal(rectangle.width, 0)
+    assert.equal(rectangle.height, 0)
   }
 
-  console.log(`Verified grid, focus, and return-to-grid for ${itemCount} fixed rectangle slots.`)
+  machine.click(24, 24)
+  values = machine.step(40, 40)
+  assert.deepEqual(readFocus(machine), [0, 0, 0, 0])
+  for (const rectangle of projectRectangles(machine, values)) {
+    assert.ok(rectangle.width >= 0)
+    assert.ok(rectangle.height >= 0)
+  }
 })
