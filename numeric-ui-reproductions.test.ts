@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {Circuit} from './numeric-ui-core.ts'
-import {createRectangleMachine} from './numeric-ui-rectangles.ts'
+import {createRectangleMachine, itemCount, rectangleField} from './numeric-ui-rectangles.ts'
 
 test('odd viewport clicks no longer produce an invalid scalar focus id', () => {
   const machine = createRectangleMachine()
@@ -14,9 +14,10 @@ test('tiny viewports no longer produce negative geometry', () => {
   const machine = createRectangleMachine()
 
   const values = machine.step(40, 40)
-  for (const rectangle of machine.output.rectangles) {
-    assert.ok(values[rectangle.width]! >= 0)
-    assert.ok(values[rectangle.height]! >= 0)
+  for (let item = 0; item < itemCount; item++) {
+    const outputStart = machine.output.rectangleStart + item * rectangleField.size
+    assert.ok(values[outputStart + rectangleField.width]! >= 0)
+    assert.ok(values[outputStart + rectangleField.height]! >= 0)
   }
 })
 

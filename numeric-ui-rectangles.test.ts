@@ -1,19 +1,28 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {createRectangleMachine, focusField, itemCount, sourceField} from './numeric-ui-rectangles.ts'
+import {
+  createRectangleMachine,
+  focusField,
+  itemCount,
+  rectangleField,
+  sourceField,
+} from './numeric-ui-rectangles.ts'
 
 const viewportWidth = 1280
 const viewportHeight = 720
 const gap = 24
 
 function projectRectangles(machine: ReturnType<typeof createRectangleMachine>, values: Float64Array) {
-  return machine.output.rectangles.map(rectangle => ({
-    left: values[rectangle.left]!,
-    top: values[rectangle.top]!,
-    width: values[rectangle.width]!,
-    height: values[rectangle.height]!,
-    visible: values[rectangle.visible]!,
-  }))
+  return Array.from({length: itemCount}, (_, item) => {
+    const outputStart = machine.output.rectangleStart + item * rectangleField.size
+    return {
+      left: values[outputStart + rectangleField.left]!,
+      top: values[outputStart + rectangleField.top]!,
+      width: values[outputStart + rectangleField.width]!,
+      height: values[outputStart + rectangleField.height]!,
+      visible: values[outputStart + rectangleField.opacity]!,
+    }
+  })
 }
 
 function readFocus(machine: ReturnType<typeof createRectangleMachine>) {
@@ -117,5 +126,22 @@ test('the complete next source table is one contiguous output block', () => {
     0,
     0,
     0,
+  ])
+})
+
+test('all rectangle projections are one contiguous output block', () => {
+  const machine = createRectangleMachine()
+  const values = machine.step(viewportWidth, viewportHeight)
+  const rectangleOutput = values.subarray(
+    machine.output.rectangleStart,
+    machine.output.rectangleStart + itemCount * rectangleField.size,
+  )
+
+  assert.equal(rectangleOutput.length, itemCount * rectangleField.size)
+  assert.deepEqual([...rectangleOutput], [
+    24, 24, 604, 324, 1,
+    652, 24, 604, 324, 1,
+    24, 372, 604, 324, 1,
+    652, 372, 604, 324, 1,
   ])
 })

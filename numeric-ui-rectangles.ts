@@ -26,6 +26,15 @@ export const sourceField = {
   size: 10,
 }
 
+export const rectangleField = {
+  left: 0,
+  top: 1,
+  width: 2,
+  height: 3,
+  opacity: 4,
+  size: 5,
+}
+
 const geometryFields = ['left', 'top', 'width', 'height'] as const
 
 type RectangleGeometry = Record<(typeof geometryFields)[number], Wire>
@@ -36,7 +45,7 @@ type RectangleProjection = RectangleGeometry & {
 
 type RectangleOutput = {
   nextSourceStart: Wire
-  rectangles: RectangleProjection[]
+  rectangleStart: Wire
 }
 
 export function focusField(item: number) {
@@ -132,12 +141,19 @@ export function compileRectangleCircuit() {
     sourceField.clickY,
     ...nextFocus,
   ].map(wire => circuit.affine([[wire, 1]]))
+  const rectangleOutput = rectangles.flatMap(rectangle => [
+    rectangle.left,
+    rectangle.top,
+    rectangle.width,
+    rectangle.height,
+    rectangle.visible,
+  ]).map(wire => circuit.affine([[wire, 1]]))
 
   return {
     circuit,
     output: {
       nextSourceStart: nextSource[0]!,
-      rectangles,
+      rectangleStart: rectangleOutput[0]!,
     },
   }
 }
@@ -198,10 +214,13 @@ export function mountRectangleDemo(document: Document, window: Window) {
     const values = machine.step(document.documentElement.clientWidth, document.documentElement.clientHeight)
     for (let item = 0; item < itemCount; item++) {
       const rectangle = rectangles[item]!
-      const projection = machine.output.rectangles[item]!
-      for (const field of geometryFields) rectangle.style[field] = `${values[projection[field]]}px`
-      rectangle.style.opacity = `${values[projection.visible]}`
-      rectangle.style.pointerEvents = values[projection.visible] === 1 ? 'auto' : 'none'
+      const outputStart = machine.output.rectangleStart + item * rectangleField.size
+      for (const field of geometryFields) {
+        rectangle.style[field] = `${values[outputStart + rectangleField[field]]}px`
+      }
+      const opacity = values[outputStart + rectangleField.opacity]!
+      rectangle.style.opacity = `${opacity}`
+      rectangle.style.pointerEvents = opacity === 1 ? 'auto' : 'none'
     }
 
     const focus = Array.from({length: itemCount}, (_, item) => machine.source[focusField(item)]!)
@@ -245,10 +264,8 @@ function validateRectangleSource(values: unknown) {
 function validateRectangleOutputWires(output: RectangleOutput, wireCount: number) {
   assertWire(output.nextSourceStart, wireCount)
   assertWire(output.nextSourceStart + sourceField.size - 1, wireCount)
-  for (const rectangle of output.rectangles) {
-    for (const field of geometryFields) assertWire(rectangle[field], wireCount)
-    assertWire(rectangle.visible, wireCount)
-  }
+  assertWire(output.rectangleStart, wireCount)
+  assertWire(output.rectangleStart + itemCount * rectangleField.size - 1, wireCount)
 }
 
 function validateRectangleOutput(values: Float64Array, output: RectangleOutput) {
@@ -263,10 +280,12 @@ function validateRectangleOutput(values: Float64Array, output: RectangleOutput) 
     focusMass += focus
   }
   invariant(focusMass <= 1 + 1e-9, 'next focus mass must not exceed 1')
-  for (const rectangle of output.rectangles) {
-    for (const field of geometryFields) assertNonNegativeFinite(values[rectangle[field]], `rectangle ${field}`)
-    const visibility = values[rectangle.visible]
-    assertUnitInterval(visibility, 'rectangle visibility')
+  for (let item = 0; item < itemCount; item++) {
+    const outputStart = output.rectangleStart + item * rectangleField.size
+    for (const field of geometryFields) {
+      assertNonNegativeFinite(values[outputStart + rectangleField[field]], `rectangle ${field}`)
+    }
+    assertUnitInterval(values[outputStart + rectangleField.opacity], 'rectangle opacity')
   }
 }
 
