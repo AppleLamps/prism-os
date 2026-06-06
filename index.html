@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Indirect Window Manager</title>
+  <link rel="stylesheet" href="./window-manager.css">
+</head>
+<body>
+  <main id="desktop">
+    <header id="system-bar">
+      <div class="system-mark"><span></span> indirect desktop</div>
+      <div class="system-status">AFFINE · ReGLU · 4 WINDOWS</div>
+    </header>
+
+    <section class="window window-files">
+      <div class="titlebar">
+        <div class="window-title"><span class="app-dot dot-files"></span>Files</div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content files-content">
+        <aside class="file-sidebar">
+          <strong>Favorites</strong>
+          <span class="selected">Desktop</span>
+          <span>Documents</span>
+          <span>Downloads</span>
+          <span>Archive</span>
+        </aside>
+        <div class="file-grid">
+          <div class="folder"><i></i><span>Experiments</span><small>18 items</small></div>
+          <div class="folder"><i></i><span>References</span><small>32 items</small></div>
+          <div class="folder"><i></i><span>Weights</span><small>9 items</small></div>
+          <div class="folder"><i></i><span>Exports</span><small>5 items</small></div>
+        </div>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <section class="window window-notes">
+      <div class="titlebar">
+        <div class="window-title"><span class="app-dot dot-notes"></span>Notes</div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content notes-content">
+        <p class="note-date">SATURDAY, JUNE 6</p>
+        <h1>One table, two atoms.</h1>
+        <p>The windows, their order, every pointer gesture, and the dock are all projections of one fixed numeric circuit.</p>
+        <div class="note-rule"></div>
+        <p class="note-small">Drag a title bar. Resize a corner. Use the three window controls. Closed windows return from the dock.</p>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <section class="window window-monitor">
+      <div class="titlebar">
+        <div class="window-title"><span class="app-dot dot-monitor"></span>Tensor Monitor</div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content monitor-content">
+        <div class="monitor-heading"><span>FRAME GRAPH</span><strong>LIVE</strong></div>
+        <div class="chart">
+          <i style="--h: 32%"></i><i style="--h: 48%"></i><i style="--h: 42%"></i>
+          <i style="--h: 68%"></i><i style="--h: 53%"></i><i style="--h: 76%"></i>
+          <i style="--h: 61%"></i><i style="--h: 84%"></i><i style="--h: 70%"></i>
+          <i style="--h: 92%"></i><i style="--h: 78%"></i><i style="--h: 88%"></i>
+        </div>
+        <div class="metric-row"><span>program</span><b>fixed</b></div>
+        <div class="metric-row"><span>runtime atoms</span><b>2</b></div>
+        <div class="metric-row"><span>DOM decisions</span><b>0</b></div>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <section class="window window-colors">
+      <div class="titlebar">
+        <div class="window-title"><span class="app-dot dot-colors"></span>Palette</div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content colors-content">
+        <div class="swatch swatch-a"></div>
+        <div class="swatch swatch-b"></div>
+        <div class="swatch swatch-c"></div>
+        <div class="swatch swatch-d"></div>
+        <div class="color-values">
+          <span>signal / warm</span>
+          <span>field / cool</span>
+          <span>mass / bright</span>
+        </div>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <nav id="dock">
+      <div class="dock-item dock-files"><span>F</span><i></i></div>
+      <div class="dock-item dock-notes"><span>N</span><i></i></div>
+      <div class="dock-item dock-monitor"><span>M</span><i></i></div>
+      <div class="dock-item dock-colors"><span>P</span><i></i></div>
+    </nav>
+
+    <div id="gesture-label">drag · resize · minimize · maximize · close</div>
+    <div id="readout"></div>
+  </main>
+  <script type="module" src="./window-manager.ts"></script>
+</body>
+</html>

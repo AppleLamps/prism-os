@@ -1,7 +1,7 @@
-# Numeric UI Atom Lab
+# Indirect
 
-This browser-free experiment tests whether apparently different UI derivations
-can lower into a small homogeneous numeric circuit.
+This experiment tests whether a complete interactive UI can lower into one
+fixed numeric circuit with only two runtime atoms.
 
 Run the browser-free checks:
 
@@ -9,7 +9,7 @@ Run the browser-free checks:
 bun test
 ```
 
-Serve the smallest browser demo:
+Serve the window manager:
 
 ```sh
 bun start
@@ -23,12 +23,16 @@ Run strict TypeScript and type-aware lint checks:
 bun check
 ```
 
-The folder is split by responsibility:
+The main files are:
 
 ```txt
 numeric-ui-core.ts            universal numeric vocabulary and tensor backend
 numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
+window-manager.ts             numeric window state machine and DOM adapter
+window-manager.test.ts        browser-free window-manager behavior proofs
+window-manager.css            fixed presentation
+index.html                    fixed four-window desktop
 photo-gallery.ts              tiny photo gallery and browser adapter
 photo-gallery.test.ts         browser-free gallery behavior checks
 photo-gallery.html            twelve fixed photo constants and CSS
@@ -36,15 +40,26 @@ photo-gallery.css             fixed presentation and photo bindings
 photo-gallery-00..11.webp     twelve fixed image constants
 ```
 
-The photo gallery switches between a twelve-slot grid and a lightbox with a
-main photo, a fixed strip containing all twelve thumbnails, previous/next controls, and close
-behavior. The browser adapter records numeric click or keyboard signals and
-projects numeric geometry, visibility, and focus outputs. Each photo and its
-caption are fixed constants permanently attached to one DOM slot. At startup,
-the fixed circuit compiles into fixed gated
-layers. Each refresh evaluates those same numeric layers without item-specific
-runtime loops or runtime branching between atom kinds. Each layer reads all
-values it actually depends on, produces only its new values, and appends them:
+The window manager has four preallocated windows. Its single source table holds
+viewport facts, layout constants, raw pointer latches, normal window geometry,
+open/minimized/maximized flags, drag and resize targets, and a 4 by 4 stacking
+matrix. One fixed circuit computes:
+
+```txt
+topmost hit selection and focus
+stable raise-to-front ordering
+dragging, resizing, and workspace bounds
+minimize, maximize, close, and dock restore
+all window and dock projection geometry
+```
+
+JavaScript event callbacks only record raw pointer facts and schedule one
+render. The render reads viewport dimensions, evaluates the numeric program,
+copies its next-state wire view into the same source table, and writes projected
+values onto permanent DOM nodes.
+
+At startup, the circuit compiles into fixed gated layers. Every refresh runs
+the same layers without window-specific runtime branches:
 
 ```txt
 input = gather(values, inputIndices)
@@ -54,20 +69,19 @@ new[gateRows] *= ReLU(projection[new:])
 values = concat(values, new)
 ```
 
-The demo validates the incoming source table, fixed compiled matrices, and
-projected output after every refresh. It also compares every tensor
-wire against a small readable atom interpreter as a development assertion;
-rendering consumes only the tensor result. Sparse storage omits zero
-coefficients but represents the same fixed rectangular matrices.
+The demo validates the source table, stack mass, compiled matrices, and
+projected output after every refresh. It also compares every live tensor wire
+against a readable atom interpreter as a development assertion. Rendering
+consumes only the tensor result. Sparse storage omits zero coefficients while
+representing the same fixed rectangular matrices.
 
 The measured tensor footprints are:
 
 ```txt
-four-photo focus demo: source 10, width 326, layers 35
-                       matrix cells 101,798, bias cells 632, bytes 819,440
-photo lightbox:         source 24, graph width 583, live values 338, layers 9
-                       logical matrix cells 23,686, stored weights 2,339
-                       bias cells 543, layer tensor bytes 36,908
+window manager: source 77, graph width 1,455, live values 751, layers 32
+                stored weights 3,346, layer tensor bytes 63,116
+photo lightbox: source 24, graph width 583, live values 338, layers 9
+                stored weights 2,339, layer tensor bytes 36,908
 ```
 
 The persistent source table is a fixed `Float64Array`. Immutable constants and
@@ -89,14 +103,15 @@ The tests compile and check:
 ```txt
 signed multiplication, min, max, and clamp
 continuous rectangle hit and overlap resolution
+dynamic stack ordering and topmost selection
+dragging, resizing, and workspace bounds
+maximize, minimize, close, and dock restoration
+same-frame pointer event batching
+finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 direct next-state and render-output wire views
 four expanded spring substeps per lane
 ```
-
-An ordinary reference calculation runs beside the compiled circuit. The script
-compares both results across deliberate edge cases and deterministic randomized
-inputs, then prints the resulting circuit size.
 
 ## TODO
 

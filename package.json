@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun ./photo-gallery.html",
+    "start": "bun ./index.html",
     "check": "tsgo && oxlint --type-aware *.ts",
     "test": "bun test"
   },
