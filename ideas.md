@@ -99,3 +99,9 @@ Instead of coding “row layout,” specify desired output:
 rectangle centers should be evenly spaced
 all visible rectangles should fit in viewport
 selected rectangle should occupy most area
+
+12. Revisit numeric representation when precision becomes a real constraint.
+The table currently uses ordinary floating-point numbers. Fixed-point, bounded
+ranges, or mixed representations may become useful if a future derivation
+requires exact thresholds or reproducible arithmetic, but no current behavior
+depends on that choice.

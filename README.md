@@ -85,8 +85,6 @@ inputs, then prints the resulting circuit size.
 
 do not change this before asking the user
 
-- Consider fixed-point precision for exact control boundaries such as hit
-  testing while allowing ordinary floating-point values for visual geometry.
 - Revisit arbitrary dynamic division only when a real derivation requires it.
   Constant division, bounded choices, and choosing better source coordinates
   already avoid it in this experiment.
