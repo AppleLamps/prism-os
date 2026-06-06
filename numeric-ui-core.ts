@@ -34,6 +34,7 @@ export class Circuit {
   operations: Operation[]
   depths: number[]
   constants: (number | undefined)[]
+  expressionWires: Map<string, Wire>
   tensorProgram: TensorProgram | null
 
   constructor(sourceSize: number) {
@@ -41,6 +42,7 @@ export class Circuit {
     this.operations = []
     this.depths = Array<number>(sourceSize).fill(0)
     this.constants = Array<number | undefined>(sourceSize).fill(undefined)
+    this.expressionWires = new Map()
     this.tensorProgram = null
   }
 
@@ -84,6 +86,9 @@ export class Circuit {
     }
     const composedAlias = kind === 'affine' ? identityWire(leftTerms, leftBias) : undefined
     if (composedAlias !== undefined) return composedAlias
+    const expressionKey = serializeExpression(kind, leftTerms, leftBias, gateTerms, gateBias)
+    const existingWire = this.expressionWires.get(expressionKey)
+    if (existingWire !== undefined) return existingWire
     const wire = this.sourceSize + this.operations.length
     const dependencies = kind === 'affine' ? leftTerms : [...leftTerms, ...gateTerms]
     let depth = 0
@@ -91,6 +96,7 @@ export class Circuit {
     this.operations.push({kind, leftTerms, leftBias, gateTerms, gateBias, depth: depth + 1})
     this.depths.push(depth + 1)
     this.constants.push(kind === 'affine' && leftTerms.length === 0 ? leftBias : undefined)
+    this.expressionWires.set(expressionKey, wire)
     this.tensorProgram = null
     return wire
   }
@@ -168,6 +174,23 @@ export class Circuit {
       depth: Math.max(...this.depths),
     }
   }
+}
+
+function serializeExpression(
+  kind: AtomKind,
+  leftTerms: Terms,
+  leftBias: number,
+  gateTerms: Terms,
+  gateBias: number,
+): string {
+  return [
+    kind,
+    leftBias,
+    ...leftTerms.flatMap(([wire, coefficient]) => [wire, coefficient]),
+    '|',
+    gateBias,
+    ...gateTerms.flatMap(([wire, coefficient]) => [wire, coefficient]),
+  ].join(',')
 }
 
 function identityWire(terms: Terms, bias: number): Wire | undefined {

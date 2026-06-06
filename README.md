@@ -64,8 +64,8 @@ The measured dense tensor footprints are:
 ```txt
 four-photo focus demo: source 10, width 326, layers 35
                        matrix cells 101,798, bias cells 632, bytes 819,440
-photo lightbox:         source 24, width 836, layers 9
-                       matrix cells 612,408, bias cells 1,624, bytes 4,912,256
+photo lightbox:         source 24, width 825, layers 9
+                       matrix cells 595,736, bias cells 1,602, bytes 4,778,704
 ```
 
 The persistent source table is a fixed `Float64Array`. Immutable constants and

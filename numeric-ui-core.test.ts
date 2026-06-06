@@ -106,3 +106,15 @@ test('affine forms compose through affine producers', () => {
   assert.deepEqual(circuit.operations[2]!.leftTerms, [[0, 16], [1, 2]])
   assert.deepEqual(circuit.operations[2]!.gateTerms, [[0, -6], [1, 3]])
 })
+
+test('identical normalized expressions share one wire', () => {
+  const circuit = new Circuit(2)
+  const firstAffine = circuit.affine([[1, 3], [0, 2]], 4)
+  const secondAffine = circuit.affine([[0, 1], [1, 3], [0, 1]], 4)
+  const firstReglu = circuit.reglu([[firstAffine, 2]], 1, [[1, -1]], 3)
+  const secondReglu = circuit.reglu([[secondAffine, 2]], 1, [[1, -1]], 3)
+
+  assert.equal(secondAffine, firstAffine)
+  assert.equal(secondReglu, firstReglu)
+  assert.equal(circuit.operations.length, 2)
+})
