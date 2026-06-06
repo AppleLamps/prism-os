@@ -380,7 +380,14 @@ export function createPhotoGalleryMachine({checkTensorEvaluation = true}: {check
   const {circuit, output} = compilePhotoGalleryCircuit()
   const wireCount = validateCircuit(circuit)
   validateGalleryOutputWires(output, wireCount)
-  const tensorProgram = circuit.tensorProgram = circuit.compileTensorProgram()
+  const tensorProgram = circuit.tensorProgram = circuit.compileTensorProgram([
+    ...output.nextSource,
+    output.backdropOpacity,
+    ...output.photos,
+    ...output.thumbnails,
+    ...output.previousControl,
+    ...output.nextControl,
+  ])
   validateTensorProgram(circuit, tensorProgram)
 
   function receiveEvent(field: number, x = source[sourceField.clickX]!, y = source[sourceField.clickY]!) {

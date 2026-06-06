@@ -118,3 +118,26 @@ test('identical normalized expressions share one wire', () => {
   assert.equal(secondReglu, firstReglu)
   assert.equal(circuit.operations.length, 2)
 })
+
+test('tensor roots remove operations that cannot affect an output', () => {
+  const circuit = new Circuit(2)
+  const liveDependency = circuit.reglu([[0, 2]], 0, [[1, 1]], 0)
+  const liveOutput = circuit.affine([[liveDependency, 1]], 3)
+  circuit.reglu([[0, 7]], 11, [[1, -2]], 5)
+  const program = circuit.compileTensorProgram([liveOutput])
+
+  assert.equal(program.width, 5)
+  assert.equal(program.valueCount, 4)
+  assert.deepEqual([...program.wireOrder], [0, 1, liveDependency, liveOutput])
+  assert.equal(evaluateOutput(circuit, program, [13, 17], liveOutput), 445)
+})
+
+function evaluateOutput(
+  circuit: Circuit,
+  program: ReturnType<Circuit['compileTensorProgram']>,
+  source: number[],
+  wire: number,
+) {
+  circuit.tensorProgram = program
+  return circuit.evaluateTensor(Float64Array.from(source))[wire]
+}

@@ -24,7 +24,9 @@ export type TensorLayer = {
 
 export type TensorProgram = {
   layers: TensorLayer[]
+  roots: Uint32Array
   sourceSize: number
+  valueCount: number
   wireOrder: Uint32Array
   width: number
 }
@@ -109,10 +111,21 @@ export class Circuit {
     return evaluateTensorProgram(source, this.tensorProgram ??= this.compileTensorProgram())
   }
 
-  compileTensorProgram(): TensorProgram {
+  compileTensorProgram(roots?: readonly Wire[]): TensorProgram {
     const width = this.sourceSize + this.operations.length
+    const normalizedRoots = roots ?? Array.from(
+      {length: this.operations.length},
+      (_, operationIndex) => this.sourceSize + operationIndex,
+    )
+    const liveOperations = findLiveOperations(
+      normalizedRoots,
+      this.sourceSize,
+      this.operations,
+      width,
+    )
     const operationsByLayer: number[][] = []
     for (let operationIndex = 0; operationIndex < this.operations.length; operationIndex++) {
+      if (liveOperations[operationIndex] === 0) continue
       const operation = this.operations[operationIndex]!
       const layerIndex = operation.depth - 1
       const operationIndices = operationsByLayer[layerIndex] ??= []
@@ -120,7 +133,9 @@ export class Circuit {
     }
 
     const layers: TensorLayer[] = []
-    const wireOrder = new Uint32Array(width)
+    const liveOperationCount = liveOperations.reduce((sum, live) => sum + live, 0)
+    const valueCount = this.sourceSize + liveOperationCount
+    const wireOrder = new Uint32Array(valueCount)
     const packedIndexByWire = new Int32Array(width)
     packedIndexByWire.fill(-1)
     for (let wire = 0; wire < this.sourceSize; wire++) {
@@ -129,7 +144,8 @@ export class Circuit {
     }
     let availableValues = this.sourceSize
     for (let layerIndex = 0; layerIndex < operationsByLayer.length; layerIndex++) {
-      const operationIndices = operationsByLayer[layerIndex]!
+      const operationIndices = operationsByLayer[layerIndex]
+      if (operationIndices === undefined) continue
       const outputSize = operationIndices.length
       const layer: TensorLayer = {
         inputSize: availableValues,
@@ -156,7 +172,14 @@ export class Circuit {
       layers.push(layer)
       availableValues += outputSize
     }
-    return {layers, sourceSize: this.sourceSize, wireOrder, width}
+    return {
+      layers,
+      roots: Uint32Array.from(normalizedRoots),
+      sourceSize: this.sourceSize,
+      valueCount,
+      wireOrder,
+      width,
+    }
   }
 
   stats() {
@@ -174,6 +197,28 @@ export class Circuit {
       depth: Math.max(...this.depths),
     }
   }
+}
+
+function findLiveOperations(
+  roots: readonly Wire[],
+  sourceSize: number,
+  operations: readonly Operation[],
+  width: number,
+): Uint8Array {
+  const liveOperations = new Uint8Array(operations.length)
+  const pending = [...roots]
+  while (pending.length > 0) {
+    const wire = pending.pop()!
+    assertWire(wire, width)
+    if (wire < sourceSize) continue
+    const operationIndex = wire - sourceSize
+    if (liveOperations[operationIndex] === 1) continue
+    liveOperations[operationIndex] = 1
+    const operation = operations[operationIndex]!
+    for (const [dependency] of operation.leftTerms) pending.push(dependency)
+    for (const [dependency] of operation.gateTerms) pending.push(dependency)
+  }
+  return liveOperations
 }
 
 function serializeExpression(
@@ -261,8 +306,8 @@ export function evaluateOperationStream(source: Float64Array, circuit: Circuit):
 
 export function evaluateTensorProgram(source: Float64Array, program: TensorProgram): Float64Array {
   invariant(source.length === program.sourceSize, 'source table has the wrong length')
-  const {layers, wireOrder, width} = program
-  const packedValues = new Float64Array(width)
+  const {layers, valueCount, wireOrder, width} = program
+  const packedValues = new Float64Array(valueCount)
   let maxOutputSize = 0
   for (const layer of layers) maxOutputSize = Math.max(maxOutputSize, layer.leftBias.length)
   const left = new Float64Array(maxOutputSize)
@@ -351,10 +396,11 @@ export function validateCircuit(circuit: Circuit): number {
 }
 
 export function validateTensorProgram(circuit: Circuit, program: TensorProgram) {
-  const {layers, wireOrder, width} = program
+  const {layers, roots, valueCount, wireOrder, width} = program
   invariant(program.sourceSize === circuit.sourceSize, 'tensor source size mismatch')
   invariant(width === circuit.sourceSize + circuit.operations.length, 'tensor width mismatch')
-  invariant(wireOrder.length === width, 'tensor wire order size mismatch')
+  invariant(valueCount <= width, 'tensor value count exceeds circuit width')
+  invariant(wireOrder.length === valueCount, 'tensor wire order size mismatch')
   const seenWires = new Uint8Array(width)
   for (let wire = 0; wire < circuit.sourceSize; wire++) {
     invariant(wireOrder[wire] === wire, 'tensor source order mismatch')
@@ -380,14 +426,15 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
     }
     availableValues += outputSize
   }
-  invariant(availableValues === width, 'tensor program output size mismatch')
-  for (let wire = 0; wire < width; wire++) invariant(seenWires[wire] === 1, 'every tensor wire must be present')
+  invariant(availableValues === valueCount, 'tensor program output size mismatch')
+  for (const root of roots) invariant(seenWires[root] === 1, 'every tensor root must be present')
 }
 
 export function validateTensorEvaluation(source: Float64Array, circuit: Circuit, tensorValues: Float64Array) {
   const expectedValues = evaluateOperationStream(source, circuit)
   invariant(expectedValues.length === tensorValues.length, 'tensor result width mismatch')
-  for (let wire = 0; wire < tensorValues.length; wire++) {
+  const program = circuit.tensorProgram ??= circuit.compileTensorProgram()
+  for (const wire of program.wireOrder) {
     assertApproximatelyEqual(tensorValues[wire]!, expectedValues[wire]!, `tensor wire ${wire}`)
   }
 }
