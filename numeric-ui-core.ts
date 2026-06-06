@@ -186,48 +186,12 @@ export function emitMultiply(circuit: Circuit, a: Wire, b: Wire): Wire {
   return circuit.affine([[positive, 1], [negative, -1]])
 }
 
-export function emitStepForInteger(circuit: Circuit, value: Wire): Wire {
-  const positiveWithOffset = circuit.reglu([], 1, [[value, 1]], 1)
-  const positive = circuit.reglu([], 1, [[value, 1]], 0)
-  return circuit.affine([[positiveWithOffset, 1], [positive, -1]])
-}
-
-export function emitGreaterThanOrEqualForInteger(circuit: Circuit, a: Wire, b: Wire): Wire {
-  return emitStepForInteger(circuit, circuit.affine([[a, 1], [b, -1]]))
-}
-
-export function emitGreaterThanForInteger(circuit: Circuit, a: Wire, b: Wire): Wire {
-  return emitStepForInteger(circuit, circuit.affine([[a, 1], [b, -1]], -1))
-}
-
-export function emitEqualForInteger(circuit: Circuit, a: Wire, b: Wire): Wire {
-  return emitMultiply(
-    circuit,
-    emitGreaterThanOrEqualForInteger(circuit, a, b),
-    emitGreaterThanOrEqualForInteger(circuit, b, a),
-  )
-}
-
-export function emitAnd(circuit: Circuit, values: Wire[]): Wire {
-  invariant(values.length > 0, 'and requires at least one value')
-  let result = values[0]!
-  for (let i = 1; i < values.length; i++) result = emitMultiply(circuit, result, values[i]!)
-  return result
-}
-
 export function emitMaximum(circuit: Circuit, a: Wire, b: Wire): Wire {
   return circuit.affine([[b, 1], [emitRelu(circuit, circuit.affine([[a, 1], [b, -1]])), 1]])
 }
 
 export function emitMinimum(circuit: Circuit, a: Wire, b: Wire): Wire {
   return circuit.affine([[a, 1], [emitRelu(circuit, circuit.affine([[a, 1], [b, -1]])), -1]])
-}
-
-export function emitSelect(circuit: Circuit, mask: Wire, yes: Wire, no: Wire): Wire {
-  return circuit.affine([
-    [emitMultiply(circuit, mask, yes), 1],
-    [emitMultiply(circuit, circuit.affine([[mask, -1]], 1), no), 1],
-  ])
 }
 
 export function validateCircuit(circuit: Circuit): number {
@@ -301,26 +265,6 @@ export function assertWire(wire: number, limit: number) {
 
 export function assertBoolean(value: number | undefined, label: string): asserts value is number {
   invariant(value === 0 || value === 1, `${label} must be 0 or 1`)
-}
-
-export function assertInteger(value: number | undefined, label: string): asserts value is number {
-  invariant(Number.isInteger(value), `${label} must be an integer`)
-}
-
-export function assertNonNegativeInteger(value: number | undefined, label: string): asserts value is number {
-  invariant(value !== undefined && Number.isInteger(value) && value >= 0, `${label} must be a non-negative integer`)
-}
-
-export function assertIntegerBetween(
-  value: number | undefined,
-  low: number,
-  high: number,
-  label: string,
-): asserts value is number {
-  invariant(
-    value !== undefined && Number.isInteger(value) && value >= low && value <= high,
-    `${label} is outside its valid range`,
-  )
 }
 
 export function assertNonNegativeFinite(value: number | undefined, label: string): asserts value is number {

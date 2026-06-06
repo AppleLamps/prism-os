@@ -209,6 +209,8 @@ export function mountRectangleDemo(document: Document, window: Window) {
     (sum, layer) => sum + layer.leftWeights.length + layer.gateWeights.length,
     0,
   )
+  readoutElement.textContent =
+    `table cells ${machine.source.length} | layers ${machine.tensorProgram.layers.length} | weights ${weightCount}`
 
   function refresh() {
     const values = machine.step(document.documentElement.clientWidth, document.documentElement.clientHeight)
@@ -220,17 +222,7 @@ export function mountRectangleDemo(document: Document, window: Window) {
       }
       const opacity = values[outputStart + rectangleField.opacity]!
       rectangle.style.opacity = `${opacity}`
-      rectangle.style.pointerEvents = opacity === 1 ? 'auto' : 'none'
     }
-
-    const focus = Array.from({length: itemCount}, (_, item) => machine.source[focusField(item)]!)
-    const focusedItem = focus.indexOf(Math.max(...focus))
-    const focusAmount = focus[focusedItem]!
-    readoutElement.textContent =
-      `table cells ${machine.source.length} | layers ${machine.tensorProgram.layers.length} | weights ${weightCount} | ` +
-      (focusAmount === 0
-        ? 'grid: click a rectangle'
-        : `focus rectangle ${focusedItem + 1}: ${focusAmount.toFixed(2)} | click to return`)
   }
 
   window.addEventListener('click', (event: MouseEvent) => {

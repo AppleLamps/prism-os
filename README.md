@@ -27,6 +27,7 @@ The folder is split by responsibility:
 
 ```txt
 numeric-ui-core.ts            universal numeric vocabulary and tensor backend
+numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
 numeric-ui-rectangles.ts      tiny rectangle app and browser adapter
 numeric-ui-rectangles.test.ts browser-free rectangle behavior checks
@@ -66,16 +67,13 @@ reglu  = one weighted sum multiplied by ReLU of another weighted sum
 Compile-time macros expand immediately into those atoms. They do not add
 runtime operations.
 
-The script compiles and checks:
+The tests compile and check:
 
 ```txt
-boolean logic and conditional selection
-min, max, and clamp
-rectangle hit masks
-rectangle occlusion masks
-deterministic overlap resolution
-bounded responsive grid layout
-fixed lane repetition
+signed multiplication, min, max, and clamp
+continuous rectangle hit and overlap resolution
+responsive four-slot layout and focus behavior
+contiguous next-state and render-output blocks
 four expanded spring substeps per lane
 ```
 

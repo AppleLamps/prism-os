@@ -17,12 +17,13 @@
     #canvas {
       position: fixed;
       inset: 0;
+      cursor: pointer;
     }
     .rectangle {
       position: absolute;
       border-radius: 18px;
       box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%), 0 18px 48px rgb(0 0 0 / 25%);
-      cursor: pointer;
+      pointer-events: none;
     }
     .rectangle:nth-child(1) { background: #ff6b6b; }
     .rectangle:nth-child(2) { background: #f7b731; }
