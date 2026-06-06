@@ -64,8 +64,8 @@ The measured dense tensor footprints are:
 ```txt
 four-photo focus demo: source 10, width 326, layers 35
                        matrix cells 101,798, bias cells 632, bytes 819,440
-photo lightbox:         source 24, width 1,014, layers 27
-                       matrix cells 977,668, bias cells 1,980, bytes 7,837,184
+photo lightbox:         source 24, width 836, layers 26
+                       matrix cells 665,536, bias cells 1,624, bytes 5,337,280
 ```
 
 The persistent source table is a fixed `Float64Array`. Immutable constants and
@@ -88,7 +88,7 @@ The tests compile and check:
 signed multiplication, min, max, and clamp
 continuous rectangle hit and overlap resolution
 responsive twelve-slot gallery and lightbox behavior
-contiguous next-state and render-output blocks
+direct next-state and render-output wire views
 four expanded spring substeps per lane
 ```
 

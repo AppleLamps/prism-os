@@ -68,6 +68,14 @@ export class Circuit {
       gateTerms = []
       gateBias = 0
     }
+    if (
+      kind === 'affine'
+      && leftBias === 0
+      && leftTerms.length === 1
+      && leftTerms[0]![1] === 1
+    ) {
+      return leftTerms[0]![0]
+    }
     const wire = this.sourceSize + this.operations.length
     const dependencies = kind === 'affine' ? leftTerms : [...leftTerms, ...gateTerms]
     let depth = 0

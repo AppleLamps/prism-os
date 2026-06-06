@@ -80,3 +80,12 @@ test('constant terms and constant gates fold before compilation', () => {
     [3, 59, 62, 0],
   )
 })
+
+test('identity affine operations return an alias without allocating a wire', () => {
+  const circuit = new Circuit(2)
+  const alias = circuit.affine([[1, 1]])
+
+  assert.equal(alias, 1)
+  assert.equal(circuit.operations.length, 0)
+  assert.equal(circuit.compileTensorProgram().width, 2)
+})

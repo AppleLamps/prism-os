@@ -18,28 +18,28 @@ const gap = 18
 
 function projectPhotos(machine: ReturnType<typeof createPhotoGalleryMachine>, values: Float64Array) {
   return Array.from({length: itemCount}, (_, item) => {
-    const outputStart = machine.output.photoStart + item * photoField.size
+    const outputStart = item * photoField.size
     return {
-      left: values[outputStart + photoField.left]!,
-      top: values[outputStart + photoField.top]!,
-      width: values[outputStart + photoField.width]!,
-      height: values[outputStart + photoField.height]!,
-      opacity: values[outputStart + photoField.opacity]!,
-      focused: values[outputStart + photoField.focused]!,
+      left: values[machine.output.photos[outputStart + photoField.left]!]!,
+      top: values[machine.output.photos[outputStart + photoField.top]!]!,
+      width: values[machine.output.photos[outputStart + photoField.width]!]!,
+      height: values[machine.output.photos[outputStart + photoField.height]!]!,
+      opacity: values[machine.output.photos[outputStart + photoField.opacity]!]!,
+      focused: values[machine.output.photos[outputStart + photoField.focused]!]!,
     }
   })
 }
 
 function projectThumbnails(machine: ReturnType<typeof createPhotoGalleryMachine>, values: Float64Array) {
   return Array.from({length: itemCount}, (_, item) => {
-    const outputStart = machine.output.thumbnailStart + item * thumbnailField.size
+    const outputStart = item * thumbnailField.size
     return {
-      left: values[outputStart + thumbnailField.left]!,
-      top: values[outputStart + thumbnailField.top]!,
-      width: values[outputStart + thumbnailField.width]!,
-      height: values[outputStart + thumbnailField.height]!,
-      opacity: values[outputStart + thumbnailField.opacity]!,
-      focused: values[outputStart + thumbnailField.focused]!,
+      left: values[machine.output.thumbnails[outputStart + thumbnailField.left]!]!,
+      top: values[machine.output.thumbnails[outputStart + thumbnailField.top]!]!,
+      width: values[machine.output.thumbnails[outputStart + thumbnailField.width]!]!,
+      height: values[machine.output.thumbnails[outputStart + thumbnailField.height]!]!,
+      opacity: values[machine.output.thumbnails[outputStart + thumbnailField.opacity]!]!,
+      focused: values[machine.output.thumbnails[outputStart + thumbnailField.focused]!]!,
     }
   })
 }
@@ -167,18 +167,20 @@ test('the projected previous and next controls drive the same numeric transition
   machine.click(target.left + 20, target.top + 20)
   values = machine.step(viewportWidth, viewportHeight)
 
-  const nextStart = machine.output.nextControlStart
+  const nextControl = machine.output.nextControl
   machine.click(
-    values[nextStart + controlField.left]! + values[nextStart + controlField.width]! / 2,
-    values[nextStart + controlField.top]! + values[nextStart + controlField.height]! / 2,
+    values[nextControl[controlField.left]!]! + values[nextControl[controlField.width]!]! / 2,
+    values[nextControl[controlField.top]!]! + values[nextControl[controlField.height]!]! / 2,
   )
   values = machine.step(viewportWidth, viewportHeight)
   assertOneFocus(machine, 6)
 
-  const previousStart = machine.output.previousControlStart
+  const previousControl = machine.output.previousControl
   machine.click(
-    values[previousStart + controlField.left]! + values[previousStart + controlField.width]! / 2,
-    values[previousStart + controlField.top]! + values[previousStart + controlField.height]! / 2,
+    values[previousControl[controlField.left]!]!
+      + values[previousControl[controlField.width]!]! / 2,
+    values[previousControl[controlField.top]!]!
+      + values[previousControl[controlField.height]!]! / 2,
   )
   machine.step(viewportWidth, viewportHeight)
   assertOneFocus(machine, 5)
@@ -236,10 +238,10 @@ test('main and control clicks do not shrink fractional focused components', () =
   values = machine.step(1281, 721)
   assert.deepEqual(readFocus(machine), [0.5, ...Array<number>(itemCount - 1).fill(0)])
 
-  const nextStart = machine.output.nextControlStart
+  const nextControl = machine.output.nextControl
   machine.click(
-    values[nextStart + controlField.left]! + values[nextStart + controlField.width]! / 2,
-    values[nextStart + controlField.top]! + values[nextStart + controlField.height]! / 2,
+    values[nextControl[controlField.left]!]! + values[nextControl[controlField.width]!]! / 2,
+    values[nextControl[controlField.top]!]! + values[nextControl[controlField.height]!]! / 2,
   )
   machine.step(1281, 721)
   const shiftedFocus = readFocus(machine)
@@ -247,27 +249,15 @@ test('main and control clicks do not shrink fractional focused components', () =
   assert.equal(shiftedFocus.reduce((sum, focus) => sum + focus, 0), 1)
 })
 
-test('next state and all render projections occupy contiguous output blocks', () => {
+test('next state and render projections are direct wire views', () => {
   const machine = createPhotoGalleryMachine()
   const values = machine.step(viewportWidth, viewportHeight)
-  const nextSource = values.subarray(
-    machine.output.nextSourceStart,
-    machine.output.nextSourceStart + sourceField.size,
-  )
-  const photos = values.subarray(
-    machine.output.photoStart,
-    machine.output.photoStart + itemCount * photoField.size,
-  )
-  const thumbnails = values.subarray(
-    machine.output.thumbnailStart,
-    machine.output.thumbnailStart + itemCount * thumbnailField.size,
-  )
+  const nextSource = machine.output.nextSource.map(wire => values[wire]!)
 
   assert.equal(nextSource.length, sourceField.size)
-  assert.deepEqual([...nextSource], [...machine.source])
-  assert.equal(photos.length, itemCount * photoField.size)
-  assert.equal(thumbnails.length, itemCount * thumbnailField.size)
-  assert.equal(machine.output.thumbnailStart, machine.output.photoStart + photos.length)
-  assert.equal(machine.output.previousControlStart, machine.output.thumbnailStart + thumbnails.length)
-  assert.equal(machine.output.nextControlStart, machine.output.previousControlStart + controlField.size)
+  assert.deepEqual(nextSource, [...machine.source])
+  assert.equal(machine.output.photos.length, itemCount * photoField.size)
+  assert.equal(machine.output.thumbnails.length, itemCount * thumbnailField.size)
+  assert.equal(machine.output.previousControl.length, controlField.size)
+  assert.equal(machine.output.nextControl.length, controlField.size)
 })

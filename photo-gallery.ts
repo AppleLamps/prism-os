@@ -79,12 +79,12 @@ type PhotoProjection = Geometry & {
 }
 
 type GalleryOutput = {
-  nextSourceStart: Wire
+  nextSource: Wire[]
   backdropOpacity: Wire
-  photoStart: Wire
-  thumbnailStart: Wire
-  previousControlStart: Wire
-  nextControlStart: Wire
+  photos: Wire[]
+  thumbnails: Wire[]
+  previousControl: Wire[]
+  nextControl: Wire[]
 }
 
 export function focusField(item: number) {
@@ -327,49 +327,46 @@ export function compilePhotoGalleryCircuit() {
     zero,
     ...nextFocus,
   ].map(wire => circuit.affine([[wire, 1]]))
-  const renderOutput = [
-    nextFocusMass,
-    ...photos.flatMap(photo => [
-      photo.left,
-      photo.top,
-      photo.width,
-      photo.height,
-      photo.opacity,
-      photo.focused,
-    ]),
-    ...thumbnailProjections.flatMap(thumbnail => [
-      thumbnail.left,
-      thumbnail.top,
-      thumbnail.width,
-      thumbnail.height,
-      thumbnail.opacity,
-      thumbnail.focused,
-    ]),
+  const photoOutput = photos.flatMap(photo => [
+    photo.left,
+    photo.top,
+    photo.width,
+    photo.height,
+    photo.opacity,
+    photo.focused,
+  ])
+  const thumbnailOutput = thumbnailProjections.flatMap(thumbnail => [
+    thumbnail.left,
+    thumbnail.top,
+    thumbnail.width,
+    thumbnail.height,
+    thumbnail.opacity,
+    thumbnail.focused,
+  ])
+  const previousControlOutput = [
     previousControl.left,
     previousControl.top,
     previousControl.width,
     previousControl.height,
     nextFocusMass,
+  ]
+  const nextControlOutput = [
     nextControl.left,
     nextControl.top,
     nextControl.width,
     nextControl.height,
     nextFocusMass,
-  ].map(wire => circuit.affine([[wire, 1]]))
+  ]
 
   return {
     circuit,
     output: {
-      nextSourceStart: nextSource[0]!,
-      backdropOpacity: renderOutput[0]!,
-      photoStart: renderOutput[1]!,
-      thumbnailStart: renderOutput[1 + itemCount * photoField.size]!,
-      previousControlStart:
-        renderOutput[1 + itemCount * photoField.size + itemCount * thumbnailField.size]!,
-      nextControlStart:
-        renderOutput[
-          1 + itemCount * photoField.size + itemCount * thumbnailField.size + controlField.size
-        ]!,
+      nextSource,
+      backdropOpacity: nextFocusMass,
+      photos: photoOutput,
+      thumbnails: thumbnailOutput,
+      previousControl: previousControlOutput,
+      nextControl: nextControlOutput,
     },
   }
 }
@@ -405,7 +402,9 @@ export function createPhotoGalleryMachine({checkTensorEvaluation = true}: {check
       const values = circuit.evaluateTensor(source)
       if (checkTensorEvaluation) validateTensorEvaluation(source, circuit, values)
       validateGalleryOutput(values, output)
-      source.set(values.subarray(output.nextSourceStart, output.nextSourceStart + source.length))
+      for (let field = 0; field < source.length; field++) {
+        source[field] = values[output.nextSource[field]!]!
+      }
       return values
     },
     click(x: number, y: number) {
@@ -455,9 +454,14 @@ export function mountPhotoGallery(document: Document, window: Window) {
   readout.textContent =
     `table cells ${machine.source.length} | layers ${machine.tensorProgram.layers.length} | weights ${weightCount}`
 
-  function projectGeometry(element: HTMLElement, values: Float64Array, outputStart: number) {
+  function projectGeometry(
+    element: HTMLElement,
+    values: Float64Array,
+    output: readonly Wire[],
+    outputStart = 0,
+  ) {
     for (const field of geometryFields) {
-      element.style[field] = `${values[outputStart + controlField[field]]}px`
+      element.style[field] = `${values[output[outputStart + controlField[field]]!]}px`
     }
   }
 
@@ -466,22 +470,30 @@ export function mountPhotoGallery(document: Document, window: Window) {
     backdropElement.style.opacity = `${values[machine.output.backdropOpacity]}`
     for (let item = 0; item < itemCount; item++) {
       const photo = photos[item]!
-      const outputStart = machine.output.photoStart + item * photoField.size
-      projectGeometry(photo, values, outputStart)
-      photo.style.opacity = `${values[outputStart + photoField.opacity]}`
-      photo.style.setProperty('--focused', `${values[outputStart + photoField.focused]}`)
+      const photoOutputStart = item * photoField.size
+      projectGeometry(photo, values, machine.output.photos, photoOutputStart)
+      photo.style.opacity =
+        `${values[machine.output.photos[photoOutputStart + photoField.opacity]!]}`
+      photo.style.setProperty(
+        '--focused',
+        `${values[machine.output.photos[photoOutputStart + photoField.focused]!]}`,
+      )
       const thumbnail = thumbnails[item]!
-      const thumbnailStart = machine.output.thumbnailStart + item * thumbnailField.size
-      projectGeometry(thumbnail, values, thumbnailStart)
-      thumbnail.style.opacity = `${values[thumbnailStart + thumbnailField.opacity]}`
-      thumbnail.style.setProperty('--focused', `${values[thumbnailStart + thumbnailField.focused]}`)
+      const thumbnailOutputStart = item * thumbnailField.size
+      projectGeometry(thumbnail, values, machine.output.thumbnails, thumbnailOutputStart)
+      thumbnail.style.opacity =
+        `${values[machine.output.thumbnails[thumbnailOutputStart + thumbnailField.opacity]!]}`
+      thumbnail.style.setProperty(
+        '--focused',
+        `${values[machine.output.thumbnails[thumbnailOutputStart + thumbnailField.focused]!]}`,
+      )
     }
-    projectGeometry(previousControlElement, values, machine.output.previousControlStart)
-    projectGeometry(nextControlElement, values, machine.output.nextControlStart)
+    projectGeometry(previousControlElement, values, machine.output.previousControl)
+    projectGeometry(nextControlElement, values, machine.output.nextControl)
     previousControlElement.style.opacity =
-      `${values[machine.output.previousControlStart + controlField.opacity]}`
+      `${values[machine.output.previousControl[controlField.opacity]!]}`
     nextControlElement.style.opacity =
-      `${values[machine.output.nextControlStart + controlField.opacity]}`
+      `${values[machine.output.nextControl[controlField.opacity]!]}`
   }
 
   window.addEventListener('click', (event: MouseEvent) => {
@@ -554,49 +566,58 @@ function validateGallerySource(values: unknown) {
 }
 
 function validateGalleryOutputWires(output: GalleryOutput, wireCount: number) {
-  assertWire(output.nextSourceStart, wireCount)
-  assertWire(output.nextSourceStart + sourceField.size - 1, wireCount)
+  validateWireView(output.nextSource, sourceField.size, wireCount)
   assertWire(output.backdropOpacity, wireCount)
-  assertWire(output.photoStart, wireCount)
-  assertWire(output.photoStart + itemCount * photoField.size - 1, wireCount)
-  assertWire(output.thumbnailStart, wireCount)
-  assertWire(output.thumbnailStart + itemCount * thumbnailField.size - 1, wireCount)
-  assertWire(output.previousControlStart, wireCount)
-  assertWire(output.previousControlStart + controlField.size - 1, wireCount)
-  assertWire(output.nextControlStart, wireCount)
-  assertWire(output.nextControlStart + controlField.size - 1, wireCount)
+  validateWireView(output.photos, itemCount * photoField.size, wireCount)
+  validateWireView(output.thumbnails, itemCount * thumbnailField.size, wireCount)
+  validateWireView(output.previousControl, controlField.size, wireCount)
+  validateWireView(output.nextControl, controlField.size, wireCount)
 }
 
 function validateGalleryOutput(values: Float64Array, output: GalleryOutput) {
   assertFiniteValues(values, 'tensor output')
-  const nextSource = values.subarray(output.nextSourceStart, output.nextSourceStart + sourceField.size)
+  const nextSource = Float64Array.from(output.nextSource, wire => values[wire]!)
   validateGallerySource(nextSource)
   for (const eventField of eventFields) {
     invariant(nextSource[eventField] === 0, 'event latch must reset after refresh')
   }
   assertUnitInterval(values[output.backdropOpacity], 'backdrop opacity')
   for (let item = 0; item < itemCount; item++) {
-    const outputStart = output.photoStart + item * photoField.size
+    const outputStart = item * photoField.size
     for (const field of geometryFields) {
-      assertNonNegativeFinite(values[outputStart + photoField[field]], `photo ${field}`)
+      assertNonNegativeFinite(values[output.photos[outputStart + photoField[field]]!], `photo ${field}`)
     }
-    assertUnitInterval(values[outputStart + photoField.opacity], 'photo opacity')
-    assertUnitInterval(values[outputStart + photoField.focused], 'photo focus')
+    assertUnitInterval(values[output.photos[outputStart + photoField.opacity]!], 'photo opacity')
+    assertUnitInterval(values[output.photos[outputStart + photoField.focused]!], 'photo focus')
   }
   for (let item = 0; item < itemCount; item++) {
-    const outputStart = output.thumbnailStart + item * thumbnailField.size
+    const outputStart = item * thumbnailField.size
     for (const field of geometryFields) {
-      assertNonNegativeFinite(values[outputStart + thumbnailField[field]], `thumbnail ${field}`)
+      assertNonNegativeFinite(
+        values[output.thumbnails[outputStart + thumbnailField[field]]!],
+        `thumbnail ${field}`,
+      )
     }
-    assertUnitInterval(values[outputStart + thumbnailField.opacity], 'thumbnail opacity')
-    assertUnitInterval(values[outputStart + thumbnailField.focused], 'thumbnail focus')
+    assertUnitInterval(
+      values[output.thumbnails[outputStart + thumbnailField.opacity]!],
+      'thumbnail opacity',
+    )
+    assertUnitInterval(
+      values[output.thumbnails[outputStart + thumbnailField.focused]!],
+      'thumbnail focus',
+    )
   }
-  for (const controlStart of [output.previousControlStart, output.nextControlStart]) {
+  for (const control of [output.previousControl, output.nextControl]) {
     for (const field of geometryFields) {
-      assertNonNegativeFinite(values[controlStart + controlField[field]], `control ${field}`)
+      assertNonNegativeFinite(values[control[controlField[field]]!], `control ${field}`)
     }
-    assertUnitInterval(values[controlStart + controlField.opacity], 'control opacity')
+    assertUnitInterval(values[control[controlField.opacity]!], 'control opacity')
   }
+}
+
+function validateWireView(wires: readonly Wire[], size: number, wireCount: number) {
+  invariant(wires.length === size, 'output wire view has the wrong length')
+  for (const wire of wires) assertWire(wire, wireCount)
 }
 
 function emitClampZeroOne(circuit: Circuit, value: Wire): Wire {
