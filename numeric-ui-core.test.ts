@@ -16,11 +16,10 @@ test('tensor layers append only their new values', () => {
       matrixSize: layer.leftWeights.length,
     })),
     [
-      {inputSize: 2, outputSize: 2, matrixSize: 4},
-      {inputSize: 4, outputSize: 1, matrixSize: 4},
+      {inputSize: 2, outputSize: 3, matrixSize: 6},
     ],
   )
-  assert.deepEqual([...program.wireOrder], [0, 1, 2, 4, 3])
+  assert.deepEqual([...program.wireOrder], [0, 1, 2, 3, 4])
   assert.deepEqual([...circuit.evaluateTensor(new Float64Array([5, 7]))], [5, 7, 10, 40, 21])
 })
 
@@ -88,4 +87,22 @@ test('identity affine operations return an alias without allocating a wire', () 
   assert.equal(alias, 1)
   assert.equal(circuit.operations.length, 0)
   assert.equal(circuit.compileTensorProgram().width, 2)
+})
+
+test('affine forms compose through affine producers', () => {
+  const circuit = new Circuit(2)
+  const first = circuit.affine([[0, 2], [1, -1]], 3)
+  const second = circuit.affine([[first, 4], [1, 5]], -2)
+  circuit.reglu([[second, 2]], 1, [[first, -3]], 7)
+
+  assert.deepEqual(circuit.operations[1], {
+    kind: 'affine',
+    leftTerms: [[0, 8], [1, 1]],
+    leftBias: 10,
+    gateTerms: [],
+    gateBias: 0,
+    depth: 1,
+  })
+  assert.deepEqual(circuit.operations[2]!.leftTerms, [[0, 16], [1, 2]])
+  assert.deepEqual(circuit.operations[2]!.gateTerms, [[0, -6], [1, 3]])
 })

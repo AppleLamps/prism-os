@@ -55,6 +55,20 @@ export class Circuit {
   append(kind: AtomKind, leftTerms: Terms, leftBias: number, gateTerms: Terms, gateBias: number): Wire {
     ;[leftTerms, leftBias] = foldConstantTerms(normalizeTerms(leftTerms), leftBias, this.constants)
     ;[gateTerms, gateBias] = foldConstantTerms(normalizeTerms(gateTerms), gateBias, this.constants)
+    const initialAlias = kind === 'affine' ? identityWire(leftTerms, leftBias) : undefined
+    if (initialAlias !== undefined) return initialAlias
+    ;[leftTerms, leftBias] = composeAffineTerms(
+      leftTerms,
+      leftBias,
+      this.sourceSize,
+      this.operations,
+    )
+    ;[gateTerms, gateBias] = composeAffineTerms(
+      gateTerms,
+      gateBias,
+      this.sourceSize,
+      this.operations,
+    )
     if (kind === 'reglu' && gateTerms.length === 0) {
       const gate = Math.max(0, gateBias)
       kind = 'affine'
@@ -68,14 +82,8 @@ export class Circuit {
       gateTerms = []
       gateBias = 0
     }
-    if (
-      kind === 'affine'
-      && leftBias === 0
-      && leftTerms.length === 1
-      && leftTerms[0]![1] === 1
-    ) {
-      return leftTerms[0]![0]
-    }
+    const composedAlias = kind === 'affine' ? identityWire(leftTerms, leftBias) : undefined
+    if (composedAlias !== undefined) return composedAlias
     const wire = this.sourceSize + this.operations.length
     const dependencies = kind === 'affine' ? leftTerms : [...leftTerms, ...gateTerms]
     let depth = 0
@@ -160,6 +168,32 @@ export class Circuit {
       depth: Math.max(...this.depths),
     }
   }
+}
+
+function identityWire(terms: Terms, bias: number): Wire | undefined {
+  if (bias !== 0 || terms.length !== 1 || terms[0]![1] !== 1) return undefined
+  return terms[0]![0]
+}
+
+function composeAffineTerms(
+  terms: Terms,
+  bias: number,
+  sourceSize: number,
+  operations: readonly Operation[],
+): [terms: Terms, bias: number] {
+  const composedTerms: [wire: Wire, coefficient: number][] = []
+  for (const [wire, coefficient] of terms) {
+    const operation = wire < sourceSize ? undefined : operations[wire - sourceSize]
+    if (operation?.kind !== 'affine') {
+      composedTerms.push([wire, coefficient])
+      continue
+    }
+    bias += coefficient * operation.leftBias
+    for (const [dependency, dependencyCoefficient] of operation.leftTerms) {
+      composedTerms.push([dependency, coefficient * dependencyCoefficient])
+    }
+  }
+  return [normalizeTerms(composedTerms), bias]
 }
 
 function foldConstantTerms(
