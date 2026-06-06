@@ -12,8 +12,8 @@ test('tensor layers append only their new values', () => {
   assert.deepEqual(
     program.layers.map(layer => ({
       inputSize: layer.inputSize,
-      outputSize: layer.leftBias.length,
-      matrixSize: layer.leftWeights.length,
+      outputSize: layer.outputSize,
+      matrixSize: layer.weights.length,
     })),
     [
       {inputSize: 2, outputSize: 3, matrixSize: 6},
@@ -141,7 +141,7 @@ test('tensor layers gather only the values they read', () => {
   assert.deepEqual(program.layers.map(layer => ({
     inputIndices: [...layer.inputIndices],
     inputSize: layer.inputSize,
-    outputSize: layer.leftBias.length,
+    outputSize: layer.outputSize,
   })), [
     {inputIndices: [0, 1], inputSize: 2, outputSize: 1},
     {inputIndices: [2], inputSize: 1, outputSize: 1},
@@ -155,10 +155,10 @@ test('affine outputs do not allocate fake gate rows', () => {
   const program = circuit.compileTensorProgram([affine, reglu])
   const layer = program.layers[0]!
 
-  assert.equal(layer.leftBias.length, 2)
+  assert.equal(layer.outputSize, 2)
   assert.deepEqual([...layer.gateRows], [1])
-  assert.equal(layer.gateBias.length, 1)
-  assert.equal(layer.gateWeights.length, layer.inputSize)
+  assert.equal(layer.bias.length, 3)
+  assert.equal(layer.weights.length, 3 * layer.inputSize)
   assert.equal(evaluateOutput(circuit, program, [7, 2], affine), 15)
   assert.equal(evaluateOutput(circuit, program, [7, 2], reglu), 69)
 })

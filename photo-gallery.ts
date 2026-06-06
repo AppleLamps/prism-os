@@ -470,7 +470,7 @@ export function mountPhotoGallery(document: Document, window: Window) {
   const previousControlElement = previousControl
   const nextControlElement = nextControl
   const weightCount = machine.tensorProgram.layers.reduce(
-    (sum, layer) => sum + layer.leftWeights.length + layer.gateWeights.length,
+    (sum, layer) => sum + layer.weights.length,
     0,
   )
   readout.textContent =

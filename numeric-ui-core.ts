@@ -22,11 +22,10 @@ type NumericRange = {
 export type TensorLayer = {
   inputIndices: Uint32Array
   inputSize: number
-  leftBias: Float64Array
-  gateBias: Float64Array
+  outputSize: number
+  bias: Float64Array
   gateRows: Uint32Array
-  leftWeights: Float64Array
-  gateWeights: Float64Array
+  weights: Float64Array
 }
 
 export type TensorProgram = {
@@ -215,11 +214,10 @@ export class Circuit {
       const layer: TensorLayer = {
         inputIndices,
         inputSize,
-        leftBias: new Float64Array(outputSize),
-        gateBias: new Float64Array(gateCount),
+        outputSize,
+        bias: new Float64Array(outputSize + gateCount),
         gateRows: new Uint32Array(gateCount),
-        leftWeights: new Float64Array(outputSize * inputSize),
-        gateWeights: new Float64Array(gateCount * inputSize),
+        weights: new Float64Array((outputSize + gateCount) * inputSize),
       }
       let gateRow = 0
       for (let row = 0; row < operationIndices.length; row++) {
@@ -230,14 +228,15 @@ export class Circuit {
         const rowOffset = row * inputSize
         wireOrder[packedOutput] = outputWire
         packedIndexByWire[outputWire] = packedOutput
-        layer.leftBias[row] = operation.leftBias
-        writePackedWeights(layer.leftWeights, rowOffset, operation.leftTerms, inputColumnByWire)
+        layer.bias[row] = operation.leftBias
+        writePackedWeights(layer.weights, rowOffset, operation.leftTerms, inputColumnByWire)
         if (operation.kind === 'reglu') {
-          layer.gateBias[gateRow] = operation.gateBias
+          const projectionRow = outputSize + gateRow
+          layer.bias[projectionRow] = operation.gateBias
           layer.gateRows[gateRow] = row
           writePackedWeights(
-            layer.gateWeights,
-            gateRow * inputSize,
+            layer.weights,
+            projectionRow * inputSize,
             operation.gateTerms,
             inputColumnByWire,
           )
@@ -433,30 +432,33 @@ export function evaluateTensorProgram(source: Float64Array, program: TensorProgr
   invariant(source.length === program.sourceSize, 'source table has the wrong length')
   const {layers, valueCount, wireOrder, width} = program
   const packedValues = new Float64Array(valueCount)
-  let maxOutputSize = 0
+  let maxProjectionSize = 0
   let maxInputSize = 0
-  let maxGateSize = 0
-  for (const layer of layers) maxOutputSize = Math.max(maxOutputSize, layer.leftBias.length)
+  for (const layer of layers) maxProjectionSize = Math.max(maxProjectionSize, layer.bias.length)
   for (const layer of layers) maxInputSize = Math.max(maxInputSize, layer.inputSize)
-  for (const layer of layers) maxGateSize = Math.max(maxGateSize, layer.gateBias.length)
   const input = new Float64Array(maxInputSize)
-  const left = new Float64Array(maxOutputSize)
-  const gate = new Float64Array(maxGateSize)
+  const projection = new Float64Array(maxProjectionSize)
   packedValues.set(source)
   let availableValues = source.length
   for (const layer of layers) {
-    const outputSize = layer.leftBias.length
+    const {outputSize} = layer
     for (let column = 0; column < layer.inputSize; column++) {
       input[column] = packedValues[layer.inputIndices[column]!]!
     }
-    matmulAddBias(left, layer.leftWeights, input, layer.leftBias, outputSize, layer.inputSize)
-    const gateSize = layer.gateBias.length
-    matmulAddBias(gate, layer.gateWeights, input, layer.gateBias, gateSize, layer.inputSize)
-    for (let gateRow = 0; gateRow < gateSize; gateRow++) {
+    matmulAddBias(
+      projection,
+      layer.weights,
+      input,
+      layer.bias,
+      layer.bias.length,
+      layer.inputSize,
+    )
+    for (let gateRow = 0; gateRow < layer.gateRows.length; gateRow++) {
       const outputRow = layer.gateRows[gateRow]!
-      left[outputRow] = left[outputRow]! * Math.max(0, gate[gateRow]!)
+      projection[outputRow] =
+        projection[outputRow]! * Math.max(0, projection[outputSize + gateRow]!)
     }
-    packedValues.set(left.subarray(0, outputSize), availableValues)
+    packedValues.set(projection.subarray(0, outputSize), availableValues)
     availableValues += outputSize
   }
   const values = new Float64Array(width)
@@ -558,26 +560,27 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
   }
   let availableValues = circuit.sourceSize
   for (const layer of layers) {
-    const outputSize = layer.leftBias.length
+    const {outputSize} = layer
     invariant(outputSize > 0, 'tensor layer must produce at least one value')
     invariant(layer.inputIndices.length === layer.inputSize, 'tensor input index size mismatch')
     for (const inputIndex of layer.inputIndices) {
       invariant(inputIndex < availableValues, 'tensor layer input is not available')
     }
-    const gateSize = layer.gateBias.length
-    invariant(layer.gateRows.length === gateSize, 'gate row shape mismatch')
+    const gateSize = layer.gateRows.length
+    const projectionSize = outputSize + gateSize
+    invariant(layer.bias.length === projectionSize, 'projection bias shape mismatch')
     const seenGateRows = new Uint8Array(outputSize)
     for (const gateRow of layer.gateRows) {
       invariant(gateRow < outputSize, 'gate output row is invalid')
       invariant(seenGateRows[gateRow] === 0, 'gate output row must be unique')
       seenGateRows[gateRow] = 1
     }
-    invariant(layer.leftWeights.length === outputSize * layer.inputSize, 'left matrix shape mismatch')
-    invariant(layer.gateWeights.length === gateSize * layer.inputSize, 'gate matrix shape mismatch')
-    assertFiniteValues(layer.leftBias, 'left bias')
-    assertFiniteValues(layer.gateBias, 'gate bias')
-    assertFiniteValues(layer.leftWeights, 'left matrix')
-    assertFiniteValues(layer.gateWeights, 'gate matrix')
+    invariant(
+      layer.weights.length === projectionSize * layer.inputSize,
+      'projection matrix shape mismatch',
+    )
+    assertFiniteValues(layer.bias, 'projection bias')
+    assertFiniteValues(layer.weights, 'projection matrix')
     for (let row = 0; row < outputSize; row++) {
       const wire = wireOrder[availableValues + row]!
       invariant(wire >= circuit.sourceSize && wire < width, 'tensor output wire is invalid')

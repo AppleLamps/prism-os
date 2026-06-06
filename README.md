@@ -48,10 +48,9 @@ values it actually depends on, produces only its new values, and appends them:
 
 ```txt
 input = gather(values, inputIndices)
-left = Wleft[new x input] x input + bleft[new]
-gate = Wgate[reglu x input] x input + bgate[reglu]
-new = left
-new[gateRows] = left[gateRows] * ReLU(gate)
+projection = W[(new + reglu) x input] x input + b[new + reglu]
+new = projection[0:new]
+new[gateRows] *= ReLU(projection[new:])
 values = concat(values, new)
 ```
 
