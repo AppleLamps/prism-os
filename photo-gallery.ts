@@ -93,6 +93,18 @@ export function focusField(item: number) {
 
 export function compilePhotoGalleryCircuit() {
   const circuit = new Circuit(sourceField.size)
+  for (const field of [
+    sourceField.viewportWidth,
+    sourceField.viewportHeight,
+    sourceField.gap,
+    sourceField.mainInset,
+    sourceField.thumbnailHeight,
+    sourceField.controlSize,
+  ]) {
+    circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
+  }
+  for (const field of eventFields) circuit.assumeRange(field, 0, 1)
+  for (let item = 0; item < itemCount; item++) circuit.assumeRange(focusField(item), 0, 1)
   const zero = circuit.affine([])
   const gridWidth = emitRelu(
     circuit,
@@ -163,6 +175,7 @@ export function compilePhotoGalleryCircuit() {
 
   const previousFocus = Array.from({length: itemCount}, (_, item) => focusField(item))
   const previousFocusMass = circuit.affine(previousFocus.map(wire => [wire, 1]))
+  circuit.assumeRange(previousFocusMass, 0, 1)
   const previousGridMass = circuit.affine([[previousFocusMass, -1]], 1)
   const thumbnails: Geometry[] = []
   const thumbnailHit: Wire[] = []
@@ -255,6 +268,7 @@ export function compilePhotoGalleryCircuit() {
   )
 
   const eventMass = circuit.affine(eventFields.map(wire => [wire, 1]))
+  circuit.assumeRange(eventMass, 0, 1)
   const eventInactive = circuit.affine([[eventMass, -1]], 1)
   const clickGridGate = emitMultiply(circuit, sourceField.clickActive, previousGridMass)
   const clickThumbnailGate = emitMultiply(circuit, sourceField.clickActive, previousFocusMass)
@@ -282,6 +296,7 @@ export function compilePhotoGalleryCircuit() {
   }
 
   const nextFocusMass = circuit.affine(nextFocus.map(wire => [wire, 1]))
+  circuit.assumeRange(nextFocusMass, 0, 1)
   const nextGridMass = circuit.affine([[nextFocusMass, -1]], 1)
   const projectedGridLeft = gridLeft.map(left => emitMultiply(circuit, nextGridMass, left))
   const projectedGridTop = gridTop.map(top => emitMultiply(circuit, nextGridMass, top))
@@ -630,7 +645,9 @@ function validateWireView(wires: readonly Wire[], size: number, wireCount: numbe
 function emitClampZeroOne(circuit: Circuit, value: Wire): Wire {
   const positive = emitRelu(circuit, value)
   const aboveOne = emitRelu(circuit, circuit.affine([[value, 1]], -1))
-  return circuit.affine([[positive, 1], [aboveOne, -1]])
+  const result = circuit.affine([[positive, 1], [aboveOne, -1]])
+  circuit.assumeRange(result, 0, 1)
+  return result
 }
 
 function assertUnitInterval(value: number | undefined, label: string): asserts value is number {

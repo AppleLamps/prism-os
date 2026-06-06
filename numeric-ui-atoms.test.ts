@@ -41,6 +41,20 @@ test('gated and signed math stay exact around zero', () => {
   }
 })
 
+test('proven nonnegative multiplication lowers to one ReGLU', () => {
+  const circuit = new Circuit(2)
+  circuit.assumeRange(1, 0, Number.POSITIVE_INFINITY)
+  const multiplied = emitMultiply(circuit, 0, 1)
+
+  assert.equal(circuit.operations.length, 1)
+  assert.equal(circuit.operations[0]!.kind, 'reglu')
+  assert.equal(evaluate(circuit, [-3, 2])[multiplied], -6)
+  assert.throws(
+    () => circuit.evaluateTensor(new Float64Array([-3, -2])),
+    /outside its assumed range/,
+  )
+})
+
 test('four spring steps match ordinary math', () => {
   const circuit = new Circuit(5)
   const [positionSource, destination, velocitySource, stiffness, timestep] = [0, 1, 2, 3, 4]

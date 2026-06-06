@@ -14,6 +14,11 @@ type Operation = {
   depth: number
 }
 
+type NumericRange = {
+  minimum: number
+  maximum: number
+}
+
 export type TensorLayer = {
   inputSize: number
   leftBias: Float64Array
@@ -37,6 +42,7 @@ export class Circuit {
   depths: number[]
   constants: (number | undefined)[]
   expressionWires: Map<string, Wire>
+  ranges: NumericRange[]
   tensorProgram: TensorProgram | null
 
   constructor(sourceSize: number) {
@@ -45,7 +51,24 @@ export class Circuit {
     this.depths = Array<number>(sourceSize).fill(0)
     this.constants = Array<number | undefined>(sourceSize).fill(undefined)
     this.expressionWires = new Map()
+    this.ranges = Array.from({length: sourceSize}, unknownRange)
     this.tensorProgram = null
+  }
+
+  assumeRange(wire: Wire, minimum: number, maximum: number) {
+    assertWire(wire, this.sourceSize + this.operations.length)
+    invariant(minimum <= maximum, 'numeric range is inverted')
+    const current = this.ranges[wire]!
+    const narrowed = {
+      minimum: Math.max(current.minimum, minimum),
+      maximum: Math.min(current.maximum, maximum),
+    }
+    invariant(narrowed.minimum <= narrowed.maximum, 'numeric range contradicts known bounds')
+    this.ranges[wire] = narrowed
+  }
+
+  isNonNegative(wire: Wire) {
+    return this.ranges[wire]!.minimum >= 0
   }
 
   affine(terms: Terms, bias = 0): Wire {
@@ -98,17 +121,34 @@ export class Circuit {
     this.operations.push({kind, leftTerms, leftBias, gateTerms, gateBias, depth: depth + 1})
     this.depths.push(depth + 1)
     this.constants.push(kind === 'affine' && leftTerms.length === 0 ? leftBias : undefined)
+    const leftRange = evaluateAffineRange(leftTerms, leftBias, this.ranges)
+    this.ranges.push(kind === 'affine'
+      ? leftRange
+      : multiplyByReluRange(leftRange, evaluateAffineRange(gateTerms, gateBias, this.ranges)))
     this.expressionWires.set(expressionKey, wire)
     this.tensorProgram = null
     return wire
   }
 
   evaluateReadable(source: Float64Array): Float64Array {
+    this.validateSourceRanges(source)
     return evaluateOperationStream(source, this)
   }
 
   evaluateTensor(source: Float64Array): Float64Array {
+    this.validateSourceRanges(source)
     return evaluateTensorProgram(source, this.tensorProgram ??= this.compileTensorProgram())
+  }
+
+  validateSourceRanges(source: Float64Array) {
+    invariant(source.length === this.sourceSize, 'source table has the wrong length')
+    for (let wire = 0; wire < source.length; wire++) {
+      const range = this.ranges[wire]!
+      invariant(
+        source[wire]! >= range.minimum && source[wire]! <= range.maximum,
+        `source wire ${wire} is outside its assumed range`,
+      )
+    }
   }
 
   compileTensorProgram(roots?: readonly Wire[]): TensorProgram {
@@ -197,6 +237,56 @@ export class Circuit {
       depth: Math.max(...this.depths),
     }
   }
+}
+
+function unknownRange(): NumericRange {
+  return {minimum: Number.NEGATIVE_INFINITY, maximum: Number.POSITIVE_INFINITY}
+}
+
+function evaluateAffineRange(
+  terms: Terms,
+  bias: number,
+  ranges: readonly NumericRange[],
+): NumericRange {
+  let minimum = bias
+  let maximum = bias
+  for (const [wire, coefficient] of terms) {
+    const range = ranges[wire]!
+    if (coefficient > 0) {
+      minimum += coefficient * range.minimum
+      maximum += coefficient * range.maximum
+    } else {
+      minimum += coefficient * range.maximum
+      maximum += coefficient * range.minimum
+    }
+  }
+  if (Number.isNaN(minimum) || Number.isNaN(maximum)) return unknownRange()
+  return {minimum, maximum}
+}
+
+function multiplyByReluRange(left: NumericRange, gate: NumericRange): NumericRange {
+  const gateMaximum = Math.max(0, gate.maximum)
+  if (left.minimum >= 0) {
+    return {
+      minimum: multiplyBounds(left.minimum, Math.max(0, gate.minimum)),
+      maximum: multiplyBounds(left.maximum, gateMaximum),
+    }
+  }
+  if (left.maximum <= 0) {
+    return {
+      minimum: multiplyBounds(left.minimum, gateMaximum),
+      maximum: multiplyBounds(left.maximum, Math.max(0, gate.minimum)),
+    }
+  }
+  return {
+    minimum: multiplyBounds(left.minimum, gateMaximum),
+    maximum: multiplyBounds(left.maximum, gateMaximum),
+  }
+}
+
+function multiplyBounds(left: number, right: number): number {
+  if (left === 0 || right === 0) return 0
+  return left * right
 }
 
 function findLiveOperations(
@@ -370,17 +460,31 @@ export function emitRelu(circuit: Circuit, value: Wire): Wire {
 }
 
 export function emitMultiply(circuit: Circuit, a: Wire, b: Wire): Wire {
+  if (circuit.isNonNegative(b)) return circuit.reglu([[a, 1]], 0, [[b, 1]], 0)
+  if (circuit.isNonNegative(a)) return circuit.reglu([[b, 1]], 0, [[a, 1]], 0)
   const positive = circuit.reglu([[a, 1]], 0, [[b, 1]], 0)
   const negative = circuit.reglu([[a, 1]], 0, [[b, -1]], 0)
   return circuit.affine([[positive, 1], [negative, -1]])
 }
 
 export function emitMaximum(circuit: Circuit, a: Wire, b: Wire): Wire {
-  return circuit.affine([[b, 1], [emitRelu(circuit, circuit.affine([[a, 1], [b, -1]])), 1]])
+  const result = circuit.affine([[b, 1], [emitRelu(circuit, circuit.affine([[a, 1], [b, -1]])), 1]])
+  circuit.assumeRange(
+    result,
+    Math.max(circuit.ranges[a]!.minimum, circuit.ranges[b]!.minimum),
+    Math.max(circuit.ranges[a]!.maximum, circuit.ranges[b]!.maximum),
+  )
+  return result
 }
 
 export function emitMinimum(circuit: Circuit, a: Wire, b: Wire): Wire {
-  return circuit.affine([[a, 1], [emitRelu(circuit, circuit.affine([[a, 1], [b, -1]])), -1]])
+  const result = circuit.affine([[a, 1], [emitRelu(circuit, circuit.affine([[a, 1], [b, -1]])), -1]])
+  circuit.assumeRange(
+    result,
+    Math.min(circuit.ranges[a]!.minimum, circuit.ranges[b]!.minimum),
+    Math.min(circuit.ranges[a]!.maximum, circuit.ranges[b]!.maximum),
+  )
+  return result
 }
 
 export function validateCircuit(circuit: Circuit): number {
