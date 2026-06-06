@@ -52,7 +52,7 @@ export function focusField(item: number) {
   return sourceField.focusStart + item
 }
 
-export function compileRectangleCircuit() {
+export function compilePhotoGalleryCircuit() {
   const circuit = new Circuit(sourceField.size)
   const zero = circuit.affine([])
   const gridWidth = emitRelu(
@@ -158,10 +158,10 @@ export function compileRectangleCircuit() {
   }
 }
 
-export function createRectangleMachine({checkTensorEvaluation = true}: {checkTensorEvaluation?: boolean} = {}) {
+export function createPhotoGalleryMachine({checkTensorEvaluation = true}: {checkTensorEvaluation?: boolean} = {}) {
   const source = new Float64Array(sourceField.size)
   source[sourceField.gap] = 24
-  const {circuit, output} = compileRectangleCircuit()
+  const {circuit, output} = compilePhotoGalleryCircuit()
   const wireCount = validateCircuit(circuit)
   validateRectangleOutputWires(output, wireCount)
   const tensorProgram = circuit.tensorProgram = circuit.compileTensorProgram()
@@ -190,16 +190,16 @@ export function createRectangleMachine({checkTensorEvaluation = true}: {checkTen
   }
 }
 
-export type RectangleMachine = ReturnType<typeof createRectangleMachine>
+export type PhotoGalleryMachine = ReturnType<typeof createPhotoGalleryMachine>
 
 declare global {
   interface Window {
-    numericUiDemo?: RectangleMachine
+    photoGalleryDemo?: PhotoGalleryMachine
   }
 }
 
-export function mountRectangleDemo(document: Document, window: Window) {
-  const machine = createRectangleMachine()
+export function mountPhotoGallery(document: Document, window: Window) {
+  const machine = createPhotoGalleryMachine()
   const rectangles = [...document.querySelectorAll<HTMLElement>('.rectangle')]
   const readout = document.querySelector<HTMLElement>('#readout')
   invariant(rectangles.length === itemCount, 'rectangle slot count mismatch')
@@ -292,5 +292,5 @@ function assertUnitInterval(value: number | undefined, label: string): asserts v
 }
 
 if (typeof document !== 'undefined' && typeof window !== 'undefined') {
-  window.numericUiDemo = mountRectangleDemo(document, window)
+  window.photoGalleryDemo = mountPhotoGallery(document, window)
 }

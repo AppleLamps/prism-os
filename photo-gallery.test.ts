@@ -1,18 +1,18 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {
-  createRectangleMachine,
+  createPhotoGalleryMachine,
   focusField,
   itemCount,
   rectangleField,
   sourceField,
-} from './numeric-ui-rectangles.ts'
+} from './photo-gallery.ts'
 
 const viewportWidth = 1280
 const viewportHeight = 720
 const gap = 24
 
-function projectRectangles(machine: ReturnType<typeof createRectangleMachine>, values: Float64Array) {
+function projectRectangles(machine: ReturnType<typeof createPhotoGalleryMachine>, values: Float64Array) {
   return Array.from({length: itemCount}, (_, item) => {
     const outputStart = machine.output.rectangleStart + item * rectangleField.size
     return {
@@ -25,11 +25,11 @@ function projectRectangles(machine: ReturnType<typeof createRectangleMachine>, v
   })
 }
 
-function readFocus(machine: ReturnType<typeof createRectangleMachine>) {
+function readFocus(machine: ReturnType<typeof createPhotoGalleryMachine>) {
   return Array.from({length: itemCount}, (_, item) => machine.source[focusField(item)]!)
 }
 
-function assertGrid(machine: ReturnType<typeof createRectangleMachine>, values: Float64Array) {
+function assertGrid(machine: ReturnType<typeof createPhotoGalleryMachine>, values: Float64Array) {
   assert.deepEqual(readFocus(machine), [0, 0, 0, 0])
   assert.deepEqual(projectRectangles(machine, values), [
     {left: 24, top: 24, width: 604, height: 324, visible: 1},
@@ -40,7 +40,7 @@ function assertGrid(machine: ReturnType<typeof createRectangleMachine>, values: 
 }
 
 test('interior clicks focus each rectangle and the next click returns to the grid', () => {
-  const machine = createRectangleMachine()
+  const machine = createPhotoGalleryMachine()
   let values = machine.step(viewportWidth, viewportHeight)
   assertGrid(machine, values)
 
@@ -66,7 +66,7 @@ test('interior clicks focus each rectangle and the next click returns to the gri
 })
 
 test('odd viewport dimensions support exact interior focus and soft boundary focus', () => {
-  const machine = createRectangleMachine()
+  const machine = createPhotoGalleryMachine()
   let values = machine.step(1281, 721)
   const rectangles = projectRectangles(machine, values)
   assert.deepEqual(rectangles[1], {left: 652.5, top: 24, width: 604.5, height: 324.5, visible: 1})
@@ -87,7 +87,7 @@ test('odd viewport dimensions support exact interior focus and soft boundary foc
 })
 
 test('tiny viewports clamp rectangle dimensions and cannot produce a hit', () => {
-  const machine = createRectangleMachine()
+  const machine = createPhotoGalleryMachine()
   let values = machine.step(40, 40)
   const rectangles = projectRectangles(machine, values)
   for (const rectangle of rectangles) {
@@ -105,7 +105,7 @@ test('tiny viewports clamp rectangle dimensions and cannot produce a hit', () =>
 })
 
 test('the complete next source table is one contiguous output block', () => {
-  const machine = createRectangleMachine()
+  const machine = createPhotoGalleryMachine()
   machine.click(326, 186)
   const values = machine.step(viewportWidth, viewportHeight)
   const nextSource = values.subarray(
@@ -130,7 +130,7 @@ test('the complete next source table is one contiguous output block', () => {
 })
 
 test('all rectangle projections are one contiguous output block', () => {
-  const machine = createRectangleMachine()
+  const machine = createPhotoGalleryMachine()
   const values = machine.step(viewportWidth, viewportHeight)
   const rectangleOutput = values.subarray(
     machine.output.rectangleStart,

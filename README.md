@@ -29,26 +29,27 @@ The folder is split by responsibility:
 numeric-ui-core.ts            universal numeric vocabulary and tensor backend
 numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
-numeric-ui-rectangles.ts      tiny rectangle app and browser adapter
-numeric-ui-rectangles.test.ts browser-free rectangle behavior checks
-numeric-ui-rectangles.html     four rectangle slots and CSS
+photo-gallery.ts              tiny photo gallery and browser adapter
+photo-gallery.test.ts         browser-free gallery behavior checks
+photo-gallery.html            four photo slots and CSS
 ```
 
-The rectangle demo switches between a four-slot grid and a focused view. The
+The photo gallery switches between a four-slot grid and a focused view. The
 browser adapter records numeric click coordinates and projects numeric
 rectangle outputs. At startup, the fixed circuit compiles into dense gated
 layers. Each refresh evaluates those same numeric layers without item-specific
-runtime loops or runtime branching between atom kinds. Each layer is a
-residual tensor-shaped operation:
+runtime loops or runtime branching between atom kinds. Each layer reads all
+values available so far, produces only its new values, and appends them:
 
 ```txt
-left = Wleft x + bleft
-gate = Wgate x + bgate
-x    = x + writeMask * left * ReLU(gate)
+left = Wleft[new x available] x values[available] + bleft[new]
+gate = Wgate[new x available] x values[available] + bgate[new]
+new = left * ReLU(gate)
+values = concat(values, new)
 ```
 
-The demo validates the incoming source table, fixed compiled matrices and
-masks, and projected output after every refresh. It also compares every tensor
+The demo validates the incoming source table, fixed compiled matrices, and
+projected output after every refresh. It also compares every tensor
 wire against a small readable atom interpreter as a development assertion;
 rendering consumes only the tensor result. The dense matrices are intentionally
 naive for now so the runtime shape stays obvious.

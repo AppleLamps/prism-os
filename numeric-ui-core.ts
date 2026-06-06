@@ -15,16 +15,17 @@ type Operation = {
 }
 
 export type TensorLayer = {
+  inputSize: number
   leftBias: Float64Array
   gateBias: Float64Array
   leftWeights: Float64Array
   gateWeights: Float64Array
-  writeMask: Float64Array
 }
 
 export type TensorProgram = {
   layers: TensorLayer[]
   sourceSize: number
+  wireOrder: Uint32Array
   width: number
 }
 
@@ -79,27 +80,43 @@ export class Circuit {
     }
 
     const layers: TensorLayer[] = []
+    const wireOrder = new Uint32Array(width)
+    const packedIndexByWire = new Int32Array(width)
+    packedIndexByWire.fill(-1)
+    for (let wire = 0; wire < this.sourceSize; wire++) {
+      wireOrder[wire] = wire
+      packedIndexByWire[wire] = wire
+    }
+    let availableValues = this.sourceSize
     for (let layerIndex = 0; layerIndex < operationsByLayer.length; layerIndex++) {
+      const operationIndices = operationsByLayer[layerIndex]!
+      const outputSize = operationIndices.length
       const layer: TensorLayer = {
-        leftBias: new Float64Array(width),
-        gateBias: new Float64Array(width),
-        leftWeights: new Float64Array(width * width),
-        gateWeights: new Float64Array(width * width),
-        writeMask: new Float64Array(width),
+        inputSize: availableValues,
+        leftBias: new Float64Array(outputSize),
+        gateBias: new Float64Array(outputSize),
+        leftWeights: new Float64Array(outputSize * availableValues),
+        gateWeights: new Float64Array(outputSize * availableValues),
       }
-      for (const operationIndex of operationsByLayer[layerIndex]!) {
+      for (let row = 0; row < operationIndices.length; row++) {
+        const operationIndex = operationIndices[row]!
         const operation = this.operations[operationIndex]!
         const outputWire = this.sourceSize + operationIndex
-        const rowOffset = outputWire * width
-        layer.writeMask[outputWire] = 1
-        layer.leftBias[outputWire] = operation.leftBias
-        layer.gateBias[outputWire] = operation.kind === 'affine' ? 1 : operation.gateBias
-        writeWeights(layer.leftWeights, rowOffset, operation.leftTerms)
-        if (operation.kind === 'reglu') writeWeights(layer.gateWeights, rowOffset, operation.gateTerms)
+        const packedOutput = availableValues + row
+        const rowOffset = row * availableValues
+        wireOrder[packedOutput] = outputWire
+        packedIndexByWire[outputWire] = packedOutput
+        layer.leftBias[row] = operation.leftBias
+        layer.gateBias[row] = operation.kind === 'affine' ? 1 : operation.gateBias
+        writePackedWeights(layer.leftWeights, rowOffset, operation.leftTerms, packedIndexByWire)
+        if (operation.kind === 'reglu') {
+          writePackedWeights(layer.gateWeights, rowOffset, operation.gateTerms, packedIndexByWire)
+        }
       }
       layers.push(layer)
+      availableValues += outputSize
     }
-    return {layers, sourceSize: this.sourceSize, width}
+    return {layers, sourceSize: this.sourceSize, wireOrder, width}
   }
 
   stats() {
@@ -136,17 +153,26 @@ export function evaluateOperationStream(source: Float64Array, circuit: Circuit):
 
 export function evaluateTensorProgram(source: Float64Array, program: TensorProgram): Float64Array {
   invariant(source.length === program.sourceSize, 'source table has the wrong length')
-  const {layers, width} = program
-  const values = new Float64Array(width)
-  const left = new Float64Array(width)
-  const gate = new Float64Array(width)
-  values.set(source)
+  const {layers, wireOrder, width} = program
+  const packedValues = new Float64Array(width)
+  let maxOutputSize = 0
+  for (const layer of layers) maxOutputSize = Math.max(maxOutputSize, layer.leftBias.length)
+  const left = new Float64Array(maxOutputSize)
+  const gate = new Float64Array(maxOutputSize)
+  packedValues.set(source)
+  let availableValues = source.length
   for (const layer of layers) {
-    matmulAddBias(left, layer.leftWeights, values, layer.leftBias, width)
-    matmulAddBias(gate, layer.gateWeights, values, layer.gateBias, width)
-    for (let row = 0; row < width; row++) {
-      values[row] = values[row]! + layer.writeMask[row]! * left[row]! * Math.max(0, gate[row]!)
+    const outputSize = layer.leftBias.length
+    matmulAddBias(left, layer.leftWeights, packedValues, layer.leftBias, outputSize, layer.inputSize)
+    matmulAddBias(gate, layer.gateWeights, packedValues, layer.gateBias, outputSize, layer.inputSize)
+    for (let row = 0; row < outputSize; row++) {
+      packedValues[availableValues + row] = left[row]! * Math.max(0, gate[row]!)
     }
+    availableValues += outputSize
+  }
+  const values = new Float64Array(width)
+  for (let packedIndex = 0; packedIndex < width; packedIndex++) {
+    values[wireOrder[packedIndex]!] = packedValues[packedIndex]!
   }
   return values
 }
@@ -156,12 +182,13 @@ function matmulAddBias(
   weights: Float64Array,
   input: Float64Array,
   bias: Float64Array,
-  width: number,
+  outputSize: number,
+  inputSize: number,
 ) {
-  for (let row = 0; row < width; row++) {
-    const rowOffset = row * width
+  for (let row = 0; row < outputSize; row++) {
+    const rowOffset = row * inputSize
     let value = bias[row]!
-    for (let column = 0; column < width; column++) value += weights[rowOffset + column]! * input[column]!
+    for (let column = 0; column < inputSize; column++) value += weights[rowOffset + column]! * input[column]!
     output[row] = value
   }
 }
@@ -172,8 +199,17 @@ function evaluateTerms(values: Float64Array, terms: Terms, bias: number): number
   return value
 }
 
-function writeWeights(weights: Float64Array, rowOffset: number, terms: Terms) {
-  for (const [wire, coefficient] of terms) weights[rowOffset + wire] = weights[rowOffset + wire]! + coefficient
+function writePackedWeights(
+  weights: Float64Array,
+  rowOffset: number,
+  terms: Terms,
+  packedIndexByWire: Int32Array,
+) {
+  for (const [wire, coefficient] of terms) {
+    const column = packedIndexByWire[wire]!
+    invariant(column >= 0, 'tensor dependency is not available')
+    weights[rowOffset + column] = weights[rowOffset + column]! + coefficient
+  }
 }
 
 export function emitRelu(circuit: Circuit, value: Wire): Wire {
@@ -207,48 +243,37 @@ export function validateCircuit(circuit: Circuit): number {
 }
 
 export function validateTensorProgram(circuit: Circuit, program: TensorProgram) {
-  const {layers, width} = program
+  const {layers, wireOrder, width} = program
   invariant(program.sourceSize === circuit.sourceSize, 'tensor source size mismatch')
   invariant(width === circuit.sourceSize + circuit.operations.length, 'tensor width mismatch')
-  const available = new Uint8Array(width)
-  const writeCount = new Uint8Array(width)
-  available.fill(1, 0, circuit.sourceSize)
+  invariant(wireOrder.length === width, 'tensor wire order size mismatch')
+  const seenWires = new Uint8Array(width)
+  for (let wire = 0; wire < circuit.sourceSize; wire++) {
+    invariant(wireOrder[wire] === wire, 'tensor source order mismatch')
+    seenWires[wire] = 1
+  }
+  let availableValues = circuit.sourceSize
   for (const layer of layers) {
-    invariant(layer.leftBias.length === width, 'left bias shape mismatch')
-    invariant(layer.gateBias.length === width, 'gate bias shape mismatch')
-    invariant(layer.leftWeights.length === width * width, 'left matrix shape mismatch')
-    invariant(layer.gateWeights.length === width * width, 'gate matrix shape mismatch')
-    invariant(layer.writeMask.length === width, 'write mask shape mismatch')
+    const outputSize = layer.leftBias.length
+    invariant(outputSize > 0, 'tensor layer must produce at least one value')
+    invariant(layer.inputSize === availableValues, 'tensor layer input size mismatch')
+    invariant(layer.gateBias.length === outputSize, 'gate bias shape mismatch')
+    invariant(layer.leftWeights.length === outputSize * availableValues, 'left matrix shape mismatch')
+    invariant(layer.gateWeights.length === outputSize * availableValues, 'gate matrix shape mismatch')
     assertFiniteValues(layer.leftBias, 'left bias')
     assertFiniteValues(layer.gateBias, 'gate bias')
     assertFiniteValues(layer.leftWeights, 'left matrix')
     assertFiniteValues(layer.gateWeights, 'gate matrix')
-    for (let row = 0; row < width; row++) {
-      const mask = layer.writeMask[row]
-      const rowOffset = row * width
-      assertBoolean(mask, 'write mask')
-      if (mask === 1) {
-        invariant(row >= circuit.sourceSize, 'tensor layer cannot overwrite source cells')
-        invariant(writeCount[row] === 0, 'tensor wire must be written exactly once')
-        writeCount[row] = 1
-      } else {
-        invariant(layer.leftBias[row] === 0 && layer.gateBias[row] === 0, 'masked row must have zero bias')
-      }
-      for (let column = 0; column < width; column++) {
-        const hasWeight = layer.leftWeights[rowOffset + column] !== 0 || layer.gateWeights[rowOffset + column] !== 0
-        if (hasWeight) {
-          invariant(mask === 1, 'masked row must have zero weights')
-          invariant(available[column] === 1, 'tensor layer read before dependency was available')
-        }
-      }
+    for (let row = 0; row < outputSize; row++) {
+      const wire = wireOrder[availableValues + row]!
+      invariant(wire >= circuit.sourceSize && wire < width, 'tensor output wire is invalid')
+      invariant(seenWires[wire] === 0, 'tensor wire must be written exactly once')
+      seenWires[wire] = 1
     }
-    for (let row = circuit.sourceSize; row < width; row++) {
-      if (layer.writeMask[row] === 1) available[row] = 1
-    }
+    availableValues += outputSize
   }
-  for (let row = circuit.sourceSize; row < width; row++) {
-    invariant(writeCount[row] === 1, 'every temporary tensor wire must be written once')
-  }
+  invariant(availableValues === width, 'tensor program output size mismatch')
+  for (let wire = 0; wire < width; wire++) invariant(seenWires[wire] === 1, 'every tensor wire must be present')
 }
 
 export function validateTensorEvaluation(source: Float64Array, circuit: Circuit, tensorValues: Float64Array) {
@@ -261,10 +286,6 @@ export function validateTensorEvaluation(source: Float64Array, circuit: Circuit,
 
 export function assertWire(wire: number, limit: number) {
   invariant(Number.isInteger(wire) && wire >= 0 && wire < limit, 'wire is outside the compiled circuit')
-}
-
-export function assertBoolean(value: number | undefined, label: string): asserts value is number {
-  invariant(value === 0 || value === 1, `${label} must be 0 or 1`)
 }
 
 export function assertNonNegativeFinite(value: number | undefined, label: string): asserts value is number {

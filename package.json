@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun ./numeric-ui-rectangles.html",
+    "start": "bun ./photo-gallery.html",
     "check": "tsgo && oxlint --type-aware *.ts",
     "test": "bun test"
   },
