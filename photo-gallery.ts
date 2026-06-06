@@ -109,16 +109,27 @@ export function compilePhotoGalleryCircuit() {
     ]),
   )
 
+  const gridLeft = Array.from({length: columnCount}, (_, column) =>
+    circuit.affine([[sourceField.gap, 1 + column], [gridWidth, column]]))
+  const gridTop = Array.from({length: rowCount}, (_, row) =>
+    circuit.affine([[sourceField.gap, 1 + row], [gridHeight, row]]))
+  const gridColumnHit = gridLeft.map(left =>
+    emitClampZeroOne(circuit, emitIntervalDistance(circuit, sourceField.clickX, left, gridWidth)))
+  const gridRowHit = gridTop.map(top =>
+    emitClampZeroOne(circuit, emitIntervalDistance(circuit, sourceField.clickY, top, gridHeight)))
   const grid: Geometry[] = []
   const gridHit: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
     const column = item % columnCount
     const row = Math.floor(item / columnCount)
-    const left = circuit.affine([[sourceField.gap, 1 + column], [gridWidth, column]])
-    const top = circuit.affine([[sourceField.gap, 1 + row], [gridHeight, row]])
-    const geometry = {left, top, width: gridWidth, height: gridHeight}
+    const geometry = {
+      left: gridLeft[column]!,
+      top: gridTop[row]!,
+      width: gridWidth,
+      height: gridHeight,
+    }
     grid.push(geometry)
-    gridHit.push(emitRectangleHit(circuit, geometry))
+    gridHit.push(emitMinimum(circuit, gridColumnHit[column]!, gridRowHit[row]!))
   }
 
   const main: Geometry = {
@@ -152,9 +163,18 @@ export function compilePhotoGalleryCircuit() {
 
   const previousFocus = Array.from({length: itemCount}, (_, item) => focusField(item))
   const previousFocusMass = circuit.affine(previousFocus.map(wire => [wire, 1]))
-  const previousGridMass = emitClampZeroOne(circuit, circuit.affine([[previousFocusMass, -1]], 1))
+  const previousGridMass = circuit.affine([[previousFocusMass, -1]], 1)
   const thumbnails: Geometry[] = []
   const thumbnailHit: Wire[] = []
+  const thumbnailVerticalHit = emitClampZeroOne(
+    circuit,
+    emitIntervalDistance(
+      circuit,
+      sourceField.clickY,
+      thumbnailTop,
+      sourceField.thumbnailHeight,
+    ),
+  )
   for (let item = 0; item < itemCount; item++) {
     const left = circuit.affine([
       [sourceField.gap, 1],
@@ -167,7 +187,14 @@ export function compilePhotoGalleryCircuit() {
       height: sourceField.thumbnailHeight,
     }
     thumbnails.push(geometry)
-    thumbnailHit.push(emitRectangleHit(circuit, geometry))
+    thumbnailHit.push(emitMinimum(
+      circuit,
+      emitClampZeroOne(
+        circuit,
+        emitIntervalDistance(circuit, sourceField.clickX, left, thumbnailWidth),
+      ),
+      thumbnailVerticalHit,
+    ))
   }
 
   const controlTop = emitRelu(circuit, circuit.affine([
@@ -191,49 +218,90 @@ export function compilePhotoGalleryCircuit() {
     width: sourceField.controlSize,
     height: sourceField.controlSize,
   }
-  const previousControlHit = emitRectangleHit(circuit, previousControl)
-  const nextControlHit = emitRectangleHit(circuit, nextControl)
+  const controlVerticalHit = emitClampZeroOne(
+    circuit,
+    emitIntervalDistance(
+      circuit,
+      sourceField.clickY,
+      controlTop,
+      sourceField.controlSize,
+    ),
+  )
+  const previousControlHit = emitMinimum(
+    circuit,
+    emitClampZeroOne(
+      circuit,
+      emitIntervalDistance(
+        circuit,
+        sourceField.clickX,
+        previousControl.left,
+        previousControl.width,
+      ),
+    ),
+    controlVerticalHit,
+  )
+  const nextControlHit = emitMinimum(
+    circuit,
+    emitClampZeroOne(
+      circuit,
+      emitIntervalDistance(
+        circuit,
+        sourceField.clickX,
+        nextControl.left,
+        nextControl.width,
+      ),
+    ),
+    controlVerticalHit,
+  )
 
   const eventMass = circuit.affine(eventFields.map(wire => [wire, 1]))
   const eventInactive = circuit.affine([[eventMass, -1]], 1)
+  const clickGridGate = emitMultiply(circuit, sourceField.clickActive, previousGridMass)
+  const clickThumbnailGate = emitMultiply(circuit, sourceField.clickActive, previousFocusMass)
+  const clickMainGate = emitMultiply(circuit, sourceField.clickActive, mainHit)
+  const currentFocusGate = circuit.affine([[eventInactive, 1], [clickMainGate, 1]])
+  const previousFocusGate = circuit.affine([
+    [sourceField.previousActive, 1],
+    [emitMultiply(circuit, sourceField.clickActive, previousControlHit), 1],
+  ])
+  const nextFocusGate = circuit.affine([
+    [sourceField.nextActive, 1],
+    [emitMultiply(circuit, sourceField.clickActive, nextControlHit), 1],
+  ])
   const nextFocus: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
     const previousShift = previousFocus[(item + 1) % itemCount]!
     const nextShift = previousFocus[(item + itemCount - 1) % itemCount]!
-    const gridSelection = emitMultiply(circuit, previousGridMass, gridHit[item]!)
-    const focusedSelection = circuit.affine([
-      [thumbnailHit[item]!, 1],
-      [emitMultiply(circuit, mainHit, previousFocus[item]!), 1],
-      [emitMultiply(circuit, previousControlHit, previousShift), 1],
-      [emitMultiply(circuit, nextControlHit, nextShift), 1],
-    ])
-    const clickSelection = circuit.affine([
-      [gridSelection, 1],
-      [emitMultiply(circuit, previousFocusMass, focusedSelection), 1],
-    ])
     nextFocus.push(circuit.affine([
-      [emitMultiply(circuit, eventInactive, previousFocus[item]!), 1],
-      [emitMultiply(circuit, sourceField.clickActive, clickSelection), 1],
-      [emitMultiply(circuit, sourceField.previousActive, previousShift), 1],
-      [emitMultiply(circuit, sourceField.nextActive, nextShift), 1],
+      [emitMultiply(circuit, currentFocusGate, previousFocus[item]!), 1],
+      [emitMultiply(circuit, clickGridGate, gridHit[item]!), 1],
+      [emitMultiply(circuit, clickThumbnailGate, thumbnailHit[item]!), 1],
+      [emitMultiply(circuit, previousFocusGate, previousShift), 1],
+      [emitMultiply(circuit, nextFocusGate, nextShift), 1],
     ]))
   }
 
   const nextFocusMass = circuit.affine(nextFocus.map(wire => [wire, 1]))
-  const nextGridMass = emitClampZeroOne(circuit, circuit.affine([[nextFocusMass, -1]], 1))
+  const nextGridMass = circuit.affine([[nextFocusMass, -1]], 1)
+  const projectedGridLeft = gridLeft.map(left => emitMultiply(circuit, nextGridMass, left))
+  const projectedGridTop = gridTop.map(top => emitMultiply(circuit, nextGridMass, top))
+  const projectedGridWidth = emitMultiply(circuit, nextGridMass, gridWidth)
+  const projectedGridHeight = emitMultiply(circuit, nextGridMass, gridHeight)
   const photos: PhotoProjection[] = []
   const thumbnailProjections: PhotoProjection[] = []
   for (let item = 0; item < itemCount; item++) {
+    const column = item % columnCount
+    const row = Math.floor(item / columnCount)
     const thisFocused = nextFocus[item]!
-    const project = (gridValue: Wire, mainValue: Wire) => circuit.affine([
-      [emitMultiply(circuit, nextGridMass, gridValue), 1],
+    const project = (gridProjection: Wire, mainValue: Wire) => circuit.affine([
+      [gridProjection, 1],
       [emitMultiply(circuit, thisFocused, mainValue), 1],
     ])
     photos.push({
-      left: project(grid[item]!.left, main.left),
-      top: project(grid[item]!.top, main.top),
-      width: project(grid[item]!.width, main.width),
-      height: project(grid[item]!.height, main.height),
+      left: project(projectedGridLeft[column]!, main.left),
+      top: project(projectedGridTop[row]!, main.top),
+      width: project(projectedGridWidth, main.width),
+      height: project(projectedGridHeight, main.height),
       opacity: circuit.affine([[nextGridMass, 1], [thisFocused, 1]]),
       focused: thisFocused,
     })
@@ -434,19 +502,28 @@ export function mountPhotoGallery(document: Document, window: Window) {
 }
 
 function emitRectangleHit(circuit: Circuit, geometry: Geometry): Wire {
-  const right = circuit.affine([[geometry.left, 1], [geometry.width, 1]])
-  const bottom = circuit.affine([[geometry.top, 1], [geometry.height, 1]])
-  const horizontalDistance = emitMinimum(
+  const horizontalDistance = emitIntervalDistance(
     circuit,
-    circuit.affine([[sourceField.clickX, 1], [geometry.left, -1]]),
-    circuit.affine([[right, 1], [sourceField.clickX, -1]]),
+    sourceField.clickX,
+    geometry.left,
+    geometry.width,
   )
-  const verticalDistance = emitMinimum(
+  const verticalDistance = emitIntervalDistance(
     circuit,
-    circuit.affine([[sourceField.clickY, 1], [geometry.top, -1]]),
-    circuit.affine([[bottom, 1], [sourceField.clickY, -1]]),
+    sourceField.clickY,
+    geometry.top,
+    geometry.height,
   )
   return emitClampZeroOne(circuit, emitMinimum(circuit, horizontalDistance, verticalDistance))
+}
+
+function emitIntervalDistance(circuit: Circuit, position: Wire, start: Wire, size: Wire): Wire {
+  const end = circuit.affine([[start, 1], [size, 1]])
+  return emitMinimum(
+    circuit,
+    circuit.affine([[position, 1], [start, -1]]),
+    circuit.affine([[end, 1], [position, -1]]),
+  )
 }
 
 function validateGallerySource(values: unknown) {

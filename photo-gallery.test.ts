@@ -224,6 +224,29 @@ test('soft edge focus remains a valid differentiable state', () => {
   assert.deepEqual(readFocus(machine), Array(itemCount).fill(0))
 })
 
+test('main and control clicks do not shrink fractional focused components', () => {
+  const machine = createPhotoGalleryMachine()
+  let values = machine.step(1281, 721)
+  const first = projectPhotos(machine, values)[0]!
+  machine.click(first.left + 0.5, first.top + first.height / 2)
+  values = machine.step(1281, 721)
+  assert.deepEqual(readFocus(machine), [0.5, ...Array<number>(itemCount - 1).fill(0)])
+
+  machine.click(640, 300)
+  values = machine.step(1281, 721)
+  assert.deepEqual(readFocus(machine), [0.5, ...Array<number>(itemCount - 1).fill(0)])
+
+  const nextStart = machine.output.nextControlStart
+  machine.click(
+    values[nextStart + controlField.left]! + values[nextStart + controlField.width]! / 2,
+    values[nextStart + controlField.top]! + values[nextStart + controlField.height]! / 2,
+  )
+  machine.step(1281, 721)
+  const shiftedFocus = readFocus(machine)
+  assert.equal(shiftedFocus[1], 0.5)
+  assert.equal(shiftedFocus.reduce((sum, focus) => sum + focus, 0), 1)
+})
+
 test('next state and all render projections occupy contiguous output blocks', () => {
   const machine = createPhotoGalleryMachine()
   const values = machine.step(viewportWidth, viewportHeight)
