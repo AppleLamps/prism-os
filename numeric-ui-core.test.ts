@@ -148,6 +148,21 @@ test('tensor layers gather only the values they read', () => {
   ])
 })
 
+test('affine outputs do not allocate fake gate rows', () => {
+  const circuit = new Circuit(2)
+  const affine = circuit.affine([[0, 2]], 1)
+  const reglu = circuit.reglu([[0, 3]], 2, [[1, -1]], 5)
+  const program = circuit.compileTensorProgram([affine, reglu])
+  const layer = program.layers[0]!
+
+  assert.equal(layer.leftBias.length, 2)
+  assert.deepEqual([...layer.gateRows], [1])
+  assert.equal(layer.gateBias.length, 1)
+  assert.equal(layer.gateWeights.length, layer.inputSize)
+  assert.equal(evaluateOutput(circuit, program, [7, 2], affine), 15)
+  assert.equal(evaluateOutput(circuit, program, [7, 2], reglu), 69)
+})
+
 function evaluateOutput(
   circuit: Circuit,
   program: ReturnType<Circuit['compileTensorProgram']>,

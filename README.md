@@ -49,8 +49,9 @@ values it actually depends on, produces only its new values, and appends them:
 ```txt
 input = gather(values, inputIndices)
 left = Wleft[new x input] x input + bleft[new]
-gate = Wgate[new x input] x input + bgate[new]
-new = left * ReLU(gate)
+gate = Wgate[reglu x input] x input + bgate[reglu]
+new = left
+new[gateRows] = left[gateRows] * ReLU(gate)
 values = concat(values, new)
 ```
 
@@ -66,8 +67,8 @@ The measured dense tensor footprints are:
 four-photo focus demo: source 10, width 326, layers 35
                        matrix cells 101,798, bias cells 632, bytes 819,440
 photo lightbox:         source 24, graph width 583, live values 338, layers 9
-                       matrix cells 28,198, bias cells 628, input indices 343
-                       tensor bytes 231,980
+                       matrix cells 23,686, bias cells 543
+                       input indices 343, gate rows 229, tensor bytes 196,120
 ```
 
 The persistent source table is a fixed `Float64Array`. Immutable constants and

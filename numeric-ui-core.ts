@@ -24,6 +24,7 @@ export type TensorLayer = {
   inputSize: number
   leftBias: Float64Array
   gateBias: Float64Array
+  gateRows: Uint32Array
   leftWeights: Float64Array
   gateWeights: Float64Array
 }
@@ -198,6 +199,10 @@ export class Circuit {
         (left, right) => packedIndexByWire[left]! - packedIndexByWire[right]!,
       )
       const inputSize = orderedInputWires.length
+      let gateCount = 0
+      for (const operationIndex of operationIndices) {
+        if (this.operations[operationIndex]!.kind === 'reglu') gateCount++
+      }
       const inputIndices = Uint32Array.from(
         orderedInputWires,
         wire => packedIndexByWire[wire]!,
@@ -211,10 +216,12 @@ export class Circuit {
         inputIndices,
         inputSize,
         leftBias: new Float64Array(outputSize),
-        gateBias: new Float64Array(outputSize),
+        gateBias: new Float64Array(gateCount),
+        gateRows: new Uint32Array(gateCount),
         leftWeights: new Float64Array(outputSize * inputSize),
-        gateWeights: new Float64Array(outputSize * inputSize),
+        gateWeights: new Float64Array(gateCount * inputSize),
       }
+      let gateRow = 0
       for (let row = 0; row < operationIndices.length; row++) {
         const operationIndex = operationIndices[row]!
         const operation = this.operations[operationIndex]!
@@ -224,10 +231,17 @@ export class Circuit {
         wireOrder[packedOutput] = outputWire
         packedIndexByWire[outputWire] = packedOutput
         layer.leftBias[row] = operation.leftBias
-        layer.gateBias[row] = operation.kind === 'affine' ? 1 : operation.gateBias
         writePackedWeights(layer.leftWeights, rowOffset, operation.leftTerms, inputColumnByWire)
         if (operation.kind === 'reglu') {
-          writePackedWeights(layer.gateWeights, rowOffset, operation.gateTerms, inputColumnByWire)
+          layer.gateBias[gateRow] = operation.gateBias
+          layer.gateRows[gateRow] = row
+          writePackedWeights(
+            layer.gateWeights,
+            gateRow * inputSize,
+            operation.gateTerms,
+            inputColumnByWire,
+          )
+          gateRow++
         }
       }
       layers.push(layer)
@@ -421,11 +435,13 @@ export function evaluateTensorProgram(source: Float64Array, program: TensorProgr
   const packedValues = new Float64Array(valueCount)
   let maxOutputSize = 0
   let maxInputSize = 0
+  let maxGateSize = 0
   for (const layer of layers) maxOutputSize = Math.max(maxOutputSize, layer.leftBias.length)
   for (const layer of layers) maxInputSize = Math.max(maxInputSize, layer.inputSize)
+  for (const layer of layers) maxGateSize = Math.max(maxGateSize, layer.gateBias.length)
   const input = new Float64Array(maxInputSize)
   const left = new Float64Array(maxOutputSize)
-  const gate = new Float64Array(maxOutputSize)
+  const gate = new Float64Array(maxGateSize)
   packedValues.set(source)
   let availableValues = source.length
   for (const layer of layers) {
@@ -434,10 +450,13 @@ export function evaluateTensorProgram(source: Float64Array, program: TensorProgr
       input[column] = packedValues[layer.inputIndices[column]!]!
     }
     matmulAddBias(left, layer.leftWeights, input, layer.leftBias, outputSize, layer.inputSize)
-    matmulAddBias(gate, layer.gateWeights, input, layer.gateBias, outputSize, layer.inputSize)
-    for (let row = 0; row < outputSize; row++) {
-      packedValues[availableValues + row] = left[row]! * Math.max(0, gate[row]!)
+    const gateSize = layer.gateBias.length
+    matmulAddBias(gate, layer.gateWeights, input, layer.gateBias, gateSize, layer.inputSize)
+    for (let gateRow = 0; gateRow < gateSize; gateRow++) {
+      const outputRow = layer.gateRows[gateRow]!
+      left[outputRow] = left[outputRow]! * Math.max(0, gate[gateRow]!)
     }
+    packedValues.set(left.subarray(0, outputSize), availableValues)
     availableValues += outputSize
   }
   const values = new Float64Array(width)
@@ -545,9 +564,16 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
     for (const inputIndex of layer.inputIndices) {
       invariant(inputIndex < availableValues, 'tensor layer input is not available')
     }
-    invariant(layer.gateBias.length === outputSize, 'gate bias shape mismatch')
+    const gateSize = layer.gateBias.length
+    invariant(layer.gateRows.length === gateSize, 'gate row shape mismatch')
+    const seenGateRows = new Uint8Array(outputSize)
+    for (const gateRow of layer.gateRows) {
+      invariant(gateRow < outputSize, 'gate output row is invalid')
+      invariant(seenGateRows[gateRow] === 0, 'gate output row must be unique')
+      seenGateRows[gateRow] = 1
+    }
     invariant(layer.leftWeights.length === outputSize * layer.inputSize, 'left matrix shape mismatch')
-    invariant(layer.gateWeights.length === outputSize * layer.inputSize, 'gate matrix shape mismatch')
+    invariant(layer.gateWeights.length === gateSize * layer.inputSize, 'gate matrix shape mismatch')
     assertFiniteValues(layer.leftBias, 'left bias')
     assertFiniteValues(layer.gateBias, 'gate bias')
     assertFiniteValues(layer.leftWeights, 'left matrix')
