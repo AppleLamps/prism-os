@@ -13,10 +13,10 @@ test('tensor layers append only their new values', () => {
     program.layers.map(layer => ({
       inputSize: layer.inputSize,
       outputSize: layer.outputSize,
-      matrixSize: layer.weights.length,
+      storedWeights: layer.weights.length,
     })),
     [
-      {inputSize: 2, outputSize: 3, matrixSize: 6},
+      {inputSize: 2, outputSize: 3, storedWeights: 3},
     ],
   )
   assert.deepEqual([...program.wireOrder], [0, 1, 2, 3, 4])
@@ -158,7 +158,9 @@ test('affine outputs do not allocate fake gate rows', () => {
   assert.equal(layer.outputSize, 2)
   assert.deepEqual([...layer.gateRows], [1])
   assert.equal(layer.bias.length, 3)
-  assert.equal(layer.weights.length, 3 * layer.inputSize)
+  assert.deepEqual([...layer.rowOffsets], [0, 1, 2, 3])
+  assert.deepEqual([...layer.columns], [0, 0, 1])
+  assert.equal(layer.weights.length, 3)
   assert.equal(evaluateOutput(circuit, program, [7, 2], affine), 15)
   assert.equal(evaluateOutput(circuit, program, [7, 2], reglu), 69)
 })

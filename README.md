@@ -41,14 +41,14 @@ main photo, a fixed strip containing all twelve thumbnails, previous/next contro
 behavior. The browser adapter records numeric click or keyboard signals and
 projects numeric geometry, visibility, and focus outputs. Each photo and its
 caption are fixed constants permanently attached to one DOM slot. At startup,
-the fixed circuit compiles into dense gated
+the fixed circuit compiles into fixed gated
 layers. Each refresh evaluates those same numeric layers without item-specific
 runtime loops or runtime branching between atom kinds. Each layer reads all
 values it actually depends on, produces only its new values, and appends them:
 
 ```txt
 input = gather(values, inputIndices)
-projection = W[(new + reglu) x input] x input + b[new + reglu]
+projection = sparse_matmul(W[(new + reglu) x input], input) + b[new + reglu]
 new = projection[0:new]
 new[gateRows] *= ReLU(projection[new:])
 values = concat(values, new)
@@ -57,17 +57,17 @@ values = concat(values, new)
 The demo validates the incoming source table, fixed compiled matrices, and
 projected output after every refresh. It also compares every tensor
 wire against a small readable atom interpreter as a development assertion;
-rendering consumes only the tensor result. The dense matrices are intentionally
-naive for now so the runtime shape stays obvious.
+rendering consumes only the tensor result. Sparse storage omits zero
+coefficients but represents the same fixed rectangular matrices.
 
-The measured dense tensor footprints are:
+The measured tensor footprints are:
 
 ```txt
 four-photo focus demo: source 10, width 326, layers 35
                        matrix cells 101,798, bias cells 632, bytes 819,440
 photo lightbox:         source 24, graph width 583, live values 338, layers 9
-                       matrix cells 23,686, bias cells 543
-                       input indices 343, gate rows 229, tensor bytes 196,120
+                       logical matrix cells 23,686, stored weights 2,339
+                       bias cells 543, layer tensor bytes 36,908
 ```
 
 The persistent source table is a fixed `Float64Array`. Immutable constants and

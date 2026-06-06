@@ -25,6 +25,8 @@ export type TensorLayer = {
   outputSize: number
   bias: Float64Array
   gateRows: Uint32Array
+  rowOffsets: Uint32Array
+  columns: Uint32Array
   weights: Float64Array
 }
 
@@ -211,39 +213,55 @@ export class Circuit {
       for (let column = 0; column < inputSize; column++) {
         inputColumnByWire[orderedInputWires[column]!] = column
       }
-      const layer: TensorLayer = {
-        inputIndices,
-        inputSize,
-        outputSize,
-        bias: new Float64Array(outputSize + gateCount),
-        gateRows: new Uint32Array(gateCount),
-        weights: new Float64Array((outputSize + gateCount) * inputSize),
-      }
+      const projectionSize = outputSize + gateCount
+      const bias = new Float64Array(projectionSize)
+      const gateRows = new Uint32Array(gateCount)
+      const projectionTerms = Array<Terms>(projectionSize)
       let gateRow = 0
       for (let row = 0; row < operationIndices.length; row++) {
         const operationIndex = operationIndices[row]!
         const operation = this.operations[operationIndex]!
         const outputWire = this.sourceSize + operationIndex
         const packedOutput = availableValues + row
-        const rowOffset = row * inputSize
         wireOrder[packedOutput] = outputWire
         packedIndexByWire[outputWire] = packedOutput
-        layer.bias[row] = operation.leftBias
-        writePackedWeights(layer.weights, rowOffset, operation.leftTerms, inputColumnByWire)
+        bias[row] = operation.leftBias
+        projectionTerms[row] = operation.leftTerms
         if (operation.kind === 'reglu') {
           const projectionRow = outputSize + gateRow
-          layer.bias[projectionRow] = operation.gateBias
-          layer.gateRows[gateRow] = row
-          writePackedWeights(
-            layer.weights,
-            projectionRow * inputSize,
-            operation.gateTerms,
-            inputColumnByWire,
-          )
+          bias[projectionRow] = operation.gateBias
+          gateRows[gateRow] = row
+          projectionTerms[projectionRow] = operation.gateTerms
           gateRow++
         }
       }
-      layers.push(layer)
+      const rowOffsets = new Uint32Array(projectionSize + 1)
+      for (let row = 0; row < projectionSize; row++) {
+        rowOffsets[row + 1] = rowOffsets[row]! + projectionTerms[row]!.length
+      }
+      const storedWeightCount = rowOffsets[projectionSize]!
+      const columns = new Uint32Array(storedWeightCount)
+      const weights = new Float64Array(storedWeightCount)
+      let storedWeight = 0
+      for (const terms of projectionTerms) {
+        for (const [wire, coefficient] of terms) {
+          const column = inputColumnByWire[wire]!
+          invariant(column >= 0, 'tensor dependency is not available')
+          columns[storedWeight] = column
+          weights[storedWeight] = coefficient
+          storedWeight++
+        }
+      }
+      layers.push({
+        inputIndices,
+        inputSize,
+        outputSize,
+        bias,
+        gateRows,
+        rowOffsets,
+        columns,
+        weights,
+      })
       availableValues += outputSize
     }
     return {
@@ -445,13 +463,13 @@ export function evaluateTensorProgram(source: Float64Array, program: TensorProgr
     for (let column = 0; column < layer.inputSize; column++) {
       input[column] = packedValues[layer.inputIndices[column]!]!
     }
-    matmulAddBias(
+    sparseMatmulAddBias(
       projection,
       layer.weights,
+      layer.columns,
+      layer.rowOffsets,
       input,
       layer.bias,
-      layer.bias.length,
-      layer.inputSize,
     )
     for (let gateRow = 0; gateRow < layer.gateRows.length; gateRow++) {
       const outputRow = layer.gateRows[gateRow]!
@@ -468,18 +486,19 @@ export function evaluateTensorProgram(source: Float64Array, program: TensorProgr
   return values
 }
 
-function matmulAddBias(
+function sparseMatmulAddBias(
   output: Float64Array,
   weights: Float64Array,
+  columns: Uint32Array,
+  rowOffsets: Uint32Array,
   input: Float64Array,
   bias: Float64Array,
-  outputSize: number,
-  inputSize: number,
 ) {
-  for (let row = 0; row < outputSize; row++) {
-    const rowOffset = row * inputSize
+  for (let row = 0; row < bias.length; row++) {
     let value = bias[row]!
-    for (let column = 0; column < inputSize; column++) value += weights[rowOffset + column]! * input[column]!
+    for (let index = rowOffsets[row]!; index < rowOffsets[row + 1]!; index++) {
+      value += weights[index]! * input[columns[index]!]!
+    }
     output[row] = value
   }
 }
@@ -488,19 +507,6 @@ function evaluateTerms(values: Float64Array, terms: Terms, bias: number): number
   let value = bias
   for (const [wire, coefficient] of terms) value += coefficient * values[wire]!
   return value
-}
-
-function writePackedWeights(
-  weights: Float64Array,
-  rowOffset: number,
-  terms: Terms,
-  packedIndexByWire: Int32Array,
-) {
-  for (const [wire, coefficient] of terms) {
-    const column = packedIndexByWire[wire]!
-    invariant(column >= 0, 'tensor dependency is not available')
-    weights[rowOffset + column] = weights[rowOffset + column]! + coefficient
-  }
 }
 
 export function emitRelu(circuit: Circuit, value: Wire): Wire {
@@ -575,10 +581,22 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
       invariant(seenGateRows[gateRow] === 0, 'gate output row must be unique')
       seenGateRows[gateRow] = 1
     }
+    invariant(layer.rowOffsets.length === projectionSize + 1, 'sparse row offset shape mismatch')
+    invariant(layer.rowOffsets[0] === 0, 'sparse row offsets must start at zero')
+    invariant(layer.columns.length === layer.weights.length, 'sparse column shape mismatch')
     invariant(
-      layer.weights.length === projectionSize * layer.inputSize,
-      'projection matrix shape mismatch',
+      layer.rowOffsets[projectionSize] === layer.weights.length,
+      'sparse row offsets must end at the stored weight count',
     )
+    for (let row = 0; row < projectionSize; row++) {
+      invariant(
+        layer.rowOffsets[row]! <= layer.rowOffsets[row + 1]!,
+        'sparse row offsets must be ordered',
+      )
+    }
+    for (const column of layer.columns) {
+      invariant(column < layer.inputSize, 'sparse matrix column is invalid')
+    }
     assertFiniteValues(layer.bias, 'projection bias')
     assertFiniteValues(layer.weights, 'projection matrix')
     for (let row = 0; row < outputSize; row++) {
