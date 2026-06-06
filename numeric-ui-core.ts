@@ -51,6 +51,8 @@ export class Circuit {
   }
 
   append(kind: AtomKind, leftTerms: Terms, leftBias: number, gateTerms: Terms, gateBias: number): Wire {
+    leftTerms = normalizeTerms(leftTerms)
+    gateTerms = normalizeTerms(gateTerms)
     const wire = this.sourceSize + this.operations.length
     const dependencies = kind === 'affine' ? leftTerms : [...leftTerms, ...gateTerms]
     let depth = 0
@@ -134,6 +136,17 @@ export class Circuit {
       depth: Math.max(...this.depths),
     }
   }
+}
+
+function normalizeTerms(terms: Terms): Terms {
+  const sortedTerms = [...terms].sort(([leftWire], [rightWire]) => leftWire - rightWire)
+  const normalizedTerms: [wire: Wire, coefficient: number][] = []
+  for (const [wire, coefficient] of sortedTerms) {
+    const previous = normalizedTerms.at(-1)
+    if (previous?.[0] === wire) previous[1] += coefficient
+    else normalizedTerms.push([wire, coefficient])
+  }
+  return normalizedTerms.filter(([, coefficient]) => coefficient !== 0)
 }
 
 export function evaluateOperationStream(source: Float64Array, circuit: Circuit): Float64Array {

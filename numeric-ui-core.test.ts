@@ -42,3 +42,18 @@ test('tensor and readable evaluators both reject a wrong-sized source table', ()
     )
   }
 })
+
+test('weighted sums normalize duplicate, zero, and unordered terms', () => {
+  const circuit = new Circuit(3)
+  circuit.affine([
+    [2, 0],
+    [1, 4],
+    [0, 3],
+    [1, -1],
+    [0, -3],
+    [2, 5],
+  ], 7)
+
+  assert.deepEqual(circuit.operations[0]!.leftTerms, [[1, 3], [2, 5]])
+  assert.equal(circuit.evaluateTensor(new Float64Array([11, 13, 17]))[3], 131)
+})
