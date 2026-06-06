@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {createRectangleMachine, focusField, itemCount} from './numeric-ui-rectangles.ts'
+import {createRectangleMachine, focusField, itemCount, sourceField} from './numeric-ui-rectangles.ts'
 
 const viewportWidth = 1280
 const viewportHeight = 720
@@ -93,4 +93,29 @@ test('tiny viewports clamp rectangle dimensions and cannot produce a hit', () =>
     assert.ok(rectangle.width >= 0)
     assert.ok(rectangle.height >= 0)
   }
+})
+
+test('the complete next source table is one contiguous output block', () => {
+  const machine = createRectangleMachine()
+  machine.click(326, 186)
+  const values = machine.step(viewportWidth, viewportHeight)
+  const nextSource = values.subarray(
+    machine.output.nextSourceStart,
+    machine.output.nextSourceStart + sourceField.size,
+  )
+
+  assert.equal(nextSource.length, sourceField.size)
+  assert.deepEqual([...nextSource], [...machine.source])
+  assert.deepEqual([...nextSource], [
+    viewportWidth,
+    viewportHeight,
+    gap,
+    0,
+    326,
+    186,
+    1,
+    0,
+    0,
+    0,
+  ])
 })

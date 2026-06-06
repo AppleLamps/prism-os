@@ -35,8 +35,7 @@ type RectangleProjection = RectangleGeometry & {
 }
 
 type RectangleOutput = {
-  focus: Wire[]
-  clickActive: Wire
+  nextSourceStart: Wire
   rectangles: RectangleProjection[]
 }
 
@@ -124,11 +123,20 @@ export function compileRectangleCircuit() {
     })
   }
 
+  const nextSource = [
+    sourceField.viewportWidth,
+    sourceField.viewportHeight,
+    sourceField.gap,
+    zero,
+    sourceField.clickX,
+    sourceField.clickY,
+    ...nextFocus,
+  ].map(wire => circuit.affine([[wire, 1]]))
+
   return {
     circuit,
     output: {
-      focus: nextFocus,
-      clickActive: zero,
+      nextSourceStart: nextSource[0]!,
       rectangles,
     },
   }
@@ -155,10 +163,7 @@ export function createRectangleMachine({checkTensorEvaluation = true}: {checkTen
       const values = circuit.evaluateTensor(source)
       if (checkTensorEvaluation) validateTensorEvaluation(source, circuit, values)
       validateRectangleOutput(values, output)
-      for (let item = 0; item < itemCount; item++) {
-        source[focusField(item)] = values[output.focus[item]!]!
-      }
-      source[sourceField.clickActive] = values[output.clickActive]!
+      source.set(values.subarray(output.nextSourceStart, output.nextSourceStart + source.length))
       return values
     },
     click(x: number, y: number) {
@@ -238,8 +243,8 @@ function validateRectangleSource(values: unknown) {
 }
 
 function validateRectangleOutputWires(output: RectangleOutput, wireCount: number) {
-  for (const focus of output.focus) assertWire(focus, wireCount)
-  assertWire(output.clickActive, wireCount)
+  assertWire(output.nextSourceStart, wireCount)
+  assertWire(output.nextSourceStart + sourceField.size - 1, wireCount)
   for (const rectangle of output.rectangles) {
     for (const field of geometryFields) assertWire(rectangle[field], wireCount)
     assertWire(rectangle.visible, wireCount)
@@ -248,10 +253,12 @@ function validateRectangleOutputWires(output: RectangleOutput, wireCount: number
 
 function validateRectangleOutput(values: Float64Array, output: RectangleOutput) {
   assertFiniteValues(values, 'tensor output')
-  invariant(values[output.clickActive] === 0, 'click latch must reset after refresh')
+  const nextSource = values.subarray(output.nextSourceStart, output.nextSourceStart + sourceField.size)
+  validateRectangleSource(nextSource)
+  invariant(nextSource[sourceField.clickActive] === 0, 'click latch must reset after refresh')
   let focusMass = 0
   for (let item = 0; item < itemCount; item++) {
-    const focus = values[output.focus[item]!]
+    const focus = nextSource[focusField(item)]
     assertUnitInterval(focus, `next focus ${item}`)
     focusMass += focus
   }
