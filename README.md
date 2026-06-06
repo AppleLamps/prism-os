@@ -44,11 +44,12 @@ caption are fixed constants permanently attached to one DOM slot. At startup,
 the fixed circuit compiles into dense gated
 layers. Each refresh evaluates those same numeric layers without item-specific
 runtime loops or runtime branching between atom kinds. Each layer reads all
-values available so far, produces only its new values, and appends them:
+values it actually depends on, produces only its new values, and appends them:
 
 ```txt
-left = Wleft[new x available] x values[available] + bleft[new]
-gate = Wgate[new x available] x values[available] + bgate[new]
+input = gather(values, inputIndices)
+left = Wleft[new x input] x input + bleft[new]
+gate = Wgate[new x input] x input + bgate[new]
 new = left * ReLU(gate)
 values = concat(values, new)
 ```
@@ -65,7 +66,8 @@ The measured dense tensor footprints are:
 four-photo focus demo: source 10, width 326, layers 35
                        matrix cells 101,798, bias cells 632, bytes 819,440
 photo lightbox:         source 24, graph width 583, live values 338, layers 9
-                       matrix cells 99,092, bias cells 628, bytes 797,760
+                       matrix cells 28,198, bias cells 628, input indices 343
+                       tensor bytes 231,980
 ```
 
 The persistent source table is a fixed `Float64Array`. Immutable constants and

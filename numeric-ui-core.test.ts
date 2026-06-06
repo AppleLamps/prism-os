@@ -132,6 +132,22 @@ test('tensor roots remove operations that cannot affect an output', () => {
   assert.equal(evaluateOutput(circuit, program, [13, 17], liveOutput), 445)
 })
 
+test('tensor layers gather only the values they read', () => {
+  const circuit = new Circuit(2)
+  const first = circuit.reglu([[0, 1]], 0, [[1, 1]], 0)
+  const second = circuit.reglu([[first, 2]], 1, [[first, -1]], 5)
+  const program = circuit.compileTensorProgram([second])
+
+  assert.deepEqual(program.layers.map(layer => ({
+    inputIndices: [...layer.inputIndices],
+    inputSize: layer.inputSize,
+    outputSize: layer.leftBias.length,
+  })), [
+    {inputIndices: [0, 1], inputSize: 2, outputSize: 1},
+    {inputIndices: [2], inputSize: 1, outputSize: 1},
+  ])
+})
+
 function evaluateOutput(
   circuit: Circuit,
   program: ReturnType<Circuit['compileTensorProgram']>,
