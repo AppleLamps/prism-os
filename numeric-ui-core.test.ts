@@ -57,3 +57,26 @@ test('weighted sums normalize duplicate, zero, and unordered terms', () => {
   assert.deepEqual(circuit.operations[0]!.leftTerms, [[1, 3], [2, 5]])
   assert.equal(circuit.evaluateTensor(new Float64Array([11, 13, 17]))[3], 131)
 })
+
+test('constant terms and constant gates fold before compilation', () => {
+  const circuit = new Circuit(1)
+  const three = circuit.affine([], 3)
+  circuit.affine([[0, 4], [three, 2]], 1)
+  circuit.reglu([[0, 2]], 5, [[three, 1]], -1)
+  circuit.reglu([[0, 7]], 11, [[three, -1]], 2)
+
+  assert.deepEqual(circuit.operations.map(operation => ({
+    kind: operation.kind,
+    leftTerms: operation.leftTerms,
+    leftBias: operation.leftBias,
+  })), [
+    {kind: 'affine', leftTerms: [], leftBias: 3},
+    {kind: 'affine', leftTerms: [[0, 4]], leftBias: 7},
+    {kind: 'affine', leftTerms: [[0, 4]], leftBias: 10},
+    {kind: 'affine', leftTerms: [], leftBias: 0},
+  ])
+  assert.deepEqual(
+    [...circuit.evaluateTensor(new Float64Array([13]))].slice(1),
+    [3, 59, 62, 0],
+  )
+})

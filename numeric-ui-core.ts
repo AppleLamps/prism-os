@@ -33,12 +33,14 @@ export class Circuit {
   sourceSize: number
   operations: Operation[]
   depths: number[]
+  constants: (number | undefined)[]
   tensorProgram: TensorProgram | null
 
   constructor(sourceSize: number) {
     this.sourceSize = sourceSize
     this.operations = []
     this.depths = Array<number>(sourceSize).fill(0)
+    this.constants = Array<number | undefined>(sourceSize).fill(undefined)
     this.tensorProgram = null
   }
 
@@ -51,14 +53,28 @@ export class Circuit {
   }
 
   append(kind: AtomKind, leftTerms: Terms, leftBias: number, gateTerms: Terms, gateBias: number): Wire {
-    leftTerms = normalizeTerms(leftTerms)
-    gateTerms = normalizeTerms(gateTerms)
+    ;[leftTerms, leftBias] = foldConstantTerms(normalizeTerms(leftTerms), leftBias, this.constants)
+    ;[gateTerms, gateBias] = foldConstantTerms(normalizeTerms(gateTerms), gateBias, this.constants)
+    if (kind === 'reglu' && gateTerms.length === 0) {
+      const gate = Math.max(0, gateBias)
+      kind = 'affine'
+      leftTerms = gate === 0
+        ? []
+        : leftTerms.map(([wire, coefficient]) => [wire, coefficient * gate])
+      leftBias *= gate
+      gateBias = 0
+    } else if (kind === 'reglu' && leftTerms.length === 0 && leftBias === 0) {
+      kind = 'affine'
+      gateTerms = []
+      gateBias = 0
+    }
     const wire = this.sourceSize + this.operations.length
     const dependencies = kind === 'affine' ? leftTerms : [...leftTerms, ...gateTerms]
     let depth = 0
     for (const [dependency] of dependencies) depth = Math.max(depth, this.depths[dependency]!)
     this.operations.push({kind, leftTerms, leftBias, gateTerms, gateBias, depth: depth + 1})
     this.depths.push(depth + 1)
+    this.constants.push(kind === 'affine' && leftTerms.length === 0 ? leftBias : undefined)
     this.tensorProgram = null
     return wire
   }
@@ -136,6 +152,20 @@ export class Circuit {
       depth: Math.max(...this.depths),
     }
   }
+}
+
+function foldConstantTerms(
+  terms: Terms,
+  bias: number,
+  constants: readonly (number | undefined)[],
+): [terms: Terms, bias: number] {
+  const dynamicTerms: [wire: Wire, coefficient: number][] = []
+  for (const [wire, coefficient] of terms) {
+    const constant = constants[wire]
+    if (constant === undefined) dynamicTerms.push([wire, coefficient])
+    else bias += coefficient * constant
+  }
+  return [dynamicTerms, bias]
 }
 
 function normalizeTerms(terms: Terms): Terms {
