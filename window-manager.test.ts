@@ -295,6 +295,29 @@ test('a down and move received before one refresh still begin the correct drag',
   assert.equal(machine.source[dragSourceField(1)], 1)
 })
 
+test('window control visual edges produce full-strength actions', () => {
+  const machine = createWindowManagerMachine()
+  let values = step(machine)
+  const projected = projectWindows(machine, values)[3]!
+  const size = machine.source[sourceField.buttonSize]!
+  const gap = machine.source[sourceField.buttonGap]!
+  const closeLeft = projected.left + projected.width - gap - size
+  const maximizeLeft = closeLeft - gap - size
+  const y = projected.top + machine.source[sourceField.titleHeight]! / 2
+
+  values = click(machine, maximizeLeft + 0.5, y)
+  assert.equal(
+    machine.source[windowSourceField(3, windowStateField.maximized)],
+    1,
+  )
+  values = settle(machine)
+  const maximized = projectWindows(machine, values)[3]!
+  assert.deepEqual(
+    {left: maximized.left, top: maximized.top, width: maximized.width, height: maximized.height},
+    {left: 12, top: 48, width: 1256, height: 664},
+  )
+})
+
 test('maximize, minimize, close, and dock restore all update the same table', () => {
   const machine = createWindowManagerMachine()
   let values = step(machine)
@@ -303,7 +326,7 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   let window = projectWindows(machine, values)[3]!
   assert.equal(window.maximized, 1)
   assert.equal(animationActive(machine, values), 1)
-  assert.notEqual(window.left, 12)
+  assert.notEqual(window.left + window.translateX, 12)
   values = settle(machine)
   window = projectWindows(machine, values)[3]!
   assert.deepEqual(

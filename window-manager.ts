@@ -55,21 +55,17 @@ export const dockOutputField = {
 } as const
 
 export const springStateField = {
-  left: 0,
-  top: 1,
+  centerX: 0,
+  centerY: 1,
   width: 2,
   height: 3,
-  translateX: 4,
-  translateY: 5,
-  scale: 6,
-  leftVelocity: 7,
-  topVelocity: 8,
-  widthVelocity: 9,
-  heightVelocity: 10,
-  translateXVelocity: 11,
-  translateYVelocity: 12,
-  scaleVelocity: 13,
-  size: 14,
+  scale: 4,
+  centerXVelocity: 5,
+  centerYVelocity: 6,
+  widthVelocity: 7,
+  heightVelocity: 8,
+  scaleVelocity: 9,
+  size: 10,
 } as const
 
 const windowStateStart = 35
@@ -124,24 +120,20 @@ export const sourceField = {
 
 const geometryFields = ['left', 'top', 'width', 'height'] as const
 const transformFields = ['translateX', 'translateY', 'scale'] as const
-const animationFields = [...geometryFields, ...transformFields] as const
+const animationFields = ['centerX', 'centerY', 'width', 'height', 'scale'] as const
 type AnimationField = (typeof animationFields)[number]
 const springPositionField: Record<AnimationField, number> = {
-  left: springStateField.left,
-  top: springStateField.top,
+  centerX: springStateField.centerX,
+  centerY: springStateField.centerY,
   width: springStateField.width,
   height: springStateField.height,
-  translateX: springStateField.translateX,
-  translateY: springStateField.translateY,
   scale: springStateField.scale,
 }
 const springVelocityField: Record<AnimationField, number> = {
-  left: springStateField.leftVelocity,
-  top: springStateField.topVelocity,
+  centerX: springStateField.centerXVelocity,
+  centerY: springStateField.centerYVelocity,
   width: springStateField.widthVelocity,
   height: springStateField.heightVelocity,
-  translateX: springStateField.translateXVelocity,
-  translateY: springStateField.translateYVelocity,
   scale: springStateField.scaleVelocity,
 }
 const eventActiveFields = [
@@ -189,7 +181,6 @@ type WindowAnimation = {
   transform: Transform
   springs: Record<AnimationField, SpringState>
   active: Wire
-  dockActive: Wire
 }
 
 type WindowManagerOutput = {
@@ -396,31 +387,36 @@ export function compileWindowManagerCircuit() {
       [sourceField.buttonGap, -1],
       [sourceField.buttonSize, -1],
     ])
-    const buttonGeometry = (left: Wire): Geometry => ({
-      left,
-      top: buttonTop,
-      width: sourceField.buttonSize,
-      height: sourceField.buttonSize,
+    const buttonHitInset = circuit.affine([[sourceField.buttonGap, 0.5]])
+    const buttonHitSize = circuit.affine([
+      [sourceField.buttonSize, 1],
+      [sourceField.buttonGap, 1],
+    ])
+    const buttonHitGeometry = (left: Wire): Geometry => ({
+      left: circuit.affine([[left, 1], [buttonHitInset, -1]]),
+      top: circuit.affine([[buttonTop, 1], [buttonHitInset, -1]]),
+      width: buttonHitSize,
+      height: buttonHitSize,
     })
     closeHit.push(emitRectangleHit(
       circuit,
       sourceField.downX,
       sourceField.downY,
-      buttonGeometry(closeLeft),
+      buttonHitGeometry(closeLeft),
       unit,
     ))
     maximizeHit.push(emitRectangleHit(
       circuit,
       sourceField.downX,
       sourceField.downY,
-      buttonGeometry(maximizeLeft),
+      buttonHitGeometry(maximizeLeft),
       unit,
     ))
     minimizeHit.push(emitRectangleHit(
       circuit,
       sourceField.downX,
       sourceField.downY,
-      buttonGeometry(minimizeLeft),
+      buttonHitGeometry(minimizeLeft),
       unit,
     ))
     dragHit.push(emitRectangleHit(
@@ -760,28 +756,31 @@ export function compileWindowManagerCircuit() {
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const visibleTarget = effectiveGeometry[windowIndex]!
     const dockTarget = dockGeometry[windowIndex]!
-    const hiddenTranslateX = circuit.affine([
+    const visibleCenterX = circuit.affine([
+      [visibleTarget.left, 1],
+      [visibleTarget.width, 0.5],
+    ])
+    const visibleCenterY = circuit.affine([
+      [visibleTarget.top, 1],
+      [visibleTarget.height, 0.5],
+    ])
+    const dockCenterX = circuit.affine([
       [dockTarget.left, 1],
       [dockTarget.width, 0.5],
-      [visibleTarget.left, -1],
-      [visibleTarget.width, -0.5],
     ])
-    const hiddenTranslateY = circuit.affine([
+    const dockCenterY = circuit.affine([
       [dockTarget.top, 1],
       [dockTarget.height, 0.5],
-      [visibleTarget.top, -1],
-      [visibleTarget.height, -0.5],
     ])
     const target: Record<AnimationField, Wire> = {
-      ...visibleTarget,
-      translateX: emitSelect(circuit, nextVisible[windowIndex]!, hiddenTranslateX, zero),
-      translateY: emitSelect(circuit, nextVisible[windowIndex]!, hiddenTranslateY, zero),
+      centerX: emitSelect(circuit, nextVisible[windowIndex]!, dockCenterX, visibleCenterX),
+      centerY: emitSelect(circuit, nextVisible[windowIndex]!, dockCenterY, visibleCenterY),
+      width: visibleTarget.width,
+      height: visibleTarget.height,
       scale: nextVisible[windowIndex]!,
     }
     const state = {} as Record<AnimationField, SpringState>
-    const animated = {} as Geometry
     const allActivity: Wire[] = []
-    const dockActivity: Wire[] = []
     const hiddenAndAbsent = emitMultiply(
       circuit,
       emitComplement(circuit, currentPresent[windowIndex]!, unit),
@@ -819,37 +818,63 @@ export function compileWindowManagerCircuit() {
         active: emitMultiply(circuit, emitComplement(circuit, direct, unit), steppedSpring.active),
       }
       state[field] = spring
-      if (field === 'left' || field === 'top' || field === 'width' || field === 'height') {
-        animated[field] = spring.position
-      } else {
-        dockActivity.push(spring.active)
-      }
       allActivity.push(spring.active)
     }
+    const width = emitClampDynamic(
+      circuit,
+      state.width.position,
+      zero,
+      sourceField.viewportWidth,
+    )
+    const height = emitClampDynamic(
+      circuit,
+      state.height.position,
+      zero,
+      sourceField.viewportHeight,
+    )
+    const halfWidth = circuit.affine([[width, 0.5]])
+    const halfHeight = circuit.affine([[height, 0.5]])
+    const scaledHalfWidth = emitMultiply(circuit, halfWidth, state.scale.position)
+    const scaledHalfHeight = emitMultiply(circuit, halfHeight, state.scale.position)
+    const centerX = emitClampDynamic(
+      circuit,
+      state.centerX.position,
+      scaledHalfWidth,
+      circuit.affine([[sourceField.viewportWidth, 1], [scaledHalfWidth, -1]]),
+    )
+    const centerY = emitClampDynamic(
+      circuit,
+      state.centerY.position,
+      scaledHalfHeight,
+      circuit.affine([[sourceField.viewportHeight, 1], [scaledHalfHeight, -1]]),
+    )
+    const active = emitClampZeroOne(
+      circuit,
+      circuit.affine(allActivity.map(laneActive => [laneActive, 1])),
+      unit,
+    )
     windowAnimations.push({
-      geometry: emitBoundedScreenGeometry(
-        circuit,
-        animated,
-        sourceField.viewportWidth,
-        sourceField.viewportHeight,
-        zero,
-      ),
+      geometry: {
+        left: visibleTarget.left,
+        top: visibleTarget.top,
+        width,
+        height,
+      },
       transform: {
-        translateX: state.translateX.position,
-        translateY: state.translateY.position,
+        translateX: circuit.affine([
+          [centerX, 1],
+          [visibleTarget.left, -1],
+          [halfWidth, -1],
+        ]),
+        translateY: circuit.affine([
+          [centerY, 1],
+          [visibleTarget.top, -1],
+          [halfHeight, -1],
+        ]),
         scale: state.scale.position,
       },
       springs: state,
-      active: emitClampZeroOne(
-        circuit,
-        circuit.affine(allActivity.map(active => [active, 1])),
-        unit,
-      ),
-      dockActive: emitClampZeroOne(
-        circuit,
-        circuit.affine(dockActivity.map(active => [active, 1])),
-        unit,
-      ),
+      active,
     })
   }
   const animationActive = emitClampZeroOne(
@@ -865,7 +890,7 @@ export function compileWindowManagerCircuit() {
         [emitMultiply(
           circuit,
           currentPresent[windowIndex]!,
-          windowAnimations[windowIndex]!.dockActive,
+          windowAnimations[windowIndex]!.active,
         ), 1],
       ]),
       unit,
@@ -913,7 +938,7 @@ export function compileWindowManagerCircuit() {
     for (let rank = 0; rank < windowCount; rank++) {
       stackTerms.push([nextStack[rank]![windowIndex]!, rank + 1])
     }
-    stackTerms.push([animation.dockActive, 40])
+    stackTerms.push([animation.active, 40])
     windows.push(
       geometry.left,
       geometry.top,
@@ -988,8 +1013,10 @@ export function createWindowManagerMachine(
     source[windowSourceField(windowIndex, windowStateField.open)] = 1
     source[windowSourceField(windowIndex, windowStateField.present)] = 1
     source[stackSourceField(windowIndex, windowIndex)] = 1
-    source[springSourceField(windowIndex, springStateField.left)] = geometry[0]
-    source[springSourceField(windowIndex, springStateField.top)] = geometry[1]
+    source[springSourceField(windowIndex, springStateField.centerX)] =
+      geometry[0] + geometry[2] / 2
+    source[springSourceField(windowIndex, springStateField.centerY)] =
+      geometry[1] + geometry[3] / 2
     source[springSourceField(windowIndex, springStateField.width)] = geometry[2]
     source[springSourceField(windowIndex, springStateField.height)] = geometry[3]
     source[springSourceField(windowIndex, springStateField.scale)] = 1
@@ -1238,33 +1265,6 @@ function emitAbsolute(circuit: Circuit, value: Wire) {
     [emitRelu(circuit, value), 1],
     [emitRelu(circuit, circuit.affine([[value, -1]])), 1],
   ])
-}
-
-function emitBoundedScreenGeometry(
-  circuit: Circuit,
-  geometry: Geometry,
-  viewportWidth: Wire,
-  viewportHeight: Wire,
-  zero: Wire,
-): Geometry {
-  const width = emitClampDynamic(circuit, geometry.width, zero, viewportWidth)
-  const height = emitClampDynamic(circuit, geometry.height, zero, viewportHeight)
-  return {
-    left: emitClampDynamic(
-      circuit,
-      geometry.left,
-      zero,
-      circuit.affine([[viewportWidth, 1], [width, -1]]),
-    ),
-    top: emitClampDynamic(
-      circuit,
-      geometry.top,
-      zero,
-      circuit.affine([[viewportHeight, 1], [height, -1]]),
-    ),
-    width,
-    height,
-  }
 }
 
 function emitFrontmost(

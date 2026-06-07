@@ -43,9 +43,9 @@ photo-gallery-00..11.webp     twelve fixed image constants
 The window manager has four preallocated windows. Its single source table holds
 viewport facts, layout constants, raw pointer latches, normal window geometry,
 open/minimized/maximized flags, drag and resize targets, a 4 by 4 stacking
-matrix, visual-presence flags, frame time, and seven position/velocity spring
-pairs per window: four for geometry and three for translation and scale. One
-fixed circuit computes:
+matrix, visual-presence flags, frame time, and five position/velocity spring
+pairs per window: center X/Y, width/height, and scale. One fixed circuit
+computes:
 
 ```txt
 topmost hit selection and focus
@@ -84,8 +84,8 @@ representing the same fixed rectangular matrices.
 The measured tensor footprints are:
 
 ```txt
-window manager: source 147, graph width 3,525, live values 1,855, layers 49
-                stored weights 9,276, layer tensor bytes 175,140
+window manager: source 131, graph width 3,064, live values 1,591, layers 49
+                stored weights 7,448, layer tensor bytes 142,376
 photo lightbox: source 24, graph width 583, live values 338, layers 9
                 stored weights 2,339, layer tensor bytes 36,908
 ```
@@ -121,6 +121,7 @@ window geometry destinations and recurrent spring convergence
 faster dock transitions with a 600 ms settle budget
 direct manipulation bypass and reversible dock transitions
 fixed-layout translation and scale-to-zero dock motion
+full-strength actions across visible window-control edges
 ```
 
 ## TODO
