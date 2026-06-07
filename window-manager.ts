@@ -24,7 +24,8 @@ export const windowStateField = {
   open: 4,
   minimized: 5,
   maximized: 6,
-  size: 7,
+  present: 7,
+  size: 8,
 } as const
 
 export const windowOutputField = {
@@ -32,11 +33,14 @@ export const windowOutputField = {
   top: 1,
   width: 2,
   height: 3,
-  opacity: 4,
-  focused: 5,
-  stack: 6,
-  maximized: 7,
-  size: 8,
+  translateX: 4,
+  translateY: 5,
+  scale: 6,
+  opacity: 7,
+  focused: 8,
+  stack: 9,
+  maximized: 10,
+  size: 11,
 } as const
 
 export const dockOutputField = {
@@ -50,10 +54,29 @@ export const dockOutputField = {
   size: 7,
 } as const
 
-const windowStateStart = 25
+export const springStateField = {
+  left: 0,
+  top: 1,
+  width: 2,
+  height: 3,
+  translateX: 4,
+  translateY: 5,
+  scale: 6,
+  leftVelocity: 7,
+  topVelocity: 8,
+  widthVelocity: 9,
+  heightVelocity: 10,
+  translateXVelocity: 11,
+  translateYVelocity: 12,
+  scaleVelocity: 13,
+  size: 14,
+} as const
+
+const windowStateStart = 35
 const dragStart = windowStateStart + windowCount * windowStateField.size
 const resizeStart = dragStart + windowCount
 const stackStart = resizeStart + windowCount
+const springStart = stackStart + windowCount * windowCount
 
 export const sourceField = {
   viewportWidth: 0,
@@ -81,14 +104,46 @@ export const sourceField = {
   pointerX: 22,
   pointerY: 23,
   systemBarHeight: 24,
+  frameTime: 25,
+  previousFrameTime: 26,
+  timeInitialized: 27,
+  springStiffness: 28,
+  springDamping: 29,
+  springMaxFrameDuration: 30,
+  springSettleDistance: 31,
+  springSettleSpeed: 32,
+  springSettleDistanceScale: 33,
+  springSettleSpeedScale: 34,
   windowStart: windowStateStart,
   dragStart,
   resizeStart,
   stackStart,
-  size: stackStart + windowCount * windowCount,
+  springStart,
+  size: springStart + windowCount * springStateField.size,
 } as const
 
 const geometryFields = ['left', 'top', 'width', 'height'] as const
+const transformFields = ['translateX', 'translateY', 'scale'] as const
+const animationFields = [...geometryFields, ...transformFields] as const
+type AnimationField = (typeof animationFields)[number]
+const springPositionField: Record<AnimationField, number> = {
+  left: springStateField.left,
+  top: springStateField.top,
+  width: springStateField.width,
+  height: springStateField.height,
+  translateX: springStateField.translateX,
+  translateY: springStateField.translateY,
+  scale: springStateField.scale,
+}
+const springVelocityField: Record<AnimationField, number> = {
+  left: springStateField.leftVelocity,
+  top: springStateField.topVelocity,
+  width: springStateField.widthVelocity,
+  height: springStateField.heightVelocity,
+  translateX: springStateField.translateXVelocity,
+  translateY: springStateField.translateYVelocity,
+  scale: springStateField.scaleVelocity,
+}
 const eventActiveFields = [
   sourceField.downActive,
   sourceField.moveActive,
@@ -114,14 +169,34 @@ const constantFields = [
   sourceField.dockGap,
   sourceField.dockItemWidth,
   sourceField.systemBarHeight,
+  sourceField.springStiffness,
+  sourceField.springDamping,
+  sourceField.springMaxFrameDuration,
+  sourceField.springSettleDistance,
+  sourceField.springSettleSpeed,
+  sourceField.springSettleDistanceScale,
+  sourceField.springSettleSpeedScale,
 ] as const
 
 type Geometry = Record<(typeof geometryFields)[number], Wire>
+type Transform = Record<(typeof transformFields)[number], Wire>
+type SpringState = {
+  position: Wire
+  velocity: Wire
+}
+type WindowAnimation = {
+  geometry: Geometry
+  transform: Transform
+  springs: Record<AnimationField, SpringState>
+  active: Wire
+  dockActive: Wire
+}
 
 type WindowManagerOutput = {
   nextSource: Wire[]
   windows: Wire[]
   dockItems: Wire[]
+  animationActive: Wire
 }
 
 export function windowSourceField(windowIndex: number, field: number) {
@@ -161,11 +236,26 @@ export function stackSourceField(rank: number, windowIndex: number) {
   return sourceField.stackStart + rank * windowCount + windowIndex
 }
 
+export function springSourceField(windowIndex: number, field: number) {
+  invariant(
+    Number.isInteger(windowIndex) && windowIndex >= 0 && windowIndex < windowCount,
+    'spring window index is invalid',
+  )
+  invariant(
+    Number.isInteger(field) && field >= 0 && field < springStateField.size,
+    'spring field is invalid',
+  )
+  return sourceField.springStart + windowIndex * springStateField.size + field
+}
+
 export function compileWindowManagerCircuit() {
   const circuit = new Circuit(sourceField.size)
   circuit.assumeRange(sourceField.viewportWidth, 0, Number.POSITIVE_INFINITY)
   circuit.assumeRange(sourceField.viewportHeight, 0, Number.POSITIVE_INFINITY)
   circuit.assumeRange(sourceField.unit, 1, 1)
+  circuit.assumeRange(sourceField.frameTime, 0, Number.POSITIVE_INFINITY)
+  circuit.assumeRange(sourceField.previousFrameTime, 0, Number.POSITIVE_INFINITY)
+  circuit.assumeRange(sourceField.timeInitialized, 0, 1)
   for (const field of constantFields) circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
   for (const field of eventActiveFields) circuit.assumeRange(field, 0, 1)
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
@@ -181,11 +271,13 @@ export function compileWindowManagerCircuit() {
       windowStateField.open,
       windowStateField.minimized,
       windowStateField.maximized,
+      windowStateField.present,
     ]) {
       circuit.assumeRange(windowSourceField(windowIndex, field), 0, 1)
     }
     circuit.assumeRange(dragSourceField(windowIndex), 0, 1)
     circuit.assumeRange(resizeSourceField(windowIndex), 0, 1)
+    circuit.assumeRange(springSourceField(windowIndex, springStateField.scale), 0, 1)
     for (let rank = 0; rank < windowCount; rank++) {
       circuit.assumeRange(stackSourceField(rank, windowIndex), 0, 1)
     }
@@ -193,6 +285,20 @@ export function compileWindowManagerCircuit() {
 
   const unit = sourceField.unit
   const zero = circuit.affine([])
+  const frameDuration = emitMultiply(
+    circuit,
+    sourceField.timeInitialized,
+    emitClampDynamic(
+      circuit,
+      circuit.affine([
+        [sourceField.frameTime, 1],
+        [sourceField.previousFrameTime, -1],
+      ]),
+      zero,
+      sourceField.springMaxFrameDuration,
+    ),
+  )
+  const springTimestep = circuit.affine([[frameDuration, 0.001 / 4]])
   const effectiveDockHeight = emitMinimum(
     circuit,
     sourceField.dockHeight,
@@ -226,12 +332,11 @@ export function compileWindowManagerCircuit() {
       [maximumTopInset, -2],
     ])),
   }
-
   const currentNormalGeometry: Geometry[] = []
-  const currentGeometry: Geometry[] = []
   const currentOpen: Wire[] = []
   const currentMinimized: Wire[] = []
   const currentMaximized: Wire[] = []
+  const currentPresent: Wire[] = []
   const currentVisible: Wire[] = []
   const windowHit: Wire[] = []
   const closeHit: Wire[] = []
@@ -251,9 +356,11 @@ export function compileWindowManagerCircuit() {
     const open = windowSourceField(windowIndex, windowStateField.open)
     const minimized = windowSourceField(windowIndex, windowStateField.minimized)
     const maximized = windowSourceField(windowIndex, windowStateField.maximized)
+    const present = windowSourceField(windowIndex, windowStateField.present)
     currentOpen.push(open)
     currentMinimized.push(minimized)
     currentMaximized.push(maximized)
+    currentPresent.push(present)
     const visible = emitMultiply(circuit, open, emitComplement(circuit, minimized, unit))
     currentVisible.push(visible)
     const geometry = {
@@ -262,7 +369,6 @@ export function compileWindowManagerCircuit() {
       width: emitSelect(circuit, maximized, normalGeometry.width, maximumGeometry.width),
       height: emitSelect(circuit, maximized, normalGeometry.height, maximumGeometry.height),
     }
-    currentGeometry.push(geometry)
     windowHit.push(emitMultiply(
       circuit,
       visible,
@@ -479,6 +585,7 @@ export function compileWindowManagerCircuit() {
   const nextMaximized: Wire[] = []
   const nextDrag: Wire[] = []
   const nextResize: Wire[] = []
+  const directManipulation: Wire[] = []
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const dragForMotion = emitSelect(
       circuit,
@@ -494,6 +601,11 @@ export function compileWindowManagerCircuit() {
     )
     nextDrag.push(emitMultiply(circuit, dragForMotion, pointerStillDown))
     nextResize.push(emitMultiply(circuit, resizeForMotion, pointerStillDown))
+    directManipulation.push(emitClampZeroOne(
+      circuit,
+      circuit.affine([[dragForMotion, 1], [resizeForMotion, 1]]),
+      unit,
+    ))
 
     const current = currentNormalGeometry[windowIndex]!
     const widthCandidate = circuit.affine([
@@ -644,6 +756,120 @@ export function compileWindowManagerCircuit() {
     })
   }
   const focusedWindow = emitFrontmost(circuit, nextStack, nextVisible, unit)
+  const windowAnimations: WindowAnimation[] = []
+  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+    const visibleTarget = effectiveGeometry[windowIndex]!
+    const dockTarget = dockGeometry[windowIndex]!
+    const hiddenTranslateX = circuit.affine([
+      [dockTarget.left, 1],
+      [dockTarget.width, 0.5],
+      [visibleTarget.left, -1],
+      [visibleTarget.width, -0.5],
+    ])
+    const hiddenTranslateY = circuit.affine([
+      [dockTarget.top, 1],
+      [dockTarget.height, 0.5],
+      [visibleTarget.top, -1],
+      [visibleTarget.height, -0.5],
+    ])
+    const target: Record<AnimationField, Wire> = {
+      ...visibleTarget,
+      translateX: emitSelect(circuit, nextVisible[windowIndex]!, hiddenTranslateX, zero),
+      translateY: emitSelect(circuit, nextVisible[windowIndex]!, hiddenTranslateY, zero),
+      scale: nextVisible[windowIndex]!,
+    }
+    const state = {} as Record<AnimationField, SpringState>
+    const animated = {} as Geometry
+    const allActivity: Wire[] = []
+    const dockActivity: Wire[] = []
+    const hiddenAndAbsent = emitMultiply(
+      circuit,
+      emitComplement(circuit, currentPresent[windowIndex]!, unit),
+      emitComplement(circuit, nextVisible[windowIndex]!, unit),
+    )
+    const direct = emitClampZeroOne(
+      circuit,
+      circuit.affine([
+        [directManipulation[windowIndex]!, 1],
+        [hiddenAndAbsent, 1],
+      ]),
+      unit,
+    )
+    for (const field of animationFields) {
+      const steppedSpring = emitSpring(
+        circuit,
+        springSourceField(windowIndex, springPositionField[field]),
+        target[field],
+        springSourceField(windowIndex, springVelocityField[field]),
+        sourceField.springStiffness,
+        sourceField.springDamping,
+        springTimestep,
+        sourceField.springSettleDistance,
+        sourceField.springSettleSpeed,
+        sourceField.springSettleDistanceScale,
+        sourceField.springSettleSpeedScale,
+        unit,
+      )
+      const position = field === 'scale'
+        ? emitClampDynamic(circuit, steppedSpring.position, zero, unit)
+        : steppedSpring.position
+      const spring = {
+        position: emitSelect(circuit, direct, position, target[field]),
+        velocity: emitSelect(circuit, direct, steppedSpring.velocity, zero),
+        active: emitMultiply(circuit, emitComplement(circuit, direct, unit), steppedSpring.active),
+      }
+      state[field] = spring
+      if (field === 'left' || field === 'top' || field === 'width' || field === 'height') {
+        animated[field] = spring.position
+      } else {
+        dockActivity.push(spring.active)
+      }
+      allActivity.push(spring.active)
+    }
+    windowAnimations.push({
+      geometry: emitBoundedScreenGeometry(
+        circuit,
+        animated,
+        sourceField.viewportWidth,
+        sourceField.viewportHeight,
+        zero,
+      ),
+      transform: {
+        translateX: state.translateX.position,
+        translateY: state.translateY.position,
+        scale: state.scale.position,
+      },
+      springs: state,
+      active: emitClampZeroOne(
+        circuit,
+        circuit.affine(allActivity.map(active => [active, 1])),
+        unit,
+      ),
+      dockActive: emitClampZeroOne(
+        circuit,
+        circuit.affine(dockActivity.map(active => [active, 1])),
+        unit,
+      ),
+    })
+  }
+  const animationActive = emitClampZeroOne(
+    circuit,
+    circuit.affine(windowAnimations.map(animation => [animation.active, 1])),
+    unit,
+  )
+  const nextPresent = Array.from({length: windowCount}, (_, windowIndex) =>
+    emitClampZeroOne(
+      circuit,
+      circuit.affine([
+        [nextVisible[windowIndex]!, 1],
+        [emitMultiply(
+          circuit,
+          currentPresent[windowIndex]!,
+          windowAnimations[windowIndex]!.dockActive,
+        ), 1],
+      ]),
+      unit,
+    ))
 
   const nextSource = Array.from({length: sourceField.size}, (_, field) => field)
   nextSource[sourceField.downActive] = zero
@@ -651,6 +877,8 @@ export function compileWindowManagerCircuit() {
   nextSource[sourceField.upActive] = zero
   nextSource[sourceField.pointerX] = pointerX
   nextSource[sourceField.pointerY] = pointerY
+  nextSource[sourceField.previousFrameTime] = sourceField.frameTime
+  nextSource[sourceField.timeInitialized] = unit
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const geometry = nextNormalGeometry[windowIndex]!
     nextSource[windowSourceField(windowIndex, windowStateField.left)] = geometry.left
@@ -662,27 +890,39 @@ export function compileWindowManagerCircuit() {
       nextMinimized[windowIndex]!
     nextSource[windowSourceField(windowIndex, windowStateField.maximized)] =
       nextMaximized[windowIndex]!
+    nextSource[windowSourceField(windowIndex, windowStateField.present)] =
+      nextPresent[windowIndex]!
     nextSource[dragSourceField(windowIndex)] = nextDrag[windowIndex]!
     nextSource[resizeSourceField(windowIndex)] = nextResize[windowIndex]!
     for (let rank = 0; rank < windowCount; rank++) {
       nextSource[stackSourceField(rank, windowIndex)] = nextStack[rank]![windowIndex]!
+    }
+    for (const field of animationFields) {
+      const spring = windowAnimations[windowIndex]!.springs[field]
+      nextSource[springSourceField(windowIndex, springPositionField[field])] = spring.position
+      nextSource[springSourceField(windowIndex, springVelocityField[field])] = spring.velocity
     }
   }
 
   const windows: Wire[] = []
   const dockItems: Wire[] = []
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    const geometry = effectiveGeometry[windowIndex]!
+    const animation = windowAnimations[windowIndex]!
+    const geometry = animation.geometry
     const stackTerms: [Wire, number][] = []
     for (let rank = 0; rank < windowCount; rank++) {
       stackTerms.push([nextStack[rank]![windowIndex]!, rank + 1])
     }
+    stackTerms.push([animation.dockActive, 40])
     windows.push(
       geometry.left,
       geometry.top,
       geometry.width,
       geometry.height,
-      nextVisible[windowIndex]!,
+      animation.transform.translateX,
+      animation.transform.translateY,
+      animation.transform.scale,
+      nextPresent[windowIndex]!,
       focusedWindow[windowIndex]!,
       circuit.affine(stackTerms),
       nextMaximized[windowIndex]!,
@@ -705,6 +945,7 @@ export function compileWindowManagerCircuit() {
       nextSource,
       windows,
       dockItems,
+      animationActive,
     },
   }
 }
@@ -725,6 +966,13 @@ export function createWindowManagerMachine(
   source[sourceField.dockGap] = 12
   source[sourceField.dockItemWidth] = 50
   source[sourceField.systemBarHeight] = 36
+  source[sourceField.springStiffness] = 650
+  source[sourceField.springDamping] = 45
+  source[sourceField.springMaxFrameDuration] = 32
+  source[sourceField.springSettleDistance] = 0.01
+  source[sourceField.springSettleSpeed] = 0.01
+  source[sourceField.springSettleDistanceScale] = 100
+  source[sourceField.springSettleSpeedScale] = 100
   const initialGeometry = [
     [54, 54, 520, 340],
     [410, 104, 500, 366],
@@ -738,7 +986,13 @@ export function createWindowManagerMachine(
     source[windowSourceField(windowIndex, windowStateField.width)] = geometry[2]
     source[windowSourceField(windowIndex, windowStateField.height)] = geometry[3]
     source[windowSourceField(windowIndex, windowStateField.open)] = 1
+    source[windowSourceField(windowIndex, windowStateField.present)] = 1
     source[stackSourceField(windowIndex, windowIndex)] = 1
+    source[springSourceField(windowIndex, springStateField.left)] = geometry[0]
+    source[springSourceField(windowIndex, springStateField.top)] = geometry[1]
+    source[springSourceField(windowIndex, springStateField.width)] = geometry[2]
+    source[springSourceField(windowIndex, springStateField.height)] = geometry[3]
+    source[springSourceField(windowIndex, springStateField.scale)] = 1
   }
 
   const {circuit, output} = compileWindowManagerCircuit()
@@ -748,6 +1002,7 @@ export function createWindowManagerMachine(
     ...output.nextSource,
     ...output.windows,
     ...output.dockItems,
+    output.animationActive,
   ])
   validateTensorProgram(circuit, tensorProgram)
 
@@ -763,9 +1018,11 @@ export function createWindowManagerMachine(
     output,
     source,
     tensorProgram,
-    step(viewportWidth: number, viewportHeight: number) {
+    step(viewportWidth: number, viewportHeight: number, frameTime: number) {
+      invariant(Number.isFinite(frameTime) && frameTime >= 0, 'frame time must be nonnegative')
       source[sourceField.viewportWidth] = viewportWidth
       source[sourceField.viewportHeight] = viewportHeight
+      source[sourceField.frameTime] = frameTime
       validateWindowManagerSource(source)
       const values = circuit.evaluateTensor(source)
       if (checkTensorEvaluation) validateTensorEvaluation(source, circuit, values)
@@ -798,29 +1055,33 @@ declare global {
 export function mountWindowManager(document: Document, window: Window) {
   const machine = createWindowManagerMachine()
   const desktop = document.querySelector<HTMLElement>('#desktop')
-  const windowElements = [...document.querySelectorAll<HTMLElement>('.window')]
+  const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
   const readout = document.querySelector<HTMLElement>('#readout')
   invariant(desktop !== null, 'desktop is missing')
-  invariant(windowElements.length === windowCount, 'window node count mismatch')
+  invariant(windows.length === windowCount, 'window node count mismatch')
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
   invariant(readout !== null, 'readout is missing')
-  const desktopElement = desktop
-  const readoutElement = readout
+  const domCache = {
+    desktop, // mount lifetime
+    windows, // mount lifetime
+    dockItems, // mount lifetime
+    readout, // mount lifetime
+  }
   const storedWeightCount = machine.tensorProgram.layers.reduce(
     (sum, layer) => sum + layer.weights.length,
     0,
   )
-  readoutElement.textContent =
+  domCache.readout.textContent =
     `${machine.source.length} table cells · ${machine.tensorProgram.layers.length} layers · `
     + `${storedWeightCount} weights`
 
-  desktopElement.style.setProperty('--title-height', `${machine.source[sourceField.titleHeight]}px`)
-  desktopElement.style.setProperty('--button-size', `${machine.source[sourceField.buttonSize]}px`)
-  desktopElement.style.setProperty('--button-gap', `${machine.source[sourceField.buttonGap]}px`)
-  desktopElement.style.setProperty('--resize-grip', `${machine.source[sourceField.resizeGrip]}px`)
-  desktopElement.style.setProperty('--dock-height', `${machine.source[sourceField.dockHeight]}px`)
-  desktopElement.style.setProperty(
+  domCache.desktop.style.setProperty('--title-height', `${machine.source[sourceField.titleHeight]}px`)
+  domCache.desktop.style.setProperty('--button-size', `${machine.source[sourceField.buttonSize]}px`)
+  domCache.desktop.style.setProperty('--button-gap', `${machine.source[sourceField.buttonGap]}px`)
+  domCache.desktop.style.setProperty('--resize-grip', `${machine.source[sourceField.resizeGrip]}px`)
+  domCache.desktop.style.setProperty('--dock-height', `${machine.source[sourceField.dockHeight]}px`)
+  domCache.desktop.style.setProperty(
     '--system-bar-height',
     `${machine.source[sourceField.systemBarHeight]}px`,
   )
@@ -831,16 +1092,23 @@ export function mountWindowManager(document: Document, window: Window) {
     scheduledRaf = window.requestAnimationFrame(renderWindowManager)
   }
 
-  function renderWindowManager() {
+  function renderWindowManager(frameTime: number) {
     scheduledRaf = null
     const viewportWidth = document.documentElement.clientWidth
     const viewportHeight = document.documentElement.clientHeight
-    const values = machine.step(viewportWidth, viewportHeight)
+    const values = machine.step(viewportWidth, viewportHeight, frameTime)
 
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-      const element = windowElements[windowIndex]!
+      const element = domCache.windows[windowIndex]!
       const outputStart = windowIndex * windowOutputField.size
       projectGeometry(element, values, machine.output.windows, outputStart, windowOutputField)
+      const translateX =
+        values[machine.output.windows[outputStart + windowOutputField.translateX]!]!
+      const translateY =
+        values[machine.output.windows[outputStart + windowOutputField.translateY]!]!
+      const scale = values[machine.output.windows[outputStart + windowOutputField.scale]!]!
+      element.style.transform =
+        `translate3d(${translateX}px,${translateY}px,0) scale(${scale})`
       element.style.opacity =
         `${values[machine.output.windows[outputStart + windowOutputField.opacity]!]}`
       element.style.zIndex =
@@ -855,7 +1123,7 @@ export function mountWindowManager(document: Document, window: Window) {
       )
     }
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-      const element = dockItems[windowIndex]!
+      const element = domCache.dockItems[windowIndex]!
       const outputStart = windowIndex * dockOutputField.size
       projectGeometry(element, values, machine.output.dockItems, outputStart, dockOutputField)
       element.style.setProperty(
@@ -871,6 +1139,7 @@ export function mountWindowManager(document: Document, window: Window) {
         `${values[machine.output.dockItems[outputStart + dockOutputField.open]!]}`,
       )
     }
+    if (values[machine.output.animationActive]! > 0) scheduleRender()
   }
 
   window.addEventListener('pointerdown', (event: PointerEvent) => {
@@ -890,7 +1159,7 @@ export function mountWindowManager(document: Document, window: Window) {
     scheduleRender()
   })
   window.addEventListener('resize', scheduleRender)
-  renderWindowManager()
+  renderWindowManager(window.performance.now())
   return machine
 }
 
@@ -904,6 +1173,97 @@ function projectGeometry(
   for (const geometryField of geometryFields) {
     element.style[geometryField] =
       `${values[output[outputStart + field[geometryField]]!]}px`
+  }
+}
+
+function emitSpring(
+  circuit: Circuit,
+  positionSource: Wire,
+  destination: Wire,
+  velocitySource: Wire,
+  stiffness: Wire,
+  damping: Wire,
+  timestep: Wire,
+  settleDistance: Wire,
+  settleSpeed: Wire,
+  settleDistanceScale: Wire,
+  settleSpeedScale: Wire,
+  unit: Wire,
+) {
+  let position = positionSource
+  let velocity = velocitySource
+  for (let step = 0; step < 4; step++) {
+    const displacement = circuit.affine([[position, 1], [destination, -1]])
+    const springForce = emitMultiply(circuit, stiffness, displacement)
+    const dampingForce = emitMultiply(circuit, damping, velocity)
+    const acceleration = circuit.affine([
+      [springForce, -1],
+      [dampingForce, -1],
+    ])
+    velocity = circuit.affine([
+      [velocity, 1],
+      [emitMultiply(circuit, acceleration, timestep), 1],
+    ])
+    position = circuit.affine([
+      [position, 1],
+      [emitMultiply(circuit, velocity, timestep), 1],
+    ])
+  }
+
+  const distanceAboveThreshold = emitRelu(circuit, circuit.affine([
+    [emitAbsolute(circuit, circuit.affine([[position, 1], [destination, -1]])), 1],
+    [settleDistance, -1],
+  ]))
+  const speedAboveThreshold = emitRelu(circuit, circuit.affine([
+    [emitAbsolute(circuit, velocity), 1],
+    [settleSpeed, -1],
+  ]))
+  const active = emitClampZeroOne(
+    circuit,
+    circuit.affine([
+      [emitMultiply(circuit, distanceAboveThreshold, settleDistanceScale), 1],
+      [emitMultiply(circuit, speedAboveThreshold, settleSpeedScale), 1],
+    ]),
+    unit,
+  )
+  return {
+    position: emitSelect(circuit, active, destination, position),
+    velocity: emitMultiply(circuit, active, velocity),
+    active,
+  }
+}
+
+function emitAbsolute(circuit: Circuit, value: Wire) {
+  return circuit.affine([
+    [emitRelu(circuit, value), 1],
+    [emitRelu(circuit, circuit.affine([[value, -1]])), 1],
+  ])
+}
+
+function emitBoundedScreenGeometry(
+  circuit: Circuit,
+  geometry: Geometry,
+  viewportWidth: Wire,
+  viewportHeight: Wire,
+  zero: Wire,
+): Geometry {
+  const width = emitClampDynamic(circuit, geometry.width, zero, viewportWidth)
+  const height = emitClampDynamic(circuit, geometry.height, zero, viewportHeight)
+  return {
+    left: emitClampDynamic(
+      circuit,
+      geometry.left,
+      zero,
+      circuit.affine([[viewportWidth, 1], [width, -1]]),
+    ),
+    top: emitClampDynamic(
+      circuit,
+      geometry.top,
+      zero,
+      circuit.affine([[viewportHeight, 1], [height, -1]]),
+    ),
+    width,
+    height,
   }
 }
 
@@ -997,6 +1357,9 @@ function validateWindowManagerSource(values: unknown) {
   assertFiniteValues(values, 'source table')
   assertNonNegativeFinite(values[sourceField.viewportWidth], 'viewport width')
   assertNonNegativeFinite(values[sourceField.viewportHeight], 'viewport height')
+  assertNonNegativeFinite(values[sourceField.frameTime], 'frame time')
+  assertNonNegativeFinite(values[sourceField.previousFrameTime], 'previous frame time')
+  assertUnitInterval(values[sourceField.timeInitialized], 'time initialized')
   invariant(values[sourceField.unit] === 1, 'unit cell must equal one')
   for (const field of constantFields) {
     assertNonNegativeFinite(values[field], 'window manager constant')
@@ -1026,6 +1389,7 @@ function validateWindowManagerSource(values: unknown) {
       windowStateField.open,
       windowStateField.minimized,
       windowStateField.maximized,
+      windowStateField.present,
     ]) {
       assertUnitInterval(values[windowSourceField(windowIndex, field)], 'window flag')
     }
@@ -1035,6 +1399,20 @@ function validateWindowManagerSource(values: unknown) {
     assertUnitInterval(resize, 'resize target')
     dragMass += drag
     resizeMass += resize
+    for (const field of animationFields) {
+      invariant(
+        Number.isFinite(values[springSourceField(windowIndex, springPositionField[field])]),
+        'spring position must be finite',
+      )
+      invariant(
+        Number.isFinite(values[springSourceField(windowIndex, springVelocityField[field])]),
+        'spring velocity must be finite',
+      )
+    }
+    assertUnitInterval(
+      values[springSourceField(windowIndex, springStateField.scale)],
+      'spring scale',
+    )
   }
   invariant(dragMass <= 1 + 1e-9, 'drag target mass must not exceed one')
   invariant(resizeMass <= 1 + 1e-9, 'resize target mass must not exceed one')
@@ -1061,6 +1439,7 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
   validateWireView(output.nextSource, sourceField.size, wireCount)
   validateWireView(output.windows, windowCount * windowOutputField.size, wireCount)
   validateWireView(output.dockItems, windowCount * dockOutputField.size, wireCount)
+  validateWireView([output.animationActive], 1, wireCount)
 }
 
 function validateWindowManagerOutput(values: Float64Array, output: WindowManagerOutput) {
@@ -1070,6 +1449,7 @@ function validateWindowManagerOutput(values: Float64Array, output: WindowManager
   for (const field of eventActiveFields) {
     invariant(nextSource[field] === 0, 'event latch must reset after refresh')
   }
+  assertUnitInterval(values[output.animationActive], 'animation active')
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const outputStart = windowIndex * windowOutputField.size
     for (const field of geometryFields) {
@@ -1079,11 +1459,18 @@ function validateWindowManagerOutput(values: Float64Array, output: WindowManager
       )
     }
     for (const field of [
+      windowOutputField.scale,
       windowOutputField.opacity,
       windowOutputField.focused,
       windowOutputField.maximized,
     ]) {
       assertUnitInterval(values[output.windows[outputStart + field]!], 'projected window flag')
+    }
+    for (const field of [windowOutputField.translateX, windowOutputField.translateY]) {
+      invariant(
+        Number.isFinite(values[output.windows[outputStart + field]!]),
+        'projected window translation must be finite',
+      )
     }
     assertNonNegativeFinite(
       values[output.windows[outputStart + windowOutputField.stack]!],

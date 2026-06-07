@@ -101,8 +101,7 @@ body {
     0 calc(14px + var(--focused) * 12px)
       calc(44px + var(--focused) * 24px) rgb(0 0 0 / 46%),
     inset 0 1px rgb(255 255 255 / 7%);
-  transform: translateZ(0);
-  transform-origin: 50% 100%;
+  transform-origin: 50% 50%;
   backdrop-filter: blur(26px) saturate(125%);
 }
 
@@ -476,7 +475,6 @@ body {
     0 8px 24px rgb(0 0 0 / 28%),
     inset 0 1px rgb(255 255 255 / 13%);
   filter: saturate(calc(1 - var(--inactive) * 0.42));
-  transform: translateY(calc(var(--inactive) * -3px));
   pointer-events: auto;
 }
 

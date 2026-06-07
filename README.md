@@ -42,21 +42,27 @@ photo-gallery-00..11.webp     twelve fixed image constants
 
 The window manager has four preallocated windows. Its single source table holds
 viewport facts, layout constants, raw pointer latches, normal window geometry,
-open/minimized/maximized flags, drag and resize targets, and a 4 by 4 stacking
-matrix. One fixed circuit computes:
+open/minimized/maximized flags, drag and resize targets, a 4 by 4 stacking
+matrix, visual-presence flags, frame time, and seven position/velocity spring
+pairs per window: four for geometry and three for translation and scale. One
+fixed circuit computes:
 
 ```txt
 topmost hit selection and focus
 stable raise-to-front ordering
-dragging, resizing, and workspace bounds
-minimize, maximize, close, and dock restore
+immediate dragging, resizing, and workspace bounds
+minimize and close into dock icons; restore and open out of them
+stable target hit geometry independent of animated presentation
+four fixed spring substeps for every geometry and transform lane
 all window and dock projection geometry
 ```
 
 JavaScript event callbacks only record raw pointer facts and schedule one
-render. The render reads viewport dimensions, evaluates the numeric program,
-copies its next-state wire view into the same source table, and writes projected
-values onto permanent DOM nodes.
+render. The render supplies viewport dimensions and the RAF timestamp,
+evaluates the numeric program, copies its next-state wire view into the same
+source table, and writes projected values onto permanent DOM nodes. A numeric
+animation-active output requests another frame until every spring has snapped
+exactly to its destination.
 
 At startup, the circuit compiles into fixed gated layers. Every refresh runs
 the same layers without window-specific runtime branches:
@@ -78,8 +84,8 @@ representing the same fixed rectangular matrices.
 The measured tensor footprints are:
 
 ```txt
-window manager: source 77, graph width 1,455, live values 751, layers 32
-                stored weights 3,346, layer tensor bytes 63,116
+window manager: source 147, graph width 3,525, live values 1,855, layers 49
+                stored weights 9,276, layer tensor bytes 175,140
 photo lightbox: source 24, graph width 583, live values 338, layers 9
                 stored weights 2,339, layer tensor bytes 36,908
 ```
@@ -111,6 +117,10 @@ finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 direct next-state and render-output wire views
 four expanded spring substeps per lane
+window geometry destinations and recurrent spring convergence
+faster dock transitions with a 600 ms settle budget
+direct manipulation bypass and reversible dock transitions
+fixed-layout translation and scale-to-zero dock motion
 ```
 
 ## TODO

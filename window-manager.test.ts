@@ -15,8 +15,41 @@ import {
 
 const viewportWidth = 1280
 const viewportHeight = 800
+const frameDuration = 16
 
 type Machine = ReturnType<typeof createWindowManagerMachine>
+const frameTimeByMachine = new WeakMap<Machine, number>()
+
+function step(
+  machine: Machine,
+  width = viewportWidth,
+  height = viewportHeight,
+  elapsed = frameDuration,
+) {
+  const frameTime = (frameTimeByMachine.get(machine) ?? 0) + elapsed
+  frameTimeByMachine.set(machine, frameTime)
+  return machine.step(width, height, frameTime)
+}
+
+function animationActive(machine: Machine, values: Float64Array) {
+  return values[machine.output.animationActive]!
+}
+
+function assertClose(actual: number, expected: number) {
+  assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} != ${expected}`)
+}
+
+function settleFrames(machine: Machine, width = viewportWidth, height = viewportHeight) {
+  for (let frames = 1; frames <= 240; frames++) {
+    const values = step(machine, width, height)
+    if (animationActive(machine, values) === 0) return {values, frames}
+  }
+  assert.fail('spring animation did not settle')
+}
+
+function settle(machine: Machine, width = viewportWidth, height = viewportHeight) {
+  return settleFrames(machine, width, height).values
+}
 
 function projectWindows(machine: Machine, values: Float64Array) {
   return Array.from({length: windowCount}, (_, windowIndex) => {
@@ -27,6 +60,9 @@ function projectWindows(machine: Machine, values: Float64Array) {
       top: values[output[start + windowOutputField.top]!]!,
       width: values[output[start + windowOutputField.width]!]!,
       height: values[output[start + windowOutputField.height]!]!,
+      translateX: values[output[start + windowOutputField.translateX]!]!,
+      translateY: values[output[start + windowOutputField.translateY]!]!,
+      scale: values[output[start + windowOutputField.scale]!]!,
       opacity: values[output[start + windowOutputField.opacity]!]!,
       focused: values[output[start + windowOutputField.focused]!]!,
       stack: values[output[start + windowOutputField.stack]!]!,
@@ -51,10 +87,24 @@ function projectDock(machine: Machine, values: Float64Array) {
   })
 }
 
+function assertCenteredOnDock(
+  window: ReturnType<typeof projectWindows>[number],
+  dock: ReturnType<typeof projectDock>[number],
+) {
+  assert.ok(Math.abs(
+    window.left + window.width / 2 + window.translateX
+    - (dock.left + dock.width / 2),
+  ) < 1e-9)
+  assert.ok(Math.abs(
+    window.top + window.height / 2 + window.translateY
+    - (dock.top + dock.height / 2),
+  ) < 1e-9)
+}
+
 function click(machine: Machine, x: number, y: number) {
   machine.pointerDown(x, y)
   machine.pointerUp(x, y)
-  return machine.step(viewportWidth, viewportHeight)
+  return step(machine)
 }
 
 function clickWindowControl(
@@ -95,7 +145,7 @@ function assertFocused(windows: ReturnType<typeof projectWindows>, windowIndex: 
 
 test('the fixed table projects four bounded windows and one focused front window', () => {
   const machine = createWindowManagerMachine()
-  const values = machine.step(viewportWidth, viewportHeight)
+  const values = step(machine)
   const windows = projectWindows(machine, values)
 
   assert.equal(machine.source.length, sourceField.size)
@@ -107,6 +157,9 @@ test('the fixed table projects four bounded windows and one focused front window
     top: 54,
     width: 520,
     height: 340,
+    translateX: 0,
+    translateY: 0,
+    scale: 1,
     opacity: 1,
     focused: 0,
     stack: 1,
@@ -119,7 +172,7 @@ test('the fixed table projects four bounded windows and one focused front window
 
 test('pointer selection raises a window and topmost overlap remains deterministic', () => {
   const machine = createWindowManagerMachine()
-  let values = machine.step(viewportWidth, viewportHeight)
+  let values = step(machine)
 
   values = click(machine, 100, 80)
   let windows = projectWindows(machine, values)
@@ -134,18 +187,30 @@ test('pointer selection raises a window and topmost overlap remains deterministi
 
 test('title dragging updates numeric geometry and clamps the whole window to the workspace', () => {
   const machine = createWindowManagerMachine()
-  let values = machine.step(viewportWidth, viewportHeight)
+  let values = step(machine)
   const initial = projectWindows(machine, values)[0]!
   const downX = initial.left + 46
   const downY = initial.top + 22
 
   machine.pointerDown(downX, downY)
-  values = machine.step(viewportWidth, viewportHeight)
+  values = step(machine)
   assert.equal(machine.source[dragSourceField(0)], 1)
 
   machine.pointerMove(downX + 100, downY + 70)
-  values = machine.step(viewportWidth, viewportHeight)
-  assert.deepEqual(projectWindows(machine, values)[0], {
+  values = step(machine)
+  let moved = projectWindows(machine, values)[0]!
+  assert.equal(moved.left, initial.left + 100)
+  assert.equal(moved.top, initial.top + 70)
+  assert.equal(
+    machine.source[windowSourceField(0, windowStateField.left)],
+    initial.left + 100,
+  )
+  assert.equal(
+    machine.source[windowSourceField(0, windowStateField.top)],
+    initial.top + 70,
+  )
+  assert.equal(animationActive(machine, values), 0)
+  assert.deepEqual(moved, {
     ...initial,
     left: initial.left + 100,
     top: initial.top + 70,
@@ -154,7 +219,7 @@ test('title dragging updates numeric geometry and clamps the whole window to the
   })
 
   machine.pointerMove(-500, -500)
-  values = machine.step(viewportWidth, viewportHeight)
+  values = step(machine)
   assert.equal(projectWindows(machine, values)[0]!.left, 0)
   assert.equal(
     projectWindows(machine, values)[0]!.top,
@@ -162,7 +227,7 @@ test('title dragging updates numeric geometry and clamps the whole window to the
   )
 
   machine.pointerMove(2000, 2000)
-  values = machine.step(viewportWidth, viewportHeight)
+  values = step(machine)
   const bounded = projectWindows(machine, values)[0]!
   assert.equal(bounded.left + bounded.width, viewportWidth)
   assert.equal(
@@ -171,62 +236,76 @@ test('title dragging updates numeric geometry and clamps the whole window to the
   )
 
   machine.pointerUp(2000, 2000)
-  machine.step(viewportWidth, viewportHeight)
+  step(machine)
   assert.equal(machine.source[dragSourceField(0)], 0)
 })
 
 test('resize grip changes both dimensions and enforces numeric minimums', () => {
   const machine = createWindowManagerMachine()
-  let values = machine.step(viewportWidth, viewportHeight)
+  let values = step(machine)
   const initial = projectWindows(machine, values)[2]!
   const grip = machine.source[sourceField.resizeGrip]!
   const downX = initial.left + initial.width - grip / 2
   const downY = initial.top + initial.height - grip / 2
 
   machine.pointerDown(downX, downY)
-  values = machine.step(viewportWidth, viewportHeight)
+  values = step(machine)
   assert.equal(machine.source[resizeSourceField(2)], 1)
 
   machine.pointerMove(downX + 120, downY + 80)
-  values = machine.step(viewportWidth, viewportHeight)
+  values = step(machine)
   let resized = projectWindows(machine, values)[2]!
   assert.equal(resized.width, initial.width + 120)
   assert.equal(resized.height, initial.height + 80)
+  assert.equal(animationActive(machine, values), 0)
 
   machine.pointerMove(downX - 1000, downY - 1000)
-  values = machine.step(viewportWidth, viewportHeight)
+  values = step(machine)
   resized = projectWindows(machine, values)[2]!
-  assert.equal(resized.width, machine.source[sourceField.minWidth])
-  assert.equal(resized.height, machine.source[sourceField.minHeight])
+  assertClose(resized.width, machine.source[sourceField.minWidth]!)
+  assertClose(resized.height, machine.source[sourceField.minHeight]!)
 
   machine.pointerUp(downX - 1000, downY - 1000)
-  machine.step(viewportWidth, viewportHeight)
+  step(machine)
   assert.equal(machine.source[resizeSourceField(2)], 0)
 })
 
 test('a down and move received before one refresh still begin the correct drag', () => {
   const machine = createWindowManagerMachine()
-  let values = machine.step(viewportWidth, viewportHeight)
+  let values = step(machine)
   const initial = projectWindows(machine, values)[1]!
   const downX = initial.left + 36
   const downY = initial.top + 20
 
   machine.pointerDown(downX, downY)
   machine.pointerMove(downX + 30, downY + 25)
-  values = machine.step(viewportWidth, viewportHeight)
+  values = step(machine)
   const moved = projectWindows(machine, values)[1]!
 
   assert.equal(moved.left, initial.left + 30)
   assert.equal(moved.top, initial.top + 25)
+  assert.equal(
+    machine.source[windowSourceField(1, windowStateField.left)],
+    initial.left + 30,
+  )
+  assert.equal(
+    machine.source[windowSourceField(1, windowStateField.top)],
+    initial.top + 25,
+  )
   assert.equal(machine.source[dragSourceField(1)], 1)
 })
 
 test('maximize, minimize, close, and dock restore all update the same table', () => {
   const machine = createWindowManagerMachine()
-  let values = machine.step(viewportWidth, viewportHeight)
+  let values = step(machine)
 
   values = clickWindowControl(machine, values, 3, 'maximize')
   let window = projectWindows(machine, values)[3]!
+  assert.equal(window.maximized, 1)
+  assert.equal(animationActive(machine, values), 1)
+  assert.notEqual(window.left, 12)
+  values = settle(machine)
+  window = projectWindows(machine, values)[3]!
   assert.deepEqual(
     {
       left: window.left,
@@ -246,36 +325,94 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
 
   values = clickWindowControl(machine, values, 3, 'minimize')
   window = projectWindows(machine, values)[3]!
-  assert.equal(window.opacity, 0)
+  const dock = projectDock(machine, values)[3]!
+  assert.equal(window.opacity, 1)
+  assert.equal(animationActive(machine, values), 1)
+  assert.ok(window.stack > 30)
+  assert.equal(window.width, 1256)
+  assert.equal(window.height, 664)
+  assert.ok(window.scale > 0 && window.scale < 1)
   assert.equal(
     machine.source[windowSourceField(3, windowStateField.minimized)],
     1,
   )
-  assert.equal(projectDock(machine, values)[3]!.inactive, 1)
+  assert.equal(dock.inactive, 1)
+
+  values = settle(machine)
+  window = projectWindows(machine, values)[3]!
+  assert.equal(window.opacity, 0)
+  assert.equal(window.stack, 4)
+  assert.equal(window.width, 1256)
+  assert.equal(window.height, 664)
+  assert.equal(window.scale, 0)
+  assertCenteredOnDock(window, dock)
 
   values = clickDock(machine, values, 3)
   window = projectWindows(machine, values)[3]!
   assert.equal(window.opacity, 1)
+  assert.equal(animationActive(machine, values), 1)
+  assert.ok(window.stack > 30)
+  assert.equal(window.width, 1256)
+  assert.ok(window.scale > 0 && window.scale < 1)
   assert.equal(
     machine.source[windowSourceField(3, windowStateField.minimized)],
     0,
   )
   assert.equal(window.maximized, 1)
   assertFocused(projectWindows(machine, values), 3)
+  values = settle(machine)
+  window = projectWindows(machine, values)[3]!
+  assert.deepEqual(
+    {left: window.left, top: window.top, width: window.width, height: window.height},
+    {left: 12, top: 48, width: 1256, height: 664},
+  )
+  assert.equal(window.translateX, 0)
+  assert.equal(window.translateY, 0)
+  assert.equal(window.scale, 1)
+  assert.equal(window.stack, 4)
 
   values = clickWindowControl(machine, values, 3, 'maximize')
+  values = settle(machine)
   values = clickWindowControl(machine, values, 3, 'close')
   window = projectWindows(machine, values)[3]!
-  assert.equal(window.opacity, 0)
+  assert.equal(window.opacity, 1)
+  assert.equal(animationActive(machine, values), 1)
   assert.equal(machine.source[windowSourceField(3, windowStateField.open)], 0)
   assert.equal(window.maximized, 0)
+  values = settle(machine)
+  window = projectWindows(machine, values)[3]!
+  assert.equal(window.opacity, 0)
+  assert.equal(window.width, 430)
+  assert.equal(window.height, 310)
+  assert.equal(window.scale, 0)
+  assertCenteredOnDock(window, dock)
 
   values = clickDock(machine, values, 3)
   window = projectWindows(machine, values)[3]!
   assert.equal(window.opacity, 1)
+  assert.equal(animationActive(machine, values), 1)
   assert.equal(machine.source[windowSourceField(3, windowStateField.open)], 1)
   assert.equal(machine.source[windowSourceField(3, windowStateField.minimized)], 0)
   assertFocused(projectWindows(machine, values), 3)
+  values = settle(machine)
+  window = projectWindows(machine, values)[3]!
+  assert.deepEqual(
+    {left: window.left, top: window.top, width: window.width, height: window.height},
+    {left: 744, top: 270, width: 430, height: 310},
+  )
+  assert.equal(window.translateX, 0)
+  assert.equal(window.translateY, 0)
+  assert.equal(window.scale, 1)
+})
+
+test('dock transitions settle within the faster spring budget', () => {
+  const machine = createWindowManagerMachine()
+  let values = step(machine)
+  values = clickWindowControl(machine, values, 3, 'minimize')
+
+  const settled = settleFrames(machine)
+  assert.ok((settled.frames + 1) * frameDuration <= 600)
+  assert.equal(projectWindows(machine, settled.values)[3]!.scale, 0)
 })
 
 test('all geometry remains finite and bounded down to a zero-sized viewport', () => {
@@ -286,7 +423,7 @@ test('all geometry remains finite and bounded down to a zero-sized viewport', ()
   ]
   for (const [width, height] of viewportCases) {
     const machine = createWindowManagerMachine()
-    const values = machine.step(width, height)
+    const values = step(machine, width, height)
     for (const window of projectWindows(machine, values)) {
       assert.ok(Number.isFinite(window.left))
       assert.ok(Number.isFinite(window.top))
@@ -306,10 +443,26 @@ test('all geometry remains finite and bounded down to a zero-sized viewport', ()
   }
 })
 
+test('a hidden window tracks a resized dock without becoming visible', () => {
+  const machine = createWindowManagerMachine()
+  let values = step(machine)
+  values = clickWindowControl(machine, values, 3, 'minimize')
+  values = settle(machine)
+  assert.equal(projectWindows(machine, values)[3]!.opacity, 0)
+
+  values = step(machine, 900, 600)
+  const window = projectWindows(machine, values)[3]!
+  const dock = projectDock(machine, values)[3]!
+  assert.equal(window.opacity, 0)
+  assert.equal(machine.source[windowSourceField(3, windowStateField.present)], 0)
+  assert.equal(window.scale, 0)
+  assertCenteredOnDock(window, dock)
+})
+
 test('next state is a direct numeric view and runtime atoms remain affine and ReGLU', () => {
   const machine = createWindowManagerMachine()
   machine.pointerDown(100, 80)
-  const values = machine.step(viewportWidth, viewportHeight)
+  const values = step(machine)
   const nextSource = machine.output.nextSource.map(wire => values[wire]!)
 
   assert.deepEqual(nextSource, [...machine.source])
