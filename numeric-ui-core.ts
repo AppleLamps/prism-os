@@ -1,9 +1,9 @@
-// Two runtime atoms, plus compile-time expansions that lower into those atoms.
+// Three runtime atoms, plus compile-time expansions that lower into those atoms.
 export type Wire = number
 
 export type Terms = readonly (readonly [wire: Wire, coefficient: number])[]
 
-type AtomKind = 'affine' | 'reglu'
+type AtomKind = 'affine' | 'reglu' | 'boolean'
 
 type Operation = {
   kind: AtomKind
@@ -25,6 +25,7 @@ export type TensorLayer = {
   outputSize: number
   bias: Float64Array
   gateRows: Uint32Array
+  booleanRows: Uint32Array
   rowOffsets: Uint32Array
   columns: Uint32Array
   weights: Float64Array
@@ -82,6 +83,12 @@ export class Circuit {
     return this.append('reglu', leftTerms, leftBias, gateTerms, gateBias)
   }
 
+  boolean(value: Wire): Wire {
+    const range = this.ranges[value]!
+    invariant(range.minimum >= 0 && range.maximum <= 1, 'boolean input must be within zero and one')
+    return this.append('boolean', [[value, 1]], 0, [], 0)
+  }
+
   append(kind: AtomKind, leftTerms: Terms, leftBias: number, gateTerms: Terms, gateBias: number): Wire {
     ;[leftTerms, leftBias] = foldConstantTerms(normalizeTerms(leftTerms), leftBias, this.constants)
     ;[gateTerms, gateBias] = foldConstantTerms(normalizeTerms(gateTerms), gateBias, this.constants)
@@ -118,16 +125,20 @@ export class Circuit {
     const existingWire = this.expressionWires.get(expressionKey)
     if (existingWire !== undefined) return existingWire
     const wire = this.sourceSize + this.operations.length
-    const dependencies = kind === 'affine' ? leftTerms : [...leftTerms, ...gateTerms]
+    const dependencies = kind === 'reglu' ? [...leftTerms, ...gateTerms] : leftTerms
     let depth = 0
     for (const [dependency] of dependencies) depth = Math.max(depth, this.depths[dependency]!)
     this.operations.push({kind, leftTerms, leftBias, gateTerms, gateBias, depth: depth + 1})
     this.depths.push(depth + 1)
     this.constants.push(kind === 'affine' && leftTerms.length === 0 ? leftBias : undefined)
     const leftRange = evaluateAffineRange(leftTerms, leftBias, this.ranges)
-    this.ranges.push(kind === 'affine'
-      ? leftRange
-      : multiplyByReluRange(leftRange, evaluateAffineRange(gateTerms, gateBias, this.ranges)))
+    this.ranges.push(
+      kind === 'affine'
+        ? leftRange
+        : kind === 'reglu'
+          ? multiplyByReluRange(leftRange, evaluateAffineRange(gateTerms, gateBias, this.ranges))
+          : {minimum: 0, maximum: 1},
+    )
     this.expressionWires.set(expressionKey, wire)
     this.tensorProgram = null
     return wire
@@ -201,8 +212,11 @@ export class Circuit {
       )
       const inputSize = orderedInputWires.length
       let gateCount = 0
+      let booleanCount = 0
       for (const operationIndex of operationIndices) {
-        if (this.operations[operationIndex]!.kind === 'reglu') gateCount++
+        const kind = this.operations[operationIndex]!.kind
+        if (kind === 'reglu') gateCount++
+        else if (kind === 'boolean') booleanCount++
       }
       const inputIndices = Uint32Array.from(
         orderedInputWires,
@@ -216,8 +230,10 @@ export class Circuit {
       const projectionSize = outputSize + gateCount
       const bias = new Float64Array(projectionSize)
       const gateRows = new Uint32Array(gateCount)
+      const booleanRows = new Uint32Array(booleanCount)
       const projectionTerms = Array<Terms>(projectionSize)
       let gateRow = 0
+      let booleanRow = 0
       for (let row = 0; row < operationIndices.length; row++) {
         const operationIndex = operationIndices[row]!
         const operation = this.operations[operationIndex]!
@@ -233,6 +249,9 @@ export class Circuit {
           gateRows[gateRow] = row
           projectionTerms[projectionRow] = operation.gateTerms
           gateRow++
+        } else if (operation.kind === 'boolean') {
+          booleanRows[booleanRow] = row
+          booleanRow++
         }
       }
       const rowOffsets = new Uint32Array(projectionSize + 1)
@@ -258,6 +277,7 @@ export class Circuit {
         outputSize,
         bias,
         gateRows,
+        booleanRows,
         rowOffsets,
         columns,
         weights,
@@ -277,15 +297,18 @@ export class Circuit {
   stats() {
     let affineCount = 0
     let regluCount = 0
+    let booleanCount = 0
     for (const operation of this.operations) {
       if (operation.kind === 'affine') affineCount++
-      else regluCount++
+      else if (operation.kind === 'reglu') regluCount++
+      else booleanCount++
     }
     return {
       sourceCells: this.sourceSize,
       temporaryCells: this.operations.length,
       affineCount,
       regluCount,
+      booleanCount,
       depth: Math.max(...this.depths),
     }
   }
@@ -440,6 +463,8 @@ export function evaluateOperationStream(source: Float64Array, circuit: Circuit):
     let value = evaluateTerms(values, operation.leftTerms, operation.leftBias)
     if (operation.kind === 'reglu') {
       value *= Math.max(0, evaluateTerms(values, operation.gateTerms, operation.gateBias))
+    } else if (operation.kind === 'boolean') {
+      value = evaluateBoolean(value)
     }
     values[circuit.sourceSize + operationIndex] = value
   }
@@ -476,6 +501,9 @@ export function evaluateTensorProgram(source: Float64Array, program: TensorProgr
       projection[outputRow] =
         projection[outputRow]! * Math.max(0, projection[outputSize + gateRow]!)
     }
+    for (const booleanRow of layer.booleanRows) {
+      projection[booleanRow] = evaluateBoolean(projection[booleanRow]!)
+    }
     packedValues.set(projection.subarray(0, outputSize), availableValues)
     availableValues += outputSize
   }
@@ -507,6 +535,14 @@ function evaluateTerms(values: Float64Array, terms: Terms, bias: number): number
   let value = bias
   for (const [wire, coefficient] of terms) value += coefficient * values[wire]!
   return value
+}
+
+function evaluateBoolean(value: number): number {
+  // FP32 rounds to whole numbers at this size; the odd base makes 0.5 round up.
+  const base = 8_388_609
+  const score = Math.fround(value)
+  const shifted = Math.fround(score + base)
+  return Math.fround(shifted - base)
 }
 
 export function emitRelu(circuit: Circuit, value: Wire): Wire {
@@ -580,6 +616,13 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
       invariant(gateRow < outputSize, 'gate output row is invalid')
       invariant(seenGateRows[gateRow] === 0, 'gate output row must be unique')
       seenGateRows[gateRow] = 1
+    }
+    const seenBooleanRows = new Uint8Array(outputSize)
+    for (const booleanRow of layer.booleanRows) {
+      invariant(booleanRow < outputSize, 'boolean output row is invalid')
+      invariant(seenGateRows[booleanRow] === 0, 'boolean output row cannot also be gated')
+      invariant(seenBooleanRows[booleanRow] === 0, 'boolean output row must be unique')
+      seenBooleanRows[booleanRow] = 1
     }
     invariant(layer.rowOffsets.length === projectionSize + 1, 'sparse row offset shape mismatch')
     invariant(layer.rowOffsets[0] === 0, 'sparse row offsets must start at zero')

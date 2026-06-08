@@ -1308,7 +1308,7 @@ function emitRectangleHit(
   geometry: Geometry,
   unit: Wire,
 ) {
-  return emitClampZeroOne(
+  const score = emitClampZeroOne(
     circuit,
     emitMinimum(
       circuit,
@@ -1317,6 +1317,7 @@ function emitRectangleHit(
     ),
     unit,
   )
+  return circuit.boolean(score)
 }
 
 function emitIntervalDistance(circuit: Circuit, position: Wire, start: Wire, size: Wire) {

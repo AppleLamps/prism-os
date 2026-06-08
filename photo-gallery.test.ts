@@ -206,14 +206,14 @@ test('clicking the main image preserves it and tiny viewports remain finite', ()
   }
 })
 
-test('soft edge focus remains a valid differentiable state', () => {
+test('edge clicks commit one complete focused item', () => {
   const machine = createPhotoGalleryMachine()
   let values = machine.step(1281, 721)
   const first = projectPhotos(machine, values)[0]!
   machine.click(first.left + 0.5, first.top + first.height / 2)
   values = machine.step(1281, 721)
 
-  assert.deepEqual(readFocus(machine), [0.5, ...Array<number>(itemCount - 1).fill(0)])
+  assert.deepEqual(readFocus(machine), [1, ...Array<number>(itemCount - 1).fill(0)])
   for (const photo of projectPhotos(machine, values)) {
     assert.ok(Number.isFinite(photo.left))
     assert.ok(Number.isFinite(photo.top))
@@ -226,17 +226,17 @@ test('soft edge focus remains a valid differentiable state', () => {
   assert.deepEqual(readFocus(machine), Array(itemCount).fill(0))
 })
 
-test('main and control clicks do not shrink fractional focused components', () => {
+test('main and control clicks preserve complete focused items', () => {
   const machine = createPhotoGalleryMachine()
   let values = machine.step(1281, 721)
   const first = projectPhotos(machine, values)[0]!
   machine.click(first.left + 0.5, first.top + first.height / 2)
   values = machine.step(1281, 721)
-  assert.deepEqual(readFocus(machine), [0.5, ...Array<number>(itemCount - 1).fill(0)])
+  assert.deepEqual(readFocus(machine), [1, ...Array<number>(itemCount - 1).fill(0)])
 
   machine.click(640, 300)
   values = machine.step(1281, 721)
-  assert.deepEqual(readFocus(machine), [0.5, ...Array<number>(itemCount - 1).fill(0)])
+  assert.deepEqual(readFocus(machine), [1, ...Array<number>(itemCount - 1).fill(0)])
 
   const nextControl = machine.output.nextControl
   machine.click(
@@ -245,7 +245,7 @@ test('main and control clicks do not shrink fractional focused components', () =
   )
   machine.step(1281, 721)
   const shiftedFocus = readFocus(machine)
-  assert.equal(shiftedFocus[1], 0.5)
+  assert.equal(shiftedFocus[1], 1)
   assert.equal(shiftedFocus.reduce((sum, focus) => sum + focus, 0), 1)
 })
 

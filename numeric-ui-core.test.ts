@@ -165,6 +165,26 @@ test('affine outputs do not allocate fake gate rows', () => {
   assert.equal(evaluateOutput(circuit, program, [7, 2], reglu), 69)
 })
 
+test('boolean outputs make complete decisions with an explicit tie rule', () => {
+  const circuit = new Circuit(1)
+  circuit.assumeRange(0, 0, 1)
+  const decision = circuit.boolean(0)
+  const program = circuit.compileTensorProgram([decision])
+
+  assert.equal(circuit.operations[0]!.kind, 'boolean')
+  assert.deepEqual([...program.layers[0]!.booleanRows], [0])
+  for (const [score, expected] of [
+    [0, 0],
+    [0.49, 0],
+    [0.5, 1],
+    [0.51, 1],
+    [1, 1],
+  ] as const) {
+    assert.equal(evaluateOutput(circuit, program, [score], decision), expected)
+    assert.equal(circuit.evaluateReadable(new Float64Array([score]))[decision], expected)
+  }
+})
+
 function evaluateOutput(
   circuit: Circuit,
   program: ReturnType<Circuit['compileTensorProgram']>,

@@ -1,7 +1,7 @@
 # Indirect
 
 This experiment tests whether a complete interactive UI can lower into one
-fixed numeric circuit with only two runtime atoms.
+fixed numeric circuit with only three runtime atoms.
 
 Run the browser-free checks:
 
@@ -29,6 +29,7 @@ The main files are:
 numeric-ui-core.ts            universal numeric vocabulary and tensor backend
 numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
+boolean-state.md              rules for turning continuous scores into bits
 window-manager.ts             numeric window state machine and DOM adapter
 window-manager.test.ts        browser-free window-manager behavior proofs
 window-manager.css            fixed presentation
@@ -64,15 +65,16 @@ source table, and writes projected values onto permanent DOM nodes. A numeric
 animation-active output requests another frame until every spring has snapped
 exactly to its destination.
 
-At startup, the circuit compiles into fixed gated layers. Every refresh runs
+At startup, the circuit compiles into fixed numeric layers. Every refresh runs
 the same layers without window-specific runtime branches:
 
 ```txt
-input = gather(values, inputIndices)
-projection = sparse_matmul(W[(new + reglu) x input], input) + b[new + reglu]
-new = projection[0:new]
-new[gateRows] *= ReLU(projection[new:])
-values = concat(values, new)
+input              = gather(values, inputIndices)
+projection         = sparse_matmul(W[(new + reglu) x input], input) + b[new + reglu]
+new                = projection[0:new]
+new[gateRows]     *= ReLU(projection[new:])
+new[booleanRows]   = boolean(new[booleanRows])
+values             = concat(values, new)
 ```
 
 The demo validates the source table, stack mass, compiled matrices, and
@@ -84,31 +86,36 @@ representing the same fixed rectangular matrices.
 The measured tensor footprints are:
 
 ```txt
-window manager: source 131, graph width 3,064, live values 1,591, layers 49
-                stored weights 7,448, layer tensor bytes 142,376
-photo lightbox: source 24, graph width 583, live values 338, layers 9
-                stored weights 2,339, layer tensor bytes 36,908
+window manager: source 131, graph width 3,092, live values 1,619, layers 50
+                stored weights 7,476, layer tensor bytes 143,276
+photo lightbox: source 24, graph width 612, live values 365, layers 10
+                stored weights 2,311, layer tensor bytes 37,060
 ```
 
 The persistent source table is a fixed `Float64Array`. Immutable constants and
 changing underivable facts share that table. Derived values are temporary
 circuit wires.
 
-The audited runtime vocabulary has only two atoms:
+The audited runtime vocabulary has only three atoms:
 
 ```txt
-affine = fixed weighted sums and offsets
-reglu  = one weighted sum multiplied by ReLU of another weighted sum
+affine  = fixed weighted sums and offsets
+reglu   = one weighted sum multiplied by ReLU of another weighted sum
+boolean = a zero-to-one score rounded to an exact zero or one
 ```
 
-Compile-time macros expand immediately into those atoms. They do not add
+`boolean` uses ordered FP32 arithmetic with a fixed tie rule: values below
+`0.5` become `0`, while `0.5` and above become `1`. The compiler records these
+rows explicitly so affine composition cannot remove the rounding step.
+
+Compile-time macros expand immediately into those atoms. They do not add other
 runtime operations.
 
 The tests compile and check:
 
 ```txt
 signed multiplication, min, max, and clamp
-continuous rectangle hit and overlap resolution
+exact Boolean rectangle hit and overlap resolution
 dynamic stack ordering and topmost selection
 dragging, resizing, and workspace bounds
 maximize, minimize, close, and dock restoration

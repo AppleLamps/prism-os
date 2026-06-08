@@ -318,6 +318,32 @@ test('window control visual edges produce full-strength actions', () => {
   )
 })
 
+test('a click between minimize and maximize becomes one complete decision', () => {
+  const machine = createWindowManagerMachine()
+  const values = step(machine)
+  const projected = projectWindows(machine, values)[3]!
+  const size = machine.source[sourceField.buttonSize]!
+  const gap = machine.source[sourceField.buttonGap]!
+  const closeLeft = projected.left + projected.width - gap - size
+  const maximizeLeft = closeLeft - gap - size
+  const expandedMaximizeLeft = maximizeLeft - gap / 2
+
+  click(
+    machine,
+    expandedMaximizeLeft + 0.5031247387902,
+    projected.top + machine.source[sourceField.titleHeight]! / 2,
+  )
+
+  assert.equal(
+    machine.source[windowSourceField(3, windowStateField.maximized)],
+    1,
+  )
+  assert.equal(
+    machine.source[windowSourceField(3, windowStateField.minimized)],
+    0,
+  )
+})
+
 test('maximize, minimize, close, and dock restore all update the same table', () => {
   const machine = createWindowManagerMachine()
   let values = step(machine)
@@ -482,7 +508,7 @@ test('a hidden window tracks a resized dock without becoming visible', () => {
   assertCenteredOnDock(window, dock)
 })
 
-test('next state is a direct numeric view and runtime atoms remain affine and ReGLU', () => {
+test('next state is a direct numeric view and runtime atoms remain fixed', () => {
   const machine = createWindowManagerMachine()
   machine.pointerDown(100, 80)
   const values = step(machine)
@@ -494,7 +520,7 @@ test('next state is a direct numeric view and runtime atoms remain affine and Re
   assert.equal(machine.output.dockItems.length, windowCount * dockOutputField.size)
   assert.deepEqual(
     [...new Set(machine.circuit.operations.map(operation => operation.kind))].sort(),
-    ['affine', 'reglu'],
+    ['affine', 'boolean', 'reglu'],
   )
   assert.equal(machine.source[sourceField.downActive], 0)
   assert.equal(machine.source[windowSourceField(0, windowStateField.left)], 54)
