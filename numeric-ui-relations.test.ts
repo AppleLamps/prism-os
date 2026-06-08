@@ -67,6 +67,35 @@ test('relation numbers change structure without changing instructions', () => {
   }
 })
 
+test('numeric output search recovers a relation table from target positions', () => {
+  const {circuit, positions} = compileRelationLayout()
+  circuit.tensorProgram = circuit.compileTensorProgram(positions.flat())
+  const target = layouts.grid.map(([x, y]) => [10 + x * 110, 10 + y * 110])
+  const horizontalRanks = searchRanks(
+    circuit,
+    positions.map(position => position[0]),
+    sourceField.horizontalRelations,
+    target.map(position => position[0]!),
+  )
+  const verticalRanks = searchRanks(
+    circuit,
+    positions.map(position => position[1]),
+    sourceField.verticalRelations,
+    target.map(position => position[1]!),
+  )
+  const source = new Float32Array(sourceField.sizeInCells)
+  source[sourceField.gap] = 10
+  source[sourceField.size] = 100
+  writeRanksAsRelations(source, sourceField.horizontalRelations, horizontalRanks)
+  writeRanksAsRelations(source, sourceField.verticalRelations, verticalRanks)
+  const values = circuit.evaluateTensor(source)
+
+  assert.deepEqual(
+    positions.map(([x, y]) => [values[x], values[y]]),
+    target,
+  )
+})
+
 function compileRelationLayout() {
   const circuit = new Circuit(sourceField.sizeInCells)
   circuit.assumeRange(sourceField.gap, 0, Number.POSITIVE_INFINITY)
@@ -114,4 +143,37 @@ function writeRanksAsRelations(
       source[relationStart + item * itemCount + influencingItem] = 1
     }
   }
+}
+
+function searchRanks(
+  circuit: Circuit,
+  outputWires: readonly number[],
+  relationStart: number,
+  target: readonly number[],
+) {
+  let bestScore = Number.POSITIVE_INFINITY
+  let bestRanks: number[] = []
+  const candidateCount = itemCount ** itemCount
+  for (let candidate = 0; candidate < candidateCount; candidate++) {
+    const ranks = Array<number>(itemCount)
+    let encodedRanks = candidate
+    for (let item = 0; item < itemCount; item++) {
+      ranks[item] = encodedRanks % itemCount
+      encodedRanks = Math.floor(encodedRanks / itemCount)
+    }
+    const source = new Float32Array(sourceField.sizeInCells)
+    source[sourceField.gap] = 10
+    source[sourceField.size] = 100
+    writeRanksAsRelations(source, relationStart, ranks)
+    const values = circuit.evaluateTensor(source)
+    let score = 0
+    for (let item = 0; item < itemCount; item++) {
+      score += Math.abs(values[outputWires[item]!]! - target[item]!)
+    }
+    if (score < bestScore) {
+      bestScore = score
+      bestRanks = ranks
+    }
+  }
+  return bestRanks
 }

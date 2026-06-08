@@ -136,6 +136,7 @@ seeded random circuits with varied roots and dead outputs
 finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 relation-driven grid, row, stack, and overlap layouts
+inverse relation search from target geometry
 scrolling, clipped row geometry, and occlusion decisions
 direct next-state and render-output wire views
 four expanded spring substeps per lane
