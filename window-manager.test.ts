@@ -239,6 +239,186 @@ function createRandom(seed: number) {
   }
 }
 
+type RandomAction = {
+  width: number
+  height: number
+  events: readonly {
+    kind: 'down' | 'move' | 'up'
+    x: number
+    y: number
+  }[]
+}
+
+function createRandomAction(
+  machine: Machine,
+  values: Float64Array,
+  width: number,
+  height: number,
+  random: () => number,
+): RandomAction {
+  const windows = projectWindows(machine, values)
+  const docks = projectDock(machine, values)
+  const windowIndex = Math.floor(random() * windowCount)
+  const window = windows[windowIndex]!
+  const dock = docks[windowIndex]!
+  const choice = Math.floor(random() * 9)
+
+  if (choice === 0) {
+    return {
+      width: Math.floor(random() * 1_500),
+      height: Math.floor(random() * 1_000),
+      events: [],
+    }
+  }
+  if (choice === 1) {
+    return {
+      width,
+      height,
+      events: [
+        {kind: 'down', x: random() * width, y: random() * height},
+        {kind: 'up', x: random() * width, y: random() * height},
+      ],
+    }
+  }
+  if (choice >= 2 && choice <= 4) {
+    const controls = ['maximize', 'minimize', 'close'] as const
+    const point = windowControlPoint(machine, values, windowIndex, controls[choice - 2]!)
+    return {
+      width,
+      height,
+      events: [
+        {kind: 'down', ...point},
+        {kind: 'up', ...point},
+      ],
+    }
+  }
+  if (choice === 5) {
+    const point = {
+      x: dock.left + dock.width / 2,
+      y: dock.top + dock.height / 2,
+    }
+    return {
+      width,
+      height,
+      events: [
+        {kind: 'down', ...point},
+        {kind: 'up', ...point},
+      ],
+    }
+  }
+
+  const grip = machine.source[sourceField.resizeGrip]!
+  const start = choice === 6
+    ? {
+        x: window.left + window.translateX + Math.min(40, window.width / 4),
+        y: window.top + window.translateY
+          + Math.min(machine.source[sourceField.titleHeight]! / 2, window.height / 4),
+      }
+    : {
+        x: window.left + window.translateX + window.width
+          - Math.min(grip / 2, window.width / 4),
+        y: window.top + window.translateY + window.height
+          - Math.min(grip / 2, window.height / 4),
+      }
+  const end = {
+    x: start.x + (random() - 0.5) * width,
+    y: start.y + (random() - 0.5) * height,
+  }
+  return {
+    width,
+    height,
+    events: [
+      {kind: 'down', ...start},
+      {kind: 'move', ...end},
+      {kind: 'up', ...end},
+    ],
+  }
+}
+
+function applyRandomAction(machine: Machine, action: RandomAction) {
+  for (const event of action.events) {
+    if (event.kind === 'down') machine.pointerDown(event.x, event.y)
+    else if (event.kind === 'move') machine.pointerMove(event.x, event.y)
+    else machine.pointerUp(event.x, event.y)
+  }
+}
+
+function discreteState(machine: Machine, values: Float64Array) {
+  const state: number[] = []
+  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+    for (const field of [
+      windowStateField.open,
+      windowStateField.minimized,
+      windowStateField.maximized,
+    ]) {
+      state.push(machine.source[windowSourceField(windowIndex, field)]!)
+    }
+    state.push(
+      machine.source[dragSourceField(windowIndex)]!,
+      machine.source[resizeSourceField(windowIndex)]!,
+      projectWindows(machine, values)[windowIndex]!.focused,
+    )
+  }
+  for (let rank = 0; rank < windowCount; rank++) {
+    for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+      state.push(machine.source[stackSourceField(rank, windowIndex)]!)
+    }
+  }
+  return state
+}
+
+function maximumProductDifference(
+  leftMachine: Machine,
+  leftValues: Float64Array,
+  rightMachine: Machine,
+  rightValues: Float64Array,
+) {
+  const leftWindows = projectWindows(leftMachine, leftValues)
+  const rightWindows = projectWindows(rightMachine, rightValues)
+  const leftDock = projectDock(leftMachine, leftValues)
+  const rightDock = projectDock(rightMachine, rightValues)
+  const pairs: {label: string, left: number, right: number}[] = []
+  const windowFields = [
+    'left',
+    'top',
+    'width',
+    'height',
+    'translateX',
+    'translateY',
+    'scale',
+    'opacity',
+  ] as const
+  const dockFields = ['left', 'top', 'width', 'height'] as const
+  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+    for (const field of windowFields) {
+      pairs.push({
+        label: `window ${windowIndex} ${field}`,
+        left: leftWindows[windowIndex]![field],
+        right: rightWindows[windowIndex]![field],
+      })
+    }
+    for (const field of dockFields) {
+      pairs.push({
+        label: `dock ${windowIndex} ${field}`,
+        left: leftDock[windowIndex]![field],
+        right: rightDock[windowIndex]![field],
+      })
+    }
+  }
+  return pairs.reduce(
+    (maximum, pair) => {
+      const absolute = Math.abs(pair.left - pair.right)
+      if (absolute <= maximum.absolute) return maximum
+      return {
+        absolute,
+        relative: absolute / Math.max(1, Math.abs(pair.left), Math.abs(pair.right)),
+        label: pair.label,
+      }
+    },
+    {absolute: 0, relative: 0, label: ''},
+  )
+}
+
 test('the fixed table projects four bounded windows and one focused front window', () => {
   const machine = createWindowManagerMachine()
   const values = step(machine)
@@ -612,57 +792,54 @@ test('long mixed event sequences preserve Boolean state and stacking', () => {
   let values = step(machine, width, height)
 
   for (let action = 0; action < 1_000; action++) {
-    const windows = projectWindows(machine, values)
-    const docks = projectDock(machine, values)
-    const windowIndex = Math.floor(random() * windowCount)
-    const window = windows[windowIndex]!
-    const dock = docks[windowIndex]!
-    const choice = Math.floor(random() * 9)
-
-    if (choice === 0) {
-      width = Math.floor(random() * 1_500)
-      height = Math.floor(random() * 1_000)
-    } else if (choice === 1) {
-      machine.pointerDown(random() * width, random() * height)
-      machine.pointerUp(random() * width, random() * height)
-    } else if (choice === 2) {
-      const point = windowControlPoint(machine, values, windowIndex, 'maximize')
-      machine.pointerDown(point.x, point.y)
-      machine.pointerUp(point.x, point.y)
-    } else if (choice === 3) {
-      const point = windowControlPoint(machine, values, windowIndex, 'minimize')
-      machine.pointerDown(point.x, point.y)
-      machine.pointerUp(point.x, point.y)
-    } else if (choice === 4) {
-      const point = windowControlPoint(machine, values, windowIndex, 'close')
-      machine.pointerDown(point.x, point.y)
-      machine.pointerUp(point.x, point.y)
-    } else if (choice === 5) {
-      machine.pointerDown(dock.left + dock.width / 2, dock.top + dock.height / 2)
-      machine.pointerUp(dock.left + dock.width / 2, dock.top + dock.height / 2)
-    } else if (choice === 6) {
-      const x = window.left + window.translateX + Math.min(40, window.width / 4)
-      const y = window.top + window.translateY
-        + Math.min(machine.source[sourceField.titleHeight]! / 2, window.height / 4)
-      const endX = x + (random() - 0.5) * width
-      const endY = y + (random() - 0.5) * height
-      machine.pointerDown(x, y)
-      machine.pointerMove(endX, endY)
-      machine.pointerUp(endX, endY)
-    } else if (choice === 7) {
-      const grip = machine.source[sourceField.resizeGrip]!
-      const x = window.left + window.translateX + window.width - Math.min(grip / 2, window.width / 4)
-      const y = window.top + window.translateY + window.height - Math.min(grip / 2, window.height / 4)
-      const endX = x + (random() - 0.5) * width
-      const endY = y + (random() - 0.5) * height
-      machine.pointerDown(x, y)
-      machine.pointerMove(endX, endY)
-      machine.pointerUp(endX, endY)
-    }
-
+    const nextAction = createRandomAction(machine, values, width, height, random)
+    width = nextAction.width
+    height = nextAction.height
+    applyRandomAction(machine, nextAction)
     values = step(machine, width, height, 1 + random() * 40)
     assertWindowManagerInvariants(machine, values, width, height)
   }
+})
+
+test('FP32 and Float64 keep the same decisions through mixed event sequences', () => {
+  const float64 = createWindowManagerMachine()
+  const float32 = createWindowManagerMachine({precision: 'float32'})
+  const random = createRandom(0xf32)
+  let width = viewportWidth
+  let height = viewportHeight
+  let float64Values = step(float64, width, height)
+  let float32Values = step(float32, width, height)
+  let maximumDifference = {absolute: 0, relative: 0, label: ''}
+
+  for (let action = 0; action < 1_000; action++) {
+    const nextAction = createRandomAction(float64, float64Values, width, height, random)
+    const elapsed = 1 + random() * 40
+    width = nextAction.width
+    height = nextAction.height
+    applyRandomAction(float64, nextAction)
+    applyRandomAction(float32, nextAction)
+    float64Values = step(float64, width, height, elapsed)
+    float32Values = step(float32, width, height, elapsed)
+
+    assertWindowManagerInvariants(float32, float32Values, width, height)
+    assert.deepEqual(
+      discreteState(float32, float32Values),
+      discreteState(float64, float64Values),
+    )
+    const difference = maximumProductDifference(
+      float32,
+      float32Values,
+      float64,
+      float64Values,
+    )
+    if (difference.absolute > maximumDifference.absolute) maximumDifference = difference
+  }
+
+  assert.ok(
+    maximumDifference.absolute < 0.1 && maximumDifference.relative < 0.001,
+    `FP32 ${maximumDifference.label} difference reached `
+      + `${maximumDifference.absolute} (${maximumDifference.relative} relative)`,
+  )
 })
 
 test('next state is a direct numeric view and runtime atoms remain fixed', () => {

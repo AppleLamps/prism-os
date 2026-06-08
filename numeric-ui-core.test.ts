@@ -23,6 +23,15 @@ test('tensor layers append only their new values', () => {
   assert.deepEqual([...circuit.evaluateTensor(new Float64Array([5, 7]))], [5, 7, 10, 40, 21])
 })
 
+test('the FP32 evaluator rounds every arithmetic step', () => {
+  const circuit = new Circuit(2)
+  const sum = circuit.affine([[0, 1], [1, 1]])
+  const source = new Float64Array([16_777_216, 1])
+
+  assert.equal(circuit.evaluateTensor(source)[sum], 16_777_217)
+  assert.equal(circuit.evaluateTensorFloat32(source)[sum], 16_777_216)
+})
+
 test('tensor and readable evaluators both reject a wrong-sized source table', () => {
   const circuit = new Circuit(2)
   circuit.affine([[0, 1], [1, 1]])
@@ -37,6 +46,10 @@ test('tensor and readable evaluators both reject a wrong-sized source table', ()
     )
     assert.throws(
       () => circuit.evaluateReadable(source),
+      /source table has the wrong length/,
+    )
+    assert.throws(
+      () => circuit.evaluateTensorFloat32(source),
       /source table has the wrong length/,
     )
   }

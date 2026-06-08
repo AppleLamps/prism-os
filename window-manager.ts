@@ -11,6 +11,7 @@ import {
   invariant,
   validateCircuit,
   validateTensorEvaluation,
+  validateTensorFloat32Evaluation,
   validateTensorProgram,
 } from './numeric-ui-core.ts'
 
@@ -976,7 +977,13 @@ export function compileWindowManagerCircuit() {
 }
 
 export function createWindowManagerMachine(
-  {checkTensorEvaluation = true}: {checkTensorEvaluation?: boolean} = {},
+  {
+    checkTensorEvaluation = true,
+    precision = 'float64',
+  }: {
+    checkTensorEvaluation?: boolean
+    precision?: 'float64' | 'float32'
+  } = {},
 ) {
   const source = new Float64Array(sourceField.size)
   source[sourceField.unit] = 1
@@ -1032,6 +1039,7 @@ export function createWindowManagerMachine(
     output.animationActive,
   ])
   validateTensorProgram(circuit, tensorProgram)
+  const numericTolerance = precision === 'float32' ? 1e-5 : 1e-9
 
   function receivePointer(activeField: number, xField: number, yField: number, x: number, y: number) {
     invariant(Number.isFinite(x) && Number.isFinite(y), 'pointer coordinates must be finite')
@@ -1050,10 +1058,15 @@ export function createWindowManagerMachine(
       source[sourceField.viewportWidth] = viewportWidth
       source[sourceField.viewportHeight] = viewportHeight
       source[sourceField.frameTime] = frameTime
-      validateWindowManagerSource(source)
-      const values = circuit.evaluateTensor(source)
-      if (checkTensorEvaluation) validateTensorEvaluation(source, circuit, values)
-      validateWindowManagerOutput(values, output)
+      validateWindowManagerSource(source, numericTolerance)
+      const values = precision === 'float32'
+        ? circuit.evaluateTensorFloat32(source)
+        : circuit.evaluateTensor(source)
+      if (checkTensorEvaluation) {
+        if (precision === 'float32') validateTensorFloat32Evaluation(source, circuit, values)
+        else validateTensorEvaluation(source, circuit, values)
+      }
+      validateWindowManagerOutput(values, output, numericTolerance)
       for (let field = 0; field < source.length; field++) {
         source[field] = values[output.nextSource[field]!]!
       }
@@ -1352,7 +1365,7 @@ function emitSelect(circuit: Circuit, gate: Wire, off: Wire, on: Wire) {
   ])
 }
 
-function validateWindowManagerSource(values: unknown) {
+function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
   invariant(values instanceof Float64Array, 'source table must be a Float64Array')
   invariant(values.length === sourceField.size, 'source table has the wrong length')
   assertFiniteValues(values, 'source table')
@@ -1360,12 +1373,14 @@ function validateWindowManagerSource(values: unknown) {
   assertNonNegativeFinite(values[sourceField.viewportHeight], 'viewport height')
   assertNonNegativeFinite(values[sourceField.frameTime], 'frame time')
   assertNonNegativeFinite(values[sourceField.previousFrameTime], 'previous frame time')
-  assertUnitInterval(values[sourceField.timeInitialized], 'time initialized')
+  assertUnitInterval(values[sourceField.timeInitialized], 'time initialized', tolerance)
   invariant(values[sourceField.unit] === 1, 'unit cell must equal one')
   for (const field of constantFields) {
     assertNonNegativeFinite(values[field], 'window manager constant')
   }
-  for (const field of eventActiveFields) assertUnitInterval(values[field], 'event latch')
+  for (const field of eventActiveFields) {
+    assertUnitInterval(values[field], 'event latch', tolerance)
+  }
   for (const field of eventCoordinateFields) {
     invariant(Number.isFinite(values[field]), 'event coordinate must be finite')
   }
@@ -1392,12 +1407,16 @@ function validateWindowManagerSource(values: unknown) {
       windowStateField.maximized,
       windowStateField.present,
     ]) {
-      assertUnitInterval(values[windowSourceField(windowIndex, field)], 'window flag')
+      assertUnitInterval(
+        values[windowSourceField(windowIndex, field)],
+        'window flag',
+        tolerance,
+      )
     }
     const drag = values[dragSourceField(windowIndex)]
     const resize = values[resizeSourceField(windowIndex)]
-    assertUnitInterval(drag, 'drag target')
-    assertUnitInterval(resize, 'resize target')
+    assertUnitInterval(drag, 'drag target', tolerance)
+    assertUnitInterval(resize, 'resize target', tolerance)
     dragMass += drag
     resizeMass += resize
     for (const field of animationFields) {
@@ -1413,26 +1432,27 @@ function validateWindowManagerSource(values: unknown) {
     assertUnitInterval(
       values[springSourceField(windowIndex, springStateField.scale)],
       'spring scale',
+      tolerance,
     )
   }
-  invariant(dragMass <= 1 + 1e-9, 'drag target mass must not exceed one')
-  invariant(resizeMass <= 1 + 1e-9, 'resize target mass must not exceed one')
+  invariant(dragMass <= 1 + tolerance, 'drag target mass must not exceed one')
+  invariant(resizeMass <= 1 + tolerance, 'resize target mass must not exceed one')
 
   for (let rank = 0; rank < windowCount; rank++) {
     let rankMass = 0
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       const stack = values[stackSourceField(rank, windowIndex)]
-      assertUnitInterval(stack, 'stack cell')
+      assertUnitInterval(stack, 'stack cell', tolerance)
       rankMass += stack
     }
-    assertApproximatelyOne(rankMass, 'stack rank mass')
+    assertApproximatelyOne(rankMass, 'stack rank mass', tolerance)
   }
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     let windowMass = 0
     for (let rank = 0; rank < windowCount; rank++) {
       windowMass += values[stackSourceField(rank, windowIndex)]!
     }
-    assertApproximatelyOne(windowMass, 'stack window mass')
+    assertApproximatelyOne(windowMass, 'stack window mass', tolerance)
   }
 }
 
@@ -1443,14 +1463,18 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
   validateWireView([output.animationActive], 1, wireCount)
 }
 
-function validateWindowManagerOutput(values: Float64Array, output: WindowManagerOutput) {
+function validateWindowManagerOutput(
+  values: Float64Array,
+  output: WindowManagerOutput,
+  tolerance = 1e-9,
+) {
   assertFiniteValues(values, 'tensor output')
   const nextSource = Float64Array.from(output.nextSource, wire => values[wire]!)
-  validateWindowManagerSource(nextSource)
+  validateWindowManagerSource(nextSource, tolerance)
   for (const field of eventActiveFields) {
     invariant(nextSource[field] === 0, 'event latch must reset after refresh')
   }
-  assertUnitInterval(values[output.animationActive], 'animation active')
+  assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const outputStart = windowIndex * windowOutputField.size
     for (const field of geometryFields) {
@@ -1465,7 +1489,11 @@ function validateWindowManagerOutput(values: Float64Array, output: WindowManager
       windowOutputField.focused,
       windowOutputField.maximized,
     ]) {
-      assertUnitInterval(values[output.windows[outputStart + field]!], 'projected window flag')
+      assertUnitInterval(
+        values[output.windows[outputStart + field]!],
+        'projected window flag',
+        tolerance,
+      )
     }
     for (const field of [windowOutputField.translateX, windowOutputField.translateY]) {
       invariant(
@@ -1491,7 +1519,11 @@ function validateWindowManagerOutput(values: Float64Array, output: WindowManager
       dockOutputField.focused,
       dockOutputField.open,
     ]) {
-      assertUnitInterval(values[output.dockItems[outputStart + field]!], 'projected dock flag')
+      assertUnitInterval(
+        values[output.dockItems[outputStart + field]!],
+        'projected dock flag',
+        tolerance,
+      )
     }
   }
 }
@@ -1501,15 +1533,22 @@ function validateWireView(wires: readonly Wire[], size: number, wireCount: numbe
   for (const wire of wires) assertWire(wire, wireCount)
 }
 
-function assertUnitInterval(value: number | undefined, label: string): asserts value is number {
+function assertUnitInterval(
+  value: number | undefined,
+  label: string,
+  tolerance = 1e-9,
+): asserts value is number {
   invariant(
-    value !== undefined && Number.isFinite(value) && value >= -1e-9 && value <= 1 + 1e-9,
-    `${label} must be within zero and one`,
+    value !== undefined
+      && Number.isFinite(value)
+      && value >= -tolerance
+      && value <= 1 + tolerance,
+    `${label} must be within zero and one, got ${value}`,
   )
 }
 
-function assertApproximatelyOne(value: number, label: string) {
-  invariant(Math.abs(value - 1) <= 1e-8, `${label} must equal one`)
+function assertApproximatelyOne(value: number, label: string, tolerance = 1e-8) {
+  invariant(Math.abs(value - 1) <= tolerance, `${label} must equal one`)
 }
 
 if (typeof document !== 'undefined' && typeof window !== 'undefined') {

@@ -120,6 +120,23 @@ test('the fixed grid opens every photo with all twelve thumbnails', () => {
   assert.equal(values[machine.output.backdropOpacity], 1)
 })
 
+test('the FP32 gallery keeps every focus decision exact', () => {
+  const machine = createPhotoGalleryMachine({precision: 'float32'})
+  let values = machine.step(viewportWidth, viewportHeight)
+  const grid = projectPhotos(machine, values)
+
+  for (let item = 0; item < itemCount; item++) {
+    if (item > 0) {
+      machine.click(0, 0)
+      values = machine.step(viewportWidth, viewportHeight)
+    }
+    const target = grid[item]!
+    machine.click(target.left + target.width / 2, target.top + target.height / 2)
+    values = machine.step(viewportWidth, viewportHeight)
+    assertOneFocus(machine, item)
+  }
+})
+
 test('thumbnail clicks switch focus and backdrop clicks close', () => {
   const machine = createPhotoGalleryMachine()
   let values = machine.step(viewportWidth, viewportHeight)

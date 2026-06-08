@@ -77,6 +77,11 @@ new[booleanRows]   = boolean(new[booleanRows])
 values             = concat(values, new)
 ```
 
+The default evaluator keeps ordinary arithmetic in `Float64` and uses FP32
+only for `boolean`. An optional reference evaluator rounds every source value,
+weight, multiply, addition, and stored result to FP32. It gives us a stable
+CPU definition to compare against a future GPU backend.
+
 The demo validates the source table, stack mass, compiled matrices, and
 projected output after every refresh. It also compares every live tensor wire
 against a readable atom interpreter as a development assertion. Rendering
@@ -121,6 +126,7 @@ dragging, resizing, and workspace bounds
 maximize, minimize, close, and dock restoration
 same-frame pointer event batching
 long deterministic mixed-event invariant sequences
+matching Float64 and FP32 decisions over the same event sequence
 finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 direct next-state and render-output wire views

@@ -10,6 +10,7 @@ import {
   invariant,
   validateCircuit,
   validateTensorEvaluation,
+  validateTensorFloat32Evaluation,
   validateTensorProgram,
 } from './numeric-ui-core.ts'
 
@@ -371,7 +372,15 @@ export function compilePhotoGalleryCircuit() {
   }
 }
 
-export function createPhotoGalleryMachine({checkTensorEvaluation = true}: {checkTensorEvaluation?: boolean} = {}) {
+export function createPhotoGalleryMachine(
+  {
+    checkTensorEvaluation = true,
+    precision = 'float64',
+  }: {
+    checkTensorEvaluation?: boolean
+    precision?: 'float64' | 'float32'
+  } = {},
+) {
   const source = new Float64Array(sourceField.size)
   source[sourceField.gap] = 18
   source[sourceField.mainInset] = 92
@@ -389,6 +398,7 @@ export function createPhotoGalleryMachine({checkTensorEvaluation = true}: {check
     ...output.nextControl,
   ])
   validateTensorProgram(circuit, tensorProgram)
+  const numericTolerance = precision === 'float32' ? 1e-5 : 1e-9
 
   function receiveEvent(field: number, x = source[sourceField.clickX]!, y = source[sourceField.clickY]!) {
     for (const eventField of eventFields) source[eventField] = 0
@@ -405,10 +415,15 @@ export function createPhotoGalleryMachine({checkTensorEvaluation = true}: {check
     step(viewportWidth: number, viewportHeight: number) {
       source[sourceField.viewportWidth] = viewportWidth
       source[sourceField.viewportHeight] = viewportHeight
-      validateGallerySource(source)
-      const values = circuit.evaluateTensor(source)
-      if (checkTensorEvaluation) validateTensorEvaluation(source, circuit, values)
-      validateGalleryOutput(values, output)
+      validateGallerySource(source, numericTolerance)
+      const values = precision === 'float32'
+        ? circuit.evaluateTensorFloat32(source)
+        : circuit.evaluateTensor(source)
+      if (checkTensorEvaluation) {
+        if (precision === 'float32') validateTensorFloat32Evaluation(source, circuit, values)
+        else validateTensorEvaluation(source, circuit, values)
+      }
+      validateGalleryOutput(values, output, numericTolerance)
       for (let field = 0; field < source.length; field++) {
         source[field] = values[output.nextSource[field]!]!
       }
@@ -551,7 +566,7 @@ function emitIntervalDistance(circuit: Circuit, position: Wire, start: Wire, siz
   )
 }
 
-function validateGallerySource(values: unknown) {
+function validateGallerySource(values: unknown, tolerance = 1e-9) {
   invariant(values instanceof Float64Array, 'source table must be a Float64Array')
   invariant(values.length === sourceField.size, 'source table has the wrong length')
   assertFiniteValues(values, 'source table')
@@ -565,17 +580,17 @@ function validateGallerySource(values: unknown) {
   invariant(Number.isFinite(values[sourceField.clickY]), 'click y must be finite')
   let eventMass = 0
   for (const eventField of eventFields) {
-    assertUnitInterval(values[eventField], 'event latch')
+    assertUnitInterval(values[eventField], 'event latch', tolerance)
     eventMass += values[eventField]
   }
-  invariant(eventMass <= 1 + 1e-9, 'event mass must not exceed 1')
+  invariant(eventMass <= 1 + tolerance, 'event mass must not exceed 1')
   let focusMass = 0
   for (let item = 0; item < itemCount; item++) {
     const focus = values[focusField(item)]
-    assertUnitInterval(focus, `focus ${item}`)
+    assertUnitInterval(focus, `focus ${item}`, tolerance)
     focusMass += focus
   }
-  invariant(focusMass <= 1 + 1e-9, 'focus mass must not exceed 1')
+  invariant(focusMass <= 1 + tolerance, 'focus mass must not exceed 1')
 }
 
 function validateGalleryOutputWires(output: GalleryOutput, wireCount: number) {
@@ -587,21 +602,33 @@ function validateGalleryOutputWires(output: GalleryOutput, wireCount: number) {
   validateWireView(output.nextControl, controlField.size, wireCount)
 }
 
-function validateGalleryOutput(values: Float64Array, output: GalleryOutput) {
+function validateGalleryOutput(
+  values: Float64Array,
+  output: GalleryOutput,
+  tolerance = 1e-9,
+) {
   assertFiniteValues(values, 'tensor output')
   const nextSource = Float64Array.from(output.nextSource, wire => values[wire]!)
-  validateGallerySource(nextSource)
+  validateGallerySource(nextSource, tolerance)
   for (const eventField of eventFields) {
     invariant(nextSource[eventField] === 0, 'event latch must reset after refresh')
   }
-  assertUnitInterval(values[output.backdropOpacity], 'backdrop opacity')
+  assertUnitInterval(values[output.backdropOpacity], 'backdrop opacity', tolerance)
   for (let item = 0; item < itemCount; item++) {
     const outputStart = item * photoField.size
     for (const field of geometryFields) {
       assertNonNegativeFinite(values[output.photos[outputStart + photoField[field]]!], `photo ${field}`)
     }
-    assertUnitInterval(values[output.photos[outputStart + photoField.opacity]!], 'photo opacity')
-    assertUnitInterval(values[output.photos[outputStart + photoField.focused]!], 'photo focus')
+    assertUnitInterval(
+      values[output.photos[outputStart + photoField.opacity]!],
+      'photo opacity',
+      tolerance,
+    )
+    assertUnitInterval(
+      values[output.photos[outputStart + photoField.focused]!],
+      'photo focus',
+      tolerance,
+    )
   }
   for (let item = 0; item < itemCount; item++) {
     const outputStart = item * thumbnailField.size
@@ -614,17 +641,19 @@ function validateGalleryOutput(values: Float64Array, output: GalleryOutput) {
     assertUnitInterval(
       values[output.thumbnails[outputStart + thumbnailField.opacity]!],
       'thumbnail opacity',
+      tolerance,
     )
     assertUnitInterval(
       values[output.thumbnails[outputStart + thumbnailField.focused]!],
       'thumbnail focus',
+      tolerance,
     )
   }
   for (const control of [output.previousControl, output.nextControl]) {
     for (const field of geometryFields) {
       assertNonNegativeFinite(values[control[controlField[field]]!], `control ${field}`)
     }
-    assertUnitInterval(values[control[controlField.opacity]!], 'control opacity')
+    assertUnitInterval(values[control[controlField.opacity]!], 'control opacity', tolerance)
   }
 }
 
@@ -641,10 +670,17 @@ function emitClampZeroOne(circuit: Circuit, value: Wire): Wire {
   return result
 }
 
-function assertUnitInterval(value: number | undefined, label: string): asserts value is number {
+function assertUnitInterval(
+  value: number | undefined,
+  label: string,
+  tolerance = 1e-9,
+): asserts value is number {
   invariant(
-    value !== undefined && Number.isFinite(value) && value >= -1e-9 && value <= 1 + 1e-9,
-    `${label} must be within 0..1`,
+    value !== undefined
+      && Number.isFinite(value)
+      && value >= -tolerance
+      && value <= 1 + tolerance,
+    `${label} must be within 0..1, got ${value}`,
   )
 }
 
