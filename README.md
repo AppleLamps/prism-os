@@ -47,15 +47,15 @@ photo-gallery-00..11.webp     twelve fixed image constants
 The window manager has four preallocated windows. Its single source table holds
 viewport facts, layout constants, raw pointer and wheel latches, normal window
 geometry, open/minimized/maximized flags, drag and resize targets, a 4 by 4
-stacking matrix, Palette scroll position, visual-presence flags, frame time,
-and five position/velocity spring pairs per window: center X/Y, width/height,
-and scale. One fixed circuit computes:
+stacking matrix, Palette vertical scroll position, visual-presence flags,
+frame time, and five position/velocity spring pairs per window: center X/Y,
+width/height, and scale. One fixed circuit computes:
 
 ```txt
 topmost hit selection and focus
 stable raise-to-front ordering
 immediate dragging, resizing, and workspace bounds
-bounded two-axis Palette scrolling, fixed cell geometry, and scrollbars
+bounded vertical Palette scrolling, responsive three-column geometry, and culling
 minimize and close into dock icons; restore and open out of them
 stable target hit geometry independent of animated presentation
 four fixed spring substeps for every geometry and transform lane
@@ -97,8 +97,8 @@ representing the same fixed rectangular matrices.
 The measured tensor footprints are:
 
 ```txt
-window manager: source 142, graph width 3,586, live values 1,846, layers 52
-                stored weights 8,366, layer tensor bytes 114,820
+window manager: source 139, graph width 3,685, live values 1,904, layers 51
+                stored weights 8,573, layer tensor bytes 117,732
 photo lightbox: source 24, graph width 612, live values 365, layers 10
                 stored weights 2,311, layer tensor bytes 25,528
 ```
@@ -138,7 +138,7 @@ finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 relation-driven grid, row, stack, and overlap layouts
 inverse relation search from target geometry
-two-axis Palette scrolling, fixed cell geometry, scrollbars, and occlusion
+vertical Palette scrolling, responsive 3 by 20 geometry, scrollbar, and culling
 direct next-state and render-output wire views
 four expanded spring substeps per lane
 window geometry destinations and recurrent spring convergence
