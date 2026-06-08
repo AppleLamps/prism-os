@@ -29,6 +29,7 @@ The main files are:
 numeric-ui-core.ts            universal numeric vocabulary and tensor backend
 numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
+execution-model.md            exact FP32 instruction and layer semantics
 boolean-state.md              rules for turning continuous scores into bits
 window-manager.ts             numeric window state machine and DOM adapter
 window-manager.test.ts        browser-free window-manager behavior proofs
