@@ -30,6 +30,7 @@ numeric-ui-core.ts            universal numeric vocabulary and tensor backend
 numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
 numeric-ui-relations.test.ts  fixed-program relation-driven layout proof
+numeric-ui-viewport.test.ts   fixed-capacity scrolling and clipping proof
 execution-model.md            exact FP32 instruction and layer semantics
 boolean-state.md              rules for turning continuous scores into bits
 window-manager.ts             numeric window state machine and DOM adapter
@@ -135,6 +136,7 @@ seeded random circuits with varied roots and dead outputs
 finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 relation-driven grid, row, stack, and overlap layouts
+scrolling, clipped row geometry, and occlusion decisions
 direct next-state and render-output wire views
 four expanded spring substeps per lane
 window geometry destinations and recurrent spring convergence
