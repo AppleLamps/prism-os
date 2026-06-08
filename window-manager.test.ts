@@ -56,12 +56,10 @@ function projectWindows(machine: Machine, values: Float64Array) {
     const start = windowIndex * windowOutputField.size
     const output = machine.output.windows
     return {
-      left: values[output[start + windowOutputField.left]!]!,
-      top: values[output[start + windowOutputField.top]!]!,
+      left: values[output[start + windowOutputField.translateX]!]!,
+      top: values[output[start + windowOutputField.translateY]!]!,
       width: values[output[start + windowOutputField.width]!]!,
       height: values[output[start + windowOutputField.height]!]!,
-      translateX: values[output[start + windowOutputField.translateX]!]!,
-      translateY: values[output[start + windowOutputField.translateY]!]!,
       scale: values[output[start + windowOutputField.scale]!]!,
       opacity: values[output[start + windowOutputField.opacity]!]!,
       focused: values[output[start + windowOutputField.focused]!]!,
@@ -92,12 +90,10 @@ function assertCenteredOnDock(
   dock: ReturnType<typeof projectDock>[number],
 ) {
   assert.ok(Math.abs(
-    window.left + window.width / 2 + window.translateX
-    - (dock.left + dock.width / 2),
+    window.left + window.width / 2 - (dock.left + dock.width / 2),
   ) < 1e-9)
   assert.ok(Math.abs(
-    window.top + window.height / 2 + window.translateY
-    - (dock.top + dock.height / 2),
+    window.top + window.height / 2 - (dock.top + dock.height / 2),
   ) < 1e-9)
 }
 
@@ -197,8 +193,6 @@ function assertWindowManagerInvariants(
       windows[windowIndex]!.top,
       windows[windowIndex]!.width,
       windows[windowIndex]!.height,
-      windows[windowIndex]!.translateX,
-      windows[windowIndex]!.translateY,
       windows[windowIndex]!.scale,
     ]) {
       assert.ok(Number.isFinite(value), `window ${windowIndex} geometry must remain finite`)
@@ -310,15 +304,13 @@ function createRandomAction(
   const grip = machine.source[sourceField.resizeGrip]!
   const start = choice === 6
     ? {
-        x: window.left + window.translateX + Math.min(40, window.width / 4),
-        y: window.top + window.translateY
+        x: window.left + Math.min(40, window.width / 4),
+        y: window.top
           + Math.min(machine.source[sourceField.titleHeight]! / 2, window.height / 4),
       }
     : {
-        x: window.left + window.translateX + window.width
-          - Math.min(grip / 2, window.width / 4),
-        y: window.top + window.translateY + window.height
-          - Math.min(grip / 2, window.height / 4),
+        x: window.left + window.width - Math.min(grip / 2, window.width / 4),
+        y: window.top + window.height - Math.min(grip / 2, window.height / 4),
       }
   const end = {
     x: start.x + (random() - 0.5) * width,
@@ -383,8 +375,6 @@ function maximumProductDifference(
     'top',
     'width',
     'height',
-    'translateX',
-    'translateY',
     'scale',
     'opacity',
   ] as const
@@ -433,8 +423,6 @@ test('the fixed table projects four bounded windows and one focused front window
     top: 54,
     width: 520,
     height: 340,
-    translateX: 0,
-    translateY: 0,
     scale: 1,
     opacity: 1,
     focused: 0,
@@ -629,7 +617,7 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   let window = projectWindows(machine, values)[3]!
   assert.equal(window.maximized, 1)
   assert.equal(animationActive(machine, values), 1)
-  assert.notEqual(window.left + window.translateX, 12)
+  assert.notEqual(window.left, 12)
   values = settle(machine)
   window = projectWindows(machine, values)[3]!
   assert.deepEqual(
@@ -692,8 +680,6 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
     {left: window.left, top: window.top, width: window.width, height: window.height},
     {left: 12, top: 48, width: 1256, height: 664},
   )
-  assert.equal(window.translateX, 0)
-  assert.equal(window.translateY, 0)
   assert.equal(window.scale, 1)
   assert.equal(window.stack, 4)
 
@@ -726,8 +712,6 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
     {left: window.left, top: window.top, width: window.width, height: window.height},
     {left: 744, top: 270, width: 430, height: 310},
   )
-  assert.equal(window.translateX, 0)
-  assert.equal(window.translateY, 0)
   assert.equal(window.scale, 1)
 })
 

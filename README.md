@@ -63,7 +63,8 @@ render. The render supplies viewport dimensions and the RAF timestamp,
 evaluates the numeric program, copies its next-state wire view into the same
 source table, and writes projected values onto permanent DOM nodes. A numeric
 animation-active output requests another frame until every spring has snapped
-exactly to its destination.
+exactly to its destination. Window nodes stay at CSS `left: 0; top: 0`; the
+circuit projects absolute X/Y translations, width, height, and scale.
 
 At startup, the circuit compiles into fixed numeric layers. Every refresh runs
 the same layers without window-specific runtime branches:
@@ -94,8 +95,8 @@ representing the same fixed rectangular matrices.
 The measured tensor footprints are:
 
 ```txt
-window manager: source 131, graph width 3,092, live values 1,619, layers 50
-                stored weights 7,476, layer tensor bytes 102,116
+window manager: source 131, graph width 3,092, live values 1,611, layers 50
+                stored weights 7,396, layer tensor bytes 101,276
 photo lightbox: source 24, graph width 612, live values 365, layers 10
                 stored weights 2,311, layer tensor bytes 25,528
 ```

@@ -30,18 +30,16 @@ export const windowStateField = {
 } as const
 
 export const windowOutputField = {
-  left: 0,
-  top: 1,
+  translateX: 0,
+  translateY: 1,
   width: 2,
   height: 3,
-  translateX: 4,
-  translateY: 5,
-  scale: 6,
-  opacity: 7,
-  focused: 8,
-  stack: 9,
-  maximized: 10,
-  size: 11,
+  scale: 4,
+  opacity: 5,
+  focused: 6,
+  stack: 7,
+  maximized: 8,
+  size: 9,
 } as const
 
 export const dockOutputField = {
@@ -178,7 +176,8 @@ type SpringState = {
   velocity: Wire
 }
 type WindowAnimation = {
-  geometry: Geometry
+  width: Wire
+  height: Wire
   transform: Transform
   springs: Record<AnimationField, SpringState>
   active: Wire
@@ -855,21 +854,15 @@ export function compileWindowManagerCircuit() {
       unit,
     )
     windowAnimations.push({
-      geometry: {
-        left: visibleTarget.left,
-        top: visibleTarget.top,
-        width,
-        height,
-      },
+      width,
+      height,
       transform: {
         translateX: circuit.affine([
           [centerX, 1],
-          [visibleTarget.left, -1],
           [halfWidth, -1],
         ]),
         translateY: circuit.affine([
           [centerY, 1],
-          [visibleTarget.top, -1],
           [halfHeight, -1],
         ]),
         scale: state.scale.position,
@@ -934,19 +927,16 @@ export function compileWindowManagerCircuit() {
   const dockItems: Wire[] = []
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const animation = windowAnimations[windowIndex]!
-    const geometry = animation.geometry
     const stackTerms: [Wire, number][] = []
     for (let rank = 0; rank < windowCount; rank++) {
       stackTerms.push([nextStack[rank]![windowIndex]!, rank + 1])
     }
     stackTerms.push([animation.active, 40])
     windows.push(
-      geometry.left,
-      geometry.top,
-      geometry.width,
-      geometry.height,
       animation.transform.translateX,
       animation.transform.translateY,
+      animation.width,
+      animation.height,
       animation.transform.scale,
       nextPresent[windowIndex]!,
       focusedWindow[windowIndex]!,
@@ -1141,11 +1131,14 @@ export function mountWindowManager(document: Document, window: Window) {
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       const element = domCache.windows[windowIndex]!
       const outputStart = windowIndex * windowOutputField.size
-      projectGeometry(element, values, machine.output.windows, outputStart, windowOutputField)
       const translateX =
         values[machine.output.windows[outputStart + windowOutputField.translateX]!]!
       const translateY =
         values[machine.output.windows[outputStart + windowOutputField.translateY]!]!
+      element.style.width =
+        `${values[machine.output.windows[outputStart + windowOutputField.width]!]}px`
+      element.style.height =
+        `${values[machine.output.windows[outputStart + windowOutputField.height]!]}px`
       const scale = values[machine.output.windows[outputStart + windowOutputField.scale]!]!
       element.style.transform =
         `translate3d(${translateX}px,${translateY}px,0) scale(${scale})`
@@ -1165,7 +1158,7 @@ export function mountWindowManager(document: Document, window: Window) {
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       const element = domCache.dockItems[windowIndex]!
       const outputStart = windowIndex * dockOutputField.size
-      projectGeometry(element, values, machine.output.dockItems, outputStart, dockOutputField)
+      projectDockGeometry(element, values, machine.output.dockItems, outputStart)
       element.style.setProperty(
         '--inactive',
         `${values[machine.output.dockItems[outputStart + dockOutputField.inactive]!]}`,
@@ -1203,16 +1196,15 @@ export function mountWindowManager(document: Document, window: Window) {
   return machine
 }
 
-function projectGeometry(
+function projectDockGeometry(
   element: HTMLElement,
   values: Float64Array,
   output: readonly Wire[],
   outputStart: number,
-  field: typeof windowOutputField | typeof dockOutputField,
 ) {
   for (const geometryField of geometryFields) {
     element.style[geometryField] =
-      `${values[output[outputStart + field[geometryField]]!]}px`
+      `${values[output[outputStart + dockOutputField[geometryField]]!]}px`
   }
 }
 
@@ -1477,9 +1469,9 @@ function validateWindowManagerOutput(
   assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const outputStart = windowIndex * windowOutputField.size
-    for (const field of geometryFields) {
+    for (const field of [windowOutputField.width, windowOutputField.height]) {
       assertNonNegativeFinite(
-        values[output.windows[outputStart + windowOutputField[field]]!],
+        values[output.windows[outputStart + field]!],
         'projected window geometry',
         tolerance,
       )

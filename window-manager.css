@@ -91,6 +91,8 @@ body {
   --focused: 0;
   --maximized: 0;
   position: absolute;
+  top: 0;
+  left: 0;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
