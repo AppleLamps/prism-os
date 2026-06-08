@@ -159,3 +159,5 @@ do not change this before asking the user
   fixed compiled circuit while source-table values change. Later explore
   whether behavior-defining projections and gates can themselves live in
   numeric regions and change without generating new JavaScript.
+- Retry layer scheduling after circuit shapes change. The earliest legal
+  schedule currently wins, but that may not generalize.
