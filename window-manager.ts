@@ -1039,7 +1039,7 @@ export function createWindowManagerMachine(
     output.animationActive,
   ])
   validateTensorProgram(circuit, tensorProgram)
-  const numericTolerance = precision === 'float32' ? 1e-5 : 1e-9
+  const numericTolerance = 1e-5
 
   function receivePointer(activeField: number, xField: number, yField: number, x: number, y: number) {
     invariant(Number.isFinite(x) && Number.isFinite(y), 'pointer coordinates must be finite')
@@ -1481,6 +1481,7 @@ function validateWindowManagerOutput(
       assertNonNegativeFinite(
         values[output.windows[outputStart + windowOutputField[field]]!],
         'projected window geometry',
+        tolerance,
       )
     }
     for (const field of [
@@ -1504,6 +1505,7 @@ function validateWindowManagerOutput(
     assertNonNegativeFinite(
       values[output.windows[outputStart + windowOutputField.stack]!],
       'projected stack',
+      tolerance,
     )
   }
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
@@ -1512,6 +1514,7 @@ function validateWindowManagerOutput(
       assertNonNegativeFinite(
         values[output.dockItems[outputStart + dockOutputField[field]]!],
         'projected dock geometry',
+        tolerance,
       )
     }
     for (const field of [

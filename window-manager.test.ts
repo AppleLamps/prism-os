@@ -512,8 +512,9 @@ test('title dragging updates numeric geometry and clamps the whole window to the
   )
 
   machine.pointerUp(2000, 2000)
-  step(machine)
+  values = step(machine)
   assert.equal(machine.source[dragSourceField(0)], 0)
+  assert.equal(projectWindows(machine, values)[0]!.stack, 4)
 })
 
 test('resize grip changes both dimensions and enforces numeric minimums', () => {

@@ -23,12 +23,12 @@ export type TensorLayer = {
   inputIndices: Uint32Array
   inputSize: number
   outputSize: number
-  bias: Float64Array
+  bias: Float32Array
   gateRows: Uint32Array
   booleanRows: Uint32Array
   rowOffsets: Uint32Array
   columns: Uint32Array
-  weights: Float64Array
+  weights: Float32Array
 }
 
 export type TensorProgram = {
@@ -233,7 +233,7 @@ export class Circuit {
         inputColumnByWire[orderedInputWires[column]!] = column
       }
       const projectionSize = outputSize + gateCount
-      const bias = new Float64Array(projectionSize)
+      const bias = new Float32Array(projectionSize)
       const gateRows = new Uint32Array(gateCount)
       const booleanRows = new Uint32Array(booleanCount)
       const projectionTerms = Array<Terms>(projectionSize)
@@ -265,7 +265,7 @@ export class Circuit {
       }
       const storedWeightCount = rowOffsets[projectionSize]!
       const columns = new Uint32Array(storedWeightCount)
-      const weights = new Float64Array(storedWeightCount)
+      const weights = new Float32Array(storedWeightCount)
       let storedWeight = 0
       for (const terms of projectionTerms) {
         for (const [wire, coefficient] of terms) {
@@ -593,11 +593,11 @@ export function evaluateTensorProgramFloat32(
 
 function sparseMatmulAddBias(
   output: Float64Array,
-  weights: Float64Array,
+  weights: Float32Array,
   columns: Uint32Array,
   rowOffsets: Uint32Array,
   input: Float64Array,
-  bias: Float64Array,
+  bias: Float32Array,
 ) {
   for (let row = 0; row < bias.length; row++) {
     let value = bias[row]!
@@ -610,18 +610,16 @@ function sparseMatmulAddBias(
 
 function sparseMatmulAddBiasFloat32(
   output: Float32Array,
-  weights: Float64Array,
+  weights: Float32Array,
   columns: Uint32Array,
   rowOffsets: Uint32Array,
   input: Float32Array,
-  bias: Float64Array,
+  bias: Float32Array,
 ) {
   for (let row = 0; row < bias.length; row++) {
-    let value = Math.fround(bias[row]!)
+    let value = bias[row]!
     for (let index = rowOffsets[row]!; index < rowOffsets[row + 1]!; index++) {
-      const product = Math.fround(
-        Math.fround(weights[index]!) * input[columns[index]!]!,
-      )
+      const product = Math.fround(weights[index]! * input[columns[index]!]!)
       value = Math.fround(value + product)
     }
     output[row] = value
@@ -766,12 +764,55 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
 }
 
 export function validateTensorEvaluation(source: Float64Array, circuit: Circuit, tensorValues: Float64Array) {
-  const expectedValues = evaluateOperationStream(source, circuit)
+  const expectedValues = evaluateOperationStreamWithFloat32Constants(source, circuit)
   invariant(expectedValues.length === tensorValues.length, 'tensor result width mismatch')
   const program = circuit.tensorProgram ??= circuit.compileTensorProgram()
   for (const wire of program.wireOrder) {
     assertApproximatelyEqual(tensorValues[wire]!, expectedValues[wire]!, `tensor wire ${wire}`)
   }
+}
+
+function evaluateOperationStreamWithFloat32Constants(
+  source: Float64Array,
+  circuit: Circuit,
+): Float64Array {
+  invariant(source.length === circuit.sourceSize, 'source table has the wrong length')
+  const values = new Float64Array(circuit.sourceSize + circuit.operations.length)
+  values.set(source)
+  for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
+    const operation = circuit.operations[operationIndex]!
+    let value = evaluateTermsWithFloat32Constants(
+      values,
+      operation.leftTerms,
+      operation.leftBias,
+    )
+    if (operation.kind === 'reglu') {
+      value *= Math.max(
+        0,
+        evaluateTermsWithFloat32Constants(
+          values,
+          operation.gateTerms,
+          operation.gateBias,
+        ),
+      )
+    } else if (operation.kind === 'boolean') {
+      value = evaluateBoolean(value)
+    }
+    values[circuit.sourceSize + operationIndex] = value
+  }
+  return values
+}
+
+function evaluateTermsWithFloat32Constants(
+  values: Float64Array,
+  terms: Terms,
+  bias: number,
+) {
+  let value = Math.fround(bias)
+  for (const [wire, coefficient] of terms) {
+    value += Math.fround(coefficient) * values[wire]!
+  }
+  return value
 }
 
 export function validateTensorFloat32Evaluation(
@@ -794,8 +835,15 @@ export function assertWire(wire: number, limit: number) {
   invariant(Number.isInteger(wire) && wire >= 0 && wire < limit, 'wire is outside the compiled circuit')
 }
 
-export function assertNonNegativeFinite(value: number | undefined, label: string): asserts value is number {
-  invariant(value !== undefined && Number.isFinite(value) && value >= 0, `${label} must be non-negative and finite`)
+export function assertNonNegativeFinite(
+  value: number | undefined,
+  label: string,
+  tolerance = 0,
+): asserts value is number {
+  invariant(
+    value !== undefined && Number.isFinite(value) && value >= -tolerance,
+    `${label} must be non-negative and finite, got ${value}`,
+  )
 }
 
 export function assertFiniteValues(values: Iterable<number>, label: string) {

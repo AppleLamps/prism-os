@@ -82,7 +82,8 @@ default. Every source value, weight, multiply, addition, and stored result is
 rounded to FP32. This gives the product one stable CPU meaning that can later
 be matched by a GPU backend. The Float64 evaluator remains only as an explicit
 test oracle for measuring numeric drift and checking that both evaluators make
-the same discrete decisions.
+the same discrete decisions. Compiled weights and biases are stored directly
+in `Float32Array`s; index arrays remain 32-bit integers.
 
 The demo validates the source table, stack mass, compiled matrices, and
 projected output after every refresh. It also compares every live tensor wire
@@ -94,9 +95,9 @@ The measured tensor footprints are:
 
 ```txt
 window manager: source 131, graph width 3,092, live values 1,619, layers 50
-                stored weights 7,476, layer tensor bytes 143,276
+                stored weights 7,476, layer tensor bytes 102,116
 photo lightbox: source 24, graph width 612, live values 365, layers 10
-                stored weights 2,311, layer tensor bytes 37,060
+                stored weights 2,311, layer tensor bytes 25,528
 ```
 
 The persistent source table is a fixed `Float64Array`. Immutable constants and

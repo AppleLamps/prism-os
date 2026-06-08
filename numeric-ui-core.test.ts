@@ -23,6 +23,17 @@ test('tensor layers append only their new values', () => {
   assert.deepEqual([...circuit.evaluateTensor(new Float64Array([5, 7]))], [5, 7, 10, 40, 21])
 })
 
+test('compiled tensor constants use native FP32 storage', () => {
+  const circuit = new Circuit(1)
+  circuit.affine([[0, 1 / 3]], 1 / 10)
+  const layer = circuit.compileTensorProgram().layers[0]!
+
+  assert.ok(layer.weights instanceof Float32Array)
+  assert.ok(layer.bias instanceof Float32Array)
+  assert.equal(layer.weights[0], Math.fround(1 / 3))
+  assert.equal(layer.bias[0], Math.fround(1 / 10))
+})
+
 test('the FP32 evaluator rounds every arithmetic step', () => {
   const circuit = new Circuit(2)
   const sum = circuit.affine([[0, 1], [1, 1]])
