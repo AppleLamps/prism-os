@@ -424,6 +424,33 @@ body {
   will-change: width, height, transform;
 }
 
+.palette-scrollbar {
+  position: absolute;
+  z-index: 2;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+  pointer-events: none;
+  transition: opacity 100ms linear;
+}
+
+.palette-scrollbar-horizontal {
+  right: 15px;
+  bottom: 5px;
+  left: 5px;
+  height: 6px;
+}
+
+.palette-scrollbar-vertical {
+  top: 5px;
+  right: 5px;
+  bottom: 15px;
+  width: 6px;
+}
+
+.palette-scrollbar-thumb {
+  fill: rgb(255 255 255 / 48%);
+}
+
 .swatch-a { background: #ff7b72; }
 .swatch-b { background: #61dafb; }
 .swatch-c { background: #ffc857; }

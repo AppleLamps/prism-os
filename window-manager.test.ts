@@ -6,6 +6,7 @@ import {
   dragSourceField,
   paletteCellCount,
   paletteCellOutputField,
+  paletteScrollbarOutputField,
   resizeSourceField,
   sourceField,
   stackSourceField,
@@ -99,6 +100,22 @@ function projectPalette(machine: Machine, values: Float32Array) {
       opacity: values[output[start + paletteCellOutputField.opacity]!]!,
     }
   })
+}
+
+function projectPaletteScrollbars(machine: Machine, values: Float32Array) {
+  const output = machine.output.paletteScrollbars
+  return {
+    scrollX: values[output[paletteScrollbarOutputField.scrollX]!]!,
+    scrollY: values[output[paletteScrollbarOutputField.scrollY]!]!,
+    viewportWidth: values[output[paletteScrollbarOutputField.viewportWidth]!]!,
+    viewportHeight: values[output[paletteScrollbarOutputField.viewportHeight]!]!,
+    contentWidth: values[output[paletteScrollbarOutputField.contentWidth]!]!,
+    contentHeight: values[output[paletteScrollbarOutputField.contentHeight]!]!,
+    horizontalOpacity:
+      values[output[paletteScrollbarOutputField.horizontalOpacity]!]!,
+    verticalOpacity:
+      values[output[paletteScrollbarOutputField.verticalOpacity]!]!,
+  }
 }
 
 function assertCenteredOnDock(
@@ -239,8 +256,8 @@ function assertWindowManagerInvariants(
     assert.equal(windowMass, 1)
   }
   for (const cell of palette) {
-    assert.ok(cell.left >= 0 && Number.isFinite(cell.left))
-    assert.ok(cell.top >= 0 && Number.isFinite(cell.top))
+    assert.ok(Number.isFinite(cell.left))
+    assert.ok(Number.isFinite(cell.top))
     assert.ok(cell.width >= 0 && Number.isFinite(cell.width))
     assert.ok(cell.height >= 0 && Number.isFinite(cell.height))
     assertBit(cell.opacity, 'palette cell opacity')
@@ -405,27 +422,44 @@ test('Palette scrolls and clips its fixed 2D grid inside the numeric circuit', (
   const machine = createWindowManagerMachine()
   let values = step(machine)
   let cells = projectPalette(machine, values)
+  let scrollbars = projectPaletteScrollbars(machine, values)
 
   assert.deepEqual(cells[0], {left: 16, top: 16, width: 120, height: 88, opacity: 1})
-  assert.deepEqual(cells[3], {left: 406, top: 16, width: 24, height: 88, opacity: 1})
-  assert.deepEqual(cells[8], {left: 16, top: 212, width: 120, height: 54, opacity: 1})
-  assert.deepEqual(cells[12], {left: 16, top: 266, width: 120, height: 0, opacity: 0})
+  assert.deepEqual(cells[3], {left: 406, top: 16, width: 120, height: 88, opacity: 1})
+  assert.deepEqual(cells[8], {left: 16, top: 212, width: 120, height: 88, opacity: 1})
+  assert.deepEqual(cells[12], {left: 16, top: 310, width: 120, height: 88, opacity: 0})
+  assert.deepEqual(scrollbars, {
+    scrollX: 0,
+    scrollY: 0,
+    viewportWidth: 430,
+    viewportHeight: 266,
+    contentWidth: 542,
+    contentHeight: 414,
+    horizontalOpacity: 1,
+    verticalOpacity: 1,
+  })
 
   machine.wheel(800, 400, 50, 70)
   values = step(machine)
   cells = projectPalette(machine, values)
+  scrollbars = projectPaletteScrollbars(machine, values)
   assert.equal(machine.source[sourceField.paletteScrollX], 50)
   assert.equal(machine.source[sourceField.paletteScrollY], 70)
-  assert.deepEqual(cells[0], {left: 0, top: 0, width: 86, height: 34, opacity: 1})
-  assert.deepEqual(cells[15], {left: 356, top: 240, width: 74, height: 26, opacity: 1})
+  assert.deepEqual(cells[0], {left: -34, top: -54, width: 120, height: 88, opacity: 1})
+  assert.deepEqual(cells[15], {left: 356, top: 240, width: 120, height: 88, opacity: 1})
+  assert.equal(scrollbars.scrollX, 50)
+  assert.equal(scrollbars.scrollY, 70)
 
   machine.wheel(800, 400, 1_000, 1_000)
   values = step(machine)
   cells = projectPalette(machine, values)
+  scrollbars = projectPaletteScrollbars(machine, values)
   assert.equal(machine.source[sourceField.paletteScrollX], 112)
   assert.equal(machine.source[sourceField.paletteScrollY], 148)
-  assert.deepEqual(cells[0], {left: 0, top: 0, width: 24, height: 0, opacity: 0})
+  assert.deepEqual(cells[0], {left: -96, top: -132, width: 120, height: 88, opacity: 0})
   assert.deepEqual(cells[15], {left: 294, top: 162, width: 120, height: 88, opacity: 1})
+  assert.equal(scrollbars.scrollX, 112)
+  assert.equal(scrollbars.scrollY, 148)
 
   machine.wheel(800, 400, -1_000, -1_000)
   values = step(machine)
@@ -804,6 +838,7 @@ test('next state is a direct numeric view and runtime atoms remain fixed', () =>
     machine.output.paletteCells.length,
     paletteCellCount * paletteCellOutputField.size,
   )
+  assert.equal(machine.output.paletteScrollbars.length, paletteScrollbarOutputField.size)
   assert.deepEqual(
     [...new Set(machine.circuit.operations.map(operation => operation.kind))].sort(),
     ['affine', 'boolean', 'reglu'],

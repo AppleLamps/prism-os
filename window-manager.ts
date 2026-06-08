@@ -64,6 +64,18 @@ export const paletteCellOutputField = {
   size: 5,
 } as const
 
+export const paletteScrollbarOutputField = {
+  scrollX: 0,
+  scrollY: 1,
+  viewportWidth: 2,
+  viewportHeight: 3,
+  contentWidth: 4,
+  contentHeight: 5,
+  horizontalOpacity: 6,
+  verticalOpacity: 7,
+  size: 8,
+} as const
+
 export const springStateField = {
   centerX: 0,
   centerY: 1,
@@ -220,6 +232,7 @@ type WindowManagerOutput = {
   windows: Wire[]
   dockItems: Wire[]
   paletteCells: Wire[]
+  paletteScrollbars: Wire[]
   animationActive: Wire
 }
 
@@ -1045,14 +1058,38 @@ export function compileWindowManagerCircuit() {
         unit,
       ))
       paletteCells.push(
-        clippedLeft,
-        clippedTop,
-        width,
-        height,
+        left,
+        top,
+        sourceField.paletteCellWidth,
+        sourceField.paletteCellHeight,
         visible,
       )
     }
   }
+  const paletteScrollbars = [
+    nextPaletteScrollX,
+    nextPaletteScrollY,
+    paletteAnimation.width,
+    paletteOutputHeight,
+    paletteContentWidth,
+    paletteContentHeight,
+    circuit.boolean(emitClampZeroOne(
+      circuit,
+      emitRelu(circuit, circuit.affine([
+        [paletteContentWidth, 1],
+        [paletteAnimation.width, -1],
+      ])),
+      unit,
+    )),
+    circuit.boolean(emitClampZeroOne(
+      circuit,
+      emitRelu(circuit, circuit.affine([
+        [paletteContentHeight, 1],
+        [paletteOutputHeight, -1],
+      ])),
+      unit,
+    )),
+  ]
 
   const nextSource = Array.from({length: sourceField.size}, (_, field) => field)
   for (const field of eventActiveFields) nextSource[field] = zero
@@ -1127,6 +1164,7 @@ export function compileWindowManagerCircuit() {
       windows,
       dockItems,
       paletteCells,
+      paletteScrollbars,
       animationActive,
     },
   }
@@ -1189,6 +1227,7 @@ export function createWindowManagerMachine() {
     ...output.windows,
     ...output.dockItems,
     ...output.paletteCells,
+    ...output.paletteScrollbars,
     output.animationActive,
   ])
   validateTensorProgram(circuit, tensorProgram)
@@ -1256,17 +1295,33 @@ export function mountWindowManager(document: Document, window: Window) {
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
   const paletteCells = [...document.querySelectorAll<HTMLElement>('.palette-cell')]
+  const horizontalScrollbar =
+    document.querySelector<SVGSVGElement>('.palette-scrollbar-horizontal')
+  const horizontalScrollbarThumb =
+    horizontalScrollbar?.querySelector<SVGRectElement>('.palette-scrollbar-thumb')
+  const verticalScrollbar =
+    document.querySelector<SVGSVGElement>('.palette-scrollbar-vertical')
+  const verticalScrollbarThumb =
+    verticalScrollbar?.querySelector<SVGRectElement>('.palette-scrollbar-thumb')
   const readout = document.querySelector<HTMLElement>('#readout')
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
   invariant(paletteCells.length === paletteCellCount, 'palette cell count mismatch')
+  invariant(horizontalScrollbar !== null, 'horizontal palette scrollbar is missing')
+  invariant(horizontalScrollbarThumb != null, 'horizontal palette thumb is missing')
+  invariant(verticalScrollbar !== null, 'vertical palette scrollbar is missing')
+  invariant(verticalScrollbarThumb != null, 'vertical palette thumb is missing')
   invariant(readout !== null, 'readout is missing')
   const domCache = {
     desktop, // mount lifetime
     windows, // mount lifetime
     dockItems, // mount lifetime
     paletteCells, // mount lifetime
+    horizontalScrollbar, // mount lifetime
+    horizontalScrollbarThumb, // mount lifetime
+    verticalScrollbar, // mount lifetime
+    verticalScrollbarThumb, // mount lifetime
     readout, // mount lifetime
   }
   const storedWeightCount = machine.tensorProgram.layers.reduce(
@@ -1358,6 +1413,33 @@ export function mountWindowManager(document: Document, window: Window) {
       element.style.opacity =
         `${values[machine.output.paletteCells[outputStart + paletteCellOutputField.opacity]!]}`
     }
+    const scrollbarOutput = machine.output.paletteScrollbars
+    const scrollX = values[scrollbarOutput[paletteScrollbarOutputField.scrollX]!]!
+    const scrollY = values[scrollbarOutput[paletteScrollbarOutputField.scrollY]!]!
+    const paletteViewportWidth =
+      values[scrollbarOutput[paletteScrollbarOutputField.viewportWidth]!]!
+    const paletteViewportHeight =
+      values[scrollbarOutput[paletteScrollbarOutputField.viewportHeight]!]!
+    const paletteContentWidth =
+      values[scrollbarOutput[paletteScrollbarOutputField.contentWidth]!]!
+    const paletteContentHeight =
+      values[scrollbarOutput[paletteScrollbarOutputField.contentHeight]!]!
+    domCache.horizontalScrollbar.setAttribute(
+      'viewBox',
+      `0 0 ${paletteContentWidth} 6`,
+    )
+    domCache.horizontalScrollbarThumb.setAttribute('x', `${scrollX}`)
+    domCache.horizontalScrollbarThumb.setAttribute('width', `${paletteViewportWidth}`)
+    domCache.horizontalScrollbar.style.opacity =
+      `${values[scrollbarOutput[paletteScrollbarOutputField.horizontalOpacity]!]}`
+    domCache.verticalScrollbar.setAttribute(
+      'viewBox',
+      `0 0 6 ${paletteContentHeight}`,
+    )
+    domCache.verticalScrollbarThumb.setAttribute('y', `${scrollY}`)
+    domCache.verticalScrollbarThumb.setAttribute('height', `${paletteViewportHeight}`)
+    domCache.verticalScrollbar.style.opacity =
+      `${values[scrollbarOutput[paletteScrollbarOutputField.verticalOpacity]!]}`
     if (values[machine.output.animationActive]! > 0) scheduleRender()
   }
 
@@ -1656,6 +1738,11 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
     paletteCellCount * paletteCellOutputField.size,
     wireCount,
   )
+  validateWireView(
+    output.paletteScrollbars,
+    paletteScrollbarOutputField.size,
+    wireCount,
+  )
   validateWireView([output.animationActive], 1, wireCount)
 }
 
@@ -1730,21 +1817,46 @@ function validateWindowManagerOutput(
   }
   for (let cellIndex = 0; cellIndex < paletteCellCount; cellIndex++) {
     const outputStart = cellIndex * paletteCellOutputField.size
-    for (const field of [
-      paletteCellOutputField.translateX,
-      paletteCellOutputField.translateY,
-      paletteCellOutputField.width,
-      paletteCellOutputField.height,
-    ]) {
+    for (const field of [paletteCellOutputField.translateX, paletteCellOutputField.translateY]) {
+      invariant(
+        Number.isFinite(values[output.paletteCells[outputStart + field]!]),
+        'projected palette translation must be finite',
+      )
+    }
+    for (const field of [paletteCellOutputField.width, paletteCellOutputField.height]) {
       assertNonNegativeFinite(
         values[output.paletteCells[outputStart + field]!],
-        'projected palette geometry',
+        'projected palette size',
         tolerance,
       )
     }
     assertUnitInterval(
       values[output.paletteCells[outputStart + paletteCellOutputField.opacity]!],
       'projected palette opacity',
+      tolerance,
+    )
+  }
+  for (const field of [
+    paletteScrollbarOutputField.scrollX,
+    paletteScrollbarOutputField.scrollY,
+    paletteScrollbarOutputField.viewportWidth,
+    paletteScrollbarOutputField.viewportHeight,
+    paletteScrollbarOutputField.contentWidth,
+    paletteScrollbarOutputField.contentHeight,
+  ]) {
+    assertNonNegativeFinite(
+      values[output.paletteScrollbars[field]!],
+      'projected palette scrollbar geometry',
+      tolerance,
+    )
+  }
+  for (const field of [
+    paletteScrollbarOutputField.horizontalOpacity,
+    paletteScrollbarOutputField.verticalOpacity,
+  ]) {
+    assertUnitInterval(
+      values[output.paletteScrollbars[field]!],
+      'projected palette scrollbar opacity',
       tolerance,
     )
   }

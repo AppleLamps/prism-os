@@ -55,7 +55,7 @@ and scale. One fixed circuit computes:
 topmost hit selection and focus
 stable raise-to-front ordering
 immediate dragging, resizing, and workspace bounds
-bounded two-axis Palette scrolling and clipped 4 by 4 cell geometry
+bounded two-axis Palette scrolling, fixed cell geometry, and scrollbars
 minimize and close into dock icons; restore and open out of them
 stable target hit geometry independent of animated presentation
 four fixed spring substeps for every geometry and transform lane
@@ -97,8 +97,8 @@ representing the same fixed rectangular matrices.
 The measured tensor footprints are:
 
 ```txt
-window manager: source 142, graph width 3,572, live values 1,836, layers 52
-                stored weights 8,321, layer tensor bytes 114,248
+window manager: source 142, graph width 3,586, live values 1,846, layers 52
+                stored weights 8,366, layer tensor bytes 114,820
 photo lightbox: source 24, graph width 612, live values 365, layers 10
                 stored weights 2,311, layer tensor bytes 25,528
 ```
@@ -138,7 +138,7 @@ finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 relation-driven grid, row, stack, and overlap layouts
 inverse relation search from target geometry
-two-axis Palette scrolling, clipped cell geometry, and occlusion decisions
+two-axis Palette scrolling, fixed cell geometry, scrollbars, and occlusion
 direct next-state and render-output wire views
 four expanded spring substeps per lane
 window geometry destinations and recurrent spring convergence
