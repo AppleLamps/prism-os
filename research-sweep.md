@@ -14,9 +14,9 @@ formats, modes, or generated state.
   same four slots into a grid, row, stack, or overlap without recompilation.
 - **Inverse layout**: numeric output search recovers relation values from
   target positions.
-- **Scrolling and occlusion**: the Palette product window vertically scrolls
-  20 preallocated rows of three responsive cells, culls hidden rows, and
-  projects one scrollbar.
+- **Scrolling and occlusion**: the Palette product window uses native vertical
+  scrolling over 20 preallocated numeric rows of three responsive cells.
+  Only visible cells have attached DOM nodes.
 
 ## Already sufficient
 

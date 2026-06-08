@@ -45,30 +45,33 @@ photo-gallery-00..11.webp     twelve fixed image constants
 ```
 
 The window manager has four preallocated windows. Its single source table holds
-viewport facts, layout constants, raw pointer and wheel latches, normal window
-geometry, open/minimized/maximized flags, drag and resize targets, a 4 by 4
-stacking matrix, Palette vertical scroll position, visual-presence flags,
-frame time, and five position/velocity spring pairs per window: center X/Y,
-width/height, and scale. One fixed circuit computes:
+viewport facts, layout constants, raw pointer latches, native Palette scroll
+position, normal window geometry, open/minimized/maximized flags, drag and
+resize targets, a 4 by 4 stacking matrix, visual-presence flags, frame time,
+and five position/velocity spring pairs per window: center X/Y, width/height,
+and scale. One fixed circuit computes:
 
 ```txt
 topmost hit selection and focus
 stable raise-to-front ordering
 immediate dragging, resizing, and workspace bounds
-bounded vertical Palette scrolling, responsive three-column geometry, and culling
+responsive three-column Palette geometry, scroll bounds, and visibility
 minimize and close into dock icons; restore and open out of them
 stable target hit geometry independent of animated presentation
 four fixed spring substeps for every geometry and transform lane
 all window and dock projection geometry
 ```
 
-JavaScript event callbacks only record raw pointer or wheel facts and schedule
-one render. The render supplies viewport dimensions and the RAF timestamp,
-evaluates the numeric program, copies its next-state wire view into the same
-source table, and writes projected values onto permanent DOM nodes. A numeric
-animation-active output requests another frame until every spring has snapped
-exactly to its destination. Window nodes stay at CSS `left: 0; top: 0`; the
-circuit projects absolute X/Y translations, width, height, and scale.
+JavaScript pointer callbacks only record raw facts and schedule one render.
+Native Palette scroll events only schedule rendering. The render supplies
+viewport dimensions, Palette `scrollTop`, and the RAF timestamp, evaluates the
+numeric program, copies its next-state wire view into the same source table,
+and projects the result. Palette uses one permanent spacer for native browser
+scrolling; visible cell nodes are created on demand and removed when occluded.
+A numeric animation-active output requests another frame until every spring
+has snapped exactly to its destination. Window nodes stay at CSS
+`left: 0; top: 0`; the circuit projects absolute X/Y translations, width,
+height, and scale.
 
 At startup, the circuit compiles into fixed numeric layers. Every refresh runs
 the same layers without window-specific runtime branches:
@@ -97,8 +100,8 @@ representing the same fixed rectangular matrices.
 The measured tensor footprints are:
 
 ```txt
-window manager: source 139, graph width 3,685, live values 1,904, layers 51
-                stored weights 8,573, layer tensor bytes 117,732
+window manager: source 135, graph width 3,492, live values 1,825, layers 55
+                stored weights 7,980, layer tensor bytes 110,600
 photo lightbox: source 24, graph width 612, live values 365, layers 10
                 stored weights 2,311, layer tensor bytes 25,528
 ```
@@ -138,7 +141,7 @@ finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 relation-driven grid, row, stack, and overlap layouts
 inverse relation search from target geometry
-vertical Palette scrolling, responsive 3 by 20 geometry, scrollbar, and culling
+native Palette scrolling, responsive 3 by 20 geometry, and DOM-node culling
 direct next-state and render-output wire views
 four expanded spring substeps per lane
 window geometry destinations and recurrent spring convergence

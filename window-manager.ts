@@ -64,14 +64,6 @@ export const paletteCellOutputField = {
   size: 5,
 } as const
 
-export const paletteScrollbarOutputField = {
-  scrollY: 0,
-  viewportHeight: 1,
-  contentHeight: 2,
-  visible: 3,
-  size: 4,
-} as const
-
 export const springStateField = {
   centerX: 0,
   centerY: 1,
@@ -134,15 +126,11 @@ export const sourceField = {
   resizeStart,
   stackStart,
   springStart,
-  wheelActive: paletteStateStart,
-  wheelX: paletteStateStart + 1,
-  wheelY: paletteStateStart + 2,
-  wheelDeltaY: paletteStateStart + 3,
-  paletteScrollY: paletteStateStart + 4,
-  paletteCellHeight: paletteStateStart + 5,
-  paletteGap: paletteStateStart + 6,
-  palettePadding: paletteStateStart + 7,
-  size: paletteStateStart + 8,
+  paletteScrollY: paletteStateStart,
+  paletteCellHeight: paletteStateStart + 1,
+  paletteGap: paletteStateStart + 2,
+  palettePadding: paletteStateStart + 3,
+  size: paletteStateStart + 4,
 } as const
 
 const paletteWindowIndex = windowCount - 1
@@ -168,7 +156,6 @@ const eventActiveFields = [
   sourceField.downActive,
   sourceField.moveActive,
   sourceField.upActive,
-  sourceField.wheelActive,
 ] as const
 const eventCoordinateFields = [
   sourceField.downX,
@@ -177,10 +164,7 @@ const eventCoordinateFields = [
   sourceField.moveY,
   sourceField.upX,
   sourceField.upY,
-  sourceField.wheelX,
-  sourceField.wheelY,
 ] as const
-const eventDeltaFields = [sourceField.wheelDeltaY] as const
 const constantFields = [
   sourceField.margin,
   sourceField.titleHeight,
@@ -224,7 +208,7 @@ type WindowManagerOutput = {
   windows: Wire[]
   dockItems: Wire[]
   paletteCells: Wire[]
-  paletteScrollbars: Wire[]
+  paletteContentHeight: Wire
   animationActive: Wire
 }
 
@@ -791,56 +775,6 @@ export function compileWindowManagerCircuit() {
     })
   }
   const focusedWindow = emitFrontmost(circuit, nextStack, nextVisible, unit)
-  const wheelWindowHit = effectiveGeometry.map((geometry, windowIndex) =>
-    emitMultiply(
-      circuit,
-      nextVisible[windowIndex]!,
-      emitRectangleHit(circuit, sourceField.wheelX, sourceField.wheelY, geometry, unit),
-    ))
-  const wheelTarget = emitFrontmost(circuit, nextStack, wheelWindowHit, unit)
-  const paletteGeometry = effectiveGeometry[paletteWindowIndex]!
-  const paletteViewportHeight = emitRelu(circuit, circuit.affine([
-    [paletteGeometry.height, 1],
-    [sourceField.titleHeight, -1],
-  ]))
-  const paletteContentHit = emitRectangleHit(
-    circuit,
-    sourceField.wheelX,
-    sourceField.wheelY,
-    {
-      left: paletteGeometry.left,
-      top: circuit.affine([
-        [paletteGeometry.top, 1],
-        [sourceField.titleHeight, 1],
-      ]),
-      width: paletteGeometry.width,
-      height: paletteViewportHeight,
-    },
-    unit,
-  )
-  const paletteWheelGate = emitMultiply(
-    circuit,
-    sourceField.wheelActive,
-    emitMultiply(circuit, wheelTarget[paletteWindowIndex]!, paletteContentHit),
-  )
-  const paletteContentHeight = circuit.affine([
-    [sourceField.palettePadding, 2],
-    [sourceField.paletteCellHeight, paletteRowCount],
-    [sourceField.paletteGap, paletteRowCount - 1],
-  ])
-  const paletteMaximumScrollY = emitRelu(circuit, circuit.affine([
-    [paletteContentHeight, 1],
-    [paletteViewportHeight, -1],
-  ]))
-  const nextPaletteScrollY = emitClampDynamic(
-    circuit,
-    circuit.affine([
-      [sourceField.paletteScrollY, 1],
-      [emitMultiply(circuit, paletteWheelGate, sourceField.wheelDeltaY), 1],
-    ]),
-    zero,
-    paletteMaximumScrollY,
-  )
   const windowAnimations: WindowAnimation[] = []
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const visibleTarget = effectiveGeometry[windowIndex]!
@@ -981,12 +915,31 @@ export function compileWindowManagerCircuit() {
 
   const paletteCells: Wire[] = []
   const paletteAnimation = windowAnimations[paletteWindowIndex]!
+  const palettePresent = circuit.boolean(nextPresent[paletteWindowIndex]!)
+  const windowBorderSpan = circuit.affine([[unit, 2]])
   const paletteOutputHeight = emitRelu(circuit, circuit.affine([
     [paletteAnimation.height, 1],
     [sourceField.titleHeight, -1],
+    [windowBorderSpan, -1],
   ]))
+  const paletteContentHeight = circuit.affine([
+    [sourceField.palettePadding, 2],
+    [sourceField.paletteCellHeight, paletteRowCount],
+    [sourceField.paletteGap, paletteRowCount - 1],
+  ])
+  const paletteMaximumScrollY = emitRelu(circuit, circuit.affine([
+    [paletteContentHeight, 1],
+    [paletteOutputHeight, -1],
+  ]))
+  const paletteScrollY = emitClampDynamic(
+    circuit,
+    sourceField.paletteScrollY,
+    zero,
+    paletteMaximumScrollY,
+  )
   const paletteAvailableWidth = emitRelu(circuit, circuit.affine([
     [paletteAnimation.width, 1],
+    [windowBorderSpan, -1],
     [sourceField.palettePadding, -2],
     [sourceField.paletteGap, -(paletteColumnCount - 1)],
   ]))
@@ -1007,19 +960,28 @@ export function compileWindowManagerCircuit() {
     const top = circuit.affine([
       [sourceField.palettePadding, 1],
       [paletteStrideY, row],
-      [nextPaletteScrollY, -1],
     ])
-    const bottom = circuit.affine([
+    const viewportTop = circuit.affine([
       [top, 1],
+      [paletteScrollY, -1],
+    ])
+    const viewportBottom = circuit.affine([
+      [viewportTop, 1],
       [sourceField.paletteCellHeight, 1],
     ])
-    const clippedTop = emitClampDynamic(circuit, top, zero, paletteOutputHeight)
-    const clippedBottom = emitClampDynamic(circuit, bottom, zero, paletteOutputHeight)
+    const clippedTop = emitClampDynamic(circuit, viewportTop, zero, paletteOutputHeight)
+    const clippedBottom = emitClampDynamic(
+      circuit,
+      viewportBottom,
+      zero,
+      paletteOutputHeight,
+    )
     const visibleHeight = emitRelu(circuit, circuit.affine([
       [clippedBottom, 1],
       [clippedTop, -1],
     ]))
-    const visible = circuit.boolean(emitClampZeroOne(circuit, visibleHeight, unit))
+    const rowVisible = circuit.boolean(emitClampZeroOne(circuit, visibleHeight, unit))
+    const visible = emitMultiply(circuit, palettePresent, rowVisible)
     for (let column = 0; column < paletteColumnCount; column++) {
       paletteCells.push(
         paletteColumnLefts[column]!,
@@ -1030,28 +992,14 @@ export function compileWindowManagerCircuit() {
       )
     }
   }
-  const paletteScrollbars = [
-    nextPaletteScrollY,
-    paletteOutputHeight,
-    paletteContentHeight,
-    circuit.boolean(emitClampZeroOne(
-      circuit,
-      emitRelu(circuit, circuit.affine([
-        [paletteContentHeight, 1],
-        [paletteOutputHeight, -1],
-      ])),
-      unit,
-    )),
-  ]
 
   const nextSource = Array.from({length: sourceField.size}, (_, field) => field)
   for (const field of eventActiveFields) nextSource[field] = zero
-  for (const field of eventDeltaFields) nextSource[field] = zero
   nextSource[sourceField.pointerX] = pointerX
   nextSource[sourceField.pointerY] = pointerY
   nextSource[sourceField.previousFrameTime] = sourceField.frameTime
   nextSource[sourceField.timeInitialized] = unit
-  nextSource[sourceField.paletteScrollY] = nextPaletteScrollY
+  nextSource[sourceField.paletteScrollY] = paletteScrollY
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const geometry = nextNormalGeometry[windowIndex]!
     nextSource[windowSourceField(windowIndex, windowStateField.left)] = geometry.left
@@ -1116,7 +1064,7 @@ export function compileWindowManagerCircuit() {
       windows,
       dockItems,
       paletteCells,
-      paletteScrollbars,
+      paletteContentHeight,
       animationActive,
     },
   }
@@ -1178,7 +1126,7 @@ export function createWindowManagerMachine() {
     ...output.windows,
     ...output.dockItems,
     ...output.paletteCells,
-    ...output.paletteScrollbars,
+    output.paletteContentHeight,
     output.animationActive,
   ])
   validateTensorProgram(circuit, tensorProgram)
@@ -1196,11 +1144,21 @@ export function createWindowManagerMachine() {
     output,
     source,
     tensorProgram,
-    step(viewportWidth: number, viewportHeight: number, frameTime: number) {
+    step(
+      viewportWidth: number,
+      viewportHeight: number,
+      frameTime: number,
+      paletteScrollY = source[sourceField.paletteScrollY]!,
+    ) {
       invariant(Number.isFinite(frameTime) && frameTime >= 0, 'frame time must be nonnegative')
+      invariant(
+        Number.isFinite(paletteScrollY) && paletteScrollY >= 0,
+        'palette scroll must be nonnegative',
+      )
       source[sourceField.viewportWidth] = viewportWidth
       source[sourceField.viewportHeight] = viewportHeight
       source[sourceField.frameTime] = frameTime
+      source[sourceField.paletteScrollY] = paletteScrollY
       validateWindowManagerSource(source, numericTolerance)
       const values = circuit.evaluateTensor(source)
       validateWindowManagerOutput(values, output, numericTolerance)
@@ -1218,16 +1176,6 @@ export function createWindowManagerMachine() {
     pointerUp(x: number, y: number) {
       receivePointer(sourceField.upActive, sourceField.upX, sourceField.upY, x, y)
     },
-    wheel(x: number, y: number, deltaY: number) {
-      invariant(
-        [x, y, deltaY].every(Number.isFinite),
-        'wheel values must be finite',
-      )
-      source[sourceField.wheelActive] = 1
-      source[sourceField.wheelX] = x
-      source[sourceField.wheelY] = y
-      source[sourceField.wheelDeltaY] = deltaY
-    },
   }
 }
 
@@ -1244,33 +1192,29 @@ export function mountWindowManager(document: Document, window: Window) {
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
-  const paletteCells = [...document.querySelectorAll<HTMLElement>('.palette-cell')]
-  const verticalScrollbar =
-    document.querySelector<SVGSVGElement>('.palette-scrollbar-vertical')
-  const verticalScrollbarThumb =
-    verticalScrollbar?.querySelector<SVGRectElement>('.palette-scrollbar-thumb')
+  const paletteViewport = document.querySelector<HTMLElement>('.colors-content')
+  const paletteSpacer = document.querySelector<HTMLElement>('.palette-spacer')
   const readout = document.querySelector<HTMLElement>('#readout')
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
-  invariant(paletteCells.length === paletteCellCount, 'palette cell count mismatch')
-  invariant(verticalScrollbar !== null, 'vertical palette scrollbar is missing')
-  invariant(verticalScrollbarThumb != null, 'vertical palette thumb is missing')
+  invariant(paletteViewport !== null, 'palette viewport is missing')
+  invariant(paletteSpacer !== null, 'palette spacer is missing')
   invariant(readout !== null, 'readout is missing')
   const domCache = {
     desktop, // mount lifetime
     windows, // mount lifetime
     dockItems, // mount lifetime
-    paletteCells, // mount lifetime
-    verticalScrollbar, // mount lifetime
-    verticalScrollbarThumb, // mount lifetime
+    paletteViewport, // mount lifetime
+    paletteSpacer, // mount lifetime
+    paletteCells: new Map<number, HTMLElement>(), // visibility lifetime
     readout, // mount lifetime
   }
   const storedWeightCount = machine.tensorProgram.layers.reduce(
     (sum, layer) => sum + layer.weights.length,
     0,
   )
-  const paletteDisplay = ['none', 'block'] as const
+  const paletteColorClasses = ['swatch-a', 'swatch-b', 'swatch-c', 'swatch-d'] as const
   domCache.readout.textContent =
     `${machine.source.length} table cells · ${machine.tensorProgram.layers.length} layers · `
     + `${storedWeightCount} weights`
@@ -1295,7 +1239,8 @@ export function mountWindowManager(document: Document, window: Window) {
     scheduledRaf = null
     const viewportWidth = document.documentElement.clientWidth
     const viewportHeight = document.documentElement.clientHeight
-    const values = machine.step(viewportWidth, viewportHeight, frameTime)
+    const paletteScrollY = domCache.paletteViewport.scrollTop
+    const values = machine.step(viewportWidth, viewportHeight, frameTime, paletteScrollY)
 
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       const element = domCache.windows[windowIndex]!
@@ -1341,9 +1286,28 @@ export function mountWindowManager(document: Document, window: Window) {
         `${values[machine.output.dockItems[outputStart + dockOutputField.open]!]}`,
       )
     }
+    domCache.paletteSpacer.style.height =
+      `${values[machine.output.paletteContentHeight]}px`
     for (let cellIndex = 0; cellIndex < paletteCellCount; cellIndex++) {
-      const element = domCache.paletteCells[cellIndex]!
       const outputStart = cellIndex * paletteCellOutputField.size
+      const visible =
+        values[machine.output.paletteCells[outputStart + paletteCellOutputField.visible]!]!
+      if (visible === 0) {
+        const element = domCache.paletteCells.get(cellIndex)
+        if (element !== undefined) {
+          element.remove()
+          domCache.paletteCells.delete(cellIndex)
+        }
+        continue
+      }
+      let element = domCache.paletteCells.get(cellIndex)
+      if (element === undefined) {
+        element = document.createElement('div')
+        element.className =
+          `palette-cell ${paletteColorClasses[cellIndex % paletteColorClasses.length]}`
+        element.dataset['paletteIndex'] = `${cellIndex}`
+        domCache.paletteCells.set(cellIndex, element)
+      }
       const translateX =
         values[machine.output.paletteCells[outputStart + paletteCellOutputField.translateX]!]!
       const translateY =
@@ -1353,24 +1317,8 @@ export function mountWindowManager(document: Document, window: Window) {
       element.style.height =
         `${values[machine.output.paletteCells[outputStart + paletteCellOutputField.height]!]}px`
       element.style.transform = `translate3d(${translateX}px,${translateY}px,0)`
-      const visible =
-        values[machine.output.paletteCells[outputStart + paletteCellOutputField.visible]!]!
-      element.style.display = paletteDisplay[visible]!
+      if (element.parentNode === null) domCache.paletteViewport.appendChild(element)
     }
-    const scrollbarOutput = machine.output.paletteScrollbars
-    const scrollY = values[scrollbarOutput[paletteScrollbarOutputField.scrollY]!]!
-    const paletteViewportHeight =
-      values[scrollbarOutput[paletteScrollbarOutputField.viewportHeight]!]!
-    const paletteContentHeight =
-      values[scrollbarOutput[paletteScrollbarOutputField.contentHeight]!]!
-    domCache.verticalScrollbar.setAttribute(
-      'viewBox',
-      `0 0 6 ${paletteContentHeight}`,
-    )
-    domCache.verticalScrollbarThumb.setAttribute('y', `${scrollY}`)
-    domCache.verticalScrollbarThumb.setAttribute('height', `${paletteViewportHeight}`)
-    domCache.verticalScrollbar.style.opacity =
-      `${values[scrollbarOutput[paletteScrollbarOutputField.visible]!]}`
     if (values[machine.output.animationActive]! > 0) scheduleRender()
   }
 
@@ -1390,11 +1338,7 @@ export function mountWindowManager(document: Document, window: Window) {
     machine.pointerUp(event.clientX, event.clientY)
     scheduleRender()
   })
-  window.addEventListener('wheel', (event: WheelEvent) => {
-    machine.wheel(event.clientX, event.clientY, event.deltaY)
-    event.preventDefault()
-    scheduleRender()
-  }, {passive: false})
+  domCache.paletteViewport.addEventListener('scroll', scheduleRender)
   window.addEventListener('resize', scheduleRender)
   renderWindowManager(window.performance.now())
   return machine
@@ -1583,9 +1527,6 @@ function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
   for (const field of eventCoordinateFields) {
     invariant(Number.isFinite(values[field]), 'event coordinate must be finite')
   }
-  for (const field of eventDeltaFields) {
-    invariant(Number.isFinite(values[field]), 'event delta must be finite')
-  }
   invariant(Number.isFinite(values[sourceField.pointerX]), 'pointer x must be finite')
   invariant(Number.isFinite(values[sourceField.pointerY]), 'pointer y must be finite')
   assertNonNegativeFinite(values[sourceField.paletteScrollY], 'palette scroll y')
@@ -1668,11 +1609,7 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
     paletteCellCount * paletteCellOutputField.size,
     wireCount,
   )
-  validateWireView(
-    output.paletteScrollbars,
-    paletteScrollbarOutputField.size,
-    wireCount,
-  )
+  assertWire(output.paletteContentHeight, wireCount)
   validateWireView([output.animationActive], 1, wireCount)
 }
 
@@ -1686,9 +1623,6 @@ function validateWindowManagerOutput(
   validateWindowManagerSource(nextSource, tolerance)
   for (const field of eventActiveFields) {
     invariant(nextSource[field] === 0, 'event latch must reset after refresh')
-  }
-  for (const field of eventDeltaFields) {
-    invariant(nextSource[field] === 0, 'event delta must reset after refresh')
   }
   assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
@@ -1766,20 +1700,9 @@ function validateWindowManagerOutput(
       tolerance,
     )
   }
-  for (const field of [
-    paletteScrollbarOutputField.scrollY,
-    paletteScrollbarOutputField.viewportHeight,
-    paletteScrollbarOutputField.contentHeight,
-  ]) {
-    assertNonNegativeFinite(
-      values[output.paletteScrollbars[field]!],
-      'projected palette scrollbar geometry',
-      tolerance,
-    )
-  }
-  assertUnitInterval(
-    values[output.paletteScrollbars[paletteScrollbarOutputField.visible]!],
-    'projected palette scrollbar visibility',
+  assertNonNegativeFinite(
+    values[output.paletteContentHeight],
+    'projected palette content height',
     tolerance,
   )
 }

@@ -6,7 +6,6 @@ import {
   dragSourceField,
   paletteCellCount,
   paletteCellOutputField,
-  paletteScrollbarOutputField,
   resizeSourceField,
   sourceField,
   stackSourceField,
@@ -28,10 +27,11 @@ function step(
   width = viewportWidth,
   height = viewportHeight,
   elapsed = frameDuration,
+  paletteScrollY = machine.source[sourceField.paletteScrollY]!,
 ) {
   const frameTime = (frameTimeByMachine.get(machine) ?? 0) + elapsed
   frameTimeByMachine.set(machine, frameTime)
-  return machine.step(width, height, frameTime)
+  return machine.step(width, height, frameTime, paletteScrollY)
 }
 
 function animationActive(machine: Machine, values: Float32Array) {
@@ -100,16 +100,6 @@ function projectPalette(machine: Machine, values: Float32Array) {
       visible: values[output[start + paletteCellOutputField.visible]!]!,
     }
   })
-}
-
-function projectPaletteScrollbars(machine: Machine, values: Float32Array) {
-  const output = machine.output.paletteScrollbars
-  return {
-    scrollY: values[output[paletteScrollbarOutputField.scrollY]!]!,
-    viewportHeight: values[output[paletteScrollbarOutputField.viewportHeight]!]!,
-    contentHeight: values[output[paletteScrollbarOutputField.contentHeight]!]!,
-    visible: values[output[paletteScrollbarOutputField.visible]!]!,
-  }
 }
 
 function assertCenteredOnDock(
@@ -416,59 +406,34 @@ test('Palette scrolls and culls its fixed 3 by 20 grid inside the numeric circui
   const machine = createWindowManagerMachine()
   let values = step(machine)
   let cells = projectPalette(machine, values)
-  let scrollbars = projectPaletteScrollbars(machine, values)
 
-  assert.deepEqual(cells[0], {left: 16, top: 16, width: 126, height: 88, visible: 1})
-  assert.deepEqual(cells[2], {left: 288, top: 16, width: 126, height: 88, visible: 1})
-  assert.deepEqual(cells[6], {left: 16, top: 212, width: 126, height: 88, visible: 1})
-  assert.deepEqual(cells[9], {left: 16, top: 310, width: 126, height: 88, visible: 0})
+  assertClose(cells[0]!.width, 376 / 3)
+  assertClose(cells[0]!.left, 16)
+  assertClose(cells[2]!.left, 16 + (376 / 3 + 10) * 2)
+  assert.deepEqual(
+    {top: cells[0]!.top, height: cells[0]!.height, visible: cells[0]!.visible},
+    {top: 16, height: 88, visible: 1},
+  )
+  assert.equal(cells[6]!.visible, 1)
+  assert.equal(cells[9]!.visible, 0)
   assert.equal(cells.filter(cell => cell.visible === 1).length, 9)
-  assert.deepEqual(scrollbars, {
-    scrollY: 0,
-    viewportHeight: 266,
-    contentHeight: 1982,
-    visible: 1,
-  })
+  assert.equal(values[machine.output.paletteContentHeight], 1982)
 
-  machine.wheel(800, 400, 70)
-  values = step(machine)
+  values = step(machine, viewportWidth, viewportHeight, frameDuration, 70)
   cells = projectPalette(machine, values)
-  scrollbars = projectPaletteScrollbars(machine, values)
   assert.equal(machine.source[sourceField.paletteScrollY], 70)
-  assert.deepEqual(cells[0], {left: 16, top: -54, width: 126, height: 88, visible: 1})
-  assert.deepEqual(cells[11], {left: 288, top: 240, width: 126, height: 88, visible: 1})
+  assert.equal(cells[0]!.visible, 1)
+  assert.equal(cells[11]!.visible, 1)
   assert.equal(cells.filter(cell => cell.visible === 1).length, 12)
-  assert.equal(scrollbars.scrollY, 70)
 
-  machine.wheel(800, 400, 10_000)
-  values = step(machine)
+  values = step(machine, viewportWidth, viewportHeight, frameDuration, 10_000)
   cells = projectPalette(machine, values)
-  scrollbars = projectPaletteScrollbars(machine, values)
-  assert.equal(machine.source[sourceField.paletteScrollY], 1716)
-  assert.deepEqual(cells[0], {left: 16, top: -1700, width: 126, height: 88, visible: 0})
-  assert.deepEqual(cells[59], {left: 288, top: 162, width: 126, height: 88, visible: 1})
+  assert.equal(machine.source[sourceField.paletteScrollY], 1718)
+  assert.equal(cells[0]!.visible, 0)
+  assert.equal(cells[59]!.visible, 1)
   assert.equal(cells.filter(cell => cell.visible === 1).length, 9)
-  assert.equal(scrollbars.scrollY, 1716)
 
-  machine.wheel(800, 400, -10_000)
-  values = step(machine)
-  assert.equal(machine.source[sourceField.paletteScrollY], 0)
-  assert.equal(machine.source[sourceField.wheelActive], 0)
-  assert.equal(machine.source[sourceField.wheelDeltaY], 0)
-})
-
-test('Palette ignores wheel input outside its frontmost content', () => {
-  const machine = createWindowManagerMachine()
-  let values = step(machine)
-
-  machine.wheel(800, 285, 40)
-  values = step(machine)
-  assert.equal(machine.source[sourceField.paletteScrollY], 0)
-
-  values = click(machine, 500, 120)
-  assertFocused(projectWindows(machine, values), 1)
-  machine.wheel(800, 350, 40)
-  step(machine)
+  values = step(machine, viewportWidth, viewportHeight, frameDuration, 0)
   assert.equal(machine.source[sourceField.paletteScrollY], 0)
 })
 
@@ -488,9 +453,11 @@ test('Palette columns continue to fill the window after resizing', () => {
   const resizedWindow = projectWindows(machine, values)[3]!
   const firstRow = projectPalette(machine, values).slice(0, 3)
   assert.equal(resizedWindow.width, 520)
-  assertClose(firstRow[0]!.width, 156)
-  assert.deepEqual(firstRow.map(cell => cell.left), [16, 182, 348])
-  assertClose(firstRow[2]!.left + firstRow[2]!.width, resizedWindow.width - 16)
+  assertClose(firstRow[0]!.width, 466 / 3)
+  assertClose(firstRow[0]!.left, 16)
+  assertClose(firstRow[1]!.left, 16 + 466 / 3 + 10)
+  assertClose(firstRow[2]!.left, 16 + (466 / 3 + 10) * 2)
+  assertClose(firstRow[2]!.left + firstRow[2]!.width, resizedWindow.width - 18)
   assert.deepEqual(firstRow.map(cell => cell.height), [88, 88, 88])
 })
 
@@ -704,6 +671,7 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   assert.equal(window.width, 1256)
   assert.equal(window.height, 664)
   assert.equal(window.scale, 0)
+  assert.equal(projectPalette(machine, values).filter(cell => cell.visible === 1).length, 0)
   assertCenteredOnDock(window, dock)
 
   values = clickDock(machine, values, 3)
@@ -727,6 +695,7 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   )
   assert.equal(window.scale, 1)
   assert.equal(window.stack, 4)
+  assert.ok(projectPalette(machine, values).some(cell => cell.visible === 1))
 
   values = clickWindowControl(machine, values, 3, 'maximize')
   values = settle(machine)
@@ -742,6 +711,7 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   assert.equal(window.width, 430)
   assert.equal(window.height, 310)
   assert.equal(window.scale, 0)
+  assert.equal(projectPalette(machine, values).filter(cell => cell.visible === 1).length, 0)
   assertCenteredOnDock(window, dock)
 
   values = clickDock(machine, values, 3)
@@ -758,6 +728,7 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
     {left: 744, top: 270, width: 430, height: 310},
   )
   assert.equal(window.scale, 1)
+  assert.equal(projectPalette(machine, values).filter(cell => cell.visible === 1).length, 9)
 })
 
 test('dock transitions settle within the faster spring budget', () => {
@@ -845,7 +816,7 @@ test('next state is a direct numeric view and runtime atoms remain fixed', () =>
     machine.output.paletteCells.length,
     paletteCellCount * paletteCellOutputField.size,
   )
-  assert.equal(machine.output.paletteScrollbars.length, paletteScrollbarOutputField.size)
+  assert.ok(Number.isInteger(machine.output.paletteContentHeight))
   assert.deepEqual(
     [...new Set(machine.circuit.operations.map(operation => operation.kind))].sort(),
     ['affine', 'boolean', 'reglu'],
