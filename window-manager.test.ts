@@ -113,6 +113,16 @@ function clickWindowControl(
   windowIndex: number,
   control: 'minimize' | 'maximize' | 'close',
 ) {
+  const point = windowControlPoint(machine, values, windowIndex, control)
+  return click(machine, point.x, point.y)
+}
+
+function windowControlPoint(
+  machine: Machine,
+  values: Float64Array,
+  windowIndex: number,
+  control: 'minimize' | 'maximize' | 'close',
+) {
   const projected = projectWindows(machine, values)[windowIndex]!
   const size = machine.source[sourceField.buttonSize]!
   const gap = machine.source[sourceField.buttonGap]!
@@ -124,11 +134,10 @@ function clickWindowControl(
     : control === 'maximize'
       ? maximizeX
       : minimizeX
-  return click(
-    machine,
+  return {
     x,
-    projected.top + machine.source[sourceField.titleHeight]! / 2,
-  )
+    y: projected.top + machine.source[sourceField.titleHeight]! / 2,
+  }
 }
 
 function clickDock(machine: Machine, values: Float64Array, windowIndex: number) {
@@ -141,6 +150,93 @@ function assertFocused(windows: ReturnType<typeof projectWindows>, windowIndex: 
     windows.map(window => window.focused),
     Array.from({length: windowCount}, (_, index) => Number(index === windowIndex)),
   )
+}
+
+function assertBit(value: number, label: string) {
+  assert.ok(value === 0 || value === 1, `${label} must be exactly zero or one, got ${value}`)
+}
+
+function assertWindowManagerInvariants(
+  machine: Machine,
+  values: Float64Array,
+  width: number,
+  height: number,
+) {
+  const windows = projectWindows(machine, values)
+  const docks = projectDock(machine, values)
+  let visibleCount = 0
+  let focusMass = 0
+  let dragMass = 0
+  let resizeMass = 0
+
+  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+    const open = machine.source[windowSourceField(windowIndex, windowStateField.open)]!
+    const minimized = machine.source[windowSourceField(windowIndex, windowStateField.minimized)]!
+    const maximized = machine.source[windowSourceField(windowIndex, windowStateField.maximized)]!
+    assertBit(open, `window ${windowIndex} open`)
+    assertBit(minimized, `window ${windowIndex} minimized`)
+    assertBit(maximized, `window ${windowIndex} maximized`)
+    visibleCount += open * (1 - minimized)
+
+    const drag = machine.source[dragSourceField(windowIndex)]!
+    const resize = machine.source[resizeSourceField(windowIndex)]!
+    assertBit(drag, `window ${windowIndex} drag owner`)
+    assertBit(resize, `window ${windowIndex} resize owner`)
+    dragMass += drag
+    resizeMass += resize
+
+    assertBit(windows[windowIndex]!.focused, `window ${windowIndex} focus`)
+    assertBit(windows[windowIndex]!.maximized, `window ${windowIndex} projected maximized`)
+    assertBit(docks[windowIndex]!.inactive, `dock ${windowIndex} inactive`)
+    assertBit(docks[windowIndex]!.focused, `dock ${windowIndex} focus`)
+    assertBit(docks[windowIndex]!.open, `dock ${windowIndex} open`)
+    focusMass += windows[windowIndex]!.focused
+
+    for (const value of [
+      windows[windowIndex]!.left,
+      windows[windowIndex]!.top,
+      windows[windowIndex]!.width,
+      windows[windowIndex]!.height,
+      windows[windowIndex]!.translateX,
+      windows[windowIndex]!.translateY,
+      windows[windowIndex]!.scale,
+    ]) {
+      assert.ok(Number.isFinite(value), `window ${windowIndex} geometry must remain finite`)
+    }
+    assert.ok(windows[windowIndex]!.width >= 0 && windows[windowIndex]!.width <= width)
+    assert.ok(windows[windowIndex]!.height >= 0 && windows[windowIndex]!.height <= height)
+  }
+
+  assert.ok(dragMass <= 1, `drag ownership mass must not exceed one, got ${dragMass}`)
+  assert.ok(resizeMass <= 1, `resize ownership mass must not exceed one, got ${resizeMass}`)
+  assert.equal(focusMass, visibleCount === 0 ? 0 : 1)
+
+  for (let rank = 0; rank < windowCount; rank++) {
+    let rankMass = 0
+    for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+      const cell = machine.source[stackSourceField(rank, windowIndex)]!
+      assertBit(cell, `stack rank ${rank}, window ${windowIndex}`)
+      rankMass += cell
+    }
+    assert.equal(rankMass, 1)
+  }
+  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+    let windowMass = 0
+    for (let rank = 0; rank < windowCount; rank++) {
+      windowMass += machine.source[stackSourceField(rank, windowIndex)]!
+    }
+    assert.equal(windowMass, 1)
+  }
+}
+
+function createRandom(seed: number) {
+  return () => {
+    seed |= 0
+    seed = seed + 0x6d2b79f5 | 0
+    let value = Math.imul(seed ^ seed >>> 15, 1 | seed)
+    value = value + Math.imul(value ^ value >>> 7, 61 | value) ^ value
+    return ((value ^ value >>> 14) >>> 0) / 4_294_967_296
+  }
 }
 
 test('the fixed table projects four bounded windows and one focused front window', () => {
@@ -506,6 +602,67 @@ test('a hidden window tracks a resized dock without becoming visible', () => {
   assert.equal(machine.source[windowSourceField(3, windowStateField.present)], 0)
   assert.equal(window.scale, 0)
   assertCenteredOnDock(window, dock)
+})
+
+test('long mixed event sequences preserve Boolean state and stacking', () => {
+  const machine = createWindowManagerMachine()
+  const random = createRandom(0x51a7e)
+  let width = viewportWidth
+  let height = viewportHeight
+  let values = step(machine, width, height)
+
+  for (let action = 0; action < 1_000; action++) {
+    const windows = projectWindows(machine, values)
+    const docks = projectDock(machine, values)
+    const windowIndex = Math.floor(random() * windowCount)
+    const window = windows[windowIndex]!
+    const dock = docks[windowIndex]!
+    const choice = Math.floor(random() * 9)
+
+    if (choice === 0) {
+      width = Math.floor(random() * 1_500)
+      height = Math.floor(random() * 1_000)
+    } else if (choice === 1) {
+      machine.pointerDown(random() * width, random() * height)
+      machine.pointerUp(random() * width, random() * height)
+    } else if (choice === 2) {
+      const point = windowControlPoint(machine, values, windowIndex, 'maximize')
+      machine.pointerDown(point.x, point.y)
+      machine.pointerUp(point.x, point.y)
+    } else if (choice === 3) {
+      const point = windowControlPoint(machine, values, windowIndex, 'minimize')
+      machine.pointerDown(point.x, point.y)
+      machine.pointerUp(point.x, point.y)
+    } else if (choice === 4) {
+      const point = windowControlPoint(machine, values, windowIndex, 'close')
+      machine.pointerDown(point.x, point.y)
+      machine.pointerUp(point.x, point.y)
+    } else if (choice === 5) {
+      machine.pointerDown(dock.left + dock.width / 2, dock.top + dock.height / 2)
+      machine.pointerUp(dock.left + dock.width / 2, dock.top + dock.height / 2)
+    } else if (choice === 6) {
+      const x = window.left + window.translateX + Math.min(40, window.width / 4)
+      const y = window.top + window.translateY
+        + Math.min(machine.source[sourceField.titleHeight]! / 2, window.height / 4)
+      const endX = x + (random() - 0.5) * width
+      const endY = y + (random() - 0.5) * height
+      machine.pointerDown(x, y)
+      machine.pointerMove(endX, endY)
+      machine.pointerUp(endX, endY)
+    } else if (choice === 7) {
+      const grip = machine.source[sourceField.resizeGrip]!
+      const x = window.left + window.translateX + window.width - Math.min(grip / 2, window.width / 4)
+      const y = window.top + window.translateY + window.height - Math.min(grip / 2, window.height / 4)
+      const endX = x + (random() - 0.5) * width
+      const endY = y + (random() - 0.5) * height
+      machine.pointerDown(x, y)
+      machine.pointerMove(endX, endY)
+      machine.pointerUp(endX, endY)
+    }
+
+    values = step(machine, width, height, 1 + random() * 40)
+    assertWindowManagerInvariants(machine, values, width, height)
+  }
 })
 
 test('next state is a direct numeric view and runtime atoms remain fixed', () => {

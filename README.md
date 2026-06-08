@@ -120,6 +120,7 @@ dynamic stack ordering and topmost selection
 dragging, resizing, and workspace bounds
 maximize, minimize, close, and dock restoration
 same-frame pointer event batching
+long deterministic mixed-event invariant sequences
 finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 direct next-state and render-output wire views
