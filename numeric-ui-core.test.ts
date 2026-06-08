@@ -40,7 +40,9 @@ test('the FP32 evaluator rounds every arithmetic step', () => {
   const source = new Float64Array([16_777_216, 1])
 
   assert.equal(circuit.evaluateTensor(source)[sum], 16_777_217)
-  assert.equal(circuit.evaluateTensorFloat32(source)[sum], 16_777_216)
+  const values = circuit.evaluateTensorFloat32(source)
+  assert.ok(values instanceof Float32Array)
+  assert.equal(values[sum], 16_777_216)
 })
 
 test('tensor and readable evaluators both reject a wrong-sized source table', () => {

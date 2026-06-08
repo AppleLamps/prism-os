@@ -101,9 +101,10 @@ photo lightbox: source 24, graph width 612, live values 365, layers 10
                 stored weights 2,311, layer tensor bytes 25,528
 ```
 
-The persistent source table is a fixed `Float64Array`. Immutable constants and
-changing underivable facts share that table. Derived values are temporary
-circuit wires.
+The product's persistent source table and evaluated wire table are fixed
+`Float32Array`s. Immutable constants and changing underivable facts share the
+source table. Derived values are temporary circuit wires. Float64 tables exist
+only in the explicit comparison oracle.
 
 The audited runtime vocabulary has only three atoms:
 

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
+import type {NumericArray} from './numeric-ui-core.ts'
 import {
   createWindowManagerMachine,
   dockOutputField,
@@ -31,7 +32,7 @@ function step(
   return machine.step(width, height, frameTime)
 }
 
-function animationActive(machine: Machine, values: Float64Array) {
+function animationActive(machine: Machine, values: NumericArray) {
   return values[machine.output.animationActive]!
 }
 
@@ -51,7 +52,7 @@ function settle(machine: Machine, width = viewportWidth, height = viewportHeight
   return settleFrames(machine, width, height).values
 }
 
-function projectWindows(machine: Machine, values: Float64Array) {
+function projectWindows(machine: Machine, values: NumericArray) {
   return Array.from({length: windowCount}, (_, windowIndex) => {
     const start = windowIndex * windowOutputField.size
     const output = machine.output.windows
@@ -69,7 +70,7 @@ function projectWindows(machine: Machine, values: Float64Array) {
   })
 }
 
-function projectDock(machine: Machine, values: Float64Array) {
+function projectDock(machine: Machine, values: NumericArray) {
   return Array.from({length: windowCount}, (_, windowIndex) => {
     const start = windowIndex * dockOutputField.size
     const output = machine.output.dockItems
@@ -105,7 +106,7 @@ function click(machine: Machine, x: number, y: number) {
 
 function clickWindowControl(
   machine: Machine,
-  values: Float64Array,
+  values: NumericArray,
   windowIndex: number,
   control: 'minimize' | 'maximize' | 'close',
 ) {
@@ -115,7 +116,7 @@ function clickWindowControl(
 
 function windowControlPoint(
   machine: Machine,
-  values: Float64Array,
+  values: NumericArray,
   windowIndex: number,
   control: 'minimize' | 'maximize' | 'close',
 ) {
@@ -136,7 +137,7 @@ function windowControlPoint(
   }
 }
 
-function clickDock(machine: Machine, values: Float64Array, windowIndex: number) {
+function clickDock(machine: Machine, values: NumericArray, windowIndex: number) {
   const dock = projectDock(machine, values)[windowIndex]!
   return click(machine, dock.left + dock.width / 2, dock.top + dock.height / 2)
 }
@@ -154,7 +155,7 @@ function assertBit(value: number, label: string) {
 
 function assertWindowManagerInvariants(
   machine: Machine,
-  values: Float64Array,
+  values: NumericArray,
   width: number,
   height: number,
 ) {
@@ -245,7 +246,7 @@ type RandomAction = {
 
 function createRandomAction(
   machine: Machine,
-  values: Float64Array,
+  values: NumericArray,
   width: number,
   height: number,
   random: () => number,
@@ -335,7 +336,7 @@ function applyRandomAction(machine: Machine, action: RandomAction) {
   }
 }
 
-function discreteState(machine: Machine, values: Float64Array) {
+function discreteState(machine: Machine, values: NumericArray) {
   const state: number[] = []
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     for (const field of [
@@ -361,9 +362,9 @@ function discreteState(machine: Machine, values: Float64Array) {
 
 function maximumProductDifference(
   leftMachine: Machine,
-  leftValues: Float64Array,
+  leftValues: NumericArray,
   rightMachine: Machine,
-  rightValues: Float64Array,
+  rightValues: NumericArray,
 ) {
   const leftWindows = projectWindows(leftMachine, leftValues)
   const rightWindows = projectWindows(rightMachine, rightValues)
@@ -414,6 +415,8 @@ test('the fixed table projects four bounded windows and one focused front window
   const values = step(machine)
   const windows = projectWindows(machine, values)
 
+  assert.ok(machine.source instanceof Float32Array)
+  assert.ok(values instanceof Float32Array)
   assert.equal(machine.source.length, sourceField.size)
   assert.deepEqual(windows.map(window => window.stack), [1, 2, 3, 4])
   assert.deepEqual(windows.map(window => window.opacity), [1, 1, 1, 1])
@@ -794,6 +797,10 @@ test('FP32 and Float64 keep the same decisions through mixed event sequences', (
   let height = viewportHeight
   let float64Values = step(float64, width, height)
   let float32Values = step(float32, width, height)
+  assert.ok(float64.source instanceof Float64Array)
+  assert.ok(float64Values instanceof Float64Array)
+  assert.ok(float32.source instanceof Float32Array)
+  assert.ok(float32Values instanceof Float32Array)
   let maximumDifference = {absolute: 0, relative: 0, label: ''}
 
   for (let action = 0; action < 1_000; action++) {

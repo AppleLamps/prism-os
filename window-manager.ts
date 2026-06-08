@@ -1,5 +1,6 @@
 import {
   Circuit,
+  type NumericArray,
   type Wire,
   assertFiniteValues,
   assertNonNegativeFinite,
@@ -975,7 +976,9 @@ export function createWindowManagerMachine(
     precision?: 'float64' | 'float32'
   } = {},
 ) {
-  const source = new Float64Array(sourceField.size)
+  const source = precision === 'float32'
+    ? new Float32Array(sourceField.size)
+    : new Float64Array(sourceField.size)
   source[sourceField.unit] = 1
   source[sourceField.margin] = 12
   source[sourceField.titleHeight] = 44
@@ -1198,7 +1201,7 @@ export function mountWindowManager(document: Document, window: Window) {
 
 function projectDockGeometry(
   element: HTMLElement,
-  values: Float64Array,
+  values: NumericArray,
   output: readonly Wire[],
   outputStart: number,
 ) {
@@ -1358,7 +1361,10 @@ function emitSelect(circuit: Circuit, gate: Wire, off: Wire, on: Wire) {
 }
 
 function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
-  invariant(values instanceof Float64Array, 'source table must be a Float64Array')
+  invariant(
+    values instanceof Float32Array || values instanceof Float64Array,
+    'source table must be a numeric typed array',
+  )
   invariant(values.length === sourceField.size, 'source table has the wrong length')
   assertFiniteValues(values, 'source table')
   assertNonNegativeFinite(values[sourceField.viewportWidth], 'viewport width')
@@ -1456,12 +1462,14 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
 }
 
 function validateWindowManagerOutput(
-  values: Float64Array,
+  values: NumericArray,
   output: WindowManagerOutput,
   tolerance = 1e-9,
 ) {
   assertFiniteValues(values, 'tensor output')
-  const nextSource = Float64Array.from(output.nextSource, wire => values[wire]!)
+  const nextSource = values instanceof Float32Array
+    ? Float32Array.from(output.nextSource, wire => values[wire]!)
+    : Float64Array.from(output.nextSource, wire => values[wire]!)
   validateWindowManagerSource(nextSource, tolerance)
   for (const field of eventActiveFields) {
     invariant(nextSource[field] === 0, 'event latch must reset after refresh')

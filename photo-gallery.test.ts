@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
+import type {NumericArray} from './numeric-ui-core.ts'
 import {
   columnCount,
   controlField,
@@ -20,7 +21,7 @@ function assertClose(actual: number, expected: number) {
   assert.ok(Math.abs(actual - expected) < 1e-4, `${actual} != ${expected}`)
 }
 
-function projectPhotos(machine: ReturnType<typeof createPhotoGalleryMachine>, values: Float64Array) {
+function projectPhotos(machine: ReturnType<typeof createPhotoGalleryMachine>, values: NumericArray) {
   return Array.from({length: itemCount}, (_, item) => {
     const outputStart = item * photoField.size
     return {
@@ -34,7 +35,7 @@ function projectPhotos(machine: ReturnType<typeof createPhotoGalleryMachine>, va
   })
 }
 
-function projectThumbnails(machine: ReturnType<typeof createPhotoGalleryMachine>, values: Float64Array) {
+function projectThumbnails(machine: ReturnType<typeof createPhotoGalleryMachine>, values: NumericArray) {
   return Array.from({length: itemCount}, (_, item) => {
     const outputStart = item * thumbnailField.size
     return {
@@ -66,6 +67,8 @@ test('the fixed grid opens every photo with all twelve thumbnails', () => {
   const gridWidth = (viewportWidth - (columnCount + 1) * gap) / columnCount
   const gridHeight = (viewportHeight - (rowCount + 1) * gap) / rowCount
 
+  assert.ok(machine.source instanceof Float32Array)
+  assert.ok(values instanceof Float32Array)
   assert.deepEqual(readFocus(machine), Array(itemCount).fill(0))
   assert.deepEqual(grid[0], {
     left: 18,

@@ -1,5 +1,6 @@
 // Three runtime atoms, plus compile-time expansions that lower into those atoms.
 export type Wire = number
+export type NumericArray = Float32Array | Float64Array
 
 export type Terms = readonly (readonly [wire: Wire, coefficient: number])[]
 
@@ -144,22 +145,22 @@ export class Circuit {
     return wire
   }
 
-  evaluateReadable(source: Float64Array): Float64Array {
+  evaluateReadable(source: NumericArray): Float64Array {
     this.validateSourceRanges(source)
     return evaluateOperationStream(source, this)
   }
 
-  evaluateTensor(source: Float64Array): Float64Array {
+  evaluateTensor(source: NumericArray): Float64Array {
     this.validateSourceRanges(source)
     return evaluateTensorProgram(source, this.tensorProgram ??= this.compileTensorProgram())
   }
 
-  evaluateTensorFloat32(source: Float64Array): Float64Array {
+  evaluateTensorFloat32(source: NumericArray): Float32Array {
     this.validateSourceRanges(source)
     return evaluateTensorProgramFloat32(source, this.tensorProgram ??= this.compileTensorProgram())
   }
 
-  validateSourceRanges(source: Float64Array) {
+  validateSourceRanges(source: NumericArray) {
     invariant(source.length === this.sourceSize, 'source table has the wrong length')
     for (let wire = 0; wire < source.length; wire++) {
       const range = this.ranges[wire]!
@@ -459,7 +460,7 @@ function normalizeTerms(terms: Terms): Terms {
   return normalizedTerms.filter(([, coefficient]) => coefficient !== 0)
 }
 
-export function evaluateOperationStream(source: Float64Array, circuit: Circuit): Float64Array {
+export function evaluateOperationStream(source: NumericArray, circuit: Circuit): Float64Array {
   invariant(source.length === circuit.sourceSize, 'source table has the wrong length')
   const values = new Float64Array(circuit.sourceSize + circuit.operations.length)
   values.set(source)
@@ -477,9 +478,9 @@ export function evaluateOperationStream(source: Float64Array, circuit: Circuit):
 }
 
 export function evaluateOperationStreamFloat32(
-  source: Float64Array,
+  source: NumericArray,
   circuit: Circuit,
-): Float64Array {
+): Float32Array {
   invariant(source.length === circuit.sourceSize, 'source table has the wrong length')
   const values = new Float32Array(circuit.sourceSize + circuit.operations.length)
   values.set(source)
@@ -498,10 +499,10 @@ export function evaluateOperationStreamFloat32(
     }
     values[circuit.sourceSize + operationIndex] = value
   }
-  return Float64Array.from(values)
+  return values
 }
 
-export function evaluateTensorProgram(source: Float64Array, program: TensorProgram): Float64Array {
+export function evaluateTensorProgram(source: NumericArray, program: TensorProgram): Float64Array {
   invariant(source.length === program.sourceSize, 'source table has the wrong length')
   const {layers, valueCount, wireOrder, width} = program
   const packedValues = new Float64Array(valueCount)
@@ -545,9 +546,9 @@ export function evaluateTensorProgram(source: Float64Array, program: TensorProgr
 }
 
 export function evaluateTensorProgramFloat32(
-  source: Float64Array,
+  source: NumericArray,
   program: TensorProgram,
-): Float64Array {
+): Float32Array {
   invariant(source.length === program.sourceSize, 'source table has the wrong length')
   const {layers, valueCount, wireOrder, width} = program
   const packedValues = new Float32Array(valueCount)
@@ -584,7 +585,7 @@ export function evaluateTensorProgramFloat32(
     packedValues.set(projection.subarray(0, outputSize), availableValues)
     availableValues += outputSize
   }
-  const values = new Float64Array(width)
+  const values = new Float32Array(width)
   for (let packedIndex = 0; packedIndex < width; packedIndex++) {
     values[wireOrder[packedIndex]!] = packedValues[packedIndex]!
   }
@@ -763,7 +764,11 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
   for (const root of roots) invariant(seenWires[root] === 1, 'every tensor root must be present')
 }
 
-export function validateTensorEvaluation(source: Float64Array, circuit: Circuit, tensorValues: Float64Array) {
+export function validateTensorEvaluation(
+  source: NumericArray,
+  circuit: Circuit,
+  tensorValues: NumericArray,
+) {
   const expectedValues = evaluateOperationStreamWithFloat32Constants(source, circuit)
   invariant(expectedValues.length === tensorValues.length, 'tensor result width mismatch')
   const program = circuit.tensorProgram ??= circuit.compileTensorProgram()
@@ -773,7 +778,7 @@ export function validateTensorEvaluation(source: Float64Array, circuit: Circuit,
 }
 
 function evaluateOperationStreamWithFloat32Constants(
-  source: Float64Array,
+  source: NumericArray,
   circuit: Circuit,
 ): Float64Array {
   invariant(source.length === circuit.sourceSize, 'source table has the wrong length')
@@ -816,9 +821,9 @@ function evaluateTermsWithFloat32Constants(
 }
 
 export function validateTensorFloat32Evaluation(
-  source: Float64Array,
+  source: NumericArray,
   circuit: Circuit,
-  tensorValues: Float64Array,
+  tensorValues: NumericArray,
 ) {
   const expectedValues = evaluateOperationStreamFloat32(source, circuit)
   invariant(expectedValues.length === tensorValues.length, 'tensor result width mismatch')
