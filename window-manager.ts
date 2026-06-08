@@ -51,6 +51,19 @@ export const dockOutputField = {
   size: 7,
 } as const
 
+export const paletteColumnCount = 4
+export const paletteRowCount = 4
+export const paletteCellCount = paletteColumnCount * paletteRowCount
+
+export const paletteCellOutputField = {
+  translateX: 0,
+  translateY: 1,
+  width: 2,
+  height: 3,
+  opacity: 4,
+  size: 5,
+} as const
+
 export const springStateField = {
   centerX: 0,
   centerY: 1,
@@ -70,6 +83,7 @@ const dragStart = windowStateStart + windowCount * windowStateField.size
 const resizeStart = dragStart + windowCount
 const stackStart = resizeStart + windowCount
 const springStart = stackStart + windowCount * windowCount
+const paletteStateStart = springStart + windowCount * springStateField.size
 
 export const sourceField = {
   viewportWidth: 0,
@@ -112,9 +126,21 @@ export const sourceField = {
   resizeStart,
   stackStart,
   springStart,
-  size: springStart + windowCount * springStateField.size,
+  wheelActive: paletteStateStart,
+  wheelX: paletteStateStart + 1,
+  wheelY: paletteStateStart + 2,
+  wheelDeltaX: paletteStateStart + 3,
+  wheelDeltaY: paletteStateStart + 4,
+  paletteScrollX: paletteStateStart + 5,
+  paletteScrollY: paletteStateStart + 6,
+  paletteCellWidth: paletteStateStart + 7,
+  paletteCellHeight: paletteStateStart + 8,
+  paletteGap: paletteStateStart + 9,
+  palettePadding: paletteStateStart + 10,
+  size: paletteStateStart + 11,
 } as const
 
+const paletteWindowIndex = windowCount - 1
 const geometryFields = ['left', 'top', 'width', 'height'] as const
 const transformFields = ['translateX', 'translateY', 'scale'] as const
 const animationFields = ['centerX', 'centerY', 'width', 'height', 'scale'] as const
@@ -137,6 +163,7 @@ const eventActiveFields = [
   sourceField.downActive,
   sourceField.moveActive,
   sourceField.upActive,
+  sourceField.wheelActive,
 ] as const
 const eventCoordinateFields = [
   sourceField.downX,
@@ -145,7 +172,10 @@ const eventCoordinateFields = [
   sourceField.moveY,
   sourceField.upX,
   sourceField.upY,
+  sourceField.wheelX,
+  sourceField.wheelY,
 ] as const
+const eventDeltaFields = [sourceField.wheelDeltaX, sourceField.wheelDeltaY] as const
 const constantFields = [
   sourceField.margin,
   sourceField.titleHeight,
@@ -165,6 +195,10 @@ const constantFields = [
   sourceField.springSettleSpeed,
   sourceField.springSettleDistanceScale,
   sourceField.springSettleSpeedScale,
+  sourceField.paletteCellWidth,
+  sourceField.paletteCellHeight,
+  sourceField.paletteGap,
+  sourceField.palettePadding,
 ] as const
 
 type Geometry = Record<(typeof geometryFields)[number], Wire>
@@ -185,6 +219,7 @@ type WindowManagerOutput = {
   nextSource: Wire[]
   windows: Wire[]
   dockItems: Wire[]
+  paletteCells: Wire[]
   animationActive: Wire
 }
 
@@ -245,6 +280,8 @@ export function compileWindowManagerCircuit() {
   circuit.assumeRange(sourceField.frameTime, 0, Number.POSITIVE_INFINITY)
   circuit.assumeRange(sourceField.previousFrameTime, 0, Number.POSITIVE_INFINITY)
   circuit.assumeRange(sourceField.timeInitialized, 0, 1)
+  circuit.assumeRange(sourceField.paletteScrollX, 0, Number.POSITIVE_INFINITY)
+  circuit.assumeRange(sourceField.paletteScrollY, 0, Number.POSITIVE_INFINITY)
   for (const field of constantFields) circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
   for (const field of eventActiveFields) circuit.assumeRange(field, 0, 1)
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
@@ -750,6 +787,74 @@ export function compileWindowManagerCircuit() {
     })
   }
   const focusedWindow = emitFrontmost(circuit, nextStack, nextVisible, unit)
+  const wheelWindowHit = effectiveGeometry.map((geometry, windowIndex) =>
+    emitMultiply(
+      circuit,
+      nextVisible[windowIndex]!,
+      emitRectangleHit(circuit, sourceField.wheelX, sourceField.wheelY, geometry, unit),
+    ))
+  const wheelTarget = emitFrontmost(circuit, nextStack, wheelWindowHit, unit)
+  const paletteGeometry = effectiveGeometry[paletteWindowIndex]!
+  const paletteViewportHeight = emitRelu(circuit, circuit.affine([
+    [paletteGeometry.height, 1],
+    [sourceField.titleHeight, -1],
+  ]))
+  const paletteContentHit = emitRectangleHit(
+    circuit,
+    sourceField.wheelX,
+    sourceField.wheelY,
+    {
+      left: paletteGeometry.left,
+      top: circuit.affine([
+        [paletteGeometry.top, 1],
+        [sourceField.titleHeight, 1],
+      ]),
+      width: paletteGeometry.width,
+      height: paletteViewportHeight,
+    },
+    unit,
+  )
+  const paletteWheelGate = emitMultiply(
+    circuit,
+    sourceField.wheelActive,
+    emitMultiply(circuit, wheelTarget[paletteWindowIndex]!, paletteContentHit),
+  )
+  const paletteContentWidth = circuit.affine([
+    [sourceField.palettePadding, 2],
+    [sourceField.paletteCellWidth, paletteColumnCount],
+    [sourceField.paletteGap, paletteColumnCount - 1],
+  ])
+  const paletteContentHeight = circuit.affine([
+    [sourceField.palettePadding, 2],
+    [sourceField.paletteCellHeight, paletteRowCount],
+    [sourceField.paletteGap, paletteRowCount - 1],
+  ])
+  const paletteMaximumScrollX = emitRelu(circuit, circuit.affine([
+    [paletteContentWidth, 1],
+    [paletteGeometry.width, -1],
+  ]))
+  const paletteMaximumScrollY = emitRelu(circuit, circuit.affine([
+    [paletteContentHeight, 1],
+    [paletteViewportHeight, -1],
+  ]))
+  const nextPaletteScrollX = emitClampDynamic(
+    circuit,
+    circuit.affine([
+      [sourceField.paletteScrollX, 1],
+      [emitMultiply(circuit, paletteWheelGate, sourceField.wheelDeltaX), 1],
+    ]),
+    zero,
+    paletteMaximumScrollX,
+  )
+  const nextPaletteScrollY = emitClampDynamic(
+    circuit,
+    circuit.affine([
+      [sourceField.paletteScrollY, 1],
+      [emitMultiply(circuit, paletteWheelGate, sourceField.wheelDeltaY), 1],
+    ]),
+    zero,
+    paletteMaximumScrollY,
+  )
   const windowAnimations: WindowAnimation[] = []
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const visibleTarget = effectiveGeometry[windowIndex]!
@@ -888,14 +993,76 @@ export function compileWindowManagerCircuit() {
       unit,
     ))
 
+  const paletteCells: Wire[] = []
+  const paletteAnimation = windowAnimations[paletteWindowIndex]!
+  const paletteOutputHeight = emitRelu(circuit, circuit.affine([
+    [paletteAnimation.height, 1],
+    [sourceField.titleHeight, -1],
+  ]))
+  const paletteStrideX = circuit.affine([
+    [sourceField.paletteCellWidth, 1],
+    [sourceField.paletteGap, 1],
+  ])
+  const paletteStrideY = circuit.affine([
+    [sourceField.paletteCellHeight, 1],
+    [sourceField.paletteGap, 1],
+  ])
+  for (let row = 0; row < paletteRowCount; row++) {
+    for (let column = 0; column < paletteColumnCount; column++) {
+      const left = circuit.affine([
+        [sourceField.palettePadding, 1],
+        [paletteStrideX, column],
+        [nextPaletteScrollX, -1],
+      ])
+      const top = circuit.affine([
+        [sourceField.palettePadding, 1],
+        [paletteStrideY, row],
+        [nextPaletteScrollY, -1],
+      ])
+      const right = circuit.affine([
+        [left, 1],
+        [sourceField.paletteCellWidth, 1],
+      ])
+      const bottom = circuit.affine([
+        [top, 1],
+        [sourceField.paletteCellHeight, 1],
+      ])
+      const clippedLeft = emitClampDynamic(circuit, left, zero, paletteAnimation.width)
+      const clippedTop = emitClampDynamic(circuit, top, zero, paletteOutputHeight)
+      const clippedRight = emitClampDynamic(circuit, right, zero, paletteAnimation.width)
+      const clippedBottom = emitClampDynamic(circuit, bottom, zero, paletteOutputHeight)
+      const width = emitRelu(circuit, circuit.affine([
+        [clippedRight, 1],
+        [clippedLeft, -1],
+      ]))
+      const height = emitRelu(circuit, circuit.affine([
+        [clippedBottom, 1],
+        [clippedTop, -1],
+      ]))
+      const visible = circuit.boolean(emitClampZeroOne(
+        circuit,
+        emitMinimum(circuit, width, height),
+        unit,
+      ))
+      paletteCells.push(
+        clippedLeft,
+        clippedTop,
+        width,
+        height,
+        visible,
+      )
+    }
+  }
+
   const nextSource = Array.from({length: sourceField.size}, (_, field) => field)
-  nextSource[sourceField.downActive] = zero
-  nextSource[sourceField.moveActive] = zero
-  nextSource[sourceField.upActive] = zero
+  for (const field of eventActiveFields) nextSource[field] = zero
+  for (const field of eventDeltaFields) nextSource[field] = zero
   nextSource[sourceField.pointerX] = pointerX
   nextSource[sourceField.pointerY] = pointerY
   nextSource[sourceField.previousFrameTime] = sourceField.frameTime
   nextSource[sourceField.timeInitialized] = unit
+  nextSource[sourceField.paletteScrollX] = nextPaletteScrollX
+  nextSource[sourceField.paletteScrollY] = nextPaletteScrollY
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const geometry = nextNormalGeometry[windowIndex]!
     nextSource[windowSourceField(windowIndex, windowStateField.left)] = geometry.left
@@ -959,6 +1126,7 @@ export function compileWindowManagerCircuit() {
       nextSource,
       windows,
       dockItems,
+      paletteCells,
       animationActive,
     },
   }
@@ -985,6 +1153,10 @@ export function createWindowManagerMachine() {
   source[sourceField.springSettleSpeed] = 0.01
   source[sourceField.springSettleDistanceScale] = 100
   source[sourceField.springSettleSpeedScale] = 100
+  source[sourceField.paletteCellWidth] = 120
+  source[sourceField.paletteCellHeight] = 88
+  source[sourceField.paletteGap] = 10
+  source[sourceField.palettePadding] = 16
   const initialGeometry = [
     [54, 54, 520, 340],
     [410, 104, 500, 366],
@@ -1016,6 +1188,7 @@ export function createWindowManagerMachine() {
     ...output.nextSource,
     ...output.windows,
     ...output.dockItems,
+    ...output.paletteCells,
     output.animationActive,
   ])
   validateTensorProgram(circuit, tensorProgram)
@@ -1055,6 +1228,17 @@ export function createWindowManagerMachine() {
     pointerUp(x: number, y: number) {
       receivePointer(sourceField.upActive, sourceField.upX, sourceField.upY, x, y)
     },
+    wheel(x: number, y: number, deltaX: number, deltaY: number) {
+      invariant(
+        [x, y, deltaX, deltaY].every(Number.isFinite),
+        'wheel values must be finite',
+      )
+      source[sourceField.wheelActive] = 1
+      source[sourceField.wheelX] = x
+      source[sourceField.wheelY] = y
+      source[sourceField.wheelDeltaX] = deltaX
+      source[sourceField.wheelDeltaY] = deltaY
+    },
   }
 }
 
@@ -1071,15 +1255,18 @@ export function mountWindowManager(document: Document, window: Window) {
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
+  const paletteCells = [...document.querySelectorAll<HTMLElement>('.palette-cell')]
   const readout = document.querySelector<HTMLElement>('#readout')
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
+  invariant(paletteCells.length === paletteCellCount, 'palette cell count mismatch')
   invariant(readout !== null, 'readout is missing')
   const domCache = {
     desktop, // mount lifetime
     windows, // mount lifetime
     dockItems, // mount lifetime
+    paletteCells, // mount lifetime
     readout, // mount lifetime
   }
   const storedWeightCount = machine.tensorProgram.layers.reduce(
@@ -1156,6 +1343,21 @@ export function mountWindowManager(document: Document, window: Window) {
         `${values[machine.output.dockItems[outputStart + dockOutputField.open]!]}`,
       )
     }
+    for (let cellIndex = 0; cellIndex < paletteCellCount; cellIndex++) {
+      const element = domCache.paletteCells[cellIndex]!
+      const outputStart = cellIndex * paletteCellOutputField.size
+      const translateX =
+        values[machine.output.paletteCells[outputStart + paletteCellOutputField.translateX]!]!
+      const translateY =
+        values[machine.output.paletteCells[outputStart + paletteCellOutputField.translateY]!]!
+      element.style.width =
+        `${values[machine.output.paletteCells[outputStart + paletteCellOutputField.width]!]}px`
+      element.style.height =
+        `${values[machine.output.paletteCells[outputStart + paletteCellOutputField.height]!]}px`
+      element.style.transform = `translate3d(${translateX}px,${translateY}px,0)`
+      element.style.opacity =
+        `${values[machine.output.paletteCells[outputStart + paletteCellOutputField.opacity]!]}`
+    }
     if (values[machine.output.animationActive]! > 0) scheduleRender()
   }
 
@@ -1175,6 +1377,11 @@ export function mountWindowManager(document: Document, window: Window) {
     machine.pointerUp(event.clientX, event.clientY)
     scheduleRender()
   })
+  window.addEventListener('wheel', (event: WheelEvent) => {
+    machine.wheel(event.clientX, event.clientY, event.deltaX, event.deltaY)
+    event.preventDefault()
+    scheduleRender()
+  }, {passive: false})
   window.addEventListener('resize', scheduleRender)
   renderWindowManager(window.performance.now())
   return machine
@@ -1363,8 +1570,13 @@ function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
   for (const field of eventCoordinateFields) {
     invariant(Number.isFinite(values[field]), 'event coordinate must be finite')
   }
+  for (const field of eventDeltaFields) {
+    invariant(Number.isFinite(values[field]), 'event delta must be finite')
+  }
   invariant(Number.isFinite(values[sourceField.pointerX]), 'pointer x must be finite')
   invariant(Number.isFinite(values[sourceField.pointerY]), 'pointer y must be finite')
+  assertNonNegativeFinite(values[sourceField.paletteScrollX], 'palette scroll x')
+  assertNonNegativeFinite(values[sourceField.paletteScrollY], 'palette scroll y')
 
   let dragMass = 0
   let resizeMass = 0
@@ -1439,6 +1651,11 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
   validateWireView(output.nextSource, sourceField.size, wireCount)
   validateWireView(output.windows, windowCount * windowOutputField.size, wireCount)
   validateWireView(output.dockItems, windowCount * dockOutputField.size, wireCount)
+  validateWireView(
+    output.paletteCells,
+    paletteCellCount * paletteCellOutputField.size,
+    wireCount,
+  )
   validateWireView([output.animationActive], 1, wireCount)
 }
 
@@ -1452,6 +1669,9 @@ function validateWindowManagerOutput(
   validateWindowManagerSource(nextSource, tolerance)
   for (const field of eventActiveFields) {
     invariant(nextSource[field] === 0, 'event latch must reset after refresh')
+  }
+  for (const field of eventDeltaFields) {
+    invariant(nextSource[field] === 0, 'event delta must reset after refresh')
   }
   assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
@@ -1507,6 +1727,26 @@ function validateWindowManagerOutput(
         tolerance,
       )
     }
+  }
+  for (let cellIndex = 0; cellIndex < paletteCellCount; cellIndex++) {
+    const outputStart = cellIndex * paletteCellOutputField.size
+    for (const field of [
+      paletteCellOutputField.translateX,
+      paletteCellOutputField.translateY,
+      paletteCellOutputField.width,
+      paletteCellOutputField.height,
+    ]) {
+      assertNonNegativeFinite(
+        values[output.paletteCells[outputStart + field]!],
+        'projected palette geometry',
+        tolerance,
+      )
+    }
+    assertUnitInterval(
+      values[output.paletteCells[outputStart + paletteCellOutputField.opacity]!],
+      'projected palette opacity',
+      tolerance,
+    )
   }
 }
 

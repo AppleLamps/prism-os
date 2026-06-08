@@ -14,8 +14,8 @@ formats, modes, or generated state.
   same four slots into a grid, row, stack, or overlap without recompilation.
 - **Inverse layout**: numeric output search recovers relation values from
   target positions.
-- **Scrolling and occlusion**: one fixed circuit scrolls, clips, and marks
-  visibility for eight preallocated rows.
+- **Scrolling and occlusion**: the Palette product window scrolls and clips a
+  fixed 4 by 4 grid in both axes while marking cell visibility.
 
 ## Already sufficient
 
@@ -84,8 +84,8 @@ free-slot allocator, and a separate full-wire debug path.
 - Permanent per-pass metrics would require compiler modes or snapshots for
   transformations that currently happen directly during construction.
 - More product UI such as menus or keyboard traversal would mostly add
-  situation-specific code; the new viewport proof covers the missing numeric
-  behavior of scrolling and clipping.
+  situation-specific code; Palette now carries the numeric scrolling and
+  clipping proof in the product.
 - A batch API would currently be a loop around the same executor. It should
   wait until candidate count makes the parked GPU design useful.
 - Buffer caching would add retained mutable state to save only small,

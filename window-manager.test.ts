@@ -4,6 +4,8 @@ import {
   createWindowManagerMachine,
   dockOutputField,
   dragSourceField,
+  paletteCellCount,
+  paletteCellOutputField,
   resizeSourceField,
   sourceField,
   stackSourceField,
@@ -85,6 +87,20 @@ function projectDock(machine: Machine, values: Float32Array) {
   })
 }
 
+function projectPalette(machine: Machine, values: Float32Array) {
+  return Array.from({length: paletteCellCount}, (_, cellIndex) => {
+    const start = cellIndex * paletteCellOutputField.size
+    const output = machine.output.paletteCells
+    return {
+      left: values[output[start + paletteCellOutputField.translateX]!]!,
+      top: values[output[start + paletteCellOutputField.translateY]!]!,
+      width: values[output[start + paletteCellOutputField.width]!]!,
+      height: values[output[start + paletteCellOutputField.height]!]!,
+      opacity: values[output[start + paletteCellOutputField.opacity]!]!,
+    }
+  })
+}
+
 function assertCenteredOnDock(
   window: ReturnType<typeof projectWindows>[number],
   dock: ReturnType<typeof projectDock>[number],
@@ -160,6 +176,7 @@ function assertWindowManagerInvariants(
 ) {
   const windows = projectWindows(machine, values)
   const docks = projectDock(machine, values)
+  const palette = projectPalette(machine, values)
   let visibleCount = 0
   let focusMass = 0
   let dragMass = 0
@@ -220,6 +237,13 @@ function assertWindowManagerInvariants(
       windowMass += machine.source[stackSourceField(rank, windowIndex)]!
     }
     assert.equal(windowMass, 1)
+  }
+  for (const cell of palette) {
+    assert.ok(cell.left >= 0 && Number.isFinite(cell.left))
+    assert.ok(cell.top >= 0 && Number.isFinite(cell.top))
+    assert.ok(cell.width >= 0 && Number.isFinite(cell.width))
+    assert.ok(cell.height >= 0 && Number.isFinite(cell.height))
+    assertBit(cell.opacity, 'palette cell opacity')
   }
 }
 
@@ -375,6 +399,58 @@ test('pointer selection raises a window and topmost overlap remains deterministi
   windows = projectWindows(machine, values)
   assertFocused(windows, 0)
   assert.deepEqual(windows.map(window => window.stack), [4, 1, 2, 3])
+})
+
+test('Palette scrolls and clips its fixed 2D grid inside the numeric circuit', () => {
+  const machine = createWindowManagerMachine()
+  let values = step(machine)
+  let cells = projectPalette(machine, values)
+
+  assert.deepEqual(cells[0], {left: 16, top: 16, width: 120, height: 88, opacity: 1})
+  assert.deepEqual(cells[3], {left: 406, top: 16, width: 24, height: 88, opacity: 1})
+  assert.deepEqual(cells[8], {left: 16, top: 212, width: 120, height: 54, opacity: 1})
+  assert.deepEqual(cells[12], {left: 16, top: 266, width: 120, height: 0, opacity: 0})
+
+  machine.wheel(800, 400, 50, 70)
+  values = step(machine)
+  cells = projectPalette(machine, values)
+  assert.equal(machine.source[sourceField.paletteScrollX], 50)
+  assert.equal(machine.source[sourceField.paletteScrollY], 70)
+  assert.deepEqual(cells[0], {left: 0, top: 0, width: 86, height: 34, opacity: 1})
+  assert.deepEqual(cells[15], {left: 356, top: 240, width: 74, height: 26, opacity: 1})
+
+  machine.wheel(800, 400, 1_000, 1_000)
+  values = step(machine)
+  cells = projectPalette(machine, values)
+  assert.equal(machine.source[sourceField.paletteScrollX], 112)
+  assert.equal(machine.source[sourceField.paletteScrollY], 148)
+  assert.deepEqual(cells[0], {left: 0, top: 0, width: 24, height: 0, opacity: 0})
+  assert.deepEqual(cells[15], {left: 294, top: 162, width: 120, height: 88, opacity: 1})
+
+  machine.wheel(800, 400, -1_000, -1_000)
+  values = step(machine)
+  assert.equal(machine.source[sourceField.paletteScrollX], 0)
+  assert.equal(machine.source[sourceField.paletteScrollY], 0)
+  assert.equal(machine.source[sourceField.wheelActive], 0)
+  assert.equal(machine.source[sourceField.wheelDeltaX], 0)
+  assert.equal(machine.source[sourceField.wheelDeltaY], 0)
+})
+
+test('Palette ignores wheel input outside its frontmost content', () => {
+  const machine = createWindowManagerMachine()
+  let values = step(machine)
+
+  machine.wheel(800, 285, 40, 40)
+  values = step(machine)
+  assert.equal(machine.source[sourceField.paletteScrollX], 0)
+  assert.equal(machine.source[sourceField.paletteScrollY], 0)
+
+  values = click(machine, 500, 120)
+  assertFocused(projectWindows(machine, values), 1)
+  machine.wheel(800, 350, 40, 40)
+  step(machine)
+  assert.equal(machine.source[sourceField.paletteScrollX], 0)
+  assert.equal(machine.source[sourceField.paletteScrollY], 0)
 })
 
 test('title dragging updates numeric geometry and clamps the whole window to the workspace', () => {
@@ -724,6 +800,10 @@ test('next state is a direct numeric view and runtime atoms remain fixed', () =>
   assert.equal(machine.output.nextSource.length, sourceField.size)
   assert.equal(machine.output.windows.length, windowCount * windowOutputField.size)
   assert.equal(machine.output.dockItems.length, windowCount * dockOutputField.size)
+  assert.equal(
+    machine.output.paletteCells.length,
+    paletteCellCount * paletteCellOutputField.size,
+  )
   assert.deepEqual(
     [...new Set(machine.circuit.operations.map(operation => operation.kind))].sort(),
     ['affine', 'boolean', 'reglu'],

@@ -30,7 +30,6 @@ numeric-ui-core.ts            universal numeric vocabulary and tensor backend
 numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
 numeric-ui-relations.test.ts  fixed-program relation-driven layout proof
-numeric-ui-viewport.test.ts   fixed-capacity scrolling and clipping proof
 execution-model.md            exact FP32 instruction and layer semantics
 research-sweep.md             landed and parked research decisions
 boolean-state.md              rules for turning continuous scores into bits
@@ -46,24 +45,25 @@ photo-gallery-00..11.webp     twelve fixed image constants
 ```
 
 The window manager has four preallocated windows. Its single source table holds
-viewport facts, layout constants, raw pointer latches, normal window geometry,
-open/minimized/maximized flags, drag and resize targets, a 4 by 4 stacking
-matrix, visual-presence flags, frame time, and five position/velocity spring
-pairs per window: center X/Y, width/height, and scale. One fixed circuit
-computes:
+viewport facts, layout constants, raw pointer and wheel latches, normal window
+geometry, open/minimized/maximized flags, drag and resize targets, a 4 by 4
+stacking matrix, Palette scroll position, visual-presence flags, frame time,
+and five position/velocity spring pairs per window: center X/Y, width/height,
+and scale. One fixed circuit computes:
 
 ```txt
 topmost hit selection and focus
 stable raise-to-front ordering
 immediate dragging, resizing, and workspace bounds
+bounded two-axis Palette scrolling and clipped 4 by 4 cell geometry
 minimize and close into dock icons; restore and open out of them
 stable target hit geometry independent of animated presentation
 four fixed spring substeps for every geometry and transform lane
 all window and dock projection geometry
 ```
 
-JavaScript event callbacks only record raw pointer facts and schedule one
-render. The render supplies viewport dimensions and the RAF timestamp,
+JavaScript event callbacks only record raw pointer or wheel facts and schedule
+one render. The render supplies viewport dimensions and the RAF timestamp,
 evaluates the numeric program, copies its next-state wire view into the same
 source table, and writes projected values onto permanent DOM nodes. A numeric
 animation-active output requests another frame until every spring has snapped
@@ -97,8 +97,8 @@ representing the same fixed rectangular matrices.
 The measured tensor footprints are:
 
 ```txt
-window manager: source 131, graph width 3,092, live values 1,611, layers 50
-                stored weights 7,396, layer tensor bytes 101,276
+window manager: source 142, graph width 3,572, live values 1,836, layers 52
+                stored weights 8,321, layer tensor bytes 114,248
 photo lightbox: source 24, graph width 612, live values 365, layers 10
                 stored weights 2,311, layer tensor bytes 25,528
 ```
@@ -138,7 +138,7 @@ finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 relation-driven grid, row, stack, and overlap layouts
 inverse relation search from target geometry
-scrolling, clipped row geometry, and occlusion decisions
+two-axis Palette scrolling, clipped cell geometry, and occlusion decisions
 direct next-state and render-output wire views
 four expanded spring substeps per lane
 window geometry destinations and recurrent spring convergence
