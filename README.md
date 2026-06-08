@@ -29,6 +29,7 @@ The main files are:
 numeric-ui-core.ts            universal numeric vocabulary and tensor backend
 numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
+numeric-ui-relations.test.ts  fixed-program relation-driven layout proof
 execution-model.md            exact FP32 instruction and layer semantics
 boolean-state.md              rules for turning continuous scores into bits
 window-manager.ts             numeric window state machine and DOM adapter
@@ -133,6 +134,7 @@ exact agreement between literal and compiled FP32 execution
 seeded random circuits with varied roots and dead outputs
 finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
+relation-driven grid, row, stack, and overlap layouts
 direct next-state and render-output wire views
 four expanded spring substeps per lane
 window geometry destinations and recurrent spring convergence
