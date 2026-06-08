@@ -129,6 +129,7 @@ maximize, minimize, close, and dock restoration
 same-frame pointer event batching
 long deterministic mixed-event invariant sequences
 exact agreement between literal and compiled FP32 execution
+seeded random circuits with varied roots and dead outputs
 finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 direct next-state and render-output wire views

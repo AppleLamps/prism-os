@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {Circuit} from './numeric-ui-core.ts'
+import {
+  Circuit,
+  type Terms,
+  type Wire,
+  validateCircuit,
+  validateTensorEvaluation,
+  validateTensorProgram,
+} from './numeric-ui-core.ts'
 
 test('tensor layers append only their new values', () => {
   const circuit = new Circuit(2)
@@ -211,6 +218,56 @@ test('boolean outputs make complete decisions with an explicit tie rule', () => 
   }
 })
 
+test('random circuits preserve every live FP32 wire', () => {
+  const random = createRandom(0x1d1ec7)
+  for (let circuitIndex = 0; circuitIndex < 500; circuitIndex++) {
+    const sourceSize = 2 + randomInteger(random, 5)
+    const circuit = new Circuit(sourceSize)
+    circuit.assumeRange(0, 0, 1)
+    circuit.assumeRange(1, 0, 1)
+    const wires = Array.from({length: sourceSize}, (_, wire) => wire)
+    const booleanWires: Wire[] = [0, 1]
+    const operationCount = 4 + randomInteger(random, 20)
+
+    for (let operation = 0; operation < operationCount; operation++) {
+      const kind = randomInteger(random, 5)
+      let wire: Wire
+      if (kind <= 1) {
+        wire = circuit.affine(randomTerms(random, wires), randomCoefficient(random))
+      } else if (kind <= 3) {
+        wire = circuit.reglu(
+          randomTerms(random, wires),
+          randomCoefficient(random),
+          randomTerms(random, wires),
+          randomCoefficient(random),
+        )
+      } else {
+        wire = circuit.boolean(booleanWires[randomInteger(random, booleanWires.length)]!)
+        booleanWires.push(wire)
+      }
+      wires.push(wire)
+    }
+
+    validateCircuit(circuit)
+    const roots = Array.from(
+      {length: 1 + randomInteger(random, 4)},
+      () => wires[sourceSize + randomInteger(random, wires.length - sourceSize)]!,
+    )
+    const program = circuit.compileTensorProgram(roots)
+    circuit.tensorProgram = program
+    validateTensorProgram(circuit, program)
+
+    for (let inputIndex = 0; inputIndex < 4; inputIndex++) {
+      const source = Float32Array.from(
+        {length: sourceSize},
+        (_, wire) => wire < 2 ? randomInteger(random, 2) : random() * 2 - 1,
+      )
+      const tensor = circuit.evaluateTensor(source)
+      validateTensorEvaluation(source, circuit, tensor)
+    }
+  }
+})
+
 function evaluateOutput(
   circuit: Circuit,
   program: ReturnType<Circuit['compileTensorProgram']>,
@@ -219,4 +276,32 @@ function evaluateOutput(
 ) {
   circuit.tensorProgram = program
   return circuit.evaluateTensor(Float32Array.from(source))[wire]
+}
+
+function createRandom(seed: number) {
+  return () => {
+    seed |= 0
+    seed = seed + 0x6d2b79f5 | 0
+    let value = Math.imul(seed ^ seed >>> 15, 1 | seed)
+    value = value + Math.imul(value ^ value >>> 7, 61 | value) ^ value
+    return ((value ^ value >>> 14) >>> 0) / 4_294_967_296
+  }
+}
+
+function randomInteger(random: () => number, limit: number) {
+  return Math.floor(random() * limit)
+}
+
+function randomCoefficient(random: () => number) {
+  return [-1, -0.5, 0, 0.5, 1][randomInteger(random, 5)]!
+}
+
+function randomTerms(random: () => number, wires: readonly Wire[]): Terms {
+  return Array.from(
+    {length: randomInteger(random, 5)},
+    () => [
+      wires[randomInteger(random, wires.length)]!,
+      randomCoefficient(random),
+    ] as const,
+  )
 }
