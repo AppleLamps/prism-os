@@ -20,7 +20,9 @@ test('tensor layers append only their new values', () => {
     ],
   )
   assert.deepEqual([...program.wireOrder], [0, 1, 2, 3, 4])
-  assert.deepEqual([...circuit.evaluateTensor(new Float64Array([5, 7]))], [5, 7, 10, 40, 21])
+  const source = new Float32Array([5, 7])
+  assert.deepEqual([...circuit.evaluateReference(source)], [5, 7, 10, 40, 21])
+  assert.deepEqual([...circuit.evaluateTensor(source)], [5, 7, 10, 40, 21])
 })
 
 test('compiled tensor constants use native FP32 storage', () => {
@@ -34,35 +36,33 @@ test('compiled tensor constants use native FP32 storage', () => {
   assert.equal(layer.bias[0], Math.fround(1 / 10))
 })
 
-test('the FP32 evaluator rounds every arithmetic step', () => {
+test('the reference and tensor evaluators round every arithmetic step', () => {
   const circuit = new Circuit(2)
   const sum = circuit.affine([[0, 1], [1, 1]])
-  const source = new Float64Array([16_777_216, 1])
+  const source = new Float32Array([16_777_216, 1])
 
-  assert.equal(circuit.evaluateTensor(source)[sum], 16_777_217)
-  const values = circuit.evaluateTensorFloat32(source)
-  assert.ok(values instanceof Float32Array)
-  assert.equal(values[sum], 16_777_216)
+  const reference = circuit.evaluateReference(source)
+  const tensor = circuit.evaluateTensor(source)
+  assert.ok(reference instanceof Float32Array)
+  assert.ok(tensor instanceof Float32Array)
+  assert.equal(reference[sum], 16_777_216)
+  assert.equal(tensor[sum], 16_777_216)
 })
 
-test('tensor and readable evaluators both reject a wrong-sized source table', () => {
+test('tensor and reference evaluators both reject a wrong-sized source table', () => {
   const circuit = new Circuit(2)
   circuit.affine([[0, 1], [1, 1]])
 
   for (const source of [
-    new Float64Array([7]),
-    new Float64Array([7, 8, 9]),
+    new Float32Array([7]),
+    new Float32Array([7, 8, 9]),
   ]) {
     assert.throws(
       () => circuit.evaluateTensor(source),
       /source table has the wrong length/,
     )
     assert.throws(
-      () => circuit.evaluateReadable(source),
-      /source table has the wrong length/,
-    )
-    assert.throws(
-      () => circuit.evaluateTensorFloat32(source),
+      () => circuit.evaluateReference(source),
       /source table has the wrong length/,
     )
   }
@@ -80,7 +80,7 @@ test('weighted sums normalize duplicate, zero, and unordered terms', () => {
   ], 7)
 
   assert.deepEqual(circuit.operations[0]!.leftTerms, [[1, 3], [2, 5]])
-  assert.equal(circuit.evaluateTensor(new Float64Array([11, 13, 17]))[3], 131)
+  assert.equal(circuit.evaluateTensor(new Float32Array([11, 13, 17]))[3], 131)
 })
 
 test('constant terms and constant gates fold before compilation', () => {
@@ -101,7 +101,7 @@ test('constant terms and constant gates fold before compilation', () => {
     {kind: 'affine', leftTerms: [], leftBias: 0},
   ])
   assert.deepEqual(
-    [...circuit.evaluateTensor(new Float64Array([13]))].slice(1),
+    [...circuit.evaluateTensor(new Float32Array([13]))].slice(1),
     [3, 59, 62, 0],
   )
 })
@@ -207,7 +207,7 @@ test('boolean outputs make complete decisions with an explicit tie rule', () => 
     [1, 1],
   ] as const) {
     assert.equal(evaluateOutput(circuit, program, [score], decision), expected)
-    assert.equal(circuit.evaluateReadable(new Float64Array([score]))[decision], expected)
+    assert.equal(circuit.evaluateReference(new Float32Array([score]))[decision], expected)
   }
 })
 
@@ -218,5 +218,5 @@ function evaluateOutput(
   wire: number,
 ) {
   circuit.tensorProgram = program
-  return circuit.evaluateTensor(Float64Array.from(source))[wire]
+  return circuit.evaluateTensor(Float32Array.from(source))[wire]
 }

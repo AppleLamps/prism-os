@@ -1,6 +1,5 @@
 // Three runtime atoms, plus compile-time expansions that lower into those atoms.
 export type Wire = number
-export type NumericArray = Float32Array | Float64Array
 
 export type Terms = readonly (readonly [wire: Wire, coefficient: number])[]
 
@@ -145,22 +144,17 @@ export class Circuit {
     return wire
   }
 
-  evaluateReadable(source: NumericArray): Float64Array {
+  evaluateReference(source: Float32Array): Float32Array {
     this.validateSourceRanges(source)
     return evaluateOperationStream(source, this)
   }
 
-  evaluateTensor(source: NumericArray): Float64Array {
+  evaluateTensor(source: Float32Array): Float32Array {
     this.validateSourceRanges(source)
     return evaluateTensorProgram(source, this.tensorProgram ??= this.compileTensorProgram())
   }
 
-  evaluateTensorFloat32(source: NumericArray): Float32Array {
-    this.validateSourceRanges(source)
-    return evaluateTensorProgramFloat32(source, this.tensorProgram ??= this.compileTensorProgram())
-  }
-
-  validateSourceRanges(source: NumericArray) {
+  validateSourceRanges(source: Float32Array) {
     invariant(source.length === this.sourceSize, 'source table has the wrong length')
     for (let wire = 0; wire < source.length; wire++) {
       const range = this.ranges[wire]!
@@ -460,25 +454,8 @@ function normalizeTerms(terms: Terms): Terms {
   return normalizedTerms.filter(([, coefficient]) => coefficient !== 0)
 }
 
-export function evaluateOperationStream(source: NumericArray, circuit: Circuit): Float64Array {
-  invariant(source.length === circuit.sourceSize, 'source table has the wrong length')
-  const values = new Float64Array(circuit.sourceSize + circuit.operations.length)
-  values.set(source)
-  for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
-    const operation = circuit.operations[operationIndex]!
-    let value = evaluateTerms(values, operation.leftTerms, operation.leftBias)
-    if (operation.kind === 'reglu') {
-      value *= Math.max(0, evaluateTerms(values, operation.gateTerms, operation.gateBias))
-    } else if (operation.kind === 'boolean') {
-      value = evaluateBoolean(value)
-    }
-    values[circuit.sourceSize + operationIndex] = value
-  }
-  return values
-}
-
-export function evaluateOperationStreamFloat32(
-  source: NumericArray,
+export function evaluateOperationStream(
+  source: Float32Array,
   circuit: Circuit,
 ): Float32Array {
   invariant(source.length === circuit.sourceSize, 'source table has the wrong length')
@@ -486,12 +463,12 @@ export function evaluateOperationStreamFloat32(
   values.set(source)
   for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
     const operation = circuit.operations[operationIndex]!
-    let value = evaluateTermsFloat32(values, operation.leftTerms, operation.leftBias)
+    let value = evaluateTerms(values, operation.leftTerms, operation.leftBias)
     if (operation.kind === 'reglu') {
       value = Math.fround(
         value * Math.max(
           0,
-          evaluateTermsFloat32(values, operation.gateTerms, operation.gateBias),
+          evaluateTerms(values, operation.gateTerms, operation.gateBias),
         ),
       )
     } else if (operation.kind === 'boolean') {
@@ -502,51 +479,8 @@ export function evaluateOperationStreamFloat32(
   return values
 }
 
-export function evaluateTensorProgram(source: NumericArray, program: TensorProgram): Float64Array {
-  invariant(source.length === program.sourceSize, 'source table has the wrong length')
-  const {layers, valueCount, wireOrder, width} = program
-  const packedValues = new Float64Array(valueCount)
-  let maxProjectionSize = 0
-  let maxInputSize = 0
-  for (const layer of layers) maxProjectionSize = Math.max(maxProjectionSize, layer.bias.length)
-  for (const layer of layers) maxInputSize = Math.max(maxInputSize, layer.inputSize)
-  const input = new Float64Array(maxInputSize)
-  const projection = new Float64Array(maxProjectionSize)
-  packedValues.set(source)
-  let availableValues = source.length
-  for (const layer of layers) {
-    const {outputSize} = layer
-    for (let column = 0; column < layer.inputSize; column++) {
-      input[column] = packedValues[layer.inputIndices[column]!]!
-    }
-    sparseMatmulAddBias(
-      projection,
-      layer.weights,
-      layer.columns,
-      layer.rowOffsets,
-      input,
-      layer.bias,
-    )
-    for (let gateRow = 0; gateRow < layer.gateRows.length; gateRow++) {
-      const outputRow = layer.gateRows[gateRow]!
-      projection[outputRow] =
-        projection[outputRow]! * Math.max(0, projection[outputSize + gateRow]!)
-    }
-    for (const booleanRow of layer.booleanRows) {
-      projection[booleanRow] = evaluateBoolean(projection[booleanRow]!)
-    }
-    packedValues.set(projection.subarray(0, outputSize), availableValues)
-    availableValues += outputSize
-  }
-  const values = new Float64Array(width)
-  for (let packedIndex = 0; packedIndex < width; packedIndex++) {
-    values[wireOrder[packedIndex]!] = packedValues[packedIndex]!
-  }
-  return values
-}
-
-export function evaluateTensorProgramFloat32(
-  source: NumericArray,
+export function evaluateTensorProgram(
+  source: Float32Array,
   program: TensorProgram,
 ): Float32Array {
   invariant(source.length === program.sourceSize, 'source table has the wrong length')
@@ -565,7 +499,7 @@ export function evaluateTensorProgramFloat32(
     for (let column = 0; column < layer.inputSize; column++) {
       input[column] = packedValues[layer.inputIndices[column]!]!
     }
-    sparseMatmulAddBiasFloat32(
+    sparseMatmulAddBias(
       projection,
       layer.weights,
       layer.columns,
@@ -593,23 +527,6 @@ export function evaluateTensorProgramFloat32(
 }
 
 function sparseMatmulAddBias(
-  output: Float64Array,
-  weights: Float32Array,
-  columns: Uint32Array,
-  rowOffsets: Uint32Array,
-  input: Float64Array,
-  bias: Float32Array,
-) {
-  for (let row = 0; row < bias.length; row++) {
-    let value = bias[row]!
-    for (let index = rowOffsets[row]!; index < rowOffsets[row + 1]!; index++) {
-      value += weights[index]! * input[columns[index]!]!
-    }
-    output[row] = value
-  }
-}
-
-function sparseMatmulAddBiasFloat32(
   output: Float32Array,
   weights: Float32Array,
   columns: Uint32Array,
@@ -627,13 +544,7 @@ function sparseMatmulAddBiasFloat32(
   }
 }
 
-function evaluateTerms(values: Float64Array, terms: Terms, bias: number): number {
-  let value = bias
-  for (const [wire, coefficient] of terms) value += coefficient * values[wire]!
-  return value
-}
-
-function evaluateTermsFloat32(
+function evaluateTerms(
   values: Float32Array,
   terms: Terms,
   bias: number,
@@ -765,73 +676,17 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
 }
 
 export function validateTensorEvaluation(
-  source: NumericArray,
+  source: Float32Array,
   circuit: Circuit,
-  tensorValues: NumericArray,
+  tensorValues: Float32Array,
 ) {
-  const expectedValues = evaluateOperationStreamWithFloat32Constants(source, circuit)
-  invariant(expectedValues.length === tensorValues.length, 'tensor result width mismatch')
-  const program = circuit.tensorProgram ??= circuit.compileTensorProgram()
-  for (const wire of program.wireOrder) {
-    assertApproximatelyEqual(tensorValues[wire]!, expectedValues[wire]!, `tensor wire ${wire}`)
-  }
-}
-
-function evaluateOperationStreamWithFloat32Constants(
-  source: NumericArray,
-  circuit: Circuit,
-): Float64Array {
-  invariant(source.length === circuit.sourceSize, 'source table has the wrong length')
-  const values = new Float64Array(circuit.sourceSize + circuit.operations.length)
-  values.set(source)
-  for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
-    const operation = circuit.operations[operationIndex]!
-    let value = evaluateTermsWithFloat32Constants(
-      values,
-      operation.leftTerms,
-      operation.leftBias,
-    )
-    if (operation.kind === 'reglu') {
-      value *= Math.max(
-        0,
-        evaluateTermsWithFloat32Constants(
-          values,
-          operation.gateTerms,
-          operation.gateBias,
-        ),
-      )
-    } else if (operation.kind === 'boolean') {
-      value = evaluateBoolean(value)
-    }
-    values[circuit.sourceSize + operationIndex] = value
-  }
-  return values
-}
-
-function evaluateTermsWithFloat32Constants(
-  values: Float64Array,
-  terms: Terms,
-  bias: number,
-) {
-  let value = Math.fround(bias)
-  for (const [wire, coefficient] of terms) {
-    value += Math.fround(coefficient) * values[wire]!
-  }
-  return value
-}
-
-export function validateTensorFloat32Evaluation(
-  source: NumericArray,
-  circuit: Circuit,
-  tensorValues: NumericArray,
-) {
-  const expectedValues = evaluateOperationStreamFloat32(source, circuit)
+  const expectedValues = evaluateOperationStream(source, circuit)
   invariant(expectedValues.length === tensorValues.length, 'tensor result width mismatch')
   const program = circuit.tensorProgram ??= circuit.compileTensorProgram()
   for (const wire of program.wireOrder) {
     invariant(
       tensorValues[wire] === expectedValues[wire],
-      `FP32 tensor wire ${wire} does not match the readable atom program`,
+      `tensor wire ${wire} does not match the reference FP32 atom program`,
     )
   }
 }
@@ -864,9 +719,4 @@ function validateTerms(terms: Terms, wireLimit: number) {
     assertWire(wire, wireLimit)
     invariant(Number.isFinite(coefficient), 'weight must be finite')
   }
-}
-
-function assertApproximatelyEqual(actual: number, expected: number, label: string) {
-  const scale = Math.max(1, Math.abs(actual), Math.abs(expected))
-  invariant(Math.abs(actual - expected) <= 1e-9 * scale, `${label} does not match the readable atom program`)
 }

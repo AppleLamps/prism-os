@@ -78,18 +78,16 @@ new[booleanRows]   = boolean(new[booleanRows])
 values             = concat(values, new)
 ```
 
-The machines and browser demos execute entirely with FP32 arithmetic by
-default. Every source value, weight, multiply, addition, and stored result is
-rounded to FP32. This gives the product one stable CPU meaning that can later
-be matched by a GPU backend. The Float64 evaluator remains only as an explicit
-test oracle for measuring numeric drift and checking that both evaluators make
-the same discrete decisions. Compiled weights and biases are stored directly
-in `Float32Array`s; index arrays remain 32-bit integers.
+The machines and browser demos execute entirely with FP32 arithmetic. Every
+source value, weight, multiply, addition, and stored result is rounded to
+FP32. This gives the product one stable CPU meaning that can later be matched
+by a GPU backend. Compiled weights and biases are stored directly in
+`Float32Array`s; index arrays remain 32-bit integers.
 
 The demo validates the source table, stack mass, compiled matrices, and
-projected output after every refresh. It also compares every live tensor wire
-against a readable atom interpreter as a development assertion. Rendering
-consumes only the tensor result. Sparse storage omits zero coefficients while
+projected output after every refresh. Rendering consumes only the compiled
+tensor result. Compiler tests also run the atoms literally in FP32 and require
+every live wire to exactly match. Sparse storage omits zero coefficients while
 representing the same fixed rectangular matrices.
 
 The measured tensor footprints are:
@@ -103,8 +101,7 @@ photo lightbox: source 24, graph width 612, live values 365, layers 10
 
 The product's persistent source table and evaluated wire table are fixed
 `Float32Array`s. Immutable constants and changing underivable facts share the
-source table. Derived values are temporary circuit wires. Float64 tables exist
-only in the explicit comparison oracle.
+source table. Derived values are temporary circuit wires.
 
 The audited runtime vocabulary has only three atoms:
 
@@ -131,7 +128,7 @@ dragging, resizing, and workspace bounds
 maximize, minimize, close, and dock restoration
 same-frame pointer event batching
 long deterministic mixed-event invariant sequences
-matching Float64 and FP32 decisions over the same event sequence
+exact agreement between literal and compiled FP32 execution
 finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
 direct next-state and render-output wire views

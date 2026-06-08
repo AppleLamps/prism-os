@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import type {NumericArray} from './numeric-ui-core.ts'
 import {
   columnCount,
   controlField,
@@ -21,7 +20,7 @@ function assertClose(actual: number, expected: number) {
   assert.ok(Math.abs(actual - expected) < 1e-4, `${actual} != ${expected}`)
 }
 
-function projectPhotos(machine: ReturnType<typeof createPhotoGalleryMachine>, values: NumericArray) {
+function projectPhotos(machine: ReturnType<typeof createPhotoGalleryMachine>, values: Float32Array) {
   return Array.from({length: itemCount}, (_, item) => {
     const outputStart = item * photoField.size
     return {
@@ -35,7 +34,7 @@ function projectPhotos(machine: ReturnType<typeof createPhotoGalleryMachine>, va
   })
 }
 
-function projectThumbnails(machine: ReturnType<typeof createPhotoGalleryMachine>, values: NumericArray) {
+function projectThumbnails(machine: ReturnType<typeof createPhotoGalleryMachine>, values: Float32Array) {
   return Array.from({length: itemCount}, (_, item) => {
     const outputStart = item * thumbnailField.size
     return {
@@ -140,8 +139,8 @@ test('the fixed grid opens every photo with all twelve thumbnails', () => {
   assert.equal(values[machine.output.backdropOpacity], 1)
 })
 
-test('the FP32 gallery keeps every focus decision exact', () => {
-  const machine = createPhotoGalleryMachine({precision: 'float32'})
+test('the gallery keeps every focus decision exact', () => {
+  const machine = createPhotoGalleryMachine()
   let values = machine.step(viewportWidth, viewportHeight)
   const grid = projectPhotos(machine, values)
 

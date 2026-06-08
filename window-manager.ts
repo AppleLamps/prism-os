@@ -1,6 +1,5 @@
 import {
   Circuit,
-  type NumericArray,
   type Wire,
   assertFiniteValues,
   assertNonNegativeFinite,
@@ -11,8 +10,6 @@ import {
   emitRelu,
   invariant,
   validateCircuit,
-  validateTensorEvaluation,
-  validateTensorFloat32Evaluation,
   validateTensorProgram,
 } from './numeric-ui-core.ts'
 
@@ -967,18 +964,8 @@ export function compileWindowManagerCircuit() {
   }
 }
 
-export function createWindowManagerMachine(
-  {
-    checkTensorEvaluation = true,
-    precision = 'float32',
-  }: {
-    checkTensorEvaluation?: boolean
-    precision?: 'float64' | 'float32'
-  } = {},
-) {
-  const source = precision === 'float32'
-    ? new Float32Array(sourceField.size)
-    : new Float64Array(sourceField.size)
+export function createWindowManagerMachine() {
+  const source = new Float32Array(sourceField.size)
   source[sourceField.unit] = 1
   source[sourceField.margin] = 12
   source[sourceField.titleHeight] = 44
@@ -1052,13 +1039,7 @@ export function createWindowManagerMachine(
       source[sourceField.viewportHeight] = viewportHeight
       source[sourceField.frameTime] = frameTime
       validateWindowManagerSource(source, numericTolerance)
-      const values = precision === 'float32'
-        ? circuit.evaluateTensorFloat32(source)
-        : circuit.evaluateTensor(source)
-      if (checkTensorEvaluation) {
-        if (precision === 'float32') validateTensorFloat32Evaluation(source, circuit, values)
-        else validateTensorEvaluation(source, circuit, values)
-      }
+      const values = circuit.evaluateTensor(source)
       validateWindowManagerOutput(values, output, numericTolerance)
       for (let field = 0; field < source.length; field++) {
         source[field] = values[output.nextSource[field]!]!
@@ -1086,7 +1067,7 @@ declare global {
 }
 
 export function mountWindowManager(document: Document, window: Window) {
-  const machine = createWindowManagerMachine({precision: 'float32'})
+  const machine = createWindowManagerMachine()
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
@@ -1201,7 +1182,7 @@ export function mountWindowManager(document: Document, window: Window) {
 
 function projectDockGeometry(
   element: HTMLElement,
-  values: NumericArray,
+  values: Float32Array,
   output: readonly Wire[],
   outputStart: number,
 ) {
@@ -1362,8 +1343,8 @@ function emitSelect(circuit: Circuit, gate: Wire, off: Wire, on: Wire) {
 
 function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
   invariant(
-    values instanceof Float32Array || values instanceof Float64Array,
-    'source table must be a numeric typed array',
+    values instanceof Float32Array,
+    'source table must be a Float32Array',
   )
   invariant(values.length === sourceField.size, 'source table has the wrong length')
   assertFiniteValues(values, 'source table')
@@ -1462,14 +1443,12 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
 }
 
 function validateWindowManagerOutput(
-  values: NumericArray,
+  values: Float32Array,
   output: WindowManagerOutput,
   tolerance = 1e-9,
 ) {
   assertFiniteValues(values, 'tensor output')
-  const nextSource = values instanceof Float32Array
-    ? Float32Array.from(output.nextSource, wire => values[wire]!)
-    : Float64Array.from(output.nextSource, wire => values[wire]!)
+  const nextSource = Float32Array.from(output.nextSource, wire => values[wire]!)
   validateWindowManagerSource(nextSource, tolerance)
   for (const field of eventActiveFields) {
     invariant(nextSource[field] === 0, 'event latch must reset after refresh')

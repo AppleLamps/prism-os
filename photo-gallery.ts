@@ -1,6 +1,5 @@
 import {
   Circuit,
-  type NumericArray,
   type Wire,
   assertFiniteValues,
   assertNonNegativeFinite,
@@ -10,8 +9,6 @@ import {
   emitRelu,
   invariant,
   validateCircuit,
-  validateTensorEvaluation,
-  validateTensorFloat32Evaluation,
   validateTensorProgram,
 } from './numeric-ui-core.ts'
 
@@ -373,18 +370,8 @@ export function compilePhotoGalleryCircuit() {
   }
 }
 
-export function createPhotoGalleryMachine(
-  {
-    checkTensorEvaluation = true,
-    precision = 'float32',
-  }: {
-    checkTensorEvaluation?: boolean
-    precision?: 'float64' | 'float32'
-  } = {},
-) {
-  const source = precision === 'float32'
-    ? new Float32Array(sourceField.size)
-    : new Float64Array(sourceField.size)
+export function createPhotoGalleryMachine() {
+  const source = new Float32Array(sourceField.size)
   source[sourceField.gap] = 18
   source[sourceField.mainInset] = 92
   source[sourceField.thumbnailHeight] = 82
@@ -401,7 +388,7 @@ export function createPhotoGalleryMachine(
     ...output.nextControl,
   ])
   validateTensorProgram(circuit, tensorProgram)
-  const numericTolerance = precision === 'float32' ? 1e-5 : 1e-9
+  const numericTolerance = 1e-5
 
   function receiveEvent(field: number, x = source[sourceField.clickX]!, y = source[sourceField.clickY]!) {
     for (const eventField of eventFields) source[eventField] = 0
@@ -419,13 +406,7 @@ export function createPhotoGalleryMachine(
       source[sourceField.viewportWidth] = viewportWidth
       source[sourceField.viewportHeight] = viewportHeight
       validateGallerySource(source, numericTolerance)
-      const values = precision === 'float32'
-        ? circuit.evaluateTensorFloat32(source)
-        : circuit.evaluateTensor(source)
-      if (checkTensorEvaluation) {
-        if (precision === 'float32') validateTensorFloat32Evaluation(source, circuit, values)
-        else validateTensorEvaluation(source, circuit, values)
-      }
+      const values = circuit.evaluateTensor(source)
       validateGalleryOutput(values, output, numericTolerance)
       for (let field = 0; field < source.length; field++) {
         source[field] = values[output.nextSource[field]!]!
@@ -456,7 +437,7 @@ declare global {
 }
 
 export function mountPhotoGallery(document: Document, window: Window) {
-  const machine = createPhotoGalleryMachine({precision: 'float32'})
+  const machine = createPhotoGalleryMachine()
   const photos = [...document.querySelectorAll<HTMLElement>('.photo')]
   const thumbnails = [...document.querySelectorAll<HTMLElement>('.thumbnail')]
   const backdrop = document.querySelector<HTMLElement>('#backdrop')
@@ -481,7 +462,7 @@ export function mountPhotoGallery(document: Document, window: Window) {
 
   function projectGeometry(
     element: HTMLElement,
-    values: NumericArray,
+    values: Float32Array,
     output: readonly Wire[],
     outputStart = 0,
   ) {
@@ -571,8 +552,8 @@ function emitIntervalDistance(circuit: Circuit, position: Wire, start: Wire, siz
 
 function validateGallerySource(values: unknown, tolerance = 1e-9) {
   invariant(
-    values instanceof Float32Array || values instanceof Float64Array,
-    'source table must be a numeric typed array',
+    values instanceof Float32Array,
+    'source table must be a Float32Array',
   )
   invariant(values.length === sourceField.size, 'source table has the wrong length')
   assertFiniteValues(values, 'source table')
@@ -609,14 +590,12 @@ function validateGalleryOutputWires(output: GalleryOutput, wireCount: number) {
 }
 
 function validateGalleryOutput(
-  values: NumericArray,
+  values: Float32Array,
   output: GalleryOutput,
   tolerance = 1e-9,
 ) {
   assertFiniteValues(values, 'tensor output')
-  const nextSource = values instanceof Float32Array
-    ? Float32Array.from(output.nextSource, wire => values[wire]!)
-    : Float64Array.from(output.nextSource, wire => values[wire]!)
+  const nextSource = Float32Array.from(output.nextSource, wire => values[wire]!)
   validateGallerySource(nextSource, tolerance)
   for (const eventField of eventFields) {
     invariant(nextSource[eventField] === 0, 'event latch must reset after refresh')

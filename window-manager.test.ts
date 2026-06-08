@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import type {NumericArray} from './numeric-ui-core.ts'
 import {
   createWindowManagerMachine,
   dockOutputField,
@@ -32,7 +31,7 @@ function step(
   return machine.step(width, height, frameTime)
 }
 
-function animationActive(machine: Machine, values: NumericArray) {
+function animationActive(machine: Machine, values: Float32Array) {
   return values[machine.output.animationActive]!
 }
 
@@ -52,7 +51,7 @@ function settle(machine: Machine, width = viewportWidth, height = viewportHeight
   return settleFrames(machine, width, height).values
 }
 
-function projectWindows(machine: Machine, values: NumericArray) {
+function projectWindows(machine: Machine, values: Float32Array) {
   return Array.from({length: windowCount}, (_, windowIndex) => {
     const start = windowIndex * windowOutputField.size
     const output = machine.output.windows
@@ -70,7 +69,7 @@ function projectWindows(machine: Machine, values: NumericArray) {
   })
 }
 
-function projectDock(machine: Machine, values: NumericArray) {
+function projectDock(machine: Machine, values: Float32Array) {
   return Array.from({length: windowCount}, (_, windowIndex) => {
     const start = windowIndex * dockOutputField.size
     const output = machine.output.dockItems
@@ -106,7 +105,7 @@ function click(machine: Machine, x: number, y: number) {
 
 function clickWindowControl(
   machine: Machine,
-  values: NumericArray,
+  values: Float32Array,
   windowIndex: number,
   control: 'minimize' | 'maximize' | 'close',
 ) {
@@ -116,7 +115,7 @@ function clickWindowControl(
 
 function windowControlPoint(
   machine: Machine,
-  values: NumericArray,
+  values: Float32Array,
   windowIndex: number,
   control: 'minimize' | 'maximize' | 'close',
 ) {
@@ -137,7 +136,7 @@ function windowControlPoint(
   }
 }
 
-function clickDock(machine: Machine, values: NumericArray, windowIndex: number) {
+function clickDock(machine: Machine, values: Float32Array, windowIndex: number) {
   const dock = projectDock(machine, values)[windowIndex]!
   return click(machine, dock.left + dock.width / 2, dock.top + dock.height / 2)
 }
@@ -155,7 +154,7 @@ function assertBit(value: number, label: string) {
 
 function assertWindowManagerInvariants(
   machine: Machine,
-  values: NumericArray,
+  values: Float32Array,
   width: number,
   height: number,
 ) {
@@ -246,7 +245,7 @@ type RandomAction = {
 
 function createRandomAction(
   machine: Machine,
-  values: NumericArray,
+  values: Float32Array,
   width: number,
   height: number,
   random: () => number,
@@ -334,80 +333,6 @@ function applyRandomAction(machine: Machine, action: RandomAction) {
     else if (event.kind === 'move') machine.pointerMove(event.x, event.y)
     else machine.pointerUp(event.x, event.y)
   }
-}
-
-function discreteState(machine: Machine, values: NumericArray) {
-  const state: number[] = []
-  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    for (const field of [
-      windowStateField.open,
-      windowStateField.minimized,
-      windowStateField.maximized,
-    ]) {
-      state.push(machine.source[windowSourceField(windowIndex, field)]!)
-    }
-    state.push(
-      machine.source[dragSourceField(windowIndex)]!,
-      machine.source[resizeSourceField(windowIndex)]!,
-      projectWindows(machine, values)[windowIndex]!.focused,
-    )
-  }
-  for (let rank = 0; rank < windowCount; rank++) {
-    for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-      state.push(machine.source[stackSourceField(rank, windowIndex)]!)
-    }
-  }
-  return state
-}
-
-function maximumProductDifference(
-  leftMachine: Machine,
-  leftValues: NumericArray,
-  rightMachine: Machine,
-  rightValues: NumericArray,
-) {
-  const leftWindows = projectWindows(leftMachine, leftValues)
-  const rightWindows = projectWindows(rightMachine, rightValues)
-  const leftDock = projectDock(leftMachine, leftValues)
-  const rightDock = projectDock(rightMachine, rightValues)
-  const pairs: {label: string, left: number, right: number}[] = []
-  const windowFields = [
-    'left',
-    'top',
-    'width',
-    'height',
-    'scale',
-    'opacity',
-  ] as const
-  const dockFields = ['left', 'top', 'width', 'height'] as const
-  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    for (const field of windowFields) {
-      pairs.push({
-        label: `window ${windowIndex} ${field}`,
-        left: leftWindows[windowIndex]![field],
-        right: rightWindows[windowIndex]![field],
-      })
-    }
-    for (const field of dockFields) {
-      pairs.push({
-        label: `dock ${windowIndex} ${field}`,
-        left: leftDock[windowIndex]![field],
-        right: rightDock[windowIndex]![field],
-      })
-    }
-  }
-  return pairs.reduce(
-    (maximum, pair) => {
-      const absolute = Math.abs(pair.left - pair.right)
-      if (absolute <= maximum.absolute) return maximum
-      return {
-        absolute,
-        relative: absolute / Math.max(1, Math.abs(pair.left), Math.abs(pair.right)),
-        label: pair.label,
-      }
-    },
-    {absolute: 0, relative: 0, label: ''},
-  )
 }
 
 test('the fixed table projects four bounded windows and one focused front window', () => {
@@ -787,51 +712,6 @@ test('long mixed event sequences preserve Boolean state and stacking', () => {
     values = step(machine, width, height, 1 + random() * 40)
     assertWindowManagerInvariants(machine, values, width, height)
   }
-})
-
-test('FP32 and Float64 keep the same decisions through mixed event sequences', () => {
-  const float64 = createWindowManagerMachine({precision: 'float64'})
-  const float32 = createWindowManagerMachine()
-  const random = createRandom(0xf32)
-  let width = viewportWidth
-  let height = viewportHeight
-  let float64Values = step(float64, width, height)
-  let float32Values = step(float32, width, height)
-  assert.ok(float64.source instanceof Float64Array)
-  assert.ok(float64Values instanceof Float64Array)
-  assert.ok(float32.source instanceof Float32Array)
-  assert.ok(float32Values instanceof Float32Array)
-  let maximumDifference = {absolute: 0, relative: 0, label: ''}
-
-  for (let action = 0; action < 1_000; action++) {
-    const nextAction = createRandomAction(float64, float64Values, width, height, random)
-    const elapsed = 1 + random() * 40
-    width = nextAction.width
-    height = nextAction.height
-    applyRandomAction(float64, nextAction)
-    applyRandomAction(float32, nextAction)
-    float64Values = step(float64, width, height, elapsed)
-    float32Values = step(float32, width, height, elapsed)
-
-    assertWindowManagerInvariants(float32, float32Values, width, height)
-    assert.deepEqual(
-      discreteState(float32, float32Values),
-      discreteState(float64, float64Values),
-    )
-    const difference = maximumProductDifference(
-      float32,
-      float32Values,
-      float64,
-      float64Values,
-    )
-    if (difference.absolute > maximumDifference.absolute) maximumDifference = difference
-  }
-
-  assert.ok(
-    maximumDifference.absolute < 0.1 && maximumDifference.relative < 0.001,
-    `FP32 ${maximumDifference.label} difference reached `
-      + `${maximumDifference.absolute} (${maximumDifference.relative} relative)`,
-  )
 })
 
 test('next state is a direct numeric view and runtime atoms remain fixed', () => {

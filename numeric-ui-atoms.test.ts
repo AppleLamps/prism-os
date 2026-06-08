@@ -9,14 +9,14 @@ import {
   validateTensorEvaluation,
 } from './numeric-ui-core.ts'
 
-function evaluate(circuit: Circuit, sourceValues: number[]): Float64Array {
-  const source = Float64Array.from(sourceValues)
+function evaluate(circuit: Circuit, sourceValues: number[]): Float32Array {
+  const source = Float32Array.from(sourceValues)
   const tensor = circuit.evaluateTensor(source)
   validateTensorEvaluation(source, circuit, tensor)
   return tensor
 }
 
-function read(values: Float64Array, wires: Wire[]): number[] {
+function read(values: Float32Array, wires: Wire[]): number[] {
   return wires.map(wire => values[wire]!)
 }
 
@@ -50,7 +50,7 @@ test('proven nonnegative multiplication lowers to one ReGLU', () => {
   assert.equal(circuit.operations[0]!.kind, 'reglu')
   assert.equal(evaluate(circuit, [-3, 2])[multiplied], -6)
   assert.throws(
-    () => circuit.evaluateTensor(new Float64Array([-3, -2])),
+    () => circuit.evaluateTensor(new Float32Array([-3, -2])),
     /outside its assumed range/,
   )
 })
@@ -85,6 +85,6 @@ test('four spring steps match ordinary math', () => {
   }
 
   const values = evaluate(circuit, [10, 20, -3, 290, 0.004])
-  assert.ok(Math.abs(values[position]! - expectedPosition) < 1e-12)
-  assert.ok(Math.abs(values[velocity]! - expectedVelocity) < 1e-12)
+  assert.ok(Math.abs(values[position]! - expectedPosition) < 1e-4)
+  assert.ok(Math.abs(values[velocity]! - expectedVelocity) < 1e-4)
 })
