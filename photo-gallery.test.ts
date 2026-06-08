@@ -16,6 +16,10 @@ const viewportWidth = 1280
 const viewportHeight = 720
 const gap = 18
 
+function assertClose(actual: number, expected: number) {
+  assert.ok(Math.abs(actual - expected) < 1e-4, `${actual} != ${expected}`)
+}
+
 function projectPhotos(machine: ReturnType<typeof createPhotoGalleryMachine>, values: Float64Array) {
   return Array.from({length: itemCount}, (_, item) => {
     const outputStart = item * photoField.size
@@ -99,24 +103,37 @@ test('the fixed grid opens every photo with all twelve thumbnails', () => {
   const thumbnails = projectThumbnails(machine, values)
   const thumbnailWidth =
     viewportWidth * (1 / itemCount) + gap * (-(itemCount + 1) / itemCount)
-  assert.deepEqual(thumbnails[0], {
-    left: gap,
+  const firstThumbnail = thumbnails[0]!
+  assert.deepEqual({
+    top: firstThumbnail.top,
+    height: firstThumbnail.height,
+    opacity: firstThumbnail.opacity,
+    focused: firstThumbnail.focused,
+  }, {
     top: 620,
-    width: thumbnailWidth,
     height: 82,
     opacity: 1,
     focused: 0,
   })
-  assert.deepEqual(thumbnails[6], {
-    left: gap + 6 * (thumbnailWidth + gap),
+  assertClose(firstThumbnail.left, gap)
+  assertClose(firstThumbnail.width, thumbnailWidth)
+  const focusedThumbnail = thumbnails[6]!
+  const focusedThumbnailLeft = gap + 6 * (thumbnailWidth + gap)
+  assert.deepEqual({
+    top: focusedThumbnail.top,
+    height: focusedThumbnail.height,
+    opacity: focusedThumbnail.opacity,
+    focused: focusedThumbnail.focused,
+  }, {
     top: 620,
-    width: thumbnailWidth,
     height: 82,
     opacity: 1,
     focused: 1,
   })
+  assertClose(focusedThumbnail.left, focusedThumbnailLeft)
+  assertClose(focusedThumbnail.width, thumbnailWidth)
   assert.equal(thumbnails.length, itemCount)
-  assert.equal(photos[6].top + photos[6].height + gap, thumbnails[0].top)
+  assert.equal(photos[6].top + photos[6].height + gap, firstThumbnail.top)
   assert.equal(values[machine.output.backdropOpacity], 1)
 })
 

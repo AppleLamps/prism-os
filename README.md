@@ -77,10 +77,12 @@ new[booleanRows]   = boolean(new[booleanRows])
 values             = concat(values, new)
 ```
 
-The default evaluator keeps ordinary arithmetic in `Float64` and uses FP32
-only for `boolean`. An optional reference evaluator rounds every source value,
-weight, multiply, addition, and stored result to FP32. It gives us a stable
-CPU definition to compare against a future GPU backend.
+The machines and browser demos execute entirely with FP32 arithmetic by
+default. Every source value, weight, multiply, addition, and stored result is
+rounded to FP32. This gives the product one stable CPU meaning that can later
+be matched by a GPU backend. The Float64 evaluator remains only as an explicit
+test oracle for measuring numeric drift and checking that both evaluators make
+the same discrete decisions.
 
 The demo validates the source table, stack mass, compiled matrices, and
 projected output after every refresh. It also compares every live tensor wire

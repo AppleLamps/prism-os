@@ -36,7 +36,7 @@ function animationActive(machine: Machine, values: Float64Array) {
 }
 
 function assertClose(actual: number, expected: number) {
-  assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} != ${expected}`)
+  assert.ok(Math.abs(actual - expected) < 1e-4, `${actual} != ${expected}`)
 }
 
 function settleFrames(machine: Machine, width = viewportWidth, height = viewportHeight) {
@@ -802,8 +802,8 @@ test('long mixed event sequences preserve Boolean state and stacking', () => {
 })
 
 test('FP32 and Float64 keep the same decisions through mixed event sequences', () => {
-  const float64 = createWindowManagerMachine()
-  const float32 = createWindowManagerMachine({precision: 'float32'})
+  const float64 = createWindowManagerMachine({precision: 'float64'})
+  const float32 = createWindowManagerMachine()
   const random = createRandom(0xf32)
   let width = viewportWidth
   let height = viewportHeight

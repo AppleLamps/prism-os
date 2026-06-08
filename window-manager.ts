@@ -979,7 +979,7 @@ export function compileWindowManagerCircuit() {
 export function createWindowManagerMachine(
   {
     checkTensorEvaluation = true,
-    precision = 'float64',
+    precision = 'float32',
   }: {
     checkTensorEvaluation?: boolean
     precision?: 'float64' | 'float32'
@@ -1093,7 +1093,7 @@ declare global {
 }
 
 export function mountWindowManager(document: Document, window: Window) {
-  const machine = createWindowManagerMachine()
+  const machine = createWindowManagerMachine({precision: 'float32'})
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]

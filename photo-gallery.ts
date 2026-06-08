@@ -375,7 +375,7 @@ export function compilePhotoGalleryCircuit() {
 export function createPhotoGalleryMachine(
   {
     checkTensorEvaluation = true,
-    precision = 'float64',
+    precision = 'float32',
   }: {
     checkTensorEvaluation?: boolean
     precision?: 'float64' | 'float32'
@@ -453,7 +453,7 @@ declare global {
 }
 
 export function mountPhotoGallery(document: Document, window: Window) {
-  const machine = createPhotoGalleryMachine()
+  const machine = createPhotoGalleryMachine({precision: 'float32'})
   const photos = [...document.querySelectorAll<HTMLElement>('.photo')]
   const thumbnails = [...document.querySelectorAll<HTMLElement>('.thumbnail')]
   const backdrop = document.querySelector<HTMLElement>('#backdrop')
