@@ -32,6 +32,7 @@ numeric-ui-atoms.test.ts      broad browser-free expressivity proof
 numeric-ui-relations.test.ts  fixed-program relation-driven layout proof
 numeric-ui-viewport.test.ts   fixed-capacity scrolling and clipping proof
 execution-model.md            exact FP32 instruction and layer semantics
+research-sweep.md             landed and parked research decisions
 boolean-state.md              rules for turning continuous scores into bits
 window-manager.ts             numeric window state machine and DOM adapter
 window-manager.test.ts        browser-free window-manager behavior proofs
