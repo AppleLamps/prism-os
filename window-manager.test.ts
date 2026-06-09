@@ -406,10 +406,17 @@ test('Palette scrolls and culls its fixed 3 by 20 grid inside the numeric circui
   const machine = createWindowManagerMachine()
   let values = step(machine)
   let cells = projectPalette(machine, values)
+  const paletteWindow = projectWindows(machine, values)[3]!
+  const availableWidth =
+    paletteWindow.width
+    - 2
+    - machine.source[sourceField.paletteViewportInset]!
+    - machine.source[sourceField.palettePadding]! * 2
+    - machine.source[sourceField.paletteGap]! * 2
 
-  assertClose(cells[0]!.width, 376 / 3)
+  assertClose(cells[0]!.width, availableWidth / 3)
   assertClose(cells[0]!.left, 16)
-  assertClose(cells[2]!.left, 16 + (376 / 3 + 10) * 2)
+  assertClose(cells[2]!.left, 16 + (availableWidth / 3 + 10) * 2)
   assert.deepEqual(
     {top: cells[0]!.top, height: cells[0]!.height, visible: cells[0]!.visible},
     {top: 16, height: 88, visible: 1},
@@ -428,7 +435,7 @@ test('Palette scrolls and culls its fixed 3 by 20 grid inside the numeric circui
 
   values = step(machine, viewportWidth, viewportHeight, frameDuration, 10_000)
   cells = projectPalette(machine, values)
-  assert.equal(machine.source[sourceField.paletteScrollY], 1718)
+  assert.equal(machine.source[sourceField.paletteScrollY], 1724)
   assert.equal(cells[0]!.visible, 0)
   assert.equal(cells[59]!.visible, 1)
   assert.equal(cells.filter(cell => cell.visible === 1).length, 9)
@@ -452,12 +459,21 @@ test('Palette columns continue to fill the window after resizing', () => {
 
   const resizedWindow = projectWindows(machine, values)[3]!
   const firstRow = projectPalette(machine, values).slice(0, 3)
+  const availableWidth =
+    resizedWindow.width
+    - 2
+    - machine.source[sourceField.paletteViewportInset]!
+    - machine.source[sourceField.palettePadding]! * 2
+    - machine.source[sourceField.paletteGap]! * 2
   assert.equal(resizedWindow.width, 520)
-  assertClose(firstRow[0]!.width, 466 / 3)
+  assertClose(firstRow[0]!.width, availableWidth / 3)
   assertClose(firstRow[0]!.left, 16)
-  assertClose(firstRow[1]!.left, 16 + 466 / 3 + 10)
-  assertClose(firstRow[2]!.left, 16 + (466 / 3 + 10) * 2)
-  assertClose(firstRow[2]!.left + firstRow[2]!.width, resizedWindow.width - 18)
+  assertClose(firstRow[1]!.left, 16 + availableWidth / 3 + 10)
+  assertClose(firstRow[2]!.left, 16 + (availableWidth / 3 + 10) * 2)
+  assertClose(
+    firstRow[2]!.left + firstRow[2]!.width,
+    resizedWindow.width - 18 - machine.source[sourceField.paletteViewportInset]!,
+  )
   assert.deepEqual(firstRow.map(cell => cell.height), [88, 88, 88])
 })
 

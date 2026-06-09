@@ -10,10 +10,6 @@ formats, modes, or generated state.
   FP32 wire between the literal and compiled executors.
 - **Execution specification**: `execution-model.md` fixes instruction,
   rounding, accumulation, and layer semantics.
-- **Dynamic behavior through relations**: two numeric relation planes turn the
-  same four slots into a grid, row, stack, or overlap without recompilation.
-- **Inverse layout**: numeric output search recovers relation values from
-  target positions.
 - **Scrolling and occlusion**: the Palette product window uses native vertical
   scrolling over 20 preallocated numeric rows of three responsive cells.
   Only visible cells have attached DOM nodes.
@@ -30,9 +26,6 @@ formats, modes, or generated state.
 - Left and gate projections already share one pass.
 - Sparse weights, compact layer inputs, dead-value removal, common-expression
   merging, constant folding, aliases, and sign reasoning are already present.
-- The relation test demonstrates changing behavior without editable
-  instructions. Relation numbers act through ordinary fixed multiplications,
-  so they cannot create a malformed program.
 
 ## Parked
 
@@ -66,7 +59,7 @@ improve through scheduling because each instruction keeps the same terms.
 ### `codex/relation-layout`
 
 The older visual relation demo works, but adds about 400 lines and replaces the
-richer gallery. Its core claim now lives in the small relation test.
+richer gallery.
 
 ### `codex/gpu-megakernel`
 
@@ -82,6 +75,9 @@ free-slot allocator, and a separate full-wire debug path.
 
 ## Not added
 
+- The relation and inverse-layout tests encoded eight item ranks as 32 unary
+  relation bits, then searched those ranks back from target positions. They
+  did not prove general relation-driven behavior, so Git history is enough.
 - Permanent per-pass metrics would require compiler modes or snapshots for
   transformations that currently happen directly during construction.
 - More product UI such as menus or keyboard traversal would mostly add

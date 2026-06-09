@@ -60,7 +60,6 @@ body {
   height: var(--system-bar-height);
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 16px;
   border-bottom: 1px solid rgb(255 255 255 / 8%);
   background: rgb(5 11 17 / 58%);
@@ -411,6 +410,8 @@ body {
 }
 
 .colors-content {
+  right: var(--palette-viewport-inset);
+  bottom: var(--palette-viewport-inset);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -494,33 +495,22 @@ body {
 .dock-monitor { background: linear-gradient(145deg, #76e6a5, #25834c); }
 .dock-colors { background: linear-gradient(145deg, #ff7b72, #a93842); }
 
-#gesture-label,
 #readout {
   position: absolute;
   z-index: 50;
   bottom: 8px;
+  right: 12px;
   color: rgb(255 255 255 / 34%);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 9px;
+  line-height: 1.5;
   letter-spacing: 0.02em;
+  text-align: right;
+  white-space: pre;
   pointer-events: none;
 }
 
-#gesture-label {
-  left: 12px;
-}
-
-#readout {
-  right: 12px;
-}
-
 @media (max-width: 720px) {
-  .system-status,
-  #gesture-label,
-  #readout {
-    display: none;
-  }
-
   .file-sidebar {
     display: none;
   }

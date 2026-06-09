@@ -19,7 +19,7 @@ type NumericRange = {
   maximum: number
 }
 
-export type TensorLayer = {
+type TensorLayer = {
   inputIndices: Uint32Array
   inputSize: number
   outputSize: number
@@ -31,7 +31,7 @@ export type TensorLayer = {
   weights: Float32Array
 }
 
-export type TensorProgram = {
+type TensorProgram = {
   layers: TensorLayer[]
   roots: Uint32Array
   sourceSize: number
@@ -454,7 +454,7 @@ function normalizeTerms(terms: Terms): Terms {
   return normalizedTerms.filter(([, coefficient]) => coefficient !== 0)
 }
 
-export function evaluateOperationStream(
+function evaluateOperationStream(
   source: Float32Array,
   circuit: Circuit,
 ): Float32Array {
@@ -479,7 +479,7 @@ export function evaluateOperationStream(
   return values
 }
 
-export function evaluateTensorProgram(
+function evaluateTensorProgram(
   source: Float32Array,
   program: TensorProgram,
 ): Float32Array {

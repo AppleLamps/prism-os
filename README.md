@@ -29,7 +29,6 @@ The main files are:
 numeric-ui-core.ts            universal numeric vocabulary and tensor backend
 numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
-numeric-ui-relations.test.ts  fixed-program relation-driven layout proof
 execution-model.md            exact FP32 instruction and layer semantics
 research-sweep.md             landed and parked research decisions
 boolean-state.md              rules for turning continuous scores into bits
@@ -100,8 +99,8 @@ representing the same fixed rectangular matrices.
 The measured tensor footprints are:
 
 ```txt
-window manager: source 135, graph width 3,492, live values 1,825, layers 55
-                stored weights 7,980, layer tensor bytes 110,600
+window manager: source 136, graph width 3,493, live values 1,826, layers 55
+                stored weights 7,982, layer tensor bytes 110,620
 photo lightbox: source 24, graph width 612, live values 365, layers 10
                 stored weights 2,311, layer tensor bytes 25,528
 ```
@@ -139,8 +138,6 @@ exact agreement between literal and compiled FP32 execution
 seeded random circuits with varied roots and dead outputs
 finite layouts down to a zero-sized viewport
 responsive twelve-slot gallery and lightbox behavior
-relation-driven grid, row, stack, and overlap layouts
-inverse relation search from target geometry
 native Palette scrolling, responsive 3 by 20 geometry, and DOM-node culling
 direct next-state and render-output wire views
 four expanded spring substeps per lane

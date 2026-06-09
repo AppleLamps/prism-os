@@ -90,7 +90,7 @@ export function focusField(item: number) {
   return sourceField.focusStart + item
 }
 
-export function compilePhotoGalleryCircuit() {
+function compilePhotoGalleryCircuit() {
   const circuit = new Circuit(sourceField.size)
   for (const field of [
     sourceField.viewportWidth,
@@ -428,15 +428,7 @@ export function createPhotoGalleryMachine() {
   }
 }
 
-export type PhotoGalleryMachine = ReturnType<typeof createPhotoGalleryMachine>
-
-declare global {
-  interface Window {
-    photoGalleryDemo?: PhotoGalleryMachine
-  }
-}
-
-export function mountPhotoGallery(document: Document, window: Window) {
+function mountPhotoGallery(document: Document, window: Window) {
   const machine = createPhotoGalleryMachine()
   const photos = [...document.querySelectorAll<HTMLElement>('.photo')]
   const thumbnails = [...document.querySelectorAll<HTMLElement>('.thumbnail')]
@@ -516,7 +508,6 @@ export function mountPhotoGallery(document: Document, window: Window) {
   })
   window.addEventListener('resize', refresh)
   refresh()
-  return machine
 }
 
 function emitRectangleHit(circuit: Circuit, geometry: Geometry): Wire {
@@ -672,5 +663,5 @@ function assertUnitInterval(
 }
 
 if (typeof document !== 'undefined' && typeof window !== 'undefined') {
-  window.photoGalleryDemo = mountPhotoGallery(document, window)
+  mountPhotoGallery(document, window)
 }

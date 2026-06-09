@@ -51,8 +51,8 @@ export const dockOutputField = {
   size: 7,
 } as const
 
-export const paletteColumnCount = 3
-export const paletteRowCount = 20
+const paletteColumnCount = 3
+const paletteRowCount = 20
 export const paletteCellCount = paletteColumnCount * paletteRowCount
 
 export const paletteCellOutputField = {
@@ -64,7 +64,7 @@ export const paletteCellOutputField = {
   size: 5,
 } as const
 
-export const springStateField = {
+const springStateField = {
   centerX: 0,
   centerY: 1,
   width: 2,
@@ -130,7 +130,8 @@ export const sourceField = {
   paletteCellHeight: paletteStateStart + 1,
   paletteGap: paletteStateStart + 2,
   palettePadding: paletteStateStart + 3,
-  size: paletteStateStart + 4,
+  paletteViewportInset: paletteStateStart + 4,
+  size: paletteStateStart + 5,
 } as const
 
 const paletteWindowIndex = windowCount - 1
@@ -187,6 +188,7 @@ const constantFields = [
   sourceField.paletteCellHeight,
   sourceField.paletteGap,
   sourceField.palettePadding,
+  sourceField.paletteViewportInset,
 ] as const
 
 type Geometry = Record<(typeof geometryFields)[number], Wire>
@@ -249,7 +251,7 @@ export function stackSourceField(rank: number, windowIndex: number) {
   return sourceField.stackStart + rank * windowCount + windowIndex
 }
 
-export function springSourceField(windowIndex: number, field: number) {
+function springSourceField(windowIndex: number, field: number) {
   invariant(
     Number.isInteger(windowIndex) && windowIndex >= 0 && windowIndex < windowCount,
     'spring window index is invalid',
@@ -261,7 +263,7 @@ export function springSourceField(windowIndex: number, field: number) {
   return sourceField.springStart + windowIndex * springStateField.size + field
 }
 
-export function compileWindowManagerCircuit() {
+function compileWindowManagerCircuit() {
   const circuit = new Circuit(sourceField.size)
   circuit.assumeRange(sourceField.viewportWidth, 0, Number.POSITIVE_INFINITY)
   circuit.assumeRange(sourceField.viewportHeight, 0, Number.POSITIVE_INFINITY)
@@ -921,6 +923,7 @@ export function compileWindowManagerCircuit() {
     [paletteAnimation.height, 1],
     [sourceField.titleHeight, -1],
     [windowBorderSpan, -1],
+    [sourceField.paletteViewportInset, -1],
   ]))
   const paletteContentHeight = circuit.affine([
     [sourceField.palettePadding, 2],
@@ -940,6 +943,7 @@ export function compileWindowManagerCircuit() {
   const paletteAvailableWidth = emitRelu(circuit, circuit.affine([
     [paletteAnimation.width, 1],
     [windowBorderSpan, -1],
+    [sourceField.paletteViewportInset, -1],
     [sourceField.palettePadding, -2],
     [sourceField.paletteGap, -(paletteColumnCount - 1)],
   ]))
@@ -1094,6 +1098,7 @@ export function createWindowManagerMachine() {
   source[sourceField.paletteCellHeight] = 88
   source[sourceField.paletteGap] = 10
   source[sourceField.palettePadding] = 16
+  source[sourceField.paletteViewportInset] = 6
   const initialGeometry = [
     [54, 54, 520, 340],
     [410, 104, 500, 366],
@@ -1179,15 +1184,7 @@ export function createWindowManagerMachine() {
   }
 }
 
-export type WindowManagerMachine = ReturnType<typeof createWindowManagerMachine>
-
-declare global {
-  interface Window {
-    numericWindowManager?: WindowManagerMachine
-  }
-}
-
-export function mountWindowManager(document: Document, window: Window) {
+function mountWindowManager(document: Document, window: Window) {
   const machine = createWindowManagerMachine()
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
@@ -1210,14 +1207,41 @@ export function mountWindowManager(document: Document, window: Window) {
     paletteCells: new Map<number, HTMLElement>(), // visibility lifetime
     readout, // mount lifetime
   }
-  const storedWeightCount = machine.tensorProgram.layers.reduce(
-    (sum, layer) => sum + layer.weights.length,
-    0,
-  )
+  const program = machine.tensorProgram
+  let affineCount = 0
+  let regluCount = 0
+  let booleanCount = 0
+  let weightCount = 0
+  let weightBytes = 0
+  let biasBytes = 0
+  let bookkeepingBytes = 0
+  for (const layer of program.layers) {
+    regluCount += layer.gateRows.length
+    booleanCount += layer.booleanRows.length
+    affineCount += layer.outputSize - layer.gateRows.length - layer.booleanRows.length
+    weightCount += layer.weights.length
+    weightBytes += layer.weights.byteLength
+    biasBytes += layer.bias.byteLength
+    bookkeepingBytes +=
+      layer.inputIndices.byteLength
+      + layer.gateRows.byteLength
+      + layer.booleanRows.byteLength
+      + layer.rowOffsets.byteLength
+      + layer.columns.byteLength
+  }
+  const activationCount = program.valueCount - program.sourceSize
+  const formatCount = (value: number) => value.toLocaleString('en-US')
+  const formatKilobytes = (bytes: number) => `${(bytes / 1_000).toFixed(1)} KB`
   const paletteColorClasses = ['swatch-a', 'swatch-b', 'swatch-c', 'swatch-d'] as const
-  domCache.readout.textContent =
-    `${machine.source.length} table cells · ${machine.tensorProgram.layers.length} layers · `
-    + `${storedWeightCount} weights`
+  domCache.readout.textContent = [
+    `${formatCount(program.sourceSize)} inputs · ${formatCount(program.roots.length)} outputs`
+      + ` · ${formatCount(activationCount)} activations`,
+    `${formatCount(affineCount)} affine · ${formatCount(regluCount)} ReGLU`
+      + ` · ${formatCount(booleanCount)} boolean`,
+    `${formatCount(weightCount)} weights · ${formatKilobytes(weightBytes)} weights`
+      + ` + ${formatKilobytes(biasBytes)} biases`
+      + ` + ${formatKilobytes(bookkeepingBytes)} bookkeeping`,
+  ].join('\n')
 
   domCache.desktop.style.setProperty('--title-height', `${machine.source[sourceField.titleHeight]}px`)
   domCache.desktop.style.setProperty('--button-size', `${machine.source[sourceField.buttonSize]}px`)
@@ -1227,6 +1251,10 @@ export function mountWindowManager(document: Document, window: Window) {
   domCache.desktop.style.setProperty(
     '--system-bar-height',
     `${machine.source[sourceField.systemBarHeight]}px`,
+  )
+  domCache.desktop.style.setProperty(
+    '--palette-viewport-inset',
+    `${machine.source[sourceField.paletteViewportInset]}px`,
   )
 
   let scheduledRaf: number | null = null
@@ -1305,7 +1333,6 @@ export function mountWindowManager(document: Document, window: Window) {
         element = document.createElement('div')
         element.className =
           `palette-cell ${paletteColorClasses[cellIndex % paletteColorClasses.length]}`
-        element.dataset['paletteIndex'] = `${cellIndex}`
         domCache.paletteCells.set(cellIndex, element)
       }
       const translateX =
@@ -1341,7 +1368,6 @@ export function mountWindowManager(document: Document, window: Window) {
   domCache.paletteViewport.addEventListener('scroll', scheduleRender)
   window.addEventListener('resize', scheduleRender)
   renderWindowManager(window.performance.now())
-  return machine
 }
 
 function projectDockGeometry(
@@ -1731,5 +1757,5 @@ function assertApproximatelyOne(value: number, label: string, tolerance = 1e-8) 
 }
 
 if (typeof document !== 'undefined' && typeof window !== 'undefined') {
-  window.numericWindowManager = mountWindowManager(document, window)
+  mountWindowManager(document, window)
 }
