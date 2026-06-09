@@ -140,7 +140,7 @@ body {
 .dot-files { background: #61dafb; }
 .dot-notes { background: #ffc857; }
 .dot-monitor { background: #76e6a5; }
-.dot-colors { background: #ff7b72; }
+.dot-photos { background: #ff7b72; }
 
 .window-controls {
   display: flex;
@@ -391,35 +391,104 @@ body {
   text-align: right;
 }
 
-.colors-content {
-  right: var(--palette-viewport-inset);
-  bottom: var(--palette-viewport-inset);
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
-  background: #121119;
+.photos-content {
+  cursor: pointer;
+  background:
+    radial-gradient(circle at 50% -20%, rgb(77 87 105 / 24%), transparent 42%),
+    #0a0b0d;
 }
 
-.palette-spacer {
-  width: 1px;
+.photos-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(2 3 5 / 94%);
+  opacity: 0;
   pointer-events: none;
 }
 
-.palette-cell {
+.photos-photo,
+.photos-thumbnail {
+  --focused: 0;
   position: absolute;
   top: 0;
   left: 0;
-  border-radius: 12px;
-  box-shadow: inset 0 1px rgb(255 255 255 / 14%);
-  transform-origin: 0 0;
-  will-change: width, height, transform;
+  overflow: hidden;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  pointer-events: none;
 }
 
-.swatch-a { background: #ff7b72; }
-.swatch-b { background: #61dafb; }
-.swatch-c { background: #ffc857; }
-.swatch-d { background: #76e6a5; }
+.photos-photo {
+  border-radius: 14px;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 16%),
+    0 18px 55px rgb(0 0 0 / 32%);
+}
+
+.photos-photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgb(0 0 0 / 70%), transparent 38%);
+  opacity: var(--focused);
+}
+
+.photos-photo span {
+  position: absolute;
+  bottom: 18px;
+  left: 20px;
+  color: white;
+  font-size: clamp(16px, 3vw, 30px);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  opacity: var(--focused);
+}
+
+.photos-thumbnail {
+  border-radius: 24%;
+  box-shadow:
+    0 8px 22px rgb(0 0 0 / 32%),
+    inset 0 0 0 1px rgb(255 255 255 / 18%);
+}
+
+.photos-thumbnail::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid white;
+  border-radius: inherit;
+  opacity: var(--focused);
+}
+
+.image-0 { background-image: url("./photo-gallery-00.webp"); }
+.image-1 { background-image: url("./photo-gallery-01.webp"); }
+.image-2 { background-image: url("./photo-gallery-02.webp"); }
+.image-3 { background-image: url("./photo-gallery-03.webp"); }
+.image-4 { background-image: url("./photo-gallery-04.webp"); }
+.image-5 { background-image: url("./photo-gallery-05.webp"); }
+.image-6 { background-image: url("./photo-gallery-06.webp"); }
+.image-7 { background-image: url("./photo-gallery-07.webp"); }
+.image-8 { background-image: url("./photo-gallery-08.webp"); }
+.image-9 { background-image: url("./photo-gallery-09.webp"); }
+.image-10 { background-image: url("./photo-gallery-10.webp"); }
+.image-11 { background-image: url("./photo-gallery-11.webp"); }
+
+.photos-control {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 999px;
+  background: rgb(10 11 13 / 72%);
+  color: white;
+  font-size: 22px;
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(16px);
+}
 
 #dock {
   position: absolute;
@@ -475,7 +544,7 @@ body {
 .dock-files { background: linear-gradient(145deg, #54c7f1, #247eb8); }
 .dock-notes { background: linear-gradient(145deg, #ffc857, #c98916); }
 .dock-monitor { background: linear-gradient(145deg, #76e6a5, #25834c); }
-.dock-colors { background: linear-gradient(145deg, #ff7b72, #a93842); }
+.dock-photos { background: linear-gradient(145deg, #ff7b72, #a93842); }
 
 @media (max-width: 720px) {
   .file-sidebar {

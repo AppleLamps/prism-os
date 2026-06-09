@@ -598,6 +598,41 @@ export function emitMinimum(circuit: Circuit, a: Wire, b: Wire): Wire {
   return result
 }
 
+export function inlineCircuit(
+  target: Circuit,
+  source: Circuit,
+  sourceWires: readonly Wire[],
+): Wire[] {
+  invariant(sourceWires.length === source.sourceSize, 'inlined source mapping has the wrong length')
+  const wireMap = [...sourceWires]
+  for (let wire = 0; wire < source.sourceSize; wire++) {
+    const range = source.ranges[wire]!
+    target.assumeRange(sourceWires[wire]!, range.minimum, range.maximum)
+  }
+  for (let operationIndex = 0; operationIndex < source.operations.length; operationIndex++) {
+    const operation = source.operations[operationIndex]!
+    const mapTerms = (terms: Terms): Terms =>
+      terms.map(([wire, coefficient]) => [wireMap[wire]!, coefficient])
+    let wire: Wire
+    if (operation.kind === 'reglu') {
+      wire = target.reglu(
+        mapTerms(operation.leftTerms),
+        operation.leftBias,
+        mapTerms(operation.gateTerms),
+        operation.gateBias,
+      )
+    } else {
+      const value = target.affine(mapTerms(operation.leftTerms), operation.leftBias)
+      wire = operation.kind === 'boolean' ? target.boolean(value) : value
+    }
+    const sourceWire = source.sourceSize + operationIndex
+    const range = source.ranges[sourceWire]!
+    target.assumeRange(wire, range.minimum, range.maximum)
+    wireMap.push(wire)
+  }
+  return wireMap
+}
+
 export function validateCircuit(circuit: Circuit): number {
   const wireCount = circuit.sourceSize + circuit.operations.length
   for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {

@@ -4,10 +4,26 @@ import {
   Circuit,
   type Terms,
   type Wire,
+  inlineCircuit,
   validateCircuit,
   validateTensorEvaluation,
   validateTensorProgram,
 } from './numeric-ui-core.ts'
+
+test('inlined circuits become one graph and share matching expressions', () => {
+  const child = new Circuit(2)
+  const childSum = child.affine([[0, 1], [1, 1]])
+  const childProduct = child.reglu([[childSum, 1]], 0, [[0, 1]], 0)
+  const parent = new Circuit(2)
+  const existingSum = parent.affine([[0, 1], [1, 1]])
+  const wireMap = inlineCircuit(parent, child, [0, 1])
+
+  assert.equal(wireMap[childSum], existingSum)
+  const output = wireMap[childProduct]!
+  const program = parent.compileTensorProgram([output])
+  parent.tensorProgram = program
+  assert.equal(parent.evaluateTensor(new Float32Array([2, 3]))[output], 10)
+})
 
 test('tensor layers append only their new values', () => {
   const circuit = new Circuit(2)

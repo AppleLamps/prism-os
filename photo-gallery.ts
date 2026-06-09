@@ -30,7 +30,9 @@ export const sourceField = {
   nextActive: 10,
   closeActive: 11,
   focusStart: 12,
-  size: 24,
+  present: 24,
+  interactive: 25,
+  size: 26,
 }
 
 export const photoField = {
@@ -77,7 +79,7 @@ type PhotoProjection = Geometry & {
   focused: Wire
 }
 
-type GalleryOutput = {
+export type PhotoGalleryOutput = {
   nextSource: Wire[]
   backdropOpacity: Wire
   photos: Wire[]
@@ -86,11 +88,26 @@ type GalleryOutput = {
   nextControl: Wire[]
 }
 
+const photoNames = [
+  'Misty Lake',
+  'Desert Light',
+  'Pacific Edge',
+  'Midnight City',
+  'Forest Path',
+  'Alpine Dawn',
+  'Amalfi Morning',
+  'North Falls',
+  'Lavender Hour',
+  'Concrete Curve',
+  'Blue Lagoon',
+  'Autumn Road',
+] as const
+
 export function focusField(item: number) {
   return sourceField.focusStart + item
 }
 
-function compilePhotoGalleryCircuit() {
+export function createPhotoGalleryCircuit() {
   const circuit = new Circuit(sourceField.size)
   for (const field of [
     sourceField.viewportWidth,
@@ -103,6 +120,8 @@ function compilePhotoGalleryCircuit() {
     circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
   }
   for (const field of eventFields) circuit.assumeRange(field, 0, 1)
+  circuit.assumeRange(sourceField.present, 0, 1)
+  circuit.assumeRange(sourceField.interactive, 0, 1)
   for (let item = 0; item < itemCount; item++) circuit.assumeRange(focusField(item), 0, 1)
   const zero = circuit.affine([])
   const gridWidth = emitRelu(
@@ -128,79 +147,126 @@ function compilePhotoGalleryCircuit() {
     emitIntervalHit(circuit, sourceField.clickX, left, gridWidth))
   const gridRowHit = gridTop.map(top =>
     emitIntervalHit(circuit, sourceField.clickY, top, gridHeight))
-  const grid: Geometry[] = []
   const gridHit: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
     const column = item % columnCount
     const row = Math.floor(item / columnCount)
-    const geometry = {
-      left: gridLeft[column]!,
-      top: gridTop[row]!,
-      width: gridWidth,
-      height: gridHeight,
-    }
-    grid.push(geometry)
     gridHit.push(emitMinimum(circuit, gridColumnHit[column]!, gridRowHit[row]!))
   }
 
+  const thumbnailBaseSize = emitMinimum(
+    circuit,
+    sourceField.thumbnailHeight,
+    emitMinimum(
+      circuit,
+      circuit.affine([[sourceField.viewportWidth, 1 / 6]]),
+      circuit.affine([[sourceField.viewportHeight, 0.24]]),
+    ),
+  )
+  const mainInset = emitMinimum(
+    circuit,
+    sourceField.mainInset,
+    circuit.affine([[sourceField.viewportWidth, 0.08]]),
+  )
   const main: Geometry = {
-    left: sourceField.mainInset,
+    left: mainInset,
     top: sourceField.gap,
     width: emitRelu(circuit, circuit.affine([
       [sourceField.viewportWidth, 1],
-      [sourceField.mainInset, -2],
+      [mainInset, -2],
     ])),
     height: emitRelu(circuit, circuit.affine([
       [sourceField.viewportHeight, 1],
-      [sourceField.thumbnailHeight, -1],
+      [thumbnailBaseSize, -1],
       [sourceField.gap, -3],
     ])),
   }
   const mainHit = emitRectangleHit(circuit, main)
 
-  const thumbnailWidth = emitRelu(
-    circuit,
-    circuit.affine([
-      [sourceField.viewportWidth, 1 / itemCount],
-      [sourceField.gap, -(itemCount + 1) / itemCount],
-    ]),
-  )
-  const thumbnailStride = circuit.affine([[thumbnailWidth, 1], [sourceField.gap, 1]])
-  const thumbnailTop = emitRelu(circuit, circuit.affine([
-    [sourceField.viewportHeight, 1],
-    [sourceField.thumbnailHeight, -1],
-    [sourceField.gap, -1],
-  ]))
-
   const previousFocus = Array.from({length: itemCount}, (_, item) => focusField(item))
   const previousFocusMass = circuit.affine(previousFocus.map(wire => [wire, 1]))
   circuit.assumeRange(previousFocusMass, 0, 1)
   const previousGridMass = circuit.affine([[previousFocusMass, -1]], 1)
-  const thumbnails: Geometry[] = []
-  const thumbnailHit: Wire[] = []
-  const thumbnailVerticalHit = emitIntervalHit(
+
+  const thumbnailOuterInset = emitMinimum(
     circuit,
-    sourceField.clickY,
-    thumbnailTop,
-    sourceField.thumbnailHeight,
+    sourceField.gap,
+    circuit.affine([[sourceField.viewportWidth, 0.5]]),
   )
-  for (let item = 0; item < itemCount; item++) {
-    const left = circuit.affine([
-      [sourceField.gap, 1],
-      [thumbnailStride, item],
-    ])
-    const geometry = {
-      left,
-      top: thumbnailTop,
-      width: thumbnailWidth,
-      height: sourceField.thumbnailHeight,
+  const thumbnailImageSpan = circuit.affine([
+    [thumbnailBaseSize, thumbnailFalloffMass()],
+  ])
+  const thumbnailGap = emitMinimum(
+    circuit,
+    circuit.affine([], 12),
+    emitRelu(circuit, circuit.affine([
+      [sourceField.viewportWidth, 1 / 8],
+      [thumbnailOuterInset, -2 / 8],
+      [thumbnailImageSpan, -1 / 8],
+    ])),
+  )
+  const thumbnailCenterY = circuit.affine([
+    [sourceField.viewportHeight, 1],
+    [sourceField.gap, -1],
+    [thumbnailBaseSize, -0.5],
+  ])
+  const thumbnailBaseScale = emitMultiply(
+    circuit,
+    thumbnailBaseSize,
+    sourceField.present,
+  )
+
+  function projectThumbnails(focus: readonly Wire[], focusMass: Wire) {
+    const result: PhotoProjection[] = []
+    for (let item = 0; item < itemCount; item++) {
+      const offsetTerms: [Wire, number][] = []
+      const distanceTerms: [Wire, number][] = []
+      const spreadTerms: [Wire, number][] = []
+      for (let focusedItem = 0; focusedItem < itemCount; focusedItem++) {
+        let offset = item - focusedItem
+        if (offset > itemCount / 2) offset -= itemCount
+        if (offset < -itemCount / 2) offset += itemCount
+        const visibleOffset = Math.abs(offset) < 5 ? offset : 0
+        offsetTerms.push([
+          focus[focusedItem]!,
+          visibleOffset,
+        ])
+        distanceTerms.push([focus[focusedItem]!, Math.abs(offset)])
+        spreadTerms.push([
+          focus[focusedItem]!,
+          Math.sign(visibleOffset) * thumbnailSpread(Math.abs(visibleOffset)),
+        ])
+      }
+      const offset = circuit.affine(offsetTerms)
+      const distance = circuit.affine(distanceTerms)
+      const spread = circuit.affine(spreadTerms)
+      const falloff = emitRelu(circuit, circuit.affine([
+        [focusMass, 1],
+        [distance, -0.22],
+      ]))
+      const scale = emitMultiply(circuit, sourceField.present, falloff)
+      const size = emitMultiply(circuit, thumbnailBaseSize, scale)
+      const centerX = circuit.affine([
+        [sourceField.viewportWidth, 0.5],
+        [emitMultiply(circuit, thumbnailBaseScale, spread), 1],
+        [emitMultiply(circuit, thumbnailGap, offset), 1],
+      ])
+      result.push({
+        left: circuit.affine([[centerX, 1], [size, -0.5]]),
+        top: emitRelu(circuit, circuit.affine([[thumbnailCenterY, 1], [size, -0.5]])),
+        width: size,
+        height: size,
+        opacity: scale,
+        focused: focus[item]!,
+      })
     }
-    thumbnails.push(geometry)
-    thumbnailHit.push(emitMinimum(
-      circuit,
-      emitIntervalHit(circuit, sourceField.clickX, left, thumbnailWidth),
-      thumbnailVerticalHit,
-    ))
+    return result
+  }
+
+  const currentThumbnails = projectThumbnails(previousFocus, previousFocusMass)
+  const thumbnailHit: Wire[] = []
+  for (let item = 0; item < itemCount; item++) {
+    thumbnailHit.push(emitRectangleHit(circuit, currentThumbnails[item]!))
   }
 
   const controlTop = emitRelu(circuit, circuit.affine([
@@ -251,20 +317,33 @@ function compilePhotoGalleryCircuit() {
     controlVerticalHit,
   )
 
-  const eventMass = circuit.affine(eventFields.map(wire => [wire, 1]))
+  const effectiveEvents = eventFields.map(wire =>
+    emitMultiply(circuit, sourceField.interactive, wire))
+  const eventMass = circuit.affine(effectiveEvents.map(wire => [wire, 1]))
   circuit.assumeRange(eventMass, 0, 1)
   const eventInactive = circuit.affine([[eventMass, -1]], 1)
-  const clickGridGate = emitMultiply(circuit, sourceField.clickActive, previousGridMass)
-  const clickThumbnailGate = emitMultiply(circuit, sourceField.clickActive, previousFocusMass)
-  const clickMainGate = emitMultiply(circuit, sourceField.clickActive, mainHit)
+  const clickActive = effectiveEvents[0]!
+  const clickGridGate = emitMultiply(circuit, clickActive, previousGridMass)
+  const focusedClick = emitMultiply(circuit, clickActive, previousFocusMass)
+  const [
+    previousControlClick,
+    nextControlClick,
+    ...focusedSurfaceClicks
+  ] = emitPrioritizedHits(
+    circuit,
+    focusedClick,
+    [previousControlHit, nextControlHit, ...thumbnailHit, mainHit],
+  )
+  const thumbnailClicks = focusedSurfaceClicks.slice(0, itemCount)
+  const clickMainGate = focusedSurfaceClicks[itemCount]!
   const currentFocusGate = circuit.affine([[eventInactive, 1], [clickMainGate, 1]])
   const previousFocusGate = circuit.affine([
-    [sourceField.previousActive, 1],
-    [emitMultiply(circuit, sourceField.clickActive, previousControlHit), 1],
+    [effectiveEvents[1]!, 1],
+    [previousControlClick!, 1],
   ])
   const nextFocusGate = circuit.affine([
-    [sourceField.nextActive, 1],
-    [emitMultiply(circuit, sourceField.clickActive, nextControlHit), 1],
+    [effectiveEvents[2]!, 1],
+    [nextControlClick!, 1],
   ])
   const nextFocus: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
@@ -273,7 +352,7 @@ function compilePhotoGalleryCircuit() {
     nextFocus.push(circuit.affine([
       [emitMultiply(circuit, currentFocusGate, previousFocus[item]!), 1],
       [emitMultiply(circuit, clickGridGate, gridHit[item]!), 1],
-      [emitMultiply(circuit, clickThumbnailGate, thumbnailHit[item]!), 1],
+      [thumbnailClicks[item]!, 1],
       [emitMultiply(circuit, previousFocusGate, previousShift), 1],
       [emitMultiply(circuit, nextFocusGate, nextShift), 1],
     ]))
@@ -287,7 +366,7 @@ function compilePhotoGalleryCircuit() {
   const projectedGridWidth = emitMultiply(circuit, nextGridMass, gridWidth)
   const projectedGridHeight = emitMultiply(circuit, nextGridMass, gridHeight)
   const photos: PhotoProjection[] = []
-  const thumbnailProjections: PhotoProjection[] = []
+  const thumbnailProjections = projectThumbnails(nextFocus, nextFocusMass)
   for (let item = 0; item < itemCount; item++) {
     const column = item % columnCount
     const row = Math.floor(item / columnCount)
@@ -301,12 +380,11 @@ function compilePhotoGalleryCircuit() {
       top: project(projectedGridTop[row]!, main.top),
       width: project(projectedGridWidth, main.width),
       height: project(projectedGridHeight, main.height),
-      opacity: circuit.affine([[nextGridMass, 1], [thisFocused, 1]]),
-      focused: thisFocused,
-    })
-    thumbnailProjections.push({
-      ...thumbnails[item]!,
-      opacity: nextFocusMass,
+      opacity: emitMultiply(
+        circuit,
+        sourceField.present,
+        circuit.affine([[nextGridMass, 1], [thisFocused, 1]]),
+      ),
       focused: thisFocused,
     })
   }
@@ -325,6 +403,8 @@ function compilePhotoGalleryCircuit() {
     zero,
     zero,
     ...nextFocus,
+    sourceField.present,
+    sourceField.interactive,
   ].map(wire => circuit.affine([[wire, 1]]))
   const photoOutput = photos.flatMap(photo => [
     photo.left,
@@ -347,21 +427,21 @@ function compilePhotoGalleryCircuit() {
     previousControl.top,
     previousControl.width,
     previousControl.height,
-    nextFocusMass,
+    emitMultiply(circuit, sourceField.present, nextFocusMass),
   ]
   const nextControlOutput = [
     nextControl.left,
     nextControl.top,
     nextControl.width,
     nextControl.height,
-    nextFocusMass,
+    emitMultiply(circuit, sourceField.present, nextFocusMass),
   ]
 
   return {
     circuit,
     output: {
       nextSource,
-      backdropOpacity: nextFocusMass,
+      backdropOpacity: emitMultiply(circuit, sourceField.present, nextFocusMass),
       photos: photoOutput,
       thumbnails: thumbnailOutput,
       previousControl: previousControlOutput,
@@ -376,9 +456,11 @@ export function createPhotoGalleryMachine() {
   source[sourceField.mainInset] = 92
   source[sourceField.thumbnailHeight] = 82
   source[sourceField.controlSize] = 52
-  const {circuit, output} = compilePhotoGalleryCircuit()
+  source[sourceField.present] = 1
+  source[sourceField.interactive] = 1
+  const {circuit, output} = createPhotoGalleryCircuit()
   const wireCount = validateCircuit(circuit)
-  validateGalleryOutputWires(output, wireCount)
+  validatePhotoGalleryOutputWires(output, wireCount)
   const tensorProgram = circuit.tensorProgram = circuit.compileTensorProgram([
     ...output.nextSource,
     output.backdropOpacity,
@@ -402,12 +484,14 @@ export function createPhotoGalleryMachine() {
     output,
     source,
     tensorProgram,
-    step(viewportWidth: number, viewportHeight: number) {
+    step(viewportWidth: number, viewportHeight: number, present = 1, interactive = 1) {
       source[sourceField.viewportWidth] = viewportWidth
       source[sourceField.viewportHeight] = viewportHeight
+      source[sourceField.present] = present
+      source[sourceField.interactive] = interactive
       validateGallerySource(source, numericTolerance)
       const values = circuit.evaluateTensor(source)
-      validateGalleryOutput(values, output, numericTolerance)
+      validatePhotoGalleryOutput(values, output, numericTolerance)
       for (let field = 0; field < source.length; field++) {
         source[field] = values[output.nextSource[field]!]!
       }
@@ -428,29 +512,41 @@ export function createPhotoGalleryMachine() {
   }
 }
 
-function mountPhotoGallery(document: Document, window: Window) {
-  const machine = createPhotoGalleryMachine()
-  const photos = [...document.querySelectorAll<HTMLElement>('.photo')]
-  const thumbnails = [...document.querySelectorAll<HTMLElement>('.thumbnail')]
-  const backdrop = document.querySelector<HTMLElement>('#backdrop')
-  const previousControl = document.querySelector<HTMLElement>('#previous')
-  const nextControl = document.querySelector<HTMLElement>('#next')
-  const readout = document.querySelector<HTMLElement>('#readout')
-  invariant(photos.length === itemCount, 'photo slot count mismatch')
-  invariant(thumbnails.length === itemCount, 'thumbnail slot count mismatch')
+function thumbnailFalloff(distance: number) {
+  return Math.max(0, 1 - 0.22 * distance)
+}
+
+function thumbnailFalloffMass() {
+  let mass = thumbnailFalloff(0)
+  for (let distance = 1; distance < 5; distance++) {
+    mass += 2 * thumbnailFalloff(distance)
+  }
+  return mass
+}
+
+function thumbnailSpread(distance: number) {
+  let spread = 0
+  for (let step = 1; step <= distance; step++) {
+    spread += (
+      thumbnailFalloff(step - 1)
+      + thumbnailFalloff(step)
+    ) / 2
+  }
+  return spread
+}
+
+export function createPhotoGalleryRenderer(document: Document, root: HTMLElement) {
+  const backdrop = root.querySelector<HTMLElement>('.photos-backdrop')
+  const previousControl = root.querySelector<HTMLElement>('.photos-previous')
+  const nextControl = root.querySelector<HTMLElement>('.photos-next')
   invariant(backdrop !== null, 'backdrop is missing')
   invariant(previousControl !== null, 'previous control is missing')
   invariant(nextControl !== null, 'next control is missing')
-  invariant(readout !== null, 'readout is missing')
   const backdropElement = backdrop
   const previousControlElement = previousControl
   const nextControlElement = nextControl
-  const weightCount = machine.tensorProgram.layers.reduce(
-    (sum, layer) => sum + layer.weights.length,
-    0,
-  )
-  readout.textContent =
-    `table cells ${machine.source.length} | layers ${machine.tensorProgram.layers.length} | weights ${weightCount}`
+  const photoElements = Array<HTMLElement | null>(itemCount).fill(null)
+  const thumbnailElements = Array<HTMLElement | null>(itemCount).fill(null)
 
   function projectGeometry(
     element: HTMLElement,
@@ -458,56 +554,88 @@ function mountPhotoGallery(document: Document, window: Window) {
     output: readonly Wire[],
     outputStart = 0,
   ) {
-    for (const field of geometryFields) {
-      element.style[field] = `${values[output[outputStart + controlField[field]]!]}px`
-    }
+    const left = values[output[outputStart + controlField.left]!]!
+    const top = values[output[outputStart + controlField.top]!]!
+    element.style.width = `${values[output[outputStart + controlField.width]!]!}px`
+    element.style.height = `${values[output[outputStart + controlField.height]!]!}px`
+    element.style.transform = `translate3d(${left}px,${top}px,0)`
   }
 
-  function refresh() {
-    const values = machine.step(document.documentElement.clientWidth, document.documentElement.clientHeight)
-    backdropElement.style.opacity = `${values[machine.output.backdropOpacity]}`
-    for (let item = 0; item < itemCount; item++) {
-      const photo = photos[item]!
-      const photoOutputStart = item * photoField.size
-      projectGeometry(photo, values, machine.output.photos, photoOutputStart)
-      photo.style.opacity =
-        `${values[machine.output.photos[photoOutputStart + photoField.opacity]!]}`
-      photo.style.setProperty(
-        '--focused',
-        `${values[machine.output.photos[photoOutputStart + photoField.focused]!]}`,
-      )
-      const thumbnail = thumbnails[item]!
-      const thumbnailOutputStart = item * thumbnailField.size
-      projectGeometry(thumbnail, values, machine.output.thumbnails, thumbnailOutputStart)
-      thumbnail.style.opacity =
-        `${values[machine.output.thumbnails[thumbnailOutputStart + thumbnailField.opacity]!]}`
-      thumbnail.style.setProperty(
-        '--focused',
-        `${values[machine.output.thumbnails[thumbnailOutputStart + thumbnailField.focused]!]}`,
-      )
+  function createPhotoElement(item: number, thumbnail: boolean) {
+    const element = document.createElement('div')
+    element.className =
+      `${thumbnail ? 'photos-thumbnail' : 'photos-photo'} image-${item}`
+    if (!thumbnail) {
+      const title = document.createElement('span')
+      title.textContent = photoNames[item]!
+      element.appendChild(title)
     }
-    projectGeometry(previousControlElement, values, machine.output.previousControl)
-    projectGeometry(nextControlElement, values, machine.output.nextControl)
-    previousControlElement.style.opacity =
-      `${values[machine.output.previousControl[controlField.opacity]!]}`
-    nextControlElement.style.opacity =
-      `${values[machine.output.nextControl[controlField.opacity]!]}`
+    root.appendChild(element)
+    return element
   }
 
-  window.addEventListener('click', (event: MouseEvent) => {
-    machine.click(event.clientX, event.clientY)
-    refresh()
-  })
-  window.addEventListener('keydown', (event: KeyboardEvent) => {
-    if (event.key === 'ArrowLeft') machine.previous()
-    else if (event.key === 'ArrowRight') machine.next()
-    else if (event.key === 'Escape') machine.close()
-    else return
-    event.preventDefault()
-    refresh()
-  })
-  window.addEventListener('resize', refresh)
-  refresh()
+  function projectItem(
+    elements: (HTMLElement | null)[],
+    item: number,
+    values: Float32Array,
+    output: readonly Wire[],
+    fields: typeof photoField,
+    classKind: 'photo' | 'thumbnail',
+  ) {
+    const outputStart = item * fields.size
+    const width = values[output[outputStart + fields.width]!]!
+    const height = values[output[outputStart + fields.height]!]!
+    const opacity = values[output[outputStart + fields.opacity]!]!
+    const visible = width > 0 && height > 0 && opacity > 0
+    let element = elements[item] ?? null
+    if (!visible) {
+      if (element !== null) {
+        element.remove()
+        elements[item] = null
+      }
+      return
+    }
+    if (element === null) {
+      element = createPhotoElement(item, classKind === 'thumbnail')
+      elements[item] = element
+    }
+    projectGeometry(element, values, output, outputStart)
+    element.style.opacity = `${opacity}`
+    element.style.setProperty(
+      '--focused',
+      `${values[output[outputStart + fields.focused]!]}`,
+    )
+  }
+
+  return {
+    render(values: Float32Array, output: PhotoGalleryOutput) {
+      backdropElement.style.opacity = `${values[output.backdropOpacity]}`
+      for (let item = 0; item < itemCount; item++) {
+        projectItem(
+          photoElements,
+          item,
+          values,
+          output.photos,
+          photoField,
+          'photo',
+        )
+        projectItem(
+          thumbnailElements,
+          item,
+          values,
+          output.thumbnails,
+          thumbnailField,
+          'thumbnail',
+        )
+      }
+      projectGeometry(previousControlElement, values, output.previousControl)
+      projectGeometry(nextControlElement, values, output.nextControl)
+      previousControlElement.style.opacity =
+        `${values[output.previousControl[controlField.opacity]!]}`
+      nextControlElement.style.opacity =
+        `${values[output.nextControl[controlField.opacity]!]}`
+    },
+  }
 }
 
 function emitRectangleHit(circuit: Circuit, geometry: Geometry): Wire {
@@ -524,6 +652,20 @@ function emitRectangleHit(circuit: Circuit, geometry: Geometry): Wire {
     geometry.height,
   )
   return emitMinimum(circuit, horizontalHit, verticalHit)
+}
+
+function emitPrioritizedHits(
+  circuit: Circuit,
+  active: Wire,
+  hits: readonly Wire[],
+): Wire[] {
+  let remaining = active
+  return hits.map((hit) => {
+    const selected = emitMultiply(circuit, remaining, hit)
+    remaining = circuit.affine([[remaining, 1], [selected, -1]])
+    circuit.assumeRange(remaining, 0, 1)
+    return selected
+  })
 }
 
 function emitIntervalHit(circuit: Circuit, position: Wire, start: Wire, size: Wire): Wire {
@@ -554,6 +696,8 @@ function validateGallerySource(values: unknown, tolerance = 1e-9) {
   assertNonNegativeFinite(values[sourceField.mainInset], 'main inset')
   assertNonNegativeFinite(values[sourceField.thumbnailHeight], 'thumbnail height')
   assertNonNegativeFinite(values[sourceField.controlSize], 'control size')
+  assertUnitInterval(values[sourceField.present], 'present', tolerance)
+  assertBit(values[sourceField.interactive], 'interactive')
   invariant(Number.isFinite(values[sourceField.clickX]), 'click x must be finite')
   invariant(Number.isFinite(values[sourceField.clickY]), 'click y must be finite')
   let eventMass = 0
@@ -571,7 +715,10 @@ function validateGallerySource(values: unknown, tolerance = 1e-9) {
   invariant(focusMass <= 1 + tolerance, 'focus mass must not exceed 1')
 }
 
-function validateGalleryOutputWires(output: GalleryOutput, wireCount: number) {
+export function validatePhotoGalleryOutputWires(
+  output: PhotoGalleryOutput,
+  wireCount: number,
+) {
   validateWireView(output.nextSource, sourceField.size, wireCount)
   assertWire(output.backdropOpacity, wireCount)
   validateWireView(output.photos, itemCount * photoField.size, wireCount)
@@ -580,9 +727,9 @@ function validateGalleryOutputWires(output: GalleryOutput, wireCount: number) {
   validateWireView(output.nextControl, controlField.size, wireCount)
 }
 
-function validateGalleryOutput(
+export function validatePhotoGalleryOutput(
   values: Float32Array,
-  output: GalleryOutput,
+  output: PhotoGalleryOutput,
   tolerance = 1e-9,
 ) {
   assertFiniteValues(values, 'tensor output')
@@ -662,6 +809,6 @@ function assertUnitInterval(
   )
 }
 
-if (typeof document !== 'undefined' && typeof window !== 'undefined') {
-  mountPhotoGallery(document, window)
+function assertBit(value: number | undefined, label: string): asserts value is number {
+  invariant(value === 0 || value === 1, `${label} must equal zero or one, got ${value}`)
 }

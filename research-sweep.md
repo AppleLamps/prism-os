@@ -10,9 +10,10 @@ formats, modes, or generated state.
   FP32 wire between the literal and compiled executors.
 - **Execution specification**: `execution-model.md` fixes instruction,
   rounding, accumulation, and layer semantics.
-- **Scrolling and occlusion**: the Palette product window uses native vertical
-  scrolling over 20 preallocated numeric rows of three responsive cells.
-  Only visible cells have attached DOM nodes.
+- **Nested numeric apps**: Photos is authored as a reusable numeric circuit,
+  then inlined into IndirectOS before the one program is compiled.
+- **Numeric DOM culling**: Photos attaches photo and thumbnail nodes only while
+  their projected size and opacity are positive.
 
 ## Already sufficient
 
@@ -21,8 +22,8 @@ formats, modes, or generated state.
   event sequences.
 - Adjustable app constants and external facts already enter through the source
   table.
-- Affine composition has removed every affine-to-affine dependency in both
-  product circuits. There is no remaining consecutive affine layer to fuse.
+- Affine composition has removed every affine-to-affine dependency in the
+  product circuit. There is no remaining consecutive affine layer to fuse.
 - Left and gate projections already share one pass.
 - Sparse weights, compact layer inputs, dead-value removal, common-expression
   merging, constant folding, aliases, and sign reasoning are already present.
@@ -41,9 +42,9 @@ module and 11 total lines without simplifying the current product.
 
 ### `codex/precompiled-demos`
 
-Precompilation speeds machine construction, but adds a generator and a 124 KB
-generated source file. Browser JavaScript grew from roughly 70/43 KB to
-180/170 KB for the two demos.
+On the then-separate demos, precompilation sped up machine construction but
+added a generator and a 124 KB generated source file. Browser JavaScript grew
+from roughly 70/43 KB to 180/170 KB.
 
 ### `codex/portable-format`
 
@@ -52,9 +53,10 @@ creates versioning plus a second representation without a current consumer.
 
 ### `codex/layer-scheduling`
 
-Latest legal scheduling increased gathered inputs from 3,511 to 4,127 for the
-window manager and from 350 to 402 for the gallery. Sparse weight count cannot
-improve through scheduling because each instruction keeps the same terms.
+On the circuit shapes at the time, latest legal scheduling increased gathered
+inputs from 3,511 to 4,127 for the window manager and from 350 to 402 for the
+gallery. Sparse weight count cannot improve through scheduling because each
+instruction keeps the same terms.
 
 ### `codex/relation-layout`
 
@@ -63,15 +65,16 @@ richer gallery.
 
 ### `codex/gpu-megakernel`
 
-Both programs fit one 256-thread workgroup: their largest projections have 212
-and 137 rows. A single-workgroup megakernel is feasible but underuses the GPU.
-It becomes interesting when many candidate source tables run in parallel.
+The current program fits one 256-thread workgroup: its largest projection has
+246 rows. A single-workgroup megakernel is feasible but underuses the GPU. It
+becomes interesting when many candidate source tables run in parallel.
 
 ### `codex/slot-reuse`
 
-Reusing packed temporaries alone saves about 4.5 KB for the window manager and
-1 KB for the gallery. Larger savings require a root-only output contract, a
-free-slot allocator, and a separate full-wire debug path.
+On the circuit shapes at the time, reusing packed temporaries alone saved
+about 4.5 KB for the window manager and 1 KB for the gallery. Larger savings
+require a root-only output contract, a free-slot allocator, and a separate
+full-wire debug path.
 
 ## Not added
 
@@ -81,8 +84,7 @@ free-slot allocator, and a separate full-wire debug path.
 - Permanent per-pass metrics would require compiler modes or snapshots for
   transformations that currently happen directly during construction.
 - More product UI such as menus or keyboard traversal would mostly add
-  situation-specific code; Palette now carries the numeric scrolling and
-  clipping proof in the product.
+  situation-specific code without testing a new numeric capability.
 - A batch API would currently be a loop around the same executor. It should
   wait until candidate count makes the parked GPU design useful.
 - Buffer caching would add retained mutable state to save only small,

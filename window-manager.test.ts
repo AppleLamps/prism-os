@@ -4,8 +4,8 @@ import {
   createWindowManagerMachine,
   dockOutputField,
   dragSourceField,
-  paletteCellCount,
-  paletteCellOutputField,
+  photoFocusSourceField,
+  photoSourceField,
   resizeSourceField,
   sourceField,
   stackSourceField,
@@ -14,6 +14,7 @@ import {
   windowSourceField,
   windowStateField,
 } from './window-manager.ts'
+import {itemCount as photoCount, photoField} from './photo-gallery.ts'
 
 const viewportWidth = 1280
 const viewportHeight = 800
@@ -27,11 +28,10 @@ function step(
   width = viewportWidth,
   height = viewportHeight,
   elapsed = frameDuration,
-  paletteScrollY = machine.source[sourceField.paletteScrollY]!,
 ) {
   const frameTime = (frameTimeByMachine.get(machine) ?? 0) + elapsed
   frameTimeByMachine.set(machine, frameTime)
-  return machine.step(width, height, frameTime, paletteScrollY)
+  return machine.step(width, height, frameTime)
 }
 
 function animationActive(machine: Machine, values: Float32Array) {
@@ -68,6 +68,8 @@ function projectWindows(machine: Machine, values: Float32Array) {
       focused: values[output[start + windowOutputField.focused]!]!,
       stack: values[output[start + windowOutputField.stack]!]!,
       maximized: values[output[start + windowOutputField.maximized]!]!,
+      contentWidth: values[output[start + windowOutputField.contentWidth]!]!,
+      contentHeight: values[output[start + windowOutputField.contentHeight]!]!,
     }
   })
 }
@@ -84,20 +86,6 @@ function projectDock(machine: Machine, values: Float32Array) {
       inactive: values[output[start + dockOutputField.inactive]!]!,
       focused: values[output[start + dockOutputField.focused]!]!,
       open: values[output[start + dockOutputField.open]!]!,
-    }
-  })
-}
-
-function projectPalette(machine: Machine, values: Float32Array) {
-  return Array.from({length: paletteCellCount}, (_, cellIndex) => {
-    const start = cellIndex * paletteCellOutputField.size
-    const output = machine.output.paletteCells
-    return {
-      left: values[output[start + paletteCellOutputField.translateX]!]!,
-      top: values[output[start + paletteCellOutputField.translateY]!]!,
-      width: values[output[start + paletteCellOutputField.width]!]!,
-      height: values[output[start + paletteCellOutputField.height]!]!,
-      visible: values[output[start + paletteCellOutputField.visible]!]!,
     }
   })
 }
@@ -177,7 +165,6 @@ function assertWindowManagerInvariants(
 ) {
   const windows = projectWindows(machine, values)
   const docks = projectDock(machine, values)
-  const palette = projectPalette(machine, values)
   let visibleCount = 0
   let focusMass = 0
   let dragMass = 0
@@ -212,6 +199,8 @@ function assertWindowManagerInvariants(
       windows[windowIndex]!.width,
       windows[windowIndex]!.height,
       windows[windowIndex]!.scale,
+      windows[windowIndex]!.contentWidth,
+      windows[windowIndex]!.contentHeight,
     ]) {
       assert.ok(Number.isFinite(value), `window ${windowIndex} geometry must remain finite`)
     }
@@ -238,13 +227,6 @@ function assertWindowManagerInvariants(
       windowMass += machine.source[stackSourceField(rank, windowIndex)]!
     }
     assert.equal(windowMass, 1)
-  }
-  for (const cell of palette) {
-    assert.ok(Number.isFinite(cell.left))
-    assert.ok(Number.isFinite(cell.top))
-    assert.ok(cell.width >= 0 && Number.isFinite(cell.width))
-    assert.ok(cell.height >= 0 && Number.isFinite(cell.height))
-    assertBit(cell.visible, 'palette cell visibility')
   }
 }
 
@@ -381,6 +363,8 @@ test('the fixed table projects four bounded windows and one focused front window
     focused: 0,
     stack: 1,
     maximized: 0,
+    contentWidth: 518,
+    contentHeight: 294,
   })
   for (let rank = 0; rank < windowCount; rank++) {
     assert.equal(machine.source[stackSourceField(rank, rank)], 1)
@@ -400,81 +384,6 @@ test('pointer selection raises a window and topmost overlap remains deterministi
   windows = projectWindows(machine, values)
   assertFocused(windows, 0)
   assert.deepEqual(windows.map(window => window.stack), [4, 1, 2, 3])
-})
-
-test('Palette scrolls and culls its fixed 3 by 20 grid inside the numeric circuit', () => {
-  const machine = createWindowManagerMachine()
-  let values = step(machine)
-  let cells = projectPalette(machine, values)
-  const paletteWindow = projectWindows(machine, values)[3]!
-  const availableWidth =
-    paletteWindow.width
-    - 2
-    - machine.source[sourceField.paletteViewportInset]!
-    - machine.source[sourceField.palettePadding]! * 2
-    - machine.source[sourceField.paletteGap]! * 2
-
-  assertClose(cells[0]!.width, availableWidth / 3)
-  assertClose(cells[0]!.left, 16)
-  assertClose(cells[2]!.left, 16 + (availableWidth / 3 + 10) * 2)
-  assert.deepEqual(
-    {top: cells[0]!.top, height: cells[0]!.height, visible: cells[0]!.visible},
-    {top: 16, height: 88, visible: 1},
-  )
-  assert.equal(cells[6]!.visible, 1)
-  assert.equal(cells[9]!.visible, 0)
-  assert.equal(cells.filter(cell => cell.visible === 1).length, 9)
-  assert.equal(values[machine.output.paletteContentHeight], 1982)
-
-  values = step(machine, viewportWidth, viewportHeight, frameDuration, 70)
-  cells = projectPalette(machine, values)
-  assert.equal(machine.source[sourceField.paletteScrollY], 70)
-  assert.equal(cells[0]!.visible, 1)
-  assert.equal(cells[11]!.visible, 1)
-  assert.equal(cells.filter(cell => cell.visible === 1).length, 12)
-
-  values = step(machine, viewportWidth, viewportHeight, frameDuration, 10_000)
-  cells = projectPalette(machine, values)
-  assert.equal(machine.source[sourceField.paletteScrollY], 1724)
-  assert.equal(cells[0]!.visible, 0)
-  assert.equal(cells[59]!.visible, 1)
-  assert.equal(cells.filter(cell => cell.visible === 1).length, 9)
-
-  values = step(machine, viewportWidth, viewportHeight, frameDuration, 0)
-  assert.equal(machine.source[sourceField.paletteScrollY], 0)
-})
-
-test('Palette columns continue to fill the window after resizing', () => {
-  const machine = createWindowManagerMachine()
-  let values = step(machine)
-  const paletteWindow = projectWindows(machine, values)[3]!
-  const grip = machine.source[sourceField.resizeGrip]!
-  const downX = paletteWindow.left + paletteWindow.width - grip / 2
-  const downY = paletteWindow.top + paletteWindow.height - grip / 2
-
-  machine.pointerDown(downX, downY)
-  step(machine)
-  machine.pointerMove(downX + 90, downY)
-  values = step(machine)
-
-  const resizedWindow = projectWindows(machine, values)[3]!
-  const firstRow = projectPalette(machine, values).slice(0, 3)
-  const availableWidth =
-    resizedWindow.width
-    - 2
-    - machine.source[sourceField.paletteViewportInset]!
-    - machine.source[sourceField.palettePadding]! * 2
-    - machine.source[sourceField.paletteGap]! * 2
-  assert.equal(resizedWindow.width, 520)
-  assertClose(firstRow[0]!.width, availableWidth / 3)
-  assertClose(firstRow[0]!.left, 16)
-  assertClose(firstRow[1]!.left, 16 + availableWidth / 3 + 10)
-  assertClose(firstRow[2]!.left, 16 + (availableWidth / 3 + 10) * 2)
-  assertClose(
-    firstRow[2]!.left + firstRow[2]!.width,
-    resizedWindow.width - 18 - machine.source[sourceField.paletteViewportInset]!,
-  )
-  assert.deepEqual(firstRow.map(cell => cell.height), [88, 88, 88])
 })
 
 test('title dragging updates numeric geometry and clamps the whole window to the workspace', () => {
@@ -687,7 +596,6 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   assert.equal(window.width, 1256)
   assert.equal(window.height, 664)
   assert.equal(window.scale, 0)
-  assert.equal(projectPalette(machine, values).filter(cell => cell.visible === 1).length, 0)
   assertCenteredOnDock(window, dock)
 
   values = clickDock(machine, values, 3)
@@ -711,7 +619,6 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   )
   assert.equal(window.scale, 1)
   assert.equal(window.stack, 4)
-  assert.ok(projectPalette(machine, values).some(cell => cell.visible === 1))
 
   values = clickWindowControl(machine, values, 3, 'maximize')
   values = settle(machine)
@@ -724,10 +631,9 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   values = settle(machine)
   window = projectWindows(machine, values)[3]!
   assert.equal(window.opacity, 0)
-  assert.equal(window.width, 430)
-  assert.equal(window.height, 310)
+  assert.equal(window.width, 560)
+  assert.equal(window.height, 430)
   assert.equal(window.scale, 0)
-  assert.equal(projectPalette(machine, values).filter(cell => cell.visible === 1).length, 0)
   assertCenteredOnDock(window, dock)
 
   values = clickDock(machine, values, 3)
@@ -741,10 +647,9 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   window = projectWindows(machine, values)[3]!
   assert.deepEqual(
     {left: window.left, top: window.top, width: window.width, height: window.height},
-    {left: 744, top: 270, width: 430, height: 310},
+    {left: 650, top: 190, width: 560, height: 430},
   )
   assert.equal(window.scale, 1)
-  assert.equal(projectPalette(machine, values).filter(cell => cell.visible === 1).length, 9)
 })
 
 test('dock transitions settle within the faster spring budget', () => {
@@ -828,15 +733,76 @@ test('next state is a direct numeric view and runtime atoms remain fixed', () =>
   assert.equal(machine.output.nextSource.length, sourceField.size)
   assert.equal(machine.output.windows.length, windowCount * windowOutputField.size)
   assert.equal(machine.output.dockItems.length, windowCount * dockOutputField.size)
-  assert.equal(
-    machine.output.paletteCells.length,
-    paletteCellCount * paletteCellOutputField.size,
-  )
-  assert.ok(Number.isInteger(machine.output.paletteContentHeight))
   assert.deepEqual(
     [...new Set(machine.circuit.operations.map(operation => operation.kind))].sort(),
     ['affine', 'boolean', 'reglu'],
   )
   assert.equal(machine.source[sourceField.downActive], 0)
   assert.equal(machine.source[windowSourceField(0, windowStateField.left)], 54)
+})
+
+test('Photos state and behavior run inside the one window-manager program', () => {
+  const machine = createWindowManagerMachine()
+  let values = step(machine)
+  const firstPhotoStart = 0
+  const firstPhoto = {
+    left: values[machine.output.photos.photos[firstPhotoStart + photoField.left]!]!,
+    top: values[machine.output.photos.photos[firstPhotoStart + photoField.top]!]!,
+    width: values[machine.output.photos.photos[firstPhotoStart + photoField.width]!]!,
+    height: values[machine.output.photos.photos[firstPhotoStart + photoField.height]!]!,
+  }
+
+  machine.photoClick(
+    firstPhoto.left + firstPhoto.width / 2,
+    firstPhoto.top + firstPhoto.height / 2,
+  )
+  values = step(machine)
+  assert.equal(machine.source[photoFocusSourceField(0)], 1)
+  assert.equal(machine.source[photoSourceField.clickActive], 0)
+
+  machine.photoNext()
+  values = step(machine)
+  assert.equal(machine.source[photoFocusSourceField(0)], 0)
+  assert.equal(machine.source[photoFocusSourceField(1)], 1)
+  assert.equal(
+    Array.from({length: photoCount}, (_, item) =>
+      machine.source[photoFocusSourceField(item)]!)
+      .reduce((sum, focus) => sum + focus, 0),
+    1,
+  )
+  assert.deepEqual(
+    machine.output.nextSource.map(wire => values[wire]!),
+    [...machine.source],
+  )
+  assert.equal(machine.tensorProgram.sourceSize, machine.source.length)
+})
+
+test('one click can focus Photos and select a photo in the same evaluation', () => {
+  const machine = createWindowManagerMachine()
+  let values = step(machine)
+  values = click(machine, 450, 126)
+  assertFocused(projectWindows(machine, values), 1)
+
+  const item = 3
+  const outputStart = item * photoField.size
+  const localLeft =
+    values[machine.output.photos.photos[outputStart + photoField.left]!]!
+  const localTop =
+    values[machine.output.photos.photos[outputStart + photoField.top]!]!
+  const localX = localLeft
+    + values[machine.output.photos.photos[outputStart + photoField.width]!]! / 2
+  const localY = localTop
+    + values[machine.output.photos.photos[outputStart + photoField.height]!]! / 2
+  const photosWindow = projectWindows(machine, values)[3]!
+  const globalX = photosWindow.left + 1 + localX
+  const globalY =
+    photosWindow.top + machine.source[sourceField.titleHeight]! + 1 + localY
+
+  machine.pointerDown(globalX, globalY)
+  machine.pointerUp(globalX, globalY)
+  machine.photoClick(localX, localY)
+  values = step(machine)
+
+  assertFocused(projectWindows(machine, values), 3)
+  assert.equal(machine.source[photoFocusSourceField(item)], 1)
 })

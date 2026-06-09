@@ -8,10 +8,21 @@ import {
   emitMinimum,
   emitMultiply,
   emitRelu,
+  inlineCircuit,
   invariant,
   validateCircuit,
   validateTensorProgram,
 } from './numeric-ui-core.ts'
+import {
+  type PhotoGalleryOutput,
+  createPhotoGalleryCircuit,
+  createPhotoGalleryRenderer,
+  focusField as localPhotoFocusField,
+  itemCount as photoCount,
+  sourceField as localPhotoSourceField,
+  validatePhotoGalleryOutput,
+  validatePhotoGalleryOutputWires,
+} from './photo-gallery.ts'
 
 export const windowCount = 4
 
@@ -37,7 +48,9 @@ export const windowOutputField = {
   focused: 6,
   stack: 7,
   maximized: 8,
-  size: 9,
+  contentWidth: 9,
+  contentHeight: 10,
+  size: 11,
 } as const
 
 export const dockOutputField = {
@@ -49,19 +62,6 @@ export const dockOutputField = {
   focused: 5,
   open: 6,
   size: 7,
-} as const
-
-const paletteColumnCount = 3
-const paletteRowCount = 20
-export const paletteCellCount = paletteColumnCount * paletteRowCount
-
-export const paletteCellOutputField = {
-  translateX: 0,
-  translateY: 1,
-  width: 2,
-  height: 3,
-  visible: 4,
-  size: 5,
 } as const
 
 const springStateField = {
@@ -83,7 +83,23 @@ const dragStart = windowStateStart + windowCount * windowStateField.size
 const resizeStart = dragStart + windowCount
 const stackStart = resizeStart + windowCount
 const springStart = stackStart + windowCount * windowCount
-const paletteStateStart = springStart + windowCount * springStateField.size
+const photoStart = springStart + windowCount * springStateField.size
+
+export const photoSourceField = {
+  gap: photoStart,
+  mainInset: photoStart + 1,
+  thumbnailHeight: photoStart + 2,
+  controlSize: photoStart + 3,
+  clickActive: photoStart + 4,
+  clickX: photoStart + 5,
+  clickY: photoStart + 6,
+  previousActive: photoStart + 7,
+  nextActive: photoStart + 8,
+  closeActive: photoStart + 9,
+  focusStart: photoStart + 10,
+  size: photoStart + 10 + photoCount,
+} as const
+const sourceSize = photoSourceField.size
 
 export const sourceField = {
   viewportWidth: 0,
@@ -126,15 +142,11 @@ export const sourceField = {
   resizeStart,
   stackStart,
   springStart,
-  paletteScrollY: paletteStateStart,
-  paletteCellHeight: paletteStateStart + 1,
-  paletteGap: paletteStateStart + 2,
-  palettePadding: paletteStateStart + 3,
-  paletteViewportInset: paletteStateStart + 4,
-  size: paletteStateStart + 5,
+  photoStart,
+  size: sourceSize,
 } as const
 
-const paletteWindowIndex = windowCount - 1
+const photosWindowIndex = windowCount - 1
 const geometryFields = ['left', 'top', 'width', 'height'] as const
 const transformFields = ['translateX', 'translateY', 'scale'] as const
 const animationFields = ['centerX', 'centerY', 'width', 'height', 'scale'] as const
@@ -166,6 +178,22 @@ const eventCoordinateFields = [
   sourceField.upX,
   sourceField.upY,
 ] as const
+const photoEventActiveFields = [
+  photoSourceField.clickActive,
+  photoSourceField.previousActive,
+  photoSourceField.nextActive,
+  photoSourceField.closeActive,
+] as const
+const photoEventCoordinateFields = [
+  photoSourceField.clickX,
+  photoSourceField.clickY,
+] as const
+const photoConstantFields = [
+  photoSourceField.gap,
+  photoSourceField.mainInset,
+  photoSourceField.thumbnailHeight,
+  photoSourceField.controlSize,
+] as const
 const constantFields = [
   sourceField.margin,
   sourceField.titleHeight,
@@ -185,10 +213,6 @@ const constantFields = [
   sourceField.springSettleSpeed,
   sourceField.springSettleDistanceScale,
   sourceField.springSettleSpeedScale,
-  sourceField.paletteCellHeight,
-  sourceField.paletteGap,
-  sourceField.palettePadding,
-  sourceField.paletteViewportInset,
 ] as const
 
 type Geometry = Record<(typeof geometryFields)[number], Wire>
@@ -209,9 +233,8 @@ type WindowManagerOutput = {
   nextSource: Wire[]
   windows: Wire[]
   dockItems: Wire[]
-  paletteCells: Wire[]
-  paletteContentHeight: Wire
   animationActive: Wire
+  photos: PhotoGalleryOutput
 }
 
 export function windowSourceField(windowIndex: number, field: number) {
@@ -263,6 +286,14 @@ function springSourceField(windowIndex: number, field: number) {
   return sourceField.springStart + windowIndex * springStateField.size + field
 }
 
+export function photoFocusSourceField(item: number) {
+  invariant(
+    Number.isInteger(item) && item >= 0 && item < photoCount,
+    'photo index is invalid',
+  )
+  return photoSourceField.focusStart + item
+}
+
 function compileWindowManagerCircuit() {
   const circuit = new Circuit(sourceField.size)
   circuit.assumeRange(sourceField.viewportWidth, 0, Number.POSITIVE_INFINITY)
@@ -271,9 +302,15 @@ function compileWindowManagerCircuit() {
   circuit.assumeRange(sourceField.frameTime, 0, Number.POSITIVE_INFINITY)
   circuit.assumeRange(sourceField.previousFrameTime, 0, Number.POSITIVE_INFINITY)
   circuit.assumeRange(sourceField.timeInitialized, 0, 1)
-  circuit.assumeRange(sourceField.paletteScrollY, 0, Number.POSITIVE_INFINITY)
   for (const field of constantFields) circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
   for (const field of eventActiveFields) circuit.assumeRange(field, 0, 1)
+  for (const field of photoConstantFields) {
+    circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
+  }
+  for (const field of photoEventActiveFields) circuit.assumeRange(field, 0, 1)
+  for (let item = 0; item < photoCount; item++) {
+    circuit.assumeRange(photoFocusSourceField(item), 0, 1)
+  }
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     for (const field of [
       windowStateField.left,
@@ -915,87 +952,7 @@ function compileWindowManagerCircuit() {
       unit,
     ))
 
-  const paletteCells: Wire[] = []
-  const paletteAnimation = windowAnimations[paletteWindowIndex]!
-  const palettePresent = circuit.boolean(nextPresent[paletteWindowIndex]!)
   const windowBorderSpan = circuit.affine([[unit, 2]])
-  const paletteOutputHeight = emitRelu(circuit, circuit.affine([
-    [paletteAnimation.height, 1],
-    [sourceField.titleHeight, -1],
-    [windowBorderSpan, -1],
-    [sourceField.paletteViewportInset, -1],
-  ]))
-  const paletteContentHeight = circuit.affine([
-    [sourceField.palettePadding, 2],
-    [sourceField.paletteCellHeight, paletteRowCount],
-    [sourceField.paletteGap, paletteRowCount - 1],
-  ])
-  const paletteMaximumScrollY = emitRelu(circuit, circuit.affine([
-    [paletteContentHeight, 1],
-    [paletteOutputHeight, -1],
-  ]))
-  const paletteScrollY = emitClampDynamic(
-    circuit,
-    sourceField.paletteScrollY,
-    zero,
-    paletteMaximumScrollY,
-  )
-  const paletteAvailableWidth = emitRelu(circuit, circuit.affine([
-    [paletteAnimation.width, 1],
-    [windowBorderSpan, -1],
-    [sourceField.paletteViewportInset, -1],
-    [sourceField.palettePadding, -2],
-    [sourceField.paletteGap, -(paletteColumnCount - 1)],
-  ]))
-  const paletteCellWidth = circuit.affine([
-    [paletteAvailableWidth, 1 / paletteColumnCount],
-  ])
-  const paletteStrideY = circuit.affine([
-    [sourceField.paletteCellHeight, 1],
-    [sourceField.paletteGap, 1],
-  ])
-  const paletteColumnLefts = Array.from({length: paletteColumnCount}, (_, column) =>
-    circuit.affine([
-      [sourceField.palettePadding, 1],
-      [paletteCellWidth, column],
-      [sourceField.paletteGap, column],
-    ]))
-  for (let row = 0; row < paletteRowCount; row++) {
-    const top = circuit.affine([
-      [sourceField.palettePadding, 1],
-      [paletteStrideY, row],
-    ])
-    const viewportTop = circuit.affine([
-      [top, 1],
-      [paletteScrollY, -1],
-    ])
-    const viewportBottom = circuit.affine([
-      [viewportTop, 1],
-      [sourceField.paletteCellHeight, 1],
-    ])
-    const clippedTop = emitClampDynamic(circuit, viewportTop, zero, paletteOutputHeight)
-    const clippedBottom = emitClampDynamic(
-      circuit,
-      viewportBottom,
-      zero,
-      paletteOutputHeight,
-    )
-    const visibleHeight = emitRelu(circuit, circuit.affine([
-      [clippedBottom, 1],
-      [clippedTop, -1],
-    ]))
-    const rowVisible = circuit.boolean(emitClampZeroOne(circuit, visibleHeight, unit))
-    const visible = emitMultiply(circuit, palettePresent, rowVisible)
-    for (let column = 0; column < paletteColumnCount; column++) {
-      paletteCells.push(
-        paletteColumnLefts[column]!,
-        top,
-        paletteCellWidth,
-        sourceField.paletteCellHeight,
-        visible,
-      )
-    }
-  }
 
   const nextSource = Array.from({length: sourceField.size}, (_, field) => field)
   for (const field of eventActiveFields) nextSource[field] = zero
@@ -1003,7 +960,6 @@ function compileWindowManagerCircuit() {
   nextSource[sourceField.pointerY] = pointerY
   nextSource[sourceField.previousFrameTime] = sourceField.frameTime
   nextSource[sourceField.timeInitialized] = unit
-  nextSource[sourceField.paletteScrollY] = paletteScrollY
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const geometry = nextNormalGeometry[windowIndex]!
     nextSource[windowSourceField(windowIndex, windowStateField.left)] = geometry.left
@@ -1048,6 +1004,15 @@ function compileWindowManagerCircuit() {
       focusedWindow[windowIndex]!,
       circuit.affine(stackTerms),
       nextMaximized[windowIndex]!,
+      emitRelu(circuit, circuit.affine([
+        [animation.width, 1],
+        [windowBorderSpan, -1],
+      ])),
+      emitRelu(circuit, circuit.affine([
+        [animation.height, 1],
+        [sourceField.titleHeight, -1],
+        [windowBorderSpan, -1],
+      ])),
     )
     const dock = dockGeometry[windowIndex]!
     dockItems.push(
@@ -1061,15 +1026,72 @@ function compileWindowManagerCircuit() {
     )
   }
 
+  const photosWindowOutputStart = photosWindowIndex * windowOutputField.size
+  const photoSourceWires = Array<Wire>(localPhotoSourceField.size)
+  photoSourceWires[localPhotoSourceField.viewportWidth] =
+    windows[photosWindowOutputStart + windowOutputField.contentWidth]!
+  photoSourceWires[localPhotoSourceField.viewportHeight] =
+    windows[photosWindowOutputStart + windowOutputField.contentHeight]!
+  photoSourceWires[localPhotoSourceField.gap] = photoSourceField.gap
+  photoSourceWires[localPhotoSourceField.mainInset] = photoSourceField.mainInset
+  photoSourceWires[localPhotoSourceField.thumbnailHeight] =
+    photoSourceField.thumbnailHeight
+  photoSourceWires[localPhotoSourceField.controlSize] = photoSourceField.controlSize
+  photoSourceWires[localPhotoSourceField.clickActive] = photoSourceField.clickActive
+  photoSourceWires[localPhotoSourceField.clickX] = photoSourceField.clickX
+  photoSourceWires[localPhotoSourceField.clickY] = photoSourceField.clickY
+  photoSourceWires[localPhotoSourceField.previousActive] =
+    photoSourceField.previousActive
+  photoSourceWires[localPhotoSourceField.nextActive] = photoSourceField.nextActive
+  photoSourceWires[localPhotoSourceField.closeActive] = photoSourceField.closeActive
+  for (let item = 0; item < photoCount; item++) {
+    photoSourceWires[localPhotoFocusField(item)] = photoFocusSourceField(item)
+  }
+  photoSourceWires[localPhotoSourceField.present] =
+    windows[photosWindowOutputStart + windowOutputField.opacity]!
+  photoSourceWires[localPhotoSourceField.interactive] =
+    windows[photosWindowOutputStart + windowOutputField.focused]!
+
+  const photoDefinition = createPhotoGalleryCircuit()
+  const photoWireMap = inlineCircuit(circuit, photoDefinition.circuit, photoSourceWires)
+  const mapPhotoWires = (wires: readonly Wire[]) =>
+    wires.map(wire => photoWireMap[wire]!)
+  const photos: PhotoGalleryOutput = {
+    nextSource: mapPhotoWires(photoDefinition.output.nextSource),
+    backdropOpacity: photoWireMap[photoDefinition.output.backdropOpacity]!,
+    photos: mapPhotoWires(photoDefinition.output.photos),
+    thumbnails: mapPhotoWires(photoDefinition.output.thumbnails),
+    previousControl: mapPhotoWires(photoDefinition.output.previousControl),
+    nextControl: mapPhotoWires(photoDefinition.output.nextControl),
+  }
+  const photoSourceBindings = [
+    [localPhotoSourceField.gap, photoSourceField.gap],
+    [localPhotoSourceField.mainInset, photoSourceField.mainInset],
+    [localPhotoSourceField.thumbnailHeight, photoSourceField.thumbnailHeight],
+    [localPhotoSourceField.controlSize, photoSourceField.controlSize],
+    [localPhotoSourceField.clickActive, photoSourceField.clickActive],
+    [localPhotoSourceField.clickX, photoSourceField.clickX],
+    [localPhotoSourceField.clickY, photoSourceField.clickY],
+    [localPhotoSourceField.previousActive, photoSourceField.previousActive],
+    [localPhotoSourceField.nextActive, photoSourceField.nextActive],
+    [localPhotoSourceField.closeActive, photoSourceField.closeActive],
+  ] as const
+  for (const [localField, field] of photoSourceBindings) {
+    nextSource[field] = photos.nextSource[localField]!
+  }
+  for (let item = 0; item < photoCount; item++) {
+    nextSource[photoFocusSourceField(item)] =
+      photos.nextSource[localPhotoFocusField(item)]!
+  }
+
   return {
     circuit,
     output: {
       nextSource,
       windows,
       dockItems,
-      paletteCells,
-      paletteContentHeight,
       animationActive,
+      photos,
     },
   }
 }
@@ -1095,15 +1117,15 @@ export function createWindowManagerMachine() {
   source[sourceField.springSettleSpeed] = 0.01
   source[sourceField.springSettleDistanceScale] = 100
   source[sourceField.springSettleSpeedScale] = 100
-  source[sourceField.paletteCellHeight] = 88
-  source[sourceField.paletteGap] = 10
-  source[sourceField.palettePadding] = 16
-  source[sourceField.paletteViewportInset] = 6
+  source[photoSourceField.gap] = 18
+  source[photoSourceField.mainInset] = 92
+  source[photoSourceField.thumbnailHeight] = 82
+  source[photoSourceField.controlSize] = 52
   const initialGeometry = [
     [54, 54, 520, 340],
     [410, 104, 500, 366],
     [174, 344, 470, 300],
-    [744, 270, 430, 310],
+    [650, 190, 560, 430],
   ] as const
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const geometry = initialGeometry[windowIndex]!
@@ -1130,9 +1152,12 @@ export function createWindowManagerMachine() {
     ...output.nextSource,
     ...output.windows,
     ...output.dockItems,
-    ...output.paletteCells,
-    output.paletteContentHeight,
     output.animationActive,
+    output.photos.backdropOpacity,
+    ...output.photos.photos,
+    ...output.photos.thumbnails,
+    ...output.photos.previousControl,
+    ...output.photos.nextControl,
   ])
   validateTensorProgram(circuit, tensorProgram)
   const numericTolerance = 1e-5
@@ -1144,6 +1169,17 @@ export function createWindowManagerMachine() {
     source[yField] = y
   }
 
+  function receivePhotoEvent(
+    field: number,
+    x = source[photoSourceField.clickX]!,
+    y = source[photoSourceField.clickY]!,
+  ) {
+    for (const eventField of photoEventActiveFields) source[eventField] = 0
+    source[field] = 1
+    source[photoSourceField.clickX] = x
+    source[photoSourceField.clickY] = y
+  }
+
   return {
     circuit,
     output,
@@ -1153,17 +1189,11 @@ export function createWindowManagerMachine() {
       viewportWidth: number,
       viewportHeight: number,
       frameTime: number,
-      paletteScrollY = source[sourceField.paletteScrollY]!,
     ) {
       invariant(Number.isFinite(frameTime) && frameTime >= 0, 'frame time must be nonnegative')
-      invariant(
-        Number.isFinite(paletteScrollY) && paletteScrollY >= 0,
-        'palette scroll must be nonnegative',
-      )
       source[sourceField.viewportWidth] = viewportWidth
       source[sourceField.viewportHeight] = viewportHeight
       source[sourceField.frameTime] = frameTime
-      source[sourceField.paletteScrollY] = paletteScrollY
       validateWindowManagerSource(source, numericTolerance)
       const values = circuit.evaluateTensor(source)
       validateWindowManagerOutput(values, output, numericTolerance)
@@ -1181,6 +1211,18 @@ export function createWindowManagerMachine() {
     pointerUp(x: number, y: number) {
       receivePointer(sourceField.upActive, sourceField.upX, sourceField.upY, x, y)
     },
+    photoClick(x: number, y: number) {
+      receivePhotoEvent(photoSourceField.clickActive, x, y)
+    },
+    photoPrevious() {
+      receivePhotoEvent(photoSourceField.previousActive)
+    },
+    photoNext() {
+      receivePhotoEvent(photoSourceField.nextActive)
+    },
+    photoClose() {
+      receivePhotoEvent(photoSourceField.closeActive)
+    },
   }
 }
 
@@ -1189,9 +1231,7 @@ function mountWindowManager(document: Document, window: Window) {
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
-  const paletteViewport = document.querySelector<HTMLElement>('.colors-content')
-  const paletteSpacer = document.querySelector<HTMLElement>('.palette-spacer')
-  const paletteTitle = document.querySelector<HTMLElement>('#palette-title')
+  const photosViewport = document.querySelector<HTMLElement>('.photos-content')
   const monitorValues = document.querySelector<HTMLElement>('#monitor-values')
   const monitorOperations = document.querySelector<HTMLElement>('#monitor-operations')
   const monitorLayers = document.querySelector<HTMLElement>('#monitor-layers')
@@ -1202,9 +1242,7 @@ function mountWindowManager(document: Document, window: Window) {
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
-  invariant(paletteViewport !== null, 'palette viewport is missing')
-  invariant(paletteSpacer !== null, 'palette spacer is missing')
-  invariant(paletteTitle !== null, 'palette title is missing')
+  invariant(photosViewport !== null, 'Photos viewport is missing')
   invariant(monitorValues !== null, 'monitor values row is missing')
   invariant(monitorOperations !== null, 'monitor operations row is missing')
   invariant(monitorLayers !== null, 'monitor layers row is missing')
@@ -1216,13 +1254,11 @@ function mountWindowManager(document: Document, window: Window) {
     desktop, // mount lifetime
     windows, // mount lifetime
     dockItems, // mount lifetime
-    paletteViewport, // mount lifetime
-    paletteSpacer, // mount lifetime
-    paletteCells: new Map<number, HTMLElement>(), // visibility lifetime
-    paletteTitle, // mount lifetime
+    photosViewport, // mount lifetime
     monitorFrame, // mount lifetime
     monitorRaf, // mount lifetime
   }
+  const photos = createPhotoGalleryRenderer(document, domCache.photosViewport)
   const program = machine.tensorProgram
   let affineCount = 0
   let regluCount = 0
@@ -1233,6 +1269,10 @@ function mountWindowManager(document: Document, window: Window) {
   let bookkeepingBytes = 0
   let denseWeightCount = 0
   let maximumLayerWidth = 0
+  const inputCount = program.sourceSize
+  const outputCount = program.roots.length
+  const activationCount = program.valueCount - program.sourceSize
+  const layerCount = program.layers.length
   for (const layer of program.layers) {
     const layerWidth = layer.outputSize + layer.gateRows.length
     regluCount += layer.gateRows.length
@@ -1250,18 +1290,16 @@ function mountWindowManager(document: Document, window: Window) {
     denseWeightCount += layerWidth * layer.inputSize
     maximumLayerWidth = Math.max(maximumLayerWidth, layerWidth)
   }
-  const activationCount = program.valueCount - program.sourceSize
   const formatCount = (value: number) => value.toLocaleString('en-US')
   const formatKilobytes = (bytes: number) => `${(bytes / 1_000).toFixed(1)} KB`
-  const paletteColorClasses = ['swatch-a', 'swatch-b', 'swatch-c', 'swatch-d'] as const
   monitorValues.textContent =
-    `${formatCount(program.sourceSize)} inputs · ${formatCount(program.roots.length)} outputs`
+    `${formatCount(inputCount)} inputs · ${formatCount(outputCount)} outputs`
     + ` · ${formatCount(activationCount)} activations`
   monitorOperations.textContent =
     `${formatCount(affineCount)} affine · ${formatCount(regluCount)} ReGLU`
     + ` · ${formatCount(booleanCount)} boolean`
   monitorLayers.textContent =
-    `${formatCount(program.layers.length)} · max width ${formatCount(maximumLayerWidth)}`
+    `${formatCount(layerCount)} · max width ${formatCount(maximumLayerWidth)}`
   monitorWeights.textContent =
     `${formatCount(denseWeightCount)} dense · ${formatCount(weightCount)} sparse`
   monitorMemory.textContent =
@@ -1279,10 +1317,6 @@ function mountWindowManager(document: Document, window: Window) {
     '--system-bar-height',
     `${machine.source[sourceField.systemBarHeight]}px`,
   )
-  domCache.desktop.style.setProperty(
-    '--palette-viewport-inset',
-    `${machine.source[sourceField.paletteViewportInset]}px`,
-  )
 
   let scheduledRaf: number | null = null
   function scheduleRender() {
@@ -1295,8 +1329,7 @@ function mountWindowManager(document: Document, window: Window) {
     scheduledRaf = null
     const viewportWidth = document.documentElement.clientWidth
     const viewportHeight = document.documentElement.clientHeight
-    const paletteScrollY = domCache.paletteViewport.scrollTop
-    const values = machine.step(viewportWidth, viewportHeight, frameTime, paletteScrollY)
+    const values = machine.step(viewportWidth, viewportHeight, frameTime)
 
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       const element = domCache.windows[windowIndex]!
@@ -1342,41 +1375,9 @@ function mountWindowManager(document: Document, window: Window) {
         `${values[machine.output.dockItems[outputStart + dockOutputField.open]!]}`,
       )
     }
-    domCache.paletteSpacer.style.height =
-      `${values[machine.output.paletteContentHeight]}px`
-    for (let cellIndex = 0; cellIndex < paletteCellCount; cellIndex++) {
-      const outputStart = cellIndex * paletteCellOutputField.size
-      const visible =
-        values[machine.output.paletteCells[outputStart + paletteCellOutputField.visible]!]!
-      if (visible === 0) {
-        const element = domCache.paletteCells.get(cellIndex)
-        if (element !== undefined) {
-          element.remove()
-          domCache.paletteCells.delete(cellIndex)
-        }
-        continue
-      }
-      let element = domCache.paletteCells.get(cellIndex)
-      if (element === undefined) {
-        element = document.createElement('div')
-        element.className =
-          `palette-cell ${paletteColorClasses[cellIndex % paletteColorClasses.length]}`
-        domCache.paletteCells.set(cellIndex, element)
-      }
-      const translateX =
-        values[machine.output.paletteCells[outputStart + paletteCellOutputField.translateX]!]!
-      const translateY =
-        values[machine.output.paletteCells[outputStart + paletteCellOutputField.translateY]!]!
-      element.style.width =
-        `${values[machine.output.paletteCells[outputStart + paletteCellOutputField.width]!]}px`
-      element.style.height =
-        `${values[machine.output.paletteCells[outputStart + paletteCellOutputField.height]!]}px`
-      element.style.transform = `translate3d(${translateX}px,${translateY}px,0)`
-      if (element.parentNode === null) domCache.paletteViewport.appendChild(element)
-    }
-    const renderedCellCount = domCache.paletteCells.size
-    domCache.paletteTitle.textContent =
-      `Palette (cells rendered: ${renderedCellCount})`
+
+    photos.render(values, machine.output.photos)
+
     const nextRafRequested = values[machine.output.animationActive]! > 0
     if (nextRafRequested) scheduleRender()
     domCache.monitorRaf.textContent = nextRafRequested ? 'yes' : 'no'
@@ -1400,7 +1401,27 @@ function mountWindowManager(document: Document, window: Window) {
     machine.pointerUp(event.clientX, event.clientY)
     scheduleRender()
   })
-  domCache.paletteViewport.addEventListener('scroll', scheduleRender)
+  domCache.photosViewport.addEventListener('click', (event: MouseEvent) => {
+    machine.photoClick(event.offsetX, event.offsetY)
+    scheduleRender()
+  })
+  window.addEventListener('keydown', (event: KeyboardEvent) => {
+    switch (event.key) {
+      case 'ArrowLeft':
+        machine.photoPrevious()
+        break
+      case 'ArrowRight':
+        machine.photoNext()
+        break
+      case 'Escape':
+        machine.photoClose()
+        break
+      default:
+        return
+    }
+    event.preventDefault()
+    scheduleRender()
+  })
   window.addEventListener('resize', scheduleRender)
   renderWindowManager(window.performance.now())
 }
@@ -1588,10 +1609,27 @@ function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
   for (const field of eventCoordinateFields) {
     invariant(Number.isFinite(values[field]), 'event coordinate must be finite')
   }
+  for (const field of photoConstantFields) {
+    assertNonNegativeFinite(values[field], 'Photos constant')
+  }
+  let photoEventMass = 0
+  for (const field of photoEventActiveFields) {
+    assertUnitInterval(values[field], 'Photos event latch', tolerance)
+    photoEventMass += values[field]
+  }
+  invariant(photoEventMass <= 1 + tolerance, 'Photos event mass must not exceed one')
+  for (const field of photoEventCoordinateFields) {
+    invariant(Number.isFinite(values[field]), 'Photos event coordinate must be finite')
+  }
+  let photoFocusMass = 0
+  for (let item = 0; item < photoCount; item++) {
+    const focus = values[photoFocusSourceField(item)]
+    assertUnitInterval(focus, `photo focus ${item}`, tolerance)
+    photoFocusMass += focus
+  }
+  invariant(photoFocusMass <= 1 + tolerance, 'photo focus mass must not exceed one')
   invariant(Number.isFinite(values[sourceField.pointerX]), 'pointer x must be finite')
   invariant(Number.isFinite(values[sourceField.pointerY]), 'pointer y must be finite')
-  assertNonNegativeFinite(values[sourceField.paletteScrollY], 'palette scroll y')
-
   let dragMass = 0
   let resizeMass = 0
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
@@ -1665,13 +1703,8 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
   validateWireView(output.nextSource, sourceField.size, wireCount)
   validateWireView(output.windows, windowCount * windowOutputField.size, wireCount)
   validateWireView(output.dockItems, windowCount * dockOutputField.size, wireCount)
-  validateWireView(
-    output.paletteCells,
-    paletteCellCount * paletteCellOutputField.size,
-    wireCount,
-  )
-  assertWire(output.paletteContentHeight, wireCount)
   validateWireView([output.animationActive], 1, wireCount)
+  validatePhotoGalleryOutputWires(output.photos, wireCount)
 }
 
 function validateWindowManagerOutput(
@@ -1685,10 +1718,19 @@ function validateWindowManagerOutput(
   for (const field of eventActiveFields) {
     invariant(nextSource[field] === 0, 'event latch must reset after refresh')
   }
+  for (const field of photoEventActiveFields) {
+    invariant(nextSource[field] === 0, 'Photos event latch must reset after refresh')
+  }
+  validatePhotoGalleryOutput(values, output.photos, tolerance)
   assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const outputStart = windowIndex * windowOutputField.size
-    for (const field of [windowOutputField.width, windowOutputField.height]) {
+    for (const field of [
+      windowOutputField.width,
+      windowOutputField.height,
+      windowOutputField.contentWidth,
+      windowOutputField.contentHeight,
+    ]) {
       assertNonNegativeFinite(
         values[output.windows[outputStart + field]!],
         'projected window geometry',
@@ -1740,32 +1782,6 @@ function validateWindowManagerOutput(
       )
     }
   }
-  for (let cellIndex = 0; cellIndex < paletteCellCount; cellIndex++) {
-    const outputStart = cellIndex * paletteCellOutputField.size
-    for (const field of [paletteCellOutputField.translateX, paletteCellOutputField.translateY]) {
-      invariant(
-        Number.isFinite(values[output.paletteCells[outputStart + field]!]),
-        'projected palette translation must be finite',
-      )
-    }
-    for (const field of [paletteCellOutputField.width, paletteCellOutputField.height]) {
-      assertNonNegativeFinite(
-        values[output.paletteCells[outputStart + field]!],
-        'projected palette size',
-        tolerance,
-      )
-    }
-    assertUnitInterval(
-      values[output.paletteCells[outputStart + paletteCellOutputField.visible]!],
-      'projected palette visibility',
-      tolerance,
-    )
-  }
-  assertNonNegativeFinite(
-    values[output.paletteContentHeight],
-    'projected palette content height',
-    tolerance,
-  )
 }
 
 function validateWireView(wires: readonly Wire[], size: number, wireCount: number) {

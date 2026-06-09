@@ -16,10 +16,6 @@ const viewportWidth = 1280
 const viewportHeight = 720
 const gap = 18
 
-function assertClose(actual: number, expected: number) {
-  assert.ok(Math.abs(actual - expected) < 1e-4, `${actual} != ${expected}`)
-}
-
 function projectPhotos(machine: ReturnType<typeof createPhotoGalleryMachine>, values: Float32Array) {
   return Array.from({length: itemCount}, (_, item) => {
     const outputStart = item * photoField.size
@@ -59,7 +55,7 @@ function assertOneFocus(machine: ReturnType<typeof createPhotoGalleryMachine>, i
   )
 }
 
-test('the fixed grid opens every photo with all twelve thumbnails', () => {
+test('the fixed grid opens every photo with a tapered thumbnail carousel', () => {
   const machine = createPhotoGalleryMachine()
   let values = machine.step(viewportWidth, viewportHeight)
   const grid = projectPhotos(machine, values)
@@ -103,39 +99,44 @@ test('the fixed grid opens every photo with all twelve thumbnails', () => {
   assert.equal(photos[0]!.left, 0)
   assert.equal(photos[0]!.opacity, 0)
   const thumbnails = projectThumbnails(machine, values)
-  const thumbnailWidth =
-    viewportWidth * (1 / itemCount) + gap * (-(itemCount + 1) / itemCount)
-  const firstThumbnail = thumbnails[0]!
-  assert.deepEqual({
-    top: firstThumbnail.top,
-    height: firstThumbnail.height,
-    opacity: firstThumbnail.opacity,
-    focused: firstThumbnail.focused,
-  }, {
-    top: 620,
-    height: 82,
-    opacity: 1,
-    focused: 0,
-  })
-  assertClose(firstThumbnail.left, gap)
-  assertClose(firstThumbnail.width, thumbnailWidth)
   const focusedThumbnail = thumbnails[6]!
-  const focusedThumbnailLeft = gap + 6 * (thumbnailWidth + gap)
   assert.deepEqual({
+    left: focusedThumbnail.left,
     top: focusedThumbnail.top,
+    width: focusedThumbnail.width,
     height: focusedThumbnail.height,
     opacity: focusedThumbnail.opacity,
     focused: focusedThumbnail.focused,
   }, {
+    left: 599,
     top: 620,
+    width: 82,
     height: 82,
     opacity: 1,
     focused: 1,
   })
-  assertClose(focusedThumbnail.left, focusedThumbnailLeft)
-  assertClose(focusedThumbnail.width, thumbnailWidth)
+  assert.ok(thumbnails[5]!.width < focusedThumbnail.width)
+  assert.ok(thumbnails[4]!.width < thumbnails[5]!.width)
+  assert.ok(thumbnails[2]!.width > 0)
+  assert.equal(thumbnails[1]!.width, 0)
+  assert.equal(thumbnails.filter(thumbnail => thumbnail.width > 0).length, 9)
   assert.equal(thumbnails.length, itemCount)
-  assert.equal(photos[6].top + photos[6].height + gap, firstThumbnail.top)
+  assert.equal(photos[6].top + photos[6].height + gap, focusedThumbnail.top)
+  const visibleThumbnails = thumbnails
+    .filter(thumbnail => thumbnail.width > 0)
+    .sort((left, right) => left.left - right.left)
+  const centerGaps = visibleThumbnails.slice(1).map((thumbnail, index) => {
+    const previous = visibleThumbnails[index]!
+    return thumbnail.left + thumbnail.width / 2
+      - (previous.left + previous.width / 2)
+  })
+  assert.ok(centerGaps[3]! > centerGaps[2]!)
+  assert.ok(centerGaps[2]! > centerGaps[1]!)
+  assert.ok(centerGaps[1]! > centerGaps[0]!)
+  const stripWidth =
+    visibleThumbnails.at(-1)!.left + visibleThumbnails.at(-1)!.width
+    - visibleThumbnails[0]!.left
+  assert.ok(stripWidth > 473 && stripWidth < 474)
   assert.equal(values[machine.output.backdropOpacity], 1)
 })
 
@@ -164,10 +165,10 @@ test('thumbnail clicks switch focus and backdrop clicks close', () => {
   values = machine.step(viewportWidth, viewportHeight)
   assertOneFocus(machine, 4)
 
-  const thumbnail = projectThumbnails(machine, values)[9]!
+  const thumbnail = projectThumbnails(machine, values)[8]!
   machine.click(thumbnail.left + thumbnail.width / 2, thumbnail.top + thumbnail.height / 2)
   values = machine.step(viewportWidth, viewportHeight)
-  assertOneFocus(machine, 9)
+  assertOneFocus(machine, 8)
 
   machine.click(4, 4)
   values = machine.step(viewportWidth, viewportHeight)
@@ -194,6 +195,31 @@ test('numeric previous and next signals wrap around, while close clears focus', 
   machine.close()
   machine.step(viewportWidth, viewportHeight)
   assert.deepEqual(readFocus(machine), Array(itemCount).fill(0))
+})
+
+test('visual presence and exact interactivity remain separate host facts', () => {
+  const machine = createPhotoGalleryMachine()
+  let values = machine.step(viewportWidth, viewportHeight, 0)
+  assert.equal(values[machine.output.backdropOpacity], 0)
+  assert.equal(projectPhotos(machine, values).filter(photo => photo.opacity > 0).length, 0)
+  assert.equal(
+    projectThumbnails(machine, values).filter(thumbnail => thumbnail.width > 0).length,
+    0,
+  )
+
+  values = machine.step(viewportWidth, viewportHeight, 0.35)
+  const target = projectPhotos(machine, values)[3]!
+  machine.click(target.left + target.width / 2, target.top + target.height / 2)
+  machine.step(viewportWidth, viewportHeight, 0.35, 0)
+  assert.deepEqual(readFocus(machine), Array(itemCount).fill(0))
+
+  machine.click(target.left + target.width / 2, target.top + target.height / 2)
+  machine.step(viewportWidth, viewportHeight, 0.35, 1)
+  assertOneFocus(machine, 3)
+  assert.throws(
+    () => machine.step(viewportWidth, viewportHeight, 0.35, 0.5),
+    /interactive must equal zero or one/,
+  )
 })
 
 test('the projected previous and next controls drive the same numeric transitions', () => {
@@ -240,6 +266,30 @@ test('clicking the main image preserves it and tiny viewports remain finite', ()
     assert.ok(photo.width >= 0)
     assert.ok(photo.height >= 0)
   }
+
+  for (const hostedWidth of [278, 558]) {
+    const hostedMachine = createPhotoGalleryMachine()
+    values = hostedMachine.step(hostedWidth, 384)
+    const hostedTarget = projectPhotos(hostedMachine, values)[0]!
+    hostedMachine.click(
+      hostedTarget.left + hostedTarget.width / 2,
+      hostedTarget.top + hostedTarget.height / 2,
+    )
+    values = hostedMachine.step(hostedWidth, 384)
+    const hostedThumbnails = projectThumbnails(hostedMachine, values)
+    for (const thumbnail of hostedThumbnails) {
+      assert.ok(thumbnail.left >= 0 && thumbnail.left <= hostedWidth)
+      assert.ok(thumbnail.top >= 0)
+      assert.ok(thumbnail.width >= 0)
+      assert.ok(thumbnail.height >= 0)
+    }
+    const visible = hostedThumbnails.filter(thumbnail => thumbnail.width > 0)
+    const stripLeft = Math.min(...visible.map(thumbnail => thumbnail.left))
+    const stripRight = Math.max(...visible.map(thumbnail => thumbnail.left + thumbnail.width))
+    assert.ok(
+      stripRight - stripLeft <= Math.min(473.3, hostedWidth - 36) + 1e-3,
+    )
+  }
 })
 
 test('edge clicks commit one complete focused item', () => {
@@ -264,22 +314,30 @@ test('edge clicks commit one complete focused item', () => {
 
 test('main and control clicks preserve complete focused items', () => {
   const machine = createPhotoGalleryMachine()
-  let values = machine.step(1281, 721)
+  const width = 558
+  const height = 384
+  let values = machine.step(width, height)
   const first = projectPhotos(machine, values)[0]!
   machine.click(first.left + 0.5, first.top + first.height / 2)
-  values = machine.step(1281, 721)
+  values = machine.step(width, height)
   assert.deepEqual(readFocus(machine), [1, ...Array<number>(itemCount - 1).fill(0)])
 
-  machine.click(640, 300)
-  values = machine.step(1281, 721)
+  machine.click(first.left + first.width / 2, first.top + first.height / 2)
+  values = machine.step(width, height)
   assert.deepEqual(readFocus(machine), [1, ...Array<number>(itemCount - 1).fill(0)])
 
   const nextControl = machine.output.nextControl
+  const nextLeft = values[nextControl[controlField.left]!]!
+  const nextTop = values[nextControl[controlField.top]!]!
+  const nextHeight = values[nextControl[controlField.height]!]!
+  const focusedPhoto = projectPhotos(machine, values)[0]!
+  const overlappingX = nextLeft + 5
+  assert.ok(overlappingX < focusedPhoto.left + focusedPhoto.width)
   machine.click(
-    values[nextControl[controlField.left]!]! + values[nextControl[controlField.width]!]! / 2,
-    values[nextControl[controlField.top]!]! + values[nextControl[controlField.height]!]! / 2,
+    overlappingX,
+    nextTop + nextHeight / 2,
   )
-  machine.step(1281, 721)
+  machine.step(width, height)
   const shiftedFocus = readFocus(machine)
   assert.equal(shiftedFocus[1], 1)
   assert.equal(shiftedFocus.reduce((sum, focus) => sum + focus, 0), 1)
