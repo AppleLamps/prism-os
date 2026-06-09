@@ -1191,13 +1191,27 @@ function mountWindowManager(document: Document, window: Window) {
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
   const paletteViewport = document.querySelector<HTMLElement>('.colors-content')
   const paletteSpacer = document.querySelector<HTMLElement>('.palette-spacer')
-  const readout = document.querySelector<HTMLElement>('#readout')
+  const paletteTitle = document.querySelector<HTMLElement>('#palette-title')
+  const monitorValues = document.querySelector<HTMLElement>('#monitor-values')
+  const monitorOperations = document.querySelector<HTMLElement>('#monitor-operations')
+  const monitorLayers = document.querySelector<HTMLElement>('#monitor-layers')
+  const monitorWeights = document.querySelector<HTMLElement>('#monitor-weights')
+  const monitorMemory = document.querySelector<HTMLElement>('#monitor-memory')
+  const monitorFrame = document.querySelector<HTMLElement>('#monitor-frame')
+  const monitorRaf = document.querySelector<HTMLElement>('#monitor-raf')
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
   invariant(paletteViewport !== null, 'palette viewport is missing')
   invariant(paletteSpacer !== null, 'palette spacer is missing')
-  invariant(readout !== null, 'readout is missing')
+  invariant(paletteTitle !== null, 'palette title is missing')
+  invariant(monitorValues !== null, 'monitor values row is missing')
+  invariant(monitorOperations !== null, 'monitor operations row is missing')
+  invariant(monitorLayers !== null, 'monitor layers row is missing')
+  invariant(monitorWeights !== null, 'monitor weights row is missing')
+  invariant(monitorMemory !== null, 'monitor memory row is missing')
+  invariant(monitorFrame !== null, 'monitor frame row is missing')
+  invariant(monitorRaf !== null, 'monitor RAF row is missing')
   const domCache = {
     desktop, // mount lifetime
     windows, // mount lifetime
@@ -1205,7 +1219,9 @@ function mountWindowManager(document: Document, window: Window) {
     paletteViewport, // mount lifetime
     paletteSpacer, // mount lifetime
     paletteCells: new Map<number, HTMLElement>(), // visibility lifetime
-    readout, // mount lifetime
+    paletteTitle, // mount lifetime
+    monitorFrame, // mount lifetime
+    monitorRaf, // mount lifetime
   }
   const program = machine.tensorProgram
   let affineCount = 0
@@ -1215,7 +1231,10 @@ function mountWindowManager(document: Document, window: Window) {
   let weightBytes = 0
   let biasBytes = 0
   let bookkeepingBytes = 0
+  let denseWeightCount = 0
+  let maximumLayerWidth = 0
   for (const layer of program.layers) {
+    const layerWidth = layer.outputSize + layer.gateRows.length
     regluCount += layer.gateRows.length
     booleanCount += layer.booleanRows.length
     affineCount += layer.outputSize - layer.gateRows.length - layer.booleanRows.length
@@ -1228,20 +1247,28 @@ function mountWindowManager(document: Document, window: Window) {
       + layer.booleanRows.byteLength
       + layer.rowOffsets.byteLength
       + layer.columns.byteLength
+    denseWeightCount += layerWidth * layer.inputSize
+    maximumLayerWidth = Math.max(maximumLayerWidth, layerWidth)
   }
   const activationCount = program.valueCount - program.sourceSize
   const formatCount = (value: number) => value.toLocaleString('en-US')
   const formatKilobytes = (bytes: number) => `${(bytes / 1_000).toFixed(1)} KB`
   const paletteColorClasses = ['swatch-a', 'swatch-b', 'swatch-c', 'swatch-d'] as const
-  domCache.readout.textContent = [
+  monitorValues.textContent =
     `${formatCount(program.sourceSize)} inputs · ${formatCount(program.roots.length)} outputs`
-      + ` · ${formatCount(activationCount)} activations`,
+    + ` · ${formatCount(activationCount)} activations`
+  monitorOperations.textContent =
     `${formatCount(affineCount)} affine · ${formatCount(regluCount)} ReGLU`
-      + ` · ${formatCount(booleanCount)} boolean`,
-    `${formatCount(weightCount)} weights · ${formatKilobytes(weightBytes)} weights`
-      + ` + ${formatKilobytes(biasBytes)} biases`
-      + ` + ${formatKilobytes(bookkeepingBytes)} bookkeeping`,
-  ].join('\n')
+    + ` · ${formatCount(booleanCount)} boolean`
+  monitorLayers.textContent =
+    `${formatCount(program.layers.length)} · max width ${formatCount(maximumLayerWidth)}`
+  monitorWeights.textContent =
+    `${formatCount(denseWeightCount)} dense · ${formatCount(weightCount)} sparse`
+  monitorMemory.textContent =
+    `${formatKilobytes(weightBytes)} weights · ${formatKilobytes(biasBytes)} biases`
+    + ` · ${formatKilobytes(bookkeepingBytes)} bookkeeping`
+  domCache.monitorFrame.textContent = '—'
+  domCache.monitorRaf.textContent = 'no'
 
   domCache.desktop.style.setProperty('--title-height', `${machine.source[sourceField.titleHeight]}px`)
   domCache.desktop.style.setProperty('--button-size', `${machine.source[sourceField.buttonSize]}px`)
@@ -1264,6 +1291,7 @@ function mountWindowManager(document: Document, window: Window) {
   }
 
   function renderWindowManager(frameTime: number) {
+    const renderStart = window.performance.now()
     scheduledRaf = null
     const viewportWidth = document.documentElement.clientWidth
     const viewportHeight = document.documentElement.clientHeight
@@ -1346,7 +1374,14 @@ function mountWindowManager(document: Document, window: Window) {
       element.style.transform = `translate3d(${translateX}px,${translateY}px,0)`
       if (element.parentNode === null) domCache.paletteViewport.appendChild(element)
     }
-    if (values[machine.output.animationActive]! > 0) scheduleRender()
+    const renderedCellCount = domCache.paletteCells.size
+    domCache.paletteTitle.textContent =
+      `Palette (cells rendered: ${renderedCellCount})`
+    const nextRafRequested = values[machine.output.animationActive]! > 0
+    if (nextRafRequested) scheduleRender()
+    domCache.monitorRaf.textContent = nextRafRequested ? 'yes' : 'no'
+    domCache.monitorFrame.textContent =
+      `${(window.performance.now() - renderStart).toFixed(2)} ms`
   }
 
   window.addEventListener('pointerdown', (event: PointerEvent) => {

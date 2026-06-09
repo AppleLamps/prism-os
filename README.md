@@ -1,26 +1,14 @@
 # Indirect
 
-This experiment tests whether a complete interactive UI can lower into one
-fixed numeric circuit with only three runtime atoms.
+This experiment tests whether an interactive UI can lower into one fixed
+numeric circuit with only three runtime atoms.
 
-Run the browser-free checks:
-
-```sh
-bun test
-```
-
-Serve the window manager:
+Run it:
 
 ```sh
-bun start
-```
-
-Then open the URL printed by Bun.
-
-Run strict TypeScript and type-aware lint checks:
-
-```sh
-bun check
+bun start  # serve IndirectOS
+bun test   # browser-free behavior and compiler checks
+bun check  # strict TypeScript and type-aware lint
 ```
 
 The main files are:
@@ -30,20 +18,13 @@ numeric-ui-core.ts            universal numeric vocabulary and tensor backend
 numeric-ui-core.test.ts       core shape and evaluator contracts
 numeric-ui-atoms.test.ts      broad browser-free expressivity proof
 execution-model.md            exact FP32 instruction and layer semantics
-research-sweep.md             landed and parked research decisions
 boolean-state.md              rules for turning continuous scores into bits
-window-manager.ts             numeric window state machine and DOM adapter
-window-manager.test.ts        browser-free window-manager behavior proofs
-window-manager.css            fixed presentation
-index.html                    fixed four-window desktop
-photo-gallery.ts              tiny photo gallery and browser adapter
-photo-gallery.test.ts         browser-free gallery behavior checks
-photo-gallery.html            twelve fixed photo constants and CSS
-photo-gallery.css             fixed presentation and photo bindings
-photo-gallery-00..11.webp     twelve fixed image constants
+window-manager.*              IndirectOS product, presentation, and tests
+photo-gallery.*               fixed twelve-photo lightbox and tests
+research-sweep.md             landed and parked research decisions
 ```
 
-The window manager has four preallocated windows. Its single source table holds
+IndirectOS has four preallocated windows. Its single input table holds
 viewport facts, layout constants, raw pointer latches, native Palette scroll
 position, normal window geometry, open/minimized/maximized flags, drag and
 resize targets, a 4 by 4 stacking matrix, visual-presence flags, frame time,
@@ -64,7 +45,7 @@ all window and dock projection geometry
 JavaScript pointer callbacks only record raw facts and schedule one render.
 Native Palette scroll events only schedule rendering. The render supplies
 viewport dimensions, Palette `scrollTop`, and the RAF timestamp, evaluates the
-numeric program, copies its next-state wire view into the same source table,
+numeric program, copies its next-state outputs into the same input table,
 and projects the result. Palette uses one permanent spacer for native browser
 scrolling; visible cell nodes are created on demand and removed when occluded.
 A numeric animation-active output requests another frame until every spring
@@ -90,24 +71,31 @@ FP32. This gives the product one stable CPU meaning that can later be matched
 by a GPU backend. Compiled weights and biases are stored directly in
 `Float32Array`s; index arrays remain 32-bit integers.
 
-The demo validates the source table, stack mass, compiled matrices, and
-projected output after every refresh. Rendering consumes only the compiled
-tensor result. Compiler tests also run the atoms literally in FP32 and require
-every live wire to exactly match. Sparse storage omits zero coefficients while
-representing the same fixed rectangular matrices.
+The compiled program is validated once at startup. Every refresh validates its
+inputs and projected outputs, while rendering consumes only the tensor result.
+Compiler tests also run the atoms literally in FP32 and require every live wire
+to exactly match. Sparse storage omits zero coefficients while representing the
+same fixed rectangular matrices.
 
-The measured tensor footprints are:
+The current compiled footprints are:
 
 ```txt
-window manager: source 136, graph width 3,493, live values 1,826, layers 55
-                stored weights 7,982, layer tensor bytes 110,620
-photo lightbox: source 24, graph width 612, live values 365, layers 10
-                stored weights 2,311, layer tensor bytes 25,528
+IndirectOS: 136 inputs, 502 outputs, 1,690 activations
+            55 layers, maximum width 212
+            150 affine, 1,491 ReGLU, 49 boolean
+            266,572 dense weights, 7,982 stored sparse weights
+            31.9 KB weights + 12.7 KB biases + 66.0 KB bookkeeping
+
+lightbox:   24 inputs, 179 outputs, 341 activations
+            10 layers, maximum width 137
+            85 affine, 231 ReGLU, 25 boolean
+            22,947 dense weights, 2,311 stored sparse weights
+            9.2 KB weights + 2.3 KB biases + 14.0 KB bookkeeping
 ```
 
-The product's persistent source table and evaluated wire table are fixed
-`Float32Array`s. Immutable constants and changing underivable facts share the
-source table. Derived values are temporary circuit wires.
+The System Monitor reports this compiled shape and storage, plus live frame
+execution time and whether another RAF was requested. Palette reports how many
+of its 60 fixed numeric cells currently have DOM nodes.
 
 The audited runtime vocabulary has only three atoms:
 
@@ -124,28 +112,15 @@ rows explicitly so affine composition cannot remove the rounding step.
 Compile-time macros expand immediately into those atoms. They do not add other
 runtime operations.
 
-The tests compile and check:
+The tests cover:
 
 ```txt
-signed multiplication, min, max, and clamp
-exact Boolean rectangle hit and overlap resolution
-dynamic stack ordering and topmost selection
-dragging, resizing, and workspace bounds
-maximize, minimize, close, and dock restoration
-same-frame pointer event batching
-long deterministic mixed-event invariant sequences
-exact agreement between literal and compiled FP32 execution
-seeded random circuits with varied roots and dead outputs
-finite layouts down to a zero-sized viewport
+universal numeric atoms and exact Boolean decisions
+literal-versus-compiled FP32 equivalence, including seeded random circuits
+window focus, stacking, dragging, resizing, controls, and mixed event sequences
+spring convergence, dock transitions, and finite zero-sized layouts
+native Palette scrolling, responsive geometry, and DOM-node culling
 responsive twelve-slot gallery and lightbox behavior
-native Palette scrolling, responsive 3 by 20 geometry, and DOM-node culling
-direct next-state and render-output wire views
-four expanded spring substeps per lane
-window geometry destinations and recurrent spring convergence
-faster dock transitions with a 600 ms settle budget
-direct manipulation bypass and reversible dock transitions
-fixed-layout translation and scale-to-zero dock motion
-full-strength actions across visible window-control edges
 ```
 
 ## TODO

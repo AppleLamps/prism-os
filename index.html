@@ -60,7 +60,7 @@
 
     <section class="window window-monitor">
       <div class="titlebar">
-        <div class="window-title"><span class="app-dot dot-monitor"></span>Tensor Monitor</div>
+        <div class="window-title"><span class="app-dot dot-monitor"></span>System Monitor</div>
         <div class="window-controls">
           <span class="window-button minimize"></span>
           <span class="window-button maximize"></span>
@@ -68,23 +68,23 @@
         </div>
       </div>
       <div class="window-content monitor-content">
-        <div class="monitor-heading"><span>FRAME GRAPH</span><strong>LIVE</strong></div>
-        <div class="chart">
-          <i style="--h: 32%"></i><i style="--h: 48%"></i><i style="--h: 42%"></i>
-          <i style="--h: 68%"></i><i style="--h: 53%"></i><i style="--h: 76%"></i>
-          <i style="--h: 61%"></i><i style="--h: 84%"></i><i style="--h: 70%"></i>
-          <i style="--h: 92%"></i><i style="--h: 78%"></i><i style="--h: 88%"></i>
-        </div>
-        <div class="metric-row"><span>program</span><b>fixed</b></div>
-        <div class="metric-row"><span>runtime atoms</span><b>2</b></div>
-        <div class="metric-row"><span>DOM decisions</span><b>0</b></div>
+        <div class="monitor-heading"><span>COMPILED SYSTEM</span><strong>LIVE</strong></div>
+        <div class="metric-row"><span>values</span><b id="monitor-values"></b></div>
+        <div class="metric-row"><span>operations</span><b id="monitor-operations"></b></div>
+        <div class="metric-row"><span>layers</span><b id="monitor-layers"></b></div>
+        <div class="metric-row"><span>weights</span><b id="monitor-weights"></b></div>
+        <div class="metric-row"><span>memory</span><b id="monitor-memory"></b></div>
+        <div class="metric-row"><span>frame execution</span><b id="monitor-frame"></b></div>
+        <div class="metric-row"><span>next RAF</span><b id="monitor-raf"></b></div>
       </div>
       <div class="resize-grip"></div>
     </section>
 
     <section class="window window-colors">
       <div class="titlebar">
-        <div class="window-title"><span class="app-dot dot-colors"></span>Palette</div>
+        <div class="window-title">
+          <span class="app-dot dot-colors"></span><span id="palette-title">Palette</span>
+        </div>
         <div class="window-controls">
           <span class="window-button minimize"></span>
           <span class="window-button maximize"></span>
@@ -103,8 +103,6 @@
       <div class="dock-item dock-monitor"><span>M</span><i></i></div>
       <div class="dock-item dock-colors"><span>P</span><i></i></div>
     </nav>
-
-    <div id="readout"></div>
   </main>
   <script type="module" src="./window-manager.ts"></script>
 </body>
