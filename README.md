@@ -7,6 +7,7 @@ outputs to the DOM.
 ```sh
 bun start
 bun run start:candidates
+bun run start:learning
 bun test
 bun check
 ```
@@ -26,6 +27,13 @@ browser still runs one source table, one circuit, and one render loop.
 The candidate gallery is a separate experiment. Cinema, Contact, and Story all
 run against the same viewport. Each scores its smallest normalized hero, cell,
 or thumbnail; a balanced argmax tournament chooses the projected geometry.
+
+The learning gallery replaces that hard winner with a differentiable blend.
+Its fixed 20-slot circuit learns an unlabeled set of rough rectangles through
+layout blend, global transform, and per-slot presence. Training first finds the
+cheapest one-to-one target/output pairing, so editor slot identities do not
+affect the result. A capped geometry loss stops inaccurate rectangles from
+pulling the result away from the clean gallery structures.
 
 ## Runtime
 
@@ -61,6 +69,8 @@ Current fused program:
 - `photo-gallery.ts`: Photos circuit and DOM projection
 - `candidate-gallery.ts`: three-layout runtime search experiment
 - `candidate-gallery.html`: standalone candidate gallery
+- `learned-gallery.ts`: rectangle fitting, backpropagation, and DOM projection
+- `learned-gallery.html`: standalone learning gallery
 - `execution-model.md`: exact instruction and layer semantics
 - `boolean-state.md`: where exact decisions belong
 - `parallel-winner.md`: balanced selection among overlapping candidates

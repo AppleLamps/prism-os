@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Differentiable UI</title>
+  <link rel="stylesheet" href="./learned-gallery.css">
+</head>
+<body>
+  <main id="learning-demo">
+    <header class="learning-header">
+      <h1>Differentiable UI</h1>
+      <p>Backprop fits one fixed numeric gallery to a rectangle sketch.</p>
+    </header>
+
+    <section class="learning-workspace">
+      <article>
+        <h2>
+          <span>Target</span>
+          <small>Drag to move · drag corner to scale · click empty space to add · Delete to remove</small>
+        </h2>
+        <div
+          id="learning-target"
+          class="learning-stage"
+          aria-label="Editable target rectangles"
+          tabindex="0"
+        ></div>
+      </article>
+      <article>
+        <h2>Learned</h2>
+        <div id="learning-result" class="learning-stage" aria-label="Learned photo gallery"></div>
+      </article>
+    </section>
+
+    <footer class="learning-footer">
+      <div class="learning-weights">
+        <span class="learning-weight">Cinema <b></b></span>
+        <span class="learning-weight">Contact <b></b></span>
+        <span class="learning-weight">Story <b></b></span>
+      </div>
+    </footer>
+  </main>
+  <script type="module" src="./learned-gallery.ts"></script>
+</body>
+</html>

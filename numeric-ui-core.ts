@@ -151,6 +151,46 @@ export class Circuit {
     return evaluateOperationStream(source, this)
   }
 
+  backpropagateReference(
+    values: Float32Array,
+    outputGradients: Float32Array,
+  ): Float32Array {
+    const width = this.sourceSize + this.operations.length
+    invariant(values.length === width, 'forward values have the wrong length')
+    invariant(outputGradients.length === width, 'output gradients have the wrong length')
+    const gradients = new Float32Array(outputGradients)
+    // Differentiate FP32 arithmetic as real-valued; ReLU uses zero slope at its corner.
+    for (let operationIndex = this.operations.length - 1; operationIndex >= 0; operationIndex--) {
+      const operation = this.operations[operationIndex]!
+      const outputWire = this.sourceSize + operationIndex
+      const outputGradient = gradients[outputWire]!
+      if (outputGradient === 0) continue
+      if (operation.kind === 'boolean') {
+        throw new Error('cannot backpropagate through a boolean atom')
+      }
+      if (operation.kind === 'affine') {
+        accumulateTermGradients(gradients, operation.leftTerms, outputGradient)
+        continue
+      }
+      const left = evaluateTerms(values, operation.leftTerms, operation.leftBias)
+      const gate = evaluateTerms(values, operation.gateTerms, operation.gateBias)
+      const activeGate = Math.max(0, gate)
+      accumulateTermGradients(
+        gradients,
+        operation.leftTerms,
+        Math.fround(outputGradient * activeGate),
+      )
+      if (gate > 0) {
+        accumulateTermGradients(
+          gradients,
+          operation.gateTerms,
+          Math.fround(outputGradient * left),
+        )
+      }
+    }
+    return gradients
+  }
+
   evaluateTensor(source: Float32Array): Float32Array {
     this.validateSourceRanges(source)
     return evaluateTensorProgram(source, this.tensorProgram ??= this.compileTensorProgram())
@@ -534,6 +574,18 @@ function evaluateTerms(
     )
   }
   return value
+}
+
+function accumulateTermGradients(
+  gradients: Float32Array,
+  terms: Terms,
+  outputGradient: number,
+) {
+  for (const [wire, coefficient] of terms) {
+    gradients[wire] = Math.fround(
+      gradients[wire]! + Math.fround(outputGradient * Math.fround(coefficient)),
+    )
+  }
 }
 
 function evaluateBoolean(value: number): number {

@@ -172,6 +172,37 @@ test('the reference and tensor evaluators round every arithmetic step', () => {
   assert.equal(tensor[sum], 16_777_216)
 })
 
+test('reference backpropagation follows affine and ReGLU atoms', () => {
+  const circuit = new Circuit(3)
+  const output = circuit.reglu(
+    [[0, 2], [2, 1]],
+    0,
+    [[0, 3], [1, -1]],
+    0,
+  )
+  const values = circuit.evaluateReference(new Float32Array([2, 1, -1]))
+  const outputGradients = new Float32Array(values.length)
+  outputGradients[output] = 1
+  const gradients = circuit.backpropagateReference(values, outputGradients)
+
+  assert.equal(values[output], 15)
+  assert.deepEqual([...gradients.subarray(0, 3)], [19, -3, 5])
+})
+
+test('reference backpropagation rejects hard boolean decisions', () => {
+  const circuit = new Circuit(1)
+  circuit.assumeRange(0, 0, 1)
+  const output = circuit.boolean(0)
+  const values = circuit.evaluateReference(new Float32Array([0.4]))
+  const outputGradients = new Float32Array(values.length)
+  outputGradients[output] = 1
+
+  assert.throws(
+    () => circuit.backpropagateReference(values, outputGradients),
+    /cannot backpropagate through a boolean atom/,
+  )
+})
+
 test('tensor and reference evaluators both reject a wrong-sized source table', () => {
   const circuit = new Circuit(2)
   circuit.affine([[0, 1], [1, 1]])
