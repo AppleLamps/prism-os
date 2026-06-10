@@ -480,14 +480,10 @@ body {
   left: 0;
   display: grid;
   place-items: center;
-  border: 1px solid rgb(255 255 255 / 24%);
-  border-radius: 999px;
-  background: rgb(10 11 13 / 72%);
   color: white;
   font-size: 22px;
   opacity: 0;
   pointer-events: none;
-  backdrop-filter: blur(16px);
 }
 
 #dock {

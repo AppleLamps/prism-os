@@ -234,7 +234,6 @@ export class Circuit {
       const booleanRows: number[] = []
       const projectionTerms = Array<Terms>(projectionSize)
       let gateRow = 0
-      let booleanRow = 0
       for (let row = 0; row < operationIndices.length; row++) {
         const operationIndex = operationIndices[row]!
         const operation = this.operations[operationIndex]!
@@ -252,7 +251,6 @@ export class Circuit {
           gateRow++
         } else if (operation.kind === 'boolean') {
           booleanRows.push(row)
-          booleanRow++
         }
       }
       const rowOffsets = Array<number>(projectionSize + 1).fill(0)
@@ -295,24 +293,6 @@ export class Circuit {
     }
   }
 
-  stats() {
-    let affineCount = 0
-    let regluCount = 0
-    let booleanCount = 0
-    for (const operation of this.operations) {
-      if (operation.kind === 'affine') affineCount++
-      else if (operation.kind === 'reglu') regluCount++
-      else booleanCount++
-    }
-    return {
-      sourceCells: this.sourceSize,
-      temporaryCells: this.operations.length,
-      affineCount,
-      regluCount,
-      booleanCount,
-      depth: Math.max(...this.depths),
-    }
-  }
 }
 
 function unknownRange(): NumericRange {
@@ -394,14 +374,11 @@ function serializeExpression(
   gateTerms: Terms,
   gateBias: number,
 ): string {
-  return [
-    kind,
-    leftBias,
-    ...leftTerms.flatMap(([wire, coefficient]) => [wire, coefficient]),
-    '|',
-    gateBias,
-    ...gateTerms.flatMap(([wire, coefficient]) => [wire, coefficient]),
-  ].join(',')
+  const parts: (string | number)[] = [kind, leftBias]
+  for (const [wire, coefficient] of leftTerms) parts.push(wire, coefficient)
+  parts.push('|', gateBias)
+  for (const [wire, coefficient] of gateTerms) parts.push(wire, coefficient)
+  return parts.join(',')
 }
 
 function identityWire(terms: Terms, bias: number): Wire | undefined {
@@ -568,15 +545,15 @@ function evaluateBoolean(value: number): number {
 }
 
 function compactUnsignedIndices(values: ArrayLike<number>): UnsignedIndexArray {
-  const numbers = Array.from(values)
   let maximum = 0
-  for (const value of numbers) {
+  for (let index = 0; index < values.length; index++) {
+    const value = values[index]!
     invariant(Number.isInteger(value) && value >= 0, 'index must be a nonnegative integer')
     maximum = Math.max(maximum, value)
   }
-  if (maximum <= 0xff) return Uint8Array.from(numbers)
-  if (maximum <= 0xffff) return Uint16Array.from(numbers)
-  return Uint32Array.from(numbers)
+  if (maximum <= 0xff) return Uint8Array.from(values)
+  if (maximum <= 0xffff) return Uint16Array.from(values)
+  return Uint32Array.from(values)
 }
 
 export function emitRelu(circuit: Circuit, value: Wire): Wire {
@@ -609,6 +586,68 @@ export function emitMinimum(circuit: Circuit, a: Wire, b: Wire): Wire {
     Math.min(circuit.ranges[a]!.maximum, circuit.ranges[b]!.maximum),
   )
   return result
+}
+
+type WinnerNode =
+  | {mass: Wire, item: number}
+  | {mass: Wire, left: WinnerNode, right: WinnerNode}
+
+export function emitFirstActive(
+  circuit: Circuit,
+  active: Wire,
+  candidates: readonly Wire[],
+): Wire[] {
+  if (candidates.length === 0) return []
+  const activeRange = circuit.ranges[active]!
+  invariant(
+    activeRange.minimum >= 0 && activeRange.maximum <= 1,
+    'winner selection must be gated within zero and one',
+  )
+  let level = candidates.map((mass, item): WinnerNode => {
+    const range = circuit.ranges[mass]!
+    invariant(
+      range.minimum >= 0 && range.maximum <= 1,
+      'winner candidates must be within zero and one',
+    )
+    return {mass, item}
+  })
+  while (level.length > 1) {
+    const next: WinnerNode[] = []
+    for (let item = 0; item < level.length; item += 2) {
+      const left = level[item]!
+      const right = level[item + 1]
+      next.push(right === undefined
+        ? left
+        : {
+            mass: emitMaximum(circuit, left.mass, right.mass),
+            left,
+            right,
+          })
+    }
+    level = next
+  }
+
+  const root = level[0]!
+  const selected = Array<Wire>(candidates.length)
+  routeWinner(circuit, root, emitMultiply(circuit, active, root.mass), selected)
+  return selected
+}
+
+function routeWinner(
+  circuit: Circuit,
+  node: WinnerNode,
+  route: Wire,
+  selected: Wire[],
+) {
+  if ('item' in node) {
+    selected[node.item] = route
+    return
+  }
+  const leftRoute = emitMultiply(circuit, route, node.left.mass)
+  const rightRoute = circuit.affine([[route, 1], [leftRoute, -1]])
+  circuit.assumeRange(rightRoute, 0, 1)
+  routeWinner(circuit, node.left, leftRoute, selected)
+  routeWinner(circuit, node.right, rightRoute, selected)
 }
 
 export function inlineCircuit(
@@ -754,8 +793,27 @@ export function assertNonNegativeFinite(
   )
 }
 
+export function assertUnitInterval(
+  value: number | undefined,
+  label: string,
+  tolerance = 1e-9,
+): asserts value is number {
+  invariant(
+    value !== undefined
+      && Number.isFinite(value)
+      && value >= -tolerance
+      && value <= 1 + tolerance,
+    `${label} must be within zero and one, got ${value}`,
+  )
+}
+
 export function assertFiniteValues(values: Iterable<number>, label: string) {
   for (const value of values) invariant(Number.isFinite(value), `${label} contains a non-finite number`)
+}
+
+export function validateWireView(wires: readonly Wire[], size: number, wireCount: number) {
+  invariant(wires.length === size, 'output wire view has the wrong length')
+  for (const wire of wires) assertWire(wire, wireCount)
 }
 
 export function invariant(condition: unknown, message: string): asserts condition {

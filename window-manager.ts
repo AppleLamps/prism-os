@@ -3,7 +3,7 @@ import {
   type Wire,
   assertFiniteValues,
   assertNonNegativeFinite,
-  assertWire,
+  assertUnitInterval,
   emitMaximum,
   emitMinimum,
   emitMultiply,
@@ -12,6 +12,7 @@ import {
   invariant,
   validateCircuit,
   validateTensorProgram,
+  validateWireView,
 } from './numeric-ui-core.ts'
 import {
   type PhotoGalleryOutput,
@@ -1782,25 +1783,6 @@ function validateWindowManagerOutput(
       )
     }
   }
-}
-
-function validateWireView(wires: readonly Wire[], size: number, wireCount: number) {
-  invariant(wires.length === size, 'output wire view has the wrong length')
-  for (const wire of wires) assertWire(wire, wireCount)
-}
-
-function assertUnitInterval(
-  value: number | undefined,
-  label: string,
-  tolerance = 1e-9,
-): asserts value is number {
-  invariant(
-    value !== undefined
-      && Number.isFinite(value)
-      && value >= -tolerance
-      && value <= 1 + tolerance,
-    `${label} must be within zero and one, got ${value}`,
-  )
 }
 
 function assertApproximatelyOne(value: number, label: string, tolerance = 1e-8) {

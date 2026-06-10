@@ -1,107 +1,55 @@
 do not change this before asking the user
 
-1. Make behavior numeric, not just state numeric.
-Current demo proves dynamic state:
+# Ideas
 
-click x/y changes
-focused rectangle changes
-viewport changes
-Next prove dynamic behavior:
+## Dynamic behavior
 
-layoutMode = 0 -> 2x2 grid
-layoutMode = 1 -> horizontal row
-layoutMode = 2 -> vertical stack
-Same fixed executor. Same compiled circuit. Only table numbers change.
+Put layout mode, gap, enabled flags, and visibility in the source table. Change
+those numbers without recompiling, then exhaustively test a small combination
+space. This distinguishes changing behavior from ordinary changing state.
 
-2. Move app constants into the table.
-Things like gap, focused padding, columns, enabled flags, maybe colors-as-ids should become table cells. The circuit should contain fewer app-specific baked biases. This tests your “underivable sources and constants in the table” rule more honestly.
+Let an agent edit only those behavior cells for tasks such as:
 
-3. Add a tiny behavior panel.
-Not because UI controls matter, but because it forces clarity:
-
-layoutMode
-focusEnabled
-gap
-visible0..visible3
-Changing controls should mutate table numbers only. No new branches, no recompilation.
-
-4. Test behavior combinations exhaustively.
-For four rectangles, we can brute-force small modes:
-
-3 layout modes
-focus on/off
-visibility masks
-click/no click
-This becomes a crisp proof that the fixed numeric machine covers a small dynamic UI space.
-
-5. Define table cell classes.
-Still all numbers, but conceptually separate:
-
-environment: viewport, pointer
-state: focused id, click latch
-constants: gap, fixed dimensions
-behavior: layout mode, focus enabled, visibility mask
-This helps answer the dynamic state vs dynamic behavior question without adding traditional names to runtime.
-
-6. Generate UI by editing numbers, not code.
-Give an agent a target such as:
-
-put these four rectangles in a row
+```txt
+put the rectangles in a row
 hide rectangle 3
-clicking rectangle 2 should reveal rectangle 3
-Then let it modify only behavior cells in the table. The executor never changes. This tests the thesis directly: can an agent make a UI by manipulating numeric state rather than emitting JavaScript?
+make selecting rectangle 2 reveal rectangle 3
+```
 
-7. Store relations, not just properties.
-Your `n*n` idea becomes useful when it means something concrete:
+## Relations
 
-row i, column j = how much item i is affected by item j
-Examples:
+Try a fixed `n*n` relation table where cell `(i, j)` says how much item `j`
+affects item `i`: covers it, pushes it, reveals it, or follows it in keyboard
+focus.
 
-j covers i
-j pushes i in layout
-clicking j reveals i
-j is the next keyboard-focus item after i
-For four rectangles that is a tiny fixed relation table. Then the same executor could derive occlusion, grouping, navigation, reveal behavior, and perhaps layout pressure from numeric relationships.
+Then change only relation numbers to turn the same slots into a row, stack,
+tabs, or a parent with revealed children.
 
-That is more interesting than merely storing left, top, visible.
+## Candidate futures
 
-8. Make one UI whose structure changes through relations.
-A good demo could start as four independent rectangles, then by changing numbers only become:
+Evaluate several next source tables together:
 
-a stack where one covers another
-a row where items push each other
-tabs where selecting one reveals its panel
-a parent item that reveals two children
-No tree objects. No app-specific helper names. Just slots plus relation numbers plus the universal executor.
-
-9. Batch possible futures.
-This is particularly machine-friendly: evaluate several possible next tables at once.
-
+```txt
 candidate 0 = focus item 1
 candidate 1 = focus item 2
 candidate 2 = expand group
-candidate 3 = change layout
-An agent or scoring rule picks one result. That begins to resemble model-style inference: propose several numeric futures, score them, commit one.
+```
 
-10. Add hard validity channels.
-If an agent is editing raw numbers, the machine should compute whether the resulting UI is valid:
+Score them and commit one. This becomes useful once batching has a real backend.
 
-no negative sizes
-no forbidden overlap
-one focused item maximum
-click targets visible
-content remains on screen
-This is important: the format becomes editable by machines only if wrong edits are quickly detectable.
+## Validity outputs
 
-11. Try inverse layout.
-Instead of coding “row layout,” specify desired output:
+When machines edit raw numbers, compute clear validity results: nonnegative
+sizes, at most one focused item, visible click targets, allowed overlap, and
+content bounds.
 
-rectangle centers should be evenly spaced
-all visible rectangles should fit in viewport
-selected rectangle should occupy most area
+## Inverse layout
 
-12. Revisit numeric representation when precision becomes a real constraint.
-The table currently uses ordinary floating-point numbers. Fixed-point, bounded
-ranges, or mixed representations may become useful if a future derivation
-requires exact thresholds or reproducible arithmetic, but no current behavior
-depends on that choice.
+Specify output goals instead of a named layout algorithm: even spacing, fit in
+the viewport, or give the selected item most of the area. Test whether numeric
+optimization can find useful source or behavior values.
+
+## Representation
+
+Revisit fixed point, bounded ranges, mixed representations, and dynamic
+division only when a concrete derivation needs them.

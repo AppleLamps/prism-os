@@ -3,13 +3,16 @@ import {
   type Wire,
   assertFiniteValues,
   assertNonNegativeFinite,
+  assertUnitInterval,
   assertWire,
+  emitFirstActive,
   emitMinimum,
   emitMultiply,
   emitRelu,
   invariant,
   validateCircuit,
   validateTensorProgram,
+  validateWireView,
 } from './numeric-ui-core.ts'
 
 export const itemCount = 12
@@ -45,15 +48,7 @@ export const photoField = {
   size: 6,
 }
 
-export const thumbnailField = {
-  left: 0,
-  top: 1,
-  width: 2,
-  height: 3,
-  opacity: 4,
-  focused: 5,
-  size: 6,
-}
+export const thumbnailField = photoField
 
 export const controlField = {
   left: 0,
@@ -325,11 +320,12 @@ export function createPhotoGalleryCircuit() {
   const clickActive = effectiveEvents[0]!
   const clickGridGate = emitMultiply(circuit, clickActive, previousGridMass)
   const focusedClick = emitMultiply(circuit, clickActive, previousFocusMass)
+  circuit.assumeRange(focusedClick, 0, 1)
   const [
     previousControlClick,
     nextControlClick,
     ...focusedSurfaceClicks
-  ] = emitPrioritizedHits(
+  ] = emitFirstActive(
     circuit,
     focusedClick,
     [previousControlHit, nextControlHit, ...thumbnailHit, mainHit],
@@ -405,23 +401,7 @@ export function createPhotoGalleryCircuit() {
     ...nextFocus,
     sourceField.present,
     sourceField.interactive,
-  ].map(wire => circuit.affine([[wire, 1]]))
-  const photoOutput = photos.flatMap(photo => [
-    photo.left,
-    photo.top,
-    photo.width,
-    photo.height,
-    photo.opacity,
-    photo.focused,
-  ])
-  const thumbnailOutput = thumbnailProjections.flatMap(thumbnail => [
-    thumbnail.left,
-    thumbnail.top,
-    thumbnail.width,
-    thumbnail.height,
-    thumbnail.opacity,
-    thumbnail.focused,
-  ])
+  ]
   const previousControlOutput = [
     previousControl.left,
     previousControl.top,
@@ -442,8 +422,8 @@ export function createPhotoGalleryCircuit() {
     output: {
       nextSource,
       backdropOpacity: emitMultiply(circuit, sourceField.present, nextFocusMass),
-      photos: photoOutput,
-      thumbnails: thumbnailOutput,
+      photos: flattenProjections(photos),
+      thumbnails: flattenProjections(thumbnailProjections),
       previousControl: previousControlOutput,
       nextControl: nextControlOutput,
     },
@@ -535,6 +515,21 @@ function thumbnailSpread(distance: number) {
   return spread
 }
 
+function flattenProjections(projections: readonly PhotoProjection[]) {
+  const output: Wire[] = []
+  for (const projection of projections) {
+    output.push(
+      projection.left,
+      projection.top,
+      projection.width,
+      projection.height,
+      projection.opacity,
+      projection.focused,
+    )
+  }
+  return output
+}
+
 export function createPhotoGalleryRenderer(document: Document, root: HTMLElement) {
   const backdrop = root.querySelector<HTMLElement>('.photos-backdrop')
   const previousControl = root.querySelector<HTMLElement>('.photos-previous')
@@ -542,9 +537,6 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
   invariant(backdrop !== null, 'backdrop is missing')
   invariant(previousControl !== null, 'previous control is missing')
   invariant(nextControl !== null, 'next control is missing')
-  const backdropElement = backdrop
-  const previousControlElement = previousControl
-  const nextControlElement = nextControl
   const photoElements = Array<HTMLElement | null>(itemCount).fill(null)
   const thumbnailElements = Array<HTMLElement | null>(itemCount).fill(null)
 
@@ -609,7 +601,7 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
 
   return {
     render(values: Float32Array, output: PhotoGalleryOutput) {
-      backdropElement.style.opacity = `${values[output.backdropOpacity]}`
+      backdrop.style.opacity = `${values[output.backdropOpacity]}`
       for (let item = 0; item < itemCount; item++) {
         projectItem(
           photoElements,
@@ -628,11 +620,11 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
           'thumbnail',
         )
       }
-      projectGeometry(previousControlElement, values, output.previousControl)
-      projectGeometry(nextControlElement, values, output.nextControl)
-      previousControlElement.style.opacity =
+      projectGeometry(previousControl, values, output.previousControl)
+      projectGeometry(nextControl, values, output.nextControl)
+      previousControl.style.opacity =
         `${values[output.previousControl[controlField.opacity]!]}`
-      nextControlElement.style.opacity =
+      nextControl.style.opacity =
         `${values[output.nextControl[controlField.opacity]!]}`
     },
   }
@@ -652,20 +644,6 @@ function emitRectangleHit(circuit: Circuit, geometry: Geometry): Wire {
     geometry.height,
   )
   return emitMinimum(circuit, horizontalHit, verticalHit)
-}
-
-function emitPrioritizedHits(
-  circuit: Circuit,
-  active: Wire,
-  hits: readonly Wire[],
-): Wire[] {
-  let remaining = active
-  return hits.map((hit) => {
-    const selected = emitMultiply(circuit, remaining, hit)
-    remaining = circuit.affine([[remaining, 1], [selected, -1]])
-    circuit.assumeRange(remaining, 0, 1)
-    return selected
-  })
 }
 
 function emitIntervalHit(circuit: Circuit, position: Wire, start: Wire, size: Wire): Wire {
@@ -782,31 +760,12 @@ export function validatePhotoGalleryOutput(
   }
 }
 
-function validateWireView(wires: readonly Wire[], size: number, wireCount: number) {
-  invariant(wires.length === size, 'output wire view has the wrong length')
-  for (const wire of wires) assertWire(wire, wireCount)
-}
-
 function emitClampZeroOne(circuit: Circuit, value: Wire): Wire {
   const positive = emitRelu(circuit, value)
   const aboveOne = emitRelu(circuit, circuit.affine([[value, 1]], -1))
   const result = circuit.affine([[positive, 1], [aboveOne, -1]])
   circuit.assumeRange(result, 0, 1)
   return result
-}
-
-function assertUnitInterval(
-  value: number | undefined,
-  label: string,
-  tolerance = 1e-9,
-): asserts value is number {
-  invariant(
-    value !== undefined
-      && Number.isFinite(value)
-      && value >= -tolerance
-      && value <= 1 + tolerance,
-    `${label} must be within 0..1, got ${value}`,
-  )
 }
 
 function assertBit(value: number | undefined, label: string): asserts value is number {

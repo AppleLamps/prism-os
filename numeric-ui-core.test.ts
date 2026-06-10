@@ -4,6 +4,7 @@ import {
   Circuit,
   type Terms,
   type Wire,
+  emitFirstActive,
   inlineCircuit,
   validateCircuit,
   validateTensorEvaluation,
@@ -84,6 +85,40 @@ test('compiled indices use the smallest safe unsigned width', () => {
   assert.ok(largeProgram.roots instanceof Uint32Array)
   assert.ok(largeProgram.wireOrder instanceof Uint32Array)
   assert.ok(largeProgram.layers[0]!.inputIndices instanceof Uint32Array)
+})
+
+test('first-active selection resolves ordered candidates through a balanced tree', () => {
+  const candidateCount = 16
+  const circuit = new Circuit(candidateCount + 1)
+  for (let wire = 0; wire < circuit.sourceSize; wire++) circuit.assumeRange(wire, 0, 1)
+  const selected = emitFirstActive(
+    circuit,
+    0,
+    Array.from({length: candidateCount}, (_, item) => item + 1),
+  )
+  circuit.tensorProgram = circuit.compileTensorProgram(selected)
+
+  for (const [active, hits, winner] of [
+    [1, [0], 0],
+    [1, [2, 5], 2],
+    [1, [1, 3, 14], 1],
+    [1, [15], 15],
+    [0, Array.from({length: candidateCount}, (_, item) => item), -1],
+  ] as const) {
+    const source = new Float32Array(circuit.sourceSize)
+    source[0] = active
+    for (const hit of hits) source[hit + 1] = 1
+    const values = circuit.evaluateTensor(source)
+    assert.deepEqual(
+      selected.map(wire => values[wire]),
+      selected.map((_, item) => Number(item === winner)),
+    )
+  }
+
+  assert.ok(
+    circuit.tensorProgram.layers.length
+      <= 2 * Math.ceil(Math.log2(candidateCount)) + 2,
+  )
 })
 
 test('the reference and tensor evaluators round every arithmetic step', () => {
