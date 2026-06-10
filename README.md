@@ -8,6 +8,7 @@ outputs to the DOM.
 bun start
 bun run start:candidates
 bun run start:learning
+bun run generate:weights
 bun test
 bun check
 ```
@@ -71,6 +72,8 @@ Current fused program:
 - `candidate-gallery.html`: standalone candidate gallery
 - `learned-gallery.ts`: rectangle fitting, backpropagation, and DOM projection
 - `learned-gallery.html`: standalone learning gallery
+- `indirect-os-weights.html`: single-file IndirectOS with compiled tensors inlined
+- `generate-indirect-os-weights.ts`: regenerates the standalone compiled demo
 - `execution-model.md`: exact instruction and layer semantics
 - `boolean-state.md`: where exact decisions belong
 - `parallel-winner.md`: balanced selection among overlapping candidates
