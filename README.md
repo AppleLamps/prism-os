@@ -6,6 +6,7 @@ outputs to the DOM.
 
 ```sh
 bun start
+bun run start:candidates
 bun test
 bun check
 ```
@@ -21,6 +22,10 @@ constants. One compiled circuit handles:
 
 Photos is authored separately, then inlined before the system compiles. The
 browser still runs one source table, one circuit, and one render loop.
+
+The candidate gallery is a separate experiment. Cinema, Contact, and Story all
+run against the same viewport. Each scores its smallest normalized hero, cell,
+or thumbnail; a balanced argmax tournament chooses the projected geometry.
 
 ## Runtime
 
@@ -54,14 +59,18 @@ Current fused program:
 - `numeric-ui-core.ts`: circuit construction, compilation, and execution
 - `window-manager.ts`: IndirectOS circuit and DOM projection
 - `photo-gallery.ts`: Photos circuit and DOM projection
+- `candidate-gallery.ts`: three-layout runtime search experiment
+- `candidate-gallery.html`: standalone candidate gallery
 - `execution-model.md`: exact instruction and layer semantics
 - `boolean-state.md`: where exact decisions belong
+- `parallel-winner.md`: balanced selection among overlapping candidates
 - `research-sweep.md`: landed and parked experiments
 - `ideas.md`: unexplored directions
 
 Tests compare the literal and compiled FP32 evaluators, including seeded random
 circuits. Product tests cover window interactions, stacking, springs, tiny
-viewports, Photos focus, overlapping controls, and DOM culling.
+viewports, Photos focus, candidate layout search, overlapping controls, and DOM
+culling.
 
 ## TODO
 

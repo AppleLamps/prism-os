@@ -671,6 +671,77 @@ type WinnerNode =
   | {mass: Wire, item: number}
   | {mass: Wire, left: WinnerNode, right: WinnerNode}
 
+type ArgmaxNode =
+  | {score: Wire, item: number}
+  | {score: Wire, leftWins: Wire, left: ArgmaxNode, right: ArgmaxNode}
+
+export function emitArgmax(
+  circuit: Circuit,
+  scores: readonly Wire[],
+  unit: Wire,
+): {selected: Wire[], score: Wire} {
+  invariant(scores.length > 0, 'argmax needs at least one score')
+  const unitRange = circuit.ranges[unit]!
+  invariant(unitRange.minimum === 1 && unitRange.maximum === 1, 'argmax unit must equal one')
+  let level = scores.map((score, item): ArgmaxNode => {
+    const range = circuit.ranges[score]!
+    invariant(
+      range.minimum >= 0 && range.maximum <= 1,
+      'argmax scores must be within zero and one',
+    )
+    return {score, item}
+  })
+  while (level.length > 1) {
+    const next: ArgmaxNode[] = []
+    for (let item = 0; item < level.length; item += 2) {
+      const left = level[item]!
+      const right = level[item + 1]
+      if (right === undefined) {
+        next.push(left)
+        continue
+      }
+      // One FP32 step above 0.5 makes exact ties choose left without exceeding 1.
+      const comparisonBias = 0.5000000596046448
+      const comparisonScale = 0.4999999403953552
+      const comparison = circuit.affine([
+        [left.score, comparisonScale],
+        [right.score, -comparisonScale],
+      ], comparisonBias)
+      circuit.assumeRange(comparison, 0, 1)
+      const leftWins = circuit.boolean(comparison)
+      next.push({
+        score: emitSelect(circuit, leftWins, right.score, left.score),
+        leftWins,
+        left,
+        right,
+      })
+    }
+    level = next
+  }
+
+  const root = level[0]!
+  const selected = Array<Wire>(scores.length)
+  routeArgmax(circuit, root, unit, selected)
+  return {selected, score: root.score}
+}
+
+function routeArgmax(
+  circuit: Circuit,
+  node: ArgmaxNode,
+  route: Wire,
+  selected: Wire[],
+) {
+  if ('item' in node) {
+    selected[node.item] = route
+    return
+  }
+  const leftRoute = emitMultiply(circuit, route, node.leftWins)
+  const rightRoute = circuit.affine([[route, 1], [leftRoute, -1]])
+  circuit.assumeRange(rightRoute, 0, 1)
+  routeArgmax(circuit, node.left, leftRoute, selected)
+  routeArgmax(circuit, node.right, rightRoute, selected)
+}
+
 export function emitFirstActive(
   circuit: Circuit,
   active: Wire,

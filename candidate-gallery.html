@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dynamic UI</title>
+  <link rel="stylesheet" href="./candidate-gallery.css">
+</head>
+<body>
+  <main id="candidate-experiment">
+    <header class="experiment-header">
+      <h1>Dynamic UI</h1>
+    </header>
+
+    <section id="candidate-stage" aria-label="Adaptive photo gallery">
+      <div id="candidate-hero-layer" aria-hidden="true">
+        <div id="candidate-hero"><span id="candidate-hero-title"></span></div>
+      </div>
+    </section>
+
+    <footer class="experiment-footer">
+      <div class="candidate-scores">
+        <article>
+          <span>Cinema</span><b></b>
+        </article>
+        <article>
+          <span>Contact</span><b></b>
+        </article>
+        <article>
+          <span>Story</span><b></b>
+        </article>
+      </div>
+      <aside class="winner-readout">
+        <span>selected</span>
+        <strong id="winner-name"></strong>
+        <small><b id="winner-score"></b> quality</small>
+      </aside>
+    </footer>
+  </main>
+  <script type="module" src="./candidate-gallery.ts"></script>
+</body>
+</html>

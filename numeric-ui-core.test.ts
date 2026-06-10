@@ -4,6 +4,7 @@ import {
   Circuit,
   type Terms,
   type Wire,
+  emitArgmax,
   emitFirstActive,
   inlineCircuit,
   validateCircuit,
@@ -118,6 +119,43 @@ test('first-active selection resolves ordered candidates through a balanced tree
   assert.ok(
     circuit.tensorProgram.layers.length
       <= 2 * Math.ceil(Math.log2(candidateCount)) + 2,
+  )
+})
+
+test('argmax resolves continuous scores through a balanced tree', () => {
+  const candidateCount = 7
+  const circuit = new Circuit(candidateCount + 1)
+  for (let wire = 0; wire < candidateCount; wire++) circuit.assumeRange(wire, 0, 1)
+  circuit.assumeRange(candidateCount, 1, 1)
+  const winner = emitArgmax(
+    circuit,
+    Array.from({length: candidateCount}, (_, item) => item),
+    candidateCount,
+  )
+  circuit.tensorProgram = circuit.compileTensorProgram([
+    ...winner.selected,
+    winner.score,
+  ])
+
+  for (const [scores, winnerIndex] of [
+    [[0.1, 0.7, 0.2, 0.4, 0.3, 0.6, 0.5], 1],
+    [[0.8, 0.2, 0.8, 0.4, 0.8, 0.6, 0.5], 0],
+    [[0, 0, 0, 0, 0, 0, 0], 0],
+  ] as const) {
+    const source = Float32Array.from([...scores, 1])
+    const values = circuit.evaluateTensor(source)
+    assert.deepEqual(
+      winner.selected.map(wire => values[wire]),
+      winner.selected.map((_, item) => Number(item === winnerIndex)),
+    )
+    assert.ok(
+      Math.abs(values[winner.score]! - Math.fround(scores[winnerIndex])) < 1e-6,
+    )
+  }
+
+  assert.ok(
+    circuit.tensorProgram.layers.length
+      <= 2 * Math.ceil(Math.log2(candidateCount)) + 3,
   )
 })
 

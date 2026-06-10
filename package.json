@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "bun ./index.html",
+    "start:candidates": "bun ./candidate-gallery.html",
     "check": "tsgo && oxlint --type-aware *.ts",
     "test": "bun test"
   },
