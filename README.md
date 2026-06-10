@@ -29,12 +29,12 @@ The candidate gallery is a separate experiment. Cinema, Contact, and Story all
 run against the same viewport. Each scores its smallest normalized hero, cell,
 or thumbnail; a balanced argmax tournament chooses the projected geometry.
 
-The learning gallery replaces that hard winner with a differentiable blend.
-Its fixed 20-slot circuit learns an unlabeled set of rough rectangles through
-layout blend, global transform, and per-slot presence. Training first finds the
-cheapest one-to-one target/output pairing, so editor slot identities do not
-affect the result. A capped geometry loss stops inaccurate rectangles from
-pulling the result away from the clean gallery structures.
+The learning gallery trains a small geometry network rather than choosing among
+authored layouts. Its 244 coefficients define two shared ReGLU layers that map
+fixed slot positions to rectangle geometry. Training pairs the unlabeled target
+and output sets, then backpropagates coordinate and soft shared-edge losses.
+Small alignment mistakes snap toward repeated edges, while deliberate offsets
+and layouts absent from the product source remain learnable.
 
 ## Runtime
 
@@ -70,6 +70,7 @@ Current fused program:
 - `photo-gallery.ts`: Photos circuit and DOM projection
 - `candidate-gallery.ts`: three-layout runtime search experiment
 - `candidate-gallery.html`: standalone candidate gallery
+- `trainable-geometry.ts`: learned affine/ReGLU geometry network and optimizer
 - `learned-gallery.ts`: rectangle fitting, backpropagation, and DOM projection
 - `learned-gallery.html`: standalone learning gallery
 - `indirect-os-weights.html`: single-file IndirectOS with compiled tensors inlined

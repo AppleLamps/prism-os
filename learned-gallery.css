@@ -183,6 +183,7 @@ body {
   font-size: 15px;
   font-weight: 650;
   text-shadow: 0 2px 12px rgb(0 0 0 / 75%);
+  opacity: 0;
 }
 
 .image-0 { background-image: url("./photo-gallery-00.webp"); }
@@ -199,21 +200,14 @@ body {
 .image-11 { background-image: url("./photo-gallery-11.webp"); }
 
 .learning-footer {
+  display: flex;
+  gap: 16px;
+  color: rgb(245 240 231 / 46%);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 10px;
 }
 
-.learning-weights {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.learning-weight {
-  color: rgb(245 240 231 / 46%);
-}
-
-.learning-weight b {
+.learning-footer b {
   color: #f5f0e7;
   font-weight: 500;
 }

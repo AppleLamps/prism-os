@@ -10,7 +10,7 @@
   <main id="learning-demo">
     <header class="learning-header">
       <h1>Differentiable UI</h1>
-      <p>Backprop fits one fixed numeric gallery to a rectangle sketch.</p>
+      <p>Backprop learns the geometry network itself from a rectangle sketch.</p>
     </header>
 
     <section class="learning-workspace">
@@ -33,11 +33,8 @@
     </section>
 
     <footer class="learning-footer">
-      <div class="learning-weights">
-        <span class="learning-weight">Cinema <b></b></span>
-        <span class="learning-weight">Contact <b></b></span>
-        <span class="learning-weight">Story <b></b></span>
-      </div>
+      <span><b id="learning-coefficients"></b> trainable coefficients</span>
+      <span>loss <b id="learning-loss"></b></span>
     </footer>
   </main>
   <script type="module" src="./learned-gallery.ts"></script>
