@@ -12,6 +12,7 @@ mode, or runtime.
 - Photo nodes attach only while numeric size and opacity are positive.
 - Compiler indexes use the smallest safe 8, 16, or 32-bit storage.
 - Static winner priority uses a balanced reduction instead of a serial scan.
+- Photos keeps thumbnail center and scale springs in the shared source table.
 - The compiler already performs affine composition, aliases, constant folding,
   common-expression merging, dead-value removal, compact layer inputs, sparse
   weights, and basic range reasoning.

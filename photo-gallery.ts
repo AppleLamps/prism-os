@@ -6,9 +6,12 @@ import {
   assertUnitInterval,
   assertWire,
   emitFirstActive,
+  emitMaximum,
   emitMinimum,
   emitMultiply,
   emitRelu,
+  emitSelect,
+  emitSpring,
   invariant,
   validateCircuit,
   validateTensorProgram,
@@ -18,6 +21,14 @@ import {
 export const itemCount = 12
 export const columnCount = 4
 export const rowCount = 3
+
+export const thumbnailSpringField = {
+  centerX: 0,
+  centerXVelocity: 1,
+  scale: 2,
+  scaleVelocity: 3,
+  size: 4,
+} as const
 
 export const sourceField = {
   viewportWidth: 0,
@@ -35,7 +46,16 @@ export const sourceField = {
   focusStart: 12,
   present: 24,
   interactive: 25,
-  size: 26,
+  unit: 26,
+  springTimestep: 27,
+  springStiffness: 28,
+  springDamping: 29,
+  springSettleDistance: 30,
+  springSettleSpeed: 31,
+  springSettleDistanceScale: 32,
+  springSettleSpeedScale: 33,
+  thumbnailSpringStart: 34,
+  size: 34 + itemCount * thumbnailSpringField.size,
 }
 
 export const photoField = {
@@ -74,9 +94,16 @@ type PhotoProjection = Geometry & {
   focused: Wire
 }
 
+type ThumbnailTarget = {
+  centerX: Wire
+  scale: Wire
+  focused: Wire
+}
+
 export type PhotoGalleryOutput = {
   nextSource: Wire[]
   backdropOpacity: Wire
+  animationActive: Wire
   photos: Wire[]
   thumbnails: Wire[]
   previousControl: Wire[]
@@ -102,6 +129,15 @@ export function focusField(item: number) {
   return sourceField.focusStart + item
 }
 
+export function thumbnailSpringSourceField(item: number, field: number) {
+  invariant(Number.isInteger(item) && item >= 0 && item < itemCount, 'photo index is invalid')
+  invariant(
+    Number.isInteger(field) && field >= 0 && field < thumbnailSpringField.size,
+    'thumbnail spring field is invalid',
+  )
+  return sourceField.thumbnailSpringStart + item * thumbnailSpringField.size + field
+}
+
 export function createPhotoGalleryCircuit() {
   const circuit = new Circuit(sourceField.size)
   for (const field of [
@@ -117,7 +153,31 @@ export function createPhotoGalleryCircuit() {
   for (const field of eventFields) circuit.assumeRange(field, 0, 1)
   circuit.assumeRange(sourceField.present, 0, 1)
   circuit.assumeRange(sourceField.interactive, 0, 1)
+  circuit.assumeRange(sourceField.unit, 1, 1)
+  for (const field of [
+    sourceField.springTimestep,
+    sourceField.springStiffness,
+    sourceField.springDamping,
+    sourceField.springSettleDistance,
+    sourceField.springSettleSpeed,
+    sourceField.springSettleDistanceScale,
+    sourceField.springSettleSpeedScale,
+  ]) {
+    circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
+  }
   for (let item = 0; item < itemCount; item++) circuit.assumeRange(focusField(item), 0, 1)
+  for (let item = 0; item < itemCount; item++) {
+    circuit.assumeRange(
+      thumbnailSpringSourceField(item, thumbnailSpringField.centerX),
+      0,
+      Number.POSITIVE_INFINITY,
+    )
+    circuit.assumeRange(
+      thumbnailSpringSourceField(item, thumbnailSpringField.scale),
+      0,
+      1,
+    )
+  }
   const zero = circuit.affine([])
   const gridWidth = emitRelu(
     circuit,
@@ -205,14 +265,8 @@ export function createPhotoGalleryCircuit() {
     [sourceField.gap, -1],
     [thumbnailBaseSize, -0.5],
   ])
-  const thumbnailBaseScale = emitMultiply(
-    circuit,
-    thumbnailBaseSize,
-    sourceField.present,
-  )
-
-  function projectThumbnails(focus: readonly Wire[], focusMass: Wire) {
-    const result: PhotoProjection[] = []
+  function projectThumbnailTargets(focus: readonly Wire[], focusMass: Wire) {
+    const result: ThumbnailTarget[] = []
     for (let item = 0; item < itemCount; item++) {
       const offsetTerms: [Wire, number][] = []
       const distanceTerms: [Wire, number][] = []
@@ -239,29 +293,37 @@ export function createPhotoGalleryCircuit() {
         [focusMass, 1],
         [distance, -0.22],
       ]))
-      const scale = emitMultiply(circuit, sourceField.present, falloff)
-      const size = emitMultiply(circuit, thumbnailBaseSize, scale)
       const centerX = circuit.affine([
         [sourceField.viewportWidth, 0.5],
-        [emitMultiply(circuit, thumbnailBaseScale, spread), 1],
+        [emitMultiply(circuit, thumbnailBaseSize, spread), 1],
         [emitMultiply(circuit, thumbnailGap, offset), 1],
       ])
       result.push({
-        left: circuit.affine([[centerX, 1], [size, -0.5]]),
-        top: emitRelu(circuit, circuit.affine([[thumbnailCenterY, 1], [size, -0.5]])),
-        width: size,
-        height: size,
-        opacity: scale,
+        centerX,
+        scale: falloff,
         focused: focus[item]!,
       })
     }
     return result
   }
 
-  const currentThumbnails = projectThumbnails(previousFocus, previousFocusMass)
+  function projectThumbnail(target: ThumbnailTarget): PhotoProjection {
+    const visibleScale = emitMultiply(circuit, sourceField.present, target.scale)
+    const size = emitMultiply(circuit, thumbnailBaseSize, visibleScale)
+    return {
+      left: circuit.affine([[target.centerX, 1], [size, -0.5]]),
+      top: emitRelu(circuit, circuit.affine([[thumbnailCenterY, 1], [size, -0.5]])),
+      width: size,
+      height: size,
+      opacity: visibleScale,
+      focused: target.focused,
+    }
+  }
+
+  const currentThumbnailTargets = projectThumbnailTargets(previousFocus, previousFocusMass)
   const thumbnailHit: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
-    thumbnailHit.push(emitRectangleHit(circuit, currentThumbnails[item]!))
+    thumbnailHit.push(emitRectangleHit(circuit, projectThumbnail(currentThumbnailTargets[item]!)))
   }
 
   const controlTop = emitRelu(circuit, circuit.affine([
@@ -269,8 +331,9 @@ export function createPhotoGalleryCircuit() {
     [main.height, 0.5],
     [sourceField.controlSize, -0.5],
   ]))
+  const controlInset = circuit.affine([[sourceField.gap, 0.5]])
   const previousControl: Geometry = {
-    left: sourceField.gap,
+    left: controlInset,
     top: controlTop,
     width: sourceField.controlSize,
     height: sourceField.controlSize,
@@ -278,7 +341,7 @@ export function createPhotoGalleryCircuit() {
   const nextControl: Geometry = {
     left: emitRelu(circuit, circuit.affine([
       [sourceField.viewportWidth, 1],
-      [sourceField.gap, -1],
+      [controlInset, -1],
       [sourceField.controlSize, -1],
     ])),
     top: controlTop,
@@ -362,7 +425,89 @@ export function createPhotoGalleryCircuit() {
   const projectedGridWidth = emitMultiply(circuit, nextGridMass, gridWidth)
   const projectedGridHeight = emitMultiply(circuit, nextGridMass, gridHeight)
   const photos: PhotoProjection[] = []
-  const thumbnailProjections = projectThumbnails(nextFocus, nextFocusMass)
+  const thumbnailTargets = projectThumbnailTargets(nextFocus, nextFocusMass)
+  const animateThumbnails = emitMultiply(circuit, previousFocusMass, nextFocusMass)
+  const snapThumbnails = circuit.affine([[animateThumbnails, -1]], 1)
+  const thumbnailProjections: PhotoProjection[] = []
+  const thumbnailAnimationTerms: [Wire, number][] = []
+  const nextThumbnailSprings: Wire[][] = []
+  for (let item = 0; item < itemCount; item++) {
+    const target = thumbnailTargets[item]!
+    const centerSpring = emitSpring(
+      circuit,
+      thumbnailSpringSourceField(item, thumbnailSpringField.centerX),
+      target.centerX,
+      thumbnailSpringSourceField(item, thumbnailSpringField.centerXVelocity),
+      sourceField.springStiffness,
+      sourceField.springDamping,
+      sourceField.springTimestep,
+      sourceField.springSettleDistance,
+      sourceField.springSettleSpeed,
+      sourceField.springSettleDistanceScale,
+      sourceField.springSettleSpeedScale,
+      sourceField.unit,
+    )
+    const scaleSpring = emitSpring(
+      circuit,
+      thumbnailSpringSourceField(item, thumbnailSpringField.scale),
+      target.scale,
+      thumbnailSpringSourceField(item, thumbnailSpringField.scaleVelocity),
+      sourceField.springStiffness,
+      sourceField.springDamping,
+      sourceField.springTimestep,
+      sourceField.springSettleDistance,
+      sourceField.springSettleSpeed,
+      sourceField.springSettleDistanceScale,
+      sourceField.springSettleSpeedScale,
+      sourceField.unit,
+    )
+    const centerX = emitSelect(
+      circuit,
+      snapThumbnails,
+      emitMinimum(
+        circuit,
+        emitMaximum(circuit, zero, centerSpring.position),
+        sourceField.viewportWidth,
+      ),
+      target.centerX,
+    )
+    const scale = emitSelect(
+      circuit,
+      snapThumbnails,
+      emitMinimum(
+        circuit,
+        emitMaximum(circuit, zero, scaleSpring.position),
+        sourceField.unit,
+      ),
+      target.scale,
+    )
+    const centerVelocity = emitSelect(
+      circuit,
+      snapThumbnails,
+      centerSpring.velocity,
+      zero,
+    )
+    const scaleVelocity = emitSelect(
+      circuit,
+      snapThumbnails,
+      scaleSpring.velocity,
+      zero,
+    )
+    nextThumbnailSprings.push([centerX, centerVelocity, scale, scaleVelocity])
+    thumbnailProjections.push(projectThumbnail({
+      centerX,
+      scale,
+      focused: target.focused,
+    }))
+    thumbnailAnimationTerms.push(
+      [emitMultiply(circuit, animateThumbnails, centerSpring.active), 1],
+      [emitMultiply(circuit, animateThumbnails, scaleSpring.active), 1],
+    )
+  }
+  const animationActive = emitClampZeroOne(
+    circuit,
+    circuit.affine(thumbnailAnimationTerms),
+  )
   for (let item = 0; item < itemCount; item++) {
     const column = item % columnCount
     const row = Math.floor(item / columnCount)
@@ -385,23 +530,15 @@ export function createPhotoGalleryCircuit() {
     })
   }
 
-  const nextSource = [
-    sourceField.viewportWidth,
-    sourceField.viewportHeight,
-    sourceField.gap,
-    sourceField.mainInset,
-    sourceField.thumbnailHeight,
-    sourceField.controlSize,
-    zero,
-    sourceField.clickX,
-    sourceField.clickY,
-    zero,
-    zero,
-    zero,
-    ...nextFocus,
-    sourceField.present,
-    sourceField.interactive,
-  ]
+  const nextSource = Array.from({length: sourceField.size}, (_, field) => field)
+  for (const eventField of eventFields) nextSource[eventField] = zero
+  for (let item = 0; item < itemCount; item++) {
+    nextSource[focusField(item)] = nextFocus[item]!
+    const spring = nextThumbnailSprings[item]!
+    for (let field = 0; field < thumbnailSpringField.size; field++) {
+      nextSource[thumbnailSpringSourceField(item, field)] = spring[field]!
+    }
+  }
   const previousControlOutput = [
     previousControl.left,
     previousControl.top,
@@ -422,6 +559,7 @@ export function createPhotoGalleryCircuit() {
     output: {
       nextSource,
       backdropOpacity: emitMultiply(circuit, sourceField.present, nextFocusMass),
+      animationActive,
       photos: flattenProjections(photos),
       thumbnails: flattenProjections(thumbnailProjections),
       previousControl: previousControlOutput,
@@ -438,12 +576,21 @@ export function createPhotoGalleryMachine() {
   source[sourceField.controlSize] = 52
   source[sourceField.present] = 1
   source[sourceField.interactive] = 1
+  source[sourceField.unit] = 1
+  source[sourceField.springTimestep] = 0.004
+  source[sourceField.springStiffness] = 650
+  source[sourceField.springDamping] = 45
+  source[sourceField.springSettleDistance] = 0.01
+  source[sourceField.springSettleSpeed] = 0.01
+  source[sourceField.springSettleDistanceScale] = 100
+  source[sourceField.springSettleSpeedScale] = 100
   const {circuit, output} = createPhotoGalleryCircuit()
   const wireCount = validateCircuit(circuit)
   validatePhotoGalleryOutputWires(output, wireCount)
   const tensorProgram = circuit.tensorProgram = circuit.compileTensorProgram([
     ...output.nextSource,
     output.backdropOpacity,
+    output.animationActive,
     ...output.photos,
     ...output.thumbnails,
     ...output.previousControl,
@@ -676,6 +823,18 @@ function validateGallerySource(values: unknown, tolerance = 1e-9) {
   assertNonNegativeFinite(values[sourceField.controlSize], 'control size')
   assertUnitInterval(values[sourceField.present], 'present', tolerance)
   assertBit(values[sourceField.interactive], 'interactive')
+  invariant(values[sourceField.unit] === 1, 'unit must equal one')
+  for (const field of [
+    sourceField.springTimestep,
+    sourceField.springStiffness,
+    sourceField.springDamping,
+    sourceField.springSettleDistance,
+    sourceField.springSettleSpeed,
+    sourceField.springSettleDistanceScale,
+    sourceField.springSettleSpeedScale,
+  ]) {
+    assertNonNegativeFinite(values[field], 'spring constant')
+  }
   invariant(Number.isFinite(values[sourceField.clickX]), 'click x must be finite')
   invariant(Number.isFinite(values[sourceField.clickY]), 'click y must be finite')
   let eventMass = 0
@@ -689,6 +848,28 @@ function validateGallerySource(values: unknown, tolerance = 1e-9) {
     const focus = values[focusField(item)]
     assertUnitInterval(focus, `focus ${item}`, tolerance)
     focusMass += focus
+    assertNonNegativeFinite(
+      values[thumbnailSpringSourceField(item, thumbnailSpringField.centerX)],
+      `thumbnail ${item} center`,
+      tolerance,
+    )
+    invariant(
+      Number.isFinite(
+        values[thumbnailSpringSourceField(item, thumbnailSpringField.centerXVelocity)],
+      ),
+      `thumbnail ${item} center velocity must be finite`,
+    )
+    assertUnitInterval(
+      values[thumbnailSpringSourceField(item, thumbnailSpringField.scale)],
+      `thumbnail ${item} scale`,
+      tolerance,
+    )
+    invariant(
+      Number.isFinite(
+        values[thumbnailSpringSourceField(item, thumbnailSpringField.scaleVelocity)],
+      ),
+      `thumbnail ${item} scale velocity must be finite`,
+    )
   }
   invariant(focusMass <= 1 + tolerance, 'focus mass must not exceed 1')
 }
@@ -699,6 +880,7 @@ export function validatePhotoGalleryOutputWires(
 ) {
   validateWireView(output.nextSource, sourceField.size, wireCount)
   assertWire(output.backdropOpacity, wireCount)
+  assertWire(output.animationActive, wireCount)
   validateWireView(output.photos, itemCount * photoField.size, wireCount)
   validateWireView(output.thumbnails, itemCount * thumbnailField.size, wireCount)
   validateWireView(output.previousControl, controlField.size, wireCount)
@@ -717,6 +899,7 @@ export function validatePhotoGalleryOutput(
     invariant(nextSource[eventField] === 0, 'event latch must reset after refresh')
   }
   assertUnitInterval(values[output.backdropOpacity], 'backdrop opacity', tolerance)
+  assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
   for (let item = 0; item < itemCount; item++) {
     const outputStart = item * photoField.size
     for (const field of geometryFields) {

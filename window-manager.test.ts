@@ -762,6 +762,7 @@ test('Photos state and behavior run inside the one window-manager program', () =
 
   machine.photoNext()
   values = step(machine)
+  assert.equal(animationActive(machine, values), 1)
   assert.equal(machine.source[photoFocusSourceField(0)], 0)
   assert.equal(machine.source[photoFocusSourceField(1)], 1)
   assert.equal(
@@ -775,6 +776,8 @@ test('Photos state and behavior run inside the one window-manager program', () =
     [...machine.source],
   )
   assert.equal(machine.tensorProgram.sourceSize, machine.source.length)
+  values = settle(machine)
+  assert.equal(animationActive(machine, values), 0)
 })
 
 test('one click can focus Photos and select a photo in the same evaluation', () => {

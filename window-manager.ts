@@ -8,6 +8,8 @@ import {
   emitMinimum,
   emitMultiply,
   emitRelu,
+  emitSelect,
+  emitSpring,
   inlineCircuit,
   invariant,
   validateCircuit,
@@ -21,6 +23,8 @@ import {
   focusField as localPhotoFocusField,
   itemCount as photoCount,
   sourceField as localPhotoSourceField,
+  thumbnailSpringField,
+  thumbnailSpringSourceField as localThumbnailSpringSourceField,
   validatePhotoGalleryOutput,
   validatePhotoGalleryOutputWires,
 } from './photo-gallery.ts'
@@ -98,7 +102,8 @@ export const photoSourceField = {
   nextActive: photoStart + 8,
   closeActive: photoStart + 9,
   focusStart: photoStart + 10,
-  size: photoStart + 10 + photoCount,
+  thumbnailSpringStart: photoStart + 10 + photoCount,
+  size: photoStart + 10 + photoCount + photoCount * thumbnailSpringField.size,
 } as const
 const sourceSize = photoSourceField.size
 
@@ -295,6 +300,15 @@ export function photoFocusSourceField(item: number) {
   return photoSourceField.focusStart + item
 }
 
+export function photoThumbnailSpringSourceField(item: number, field: number) {
+  invariant(Number.isInteger(item) && item >= 0 && item < photoCount, 'photo index is invalid')
+  invariant(
+    Number.isInteger(field) && field >= 0 && field < thumbnailSpringField.size,
+    'photo thumbnail spring field is invalid',
+  )
+  return photoSourceField.thumbnailSpringStart + item * thumbnailSpringField.size + field
+}
+
 function compileWindowManagerCircuit() {
   const circuit = new Circuit(sourceField.size)
   circuit.assumeRange(sourceField.viewportWidth, 0, Number.POSITIVE_INFINITY)
@@ -311,6 +325,16 @@ function compileWindowManagerCircuit() {
   for (const field of photoEventActiveFields) circuit.assumeRange(field, 0, 1)
   for (let item = 0; item < photoCount; item++) {
     circuit.assumeRange(photoFocusSourceField(item), 0, 1)
+    circuit.assumeRange(
+      photoThumbnailSpringSourceField(item, thumbnailSpringField.centerX),
+      0,
+      Number.POSITIVE_INFINITY,
+    )
+    circuit.assumeRange(
+      photoThumbnailSpringSourceField(item, thumbnailSpringField.scale),
+      0,
+      1,
+    )
   }
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     for (const field of [
@@ -934,7 +958,7 @@ function compileWindowManagerCircuit() {
       active,
     })
   }
-  const animationActive = emitClampZeroOne(
+  const windowAnimationActive = emitClampZeroOne(
     circuit,
     circuit.affine(windowAnimations.map(animation => [animation.active, 1])),
     unit,
@@ -1047,11 +1071,27 @@ function compileWindowManagerCircuit() {
   photoSourceWires[localPhotoSourceField.closeActive] = photoSourceField.closeActive
   for (let item = 0; item < photoCount; item++) {
     photoSourceWires[localPhotoFocusField(item)] = photoFocusSourceField(item)
+    for (let field = 0; field < thumbnailSpringField.size; field++) {
+      photoSourceWires[localThumbnailSpringSourceField(item, field)] =
+        photoThumbnailSpringSourceField(item, field)
+    }
   }
   photoSourceWires[localPhotoSourceField.present] =
     windows[photosWindowOutputStart + windowOutputField.opacity]!
   photoSourceWires[localPhotoSourceField.interactive] =
     windows[photosWindowOutputStart + windowOutputField.focused]!
+  photoSourceWires[localPhotoSourceField.unit] = sourceField.unit
+  photoSourceWires[localPhotoSourceField.springTimestep] = springTimestep
+  photoSourceWires[localPhotoSourceField.springStiffness] = sourceField.springStiffness
+  photoSourceWires[localPhotoSourceField.springDamping] = sourceField.springDamping
+  photoSourceWires[localPhotoSourceField.springSettleDistance] =
+    sourceField.springSettleDistance
+  photoSourceWires[localPhotoSourceField.springSettleSpeed] =
+    sourceField.springSettleSpeed
+  photoSourceWires[localPhotoSourceField.springSettleDistanceScale] =
+    sourceField.springSettleDistanceScale
+  photoSourceWires[localPhotoSourceField.springSettleSpeedScale] =
+    sourceField.springSettleSpeedScale
 
   const photoDefinition = createPhotoGalleryCircuit()
   const photoWireMap = inlineCircuit(circuit, photoDefinition.circuit, photoSourceWires)
@@ -1060,6 +1100,7 @@ function compileWindowManagerCircuit() {
   const photos: PhotoGalleryOutput = {
     nextSource: mapPhotoWires(photoDefinition.output.nextSource),
     backdropOpacity: photoWireMap[photoDefinition.output.backdropOpacity]!,
+    animationActive: photoWireMap[photoDefinition.output.animationActive]!,
     photos: mapPhotoWires(photoDefinition.output.photos),
     thumbnails: mapPhotoWires(photoDefinition.output.thumbnails),
     previousControl: mapPhotoWires(photoDefinition.output.previousControl),
@@ -1083,7 +1124,19 @@ function compileWindowManagerCircuit() {
   for (let item = 0; item < photoCount; item++) {
     nextSource[photoFocusSourceField(item)] =
       photos.nextSource[localPhotoFocusField(item)]!
+    for (let field = 0; field < thumbnailSpringField.size; field++) {
+      nextSource[photoThumbnailSpringSourceField(item, field)] =
+        photos.nextSource[localThumbnailSpringSourceField(item, field)]!
+    }
   }
+  const animationActive = emitClampZeroOne(
+    circuit,
+    circuit.affine([
+      [windowAnimationActive, 1],
+      [photos.animationActive, 1],
+    ]),
+    unit,
+  )
 
   return {
     circuit,
@@ -1439,70 +1492,6 @@ function projectDockGeometry(
   }
 }
 
-function emitSpring(
-  circuit: Circuit,
-  positionSource: Wire,
-  destination: Wire,
-  velocitySource: Wire,
-  stiffness: Wire,
-  damping: Wire,
-  timestep: Wire,
-  settleDistance: Wire,
-  settleSpeed: Wire,
-  settleDistanceScale: Wire,
-  settleSpeedScale: Wire,
-  unit: Wire,
-) {
-  let position = positionSource
-  let velocity = velocitySource
-  for (let step = 0; step < 4; step++) {
-    const displacement = circuit.affine([[position, 1], [destination, -1]])
-    const springForce = emitMultiply(circuit, stiffness, displacement)
-    const dampingForce = emitMultiply(circuit, damping, velocity)
-    const acceleration = circuit.affine([
-      [springForce, -1],
-      [dampingForce, -1],
-    ])
-    velocity = circuit.affine([
-      [velocity, 1],
-      [emitMultiply(circuit, acceleration, timestep), 1],
-    ])
-    position = circuit.affine([
-      [position, 1],
-      [emitMultiply(circuit, velocity, timestep), 1],
-    ])
-  }
-
-  const distanceAboveThreshold = emitRelu(circuit, circuit.affine([
-    [emitAbsolute(circuit, circuit.affine([[position, 1], [destination, -1]])), 1],
-    [settleDistance, -1],
-  ]))
-  const speedAboveThreshold = emitRelu(circuit, circuit.affine([
-    [emitAbsolute(circuit, velocity), 1],
-    [settleSpeed, -1],
-  ]))
-  const active = emitClampZeroOne(
-    circuit,
-    circuit.affine([
-      [emitMultiply(circuit, distanceAboveThreshold, settleDistanceScale), 1],
-      [emitMultiply(circuit, speedAboveThreshold, settleSpeedScale), 1],
-    ]),
-    unit,
-  )
-  return {
-    position: emitSelect(circuit, active, destination, position),
-    velocity: emitMultiply(circuit, active, velocity),
-    active,
-  }
-}
-
-function emitAbsolute(circuit: Circuit, value: Wire) {
-  return circuit.affine([
-    [emitRelu(circuit, value), 1],
-    [emitRelu(circuit, circuit.affine([[value, -1]])), 1],
-  ])
-}
-
 function emitFrontmost(
   circuit: Circuit,
   stack: readonly (readonly Wire[])[],
@@ -1581,13 +1570,6 @@ function emitComplement(circuit: Circuit, value: Wire, unit: Wire) {
   return circuit.affine([[unit, 1], [value, -1]])
 }
 
-function emitSelect(circuit: Circuit, gate: Wire, off: Wire, on: Wire) {
-  return circuit.affine([
-    [off, 1],
-    [emitMultiply(circuit, gate, circuit.affine([[on, 1], [off, -1]])), 1],
-  ])
-}
-
 function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
   invariant(
     values instanceof Float32Array,
@@ -1627,6 +1609,32 @@ function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
     const focus = values[photoFocusSourceField(item)]
     assertUnitInterval(focus, `photo focus ${item}`, tolerance)
     photoFocusMass += focus
+    assertNonNegativeFinite(
+      values[photoThumbnailSpringSourceField(item, thumbnailSpringField.centerX)],
+      `photo thumbnail ${item} center`,
+      tolerance,
+    )
+    invariant(
+      Number.isFinite(
+        values[
+          photoThumbnailSpringSourceField(item, thumbnailSpringField.centerXVelocity)
+        ],
+      ),
+      `photo thumbnail ${item} center velocity must be finite`,
+    )
+    assertUnitInterval(
+      values[photoThumbnailSpringSourceField(item, thumbnailSpringField.scale)],
+      `photo thumbnail ${item} scale`,
+      tolerance,
+    )
+    invariant(
+      Number.isFinite(
+        values[
+          photoThumbnailSpringSourceField(item, thumbnailSpringField.scaleVelocity)
+        ],
+      ),
+      `photo thumbnail ${item} scale velocity must be finite`,
+    )
   }
   invariant(photoFocusMass <= 1 + tolerance, 'photo focus mass must not exceed one')
   invariant(Number.isFinite(values[sourceField.pointerX]), 'pointer x must be finite')

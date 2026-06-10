@@ -5,6 +5,7 @@ import {
   emitMaximum,
   emitMinimum,
   emitMultiply,
+  emitSpring,
   type Wire,
   validateTensorEvaluation,
 } from './numeric-ui-core.ts'
@@ -59,22 +60,22 @@ test('four spring steps match ordinary math', () => {
   const circuit = new Circuit(5)
   const [positionSource, destination, velocitySource, stiffness, timestep] = [0, 1, 2, 3, 4]
   const damping = constant(circuit, 30)
-  let position = positionSource
-  let velocity = velocitySource
-
-  for (let step = 0; step < 4; step++) {
-    const displacement = circuit.affine([[position, 1], [destination, -1]])
-    const springForce = emitMultiply(circuit, circuit.affine([[stiffness, -1]]), displacement)
-    const dampingForce = emitMultiply(circuit, circuit.affine([[damping, -1]]), velocity)
-    velocity = circuit.affine([
-      [velocity, 1],
-      [emitMultiply(circuit, circuit.affine([[springForce, 1], [dampingForce, 1]]), timestep), 1],
-    ])
-    position = circuit.affine([
-      [position, 1],
-      [emitMultiply(circuit, velocity, timestep), 1],
-    ])
-  }
+  const zero = constant(circuit, 0)
+  const unit = constant(circuit, 1)
+  const spring = emitSpring(
+    circuit,
+    positionSource,
+    destination,
+    velocitySource,
+    stiffness,
+    damping,
+    timestep,
+    zero,
+    zero,
+    unit,
+    unit,
+    unit,
+  )
 
   let expectedPosition = 10
   let expectedVelocity = -3
@@ -85,6 +86,7 @@ test('four spring steps match ordinary math', () => {
   }
 
   const values = evaluate(circuit, [10, 20, -3, 290, 0.004])
-  assert.ok(Math.abs(values[position]! - expectedPosition) < 1e-4)
-  assert.ok(Math.abs(values[velocity]! - expectedVelocity) < 1e-4)
+  assert.ok(Math.abs(values[spring.position]! - expectedPosition) < 1e-4)
+  assert.ok(Math.abs(values[spring.velocity]! - expectedVelocity) < 1e-4)
+  assert.equal(values[spring.active], 1)
 })

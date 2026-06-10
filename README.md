@@ -16,7 +16,7 @@ constants. One compiled circuit handles:
 
 - focus, stacking, dragging, resizing, and window controls
 - dock transitions and fixed-step springs
-- the Photos grid, lightbox, navigation, and thumbnail strip
+- the Photos grid, lightbox, navigation, and spring-animated thumbnail strip
 - numeric visibility used to attach and remove photo nodes
 
 Photos is authored separately, then inlined before the system compiles. The
@@ -42,11 +42,11 @@ then appends its outputs.
 Current fused program:
 
 ```txt
-153 inputs, 381 outputs, 2,064 activations
-70 layers, maximum width 246
-198 affine, 1,802 ReGLU, 64 boolean
-317,961 dense weights, 13,138 stored sparse weights
-52.6 KB weights + 15.5 KB biases + 33.8 KB bookkeeping
+201 inputs, 429 outputs, 2,933 activations
+90 layers, maximum width 224
+247 affine, 2,622 ReGLU, 64 boolean
+528,306 dense weights, 16,406 stored sparse weights
+65.6 KB weights + 22.2 KB biases + 47.0 KB bookkeeping
 ```
 
 ## Files

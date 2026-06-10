@@ -55,6 +55,14 @@ function assertOneFocus(machine: ReturnType<typeof createPhotoGalleryMachine>, i
   )
 }
 
+function settleThumbnails(machine: ReturnType<typeof createPhotoGalleryMachine>) {
+  for (let frames = 1; frames <= 120; frames++) {
+    const values = machine.step(viewportWidth, viewportHeight)
+    if (values[machine.output.animationActive] === 0) return {values, frames}
+  }
+  assert.fail('thumbnail animation did not settle')
+}
+
 test('the fixed grid opens every photo with a tapered thumbnail carousel', () => {
   const machine = createPhotoGalleryMachine()
   let values = machine.step(viewportWidth, viewportHeight)
@@ -341,6 +349,33 @@ test('main and control clicks preserve complete focused items', () => {
   const shiftedFocus = readFocus(machine)
   assert.equal(shiftedFocus[1], 1)
   assert.equal(shiftedFocus.reduce((sum, focus) => sum + focus, 0), 1)
+})
+
+test('thumbnail movement and scale spring between focused photos', () => {
+  const machine = createPhotoGalleryMachine()
+  let values = machine.step(viewportWidth, viewportHeight)
+  const firstPhoto = projectPhotos(machine, values)[0]!
+  machine.click(
+    firstPhoto.left + firstPhoto.width / 2,
+    firstPhoto.top + firstPhoto.height / 2,
+  )
+  values = machine.step(viewportWidth, viewportHeight)
+  const openThumbnails = projectThumbnails(machine, values)
+  assert.equal(values[machine.output.animationActive], 0)
+
+  machine.next()
+  values = machine.step(viewportWidth, viewportHeight)
+  const movingThumbnails = projectThumbnails(machine, values)
+  assert.equal(values[machine.output.animationActive], 1)
+  assert.ok(movingThumbnails[1]!.width > openThumbnails[1]!.width)
+  assert.ok(movingThumbnails[0]!.left < openThumbnails[0]!.left)
+
+  const settled = settleThumbnails(machine)
+  const settledThumbnails = projectThumbnails(machine, settled.values)
+  assert.ok(settled.frames < 60)
+  assert.equal(settledThumbnails[1]!.width, machine.source[sourceField.thumbnailHeight])
+  assert.ok(settledThumbnails[1]!.width > movingThumbnails[1]!.width)
+  assert.equal(settled.values[machine.output.animationActive], 0)
 })
 
 test('next state and render projections are direct wire views', () => {

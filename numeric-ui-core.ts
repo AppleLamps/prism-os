@@ -588,6 +588,85 @@ export function emitMinimum(circuit: Circuit, a: Wire, b: Wire): Wire {
   return result
 }
 
+export function emitSelect(circuit: Circuit, gate: Wire, off: Wire, on: Wire): Wire {
+  return circuit.affine([
+    [off, 1],
+    [emitMultiply(circuit, gate, circuit.affine([[on, 1], [off, -1]])), 1],
+  ])
+}
+
+export function emitSpring(
+  circuit: Circuit,
+  positionSource: Wire,
+  destination: Wire,
+  velocitySource: Wire,
+  stiffness: Wire,
+  damping: Wire,
+  timestep: Wire,
+  settleDistance: Wire,
+  settleSpeed: Wire,
+  settleDistanceScale: Wire,
+  settleSpeedScale: Wire,
+  unit: Wire,
+) {
+  let position = positionSource
+  let velocity = velocitySource
+  for (let step = 0; step < 4; step++) {
+    const displacement = circuit.affine([[position, 1], [destination, -1]])
+    const springForce = emitMultiply(circuit, stiffness, displacement)
+    const dampingForce = emitMultiply(circuit, damping, velocity)
+    const acceleration = circuit.affine([
+      [springForce, -1],
+      [dampingForce, -1],
+    ])
+    velocity = circuit.affine([
+      [velocity, 1],
+      [emitMultiply(circuit, acceleration, timestep), 1],
+    ])
+    position = circuit.affine([
+      [position, 1],
+      [emitMultiply(circuit, velocity, timestep), 1],
+    ])
+  }
+
+  const distanceAboveThreshold = emitRelu(circuit, circuit.affine([
+    [emitAbsolute(circuit, circuit.affine([[position, 1], [destination, -1]])), 1],
+    [settleDistance, -1],
+  ]))
+  const speedAboveThreshold = emitRelu(circuit, circuit.affine([
+    [emitAbsolute(circuit, velocity), 1],
+    [settleSpeed, -1],
+  ]))
+  const active = emitClampZeroOne(
+    circuit,
+    circuit.affine([
+      [emitMultiply(circuit, distanceAboveThreshold, settleDistanceScale), 1],
+      [emitMultiply(circuit, speedAboveThreshold, settleSpeedScale), 1],
+    ]),
+    unit,
+  )
+  return {
+    position: emitSelect(circuit, active, destination, position),
+    velocity: emitMultiply(circuit, active, velocity),
+    active,
+  }
+}
+
+function emitAbsolute(circuit: Circuit, value: Wire) {
+  return circuit.affine([
+    [emitRelu(circuit, value), 1],
+    [emitRelu(circuit, circuit.affine([[value, -1]])), 1],
+  ])
+}
+
+function emitClampZeroOne(circuit: Circuit, value: Wire, unit: Wire) {
+  const positive = emitRelu(circuit, value)
+  const aboveOne = emitRelu(circuit, circuit.affine([[value, 1], [unit, -1]]))
+  const result = circuit.affine([[positive, 1], [aboveOne, -1]])
+  circuit.assumeRange(result, 0, 1)
+  return result
+}
+
 type WinnerNode =
   | {mass: Wire, item: number}
   | {mass: Wire, left: WinnerNode, right: WinnerNode}
