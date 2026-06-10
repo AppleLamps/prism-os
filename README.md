@@ -78,7 +78,8 @@ The machines and browser product execute entirely with FP32 arithmetic. Every
 source value, weight, multiply, addition, and stored result is rounded to
 FP32. This gives the product one stable CPU meaning that can later be matched
 by a GPU backend. Compiled weights and biases are stored directly in
-`Float32Array`s; index arrays remain 32-bit integers.
+`Float32Array`s. Each index array uses 8, 16, or 32 bits according to its own
+largest value.
 
 The compiled program is validated once at startup. Every refresh validates its
 inputs and projected outputs, while rendering consumes only tensor results.
@@ -93,7 +94,7 @@ The current compiled footprints are:
 75 layers, maximum width 246
 198 affine, 1,788 ReGLU, 64 boolean
 316,329 dense weights, 13,094 stored sparse weights
-52.4 KB weights + 15.4 KB biases + 92.8 KB bookkeeping
+52.4 KB weights + 15.4 KB biases + 33.8 KB bookkeeping
 ```
 
 The System Monitor reports this one compiled program, plus live frame

@@ -59,6 +59,33 @@ test('compiled tensor constants use native FP32 storage', () => {
   assert.equal(layer.bias[0], Math.fround(1 / 10))
 })
 
+test('compiled indices use the smallest safe unsigned width', () => {
+  const small = new Circuit(255)
+  const smallOutput = small.affine([[254, 2]])
+  const smallProgram = small.compileTensorProgram([smallOutput])
+  assert.ok(smallProgram.roots instanceof Uint8Array)
+  assert.ok(smallProgram.wireOrder instanceof Uint8Array)
+  assert.ok(smallProgram.layers[0]!.inputIndices instanceof Uint8Array)
+
+  const medium = new Circuit(257)
+  const mediumOutput = medium.affine(
+    Array.from({length: 257}, (_, wire) => [wire, 1] as const),
+  )
+  const mediumProgram = medium.compileTensorProgram([mediumOutput])
+  assert.ok(mediumProgram.roots instanceof Uint16Array)
+  assert.ok(mediumProgram.wireOrder instanceof Uint16Array)
+  assert.ok(mediumProgram.layers[0]!.inputIndices instanceof Uint16Array)
+  assert.ok(mediumProgram.layers[0]!.columns instanceof Uint16Array)
+  assert.ok(mediumProgram.layers[0]!.rowOffsets instanceof Uint16Array)
+
+  const large = new Circuit(65_537)
+  const largeOutput = large.affine([[65_536, 2]])
+  const largeProgram = large.compileTensorProgram([largeOutput])
+  assert.ok(largeProgram.roots instanceof Uint32Array)
+  assert.ok(largeProgram.wireOrder instanceof Uint32Array)
+  assert.ok(largeProgram.layers[0]!.inputIndices instanceof Uint32Array)
+})
+
 test('the reference and tensor evaluators round every arithmetic step', () => {
   const circuit = new Circuit(2)
   const sum = circuit.affine([[0, 1], [1, 1]])

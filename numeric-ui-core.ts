@@ -19,24 +19,26 @@ type NumericRange = {
   maximum: number
 }
 
+type UnsignedIndexArray = Uint8Array | Uint16Array | Uint32Array
+
 type TensorLayer = {
-  inputIndices: Uint32Array
+  inputIndices: UnsignedIndexArray
   inputSize: number
   outputSize: number
   bias: Float32Array
-  gateRows: Uint32Array
-  booleanRows: Uint32Array
-  rowOffsets: Uint32Array
-  columns: Uint32Array
+  gateRows: UnsignedIndexArray
+  booleanRows: UnsignedIndexArray
+  rowOffsets: UnsignedIndexArray
+  columns: UnsignedIndexArray
   weights: Float32Array
 }
 
 type TensorProgram = {
   layers: TensorLayer[]
-  roots: Uint32Array
+  roots: UnsignedIndexArray
   sourceSize: number
   valueCount: number
-  wireOrder: Uint32Array
+  wireOrder: UnsignedIndexArray
   width: number
 }
 
@@ -218,9 +220,8 @@ export class Circuit {
         if (kind === 'reglu') gateCount++
         else if (kind === 'boolean') booleanCount++
       }
-      const inputIndices = Uint32Array.from(
-        orderedInputWires,
-        wire => packedIndexByWire[wire]!,
+      const inputIndices = compactUnsignedIndices(
+        orderedInputWires.map(wire => packedIndexByWire[wire]!),
       )
       const inputColumnByWire = new Int32Array(width)
       inputColumnByWire.fill(-1)
@@ -229,8 +230,8 @@ export class Circuit {
       }
       const projectionSize = outputSize + gateCount
       const bias = new Float32Array(projectionSize)
-      const gateRows = new Uint32Array(gateCount)
-      const booleanRows = new Uint32Array(booleanCount)
+      const gateRows: number[] = []
+      const booleanRows: number[] = []
       const projectionTerms = Array<Terms>(projectionSize)
       let gateRow = 0
       let booleanRow = 0
@@ -246,20 +247,20 @@ export class Circuit {
         if (operation.kind === 'reglu') {
           const projectionRow = outputSize + gateRow
           bias[projectionRow] = operation.gateBias
-          gateRows[gateRow] = row
+          gateRows.push(row)
           projectionTerms[projectionRow] = operation.gateTerms
           gateRow++
         } else if (operation.kind === 'boolean') {
-          booleanRows[booleanRow] = row
+          booleanRows.push(row)
           booleanRow++
         }
       }
-      const rowOffsets = new Uint32Array(projectionSize + 1)
+      const rowOffsets = Array<number>(projectionSize + 1).fill(0)
       for (let row = 0; row < projectionSize; row++) {
         rowOffsets[row + 1] = rowOffsets[row]! + projectionTerms[row]!.length
       }
       const storedWeightCount = rowOffsets[projectionSize]!
-      const columns = new Uint32Array(storedWeightCount)
+      const columns = Array<number>(storedWeightCount)
       const weights = new Float32Array(storedWeightCount)
       let storedWeight = 0
       for (const terms of projectionTerms) {
@@ -276,20 +277,20 @@ export class Circuit {
         inputSize,
         outputSize,
         bias,
-        gateRows,
-        booleanRows,
-        rowOffsets,
-        columns,
+        gateRows: compactUnsignedIndices(gateRows),
+        booleanRows: compactUnsignedIndices(booleanRows),
+        rowOffsets: compactUnsignedIndices(rowOffsets),
+        columns: compactUnsignedIndices(columns),
         weights,
       })
       availableValues += outputSize
     }
     return {
       layers,
-      roots: Uint32Array.from(normalizedRoots),
+      roots: compactUnsignedIndices(normalizedRoots),
       sourceSize: this.sourceSize,
       valueCount,
-      wireOrder,
+      wireOrder: compactUnsignedIndices(wireOrder),
       width,
     }
   }
@@ -520,7 +521,7 @@ function evaluateTensorProgram(
     availableValues += outputSize
   }
   const values = new Float32Array(width)
-  for (let packedIndex = 0; packedIndex < width; packedIndex++) {
+  for (let packedIndex = 0; packedIndex < wireOrder.length; packedIndex++) {
     values[wireOrder[packedIndex]!] = packedValues[packedIndex]!
   }
   return values
@@ -529,8 +530,8 @@ function evaluateTensorProgram(
 function sparseMatmulAddBias(
   output: Float32Array,
   weights: Float32Array,
-  columns: Uint32Array,
-  rowOffsets: Uint32Array,
+  columns: UnsignedIndexArray,
+  rowOffsets: UnsignedIndexArray,
   input: Float32Array,
   bias: Float32Array,
 ) {
@@ -564,6 +565,18 @@ function evaluateBoolean(value: number): number {
   const score = Math.fround(value)
   const shifted = Math.fround(score + base)
   return Math.fround(shifted - base)
+}
+
+function compactUnsignedIndices(values: ArrayLike<number>): UnsignedIndexArray {
+  const numbers = Array.from(values)
+  let maximum = 0
+  for (const value of numbers) {
+    invariant(Number.isInteger(value) && value >= 0, 'index must be a nonnegative integer')
+    maximum = Math.max(maximum, value)
+  }
+  if (maximum <= 0xff) return Uint8Array.from(numbers)
+  if (maximum <= 0xffff) return Uint16Array.from(numbers)
+  return Uint32Array.from(numbers)
 }
 
 export function emitRelu(circuit: Circuit, value: Wire): Wire {

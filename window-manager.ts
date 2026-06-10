@@ -1266,7 +1266,7 @@ function mountWindowManager(document: Document, window: Window) {
   let weightCount = 0
   let weightBytes = 0
   let biasBytes = 0
-  let bookkeepingBytes = 0
+  let bookkeepingBytes = program.roots.byteLength + program.wireOrder.byteLength
   let denseWeightCount = 0
   let maximumLayerWidth = 0
   const inputCount = program.sourceSize
