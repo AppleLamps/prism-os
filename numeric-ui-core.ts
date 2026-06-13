@@ -49,7 +49,6 @@ export class Circuit {
   constants: (number | undefined)[]
   expressionWires: Map<string, Wire>
   ranges: NumericRange[]
-  inlinedAffines: Set<Wire>
   tensorProgram: TensorProgram | null
 
   constructor(sourceSize: number) {
@@ -59,7 +58,6 @@ export class Circuit {
     this.constants = Array<number | undefined>(sourceSize).fill(undefined)
     this.expressionWires = new Map()
     this.ranges = Array.from({length: sourceSize}, unknownRange)
-    this.inlinedAffines = new Set()
     this.tensorProgram = null
   }
 
@@ -103,14 +101,12 @@ export class Circuit {
       leftBias,
       this.sourceSize,
       this.operations,
-      this.inlinedAffines,
     )
     ;[gateTerms, gateBias] = composeAffineTerms(
       gateTerms,
       gateBias,
       this.sourceSize,
       this.operations,
-      this.inlinedAffines,
     )
     if (kind === 'reglu' && gateTerms.length === 0) {
       const gate = Math.max(0, gateBias)
@@ -430,11 +426,8 @@ function identityWire(terms: Terms, bias: number): Wire | undefined {
   return terms[0]![0]
 }
 
-// A sum at or above this many terms is materialized once when shared by several
-// consumers rather than copied into each. Small affines always inline, so the
-// common case is untouched; only large shared sums (which otherwise reinflate to
-// O(n^2) stored weights) become one wire. Four balances stored weights against
-// the extra wire and depth that materializing adds.
+// Keep wide sums as explicit wires so every consumer sees the same FP32 rounding
+// point. Small affine forms still compose into their consumers.
 const affineShareThreshold = 4
 
 function composeAffineTerms(
@@ -442,27 +435,17 @@ function composeAffineTerms(
   bias: number,
   sourceSize: number,
   operations: readonly Operation[],
-  inlinedAffines: Set<Wire>,
 ): [terms: Terms, bias: number] {
   const composedTerms: [wire: Wire, coefficient: number][] = []
   for (const [wire, coefficient] of terms) {
     const operation = wire < sourceSize ? undefined : operations[wire - sourceSize]
-    // Inline an affine producer into its consumer, except keep a large sum that is
-    // shared by many consumers materialized as one wire so it is not copied into
-    // every consumer (which made stored weights grow O(n^2)). A sum counts as
-    // large once it has at least affineShareThreshold terms; the first consumer
-    // still inlines it, and later consumers reference the materialized wire. Small
-    // affines always inline, so the common case and expression sharing are
-    // unchanged. A producer's leftTerms therefore reference another affine only
-    // when that affine is a materialized large sum, so this single pass stays
-    // correct without recursing into it.
-    const shareable = operation?.kind === 'affine'
-      && operation.leftTerms.length >= affineShareThreshold
-    if (operation?.kind !== 'affine' || (shareable && inlinedAffines.has(wire))) {
+    if (
+      operation?.kind !== 'affine'
+      || operation.leftTerms.length >= affineShareThreshold
+    ) {
       composedTerms.push([wire, coefficient])
       continue
     }
-    if (shareable) inlinedAffines.add(wire)
     bias += coefficient * operation.leftBias
     for (const [dependency, dependencyCoefficient] of operation.leftTerms) {
       composedTerms.push([dependency, coefficient * dependencyCoefficient])

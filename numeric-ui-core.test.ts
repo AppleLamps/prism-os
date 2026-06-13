@@ -114,7 +114,7 @@ test('first-active selection resolves ordered candidates through a balanced tree
 
   assert.ok(
     circuit.tensorProgram.layers.length
-      <= 2 * Math.ceil(Math.log2(candidateCount)) + 2,
+      <= 3 * Math.ceil(Math.log2(candidateCount)) + 2,
   )
 })
 
@@ -151,7 +151,7 @@ test('argmax resolves continuous scores through a balanced tree', () => {
 
   assert.ok(
     circuit.tensorProgram.layers.length
-      <= 2 * Math.ceil(Math.log2(candidateCount)) + 3,
+      <= 4 * Math.ceil(Math.log2(candidateCount)),
   )
 })
 
@@ -278,6 +278,39 @@ test('a sum shared by many consumers stays one materialized wire', () => {
   // one shared wire keeps the ratio near 2.
   assert.ok(sharedSumWeights(64) < 3 * sharedSumWeights(32))
   assert.ok(sharedSumWeights(128) < 3 * sharedSumWeights(64))
+})
+
+test('wide affine sharing is independent of consumer order', () => {
+  const source = Float32Array.from([
+    -0.00002327098263776861,
+    -6.589837084902683e-7,
+    0.0015497038839384913,
+    -0.02216961793601513,
+  ])
+
+  function build(withUnusedConsumer: boolean) {
+    const circuit = new Circuit(4)
+    const shared = circuit.affine([[0, 1], [1, 1], [2, 1], [3, 1]])
+    if (withUnusedConsumer) circuit.affine([[shared, 2]], 1)
+    const live = circuit.affine([[shared, 2]], 1)
+    return {circuit, live}
+  }
+
+  const clean = build(false)
+  const withUnusedConsumer = build(true)
+  assert.equal(
+    clean.circuit.evaluateReference(source)[clean.live],
+    withUnusedConsumer.circuit.evaluateReference(source)[withUnusedConsumer.live],
+  )
+})
+
+test('identical consumers of a wide affine share one wire', () => {
+  const circuit = new Circuit(4)
+  const shared = circuit.affine([[0, 1], [1, 1], [2, 1], [3, 1]])
+  const first = circuit.affine([[shared, 2]], 1)
+  const second = circuit.affine([[shared, 2]], 1)
+
+  assert.equal(second, first)
 })
 
 test('duplicate-wire terms merge into one exact FP32 coefficient', () => {
