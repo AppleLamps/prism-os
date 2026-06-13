@@ -312,6 +312,21 @@ describe('emitMultiply exact-product property', () => {
     expect(evaluateMultiply(-1e20, 1e20)).toBe(f(f(-1e20) * f(1e20)))
     expect(evaluateMultiply(1e20, 1e20)).toBe(Infinity)
   })
+
+  test('a proven-nonnegative operand lowers emitMultiply to one reglu', () => {
+    // With a provably non-negative operand emitMultiply takes the single-reglu
+    // fast path; the assumed range is then enforced at evaluation time. (Lifted
+    // from the former numeric-ui-atoms suite — the one assertion not covered here.)
+    const circuit = new Circuit(2)
+    circuit.assumeRange(1, 0, Number.POSITIVE_INFINITY)
+    const product = emitMultiply(circuit, 0, 1)
+    expect(circuit.operations.length).toBe(1)
+    expect(circuit.operations[0]!.kind).toBe('reglu')
+    expect(circuit.evaluateTensor(Float32Array.from([-3, 2]))[product]).toBe(-6)
+    expect(() => circuit.evaluateTensor(Float32Array.from([-3, -2]))).toThrow(
+      /outside its assumed range/,
+    )
+  })
 })
 
 function createRandom(seed: number) {
