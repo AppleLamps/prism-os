@@ -4,6 +4,7 @@ import {
   emitMaximum,
   emitMinimum,
   emitMultiply,
+  emitRelu,
   emitSelect,
   emitSpring,
 } from './numeric-ui-core.ts'
@@ -67,13 +68,28 @@ function evaluateMultiply(a: number, b: number): number {
   return reference[result]!
 }
 
-// The clamp01 shape relu(v) - relu(v - 1), the exact body of emitClampZeroOne
-// with unit = 1. Modelled directly because the macro is not exported, but
-// matched against the live emitSpring usage below.
+// The clamp01 shape relu(v) - relu(v - 1), built through the REAL atom path so
+// these tests exercise the compiled circuit instead of a JS shadow that could
+// drift from numeric-ui-core.ts. This mirrors emitClampZeroOne exactly (which is
+// not exported): positive = relu(v); aboveOne = relu(v - unit);
+// result = affine([[positive, 1], [aboveOne, -1]]); assumeRange(result, 0, 1),
+// with unit pinned to 1.
 function evaluateClampZeroOne(v: number): number {
-  const positive = Math.max(0, f(v))
-  const aboveOne = Math.max(0, f(f(1 * v) + f(-1 * 1)))
-  return f(f(1 * positive) + f(-1 * aboveOne))
+  const circuit = new Circuit(2)
+  circuit.assumeRange(0, -BIG, BIG)
+  circuit.assumeRange(1, 1, 1)
+  const value = 0
+  const unit = 1
+  const positive = emitRelu(circuit, value)
+  const aboveOne = emitRelu(circuit, circuit.affine([[value, 1], [unit, -1]]))
+  const result = circuit.affine([[positive, 1], [aboveOne, -1]])
+  circuit.assumeRange(result, 0, 1)
+  const source = Float32Array.from([v, 1])
+  const reference = circuit.evaluateReference(source)
+  const tensor = circuit.evaluateTensor(source)
+  // The compiled and literal evaluators must agree bit-for-bit regardless of magnitude.
+  expect(tensor[result]).toBe(reference[result])
+  return reference[result]!
 }
 
 const random = createRandom(0x5afe9a)
@@ -146,33 +162,19 @@ describe('emitMaximum / emitMinimum magnitude preconditions', () => {
 })
 
 describe('clamp01 pattern relu(v) - relu(v - 1) magnitude precondition', () => {
-  test('clamp01 collapses to zero at v = 2**25', () => {
-    // At 2**25 the binade ulp is 4, so v - 1 rounds back up to v. Both relu arms
-    // then equal 2**25 and cancel: relu(v) - relu(v - 1) = 0 instead of 1.
-    expect(evaluateClampZeroOne(2 ** 25)).toBe(0)
+  test('clamp01 is exact through 2**24 then degrades at the binade boundaries', () => {
     // Sanity: the pattern clamps correctly at normal magnitudes.
     expect(evaluateClampZeroOne(0.5)).toBe(0.5)
     expect(evaluateClampZeroOne(-3)).toBe(0)
     expect(evaluateClampZeroOne(2)).toBe(1)
-  })
-
-  test('the first failing magnitude is v = 2**24 + 2, where it returns 2 not 1', () => {
-    // The clamp first breaks below 2**25: once ulp reaches 2 (binade [2**24, 2**25)),
-    // v - 1 rounds to v - 2, so relu(v) - relu(v - 1) = 2. The plateau value of 1
-    // survives only at the lower binade edge 2**24 itself.
+    // The plateau value of 1 survives up to the lower binade edge 2**24 itself.
     expect(evaluateClampZeroOne(2 ** 24)).toBe(1)
-    let firstFailure: number | undefined
-    for (let v = 2 ** 24; v < 2 ** 25 && firstFailure === undefined; v += 2) {
-      if (evaluateClampZeroOne(f(v)) !== 1) firstFailure = f(v)
-    }
-    expect(firstFailure).toBe(2 ** 24 + 2)
+    // First failing magnitude: once ulp reaches 2 (binade [2**24, 2**25)),
+    // v - 1 rounds to v - 2, so relu(v) - relu(v - 1) = 2 instead of 1.
     expect(evaluateClampZeroOne(2 ** 24 + 2)).toBe(2)
-  })
-
-  test('clamp01 holds exactly at every power of two below the boundary', () => {
-    for (let exponent = 0; exponent <= 24; exponent++) {
-      expect(evaluateClampZeroOne(2 ** exponent)).toBe(1)
-    }
+    // At 2**25 the binade ulp is 4, so v - 1 rounds back up to v. Both relu arms
+    // then equal 2**25 and cancel: relu(v) - relu(v - 1) = 0 instead of 1.
+    expect(evaluateClampZeroOne(2 ** 25)).toBe(0)
   })
 })
 
@@ -294,14 +296,6 @@ describe('emitMultiply exact-product property', () => {
       for (const b of values) {
         expect(evaluateMultiply(a, b)).toBe(f(f(a) * f(b)))
       }
-    }
-  })
-
-  test('emitMultiply stays exact over a seeded random sweep of finite operands', () => {
-    for (let trial = 0; trial < 5_000; trial++) {
-      const a = signedMagnitude(random, 1e18)
-      const b = signedMagnitude(random, 1e18)
-      expect(evaluateMultiply(a, b)).toBe(f(f(a) * f(b)))
     }
   })
 

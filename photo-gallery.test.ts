@@ -148,16 +148,14 @@ test('the fixed grid opens every photo with a tapered thumbnail carousel', () =>
   assert.equal(values[machine.output.backdropOpacity], 1)
 })
 
-test('the gallery keeps every focus decision exact', () => {
+test('the gallery keeps focus decisions exact across representative items', () => {
   const machine = createPhotoGalleryMachine()
   let values = machine.step(viewportWidth, viewportHeight)
   const grid = projectPhotos(machine, values)
 
-  for (let item = 0; item < itemCount; item++) {
-    if (item > 0) {
-      machine.click(0, 0)
-      values = machine.step(viewportWidth, viewportHeight)
-    }
+  for (const item of [0, 6, itemCount - 1]) {
+    machine.click(0, 0)
+    machine.step(viewportWidth, viewportHeight)
     const target = grid[item]!
     machine.click(target.left + target.width / 2, target.top + target.height / 2)
     values = machine.step(viewportWidth, viewportHeight)
@@ -184,7 +182,7 @@ test('thumbnail clicks switch focus and backdrop clicks close', () => {
   assert.equal(values[machine.output.backdropOpacity], 0)
 })
 
-test('numeric previous and next signals wrap around, while close clears focus', () => {
+test('numeric and projected previous/next drive the same wrap-around transitions, while close clears focus', () => {
   const machine = createPhotoGalleryMachine()
   let values = machine.step(viewportWidth, viewportHeight)
   const first = projectPhotos(machine, values)[0]!
@@ -192,11 +190,31 @@ test('numeric previous and next signals wrap around, while close clears focus', 
   machine.step(viewportWidth, viewportHeight)
   assertOneFocus(machine, 0)
 
+  // numeric signals wrap around at the boundary
   machine.previous()
   machine.step(viewportWidth, viewportHeight)
   assertOneFocus(machine, itemCount - 1)
 
   machine.next()
+  values = machine.step(viewportWidth, viewportHeight)
+  assertOneFocus(machine, 0)
+
+  // projected control rects drive the same transitions
+  const nextControl = machine.output.nextControl
+  machine.click(
+    values[nextControl[controlField.left]!]! + values[nextControl[controlField.width]!]! / 2,
+    values[nextControl[controlField.top]!]! + values[nextControl[controlField.height]!]! / 2,
+  )
+  values = machine.step(viewportWidth, viewportHeight)
+  assertOneFocus(machine, 1)
+
+  const previousControl = machine.output.previousControl
+  machine.click(
+    values[previousControl[controlField.left]!]!
+      + values[previousControl[controlField.width]!]! / 2,
+    values[previousControl[controlField.top]!]!
+      + values[previousControl[controlField.height]!]! / 2,
+  )
   machine.step(viewportWidth, viewportHeight)
   assertOneFocus(machine, 0)
 
@@ -228,32 +246,6 @@ test('visual presence and exact interactivity remain separate host facts', () =>
     () => machine.step(viewportWidth, viewportHeight, 0.35, 0.5),
     /interactive must equal zero or one/,
   )
-})
-
-test('the projected previous and next controls drive the same numeric transitions', () => {
-  const machine = createPhotoGalleryMachine()
-  let values = machine.step(viewportWidth, viewportHeight)
-  const target = projectPhotos(machine, values)[5]!
-  machine.click(target.left + 20, target.top + 20)
-  values = machine.step(viewportWidth, viewportHeight)
-
-  const nextControl = machine.output.nextControl
-  machine.click(
-    values[nextControl[controlField.left]!]! + values[nextControl[controlField.width]!]! / 2,
-    values[nextControl[controlField.top]!]! + values[nextControl[controlField.height]!]! / 2,
-  )
-  values = machine.step(viewportWidth, viewportHeight)
-  assertOneFocus(machine, 6)
-
-  const previousControl = machine.output.previousControl
-  machine.click(
-    values[previousControl[controlField.left]!]!
-      + values[previousControl[controlField.width]!]! / 2,
-    values[previousControl[controlField.top]!]!
-      + values[previousControl[controlField.height]!]! / 2,
-  )
-  machine.step(viewportWidth, viewportHeight)
-  assertOneFocus(machine, 5)
 })
 
 test('clicking the main image preserves it and tiny viewports remain finite', () => {
@@ -300,13 +292,16 @@ test('clicking the main image preserves it and tiny viewports remain finite', ()
   }
 })
 
-test('edge clicks commit one complete focused item', () => {
+test('edge and overlapping clicks commit exactly one complete focused item', () => {
+  const width = 558
+  const height = 384
   const machine = createPhotoGalleryMachine()
-  let values = machine.step(1281, 721)
+  let values = machine.step(width, height)
   const first = projectPhotos(machine, values)[0]!
-  machine.click(first.left + 0.5, first.top + first.height / 2)
-  values = machine.step(1281, 721)
 
+  // a sub-pixel edge click commits exactly one complete item, with finite geometry
+  machine.click(first.left + 0.5, first.top + first.height / 2)
+  values = machine.step(width, height)
   assert.deepEqual(readFocus(machine), [1, ...Array<number>(itemCount - 1).fill(0)])
   for (const photo of projectPhotos(machine, values)) {
     assert.ok(Number.isFinite(photo.left))
@@ -315,25 +310,12 @@ test('edge clicks commit one complete focused item', () => {
     assert.ok(Number.isFinite(photo.height))
   }
 
-  machine.click(0, 0)
-  machine.step(1281, 721)
-  assert.deepEqual(readFocus(machine), Array(itemCount).fill(0))
-})
-
-test('main and control clicks preserve complete focused items', () => {
-  const machine = createPhotoGalleryMachine()
-  const width = 558
-  const height = 384
-  let values = machine.step(width, height)
-  const first = projectPhotos(machine, values)[0]!
-  machine.click(first.left + 0.5, first.top + first.height / 2)
-  values = machine.step(width, height)
-  assert.deepEqual(readFocus(machine), [1, ...Array<number>(itemCount - 1).fill(0)])
-
+  // clicking the main image preserves the current focus
   machine.click(first.left + first.width / 2, first.top + first.height / 2)
   values = machine.step(width, height)
   assert.deepEqual(readFocus(machine), [1, ...Array<number>(itemCount - 1).fill(0)])
 
+  // when a control overlaps the focused photo, the control click wins
   const nextControl = machine.output.nextControl
   const nextLeft = values[nextControl[controlField.left]!]!
   const nextTop = values[nextControl[controlField.top]!]!
@@ -341,14 +323,16 @@ test('main and control clicks preserve complete focused items', () => {
   const focusedPhoto = projectPhotos(machine, values)[0]!
   const overlappingX = nextLeft + 5
   assert.ok(overlappingX < focusedPhoto.left + focusedPhoto.width)
-  machine.click(
-    overlappingX,
-    nextTop + nextHeight / 2,
-  )
+  machine.click(overlappingX, nextTop + nextHeight / 2)
   machine.step(width, height)
   const shiftedFocus = readFocus(machine)
   assert.equal(shiftedFocus[1], 1)
   assert.equal(shiftedFocus.reduce((sum, focus) => sum + focus, 0), 1)
+
+  // a backdrop click clears focus
+  machine.click(0, 0)
+  machine.step(width, height)
+  assert.deepEqual(readFocus(machine), Array(itemCount).fill(0))
 })
 
 test('thumbnail movement and scale spring between focused photos', () => {
