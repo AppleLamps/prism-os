@@ -159,6 +159,29 @@ test('argmax resolves continuous scores through a balanced tree', () => {
   )
 })
 
+test('argmax breaks exact ties toward the lower-indexed candidate', () => {
+  // parallel-winner.md: equal scores must resolve to the left (lower) candidate.
+  // The 0.5 +/- 2^-24 comparison constants are what guarantee this; a plain 0.5
+  // comparison sends some ties (e.g. 0.3 vs 0.3) to the right instead, so this
+  // pins the tie-break direction the agreement oracles cannot see.
+  const candidateCount = 4
+  const circuit = new Circuit(candidateCount + 1)
+  for (let wire = 0; wire < candidateCount; wire++) circuit.assumeRange(wire, 0, 1)
+  circuit.assumeRange(candidateCount, 1, 1)
+  const winner = emitArgmax(
+    circuit,
+    Array.from({length: candidateCount}, (_, item) => item),
+    candidateCount,
+  )
+  circuit.tensorProgram = circuit.compileTensorProgram(winner.selected)
+
+  for (const tie of [0, 0.25, 0.3, 0.5, 0.7, 1] as const) {
+    const source = Float32Array.from([tie, tie, tie, tie, 1])
+    const values = circuit.evaluateTensor(source)
+    assert.deepEqual(winner.selected.map(wire => values[wire]), [1, 0, 0, 0])
+  }
+})
+
 test('the reference and tensor evaluators round every arithmetic step', () => {
   const circuit = new Circuit(2)
   const sum = circuit.affine([[0, 1], [1, 1]])
@@ -235,6 +258,50 @@ test('weighted sums normalize duplicate, zero, and unordered terms', () => {
 
   assert.deepEqual(circuit.operations[0]!.leftTerms, [[1, 3], [2, 5]])
   assert.equal(circuit.evaluateTensor(new Float32Array([11, 13, 17]))[3], 131)
+})
+
+test('a sum shared by many consumers stays one materialized wire', () => {
+  // A wide sum read by many consumers must not be copied into each consumer, or
+  // stored weights grow with consumers x terms (quadratically). It is kept as one
+  // wire that consumers reference, so total stored weights stay linear in n.
+  function sharedSumWeights(n: number) {
+    const circuit = new Circuit(n + n)
+    for (let wire = 0; wire < n; wire++) circuit.assumeRange(wire, 0, 1)
+    const shared = circuit.affine(
+      Array.from({length: n}, (_, wire): [Wire, number] => [wire, 1]),
+    )
+    const outputs = Array.from({length: n}, (_, item) =>
+      circuit.affine([[shared, 0.5], [n + item, 1]]))
+    const program = circuit.compileTensorProgram(outputs)
+    let weights = 0
+    for (const layer of program.layers) weights += layer.weights.length
+    return weights
+  }
+
+  // Doubling n must not quadruple the weights. A quadratic copy would; referencing
+  // one shared wire keeps the ratio near 2.
+  assert.ok(sharedSumWeights(64) < 3 * sharedSumWeights(32))
+  assert.ok(sharedSumWeights(128) < 3 * sharedSumWeights(64))
+})
+
+test('duplicate-wire terms merge into one exact FP32 coefficient', () => {
+  // Two terms on the same wire must collapse to one summed coefficient, so the
+  // evaluator rounds a single product fround(c1+c2)*x rather than two separate
+  // products fround(c1)*x + fround(c2)*x, which differ by a ULP at some x. Both
+  // evaluators run the same stored stream, so only this build-time check sees it.
+  const merged = 1 / 3 + 0.1
+  const circuit = new Circuit(1)
+  const sum = circuit.affine([[0, 1 / 3], [0, 0.1]])
+  assert.deepEqual(circuit.operations[0]!.leftTerms, [[0, merged]])
+
+  const x = -17.309
+  const expected = Math.fround(Math.fround(merged) * x)
+  const unmerged = Math.fround(
+    Math.fround(Math.fround(1 / 3) * x) + Math.fround(Math.fround(0.1) * x),
+  )
+  assert.notEqual(expected, unmerged) // the chosen x genuinely separates the two
+  assert.equal(circuit.evaluateReference(new Float32Array([x]))[sum], expected)
+  assert.equal(circuit.evaluateTensor(new Float32Array([x]))[sum], expected)
 })
 
 test('constant terms and constant gates fold before compilation', () => {
