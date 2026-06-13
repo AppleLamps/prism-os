@@ -41,6 +41,26 @@ FP32 loses fractional precision near a sufficiently large number. Add
 Use this only when smooth values become Boolean decisions. Keep positions,
 sizes, opacity, scale, and animation at full precision.
 
+## Magnitude safety
+
+FP32 represents every integer exactly only up to `2**24` (16,777,216); above
+that the gap between neighbors grows to 2, then 4. Macros that subtract inside
+their expansion silently lose precision past that point:
+
+- `clamp01(v) = relu(v) - relu(v - 1)` returns exactly 1 only for `v <= 2**24`;
+  it returns 2 at `2**24 + 2` and collapses to 0 by `2**25`.
+- `max`/`min` (`b + relu(a - b)`) and `select` with gate 1 reconstruct through a
+  subtraction, so they are exact only when the difference fits: keep integer
+  operands under `2**23` so `|a - b| < 2**24`. `select` gate 0 and `off = 0` are
+  exact at any size; `multiply` is one product, exact for all finite inputs; the
+  rounding boolean above is exact in `0..1`.
+
+Keep clamp/min/max/select inputs well under `2**23` (~8.4M). Pixel-space UI
+(coordinates in the thousands, scores in `0..1`) sits orders of magnitude inside
+the band; the only way out is to deliberately scale up (e.g. a `* 100000`
+sharpening constant) — don't. Full per-macro table and failing values in
+`macro-ranges.md`.
+
 ## Dynamic division
 
 Explore whether FP32's changing precision can provide enough nonlinearity to

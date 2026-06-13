@@ -8,7 +8,6 @@ outputs to the DOM.
 bun start
 bun run start:candidates
 bun run start:learning
-bun run generate:weights
 bun test
 bun check
 ```
@@ -56,11 +55,11 @@ then appends its outputs.
 Current fused program:
 
 ```txt
-201 inputs, 429 outputs, 2,933 activations
-90 layers, maximum width 224
-247 affine, 2,622 ReGLU, 64 boolean
-528,306 dense weights, 16,406 stored sparse weights
-65.6 KB weights + 22.2 KB biases + 47.0 KB bookkeeping
+201 inputs, 429 outputs, 3,204 activations
+96 layers, maximum width 210
+551 affine, 2,589 ReGLU, 64 boolean
+431,961 dense weights, 12,020 stored sparse weights
+48.1 KB weights + 23.2 KB biases + 40.7 KB bookkeeping
 ```
 
 ## Files
@@ -73,10 +72,9 @@ Current fused program:
 - `trainable-geometry.ts`: learned affine/ReGLU geometry network and optimizer
 - `learned-gallery.ts`: rectangle fitting, backpropagation, and DOM projection
 - `learned-gallery.html`: standalone learning gallery
-- `indirect-os-weights.html`: single-file IndirectOS with compiled tensors inlined
-- `generate-indirect-os-weights.ts`: regenerates the standalone compiled demo
 - `execution-model.md`: exact instruction and layer semantics
 - `boolean-state.md`: where exact decisions belong
+- `macro-ranges.md`: FP32 magnitude preconditions for the macro library
 - `parallel-winner.md`: balanced selection among overlapping candidates
 - `research-sweep.md`: landed and parked experiments
 - `ideas.md`: unexplored directions
