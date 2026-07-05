@@ -33,13 +33,13 @@ The first and last items are then naturally close, so cyclic distance and
 direction need no modulo jump. For a fixed item count, the circle points are
 constants and the remaining math is differentiable.
 
-## FP32 rounding
+## Decision bits
 
-FP32 loses fractional precision near a sufficiently large number. Add
-`8_388_609`, then subtract it, to turn a score in `0..1` into an exact bit.
+When a score is an integer count, `relu(score) - relu(score - 1)` is already the exact bit of `score >= 1`: an integer cannot land strictly between 0 and 1, so the clamp never emits a fraction. Prefer this form for decisions that can be phrased as counts, e.g. `visible = clamp01(baseVisible + how many selected slots reveal me)`. It needs no special constant, it trains with the plain reference backward pass (for a fractional score inside `0..1` the same expression is the identity ramp, so no surrogate gradient is needed), and it stays exact in narrower formats like bfloat16 as long as the integers fit the mantissa. Validated in `exp-integer-boolean.ts`.
 
-Use this only when smooth values become Boolean decisions. Keep positions,
-sizes, opacity, scale, and animation at full precision.
+When the score is genuinely continuous — a hit distance can be `0.3` near an edge — the bit must come from rounding. FP32 loses fractional precision near a sufficiently large number: add `8_388_609`, then subtract it, to round a score in `0..1` at `0.5`. This is the `boolean` atom (see `execution-model.md`). It accepts any score in `0..1`, but it is FP32-specific and its backward pass must invent a slope. Either way, keep positions, sizes, opacity, scale, and animation at full precision.
+
+History, briefly: the relu form is the older of the two — the first commit's integer machinery had it as `emitStepForInteger` — and it was deleted with the move to continuous coordinates (`6cf0d81`), one day before the rounding boolean arrived (`fd8f0a3`). It returned once behavior decisions turned out to be integer counts after all.
 
 ## Magnitude safety
 
