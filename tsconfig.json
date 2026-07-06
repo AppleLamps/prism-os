@@ -21,5 +21,5 @@
     "noFallthroughCasesInSwitch": true,
     "noPropertyAccessFromIndexSignature": true
   },
-  "include": ["*.ts"]
+  "include": ["*.ts", "exp/*.ts"]
 }
