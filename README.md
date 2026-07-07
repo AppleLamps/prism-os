@@ -73,7 +73,6 @@ Current fused program:
 - `learned-gallery.ts`: rectangle fitting, backpropagation, and DOM projection
 - `learned-gallery.html`: standalone learning gallery
 - `execution-model.md`: exact instruction and layer semantics
-- `boolean-state.md`: where exact decisions belong
 - `macro-ranges.md`: FP32 magnitude preconditions for the macro library
 - `parallel-winner.md`: balanced selection among overlapping candidates
 - `research-sweep.md`: landed and parked experiments

@@ -5,7 +5,7 @@ do not change this before asking the user
 Research notes for making the `boolean` atom and, eventually, circuit
 *structure* trainable. This file is additive and descriptive: it does not change
 any runtime semantics. The runtime forward pass stays exact FP32 as defined in
-`execution-model.md` and `boolean-state.md`; everything here is about the
+`execution-model.md` and `tricks.md` ("Decision bits"); everything here is about the
 *backward* pass and about future trainable parameterizations.
 
 ## Where this repo sits structurally
@@ -14,7 +14,7 @@ Read `numeric-ui-core.ts` lines 154-192 first. `backpropagateReference` already
 differentiates `affine` and `reglu` as real-valued FP32 arithmetic (ReLU uses
 zero slope at the corner, line 162). It throws on `boolean` (line 169). The
 `boolean(score)` atom is `round-to-bit at 0.5` over a value the circuit has
-already constrained to `[0,1]` (`numeric-ui-core.ts:88-92`, `boolean-state.md`).
+already constrained to `[0,1]` (`numeric-ui-core.ts:88-92`, `tricks.md` "Decision bits").
 
 That makes our `boolean` atom **a threshold/sign unit on an affine score**, i.e.
 structurally a Binarized-Neural-Network sign activation, **not** a 2-input
@@ -222,7 +222,7 @@ Recipe choices, justified by section 1d/1e:
 
 Atom cost: **zero**. No new atoms; only the backward pass changes. The forward
 circuit, compilation, and FP32 results are byte-identical (this is exactly what
-`boolean-state.md` line 22-23 anticipates: "its backward pass may use a surrogate
+`tricks.md` ("Decision bits") anticipates: "its backward pass may use a surrogate
 gradient; that does not change the exact forward result").
 
 What stage 1 buys: any single-frame decision whose downstream loss is

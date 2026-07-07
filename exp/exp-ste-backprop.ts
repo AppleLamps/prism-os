@@ -3,7 +3,7 @@
 // Circuit.backpropagateReference THROWS at boolean atoms: the boolean forward
 // pass is an exact 0/1 round, whose true derivative is zero almost everywhere
 // and undefined at the threshold, so there is no honest gradient to propagate.
-// boolean-state.md reserves the slot for exactly this: "its backward pass may
+// tricks.md ("Decision bits") reserves the slot for exactly this: "its backward pass may
 // use a surrogate gradient; that does not change the exact forward result".
 //
 // This file backpropagates affine and reglu atoms identically to the reference
