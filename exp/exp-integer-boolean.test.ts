@@ -8,8 +8,6 @@ import {
   fp32RoundingBoolean,
   roundToBf16,
   trainIntegerReveal,
-} from './exp-integer-boolean.ts'
-import {
   baseVisibleVector,
   buildCases,
   groundTruthRelation,
@@ -19,7 +17,7 @@ import {
   slotCount,
   sourceFromBits,
   writeInputs,
-} from './exp-ste-reveal.ts'
+} from './exp-integer-boolean.ts'
 
 const seeds = [1, 2, 3, 4]
 

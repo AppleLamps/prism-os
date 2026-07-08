@@ -75,8 +75,14 @@ Current fused program:
 - `execution-model.md`: exact instruction and layer semantics
 - `macro-ranges.md`: FP32 magnitude preconditions for the macro library
 - `parallel-winner.md`: balanced selection among overlapping candidates
-- `research-sweep.md`: landed and parked experiments
+- `tricks.md`: reusable numeric constructions, including the three decision-bit forms
+- `research-sweep.md`: landed and parked experiments, and supersession records
 - `ideas.md`: unexplored directions
+- `exp/`: early experiments, kept where still unique (supersessions in `research-sweep.md`)
+- `lab/`: the current experiment round -- generative layout fields, event-window
+  behavior, the trace compiler, and gather lowering -- with briefs, READMEs full
+  of measurements, and two demos: `bun lab/generative-fields/demo.html` and
+  `bun lab/event-window/demo.html`
 
 Tests compare the literal and compiled FP32 evaluators, including seeded random
 circuits. Product tests cover window interactions, stacking, springs, tiny
@@ -88,6 +94,9 @@ culling.
 do not change this before asking the user
 
 - Revisit dynamic division only when a real UI needs it.
-- Separate changing state from changing behavior while keeping one circuit.
-- Study the geometric meaning and valid ranges of behavior weights.
-- Retry layer scheduling after the circuit shape changes.
+- Retry layer scheduling after the circuit shape changes; Percepta's
+  mixed-integer formulation (scheduling plus residual-slot reuse) is the
+  reference approach.
+- Declare finite ranges in the production builders so recognized one-hot reads
+  lower to gathers (currently zero engage, because geometry is declared
+  0..Infinity).

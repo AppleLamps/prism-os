@@ -2,6 +2,8 @@
 
 do not change this before asking the user
 
+Status, July 2026: kept as historical research notes. Stage 1 (surrogate slopes through the boolean atom) is superseded — three routes now avoid the surrogate entirely: integer-count scores (tricks.md "Decision bits", exp-integer-boolean.ts), annealed soft ramps (lab/event-window's training), and the relu sign cascade (tricks.md, from lab/trace-compiler). The companion files exp-ste-backprop.ts and exp-ste-reveal.ts referenced below were removed with that supersession (record in research-sweep.md). Stage 2's recipes (anneal the ramp; mind learning-rate cliffs) were empirically confirmed by lab/event-window's fixed-ramp failure and fix. The recurrence worry in section 3 (backpropagation through time across the nextSource writeback) was dissolved rather than solved: lab/event-window proves the irreducible recurrence of discrete behavior is event-clocked, so no unrolling is needed. Stage 3 (trainable structure) remains open; exp-learned-wiring.ts is still the only demonstration.
+
 Research notes for making the `boolean` atom and, eventually, circuit
 *structure* trainable. This file is additive and descriptive: it does not change
 any runtime semantics. The runtime forward pass stays exact FP32 as defined in

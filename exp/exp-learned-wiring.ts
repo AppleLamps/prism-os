@@ -1,7 +1,7 @@
 // Learned wiring: recover a circuit's CONNECTIONS from behavior, one level
 // below learned cells.
 //
-// exp-ste-reveal.ts learns the VALUES in a relation table whose wiring is
+// exp-integer-boolean.ts learns the VALUES in a relation table whose wiring is
 // fixed: every (source, target) pair exists as a cell, and training decides
 // each cell's bit. exp-dlgn-plan.md stage 3 goes further -- learn which
 // OPERATION each node computes -- but explicitly parks connection learning:
@@ -57,7 +57,14 @@ import {
   invariant,
   validateCircuit,
 } from '../numeric-ui-core.ts'
-import {createRandom} from './exp-ste-reveal.ts'
+// Deterministic LCG, matching trainable-geometry.ts.
+export function createRandom(seed: number) {
+  let state = seed >>> 0
+  return () => {
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0
+    return state / 0x1_0000_0000
+  }
+}
 
 export const inputCount = 4
 export const layerOneGateCount = 2

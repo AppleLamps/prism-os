@@ -8,7 +8,7 @@
 // must be odd so 0.5 rounds up under ties-to-even; 8_388_609 = 2^23 + 1 is the
 // smallest such odd integer, and bfloat16 cannot represent it at all. Rounding
 // also has no honest derivative, which is why backpropagateReference throws at
-// boolean atoms and exp-ste-backprop.ts had to invent surrogate slopes.
+// boolean atoms and the removed surrogate experiments had to invent slopes.
 //
 // This experiment removes the boolean atom for decisions whose hardened score
 // is an INTEGER. The identity is one the repo already owns as clamp01:
@@ -24,7 +24,7 @@
 // way: exact step functions from ReLU differences over integer-valued wires.
 //
 // What this buys, measured here on the same 6-slot reveal law, hidden ground
-// truth, and training cases as exp-ste-reveal.ts:
+// truth, and training cases as the superseded surrogate experiment:
 //
 // 1. Native gradients. During training the relation cells are fractional, the
 //    score sits inside [0, 1], and clamp01 passes it through as an honest
@@ -56,19 +56,121 @@ import {
   invariant,
   validateCircuit,
 } from '../numeric-ui-core.ts'
-import {
-  type RevealCase,
-  baseVisibleCell,
-  createRandom,
-  relationCell,
-  selectedCell,
-  slotCount,
-  sourceFromBits,
-  sourceSize,
-  writeInputs,
-} from './exp-ste-reveal.ts'
+// --- The reveal-law scaffolding ----------------------------------------------
+// This layout, ground truth, and case machinery originally lived in the
+// surrogate-gradient experiment (exp-ste-reveal.ts), which this experiment
+// superseded; the scaffolding moved here when that file was removed. See
+// research-sweep.md for the supersession record.
 
+export const slotCount = 6
+
+// Deterministic LCG, matching trainable-geometry.ts.
+export function createRandom(seed: number) {
+  let state = seed >>> 0
+  return () => {
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0
+    return state / 0x1_0000_0000
+  }
+}
+
+// Source-table layout: 36 trainable relation cells, then 6 baseVisible
+// constants, then 6 one-hot selection inputs.
+const relationStart = 0
 const relationSize = slotCount * slotCount
+const baseVisibleStart = relationStart + relationSize
+const selectedStart = baseVisibleStart + slotCount
+export const sourceSize = selectedStart + slotCount
+
+export function relationCell(source: Wire, target: Wire): Wire {
+  return relationStart + source * slotCount + target
+}
+export function baseVisibleCell(target: Wire): Wire {
+  return baseVisibleStart + target
+}
+export function selectedCell(source: Wire): Wire {
+  return selectedStart + source
+}
+
+// The hidden ground-truth reveal law, as a 6x6 bit matrix groundTruth[i][j] = 1
+// iff selecting slot i reveals slot j: selecting 2 reveals 3; selecting 0
+// reveals 4 and 5; everything else unaffected.
+export function groundTruthRelation(): Uint8Array {
+  const relation = new Uint8Array(relationSize)
+  const set = (i: number, j: number) => { relation[i * slotCount + j] = 1 }
+  set(2, 3)
+  set(0, 4)
+  set(0, 5)
+  return relation
+}
+
+// baseVisible: every slot starts hidden, so the ground truth is a pure
+// function of the relation matrix.
+export function baseVisibleVector(): Float32Array {
+  return new Float32Array(slotCount)
+}
+
+// Expected visibility for a given selection under a bit relation, computed
+// through the same clamp-then-decide semantics the circuit uses.
+export function expectedVisibility(
+  relation: Uint8Array,
+  baseVisible: Float32Array,
+  selected: number, // 0..slotCount-1, or -1 for none
+): Uint8Array {
+  const out = new Uint8Array(slotCount)
+  for (let j = 0; j < slotCount; j++) {
+    let score = baseVisible[j]!
+    if (selected >= 0) score += relation[selected * slotCount + j]!
+    const clamped = Math.min(1, Math.max(0, score))
+    out[j] = clamped >= 0.5 ? 1 : 0
+  }
+  return out
+}
+
+// The seven training cases: one per single selection plus the none case.
+export type RevealCase = {
+  selected: number // 0..slotCount-1 or -1
+  expected: Uint8Array
+}
+
+export function buildCases(relation: Uint8Array, baseVisible: Float32Array): RevealCase[] {
+  const cases: RevealCase[] = []
+  for (let selected = 0; selected < slotCount; selected++) {
+    cases.push({selected, expected: expectedVisibility(relation, baseVisible, selected)})
+  }
+  cases.push({selected: -1, expected: expectedVisibility(relation, baseVisible, -1)})
+  return cases
+}
+
+// Write a selection (one-hot or all-zero) and baseVisible into a source table
+// that already holds the relation cells.
+export function writeInputs(source: Float32Array, baseVisible: Float32Array, selected: number) {
+  for (let i = 0; i < slotCount; i++) source[selectedCell(i)] = selected === i ? 1 : 0
+  for (let j = 0; j < slotCount; j++) source[baseVisibleCell(j)] = baseVisible[j]!
+}
+
+// HARDEN: round each learned raw cell to an exact 0/1 bit.
+export function hardenRelation(learnedRelation: Float32Array): Uint8Array {
+  const bits = new Uint8Array(relationSize)
+  for (let cell = 0; cell < relationSize; cell++) {
+    bits[cell] = learnedRelation[cell]! >= 0.5 ? 1 : 0
+  }
+  return bits
+}
+
+// Write hardened relation bits into a fresh source table.
+export function sourceFromBits(relationBits: Uint8Array): Float32Array {
+  const source = new Float32Array(sourceSize)
+  for (let cell = 0; cell < relationSize; cell++) source[relationStart + cell] = relationBits[cell]!
+  return source
+}
+
+// Whether two relation bit matrices agree cell-for-cell (a stronger statement
+// than reproducing the training cases: the recovered LAW matches).
+export function relationBitsEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false
+  for (let cell = 0; cell < a.length; cell++) if (a[cell] !== b[cell]) return false
+  return true
+}
 
 // clamp01(score) = relu(score) - relu(score - 1). For an integer score this is
 // exactly the bit of "score >= 1"; for a fractional score inside [0, 1] it is
@@ -81,7 +183,7 @@ function emitIntegerBit(circuit: Circuit, score: Wire): Wire {
   return bit
 }
 
-// Same source layout and visibility law as exp-ste-reveal's createRevealCircuit,
+// Same source layout and visibility law as the superseded surrogate circuit,
 // with the clamp01 + boolean pair replaced by the single relu-difference bit.
 // The circuit contains no boolean atom, so both the 2^23 constant and the
 // surrogate backward pass are structurally absent.
@@ -124,7 +226,7 @@ export type IntegerTrainResult = {
 }
 
 // Train the 36 relation cells with the plain reference backward pass. The
-// mechanical difference from exp-ste-reveal's trainReveal is what is absent:
+// mechanical difference from the superseded surrogate trainer is what is absent:
 // no surrogate mode, no temperature. backpropagateReference differentiates the
 // whole circuit because no boolean atom exists to throw at.
 export function trainIntegerReveal(
@@ -217,7 +319,7 @@ export function trainIntegerReveal(
 }
 
 // Run the hardened integer circuit over the cases and check every visibility
-// value strictly equals the expected bit. Beyond exp-ste-reveal's check, this
+// value strictly equals the expected bit. Beyond the superseded check, this
 // also asserts each output IS an exact 0 or 1 -- the relu difference of an
 // integer score must never emit a fraction.
 export function checkHardenedIntegerExact(
