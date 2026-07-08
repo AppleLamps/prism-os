@@ -21,6 +21,37 @@ type NumericRange = {
 
 type UnsignedIndexArray = Uint8Array | Uint16Array | Uint32Array
 
+// A declared invariant over a set of wires: every member is exactly 0 or 1 and
+// their sum is exactly 1. With allowAllZero the all-zero state is also legal
+// (emitFirstActive produces that state when its gate is inactive). Like
+// assumeRange, the declaration is a contract the builder or trainer promises;
+// the compiler uses it to lower one-hot-masked sums to gather reads, and
+// validateOneHotGroups can check evaluated values against it in tests.
+type OneHotGroup = {
+  members: readonly Wire[]
+  allowAllZero: boolean
+}
+
+// One resolved group index inside a tensor layer: the executor reads the packed
+// one-hot bits, takes their dot with 0..N-1 (exact for 0/1 bits summing to at
+// most one), and stores the resulting index and mass for the layer's gather
+// reads. Computed once per group per evaluation, shared by every read.
+type TensorGatherCompute = {
+  slot: number
+  bitPositions: UnsignedIndexArray
+}
+
+// One lowered masked sum: instead of dense rows over N products, the executor
+// looks up the packed position of the selected candidate and adds that single
+// value onto the row's bias. Groups that allow the all-zero state multiply the
+// gathered value by the group mass first, so an inactive group contributes 0.
+type TensorGatherRead = {
+  row: number
+  slot: number
+  masked: boolean
+  candidatePositions: UnsignedIndexArray
+}
+
 type TensorLayer = {
   inputIndices: UnsignedIndexArray
   inputSize: number
@@ -31,6 +62,8 @@ type TensorLayer = {
   rowOffsets: UnsignedIndexArray
   columns: UnsignedIndexArray
   weights: Float32Array
+  gatherComputes: TensorGatherCompute[]
+  gatherReads: TensorGatherRead[]
 }
 
 type TensorProgram = {
@@ -40,6 +73,15 @@ type TensorProgram = {
   valueCount: number
   wireOrder: UnsignedIndexArray
   width: number
+  gatherSlotCount: number
+}
+
+// A recognized one-hot-masked sum, keyed by its operation index: the affine's
+// terms are products of the group's bits against these candidate value wires,
+// ordered by group position.
+type GatherPlan = {
+  groupIndex: number
+  candidateWires: readonly Wire[]
 }
 
 export class Circuit {
@@ -49,6 +91,7 @@ export class Circuit {
   constants: (number | undefined)[]
   expressionWires: Map<string, Wire>
   ranges: NumericRange[]
+  oneHotGroups: OneHotGroup[]
   tensorProgram: TensorProgram | null
 
   constructor(sourceSize: number) {
@@ -58,6 +101,7 @@ export class Circuit {
     this.constants = Array<number | undefined>(sourceSize).fill(undefined)
     this.expressionWires = new Map()
     this.ranges = Array.from({length: sourceSize}, unknownRange)
+    this.oneHotGroups = []
     this.tensorProgram = null
   }
 
@@ -71,6 +115,28 @@ export class Circuit {
     }
     invariant(narrowed.minimum <= narrowed.maximum, 'numeric range contradicts known bounds')
     this.ranges[wire] = narrowed
+  }
+
+  // Declare that these wires form an exact one-hot: each is exactly 0 or 1 and
+  // exactly one of them is 1 (with allowAllZero, all zeros is also legal). The
+  // declaration also narrows every member's range to 0..1. emitArgmax declares
+  // its selection automatically (the tournament routes the unit down exactly
+  // one path regardless of the scores); emitFirstActive declares its selection
+  // only when its gate and candidates are provably exact bits, because
+  // fractional scores are legal inputs there and break the property.
+  // Hand-declared groups (e.g. a focus one-hot stored in the source table) are
+  // the caller's promise, checkable with validateOneHotGroups.
+  assumeOneHot(members: readonly Wire[], allowAllZero = false) {
+    invariant(members.length > 0, 'a one-hot group needs at least one member')
+    const seen = new Set<Wire>()
+    for (const member of members) {
+      assertWire(member, this.sourceSize + this.operations.length)
+      invariant(!seen.has(member), 'one-hot group members must be distinct wires')
+      seen.add(member)
+      this.assumeRange(member, 0, 1)
+    }
+    this.oneHotGroups.push({members: [...members], allowAllZero})
+    this.tensorProgram = null
   }
 
   isNonNegative(wire: Wire) {
@@ -200,24 +266,28 @@ export class Circuit {
     invariant(source.length === this.sourceSize, 'source table has the wrong length')
     for (let wire = 0; wire < source.length; wire++) {
       const range = this.ranges[wire]!
-      invariant(
-        source[wire]! >= range.minimum && source[wire]! <= range.maximum,
-        `source wire ${wire} is outside its assumed range`,
-      )
+      // The message is built only on failure; constructing it eagerly would
+      // allocate one string per source cell on every evaluation.
+      if (!(source[wire]! >= range.minimum && source[wire]! <= range.maximum)) {
+        invariant(false, `source wire ${wire} is outside its assumed range`)
+      }
     }
   }
 
-  compileTensorProgram(roots?: readonly Wire[]): TensorProgram {
+  compileTensorProgram(roots?: readonly Wire[], lowerGathers = true): TensorProgram {
     const width = this.sourceSize + this.operations.length
     const normalizedRoots = roots ?? Array.from(
       {length: this.operations.length},
       (_, operationIndex) => this.sourceSize + operationIndex,
     )
+    const gatherPlans = lowerGathers ? planGatherLowering(this) : new Map<number, GatherPlan>()
     const liveOperations = findLiveOperations(
       normalizedRoots,
       this.sourceSize,
       this.operations,
       width,
+      gatherPlans,
+      this.oneHotGroups,
     )
     const operationsByLayer: number[][] = []
     for (let operationIndex = 0; operationIndex < this.operations.length; operationIndex++) {
@@ -239,12 +309,16 @@ export class Circuit {
       packedIndexByWire[wire] = wire
     }
     let availableValues = this.sourceSize
+    const slotByGroup = new Map<number, number>()
     for (let layerIndex = 0; layerIndex < operationsByLayer.length; layerIndex++) {
       const operationIndices = operationsByLayer[layerIndex]
       if (operationIndices === undefined) continue
       const outputSize = operationIndices.length
       const inputWires = new Set<Wire>()
       for (const operationIndex of operationIndices) {
+        // Gather rows read packed values directly by position; they pull
+        // nothing through the layer's input gather.
+        if (gatherPlans.has(operationIndex)) continue
         const operation = this.operations[operationIndex]!
         for (const [wire] of operation.leftTerms) inputWires.add(wire)
         for (const [wire] of operation.gateTerms) inputWires.add(wire)
@@ -273,6 +347,7 @@ export class Circuit {
       const gateRows: number[] = []
       const booleanRows: number[] = []
       const projectionTerms = Array<Terms>(projectionSize)
+      const pendingGatherReads: {row: number, plan: GatherPlan}[] = []
       let gateRow = 0
       for (let row = 0; row < operationIndices.length; row++) {
         const operationIndex = operationIndices[row]!
@@ -282,6 +357,14 @@ export class Circuit {
         wireOrder[packedOutput] = outputWire
         packedIndexByWire[outputWire] = packedOutput
         bias[row] = operation.leftBias
+        const plan = gatherPlans.get(operationIndex)
+        if (plan !== undefined) {
+          // The lowered sum keeps its bias in the sparse row and stores no
+          // weights; the executor adds the gathered value onto the bias.
+          projectionTerms[row] = []
+          pendingGatherReads.push({row, plan})
+          continue
+        }
         projectionTerms[row] = operation.leftTerms
         if (operation.kind === 'reglu') {
           const projectionRow = outputSize + gateRow
@@ -292,6 +375,36 @@ export class Circuit {
         } else if (operation.kind === 'boolean') {
           booleanRows.push(row)
         }
+      }
+      const gatherComputes: TensorGatherCompute[] = []
+      const gatherReads: TensorGatherRead[] = []
+      for (const {row, plan} of pendingGatherReads) {
+        const group = this.oneHotGroups[plan.groupIndex]!
+        let slot = slotByGroup.get(plan.groupIndex)
+        if (slot === undefined) {
+          // First read of this group: resolve its index here, once, before any
+          // of the layer's reads run. Bits and candidates sit at strictly
+          // earlier depths than the sum they fed, so they are already packed.
+          slot = slotByGroup.size
+          slotByGroup.set(plan.groupIndex, slot)
+          const bitPositions = group.members.map(member => {
+            const position = packedIndexByWire[member]!
+            invariant(position >= 0 && position < availableValues, 'gather bit is not available')
+            return position
+          })
+          gatherComputes.push({slot, bitPositions: compactUnsignedIndices(bitPositions)})
+        }
+        const candidatePositions = plan.candidateWires.map(candidate => {
+          const position = packedIndexByWire[candidate]!
+          invariant(position >= 0 && position < availableValues, 'gather candidate is not available')
+          return position
+        })
+        gatherReads.push({
+          row,
+          slot,
+          masked: group.allowAllZero,
+          candidatePositions: compactUnsignedIndices(candidatePositions),
+        })
       }
       const rowOffsets = Array<number>(projectionSize + 1).fill(0)
       for (let row = 0; row < projectionSize; row++) {
@@ -320,6 +433,8 @@ export class Circuit {
         rowOffsets: compactUnsignedIndices(rowOffsets),
         columns: compactUnsignedIndices(columns),
         weights,
+        gatherComputes,
+        gatherReads,
       })
       availableValues += outputSize
     }
@@ -330,6 +445,7 @@ export class Circuit {
       valueCount,
       wireOrder: compactUnsignedIndices(wireOrder),
       width,
+      gatherSlotCount: slotByGroup.size,
     }
   }
 
@@ -390,6 +506,8 @@ function findLiveOperations(
   sourceSize: number,
   operations: readonly Operation[],
   width: number,
+  gatherPlans: ReadonlyMap<number, GatherPlan>,
+  oneHotGroups: readonly OneHotGroup[],
 ): Uint8Array {
   const liveOperations = new Uint8Array(operations.length)
   const pending = [...roots]
@@ -400,11 +518,258 @@ function findLiveOperations(
     const operationIndex = wire - sourceSize
     if (liveOperations[operationIndex] === 1) continue
     liveOperations[operationIndex] = 1
+    const plan = gatherPlans.get(operationIndex)
+    if (plan !== undefined) {
+      // A lowered sum no longer reads its product terms; it reads the group's
+      // bits (for the index) and every candidate value directly. Products with
+      // no other consumer drop out of the compiled program entirely.
+      for (const member of oneHotGroups[plan.groupIndex]!.members) pending.push(member)
+      for (const candidate of plan.candidateWires) pending.push(candidate)
+      continue
+    }
     const operation = operations[operationIndex]!
     for (const [dependency] of operation.leftTerms) pending.push(dependency)
     for (const [dependency] of operation.gateTerms) pending.push(dependency)
   }
   return liveOperations
+}
+
+type MaskedProduct = {
+  coefficient: number
+  leftWire: Wire
+  gateWire: Wire
+  gateCoefficient: number
+}
+
+// Undo the builder's affine composition for one side of a reglu. Small affine
+// wires (fewer than affineShareThreshold terms) are inlined into consumers, so
+// a product against such a wire stores the wire's expanded definition rather
+// than a single reference. The builder's own deduplication map recovers the
+// defining wire: an expanded copy serializes to exactly the key under which
+// that wire was registered. sign -1 means the side equals the negated wire
+// (the negative arm of a mixed-sign multiply stores gate terms scaled by -1).
+function resolveAffineSide(
+  circuit: Circuit,
+  terms: Terms,
+  bias: number,
+  allowNegated: boolean,
+): {wire: Wire, sign: number} | undefined {
+  if (bias === 0 && terms.length === 1) {
+    const [wire, coefficient] = terms[0]!
+    if (coefficient === 1) return {wire, sign: 1}
+    if (coefficient === -1 && allowNegated) return {wire, sign: -1}
+    // Other coefficients may still be some wire's whole definition; fall
+    // through to the deduplication lookup.
+  }
+  if (terms.length === 0) return undefined
+  const direct = circuit.expressionWires.get(
+    serializeExpression('affine', terms, bias, [], 0),
+  )
+  if (direct !== undefined) return {wire: direct, sign: 1}
+  if (!allowNegated) return undefined
+  const negatedTerms: Terms = terms.map(([wire, coefficient]) => [wire, -coefficient])
+  const negated = circuit.expressionWires.get(
+    serializeExpression('affine', negatedTerms, -bias, [], 0),
+  )
+  if (negated !== undefined) return {wire: negated, sign: -1}
+  return undefined
+}
+
+// Parse one term of a candidate masked sum. A usable product is a reglu whose
+// left side is some wire (possibly stored as that wire's inlined definition)
+// and whose gate side is a wire or its negation — exactly the shapes
+// emitMultiply builds for bit * value across the orientations it picks.
+function maskedProductShape(circuit: Circuit, wire: Wire): Omit<MaskedProduct, 'coefficient'> | undefined {
+  if (wire < circuit.sourceSize) return undefined
+  const operation = circuit.operations[wire - circuit.sourceSize]!
+  if (operation.kind !== 'reglu') return undefined
+  const left = resolveAffineSide(circuit, operation.leftTerms, operation.leftBias, false)
+  if (left === undefined) return undefined
+  const gate = resolveAffineSide(circuit, operation.gateTerms, operation.gateBias, true)
+  if (gate === undefined) return undefined
+  return {leftWire: left.wire, gateWire: gate.wire, gateCoefficient: gate.sign}
+}
+
+// Recognize dynamic-lookup idioms: an affine whose terms are products of a
+// declared one-hot group against value wires, covering every group position
+// exactly once. Such a sum accumulates fround(0 * value) = 0 for every
+// non-selected position plus the selected value itself, so an indexed read of
+// the selected candidate reproduces it bit-for-bit (see the gather tests under
+// lab/gather-lowering for the full argument and its adversarial cases).
+function planGatherLowering(circuit: Circuit): Map<number, GatherPlan> {
+  const plans = new Map<number, GatherPlan>()
+  if (circuit.oneHotGroups.length === 0) return plans
+  const groupsByWire = new Map<Wire, number[]>()
+  const positionsByGroup = circuit.oneHotGroups.map((group, groupIndex) => {
+    const positions = new Map<Wire, number>()
+    for (let position = 0; position < group.members.length; position++) {
+      const member = group.members[position]!
+      positions.set(member, position)
+      const groups = groupsByWire.get(member)
+      if (groups === undefined) groupsByWire.set(member, [groupIndex])
+      else groups.push(groupIndex)
+    }
+    return positions
+  })
+  for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
+    const operation = circuit.operations[operationIndex]!
+    if (operation.kind !== 'affine' || operation.leftTerms.length === 0) continue
+    const products: MaskedProduct[] = []
+    let parsed = true
+    for (const [wire, coefficient] of operation.leftTerms) {
+      if (coefficient !== 1 && coefficient !== -1) {
+        parsed = false
+        break
+      }
+      const shape = maskedProductShape(circuit, wire)
+      if (shape === undefined) {
+        parsed = false
+        break
+      }
+      products.push({coefficient, ...shape})
+    }
+    if (!parsed) continue
+    // Every term of a matching sum references the group through its left or
+    // gate wire, so the first product's groups are the only ones to try.
+    const first = products[0]!
+    const candidateGroups = new Set([
+      ...groupsByWire.get(first.gateWire) ?? [],
+      ...groupsByWire.get(first.leftWire) ?? [],
+    ])
+    for (const groupIndex of candidateGroups) {
+      const candidateWires = attemptGatherMatch(
+        circuit,
+        products,
+        circuit.oneHotGroups[groupIndex]!,
+        positionsByGroup[groupIndex]!,
+      )
+      if (candidateWires !== null) {
+        plans.set(operationIndex, {groupIndex, candidateWires})
+        break
+      }
+    }
+  }
+  return plans
+}
+
+// Lowering requires value wires with finite declared ranges. A wire whose
+// range admits Infinity can poison the dense sum to NaN through a
+// non-selected product (fround(Infinity * 0) is NaN) while the gather would
+// skip that product entirely, so such reads must stay dense.
+function hasFiniteRange(circuit: Circuit, wire: Wire): boolean {
+  const range = circuit.ranges[wire]!
+  return Number.isFinite(range.minimum) && Number.isFinite(range.maximum)
+}
+
+// Try to interpret the parsed products as one complete read of the group:
+// every group position must contribute exactly one value wire, and every term
+// must be provably equal to that masked read in FP32. Returns the candidate
+// value wires ordered by group position, or null when the sum is not a pure
+// masked read of this group.
+function attemptGatherMatch(
+  circuit: Circuit,
+  products: readonly MaskedProduct[],
+  group: OneHotGroup,
+  positionByMember: ReadonlyMap<Wire, number>,
+): readonly Wire[] | null {
+  // Index the negative arms of mixed-sign multiplies first. For a value with a
+  // signed range, emitMultiply emits pos = reglu(bit; value) and
+  // neg = reglu(bit; -value) and subtracts them; only the pair together reads
+  // the value exactly, so each arm must find its partner.
+  const negativeArms = new Map<string, {used: boolean}>()
+  for (const product of products) {
+    if (
+      product.coefficient === -1
+      && product.gateCoefficient === -1
+      && positionByMember.has(product.leftWire)
+      && !positionByMember.has(product.gateWire)
+    ) {
+      const key = `${product.leftWire}|${product.gateWire}`
+      if (negativeArms.has(key)) return null
+      negativeArms.set(key, {used: false})
+    }
+  }
+  const optionsByTerm: {position: number, valueWire: Wire}[][] = []
+  for (const product of products) {
+    const {coefficient, leftWire, gateWire, gateCoefficient} = product
+    if (coefficient === 1 && gateCoefficient === 1) {
+      const options: {position: number, valueWire: Wire}[] = []
+      const gatePosition = positionByMember.get(gateWire)
+      // Bit in the gate: fround(value * max(0, bit)) selects any finite value.
+      // The value's declared range must be finite on both ends: a range that
+      // admits Infinity lets a non-selected product turn into
+      // fround(Infinity * 0) = NaN and poison the dense sum, which a gather
+      // would not reproduce.
+      if (gatePosition !== undefined && hasFiniteRange(circuit, leftWire)) {
+        options.push({position: gatePosition, valueWire: leftWire})
+      }
+      const leftPosition = positionByMember.get(leftWire)
+      if (leftPosition !== undefined) {
+        const negativeArm = negativeArms.get(`${leftWire}|${gateWire}`)
+        if (negativeArm !== undefined && !negativeArm.used && hasFiniteRange(circuit, gateWire)) {
+          negativeArm.used = true
+          options.push({position: leftPosition, valueWire: gateWire})
+        } else if (
+          circuit.ranges[gateWire]!.minimum >= 0
+          && Number.isFinite(circuit.ranges[gateWire]!.maximum)
+        ) {
+          // Bit on the left: fround(bit * max(0, value)) reads the value only
+          // when the relu is the identity, so the value must be non-negative,
+          // and finite for the same NaN reason as above.
+          options.push({position: leftPosition, valueWire: gateWire})
+        }
+      }
+      if (options.length === 0) return null
+      optionsByTerm.push(options)
+    } else if (gateCoefficient === -1 && positionByMember.has(product.gateWire)) {
+      // A bit behind a negated gate: max(0, -bit) is exactly 0 for a 0/1 bit,
+      // so the term contributes a signed zero the sum ignores — unless the
+      // left value could be infinite, in which case the reference computes
+      // fround(Infinity * 0) = NaN instead of a zero.
+      if (!hasFiniteRange(circuit, leftWire)) return null
+      continue
+    } else if (
+      coefficient === -1
+      && gateCoefficient === -1
+      && positionByMember.has(leftWire)
+    ) {
+      // The negative arm of a mixed-sign pair, verified as used below.
+      continue
+    } else {
+      return null
+    }
+  }
+  for (const arm of negativeArms.values()) {
+    if (!arm.used) return null
+  }
+  // Assign positions: fixed terms first, then terms whose bit could sit on
+  // either side take whichever position is still open.
+  const candidateWires = Array<Wire | undefined>(group.members.length)
+  const flexibleTerms: {position: number, valueWire: Wire}[][] = []
+  for (const options of optionsByTerm) {
+    if (options.length === 1) {
+      const {position, valueWire} = options[0]!
+      if (candidateWires[position] !== undefined) return null
+      candidateWires[position] = valueWire
+    } else {
+      flexibleTerms.push(options)
+    }
+  }
+  for (const options of flexibleTerms) {
+    let placed = false
+    for (const {position, valueWire} of options) {
+      if (candidateWires[position] === undefined) {
+        candidateWires[position] = valueWire
+        placed = true
+        break
+      }
+    }
+    if (!placed) return null
+  }
+  for (const candidate of candidateWires) {
+    if (candidate === undefined) return null
+  }
+  return candidateWires as Wire[]
 }
 
 function serializeExpression(
@@ -517,6 +882,8 @@ function evaluateTensorProgram(
   for (const layer of layers) maxInputSize = Math.max(maxInputSize, layer.inputSize)
   const input = new Float32Array(maxInputSize)
   const projection = new Float32Array(maxProjectionSize)
+  const gatherIndices = new Int32Array(program.gatherSlotCount)
+  const gatherMasses = new Float32Array(program.gatherSlotCount)
   packedValues.set(source)
   let availableValues = source.length
   for (const layer of layers) {
@@ -532,6 +899,9 @@ function evaluateTensorProgram(
       input,
       layer.bias,
     )
+    if (layer.gatherReads.length > 0) {
+      applyGathers(layer, packedValues, projection, gatherIndices, gatherMasses)
+    }
     for (let gateRow = 0; gateRow < layer.gateRows.length; gateRow++) {
       const outputRow = layer.gateRows[gateRow]!
       projection[outputRow] = Math.fround(
@@ -549,6 +919,42 @@ function evaluateTensorProgram(
     values[wireOrder[packedIndex]!] = packedValues[packedIndex]!
   }
   return values
+}
+
+// Kept out of evaluateTensorProgram on purpose: with these loops inlined, the
+// engine's top JIT tier fails to optimize the whole evaluation function and
+// gather-heavy programs run several times slower on identical work (measured
+// 3.6x-5.3x on Bun 1.3 / JavaScriptCore; the reproducible measurement lives in
+// lab/gather-lowering/executor-study.ts).
+function applyGathers(
+  layer: TensorLayer,
+  packedValues: Float32Array,
+  projection: Float32Array,
+  gatherIndices: Int32Array,
+  gatherMasses: Float32Array,
+) {
+  for (const compute of layer.gatherComputes) {
+    // The dot of exact 0/1 bits with 0..N-1 is an exact small integer, so the
+    // index and the group mass are both computed without rounding.
+    let index = 0
+    let mass = 0
+    for (let position = 0; position < compute.bitPositions.length; position++) {
+      const bit = packedValues[compute.bitPositions[position]!]!
+      index += position * bit
+      mass += bit
+    }
+    gatherIndices[compute.slot] = index
+    gatherMasses[compute.slot] = mass
+  }
+  for (const read of layer.gatherReads) {
+    // Clamp so a violated one-hot contract reads a wrong value instead of
+    // reading out of bounds; an exact contract makes the clamp a no-op.
+    const limit = read.candidatePositions.length - 1
+    const index = Math.min(Math.max(gatherIndices[read.slot]!, 0), limit)
+    let contribution = packedValues[read.candidatePositions[index]!]!
+    if (read.masked) contribution = Math.fround(gatherMasses[read.slot]! * contribution)
+    projection[read.row] = Math.fround(projection[read.row]! + contribution)
+  }
 }
 
 function sparseMatmulAddBias(
@@ -781,6 +1187,10 @@ export function emitArgmax(
   const root = level[0]!
   const selected = Array<Wire>(scores.length)
   routeArgmax(circuit, root, unit, selected)
+  // The tournament routes the unit down exactly one path, so the selection is
+  // an exact one-hot by construction; declare it so masked reads of it can
+  // lower to gathers.
+  circuit.assumeOneHot(selected)
   return {selected, score: root.score}
 }
 
@@ -839,7 +1249,40 @@ export function emitFirstActive(
   const root = level[0]!
   const selected = Array<Wire>(candidates.length)
   routeWinner(circuit, root, emitMultiply(circuit, active, root.mass), selected)
+  // The selection is one-hot-or-all-zero only when the gate and every
+  // candidate are exact bits. Fractional scores in 0..1 are legal inputs here
+  // and produce fractional masses (e.g. candidates [0.5, 0] route 0.25 to each
+  // output), so declaring unconditionally would be a false contract that
+  // gather lowering then miscompiles. Constant candidates can also fold
+  // routing wires together, and a group needs distinct members, so those
+  // degenerate selections stay undeclared as well.
+  if (isProvenBit(circuit, active) && candidates.every(candidate => isProvenBit(circuit, candidate))) {
+    const distinctMembers = new Set(selected)
+    if (distinctMembers.size === selected.length) circuit.assumeOneHot(selected, true)
+  }
   return selected
+}
+
+// A wire that provably holds an exact 0 or 1: its declared range pins it to
+// one of the two values, a boolean atom produced it, or it belongs to a
+// declared one-hot group (whose members are exactly 0 or 1 by contract, in
+// all-zero-allowed groups too). A plain 0..1 range is NOT enough — it admits
+// fractional values.
+function isProvenBit(circuit: Circuit, wire: Wire): boolean {
+  const range = circuit.ranges[wire]!
+  if (range.minimum === range.maximum && (range.minimum === 0 || range.minimum === 1)) {
+    return true
+  }
+  if (
+    wire >= circuit.sourceSize
+    && circuit.operations[wire - circuit.sourceSize]!.kind === 'boolean'
+  ) {
+    return true
+  }
+  for (const group of circuit.oneHotGroups) {
+    if (group.members.includes(wire)) return true
+  }
+  return false
 }
 
 function routeWinner(
@@ -891,6 +1334,14 @@ export function inlineCircuit(
     target.assumeRange(wire, range.minimum, range.maximum)
     wireMap.push(wire)
   }
+  // Declared one-hot groups survive inlining: the property is about runtime
+  // values, which the mapped wires still carry.
+  for (const group of source.oneHotGroups) {
+    target.assumeOneHot(
+      group.members.map(member => wireMap[member]!),
+      group.allowAllZero,
+    )
+  }
   return wireMap
 }
 
@@ -917,6 +1368,7 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
     invariant(wireOrder[wire] === wire, 'tensor source order mismatch')
     seenWires[wire] = 1
   }
+  const resolvedGatherSlots = new Uint8Array(program.gatherSlotCount)
   let availableValues = circuit.sourceSize
   for (const layer of layers) {
     const {outputSize} = layer
@@ -957,6 +1409,34 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
     for (const column of layer.columns) {
       invariant(column < layer.inputSize, 'sparse matrix column is invalid')
     }
+    for (const compute of layer.gatherComputes) {
+      invariant(
+        compute.slot >= 0 && compute.slot < program.gatherSlotCount,
+        'gather slot is invalid',
+      )
+      invariant(resolvedGatherSlots[compute.slot] === 0, 'gather slot must be resolved exactly once')
+      resolvedGatherSlots[compute.slot] = 1
+      for (const bitPosition of compute.bitPositions) {
+        invariant(bitPosition < availableValues, 'gather bit is not available')
+      }
+    }
+    for (const read of layer.gatherReads) {
+      invariant(read.row < outputSize, 'gather output row is invalid')
+      invariant(seenGateRows[read.row] === 0, 'gather output row cannot be gated')
+      invariant(seenBooleanRows[read.row] === 0, 'gather output row cannot be boolean')
+      invariant(
+        layer.rowOffsets[read.row] === layer.rowOffsets[read.row + 1],
+        'gather output row must store no weights',
+      )
+      invariant(
+        read.slot >= 0 && read.slot < program.gatherSlotCount && resolvedGatherSlots[read.slot] === 1,
+        'gather read must follow its slot resolution',
+      )
+      invariant(read.candidatePositions.length > 0, 'gather read needs at least one candidate')
+      for (const candidatePosition of read.candidatePositions) {
+        invariant(candidatePosition < availableValues, 'gather candidate is not available')
+      }
+    }
     assertFiniteValues(layer.bias, 'projection bias')
     assertFiniteValues(layer.weights, 'projection matrix')
     for (let row = 0; row < outputSize; row++) {
@@ -968,7 +1448,34 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
     availableValues += outputSize
   }
   invariant(availableValues === valueCount, 'tensor program output size mismatch')
+  for (const resolved of resolvedGatherSlots) {
+    invariant(resolved === 1, 'every gather slot must be resolved')
+  }
   for (const root of roots) invariant(seenWires[root] === 1, 'every tensor root must be present')
+}
+
+// Check every declared one-hot group against evaluated wire values: each
+// member is exactly 0 or 1 and the members sum to exactly 1 (or 0 where the
+// group allows the all-zero state). Meant for tests and for checking trainer
+// writebacks; the evaluators never pay this cost on their own.
+export function validateOneHotGroups(circuit: Circuit, values: Float32Array) {
+  invariant(
+    values.length === circuit.sourceSize + circuit.operations.length,
+    'one-hot validation needs the full wire values',
+  )
+  for (const group of circuit.oneHotGroups) {
+    let mass = 0
+    for (const member of group.members) {
+      const value = values[member]!
+      if (!(value === 0 || value === 1)) {
+        invariant(false, `one-hot member wire ${member} must be exactly 0 or 1, got ${value}`)
+      }
+      mass += value
+    }
+    if (!(mass === 1 || (group.allowAllZero && mass === 0))) {
+      invariant(false, `one-hot group must have exactly one active member, got mass ${mass}`)
+    }
+  }
 }
 
 export function validateTensorEvaluation(

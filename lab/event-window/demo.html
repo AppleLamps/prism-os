@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Event Window</title>
+  <link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+  <main id="event-window-demo">
+    <header class="demo-header">
+      <h1>Event window</h1>
+      <p>
+        Four windows driven entirely by one compiled numeric circuit stepping closed-loop:
+        every frame is a pure function of the latched press record plus the live pointer.
+        The JavaScript on this page only feeds pointer events into source cells and copies
+        sixteen geometry numbers back onto the screen.
+        Drag a title bar. Click a window to focus it, click its body again to maximize.
+      </p>
+    </header>
+
+    <section id="demo-stage" aria-label="Interactive windows driven by the circuit">
+      <div id="demo-world"></div>
+    </section>
+
+    <aside class="demo-side">
+      <section class="panel" id="latch-panel">
+        <h2>The event window</h2>
+        <div class="latch-rows">
+          <div class="latch-row">
+            <span class="latch-row-label">live pointer</span>
+            <div class="latch-values">
+              <div class="latch-number"><span>x</span><b id="latch-pointer-x">0</b></div>
+              <div class="latch-number"><span>y</span><b id="latch-pointer-y">0</b></div>
+            </div>
+          </div>
+          <div class="latch-row">
+            <span class="latch-row-label">press record</span>
+            <div class="latch-values">
+              <div class="latch-lamp" id="latch-press"><i></i><span>active</span></div>
+              <div class="latch-number"><span>x</span><b id="latch-press-x">0</b></div>
+              <div class="latch-number"><span>y</span><b id="latch-press-y">0</b></div>
+            </div>
+          </div>
+          <div class="latch-row">
+            <span class="latch-row-label">window hit</span>
+            <div class="latch-values" id="latch-hit-cells"></div>
+          </div>
+          <div class="latch-row">
+            <span class="latch-row-label">snapshot at press</span>
+            <div class="latch-values">
+              <div class="latch-lamp" id="latch-on-title"><i></i><span>on title</span></div>
+              <div class="latch-lamp" id="latch-was-focused"><i></i><span>was focused</span></div>
+              <div class="latch-lamp" id="latch-on-maximized"><i></i><span>was max</span></div>
+            </div>
+          </div>
+          <div class="latch-row">
+            <span class="latch-row-label">drag-begin latch</span>
+            <div class="latch-values">
+              <div class="latch-lamp latch-lamp-wide" id="latch-slop"><i></i><span>slop crossed</span></div>
+            </div>
+          </div>
+        </div>
+        <p class="panel-caption">
+          One latched press record plus the live pointer is the entire memory of the
+          interaction — nothing accumulates per frame. Latched values stay after release;
+          the active bit gates their meaning. Watch the drag-begin latch flip the instant
+          the pointer crosses the slop threshold.
+        </p>
+      </section>
+
+      <section class="panel" id="controls-panel">
+        <h2>Behavior cells</h2>
+        <div class="control-toggles">
+          <label class="control-toggle"><input type="checkbox" id="cell-drag-title" checked><i></i><span>title bar drags</span></label>
+          <label class="control-toggle"><input type="checkbox" id="cell-toggle-title"><i></i><span>title click maximizes</span></label>
+          <label class="control-toggle"><input type="checkbox" id="cell-drag-body"><i></i><span>body drags</span></label>
+          <label class="control-toggle"><input type="checkbox" id="cell-toggle-body" checked><i></i><span>body click maximizes</span></label>
+        </div>
+        <div class="control-sliders">
+          <label class="control-slider">
+            <span>slop <b id="cell-slop-value">4</b>px</span>
+            <input type="range" id="cell-slop" min="1" max="16" step="1" value="4">
+          </label>
+          <label class="control-slider">
+            <span>title bar <b id="cell-title-value">30</b>px</span>
+            <input type="range" id="cell-title" min="10" max="60" step="1" value="30">
+          </label>
+        </div>
+        <p class="panel-caption">
+          These six values are behavior parameter cells inside the running circuit, written
+          between frames. Flip “body drags” and every window becomes draggable anywhere,
+          instantly — zero recompilation. The title-bar strip you see is drawn from the same
+          cell the circuit reads, so the picture and the behavior cannot disagree.
+        </p>
+      </section>
+    </aside>
+
+    <footer class="demo-footer">
+      <div class="stat-line" id="stat-line">·</div>
+      <div class="agreement" id="agreement">circuit ≡ reference · 0 frames · 0 divergences</div>
+      <button id="autopilot-toggle" type="button">autopilot on</button>
+    </footer>
+  </main>
+  <script type="module" src="./demo.ts"></script>
+</body>
+</html>

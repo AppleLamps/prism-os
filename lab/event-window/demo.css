@@ -1,0 +1,474 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --paper: #f6f1e8;
+  --paper-dim: rgb(246 241 232 / 48%);
+  --accent: #f0bd73;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  color: var(--paper);
+  background:
+    radial-gradient(circle at 16% 0%, rgb(157 103 62 / 18%), transparent 36%),
+    radial-gradient(circle at 90% 86%, rgb(58 87 113 / 22%), transparent 38%),
+    #0b0d0f;
+}
+
+#event-window-demo {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 14px 16px;
+  padding: 20px;
+}
+
+.demo-header {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 24px;
+}
+
+.demo-header h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(24px, 3vw, 44px);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+}
+
+.demo-header p {
+  max-width: 88ch;
+  margin: 0;
+  color: var(--paper-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* The stage frames the circuit's 1280 x 800 coordinate space; the world inside
+   is scaled to fit, so circuit pixels and screen pixels stay proportional. */
+#demo-stage {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(246 241 232 / 14%);
+  border-radius: 22px;
+  background: rgb(0 0 0 / 42%);
+  box-shadow:
+    0 28px 80px rgb(0 0 0 / 32%),
+    inset 0 1px rgb(255 255 255 / 5%);
+  touch-action: none;
+}
+
+#demo-stage[data-dragging="1"],
+#demo-stage[data-dragging="1"] .window-title {
+  cursor: grabbing;
+}
+
+#demo-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1280px;
+  height: 800px;
+  transform-origin: top left;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 2.5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 2.5%) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+/* Everything inside the world is sized in world pixels: the stage scales the
+   whole coordinate space with one transform, so text and chrome scale with the
+   windows instead of fighting them. */
+.demo-window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  border: 1.5px solid rgb(255 255 255 / calc(0.14 + var(--focused, 0) * 0.55));
+  border-radius: calc(16px - var(--maximized, 0) * 10px);
+  background:
+    linear-gradient(160deg, hsl(var(--hue) 34% 24% / 0.92), hsl(var(--hue) 40% 12% / 0.94)),
+    #0b0d0f;
+  box-shadow:
+    0 18px 44px rgb(0 0 0 / calc(0.3 + var(--focused, 0) * 0.25)),
+    0 0 0 calc(var(--focused, 0) * 5px) hsl(var(--hue) 70% 62% / 14%),
+    inset 0 1px rgb(255 255 255 / 7%);
+  container-type: size;
+}
+
+.window-title {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  padding: 0 16px;
+  border-bottom: 1px solid rgb(255 255 255 / 9%);
+  background: linear-gradient(hsl(var(--hue) 40% 34% / 0.5), hsl(var(--hue) 36% 26% / 0.28));
+  cursor: grab;
+}
+
+.window-title i {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: hsl(var(--hue) 72% 66% / calc(0.35 + var(--focused, 0) * 0.6));
+  box-shadow: 0 0 calc(var(--focused, 0) * 10px) hsl(var(--hue) 80% 66% / 55%);
+}
+
+.window-title span {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: calc(0.55 + var(--focused, 0) * 0.45);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-body {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.window-body b {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 42cqmin;
+  font-weight: 400;
+  color: hsl(var(--hue) 60% 78% / calc(0.1 + var(--focused, 0) * 0.14 + var(--maximized, 0) * 0.1));
+  user-select: none;
+}
+
+.window-body small {
+  position: absolute;
+  bottom: 16px;
+  color: rgb(246 241 232 / calc(var(--maximized, 0) * 0.55));
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.demo-side {
+  display: grid;
+  grid-auto-rows: min-content;
+  gap: 14px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.panel {
+  padding: 14px 16px 12px;
+  border: 1px solid rgb(246 241 232 / 12%);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 3%);
+}
+
+.panel h2 {
+  margin: 0 0 10px;
+  color: var(--paper-dim);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.panel-caption {
+  margin: 12px 0 0;
+  color: var(--paper-dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.latch-rows {
+  display: grid;
+  gap: 8px;
+}
+
+.latch-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.latch-row-label {
+  color: var(--paper-dim);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.latch-values {
+  display: flex;
+  gap: 6px;
+}
+
+.latch-lamp {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid rgb(255 255 255 / calc(0.09 + var(--on, 0) * 0.3));
+  border-radius: 8px;
+  background: rgb(240 189 115 / calc(var(--on, 0) * 0.13));
+  box-shadow: 0 0 calc(var(--on, 0) * 14px) rgb(240 189 115 / 22%);
+  transition: background 200ms, border-color 200ms, box-shadow 200ms;
+}
+
+.latch-lamp i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(240 189 115 / calc(0.14 + var(--on, 0) * 0.86));
+  box-shadow: 0 0 calc(var(--on, 0) * 8px) var(--accent);
+  transition: background 200ms, box-shadow 200ms;
+}
+
+.latch-lamp span {
+  color: rgb(246 241 232 / calc(0.42 + var(--on, 0) * 0.55));
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transition: color 200ms;
+}
+
+.latch-hit-cell {
+  flex: 1;
+  padding: 5px 0;
+  border: 1px solid rgb(255 255 255 / calc(0.09 + var(--on, 0) * 0.34));
+  border-radius: 8px;
+  background: hsl(var(--hue) 60% 60% / calc(var(--on, 0) * 0.2));
+  box-shadow: 0 0 calc(var(--on, 0) * 14px) hsl(var(--hue) 70% 62% / 30%);
+  color: rgb(246 241 232 / calc(0.42 + var(--on, 0) * 0.55));
+  font-family: var(--mono);
+  font-size: 9.5px;
+  text-align: center;
+  transition: background 200ms, border-color 200ms, box-shadow 200ms, color 200ms;
+}
+
+.latch-number {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 8px;
+  font-family: var(--mono);
+}
+
+.latch-number span {
+  color: var(--paper-dim);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.latch-number b {
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  opacity: var(--lit, 1);
+  transition: opacity 200ms;
+}
+
+.control-toggles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.control-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 9px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.control-toggle:hover {
+  border-color: rgb(255 255 255 / 22%);
+}
+
+.control-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.control-toggle i {
+  position: relative;
+  flex: none;
+  width: 26px;
+  height: 15px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 14%);
+  transition: background 160ms;
+}
+
+.control-toggle i::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--paper);
+  transition: transform 160ms;
+}
+
+.control-toggle input:checked + i {
+  background: rgb(240 189 115 / 75%);
+}
+
+.control-toggle input:checked + i::after {
+  transform: translateX(11px);
+}
+
+.control-toggle span {
+  font-size: 11px;
+  color: rgb(246 241 232 / 78%);
+  white-space: nowrap;
+}
+
+.control-sliders {
+  display: grid;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.control-slider {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.control-slider span {
+  color: var(--paper-dim);
+  font-family: var(--mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.control-slider b {
+  color: var(--paper);
+  font-weight: 500;
+}
+
+.control-slider input {
+  width: 100%;
+  height: 3px;
+  appearance: none;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 16%);
+  cursor: pointer;
+}
+
+.control-slider input::-webkit-slider-thumb {
+  width: 13px;
+  height: 13px;
+  appearance: none;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px rgb(240 189 115 / 45%);
+}
+
+.demo-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  color: var(--paper-dim);
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+
+.stat-line {
+  font-variant-numeric: tabular-nums;
+}
+
+.agreement {
+  font-variant-numeric: tabular-nums;
+  color: rgb(146 200 146 / 85%);
+}
+
+.agreement.diverged {
+  color: #ff7b6b;
+  animation: diverged-flash 600ms ease-in-out infinite alternate;
+}
+
+@keyframes diverged-flash {
+  from { opacity: 1; }
+  to { opacity: 0.35; }
+}
+
+#autopilot-toggle {
+  margin-left: auto;
+  padding: 6px 14px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 4%);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+#autopilot-toggle[data-on="1"] {
+  border-color: rgb(240 189 115 / 55%);
+  background: rgb(240 189 115 / 12%);
+  color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  #event-window-demo {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(240px, 1fr) auto auto;
+    overflow-y: auto;
+  }
+
+  .demo-side {
+    grid-column: 1;
+    overflow-y: visible;
+  }
+
+  .demo-footer {
+    flex-wrap: wrap;
+  }
+}
