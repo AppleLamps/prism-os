@@ -1,5 +1,14 @@
 # One-hot group invariants and gather lowering in the tensor compiler
 
+## September 2026 update
+
+Current production counts are 26 candidate-gallery reads and 12 window-manager reads. Preserved multiplication metadata retains constant-zero candidates that earlier builder folding erased. The current compiled sparse-weight counts are 940 to 848 for candidate-gallery and 11,742 to 11,598 for window-manager; the tables below record earlier implementations and are historical. The differential study now uses 3,000 circuits, keeping the existing minimum coverage requirements after the graph representation changed.
+
+Finite bounds now follow FP32 rounding at each step. A finite float64 endpoint above the FP32 range no longer authorizes gather lowering. See `numeric-semantics.test.ts` for an unselected overflowing-product regression. Retrieval still follows selection; this pass does not discover query/key scoring. See `lab/runtime-cost` for the separate reusable-buffer measurement.
+
+## Historical July notes
+
+
 Dynamic lookup — reading one item out of N at a runtime index — previously cost O(N) stored weights and O(N) work per read: a one-hot mask multiplied against every candidate, then summed. This experiment implements the alternative chosen in `todo.md` ("Revisit hardAttend"): no fourth atom. The circuit algebra stays affine/reglu/boolean, the literal reference evaluator stays the definition of correctness, and the tensor **executor** gains a gather operation that `compileTensorProgram` emits when it recognizes the masked-sum idiom over a declared one-hot group. The lowering is bit-identical to the reference on every wire (with one precisely-characterized signed-zero caveat), proven by randomized differential tests over thousands of seeded circuits and by the production circuits running their full test suites through lowered programs.
 
 ## What was built (all in `numeric-ui-core.ts`, additive; reference evaluator untouched)
@@ -82,20 +91,41 @@ Two earlier README claims rested on unretained instrumentation. Both are now rep
 - `validateSourceRanges` (pre-existing, runs on every `evaluateTensor`) built its failure message eagerly — one template string per source cell per evaluation, megabytes of garbage per call at tens of thousands of sources. The message is now built only on failure. Semantics unchanged; verified by the full suite.
 - The `applyGathers` extraction above: keeping the gather loops out of `evaluateTensorProgram` avoids the JIT pathology, 3.6–5.3x on the affected shape.
 
-## Production survey (`production-survey.test.ts`)
+## Production adoption (`production-survey.test.ts`, `bun lab/gather-lowering/production-benchmark.ts`)
 
-| circuit | declared groups | gather reads (default compile) |
-| --- | --- | --- |
-| candidate-gallery (as committed) | 1 (argmax winner) | 0 |
-| window-manager (as committed) | 0 | 0 |
-| window-manager + declared stack contracts (from the test) | 8 | 12 |
+After the exactness fixes landed, the committed circuits lowered 0 gathers by default: their masked-read candidates could not be *proven* finite from declared ranges alone, even though at runtime they are (the pre-fix lowering of exactly these reads was unsound as a contract — with only the finiteness gate disabled, exactly 22 reads come back in candidate-gallery). With Cheng's approval, the builders now declare what was always true, and recognition engages:
 
-The headline production finding, stated honestly: **with the exactness fixes in place, all committed production circuits lower 0 gathers by default** — not because the idiom is absent, but because their masked-read candidates cannot be *proven* to satisfy the contract from declared ranges alone, even though at runtime they do.
+| circuit | declared groups | gather reads | stored weights dense → lowered | execution µs dense → lowered (min-max of subprocess medians) |
+| --- | --- | --- | --- | --- |
+| candidate-gallery | 1 (argmax winner) | 22 | 895 → 863 | 8.3-9.4 → 6.8-6.9 (1.26x median) |
+| window-manager | 8 (stack rows and columns) | 12 | 11,145 → 10,993 | 30.0-32.1 → 29.3-31.5 (1.02x median) |
 
-- **candidate-gallery: 1 group, 0 gathers.** The argmax winner group is still declared. Its 22 `selectValue` masked reads (53 call sites minus deduplication and the hero sums that constant folding truncates) match the shape over that group — and they lowered under the pre-fix compiler. But every candidate is viewport-derived geometry with a declared range of `0..Infinity`, and the finiteness rule now refuses unbounded candidates: with a non-selected value infinite and its bit 0, the dense sum computes `fround(Infinity * 0) = NaN` that a gather would not reproduce. Confirmed by isolating the fix — with only the finiteness gate disabled, exactly those 22 reads come back. In practice the viewport is finite so the pre-fix lowering matched at runtime, but the *declared contract* was unsound; declaring finite viewport-derived bounds inside the builder would re-enable all 22 reads soundly. The 60-frame click/resize trace stays bit-identical to the reference every frame with the group validated.
-- **window-manager: 0 groups, 0 gathers.** The photo gallery's click selection gates on a product of 0..1-range wires — not a *provably* exact bit — so `emitFirstActive` no longer declares it (correctly: the pre-fix unconditional declaration was the exactness hole). Its real dynamic lookups (`emitFrontmost`, the stacking updates) run over the stack permutation matrix, a source-table contract that nothing declares.
-- **Declaring the stack contracts finds the lookups.** Declaring the 4 stack rows and 4 stack columns as one-hot groups — from the test, without touching `window-manager.ts` — lowers 12 gathers (the frontmost-window selection and the selected-rank reads; stored weights 11,145 → 10,993). A full interaction trace (title-bar drag, restacking clicks, dock minimize/restore, photo navigation, spring settling) stays bit-identical to the reference every frame, and `validateOneHotGroups` confirms the permutation stays exactly one-hot throughout. The `focusedWindow` call reads the *next* stack (computed wires, not the declared source cells), so it stays dense: declared invariants do not propagate through computation.
-- **event-window (a sibling lab, unmodified): 0 groups, 0 gathers, 33 tests still green.** Its `emitFirstActive` selection is over products `bit * stateCell` that are exact bits at runtime but not provably so from declared ranges, so the stricter rule abstains. Its 20k-frame differentials pass unchanged, dense.
+Execution times use the same methodology as the main benchmark (subprocess per circuit and mode, 5 repeats of 500 timed runs, evaluation interleaved with the source-range validation it always pays, measured on a realistic settled machine state with a rotating pointer cell). The window-manager delta is within measurement noise, as expected: 12 gather reads replace 152 of 11,145 stored weights in a circuit of about 3,000 live operations. The candidate-gallery delta is real but modest. The point of the exercise is validation, not speed: the declared-invariant path runs end to end on the real circuits, exactly, under their full test suites.
+
+Every range change in the builders, with its justification:
+
+| file | field(s) | old range | new range | justification |
+| --- | --- | --- | --- | --- |
+| candidate-gallery.ts | viewportWidth, viewportHeight, clickX, clickY, cinemaRailMaximum | 0..Infinity | 0..16384 | pixel-space; 16384 covers 8K displays (7680 wide) with headroom, far inside FP32's exact-integer band per macro-ranges.md |
+| candidate-gallery.ts | gap | 0..Infinity | 0..1024 | a spacing constant in the tens of pixels (the machine uses 14) |
+| candidate-gallery.ts | the seven quality scales | 0..Infinity | unchanged | behavior parameters (reciprocals of target sizes), not pixel geometry; their products are clamped to 0..1 downstream |
+| photo-gallery.ts | viewportWidth, viewportHeight | 0..Infinity | 0..16384 | pixel-space; once inlined into the window manager the bound becomes a contract on the window content dimensions, which are clamped to the viewport |
+| photo-gallery.ts | gap, mainInset, thumbnailHeight, controlSize | 0..Infinity | 0..1024 | spacing and control-size constants (18, 92, 82, 52 in the machine) |
+| photo-gallery.ts | thumbnail spring centerX (12 cells) | 0..Infinity | 0..16384 | clamped to the viewport before writeback |
+| window-manager.ts | viewportWidth, viewportHeight | 0..Infinity | 0..16384 | pixel-space, as above |
+| window-manager.ts | margin, titleHeight, minWidth, minHeight, resizeGrip, buttonSize, buttonGap, dockHeight, dockGap, dockItemWidth, systemBarHeight | 0..Infinity | 0..1024 | geometry constants in the tens to hundreds of pixels (the largest, minWidth, is 280) |
+| window-manager.ts | spring stiffness, damping, max frame duration, settle thresholds and scales | 0..Infinity | unchanged | physics constants, not pixel geometry |
+| window-manager.ts | frameTime, previousFrameTime | 0..Infinity | unchanged | requestAnimationFrame timestamps grow without bound over a session |
+| window-manager.ts | window left, top, width, height (4 windows) | 0..Infinity | 0..16384 | clamped to the viewport every frame before writeback |
+| window-manager.ts | photo gap, mainInset, thumbnailHeight, controlSize | 0..Infinity | 0..1024 | must agree with photo-gallery.ts, whose inlined contracts land on these wires |
+| window-manager.ts | photo thumbnail spring centerX (12 cells) | 0..Infinity | 0..16384 | as in photo-gallery.ts |
+| window-manager.ts | stack rows and columns | 0..1 per cell, no group | + 8 `assumeOneHot` declarations | the stacking state is a permutation matrix, asserted by validateWindowManagerSource every frame; validated one-hot-exact across full interaction traces from the test side before moving into the builder |
+
+No test or demo feeds values outside the new bounds: the largest viewport any test uses is 2000, pointer coordinates (which go negative and large in the drag tests) carry no range contract beyond finiteness, and frame times stay unbounded on purpose. All 108 pre-existing root and exp tests pass unchanged on the lowered programs — including oracle-trace's long randomized interaction traces, which compare the tensor result against the reference on every live wire every frame — plus the survey's own 200-frame drag/restack/dock/photo trace with `validateOneHotGroups` checked exactly each step.
+
+What lowers, precisely: candidate-gallery's 22 distinct `selectValue` sums over the argmax winner (53 call sites minus deduplication; the hero sums stay dense because constant folding erases their constant-zero Contact member); window-manager's 12 stacking reads (4 rank-hit reads over stack rows, 4 selected-window reads over columns, 4 selected-rank reads over rows). The `focusedWindow` call reads the *next* stack — computed wires, not the declared source cells — so it stays dense: declared invariants do not propagate through computation. The photo gallery's click selection still declares nothing (its gate is a product of 0..1-range wires, not a provably exact bit), and its focus update is a mixed sum, outside the pure idiom.
+
+**event-window (a sibling lab, unmodified): 0 groups, 0 gathers, tests green.** Its `emitFirstActive` selection is over products `bit * stateCell` that are exact bits at runtime but not provably so from declared ranges, so the stricter rule abstains. Its 20k-frame differentials pass unchanged, dense.
 
 ## Validation cost and policy
 
@@ -104,8 +134,8 @@ Measured per evaluation (benchmark table, "one-hot check µs"): checking every d
 ## Failures and limits
 
 - Recognition is shape-bound: mixed sums, scaled reads, partial covers, and balanced-tree partial sums stay dense (correctly, since FP32 accumulation order forbids partial substitution).
-- The finiteness rule is conservative on declared ranges, not runtime values: production geometry is finite at runtime but declared `0..Infinity`, so those reads stay dense until the builder declares finite bounds. This is the main reason the committed circuits lower nothing by default. It is the correct conservative choice — the alternative miscompiles — but it means the production payoff needs a small change to the circuit builders (finite range annotations), not just to the compiler.
-- The `emitFirstActive` proven-bit rule is likewise conservative: selections over products-of-bits are exact bits at runtime but abstain from declaration. Threading exact-bit provenance through products would re-enable them.
+- The finiteness rule is conservative on declared ranges, not runtime values: geometry that is finite at runtime but declared `0..Infinity` stays dense. The production builders now declare honest finite bounds, which re-engaged their reads; any new circuit has to do the same or its lookups stay dense.
+- The `emitFirstActive` proven-bit rule is likewise conservative: selections over products-of-bits are exact bits at runtime but abstain from declaration (the photo click selection and the event-window lab both sit in this gap). Threading exact-bit provenance through products would re-enable them.
 - Constant folding erases degenerate members before recognition sees them (candidate-gallery's hero); recognizing "the missing member was the constant zero" would need the sum to remember folded terms; not built.
 - At N below the affine-share threshold (4), consumers inline the products, keeping them alive; lowering then saves the sum's weights but not the products'.
 - Declared invariants do not flow through computation: the *next*-stack wires are provably a permutation of declared one-hots, but nothing infers that, so `focusedWindow` stays dense.
@@ -114,13 +144,14 @@ Measured per evaluation (benchmark table, "one-hot check µs"): checking every d
 
 ## Next steps
 
-Declare finite viewport-derived ranges in the candidate-gallery and window-manager builders so their masked reads lower soundly; thread exact-bit provenance through products so first-active selections over products-of-bits can declare; split mixed sums during emission so focus-style updates lower; infer one-hot propagation through selection sums; return packed values from the executor and adopt a writeback-time validation policy to attack the fixed costs; teach `emitArgmax` to hand the gather its index directly instead of re-deriving it from the bits; extend the declared-invariant-plus-idiom pattern to bounded visibility compaction.
+Thread exact-bit provenance through products so first-active selections over products-of-bits can declare; split mixed sums during emission so focus-style updates lower; infer one-hot propagation through selection sums; return packed values from the executor and adopt a writeback-time validation policy to attack the fixed costs; teach `emitArgmax` to hand the gather its index directly instead of re-deriving it from the bits; extend the declared-invariant-plus-idiom pattern to bounded visibility compaction.
 
 ## Files
 
 - `numeric-ui-core.ts` (repo root, modified additively): `assumeOneHot`, `validateOneHotGroups`, `planGatherLowering` + `attemptGatherMatch` + `resolveAffineSide` + `hasFiniteRange`, gather metadata in `TensorProgram`, `applyGathers` in the executor, `isProvenBit`, auto-declarations in `emitArgmax`/`emitFirstActive`/`inlineCircuit`, the two performance fixes.
+- `candidate-gallery.ts`, `window-manager.ts`, `photo-gallery.ts` (repo root): honest finite pixel-space range declarations, and the window manager's stack permutation one-hot declarations — the per-change table above.
 - `gather-recognition.test.ts` — 24 unit tests: every orientation, every non-recognition boundary (including unbounded-range refusal in each orientation and fractional first-active refusal), inlining/dedup robustness, chaining, size-1, all-zero, the signed-zero caveat, contract violation, FP32 extremes.
 - `gather-differential.test.ts` — 2,000 seeded circuits, 559,977 exact wire comparisons across three evaluation paths; chained coverage counted by actual use.
 - `gather-scaling.test.ts` — structural asymptotics (3NT to 0 stored weights, dead-product elimination, bookkeeping bound).
-- `production-survey.test.ts` — the survey table above plus full interaction traces compared against the reference each frame.
-- `benchmark.ts` — the N x T grid (subprocess-isolated timing, min–max spread); `executor-study.ts` — the retained phase decomposition and JIT-pathology measurement; `library-circuit.ts`, `measure.ts` — shared builders and instrumentation.
+- `production-survey.test.ts` — pins the production counts (22 and 12) plus full interaction traces compared against the reference each frame.
+- `benchmark.ts` — the N x T grid (subprocess-isolated timing, min–max spread); `production-benchmark.ts` — the production execution-time deltas with the same methodology; `executor-study.ts` — the retained phase decomposition and JIT-pathology measurement; `library-circuit.ts`, `measure.ts` — shared builders and instrumentation.

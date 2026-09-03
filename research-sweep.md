@@ -1,5 +1,12 @@
 # Research sweep
 
+## September 2026 update
+
+The July results below are historical. Several interpretations changed after independent review: see [the reassessment](lab/reassessment-2026-09-03.md) and [current status](lab/status.md). In particular, exact forward execution is distinct from a useful training gradient; layout validity did not require retaining all content; and event training used correct internal state rather than eliminating recurrence.
+
+## Historical July notes
+
+
 Land changes that strengthen the numeric model without adding another format,
 mode, or runtime.
 

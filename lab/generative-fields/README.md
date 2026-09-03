@@ -1,5 +1,15 @@
 # Generative layout from fields over one shared slot function
 
+## September 2026 corrections
+
+The tables below are the July study, not promises about the corrected optimizer. The fitness backward pass now includes direct padding and importance derivatives as well as derivatives through geometry. Current gradient-ascent results can therefore differ from the historical numbers. Regression tests check the derivative calculation and useful improvement, not that a particular optimizer continues to produce the old scores.
+
+The historical `validBit` is deliberately unchanged so the old experiment remains interpretable: content may be hidden, horizontal containment allows `innerWidth * wrapSlack` extra pixels, and checks have a 0.5-pixel tolerance. `auditContent(snapshot, required)` adds separate required-content retention and strict padded containment reports, with no wrap allowance or pixel tolerance. A layout can pass the historical bit and fail both stricter reports. Of the July study's 4,154 repairs, 1,408 hid previously visible items; one reduced sixteen visible items to six. Text fit is measured afterward, not part of the optimized score.
+
+The samples do not establish smooth motion: sorting, visibility, and wrapping can jump. The demo may also substitute a nearby saved sample when an intermediate is invalid. Keep sampled validity, content retention, and movement as separate measurements. The new `lab/reusable-layout` experiment keeps required content and importance fixed and allows vertical scrolling.
+
+## Historical July study
+
 One equivariant 16-slot layout circuit, driven entirely by input fields. The same compiled program produces a uniform grid, a hero layout, an importance-weighted mosaic, a list, and a filmstrip purely by changing numbers in the source table; it scores its own validity with exact bits; a Duplo-style fitness function generates layouts by search and by gradient; and straight-line interpolation between valid layouts, repaired by projecting against the circuit's own violation outputs, stays valid at 100% of sampled points (target was 95%).
 
 Reproduce everything: `bun lab/generative-fields/experiments.ts` prints every table below (about 2 seconds); `bun test lab/generative-fields` re-checks the claims (18 tests, about 3 seconds).

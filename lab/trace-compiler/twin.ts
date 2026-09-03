@@ -2,12 +2,12 @@
 // Every arithmetic step rounds through Math.fround, and division rewrites to multiplication by
 // the FP32 reciprocal — the one algebraic rewrite the substrate forces, since the circuit has no
 // division. Control flow (ternaries, ifs, loops, Math.min/max/floor) stays native. The compiled
-// circuit must agree with this twin bit-for-bit; the same interpreter in fp64 mode is the
-// original float64 function, used to measure drift between the twin and the author's intent.
+// circuit must agree with this twin bit-for-bit. The fp64 mode is still an interpreter, not
+// the original function: the harness independently checks it against native JS execution.
 //
 // The twin also replays the circuit's comparison decisions: for every continuous comparison the
-// compiler lowered to a boolean atom, the twin checks whether the operand difference fell inside
-// the unresolved margin where the circuit's decision bit could disagree with the native branch.
+// compiler lowered with a margin, the twin checks whether the difference fell inside that
+// unresolved margin. Current sign-cascade comparisons have no margin to check.
 
 import ts from 'typescript'
 import {invariant} from '../../numeric-ui-core.ts'
@@ -42,6 +42,7 @@ export type MarginViolation = {positionKey: string, difference: number}
 export type InterpreterMode = 'fp32' | 'fp64'
 
 type Binding = {value: RuntimeValue}
+type ExecutionContext = {scope: Scope, completion: {returned: {value: RuntimeValue} | null}}
 
 export class Scope {
   parent: Scope | null
@@ -117,7 +118,7 @@ export class Interpreter {
   runStatements(statements: readonly ts.Statement[], bindings: Map<string, RuntimeValue>): Scope {
     const scope = new Scope(this.moduleScope)
     for (const [name, value] of bindings) scope.declare(name, value)
-    const ctx = {scope, returned: null as {value: RuntimeValue} | null}
+    const ctx: ExecutionContext = {scope, completion: {returned: null}}
     this.executeAll(statements, ctx)
     return scope
   }
@@ -125,12 +126,12 @@ export class Interpreter {
   evaluateExpression(expression: ts.Expression, bindings: Map<string, RuntimeValue>): RuntimeValue {
     const scope = new Scope(this.moduleScope)
     for (const [name, value] of bindings) scope.declare(name, value)
-    return this.evaluate(expression, {scope, returned: null})
+    return this.evaluate(expression, {scope, completion: {returned: null}})
   }
 
   invoke(declaration: FunctionLike, args: RuntimeValue[]): RuntimeValue {
     const scope = new Scope(this.moduleScope)
-    const ctx = {scope, returned: null as {value: RuntimeValue} | null}
+    const ctx: ExecutionContext = {scope, completion: {returned: null}}
     declaration.parameters.forEach((parameter, index) => {
       invariant(ts.isIdentifier(parameter.name), 'destructured parameters are outside the subset')
       let argument = args[index]
@@ -144,19 +145,19 @@ export class Interpreter {
     invariant(body !== undefined, 'function without a body')
     if (ts.isBlock(body)) {
       this.executeAll(body.statements, ctx)
-      return ctx.returned === null ? null : ctx.returned.value
+      return ctx.completion.returned === null ? null : ctx.completion.returned.value
     }
     return this.evaluate(body, ctx)
   }
 
-  executeAll(statements: readonly ts.Statement[], ctx: {scope: Scope, returned: {value: RuntimeValue} | null}) {
+  executeAll(statements: readonly ts.Statement[], ctx: ExecutionContext) {
     for (const statement of statements) {
-      if (ctx.returned !== null) return
+      if (ctx.completion.returned !== null) return
       this.execute(statement, ctx)
     }
   }
 
-  execute(statement: ts.Statement, ctx: {scope: Scope, returned: {value: RuntimeValue} | null}) {
+  execute(statement: ts.Statement, ctx: ExecutionContext) {
     if (ts.isVariableStatement(statement)) {
       for (const declaration of statement.declarationList.declarations) {
         invariant(declaration.initializer !== undefined, 'declaration without an initializer')
@@ -193,10 +194,9 @@ export class Interpreter {
       while (statement.condition === undefined || truthy(this.evaluate(statement.condition, loopCtx))) {
         invariant(this.loopGuard++ < 10_000_000, 'twin loop guard exceeded')
         this.execute(statement.statement, {...loopCtx, scope: new Scope(loopScope)})
-        if (loopCtx.returned !== null) return
+        if (ctx.completion.returned !== null) return
         if (statement.incrementor !== undefined) this.evaluate(statement.incrementor, loopCtx)
       }
-      ctx.returned = loopCtx.returned
       return
     }
     if (ts.isForOfStatement(statement)) {
@@ -209,12 +209,12 @@ export class Interpreter {
         const iterationCtx = {...ctx, scope: iterationScope}
         this.bindName(declaration.name, element, iterationCtx)
         this.execute(statement.statement, iterationCtx)
-        if (ctx.returned !== null) return
+        if (ctx.completion.returned !== null) return
       }
       return
     }
     if (ts.isReturnStatement(statement)) {
-      ctx.returned = {value: statement.expression === undefined ? null : this.evaluate(statement.expression, ctx)}
+      ctx.completion.returned = {value: statement.expression === undefined ? null : this.evaluate(statement.expression, ctx)}
       return
     }
     if (ts.isBlock(statement)) {
@@ -244,7 +244,7 @@ export class Interpreter {
     invariant(false, 'array destructuring is outside the subset')
   }
 
-  evaluate(node: ts.Expression, ctx: {scope: Scope, returned: {value: RuntimeValue} | null}): RuntimeValue {
+  evaluate(node: ts.Expression, ctx: ExecutionContext): RuntimeValue {
     if (ts.isNumericLiteral(node)) return this.round(Number(node.text))
     if (ts.isStringLiteralLike(node)) return node.text
     if (node.kind === ts.SyntaxKind.TrueKeyword) return true
@@ -260,7 +260,7 @@ export class Interpreter {
       if (declaration !== undefined) return {kind: 'function', declaration}
       const initializer = this.constantInitializers.get(name)
       if (initializer !== undefined) {
-        const value = this.evaluate(initializer, {scope: this.moduleScope, returned: null})
+        const value = this.evaluate(initializer, {scope: this.moduleScope, completion: {returned: null}})
         this.moduleScope.declare(name, value)
         return value
       }
@@ -331,14 +331,14 @@ export class Interpreter {
     invariant(false, `twin does not support expression ${ts.SyntaxKind[node.kind]}`)
   }
 
-  applyIncrement(operand: ts.Expression, delta: number, ctx: {scope: Scope, returned: {value: RuntimeValue} | null}): number {
+  applyIncrement(operand: ts.Expression, delta: number, ctx: ExecutionContext): number {
     const target = this.resolveTarget(operand, ctx)
     const current = asNumber(target.read())
     target.write(this.round(current + delta))
     return current
   }
 
-  resolveTarget(node: ts.Expression, ctx: {scope: Scope, returned: {value: RuntimeValue} | null}): {read: () => RuntimeValue, write: (value: RuntimeValue) => void} {
+  resolveTarget(node: ts.Expression, ctx: ExecutionContext): {read: () => RuntimeValue, write: (value: RuntimeValue) => void} {
     if (ts.isIdentifier(node)) {
       const binding = ctx.scope.lookup(node.text)
       invariant(binding !== null, `assignment to unknown ${node.text}`)
@@ -373,7 +373,7 @@ export class Interpreter {
     invariant(false, `twin assignment target ${ts.SyntaxKind[node.kind]}`)
   }
 
-  evaluateCall(node: ts.CallExpression, ctx: {scope: Scope, returned: {value: RuntimeValue} | null}): RuntimeValue {
+  evaluateCall(node: ts.CallExpression, ctx: ExecutionContext): RuntimeValue {
     if (ts.isPropertyAccessExpression(node.expression)) {
       const method = node.expression.name.text
       if (ts.isIdentifier(node.expression.expression) && node.expression.expression.text === 'Math') {
@@ -417,7 +417,7 @@ export class Interpreter {
     return this.invoke(callee.declaration, node.arguments.map(argument => this.evaluate(argument, ctx)))
   }
 
-  evaluateBinary(node: ts.BinaryExpression, ctx: {scope: Scope, returned: {value: RuntimeValue} | null}): RuntimeValue {
+  evaluateBinary(node: ts.BinaryExpression, ctx: ExecutionContext): RuntimeValue {
     const kind = node.operatorToken.kind
     switch (kind) {
       case ts.SyntaxKind.EqualsToken: {

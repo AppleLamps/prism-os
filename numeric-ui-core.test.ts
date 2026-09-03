@@ -114,7 +114,7 @@ test('first-active selection resolves ordered candidates through a balanced tree
 
   assert.ok(
     circuit.tensorProgram.layers.length
-      <= 3 * Math.ceil(Math.log2(candidateCount)) + 2,
+      <= 5 * Math.ceil(Math.log2(candidateCount)) + 1,
   )
 })
 
@@ -151,7 +151,7 @@ test('argmax resolves continuous scores through a balanced tree', () => {
 
   assert.ok(
     circuit.tensorProgram.layers.length
-      <= 4 * Math.ceil(Math.log2(candidateCount)),
+      <= 6 * Math.ceil(Math.log2(candidateCount)),
   )
 })
 

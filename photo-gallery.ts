@@ -140,15 +140,24 @@ export function thumbnailSpringSourceField(item: number, field: number) {
 
 export function createPhotoGalleryCircuit() {
   const circuit = new Circuit(sourceField.size)
+  // Pixel-space sources carry an honest finite ceiling: 16384 covers the
+  // largest real displays (8K is 7680 wide) with headroom while staying far
+  // inside FP32's exact-integer band (macro-ranges.md keeps operands well
+  // under 2^23). Finite bounds also make the geometry eligible for gather
+  // lowering, and when this circuit is inlined into the window manager the
+  // bounds become contracts on the window content dimensions, which are
+  // clamped to the viewport and so honor them.
+  circuit.assumeRange(sourceField.viewportWidth, 0, 16_384)
+  circuit.assumeRange(sourceField.viewportHeight, 0, 16_384)
+  // Spacing and control-size constants live in the tens of pixels; 1024 is
+  // generous.
   for (const field of [
-    sourceField.viewportWidth,
-    sourceField.viewportHeight,
     sourceField.gap,
     sourceField.mainInset,
     sourceField.thumbnailHeight,
     sourceField.controlSize,
   ]) {
-    circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
+    circuit.assumeRange(field, 0, 1024)
   }
   for (const field of eventFields) circuit.assumeRange(field, 0, 1)
   circuit.assumeRange(sourceField.present, 0, 1)
@@ -167,10 +176,12 @@ export function createPhotoGalleryCircuit() {
   }
   for (let item = 0; item < itemCount; item++) circuit.assumeRange(focusField(item), 0, 1)
   for (let item = 0; item < itemCount; item++) {
+    // A thumbnail's spring center is clamped to the viewport before it is
+    // written back, so the viewport ceiling is honest here too.
     circuit.assumeRange(
       thumbnailSpringSourceField(item, thumbnailSpringField.centerX),
       0,
-      Number.POSITIVE_INFINITY,
+      16_384,
     )
     circuit.assumeRange(
       thumbnailSpringSourceField(item, thumbnailSpringField.scale),

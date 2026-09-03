@@ -2,52 +2,44 @@ import {expect, test} from 'bun:test'
 import {
   validateOneHotGroups,
   validateTensorEvaluation,
-  validateTensorProgram,
 } from '../../numeric-ui-core.ts'
 import {createCandidateGalleryMachine} from '../../candidate-gallery.ts'
 import {
   createWindowManagerMachine,
-  stackSourceField,
   sourceField as windowSourceField,
-  windowCount,
 } from '../../window-manager.ts'
 import {createRandom, gatherStatistics, randomInteger} from './measure.ts'
 
-// Production impact: compile the real circuits with recognition enabled, count
-// what lowers, and confirm the lowered programs stay bit-identical to the
-// reference across interaction traces.
+// Production impact: the builders now declare finite pixel-space ranges and
+// the window manager declares its stack permutation contracts, so recognition
+// engages on the committed circuits. These tests pin the counts and confirm
+// the lowered programs stay bit-identical to the reference across interaction
+// traces.
 
-test('candidate-gallery declares its argmax group but lowers nothing', () => {
+test('candidate-gallery lowers its 26 layout selection reads', () => {
   const machine = createCandidateGalleryMachine()
   const {circuit} = machine
   const lowered = gatherStatistics(machine.tensorProgram)
   const plain = gatherStatistics(
     circuit.compileTensorProgram([...machine.tensorProgram.roots], false),
   )
-  // Only the argmax winner group is declared: the click selection's gate is a
+  // One declared group: the argmax winner (the click selection's gate is a
   // product of 0..1-range wires, not a provably exact bit, so emitFirstActive
-  // leaves it undeclared. The 22 distinct selectValue sums (53 call sites
-  // minus deduplication and the hero sums that constant folding truncates)
-  // match the masked-read shape over the argmax group, but every candidate is
-  // viewport-derived geometry with a declared range of 0..Infinity, and the
-  // finiteness rule refuses unbounded candidates — with the value infinite
-  // and its bit 0, the dense sum computes fround(Infinity * 0) = NaN that a
-  // gather would not reproduce. The same shape with finite ranges lowers (see
-  // the argmax-inlining test in gather-recognition.test.ts), so declaring
-  // finite viewport bounds inside the builder would re-enable all 22 reads.
+  // leaves it undeclared). Preserved multiplication metadata also retains the
+  // constant-zero Contact member of the hero sums, so those reads now lower.
   expect(circuit.oneHotGroups.length).toBe(1)
-  expect(lowered.readCount).toBe(0)
-  expect(lowered.storedWeightCount).toBe(plain.storedWeightCount)
+  expect(lowered.readCount).toBe(26)
+  expect(lowered.slotCount).toBe(1)
+  expect(lowered.storedWeightCount).toBeLessThan(plain.storedWeightCount)
   console.log(
     `[survey] candidate-gallery: groups=${circuit.oneHotGroups.length}`
-      + ` gatherReads=${lowered.readCount}`
+      + ` gatherReads=${lowered.readCount} slots=${lowered.slotCount}`
       + ` storedWeights=${lowered.storedWeightCount}`
       + ` (dense compile of the same roots: ${plain.storedWeightCount})`,
   )
 
   // Interaction trace: resizes and clicks, every frame compared wire-for-wire
   // against the reference evaluator, with the declared group checked exactly.
-  machine.circuit.tensorProgram = machine.tensorProgram
   const random = createRandom(0xca11)
   const viewports = [
     [1280, 800], [700, 900], [420, 700], [1600, 500], [900, 900],
@@ -67,68 +59,29 @@ test('candidate-gallery declares its argmax group but lowers nothing', () => {
   }
 })
 
-test('window-manager as committed declares no groups and lowers nothing', () => {
+test('window-manager lowers its 12 stacking reads and stays exact in use', () => {
   const machine = createWindowManagerMachine()
+  const {circuit} = machine
   const statistics = gatherStatistics(machine.tensorProgram)
-  // The photo gallery's click selection gates on a product of 0..1-range
-  // wires, which is not a provably exact bit, so its first-active group stays
-  // undeclared. The real dynamic lookups (frontmost-window selection, the
-  // stacking updates) run over source-table contracts that nothing declares.
-  expect(machine.circuit.oneHotGroups.length).toBe(0)
-  expect(statistics.readCount).toBe(0)
-  console.log(
-    `[survey] window-manager (as committed): groups=${machine.circuit.oneHotGroups.length}`
-      + ` gatherReads=${statistics.readCount}`
-      + ` storedWeights=${statistics.storedWeightCount}`,
+  const baseline = gatherStatistics(
+    circuit.compileTensorProgram([...machine.tensorProgram.roots], false),
   )
-})
-
-test('declaring the stack permutation contracts lowers the frontmost reads', () => {
-  // The window manager's stacking state is a permutation matrix in the source
-  // table: each rank holds exactly one window and each window one rank, which
-  // the production validators already assert every frame. Declaring those rows
-  // and columns as one-hot groups — without touching window-manager.ts — lets
-  // recognition lower the frontmost-window selection sums.
-  const machine = createWindowManagerMachine()
-  const {circuit, output} = machine
-  for (let rank = 0; rank < windowCount; rank++) {
-    circuit.assumeOneHot(Array.from(
-      {length: windowCount},
-      (_, windowIndex) => stackSourceField(rank, windowIndex),
-    ))
-  }
-  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    circuit.assumeOneHot(Array.from(
-      {length: windowCount},
-      (_, rank) => stackSourceField(rank, windowIndex),
-    ))
-  }
-  const roots = [
-    ...output.nextSource,
-    ...output.windows,
-    ...output.dockItems,
-    output.animationActive,
-    output.photos.backdropOpacity,
-    ...output.photos.photos,
-    ...output.photos.thumbnails,
-    ...output.photos.previousControl,
-    ...output.photos.nextControl,
-  ]
-  const program = circuit.compileTensorProgram(roots)
-  validateTensorProgram(circuit, program)
-  circuit.tensorProgram = program
-  const statistics = gatherStatistics(program)
-  const baseline = gatherStatistics(circuit.compileTensorProgram(roots, false))
-  expect(statistics.readCount).toBeGreaterThan(0)
+  // The builder declares the 4 stack rows and 4 stack columns as one-hot
+  // groups (the permutation contract its validators already assert every
+  // frame), which lowers the frontmost-window selection sums: 4 rank-hit
+  // reads over rows, 4 selected-window reads over columns, 4 selected-rank
+  // reads over rows. The photo gallery's click selection still gates on a
+  // product that is not a provably exact bit, so it declares nothing.
+  expect(circuit.oneHotGroups.length).toBe(8)
+  expect(statistics.readCount).toBe(12)
+  expect(statistics.slotCount).toBe(8)
+  expect(statistics.storedWeightCount).toBeLessThan(baseline.storedWeightCount)
   console.log(
-    `[survey] window-manager (stack groups declared): groups=${circuit.oneHotGroups.length}`
+    `[survey] window-manager: groups=${circuit.oneHotGroups.length}`
       + ` gatherReads=${statistics.readCount} slots=${statistics.slotCount}`
       + ` storedWeights=${statistics.storedWeightCount}`
-      + ` (dense: ${baseline.storedWeightCount})`,
+      + ` (dense compile of the same roots: ${baseline.storedWeightCount})`,
   )
-  // Compiling the dense baseline above does not assign the circuit's program,
-  // so the trace below still runs on the gathered one.
-  circuit.tensorProgram = program
 
   // A full interaction trace on the gathered program: window drags, title-bar
   // clicks that restack, dock clicks that minimize and restore, and photo
@@ -167,7 +120,7 @@ test('declaring the stack permutation contracts lowers the frontmost reads', () 
     compareStep(1280, 800)
   }
   // Dock sits at the bottom center; click item positions directly.
-  for (let item = 0; item < windowCount; item++) {
+  for (let item = 0; item < 4; item++) {
     const x = 640 - 90 + item * 62
     machine.pointerDown(x, 800 - 38)
     compareStep(1280, 800)

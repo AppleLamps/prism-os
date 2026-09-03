@@ -113,8 +113,14 @@ export type FitnessGradient = {
   // Straight-through seed for the visibility bits (content richness wants
   // more slots shown); meaningful only through the STE backward pass.
   visible: Float64Array
+  importance: Float64Array
   coveredArea: number
   contentBottom: number
+  innerWidth: number
+  innerHeight: number
+  viewportWidth: number
+  viewportHeight: number
+  paddingY: number
 }
 
 export type FitnessResult = {
@@ -151,8 +157,14 @@ export function scoreFitness(
     width: new Float64Array(slotCount),
     height: new Float64Array(slotCount),
     visible: new Float64Array(slotCount),
+    importance: new Float64Array(slotCount),
     coveredArea: 0,
     contentBottom: 0,
+    innerWidth: 0,
+    innerHeight: 0,
+    viewportWidth: 0,
+    viewportHeight: 0,
+    paddingY: 0,
   }
   const visibleSlots = Array.from({length: slotCount}, (_, slot) => slot)
     .filter(slot => snapshot.visible[slot]!)
@@ -188,6 +200,8 @@ export function scoreFitness(
   terms.fill = Math.min(1, fillRatio)
   if (fillRatio < 1) {
     gradient.coveredArea += weights.fill / usableArea
+    gradient.innerWidth -= weights.fill * fillRatio / snapshot.innerWidth
+    gradient.innerHeight -= weights.fill * fillRatio / snapshot.innerHeight
   }
 
   // Vertical fit: the content bottom should land at the padded bottom edge;
@@ -199,6 +213,10 @@ export function scoreFitness(
   if (terms.verticalFit > 0 && bottomError !== 0) {
     gradient.contentBottom +=
       weights.verticalFit * (-Math.sign(bottomError) / snapshot.innerHeight)
+    const limitGradient = weights.verticalFit * Math.sign(bottomError) / snapshot.innerHeight
+    gradient.viewportHeight += limitGradient
+    gradient.paddingY -= limitGradient
+    gradient.innerHeight += weights.verticalFit * verticalMiss / snapshot.innerHeight
   }
 
   // Horizontal balance: the area-weighted centroid should sit near the middle.
@@ -217,6 +235,8 @@ export function scoreFitness(
     terms.balanceX = Math.max(0, 1 - Math.abs(offset))
     if (terms.balanceX > 0 && offset !== 0) {
       const scale = weights.balanceX * (-Math.sign(offset) / halfInner)
+      gradient.viewportWidth -= scale / 2
+      gradient.innerWidth += weights.balanceX * Math.abs(offset) / snapshot.innerWidth
       for (let index = 0; index < visibleSlots.length; index++) {
         const slot = visibleSlots[index]!
         const centerPull = areas[index]! / totalArea
@@ -260,6 +280,9 @@ export function scoreFitness(
         const centeredArea = areas[index]! - meanArea
         const correlationByArea =
           centeredImportance / normalizer - correlation * centeredArea / areaSpread
+        gradient.importance[slot] = scale * (
+          centeredArea / normalizer - correlation * centeredImportance / importanceSpread
+        )
         gradient.width[slot] = gradient.width[slot]!
           + scale * correlationByArea * snapshot.height[slot]!
         gradient.height[slot] = gradient.height[slot]!
@@ -312,6 +335,7 @@ export function scoreFitness(
     terms.rowEvenness = Math.max(0, 1 - spread)
     if (terms.rowEvenness > 0 && spread > 0 && widestSlot !== narrowestSlot) {
       const scale = weights.rowEvenness / snapshot.innerWidth
+      gradient.innerWidth += weights.rowEvenness * spread / snapshot.innerWidth
       gradient.x[widestSlot] = gradient.x[widestSlot]! - scale
       gradient.width[widestSlot] = gradient.width[widestSlot]! - scale
       gradient.x[narrowestSlot] = gradient.x[narrowestSlot]! + scale

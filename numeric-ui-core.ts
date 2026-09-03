@@ -5,6 +5,10 @@ export type Terms = readonly (readonly [wire: Wire, coefficient: number])[]
 
 type AtomKind = 'affine' | 'reglu' | 'boolean'
 
+type Macro =
+  | {kind: 'multiply', left: Wire, right: Wire}
+  | {kind: 'select', gate: Wire, off: Wire, on: Wire}
+
 type Operation = {
   kind: AtomKind
   leftTerms: Terms
@@ -12,6 +16,8 @@ type Operation = {
   gateTerms: Terms
   gateBias: number
   depth: number
+  preserveRounding?: true
+  macro?: Macro
 }
 
 type NumericRange = {
@@ -74,6 +80,14 @@ type TensorProgram = {
   wireOrder: UnsignedIndexArray
   width: number
   gatherSlotCount: number
+}
+
+type TensorWorkspace = {
+  packedValues: Float32Array
+  input: Float32Array
+  projection: Float32Array
+  gatherIndices: Int32Array
+  gatherMasses: Float32Array
 }
 
 // A recognized one-hot-masked sum, keyed by its operation index: the affine's
@@ -147,6 +161,34 @@ export class Circuit {
     return this.append('affine', terms, bias, [], 0)
   }
 
+  // Keep this evaluation, term order, and input wires intact, including constants.
+  roundAffine(terms: Terms, bias = 0): Wire {
+    return this.append('affine', terms, bias, [], 0, {preserveRounding: true})
+  }
+
+  multiply(left: Wire, right: Wire): Wire {
+    const options = {preserveRounding: true, macro: {kind: 'multiply', left, right}} as const
+    if (this.isNonNegative(right)) {
+      return this.append('reglu', [[left, 1]], 0, [[right, 1]], 0, options)
+    }
+    if (this.isNonNegative(left)) {
+      return this.append('reglu', [[right, 1]], 0, [[left, 1]], 0, options)
+    }
+    const positive = this.append('reglu', [[left, 1]], 0, [[right, 1]], 0, {preserveRounding: true})
+    const negative = this.append('reglu', [[left, 1]], 0, [[right, -1]], 0, {preserveRounding: true})
+    return this.append('affine', [[positive, 1], [negative, -1]], 0, [], 0, options)
+  }
+
+  select(gate: Wire, off: Wire, on: Wire): Wire {
+    const complement = this.roundAffine([[gate, -1]], 1)
+    const selectedOn = this.multiply(gate, on)
+    const selectedOff = this.multiply(complement, off)
+    return this.append('affine', [[selectedOn, 1], [selectedOff, 1]], 0, [], 0, {
+      preserveRounding: true,
+      macro: {kind: 'select', gate, off, on},
+    })
+  }
+
   reglu(leftTerms: Terms, leftBias: number, gateTerms: Terms, gateBias: number): Wire {
     return this.append('reglu', leftTerms, leftBias, gateTerms, gateBias)
   }
@@ -157,48 +199,62 @@ export class Circuit {
     return this.append('boolean', [[value, 1]], 0, [], 0)
   }
 
-  append(kind: AtomKind, leftTerms: Terms, leftBias: number, gateTerms: Terms, gateBias: number): Wire {
-    ;[leftTerms, leftBias] = foldConstantTerms(normalizeTerms(leftTerms), leftBias, this.constants)
-    ;[gateTerms, gateBias] = foldConstantTerms(normalizeTerms(gateTerms), gateBias, this.constants)
-    const initialAlias = kind === 'affine' ? identityWire(leftTerms, leftBias) : undefined
-    if (initialAlias !== undefined) return initialAlias
-    ;[leftTerms, leftBias] = composeAffineTerms(
-      leftTerms,
-      leftBias,
-      this.sourceSize,
-      this.operations,
-    )
-    ;[gateTerms, gateBias] = composeAffineTerms(
-      gateTerms,
-      gateBias,
-      this.sourceSize,
-      this.operations,
-    )
-    if (kind === 'reglu' && gateTerms.length === 0) {
-      const gate = Math.max(0, gateBias)
-      kind = 'affine'
-      leftTerms = gate === 0
-        ? []
-        : leftTerms.map(([wire, coefficient]) => [wire, coefficient * gate])
-      leftBias *= gate
-      gateBias = 0
-    } else if (kind === 'reglu' && leftTerms.length === 0 && leftBias === 0) {
-      kind = 'affine'
-      gateTerms = []
-      gateBias = 0
+  append(
+    kind: AtomKind,
+    leftTerms: Terms,
+    leftBias: number,
+    gateTerms: Terms,
+    gateBias: number,
+    options: {preserveRounding?: true, macro?: Macro} = {},
+  ): Wire {
+    if (options.preserveRounding) {
+      leftTerms = leftTerms.map(([wire, coefficient]) => [wire, coefficient])
+      gateTerms = gateTerms.map(([wire, coefficient]) => [wire, coefficient])
+    } else {
+      ;[leftTerms, leftBias] = foldConstantTerms(normalizeTerms(leftTerms), leftBias, this.constants)
+      ;[gateTerms, gateBias] = foldConstantTerms(normalizeTerms(gateTerms), gateBias, this.constants)
+      const initialAlias = kind === 'affine' ? identityWire(leftTerms, leftBias) : undefined
+      if (initialAlias !== undefined) return initialAlias
+      ;[leftTerms, leftBias] = composeAffineTerms(
+        leftTerms,
+        leftBias,
+        this.sourceSize,
+        this.operations,
+      )
+      ;[gateTerms, gateBias] = composeAffineTerms(
+        gateTerms,
+        gateBias,
+        this.sourceSize,
+        this.operations,
+      )
+      if (kind === 'reglu' && gateTerms.length === 0) {
+        const gate = Math.max(0, gateBias)
+        kind = 'affine'
+        leftTerms = gate === 0
+          ? []
+          : leftTerms.map(([wire, coefficient]) => [wire, coefficient * gate])
+        leftBias *= gate
+        gateBias = 0
+      } else if (kind === 'reglu' && leftTerms.length === 0 && leftBias === 0) {
+        kind = 'affine'
+        gateTerms = []
+        gateBias = 0
+      }
+      const composedAlias = kind === 'affine' ? identityWire(leftTerms, leftBias) : undefined
+      if (composedAlias !== undefined) return composedAlias
     }
-    const composedAlias = kind === 'affine' ? identityWire(leftTerms, leftBias) : undefined
-    if (composedAlias !== undefined) return composedAlias
     const expressionKey = serializeExpression(kind, leftTerms, leftBias, gateTerms, gateBias)
+      + (options.preserveRounding ? '|round' : '')
+      + (options.macro === undefined ? '' : `|${JSON.stringify(options.macro)}`)
     const existingWire = this.expressionWires.get(expressionKey)
     if (existingWire !== undefined) return existingWire
     const wire = this.sourceSize + this.operations.length
     const dependencies = kind === 'reglu' ? [...leftTerms, ...gateTerms] : leftTerms
     let depth = 0
     for (const [dependency] of dependencies) depth = Math.max(depth, this.depths[dependency]!)
-    this.operations.push({kind, leftTerms, leftBias, gateTerms, gateBias, depth: depth + 1})
+    this.operations.push({kind, leftTerms, leftBias, gateTerms, gateBias, depth: depth + 1, ...options})
     this.depths.push(depth + 1)
-    this.constants.push(kind === 'affine' && leftTerms.length === 0 ? leftBias : undefined)
+    this.constants.push(!options.preserveRounding && kind === 'affine' && leftTerms.length === 0 ? leftBias : undefined)
     const leftRange = evaluateAffineRange(leftTerms, leftBias, this.ranges)
     this.ranges.push(
       kind === 'affine'
@@ -220,6 +276,7 @@ export class Circuit {
   backpropagateReference(
     values: Float32Array,
     outputGradients: Float32Array,
+    options: {booleanGradient?: 'reject' | 'straight-through'} = {},
   ): Float32Array {
     const width = this.sourceSize + this.operations.length
     invariant(values.length === width, 'forward values have the wrong length')
@@ -231,8 +288,24 @@ export class Circuit {
       const outputWire = this.sourceSize + operationIndex
       const outputGradient = gradients[outputWire]!
       if (outputGradient === 0) continue
+      const macro = operation.macro
+      if (macro?.kind === 'multiply') {
+        accumulateTermGradients(gradients, [[macro.left, values[macro.right]!]], outputGradient)
+        accumulateTermGradients(gradients, [[macro.right, values[macro.left]!]], outputGradient)
+        continue
+      }
+      if (macro?.kind === 'select') {
+        const gate = values[macro.gate]!
+        accumulateTermGradients(gradients, [[macro.off, 1 - gate], [macro.on, gate]], outputGradient)
+        accumulateTermGradients(gradients, [[macro.gate, values[macro.on]! - values[macro.off]!]], outputGradient)
+        continue
+      }
       if (operation.kind === 'boolean') {
-        throw new Error('cannot backpropagate through a boolean atom')
+        if (options.booleanGradient !== 'straight-through') {
+          throw new Error('cannot backpropagate through a boolean atom')
+        }
+        accumulateTermGradients(gradients, operation.leftTerms, outputGradient)
+        continue
       }
       if (operation.kind === 'affine') {
         accumulateTermGradients(gradients, operation.leftTerms, outputGradient)
@@ -260,6 +333,22 @@ export class Circuit {
   evaluateTensor(source: Float32Array): Float32Array {
     this.validateSourceRanges(source)
     return evaluateTensorProgram(source, this.tensorProgram ??= this.compileTensorProgram())
+  }
+
+  // The returned output array is reused and overwritten on the next call.
+  createTensorEvaluator(roots: readonly Wire[]): (source: Float32Array) => Float32Array {
+    const program = this.compileTensorProgram(roots)
+    const workspace = createTensorWorkspace(program)
+    const positions = roots.map(root => program.wireOrder.indexOf(root))
+    const outputs = new Float32Array(roots.length)
+    return source => {
+      this.validateSourceRanges(source)
+      executeTensorProgram(source, program, workspace)
+      for (let index = 0; index < positions.length; index++) {
+        outputs[index] = workspace.packedValues[positions[index]!]!
+      }
+      return outputs
+    }
   }
 
   validateSourceRanges(source: Float32Array) {
@@ -460,45 +549,37 @@ function evaluateAffineRange(
   bias: number,
   ranges: readonly NumericRange[],
 ): NumericRange {
-  let minimum = bias
-  let maximum = bias
+  let minimum = Math.fround(bias)
+  let maximum = Math.fround(bias)
   for (const [wire, coefficient] of terms) {
     const range = ranges[wire]!
-    if (coefficient > 0) {
-      minimum += coefficient * range.minimum
-      maximum += coefficient * range.maximum
+    const roundedCoefficient = Math.fround(coefficient)
+    if (roundedCoefficient > 0) {
+      minimum = Math.fround(minimum + Math.fround(roundedCoefficient * range.minimum))
+      maximum = Math.fround(maximum + Math.fround(roundedCoefficient * range.maximum))
     } else {
-      minimum += coefficient * range.maximum
-      maximum += coefficient * range.minimum
+      minimum = Math.fround(minimum + Math.fround(roundedCoefficient * range.maximum))
+      maximum = Math.fround(maximum + Math.fround(roundedCoefficient * range.minimum))
     }
+    if (Number.isNaN(minimum) || Number.isNaN(maximum)) return unknownRange()
   }
   if (Number.isNaN(minimum) || Number.isNaN(maximum)) return unknownRange()
   return {minimum, maximum}
 }
 
 function multiplyByReluRange(left: NumericRange, gate: NumericRange): NumericRange {
+  const gateMinimum = Math.max(0, gate.minimum)
   const gateMaximum = Math.max(0, gate.maximum)
-  if (left.minimum >= 0) {
-    return {
-      minimum: multiplyBounds(left.minimum, Math.max(0, gate.minimum)),
-      maximum: multiplyBounds(left.maximum, gateMaximum),
-    }
-  }
-  if (left.maximum <= 0) {
-    return {
-      minimum: multiplyBounds(left.minimum, gateMaximum),
-      maximum: multiplyBounds(left.maximum, Math.max(0, gate.minimum)),
-    }
-  }
-  return {
-    minimum: multiplyBounds(left.minimum, gateMaximum),
-    maximum: multiplyBounds(left.maximum, gateMaximum),
-  }
-}
-
-function multiplyBounds(left: number, right: number): number {
-  if (left === 0 || right === 0) return 0
-  return left * right
+  const products = [
+    Math.fround(left.minimum * gateMinimum),
+    Math.fround(left.minimum * gateMaximum),
+    Math.fround(left.maximum * gateMinimum),
+    Math.fround(left.maximum * gateMaximum),
+  ]
+  // Zero times an infinite endpoint can produce NaN. Do not turn it into a
+  // finite bound that would later authorize removing an unselected product.
+  if (products.some(Number.isNaN)) return unknownRange()
+  return {minimum: Math.min(...products), maximum: Math.max(...products)}
 }
 
 function findLiveOperations(
@@ -539,6 +620,7 @@ type MaskedProduct = {
   leftWire: Wire
   gateWire: Wire
   gateCoefficient: number
+  exactMultiply?: true
 }
 
 // Undo the builder's affine composition for one side of a reglu. Small affine
@@ -582,6 +664,9 @@ function resolveAffineSide(
 function maskedProductShape(circuit: Circuit, wire: Wire): Omit<MaskedProduct, 'coefficient'> | undefined {
   if (wire < circuit.sourceSize) return undefined
   const operation = circuit.operations[wire - circuit.sourceSize]!
+  if (operation.macro?.kind === 'multiply') {
+    return {leftWire: operation.macro.left, gateWire: operation.macro.right, gateCoefficient: 1, exactMultiply: true}
+  }
   if (operation.kind !== 'reglu') return undefined
   const left = resolveAffineSide(circuit, operation.leftTerms, operation.leftBias, false)
   if (left === undefined) return undefined
@@ -658,7 +743,7 @@ function planGatherLowering(circuit: Circuit): Map<number, GatherPlan> {
 // skip that product entirely, so such reads must stay dense.
 function hasFiniteRange(circuit: Circuit, wire: Wire): boolean {
   const range = circuit.ranges[wire]!
-  return Number.isFinite(range.minimum) && Number.isFinite(range.maximum)
+  return Number.isFinite(Math.fround(range.minimum)) && Number.isFinite(Math.fround(range.maximum))
 }
 
 // Try to interpret the parsed products as one complete read of the group:
@@ -706,7 +791,9 @@ function attemptGatherMatch(
       const leftPosition = positionByMember.get(leftWire)
       if (leftPosition !== undefined) {
         const negativeArm = negativeArms.get(`${leftWire}|${gateWire}`)
-        if (negativeArm !== undefined && !negativeArm.used && hasFiniteRange(circuit, gateWire)) {
+        if (product.exactMultiply && hasFiniteRange(circuit, gateWire)) {
+          options.push({position: leftPosition, valueWire: gateWire})
+        } else if (negativeArm !== undefined && !negativeArm.used && hasFiniteRange(circuit, gateWire)) {
           negativeArm.used = true
           options.push({position: leftPosition, valueWire: gateWire})
         } else if (
@@ -806,6 +893,7 @@ function composeAffineTerms(
     const operation = wire < sourceSize ? undefined : operations[wire - sourceSize]
     if (
       operation?.kind !== 'affine'
+      || operation.preserveRounding === true
       || operation.leftTerms.length >= affineShareThreshold
     ) {
       composedTerms.push([wire, coefficient])
@@ -873,17 +961,39 @@ function evaluateTensorProgram(
   source: Float32Array,
   program: TensorProgram,
 ): Float32Array {
-  invariant(source.length === program.sourceSize, 'source table has the wrong length')
-  const {layers, valueCount, wireOrder, width} = program
-  const packedValues = new Float32Array(valueCount)
+  const workspace = createTensorWorkspace(program)
+  executeTensorProgram(source, program, workspace)
+  const values = new Float32Array(program.width)
+  for (let packedIndex = 0; packedIndex < program.wireOrder.length; packedIndex++) {
+    values[program.wireOrder[packedIndex]!] = workspace.packedValues[packedIndex]!
+  }
+  return values
+}
+
+function createTensorWorkspace(program: TensorProgram): TensorWorkspace {
   let maxProjectionSize = 0
   let maxInputSize = 0
-  for (const layer of layers) maxProjectionSize = Math.max(maxProjectionSize, layer.bias.length)
-  for (const layer of layers) maxInputSize = Math.max(maxInputSize, layer.inputSize)
-  const input = new Float32Array(maxInputSize)
-  const projection = new Float32Array(maxProjectionSize)
-  const gatherIndices = new Int32Array(program.gatherSlotCount)
-  const gatherMasses = new Float32Array(program.gatherSlotCount)
+  for (const layer of program.layers) {
+    maxProjectionSize = Math.max(maxProjectionSize, layer.bias.length)
+    maxInputSize = Math.max(maxInputSize, layer.inputSize)
+  }
+  return {
+    packedValues: new Float32Array(program.valueCount),
+    input: new Float32Array(maxInputSize),
+    projection: new Float32Array(maxProjectionSize),
+    gatherIndices: new Int32Array(program.gatherSlotCount),
+    gatherMasses: new Float32Array(program.gatherSlotCount),
+  }
+}
+
+function executeTensorProgram(
+  source: Float32Array,
+  program: TensorProgram,
+  workspace: TensorWorkspace,
+): void {
+  invariant(source.length === program.sourceSize, 'source table has the wrong length')
+  const {layers} = program
+  const {packedValues, input, projection, gatherIndices, gatherMasses} = workspace
   packedValues.set(source)
   let availableValues = source.length
   for (const layer of layers) {
@@ -914,11 +1024,6 @@ function evaluateTensorProgram(
     packedValues.set(projection.subarray(0, outputSize), availableValues)
     availableValues += outputSize
   }
-  const values = new Float32Array(width)
-  for (let packedIndex = 0; packedIndex < wireOrder.length; packedIndex++) {
-    values[wireOrder[packedIndex]!] = packedValues[packedIndex]!
-  }
-  return values
 }
 
 // Kept out of evaluateTensorProgram on purpose: with these loops inlined, the
@@ -1026,38 +1131,35 @@ export function emitRelu(circuit: Circuit, value: Wire): Wire {
 }
 
 export function emitMultiply(circuit: Circuit, a: Wire, b: Wire): Wire {
-  if (circuit.isNonNegative(b)) return circuit.reglu([[a, 1]], 0, [[b, 1]], 0)
-  if (circuit.isNonNegative(a)) return circuit.reglu([[b, 1]], 0, [[a, 1]], 0)
-  const positive = circuit.reglu([[a, 1]], 0, [[b, 1]], 0)
-  const negative = circuit.reglu([[a, 1]], 0, [[b, -1]], 0)
-  return circuit.affine([[positive, 1], [negative, -1]])
+  return circuit.multiply(a, b)
 }
 
 export function emitMaximum(circuit: Circuit, a: Wire, b: Wire): Wire {
-  const result = circuit.affine([[b, 1], [emitRelu(circuit, circuit.affine([[a, 1], [b, -1]])), 1]])
-  circuit.assumeRange(
-    result,
-    Math.max(circuit.ranges[a]!.minimum, circuit.ranges[b]!.minimum),
-    Math.max(circuit.ranges[a]!.maximum, circuit.ranges[b]!.maximum),
-  )
+  const difference = circuit.roundAffine([[a, 1], [b, -1]])
+  const result = circuit.roundAffine([[b, 1], [emitRelu(circuit, difference), 1]])
+  const aRange = circuit.ranges[a]!
+  const bRange = circuit.ranges[b]!
+  // In [0,1], subtraction error is below the midpoint above 1, so the
+  // reconstruction cannot round above 1. This does not imply exact max.
+  if (aRange.minimum >= 0 && aRange.maximum <= 1 && bRange.minimum >= 0 && bRange.maximum <= 1) {
+    circuit.assumeRange(result, 0, 1)
+  }
   return result
 }
 
 export function emitMinimum(circuit: Circuit, a: Wire, b: Wire): Wire {
-  const result = circuit.affine([[a, 1], [emitRelu(circuit, circuit.affine([[a, 1], [b, -1]])), -1]])
-  circuit.assumeRange(
-    result,
-    Math.min(circuit.ranges[a]!.minimum, circuit.ranges[b]!.minimum),
-    Math.min(circuit.ranges[a]!.maximum, circuit.ranges[b]!.maximum),
-  )
+  const difference = circuit.roundAffine([[a, 1], [b, -1]])
+  const result = circuit.roundAffine([[a, 1], [emitRelu(circuit, difference), -1]])
+  // For finite nonnegative operands, rounded max(0, a-b) is within [0,a].
+  // The result may undershoot min(a,b), so retain only this weaker bound.
+  if (circuit.isNonNegative(a) && circuit.isNonNegative(b) && hasFiniteRange(circuit, a) && hasFiniteRange(circuit, b)) {
+    circuit.assumeRange(result, 0, Math.fround(circuit.ranges[a]!.maximum))
+  }
   return result
 }
 
 export function emitSelect(circuit: Circuit, gate: Wire, off: Wire, on: Wire): Wire {
-  return circuit.affine([
-    [off, 1],
-    [emitMultiply(circuit, gate, circuit.affine([[on, 1], [off, -1]])), 1],
-  ])
+  return circuit.select(gate, off, on)
 }
 
 export function emitSpring(
@@ -1318,15 +1420,22 @@ export function inlineCircuit(
     const mapTerms = (terms: Terms): Terms =>
       terms.map(([wire, coefficient]) => [wireMap[wire]!, coefficient])
     let wire: Wire
-    if (operation.kind === 'reglu') {
-      wire = target.reglu(
+    if (operation.macro?.kind === 'multiply') {
+      wire = target.multiply(wireMap[operation.macro.left]!, wireMap[operation.macro.right]!)
+    } else if (operation.macro?.kind === 'select') {
+      wire = target.select(wireMap[operation.macro.gate]!, wireMap[operation.macro.off]!, wireMap[operation.macro.on]!)
+    } else if (operation.kind === 'reglu') {
+      wire = target.append('reglu',
         mapTerms(operation.leftTerms),
         operation.leftBias,
         mapTerms(operation.gateTerms),
         operation.gateBias,
+        operation.preserveRounding ? {preserveRounding: true} : {},
       )
     } else {
-      const value = target.affine(mapTerms(operation.leftTerms), operation.leftBias)
+      const value = operation.preserveRounding
+        ? target.roundAffine(mapTerms(operation.leftTerms), operation.leftBias)
+        : target.affine(mapTerms(operation.leftTerms), operation.leftBias)
       wire = operation.kind === 'boolean' ? target.boolean(value) : value
     }
     const sourceWire = source.sourceSize + operationIndex

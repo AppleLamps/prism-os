@@ -1,5 +1,7 @@
 # Brief: multi-frame behavior as a feedforward function of an event window
 
+Historical July 2026 assignment, retained for provenance. Its proposed policies and success criteria are not current conclusions. Read [shared context](context-shared.md) and [current status](../status.md) before using this brief.
+
 Folder: `lab/event-window/`. Read `lab/briefs/context-shared.md` first; conclusions 6, 7, 8 are your foundation.
 
 ## The question

@@ -2,16 +2,18 @@
 //   1. the compiled circuit through the literal reference evaluator,
 //   2. the compiled circuit through the compiled tensor backend,
 //   3. the fround twin (FP32 interpreter),
-//   4. the original float64 interpreter.
+//   4. the float64 interpreter,
+//   5. the selected source executed by the JS engine.
 // 1, 2 and 3 must agree bit-for-bit on every output (plus or minus zero compare as equal, the
-// same equality the repo's differential tests use). 4 measures how far FP32 execution drifts
-// from the author's float64 function.
+// same equality the repo's differential tests use). 4 must agree with 5 independently of the
+// circuit. Precision drift is measured between 3 and 5, not treated as a compiler failure.
 
 import {invariant, validateTensorEvaluation} from '../../numeric-ui-core.ts'
 import ts from 'typescript'
 import type {FitRelation} from './annotations.ts'
 import type {CompiledProgram, FunctionLike} from './compile.ts'
 import {Interpreter, type MarginInfo, type RuntimeValue, runtimeObject} from './twin.ts'
+import {NativeExecutor} from './native.ts'
 
 export class RandomSource {
   state: number
@@ -49,6 +51,17 @@ export type EquivalenceReport = {
   legs: {threeWay: number, withoutTensorLeg: number, withoutTwinLeg: number, referenceOnly: number}
   mismatches: Mismatch[]
   marginViolations: number
+  sourceSemantics: {
+    outputsChecked: number
+    mismatchCount: number
+    mismatches: {
+      trial: number
+      name: string
+      interpreterValue: number | null | undefined
+      nativeValue: number | null | undefined
+      inputs: [string, number][]
+    }[]
+  }
   drift: {
     outputsCompared: number
     bitEqualCount: number
@@ -167,9 +180,7 @@ export function relationsAccept(relations: FitRelation[]): ((values: Map<string,
 }
 
 export type TrialRunner = {
-  // Runs one interpreter (fp32 twin or fp64 original) on the given inputs and returns the
-  // flattened named outputs.
-  run: (interpreter: Interpreter, values: Map<string, number>) => Map<string, number | null>
+  run: (executor: Pick<Interpreter, 'mode' | 'callFunction' | 'runStatements' | 'evaluateExpression'>, values: Map<string, number>) => Map<string, number | null>
 }
 
 // Twin setup for a compiled function: rebuild the parameter list (numbers, or objects whose
@@ -226,6 +237,7 @@ export function runEquivalence(
 
   const twin = new Interpreter(sourceFile, 'fp32', marginsByPosition(program))
   const original = new Interpreter(sourceFile, 'fp64')
+  const native = new NativeExecutor(sourceFile)
 
   const sampleRangeFor = (name: string, spec: SampleRange): SampleRange => {
     const override = options.sampleRanges?.[name]
@@ -242,6 +254,7 @@ export function runEquivalence(
     legs: {threeWay: 0, withoutTensorLeg: 0, withoutTwinLeg: 0, referenceOnly: 0},
     mismatches: [],
     marginViolations: 0,
+    sourceSemantics: {outputsChecked: 0, mismatchCount: 0, mismatches: []},
     drift: {
       outputsCompared: 0,
       bitEqualCount: 0,
@@ -282,8 +295,20 @@ export function runEquivalence(
       if (trial < 3) validateTensorEvaluation(source, circuit, tensorValues)
     }
 
-    const twinOutputs = runner.run(twin, values)
+    const twinInputs = new Map([...values].map(([name, value]) => [name, Math.fround(value)]))
+    const twinOutputs = runner.run(twin, twinInputs)
     const originalOutputs = runner.run(original, values)
+    const nativeOutputs = runner.run(native, values)
+    for (const name of new Set([...originalOutputs.keys(), ...nativeOutputs.keys()])) {
+      const interpreterValue = originalOutputs.get(name)
+      const nativeValue = nativeOutputs.get(name)
+      report.sourceSemantics.outputsChecked++
+      if (interpreterValue === nativeValue || Object.is(interpreterValue, nativeValue)) continue
+      report.sourceSemantics.mismatchCount++
+      if (report.sourceSemantics.mismatches.length < 10) {
+        report.sourceSemantics.mismatches.push({trial, name, interpreterValue, nativeValue, inputs: [...values]})
+      }
+    }
 
     for (const output of program.outputs) {
       const referenceValue = output.num.kind === 'constant' ? output.num.value : referenceValues[output.num.wire]!
@@ -314,8 +339,8 @@ export function runEquivalence(
         continue
       }
 
-      // Drift between the FP32 twin and the float64 original.
-      const originalExpected = expectedValue(output.name, originalOutputs)
+      // Drift against native JS is separate from source-interpreter correctness.
+      const originalExpected = expectedValue(output.name, nativeOutputs)
       if (output.name.endsWith('.present')) {
         if (twinExpected !== originalExpected) report.drift.presenceDisagreements++
         continue

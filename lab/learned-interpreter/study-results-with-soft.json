@@ -1,0 +1,6709 @@
+{
+  "runtime": {
+    "bun": "1.4.0",
+    "platform": "darwin",
+    "architecture": "arm64"
+  },
+  "trainingDomain": "14,739 small integer examples; inputs and each instruction rounded to FP32",
+  "certificationCases": 39605,
+  "configurations": {
+    "original": {
+      "phases": [
+        {
+          "steps": 500,
+          "temperature": 2,
+          "learningRate": 0.02
+        },
+        {
+          "steps": 500,
+          "temperature": 1,
+          "learningRate": 0.02
+        },
+        {
+          "steps": 500,
+          "temperature": 0.5,
+          "learningRate": 0.01
+        },
+        {
+          "steps": 500,
+          "temperature": 0.25,
+          "learningRate": 0.005
+        },
+        {
+          "steps": 500,
+          "temperature": 0.125,
+          "learningRate": 0.002
+        }
+      ],
+      "lossScale": 256,
+      "lossMultiplier": 1,
+      "adamEpsilon": 1e-8
+    },
+    "corrected": {
+      "phases": [
+        {
+          "steps": 500,
+          "temperature": 2,
+          "learningRate": 0.02
+        },
+        {
+          "steps": 500,
+          "temperature": 1,
+          "learningRate": 0.02
+        },
+        {
+          "steps": 500,
+          "temperature": 0.5,
+          "learningRate": 0.01
+        },
+        {
+          "steps": 500,
+          "temperature": 0.25,
+          "learningRate": 0.005
+        },
+        {
+          "steps": 500,
+          "temperature": 0.125,
+          "learningRate": 0.002
+        }
+      ],
+      "lossScale": 256,
+      "lossMultiplier": 1,
+      "adamEpsilon": 1e-14
+    },
+    "equivalentScaling": {
+      "phases": [
+        {
+          "steps": 500,
+          "temperature": 2,
+          "learningRate": 0.02
+        },
+        {
+          "steps": 500,
+          "temperature": 1,
+          "learningRate": 0.02
+        },
+        {
+          "steps": 500,
+          "temperature": 0.5,
+          "learningRate": 0.01
+        },
+        {
+          "steps": 500,
+          "temperature": 0.25,
+          "learningRate": 0.005
+        },
+        {
+          "steps": 500,
+          "temperature": 0.125,
+          "learningRate": 0.002
+        }
+      ],
+      "lossScale": 256,
+      "lossMultiplier": 1000000,
+      "adamEpsilon": 1e-8
+    }
+  },
+  "metrics": {
+    "soft": {
+      "runtimeCells": 4,
+      "programCells": 123,
+      "operations": 240,
+      "affine": 67,
+      "reglu": 173,
+      "layers": 8,
+      "storedWeights": 599,
+      "gatherReads": 0
+    },
+    "hard": {
+      "runtimeCells": 4,
+      "programCells": 123,
+      "operations": 240,
+      "affine": 67,
+      "reglu": 173,
+      "layers": 6,
+      "storedWeights": 230,
+      "gatherReads": 2
+    }
+  },
+  "exhaustiveBaselines": [
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "matrixExamples": 14739,
+      "matrixFirstInstructionEvaluations": 707472,
+      "matrixFinalInstructionEvaluations": 53060400,
+      "matrixStoredBytes": 28800,
+      "exactTrainingPrograms": 12,
+      "exactFullCertificationPrograms": 4,
+      "lossLookups": 3600,
+      "program": 0,
+      "trainingLoss": 0
+    },
+    {
+      "task": {
+        "kind": "coordinate"
+      },
+      "matrixExamples": 14739,
+      "matrixFirstInstructionEvaluations": 707472,
+      "matrixFinalInstructionEvaluations": 53060400,
+      "matrixStoredBytes": 28800,
+      "exactTrainingPrograms": 2,
+      "exactFullCertificationPrograms": 2,
+      "lossLookups": 3600,
+      "program": 40,
+      "trainingLoss": 0
+    }
+  ],
+  "hardStudies": [
+    {
+      "name": "Original study seeds",
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "firstSeed": 501,
+      "lastSeed": 520,
+      "summary": {
+        "original": {
+          "total": 20,
+          "exactTraining": 0,
+          "exactIntegerCertification": 0,
+          "exactFullCertification": 0,
+          "tensorMismatches": 0
+        },
+        "corrected": {
+          "total": 20,
+          "exactTraining": 19,
+          "exactIntegerCertification": 19,
+          "exactFullCertification": 5,
+          "tensorMismatches": 0
+        },
+        "equivalentScaling": {
+          "total": 20,
+          "exactTraining": 19,
+          "exactIntegerCertification": 19,
+          "exactFullCertification": 5,
+          "tensorMismatches": 0
+        },
+        "joint": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 6,
+          "tensorMismatches": 0
+        },
+        "coordinateDescent": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 6,
+          "tensorMismatches": 0
+        }
+      },
+      "epsilonScalingAgreement": {
+        "maximumProbabilityDifference": 3.294147178922735e-7,
+        "differentHardenedPrograms": 0
+      },
+      "rows": {
+        "original": [
+          {
+            "seed": 501,
+            "program": 1,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 502,
+            "program": 4,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 503,
+            "program": 1,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 504,
+            "program": 8,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 505,
+            "program": 10,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 506,
+            "program": 13,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 507,
+            "program": 4,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 508,
+            "program": 15,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 509,
+            "program": 16,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 510,
+            "program": 18,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 511,
+            "program": 19,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 512,
+            "program": 20,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 513,
+            "program": 22,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 514,
+            "program": 23,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 515,
+            "program": 24,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 516,
+            "program": 22,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 517,
+            "program": 25,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 518,
+            "program": 26,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 519,
+            "program": 27,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 520,
+            "program": 28,
+            "trainingLoss": 0.000732421875
+          }
+        ],
+        "corrected": [
+          {
+            "seed": 501,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 502,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 503,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 504,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 505,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 506,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 507,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 508,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 509,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 510,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 511,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 512,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 513,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 514,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 515,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 516,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 517,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 518,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 519,
+            "program": 27,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 520,
+            "program": 3,
+            "trainingLoss": 0
+          }
+        ],
+        "equivalentScaling": [
+          {
+            "seed": 501,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 502,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 503,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 504,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 505,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 506,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 507,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 508,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 509,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 510,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 511,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 512,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 513,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 514,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 515,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 516,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 517,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 518,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 519,
+            "program": 27,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 520,
+            "program": 3,
+            "trainingLoss": 0
+          }
+        ],
+        "joint": [
+          {
+            "seed": 501,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 502,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 503,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 504,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 505,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 506,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 507,
+            "program": 14,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 508,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 509,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 510,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 511,
+            "program": 14,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 512,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 513,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 514,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 515,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 516,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 517,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 518,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 519,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 520,
+            "program": 12,
+            "trainingLoss": 0
+          }
+        ],
+        "coordinateDescent": [
+          {
+            "seed": 501,
+            "program": 0,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 502,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 503,
+            "program": 0,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 504,
+            "program": 0,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 505,
+            "program": 7,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 506,
+            "program": 7,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 507,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 508,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 509,
+            "program": 12,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 510,
+            "program": 12,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 511,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 512,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 513,
+            "program": 12,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 514,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 515,
+            "program": 0,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 516,
+            "program": 12,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 517,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 518,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 519,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 520,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Reassessment seeds",
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "firstSeed": 1001,
+      "lastSeed": 1020,
+      "summary": {
+        "original": {
+          "total": 20,
+          "exactTraining": 0,
+          "exactIntegerCertification": 0,
+          "exactFullCertification": 0,
+          "tensorMismatches": 0
+        },
+        "corrected": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 3,
+          "tensorMismatches": 0
+        },
+        "equivalentScaling": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 3,
+          "tensorMismatches": 0
+        },
+        "joint": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 8,
+          "tensorMismatches": 0
+        },
+        "coordinateDescent": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 3,
+          "tensorMismatches": 0
+        }
+      },
+      "epsilonScalingAgreement": {
+        "maximumProbabilityDifference": 3.3687741174404096e-7,
+        "differentHardenedPrograms": 0
+      },
+      "rows": {
+        "original": [
+          {
+            "seed": 1001,
+            "program": 26,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1002,
+            "program": 29,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1003,
+            "program": 26,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1004,
+            "program": 30,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1005,
+            "program": 28,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1006,
+            "program": 28,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1007,
+            "program": 25,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1008,
+            "program": 31,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1009,
+            "program": 32,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1010,
+            "program": 33,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1011,
+            "program": 24,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1012,
+            "program": 22,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1013,
+            "program": 18,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1014,
+            "program": 25,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1015,
+            "program": 27,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1016,
+            "program": 34,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1017,
+            "program": 30,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1018,
+            "program": 35,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1019,
+            "program": 28,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 1020,
+            "program": 25,
+            "trainingLoss": 0.000732421875
+          }
+        ],
+        "corrected": [
+          {
+            "seed": 1001,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1002,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1003,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1004,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1005,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1006,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1007,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1008,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1009,
+            "program": 14,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1010,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1011,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1012,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1013,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1014,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1015,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1016,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1017,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1018,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1019,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1020,
+            "program": 3,
+            "trainingLoss": 0
+          }
+        ],
+        "equivalentScaling": [
+          {
+            "seed": 1001,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1002,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1003,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1004,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1005,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1006,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1007,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1008,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1009,
+            "program": 14,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1010,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1011,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1012,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1013,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1014,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1015,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1016,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1017,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1018,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1019,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1020,
+            "program": 3,
+            "trainingLoss": 0
+          }
+        ],
+        "joint": [
+          {
+            "seed": 1001,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1002,
+            "program": 14,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1003,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1004,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1005,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1006,
+            "program": 14,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1007,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1008,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1009,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1010,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1011,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1012,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1013,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1014,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1015,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1016,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1017,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1018,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1019,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1020,
+            "program": 21,
+            "trainingLoss": 0
+          }
+        ],
+        "coordinateDescent": [
+          {
+            "seed": 1001,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1002,
+            "program": 7,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1003,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1004,
+            "program": 14,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1005,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1006,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1007,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1008,
+            "program": 14,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1009,
+            "program": 14,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1010,
+            "program": 12,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1011,
+            "program": 0,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1012,
+            "program": 12,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1013,
+            "program": 12,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1014,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1015,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1016,
+            "program": 7,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1017,
+            "program": 14,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1018,
+            "program": 14,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1019,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1020,
+            "program": 21,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Fresh seeds",
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "firstSeed": 4001,
+      "lastSeed": 4020,
+      "summary": {
+        "original": {
+          "total": 20,
+          "exactTraining": 0,
+          "exactIntegerCertification": 0,
+          "exactFullCertification": 0,
+          "tensorMismatches": 0
+        },
+        "corrected": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 7,
+          "tensorMismatches": 0
+        },
+        "equivalentScaling": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 7,
+          "tensorMismatches": 0
+        },
+        "joint": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 8,
+          "tensorMismatches": 0
+        },
+        "coordinateDescent": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 8,
+          "tensorMismatches": 0
+        }
+      },
+      "epsilonScalingAgreement": {
+        "maximumProbabilityDifference": 7.148495894115925e-7,
+        "differentHardenedPrograms": 0
+      },
+      "rows": {
+        "original": [
+          {
+            "seed": 4001,
+            "program": 18,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4002,
+            "program": 36,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4003,
+            "program": 1,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4004,
+            "program": 4,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4005,
+            "program": 30,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4006,
+            "program": 35,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4007,
+            "program": 10,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4008,
+            "program": 1,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4009,
+            "program": 37,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4010,
+            "program": 38,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4011,
+            "program": 15,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4012,
+            "program": 15,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4013,
+            "program": 20,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4014,
+            "program": 20,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4015,
+            "program": 37,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4016,
+            "program": 39,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4017,
+            "program": 8,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4018,
+            "program": 15,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4019,
+            "program": 13,
+            "trainingLoss": 0.000732421875
+          },
+          {
+            "seed": 4020,
+            "program": 23,
+            "trainingLoss": 0.000732421875
+          }
+        ],
+        "corrected": [
+          {
+            "seed": 4001,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4002,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4003,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4004,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4005,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4006,
+            "program": 14,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4007,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4008,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4009,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4010,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4011,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4012,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4013,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4014,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4015,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4016,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4017,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4018,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4019,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4020,
+            "program": 5,
+            "trainingLoss": 0
+          }
+        ],
+        "equivalentScaling": [
+          {
+            "seed": 4001,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4002,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4003,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4004,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4005,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4006,
+            "program": 14,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4007,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4008,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4009,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4010,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4011,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4012,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4013,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4014,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4015,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4016,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4017,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4018,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4019,
+            "program": 17,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4020,
+            "program": 5,
+            "trainingLoss": 0
+          }
+        ],
+        "joint": [
+          {
+            "seed": 4001,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4002,
+            "program": 3,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4003,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4004,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4005,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4006,
+            "program": 12,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4007,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4008,
+            "program": 14,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4009,
+            "program": 7,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4010,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4011,
+            "program": 5,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4012,
+            "program": 21,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4013,
+            "program": 0,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4014,
+            "program": 11,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4015,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4016,
+            "program": 6,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4017,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4018,
+            "program": 2,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4019,
+            "program": 9,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4020,
+            "program": 0,
+            "trainingLoss": 0
+          }
+        ],
+        "coordinateDescent": [
+          {
+            "seed": 4001,
+            "program": 12,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4002,
+            "program": 12,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4003,
+            "program": 0,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4004,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4005,
+            "program": 14,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4006,
+            "program": 14,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4007,
+            "program": 7,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4008,
+            "program": 0,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4009,
+            "program": 0,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4010,
+            "program": 14,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4011,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4012,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4013,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4014,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4015,
+            "program": 0,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4016,
+            "program": 7,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4017,
+            "program": 0,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4018,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4019,
+            "program": 7,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4020,
+            "program": 5,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Original study seeds",
+      "task": {
+        "kind": "coordinate"
+      },
+      "firstSeed": 541,
+      "lastSeed": 560,
+      "summary": {
+        "original": {
+          "total": 20,
+          "exactTraining": 0,
+          "exactIntegerCertification": 0,
+          "exactFullCertification": 0,
+          "tensorMismatches": 0
+        },
+        "corrected": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        },
+        "equivalentScaling": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        },
+        "joint": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        },
+        "coordinateDescent": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        }
+      },
+      "epsilonScalingAgreement": {
+        "maximumProbabilityDifference": 7.105427357601002e-14,
+        "differentHardenedPrograms": 0
+      },
+      "rows": {
+        "original": [
+          {
+            "seed": 541,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 542,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 543,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 544,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 545,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 546,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 547,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 548,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 549,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 550,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 551,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 552,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 553,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 554,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 555,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 556,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 557,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 558,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 559,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 560,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          }
+        ],
+        "corrected": [
+          {
+            "seed": 541,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 542,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 543,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 544,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 545,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 546,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 547,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 548,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 549,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 550,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 551,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 552,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 553,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 554,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 555,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 556,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 557,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 558,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 559,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 560,
+            "program": 42,
+            "trainingLoss": 0
+          }
+        ],
+        "equivalentScaling": [
+          {
+            "seed": 541,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 542,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 543,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 544,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 545,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 546,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 547,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 548,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 549,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 550,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 551,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 552,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 553,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 554,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 555,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 556,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 557,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 558,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 559,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 560,
+            "program": 42,
+            "trainingLoss": 0
+          }
+        ],
+        "joint": [
+          {
+            "seed": 541,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 542,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 543,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 544,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 545,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 546,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 547,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 548,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 549,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 550,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 551,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 552,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 553,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 554,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 555,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 556,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 557,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 558,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 559,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 560,
+            "program": 40,
+            "trainingLoss": 0
+          }
+        ],
+        "coordinateDescent": [
+          {
+            "seed": 541,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 542,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 543,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 544,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 545,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 546,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 547,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 548,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 549,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 550,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 551,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 552,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 553,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 554,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 555,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 556,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 557,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 558,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 559,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 560,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Reassessment seeds",
+      "task": {
+        "kind": "coordinate"
+      },
+      "firstSeed": 1001,
+      "lastSeed": 1020,
+      "summary": {
+        "original": {
+          "total": 20,
+          "exactTraining": 0,
+          "exactIntegerCertification": 0,
+          "exactFullCertification": 0,
+          "tensorMismatches": 0
+        },
+        "corrected": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        },
+        "equivalentScaling": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        },
+        "joint": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        },
+        "coordinateDescent": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        }
+      },
+      "epsilonScalingAgreement": {
+        "maximumProbabilityDifference": 1.1335377081422848e-13,
+        "differentHardenedPrograms": 0
+      },
+      "rows": {
+        "original": [
+          {
+            "seed": 1001,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1002,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1003,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1004,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1005,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1006,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1007,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1008,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1009,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1010,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1011,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1012,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1013,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1014,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1015,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1016,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1017,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1018,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1019,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 1020,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          }
+        ],
+        "corrected": [
+          {
+            "seed": 1001,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1002,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1003,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1004,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1005,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1006,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1007,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1008,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1009,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1010,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1011,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1012,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1013,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1014,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1015,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1016,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1017,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1018,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1019,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1020,
+            "program": 42,
+            "trainingLoss": 0
+          }
+        ],
+        "equivalentScaling": [
+          {
+            "seed": 1001,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1002,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1003,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1004,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1005,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1006,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1007,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1008,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1009,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1010,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1011,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1012,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1013,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1014,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1015,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1016,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1017,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1018,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1019,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1020,
+            "program": 42,
+            "trainingLoss": 0
+          }
+        ],
+        "joint": [
+          {
+            "seed": 1001,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1002,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1003,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1004,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1005,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1006,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1007,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1008,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1009,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1010,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1011,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1012,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1013,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1014,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1015,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1016,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1017,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1018,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1019,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 1020,
+            "program": 42,
+            "trainingLoss": 0
+          }
+        ],
+        "coordinateDescent": [
+          {
+            "seed": 1001,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1002,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1003,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1004,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1005,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1006,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1007,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1008,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1009,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1010,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1011,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1012,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1013,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1014,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1015,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1016,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1017,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1018,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1019,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 1020,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Fresh seeds",
+      "task": {
+        "kind": "coordinate"
+      },
+      "firstSeed": 4001,
+      "lastSeed": 4020,
+      "summary": {
+        "original": {
+          "total": 20,
+          "exactTraining": 0,
+          "exactIntegerCertification": 0,
+          "exactFullCertification": 0,
+          "tensorMismatches": 0
+        },
+        "corrected": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        },
+        "equivalentScaling": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        },
+        "joint": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        },
+        "coordinateDescent": {
+          "total": 20,
+          "exactTraining": 20,
+          "exactIntegerCertification": 20,
+          "exactFullCertification": 20,
+          "tensorMismatches": 0
+        }
+      },
+      "epsilonScalingAgreement": {
+        "maximumProbabilityDifference": 3.191891195797325e-14,
+        "differentHardenedPrograms": 0
+      },
+      "rows": {
+        "original": [
+          {
+            "seed": 4001,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4002,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4003,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4004,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4005,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4006,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4007,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4008,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4009,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4010,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4011,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4012,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4013,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4014,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4015,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4016,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4017,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4018,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4019,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          },
+          {
+            "seed": 4020,
+            "program": 41,
+            "trainingLoss": 0.009765625
+          }
+        ],
+        "corrected": [
+          {
+            "seed": 4001,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4002,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4003,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4004,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4005,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4006,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4007,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4008,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4009,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4010,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4011,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4012,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4013,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4014,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4015,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4016,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4017,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4018,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4019,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4020,
+            "program": 42,
+            "trainingLoss": 0
+          }
+        ],
+        "equivalentScaling": [
+          {
+            "seed": 4001,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4002,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4003,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4004,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4005,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4006,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4007,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4008,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4009,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4010,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4011,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4012,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4013,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4014,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4015,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4016,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4017,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4018,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4019,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4020,
+            "program": 42,
+            "trainingLoss": 0
+          }
+        ],
+        "joint": [
+          {
+            "seed": 4001,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4002,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4003,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4004,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4005,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4006,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4007,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4008,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4009,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4010,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4011,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4012,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4013,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4014,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4015,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4016,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4017,
+            "program": 40,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4018,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4019,
+            "program": 42,
+            "trainingLoss": 0
+          },
+          {
+            "seed": 4020,
+            "program": 42,
+            "trainingLoss": 0
+          }
+        ],
+        "coordinateDescent": [
+          {
+            "seed": 4001,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4002,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4003,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4004,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4005,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4006,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4007,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4008,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4009,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4010,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4011,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4012,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4013,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4014,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4015,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4016,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4017,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4018,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4019,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          },
+          {
+            "seed": 4020,
+            "program": 40,
+            "trainingLoss": 0,
+            "lossLookups": 124,
+            "sweeps": 1
+          }
+        ]
+      }
+    }
+  ],
+  "softStudies": [
+    {
+      "name": "Original soft coordinate seeds",
+      "task": {
+        "kind": "coordinate"
+      },
+      "firstSeed": 101,
+      "lastSeed": 120,
+      "config": {
+        "batchSize": 64,
+        "lossScale": 256,
+        "adamEpsilon": 1e-8,
+        "allowedOperations": [
+          "add",
+          "subtract",
+          "multiply"
+        ],
+        "phases": [
+          {
+            "steps": 500,
+            "temperature": 2,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 1,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 0.5,
+            "learningRate": 0.01
+          },
+          {
+            "steps": 500,
+            "temperature": 0.25,
+            "learningRate": 0.005
+          },
+          {
+            "steps": 500,
+            "temperature": 0.125,
+            "learningRate": 0.002
+          }
+        ]
+      },
+      "summary": {
+        "total": 20,
+        "exactTraining": 11,
+        "exactIntegerCertification": 11,
+        "exactFullCertification": 11,
+        "tensorMismatches": 0
+      },
+      "rows": [
+        {
+          "seed": 101,
+          "program": 43,
+          "trainingLoss": 0.013671875
+        },
+        {
+          "seed": 102,
+          "program": 40,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 103,
+          "program": 40,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 104,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 105,
+          "program": 40,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 106,
+          "program": 40,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 107,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 108,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 109,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 110,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 111,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 112,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 113,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 114,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 115,
+          "program": 45,
+          "trainingLoss": 0.013671875
+        },
+        {
+          "seed": 116,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 117,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 118,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 119,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 120,
+          "program": 40,
+          "trainingLoss": 0
+        }
+      ]
+    },
+    {
+      "name": "Fresh soft coordinate seeds",
+      "task": {
+        "kind": "coordinate"
+      },
+      "firstSeed": 6101,
+      "lastSeed": 6120,
+      "config": {
+        "batchSize": 64,
+        "lossScale": 256,
+        "adamEpsilon": 1e-8,
+        "allowedOperations": [
+          "add",
+          "subtract",
+          "multiply"
+        ],
+        "phases": [
+          {
+            "steps": 500,
+            "temperature": 2,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 1,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 0.5,
+            "learningRate": 0.01
+          },
+          {
+            "steps": 500,
+            "temperature": 0.25,
+            "learningRate": 0.005
+          },
+          {
+            "steps": 500,
+            "temperature": 0.125,
+            "learningRate": 0.002
+          }
+        ]
+      },
+      "summary": {
+        "total": 20,
+        "exactTraining": 11,
+        "exactIntegerCertification": 11,
+        "exactFullCertification": 11,
+        "tensorMismatches": 0
+      },
+      "rows": [
+        {
+          "seed": 6101,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6102,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6103,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6104,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 6105,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 6106,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 6107,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 6108,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 6109,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6110,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6111,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 6112,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6113,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 6114,
+          "program": 40,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6115,
+          "program": 40,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6116,
+          "program": 40,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6117,
+          "program": 42,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6118,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 6119,
+          "program": 44,
+          "trainingLoss": 0.01708984375
+        },
+        {
+          "seed": 6120,
+          "program": 42,
+          "trainingLoss": 0
+        }
+      ]
+    },
+    {
+      "name": "Original soft two-add seeds",
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "firstSeed": 421,
+      "lastSeed": 440,
+      "config": {
+        "batchSize": 64,
+        "lossScale": 256,
+        "adamEpsilon": 1e-8,
+        "allowedOperations": [
+          "add",
+          "subtract",
+          "multiply"
+        ],
+        "phases": [
+          {
+            "steps": 500,
+            "temperature": 2,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 1,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 0.5,
+            "learningRate": 0.01
+          },
+          {
+            "steps": 500,
+            "temperature": 0.25,
+            "learningRate": 0.005
+          },
+          {
+            "steps": 500,
+            "temperature": 0.125,
+            "learningRate": 0.002
+          }
+        ]
+      },
+      "summary": {
+        "total": 20,
+        "exactTraining": 0,
+        "exactIntegerCertification": 0,
+        "exactFullCertification": 0,
+        "tensorMismatches": 0
+      },
+      "rows": [
+        {
+          "seed": 421,
+          "program": 46,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 422,
+          "program": 47,
+          "trainingLoss": 0.002197265625
+        },
+        {
+          "seed": 423,
+          "program": 48,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 424,
+          "program": 49,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 425,
+          "program": 50,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 426,
+          "program": 51,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 427,
+          "program": 52,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 428,
+          "program": 51,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 429,
+          "program": 53,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 430,
+          "program": 49,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 431,
+          "program": 54,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 432,
+          "program": 55,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 433,
+          "program": 56,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 434,
+          "program": 57,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 435,
+          "program": 55,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 436,
+          "program": 58,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 437,
+          "program": 54,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 438,
+          "program": 59,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 439,
+          "program": 46,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 440,
+          "program": 59,
+          "trainingLoss": 0.000732421875
+        }
+      ]
+    },
+    {
+      "name": "Fresh soft two-add seeds",
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "firstSeed": 6201,
+      "lastSeed": 6220,
+      "config": {
+        "batchSize": 64,
+        "lossScale": 256,
+        "adamEpsilon": 1e-8,
+        "allowedOperations": [
+          "add",
+          "subtract",
+          "multiply"
+        ],
+        "phases": [
+          {
+            "steps": 500,
+            "temperature": 2,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 1,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 0.5,
+            "learningRate": 0.01
+          },
+          {
+            "steps": 500,
+            "temperature": 0.25,
+            "learningRate": 0.005
+          },
+          {
+            "steps": 500,
+            "temperature": 0.125,
+            "learningRate": 0.002
+          }
+        ]
+      },
+      "summary": {
+        "total": 20,
+        "exactTraining": 0,
+        "exactIntegerCertification": 0,
+        "exactFullCertification": 0,
+        "tensorMismatches": 0
+      },
+      "rows": [
+        {
+          "seed": 6201,
+          "program": 60,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6202,
+          "program": 59,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6203,
+          "program": 54,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6204,
+          "program": 61,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6205,
+          "program": 55,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6206,
+          "program": 48,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6207,
+          "program": 58,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6208,
+          "program": 55,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6209,
+          "program": 59,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6210,
+          "program": 62,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6211,
+          "program": 61,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6212,
+          "program": 55,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6213,
+          "program": 52,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6214,
+          "program": 53,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6215,
+          "program": 62,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6216,
+          "program": 49,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6217,
+          "program": 56,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6218,
+          "program": 57,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6219,
+          "program": 49,
+          "trainingLoss": 0.000732421875
+        },
+        {
+          "seed": 6220,
+          "program": 49,
+          "trainingLoss": 0.000732421875
+        }
+      ]
+    },
+    {
+      "name": "Original add-only seeds",
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "firstSeed": 441,
+      "lastSeed": 460,
+      "config": {
+        "batchSize": 64,
+        "lossScale": 256,
+        "adamEpsilon": 1e-8,
+        "allowedOperations": [
+          "add"
+        ],
+        "phases": [
+          {
+            "steps": 500,
+            "temperature": 2,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 1,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 0.5,
+            "learningRate": 0.01
+          },
+          {
+            "steps": 500,
+            "temperature": 0.25,
+            "learningRate": 0.005
+          },
+          {
+            "steps": 500,
+            "temperature": 0.125,
+            "learningRate": 0.002
+          }
+        ]
+      },
+      "summary": {
+        "total": 20,
+        "exactTraining": 20,
+        "exactIntegerCertification": 20,
+        "exactFullCertification": 9,
+        "tensorMismatches": 0
+      },
+      "rows": [
+        {
+          "seed": 441,
+          "program": 17,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 442,
+          "program": 9,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 443,
+          "program": 6,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 444,
+          "program": 0,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 445,
+          "program": 6,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 446,
+          "program": 14,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 447,
+          "program": 9,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 448,
+          "program": 6,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 449,
+          "program": 12,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 450,
+          "program": 7,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 451,
+          "program": 3,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 452,
+          "program": 11,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 453,
+          "program": 0,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 454,
+          "program": 7,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 455,
+          "program": 11,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 456,
+          "program": 2,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 457,
+          "program": 7,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 458,
+          "program": 0,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 459,
+          "program": 6,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 460,
+          "program": 9,
+          "trainingLoss": 0
+        }
+      ]
+    },
+    {
+      "name": "Fresh add-only seeds",
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "firstSeed": 6301,
+      "lastSeed": 6320,
+      "config": {
+        "batchSize": 64,
+        "lossScale": 256,
+        "adamEpsilon": 1e-8,
+        "allowedOperations": [
+          "add"
+        ],
+        "phases": [
+          {
+            "steps": 500,
+            "temperature": 2,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 1,
+            "learningRate": 0.02
+          },
+          {
+            "steps": 500,
+            "temperature": 0.5,
+            "learningRate": 0.01
+          },
+          {
+            "steps": 500,
+            "temperature": 0.25,
+            "learningRate": 0.005
+          },
+          {
+            "steps": 500,
+            "temperature": 0.125,
+            "learningRate": 0.002
+          }
+        ]
+      },
+      "summary": {
+        "total": 20,
+        "exactTraining": 18,
+        "exactIntegerCertification": 18,
+        "exactFullCertification": 5,
+        "tensorMismatches": 0
+      },
+      "rows": [
+        {
+          "seed": 6301,
+          "program": 0,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6302,
+          "program": 63,
+          "trainingLoss": 0.00146484375
+        },
+        {
+          "seed": 6303,
+          "program": 14,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6304,
+          "program": 14,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6305,
+          "program": 7,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6306,
+          "program": 64,
+          "trainingLoss": 0.00146484375
+        },
+        {
+          "seed": 6307,
+          "program": 9,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6308,
+          "program": 5,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6309,
+          "program": 9,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6310,
+          "program": 9,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6311,
+          "program": 9,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6312,
+          "program": 6,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6313,
+          "program": 0,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6314,
+          "program": 0,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6315,
+          "program": 6,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6316,
+          "program": 6,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6317,
+          "program": 21,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6318,
+          "program": 12,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6319,
+          "program": 17,
+          "trainingLoss": 0
+        },
+        {
+          "seed": 6320,
+          "program": 0,
+          "trainingLoss": 0
+        }
+      ]
+    }
+  ],
+  "programs": [
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "instruction0"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 0,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 0,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 0
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "instruction0",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 0,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 0,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 0
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "instruction0",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 196,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 196,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 1.1920928955078125e-7
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "instruction0"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 196,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 196,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 1.1920928955078125e-7
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "instruction0",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 196,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 196,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 1.1920928955078125e-7
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "instruction0"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 0,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 0,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 0
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "instruction0",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 196,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 196,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 1.1920928955078125e-7
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "instruction0",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 0,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 0,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 0
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "instruction0"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 196,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 196,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 1.1920928955078125e-7
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "instruction0"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 196,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 196,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 1.1920928955078125e-7
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "instruction0",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 196,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 196,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 1.1920928955078125e-7
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "instruction0"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 196,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 196,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 1.1920928955078125e-7
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "coordinate"
+      },
+      "instructions": [
+        {
+          "operation": "subtract",
+          "left": "pointerX",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "multiply",
+          "left": "scale",
+          "right": "instruction0"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 0,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 0,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 0
+      }
+    },
+    {
+      "task": {
+        "kind": "coordinate"
+      },
+      "instructions": [
+        {
+          "operation": "subtract",
+          "left": "pointerX",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "instruction0",
+          "right": "instruction0"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 36894,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 11520,
+          "extrapolation": 270,
+          "translation": 23040,
+          "fractional": 2058,
+          "input-rounding": 6
+        },
+        "maximumAbsoluteError": 882
+      }
+    },
+    {
+      "task": {
+        "kind": "coordinate"
+      },
+      "instructions": [
+        {
+          "operation": "subtract",
+          "left": "pointerX",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "multiply",
+          "left": "instruction0",
+          "right": "scale"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 0,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 0,
+          "extrapolation": 0,
+          "translation": 0,
+          "fractional": 0,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 0
+      }
+    },
+    {
+      "task": {
+        "kind": "coordinate"
+      },
+      "instructions": [
+        {
+          "operation": "subtract",
+          "left": "scale",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "multiply",
+          "left": "scale",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38658,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1456,
+          "input-rounding": 14
+        },
+        "maximumAbsoluteError": 441
+      }
+    },
+    {
+      "task": {
+        "kind": "coordinate"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "scale",
+          "right": "scale"
+        },
+        {
+          "operation": "subtract",
+          "left": "pointerX",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 25074,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 7680,
+          "extrapolation": 270,
+          "translation": 15360,
+          "fractional": 1764,
+          "input-rounding": 0
+        },
+        "maximumAbsoluteError": 756
+      }
+    },
+    {
+      "task": {
+        "kind": "coordinate"
+      },
+      "instructions": [
+        {
+          "operation": "subtract",
+          "left": "scale",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "multiply",
+          "left": "pointerX",
+          "right": "scale"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38658,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1456,
+          "input-rounding": 14
+        },
+        "maximumAbsoluteError": 441
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "distractor",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "panelLeft",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 39360,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 2156,
+          "input-rounding": 16
+        },
+        "maximumAbsoluteError": 191.25
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "distractor",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "panelLeft",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "distractor",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "panelLeft",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "pointerX",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "panelLeft",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "pointerX",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "panelLeft",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "pointerX",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "distractor",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "pointerX"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "panelLeft",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38869,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1666,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "pointerX",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "pointerX",
+          "right": "pointerX"
+        },
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "distractor",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "multiply",
+          "left": "panelLeft",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "pointerX",
+          "right": "distractor"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38799,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 12288,
+          "extrapolation": 324,
+          "translation": 24576,
+          "fractional": 1596,
+          "input-rounding": 15
+        },
+        "maximumAbsoluteError": 63.75000011920929
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "panelLeft"
+        },
+        {
+          "operation": "add",
+          "left": "instruction0",
+          "right": "panelLeft"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 36782,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 11520,
+          "extrapolation": 270,
+          "translation": 23040,
+          "fractional": 1946,
+          "input-rounding": 6
+        },
+        "maximumAbsoluteError": 127.50000005960464
+      }
+    },
+    {
+      "task": {
+        "kind": "two-add",
+        "thirdAddend": "distractor"
+      },
+      "instructions": [
+        {
+          "operation": "add",
+          "left": "panelLeft",
+          "right": "distractor"
+        },
+        {
+          "operation": "add",
+          "left": "distractor",
+          "right": "instruction0"
+        }
+      ],
+      "verification": {
+        "caseCount": 39605,
+        "referenceMismatches": 38348,
+        "tensorMismatches": 0,
+        "mismatchesByFamily": {
+          "unseen": 11520,
+          "extrapolation": 306,
+          "translation": 24576,
+          "fractional": 1932,
+          "input-rounding": 14
+        },
+        "maximumAbsoluteError": 127.5
+      }
+    }
+  ],
+  "elapsedSeconds": 403.111735666
+}

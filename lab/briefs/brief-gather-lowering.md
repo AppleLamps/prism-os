@@ -1,5 +1,7 @@
 # Brief: one-hot group invariants and gather lowering in the tensor compiler
 
+Historical July 2026 assignment, retained for provenance. Its proposed policies and success criteria are not current conclusions. Read [shared context](context-shared.md) and [current status](../status.md) before using this brief.
+
 Folder: `lab/gather-lowering/`. Read `lab/briefs/context-shared.md` first; conclusion 10 is your foundation, and the `todo.md` section "Revisit hardAttend" is the design decision you are implementing the alternative to.
 
 ## The question

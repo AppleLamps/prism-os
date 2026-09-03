@@ -200,7 +200,7 @@ const photoConstantFields = [
   photoSourceField.thumbnailHeight,
   photoSourceField.controlSize,
 ] as const
-const constantFields = [
+const pixelConstantFields = [
   sourceField.margin,
   sourceField.titleHeight,
   sourceField.minWidth,
@@ -212,6 +212,8 @@ const constantFields = [
   sourceField.dockGap,
   sourceField.dockItemWidth,
   sourceField.systemBarHeight,
+] as const
+const springConstantFields = [
   sourceField.springStiffness,
   sourceField.springDamping,
   sourceField.springMaxFrameDuration,
@@ -220,6 +222,7 @@ const constantFields = [
   sourceField.springSettleDistanceScale,
   sourceField.springSettleSpeedScale,
 ] as const
+const constantFields = [...pixelConstantFields, ...springConstantFields] as const
 
 type Geometry = Record<(typeof geometryFields)[number], Wire>
 type Transform = Record<(typeof transformFields)[number], Wire>
@@ -311,24 +314,40 @@ export function photoThumbnailSpringSourceField(item: number, field: number) {
 
 function compileWindowManagerCircuit() {
   const circuit = new Circuit(sourceField.size)
-  circuit.assumeRange(sourceField.viewportWidth, 0, Number.POSITIVE_INFINITY)
-  circuit.assumeRange(sourceField.viewportHeight, 0, Number.POSITIVE_INFINITY)
+  // Pixel-space sources carry an honest finite ceiling: 16384 covers the
+  // largest real displays (8K is 7680 wide) with headroom while staying far
+  // inside FP32's exact-integer band (macro-ranges.md keeps operands well
+  // under 2^23). Finite bounds make geometry eligible for gather lowering
+  // (see lab/gather-lowering); a range that admits Infinity cannot lower.
+  circuit.assumeRange(sourceField.viewportWidth, 0, 16_384)
+  circuit.assumeRange(sourceField.viewportHeight, 0, 16_384)
   circuit.assumeRange(sourceField.unit, 1, 1)
+  // Frame times are requestAnimationFrame timestamps; they grow without bound
+  // over a session, so their range honestly stays open.
   circuit.assumeRange(sourceField.frameTime, 0, Number.POSITIVE_INFINITY)
   circuit.assumeRange(sourceField.previousFrameTime, 0, Number.POSITIVE_INFINITY)
   circuit.assumeRange(sourceField.timeInitialized, 0, 1)
-  for (const field of constantFields) circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
+  // Margins, the title bar, buttons, and dock geometry are constants in the
+  // tens to hundreds of pixels; 1024 is generous. The spring parameters are
+  // physics constants, not pixel geometry, so their range stays open.
+  for (const field of pixelConstantFields) circuit.assumeRange(field, 0, 1024)
+  for (const field of springConstantFields) {
+    circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
+  }
   for (const field of eventActiveFields) circuit.assumeRange(field, 0, 1)
   for (const field of photoConstantFields) {
-    circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
+    circuit.assumeRange(field, 0, 1024)
   }
   for (const field of photoEventActiveFields) circuit.assumeRange(field, 0, 1)
   for (let item = 0; item < photoCount; item++) {
     circuit.assumeRange(photoFocusSourceField(item), 0, 1)
+    // Clamped to the window content width before writeback, so the viewport
+    // ceiling holds here too (and must agree with photo-gallery.ts, whose
+    // inlined contract lands on these wires).
     circuit.assumeRange(
       photoThumbnailSpringSourceField(item, thumbnailSpringField.centerX),
       0,
-      Number.POSITIVE_INFINITY,
+      16_384,
     )
     circuit.assumeRange(
       photoThumbnailSpringSourceField(item, thumbnailSpringField.scale),
@@ -337,13 +356,15 @@ function compileWindowManagerCircuit() {
     )
   }
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+    // Window geometry is clamped to the viewport every frame before writeback,
+    // so the viewport ceiling is honest for the stored state as well.
     for (const field of [
       windowStateField.left,
       windowStateField.top,
       windowStateField.width,
       windowStateField.height,
     ]) {
-      circuit.assumeRange(windowSourceField(windowIndex, field), 0, Number.POSITIVE_INFINITY)
+      circuit.assumeRange(windowSourceField(windowIndex, field), 0, 16_384)
     }
     for (const field of [
       windowStateField.open,
@@ -359,6 +380,22 @@ function compileWindowManagerCircuit() {
     for (let rank = 0; rank < windowCount; rank++) {
       circuit.assumeRange(stackSourceField(rank, windowIndex), 0, 1)
     }
+  }
+  // The stacking state is a permutation matrix: exactly one window per rank
+  // and exactly one rank per window, asserted by validateWindowManagerSource
+  // every frame. Declared as one-hot groups, the frontmost-window selection
+  // sums lower to gather reads (see lab/gather-lowering).
+  for (let rank = 0; rank < windowCount; rank++) {
+    circuit.assumeOneHot(Array.from(
+      {length: windowCount},
+      (_, windowIndex) => stackSourceField(rank, windowIndex),
+    ))
+  }
+  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+    circuit.assumeOneHot(Array.from(
+      {length: windowCount},
+      (_, rank) => stackSourceField(rank, windowIndex),
+    ))
   }
 
   const unit = sourceField.unit

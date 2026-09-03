@@ -425,18 +425,17 @@ test('fractional first-active selections never lower a masked sum', () => {
 })
 
 test('emitFirstActive accepts candidates that fold to one shared constant', () => {
-  // Constant-zero candidates collapse the routing wires into one constant
-  // wire. The committed core accepted this input, and the one-hot declaration
-  // must not reject it: the selection simply stays undeclared because a group
-  // needs distinct members.
+  // The candidates share a constant, but multiplication preserves distinct
+  // routing operations. Their all-zero group is legal and remains checkable.
   const circuit = new Circuit(1)
   circuit.assumeRange(0, 1, 1)
   const zero = circuit.affine([])
   const selected = emitFirstActive(circuit, 0, [zero, zero])
   expect(selected.length).toBe(2)
-  expect(circuit.oneHotGroups.length).toBe(0)
+  expect(circuit.oneHotGroups.length).toBe(1)
   const values = circuit.evaluateReference(Float32Array.from([1]))
   expect(selected.map(wire => values[wire])).toEqual([0, 0])
+  validateOneHotGroups(circuit, values)
 })
 
 test('candidates with unbounded declared ranges are refused in every orientation', () => {

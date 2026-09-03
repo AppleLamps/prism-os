@@ -194,10 +194,8 @@ describe('emitSelect exactness at the gate rails', () => {
   })
 
   test('gate exactly 1 returns on bit-exactly for integer operands with |x| < 2**23', () => {
-    // on - off then off + (on - off) only reconstruct on when neither subtraction
-    // re-rounds. That holds for integer on/off with |x| < 2**23 (so |on - off| stays
-    // below 2**24), and for off = 0 at any magnitude. Fractional on (e.g. 3.14159)
-    // re-rounds when off is larger.
+    // Both endpoints select directly through products, without subtracting the
+    // two candidates from each other.
     const integers = [0, 1, -1, 2, -2, 1000, -1000, 65_535, 2 ** 22, -(2 ** 22), 2 ** 23 - 1, -(2 ** 23 - 1)]
     for (const on of integers) {
       for (const off of integers) {
@@ -210,15 +208,11 @@ describe('emitSelect exactness at the gate rails', () => {
     }
   })
 
-  test('gate exactly 1 is NOT exact when on and off differ enormously in magnitude', () => {
-    // Characterizes the re-rounding hazard: with a tiny on and a huge off,
-    // on - off rounds to -off and off + (-off) = 0, dropping on entirely. This
-    // refutes the assumption that the gate=1 rail is exact at any disparity.
-    expect(evaluateSelect(1, 1e10, 1)).toBe(0)
-    expect(evaluateSelect(1, -9.99e30, 16_777_216)).toBe(0)
-    // A same-scale but fractional on also misses once off is a larger integer.
-    expect(evaluateSelect(1, 1000, 3.141_59)).not.toBe(f(3.141_59))
-    expect(evaluateSelect(1, 16_777_216, 3.141_59)).not.toBe(f(3.141_59))
+  test('gate exactly 1 stays exact across extreme magnitude differences', () => {
+    expect(evaluateSelect(1, 1e10, 1)).toBe(1)
+    expect(evaluateSelect(1, -9.99e30, 16_777_216)).toBe(16_777_216)
+    expect(evaluateSelect(1, 1000, 3.141_59)).toBe(f(3.141_59))
+    expect(evaluateSelect(1, 16_777_216, 3.141_59)).toBe(f(3.141_59))
   })
 })
 

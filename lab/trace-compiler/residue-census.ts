@@ -1,6 +1,6 @@
 // The residue census: every statement of the real render path, classified. A unit is a leaf
 // statement, an if condition, or a loop header. Units covered by a compiled-and-verified slice
-// count as compiled; every other unit gets a rejection category with a fixability judgment.
+// count as compiled; other units receive heuristic categories, not actual compiler diagnostics.
 // The classification rules are syntactic (marker sets over the unit's source text plus a few
 // AST checks); the output table was reviewed line by line against the file.
 
@@ -10,7 +10,7 @@ import type {RealTarget, SliceResult} from './real-slice.ts'
 
 export type CensusCategory =
   | 'compiled and verified in a slice'
-  | 'compilable numeric (not sliced)'
+  | 'numeric candidate (not compiled)'
   | 'unbounded range (needs a finite @fit)'
   | 'DOM read'
   | 'DOM write'
@@ -24,16 +24,16 @@ export type CensusCategory =
   | 'state commit (write-back)'
   | 'debug-only'
 
-export type Fixability = 'compiled' | 'boundary I/O' | 'mechanically fixable' | 'annotation-fixable' | 'supported by the architecture' | 'out of scope'
+export type Fixability = 'compiled' | 'needs compilation' | 'boundary I/O' | 'mechanically fixable' | 'annotation-fixable' | 'supported by the architecture' | 'out of scope'
 
 export const categoryFixability: Record<CensusCategory, {fixability: Fixability, how: string}> = {
   'compiled and verified in a slice': {
     fixability: 'compiled',
     how: 'bit-exact against the fround twin over seeded random inputs',
   },
-  'compilable numeric (not sliced)': {
-    fixability: 'compiled',
-    how: 'inside the supported subset but not part of an equivalence-verified slice',
+  'numeric candidate (not compiled)': {
+    fixability: 'needs compilation',
+    how: 'syntax suggests a possible numeric slice; compilation and verification have not been attempted',
   },
   'unbounded range (needs a finite @fit)': {
     fixability: 'annotation-fixable',
@@ -41,7 +41,7 @@ export const categoryFixability: Record<CensusCategory, {fixability: Fixability,
   },
   'DOM read': {
     fixability: 'boundary I/O',
-    how: 'stays in the JS glue; the read value enters the source table as an input cell, the way window-manager.ts feeds viewport facts today',
+    how: 'stays in the JS glue; the read value enters the source table as an input cell',
   },
   'DOM write': {
     fixability: 'boundary I/O',
@@ -65,7 +65,7 @@ export const categoryFixability: Record<CensusCategory, {fixability: Fixability,
   },
   'dynamic index': {
     fixability: 'mechanically fixable',
-    how: 'one-hot gather or scatter, O(n) operations per access; the core’s declared one-hot groups lower the tensor cost to a single read',
+    how: 'one-hot gather or scatter needs selection plus retrieval; declared one-hot groups can share selection and lower each retrieval to a direct read',
   },
   'loop early exit (first match)': {
     fixability: 'mechanically fixable',
@@ -194,7 +194,7 @@ function classify(node: ts.Node, unitKind: CensusUnit['unitKind'], loopVariables
   if (functionName === 'render' && stateCommitPrefixes.some(prefix => text.startsWith(prefix))) {
     return 'state commit (write-back)'
   }
-  return 'compilable numeric (not sliced)'
+  return 'numeric candidate (not compiled)'
 }
 
 export function runCensus(target: RealTarget, slices: SliceResult[]): CensusUnit[] {
@@ -218,11 +218,11 @@ export function runCensus(target: RealTarget, slices: SliceResult[]): CensusUnit
   // their own units), but its coverage comes from the header line inside a slice's range.
   const recordLoopHeader = (functionName: string, statement: ts.ForStatement | ts.ForOfStatement, parts: ts.Node[], loopVariables: Set<string>) => {
     const start = sourceFile.getLineAndCharacterOfPosition(statement.getStart()).line + 1
-    let category: CensusCategory = isCovered(start, start) ? 'compiled and verified in a slice' : 'compilable numeric (not sliced)'
+    let category: CensusCategory = isCovered(start, start) ? 'compiled and verified in a slice' : 'numeric candidate (not compiled)'
     if (category !== 'compiled and verified in a slice') {
       for (const part of parts) {
         const partCategory = classify(part, 'loop header', loopVariables, false, functionName)
-        if (partCategory !== 'compilable numeric (not sliced)') {
+        if (partCategory !== 'numeric candidate (not compiled)') {
           category = partCategory
           break
         }
@@ -294,7 +294,7 @@ export type CensusSummary = {
   totalUnits: number
   compiledUnits: number
   numericUnits: number
-  numericCompiledUnits: number
+  numericClassifiedUnits: number
   rows: {category: CensusCategory, count: number, exampleLine: number, exampleText: string, fixability: Fixability, how: string}[]
 }
 
@@ -319,8 +319,8 @@ export function summarizeCensus(units: CensusUnit[]): CensusSummary {
     .sort((left, right) => right.count - left.count)
   const compiledUnits = units.filter(unit => unit.category === 'compiled and verified in a slice').length
   const numericUnits = units.filter(unit => !boundaryCategories.includes(unit.category)).length
-  const numericCompiledUnits = units.filter(
-    unit => unit.category === 'compiled and verified in a slice' || unit.category === 'compilable numeric (not sliced)',
+  const numericClassifiedUnits = units.filter(
+    unit => unit.category === 'compiled and verified in a slice' || unit.category === 'numeric candidate (not compiled)',
   ).length
-  return {totalUnits: units.length, compiledUnits, numericUnits, numericCompiledUnits, rows}
+  return {totalUnits: units.length, compiledUnits, numericUnits, numericClassifiedUnits, rows}
 }

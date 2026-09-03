@@ -3,6 +3,7 @@ import {test} from 'bun:test'
 import {parseFitText} from './annotations.ts'
 import {compileFunctionFromSource, type CompileResult} from './compile.ts'
 import {functionTrialRunner, runEquivalence} from './harness.ts'
+import {Interpreter} from './twin.ts'
 
 function compileOrThrow(source: string, name: string, options?: Parameters<typeof compileFunctionFromSource>[2]) {
   const result = compileFunctionFromSource(source, name, options)
@@ -18,6 +19,7 @@ function verify(result: CompileResult & {ok: true}, functionName: string, trials
     {trials, seed},
   )
   assert.deepEqual(report.mismatches, [])
+  assert.deepEqual(report.sourceSemantics.mismatches, [])
   return report
 }
 
@@ -298,4 +300,119 @@ test('a branch whose float64 range is finite but overflows FP32 is rejected, not
     assert.ok(!result.ok, `expected rejection for: ${source}`)
     assert.equal(result.diagnostic.category, 'non-finite branch')
   }
+})
+
+test('returns propagate through blocks, constant branches, and fixed loops', () => {
+  const bodies = [
+    '{ return x + 1 } return x + 2',
+    'if (true) { return x + 1 } return x + 2',
+    'if (false) { return x + 2 } else { { return x + 1 } } return x + 3',
+    'for (let index = 0; index < 3; index++) { return x + 1 } return x + 2',
+    'for (const offset of [1, 2, 3]) { return x + offset } return x + 2',
+  ]
+  for (const body of bodies) {
+    const result = compileOrThrow(`function example(x: number) { ${body} }`, 'example', {
+      inputs: {x: {minimum: -10, maximum: 10}},
+    })
+    const report = verify(result, 'example', 20)
+    assert.equal(report.sourceSemantics.outputsChecked, 20)
+  }
+})
+
+test('runtime conditional expressions explicitly reject mutations in evaluated branches', () => {
+  for (const expression of [
+    'flag > 0 ? bump(object) : 0',
+    'flag > 0 ? 0 : bump(object)',
+    'flag > 0 && bump(object) > 0',
+    'flag > 0 || bump(object) > 0',
+    '(flag > 0 ? 5 : null) ?? bump(object)',
+  ]) {
+    const source = `
+      function bump(object: {value: number}) { object.value += 1; return object.value }
+      function example(flag: number, object: {value: number}) { return ${expression} }
+    `
+    const result = compileFunctionFromSource(source, 'example', {
+      inputs: {flag: {minimum: 0, maximum: 1}, 'object.value': {minimum: 0, maximum: 10}},
+    })
+    assert.ok(!result.ok, expression)
+    assert.equal(result.diagnostic.category, 'unsupported syntax')
+    assert.match(result.diagnostic.construct, /mutation inside a runtime conditional expression/)
+  }
+  const pure = compileOrThrow(`
+    function offset(value: number) { return value + 1 }
+    function example(flag: number) { return flag > 0 ? offset(flag) : 0 }
+  `, 'example', {inputs: {flag: {minimum: 0, maximum: 1}}})
+  verify(pure, 'example', 20)
+})
+
+test('nullable equality compares presence and values, in either operand order', () => {
+  for (const expression of [
+    'value === 5', '5 === value', 'value !== 5', '5 !== value',
+    'value === null', 'null === value', 'value !== null', 'null !== value',
+    'value === other', 'value !== other', 'null === null', '5 === null',
+  ]) {
+    const result = compileOrThrow(`
+      function example(flag: number, otherFlag: number) {
+        const value = flag > 0 ? 5 : null
+        const other = otherFlag > 0 ? 6 : null
+        return ${expression}
+      }
+    `, 'example', {inputs: {
+      flag: {minimum: 0, maximum: 1, integer: true},
+      otherFlag: {minimum: 0, maximum: 1, integer: true},
+    }})
+    const report = runEquivalence(result.program, result.sourceFile, functionTrialRunner(result.declaration, 'example'), {
+      trials: 4, seed: 1,
+      generateInputs: trial => new Map([['flag', trial % 2], ['otherFlag', Math.floor(trial / 2)]]),
+    })
+    assert.deepEqual(report.mismatches, [], expression)
+    assert.deepEqual(report.sourceSemantics.mismatches, [], expression)
+  }
+})
+
+test('floor bounds include rounding up to the next FP32 integer', () => {
+  const maximumX = 1 - 2 ** -24
+  const maximumY = 2 ** -25
+  const result = compileOrThrow('function example(x: number, y: number) { return Math.floor(x + y) }', 'example', {
+    inputs: {x: {minimum: 0, maximum: maximumX}, y: {minimum: 0, maximum: maximumY}},
+  })
+  const report = runEquivalence(result.program, result.sourceFile, functionTrialRunner(result.declaration, 'example'), {
+    trials: 1, seed: 1, generateInputs: () => new Map([['x', maximumX], ['y', maximumY]]),
+  })
+  assert.deepEqual(report.mismatches, [])
+  assert.deepEqual(report.sourceSemantics.mismatches, [])
+  assert.equal(report.drift.maxAbsoluteDrift, 1)
+})
+
+test('native validation detects an interpreter error even when circuit and twin agree', () => {
+  const result = compileOrThrow('function example(x: number) { return x + 1 }', 'example', {
+    inputs: {x: {minimum: 0, maximum: 10, integer: true}},
+  })
+  const runner = functionTrialRunner(result.declaration, 'example')
+  const report = runEquivalence(result.program, result.sourceFile, {
+    run(executor, values) {
+      const outputs = runner.run(executor, values)
+      if (executor instanceof Interpreter && executor.mode === 'fp64') {
+        outputs.set('return', outputs.get('return')! + 1)
+      }
+      return outputs
+    },
+  }, {trials: 3, seed: 1})
+  assert.deepEqual(report.mismatches, [])
+  assert.equal(report.sourceSemantics.mismatchCount, 3)
+  assert.equal(report.drift.maxAbsoluteDrift, 0)
+})
+
+test('native validation allows intentional FP32 drift and preserves source rounding points', () => {
+  const result = compileOrThrow('function example(x: number) { return (100000000 + x) - 100000000 }', 'example', {
+    inputs: {x: {minimum: 0, maximum: 2}},
+  })
+  const report = runEquivalence(result.program, result.sourceFile, functionTrialRunner(result.declaration, 'example'), {
+    trials: 1, seed: 1, generateInputs: () => new Map([['x', 1]]),
+  })
+  assert.deepEqual(report.mismatches, [])
+  assert.deepEqual(report.sourceSemantics.mismatches, [])
+  assert.equal(report.drift.maxAbsoluteDrift, 1)
+  assert.equal(result.program.opCounts.reglu, 0)
+  assert.equal(result.program.opCounts.affine, 2)
 })

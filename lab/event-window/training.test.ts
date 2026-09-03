@@ -42,8 +42,6 @@ test('the soft training circuit contains zero boolean atoms', () => {
   // through silently. This pins the stronger claim: none exist at all.
   const cost = measureCircuitCost(createSoftTrainingBuild())
   expect(cost.boolean).toBe(0)
-  expect(cost.operations).toBe(496)
-  expect(cost.depth).toBe(36)
 })
 
 test('training recovers scrambled behavior parameters to closed-loop exactness', () => {

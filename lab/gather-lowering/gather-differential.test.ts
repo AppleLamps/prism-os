@@ -54,7 +54,7 @@ const extremeValues = [
 
 test('seeded circuits with gathers match the reference on every wire', () => {
   const random = createRandom(0x6a7 << 12 | 0x3e5)
-  const circuitCount = 2_000
+  const circuitCount = 3_000
   const samplesPerCircuit = 3
   let totalReads = 0
   let totalDecoys = 0

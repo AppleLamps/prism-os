@@ -22,12 +22,12 @@ import {
   type BehaviorConfig,
   type FrameInput,
   type OracleState,
-  type PointerEventKind,
   createOracleState,
   oracleTick,
   rectangleCount,
 } from './oracle.ts'
 import {createRandom} from './trace.ts'
+import {appendPointerMoves, type RawPointerInput} from './pointer-input.ts'
 
 const worldWidth = 1280
 const worldHeight = 800
@@ -54,8 +54,6 @@ function createDemoConfig(): BehaviorConfig {
     },
   }
 }
-
-type RawPointerInput = {kind: PointerEventKind, clientX: number, clientY: number}
 
 type WindowDom = {
   root: HTMLElement
@@ -406,10 +404,8 @@ function mountEventWindowDemo(document: Document, window: Window) {
     // driving they would yank its pointer around, so they only count when the
     // autopilot is off.
     if (st.autopilotOn) return
-    const raw: RawPointerInput = {kind: 'move', clientX: event.clientX, clientY: event.clientY}
-    const last = st.pendingPointer.at(-1)
-    if (last !== undefined && last.kind === 'move') st.pendingPointer[st.pendingPointer.length - 1] = raw
-    else st.pendingPointer.push(raw)
+    const samples = event.getCoalescedEvents()
+    appendPointerMoves(st.pendingPointer, samples.length > 0 ? samples : [event])
     scheduleRender()
   })
   const releasePointer = (event: PointerEvent) => {

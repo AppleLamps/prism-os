@@ -1,5 +1,7 @@
 # Brief: trace-based compilation from vibescript-style code to circuits
 
+Historical July 2026 assignment, retained for provenance. Its proposed policies and success criteria are not current conclusions. Read [shared context](context-shared.md) and [current status](../status.md) before using this brief.
+
 Folder: `lab/trace-compiler/`. Read `lab/briefs/context-shared.md` first; conclusion 9 is your foundation. Also read `~/github/vibescript/docs/ui.md`, `~/github/vibescript/docs/engineering.md`, and the real demo `~/github/chenglou.github.io/index.ts`.
 
 ## The question

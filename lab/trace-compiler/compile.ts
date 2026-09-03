@@ -4,17 +4,13 @@
 // - The compiler walks the TypeScript AST with symbolic values. Compile-time constants fold;
 //   runtime numbers become wires. Loops over known ranges unroll; loops whose bounds are runtime
 //   integers with @fit bounds unroll over the static range with a per-iteration mask bit.
-// - Every arithmetic step in the source becomes its own circuit operation, emitted as a reglu
-//   whose gate reads a source wire that always holds 1. A plain affine operation would be inlined
-//   into its consumers by the Circuit builder (composeAffineTerms), which merges FP32 rounding
-//   points; the unit gate blocks that, so the circuit rounds exactly where the fround twin rounds.
-// - Ternaries lower to a select built from two masked products: on*bit + off*(1-bit). Unlike the
-//   repo's emitSelect (off + bit*(on-off)), the two-product form is bit-exact for arbitrary
-//   fractional operands, because multiplying by an exact 1 or 0 never re-rounds.
+// - Each affine arithmetic step uses roundAffine, preserving the source's FP32 rounding point
+//   instead of allowing the builder to compose the operation into its consumers.
+// - Ternaries lower to two masked products: on*bit + off*(1-bit). For finite FP32 operands,
+//   multiplying by an exact 1 or 0 does not re-round the selected value.
 // - Comparisons on values proven integral use the integer decision-bit form
-//   relu(d) - relu(d - 1), which is exact. Comparisons on continuous values scale the difference
-//   into a score near 0.5 and use the boolean atom; they resolve differences above a computed
-//   margin, reported per comparison site and cross-checked by the harness.
+//   relu(d) - relu(d - 1). Continuous comparisons use the exact sign cascade, not the old
+//   boolean-atom margin policy. Exact forward decisions do not imply useful training gradients.
 
 import ts from 'typescript'
 import {Circuit, type Wire, invariant} from '../../numeric-ui-core.ts'
@@ -144,14 +140,12 @@ function fitsFp32(range: {minimum: number, maximum: number}): boolean {
 
 export class Emitter {
   circuit: Circuit
-  one: Wire
   comparisonSites: ComparisonSite[]
   floorStepLimit: number
   divisorSpanLimit: number
 
-  constructor(circuit: Circuit, one: Wire, floorStepLimit = 64, divisorSpanLimit = 32) {
+  constructor(circuit: Circuit, floorStepLimit = 64, divisorSpanLimit = 32) {
     this.circuit = circuit
-    this.one = one
     this.comparisonSites = []
     this.floorStepLimit = floorStepLimit
     this.divisorSpanLimit = divisorSpanLimit
@@ -240,7 +234,7 @@ export class Emitter {
     if (!orderFree) {
       reject(node, 'unsupported syntax', 'arithmetic shape whose FP32 result would depend on term order')
     }
-    const wire = this.circuit.reglu(wireTerms, foldedBias, [[this.one, 1]], 0)
+    const wire = this.circuit.roundAffine(wireTerms, foldedBias)
     return {kind: 'wire', wire, integer}
   }
 
@@ -311,36 +305,11 @@ export class Emitter {
     if (b.kind === 'constant') return this.multiplyConstant(node, a, b.value)
     const rangeA = this.rangeOf(a)
     const rangeB = this.rangeOf(b)
-    let result: Num
-    if (rangeB.minimum >= 0) result = this.maskedProduct(node, a, b)
-    else if (rangeA.minimum >= 0) result = this.maskedProduct(node, b, a)
-    else if (rangeB.maximum <= 0) {
-      const negated = this.regluProductNegatedGate(a, b)
-      result = this.multiplyConstant(node, negated, -1)
-    } else if (rangeA.maximum <= 0) {
-      const negated = this.regluProductNegatedGate(b, a)
-      result = this.multiplyConstant(node, negated, -1)
-    } else {
-      // Mixed-sign gate: f(a*relu(b)) - f(a*relu(-b)). One of the products is an exact zero, so
-      // the subtraction copies the other product without re-rounding.
-      const positive = this.maskedProduct(node, a, b)
-      const negative = this.regluProductNegatedGate(a, b)
-      result = this.subtract(node, positive, negative)
-    }
-    if (result.kind === 'wire') {
-      const globalHull = productHull(this.globalRangeOf(a), this.globalRangeOf(b))
-      this.circuit.assumeRange(result.wire, globalHull.minimum, globalHull.maximum)
-      const narrowedHull = productHull(rangeA, rangeB)
-      result = this.normalize(this.attachNarrowedHull(result, narrowedHull.minimum, narrowedHull.maximum))
-    }
-    return result
-  }
-
-  // f(a * max(0, -b)) as a single operation.
-  regluProductNegatedGate(a: Num, b: Num): Num {
-    invariant(a.kind === 'wire' && b.kind === 'wire', 'negated-gate product needs wires')
-    const wire = this.circuit.reglu([[a.wire, 1]], 0, [[b.wire, -1]], 0)
-    return {kind: 'wire', wire, integer: a.integer && b.integer}
+    const result: Num = {kind: 'wire', wire: this.circuit.multiply(a.wire, b.wire), integer: a.integer && b.integer}
+    const globalHull = productHull(this.globalRangeOf(a), this.globalRangeOf(b))
+    this.circuit.assumeRange(result.wire, globalHull.minimum, globalHull.maximum)
+    const narrowedHull = productHull(rangeA, rangeB)
+    return this.normalize(this.attachNarrowedHull(result, narrowedHull.minimum, narrowedHull.maximum))
   }
 
   // max(0, f(num + bias)) as a single operation.
@@ -800,7 +769,8 @@ function productHull(
     rangeA.minimum * rangeB.maximum,
     rangeA.maximum * rangeB.minimum,
     rangeA.maximum * rangeB.maximum,
-  ].map(product => (Number.isNaN(product) ? 0 : product))
+  ].map(product => f32(product))
+  if (products.some(Number.isNaN)) return {minimum: -Infinity, maximum: Infinity}
   return {minimum: Math.min(...products), maximum: Math.max(...products)}
 }
 
@@ -851,7 +821,8 @@ type ExecutionContext = {
   module: ModuleContext
   scope: Scope
   mask: Num | null
-  returned: {value: Value} | null
+  completion: {returned: {value: Value} | null}
+  rejectExpressionEffects: boolean
 }
 
 const browserGlobals = new Set([
@@ -864,7 +835,7 @@ const browserGlobals = new Set([
 
 function runStatements(statements: readonly ts.Statement[], ctx: ExecutionContext) {
   for (const statement of statements) {
-    if (ctx.returned !== null) return
+    if (ctx.completion.returned !== null) return
     runStatement(statement, ctx)
   }
 }
@@ -892,7 +863,7 @@ function runStatement(statement: ts.Statement, ctx: ExecutionContext) {
   }
   if (ts.isReturnStatement(statement)) {
     if (ctx.mask !== null) reject(statement, 'early return', 'return under a runtime condition')
-    ctx.returned = {value: statement.expression === undefined ? {kind: 'null'} : evaluate(statement.expression, ctx)}
+    ctx.completion.returned = {value: statement.expression === undefined ? {kind: 'null'} : evaluate(statement.expression, ctx)}
     return
   }
   if (ts.isBlock(statement)) {
@@ -978,6 +949,9 @@ type AssignmentTarget = {
 }
 
 function resolveAssignmentTarget(node: ts.Expression, ctx: ExecutionContext): AssignmentTarget {
+  if (ctx.rejectExpressionEffects) {
+    reject(node, 'unsupported syntax', 'mutation inside a runtime conditional expression; use an if statement')
+  }
   if (ts.isIdentifier(node)) {
     const binding = ctx.scope.lookup(node.text)
     if (binding === null) reject(node, 'unknown identifier', `assignment to unknown ${node.text}`)
@@ -1147,6 +1121,7 @@ function runForStatement(statement: ts.ForStatement, ctx: ExecutionContext) {
       ...iterationCtx,
       mask: normalizedMask.kind === 'constant' && normalizedMask.value === 1 ? ctx.mask : normalizedMask,
     })
+    if (ctx.completion.returned !== null) return
     if (ctx.module.loopBudget-- <= 0) reject(statement, 'dynamic loop bound', 'loop unrolling budget exhausted')
   }
 }
@@ -1190,7 +1165,7 @@ function runForOfStatement(statement: ts.ForOfStatement, ctx: ExecutionContext) 
     const iterationCtx: ExecutionContext = {...ctx, scope: iterationScope}
     bindDeclarationName(declaration.name, element, false, iterationCtx)
     runStatement(statement.statement, iterationCtx)
-    if (ctx.returned !== null) return
+    if (ctx.completion.returned !== null) return
   }
 }
 
@@ -1240,7 +1215,7 @@ function evaluateIdentifier(node: ts.Identifier, ctx: ExecutionContext): Value {
   if (declaration !== undefined) return {kind: 'function', declaration}
   const initializer = module.constantInitializers.get(name)
   if (initializer !== undefined) {
-    const value = evaluate(initializer, {module, scope: module.moduleScope, mask: null, returned: null})
+    const value = evaluate(initializer, {module, scope: module.moduleScope, mask: null, completion: {returned: null}, rejectExpressionEffects: ctx.rejectExpressionEffects})
     module.memoizedConstants.set(name, value)
     return value
   }
@@ -1317,6 +1292,7 @@ function evaluateCall(node: ts.CallExpression, ctx: ExecutionContext): Value {
     const container = evaluate(node.expression.expression, ctx)
     if (container.kind === 'array') {
       if (method === 'push') {
+        if (ctx.rejectExpressionEffects) reject(node, 'unsupported syntax', 'array append inside a runtime conditional expression')
         if (ctx.mask !== null) reject(node, 'runtime-sized array', 'array append under a runtime condition')
         for (const argument of node.arguments) container.elements.push(evaluate(argument, ctx))
         return constantNum(container.elements.length)
@@ -1353,7 +1329,7 @@ export function inlineFunctionCall(declaration: FunctionLike, args: Value[], nod
   const module = ctx.module
   if (module.callDepth >= 16) reject(node, 'unsupported call', 'call depth limit (recursion?)')
   const callScope = new Scope(module.moduleScope)
-  const callCtx: ExecutionContext = {module, scope: callScope, mask: ctx.mask, returned: null}
+  const callCtx: ExecutionContext = {module, scope: callScope, mask: ctx.mask, completion: {returned: null}, rejectExpressionEffects: ctx.rejectExpressionEffects}
   declaration.parameters.forEach((parameter, index) => {
     if (!ts.isIdentifier(parameter.name)) reject(parameter, 'unsupported syntax', 'destructured parameter')
     let argument = args[index]
@@ -1369,7 +1345,7 @@ export function inlineFunctionCall(declaration: FunctionLike, args: Value[], nod
   try {
     if (ts.isBlock(body)) {
       runStatements(body.statements, callCtx)
-      return callCtx.returned === null ? {kind: 'null'} : callCtx.returned.value
+      return callCtx.completion.returned === null ? {kind: 'null'} : callCtx.completion.returned.value
     }
     return evaluate(body, callCtx)
   } finally {
@@ -1390,7 +1366,7 @@ function evaluateBinary(node: ts.BinaryExpression, ctx: ExecutionContext): Value
       if (kind === ts.SyntaxKind.BarBarToken && left.value === 1) return constantNum(1)
       return toBit(evaluate(node.right, ctx), node.right, ctx)
     }
-    const right = toBit(evaluate(node.right, ctx), node.right, ctx)
+    const right = toBit(evaluate(node.right, {...ctx, rejectExpressionEffects: true}), node.right, ctx)
     return kind === ts.SyntaxKind.AmpersandAmpersandToken
       ? emitter.andBit(node, left, right)
       : emitter.orBit(node, left, right)
@@ -1400,7 +1376,7 @@ function evaluateBinary(node: ts.BinaryExpression, ctx: ExecutionContext): Value
     const left = evaluate(node.left, ctx)
     if (left.kind === 'null') return evaluate(node.right, ctx)
     if (left.kind !== 'nullable') return left
-    const fallback = toNum(evaluate(node.right, ctx), node.right)
+    const fallback = toNum(evaluate(node.right, {...ctx, rejectExpressionEffects: true}), node.right)
     return emitter.select(node, left.present, fallback, left.value)
   }
 
@@ -1428,11 +1404,18 @@ function evaluateBinary(node: ts.BinaryExpression, ctx: ExecutionContext): Value
     if (leftValue.kind === 'null' || rightValue.kind === 'null'
       || leftValue.kind === 'nullable' || rightValue.kind === 'nullable') {
       if (comparison === '===' || comparison === '!==') {
-        const nullSide = leftValue.kind === 'null' || leftValue.kind === 'nullable' ? leftValue : rightValue
-        const isNullBit = nullSide.kind === 'null' ? constantNum(1)
-          : nullSide.kind === 'nullable' ? emitter.notBit(node, nullSide.present)
-          : constantNum(0)
-        return comparison === '===' ? isNullBit : emitter.notBit(node, isNullBit)
+        const left = toNullable(leftValue)
+        const right = toNullable(rightValue)
+        if (left === null || right === null) reject(node, 'non-numeric value', 'nullable comparison requires numbers or null')
+        if (leftValue.kind === 'null' || rightValue.kind === 'null') {
+          const other = leftValue.kind === 'null' ? right : left
+          return comparison === '===' ? emitter.notBit(node, other.present) : other.present
+        }
+        const bothAbsent = emitter.andBit(node, emitter.notBit(node, left.present), emitter.notBit(node, right.present))
+        const bothPresent = emitter.andBit(node, left.present, right.present)
+        const equalValues = emitter.compare(node, '===', left.value, right.value)
+        const equal = emitter.orBit(node, bothAbsent, emitter.andBit(node, bothPresent, equalValues))
+        return comparison === '===' ? equal : emitter.notBit(node, equal)
       }
       reject(node, 'non-numeric value', 'ordering comparison on a nullable value')
     }
@@ -1461,8 +1444,9 @@ function evaluateConditional(node: ts.ConditionalExpression, ctx: ExecutionConte
   if (bit.kind === 'constant') {
     return evaluate(bit.value === 1 ? node.whenTrue : node.whenFalse, ctx)
   }
-  const whenTrue = evaluate(node.whenTrue, refineScopeForBranch(node.condition, true, ctx))
-  const whenFalse = evaluate(node.whenFalse, refineScopeForBranch(node.condition, false, ctx))
+  const branchContext = {...ctx, rejectExpressionEffects: true}
+  const whenTrue = evaluate(node.whenTrue, refineScopeForBranch(node.condition, true, branchContext))
+  const whenFalse = evaluate(node.whenFalse, refineScopeForBranch(node.condition, false, branchContext))
   const emitter = ctx.module.emitter
   if (isNum(whenTrue) && isNum(whenFalse)) return emitter.select(node, bit, whenFalse, whenTrue)
   // Branches mixing numbers and null lower to a presence bit plus a value.
@@ -1694,7 +1678,7 @@ export class Compilation {
       )
       return {name, wire, spec}
     })
-    this.emitter = new Emitter(this.circuit, 0, options.floorStepLimit ?? 64)
+    this.emitter = new Emitter(this.circuit, options.floorStepLimit ?? 64)
     const {functions, constantInitializers} = indexModule(sourceFile)
     this.module = {
       functions,
@@ -1716,7 +1700,7 @@ export class Compilation {
   runStatements(statements: readonly ts.Statement[], bindings: Map<string, Value>): Scope {
     const scope = new Scope(this.module.moduleScope)
     for (const [name, value] of bindings) scope.declare(name, value, true)
-    const ctx: ExecutionContext = {module: this.module, scope, mask: null, returned: null}
+    const ctx: ExecutionContext = {module: this.module, scope, mask: null, completion: {returned: null}, rejectExpressionEffects: false}
     runStatements(statements, ctx)
     return scope
   }
@@ -1724,14 +1708,14 @@ export class Compilation {
   evaluateExpression(expression: ts.Expression, bindings: Map<string, Value>): Value {
     const scope = new Scope(this.module.moduleScope)
     for (const [name, value] of bindings) scope.declare(name, value, true)
-    const ctx: ExecutionContext = {module: this.module, scope, mask: null, returned: null}
+    const ctx: ExecutionContext = {module: this.module, scope, mask: null, completion: {returned: null}, rejectExpressionEffects: false}
     return evaluate(expression, ctx)
   }
 
   callFunction(name: string, args: Value[]): Value {
     const declaration = this.module.functions.get(name)
     invariant(declaration !== undefined, `function ${name} not found`)
-    const ctx: ExecutionContext = {module: this.module, scope: this.module.moduleScope, mask: null, returned: null}
+    const ctx: ExecutionContext = {module: this.module, scope: this.module.moduleScope, mask: null, completion: {returned: null}, rejectExpressionEffects: false}
     return inlineFunctionCall(declaration, args, declaration, ctx)
   }
 }

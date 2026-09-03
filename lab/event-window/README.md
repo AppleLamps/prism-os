@@ -1,5 +1,13 @@
 # Event window: multi-frame interaction behavior as a feedforward function
 
+## September 2026 corrections
+
+The demo now keeps every queued pointer move, including browser-coalesced samples. A press followed by an outward-and-back movement must cancel a click even if both moves arrive before the next render. Previously only the last move survived, and the reference received the same incomplete input, so its agreement counter could not detect the mistake. `pointer-input.test.ts` covers the full path from queued samples through both evaluators.
+
+This experiment learns six shared behavior parameters from examples that supply correct internal state and directly supervise decisions. That supervision permits one-step training. Positions, focus, maximization, and press state still recur between frames; event-triggered updates do not remove the problem of learning from delayed consequences. The extra event archive is not consulted by behavior. The demo uses its displayed parameter settings, not automatically loaded training results.
+
+## Historical July study
+
 This experiment tests the claim in the shared context (conclusion 6): discrete multi-frame interaction behavior — dragging with pointer ownership, focus, click-versus-drag disambiguation, a maximize toggle — can be expressed and trained as a pure feedforward function of (current input, a small bank of latched events), with no backpropagation through time, and hardened to bit-exact agreement with a plain TypeScript reference over long randomized traces.
 
 Everything below is verified by `bun test lab/event-window` (33 tests, ~10s) or by one of the two measurement scripts (`training-sweep.ts`, `measure-cost.ts`) whose printed tables are reproduced here; where a number comes from a specific test or script, the text names it.

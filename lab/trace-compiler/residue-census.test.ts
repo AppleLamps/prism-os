@@ -45,7 +45,7 @@ test('the residue census classifies every render-path unit and the taxonomy has 
   const byCategory = Object.fromEntries(summary.rows.map(row => [row.category, row.count]))
   assert.deepEqual(byCategory, {
     'compiled and verified in a slice': 64,
-    'compilable numeric (not sliced)': 49,
+    'numeric candidate (not compiled)': 49,
     'DOM write': 27,
     'nullable state': 15,
     'event object plumbing': 14,
@@ -62,5 +62,5 @@ test('the residue census classifies every render-path unit and the taxonomy has 
   assert.equal(summary.totalUnits, 221)
   assert.equal(summary.compiledUnits, 64)
   assert.equal(summary.numericUnits, 173)
-  assert.equal(summary.numericCompiledUnits, 113)
+  assert.equal(summary.numericClassifiedUnits, 113)
 }, 60_000)

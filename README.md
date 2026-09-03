@@ -8,6 +8,7 @@ outputs to the DOM.
 bun start
 bun run start:candidates
 bun run start:learning
+bun run start:reusable
 bun test
 bun check
 ```
@@ -52,15 +53,9 @@ Independent instructions share layers. Each layer gathers the values it reads,
 runs one sparse affine projection, applies ReGLU gates and Boolean rounding,
 then appends its outputs.
 
-Current fused program:
+The execution backend is currently serial JavaScript, not GPU code. Multiplication and selection preserve their meaning for differentiation, and `roundAffine` preserves required FP32 rounding points. See [execution semantics](execution-model.md).
 
-```txt
-201 inputs, 429 outputs, 3,204 activations
-96 layers, maximum width 210
-551 affine, 2,589 ReGLU, 64 boolean
-431,961 dense weights, 12,020 stored sparse weights
-48.1 KB weights + 23.2 KB biases + 40.7 KB bookkeeping
-```
+Current results, domains, and limitations are recorded in [lab/status.md](lab/status.md). `bun lab/runtime-cost/report.ts` reports current program sizes and CPU costs, including an opt-in evaluator that reuses buffers and returns only requested outputs. Old program-size and timing tables should not be applied to a changed graph.
 
 ## Files
 
@@ -88,6 +83,8 @@ Tests compare the literal and compiled FP32 evaluators, including seeded random
 circuits. Product tests cover window interactions, stacking, springs, tiny
 viewports, Photos focus, candidate layout search, overlapping controls, and DOM
 culling.
+
+The TODO list below is retained from the earlier discussion. Its finite-range/gather item has since been completed; current status is in `lab/status.md`.
 
 ## TODO
 

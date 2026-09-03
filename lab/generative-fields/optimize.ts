@@ -17,9 +17,9 @@ import {
   type LayoutContext,
 } from './fields.ts'
 import type {FlowLayoutMachine} from './flow-layout.ts'
-import {extractSnapshot, scoreFitness, selectionScore, type FitnessGradient, type FitnessWeights} from './fitness.ts'
+import {extractSnapshot, scoreFitness, selectionScore, type FitnessGradient, type FitnessWeights, type LayoutSnapshot} from './fitness.ts'
 import {geometryField} from './flow-layout.ts'
-import {slotCount} from './fields.ts'
+import {globalField, slotCount, slotField, slotFieldIndex} from './fields.ts'
 import {backpropagateStraightThrough} from './ste-backprop.ts'
 
 type AdamState = {
@@ -83,9 +83,10 @@ function fieldLossGradients(
   return lossGradients
 }
 
-function seedFitnessGradients(
+export function seedFitnessGradients(
   machine: FlowLayoutMachine,
   gradient: FitnessGradient,
+  snapshot: LayoutSnapshot,
   sign: number,
 ): Float32Array {
   const width = machine.circuit.sourceSize + machine.circuit.operations.length
@@ -103,9 +104,23 @@ function seedFitnessGradients(
     seed(output.slotGeometry[start + geometryField.width]!, gradient.width[slot]!)
     seed(output.slotGeometry[start + geometryField.height]!, gradient.height[slot]!)
     seed(output.visibleBits[slot]!, gradient.visible[slot]!)
+    seed(slotFieldIndex(slot, slotField.importance), gradient.importance[slot]!)
   }
   seed(output.coveredArea, gradient.coveredArea)
   seed(output.contentBottom, gradient.contentBottom)
+  seed(globalField.viewportWidth, gradient.viewportWidth)
+  seed(globalField.viewportHeight, gradient.viewportHeight)
+  seed(globalField.paddingY, gradient.paddingY)
+  // extractSnapshot derives the inner dimensions directly from source cells.
+  // These paths do not pass through the geometry output wires.
+  if (snapshot.viewportWidth - 2 * snapshot.paddingX > 1) {
+    seed(globalField.viewportWidth, gradient.innerWidth)
+    seed(globalField.paddingX, -2 * gradient.innerWidth)
+  }
+  if (snapshot.viewportHeight - 2 * snapshot.paddingY > 1) {
+    seed(globalField.viewportHeight, gradient.innerHeight)
+    seed(globalField.paddingY, -2 * gradient.innerHeight)
+  }
   return outputGradients
 }
 
@@ -162,7 +177,7 @@ export function ascendFitness(
     }
     if (step === steps) break
     // Loss = -fitness + violationWeight * violationDepth; descend it.
-    const outputGradients = seedFitnessGradients(machine, fitness.gradient, -1)
+    const outputGradients = seedFitnessGradients(machine, fitness.gradient, snapshot, -1)
     outputGradients[machine.output.violationDepth] = Math.fround(
       outputGradients[machine.output.violationDepth]! + violationWeight,
     )

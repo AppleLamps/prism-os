@@ -1,0 +1,359 @@
+[
+  {
+    "seed": 17,
+    "epochs": 160,
+    "trainingExamples": 576,
+    "initialLoss": 0.009091756180714264,
+    "finalLoss": 0.00007995984855848185,
+    "trainingMilliseconds": 799.3666249999999,
+    "short": {
+      "wrapping": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.3727159414882551,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1403.509259259259,
+        "medianMicroseconds": 1.7910000000256332,
+        "p95Microseconds": 4.415999999991982,
+        "meanMovementForOnePixel": 0,
+        "p95MovementForOnePixel": 0,
+        "maximumMovementForOnePixel": 0
+      },
+      "perInstance": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.022931881363323817,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1110.352347883598,
+        "medianMicroseconds": 317.4170000000913,
+        "p95Microseconds": 614.4160000000056,
+        "meanMovementForOnePixel": 4.991759527247642,
+        "p95MovementForOnePixel": 0.6666666666666666,
+        "maximumMovementForOnePixel": 257.5999464691068
+      },
+      "shared": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.026555467086703,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1203.7873998372645,
+        "medianMicroseconds": 18.291999999973996,
+        "p95Microseconds": 35.08299999998599,
+        "meanMovementForOnePixel": 0.47007076368721395,
+        "p95MovementForOnePixel": 0.008988532408672674,
+        "maximumMovementForOnePixel": 44.911691334163926
+      }
+    },
+    "long": {
+      "wrapping": {
+        "scenes": 96,
+        "meanPreferenceLoss": 1.0530301953316004,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1900.5880080064865,
+        "medianMicroseconds": 2.457999999933236,
+        "p95Microseconds": 4.709000000048036,
+        "meanMovementForOnePixel": 0,
+        "p95MovementForOnePixel": 0,
+        "maximumMovementForOnePixel": 0
+      },
+      "perInstance": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.19874669124906355,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1497.3960667955232,
+        "medianMicroseconds": 761.4170000000513,
+        "p95Microseconds": 1328.708000000006,
+        "meanMovementForOnePixel": 5.716307400714005,
+        "p95MovementForOnePixel": 0.3181818181817941,
+        "maximumMovementForOnePixel": 235.428935400712
+      },
+      "shared": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.2853578294936146,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1542.5631696134196,
+        "medianMicroseconds": 13.999999999896318,
+        "p95Microseconds": 16.041999999970358,
+        "meanMovementForOnePixel": 3.0240021536152746,
+        "p95MovementForOnePixel": 0.013734457379499077,
+        "maximumMovementForOnePixel": 125.07176783487513
+      }
+    },
+    "widthSweep": {
+      "wrapping": {
+        "transitions": 1640,
+        "meanMovement": 2.0110163026893613,
+        "p95Movement": 0,
+        "maximumMovement": 939.3762513863472,
+        "transitionsOverTenPixels": 6
+      },
+      "perInstance": {
+        "transitions": 1640,
+        "meanMovement": 3.84045118885689,
+        "p95Movement": 0.6666666666666666,
+        "maximumMovement": 359.26120291050665,
+        "transitionsOverTenPixels": 53
+      },
+      "shared": {
+        "transitions": 1640,
+        "meanMovement": 3.0650110740937313,
+        "p95Movement": 0.0052973823423553045,
+        "maximumMovement": 369.553243008113,
+        "transitionsOverTenPixels": 35
+      }
+    }
+  },
+  {
+    "seed": 41,
+    "epochs": 160,
+    "trainingExamples": 576,
+    "initialLoss": 0.012907039763002353,
+    "finalLoss": 0.00010113867347875023,
+    "trainingMilliseconds": 845.0950419999999,
+    "short": {
+      "wrapping": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.3727159414882551,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1403.509259259259,
+        "medianMicroseconds": 0.9999999997489795,
+        "p95Microseconds": 1.833000000260654,
+        "meanMovementForOnePixel": 0,
+        "p95MovementForOnePixel": 0,
+        "maximumMovementForOnePixel": 0
+      },
+      "perInstance": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.022931881363323817,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1110.352347883598,
+        "medianMicroseconds": 350.41699999965203,
+        "p95Microseconds": 647.1670000000813,
+        "meanMovementForOnePixel": 4.991759527247642,
+        "p95MovementForOnePixel": 0.6666666666666666,
+        "maximumMovementForOnePixel": 257.5999464691068
+      },
+      "shared": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.02590583290184924,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1163.426133192327,
+        "medianMicroseconds": 10.458000000198808,
+        "p95Microseconds": 15.291000000161148,
+        "meanMovementForOnePixel": 4.206363573366488,
+        "p95MovementForOnePixel": 0.014574944026852185,
+        "maximumMovementForOnePixel": 202.3577154097512
+      }
+    },
+    "long": {
+      "wrapping": {
+        "scenes": 96,
+        "meanPreferenceLoss": 1.0530301953316004,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1900.5880080064865,
+        "medianMicroseconds": 2.167000000099506,
+        "p95Microseconds": 2.9999999997016857,
+        "meanMovementForOnePixel": 0,
+        "p95MovementForOnePixel": 0,
+        "maximumMovementForOnePixel": 0
+      },
+      "perInstance": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.19874669124906355,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1497.3960667955232,
+        "medianMicroseconds": 1027.9999999997926,
+        "p95Microseconds": 1442.7080000000387,
+        "meanMovementForOnePixel": 5.716307400714005,
+        "p95MovementForOnePixel": 0.3181818181817941,
+        "maximumMovementForOnePixel": 235.428935400712
+      },
+      "shared": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.30792071594274234,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1513.3064290375667,
+        "medianMicroseconds": 12.541000000055647,
+        "p95Microseconds": 14.916999999968539,
+        "meanMovementForOnePixel": 0.0033562094596288976,
+        "p95MovementForOnePixel": 0.010155111938021485,
+        "maximumMovementForOnePixel": 0.01627794695812829
+      }
+    },
+    "widthSweep": {
+      "wrapping": {
+        "transitions": 1640,
+        "meanMovement": 2.0110163026893613,
+        "p95Movement": 0,
+        "maximumMovement": 939.3762513863472,
+        "transitionsOverTenPixels": 6
+      },
+      "perInstance": {
+        "transitions": 1640,
+        "meanMovement": 3.84045118885689,
+        "p95Movement": 0.6666666666666666,
+        "maximumMovement": 359.26120291050665,
+        "transitionsOverTenPixels": 53
+      },
+      "shared": {
+        "transitions": 1640,
+        "meanMovement": 3.136703650526901,
+        "p95Movement": 0.004099745536177364,
+        "maximumMovement": 361.78617164946974,
+        "transitionsOverTenPixels": 33
+      }
+    }
+  },
+  {
+    "seed": 73,
+    "epochs": 160,
+    "trainingExamples": 576,
+    "initialLoss": 0.008383739046909915,
+    "finalLoss": 0.00007376217410312512,
+    "trainingMilliseconds": 1005.5395000000008,
+    "short": {
+      "wrapping": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.3727159414882551,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1403.509259259259,
+        "medianMicroseconds": 1.1249999997744453,
+        "p95Microseconds": 2.290999999786436,
+        "meanMovementForOnePixel": 0,
+        "p95MovementForOnePixel": 0,
+        "maximumMovementForOnePixel": 0
+      },
+      "perInstance": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.022931881363323817,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1110.352347883598,
+        "medianMicroseconds": 421.04099999960454,
+        "p95Microseconds": 827.2090000000389,
+        "meanMovementForOnePixel": 4.991759527247642,
+        "p95MovementForOnePixel": 0.6666666666666666,
+        "maximumMovementForOnePixel": 257.5999464691068
+      },
+      "shared": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.026122757590562304,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1196.9662337267682,
+        "medianMicroseconds": 12.375000000247383,
+        "p95Microseconds": 16.292000000248663,
+        "meanMovementForOnePixel": 3.273893716342426,
+        "p95MovementForOnePixel": 0.008349018122373764,
+        "maximumMovementForOnePixel": 166.00493161577927
+      }
+    },
+    "long": {
+      "wrapping": {
+        "scenes": 96,
+        "meanPreferenceLoss": 1.0530301953316004,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1900.5880080064865,
+        "medianMicroseconds": 2.375000000029104,
+        "p95Microseconds": 4.415999999764608,
+        "meanMovementForOnePixel": 0,
+        "p95MovementForOnePixel": 0,
+        "maximumMovementForOnePixel": 0
+      },
+      "perInstance": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.19874669124906355,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1497.3960667955232,
+        "medianMicroseconds": 1159.7920000003796,
+        "p95Microseconds": 1548.8750000004075,
+        "meanMovementForOnePixel": 5.716307400714005,
+        "p95MovementForOnePixel": 0.3181818181817941,
+        "maximumMovementForOnePixel": 235.428935400712
+      },
+      "shared": {
+        "scenes": 96,
+        "meanPreferenceLoss": 0.29686420926058293,
+        "missingContent": 0,
+        "maximumTextOverflow": 0,
+        "maximumHorizontalOverflow": 0,
+        "overlaps": 0,
+        "meanScrollHeight": 1529.659712969736,
+        "medianMicroseconds": 14.416999999411928,
+        "p95Microseconds": 17.708999999740627,
+        "meanMovementForOnePixel": 0.0077782878782776885,
+        "p95MovementForOnePixel": 0.01986576483987704,
+        "maximumMovementForOnePixel": 0.026756185396812238
+      }
+    },
+    "widthSweep": {
+      "wrapping": {
+        "transitions": 1640,
+        "meanMovement": 2.0110163026893613,
+        "p95Movement": 0,
+        "maximumMovement": 939.3762513863472,
+        "transitionsOverTenPixels": 6
+      },
+      "perInstance": {
+        "transitions": 1640,
+        "meanMovement": 3.84045118885689,
+        "p95Movement": 0.6666666666666666,
+        "maximumMovement": 359.26120291050665,
+        "transitionsOverTenPixels": 53
+      },
+      "shared": {
+        "transitions": 1640,
+        "meanMovement": 3.0625066955743363,
+        "p95Movement": 0.015034787598474675,
+        "maximumMovement": 364.0786274251152,
+        "transitionsOverTenPixels": 35
+      }
+    }
+  }
+]

@@ -100,12 +100,28 @@ export function focusField(item: number) {
 
 export function createCandidateGalleryCircuit() {
   const circuit = new Circuit(sourceField.size)
+  // Pixel-space sources carry an honest finite ceiling: 16384 covers the
+  // largest real displays (8K is 7680 wide) with headroom while staying far
+  // inside FP32's exact-integer band (macro-ranges.md keeps operands well
+  // under 2^23). Finite bounds are also what lets the compiler lower the
+  // layout selection reads to gather operations: a range that admits Infinity
+  // would let a non-selected candidate poison the masked sum to NaN, so such
+  // reads must stay dense (see lab/gather-lowering).
   for (const field of [
     sourceField.viewportWidth,
     sourceField.viewportHeight,
-    sourceField.gap,
     sourceField.clickX,
     sourceField.clickY,
+    sourceField.cinemaRailMaximum,
+  ]) {
+    circuit.assumeRange(field, 0, 16_384)
+  }
+  // The gap is a spacing constant in the tens of pixels; 1024 is generous.
+  circuit.assumeRange(sourceField.gap, 0, 1024)
+  // The quality scales are behavior parameters (reciprocals of target sizes),
+  // not pixel geometry; their products are clamped to 0..1 downstream, so
+  // their range stays open.
+  for (const field of [
     sourceField.contactCellScale,
     sourceField.cinemaHeroWidthScale,
     sourceField.cinemaHeroHeightScale,
@@ -113,7 +129,6 @@ export function createCandidateGalleryCircuit() {
     sourceField.storyHeroWidthScale,
     sourceField.storyHeroHeightScale,
     sourceField.storyThumbnailScale,
-    sourceField.cinemaRailMaximum,
   ]) {
     circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
   }

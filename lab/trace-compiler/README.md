@@ -1,131 +1,122 @@
-# Trace compiler: vibescript-style TypeScript to circuits
+# Numeric TypeScript to circuits
 
-The question from the brief: how much of a real vibescript-style render tick compiles mechanically into an affine/reglu/boolean circuit, with the residue precisely characterized? The answer, measured on `~/github/chenglou.github.io/index.ts` (Cheng's photo gallery, 221 photos): both layout modes, the column math, the spring physics step, the 1D hit test, the occlusion condition, and the scroll compensation all compile from the file's own source text and match an FP32 reference bit-for-bit — 64 of the render path's 221 statement units are compiled and equivalence-verified, 113 of its 173 numeric units (65.3%) are inside the supported subset, and every unit that is not gets one of twelve rejection categories with a fixability judgment. The full taxonomy is at the bottom; it is the main deliverable.
+This experiment compiles a defined numeric subset of TypeScript into the project's circuit representation. It walks the TypeScript AST with symbolic values; it is not a runtime tracer and does not compile arbitrary JavaScript. Static photo data and bounded integer choices let it specialize some operations that would otherwise require dynamic indexing or allocation.
 
-## What was built
-
-- `compile.ts` — the compiler. It walks the TypeScript AST (parsed with the `typescript` package) with symbolic values: compile-time constants fold, runtime numbers become wires, and every emitted operation goes through an emission layer that keeps the circuit's FP32 rounding points identical to the source's. Entry points: `compileFunctionFromSource` for whole functions, and the lower-level `Compilation` session for block slices, per-value specialization, and expression slices.
-- `annotations.ts` — the `@fit` parser: `int 0..Infinity`, `0..<4096`, `> 0`, `given max >= min` (a relation between parameters, used to constrain sampling), `return.cols: int 1..7`.
-- `twin.ts` — the fround twin: an interpreter that runs the same subset with FP32 semantics (every arithmetic step through `Math.fround`, division rewritten to reciprocal multiplication). The same interpreter in fp64 mode is the original float64 function, used for drift statistics.
-- `harness.ts` — the equivalence harness: seeded LCG sampling inside declared ranges (with boundary and exact-integer emphasis, since ties are where decision bits fail), then per trial: circuit reference evaluator, compiled tensor backend, FP32 twin, and float64 original. The first three must agree bit-for-bit on every output; the repo's `validateTensorEvaluation` additionally checks every live wire on early trials.
-- `gauntlet.ts` — eight synthetic layout functions in the vibescript style, compiled and verified.
-- `real-slice.ts` — the real-file slices and two rejection probes, compiled from the target file's own bytes (statements located by distinctive source text, so edits to the file fail loudly).
-- `residue-census.ts` — classifies every statement unit of the render path into compiled/rejection categories; `report.ts` prints all tables below (`bun lab/trace-compiler/report.ts`).
-
-## The supported subset
-
-Numeric `const`/`let` with reassignment, object and array literals, object destructuring, arithmetic (`+ - * / %`), comparisons, `&& || !` over decision bits, ternaries (including branches mixing numbers and `null`), `??` and `== null` tests, `Math.min/max/abs/floor`, bounded `for` loops (unrolled; runtime integer bounds become masked unrolls), `for...of` over fixed arrays, array `push`/`at`/`.length`/indexing at unroll-time-constant indices, single-level-plus function inlining with default parameters, parameter object fields as inputs with mutations as outputs, and module-level constants. Everything else rejects with a diagnostic carrying the line, the construct, and a taxonomy category — the diagnostics are the data.
-
-## Lowering rules
-
-| Source construct | Lowering | Cost |
-| --- | --- | --- |
-| every arithmetic step | one reglu whose gate reads a source wire holding 1 | 1 op |
-| `a * b`, signs unknown | `f(a·relu(b)) - f(a·relu(-b))`; one product is an exact zero | 2–3 ops |
-| `a / constant` | multiply by the FP32 reciprocal (the twin mirrors this rewrite) | 1 op |
-| `a / boundedInt`, `a % boundedInt` | exact one-hot over the divisor's range, one folded branch per value | ~8 ops per possible divisor value |
-| integer comparison | `relu(d) - relu(d - 1)` decision bit, exact below 2^24 | 4–8 ops |
-| continuous comparison | exact sign cascade: relu, then power-of-two scaling and clamp01 rounds until every positive value saturates at exactly 1 | ~25 ops |
-| ternary on a bit | select as two masked products: `on·bit + off·(1-bit)`, exact for any finite operands | 4 ops |
-| `Math.floor` over a bounded range | sum of exact step bits `[x >= k]` | ~25 ops per integer step |
-| `Math.min/max` | comparison bit plus select | ~30 ops |
-| loop with a runtime integer bound | unroll the static range; mask each iteration's writes with `select(mask, old, new)` — a masked-off iteration is an exact no-op, so the unroll matches the twin's native loop bit-for-bit | per-iteration mask ~6 ops |
-| `if` under a runtime condition | same masking; assignments in both branches become selects | |
-| runtime-sized structure driven by a bounded integer | per-value specialization: compile the block once per possible value, combine outputs through the exact one-hot (used for the 2D grid's row structure over cols 1..7) | ~7x the block, minus heavy sharing from expression dedup |
-| `x: number \| null` | a presence bit plus a value | 2 outputs |
-
-Two policies are load-bearing and deliberately differ from the repo's macro library. First, every source arithmetic step is frozen as its own reglu with a unit gate, because the Circuit builder's affine composition (`composeAffineTerms`) merges small affine forms into consumers and sorts terms by wire index — either one moves FP32 rounding points away from the source's. Second, select uses the two-masked-products form instead of the repo's `off + gate·(on - off)`, because the repo form re-rounds through a subtraction and is only exact for integer operands below 2^23 (see `macro-ranges.md`), while traced source code selects between arbitrary fractional values. Consequence: the compiled circuits are all reglu (`affine: 0` everywhere), which trades stored weights for exactness.
-
-Range analysis rides on the Circuit's own interval tracking (`assumeRange`), tightened by product hulls and select hulls, plus one addition: comparison-guided narrowing in ternary branches. In the false branch of `v > max ? max : v`, the value `v` is at most `max` — the flow narrowing TypeScript performs for types, applied to numeric ranges. Without it, the clamp helper's result range stays unbounded and division by the clamped column count would reject. Narrowing comes with a soundness rule that adversarial verification proved necessary: everything stamped onto a circuit wire with `assumeRange` is computed from context-free (un-narrowed) ranges only, because the builder's expression dedup shares one wire across every occurrence of the same expression — a hull derived from a branch-narrowed operand would silently become a global claim about the shared wire and miscompile the uses outside the branch (the verified repro: `a * b` inside an `a > 5` branch dedup-shared with the same product outside, whose stamped non-negative hull made `Math.max(outer, -5)` fold away). Branch-derived hulls travel on the compiler-side value metadata instead, which stays local to the branch. This also restores the premise of the sign cascade, whose first scaling exponent and overflow safety derive from stored ranges: with only context-free facts on wires, that derivation is sound for every input the wire can carry.
-
-## Exactness policy, and the one policy that failed
-
-The policy is option (a) from the brief: the circuit computes in FP32 and must agree bit-for-bit with a mechanically derived fround twin of the source; drift between the twin and the original float64 function is measured, not hidden. The twin makes exactly one algebraic rewrite, forced by the substrate: `a / b` becomes `f(a · f(1/b))`, since the circuit has no division. Plus and minus zero compare as equal (the repo's differential tests use the same equality). NaN cannot arise because inputs are range-validated and every lowering that computes a value on a masked-off path (select branches, masked loop writes, one-hot divisor branches) rejects at compile time unless the value's context-free range stays within FP32's largest finite value (about 3.4e38) — a float64-finite bound is not enough, since fround(1e30 * 1e30) is Infinity and fround(Infinity * 0) is NaN.
-
-The first comparison policy followed the brief's suggestion — scale the difference into a score near 0.5 and round with the boolean atom, argmax-style, with a documented margin. The exhaustive column-count sweep falsified it: at viewport width 1732, `(1732 - 24) · fround(1/244)` lands one FP32 ulp below 7, the twin's `Math.floor` says 6, and the score-based step bit could not resolve a difference below the score's own rounding step, so the circuit said 7. Differences smaller than the margin are not rare corner dust; they are systematically produced at every exact column boundary by the reciprocal rewrite. The replacement makes the comparison exact with no margin at all: `relu(d)` keeps positive values, one power-of-two multiplication lifts the range near 2^23, then clamp01 (`v - relu(v - 1)`, exact for v < 2^24) and another power-of-two multiplication repeat until even the smallest positive FP32 value (2^-149) has saturated at exactly 1. Power-of-two multiplication only shifts the exponent, so every intermediate is an exact rescaling of `d` or exactly 1, and `f(a - b)` is zero exactly when `a` equals `b` — so the bit agrees with the native comparison on every input. A surprising side effect: the compiler never emits the boolean atom (`boolean: 0` in every table row); continuous decisions come out of pure relu arithmetic, extending the integer decision-bit trick of `tricks.md` to continuous values.
-
-## Gauntlet results
-
-Every function matches the twin bit-for-bit on every output of every trial, and `responsiveColumnCount` is verified exhaustively over every integer viewport width in 0..4096. `twin==f64 bits` is how often the FP32 result equals the float64 result rounded to FP32 — measured drift, not a correctness criterion.
-
-| function | ops | reglu | boolean | layers | stored weights | trials | outputs checked | three-way | mismatches | twin==f64 bits | max abs drift |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| responsiveColumnCount | 443 | 443 | 0 | 51 | 883 | 4097 | 4097 | all | 0 | 99.9% | 1.0e+0 |
-| gapDistribution | 82 | 82 | 0 | 40 | 169 | 5000 | 5000 | all | 0 | 81.3% | 8.1e-5 |
-| clampedPanelPosition | 124 | 124 | 0 | 60 | 250 | 5000 | 10000 | all | 0 | 99.9% | 1.2e-4 |
-| wrapIndex | 213 | 213 | 0 | 29 | 466 | 5000 | 5000 | all | 0 | 100.0% | 0.0e+0 |
-| springSettle | 79 | 79 | 0 | 43 | 158 | 5000 | 15000 | all | 0 | 86.7% | 1.9e-3 |
-| heroRowSizing | 118 | 118 | 0 | 58 | 239 | 5000 | 5000 | all | 0 | 92.5% | 1.5e-4 |
-| hitTestBox | 113 | 113 | 0 | 31 | 227 | 5000 | 5000 | all | 0 | 100.0% | 0.0e+0 |
-| hoverMagnet | 13 | 13 | 0 | 7 | 29 | 5000 | 5000 | all | 0 | 97.3% | 1.3e-4 |
-
-Integer-only functions (`wrapIndex`, and `hitTestBox` whose inputs make every taken branch integral in the harness) drift zero: exact integer arithmetic is exact in both precisions. The 1.0 max drift of `responsiveColumnCount` is the column decision flipping at exact multiples, quantified below.
-
-## The real-file slice
-
-All slices compile from the real file's own source text; photo dimensions (221 entries from `data.ts`) enter as compile-time constants, the tracing stance — the render tick runs against recorded static content, so `sizeX / d.ar` is division by a per-photo constant rather than dynamic division. Slice boundaries, stated honestly: the 2D slice covers the column computation, the sizing pass, and the destination loop, but not the dismissed-scroll adjustment above it (dynamic index `rowsTop[Math.floor(focused / cols)]`), the hover magnet (needs `hitTest2DMode`), or the anchor search (loop with break). The 1D slice covers everything in the lightbox layout except the keyboard rubber-band decoding (`inputCode === 'ArrowLeft'`, string work), which enters as a numeric input instead. The 2D slice has a single input — the viewport width; cols and boxMaxSizeX derive inside the slice through the compiled `colsBoxMaxSizeXF`.
-
-| slice | ops | reglu | boolean | layers | stored weights | trials | outputs checked | three-way | mismatches | twin==f64 bits | max abs drift |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| clamp | 60 | 60 | 0 | 31 | 122 | 5000 | 5000 | all | 0 | 100.0% | 0.0e+0 |
-| colsBoxMaxSizeXF | 524 | 524 | 0 | 91 | 1050 | 4097 (exhaustive) | 8194 | all | 0 | 81.1% | 2.4e+2 |
-| springStep | 12 | 12 | 0 | 8 | 28 | 5000 | 10000 | all | 0 | 71.9% | 2.1e-1 |
-| springGoToEnd | 0 | 0 | 0 | 0 | 0 | 2000 | 4000 | 2000 (+2000 constant outputs) | 0 | 100.0% | 0.0e+0 |
-| hitTest1DMode | 117 | 117 | 0 | 32 | 228 | 5000 | 10000 | 6444 (+3556 twin-null value slots) | 0 | 100.0% | 0.0e+0 |
-| 2D grid layout (per-cols specialization x7) | 24894 | 24894 | 0 | 600 | 56418 | 300 | 398100 | all | 0 | 65.2% | 1.6e-1 |
-| 1D lightbox layout (masked loops, no specialization) | 21213 | 21213 | 0 | 1580 | 43767 | 300 | 464100 | 397800 (+66300 constant outputs) | 0 | 81.9% | 4.1e-1 |
-| occlusion culling bits (one per photo) | 25416 | 25416 | 0 | 32 | 51274 | 500 | 110500 | all | 0 | 100.0% | 0.0e+0 |
-| scroll compensation (y.pos writes) | 222 | 222 | 0 | 2 | 666 | 500 | 110500 | all | 0 | 92.6% | 3.9e-2 |
-
-Zero mismatches across 1,174,491 output comparisons (gauntlet plus slices): 1,102,635 with all three legs (literal reference evaluator, compiled tensor backend, fround twin), 68,300 without the tensor leg (constant-folded outputs never enter the tensor program: springGoToEnd's `config.v = 0`, the 1D slice's `scale.dest = 1`), and 3,556 without the twin leg (hitTest1DMode's value slot when the twin returns null — 71.1% of its 5,000 value comparisons — where the circuit's value is arbitrary by the nullable encoding and only the presence bit is meaningful). No comparison ran reference-only. `springGoToEnd` compiles to zero operations — its outputs are an input wire and a constant, which is correct.
-
-Drift against float64, characterized rather than averaged: `colsBoxMaxSizeXF`'s 240-pixel max drift is not accumulated error but a discrete decision flip — at exactly 6 of the 4097 widths (512, 756, 1000, 1244, 1488, 1732, i.e. wherever width − 24 is an exact multiple of 244), the FP32 reciprocal lands one ulp below the exact quotient, FP32 chooses one fewer column than float64, and the per-column width jumps accordingly. The circuit and the twin agree with each other at all 4097 widths; the disagreement is between FP32-as-a-semantics and float64-as-a-semantics, and it is pinned to those 6 inputs. The 2D slice's 65.2% bit-agreement with float64 (max 0.16px) is ordinary FP32 rounding through the sizing chains; positions drift by less than a hundredth of a pixel in typical rows.
-
-Two functions reject, as expected, with precise diagnostics (the probes are tests): `hitTest2DMode` at line 219, category `early return` (first-match search loop — the parallel-winner tree is the known lowering, not implemented here), and `stepSpring` at line 188, category `dynamic loop bound` (its `@fit` says `int 0..Infinity`; a finite bound would turn it into a masked unroll of spring steps).
-
-## Residue taxonomy (the deliverable)
-
-Every statement unit (leaf statement, if condition, or loop header) of the render path — `render` plus the nine helpers it calls — classified. Counts are produced mechanically by `residue-census.ts` and the table was reviewed line by line against the file.
-
-| category | count | example (line) | fixability | how |
-| --- | --- | --- | --- | --- |
-| compiled and verified in a slice | 64 | `const {cols, boxMaxSizeX} = colsBoxMaxSizeXF(newWindowSizeX)` (292) | compiled | bit-exact against the fround twin over seeded random inputs |
-| compilable numeric (not sliced) | 49 | `for (let i = 0; i < data.length; i++)` (263) | compiled | inside the supported subset but not part of an equivalence-verified slice |
-| DOM write | 27 | `const {node, img, promptNode} = d` (413) | boundary I/O | stays in the JS glue; circuit outputs project onto the DOM in the batched write phase |
-| nullable state | 15 | `let focused: number \| null = null` (263) | mechanically fixable | a presence bit plus a value; demonstrated by the compiled hitTest1DMode (return.present, return.value) |
-| event object plumbing | 14 | `const inputCode = events.keydown == null ? null : events.keydown.code` (233) | mechanically fixable | event handlers store numeric cells (the window-manager pattern: downActive, downX, downY) and render reads the cells |
-| string work | 9 | `data[i]!.id === hashImgId` (263) | annotation-fixable | encode as integers: key codes as an enum cell, the photo id in the URL hash as an index, the cursor name as a one-hot choice |
-| browser side effect | 9 | `const selection = window.getSelection()` (278) | boundary I/O | scrollTo, pushState, and selection stay imperative; their arguments can be circuit outputs |
-| dynamic loop bound | 8 | `const stillAnimating = animationDisabled ? false : stepSprings(steps)` (406) | annotation-fixable | a finite @fit bound turns the loop into a masked unroll (demonstrated by the 1D backward loop); stepSpring's @fit says int 0..Infinity, so it stays rejected until the bound is finite |
-| debug-only | 6 | `debug` (249) | out of scope | manual frame stepping for development; not part of the product tick |
-| DOM read | 6 | `const newWindowSizeX = document.documentElement.clientWidth` (255) | boundary I/O | stays in the JS glue; the read value enters the source table as an input cell, the way window-manager.ts feeds viewport facts today |
-| dynamic index | 6 | `const focusedTop = rowsTop[Math.floor(focused / cols)]!` (319) | mechanically fixable | one-hot gather or scatter, O(n) operations per access; the core's declared one-hot groups lower the tensor cost to a single read |
-| state commit (write-back) | 4 | `anchor = newAnchor` (468) | supported by the architecture | module state cells become source-table entries written back each frame — the recurrence f(state, input) -> (state, output) |
-| loop early exit (first match) | 3 | `for (newAnchor = 0; newAnchor < data.length; newAnchor += cols)` (352) | mechanically fixable | per-item condition bits plus a first-match selection tree (the emitFirstActive precedent); recognized but not implemented in this compiler |
-| unbounded range (needs a finite @fit) | 1 | `const steps = Math.floor((now - newAnimatedUntilTime) / msPerAnimationStep)` (404) | annotation-fixable | Math.floor over the frame-time delta has no finite bound, so the compiler cannot lower it to step bits; a spiral-of-death clamp on the delta (ui.md caps the step count with Math.min(300, ...)) would bound it |
-
-Totals: 221 units (exact per-category counts are pinned by a test, so drift in the target file or the classifier fails loudly). 64 (29.0%) compiled and equivalence-verified. Of the 173 numeric units (excluding DOM reads/writes, browser side effects, and debug-only), 113 (65.3%) are inside the supported subset and 64 (37.0%) are verified bit-exactly. The brief's hypothesis holds with names attached: straight-line layout math traces cleanly; the residue is data-dependent structure (dynamic indices, first-match searches, the runtime-length rowsTop array), capacities (loop bounds, the photo count), and encodings (strings for keys/ids/cursors, null for modes) — plus the browser boundary, which is not residue but the I/O the architecture already assigns to glue code.
-
-The coding pattern shifts the residue asks of an author, concretely: give `@fit` bounds that are actually finite (the only annotation in the file that blocked compilation was `int 0..Infinity` on `steps` and `containerSizeX`), let event handlers write numbers instead of letting render read event objects, prefer indices over id strings in state, phrase searches so the first match is a maskable condition, and treat `null` as a presence bit you could have declared.
-
-## Failures and limits
-
-- Adversarial verification found two genuine soundness holes, both fixed with regression tests. First, branch-narrowed range hulls leaked onto circuit wires through expression dedup: `a * b` emitted inside an `a > 5` branch shares its wire with the same product outside, and the branch-derived non-negative hull stamped on that wire made a later `Math.max(outer, -5)` fold away (circuit -100, twin -5 at a = -10, b = 10). The fix keeps wire-stamped ranges context-free and moves branch-derived hulls to compiler-side metadata. Second, the select guard checked float64 finiteness where the real precondition is FP32 representability: with inputs in [0, 1e30], the masked-off `a * b` branch computed fround(Infinity · 0) = NaN and poisoned the select. The guard (and the one-hot divisor branches) now reject any branch whose context-free range exceeds FP32's largest finite value.
-- The boolean-atom margin policy for continuous comparisons is measurably insufficient for bit-exactness (6 systematic failures in one 4097-input sweep); the exact sign cascade replaced it at ~10x the per-comparison cost. This is the experiment's clearest finding about the substrate: exactness against a native-comparison twin needs exact bits, and exact bits over continuous FP32 values cost about 25 operations each.
-- Comparisons require finite declared ranges below 2^23 in magnitude, floors require bounded spans, and one-hot divisors require small integer ranges. These are preconditions the diagnostics name, not silent assumptions.
-- The 1D slice is 1580 layers deep because `currentLeft` accumulates through 221 masked iterations sequentially; a prefix-sum restructuring would cut the depth to O(log n) but changes rounding order, so it cannot be bit-exact against this twin. Depth is the honest price of sequential source semantics.
-- Per-value specialization multiplies work by the number of possible values (7 here); expression dedup absorbed most of it (the 2D slice is 24.9k ops, not 7x its single-variant size), but the technique needs a small bounded driver to stay reasonable.
-- The census classifier is syntactic (marker sets plus AST checks), reviewed by hand against this one file; it is a measurement instrument for this target, not a general classifier.
-- The real pointer state initializes to `-Infinity`; compiled comparisons need finite ranges, so the slices declare finite pointer bounds and the sentinel is noted as an encoding to fix (a presence bit, or a finite off-screen coordinate).
-- The core (`numeric-ui-core.ts`) gained declared one-hot groups and gather lowering from a parallel experiment while this one was running; these circuits declare no groups, so the additions do not engage, and the full equivalence suites pass unchanged against the revised core.
-
-## Next steps
-
-- Implement the first-match lowering (per-item bits plus prefix masking) to absorb `hitTest2DMode` and the anchor search — the two remaining mechanical rejections.
-- Route the per-cols one-hot and the divisor one-hots through the core's new declared one-hot groups (`assumeOneHot`), so the tensor backend gathers instead of summing 7 masked branches.
-- A `steps` bound (`@fit int 0..8` matches 120fps frame budgets) would unroll `stepSpring` and close the animation tick.
-- Fold the slices into one circuit with the mode bit selecting between the 2D and 1D destination sets, plus the state write-backs — that would be the full compiled tick minus DOM glue.
+The September 2026 reassessment found bugs in block returns, nullable equality, and conditional side effects, plus a shared interpreter bug that made an incorrect result look verified. Those cases now have regressions. The harness independently executes the selected source with the JS engine, in addition to comparing the FP32 circuit and interpreter.
 
 ## Reproducing
 
-`bun test lab/trace-compiler` (28 tests: unit lowering tests, the gauntlet, the real-file slices, the census), `bunx tsgo -p lab/trace-compiler`, `bunx oxlint --type-aware lab/trace-compiler`, and `bun lab/trace-compiler/report.ts` regenerates every table above. Tests read `~/github/chenglou.github.io/index.ts` and `data.ts` live; if the file changes, statement markers and counts fail loudly rather than silently compiling something else.
+- `bun test lab/trace-compiler`
+- `bunx tsgo -p lab/trace-compiler`
+- `bunx oxlint --type-aware lab/trace-compiler`
+- `bun lab/trace-compiler/report.ts` prints the measurements and coverage classification.
+- `bun lab/trace-compiler/report.ts --live` optionally checks the current external gallery files. Changes to the external source may cause rejection; this is separate from the repeatable fixture tests.
+
+The default source is frozen in [fixtures](./fixtures/README.md), copied byte-for-byte from gallery commit `f315d5864a21b9e10126b741456e232d8ece681e`, the last committed revision of the target files before the July experiment. That revision reproduces the reported statement locations and 221-photo count. The July run did not record a working-tree hash, so this is known Git provenance, not proof that an unrecorded working tree was identical.
+
+## What Is Checked
+
+Every sampled trial runs five calculations:
+
+1. The circuit's literal reference evaluator.
+2. The circuit's compiled execution path, currently JavaScript rather than a GPU backend.
+3. The FP32 source interpreter.
+4. The float64 source interpreter.
+5. The selected source executed natively by the JavaScript engine.
+
+The first three must agree on the circuit outputs. Constant outputs have no compiled-execution comparison, and absent nullable values have no meaningful value to compare. Plus and minus zero compare equal.
+
+The float64 interpreter must separately agree with native JS. This check includes returned values and object-parameter fields, including fields the compiler thought were unchanged. `report.sourceSemantics` records any disagreement. A regression deliberately corrupts the float64 interpreter's result and confirms that this independent check catches it even while the circuit and FP32 interpreter agree.
+
+Precision drift compares the FP32 interpreter with native JS. Drift is reported, not treated as a compiler error. For example, `(100000000 + 1) - 100000000` is zero with a rounding step after each FP32 operation, but one in native JS. Similarly, the FP32 interpreter replaces division with `fround(a * fround(1 / b))`. That is an explicit arithmetic policy, not exact preservation of JavaScript division.
+
+Native validation uses TypeScript only to identify reachable declarations and erase types. Arithmetic, branches, loops, and mutations then run in the JS engine. Unrelated browser initialization is not included. This executes trusted local test source; it is not a sandbox for untrusted programs.
+
+These checks are sampled evidence within declared input ranges, not a proof for every supported program. A zero mismatch count is meaningful only alongside the domain and the independent source check.
+
+## Supported Constructs
+
+The implemented subset includes numeric declarations and assignments; fixed object and array structures; object destructuring; arithmetic; comparisons; logical operations over decision bits; numeric and nullable ternaries; null tests and null coalescing; `Math.min/max/abs/floor`; bounded `for` loops; `for...of` over fixed arrays; constant-index array access, append, and `.at`; function inlining; and module constants.
+
+Runtime loop bounds need finite integer ranges. The compiler unrolls the static range and masks each iteration's writes. Returns inside ordinary blocks, constant branches, and constant iterations now propagate out of the function. Returns under a runtime condition still reject explicitly; first-match search lowering has not been implemented.
+
+A runtime ternary, logical short circuit, or null-coalescing fallback must not mutate state. The compiler rejects assignments and array appends while evaluating those branches, including mutations inside called helpers. This conservative restriction also rejects helper-local assignments in those expressions. Pure helper calls remain supported. Runtime `if` statements can mask numeric assignments.
+
+Nullable strict equality checks both presence and numeric values. For example, `(flag > 0 ? 5 : null) === 5` is true only when the value is present and equal to five; it is not merely a null test.
+
+## Lowering And Rounding
+
+| Source operation | Current lowering |
+| --- | --- |
+| An affine arithmetic step | `Circuit.roundAffine`, which preserves one FP32 evaluation and prevents composition into a consumer |
+| Runtime multiplication | `Circuit.multiply`, with semantic multiplication metadata and a ReGLU forward expansion |
+| Division by a constant | Multiplication by an FP32 reciprocal |
+| Division or modulo by a small bounded integer | One branch per possible divisor, selected with exact bits |
+| Integer comparison | ReLU difference bits, within the exact integer range |
+| Continuous comparison | A sign cascade with ReLU, power-of-two scaling, and clamps |
+| Numeric selection | Two masked products, `on * bit + off * (1 - bit)` |
+| Bounded floor | A sum of threshold bits |
+| Runtime conditional assignment | Selection between the old and new values |
+| Small bounded structural choice | One specialized circuit per possible value, then output selection |
+
+The compiler previously used a dummy unit ReGLU gate to prevent affine composition from removing a rounding point. `roundAffine` now expresses that requirement directly. It sorts terms by wire index, so the emitter accepts only combinations whose rounding is independent of that reordering, such as two terms with zero bias. The circuit now contains affine operations as well as ReGLUs; the old claim that every operation was a ReGLU is obsolete.
+
+Multiplication retains its meaning for differentiation rather than differentiating only its signed ReLU expansion. This addresses the zero-operand derivative problem found during reassessment. Differentiation still refers to an intended real-valued calculation, not a literal derivative of FP32 rounding.
+
+Ranges must model FP32 rounding. In particular, a real-number bound just below one can round to one, changing `Math.floor`. The regression uses `x = 1 - 2^-24` and `y = 2^-25`: FP32 `x + y` rounds to one, and the compiled floor must return one. Product bounds in this compiler also round their endpoints and conservatively handle nonfinite cases.
+
+Branch-derived ranges stay on local symbolic values. They must not be installed globally on a shared circuit wire, because the same expression can also occur outside that branch. Masked expressions require finite FP32 ranges; otherwise an unselected `Infinity * 0` could produce NaN.
+
+## The Sign Cascade
+
+The July comparison policy scaled a difference into a score near 0.5 and used the boolean atom. That policy failed at exact column boundaries: at viewport width 1732, reciprocal multiplication lands one FP32 step below seven, while the score loses that small difference.
+
+The replacement first keeps positive differences with ReLU, then repeatedly scales by powers of two and clamps until every positive FP32 difference in the supported range becomes one. The compiler uses this construction for continuous comparisons and does not emit boolean atoms in the current test circuits.
+
+This is an exact forward construction under the compiler's numeric assumptions. It does not make hard comparisons usefully differentiable, nor prove that a long cascade is the fastest execution method. A native comparison or a simpler training relaxation is a separate lowering choice.
+
+## September Fixture Results
+
+The complete report checks 1,174,491 circuit outputs: 1,102,635 with all three FP32 comparisons, 68,300 without a compiled-execution comparison because the output was constant, and 3,556 absent nullable value slots. There were zero circuit mismatches. Native JS independently checked 1,193,491 float64 interpreter outputs with zero disagreements. The larger native count includes unchanged object fields and uses a different nullable representation.
+
+| Gallery slice | Operations | ReGLUs | Layers | Stored weights | Trials |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| clamp | 60 | 22 | 31 | 84 | 5,000 |
+| column calculation | 524 | 174 | 91 | 700 | 4,097 |
+| spring step | 14 | 4 | 8 | 24 | 5,000 |
+| spring snap | 0 | 0 | 0 | 0 | 2,000 |
+| 1D hit test | 117 | 47 | 32 | 158 | 5,000 |
+| 2D layout, seven column variants | 24,894 | 7,286 | 600 | 38,810 | 300 |
+| 1D layout, masked loops | 21,213 | 8,736 | 1,580 | 31,290 | 300 |
+| occlusion bits | 25,416 | 8,619 | 32 | 34,477 | 500 |
+| scroll compensation | 222 | 0 | 2 | 444 | 500 |
+
+All rows emit zero boolean atoms. The eight synthetic gauntlet functions also passed; their full counts and drift statistics are printed by `report.ts`.
+
+The column calculation intentionally differs between FP32 and native float64 at six of the 4,097 integer widths: 512, 756, 1000, 1244, 1488, and 1732. Reciprocal rounding selects one fewer column there, and the per-column width can differ by about 240 pixels. Circuit/interpreter agreement does not make that precision choice invisible to users.
+
+Photo dimensions and aspect ratios are static compilation inputs. The 2D slice compiles once per column count from one through seven. It excludes hover search, dismissed-scroll adjustment, and anchor search. The 1D slice excludes keyboard string decoding, which enters as a numeric input. This is not the entire application compiled unchanged.
+
+## Coverage And Remaining Work
+
+The frozen render path contains 221 statement units. The slices actually compile and verify 64 units: 29.0% of all units, or 37.0% of the 173 units classified as numeric.
+
+A syntax-based classifier identifies another 49 numeric candidates. Adding those candidates gives the historical 113/173, or 65.3%, but those 49 have not been compiled and verified. The census now labels them as candidates, not compiled code. Its remaining categories describe possible work, not actual diagnostics produced by compiling every statement.
+
+The two explicit rejection probes remain: first-match hit testing returns under a runtime condition, and spring stepping has an unbounded runtime iteration count. Other remaining restrictions include dynamic array access, runtime allocation, string encoding, nonfinite sentinels, and browser I/O.
+
+The deepest slice still has 1,580 layers because it accumulates positions sequentially through 221 photos. A parallel prefix sum would change rounding order, so it is not automatically interchangeable under this exactness policy. Seven-way specialization also requires a genuinely small choice set. Neither measurement establishes GPU performance.
+
+Useful next changes are bounded first-match selection and explicit gather declarations, with the native source checks retained. Increasing coverage is an experiment to measure; it should not be inferred from syntax alone.
+
+## Files
+
+- `compile.ts`: symbolic AST compiler and numeric emitter.
+- `annotations.ts`: input range and relation annotations.
+- `twin.ts`: FP32 and float64 source interpreters.
+- `native.ts`: independent native execution for selected functions and slices.
+- `harness.ts`: sampling, three-way FP32 checks, independent source checks, and precision drift.
+- `gauntlet.ts`: synthetic numeric examples.
+- `real-slice.ts`: frozen gallery slices and optional live-source loading.
+- `residue-census.ts`: heuristic coverage classification.
+- `report.ts`: repeatable measurements.

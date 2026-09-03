@@ -1,5 +1,7 @@
-// Slices of the real target, ~/github/chenglou.github.io/index.ts (Cheng's photo gallery),
-// compiled from the file's own source text and verified against the fround twin. The slices are:
+// Slices of Cheng's photo gallery, loaded from a frozen source fixture by default. An optional
+// live-source run reads ~/github/chenglou.github.io. Both check the circuit against the FP32
+// interpreter and independently validate the float64 interpreter against native JS.
+// The slices are:
 //
 // - clamp, colsBoxMaxSizeXF, springStep, springGoToEnd, hitTest1DMode: whole functions.
 // - the 2D grid layout (first sizing pass + spring destination loop): the row structure (which
@@ -58,9 +60,11 @@ export type RealTarget = {
   photos: {naturalSizeX: number, aspectRatio: number}[]
 }
 
-export function loadRealTarget(): RealTarget {
-  const sourceFile = parseSource(readFileSync(realIndexPath, 'utf8'), 'index.ts')
-  const dataFile = parseSource(readFileSync(realDataPath, 'utf8'), 'data.ts')
+export function loadRealTarget(source: 'fixture' | 'live' = 'fixture'): RealTarget {
+  const indexPath = source === 'live' ? realIndexPath : new URL('./fixtures/index.ts.txt', import.meta.url)
+  const dataPath = source === 'live' ? realDataPath : new URL('./fixtures/data.ts.txt', import.meta.url)
+  const sourceFile = parseSource(readFileSync(indexPath, 'utf8'), 'index.ts')
+  const dataFile = parseSource(readFileSync(dataPath, 'utf8'), 'data.ts')
   const photos: {naturalSizeX: number, aspectRatio: number}[] = []
   const dataArray = findSmallest(dataFile, node => ts.isArrayLiteralExpression(node), "id: '")
   invariant(dataArray !== null && ts.isArrayLiteralExpression(dataArray), 'photoGalleryData literal not found')
@@ -82,7 +86,7 @@ export function loadRealTarget(): RealTarget {
 
 // Finds the smallest node of a matching kind whose source text contains the marker. The real
 // file has no stable statement labels, so slices locate their statements by distinctive text;
-// if the file changes, the tests fail loudly rather than silently compiling something else.
+// a changed fixture or live file fails loudly rather than silently compiling something else.
 function findSmallest(root: ts.Node, matches: (node: ts.Node) => boolean, marker: string): ts.Node | null {
   let best: ts.Node | null = null
   const visit = (node: ts.Node) => {
@@ -779,8 +783,8 @@ export type RealSliceRun = {
   probes: RejectionProbe[]
 }
 
-export function runRealSlices(seed = 20260706): RealSliceRun {
-  const target = loadRealTarget()
+export function runRealSlices(seed = 20260706, source: 'fixture' | 'live' = 'fixture'): RealSliceRun {
+  const target = loadRealTarget(source)
   const slices = [
     compileClampSlice(target, 5000, seed),
     compileColsBoxSlice(target, seed),

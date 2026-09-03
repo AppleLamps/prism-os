@@ -6,6 +6,7 @@ test('every gauntlet function compiles and matches the fround twin bit-for-bit',
   const runs = runGauntlet()
   for (const {entry, compiled, report} of runs) {
     assert.deepEqual(report.mismatches, [], `${entry.name} diverged from the twin`)
+    assert.deepEqual(report.sourceSemantics.mismatches, [], `${entry.name} interpreter diverged from native JS`)
     assert.ok(report.outputsChecked > 0, `${entry.name} checked no outputs`)
     // The actual exactness claim: every comparison lowers without an unresolved margin, so no
     // site carries an epsilon (a margin-violation count would be vacuous).

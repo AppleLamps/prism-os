@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Photo Layout Lab</title>
+  <link rel="stylesheet" href="./demo.css">
+  <script type="module" src="./demo.ts"></script>
+</head>
+<body>
+  <header class="page-header">
+    <h1>Photo Layout Lab</h1>
+    <fieldset class="methods" aria-label="Layout method">
+      <label><input type="radio" name="method" value="wrapping"><span>Wrapping</span></label>
+      <label><input type="radio" name="method" value="perInstance"><span>Per-layout search</span></label>
+      <label><input type="radio" name="method" value="shared" checked><span>Shared rule</span></label>
+    </fieldset>
+  </header>
+  <section class="toolbar" aria-label="Collection settings">
+    <label class="width-control">Viewport <input id="width" type="range" min="320" max="1180" step="1" value="900"><output id="width-value">900 px</output></label>
+    <label>Photos <select id="count"><option>4</option><option>6</option><option>8</option><option selected>12</option></select></label>
+    <label>Content <select id="content"><option value="short">Short captions</option><option value="long" selected>Long captions + new crops</option></select></label>
+    <button id="next-collection" type="button">New collection</button>
+  </section>
+  <main>
+    <div class="collection-heading"><h2 id="collection-name">Collection 101</h2><span id="collection-status"></span></div>
+    <section class="comparison" aria-label="Measured comparison">
+      <h2>Current Collection</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Method</th><th>Photos</th><th>Text overflow</th><th>Horizontal overflow</th><th>Preference loss</th><th>Height</th><th>+1 px movement</th><th>This run</th></tr></thead>
+          <tbody id="comparison-rows"></tbody>
+        </table>
+      </div>
+    </section>
+    <div id="available-width"><div id="gallery" aria-label="Photo collection"></div></div>
+  </main>
+</body>
+</html>

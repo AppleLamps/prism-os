@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {authoredFamilies, buildSource, defaultContext, slotCount} from './fields.ts'
+import {authoredFamilies, buildSource, defaultContext, fieldDimension, globalField, slotCount} from './fields.ts'
 import {createFlowLayoutMachine} from './flow-layout.ts'
 import {extractSnapshot, scoreFitness, selectionScore, type LayoutSnapshot} from './fitness.ts'
 import {createRandom, sampleFieldVector} from './search.ts'
+import {seedFitnessGradients} from './optimize.ts'
+import {backpropagateStraightThrough} from './ste-backprop.ts'
 
 const machine = createFlowLayoutMachine()
 
@@ -80,6 +82,9 @@ test('hand-derived fitness gradients match central finite differences', () => {
       check(`height[${slot}]`, gradient.height[slot]!, (target, offset) => {
         target.height[slot] = target.height[slot]! + offset
       }, 1e-3)
+      check(`importance[${slot}]`, gradient.importance[slot]!, (target, offset) => {
+        target.importance[slot] = target.importance[slot]! + offset
+      }, 1e-5)
     }
     check('coveredArea', gradient.coveredArea, (target, offset) => {
       target.coveredArea += offset
@@ -87,9 +92,32 @@ test('hand-derived fitness gradients match central finite differences', () => {
     check('contentBottom', gradient.contentBottom, (target, offset) => {
       target.contentBottom += offset
     }, 1e-3)
+    for (const field of ['innerWidth', 'innerHeight', 'viewportWidth', 'viewportHeight', 'paddingY'] as const) {
+      check(field, gradient[field], (target, offset) => {
+        target[field] += offset
+      }, 1e-3)
+    }
   }
   assert.ok(checkedCount > 300, `too few gradient checks ran: ${checkedCount}`)
   assert.ok(kinkSkips < checkedCount * 0.2, `too many kink skips: ${kinkSkips} vs ${checkedCount}`)
+})
+
+test('fill gradient includes both geometry and direct padding dependencies', () => {
+  const fields = authoredFamilies()[0]!.fields
+  const source = buildSource(fields, defaultContext)
+  const values = machine.evaluate(source)
+  const snapshot = extractSnapshot(values, machine.output, source)
+  const weights = {fill: 1, verticalFit: 0, importanceMatch: 0, balanceX: 0, sizeComfort: 0, rowEvenness: 0, contentRichness: 0}
+  const gradient = scoreFitness(snapshot, weights).gradient
+  const seeds = seedFitnessGradients(machine, gradient, snapshot, 1)
+  const actual = backpropagateStraightThrough(machine.circuit, values, seeds)[globalField.paddingX]!
+  const epsilon = 0.25
+  const above = new Float64Array(fields)
+  const below = new Float64Array(fields)
+  above[fieldDimension('paddingX')]! += epsilon
+  below[fieldDimension('paddingX')]! -= epsilon
+  const expected = (scoreFitness(snapshotFrom(above), weights).value - scoreFitness(snapshotFrom(below), weights).value) / (2 * epsilon)
+  assert.ok(Math.abs(actual - expected) < 1e-6, `complete derivative ${actual}, finite difference ${expected}`)
 })
 
 test('selection score ranks every valid layout above every invalid one', () => {
