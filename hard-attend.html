@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hard Attend Walkthrough</title>
+  <link rel="stylesheet" href="./hard-attend.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="control-band" aria-labelledby="demo-title">
+      <div class="title-block">
+        <p class="eyebrow">three item lookup</p>
+        <h1 id="demo-title">Hard Attend</h1>
+        <p class="summary">Move the query. The highest score wins, then both lookup paths return the same value.</p>
+      </div>
+
+      <div class="query-control">
+        <label for="query-slider">query index <output id="query-readout">1.00</output></label>
+        <input id="query-slider" type="range" min="0" max="2" step="0.01" value="1">
+        <div id="preset-row" class="preset-row" aria-label="Query presets"></div>
+      </div>
+
+      <div class="query-math" aria-label="Query and key equation">
+        <div>
+          <span>query</span>
+          <strong id="query-vector">(1.00, 1)</strong>
+        </div>
+        <div>
+          <span>key_j</span>
+          <strong>(2j, -j*j)</strong>
+        </div>
+        <div>
+          <span>score_j</span>
+          <strong>query dot key_j</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="items-band" aria-label="Items and scores">
+      <div id="item-track" class="item-track"></div>
+    </section>
+
+    <section class="result-band" aria-label="Lookup comparison">
+      <article class="result-panel">
+        <p class="eyebrow">expanded today</p>
+        <h2>one-hot gather</h2>
+        <code id="onehot-formula"></code>
+      </article>
+
+      <article class="result-panel selected-result">
+        <p class="eyebrow">hardAttend</p>
+        <h2>direct gather</h2>
+        <code id="hard-formula"></code>
+      </article>
+
+      <article class="result-panel">
+        <p class="eyebrow">soft training form</p>
+        <h2>softmax gather</h2>
+        <label for="beta-slider">sharpness <output id="beta-readout">5.0</output></label>
+        <input id="beta-slider" type="range" min="0.5" max="14" step="0.1" value="5">
+        <code id="soft-formula"></code>
+      </article>
+    </section>
+  </main>
+
+  <script type="module" src="./hard-attend.ts"></script>
+</body>
+</html>

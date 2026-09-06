@@ -5,6 +5,7 @@
   "scripts": {
     "start": "bun ./index.html",
     "start:candidates": "bun ./candidate-gallery.html",
+    "start:hard-attend": "bun ./hard-attend.html",
     "start:learning": "bun ./learned-gallery.html",
     "start:reusable": "bun ./lab/reusable-layout/demo.html",
     "check": "bun scripts/check.ts",
