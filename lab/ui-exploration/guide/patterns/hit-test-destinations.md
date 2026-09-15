@@ -1,3 +1,5 @@
+Size: behavior choice. Short entry: [behavior-choices.md, "Hit-test destinations instead of drawn positions"](../../../../behavior-choices.md#hit-test-destinations-instead-of-drawn-positions).
+
 # Hit-test destinations instead of drawn positions
 
 Test a press against each element's destination, the position its spring is heading to, instead of where the element is drawn, so the hit test reads only stored state, and no spring has to run before it.
@@ -85,6 +87,6 @@ The drawn-position form spends 140 operations on sign cascades for its 8 compari
 
 - vibescript's `~/github/vibescript/docs/ui.md`, section "Hit Testing", recommends testing `dest` instead of `pos`, which prevents mis-clicks on moving elements and lets rapid repeated clicks work. chenglou.github.io's index.ts tests hover against layout targets in `hitTest2DTargets`, and in its one-photo mode lets clicks land during transitions in `hitTest1DMode`.
 - [indirect-os-2](../../indirect-os-2/README.md) hit-tests clicks on Photos at the window's destination size. window-manager.ts tests them at the animated size, so which photo a click lands on depends on spring timing: with spring-bank's springs, a click during a Photos window animation landed on a different photo in 2 of 8 random 400-frame traces. indirect-os-2 also flows the Notes paragraph around the other windows' destinations: 19,854 operations and 343 layers, against 19,861 and 368 around their drawn geometry, and within 2.4e-4 px between 60 and 120 fps, against 25.4 px.
-- [Long dependency chains](../sections/chains.md#way-5-change-what-the-app-computes), way 5, and [decision 6](../README.md#6-should-depth-be-optimized-now) in the guide's README.
+- [Long dependency chains](../sections/chains.md#way-5-change-what-the-app-computes), way 5, and [decision 6](../review-and-decisions.md#6-should-depth-be-optimized-now) in the guide's decision record.
 - [Commit state at events](commit-at-events.md) runs the same toast stack at several frame rates.
 - Example and test: [toast-stack.ts](../examples/patterns/fewer-dependencies/toast-stack.ts) and [hit-test-destinations.test.ts](../examples/patterns/fewer-dependencies/hit-test-destinations.test.ts).

@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "A linear step repeated a runtime number of times"](../../../../patterns.md#a-linear-step-repeated-a-runtime-number-of-times).
+
 # Repeated steps as one matrix power
 
 Moves a spring through all of an evaluation's fixed 4 ms steps at once, e.g. a window sliding toward its destination through the 4 steps of a 16.7 ms frame, without a loop that runs a runtime number of times.

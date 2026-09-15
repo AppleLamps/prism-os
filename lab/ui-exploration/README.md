@@ -12,7 +12,7 @@ The work ran in rounds:
 
 Nothing outside this folder was changed. `numeric-ui-core.ts` is untouched; prototypes that needed runtime changes changed a copy inside their own folder.
 
-Update, September 14, 2026: the repo root `numeric-ui-core.ts` has since gained an index read instruction (`indexRead`, `indexReadAffine`), the comparison helper `emitCompare` with declared grids and rounding point records (`assumeGrid`, `markRoundingPoint`, `roundingPoints`), and springs whose step matrix JavaScript writes into source cells (`emitApplySpringMatrix`, `emitAnimatedObject`). A new repo root file, `host-timing.ts`, computes what JavaScript writes before each evaluation, e.g. frame durations, event times and the spring matrix. See decisions 1 to 3 in [the guide's README](guide/README.md#decisions-for-you). The prototypes below were built on the root runtime as it was at commit a915dcb, or on copies inside their folders.
+Update, September 14, 2026: the repo root `numeric-ui-core.ts` has since gained an index read instruction (`indexRead`, `indexReadAffine`), the comparison helper `emitCompare` with declared grids and rounding point records (`assumeGrid`, `markRoundingPoint`, `roundingPoints`), and springs whose step matrix JavaScript writes into source cells (`emitApplySpringMatrix`, `emitAnimatedObject`). A new repo root file, `host-timing.ts`, computes what JavaScript writes before each evaluation, e.g. frame durations, event times and the spring matrix. See decisions 1 to 3 in [the guide's decision record](guide/review-and-decisions.md#decisions-for-you). The prototypes below were built on the root runtime as it was at commit a915dcb, or on copies inside their folders.
 
 ## Short answer
 

@@ -30,7 +30,7 @@ Evidence:
 - numeric-library's float hash is already unevenly spread at 16,384 keys (chi-square p = 0.018), and past 65,536 keys it's far from even, likely because `key * .1031` keeps only about 11 fractional bits there.
 - codegen's WGSL needed a `max` guard on nearly every row (537 guards for 510 statements on the press map), because Metal fuses multiply-adds and folds `(x + 8388609) - 8388609`. The press map was exact even without the guard, because every product in it is an exact integer.
 
-What dropping it would unlock: a separate integer representation for values that are provably integers, e.g. `i32` in WGSL, where fusing and folding can't change a result, native `u32` hashing, and text buffers whose position keys don't share a 24-bit mantissa with fractional geometry. tricks.md already notes that integer-count bits stay exact in narrower formats like bfloat16, while the 2^23 rounding trick doesn't.
+What dropping it would unlock: a separate integer representation for values that are provably integers, e.g. `i32` in WGSL, where fusing and folding can't change a result, native `u32` hashing, and text buffers whose position keys don't share a 24-bit mantissa with fractional geometry. expressions.md ("Decision bits") already notes that integer-count bits stay exact in narrower formats like bfloat16, while the 2^23 rounding trick doesn't.
 
 ### 2. Bit-exact accumulation order on every wire
 

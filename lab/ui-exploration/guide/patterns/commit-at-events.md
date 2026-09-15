@@ -1,3 +1,5 @@
+Size: behavior choice. Short entry: [behavior-choices.md, "Apply events at their timestamps, and write state back only at events and settle checks"](../../../../behavior-choices.md#apply-events-at-their-timestamps-and-write-state-back-only-at-events-and-settle-checks).
+
 # Commit state at events
 
 Write state back only at each event's timestamp and at settle checks, and draw every frame from a copy of the table, so what's stored depends on the events and not on which frames ran.
@@ -63,7 +65,7 @@ clock = advanceFrame(clock, frameTime, arrivedEvents, evaluation => {
 }, 'events and settle checks')
 ```
 
-Two options of `emitAnimatedObject` keep commits independent of frames: a spring settles only while the `settleCheck` cell holds 1, i.e. at fixed simulated times, and its steps pull toward `destinationDuringSteps`, the destination before this evaluation's events.
+Two options of `emitAnimatedObject` keep commits independent of frames: an object not exactly at rest settles only while the `settleCheck` cell holds 1, i.e. at fixed simulated times, and its steps pull toward `destinationDuringSteps`, the destination before this evaluation's events.
 
 ## Cost
 
@@ -85,6 +87,6 @@ The same program, at the same size and depth. The evaluations are the same as wh
 
 - `advanceFrame` in [host-timing.ts](../../../../host-timing.ts), whose `'events and settle checks'` policy [spring-matrix.test.ts](../../../../spring-matrix.test.ts) checks: every stored table identical in every bit at 10, 30, 60 and 120 fps and through 500 ms stalls.
 - [event-time](../../event-time/README.md) committed IndirectOS at events: committed tables identical in every bit at 10 to 240 fps and through 500 ms and 2 s stalls over 6 traces, where frames that wrote back held different bits in 15% to 18% of shared frames.
-- [Springs](../sections/springs.md#5-commit-state-only-at-event-timestamps), form 5, and [decision 3](../README.md#3-how-should-time-enter-the-program-and-which-spring-should-be-the-default) in the guide's README. The springs section's [selection highlight](../examples/springs/shared-runtime-springs.ts) runs the same host loop.
+- [Springs](../sections/springs.md#5-commit-state-only-at-event-timestamps), form 5, and [decision 3](../review-and-decisions.md#3-how-should-time-enter-the-program-and-which-spring-should-be-the-default) in the guide's decision record. The springs section's [selection highlight](../examples/springs/shared-runtime-springs.ts) runs the same host loop.
 - [Hit-test destinations instead of drawn positions](hit-test-destinations.md) builds the toast stack this example runs.
 - Example and test: [toast-stack.ts](../examples/patterns/fewer-dependencies/toast-stack.ts) (`runToastStack`) and [commit-at-events.test.ts](../examples/patterns/fewer-dependencies/commit-at-events.test.ts).

@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "Following links one at a time"](../../../../patterns.md#following-links-one-at-a-time).
+
 # Following links by doubling
 
 Computes where every line of a paragraph starts from a table whose entry s is where the next line starts when a line starts at segment s, reaching line L with about log2 L reads that run one after another, instead of L.

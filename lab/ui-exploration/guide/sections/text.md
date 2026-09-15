@@ -288,7 +288,7 @@ So recovering L lines of an N-segment paragraph this way is O(L × N) operations
 | 1,023 | next-start table + segment scan | 166,147 | 4,128 | 0% | 166,147 |
 | 1,023 | segment walker | 23,496 | 9,204 | 0% | 23,496 |
 
-The estimate replaces every one-hot group with one operation, as if the executor could read a table at an integer wire. It's an estimate, not a built circuit. The index-read prototype added such an instruction, `indexRead`, to its own copy of the runtime, and code-points and streaming-words used that copy. Since September 14, 2026, numeric-ui-core.ts has the same instruction ([decision 1](../README.md#1-should-the-shared-runtime-get-an-index-read-instruction)), but nobody has rebuilt text-walker's circuits with it yet.
+The estimate replaces every one-hot group with one operation, as if the executor could read a table at an integer wire. It's an estimate, not a built circuit. The index-read prototype added such an instruction, `indexRead`, to its own copy of the runtime, and code-points and streaming-words used that copy. Since September 14, 2026, numeric-ui-core.ts has the same instruction ([decision 1](../review-and-decisions.md#1-should-the-shared-runtime-get-an-index-read-instruction)), but nobody has rebuilt text-walker's circuits with it yet.
 
 Gather lowering also keeps a list of candidate positions for every read, one per segment. For gathered lines at 1,023 segments those lists add up to 10.3 million table entries.
 
@@ -495,7 +495,7 @@ text-tabulated's search (80 random rich inline flows with seed 12, swept exhaust
 | WebKit | 71 / 32 | 1,567 / 0 | 87 / 87 |
 | WebKit, kerning | 71 / 32 | 1,577 / 0 | 86 / 86 |
 
-Nobody compared these flows with browsers, so whether browsers lay them out like the patched or the unpatched pretext is still open. The guide's [decision 7](../README.md#7-should-pretext-take-the-epsilon-change-at-srcrich-inlinets769) recommends laying out the two minimal flows in Chrome, Safari and Firefox before changing pretext.
+Nobody compared these flows with browsers, so whether browsers lay them out like the patched or the unpatched pretext is still open. The guide's [decision 7](../review-and-decisions.md#7-should-pretext-take-the-epsilon-change-at-srcrich-inlinets769) recommends laying out the two minimal flows in Chrome, Safari and Firefox before changing pretext.
 
 ### Wider ranges involve soft hyphens
 

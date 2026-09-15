@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "`findIndex` when passing items can be anywhere, and keeping the best score so far"](../../../../patterns.md#findindex-when-passing-items-can-be-anywhere-and-keeping-the-best-score-so-far).
+
 # The highest score, in a tree
 
 Given a score for each candidate, e.g. how well each candidate layout fits the viewport, select the candidate with the highest score, with ties going to the earlier candidate.
@@ -79,5 +81,4 @@ The exact chain has the same operations as the exact tree, and 438 layers on the
 - [indexing](../sections/indexing.md#hard-attention-as-the-limit): hard attention, with scores that are highest at the nearest position, and with runtime keys for snap targets ([hard-attention.ts](../examples/indexing/hard-attention.ts)).
 - [instanced-items](../../instanced-items/README.md): the `argmax` reduction between per-item stages.
 - [comparisons](../sections/comparisons.md#which-form-to-use-by-default): which comparison form `emitCompare` builds, and what each costs.
-- [parallel-winner.md](../../../../parallel-winner.md): the note that introduced the tree for continuous scores. It describes the tie margin as one FP32 step, where the sweep above measured a wider band.
 - Example and test: [highest-score-tree.ts](../examples/patterns/selection/highest-score-tree.ts) and [highest-score-tree.test.ts](../examples/patterns/selection/highest-score-tree.test.ts).

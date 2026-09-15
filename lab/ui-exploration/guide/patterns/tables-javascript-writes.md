@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "A loop over data that rarely changes"](../../../../patterns.md#a-loop-over-data-that-rarely-changes).
+
 # Tables that JavaScript writes
 
 Numbers that a loop would compute from data that rarely changes, e.g. each comment's ancestor at every indent level, or a spring's matrix for this evaluation's steps, get computed by JavaScript and written into source cells, and the program reads them with one operation or a few products.

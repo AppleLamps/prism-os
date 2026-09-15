@@ -408,7 +408,7 @@ export class Emitter {
   }
 
   // clamp01 over a value that is integral at runtime: relu(d) - relu(d - 1) is the exact bit of
-  // d >= 1 (tricks.md "Decision bits").
+  // d >= 1 (expressions.md "Decision bits").
   integerAtLeastOneBit(node: ts.Node, d: Num): Num {
     invariant(numInteger(d), 'integer decision bit needs an integral score')
     if (d.kind === 'constant') return constantNum(d.value >= 1 ? 1 : 0)

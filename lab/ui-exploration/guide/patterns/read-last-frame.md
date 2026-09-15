@@ -1,3 +1,5 @@
+Size: behavior choice. Short entry: [behavior-choices.md, "Read last frame's value"](../../../../behavior-choices.md#read-last-frames-value).
+
 # Read last frame's value
 
 Let a stage read a stored copy of a value from the previous evaluation instead of this evaluation's value, so the stage's layers no longer come after the chain that computes the value, and the stage's output is a frame behind while the value moves.

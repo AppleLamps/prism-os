@@ -1,3 +1,5 @@
+Size: expression. Short entry: [expressions.md, "Familiar expressions"](../../../../expressions.md#familiar-expressions), the `Math.floor(x / step)` row.
+
 # Threshold counts instead of floor and division
 
 A floor or a division with a few possible results becomes a count of the fixed thresholds the input reaches, e.g. a responsive grid's column count is 1 plus how many of 6 widths the container reaches.

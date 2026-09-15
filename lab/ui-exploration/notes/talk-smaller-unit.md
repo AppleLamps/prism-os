@@ -67,7 +67,7 @@ The talk warns against compressing concepts too early. IndirectOS's own vocabula
 
 ### The item program as an instance
 
-- Today: tricks.md's instancing, and codegen's instance axis, which splits a compiled circuit into shared rows and per-instance rows automatically. The gallery and hn-thread still write per-item code out once per item.
+- Today: tricks.md's instancing (now in [patterns.md](../../../patterns.md#a-loop-over-items-that-mixes-per-item-work-with-values-carried-to-the-next-item)), and codegen's instance axis, which splits a compiled circuit into shared rows and per-instance rows automatically. The gallery and hn-thread still write per-item code out once per item.
 - What emerges: the item count becomes a buffer length, the per-item program has a fixed size, and work across items is confined to a few reduction passes.
 - The gap: items can't read each other inside the instance program. Decisions across items, e.g. a row's tallest photo, prefix sums, the first photo under a click, or the scroll anchor, become reductions between instance passes, like separate passes in a GPU renderer.
 - What a prototype measures: per-instance rows, bit equality with the flat circuit, the number of reduction passes, and time at 10,000 to 100,000 items.

@@ -98,7 +98,7 @@ const rowHeight = candidateValues[selectedPosition]
 
 ## Way 3: the index read instruction
 
-[index-read](../../index-read/README.md) added a fourth instruction to its copy of the runtime, and on September 14, 2026 Cheng decided to add it to the repo root runtime, numeric-ui-core.ts ([decision 1](../README.md#1-should-the-shared-runtime-get-an-index-read-instruction)). `circuit.indexRead(index, candidates, {outOfRange})` returns `candidates[floor(index)]`. Outside the table it returns the nearest end, or +0 with `{outOfRange: 'zero'}`. `circuit.indexReadAffine(indexTerms, indexBias, candidates, below, above, {indexRange})` takes the index as an affine form, with one rule per side. From [shared-runtime-index-read.ts](../examples/indexing/shared-runtime-index-read.ts), shortened:
+[index-read](../../index-read/README.md) added a fourth instruction to its copy of the runtime, and on September 14, 2026 Cheng decided to add it to the repo root runtime, numeric-ui-core.ts ([decision 1](../review-and-decisions.md#1-should-the-shared-runtime-get-an-index-read-instruction)). `circuit.indexRead(index, candidates, {outOfRange})` returns `candidates[floor(index)]`. Outside the table it returns the nearest end, or +0 with `{outOfRange: 'zero'}`. `circuit.indexReadAffine(indexTerms, indexBias, candidates, below, above, {indexRange})` takes the index as an affine form, with one rule per side. From [shared-runtime-index-read.ts](../examples/indexing/shared-runtime-index-read.ts), shortened:
 
 ```ts
 import {Circuit} from '../../../../../numeric-ui-core.ts'

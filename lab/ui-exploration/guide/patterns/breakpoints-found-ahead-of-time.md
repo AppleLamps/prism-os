@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "A layout function of one runtime number"](../../../../patterns.md#a-layout-function-of-one-runtime-number).
+
 # Breakpoints found ahead of time
 
 When a layout result only changes at a few widths, e.g. a paragraph's line count or a grid's column count, JavaScript finds those widths while preparing, and the program only compares the runtime width with them and adds up constants.

@@ -156,7 +156,9 @@ test('argmax resolves continuous scores through a balanced tree', () => {
 })
 
 test('argmax breaks exact ties toward the lower-indexed candidate', () => {
-  // parallel-winner.md: equal scores must resolve to the left (lower) candidate.
+  // patterns.md, "`findIndex` when passing items can be anywhere": equal scores
+  // resolve to the left (lower) candidate, like a loop that replaces the best
+  // only on a strictly larger score.
   // The 0.5 +/- 2^-24 comparison constants are what guarantee this; a plain 0.5
   // comparison sends some ties (e.g. 0.3 vs 0.3) to the right instead, so this
   // pins the tie-break direction the agreement oracles cannot see.

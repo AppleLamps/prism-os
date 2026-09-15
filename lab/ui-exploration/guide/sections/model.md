@@ -249,7 +249,7 @@ The third operation, the boolean atom `circuit.boolean(score)`, takes a score de
 
 The boolean atom costs 1 operation. The builder throws when the score's declared range isn't inside 0..1.
 
-Decisions need exact bits. A focused, open or pressed flag must be exactly 0 or 1: a score of 0.3 stored as `open` would leave a window partly open in state. Once a value is an exact bit, products of bits, and sums of bits that can't be 1 at the same time, stay exact bits, so most logic after the first decision needs no more rounding ([tricks.md](../../../../tricks.md)).
+Decisions need exact bits. A focused, open or pressed flag must be exactly 0 or 1: a score of 0.3 stored as `open` would leave a window partly open in state. Once a value is an exact bit, products of bits, and sums of bits that can't be 1 at the same time, stay exact bits, so most logic after the first decision needs no more rounding ([expressions.md](../../../../expressions.md#decision-bits)).
 
 ### Index reads
 
@@ -286,7 +286,7 @@ When one side is expensive and rarely picked, e.g. a layout that only applies wh
 
 Both are exact for integer operands below 2^23. With fractional operands of different magnitudes, the result rebuilds the smaller operand from a rounded difference, and can drift: `min(1000.37, 0.3)` returns 0.29998779296875, where `Math.fround(0.3)` is 0.30000001192092896. The error, 1.2e-5, is under one FP32 step at 1,000 (2^-14 ≈ 6.1e-5). When a decision depends on such a minimum, use an exact minimum, a comparison followed by a select. numeric-library's exact minimum is 7 operations in 5 layers ([numeric-library](../../numeric-library/README.md)), and numeric-ui-core.ts's `emitMinimumExact`, whose comparison handles every pair of FP32 values, is 18 operations in 16 layers for operands within 0..16,384 ([comparisons](comparisons.md#which-form-to-use-by-default)).
 
-A clamp between runtime bounds is a max, then a min. `Math.min(Math.max(windowLeft, 0), maxLeft)` is 7 operations in 7 layers, counting the constant 0 wire. A clamp to 0..1 is cheaper, `relu(v) - relu(v - 1)`: 3 operations in 2 layers (`fillAmount` in atoms.ts). It returns exactly 1 for every v above 1 while v is at most 2^24, and only while v is at most 2^23 when v is an ordinary affine sum of fewer than 4 terms, which the builder copies into both ReLUs ([runtime notes](../../notes/runtime.md), section 7).
+A clamp between runtime bounds is a max, then a min. `Math.min(Math.max(windowLeft, 0), maxLeft)` is 7 operations in 7 layers, counting the constant 0 wire. A clamp to 0..1 is cheaper, `relu(v) - relu(v - 1)`: 3 operations in 2 layers (`fillAmount` in atoms.ts). When v is its own operation, e.g. a source cell, it returns exactly 1 for every v above 1 while v is at most 2^24. When v is an ordinary affine sum of fewer than 4 terms, the builder copies the sum into both ReLUs, and the clamp returns exactly 1 above 1 only while both copies add without rounding, e.g. up to 2^23 for multiples of 1/2, while `v = x + 0.25` at `x = f(0.8)` returns 0.99999994. `roundAffine` keeps v as its own operation ([macro-ranges.md](../../../../macro-ranges.md#clamping-and-springs)).
 
 ### A decision bit from continuous values
 

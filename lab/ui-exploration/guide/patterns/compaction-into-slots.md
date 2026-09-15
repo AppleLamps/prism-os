@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "`items.filter(isVisible).slice(0, K)` into K DOM nodes"](../../../../patterns.md#itemsfilterisvisibleslice0-k-into-k-dom-nodes).
+
 # Compaction into K DOM slots
 
 A filtered list shows its first K visible items in K reusable DOM nodes: every item's visibility is computed in the same layers, a prefix sum numbers the visible items, and DOM slot k shows the visible item numbered k.
@@ -75,7 +77,7 @@ When fewer than k + 1 items are visible, the search ends past the last item, whe
 
 ## Where it's used
 
-- [tricks.md](../../../../tricks.md#bounded-visibility-compaction): the idea, as bounded visibility compaction.
+- [patterns.md](../../../../patterns.md#itemsfilterisvisibleslice0-k-into-k-dom-nodes): the short entry, which absorbed tricks.md's "Bounded visibility compaction", where the idea was first written down.
 - [lists](../../lists/README.md): capacity routing, 1,000 items into 20 DOM slots, 0 mismatches over 208 visibility patterns.
 - [hn-thread](../../hn-thread/README.md): rank slots for the comments in view, and window slots.
 - [index-read](../../index-read/README.md): prefix counts and a binary search per slot, 10,000 operations and 49 layers for 1,000 items into 20, in its copy of the runtime.

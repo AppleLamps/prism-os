@@ -59,8 +59,9 @@ Current results, domains, and limitations are recorded in [lab/status.md](lab/st
 - `hard-attend.ts`, `hard-attend.html`: interactive hard-attend walkthrough
 - `execution-model.md`: exact instruction and layer semantics
 - `macro-ranges.md`: FP32 magnitude preconditions for the macro library
-- `parallel-winner.md`: balanced selection among overlapping candidates
-- `tricks.md`: reusable numeric constructions, including the three decision-bit forms
+- `expressions.md`: constructions that replace one familiar expression, e.g. exact decision bits for `a >= b`
+- `patterns.md`: constructions that replace a familiar loop, e.g. a balanced tree instead of `findIndex` over overlapping click targets
+- `behavior-choices.md`: choices that change what the user sees, e.g. hit-testing where elements are going instead of where they're drawn
 - `research-sweep.md`: landed and parked experiments, and supersession records
 - `ideas.md`: unexplored directions
 - `todo.md`: open tasks, e.g. revisiting hardAttend

@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "A state machine over queued events"](../../../../patterns.md#a-state-machine-over-queued-events).
+
 # Events through a state machine, as a prefix scan
 
 Computes a button's state before every pointer event queued in one frame, and how many clicks the queue holds, with a chain of combines that grows like log2 k for k events instead of k.

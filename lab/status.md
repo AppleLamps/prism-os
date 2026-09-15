@@ -1,6 +1,6 @@
 # Current results, September 2026
 
-This is the current summary after implementing the [reassessment](reassessment-2026-09-03.md). The July briefs and old measurements remain historical; they are not requirements for new experiments. The protected author notes in `ideas.md`, `tricks.md`, and the README TODO were left intact, so consult this page and the current numeric-contract documents for implementation status.
+This is the current summary after implementing the [reassessment](reassessment-2026-09-03.md). The July briefs and old measurements remain historical; they are not requirements for new experiments. The protected author notes in `ideas.md` and the README TODO were left intact, so consult this page and the current numeric-contract documents for implementation status. `tricks.md` was renamed to `expressions.md` and rewritten on September 15, 2026, with Cheng's approval, and is no longer protected.
 
 ## What learns
 

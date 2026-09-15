@@ -13,8 +13,8 @@
 // overlap, viewport containment, minimum sizes) with an aggregate valid bit,
 // plus a continuous violation depth in pixels that projection can descend.
 //
-// Decision style follows tricks.md: counts use integer-exact clamp01 decision
-// bits (rank equality, violation aggregation); genuinely continuous
+// Decision style follows expressions.md: counts use integer-exact clamp01
+// decision bits (rank equality, violation aggregation); genuinely continuous
 // comparisons (order keys, wrap tests, pixel thresholds) use the boolean atom.
 
 import {
@@ -85,8 +85,8 @@ function emitClamp01(circuit: Circuit, value: Wire): Wire {
 }
 
 // Exact bit for `count >= threshold` when count only takes integer values
-// (tricks.md "Decision bits"): an integer cannot land strictly inside the
-// clamp ramp, so no boolean atom is needed.
+// (expressions.md "Decision bits"): an integer cannot land strictly inside
+// the clamp ramp, so no boolean atom is needed.
 function emitCountAtLeastOne(circuit: Circuit, count: Wire): Wire {
   return emitClamp01(circuit, count)
 }

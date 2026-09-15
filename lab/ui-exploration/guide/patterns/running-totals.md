@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "Running totals"](../../../../patterns.md#running-totals).
+
 # Running totals as a tree of additions
 
 Computes every row's top from the row heights, `rowTops[row + 1] = heights[0] + ... + heights[row]`, with the additions arranged as a tree, so a total doesn't depend on a chain through every total before it.

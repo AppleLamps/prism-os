@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "A state machine over queued events"](../../../../patterns.md#a-state-machine-over-queued-events).
+
 # Speculation
 
 Run the next block of steps once for every value the state could hold when the block starts, so the runs don't read the results of earlier steps, then keep the run that starts where the state actually is, like a carry-select adder picks each block's sum by the carry that actually arrived.
@@ -74,6 +76,6 @@ Measured by the example's test, with 5 buttons:
 ## Where it's used
 
 - [Chains, way 2](../sections/chains.md#way-2-speculation): a button that acts on release, over 64 queued pointer events, is 1,612 operations and 17 layers with speculation, against the loop's 516 operations and 65 layers ([button-forms.ts](../examples/chains/button-forms.ts)).
-- The guide's [decisions that can wait](../README.md#decisions-that-can-wait): speculation over press sessions, i.e. running one press session's hit tests against each possible outcome of the session before it, e.g. which window rose to the front, isn't built, because a drag's outcome includes where the window landed.
+- The guide's [decisions that can wait](../review-and-decisions.md#decisions-that-can-wait): speculation over press sessions, i.e. running one press session's hit tests against each possible outcome of the session before it, e.g. which window rose to the front, isn't built, because a drag's outcome includes where the window landed.
 - [Run every candidate, then pick one](run-every-candidate.md) also runs several candidates, but keeps the one with the best score instead of the one that matches.
 - Example and test: [speculation.ts](../examples/patterns/candidates-and-tables/speculation.ts) and [speculation.test.ts](../examples/patterns/candidates-and-tables/speculation.test.ts).

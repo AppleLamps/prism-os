@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "`items.sort(compare)`"](../../../../patterns.md#itemssortcompare).
+
 # Ranks instead of sorting
 
 Each item's position after sorting is computed directly, i.e. how many items come before it, e.g. each card's slot in a stack sorted by date, which is what the DOM needs for a `translateY`.

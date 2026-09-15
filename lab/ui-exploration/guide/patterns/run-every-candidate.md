@@ -1,3 +1,5 @@
+Size: loop, which also changes behavior when a score replaces hand-written rules. Short entry: [patterns.md, "Build every option, score each, and keep the best"](../../../../patterns.md#build-every-option-score-each-and-keep-the-best).
+
 # Run every candidate, then pick one
 
 Compute several complete candidates on every frame, e.g. three whole gallery layouts, give each candidate a score, and show the candidate with the highest score.
@@ -10,7 +12,7 @@ viewport 1024 x 480 --+--> hero layout  --> score 0.70 --+
                       +--> strip layout --> score 0.94 --+
 ```
 
-Each layout's rectangles and score are computed from the same inputs without reading the other layouts, so the three layouts sit side by side in the same layers. The argmax is a tournament over the scores ([parallel-winner.md](../../../../parallel-winner.md)), and its one-hot picks every output from the same layout, so the page never shows the hero's width from one layout next to a thumbnail's position from another.
+Each layout's rectangles and score are computed from the same inputs without reading the other layouts, so the three layouts sit side by side in the same layers. The argmax is a tournament over the scores ([patterns.md](../../../../patterns.md#findindex-when-passing-items-can-be-anywhere-and-keeping-the-best-score-so-far)), and its one-hot picks every output from the same layout, so the page never shows the hero's width from one layout next to a thumbnail's position from another.
 
 ## The loop it replaces
 

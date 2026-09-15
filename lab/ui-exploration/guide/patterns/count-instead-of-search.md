@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "`findIndex` when the test flips once along the items"](../../../../patterns.md#findindex-when-the-test-flips-once-along-the-items).
+
 # Count instead of search
 
 When a test passes for a run of items at the start and fails for every item after it, e.g. `rowBottom <= pointerY` over rows from top to bottom, the number of items that pass is the index of the first item that fails, and the differences of neighboring bits mark that item.

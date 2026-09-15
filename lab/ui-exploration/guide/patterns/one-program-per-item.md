@@ -1,3 +1,5 @@
+Size: loop. Short entry: [patterns.md, "A loop over items that mixes per-item work with values carried to the next item"](../../../../patterns.md#a-loop-over-items-that-mixes-per-item-work-with-values-carried-to-the-next-item).
+
 # One program per item
 
 A collection's per-item work is written once as map stages that run for every item, like a shader over pixels, and the few lines that carry a value from one item to the next become reductions between the stages.

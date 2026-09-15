@@ -22,9 +22,10 @@ export function emitNot(circuit: Circuit, bit: Wire): Wire {
   return circuit.affine([[bit, -1]], 1)
 }
 
-// JS: Math.min(1, Math.max(0, value)), as relu(value) - relu(value - 1). The result is exactly 1 for every value above 1
-// while value is at most 2^24 when value is its own operation, and at most 2^23 when value is a small affine that the
-// builder copies into both ReLUs (lab/ui-exploration/notes/runtime.md, section 7).
+// JS: Math.min(1, Math.max(0, value)), as relu(value) - relu(value - 1). When value is its own operation, the result is
+// exactly 1 for every value above 1 while value is at most 2^24. When value is a small affine that the builder copies
+// into both ReLUs, both copies must add without rounding, e.g. up to 2^23 for multiples of 1/2, while value = x + 0.25
+// at x = Math.fround(0.8) gives 0.99999994 (macro-ranges.md, "Clamping and springs").
 export function emitClampZeroOne(circuit: Circuit, value: Wire): Wire {
   const aboveZero = emitRelu(circuit, value)
   const aboveOne = emitRelu(circuit, circuit.affine([[value, 1]], -1))
@@ -37,8 +38,10 @@ export function emitClampZeroOne(circuit: Circuit, value: Wire): Wire {
 // The difference is kept as its own operation, so FP32 rounds it once, and for finite operands it is 0 exactly when
 // a === b. Multiplying by a power of two is exact. Adding 0.5 and clamping to 0..1 puts a difference of 0 exactly on
 // 0.5, which the boolean atom sends to 1, and any difference of at least 2^-23 / scale on the right side of 0.5.
-// The clamp still returns exactly 1 above 1 while scale * |a - b| <= 2^22 (lab/ui-exploration/numeric-library/README.md),
-// so the helper reads that bound from the declared ranges and throws while building without it. For operands on the
+// The score is a small affine, so the builder copies it into both of the clamp's ReLUs. While scale * |a - b| <= 2^22,
+// each copy rounds by at most 1/4, so for a score above 1 the clamp returns a value within 0.5..1.5, e.g. 0.99999994 for
+// a = Math.fround(0.8) / 64 and b = 0, and the boolean atom sends every such value to 1. The helper reads that bound from
+// the declared ranges and throws while building without it. For operands on the
 // host's 1/64 px grid, any two different values differ by at least 2^-6, far above the comparison's resolution.
 export function emitAtLeast(circuit: Circuit, a: Wire, b: Wire, scale: number): Wire {
   invariant(Number.isInteger(Math.log2(scale)), 'the comparison scale must be a power of two')
