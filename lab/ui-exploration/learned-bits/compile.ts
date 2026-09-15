@@ -22,7 +22,9 @@ export function measureProgram(circuit: Circuit, roots: readonly Wire[]): Progra
   const program = circuit.compileTensorProgram(roots)
   const counts = {affine: 0, reglu: 0, boolean: 0}
   for (let position = circuit.sourceSize; position < program.wireOrder.length; position++) {
-    counts[circuit.operations[program.wireOrder[position]! - circuit.sourceSize]!.kind]++
+    const kind = circuit.operations[program.wireOrder[position]! - circuit.sourceSize]!.kind
+    if (kind === 'index') throw new Error('measureProgram counts affine, reglu and boolean operations only')
+    counts[kind]++
   }
   return {
     liveOperations: program.wireOrder.length - circuit.sourceSize,

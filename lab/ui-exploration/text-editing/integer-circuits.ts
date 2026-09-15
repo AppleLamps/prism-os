@@ -307,7 +307,11 @@ export function measureCircuit(circuit: Circuit, roots: readonly Wire[]): Circui
   const counts = {affine: 0, reglu: 0, boolean: 0}
   const liveWires = new Set<number>()
   for (let position = circuit.sourceSize; position < program.wireOrder.length; position++) liveWires.add(program.wireOrder[position]!)
-  for (const wire of liveWires) counts[circuit.operations[wire - circuit.sourceSize]!.kind]++
+  for (const wire of liveWires) {
+    const kind = circuit.operations[wire - circuit.sourceSize]!.kind
+    if (kind === 'index') throw new Error('these counts cover affine, reglu and boolean operations only')
+    counts[kind]++
+  }
   return {
     sources: circuit.sourceSize,
     operations: circuit.operations.length,
