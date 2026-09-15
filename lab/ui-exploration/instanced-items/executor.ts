@@ -2,9 +2,9 @@
 // JS with an instance loop over struct-of-arrays columns, and reductions as
 // plain loops that take the FP32 steps staged.ts states for each fold order.
 import {invariant, type Wire} from '../../../numeric-ui-core.ts'
-import {type GeneratedFunction, flattenProgram, generateScalarModule} from './codegen.ts'
+import {type GeneratedFunction, flattenProgram, generateScalarModule} from '../codegen/codegen.ts'
 import {type ColumnInstanceRunner, compileColumnInstanceProgram} from './columns.ts'
-import {type InstancePlan, planInstances} from './instance.ts'
+import {type InstancePlan, planInstances} from '../codegen/instance.ts'
 import {type Reduction, type StageInfo, type StagedProgram, type Value} from './staged.ts'
 
 const f = Math.fround

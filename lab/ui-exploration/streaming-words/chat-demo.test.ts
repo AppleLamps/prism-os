@@ -1,6 +1,6 @@
 import {expect, test} from 'bun:test'
 import {ChatDemo, demoScript} from './chat-demo.ts'
-import {loadPretext} from './fake-canvas.ts'
+import {loadPretext} from '../text-walker/fake-canvas.ts'
 import {testFont} from './samples.ts'
 
 const pretext = await loadPretext()

@@ -1,7 +1,7 @@
 // Synthetic photos for scaling the gallery past its 221 real photos: integer
 // sizes with the aspect ratios Midjourney produces (square, portrait, landscape,
 // panorama), drawn from a seeded generator so every run sees the same list.
-import type {PhotoData} from './photo-data.ts'
+import type {PhotoData} from '../gallery/photo-data.ts'
 
 const shapes = [[2048, 2048], [1792, 2688], [2688, 1792], [1632, 2912], [2912, 1632], [1344, 896], [896, 1344], [1536, 768], [1856, 2464], [2464, 1856], [1456, 816]] as const
 

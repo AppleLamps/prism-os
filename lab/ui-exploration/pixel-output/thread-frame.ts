@@ -23,8 +23,8 @@
 // - DOM slots: rows that are in view and at least 0.25px tall get slot numbers in row
 //   order, up to slotCount.
 
-import {commentWidthAt} from './text-heights.ts'
-import {threadLayout, type ThreadTables} from './thread-model.ts'
+import {commentWidthAt} from '../hn-thread/text-heights.ts'
+import {threadLayout, type ThreadTables} from '../hn-thread/thread-model.ts'
 
 export type FrameInputs = {
   windowWidth: number

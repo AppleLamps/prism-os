@@ -4,7 +4,7 @@
 // Run: bun lab/ui-exploration/streaming-words/report.ts [sizes] [phases] [streams] [interrupt] [spawn]
 // With no arguments it runs every part. Results merge into results.json next to this file.
 import {existsSync, readFileSync, writeFileSync} from 'node:fs'
-import {loadPretext} from './fake-canvas.ts'
+import {loadPretext} from '../text-walker/fake-canvas.ts'
 import {createGeneratedEvaluator} from './generated.ts'
 import {indexReadRuntime, medianMicroseconds, type Runtime} from './kit.ts'
 import {buildForTurns, conversationTurns, replyTurns, rightAlignedTurns, testFont} from './samples.ts'

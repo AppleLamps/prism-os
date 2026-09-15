@@ -23,8 +23,8 @@
 // outputs are decisions, and which output counts violations.
 import type {Circuit, Wire} from '../../../numeric-ui-core.ts'
 import {backpropagate, type BooleanGradient} from './backward.ts'
-import {compileScalarProgram} from './codegen.ts'
-import {compileInstanceProgram, planInstances, type InstanceRunner} from './instance.ts'
+import {compileScalarProgram} from '../codegen/codegen.ts'
+import {compileInstanceProgram, planInstances, type InstanceRunner} from '../codegen/instance.ts'
 
 export type KnobSpec = {name: string, cell: Wire, minimum: number, maximum: number, magnitudeFloor: number}
 

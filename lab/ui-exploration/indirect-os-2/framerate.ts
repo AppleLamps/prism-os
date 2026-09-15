@@ -5,7 +5,7 @@
 import type {QueuedEvent} from './events.ts'
 import {type IndirectOSMachine, type IndirectOSOptions, createIndirectOSMachine} from './indirect-os.ts'
 import {sessionEvents, sessionFrameCount, sessionViewport} from './session.ts'
-import {read} from './wires.ts'
+import {read} from '../notation/wires.ts'
 
 // The session with the latch machine's API: presses act on the down there, and a
 // Photos click also needs the DOM click at local coordinates.

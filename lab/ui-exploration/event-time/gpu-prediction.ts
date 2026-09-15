@@ -9,10 +9,10 @@
 //   DAWN_WEBGPU=/path/to/node_modules/webgpu/index.js node lab/ui-exploration/event-time/gpu-prediction.ts
 import {replayCommitPerEvent} from './commits.ts'
 import {createEventTimeMachine} from './event-machine.ts'
-import {compareOutputs, createGpuInstanceRunner} from './gpu-runner.ts'
+import {compareOutputs, createGpuInstanceRunner} from '../codegen/gpu-runner.ts'
 import {createPredictor, sampleCount} from './prediction.ts'
-import {createIndirectOSTrace, offsetPresses, randomPressOffsets} from './trace.ts'
-import {emitInstanceWgsl, packSharedBuffer} from './wgsl.ts'
+import {createIndirectOSTrace, offsetPresses, randomPressOffsets} from '../spring-bank/trace.ts'
+import {emitInstanceWgsl, packSharedBuffer} from '../codegen/wgsl.ts'
 
 type HostGlobals = {
   Deno?: {version?: {deno?: string}}

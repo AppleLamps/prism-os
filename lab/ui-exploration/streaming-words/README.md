@@ -19,7 +19,7 @@ bun lab/ui-exploration/streaming-words/demo.html
 - report.ts prints every table below and merges them into results.json. The whole report takes several minutes. Pass part names to run some of them, e.g. `bun lab/ui-exploration/streaming-words/report.ts streams spawn`. The parts are sizes, phases, streams, interrupt and spawn.
 - The demo page is a conversation: the user's messages arrive whole on the right, and the replies stream on the left in chunks. It has a Stop button, a width slider, and selectors for the chunk size and for how arriving words start. All of its logic is in chat-demo.ts, which chat-demo.test.ts runs headlessly. The page bundles (`bun build lab/ui-exploration/streaming-words/demo.html --outdir <folder>`, 22 modules), but I didn't open it in a browser.
 
-Every circuit imports the shared runtime, `numeric-ui-core.ts`, with a relative path, except the rows below marked "index read instruction" and "index-read runtime defaults". Those use `numeric-ui-core-index-read.ts`, an unchanged copy of index-read's runtime copy. `pretext-src/` is text-walker's snapshot of pretext's `src/` (commit 477510e). Headless checks run pretext with text-walker's fake canvas, whose widths are multiples of 1/4 px, with the Gecko profile (lineFitEpsilon 0.005).
+Every circuit imports the shared runtime, `numeric-ui-core.ts`, with a relative path, except the rows below marked "index read instruction" and "index-read runtime defaults". Those use index-read's runtime copy, `index-read/numeric-ui-core.ts`. Pretext is text-walker's snapshot of pretext's `src/` (commit 477510e), `text-walker/pretext-src/`. Until September 15, 2026 this folder held unchanged copies of both, `numeric-ui-core-index-read.ts` and `pretext-src/`. Headless checks run pretext with text-walker's fake canvas, whose widths are multiples of 1/4 px, with the Gecko profile (lineFitEpsilon 0.005).
 
 ## What was built
 
@@ -31,8 +31,8 @@ Every circuit imports the shared runtime, `numeric-ui-core.ts`, with a relative 
 | `session.ts` | Chunks at timestamps, frames with fixed 4 ms spring steps, and Stop at the press's timestamp |
 | `spring-reference.ts` | Float64 spring iteration with the circuit's settle rule and gates |
 | `generated.ts`, `codegen.ts` | Generated JS through codegen's generator, copied with one change: gather computes are loops over position tables |
-| `kit.ts`, `word-springs.ts`, `fake-canvas.ts` | Copied from text-walker. kit.ts lists its changes at the top; the other two are unchanged |
-| `numeric-ui-core-index-read.ts` | The copy of index-read's runtime |
+| `kit.ts`, `word-springs.ts` | Copied from text-walker. kit.ts lists its changes at the top; word-springs.ts is unchanged |
+| text-walker's `fake-canvas.ts` and `pretext-src/`, index-read's `numeric-ui-core.ts` | Imported from those folders (until September 15, 2026 this folder held unchanged copies, with index-read's runtime as `numeric-ui-core-index-read.ts`) |
 | `samples.ts` | The replies, the conversation shapes, and a build helper that sizes the bounds from the texts |
 | `chat-demo.ts`, `demo.html`, `demo.ts`, `demo.css` | The demo |
 | `stream-layout.test.ts`, `stream-springs.test.ts`, `chat-demo.test.ts` | The tests |

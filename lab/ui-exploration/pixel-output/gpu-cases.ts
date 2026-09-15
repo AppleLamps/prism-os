@@ -17,7 +17,7 @@ import type {RowLookup} from './pixel-circuit.ts'
 import {emitInstanceWgsl, packSharedBuffer} from './wgsl.ts'
 import {compareRaster, countEmphasisSamples, geometryFromReference, rasterize, topsSorted} from './pixel-reference.ts'
 import {compareOutputs} from './gpu-runner.ts'
-import {threadLayout} from './thread-model.ts'
+import {threadLayout} from '../hn-thread/thread-model.ts'
 import {encodePng} from './png.ts'
 
 export const gpuGrid = {width: 1280, height: 800, stride: 1, offset: 0.5} as const

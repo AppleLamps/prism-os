@@ -14,7 +14,7 @@
 import {paintColors, paintGeometry, paintLayer, type Color, type PaintTables, type TextMode} from './pixel-model.ts'
 import type {GlyphAtlas, TextTables} from './text-table.ts'
 import type {ThreadFrame} from './thread-frame.ts'
-import {threadLayout, type ThreadTables} from './thread-model.ts'
+import {threadLayout, type ThreadTables} from '../hn-thread/thread-model.ts'
 
 export type RowGeometry = {
   top: number

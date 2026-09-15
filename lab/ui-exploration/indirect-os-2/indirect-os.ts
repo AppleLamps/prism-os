@@ -27,8 +27,8 @@ import {
   photoLatchCells,
   photoStateCells,
 } from './photos.ts'
-import {type SpringClock, type SpringGroup, createConstantPowerGroup, createSpringClock, emitSpringBox, withSection} from './spring-bank.ts'
-import {createFrameDeltaTracker, defaultClockConfig} from './spring-math.ts'
+import {type SpringClock, type SpringGroup, createConstantPowerGroup, createSpringClock, emitSpringBox, withSection} from '../spring-bank/spring-bank.ts'
+import {createFrameDeltaTracker, defaultClockConfig} from '../spring-bank/spring-math.ts'
 import {
   anyNumber,
   bit,
@@ -44,7 +44,7 @@ import {
   state,
   unitInterval,
 } from './table.ts'
-import {type Rect, createNotation} from './wires.ts'
+import {type Rect, createNotation} from '../notation/wires.ts'
 
 // category: declarations
 export const windowCount = 4

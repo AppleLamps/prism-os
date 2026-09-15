@@ -2,6 +2,8 @@
 
 This note covers `lab/trace-compiler`, `lab/event-window`, `lab/generative-fields`, `lab/reusable-layout` (text and layout files), `lab/data-adapter`, and `lab/gather-lowering`, read only for what they show about writing and executing UI. Training, gradient studies, and learned interpreters are ignored. Nothing under `exp/` or `lab/briefs/` was read.
 
+Line numbers in `numeric-ui-core.ts` refer to commit c3d8e54 (September 5, 2026); on September 14, 2026 the file grew from 1,653 to 3,158 lines.
+
 I also ran the repo's report scripts and three scratch scripts. The scratch scripts live in `scratchpad/phase1/lab-ui/`:
 
 - `lab-circuit-sizes.ts` prints the current size of each lab circuit next to IndirectOS.

@@ -6,6 +6,8 @@ This prototype adds a direct read at a computed integer index to Indirect's nume
 
 The runtime here is a modified copy of the repo root `numeric-ui-core.ts` (commit a915dcb), kept in this folder as `numeric-ui-core.ts`. The repo root file is untouched. Every addition is described below and listed at the top of the copy.
 
+Update, September 14, 2026: the repo root `numeric-ui-core.ts` now has an index read instruction based on this prototype ([execution-model.md](../../../execution-model.md#index-reads), and decision 1 in [the guide's README](../guide/README.md#1-should-the-shared-runtime-get-an-index-read-instruction)). These parts of the copy weren't added: the compile pass that recognizes relu one-hots (`lowerIndexOneHots`, section 2), and `assumeBit`, `inferBitFamilies` and `lowerSelects` from section 3. Below, "the shared runtime" means the root runtime at commit a915dcb.
+
 Run from ~/github/indirect:
 
 - `bun test lab/ui-exploration/index-read`: 25 tests, under one second.

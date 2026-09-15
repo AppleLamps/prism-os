@@ -3,13 +3,13 @@
 //
 // Copied from lab/ui-exploration/text-walker/kit.ts with these changes:
 // - A Runtime picks which numeric runtime builds and compiles a circuit: the shared
-//   numeric-ui-core.ts, or this folder's copy of index-read's runtime (numeric-ui-core-index-read.ts),
+//   numeric-ui-core.ts, or index-read's runtime (lab/ui-exploration/index-read/numeric-ui-core.ts),
 //   which adds the indexRead instruction.
 // - integerSteps: [x >= j] bits over shared relus without one-hot members, for presence bits.
 // - atLeastBit: an exact bit for [value >= threshold] on a continuous value.
 // - Table entries count stride tables from the index-read runtime too.
 import {Circuit, type Terms, type Wire} from '../../../numeric-ui-core.ts'
-import {Circuit as IndexReadCircuit, type CompileOptions} from './numeric-ui-core-index-read.ts'
+import {Circuit as IndexReadCircuit, type CompileOptions} from '../index-read/numeric-ui-core.ts'
 
 export type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 

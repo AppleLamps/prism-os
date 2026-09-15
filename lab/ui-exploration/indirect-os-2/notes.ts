@@ -18,10 +18,10 @@
 import {type Wire, invariant} from '../../../numeric-ui-core.ts'
 import type {LayoutWires} from './desktop-latches.ts'
 import {type FastParagraph, attachFastCircuit, longestBreakAfterRun, maximumSegmentWidth, segmentGeometry, walkGatheredLines} from './fast-walker.ts'
-import {type Term, createKit} from './input-kit.ts'
-import {type SpringClock, type SpringGroup, createConstantPowerGroup, emitSpringBox, withSection} from './spring-bank.ts'
+import {type Term, createKit} from '../input/kit.ts'
+import {type SpringClock, type SpringGroup, createConstantPowerGroup, emitSpringBox, withSection} from '../spring-bank/spring-bank.ts'
 import {type Allocated, type SourceTable, anyNumber, bit, constant, input, inputBit, list, state} from './table.ts'
-import type {Notation, SpringParams} from './wires.ts'
+import type {Notation, SpringParams} from '../notation/wires.ts'
 
 export type NotesOptions = {
   paragraph: FastParagraph

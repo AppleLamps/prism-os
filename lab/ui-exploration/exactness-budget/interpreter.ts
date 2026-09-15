@@ -149,11 +149,6 @@ export function packProgram(flat: FlatProgram): PackedProgram {
   return packed
 }
 
-export function compilePacked(circuit: Circuit, roots?: readonly Wire[]): {program: TensorProgram, packed: PackedProgram} {
-  const program = circuit.compileTensorProgram(roots)
-  return {program, packed: packProgram(flattenProgram(program))}
-}
-
 // Exact FP32 rounding of addend + weight · input, as a fused multiply-add
 // followed by one rounding to FP32 would give. The double product of two FP32
 // values is exact (48 significant bits). The double sum can round, but TwoSum

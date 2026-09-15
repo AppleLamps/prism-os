@@ -1,6 +1,6 @@
 import {expect, test} from 'bun:test'
 import {defaultFlowLayout, type SpawnMode, type StreamBuild} from './stream-circuit.ts'
-import {loadPretext} from './fake-canvas.ts'
+import {loadPretext} from '../text-walker/fake-canvas.ts'
 import {createGeneratedEvaluator} from './generated.ts'
 import {buildForTurns, conversationTurns, replyTurns, rightAlignedTurns, testFont} from './samples.ts'
 import {StreamSession, timedChunks} from './session.ts'

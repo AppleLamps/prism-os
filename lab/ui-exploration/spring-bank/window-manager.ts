@@ -449,7 +449,7 @@ function writePowerTables(source: Float32Array) {
 
 // JS side of the bank clock. Circuit clocks only need the frame delta.
 // Source-matrix hosts also count steps and write M^steps into 4 cells.
-function writeBankFrame(source: Float32Array, options: WindowManagerOptions, frameDeltaMs: number) {
+export function writeBankFrame(source: Float32Array, options: WindowManagerOptions, frameDeltaMs: number) {
   if (options.springs !== 'source-matrix') {
     source[bankSourceField.frameDeltaMs] = frameDeltaMs
     return
@@ -1893,7 +1893,7 @@ function emitComplement(circuit: Circuit, value: Wire, unit: Wire) {
   return circuit.affine([[unit, 1], [value, -1]])
 }
 
-function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
+export function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
   invariant(
     values instanceof Float32Array,
     'source table must be a Float32Array',
@@ -2039,7 +2039,7 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
   validatePhotoGalleryOutputWires(output.photos, wireCount)
 }
 
-function validateWindowManagerOutput(
+export function validateWindowManagerOutput(
   values: Float32Array,
   output: WindowManagerOutput,
   tolerance = 1e-9,

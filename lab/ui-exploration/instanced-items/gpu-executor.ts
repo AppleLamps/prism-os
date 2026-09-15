@@ -3,9 +3,9 @@
 // shader. Every map stage pays one round trip per evaluation: pack its per-instance inputs, upload,
 // dispatch, read back, unpack. The timings keep those parts apart.
 import {createExecutor, type MapStageContext} from './executor.ts'
-import {createGpuInstanceRunner} from './gpu-runner.ts'
+import {createGpuInstanceRunner} from '../codegen/gpu-runner.ts'
 import type {StagedProgram} from './staged.ts'
-import {emitInstanceWgsl, packSharedBuffer, type Guard} from './wgsl.ts'
+import {emitInstanceWgsl, packSharedBuffer, type Guard} from '../codegen/wgsl.ts'
 
 export type GpuStageTiming = {
   name: string

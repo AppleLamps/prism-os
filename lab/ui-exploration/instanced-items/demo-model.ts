@@ -5,7 +5,7 @@ import {createExecutor} from './executor.ts'
 import {createStagedEngine} from './gallery-engine.ts'
 import {createGalleryApp, projectBoxStyle, type GalleryPlatform, type GalleryView} from './gallery-host.ts'
 import {buildStagedGallery} from './gallery-staged.ts'
-import {photoGalleryData, type PhotoData} from './photo-data.ts'
+import {photoGalleryData, type PhotoData} from '../gallery/photo-data.ts'
 import {stageStats} from './staged.ts'
 import {syntheticPhotos} from './synthetic-photos.ts'
 

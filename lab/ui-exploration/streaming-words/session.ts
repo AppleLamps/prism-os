@@ -8,7 +8,7 @@
 import {settleAtTargets, writeBack, type StreamBuild, type StreamOutputs} from './stream-circuit.ts'
 import {applyWrites, chunkEvents, flowStateWrites, layoutFlow, stopWrites, type CellWrite, type ChunkEvent, type FlowState, type Turn} from './stream-model.ts'
 
-type Pretext = typeof import('./pretext-src/layout.ts')
+type Pretext = typeof import('../text-walker/pretext-src/layout.ts')
 
 export const stepMilliseconds = 4
 

@@ -8,7 +8,7 @@
 // one click per press session and one folded run of key presses per segment
 // between presses (see desktop-queue.ts).
 import {type Wire, invariant} from '../../../numeric-ui-core.ts'
-import {type SpringGroup, emitSpringBox} from './spring-bank.ts'
+import {type SpringGroup, emitSpringBox} from '../spring-bank/spring-bank.ts'
 import {
   type Allocated,
   type SourceTable,
@@ -24,7 +24,7 @@ import {
   state,
   unitInterval,
 } from './table.ts'
-import {type Notation, type Rect, type SpringParams, type Vec2, bias} from './wires.ts'
+import {type Notation, type Rect, type SpringParams, type Vec2, bias} from '../notation/wires.ts'
 
 // category: declarations
 export const photoCount = 12

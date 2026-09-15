@@ -15,7 +15,7 @@
 // For a line starting at s, fits(o) = [T[s+o] - prefix(s) <= maxWidth + epsilon] is monotone in o
 // (1..1 0..0), so "the first segment that does not fit" is a count.
 import {type Circuit, type Terms, type Wire, invariant} from '../../../numeric-ui-core.ts'
-import {viewPrepared} from './fake-canvas.ts'
+import {viewPrepared} from '../text-walker/fake-canvas.ts'
 import {type OneHot, fitBit, integerAtLeast, integerOneHot, maskedRead} from './text-kit.ts'
 
 export type FastParagraph = {

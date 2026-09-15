@@ -358,13 +358,6 @@ export function createNetwork(task: Task, options: NetworkOptions): Network {
   }
 }
 
-// Sets a unit to one function with large logits, for hand-built networks.
-export function setGateUnit(layer: Layer, unit: number, wireA: number, wireB: number, functionIndex: number) {
-  layer.wires[2 * unit] = wireA
-  layer.wires[2 * unit + 1] = wireB
-  for (let index = 0; index < 16; index++) layer.logits[16 * unit + index] = index === functionIndex ? 40 : -40
-}
-
 export function setCountUnit(layer: Layer, unit: number, terms: readonly (readonly [wire: number, weight: -1 | 0 | 1])[], threshold: number, thresholdCount: number) {
   const fanIn = layer.fanIn
   const base = unit * layer.logitsPerUnit

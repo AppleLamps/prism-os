@@ -1,9 +1,9 @@
 // Stage 6: the demo host's projection and input decoding, against fake DOM elements.
 import {expect, test} from 'bun:test'
-import {lineFitEpsilon, loadPretext} from './fake-canvas.ts'
+import {lineFitEpsilon, loadPretext} from '../text-walker/fake-canvas.ts'
 import {type IndirectOSDom, createDemoMachine, createWordNodes, describeProgram, renderOutputs, toQueuedEvents} from './indirect-os-dom.ts'
 import {testFont} from './paragraph.ts'
-import {read} from './wires.ts'
+import {read} from '../notation/wires.ts'
 
 type FakeElement = {
   style: Record<string, string | ((name: string, value: string) => void)>

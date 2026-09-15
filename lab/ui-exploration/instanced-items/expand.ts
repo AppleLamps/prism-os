@@ -11,7 +11,7 @@
 // shared through the builder's expression table, the way a flat build would
 // deduplicate them.
 import {Circuit, invariant, type Wire} from '../../../numeric-ui-core.ts'
-import {emitAnd, emitFirstSetBit, emitGather, emitIndexOneHot} from './kit.ts'
+import {emitAnd, emitFirstSetBit, emitGather, emitIndexOneHot} from '../gallery/kit.ts'
 import {type Range, type Reduction, type StageInfo, type StagedProgram} from './staged.ts'
 
 type Operation = Circuit['operations'][number]

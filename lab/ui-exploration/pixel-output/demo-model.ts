@@ -1,7 +1,7 @@
 // The demo page's logic without the DOM: building a pixel program for a variant,
 // scroll clamping, the CPU fallback's drawing, and a glyph atlas from canvas coverage.
 // demo.ts only wires events, the canvas and WebGPU.
-import type {HNThread} from './hn-data.ts'
+import type {HNThread} from '../hn-thread/hn-data.ts'
 import {createPixelMachine, pixelCenters, type GlyphTextOptions, type PixelMachine} from './pixel-machine.ts'
 import {paintTables, pixelOutputField, type MeasureText} from './pixel-model.ts'
 import type {RowLookup} from './pixel-circuit.ts'

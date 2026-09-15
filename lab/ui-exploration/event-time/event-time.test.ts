@@ -21,10 +21,10 @@ import {
   randomPressOffsets,
   replayTrace,
   scheduleFrameTimes,
-} from './trace.ts'
-import {createWgslInterpreter} from './wgsl-interpreter.ts'
-import {emitInstanceWgsl, packSharedBuffer} from './wgsl.ts'
-import {bankOptions, createWindowManagerMachine, sourceField, windowCount} from './window-manager.ts'
+} from '../spring-bank/trace.ts'
+import {createWgslInterpreter} from '../codegen/wgsl-interpreter.ts'
+import {emitInstanceWgsl, packSharedBuffer} from '../codegen/wgsl.ts'
+import {bankOptions, createWindowManagerMachine, sourceField, windowCount} from '../spring-bank/window-manager.ts'
 
 const resizeTrace = createIndirectOSTrace({liveResize: true})
 // Every press moves off the 30 fps grid by its own random offset, and Photos is

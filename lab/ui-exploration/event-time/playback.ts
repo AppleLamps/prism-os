@@ -31,8 +31,8 @@ import {
   trackValues,
 } from './keyframes.ts'
 import {type Prediction, type Predictor, lastPlayedSample, sampleIndexAt} from './prediction.ts'
-import {defaultClockConfig} from './spring-math.ts'
-import {type TraceEvent, applyEvent, traceViewport} from './trace.ts'
+import {defaultClockConfig} from '../spring-bank/spring-math.ts'
+import {type TraceEvent, applyEvent, traceViewport} from '../spring-bank/trace.ts'
 
 export type Stall = {startMs: number, durationMs: number}
 

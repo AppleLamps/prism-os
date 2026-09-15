@@ -5,7 +5,7 @@
 // reduced motion, and a 900 ms stall.
 import type {GalleryEngine} from './gallery-engine.ts'
 import {initializeEngine} from './gallery-host.ts'
-import type {PhotoData} from './photo-data.ts'
+import type {PhotoData} from '../gallery/photo-data.ts'
 
 export const sessionFrames = 220
 

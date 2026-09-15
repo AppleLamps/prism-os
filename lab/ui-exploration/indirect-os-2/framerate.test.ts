@@ -2,7 +2,7 @@
 // 120 fps, compared at the timestamps both render.
 import {expect, test} from 'bun:test'
 import {configurations} from './configurations.ts'
-import {lineFitEpsilon, loadPretext} from './fake-canvas.ts'
+import {lineFitEpsilon, loadPretext} from '../text-walker/fake-canvas.ts'
 import {fastParagraph} from './fast-walker.ts'
 import {compareFrameRates} from './framerate.ts'
 import {notesOptionsFor, notesText, testFont} from './paragraph.ts'

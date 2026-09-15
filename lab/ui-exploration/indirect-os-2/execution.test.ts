@@ -1,7 +1,7 @@
 // Stage 5: generated JavaScript and tiered execution, bit for bit against the executor.
 import {expect, test} from 'bun:test'
 import {compileScalarProgram, comparePacked} from './codegen.ts'
-import {lineFitEpsilon, loadPretext} from './fake-canvas.ts'
+import {lineFitEpsilon, loadPretext} from '../text-walker/fake-canvas.ts'
 import {fastParagraph} from './fast-walker.ts'
 import {configurations} from './configurations.ts'
 import {createIndirectOSMachine} from './indirect-os.ts'

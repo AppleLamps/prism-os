@@ -5,7 +5,7 @@
 // by the browser, so glyphs sit where pretext put them with the browser's font.
 // Nobody has looked at this page in a browser yet (no browser automation was allowed).
 import atlasJson from './glyph-atlas.json'
-import {thread} from './hn-data.ts'
+import {thread} from '../hn-thread/hn-data.ts'
 import {atlasFromCoverage, createDemoModel, demoVariants, type DemoModel, type DemoVariant} from './demo-model.ts'
 import type {GlyphAtlasJson} from './text-table.ts'
 import {cursorNames, type FrameInputs} from './thread-frame.ts'

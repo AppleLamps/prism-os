@@ -5,9 +5,10 @@ Indirect tests whether an interactive UI can compile into one fixed numeric prog
 ```sh
 bun start
 bun run start:candidates
+bun run start:hard-attend
 bun run start:learning
 bun run start:reusable
-bun test
+bun run test
 bun check
 ```
 
@@ -55,14 +56,16 @@ Current results, domains, and limitations are recorded in [lab/status.md](lab/st
 - `trainable-geometry.ts`: learned affine/ReGLU geometry network and optimizer
 - `learned-gallery.ts`: rectangle fitting, backpropagation, and DOM projection
 - `learned-gallery.html`: standalone learning gallery
+- `hard-attend.ts`, `hard-attend.html`: interactive hard-attend walkthrough
 - `execution-model.md`: exact instruction and layer semantics
 - `macro-ranges.md`: FP32 magnitude preconditions for the macro library
 - `parallel-winner.md`: balanced selection among overlapping candidates
 - `tricks.md`: reusable numeric constructions, including the three decision-bit forms
 - `research-sweep.md`: landed and parked experiments, and supersession records
 - `ideas.md`: unexplored directions
+- `todo.md`: open tasks, e.g. revisiting hardAttend
 - `exp/`: early experiments, kept where still unique (supersessions in `research-sweep.md`)
-- `lab/`: the current experiment round -- generative layout fields, event-window behavior, the trace compiler, and gather lowering -- with briefs, READMEs full of measurements, and two demos: `bun lab/generative-fields/demo.html` and `bun lab/event-window/demo.html`
+- `lab/`: experiment folders, each with a README full of measurements, and the briefs in `lab/briefs/`; `lab/status.md` summarizes current results. Demos: `bun lab/generative-fields/demo.html`, `bun lab/event-window/demo.html` and `bun run start:reusable`
 
 Tests compare the literal and compiled FP32 evaluators, including seeded random circuits. Product tests cover window interactions, stacking, springs, tiny viewports, Photos focus, candidate layout search, overlapping controls, and DOM culling.
 

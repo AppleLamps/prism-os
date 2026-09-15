@@ -6,8 +6,8 @@
 import {invariant} from '../../../numeric-ui-core.ts'
 import {type Presenter, createEventTimeScene, discreteStyles, displayRow, predictionRow} from './demo-model.ts'
 import {type KeyframePlan, type Track, type TrackPart, animationTiming, keyframeStyle, trackKeyframes, trackValues} from './keyframes.ts'
-import {itemCount as photoCount, photoNames} from './photo-gallery.ts'
-import {sourceField, windowCount} from './window-manager.ts'
+import {itemCount as photoCount, photoNames} from '../spring-bank/photo-gallery.ts'
+import {sourceField, windowCount} from '../spring-bank/window-manager.ts'
 
 const parameters = new URLSearchParams(window.location.search)
 const presenter: Presenter = parameters.get('presenter') === 'frames' ? 'frames' : 'keyframes'

@@ -4,8 +4,8 @@ import {createStagedEngine} from './gallery-engine.ts'
 import {applySessionFrame, startSession} from './gallery-session.ts'
 import {buildStagedGallery} from './gallery-staged.ts'
 import {syntheticPhotos} from './synthetic-photos.ts'
-import {emitInstanceWgsl, packSharedBuffer} from './wgsl.ts'
-import {createWgslInterpreter} from './wgsl-interpreter.ts'
+import {emitInstanceWgsl, packSharedBuffer} from '../codegen/wgsl.ts'
+import {createWgslInterpreter} from '../codegen/wgsl-interpreter.ts'
 
 // Zeros of either sign count as equal.
 const same = (left: number, right: number) => left === right || (Number.isNaN(left) && Number.isNaN(right))

@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {sameFloat} from './codegen.ts'
+import {sameFloat} from '../codegen/codegen.ts'
 import {authoredBehavior, testWindowsConfig as config, withBehavior, type BehaviorSetting} from './fixtures.ts'
 import {createLiftedOracle, createPopulation, liftedPopulationCircuit, populationFrameDelta, runPopulation} from './population.ts'
 import {createUserModel, frameDuration, metric, ratesOf, segmentCount} from './user-model.ts'

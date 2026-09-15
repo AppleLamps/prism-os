@@ -1,6 +1,6 @@
 import {describe, expect, test} from 'bun:test'
-import {installFakeCanvas, fakeTextWidth} from './fake-canvas.ts'
-import {thread} from './hn-data.ts'
+import {installFakeCanvas, fakeTextWidth} from '../hn-thread/fake-canvas.ts'
+import {thread} from '../hn-thread/hn-data.ts'
 import {initialThreadState, prepareThread, type PreparedThread} from './thread-prepare.ts'
 import {buildThreadCircuit} from './thread-circuit.ts'
 import {containerWidthF, referenceFrame, type ThreadFrame} from './thread-frame.ts'
@@ -13,7 +13,7 @@ import {atlasFromJson, layoutTextTables, textCapacity, type GlyphAtlasJson} from
 import {emitInstanceWgsl, packSharedBuffer} from './wgsl.ts'
 import {createWgslInterpreter} from './wgsl-interpreter.ts'
 import {gpuGrid, gpuStates} from './gpu-cases.ts'
-import {threadLayout} from './thread-model.ts'
+import {threadLayout} from '../hn-thread/thread-model.ts'
 import atlasJson from './glyph-atlas.json'
 
 installFakeCanvas()

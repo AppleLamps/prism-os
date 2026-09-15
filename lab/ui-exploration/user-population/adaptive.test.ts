@@ -12,10 +12,10 @@ import {
   writeAdaptiveTable,
   type AdaptiveTable,
 } from './adaptive.ts'
-import {writeEventQueue, type QueuedEvent} from './events.ts'
+import {writeEventQueue, type QueuedEvent} from '../input/events.ts'
 import {testWindowsConfig as config} from './fixtures.ts'
 import {generateWindowsTrace, randomEventTimes, type Frame} from './input-traces.ts'
-import {createRandom, randomInteger} from './kit.ts'
+import {createRandom, randomInteger} from '../input/kit.ts'
 import {runPopulation} from './population.ts'
 import {segmentCount} from './user-model.ts'
 

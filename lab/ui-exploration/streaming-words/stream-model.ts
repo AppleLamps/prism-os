@@ -4,10 +4,10 @@
 //
 // pretext is passed in, so the same code runs headlessly with the fake canvas and in the browser with
 // real fonts.
-import {viewPrepared} from './fake-canvas.ts'
+import {viewPrepared} from '../text-walker/fake-canvas.ts'
 import {type FlowLayout, type StreamBuild} from './stream-circuit.ts'
 
-type Pretext = typeof import('./pretext-src/layout.ts')
+type Pretext = typeof import('../text-walker/pretext-src/layout.ts')
 
 // 1 and 3 are chunks of that many characters. 'word' chunks are a word with its leading space, the
 // way a tokenizer's word tokens usually carry the space. 'whole' is one chunk, e.g. a sent message.

@@ -16,10 +16,10 @@ import {
 } from './commits.ts'
 import {createEventTimeScene} from './demo-model.ts'
 import {type EventTimeOptions, createEventTimeMachine, displayLayout} from './event-machine.ts'
-import {planInstances} from './instance.ts'
+import {planInstances} from '../codegen/instance.ts'
 import {createTracks, planKeyframes, trackKeyframes} from './keyframes.ts'
 import {compareScreens, holdLastFrame, screenGroups, simulateKeyframePresenter, staleWindow, stallWindow, type Stall} from './playback.ts'
-import {controlField, photoField} from './photo-gallery.ts'
+import {controlField, photoField} from '../spring-bank/photo-gallery.ts'
 import {createPredictor, frameCells, sampleCount, snapStatistics} from './prediction.ts'
 import {checkCommitSprings, createDisplaySpringCheck} from './springs-check.ts'
 import {
@@ -32,9 +32,9 @@ import {
   randomPressOffsets,
   replayTrace,
   scheduleFrameTimes,
-} from './trace.ts'
-import {createWgslInterpreter} from './wgsl-interpreter.ts'
-import {emitInstanceWgsl, packSharedBuffer} from './wgsl.ts'
+} from '../spring-bank/trace.ts'
+import {createWgslInterpreter} from '../codegen/wgsl-interpreter.ts'
+import {emitInstanceWgsl, packSharedBuffer} from '../codegen/wgsl.ts'
 import {
   bankOptions,
   bankSourceField,
@@ -43,7 +43,7 @@ import {
   photoSourceField,
   sourceField,
   windowOutputField,
-} from './window-manager.ts'
+} from '../spring-bank/window-manager.ts'
 
 const results: Record<string, unknown> = {}
 const reportStart = performance.now()

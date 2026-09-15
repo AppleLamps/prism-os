@@ -5,7 +5,7 @@
 // state. Needs a machine built with the bank and debugOutputs.
 import type {Wire} from '../../../numeric-ui-core.ts'
 import {type IndirectOSMachine, type MachineObserver, springField, windowSpringConstants} from './indirect-os.ts'
-import {type ReferenceLane, type SpringConstants, advanceReferenceClock, defaultClockConfig, referenceBoxStep} from './spring-math.ts'
+import {type ReferenceLane, type SpringConstants, advanceReferenceClock, defaultClockConfig, referenceBoxStep} from '../spring-bank/spring-math.ts'
 
 export type BoxLane = {
   position: Wire

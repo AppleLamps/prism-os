@@ -3,11 +3,11 @@
 // tree tables. Its results are numbers: thresholds and deltas that become circuit
 // weights, and table entries that become wiring.
 
-import {parseHNCommentHTML, type HNCommentDoc} from './comment-doc.ts'
-import type {HNComment} from './hn-data.ts'
-import {commentTextHeight, commentWidthAt, prepareComment, tabulateStaircase, type PreparedComment, type Staircase} from './text-heights.ts'
+import {parseHNCommentHTML, type HNCommentDoc} from '../hn-thread/comment-doc.ts'
+import type {HNComment} from '../hn-thread/hn-data.ts'
+import {commentTextHeight, commentWidthAt, prepareComment, tabulateStaircase, type PreparedComment, type Staircase} from '../hn-thread/text-heights.ts'
 import {containerWidthF, type ThreadState} from './thread-frame.ts'
-import {buildThreadTables, threadLayout, type ThreadTables} from './thread-model.ts'
+import {buildThreadTables, threadLayout, type ThreadTables} from '../hn-thread/thread-model.ts'
 
 export type PreparedThread = {
   comments: readonly HNComment[]

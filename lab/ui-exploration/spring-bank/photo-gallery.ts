@@ -138,7 +138,7 @@ export type PhotoGalleryOutput = {
   nextControl: Wire[]
 }
 
-const photoNames = [
+export const photoNames = [
   'Misty Lake',
   'Desert Light',
   'Pacific Edge',

@@ -8,10 +8,10 @@
 // shader that instanced-items/gpu-executor.ts would dispatch for the same stage.
 import {createExecutor} from '../../../instanced-items/executor.ts'
 import {generateColumnInstanceModule} from '../../../instanced-items/columns.ts'
-import {planInstances} from '../../../instanced-items/instance.ts'
-import {aboveZero, atLeastZero, emitAll} from '../../../instanced-items/kit.ts'
+import {planInstances} from '../../../codegen/instance.ts'
+import {aboveZero, atLeastZero, emitAll} from '../../../gallery/kit.ts'
 import {StagedProgram} from '../../../instanced-items/staged.ts'
-import {emitInstanceWgsl} from '../../../instanced-items/wgsl.ts'
+import {emitInstanceWgsl} from '../../../codegen/wgsl.ts'
 
 export function buildHitTestProgram(count: number) {
   const program = new StagedProgram()

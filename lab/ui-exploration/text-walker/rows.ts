@@ -361,16 +361,6 @@ export function lineRow(view: PreparedView, cursor: Cursor, options: RowOptions)
     : complexLineRow(view, normalized.cursor, normalized.chunkIndex, options)
 }
 
-// The line for a given width, read from the row the way the circuit reads it.
-export function evaluateRow(row: LineRow, width: number, epsilon: number): Outcome {
-  let running = -Infinity
-  for (const candidate of row.candidates) {
-    running = Math.max(running, candidate.threshold)
-    if (running > width + epsilon) return candidate.outcome
-  }
-  return row.final
-}
-
 // Cursor positions a line can start or end at: every segment start, the graphemes of segments that
 // can take emergency breaks, and the end of the text.
 export type Units = {

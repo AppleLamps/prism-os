@@ -11,7 +11,7 @@ import {notesFont, notesOptionsFor, notesText} from './paragraph.ts'
 import {photoCount} from './photos.ts'
 import {queueInput} from './configurations.ts'
 import {createTieredEvaluator} from './tiered.ts'
-import {read} from './wires.ts'
+import {read} from '../notation/wires.ts'
 
 // category: host
 const photoNames = ['Misty Lake', 'Desert Light', 'Pacific Edge', 'Midnight City', 'Forest Path', 'Alpine Dawn', 'Amalfi Morning', 'North Falls', 'Lavender Hour', 'Concrete Curve', 'Blue Lagoon', 'Autumn Road']
@@ -156,8 +156,8 @@ export function createDemoMachine(prepare: (text: string, font: string) => objec
 }
 
 export async function mountIndirectOS(document: Document, window: Window) {
-  const pretext = await import('./pretext-src/layout.ts')
-  const measurement = await import('./pretext-src/measurement.ts')
+  const pretext = await import('../text-walker/pretext-src/layout.ts')
+  const measurement = await import('../text-walker/pretext-src/measurement.ts')
   const {machine, evaluator, words} = createDemoMachine(pretext.prepareWithSegments as never, measurement.getEngineProfile().lineFitEpsilon)
   const query = (selector: string) => {
     const node = document.querySelector<HTMLElement>(selector)

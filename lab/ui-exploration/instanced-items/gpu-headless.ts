@@ -14,7 +14,7 @@ import {createStagedEngine, latchNames} from './gallery-engine.ts'
 import {applySessionFrame, startSession} from './gallery-session.ts'
 import {buildStagedGallery} from './gallery-staged.ts'
 import {createGpuExecutor} from './gpu-executor.ts'
-import {photoGalleryData} from './photo-data.ts'
+import {photoGalleryData} from '../gallery/photo-data.ts'
 import {syntheticPhotos} from './synthetic-photos.ts'
 
 type HostGlobals = {

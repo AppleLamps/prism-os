@@ -1,12 +1,12 @@
 // input's seeded random window traces, copied from
 // lab/ui-exploration/input/traces.ts (generateWindowsTrace, randomEventTimes and
-// the frame durations) with no change besides the import of the original
-// windows copy. The lifted build is checked against the original over these
-// traces.
+// the frame durations) with no change besides import paths, which name input's
+// kit.ts, events.ts and windows.ts. The lifted build is checked against the
+// original over these traces.
 
-import type {QueuedEvent} from './events.ts'
-import {createRandom, randomInteger} from './kit.ts'
-import {createWindowsState, seenWindowRectangle, windowsOracleEvent, windowsOracleFrameStart, type WindowsConfig} from './input-windows.ts'
+import type {QueuedEvent} from '../input/events.ts'
+import {createRandom, randomInteger} from '../input/kit.ts'
+import {createWindowsState, seenWindowRectangle, windowsOracleEvent, windowsOracleFrameStart, type WindowsConfig} from '../input/windows.ts'
 
 export type Frame = {frameDelta: number, events: QueuedEvent[]}
 

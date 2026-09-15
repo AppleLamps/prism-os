@@ -3,7 +3,7 @@
 // the state writeback and the metrics stay on the CPU: each frame uploads the
 // per-user table (state, behavior cells and events), dispatches, reads the
 // outputs back, and compares them with the generated JS outputs for the same
-// table. wgsl.ts and gpu-runner.ts are unchanged copies of codegen's.
+// table. wgsl.ts and gpu-runner.ts are imported from codegen.
 //
 // Bun has no WebGPU. Run from the repo root under Node with Dawn (the `webgpu`
 // npm package, installed in a scratch folder as codegen's README describes):
@@ -13,10 +13,10 @@
 // where guards is e.g. max,none. Prints JSON, and progress to stderr.
 
 import {testWindowsConfig as config, type BehaviorSetting} from './fixtures.ts'
-import {compareOutputs, createGpuInstanceRunner} from './gpu-runner.ts'
+import {compareOutputs, createGpuInstanceRunner} from '../codegen/gpu-runner.ts'
 import {createPopulation, frameSchedule, liftedPopulationCircuit, populationFrameDelta} from './population.ts'
 import {createUserModel} from './user-model.ts'
-import {emitInstanceWgsl, packSharedBuffer, type Guard} from './wgsl.ts'
+import {emitInstanceWgsl, packSharedBuffer, type Guard} from '../codegen/wgsl.ts'
 import {buildWindowsCircuit} from './windows.ts'
 
 type HostGlobals = {

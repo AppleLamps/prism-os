@@ -2,7 +2,7 @@
 import {expect, test} from 'bun:test'
 import {createWindowManagerMachine} from '../../../window-manager.ts'
 import {createBoxCheck, windowAndPhotoBoxes} from './box-check.ts'
-import {compareCircuits, programStats} from './compare.ts'
+import {compareCircuits, programStats} from '../notation/compare.ts'
 import {buildIndirectOS, createIndirectOSMachine, originalOptions} from './indirect-os.ts'
 import {createPair, runRandomTrace} from './pair-traces.ts'
 import {leafWires} from './table.ts'

@@ -1,6 +1,6 @@
 // A streamed chat whose words, bubbles and Stop all come from one circuit. The logic lives in
 // chat-demo.ts; this file reads inputs into transient state, runs a frame, and projects the outputs.
-import * as pretext from './pretext-src/layout.ts'
+import * as pretext from '../text-walker/pretext-src/layout.ts'
 import {ChatDemo, demoLayout, maximumWidth, minimumWidth, columnWidthFor} from './chat-demo.ts'
 import {type SpawnMode} from './stream-circuit.ts'
 import {type ChunkMode} from './stream-model.ts'

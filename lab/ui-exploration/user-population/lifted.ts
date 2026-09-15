@@ -1,10 +1,10 @@
-// Runs input's original window circuit (input-windows.ts, an unchanged copy)
+// Runs input's original window circuit (lab/ui-exploration/input/windows.ts)
 // and the lifted build (windows.ts) side by side over the same frames, and
 // compares every output bit for bit. Both builds also go through the lifted
 // oracle every frame. At the authored values the double click distance equals
 // the slop, so both circuits compute the same behavior.
 
-import {writeEventQueue} from './events.ts'
+import {writeEventQueue} from '../input/events.ts'
 import {
   buildWindowsCircuit as buildInputCircuit,
   createWindowsState as createInputState,
@@ -12,9 +12,9 @@ import {
   writeWindowsConstants as writeInputConstants,
   writeWindowsState as writeInputState,
   type WindowsVariant as InputVariant,
-} from './input-windows.ts'
+} from '../input/windows.ts'
 import type {Frame} from './input-traces.ts'
-import {readOneHot} from './kit.ts'
+import {readOneHot} from '../input/kit.ts'
 import {
   buildWindowsCircuit,
   createWindowsState,

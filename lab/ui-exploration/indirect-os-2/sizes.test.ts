@@ -1,7 +1,7 @@
 // The compiled size of every step from window-manager.ts to the whole program.
 import {expect, test} from 'bun:test'
 import {configurations} from './configurations.ts'
-import {lineFitEpsilon, loadPretext} from './fake-canvas.ts'
+import {lineFitEpsilon, loadPretext} from '../text-walker/fake-canvas.ts'
 import {fastParagraph} from './fast-walker.ts'
 import {buildIndirectOS} from './indirect-os.ts'
 import {programSize} from './measure.ts'

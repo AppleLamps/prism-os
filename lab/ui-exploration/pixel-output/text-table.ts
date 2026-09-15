@@ -9,9 +9,9 @@
 // its x (line coordinates, quantized to 1/64px). Characters are laid out one at a
 // time with `measure`, so glyphs sit where the additive measurement puts them; with
 // the fake canvas every segment width is exactly the sum of its characters.
-import {layoutWithLines} from './pretext/layout.ts'
-import {materializeRichInlineLineRange, walkRichInlineLineRanges} from './pretext/rich-inline.ts'
-import {commentBlockGap, commentBodyFont, commentCodeFont, commentItalicFont, commentLineHeight, commentWidthAt} from './text-heights.ts'
+import {layoutWithLines} from '../hn-thread/pretext/layout.ts'
+import {materializeRichInlineLineRange, walkRichInlineLineRanges} from '../hn-thread/pretext/rich-inline.ts'
+import {commentBlockGap, commentBodyFont, commentCodeFont, commentItalicFont, commentLineHeight, commentWidthAt} from '../hn-thread/text-heights.ts'
 import type {MeasureText} from './pixel-model.ts'
 import type {PreparedThread} from './thread-prepare.ts'
 

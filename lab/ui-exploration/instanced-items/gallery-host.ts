@@ -3,10 +3,10 @@
 // lab/ui-exploration/gallery/gallery-app.ts that talks to a GalleryEngine
 // instead of the original circuit, so the browser demo, the differential tests
 // and the report drive every engine through the same code.
-import {galleryConstants, springNames} from './gallery-circuit.ts'
+import {galleryConstants, springNames} from '../gallery/gallery-circuit.ts'
 import type {GalleryEngine} from './gallery-engine.ts'
 import {sharedCellNames, springFields} from './gallery-staged.ts'
-import type {PhotoData} from './photo-data.ts'
+import type {PhotoData} from '../gallery/photo-data.ts'
 
 // index.ts:83-91 in float64, used only for the initial spring state at load (index.ts:132-166),
 // which index.ts computes in JS before its first render.

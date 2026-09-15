@@ -4,9 +4,9 @@
 import {type Committer, createCommitter} from './commits.ts'
 import {type Evaluation, createEventTimeMachine, displayLayout} from './event-machine.ts'
 import {type KeyframePlan, createTracks, planKeyframes} from './keyframes.ts'
-import {controlField, itemCount as photoCount, photoField} from './photo-gallery.ts'
+import {controlField, itemCount as photoCount, photoField} from '../spring-bank/photo-gallery.ts'
 import {type Prediction, createPredictor} from './prediction.ts'
-import {dockOutputField, windowCount, windowOutputField} from './window-manager.ts'
+import {dockOutputField, windowCount, windowOutputField} from '../spring-bank/window-manager.ts'
 
 export type Presenter = 'keyframes' | 'frames'
 

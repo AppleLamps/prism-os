@@ -12,12 +12,12 @@
 //
 // Both produce the same outputs bit for bit on sorted row tops, since every field
 // they read holds the same FP32 value and the arithmetic after the reads is identical.
-import {Circuit, type Terms, type Wire} from './numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from '../index-read/numeric-ui-core.ts'
 import {paintColors, paintGeometry, pixelOutputField, type PaintTables, type TextMode} from './pixel-model.ts'
 import type {GlyphAtlas, TextCapacity, TextTables} from './text-table.ts'
 import type {BuiltThreadCircuit} from './thread-circuit.ts'
 import type {RowFrame} from './thread-frame.ts'
-import {threadLayout, type ThreadTables} from './thread-model.ts'
+import {threadLayout, type ThreadTables} from '../hn-thread/thread-model.ts'
 
 export type RowLookup = 'count' | 'binary-search'
 

@@ -190,8 +190,6 @@ export function untestedCuts(cuts: readonly number[], recordings: readonly Recor
 
 export type Budget = {px: number, opacity: number}
 
-export const defaultBudget: Budget = {px: 1, opacity: 0.02}
-
 export type ReplayResult = {
   trace: string
   frames: number

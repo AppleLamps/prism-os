@@ -16,12 +16,12 @@
 //   read from the window state after each down and up.
 import {type Wire, invariant} from '../../../numeric-ui-core.ts'
 import {type DesktopContext, type DesktopResult, dockGeometry, frontmost, raiseToFront} from './desktop-latches.ts'
-import {type Term, createKit} from './input-kit.ts'
+import {type Term, createKit} from '../input/kit.ts'
 import {type PhotoInputs, type PhotoSprings, type PhotoStateCells, photoClick, photoKeys, photoLayout, renderPhotos} from './photos.ts'
-import {withSection} from './spring-bank.ts'
+import {withSection} from '../spring-bank/spring-bank.ts'
 import {type Allocated, type SourceTable, bit, constant, event, input, list, oneHot, state} from './table.ts'
 import {integerOneHot, maskedRead} from './text-kit.ts'
-import type {Rect, Vec2} from './wires.ts'
+import type {Rect, Vec2} from '../notation/wires.ts'
 
 // keyGates: how a key slot learns whether Photos is focused at its position.
 // - 'gather': one gather over the focus bit at every chain point. Simple, but the

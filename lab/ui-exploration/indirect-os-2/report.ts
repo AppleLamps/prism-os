@@ -7,11 +7,11 @@
 import {compileScalarProgram, comparePacked} from './codegen.ts'
 import {createBoxCheck, windowAndPhotoBoxes, wordBoxes} from './box-check.ts'
 import {configurations} from './configurations.ts'
-import {lineFitEpsilon, loadPretext} from './fake-canvas.ts'
+import {lineFitEpsilon, loadPretext} from '../text-walker/fake-canvas.ts'
 import {fastParagraph} from './fast-walker.ts'
 import {compareFrameRates} from './framerate.ts'
 import {type IndirectOSMachine, type IndirectOSOptions, buildIndirectOS, createIndirectOSMachine} from './indirect-os.ts'
-import {createRandom, randomInteger} from './input-kit.ts'
+import {createRandom, randomInteger} from '../input/kit.ts'
 import {deepestPathSections, programSize, sectionBreakdown} from './measure.ts'
 import {referenceNotesFlow} from './notes-reference.ts'
 import {createOracleState, oracleEvaluation} from './oracle.ts'
@@ -22,7 +22,7 @@ import {sessionEvents, sessionFrameCount, sessionFrameTime, sessionViewport} fro
 import {leafWires} from './table.ts'
 import {countOneHotOperations} from './text-kit.ts'
 import {createTieredEvaluator} from './tiered.ts'
-import {read} from './wires.ts'
+import {read} from '../notation/wires.ts'
 
 const folder = import.meta.dir
 const pretext = await loadPretext()

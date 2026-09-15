@@ -12,10 +12,10 @@
 // stacking changes wait for the main thread.
 import {invariant} from '../../../numeric-ui-core.ts'
 import {type EventTimeMachine, displayLayout} from './event-machine.ts'
-import {controlField, itemCount as photoCount, photoField} from './photo-gallery.ts'
-import {type Prediction, lastPlayedSample, sampleIndexAt} from './prediction.ts'
-import {defaultClockConfig} from './spring-math.ts'
-import {windowCount, windowOutputField} from './window-manager.ts'
+import {controlField, itemCount as photoCount, photoField} from '../spring-bank/photo-gallery.ts'
+import {type Prediction, lastPlayedSample} from './prediction.ts'
+import {defaultClockConfig} from '../spring-bank/spring-math.ts'
+import {windowCount, windowOutputField} from '../spring-bank/window-manager.ts'
 
 export type TrackKind = 'window' | 'photo' | 'thumbnail' | 'previousControl' | 'nextControl' | 'backdrop'
 export type TrackPart = 'composited' | 'layout'
@@ -126,11 +126,6 @@ export function planKeyframes(prediction: Prediction, tracks: readonly Track[]):
 
 export function trackValues(prediction: Prediction, track: Track, sample: number) {
   return track.columns.map(column => prediction.samples[sample * prediction.rootCount + column]!)
-}
-
-// The values the keyframes show at `time`.
-export function playbackValues(prediction: Prediction, track: Track, time: number) {
-  return trackValues(prediction, track, sampleIndexAt(prediction, time))
 }
 
 export function compositedStyle(kind: TrackKind, values: readonly number[]): Keyframe {

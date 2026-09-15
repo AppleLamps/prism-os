@@ -6,8 +6,8 @@
 // row a sticky user banner (z-index 1) over the comment text, and the gutter
 // lines that the demo strokes on a canvas above everything. Text is either one
 // gray bar per 14px line ('bars') or glyphs read from a 1-bit atlas ('glyphs').
-import {threadLayout, type ThreadTables} from './thread-model.ts'
-import type {HNThread} from './hn-data.ts'
+import {threadLayout, type ThreadTables} from '../hn-thread/thread-model.ts'
+import type {HNThread} from '../hn-thread/hn-data.ts'
 
 export type Color = readonly [number, number, number]
 

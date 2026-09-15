@@ -3,7 +3,7 @@
 // tested on the CPU. Every f32 operation rounds on its own, which is what WGSL
 // means when no optimizer contracts or regroups. It says nothing about what a
 // real GPU compiler does; gpu-headless.ts checks that.
-import {invariant} from './numeric-ui-core.ts'
+import {invariant} from '../index-read/numeric-ui-core.ts'
 
 type ValueType = 'f32' | 'i32' | 'u32' | 'bool'
 type Frame = {slots: Float64Array, shared: Float32Array, sources: Float32Array, outputs: Float32Array}

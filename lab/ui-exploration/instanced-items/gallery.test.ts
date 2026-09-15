@@ -1,11 +1,11 @@
 import {describe, expect, test} from 'bun:test'
 import {createExecutor} from './executor.ts'
 import {createDuplicatedMachine, expandDuplicated, measureCircuit} from './expand.ts'
-import {buildGalleryCircuit} from './gallery-circuit.ts'
+import {buildGalleryCircuit} from '../gallery/gallery-circuit.ts'
 import {runScenario, scriptedTrace} from './gallery-differential.ts'
 import {createDuplicatedEngine, createOriginalEngine, createStagedEngine, createTeeEngine, createTeeStats, summarizeTee} from './gallery-engine.ts'
 import {buildStagedGallery} from './gallery-staged.ts'
-import {photoGalleryData} from './photo-data.ts'
+import {photoGalleryData} from '../gallery/photo-data.ts'
 import {stageStats} from './staged.ts'
 import {syntheticPhotos} from './synthetic-photos.ts'
 

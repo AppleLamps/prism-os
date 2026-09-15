@@ -6,9 +6,9 @@
 // bits the display computed, and compare with the display's stepped spring
 // state (its next-source outputs, which a display otherwise discards).
 import type {EventTimeMachine, Evaluation} from './event-machine.ts'
-import {type ReferenceLane, referenceBoxStep} from './spring-math.ts'
-import {createWindowSpringCheck} from './trace.ts'
-import {sourceField, windowCount, windowDestinationSourceField, windowOutputField} from './window-manager.ts'
+import {type ReferenceLane, referenceBoxStep} from '../spring-bank/spring-math.ts'
+import {createWindowSpringCheck} from '../spring-bank/trace.ts'
+import {sourceField, windowCount, windowDestinationSourceField, windowOutputField} from '../spring-bank/window-manager.ts'
 
 const laneCount = 5
 const springFieldCount = 10

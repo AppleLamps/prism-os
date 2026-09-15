@@ -12,6 +12,8 @@ The work ran in rounds:
 
 Nothing outside this folder was changed. `numeric-ui-core.ts` is untouched; prototypes that needed runtime changes changed a copy inside their own folder.
 
+Update, September 14, 2026: the repo root `numeric-ui-core.ts` has since gained an index read instruction (`indexRead`, `indexReadAffine`), the comparison helper `emitCompare` with declared grids and rounding point records (`assumeGrid`, `markRoundingPoint`, `roundingPoints`), and springs whose step matrix JavaScript writes into source cells (`emitApplySpringMatrix`, `emitAnimatedObject`). A new repo root file, `host-timing.ts`, computes what JavaScript writes before each evaluation, e.g. frame durations, event times and the spring matrix. See decisions 1 to 3 in [the guide's README](guide/README.md#decisions-for-you). The prototypes below were built on the root runtime as it was at commit a915dcb, or on copies inside their folders.
+
 ## Short answer
 
 Most of the UI logic the prototypes ported became a circuit: window management, fixed-step springs with catch-up, a virtualized list, drag-to-reorder cards, flick to a snap target, several pointer events per frame, keyboard focus and menus, Clay-style app layout, chenglou.github.io's 221-photo gallery, the nicer-hacker-news comment thread, a text field's editing model (insert and delete, caret and word movement, shift-selection, paste, wrapping at spaces and newlines, click to place the caret), and pretext's line walker itself, flowing text around a draggable window with a spring per word. Not ported: vibescript's scroll-anchor demo (keeping item identity when items are inserted), mobile-test-standalone, spring-comparison, the two global illumination demos, and hn.js's search, highlights, and selection.
@@ -122,6 +124,8 @@ Operations are live operations after compilation. For scale, IndirectOS is 5,253
 ## Findings worth taking back to the main runtime
 
 These are suggestions for the morning. None were applied outside this folder.
+
+Update, September 14, 2026: the index read instruction, `emitCompare` with rounding point records, and springs whose step matrix JavaScript writes into source cells have since been added to the repo root (see the update at the top of this README). The repo root's `window-manager.ts` and `photo-gallery.ts` weren't changed, so IndirectOS and its Photos app still use `emitSpring`.
 
 - An integer index read, either as an instruction or as recognition of relu one-hots (index-read). It changes the cost of lists, text, and slot routing more than anything else measured.
 - IndirectOS's springs integrate four substeps of the frame duration with a 32 ms clamp, so trajectories depend on frame rate and a stall loses time. spring-bank's fixed-step bank is cheaper (3,580 against 5,253 operations in its IndirectOS copy). It's frame-rate independent with deferred retargeting, and when presses fall between frames, with one extra evaluation at each press's timestamp.

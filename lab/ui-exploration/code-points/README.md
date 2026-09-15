@@ -19,7 +19,7 @@ bun lab/ui-exploration/code-points/demo.html                       # browser dem
 
 Two scratch scripts live in `scratchpad/phase3/code-points/`. `overflow-categories.ts` is the JS experiment that found which remaining mismatches go away when CJK runs are kept whole, before that rule went into the circuit. `attribution-probe.ts` is the experiment behind the causes table that `pretext-agreement.ts census` prints.
 
-The runtime is `numeric-ui-core.ts`, a copy of index-read's runtime copy, which adds the `indexRead` instruction to the repo root runtime (commit a915dcb). This folder changed only how that copy builds and compiles reads over large tables. See [what got awkward](#what-got-awkward). The `baseline-*.ts` files are text-editing's editor circuit, JS model, integer building blocks and width table, copied unchanged except for import paths, on the shared runtime (`../../../numeric-ui-core.ts`). `report.ts` and `pretext-agreement.ts` measure them next to the new circuit. `line-break-data.ts` is pretext's generated UAX #14 table (Unicode 17, MIT License), copied from tonight's read-only clone. `pretext-agreement.ts` imports phase 1's copy of pretext's source, never `~/github/pretext`.
+The runtime is `numeric-ui-core.ts`, a copy of index-read's runtime copy, which adds the `indexRead` instruction to the repo root runtime (commit a915dcb). This folder changed only how that copy builds and compiles reads over large tables. See [what got awkward](#what-got-awkward). The baseline is text-editing's editor circuit, JS model, integer building blocks and width table (`editor-circuit.ts`, `reference.ts`, `integer-circuits.ts`, `width-table.ts`) on the shared runtime (`../../../numeric-ui-core.ts`). These files and text-editing's `fake-canvas.ts` are imported from `../text-editing/`. Until September 15, 2026 this folder held copies of them: the four baseline files as `baseline-*.ts`, unchanged except for import paths, and an unchanged `fake-canvas.ts`. `report.ts` and `pretext-agreement.ts` measure the baseline next to the new circuit. `line-break-data.ts` is pretext's generated UAX #14 table (Unicode 17, MIT License), copied from tonight's read-only clone. `pretext-agreement.ts` imports phase 1's copy of pretext's source, never `~/github/pretext`.
 
 I didn't open the demo in a browser, since no browser automation was allowed. `bun build lab/ui-exploration/code-points/demo.ts` bundles it, and the tests exercise every module the demo uses except `demo.ts` itself.
 
@@ -39,7 +39,7 @@ I didn't open the demo in a browser, since no browser automation was allowed. `b
 | `report.ts` | Every other measurement |
 | `editor.test.ts`, `tables.test.ts`, `integer-circuits.test.ts` | Differential tests, table tests, building block tests |
 | `demo.html`, `demo.ts` | Browser demo |
-| `numeric-ui-core.ts`, `line-break-data.ts`, `fake-canvas.ts`, `test-support.ts`, `baseline-*.ts` | Copies described above, and random inputs |
+| `numeric-ui-core.ts`, `line-break-data.ts`, `test-support.ts` | Copies described above, and random inputs |
 
 ### Cells and tables
 

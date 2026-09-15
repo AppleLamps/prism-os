@@ -24,8 +24,8 @@
 // circuit code.
 
 import {invariant} from '../../../numeric-ui-core.ts'
-import {allocateEventQueue, eventTimeLimit, isOnTimeGrid, type QueuedEvent} from './events.ts'
-import {createKit, SourceLayout, type Term, type Wire} from './kit.ts'
+import {allocateEventQueue, eventTimeLimit, isOnTimeGrid, type QueuedEvent} from '../input/events.ts'
+import {createKit, SourceLayout, type Term, type Wire} from '../input/kit.ts'
 import type {Population, PopulationCircuit, PopulationOracle} from './population.ts'
 import {segmentCount} from './user-model.ts'
 import {

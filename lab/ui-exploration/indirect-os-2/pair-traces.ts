@@ -17,7 +17,7 @@ import {
 import {type IndirectOSMachine, type IndirectOSOptions, type MachineOptions, createIndirectOSMachine, windowCount} from './indirect-os.ts'
 import {photoCount} from './photos.ts'
 import {leafWires} from './table.ts'
-import {read} from './wires.ts'
+import {read} from '../notation/wires.ts'
 
 type OriginalMachine = ReturnType<typeof createWindowManagerMachine>
 export type Comparison = 'all roots' | 'discrete'

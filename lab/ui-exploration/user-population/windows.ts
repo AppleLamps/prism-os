@@ -15,7 +15,7 @@
 //   this far (Chebyshev) from the first click's press point.
 //
 // Every other rule, and the order in which operations are created, is input's.
-// `input-windows.ts` is an unchanged copy of input's file; lifted.test.ts and
+// `../input/windows.ts` is input's original file; lifted.test.ts and
 // report.ts check that at the authored values (distance equal to slop) the two
 // builds have the same live operations, layers and stored weights, and give
 // bit-identical outputs over input's random traces.
@@ -29,8 +29,8 @@
 //   say where a corrupted operation sits.
 
 import {invariant} from '../../../numeric-ui-core.ts'
-import {allocateEventQueue, coordinateLimit, eventTimeLimit, isOnTimeGrid, writeEventQueue, type EventSlot, type QueuedEvent} from './events.ts'
-import {createKit, readBit, readOneHot, SourceLayout, sklanskyPrefix, type Kit, type Term, type Wire} from './kit.ts'
+import {allocateEventQueue, coordinateLimit, eventTimeLimit, isOnTimeGrid, writeEventQueue, type EventSlot, type QueuedEvent} from '../input/events.ts'
+import {createKit, readBit, readOneHot, SourceLayout, sklanskyPrefix, type Kit, type Term, type Wire} from '../input/kit.ts'
 
 export type Rectangle = {left: number, top: number, width: number, height: number}
 

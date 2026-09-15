@@ -17,7 +17,7 @@
 // the change first reached a state or display output (noticed). A corruption
 // that is never activated changes nothing for these inputs.
 
-import {writeEventQueue} from './events.ts'
+import {writeEventQueue} from '../input/events.ts'
 import {testWindowsConfig as config, type BehaviorSetting} from './fixtures.ts'
 import type {Frame} from './input-traces.ts'
 import {createPopulation, frameSchedule, liftedPopulationCircuit, populationFrameDelta} from './population.ts'

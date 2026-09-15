@@ -8,9 +8,9 @@
 //                                                                     pretext's segments disagree)
 // It imports the phase 1 copy of pretext's source (never ~/github/pretext).
 
-import {referenceLayout as baselineLayout, type EditorState as BaselineState} from './baseline-reference.ts'
-import {createWidthTable, encodeText} from './baseline-width-table.ts'
-import {fakeTextWidth, installFakeCanvas} from './fake-canvas.ts'
+import {referenceLayout as baselineLayout, type EditorState as BaselineState} from '../text-editing/reference.ts'
+import {createWidthTable, encodeText} from '../text-editing/width-table.ts'
+import {fakeTextWidth, installFakeCanvas} from '../text-editing/fake-canvas.ts'
 import {breaksBetween, classNames, classOfCodePoint, codePointsOf, LB, pairRuleFor} from './line-break-classes.ts'
 import {type CharacterModel, type EditorState, type PretextExperiment, referenceLayout} from './reference.ts'
 import {createRandom} from './test-support.ts'

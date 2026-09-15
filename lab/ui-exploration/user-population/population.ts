@@ -9,15 +9,15 @@
 // - shared: window sizes, the workspace, the title and button sizes, the frame
 //   duration, and the unused key bits of the slots.
 //
-// codegen's generated instance loop (instance.ts, copied unchanged) hoists
+// codegen's generated instance loop (codegen/instance.ts) hoists
 // shared values and runs the per-user part over blocks of users. After every
 // frame the host copies each user's next-state outputs back into that user's
 // state columns, which sit first in the per-user table in output order.
 
 import {invariant, type Circuit} from '../../../numeric-ui-core.ts'
-import type {EventSlot, QueuedEvent} from './events.ts'
-import {compileInstanceProgram, planInstances, type InstancePlan, type InstanceRunner} from './instance.ts'
-import {createRandom, type SourceLayout, type Wire} from './kit.ts'
+import type {EventSlot, QueuedEvent} from '../input/events.ts'
+import {compileInstanceProgram, planInstances, type InstancePlan, type InstanceRunner} from '../codegen/instance.ts'
+import {createRandom, type SourceLayout, type Wire} from '../input/kit.ts'
 import {createUserModel, metricCount, segmentCount, type UserModelOptions} from './user-model.ts'
 import {
   createWindowsState,

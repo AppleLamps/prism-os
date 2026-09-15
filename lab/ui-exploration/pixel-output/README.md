@@ -19,11 +19,12 @@ Commands, from the repo root:
 - `bun lab/ui-exploration/pixel-output/demo.html`: the browser demo. It bundles (`bun build lab/ui-exploration/pixel-output/demo.html --outdir <scratch folder>`, 0.53 MB), but nobody has opened it in a browser.
 - `swift lab/ui-exploration/pixel-output/glyph-atlas.swift Verdana 10 < characters.json > glyph-atlas.json` renders the headless glyph atlas with CoreText. `characters.json` is a JSON array of the thread's characters.
 
-The runtime is a copy of index-read's modified `numeric-ui-core.ts` (the root runtime plus the `indexRead` instruction, one-hot recognition, and bit provenance), unchanged, in this folder. Every program here is compiled with `{lowerIndexOneHots: false, inferBitFamilies: false, recomputeDepths: false}`, which turns index-read's compile passes off, so everything except index reads behaves like the shared runtime. With those options the copy gives hn-thread's exact counts (53,703 live operations, 69 layers, 218,170 stored weights with 48 slots; 28,340, 68 and 84,308 with none), and a test checks it.
+The runtime is index-read's modified `numeric-ui-core.ts` (the root runtime plus the `indexRead` instruction, one-hot recognition, and bit provenance), imported from index-read (until September 15, 2026 this folder held an unchanged copy). Every program here is compiled with `{lowerIndexOneHots: false, inferBitFamilies: false, recomputeDepths: false}`, which turns index-read's compile passes off, so everything except index reads behaves like the shared runtime. With those options this runtime gives hn-thread's exact counts (53,703 live operations, 69 layers, 218,170 stored weights with 48 slots; 28,340, 68 and 84,308 with none), and a test checks it.
 
 | File | What it holds |
 | --- | --- |
-| `hn-data.ts`, `comment-doc.ts`, `fake-canvas.ts`, `pretext/`, `text-heights.ts`, `thread-model.ts`, `thread-prepare.ts`, `differential.ts` | Copied from hn-thread unchanged: data, parsing, pretext, breakpoints, random states and the scripted session |
+| hn-thread's `hn-data.ts`, `comment-doc.ts`, `fake-canvas.ts`, `pretext/`, `text-heights.ts`, `thread-model.ts` | Imported from hn-thread (until September 15, 2026 this folder held unchanged copies): data, parsing, pretext, breakpoints |
+| `thread-prepare.ts`, `differential.ts` | Copied from hn-thread unchanged except for import paths: preparation, random states and the scripted session |
 | `thread-frame.ts`, `thread-circuit.ts` | Copied from hn-thread, with slot mode `'none'`, extra source cells, and the exported wires a per-pixel program reads |
 | `pixel-model.ts` | Colors, paint layers, bar geometry, banner label and header widths |
 | `pixel-circuit.ts` | The per-pixel program: container, header, row lookup, banner, text, gutters, layer, color |

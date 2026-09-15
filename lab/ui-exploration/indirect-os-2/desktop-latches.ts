@@ -5,7 +5,7 @@
 import type {Wire} from '../../../numeric-ui-core.ts'
 import type {PhotoConstantCells, PhotoDebug, PhotoInputs, PhotoOutputs, PhotoSprings, PhotoStateCells} from './photos.ts'
 import {type SourceTable, list} from './table.ts'
-import type {Notation, Rect, Vec2} from './wires.ts'
+import type {Notation, Rect, Vec2} from '../notation/wires.ts'
 
 export type LayoutWires = {
   viewportWidth: Wire, viewportHeight: Wire, unit: Wire, margin: Wire, titleHeight: Wire, minWidth: Wire, minHeight: Wire,

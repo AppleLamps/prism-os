@@ -3,12 +3,12 @@
 // every frame, decisions are compared exactly and continuous values are compared as measured errors.
 // Adapted from lab/ui-exploration/gallery/differential.ts: the harness reads the engine surface
 // instead of the original circuit's wires, and accepts other photo lists.
-import {FakeBrowser} from './fake-dom.ts'
-import {springNames} from './gallery-circuit.ts'
+import {FakeBrowser} from '../gallery/fake-dom.ts'
+import {springNames} from '../gallery/gallery-circuit.ts'
 import type {GalleryEngine} from './gallery-engine.ts'
 import {createGalleryApp, type BoxStyle, type GalleryApp, type GalleryView} from './gallery-host.ts'
-import type {PhotoData} from './photo-data.ts'
-import {createReferenceGallery, type ReferenceGallery} from './reference.ts'
+import type {PhotoData} from '../gallery/photo-data.ts'
+import {createReferenceGallery, type ReferenceGallery} from '../gallery/reference.ts'
 
 export type Action =
   | {kind: 'frame', duration: number}

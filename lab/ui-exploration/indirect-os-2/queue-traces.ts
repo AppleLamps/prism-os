@@ -4,7 +4,7 @@
 // events and downs per evaluation, and moves each press or release off points
 // where a float64 hit decision sits within 0.01 px of its threshold.
 import type {QueuedEvent} from './events.ts'
-import {createRandom, randomInteger} from './input-kit.ts'
+import {createRandom, randomInteger} from '../input/kit.ts'
 import {
   type OracleState,
   type Viewport,

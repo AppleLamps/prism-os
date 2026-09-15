@@ -1,10 +1,10 @@
 // Replies and conversations for the tests and the report, and a build helper that sizes a circuit's
 // bounds from the texts it will stream.
-import {lineFitEpsilon, makeParagraph} from './fake-canvas.ts'
+import {lineFitEpsilon, makeParagraph} from '../text-walker/fake-canvas.ts'
 import {buildStreamCircuit, defaultFlowLayout, type StreamBuild, type StreamBuildOptions} from './stream-circuit.ts'
 import {lineCountOf, segmentCountOf, windowForTurns, type ChunkMode, type Turn} from './stream-model.ts'
 
-type Pretext = typeof import('./pretext-src/layout.ts')
+type Pretext = typeof import('../text-walker/pretext-src/layout.ts')
 
 export const testFont = '16px Test Sans'
 // Every build covers widths from narrowestWidth to widestWidth.

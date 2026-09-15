@@ -50,7 +50,7 @@ Gather lowering recognizes 26 candidate-gallery reads and 12 window-manager read
 ## Verification and reproduction
 
 - `bun run check` checks root code, standalone lab scripts, and each scoped lab, without reading `exp/`.
-- `bun run test` runs root and lab regression tests. Latest integrated run: 274 passing tests, no failures.
+- `bun run test` runs root and lab regression tests. Latest integrated run, at commit a915dcb on September 3, 2026: 274 passing tests, no failures.
 - `bun lab/learned-interpreter/report.ts --soft --write` reruns the expensive hard and soft seed studies separately from regression tests.
 - `bun lab/reusable-layout/study.ts --write` regenerates the three-seed layout study and the preselected seed-17 model.
 - `bun lab/user-effort/report.ts`, `bun lab/data-adapter/report.ts`, and `bun lab/runtime-cost/report.ts` reproduce the smaller studies.

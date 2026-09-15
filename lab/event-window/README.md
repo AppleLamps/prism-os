@@ -10,7 +10,7 @@ This experiment learns six shared behavior parameters from examples that supply 
 
 This experiment tests the claim in the shared context (conclusion 6): discrete multi-frame interaction behavior — dragging with pointer ownership, focus, click-versus-drag disambiguation, a maximize toggle — can be expressed and trained as a pure feedforward function of (current input, a small bank of latched events), with no backpropagation through time, and hardened to bit-exact agreement with a plain TypeScript reference over long randomized traces.
 
-Everything below is verified by `bun test lab/event-window` (33 tests, ~10s) or by one of the two measurement scripts (`training-sweep.ts`, `measure-cost.ts`) whose printed tables are reproduced here; where a number comes from a specific test or script, the text names it.
+Everything below is verified by `bun test lab/event-window` (34 tests, ~11s) or by one of the two measurement scripts (`training-sweep.ts`, `measure-cost.ts`) whose printed tables are reproduced here; where a number comes from a specific test or script, the text names it.
 
 ## The behavior
 

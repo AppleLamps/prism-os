@@ -33,7 +33,7 @@
 //   `max` with a NaN operand isn't pinned down. Results only match where the
 //   CPU reference has no NaN or Infinity. Signed zeros may also differ, which
 //   never changes a nonzero result of these atoms.
-import {invariant} from './numeric-ui-core.ts'
+import {invariant} from '../index-read/numeric-ui-core.ts'
 import type {Term, ValueRow} from './codegen.ts'
 import type {InstancePlan, InstanceRunner} from './instance.ts'
 

@@ -5,7 +5,7 @@
 import type {Wire} from '../../../numeric-ui-core.ts'
 import type {DuplicatedMachine} from './expand.ts'
 import type {StagedExecutor} from './executor.ts'
-import {springNames, type GalleryCircuit, type SpringName} from './gallery-circuit.ts'
+import {springNames, type GalleryCircuit, type SpringName} from '../gallery/gallery-circuit.ts'
 import {
   photoOutputNames,
   sharedCellNames,

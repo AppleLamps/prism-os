@@ -6,6 +6,8 @@ These are phase 1 notes for the question "how far does the IndirectOS matmul app
 - Sites: `~/github/chenglou.github.io/index.ts` (the Midjourney gallery, 222 photos in `data.ts`) and `~/github/nicer-hacker-news/hn.js` (with `hn.html` and `data.js`: 32 threads, which are copies of two distinct threads, one with 30 comments nested up to indent 7 and one with 4 comments).
 - For comparison, from the indirect repo: `README.md`, `execution-model.md`, `tricks.md`, `parallel-winner.md`, `macro-ranges.md`, `lab/status.md`, the macros in `numeric-ui-core.ts` (lines 1129-1405), the IndirectOS machine and render loop in `window-manager.ts` (lines 1190-1520), the Photos circuit and renderer in `photo-gallery.ts`, and the READMEs of `lab/trace-compiler` and `lab/event-window`, skipping their training parts. I also ran `bun lab/runtime-cost/report.ts`.
 
+Line numbers in `numeric-ui-core.ts` refer to commit c3d8e54 (September 5, 2026); on September 14, 2026 the file grew from 1,653 to 3,158 lines.
+
 Measurement scripts are in `scratchpad/phase1/doctrine/`:
 
 - `measure.ts`: accumulating row positions with five constructions, and a spring with the doctrine's fixed 4ms steps built from matrix powers.

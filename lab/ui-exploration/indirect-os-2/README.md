@@ -18,7 +18,7 @@ bun lab/ui-exploration/indirect-os-2/report.ts structure framerate   # parts: st
 bun lab/ui-exploration/indirect-os-2/indirect-os.html   # the demo page
 ```
 
-The shared runtime `numeric-ui-core.ts` is imported unchanged, and no file outside this folder was edited. The folder holds copies of the pieces it builds on; the changes to those copies are listed under "Files". The demo page bundles with `bun build` (44 modules), and `dom.test.ts` runs its projection and input decoding against fake DOM elements, but nobody opened the page in a browser.
+The shared runtime `numeric-ui-core.ts` is imported unchanged, and no file outside this folder was edited. Pieces it builds on without changes are imported from their folders (until September 15, 2026 this folder held unchanged copies of them), and pieces it changed are copies in this folder; "Files" says which is which and lists the changes to the copies. The demo page bundles with `bun build` (44 modules), and `dom.test.ts` runs its projection and input decoding against fake DOM elements, but nobody opened the page in a browser.
 
 ## What was built
 
@@ -34,14 +34,14 @@ The shared runtime `numeric-ui-core.ts` is imported unchanged, and no file outsi
 | `photos.ts` | Photos: notation's build with a springs switch, plus the layout, click, key and render parts the queue build uses |
 | `notes.ts` | the Notes flow: obstacles, slots, line walker, word springs |
 | `notes-reference.ts`, `paragraph.ts` | dynamic-layout's layoutColumn for several rectangles with pretext's layoutNextLineRange; the paragraph and its options |
-| `table.ts`, `wires.ts` | notation's allocator and helpers; `table.ts` gained an exact-bit `inputBit` cell |
-| `spring-bank.ts`, `spring-math.ts` | copied from spring-bank unchanged: clock, constant power groups, boxes, and the float64 doctrine reference |
-| `fast-walker.ts`, `text-kit.ts`, `fake-canvas.ts`, `pretext-src/` | copied from text-walker; the walker is trimmed to gathered lines and builds its tables inside an existing circuit over existing cells, and `text-kit.ts` gained a count of integer one-hot operations |
-| `input-kit.ts` | copied from input unchanged: exact integer bits, picks, masks |
+| `table.ts`, notation's `wires.ts` | notation's allocator and helpers; `table.ts` is a copy that gained an exact-bit `inputBit` cell, and `wires.ts` is imported |
+| spring-bank's `spring-bank.ts`, `spring-math.ts` | imported from spring-bank: clock, constant power groups, boxes, and the float64 doctrine reference |
+| `fast-walker.ts`, `text-kit.ts`, text-walker's `fake-canvas.ts`, `pretext-src/` | from text-walker; `fake-canvas.ts` and `pretext-src/` are imported, and the other two are copies: the walker is trimmed to gathered lines and builds its tables inside an existing circuit over existing cells, and `text-kit.ts` gained a count of integer one-hot operations |
+| input's `kit.ts` | imported from input: exact integer bits, picks, masks |
 | `codegen.ts` | copied from codegen, with an optional term budget per generated function |
 | `tiered.ts` | executor first, then generated code, verified on every live wire before switching |
 | `configurations.ts`, `measure.ts`, `report.ts`, `results.json` | named option sets, section attribution, measurements |
-| `pair-traces.ts`, `queue-traces.ts`, `box-check.ts`, `framerate.ts`, `session.ts`, `compare.ts` | traces against window-manager.ts, random queue frames, the float64 spring check, the 60 fps against 120 fps replay, a scripted session, notation's structural comparison |
+| `pair-traces.ts`, `queue-traces.ts`, `box-check.ts`, `framerate.ts`, `session.ts`, notation's `compare.ts` | traces against window-manager.ts, random queue frames, the float64 spring check, the 60 fps against 120 fps replay, a scripted session, notation's structural comparison (imported) |
 | `indirect-os.html`, `indirect-os-dom.ts`, `demo.css` | the demo on window-manager.css's markup, with word spans in the Notes window |
 
 ### 1. The notation base

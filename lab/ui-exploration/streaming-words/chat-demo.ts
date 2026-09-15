@@ -7,7 +7,7 @@ import {StreamSession, timedChunks} from './session.ts'
 import {layoutMismatches, lineCountOf, lineHops, referenceLayout, segmentCountOf, windowForTurns, type ChunkMode, type ReferenceLayout, type Turn} from './stream-model.ts'
 import {defaultSpringConfig} from './word-springs.ts'
 
-type Pretext = typeof import('./pretext-src/layout.ts')
+type Pretext = typeof import('../text-walker/pretext-src/layout.ts')
 
 // No hyphens or apostrophes, so every prefix stays on pretext's fast path and segments the same way
 // as the whole text.

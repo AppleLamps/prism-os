@@ -3,7 +3,7 @@ import {describe, expect, test} from 'bun:test'
 import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
 import type {QueuedEvent} from './events.ts'
 import {type IndirectOSMachine, type IndirectOSOptions, createIndirectOSMachine, originalOptions} from './indirect-os.ts'
-import {readBit, readOneHot} from './input-kit.ts'
+import {readBit, readOneHot} from '../input/kit.ts'
 import {type OracleState, createOracleState, focusedWindow, oracleEvaluation} from './oracle.ts'
 import {generateQueueTrace} from './queue-traces.ts'
 

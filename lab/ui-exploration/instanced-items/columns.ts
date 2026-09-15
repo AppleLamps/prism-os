@@ -1,11 +1,11 @@
 // Generated JS for one map stage over struct-of-arrays columns. This is
-// instance.ts's generated instance loop (copied from lab/ui-exploration/codegen)
+// codegen's generated instance loop (lab/ui-exploration/codegen/instance.ts)
 // with a different load and store: per-instance sources come from one
 // Float32Array per field, and outputs go to one Float32Array per field, so
 // stages hand fields to each other without packing tables.
 import {invariant} from '../../../numeric-ui-core.ts'
-import {type GeneratedFunction, type RowReaders, type ValueRow, gatherIndexExpression, gatherMassExpression, generateScalarModule, rowValueExpression} from './codegen.ts'
-import type {InstancePlan} from './instance.ts'
+import {type GeneratedFunction, type RowReaders, type ValueRow, gatherIndexExpression, gatherMassExpression, generateScalarModule, rowValueExpression} from '../codegen/codegen.ts'
+import type {InstancePlan} from '../codegen/instance.ts'
 
 export type ColumnCodeOptions = {rowsPerFunction: number, blockSize: number}
 

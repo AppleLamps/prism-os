@@ -2,14 +2,14 @@
 // pretext's layoutNextLineRange with the deterministic fake canvas.
 import {expect, test} from 'bun:test'
 import {createBoxCheck, windowAndPhotoBoxes, wordBoxes} from './box-check.ts'
-import {lineFitEpsilon, loadPretext} from './fake-canvas.ts'
+import {lineFitEpsilon, loadPretext} from '../text-walker/fake-canvas.ts'
 import {generateQueueTrace} from './queue-traces.ts'
 import {fastParagraph} from './fast-walker.ts'
 import {type IndirectOSMachine, createIndirectOSMachine, originalOptions} from './indirect-os.ts'
-import {createRandom, randomInteger} from './input-kit.ts'
+import {createRandom, randomInteger} from '../input/kit.ts'
 import {type NotesArrangement, referenceNotesFlow} from './notes-reference.ts'
 import {notesOptionsFor, notesText, testFont} from './paragraph.ts'
-import {read} from './wires.ts'
+import {read} from '../notation/wires.ts'
 
 const pretext = await loadPretext()
 const prepared = pretext.prepareWithSegments(notesText, testFont)

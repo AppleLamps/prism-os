@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {lineFitEpsilon, loadPretext, makeParagraph} from './fake-canvas.ts'
+import {lineFitEpsilon, loadPretext, makeParagraph} from '../text-walker/fake-canvas.ts'
 import {indexReadRuntime} from './kit.ts'
 import {buildStreamCircuit, defaultFlowLayout, type LineCountMode, type StreamBuild} from './stream-circuit.ts'
 import {chunkEvents, layoutFlow, layoutMismatches, lineCountOf, referenceLayout, segmentCountOf, windowForTurns, writeFlowState, type ChunkMode, type Turn} from './stream-model.ts'

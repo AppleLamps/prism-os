@@ -14,6 +14,8 @@ Run from the repo root:
 
 The folder imports `numeric-ui-core.ts` unchanged (and the production `window-manager.ts` in one test). The workloads are copies in `copies/`: spring-bank's IndirectOS copy (`window-manager.ts`, `photo-gallery.ts`, `spring-bank.ts`, `spring-math.ts`, `trace.ts`), layout-tree's app shell and builder, the gallery circuit, app and native reference (which reads the frozen fixture in `lab/trace-compiler/fixtures`), and hn-thread's circuit, prepare step, pretext snapshot and differential script. The copies differ from the originals in four ways: the `numeric-ui-core.ts` imports and the gallery's fixture path are two directories deeper, `writeBankFrame` is exported, and the gallery app takes an injected machine plus a guard against a focused index out of range (a retimed circuit produced one, and the original JS threw).
 
+Update, September 15, 2026: spring-bank's `window-manager.ts` now exports `writeBankFrame`, `validateWindowManagerSource` and `validateWindowManagerOutput`, and its `photo-gallery.ts` now exports `photoNames`, so that event-time can import these names. The copies here weren't changed and export only `writeBankFrame`. Exporting `writeBankFrame` is therefore no longer a difference, and the copies now differ by not exporting `validateWindowManagerSource`, `validateWindowManagerOutput` and `photoNames`.
+
 ## What was built
 
 - `flat.ts`: the compiled program as one list of rows in execution order (codegen's `flattenProgram`, packed into typed arrays), an FP32 evaluator with registers, the dependency graph, depth and height analysis, critical levels, and a minimum vertex cut by max flow.

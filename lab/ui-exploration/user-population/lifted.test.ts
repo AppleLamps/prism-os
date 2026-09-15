@@ -1,10 +1,10 @@
 import {describe, expect, test} from 'bun:test'
 import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
-import type {QueuedEvent} from './events.ts'
+import type {QueuedEvent} from '../input/events.ts'
 import {authoredBehavior, testWindowsConfig as config, withBehavior} from './fixtures.ts'
-import {createWindowsMachine as createInputMachine, type WindowsVariant as InputVariant} from './input-windows.ts'
+import {createWindowsMachine as createInputMachine, type WindowsVariant as InputVariant} from '../input/windows.ts'
 import {generateWindowsTrace} from './input-traces.ts'
-import {measureProgram} from './kit.ts'
+import {measureProgram} from '../input/kit.ts'
 import {createWindowsMachine, createWindowsState, windowsOracleFrame, type WindowsConfig, type WindowsVariant} from './windows.ts'
 import {compareLiftedWithInput} from './lifted.ts'
 

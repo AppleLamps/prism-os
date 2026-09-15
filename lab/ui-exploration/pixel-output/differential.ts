@@ -11,8 +11,8 @@ import {
   containerWidthF, referenceFrame, rowFrameFields, slotFrameFields,
   type FrameBranches, type FrameInputs, type FrameMargins, type ThreadFrame, type ThreadState,
 } from './thread-frame.ts'
-import {commentWidthAt} from './text-heights.ts'
-import {threadLayout} from './thread-model.ts'
+import {commentWidthAt} from '../hn-thread/text-heights.ts'
+import {threadLayout} from '../hn-thread/thread-model.ts'
 import type {PreparedThread} from './thread-prepare.ts'
 
 export type Mismatch = {path: string, reference: number, circuit: number, margin: number}

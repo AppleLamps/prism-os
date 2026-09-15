@@ -2,7 +2,7 @@
 // reads, and how they split over labeled build sections (spring-bank.ts
 // withSection), including along the deepest path.
 import type {Circuit, Wire} from '../../../numeric-ui-core.ts'
-import {sectionRanges} from './spring-bank.ts'
+import {sectionRanges} from '../spring-bank/spring-bank.ts'
 
 export type ProgramSize = {live: number, layers: number, weights: number, gatherReads: number, widestLayer: number}
 

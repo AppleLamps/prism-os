@@ -18,14 +18,14 @@ DAWN_WEBGPU=/path/to/node_modules/webgpu/index.js node lab/ui-exploration/user-p
 deno run --unstable-webgpu --allow-all lab/ui-exploration/user-population/gpu-population.ts 256 600 none
 ```
 
-`numeric-ui-core.ts` is imported unchanged through `../../../numeric-ui-core.ts`. No file outside this folder changed. Files copied from other folders:
+`numeric-ui-core.ts` is imported unchanged through `../../../numeric-ui-core.ts`. No file outside this folder changed. Files from other folders:
 
-- `kit.ts`, `events.ts` and `input-windows.ts` are unchanged copies of input's `kit.ts`, `events.ts` and `windows.ts` (`cmp` finds no difference).
-- `codegen.ts`, `instance.ts`, `wgsl.ts` and `gpu-runner.ts` are unchanged copies of codegen's files of the same names.
-- `input-traces.ts` holds input's `generateWindowsTrace` and `randomEventTimes`, copied without change except for importing the original windows copy.
+- input's `kit.ts`, `events.ts` and `windows.ts` are imported from `../input/`. Until September 15, 2026 this folder held unchanged copies of them, named `kit.ts`, `events.ts` and `input-windows.ts` (`cmp` found no difference).
+- codegen's `codegen.ts`, `instance.ts`, `wgsl.ts` and `gpu-runner.ts` are imported from `../codegen/`. Until September 15, 2026 this folder held unchanged copies with the same names.
+- `input-traces.ts` holds input's `generateWindowsTrace` and `randomEventTimes`, copied without change except for import paths.
 - `fixtures.ts` holds input's window layout plus the lifted distance.
 
-`bunx oxlint --type-aware lab/ui-exploration/user-population` reports only the `new Function` calls in the unchanged codegen copies, which codegen's own folder also reports. `gpu-population.ts` typechecks with the folder but needs Node with Dawn, or Deno, to run, because Bun has no WebGPU. The `webgpu` package was installed in a scratch folder, as codegen's README describes.
+`bunx oxlint --type-aware lab/ui-exploration/user-population` reports nothing. Until September 15, 2026, while this folder held the codegen copies, the same command reported only the `new Function` calls in those copies, which codegen's own folder also reports. `gpu-population.ts` typechecks with the folder but needs Node with Dawn, or Deno, to run, because Bun has no WebGPU. The `webgpu` package was installed in a scratch folder, as codegen's README describes.
 
 | File | What it holds |
 | --- | --- |
