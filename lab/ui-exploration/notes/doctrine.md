@@ -1,6 +1,8 @@
 # Cheng's UI doctrine and personal sites, read against the circuit approach
 
-These are phase 1 notes for the question "how far does the IndirectOS matmul approach take us for writing UI?" This area covers Cheng's written doctrine and his two personal sites:
+Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS still describes window-manager.ts, which hasn't changed since commit a915dcb.
+
+These are phase 1 notes for the question "how far does the IndirectOS matmul approach take us for writing UI?" This area covers Cheng's written doctrine and Cheng's two personal sites:
 
 - Doctrine, read fully: `~/github/vibescript/docs/ui.md`, `Animation.md`, `Input.md`, `Scrolling.md`, `FrameScheduling.md`, `engineering.md`, `router.md`, `z-index-depth-management.md`. Skimmed: `media.md`, `drafts/layout-geometry.md`, `drafts/verification.md`, `drafts/automating-browsers.md`.
 - Sites: `~/github/chenglou.github.io/index.ts` (the Midjourney gallery, 222 photos in `data.ts`) and `~/github/nicer-hacker-news/hn.js` (with `hn.html` and `data.js`: 32 threads, which are copies of two distinct threads, one with 30 comments nested up to indent 7 and one with 4 comments).
@@ -8,7 +10,7 @@ These are phase 1 notes for the question "how far does the IndirectOS matmul app
 
 Line numbers in `numeric-ui-core.ts` refer to commit c3d8e54 (September 5, 2026); on September 14, 2026 the file grew from 1,653 to 3,158 lines.
 
-Measurement scripts are in `scratchpad/phase1/doctrine/`:
+Measurement scripts are in `scratchpad/phase1/doctrine/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/doctrine/`):
 
 - `measure.ts`: accumulating row positions with five constructions, and a spring with the doctrine's fixed 4ms steps built from matrix powers.
 - `hn-hit.ts`: hn.js hit testing (row under the pointer, gutter or comment, ancestor search, shrink bits) as a circuit, checked against the hn.js logic.

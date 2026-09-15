@@ -18,7 +18,7 @@ bun lab/ui-exploration/indirect-os-2/report.ts structure framerate   # parts: st
 bun lab/ui-exploration/indirect-os-2/indirect-os.html   # the demo page
 ```
 
-The shared runtime `numeric-ui-core.ts` is imported unchanged, and no file outside this folder was edited. Pieces it builds on without changes are imported from their folders (until September 15, 2026 this folder held unchanged copies of them), and pieces it changed are copies in this folder; "Files" says which is which and lists the changes to the copies. The demo page bundles with `bun build` (44 modules), and `dom.test.ts` runs its projection and input decoding against fake DOM elements, but nobody opened the page in a browser.
+The shared runtime `numeric-ui-core.ts` is imported unchanged, and no file outside this folder was edited. Pieces it builds on without changes are imported from their folders (until September 15, 2026 this folder held unchanged copies of them), and pieces it changed are copies in this folder; "Files" says which is which and lists the changes to the copies. The demo page bundles with `bun build` (44 modules), and `dom.test.ts` runs its projection and input decoding against fake DOM elements, but nobody opened the page in a browser. A later Chrome check opened the page, see [Browser check](#browser-check).
 
 ## What was built
 

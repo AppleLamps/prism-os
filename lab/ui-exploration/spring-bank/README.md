@@ -12,9 +12,11 @@ Run from the repo root:
 - `bun lab/ui-exploration/spring-bank/demo.html` opens the predictive keyframes demo. Click to fling five boxes. The render loop runs only every 300 ms; Web Animations plays 301 predicted 4 ms samples per box.
 - `bun lab/ui-exploration/spring-bank/indirect-os.html` opens IndirectOS with bank springs and controls for the spring variant, retarget timing, frame pacing (display rate, 30 fps, 10 fps), and a button that blocks the main thread for 500 ms. The same choices work as query parameters, e.g. `?springs=original&fps=10`. The page applies events in the next rendered frame; it doesn't do the event-time evaluations described in the frame-rate results.
 
-I checked that both pages bundle with `bun build`, but I haven't opened them in a browser.
+I checked that both pages bundle with `bun build`, but I haven't opened them in a browser. A later Chrome check opened both pages, see [Browser check](#browser-check).
 
 Nothing outside this folder changed. The folder imports `numeric-ui-core.ts` unchanged.
+
+Update, September 14, 2026: the repo root runtime adopted this prototype's springs in a different form ([execution-model.md](../../../execution-model.md#springs-and-time)). JavaScript counts the 4 ms steps and writes the matrix power into cells, a frame that would run more than 300 steps snaps every object onto its destination instead of carrying the rest of the time into later frames, and settling is checked every 64 ms of simulated time (`emitAnimatedObject`, and `advanceFrame` in host-timing.ts). The repo root's window-manager.ts still uses `emitSpring`.
 
 ## What was built
 

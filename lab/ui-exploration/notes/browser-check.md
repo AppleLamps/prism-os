@@ -1,5 +1,7 @@
 # Browser check of the ui-exploration demos
 
+Status, September 15, 2026: each section below records one check as it ran, so later sections supersede the earlier "Look at these first" lists. E.g. "Morning fixes" fixed the first list's codegen, layout-tree, hn-thread, notation and text selection problems, and both demo directory checks found pixel-output drawing in Chrome.
+
 2026-09-13, Chrome. I served each page with Bun's HTML dev server from the repo root, opened it in a tab I created, read the console, exercised what the folder's README describes, and recorded a GIF. Each folder's README.md now ends with a "Browser check" section. Nothing was committed.
 
 ## How the check ran, and what that limits
@@ -107,7 +109,7 @@
 - Cause: the folder imports `candidate-gallery.ts` (from `demo-model.ts` and `workloads.ts`) and `window-manager.ts` (from `window-ownership.ts`) from the repo root, and both mount their own page at import time whenever `document` exists. Headless runs have no `document`.
 - A scratch copy of the page with off-screen candidate markup got past the first import, then threw "desktop is missing" from `window-manager.ts`. I stopped there.
 - Not fixed, since it needs changes to repo-root modules other pages use.
-- No GIF (the recorder captured 0 frames). Screenshot of the error on the scratch copy: `scratchpad/browser-check/codegen-import-error.jpg`. The scratch page is `codegen-workaround.html` in the same folder.
+- No GIF (the recorder captured 0 frames). Screenshot of the error on the scratch copy: `scratchpad/browser-check/codegen-import-error.jpg`. The scratch page is `codegen-workaround.html` in the same folder. Both are backed up at `~/github/indirect-scratch-backup/2026-09-15/scratchpad/browser-check/`.
 
 ## numeric-library/demo.html
 
@@ -134,7 +136,7 @@
 
 ## Morning fixes
 
-Later on 2026-09-13, a second agent fixed the problems above inside the prototype folders, without editing repo-root files, and rechecked each demo in Chrome. The tab was still hidden, so pages ran with the same console replacement for `requestAnimationFrame`. The tab's viewport was 406 by 422 CSS px this time, and it didn't follow window resizes either, so where a demo needed a bigger viewport, I loaded the page in an iframe of that size, e.g. 2,320 by 1,268 px for hn-thread to match the first check. `lab/ui-exploration/` isn't in git yet, so before editing I copied the nine affected folders to the session scratchpad (`demo-fixes/backup/`). Nothing was committed. Each README's "Browser check" section has the details.
+Later on 2026-09-13, a second agent fixed the problems above inside the prototype folders, without editing repo-root files, and rechecked each demo in Chrome. The tab was still hidden, so pages ran with the same console replacement for `requestAnimationFrame`. The tab's viewport was 406 by 422 CSS px this time, and it didn't follow window resizes either, so where a demo needed a bigger viewport, I loaded the page in an iframe of that size, e.g. 2,320 by 1,268 px for hn-thread to match the first check. `lab/ui-exploration/` isn't in git yet, so before editing I copied the nine affected folders to the session scratchpad (`demo-fixes/backup/`, backed up at `~/github/indirect-scratch-backup/2026-09-15/scratchpad/demo-fixes/backup/`). Nothing was committed. Each README's "Browser check" section has the details.
 
 ### codegen
 
@@ -260,7 +262,7 @@ Later on 2026-09-13, another agent checked five more demos in Chrome: streaming-
 
 - Doesn't draw in Chrome. The first frame throws "RangeError: Maximum call stack size exceeded" in `runShared`, with glyphs and with bars. `sumExpression` rounds the running sum before each term, so one generated statement of thread logic nests `f(...)` 1,003 deep, and a probe in Chrome threw at 665 levels. Bun's JavaScriptCore runs the same code.
 - Not fixed in the repo, since `codegen.ts` also produces the generated JS the tests and `report.ts` measure. A scratch copy stores the running sum in a variable every 256 terms, which keeps the float32 values and brings the deepest statement to 257 levels, and its 8 tests pass. With the copy, WebGPU draws the thread with glyph text at 7.2 to 7.6 ms per frame. Of 247,080 CPU samples, 246,629 equal one of the two nearest GPU device pixels, and the other 451 sit on text rows and equal a device pixel within their 4 by 4 block.
-- The copy is `scratchpad/browser-check-3c/pixel-output-workaround/`, and `pixel-output-workaround.diff` in the same folder shows the change.
+- The copy is `scratchpad/browser-check-3c/pixel-output-workaround/`, and `pixel-output-workaround.diff` in the same folder shows the change. The copy and this round's other scratch files are backed up at `~/github/indirect-scratch-backup/2026-09-15/scratchpad/browser-check-3c/`.
 - GIF: `ui-exploration-pixel-output-demo.gif` (1 frame). A screenshot of the scrolled WebGPU frame is `pixel-output-webgpu-scrolled.jpg` in the same scratch folder.
 
 ### code-points/demo.html

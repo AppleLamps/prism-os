@@ -358,7 +358,7 @@ A gather is a read of one value at a position, like `table[index]`. In a circuit
 | `sum`, `countBits` | `total += value` | O(n) | one sum: 1 operation, 1 layer, n stored weights |
 | `prefixSum`, one item at a time | `before[i] = running; running += value` | O(n) | a chain: n operations in n layers; or wide sums: n operations in 1 layer with about n²/2 stored weights |
 | `prefixSum`, Brent-Kung | the same outputs | O(n) | about 2n operations in about 2 log2 n layers |
-| `firstActive` | `if (bits[i] === 1) return i` | O(n) | a tournament: about 2.7n operations in about 3 log2 n layers, e.g. 172 operations and 17 layers for 64 items |
+| `firstActive` | `if (bits[i] === 1) return i` | O(n) | a tournament: about 2.7n operations in about 3 log2 n layers, e.g. 172 operations and 17 layers for 64 items with gallery/kit.ts's `emitFirstSetBit`, a different helper from numeric-ui-core.ts's `emitFirstActive`, which is 316 operations in 31 layers |
 | `argmax` | the index of the highest score | O(n) | `emitArgmax`'s tournament: O(n) operations in O(log n) layers |
 | `max`, `groupMax` | `tallest = Math.max(tallest, value)` | O(n) | a chain of maxima: 3 operations and 3 layers per item |
 | `gatherAt` | `values[index]`, with index a shared value | O(1) | the index's one-hot from about n ReLUs, then one gather |
@@ -367,13 +367,15 @@ A gather is a read of one value at a position, like `table[index]`. In a circuit
 
 In gallery-circuit.ts, the click tournament accounts for about 20 of the 61 layers.
 
+`gatherAt`, `gatherIndexed` and `scatter` were written before numeric-ui-core.ts had `circuit.indexRead`, which reads at a runtime index, including a different index per item, in 1 operation. The staged builder and its duplicated form weren't updated to use it.
+
 ### Measured
 
 At 10,000 photos, the slowest reduction, the strip's prefix sum, took 26 µs of a 4,106 µs frame. At 1,000 photos, every reduction took at most 2.7 µs.
 
 ### When not to use a reduction
 
-When one item needs a runtime index into another array, e.g. each photo reading its row for the current column count. `gatherIndexed` only takes per-item constant indices, because a runtime index per photo into n rows would need an n-member one-hot per photo in the duplicated circuit. The gallery instead keeps 7 arrays of rows, one per column count, and each photo gathers the current variant through the column count's one-hot.
+When one item needs a runtime index into another array, e.g. each photo reading its row for the current column count. `gatherIndexed` only takes per-item constant indices, because a runtime index per photo into n rows would need an n-member one-hot per photo in the duplicated circuit. `circuit.indexRead` in numeric-ui-core.ts now reads at such an index in 1 operation, but the staged builder doesn't use it. The gallery instead keeps 7 arrays of rows, one per column count, and each photo gathers the current variant through the column count's one-hot.
 
 ### Pitfalls
 
@@ -629,7 +631,7 @@ Build time and memory follow the operation count, e.g. 4.7 s and about 2 GB of h
 - [cards-reference.ts](../examples/instancing/cards-reference.ts): the plain loops.
 - [cards-duplicated.ts](../examples/instancing/cards-duplicated.ts): before, one circuit with each card written out.
 - [map-stage.ts](../examples/instancing/map-stage.ts) and [cards-staged.ts](../examples/instancing/cards-staged.ts): after, three map stages with three reductions between them.
-- [bits.ts](../examples/instancing/bits.ts): the exact comparison bits both circuits use (see [comparisons](comparisons.md)).
+- [bits.ts](../examples/instancing/bits.ts): the exact comparison bits both circuits use, this folder's own helpers that end in a boolean atom instead of `emitCompare` (see [comparisons](comparisons.md)).
 - [max-order.ts](../examples/instancing/max-order.ts) and [prefix-precision.ts](../examples/instancing/prefix-precision.ts): the accumulation order numbers above.
 - [generated-loop.ts](../examples/instancing/generated-loop.ts): a hit test stage run through instanced-items' executor, and its generated JavaScript and WGSL.
 - [card-traces.ts](../examples/instancing/card-traces.ts), [instancing.test.ts](../examples/instancing/instancing.test.ts) and [report.ts](../examples/instancing/report.ts): random inputs, the checks, and the numbers. From the repository root, `bun test lab/ui-exploration/guide/examples/instancing` runs 6 tests in about 0.15 s, and `bun lab/ui-exploration/guide/examples/instancing/report.ts` runs in under a second.
@@ -806,7 +808,7 @@ The structure lines up: a staged program alternates per-item programs with compu
 
 - Reductions on the GPU: counts and the first set bit as parallel reductions, Brent-Kung prefix sums as GPU passes with the max guard, gathers as indexed reads inside the next shader, and grouped maxima over at most 7 photos per row. Then fields could stay on the GPU, and a frame could become a few dispatches plus one readback of the visible photos.
 - Per-item weight columns: an operation whose coefficient comes from a per-item column instead of a product would keep the duplicated circuit's weights, and remove the gallery's extra operations per photo.
-- Runtime indices across arrays, e.g. rows for the current column count, with a lowering that chooses among a few variants.
+- Runtime indices across arrays, e.g. rows for the current column count, with a lowering that chooses among a few variants, or one `circuit.indexRead` per item, which numeric-ui-core.ts has had since September 14, 2026.
 - Precision past a million pixels: prefix sums anchored at the focused photo or at the scroll anchor would keep onscreen positions small at any photo count, and a two-part sum (whole pixels and the fraction) would keep the fraction precise.
 - Skipping settled photos: a step that runs the springs stage only for photos still moving, so the cost follows the moving photos.
 - Why a frame at 10,000 photos in Chrome (evaluation, DOM writes for 12 to 16 visible photos, and the on-screen stats) took 12 to 19 ms at the median in most measurements and about 4 ms in one part of the session, when the staged executor's evaluation alone took 4,106 µs in Bun. The DOM writes took 36 to 214 µs.

@@ -4,6 +4,8 @@ This folder adds the missing operations from phase one to the macro library: exa
 
 `numeric-ui-core.ts` is unchanged. Everything imports it with a relative path.
 
+Update, September 14, 2026: the repo root `numeric-ui-core.ts` now has its own `emitCompare`, which builds integer bits when both operands are declared on a grid, and a sign cascade otherwise, e.g. `a >= b` within 0..16,384 in 15 operations and 14 layers ([execution-model.md](../../../execution-model.md#comparisons)). This folder's library doesn't read grids, and its reciprocal, division, square root, trigonometry, rounding and hash aren't in the root runtime ([expressions.md](../../../expressions.md#familiar-expressions)).
+
 ## How to run it
 
 From the repo root:

@@ -112,14 +112,7 @@ const slotTops = Array.from({length: slotCount}, (_, slot) =>
   circuit.indexReadAffine([[firstVisibleRow, 1]], slot, rowTops, 'clamp', 'zero'))
 ```
 
-The contract, from [execution-model.md](../../../../execution-model.md#index-reads):
-
-- The index needs a declared range strictly inside ±2^24, where every integer is an FP32 value. The builder throws on an open range, e.g. an index cell without `assumeRange`, and on a range that reaches ±2^24, e.g. a cell declared within 0..2^24 plus 1, whose range endpoint f(2^24 + 1) is 2^24.
-- The index must hold an integer. The builder can't check that, so `validateIndexReads(circuit, values)` checks it in tests.
-- The selected value is copied without rounding, so `-0`, infinities and NaN come through unchanged. A NaN index reads NaN, which can only happen when a range declared on a computed wire is false.
-- Candidates can repeat and need no declared range. The builder freezes the candidates array, so changing the array after a read throws instead of silently changing which values the read returns.
-- A constant index selects its candidate while building, and identical reads return one wire.
-- A read whose reachable candidates are all exact bits, e.g. a table of hit test bits read at a computed row, counts as a proven bit, so `emitFirstActive` over such reads declares a one-hot group. A read that can reach a fraction, e.g. an opacity within 0..1, doesn't count.
+[execution-model.md](../../../../execution-model.md#index-reads) has the contract: which declared index ranges the builder accepts, why the index must hold an integer, which `validateIndexReads(circuit, values)` checks in tests, how `-0`, infinities and NaN come through, and which reads count as proven bits for `emitFirstActive`.
 
 [index-read-instruction.ts](../examples/indexing/index-read-instruction.ts) builds the first read and the linear interpolation below over index-read's copy of the runtime, and [shared-runtime-index-read.test.ts](../examples/indexing/shared-runtime-index-read.test.ts) checks that both runtimes return the same values with the same counts.
 

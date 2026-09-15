@@ -2,7 +2,7 @@
 // against native JavaScript comparisons and against this folder's hand-built sign cascade.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/comparisons
 import {expect, test} from 'bun:test'
-import {Circuit, type Relation, emitCompare, validateGrids} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Relation, emitCompare, emitMinimumExact, validateGrids} from '../../../../../numeric-ui-core.ts'
 import {createRandom, differenceClasses, f, measureCost} from './fp32.ts'
 import {pairWithDifference, randomPixelPairs} from './measure.ts'
 import {buildMinimums, buildSharedCompare, relations} from './shared-runtime-compare.ts'
@@ -151,4 +151,25 @@ test('emitMinimumExact returns one operand exactly where emitMinimum drifts', ()
   expect(wrong).toBe(0)
   expect(measureCost(circuit, [drifting])).toEqual({operations: 3, layers: 3})
   expect(measureCost(circuit, [exact])).toEqual({operations: 18, layers: 16})
+})
+
+test('emitMinimumExact on operands declared on a 1/64 grid is 5 operations in 4 layers', () => {
+  const circuit = new Circuit(2)
+  for (const wire of [0, 1]) {
+    circuit.assumeRange(wire, 0, 16_384)
+    circuit.assumeGrid(wire, 1 / 64)
+  }
+  const exact = emitMinimumExact(circuit, 0, 1)
+  const random = createRandom(13)
+  const gridValue = () => Math.floor(random() * 16_384 * 64) / 64
+  let wrong = 0
+  for (let pair = 0; pair < 3_000; pair++) {
+    const a = gridValue()
+    // Every third pair differs by one grid step, the smallest difference the bit has to resolve.
+    const b = pair % 3 === 0 ? a + 1 / 64 : gridValue()
+    const source = pair % 2 === 0 ? Float32Array.of(a, b) : Float32Array.of(b, a)
+    if (circuit.evaluateReference(source)[exact] !== Math.min(a, b)) wrong++
+  }
+  expect(wrong).toBe(0)
+  expect(measureCost(circuit, [exact])).toEqual({operations: 5, layers: 4})
 })

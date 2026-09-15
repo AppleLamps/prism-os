@@ -1,6 +1,8 @@
 # Uniform direction: what homogeneity lets us do to a compiled UI
 
-This note reads Cheng's talk "Repeatable breakthrough" through one lens. Once every UI is the same three atoms in sparse layers over one source table, which uniform ways of directing a UI become possible that a normal UI codebase can't offer, and how far do tonight's numbers say they go? It proposes six prototypes. Two short scratch runs check the costs. Their scripts are `population.ts` and `drag-gradient.ts` in `scratchpad/phase3-ideas/uniform-direction/`. No repo file besides this note changed.
+Status, September 15, 2026: two of this note's six ideas were built as prototypes after it was written: [user-population](../user-population/README.md) (idea 1) and [drag-knobs](../drag-knobs/README.md) (2). The design atlas (3), decision margins (4), behavior edits as numbers (5) and candidate futures (6) weren't built. [guide/sections/talk.md](../guide/sections/talk.md) explains each prototype.
+
+This note reads Cheng's talk "Repeatable breakthrough" through one lens. Once every UI is the same three atoms in sparse layers over one source table, which uniform ways of directing a UI become possible that a normal UI codebase can't offer, and how far do tonight's numbers say they go? It proposes six prototypes. Two short scratch runs check the costs. Their scripts are `population.ts` and `drag-gradient.ts` in `scratchpad/phase3-ideas/uniform-direction/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase3-ideas/uniform-direction/`). No repo file besides this note changed.
 
 ## Reading the talk against tonight's results
 

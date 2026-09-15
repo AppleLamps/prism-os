@@ -1,10 +1,12 @@
 # Outside techniques for writing UI as fixed numeric layers
 
+Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS still describes window-manager.ts, which hasn't changed since commit a915dcb.
+
 This note surveys techniques from shader programming, GPU compute, machine learning, classic parallel algorithms, and immediate-mode UI practice. For each one it asks what the technique could do inside an Indirect circuit: a fixed feed-forward program of affine operations, ReLU-gated products (ReGLU), and exact bits, evaluated once per frame over a Float32Array source table. Each entry gives a short description, a pointer (paper, post, or repo), the UI job it could do, and its cost in depth (layers) and width (operations and stored weights). The note ends with ten prototypes.
 
 Line numbers in `numeric-ui-core.ts` refer to commit c3d8e54 (September 5, 2026); on September 14, 2026 the file grew from 1,653 to 3,158 lines.
 
-Where a cost says "measured", the number comes from a scratch script in `scratchpad/phase1/outside-techniques/` (`histogram.ts`, `springs.ts`, `prefix.ts`, `sort.ts`, `linebreak.ts`, `eventscan.ts`, `nearest.ts`, sharing `common.ts`). Every script builds circuits with the real `Circuit` class from `numeric-ui-core.ts`, measures `compileTensorProgram(roots)`, and checks outputs for exact equality against a plain JavaScript reference on random inputs. Run any of them with `bun <script>.ts` from that folder.
+Where a cost says "measured", the number comes from a scratch script in `scratchpad/phase1/outside-techniques/` (`histogram.ts`, `springs.ts`, `prefix.ts`, `sort.ts`, `linebreak.ts`, `eventscan.ts`, `nearest.ts`, sharing `common.ts`). Every script builds circuits with the real `Circuit` class from `numeric-ui-core.ts`, measures `compileTensorProgram(roots)`, and checks outputs for exact equality against a plain JavaScript reference on random inputs. Run any of them with `bun <script>.ts` from that folder. The scripts are backed up at `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/outside-techniques/`.
 
 ## Context this survey assumes
 

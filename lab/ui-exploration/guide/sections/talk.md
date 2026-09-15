@@ -112,6 +112,8 @@ Chrome can keep playing an animation on its compositor thread while JavaScript i
 
 **Main limitation.** JavaScript now runs a schedule: when to commit, timers for settle commits, running due settle commits before a display, and undoing settle commits when an event with an earlier timestamp arrives after them. Events that arrive during a stall are still handled only once the main thread is free. A value read "from last frame" now comes from the last commit, which can be hundreds of milliseconds old, e.g. Photos laying itself out from last state's window size was 507 px off during the maximize, against 35.7 px when every frame writes back at 240 fps. A live resize also created about 181,000 keyframe objects in 11 s.
 
+**Since then.** Since September 14, 2026, host-timing.ts's `advanceFrame` applies the same rule in the repo root when `writeBack` is `'events and settle checks'`: only evaluations at events, settle checks and snaps write state back, and each frame evaluates a copy of the table ([execution-model.md](../../../../execution-model.md#which-evaluations-write-state-back)).
+
 ### pixel-output: the pixel instead of the DOM element
 
 **The idea from the talk.** Ken Perlin's "one supercomputer behind every pixel": draw the UI with one small program that runs for every pixel, instead of routing content into DOM elements.
@@ -151,7 +153,7 @@ The page first failed in Chrome with "Maximum call stack size exceeded": one gen
 
 JavaScript writes tables into the source table once: a line break class for every code point (41 classes, starting from UAX #14, Unicode's line breaking algorithm, plus distinctions that pretext makes), three property bits per class (space or newline, newline, part of a word), and a 41 × 41 table of bits that says whether a line may break between one class and the class after it. JavaScript fills in a code point's advance, i.e. its width, the first time the code point appears, and a font change rewrites only those entries.
 
-The circuit reads these tables with the index read instruction, from index-read's copy of the runtime. The class and advance tables have two levels: a first table maps each block of 128 code points to an offset into a second table, so blocks whose entries are all the same share one page of entries, e.g. every block of CJK ideographs. Per cell, the circuit does 8 index reads: block offset then class, block offset then advance, the three property bits, and the break bit. In JavaScript terms, the break bit is `breakAfter[i] = pairTable[classOf(codePoints[i]) * 41 + classOf(codePoints[i + 1])]`. The line walk then uses `breakAfter` where text-editing used "is a space".
+The circuit reads these tables with the index read instruction, from index-read's copy of the runtime; numeric-ui-core.ts has had the same `circuit.indexRead` since September 14, 2026. The class and advance tables have two levels: a first table maps each block of 128 code points to an offset into a second table, so blocks whose entries are all the same share one page of entries, e.g. every block of CJK ideographs. Per cell, the circuit does 8 index reads: block offset then class, block offset then advance, the three property bits, and the break bit. In JavaScript terms, the break bit is `breakAfter[i] = pairTable[classOf(codePoints[i]) * 41 + classOf(codePoints[i + 1])]`. The line walk then uses `breakAfter` where text-editing used "is a space".
 
 **What it showed.**
 
@@ -376,12 +378,12 @@ The combined circuit needed new click rules. Window buttons and dock items act o
 Some results translate directly into ways of writing an app:
 
 - Write repeated items as one per-item program with reductions between stages (instanced-items), and use Brent-Kung prefix sums for positions that can pass about a million px.
-- Where stored state must not depend on the frame rate, commit state per event and draw frames with evaluations that never write back (event-time).
+- Where stored state must not depend on the frame rate, commit state per event and draw frames with evaluations that never write back (event-time), which host-timing.ts's `advanceFrame` does with `'events and settle checks'`.
 - Keep behavior and design numbers in source cells instead of constants (user-population, drag-knobs). All five of drag-knobs' design numbers cost 60 operations, and a number in a cell can be searched, changed at runtime, or differ per user.
 - Treat a capacity as an upper bound, and compute whole-text outputs like a line count from the count of what has arrived (streaming-words).
 - Lay text out and hit-test against destinations, not drawn positions (indirect-os-2).
-- Hold code points in text cells and read line break rules from tables (code-points), once the runtime has the index read instruction.
+- Hold code points in text cells and read line break rules from tables (code-points), with the index read instruction that numeric-ui-core.ts has had since September 14, 2026.
 
-Other results are research directions rather than building blocks: learned rules (learned-bits), delays chosen by search (retiming), per-pixel output with index reads and a GPU guard (pixel-output), and a relaxed order of additions away from rounding points (exactness-budget), which needs the builder to mark rounding points first.
+Other results are research directions rather than building blocks: learned rules (learned-bits), delays chosen by search (retiming), per-pixel output with index reads and a GPU guard (pixel-output), and a relaxed order of additions away from rounding points (exactness-budget), which needs rounding points recorded. Since September 14, 2026 the builder records boolean atoms, `emitCompare`'s operations and operations marked with `circuit.markRoundingPoint`, while existing circuits, e.g. IndirectOS, still record only their boolean atoms.
 
 The same limits came up in several prototypes: sizes fixed when the circuit is built, e.g. capacities, line slots, queue entries and turns; FP32 precision at large coordinates; comparisons that sit exactly on a threshold while reading drifting spring state; generated JS that needs thousands of evaluations to get fast; GPU runs that spend most of their time uploading and reading back; and browser checks in a hidden tab that give no information about motion or frame pacing.

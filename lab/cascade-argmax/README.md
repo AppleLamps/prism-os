@@ -30,6 +30,8 @@ The September core preserves macro semantics and rounding, so the July operation
 
 The long exact cascade is an available construction, not a proof of minimality. A native comparison backend, a proven minimum separation, or another construction can change the cost. Current timing is serial JavaScript CPU execution. Run the report on the target machine rather than extrapolating it to GPU execution.
 
+The cascade columns use this folder's own cascade. Since September 14, 2026, numeric-ui-core.ts's `emitCompare` builds exact comparisons from declared ranges, and an exact tree over 8 candidates built with it is 150 operations in 57 layers without a grid, or 52 in 18 on a 1/64 grid ([highest-score-tree.md](../ui-exploration/guide/patterns/highest-score-tree.md)).
+
 ## Reproduce
 
 Run `bun test lab/cascade-argmax`, `bunx tsgo -p lab/cascade-argmax`, `bunx oxlint --type-aware lab/cascade-argmax`, and `bun lab/cascade-argmax/report.ts`.

@@ -6,6 +6,8 @@ Current production counts are 26 candidate-gallery reads and 12 window-manager r
 
 Finite bounds now follow FP32 rounding at each step. A finite float64 endpoint above the FP32 range no longer authorizes gather lowering. See `numeric-semantics.test.ts` for an unselected overflowing-product regression. Retrieval still follows selection; this pass does not discover query/key scoring. See `lab/runtime-cost` for the separate reusable-buffer measurement.
 
+Update, September 15, 2026: since September 14, `circuit.indexRead` reads at a computed integer index in 1 operation, without a one-hot ([execution-model.md](../../execution-model.md#index-reads)). `isProvenBit` also accepts `emitCompare` bits and index reads of bits, so `emitFirstActive` declares a group over selections among them. The next step "extend the declared-invariant-plus-idiom pattern to bounded visibility compaction" was built in [compaction-into-slots.ts](../ui-exploration/guide/examples/patterns/every-item/compaction-into-slots.ts), whose test checks the one-hot and binary-search forms against a loop in both evaluators.
+
 ## Historical July notes
 
 

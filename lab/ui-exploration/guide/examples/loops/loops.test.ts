@@ -234,7 +234,7 @@ describe('grow and shrink with min and max', () => {
   })
 })
 
-describe('numbers quoted in the section', () => {
+describe('worked examples', () => {
   test('first visible row: heights 40, 40, 0, 60, 40 at scrollTop 90', () => {
     const built = buildFirstVisibleRow(5, 2)
     const values = built.circuit.evaluateReference(Float32Array.from([90, 40, 40, 0, 60, 40]))

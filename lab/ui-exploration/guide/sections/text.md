@@ -366,13 +366,13 @@ Obstacles should be the windows' destinations, not their drawn positions. With w
 
 - One line's end from a known start: O(lookahead) comparisons at constant depth, plus the prefix sums, which are O(N) additions in O(log N) layers with Brent-Kung, or one wide sum per prefix in 1 layer with about N²/2 stored weights.
 - Every start's line end: O(N × lookahead) comparisons at constant depth.
-- L lines chained through one-hots: O(L × N) operations and O(L) layers today, and O(N + L × lookahead) operations with an index read instruction.
+- L lines chained through one-hots: O(L × N) operations and O(L) layers. numeric-ui-core.ts has had the index read instruction since September 14, 2026, which would bring this to about O(N + L × lookahead) operations, but no text circuit has been rebuilt on it, so that size and the table's last column are still estimates.
 - Each word's x and line index from the slots' one-hots: one product per segment per slot, O(N × L).
 
 ### When not to use the walker
 
 - When one width drives a block of fixed text, tabulation is much smaller and 4 layers deep, e.g. the Notes window's 10 tabulated blocks are 1,041 operations with every painting output.
-- For long paragraphs without an index read instruction: at 1,023 segments, gathered lines are 361,890 operations, 89% of them one-hots.
+- For long paragraphs chained through one-hots, as text-walker built them: at 1,023 segments, gathered lines are 361,890 operations, 89% of them one-hots. The index read instruction in numeric-ui-core.ts would replace those one-hots, but nobody has rebuilt text-walker on it yet.
 - For speed. On the CPU executor the walker circuits ran 50 to about 1,000 times slower than pretext's own walker. The reason to use the walker is that text becomes part of one program with window geometry and springs.
 
 ### Pitfalls

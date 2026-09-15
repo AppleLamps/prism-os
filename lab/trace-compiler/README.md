@@ -75,6 +75,8 @@ The replacement first keeps positive differences with ReLU, then repeatedly scal
 
 This is an exact forward construction under the compiler's numeric assumptions. It does not make hard comparisons usefully differentiable, nor prove that a long cascade is the fastest execution method. A native comparison or a simpler training relaxation is a separate lowering choice.
 
+Update, September 15, 2026: compile.ts still builds its own cascade, scaling by 2^23 and clamping until the smallest positive FP32 value reaches 1. Since September 14, numeric-ui-core.ts's `emitCompare` plans cascade stages from declared ranges, e.g. `a >= b` within 0..16,384 in 15 operations and 14 layers ([execution-model.md](../../execution-model.md#comparisons)). The compiler doesn't use `emitCompare`, `circuit.indexRead` or host-written spring matrices, all added that day.
+
 ## September Fixture Results
 
 The complete report checks 1,174,491 circuit outputs: 1,102,635 with all three FP32 comparisons, 68,300 without a compiled-execution comparison because the output was constant, and 3,556 absent nullable value slots. There were zero circuit mismatches. Native JS independently checked 1,193,491 float64 interpreter outputs with zero disagreements. The larger native count includes unchanged object fields and uses a different nullable representation.

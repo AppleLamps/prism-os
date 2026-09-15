@@ -17,9 +17,9 @@ bun lab/ui-exploration/text-editing/pretext-agreement.ts        # wrapping rules
 bun lab/ui-exploration/text-editing/demo.html                   # browser demo
 ```
 
-Four longer checks live in the scratchpad (`scratchpad/phase2/text-editing/`) and run with `bun <path>`: `stress.ts` (differential runs at capacities 31 to 64), `large-capacity.ts` (the FP32 budget, sizes at capacity 512 and 1024, and a differential run at capacity 512 that fills the buffer), `codegen-warmup.ts <rows per function> <capacity>` (generated JS over 30 seconds of warmup), and `line-depth.ts` (the chain of operations inside one line slot).
+Four longer checks live in the scratchpad (`scratchpad/phase2/text-editing/`, backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase2/text-editing/`) and run with `bun <path>`: `stress.ts` (differential runs at capacities 31 to 64), `large-capacity.ts` (the FP32 budget, sizes at capacity 512 and 1024, and a differential run at capacity 512 that fills the buffer), `codegen-warmup.ts <rows per function> <capacity>` (generated JS over 30 seconds of warmup), and `line-depth.ts` (the chain of operations inside one line slot).
 
-`pretext-agreement.ts` imports the phase 1 copy of pretext's source from the scratchpad (`phase1/pretext/pretext-src`), not `~/github/pretext`. I didn't open the demo in a browser, since no browser automation was allowed. I checked that `bun demo.html` serves the page and bundles the module, and every module the demo uses is exercised by the headless tests. The runtime (`numeric-ui-core.ts`) is imported unchanged.
+`pretext-agreement.ts` imports the phase 1 copy of pretext's source from the scratchpad (`phase1/pretext/pretext-src`, backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/pretext/pretext-src`), not `~/github/pretext`. I didn't open the demo in a browser, since no browser automation was allowed. A later Chrome check opened the demo, see [Browser check](#browser-check). I checked that `bun demo.html` serves the page and bundles the module, and every module the demo uses is exercised by the headless tests. The runtime (`numeric-ui-core.ts`) is imported unchanged.
 
 ## What was built
 

@@ -1,6 +1,39 @@
 # Current results, September 2026
 
-This is the current summary after implementing the [reassessment](reassessment-2026-09-03.md). The July briefs and old measurements remain historical; they are not requirements for new experiments. The protected author notes in `ideas.md` and the README TODO were left intact, so consult this page and the current numeric-contract documents for implementation status. `tricks.md` was renamed to `expressions.md` and rewritten on September 15, 2026, with Cheng's approval, and is no longer protected.
+This is the repo-wide page for current results, known issues in production code, open decisions, and parked work. It started as the summary after implementing the [reassessment](reassessment-2026-09-03.md). The July briefs and old measurements remain historical; they are not requirements for new experiments. The protected author notes in `ideas.md` and the README TODO were left intact, so consult this page and the current numeric-contract documents for implementation status. `tricks.md` was renamed to `expressions.md` and rewritten on September 15, 2026, with Cheng's approval, and is no longer protected.
+
+## Runtime additions since September 14, 2026
+
+On September 14, Cheng chose the recommended option for three runtime questions ([decisions 1 to 3](ui-exploration/guide/review-and-decisions.md#decisions-for-you)). Every existing circuit compiles to the same program with the same values, e.g. IndirectOS stays at 5,253 operations in 192 layers.
+
+- **Index reads.** `circuit.indexRead` and `circuit.indexReadAffine` copy `candidates[floor(index)]` in 1 operation at any table size, for an index range strictly inside ±2^24. A gradient into the index throws unless the caller passes `'zero'` or `'backward-difference'`. The `recomputeDepths` option recomputes layers after gather lowering, and is off by default ([index reads](../execution-model.md#index-reads), [compilation](../execution-model.md#compilation)).
+- **Comparisons.** `emitCompare` builds an exact bit of `>`, `>=`, `<`, `<=` or `===` from declared ranges: integer bits when both operands lie on grids declared with `assumeGrid`, e.g. 2 operations in 2 layers for `a >= b` on a 1/64 grid, and a sign cascade otherwise, e.g. 15 operations in 14 layers for `a >= b` within 0..16,384. `emitMinimumExact`, `emitMaximumExact` and `emitClampExact` select one operand with such a bit, and `emitFirstActive` counts these bits and index reads of bits as proven bits ([comparisons](../execution-model.md#comparisons), [grids](../execution-model.md#grids)).
+- **Rounding points.** The builder records boolean atoms, `emitCompare`'s operations, and operations marked with `markRoundingPoint`, so a backend may reorder or fuse every other sum ([rounding points](../execution-model.md#rounding-points)).
+- **Springs and time.** host-timing.ts counts 4 ms spring steps and writes a 4-number step matrix per stiffness and damping pair, which `emitApplySpringMatrix` and `emitAnimatedObject` apply. `advanceFrame` steps springs to each event's timestamp before applying the event, snaps objects onto their destinations past 300 steps in one frame, and with `'events and settle checks'` writes state back only at events, settle checks and snaps ([springs and time](../execution-model.md#springs-and-time)).
+
+IndirectOS and its Photos app don't use these additions yet; see the known issues below.
+
+## Known issues in production code
+
+- window-manager.ts still steps springs with `emitSpring`, 4 substeps of the frame's duration capped at 32 ms, so IndirectOS's animations depend on the frame rate and a stall loses time.
+- window-manager.ts's `emitFrontmost` checks stacking ranks one at a time, instead of with the balanced tree in [patterns.md](../patterns.md#findindex-when-passing-items-can-be-anywhere-and-keeping-the-best-score-so-far).
+- window-manager.ts tests Photos clicks against the animated layout, so which photo a click lands on depends on spring timing, while [indirect-os-2](ui-exploration/indirect-os-2/README.md) tests them at the window's destination size ([behavior-choices.md](../behavior-choices.md#hit-test-destinations-instead-of-drawn-positions)).
+- The stacking output adds `40 × animation.active` to each window's rank. The activity comes from clamped settle scores, so while a window settles, the projection can write a fractional z-index string, which CSS ignores.
+- Range propagation doesn't track NaN: a ReLU of a wire with an open range gets the range 0..Infinity, and a later product can get a finite range while holding NaN. So when a source cell holds Infinity, gather lowering can skip an unselected product whose dense sum is NaN. `bun lab/ui-exploration/codegen/nan-range-case.ts` finds 10 source tables over 200 random circuits where the executor and the reference evaluator differ on today's numeric-ui-core.ts. The demos can't reach the case, since their JavaScript validation rejects non-finite sources ([codegen](ui-exploration/codegen/README.md)).
+- Not production code, but agents copy it: most guide examples still use the older defaults, e.g. the toggle switch in [guide/sections/model.md](ui-exploration/guide/sections/model.md) uses rounding stages and `emitSpring`, which `emitCompare`, `emitAnimatedObject` and `advanceFrame` replaced as defaults on September 14.
+
+## Open decisions
+
+One line each. The options, recommendations and reasons are in [review-and-decisions.md](ui-exploration/guide/review-and-decisions.md#decisions-for-you).
+
+- [4. What agents build apps from](ui-exploration/guide/review-and-decisions.md#4-what-should-agents-build-apps-from): notation's declarations or raw numeric-ui-core.ts calls, buttons that act on release, one press per evaluation, and one shared host check.
+- [5. Staged per-item programs](ui-exploration/guide/review-and-decisions.md#5-should-collections-be-written-as-staged-per-item-programs): whether instanced-items' staged builder moves into the shared runtime for large or unknown-size collections.
+- [6. Whether to optimize depth now](ui-exploration/guide/review-and-decisions.md#6-should-depth-be-optimized-now): the recommendation is to measure one per-layer GPU pass first, and meanwhile accept only changes that remove layers while adding few operations.
+- [7. Pretext's epsilon change at src/rich-inline.ts:769](ui-exploration/guide/review-and-decisions.md#7-should-pretext-take-the-epsilon-change-at-srcrich-inlinets769): the recommendation is to lay the two minimal flows out in Chrome, Safari and Firefox before applying it.
+- [8. The next learning experiment](ui-exploration/guide/review-and-decisions.md#8-what-should-the-next-learning-experiment-be): the recommendation is retrieving an item's rectangle by id, trained with soft attention, run with argmax, and compared with lab/data-adapter.
+- Whether to convert IndirectOS to the new runtime pieces: `emitCompare` for its hit tests (17 more layers in a scratch copy), host-written spring matrices with `advanceFrame`, a balanced tree for `emitFrontmost`, and hit-testing Photos at destinations.
+- Still open from decisions 1 to 3: packaging the line walker and binary searches on the index read instruction; whether `emitCompare` should accept a number as a threshold and pick its FP32 value; recording the ReLUs and drifting minimums that feed today's atoms as rounding points; changing ui.md, Animation.md and index.ts to step springs to each event's timestamp; event-time's predicted keyframes and the closed-form matrix exp(A × elapsed time). Not added from index-read's copy of the runtime: the recognition pass `lowerIndexOneHots` and `assumeBit`.
+- [Decisions that can wait](ui-exploration/guide/review-and-decisions.md#decisions-that-can-wait): 8 smaller questions, e.g. whether `multiply` by a constant should fold into a weight, or whether to package a sorting network for more than 64 items.
 
 ## What learns
 
@@ -13,6 +46,7 @@ This is the current summary after implementing the [reassessment](reassessment-2
 | [Event window](event-window/README.md) | Six shared behavior parameters | Regression study trains from six starts and requires at least five to pass two unseen 10,000-frame traces. | Training supplies correct internal state and decision labels. Persistent state and temporal dependencies remain. |
 | [Generative fields](generative-fields/README.md) | Fields for one layout instance | Search and gradient tests pass; new audits separately report required content and strict containment. | Historical repair could hide content, and valid samples do not establish a smooth valid interpolation. |
 | [Cascade selection](cascade-argmax/README.md) | Per-case score cells through softened comparisons | A single clipped ramp recovers 160/160 table selections over ten fresh seeds before exact hardening. | This fits a table, not a shared query/key rule. Hard score gradients still provide no useful learning signal. |
+| [UI exploration](ui-exploration/README.md#capability-map) | learned-bits: decision rules as 2-input gates or counting units. user-population: behavior constants, e.g. drag slop, chosen over simulated users. drag-knobs: design numbers moved through a backward pass from a dragged output edge | learned-bits: 0 of 48 runs learned a task exactly at base settings. user-population: a table of constants per tremor segment cut the summed mistake rates from 56.1% to 36.5% after 5 s of use | Users and hands are synthetic. No Tab rule was learned exactly from part of its cases. |
 
 Learned parameters can occupy source cells beside changing application inputs. That storage choice does not turn parameter fitting into a different learning algorithm. The reusable layout and effort models train shared parameters once, then replace only features at inference.
 
@@ -20,14 +54,7 @@ Learned parameters can occupy source cells beside changing application inputs. T
 
 Run `bun run start:reusable`. The demo compares ordinary wrapping, search for each layout, and the shared learned rule. Controls change viewport width, collection, item count, and captions. All methods keep reading order and required content; scrolling is allowed.
 
-Lower preference loss is better under the explicitly authored objective:
-
-| Test set | Wrapping | Per-layout search | Shared rule, three seeds |
-| --- | ---: | ---: | ---: |
-| New counts and widths, short captions | 0.3727 | 0.0229 | 0.0259-0.0266 |
-| Longer captions and unfamiliar crops | 1.0530 | 0.1987 | 0.2854-0.3079 |
-
-The shared rule transfers well on the easier set and leaves a visible gap on the harder set. This is learned responsive sizing within a fixed flow layout, not generation of arbitrary page structures. The wrapping baseline uses a fixed preferred width; we have not shown that the model beats a carefully tuned responsive formula or measured how much it improves on a width-only model. Every method has zero measured missing items, text overflow, horizontal overflow, and overlap in those sets. Resize sweeps still find abrupt reflow. The photo corpus is shared between training and evaluation; different crops are not new photographs.
+Under the authored preference objective, the shared rule transfers well to new counts and widths and leaves a visible gap with longer captions and unfamiliar crops; the loss table is in the experiment's [results](reusable-layout/README.md#results). This is learned responsive sizing within a fixed flow layout, not generation of arbitrary page structures. The wrapping baseline uses a fixed preferred width; we have not shown that the model beats a carefully tuned responsive formula or measured how much it improves on a width-only model. Every method has zero measured missing items, text overflow, horizontal overflow, and overlap in those sets. Resize sweeps still find abrupt reflow. The photo corpus is shared between training and evaluation; different crops are not new photographs.
 
 ## Correctness changes
 
@@ -45,21 +72,37 @@ See [execution semantics](../execution-model.md), [macro contracts](../macro-ran
 
 Gather lowering recognizes 26 candidate-gallery reads and 12 window-manager reads. Sparse weights drop from 940 to 848 and from 11,742 to 11,598 respectively when comparing lowered and unlowered versions of the same current circuits. Candidate-index tables and candidate computation remain. The pass optimizes retrieval after selection; it does not discover query/key scoring.
 
-`createTensorEvaluator(roots)` reuses execution buffers and returns only requested outputs. The returned array is overwritten on the next call. Existing evaluators still return fresh full arrays. [Runtime measurements](runtime-cost/README.md) compare those paths with a direct scalar-JS baseline for the small coordinate calculation. All measurements are CPU execution, not GPU results, and do not isolate the cost of each September semantic change.
-
-## Verification and reproduction
-
-- `bun run check` checks root code, standalone lab scripts, and each scoped lab, without reading `exp/`.
-- `bun run test` runs root and lab regression tests. Latest integrated run, at commit a915dcb on September 3, 2026: 274 passing tests, no failures.
-- `bun lab/learned-interpreter/report.ts --soft --write` reruns the expensive hard and soft seed studies separately from regression tests.
-- `bun lab/reusable-layout/study.ts --write` regenerates the three-seed layout study and the preselected seed-17 model.
-- `bun lab/user-effort/report.ts`, `bun lab/data-adapter/report.ts`, and `bun lab/runtime-cost/report.ts` reproduce the smaller studies.
-- `bun lab/trace-compiler/report.ts` runs the independent native checks and circuit comparisons on the frozen fixture.
-
-The reusable-layout demo was checked in the browser at desktop and 390/320-pixel phone widths. All twelve photo assets rendered; controls changed the displayed layout; inspected views had no overlapping photos, clipped caption lines, page-level horizontal overflow, or browser errors. This complements the numerical tests; it is not a human usability study.
+`createTensorEvaluator(roots)` reuses execution buffers and returns only requested outputs ([buffer lifetime](../execution-model.md#buffer-lifetime)). [Runtime measurements](runtime-cost/README.md) compare it with the evaluators that return full arrays, on the CPU.
 
 ## Still open
 
 The next interpreter question is whether fractional training examples identify the required addition grouping. Scaling to longer programs without a complete loss table, learning a search guide across task families, and discovering shared query/key functions remain untested. The data-adapter baseline supplies a small exact task and independent oracle for that next comparison.
 
 For UI, the next evidence should come from broader content and an explicit human task, not from interpreting synthetic preference scores as usability. GPU execution, a general JavaScript compiler, learned arbitrary abstractions, and a full learned UI runtime are not delivered by these experiments.
+
+## Parked and deferred
+
+Moved from research-sweep.md on September 15, 2026, with updates. Parked work was tried in July 2026 and set aside:
+
+- **Compiler mutation tests:** 49 lines mostly restated validator checks.
+- **Executor split:** a separate dependency-free executor added a module without shrinking the product.
+- **Precompiled demos:** faster startup, but a generator and 124 KB of generated source made browser bundles much larger.
+- **Portable tensor format:** exact JSON round-tripping added versioning and a second representation with no consumer.
+- **Layer scheduling:** latest-legal scheduling increased gathered inputs. Retry after circuit shapes change; the README's TODO names Percepta's mixed-integer formulation as the reference approach.
+- **Relation layout:** the older demo added about 400 lines and proved less than the current window and Photos behaviors.
+- **GPU megakernel:** feasible in one 256-thread workgroup, but interesting only when many source tables run together. Since then, outside the root runtime, codegen and instanced-items built WGSL executors, and user-population ran 16,384 users for 600 frames on an Apple GPU, matching generated JS on every output. instanced-items' GPU pipeline, with one readback per stage, was slower than its CPU executor at every size. Decision 6 recommends measuring one per-layer GPU pass first.
+- **Slot reuse:** saved about 4.5 KB for windows and 1 KB for Photos. Larger gains need a narrower output contract and more runtime machinery.
+
+**Deferred.** In July, strings, arbitrary division, variable allocation, fixed point, editable instructions, and batching still lacked a UI behavior that required them. Since then, prototypes built some of these: division by a runtime value (numeric-library's Newton reciprocal, see [expressions.md](../expressions.md#dynamic-division)), code points in cells with line break rules read from tables (code-points), transition tables in cells run by one compiled program (the guide's [table machine](ui-exploration/guide/sections/chains.md#batching-different-chains-together)), and one program over many source tables (codegen's instance axis, user-population). None of these is in numeric-ui-core.ts. Keep the preallocated FP32 model in the root runtime until a UI behavior requires one of them.
+
+## Verification and reproduction
+
+- `bun run check` checks root code, standalone lab scripts, and each scoped lab, without reading `exp/`.
+- `bun run test` runs root and lab regression tests, including lab/ui-exploration's prototype and guide example tests. The last recorded full run, at commit a915dcb on September 3, 2026, before lab/ui-exploration existed, had 274 passing tests and no failures.
+- `bun lab/ui-exploration/serve-demos.ts` serves every demo from one index page at http://127.0.0.1:4321/.
+- `bun lab/learned-interpreter/report.ts --soft --write` reruns the expensive hard and soft seed studies separately from regression tests.
+- `bun lab/reusable-layout/study.ts --write` regenerates the three-seed layout study and the preselected seed-17 model.
+- `bun lab/user-effort/report.ts`, `bun lab/data-adapter/report.ts`, and `bun lab/runtime-cost/report.ts` reproduce the smaller studies.
+- `bun lab/trace-compiler/report.ts` runs the independent native checks and circuit comparisons on the frozen fixture.
+
+The reusable-layout demo was checked in the browser at desktop and 390/320-pixel phone widths. All twelve photo assets rendered; controls changed the displayed layout; inspected views had no overlapping photos, clipped caption lines, page-level horizontal overflow, or browser errors. This complements the numerical tests; it is not a human usability study.

@@ -20,7 +20,7 @@ bun lab/ui-exploration/input/report.ts          # every table below, about 30 se
 bun lab/ui-exploration/input/demo.html          # the combined demo
 ```
 
-No file outside this folder changed; numeric-ui-core.ts is imported as is. The demo was not opened in a browser during this work (no browser automation was allowed). It typechecks, bundles with `bun build`, and only calls modules the headless tests exercise.
+No file outside this folder changed; numeric-ui-core.ts is imported as is. The demo was not opened in a browser during this work (no browser automation was allowed). A later Chrome check opened the demo, see [Browser check](#browser-check). It typechecks, bundles with `bun build`, and only calls modules the headless tests exercise.
 
 Files:
 

@@ -1,10 +1,12 @@
 # Runtime and vocabulary
 
+Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS still describes window-manager.ts, which hasn't changed since commit a915dcb.
+
 These are phase-one reader notes on Indirect's numeric runtime. They cover the atoms and macros a UI author can use today, how the compiler and executor turn them into layers, measured sizes and CPU times for the production circuits, the operations that don't exist yet (with prototyped constructions and their measured costs), and what a GPU or batched backend would look like for this program shape.
 
 Line numbers in `numeric-ui-core.ts` refer to commit c3d8e54 (September 5, 2026); on September 14, 2026 the file grew from 1,653 to 3,158 lines.
 
-All scripts live in `scratchpad/phase1/runtime/`, with their raw JSON outputs beside them: `measure-circuits.ts` (production circuits), `macro-costs.ts` (each macro alone), `constructions.ts` and `probe.ts` (missing operations), and `codegen-study.ts` (generated code and instance batching). Measurements used Bun 1.4.0 on an Apple-silicon laptop. Structural counts are exact. Timings move by tens of percent from run to run.
+All scripts live in `scratchpad/phase1/runtime/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/runtime/`), with their raw JSON outputs beside them: `measure-circuits.ts` (production circuits), `macro-costs.ts` (each macro alone), `constructions.ts` and `probe.ts` (missing operations), and `codegen-study.ts` (generated code and instance batching). Measurements used Bun 1.4.0 on an Apple-silicon laptop. Structural counts are exact. Timings move by tens of percent from run to run.
 
 ## 1. How one frame runs
 

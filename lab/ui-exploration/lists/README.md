@@ -9,7 +9,7 @@ From the repo root:
 - `bun test lab/ui-exploration/lists`: 15 tests, about 1 s.
 - `bunx tsgo -p lab/ui-exploration/lists`: typecheck.
 - `bun lab/ui-exploration/lists/report.ts [list] [routing] [cards] [cards-seeds] [flick] [hazard] [pieces]`: the heavy measurements (several minutes for all sections). It prints one JSON line per row and merges the selected sections into `results.json`.
-- `bun lab/ui-exploration/lists/list.html` and `bun lab/ui-exploration/lists/cards.html`: demo pages. Both bundle with `bun build`, but I haven't opened either in a browser, since nobody was awake to allow browser automation.
+- `bun lab/ui-exploration/lists/list.html` and `bun lab/ui-exploration/lists/cards.html`: demo pages. Both bundle with `bun build`, but I haven't opened either in a browser, since nobody was awake to allow browser automation. A later Chrome check opened both pages, see [Browser check](#browser-check).
 
 | file | contents |
 | --- | --- |

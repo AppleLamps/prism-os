@@ -17,11 +17,11 @@ bun lab/ui-exploration/code-points/report.ts decode exhaustive     # chosen sect
 bun lab/ui-exploration/code-points/demo.html                       # browser demo
 ```
 
-Two scratch scripts live in `scratchpad/phase3/code-points/`. `overflow-categories.ts` is the JS experiment that found which remaining mismatches go away when CJK runs are kept whole, before that rule went into the circuit. `attribution-probe.ts` is the experiment behind the causes table that `pretext-agreement.ts census` prints.
+Two scratch scripts live in `scratchpad/phase3/code-points/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase3/code-points/`). `overflow-categories.ts` is the JS experiment that found which remaining mismatches go away when CJK runs are kept whole, before that rule went into the circuit. `attribution-probe.ts` is the experiment behind the causes table that `pretext-agreement.ts census` prints.
 
 The runtime is `numeric-ui-core.ts`, a copy of index-read's runtime copy, which adds the `indexRead` instruction to the repo root runtime (commit a915dcb). This folder changed only how that copy builds and compiles reads over large tables. See [what got awkward](#what-got-awkward). The baseline is text-editing's editor circuit, JS model, integer building blocks and width table (`editor-circuit.ts`, `reference.ts`, `integer-circuits.ts`, `width-table.ts`) on the shared runtime (`../../../numeric-ui-core.ts`). These files and text-editing's `fake-canvas.ts` are imported from `../text-editing/`. Until September 15, 2026 this folder held copies of them: the four baseline files as `baseline-*.ts`, unchanged except for import paths, and an unchanged `fake-canvas.ts`. `report.ts` and `pretext-agreement.ts` measure the baseline next to the new circuit. `line-break-data.ts` is pretext's generated UAX #14 table (Unicode 17, MIT License), copied from tonight's read-only clone. `pretext-agreement.ts` imports phase 1's copy of pretext's source, never `~/github/pretext`.
 
-I didn't open the demo in a browser, since no browser automation was allowed. `bun build lab/ui-exploration/code-points/demo.ts` bundles it, and the tests exercise every module the demo uses except `demo.ts` itself.
+I didn't open the demo in a browser, since no browser automation was allowed. A later Chrome check opened the demo, see [Browser check](#browser-check). `bun build lab/ui-exploration/code-points/demo.ts` bundles it, and the tests exercise every module the demo uses except `demo.ts` itself.
 
 ## What was built
 

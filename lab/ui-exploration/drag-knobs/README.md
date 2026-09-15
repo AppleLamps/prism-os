@@ -10,7 +10,7 @@ Run from the repo root:
 
 - `bun test lab/ui-exploration/drag-knobs` runs 13 tests in about 1.5 s.
 - `bun lab/ui-exploration/drag-knobs/report.ts` prints every table in this README and writes `report-results.json`. It takes about 25 s.
-- `bun lab/ui-exploration/drag-knobs/demo.html` opens the demo. Drag the left, right or bottom edge of any card. Checked knobs may move. The panel shows the knob values, how the last frame was solved, and flip sentences for the dragged card's grid and title. Nobody has opened the demo in a browser yet; its logic is in `demo-model.ts`, which the tests drive headlessly, and `bun build` bundles the page.
+- `bun lab/ui-exploration/drag-knobs/demo.html` opens the demo. Drag the left, right or bottom edge of any card. Checked knobs may move. The panel shows the knob values, how the last frame was solved, and flip sentences for the dragged card's grid and title. Nobody has opened the demo in a browser yet; its logic is in `demo-model.ts`, which the tests drive headlessly, and `bun build` bundles the page. A later Chrome check opened the demo, see [Browser check](#browser-check).
 - `bunx tsgo -p lab/ui-exploration/drag-knobs` type-checks the folder.
 
 numeric-ui-core.ts is unchanged and imported through `../../../numeric-ui-core.ts`. codegen's `codegen.ts` and `instance.ts` are imported from `../codegen/`. Until September 15, 2026 this folder held unchanged copies of them. Everything else is copied into this folder: layout-tree's tree, builder, ops, reference, compare, text tables and app shell, and the repo root's `candidate-gallery.ts` (circuit and machine only).

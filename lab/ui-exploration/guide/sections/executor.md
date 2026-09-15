@@ -368,7 +368,7 @@ What one program per item buys, besides a constant program size:
 What it costs:
 
 - A per-item constant turns from a weight into a product. The staged gallery has about 33 more operations per photo than the hand-written circuit, mostly products for per-photo constants plus per-photo comparisons and reads, and IndirectOS grew from 5,253 to 6,282 operations when its windows, dock items and photos became instances.
-- A runtime index into another list of items doesn't lower. A photo's row depends on the runtime column count, so the gallery keeps 7 arrays of rows, one per column count, and each photo's program reads the photo's row values from the array for the current column count.
+- A runtime index into another list of items doesn't lower. A photo's row depends on the runtime column count, so the gallery keeps 7 arrays of rows, one per column count, and each photo's program reads the photo's row values from the array for the current column count. The staged builder was written before numeric-ui-core.ts had `circuit.indexRead`, which reads at a per-item runtime index in 1 operation, and wasn't updated.
 
 ## Choices of semantics that determine big-O
 
@@ -384,7 +384,7 @@ A comparison's cost is multiplied by the number of comparisons a UI makes. Every
 
 The trace compiler lowered every comparison to a sign cascade and every running total to a chain. Its slice of the gallery's 1D photo strip came out at 21,213 operations and 1,580 layers. Written by hand with 4-operation comparisons and one wide sum per running total, the same outputs are 3,399 operations in 9 layers ([gallery](../../gallery/README.md)).
 
-Choosing among items is a comparison structure too. A tournament, which compares items in pairs, then compares the pairs' results, until one item remains, e.g. `emitArgmax`, is O(n) operations and O(log n) layers: 441 operations and 33 layers for 64 scores. Counting, where an item is selected when it's below every other item, is O(n²) comparisons at constant depth: numeric-library's exact minimum of 8 values is 121 operations and 5 layers. Sorting 64 integer keys is 2,172 operations and 63 layers as a Batcher network (a fixed arrangement of compare-and-swap steps), and 20,418 operations and 6 layers as ranks by counting, with each sorted position read through a one-hot of its rank ([notes/runtime.md](../../notes/runtime.md)).
+Choosing among items is a comparison structure too. A tournament, which compares items in pairs, then compares the pairs' results, until one item remains, e.g. `emitArgmax`, is O(n) operations and O(log n) layers: 437 operations and 33 layers for 64 scores ([the highest score, in a tree](../patterns/highest-score-tree.md)). Counting, where an item is selected when it's below every other item, is O(n²) comparisons at constant depth: numeric-library's exact minimum of 8 values is 121 operations and 5 layers. Sorting 64 integer keys is 2,172 operations and 63 layers as a Batcher network (a fixed arrangement of compare-and-swap steps), and 20,418 operations and 6 layers as ranks by counting, with each sorted position read through a one-hot of its rank ([notes/runtime.md](../../notes/runtime.md)).
 
 ### Whether per-item programs exist
 
@@ -410,7 +410,7 @@ Reading last frame's value from a source cell cuts a chain at that value, like a
 
 ## UI jobs under each choice
 
-Operations and layers for one evaluation, from the prototypes' READMEs and this section's examples. "Dense" means masked sums without gather lowering, and "index reads" means index-read's instruction, measured in index-read's copy of the runtime, which numeric-ui-core.ts now has too.
+Operations and layers for one evaluation, from the prototypes' READMEs, this guide's examples and its pattern docs. "Dense" means masked sums without gather lowering, and "index reads" means index-read's instruction, measured in index-read's copy of the runtime, which numeric-ui-core.ts now has too. Rows from the pattern docs were measured on numeric-ui-core.ts with `emitCompare`, whose integer bits are 2 operations, while sections/loops.md's examples build each integer bit from 3.
 
 | UI job | Choice | Operations | Layers | Growth | Source |
 | --- | --- | ---: | ---: | --- | --- |
@@ -421,10 +421,17 @@ Operations and layers for one evaluation, from the prototypes' READMEs and this 
 | | ReLU one-hot, gather lowering | 30,154 | 11 | O(rows) operations, O(rows × nodes × fields) table entries | index-read |
 | | index reads | 153 | 9 | O(nodes × fields) | index-read |
 | | rows of one height, row data kept in JavaScript | 280 | 19 | O(nodes) | lists |
+| | rows of one height, 1 field per node in source cells, read through the first visible row's one-hot | 20,305 | 19 | O(rows) | lists |
 | first visible row among 10,000 rows of different heights | count of comparisons, index reads for the nodes | 30,143 | 5 | O(N) work, constant depth | index-read |
 | | binary search, index reads | 215 | 57 | O(log N) work and depth | index-read |
-| filtered list, 1,000 items shown through 20 DOM nodes | count earlier visible items, one equality bit per item and node | 81,961 | 6 | O(items × nodes) | index-read |
+| filtered list, 1,000 items shown through 20 DOM nodes | count earlier visible items, one equality bit per item and node (rank slots) | 81,961 | 6 | O(items × nodes) | index-read |
+| | neighbor differences of `[visible items through item <= k]`, Brent-Kung prefix counts | 49,224 | 27 | O(items × nodes) | lists |
+| | the same, on numeric-ui-core.ts | 47,044 | 24 | O(items × nodes) | patterns/compaction-into-slots.md |
 | | prefix counts, then a binary search per node with index reads | 10,000 | 49 | O(items log items + nodes log items) | index-read |
+| | the same, on numeric-ui-core.ts | 7,824 | 57 | O(items + nodes log items) | patterns/compaction-into-slots.md |
+| filtered list, 10,000 items shown through 24 DOM nodes | prefix counts, then a binary search per node with index reads | 125,324 | 69 | O(items log items + nodes log items) | index-read |
+| hn-thread's comments in view, 251 comments through 48 DOM nodes, routing only | rank slots | 25,616 | | O(comments × nodes) | hn-thread |
+| | window slots | 1,269 | | O(comments + nodes) | hn-thread |
 | HN thread drawn per pixel, 251 comments | find the row under the pixel by counting | 1,615 per pixel | 24 per pixel | O(rows) per pixel | pixel-output |
 | | binary search, index reads | 314 per pixel | 54 per pixel | O(log rows) per pixel | pixel-output |
 | running totals of 1,024 heights | chain of 2-term sums | 1,023 | 1,023 | O(n) work, O(n) depth | this section |
@@ -433,8 +440,12 @@ Operations and layers for one evaluation, from the prototypes' READMEs and this 
 | | Kogge-Stone network | 9,217 | 10 | O(n log n) work, O(log n) depth | this section |
 | sort 64 integer keys | Batcher network | 2,172 | 63 | O(n log² n) work, O(log² n) depth | notes/runtime.md |
 | | ranks by counting | 20,418 | 6 | O(n²) work, constant depth | notes/runtime.md |
+| | ranks alone, with `emitCompare` bits | 4,096 | 3 | O(n²) work, constant depth | patterns/ranks-instead-of-sorting.md |
+| sort 64 integer keys, carrying one payload value each | bitonic network | 10,624 | 105 | O(n log² n) work, O(log² n) depth | notes/outside-techniques.md |
+| | ranks by counting, with gathers | 16,512 | 5 | O(n²) work, constant depth | notes/outside-techniques.md |
 | drag to reorder 100 cards, whole circuit | recount every card's rank each frame | 69,653 | 105 | O(n²) | lists |
 | | update the layout from the one card that moves | 36,207 | 90 | O(n) | lists |
+| a dragged card's next rank among 100 cards | count the cards the pointer passes, `emitCompare` bits | 1,404 | 8 | O(n) | patterns/ranks-instead-of-sorting.md |
 | `[a > b]` on continuous values within 16,384 | sign cascade, every pair of FP32 values | 16 | 15 | constant | comparisons |
 | | the trace compiler's layout of that cascade | 26 | 26 | constant | notes/runtime.md |
 | | one rounding stage, 2^45 ratio | 4 | 3 | constant | numeric-library |
@@ -442,6 +453,12 @@ Operations and layers for one evaluation, from the prototypes' READMEs and this 
 | | one rounding stage per comparison, one wide sum per total | 3,399 | 9 | | gallery |
 | which of 221 photos a click lands on, whole gallery circuit | tournament over hit bits | 48,411 | 61 | O(n) work, O(log n) depth | gallery |
 | | prefix counts of hit bits | 48,129 (23,243 more weights) | 41 | O(n²) weights, constant depth | gallery |
+| first hit among 1,024 overlapping items, hit bits in source cells | tournament (`emitFirstActive`) | 5,116 | 51 | O(n) work, O(log n) depth | sections/loops.md |
+| | earlier-hit counts, wide sums | 2,046 (525,822 weights) | 2 | O(n²) weights, constant depth | sections/loops.md |
+| | earlier-hit counts, Brent-Kung network | 3,050 | 19 | O(n) work, O(log n) depth | sections/loops.md |
+| the gallery's column count, 1 to 7 columns | threshold count, `emitCompare` bits | 13 | 3 | O(possible counts) | patterns/threshold-counts.md |
+| the gallery's column count and photo width | threshold count | 30 | 6 | O(possible counts) | gallery |
+| | the trace compiler's slice of index.ts | 524 | 91 | | gallery |
 | 32 pointer events per evaluation, window behaviors | event step written out per event | 10,196 | 281 | O(events) depth | input |
 | | moves from prefix counts, at most 2 presses | 2,230 | 55 | O(presses) depth | input |
 | 16 key events, keyboard focus | transition matrices, parallel prefix scan | 59,730 | 31 | | input |
@@ -449,9 +466,13 @@ Operations and layers for one evaluation, from the prototypes' READMEs and this 
 | recover 157 lines of a 1,023-segment paragraph; totals include a 190,279-operation table of where a line starting at each segment ends | one line at a time, ReLU one-hot, dense | 993,877 | 957 | O(lines × segments) beyond the table | index-read |
 | | one line at a time, index reads | 191,688 | 490 | O(lines) beyond the table | index-read |
 | | pointer jumping, index reads | 226,193 | 66 | O(segments × log lines) beyond the table | index-read |
+| greedy line breaking of 1,023 segments into 157 line slots | the line walker, unrolled one segment at a time | 23,496 | 9,204 | O(segments) work and depth | text-walker |
+| | text-walker's own next-start table, then one line slot at a time through one-hots | 457,882 | 725 | O(segments × lookahead + lines × segments) work, O(lines) depth | text-walker |
 | grow and shrink with min and max, 64 children | Clay's loop, unrolled | up to 226 rounds, not built | | | layout-tree |
-| | water filling, constant content widths | 897 | 9 | O(n) operations, O(n²) weights | layout-tree |
-| | water filling, runtime content widths | 5,750 | 13 | O(n²) work, constant depth | layout-tree |
+| | water filling, constant fit widths, whole circuit | 897 | 9 | O(n) operations, O(n²) weights | layout-tree |
+| | the same, widths pass only | 784 | 9 | O(n) operations, O(n²) weights | layout-tree |
+| | water filling, runtime fit widths, whole circuit | 5,750 | 13 | O(n²) work, constant depth | layout-tree |
+| | the same, widths pass only | 5,601 | 12 | O(n²) work, constant depth | layout-tree |
 | flex-wrap, 64 children | scan over children | 1,185 | 276 | O(n) depth | layout-tree |
 | IndirectOS's springs | `emitSpring`, 4 substeps per frame | 5,253 (whole circuit) | 192 | 46 operations per animated number | spring-bank |
 | | shared matrix powers | 3,580 (whole circuit) | 137 | 4 products per animated number | spring-bank |
@@ -460,7 +481,7 @@ Operations and layers for one evaluation, from the prototypes' READMEs and this 
 | thumbnail targets, 1,024 photos | one weight per (thumbnail, focused photo) | 3,072 (1,063,936 weights) | 1 | O(n²) weights | index-read |
 | | a table in cells, read per thumbnail | 3,072 (3,072 weights) | 1 | O(n) | index-read |
 
-Some terms in the table: a parallel prefix network computes running totals as a fixed tree of pairwise additions. A Brent-Kung network uses about 2n additions in about 2 log2 n layers, and a Kogge-Stone network about n log2 n additions in log2 n layers. Pointer jumping replaces each "where does the line starting here end" pointer with its target's pointer, doubling how far each pointer reaches per round. Water filling raises one shared level until the children's sizes add up to the container, with every child clamped between its own min and max. Clay is a C layout library whose grow step distributes leftover space in a loop.
+Some terms in the table: a parallel prefix network computes running totals as a fixed tree of pairwise additions. A Brent-Kung network uses about 2n additions in about 2 log2 n layers, and a Kogge-Stone network about n log2 n additions in log2 n layers. Pointer jumping replaces each "where does the line starting here end" pointer with its target's pointer, doubling how far each pointer reaches per round. Water filling raises one shared level until the children's sizes add up to the container, with every child clamped between its own min and max. Clay is a C layout library whose grow step distributes leftover space in a loop. A tournament picks one item by comparing items in pairs, then the pairs' results in pairs. Rank slots and window slots are hn-thread's two ways to fill a fixed number of DOM nodes: with rank slots, node k shows the (k + 1)-th visible item, found with one equality bit per item and node, and with window slots, node k shows the first visible row + k, since visible rows are contiguous. Window slots are 20 times cheaper, but rows of height 0 in view use up nodes, e.g. once a collapsed subtree has settled in view, window slots need 32 nodes where rank slots need 7. The line walker is text-walker's greedy line breaker written as arithmetic, one segment after another.
 
 ## When depth is worth trading for work
 

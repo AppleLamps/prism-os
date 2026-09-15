@@ -6,9 +6,11 @@ Each rewrite below computes the same result as the loop, and every iteration of 
 
 Three related topics are in other sections. A loop that runs a spring step a runtime number of times becomes powers of one step matrix, chosen by the binary digits of the step count, in [springs](springs.md). A loop that carries a state machine from event to event, and following links like "where does the next line start", are in [chains](chains.md). Reading `values[index]` at a computed index is in [indexing](indexing.md).
 
+The short entries for these loops are in the repo root's [patterns.md](../../../../patterns.md). Sections 1 to 5 each link a long pattern doc, which has a runnable example and a test, and keep what the pattern doc doesn't cover: other ways to compute the same result, and what the prototypes measured. Section 6 is the long form of patterns.md's water filling entry.
+
 ## How cost is counted
 
-An operation is one step of the compiled program: an affine sum (weights times inputs plus a constant), a ReLU-gated product, or a boolean atom. "Operations" counts the operations that some output needs, and all of them run on every frame.
+An operation is one step of the compiled program: an affine sum (weights times inputs plus a constant), a ReLU-gated product, a boolean atom, or an index read (`circuit.indexRead`), which copies the value at a computed position. "Operations" counts the operations that some output needs, and all of them run on every frame.
 
 A layer is a group of operations that don't read each other, which the executor runs as one sparse matrix multiplication. Depth is the number of layers, i.e. the longest chain of operations that must run one after another.
 
@@ -66,88 +68,15 @@ A masked sum over a one-hot, `Σ bit[i] × value[i]`, returns the value at the m
 
 ## 1. Count instead of search
 
-The pattern doc [count instead of search](../patterns/count-instead-of-search.md) has this idea on one page, with a runnable example and a test.
+A virtualized list keeps a fixed number of reusable DOM nodes, called DOM slots here, e.g. 24, and every frame it needs the first row that is at least partly visible, so that DOM slot k can show row `firstVisibleRow + k`. The loop `while (rowTops[firstVisibleRow + 1] <= scrollTop) firstVisibleRow++` stops at a position that depends on the data. The circuit evaluates the loop's test for every row at once and counts the rows that pass: row bottoms never decrease down the list, so the bits read `1 1 1 0 0`, and their count is the index where the loop stops. The differences of neighboring bits give the result as a one-hot, so each DOM slot's top is one gather. The pattern doc [count instead of search](../patterns/count-instead-of-search.md) covers why the count gives the loop's index, its cost, when it's exact and when not to use it.
 
-### The problem
-
-A virtualized list creates DOM nodes only for the rows in view. It keeps a fixed number of reusable DOM nodes, called DOM slots here, e.g. 24, and every frame it needs the first row that is at least partly visible, so that DOM slot k can show row `firstVisibleRow + k`. When rows have different heights, dividing scrollTop by a row height doesn't give that row.
-
-### The JavaScript way
-
-```ts
-// rowTops[r] is the top of row r, and rowTops[r + 1] is its bottom.
-let firstVisibleRow = 0
-while (firstVisibleRow < rowCount && rowTops[firstVisibleRow + 1] <= scrollTop) firstVisibleRow++
-```
-
-The loop stops at a position that depends on the data, and so does a binary search.
-
-### The circuit way
-
-Evaluate the loop's test for every row at once, then count the rows that pass ([first-visible-row.ts](../examples/loops/first-visible-row.ts)):
-
-```ts
-// aboveViewport[r] = [rowBottom[r] <= scrollTop], an integer bit on the quarter-pixel grid
-const aboveViewport = Array.from({length: rowCount}, (_, row) =>
-  emitIntegerAtLeastZero(circuit, [[scrollTop, 4], [rowTops[row + 1]!, -4]], 0))
-const firstVisibleRow = circuit.affine(aboveViewport.map(bit => [bit, 1] as const))
-```
-
-### Why it works
-
-Row bottoms never decrease down the list, so the test "this row's bottom is at or above scrollTop" passes for a run of rows at the start and fails for every row after that run. The bits look like `1 1 1 0 0`. Bits with that shape are called monotone along the index. The loop steps over the 1s and stops at the first 0, so its result, the index of the first 0, equals the number of 1s.
-
-For example, with row heights 40, 40, 0, 60 and 40 px, the row bottoms are 40, 80, 80, 140 and 180 px. At scrollTop 90, the bits are `1 1 1 0 0`, and their count is 3: row 3, which spans 80 to 140 px, is the first visible row. Row 2 is collapsed to height 0, so it repeats row 1's bottom, and the bits stay sorted.
-
-The count adds exact 0s and 1s, which FP32 adds exactly in any order.
-
-### The result's one-hot, from neighboring bits
-
-Reading the first visible row's top, or any value stored per row, needs the result as a one-hot. For monotone bits, the differences of neighboring bits form that one-hot, with no more comparisons:
-
-```ts
-// isFirstVisible[r] = aboveViewport[r - 1] - aboveViewport[r], treating aboveViewport[-1] as 1 and aboveViewport[rowCount] as 0
-const isFirstVisible = Array.from({length: rowCount + 1}, (_, row) => {
-  if (row === rowCount) return aboveViewport[rowCount - 1]!
-  const previous: [Wire, number][] = row === 0 ? [] : [[aboveViewport[row - 1]!, 1]]
-  return circuit.roundAffine([...previous, [aboveViewport[row]!, -1]], row === 0 ? 1 : 0)
-})
-circuit.assumeOneHot(isFirstVisible)
-// DOM slot k shows row firstVisibleRow + k, so its top is a masked sum that compiles to one gather.
-const slotTops = Array.from({length: slotCount}, (_, slot) => circuit.affine(
-  isFirstVisible.map((bit, row) => [circuit.multiply(rowTops[Math.min(row + slot, rowCount)]!, bit), 1] as const)))
-```
-
-In the example, the bits `1 1 1 0 0` give the differences `0 0 0 1 0 0`, which mark position 3, and DOM slots 0 and 1 get the tops 80 and 140 px. Each difference is 0 or 1, because monotone bits never go from 0 back up to 1. The differences add up to `aboveViewport[−1] − aboveViewport[rowCount] = 1 − 0`, so exactly one of them is 1. Position `rowCount` is marked when every row is above the viewport.
-
-### Cost
-
-Counting is O(n) operations at O(1) depth: one integer bit per row (3 operations, 2 layers), 1 count, and n + 1 one-hot members in 1 more layer. Each DOM slot's top is 1 gather.
-
-The example at 10,000 rows, with row heights in source cells and 24 DOM slots:
-
-- The row tops, from a Brent-Kung prefix sum (section 3): 19,981 operations and 24 layers.
-- With the count added: 49,982 operations and 27 layers.
-- With the one-hot and the 24 DOM slot tops added: 60,007 operations, 28 layers and 24 gather reads.
+This section's [first-visible-row.ts](../examples/loops/first-visible-row.ts) builds the list with 3-operation integer bits and row heights in source cells. At 10,000 rows, the Brent-Kung row tops are 19,981 operations in 24 layers, the count adds 30,001 operations and 3 layers, and the one-hot with 24 DOM slot tops brings the total to 60,007 operations, 28 layers and 24 gather reads. Row data the circuit doesn't compute with, e.g. labels, can stay in a JavaScript array indexed by the circuit's row index, which costs nothing in the circuit.
 
 ### Measured in the prototypes
 
 - lists' virtualized list does the same work, plus giving each visible row a DOM slot that doesn't change while the row stays visible: 60,174 operations and 32 layers at 10,000 rows with row tops computed in the circuit, and 40,193 operations and 8 layers with row bottoms computed in JavaScript.
 - Rows of one height need no per-row work, because the first visible row is `floor(scrollTop / rowHeight)` (section 4 covers floor). lists' uniform list is 280 operations and 19 layers at 1,000, 10,000 or 100,000 rows, with 0 mismatches in rows, y positions and DOM slots over every quarter-pixel scrollTop of 10,000 rows, at viewport heights 600 and 920 px.
 - A binary search takes log2 n steps, and each step reads a row bottom at a position the previous step computed. Reading at a computed position through a one-hot over every row costs O(n) operations per step, so that search costs more than the count. index-read added an index read instruction to a copy of the runtime, which reads `values[floor(index)]` as 1 operation, and numeric-ui-core.ts now has the same instruction as `circuit.indexRead`. With that instruction, in index-read's copy, finding the first visible row among 10,000 rows of different heights, with row tops prepared in JavaScript and 2 fields read per DOM slot, was 215 operations and 57 layers by binary search, against 30,143 operations and 5 layers by counting. So counting is O(n) operations at O(1) depth, and a binary search with index reads is O(log n) operations at O(log n) depth.
-
-### When not to use it
-
-- When every row has the same height: `floor(scrollTop / rowHeight)` takes fewer than 10 operations at any row count.
-- When the index read instruction is available and depth doesn't matter: a binary search reads log2 n row bottoms instead of comparing every row.
-- When the test isn't monotone, e.g. hit bits of overlapping windows: see section 2.
-
-### Pitfalls
-
-- A count returns a number for any bits, so unsorted bits give a wrong result and no error. pixel-output finds the row under each pixel by counting row tops. In 20 of its 60 random frames, hn-thread's resize handling had made a row height negative, so the row tops weren't sorted, and 1,728 decisions per variant differed from an independent painter's rasterizer.
-- Gather lowering relies on `assumeOneHot` without checking it. Run `validateOneHotGroups` in tests, as [loops.test.ts](../examples/loops/loops.test.ts) does.
-- The comparison has to be exact. The example's host contract is that scrollTop and row heights are multiples of 1/4 px, and lists rounds scrollTop down onto that grid in JavaScript.
-- The count compares every row on every frame, even when 24 rows are in view. Row data the circuit doesn't compute with, e.g. labels, can stay in a JavaScript array indexed by the circuit's row index, which costs nothing in the circuit.
 
 ### The same idea in other prototypes
 
@@ -159,23 +88,7 @@ The example at 10,000 rows, with row heights in source cells and 24 DOM slots:
 
 ## 2. When the test isn't monotone: the first hit
 
-The pattern doc [the first active candidate, in a tree](../patterns/first-active-tree.md) has way 2 on one page, with a runnable example and a test.
-
-### The problem
-
-A press lands where several windows overlap, and the frontmost window under the pointer receives the press. The hit bits, in stacking order from the front, look like `0 1 0 1 1`. These bits aren't sorted, so their count, 3, isn't the position of the first hit, 1.
-
-### The JavaScript way
-
-```ts
-let pressedWindow = -1
-for (let window = 0; window < windowCount; window++) {
-  if (hit[window] === 1) {
-    pressedWindow = window
-    break
-  }
-}
-```
+A press lands where several windows overlap, and the frontmost window under the pointer receives the press. A loop over the hit bits in stacking order, from the front, stops at the first 1. The hit bits look like `0 1 0 1 1`, which aren't sorted, so their count, 3, isn't the position of the first hit, 1.
 
 ### Circuit way 1: count the earlier hits
 
@@ -190,173 +103,48 @@ const isFirstHit = hits.map((hit, window) => circuit.reglu([], 1, [[hit, 1], [hi
 
 Another way to see why this works: the running OR of the hits, `min(1, hitsBefore + hit)`, is monotone, `0 1 1 1 1`, and the first hit is where the running OR changes.
 
+At 1,024 items with hit bits in source cells, the earlier-hit counts as wide sums are 2,046 operations in 2 layers with 525,822 stored weights, and from a Brent-Kung network 3,050 operations in 19 layers with 6,099 stored weights, against 5,116 operations in 51 layers for the tournament of way 2. In the gallery, where a click selects one photo among 221, the tournament accounts for about 20 of the circuit's 61 layers, and selecting the click by earlier-hit counts brings the whole circuit to 41 layers, for about 23,000 more stored weights.
+
+numeric-library's `emitMinimumOf` finds "which value is smallest" by counting as well: it compares every pair and marks the value that is at most every other value, choosing the first index on ties. The exact minimum of 8 values is 121 operations and 5 layers, O(n²) operations at O(1) depth.
+
 ### Circuit way 2: a tournament
 
-A tournament compares items in pairs, then the pairs' results in pairs, like a bracket. `emitFirstActive(circuit, gate, hits)` in numeric-ui-core.ts takes the maximum of neighboring hit bits up a balanced tree, so each tree node holds 1 when the press hits any window under that node. Then it routes the gate, a bit that is 1 when a selection should happen, back down the tree: at each node the route goes left when the left subtree holds a hit, and right otherwise. The window where the route arrives is the first hit. That's O(n) operations at O(log n) depth.
+A tournament compares items in pairs, then the pairs' results in pairs, like a bracket. `emitFirstActive(circuit, gate, hits)` in numeric-ui-core.ts takes the maximum of neighboring hit bits up a balanced tree, then routes the gate, a bit that is 1 when a selection should happen, back down to the first hit: O(n) operations at O(log n) depth. The pattern doc [the first active candidate, in a tree](../patterns/first-active-tree.md) covers the tree, its sizes, when it's exact and when not to use it.
 
 ### Circuit way 3: the largest key
 
 instanced-items' staged IndirectOS gives each window a key: its stacking rank + 1 when the press hits the window, where a higher rank is closer to the front, and 0 when the press misses. The frontmost hit window has the largest key, so the circuit takes the maximum key, and each window compares its own key with that maximum.
 
-### Cost
-
-The example at 1,024 items, with hit bits in source cells:
-
-| Form | Operations | Layers | Stored weights |
-| --- | ---: | ---: | ---: |
-| tournament (`emitFirstActive`) | 5,116 | 51 | 9,793 |
-| earlier-hit counts as wide sums | 2,046 | 2 | 525,822 |
-| earlier-hit counts from a Brent-Kung network | 3,050 | 19 | 6,099 |
-
-At 64 items the same forms are 316 operations in 31 layers; 126 operations in 2 layers with 2,142 stored weights; and 178 operations in 11 layers. The tournament is 5 log2 n + 1 layers at every size the report prints, from 16 to 1,024 items.
-
-In the gallery, where a click selects one photo among 221, the tournament accounts for about 20 of the circuit's 61 layers. Selecting the click by earlier-hit counts brings the whole circuit to 41 layers, for about 23,000 more stored weights.
-
-numeric-library's `emitMinimumOf` finds "which value is smallest" by counting as well: it compares every pair and marks the value that is at most every other value, choosing the first index on ties. The exact minimum of 8 values is 121 operations and 5 layers, O(n²) operations at O(1) depth.
-
 ### Pitfalls
 
-- The hits have to be exact bits. `emitFirstActive` accepts fractional scores, and then the route splits, e.g. candidates `[0.5, 0]` send 0.25 to each output. It declares its output a one-hot only when the gate and every candidate are provably exact bits: a boolean atom, a bit returned by `emitCompare`, a member of a declared one-hot, an index read whose reachable candidates are all such bits, or a range pinned to exactly 0 or exactly 1. A plain 0..1 range isn't enough, and neither is an AND of bits built with a ReLU.
+- The hits have to be exact bits, for the counts as well as for the tournament. [When the tree is exact](../patterns/first-active-tree.md#when-its-exact) lists which bits `emitFirstActive` can prove exact, and what fractional candidates do to the route.
 - Wide sums store n²/2 weights, e.g. about half a million at 1,024 items.
 - Items that can't overlap, e.g. photos in a grid, need none of this, since at most one hit bit is 1.
 
 ## 3. Prefix sums three ways
 
-The pattern doc [running totals as a tree of additions](../patterns/running-totals.md) has the three forms on one page, with a runnable example and a test.
+A prefix sum is the list of running totals of a list, e.g. `rowTops[r] = heights[0] + ... + heights[r − 1]`. UIs need prefix sums for row tops, the left edges of photos in a strip, the x positions of words along a line, and the number of visible items before each item. The loop is a chain as deep as the list is long. The pattern doc [running totals as a tree of additions](../patterns/running-totals.md) builds three arrangements of the same additions with `circuit.roundAffine`, a chain in the loop's order, one wide sum per total, and a Brent-Kung network, with their sizes, when each equals the loop, and which to use. Every FP32 addition rounds, so the grouping of the additions is part of what a prefix sum computes.
 
-### The problem
-
-A prefix sum is the list of running totals of a list, e.g. `rowTops[r] = heights[0] + ... + heights[r − 1]`. UIs need prefix sums for row tops, the left edges of photos in a strip, the x positions of words along a line, and the number of visible items before each item.
-
-### The JavaScript way
-
-```ts
-// row-tops.ts, in FP32 like the circuit
-let top = 0
-for (let row = 0; row < heights.length; row++) {
-  top = Math.fround(top + heights[row]!)
-  rowTops[row + 1] = top
-}
-```
-
-### Why the order of additions matters
-
-Every FP32 addition rounds, so adding the same numbers in a different grouping can give a different result. For example, with row heights 229, 167.4, 208.5 and 194.4 px, the loop computes `((229 + 167.4) + 208.5) + 194.4` and gets 799.300048828125, while adding in pairs, `(229 + 167.4) + (208.5 + 194.4)`, gives 799.2999877929688, one FP32 step lower. So a prefix sum's grouping is part of what it computes, and the grouping determines whether a circuit matches a sequential JavaScript loop bit for bit.
-
-### Form 1: a chain
-
-```ts
-rowTops[row + 1] = circuit.roundAffine([[rowTops[row]!, 1], [heights[row]!, 1]])
-```
-
-Each total adds one height to the previous total, in the loop's order, so the results equal the loop's results bit for bit. n heights cost n − 1 additions in n − 1 layers.
-
-Use `roundAffine` here, not `affine`. The builder copies an ordinary affine sum with fewer than 4 terms into the sums that read it and sorts terms by wire number, so a chain written with `affine` regroups its additions. The runtime notes measured a chain of 1,024 ordinary affine sums at 341 layers, drifting 0.2 px from the sequential loop.
-
-### Form 2: one wide sum per total
-
-```ts
-rowTops[row + 1] = circuit.roundAffine(heights.slice(0, row + 1).map(height => [height, 1] as const))
-```
-
-Each total is one sum whose terms are in loop order. An affine computes `value = fround(bias)`, then `value = fround(value + fround(coefficient × input))` for each term in stored order, and `roundAffine` stores the caller's order. So each sum takes the same rounding steps as the loop and gives the same bits. No total reads another total, so n − 1 sums fit in 1 layer. The cost moves into stored weights: the total after r rows stores r weights, about n²/2 in all.
-
-### Form 3: a Brent-Kung network
-
-A prefix network is a fixed arrangement of pairwise additions that computes every running total in fewer layers than a chain. In the Brent-Kung network (Brent and Kung, 1982), an upward pass adds neighbors, then pairs of pairs, and so on, completing the totals of the first 2, 4, 8, ... heights. A downward pass then fills in the totals in between, each by adding one completed total to one smaller block (`emitRowTopsBrentKung` in [row-tops.ts](../examples/loops/row-tops.ts)).
-
-For 8 heights h0 to h7, the builder places each addition in the first layer where both of its operands exist, which gives this network (`report.ts network`):
-
-| Layer | Additions | Totals completed |
-| --- | --- | --- |
-| 1 | h0 + h1, h2 + h3, h4 + h5, h6 + h7 | rowTops[2] |
-| 2 | (h0..h1) + (h2..h3), (h4..h5) + (h6..h7), (h0..h1) + h2 | rowTops[4], rowTops[3] |
-| 3 | (h0..h3) + (h4..h7), (h0..h3) + (h4..h5), (h0..h3) + h4 | rowTops[8], rowTops[6], rowTops[5] |
-| 4 | (h0..h5) + h6 | rowTops[7] |
-
-That's 11 additions in 4 layers, against 7 additions in 7 layers for the chain. `rowTops[1]` is h0 itself and needs no addition. In general a Brent-Kung network is about 2n additions in about 2 log2 n layers, e.g. 2,036 additions in 18 layers for 1,024 heights.
-
-Each total groups its additions differently from the loop, e.g. rowTops[4] is `(h0 + h1) + (h2 + h3)`, the paired grouping from the example above. When every partial sum is exact, e.g. quarter-pixel heights with totals below 2^22 px, the results equal the loop's results. On fractional heights the last bits can differ.
-
-A Kogge-Stone network is another prefix network, with about n log2 n additions in log2 n layers: the runtime notes measured 9,217 additions in 10 layers for 1,024 values.
-
-### Cost
-
-The example, with row heights in source cells:
-
-| Rows | Chain | Wide sums | Brent-Kung |
-| ---: | --- | --- | --- |
-| 8 | 7 operations, 7 layers, 14 weights | 7 operations, 1 layer, 35 weights | 11 operations, 4 layers, 22 weights |
-| 64 | 63 operations, 63 layers, 126 weights | 63 operations, 1 layer, 2,079 weights | 120 operations, 10 layers, 240 weights |
-| 256 | 255 operations, 255 layers, 510 weights | 255 operations, 1 layer, 32,895 weights | 502 operations, 14 layers, 1,004 weights |
-| 1,024 | 1,023 operations, 1,023 layers, 2,046 weights | 1,023 operations, 1 layer, 524,799 weights | 2,036 operations, 18 layers, 4,072 weights |
-
-The example's tests compare all three forms with the sequential `Math.fround` loop. On quarter-pixel heights at 1 to 200 rows, every total of every form equals the loop's total. On fractional heights at 5 to 200 rows, every total of the chain and of the wide sums equals the loop's total, while some Brent-Kung totals at 64 and 200 rows differ, each by less than 0.02 px.
+This section's [row-tops.ts](../examples/loops/row-tops.ts) builds the same three forms, and `bun lab/ui-exploration/guide/examples/loops/report.ts network` prints the additions in each layer of the 8-row Brent-Kung network. Its tests compare every form with a sequential `Math.fround` loop: on quarter-pixel heights at 1 to 200 rows every total of every form equals the loop's total, and on fractional heights at 5 to 200 rows the chain and the wide sums still do, while some Brent-Kung totals at 64 and 200 rows differ, each by less than 0.02 px. A Kogge-Stone network is another prefix network, with about n log2 n additions in log2 n layers, e.g. 9,217 additions in 10 layers for 1,024 values ([executor](executor.md#ui-jobs-under-each-choice)).
 
 ### Measured in the prototypes
 
 - The gallery's photo strip, with the same outputs as the trace compiler's slice of index.ts, is 9 layers with wide sums and 21 layers with Brent-Kung sums. The trace compiler's slice was 1,580 layers, mostly from sequential sums and long comparison chains.
 - hn-thread's 251 animated row tops as wide sums are 506 operations, 32,637 stored weights and 1 layer. Its natural row tops, from integer heights, use a Brent-Kung network of 487 operations and 974 stored weights, 13 layers deeper than the heights it adds. Writing the natural tops as wide sums too takes the whole thread from 69 to 57 layers, for about 31,000 more stored weights.
 - lists' capacity routing shows the visible items of a filtered list of 1,000 items in 20 DOM slots, and counts the visible items before each item: 1,009 layers with a chain of counts, 27 layers and 140,408 stored weights with Brent-Kung counts, and 11 layers and 636,939 stored weights with wide sums.
+- Two circuits that compute "the same" running totals can still group their additions differently. gallery-circuit.ts starts strip total k from `52 × k`, the k gaps, and then adds k widths, a grouping that no one-at-a-time loop reproduces. Switching instanced-items' staged gallery from sequential to Brent-Kung sums kept 90.7% of values bit-identical and moved strip destinations by up to 0.164 px, with no decision changed.
 
 ### Precision at large totals
 
-A sequential loop adds a small height to a total that keeps growing. Past about a million pixels, neighboring FP32 values are 1/8 px apart or more, and thousands of rounded additions can round in the same direction. A Brent-Kung network mostly adds totals of similar size, and adds at the full total's size only in its last few levels, so its rounding error grows with the number of levels rather than the number of rows. The example's report, with fractional heights between 20 and 300 px, against exact float64 sums:
-
-- 1,000 rows, 165,492 px of content: the sequential loop is off by up to 0.244 px, Brent-Kung by up to 0.021 px.
-- 10,000 rows, 1,584,967 px of content: up to 2.03 px against up to 0.288 px.
-
-In instanced-items at 10,000 photos, sequential sums put row tops off by up to 40.7 px and strip left edges by up to 472.8 px, and one trace flipped 74 decisions against index.ts. With Brent-Kung sums, every decision matched index.ts over 2,408,107 checks ([instancing](instancing.md)).
-
-### Which form to use
-
-- To match a sequential JavaScript loop bit for bit on fractional values: a chain or wide sums.
-- For a prefix sum on the UI's longest chain of dependencies: wide sums while n²/2 stored weights are acceptable, e.g. a few hundred rows, and Brent-Kung beyond that.
-- For totals past about a million pixels: Brent-Kung, which drifts less but doesn't match a sequential loop's bits.
-- On today's CPU executor, with nothing to gain from depth: the chain, which is the least work.
-
-### Pitfalls
-
-- Partial sums are exact only below 2^24 units, e.g. below 2^22 px on a quarter-pixel grid.
-- Two circuits that compute "the same" running totals can still group their additions differently. gallery-circuit.ts starts strip total k from `52 × k`, the k gaps, and then adds k widths, a grouping that no one-at-a-time loop reproduces. Switching instanced-items' staged gallery from sequential to Brent-Kung sums kept 90.7% of values bit-identical and moved strip destinations by up to 0.164 px, with no decision changed.
+A sequential loop adds a small height to a total that keeps growing, and past about a million pixels, neighboring FP32 values are 1/8 px apart or more. The example's report, with fractional heights between 20 and 300 px, against exact float64 sums: at 1,000 rows and 165,492 px of content, the sequential loop is off by up to 0.244 px and Brent-Kung by up to 0.021 px, and at 10,000 rows and 1,584,967 px, by up to 2.03 px against 0.288 px. [Instancing](instancing.md#accumulation-order-is-part-of-the-result) explains why Brent-Kung sums drift less, and what sequential sums did at 10,000 photos, where they flipped 74 decisions against index.ts.
 
 ## 4. Threshold counts instead of floor and division
 
-The pattern doc [threshold counts instead of floor and division](../patterns/threshold-counts.md) has this idea on one page, with a runnable example and a test, and [breakpoints found ahead of time](../patterns/breakpoints-found-ahead-of-time.md) finds the thresholds by searching a black-box layout.
-
-### The problem
-
-A responsive grid computes its column count from the container width, then places each item in a row and a column.
-
-### The JavaScript way
-
-From chenglou.github.io's photo gallery, index.ts's `colsBoxMaxSizeXF`, with its gap of 24 px and its minimum photo width of 220 px written in:
-
-```ts
-const columnCount = clamp(1, Math.floor((containerWidth - 24) / (220 + 24)), 7)
-// and per item:
-const row = Math.floor(item / columnCount)
-const column = item % columnCount
-```
+A responsive grid computes its column count from the container width, e.g. index.ts's `colsBoxMaxSizeXF`, `clamp(1, Math.floor((containerWidth - 24) / (220 + 24)), 7)`, then places each item at row `Math.floor(item / columnCount)` and column `item % columnCount`. The circuit counts the thresholds the width reaches instead: `atLeastColumns[c] = [containerWidth − 24 − 244 c >= 0]` for c = 2 to 7, with `atLeastColumns[1] = 1` and `atLeastColumns[8] = 0` for the clamp, and the column count is 1 plus the bits for c = 2 to 7. The pattern doc [threshold counts instead of floor and division](../patterns/threshold-counts.md) covers why the count is exact, its cost with `emitCompare` and when not to use it, and [breakpoints found ahead of time](../patterns/breakpoints-found-ahead-of-time.md) finds the thresholds by searching a black-box layout. This section's [column-count.ts](../examples/loops/column-count.ts) builds each bit from 3 operations, so its column count is 19 operations in 3 layers, and with the rows and columns of 221 items, 466 operations in 4 layers.
 
 ### What goes wrong with a reciprocal and floor
 
 A circuit can't divide by 244 exactly, but it can multiply by the constant `Math.fround(1 / 244)` and then round down. That gives one column too few exactly where a new column should start. At 1,000 px, `Math.fround(976 × Math.fround(1 / 244))` is 3.9999998 instead of 4, so floor returns 3. The example's test tries every width from 0 to 8,192 px, and the reciprocal is wrong at exactly 512, 756, 1,000, 1,244, 1,488 and 1,732 px.
-
-### The circuit way
-
-For x >= 0, `floor(x / d)` is the number of multiples of d at or below x, `Σ_(k >= 1) [x >= k × d]`. With a fixed range of possible results, that's a fixed number of comparisons against constants, called a threshold count ([column-count.ts](../examples/loops/column-count.ts)):
-
-```ts
-// atLeastColumns[c] = [columnCount >= c] = [containerWidth - 24 - 244 c >= 0] for c = 2..7.
-// The clamp makes atLeastColumns[1] = 1 and atLeastColumns[8] = 0.
-for (let columns = 2; columns <= 7; columns++) {
-  atLeastColumns.push(emitIntegerAtLeastZero(circuit, [[containerWidth, 1]], -(24 + 244 * columns)))
-}
-const columnCount = circuit.affine(atLeastColumns.slice(2, 8).map(bit => [bit, 1] as const), 1)
-```
-
-At 1,000 px the width reaches the thresholds 512, 756 and 1,000 px, so the count is 1 + 3 = 4 columns. The clamp costs nothing, because the count starts at 1 and there are only 6 thresholds.
 
 ### Dividing by the runtime column count
 
@@ -375,16 +163,6 @@ const columns = Array.from({length: itemCount}, (_, item) =>
 
 For example, item 10's row is `10 × [columnCount == 1] + 5 × [columnCount == 2] + 3 × [columnCount == 3] + 2 × [columnCount == 4] + ...`, which is 2 at 4 columns.
 
-### Why it works
-
-Under the host contract that the container width is a whole number of pixels, each threshold is an exact integer comparison. The threshold bits are monotone, since a width with room for 7 columns also has room for 6, so their neighbor differences form an exact one-hot. Every output is a sum of exact bits with integer coefficients.
-
-### Cost
-
-K possible results cost K comparisons at O(1) depth, and each value that can be tabulated per possible result while building costs one sum per output. In the example, the column count is 19 operations in 3 layers. With the rows and columns of 221 items, the program is 466 operations, 4 layers and 2,532 stored weights, and with 10,000 items, 10,443 operations in still 4 layers.
-
-In the gallery, the column count and photo width are 30 operations, 6 layers and 54 stored weights, against 524 operations and 91 layers in the trace compiler's slice, and the column count matched index.ts at every whole-pixel width from 320 to 3,840 px.
-
 ### Other uses
 
 - **Replacing sqrt, division and floor together.** vibescript's life-calendar sizes its grid with `Math.sqrt`, a runtime division, floor and ceil. codegen's circuit uses 141 threshold tests with constant coefficients instead: the grid has at least 7m columns exactly when `life × gridSizeX >= 49 m (m + 1) × gridSizeY`. It matched the demo's column and row counts on all 197,232 viewports of phase one's sweep.
@@ -392,76 +170,15 @@ In the gallery, the column count and photo width are 30 operations, 6 layers and
 - **Floor division by a constant.** `Math.floor(Math.fround(Math.fround(1 / rowHeight) × scrollTop))` misses at least one row for 74 of the 512 integer row heights from 1 to 512 (index-read). index-read's `emitFloorDivide` rounds the approximate quotient, then subtracts 1 when the exact integer remainder is negative: 8 operations and 7 layers, for integer numerators in 0..2^21. It had 0 mismatches at every multiple of the row height up to 2^21, and one below each, for the first ten heights where the plain floor fails.
 - **A step function of one runtime width.** A paragraph's height changes in steps as its container gets wider, so the height becomes `baseHeight + Σ heightChange × [width >= threshold]`, with thresholds found in JavaScript when the text is prepared. hn-thread's 251 comment heights use 1,768 thresholds: 5,283 operations in 4 layers. The [text](text.md) section covers this.
 
-### When not to use it
-
-When the range of results is wide, e.g. a row index among 10,000 rows, because a threshold count costs one comparison per possible result. Use `emitFloorDivide`, or a floor on a known grid, instead.
-
-### Pitfalls
-
-- The input has to be on a known grid, e.g. whole pixels. A fractional width needs rounding onto a grid in JavaScript, or a continuous comparison.
-- A threshold that FP32 can't represent gets rounded. numeric-library's progress ring lit tick 5 one FP32 step early by comparing progress with `Math.fround(5 / 24)`, which is below 5/24. For an FP32 value x, `x >= t` holds exactly when x is at least the smallest FP32 value at or above t, so storing that value as the threshold makes the comparison match float64.
-
 ## 5. Ranks instead of sorting
 
-The pattern doc [ranks instead of sorting](../patterns/ranks-instead-of-sorting.md) has ranks, and the update when one card moves, on one page, with a runnable example and a test.
-
-### The problem
-
-E.g. a photo grid sorted by date after a toggle, or cards reordered by dragging. The DOM needs each item's position, e.g. its translateY, more than it needs a sorted array.
-
-### The JavaScript way
-
-```ts
-const order = items.map((_, item) => item).sort((left, right) => keys[left] - keys[right] || left - right)
-let top = 0
-for (const item of order) {
-  itemTops[item] = top
-  top += heights[item]
-}
-```
-
-### The circuit way
-
-An item's rank is its position after sorting, which is the number of items that come before it ([rank-sort.ts](../examples/loops/rank-sort.ts)):
-
-```ts
-// earlierFirst[earlier][later] = [keys[earlier] <= keys[later]]: does the earlier item come first?
-// n(n - 1)/2 integer bits, none of which reads another, so all of them share the same 2 layers.
-const ranks = Array.from({length: itemCount}, (_, item) => {
-  const terms: [Wire, number][] = []
-  let bias = 0
-  for (let other = 0; other < itemCount; other++) {
-    if (other < item) terms.push([earlierFirst[other]![item]!, 1]) // an earlier item comes first when its key is at most this item's key
-    if (other > item) { // a later item comes first when this item's key is larger
-      terms.push([earlierFirst[item]![other]!, -1])
-      bias += 1
-    }
-  }
-  return circuit.roundAffine(terms, bias)
-})
-```
-
-For example, with keys 30, 10, 30 and 20, e.g. dates as day numbers, the ranks are 2, 0, 3 and 1. Items 0 and 2 have the same key, and the earlier item comes first, as in a stable sort, i.e. a sort that keeps items with equal keys in their original order. For each pair, exactly one of the two items comes first, so one comparison per pair gives the order in both directions.
+A photo grid sorted by date after a toggle, or cards reordered by dragging, needs each item's position, e.g. its translateY, more than a sorted array. An item's rank is its position after sorting, i.e. the number of items that come before it. One comparison per pair gives the order in both directions, and each rank is one sum of those bits, O(n²) operations at O(1) depth. The pattern doc [ranks instead of sorting](../patterns/ranks-instead-of-sorting.md) builds ranks, item tops, and the update when one dragged card moves, with their sizes and when they're exact. This section's [rank-sort.ts](../examples/loops/rank-sort.ts) builds each bit from 3 operations, so its 64 ranks are 6,112 operations in 3 layers, against 4,096 with `emitCompare`'s 2-operation bits in the pattern doc, and with item tops 10,144 operations in 4 layers.
 
 ### Positions and sorted reads from the same comparisons
 
-An item's top is the sum of the heights of the items that come before it, one product per pair, e.g. `earlierFirst[other][item] × heights[other]`.
+An item's top is the sum of the heights of the items that come before it, one product per pair, e.g. `earlierFirst[other][item] × heights[other]`, where `earlierFirst[earlier][later]` is the bit `[keys[earlier] <= keys[later]]`.
 
-Reading "the height at sorted position p" uses the bits `[rank[item] == p]`, which form a one-hot over items for each p, so each read is a masked sum that compiles to one gather. Together these n² bits form a permutation matrix, a table of bits with exactly one 1 in each row and in each column.
-
-### Why it works
-
-An item's final position depends only on how many items come before it, and that count adds up one comparison per pair. With integer keys every comparison is exact, and on a quarter-pixel grid every sum of heights is exact. The example's tests compare ranks, tops and sorted reads with a stable JavaScript sort at 1 to 33 items, on keys drawn from 8 values so that many keys tie.
-
-### Cost
-
-Ranks are O(n²) operations at O(1) depth. The example, where each column includes the ranks:
-
-| Items | Ranks | Item tops | Height at each sorted position |
-| ---: | --- | --- | --- |
-| 16 | 376 operations, 3 layers | 616 operations, 4 layers | 936 operations, 6 layers, 16 gather reads |
-| 64 | 6,112 operations, 3 layers | 10,144 operations, 4 layers | 14,496 operations, 6 layers, 64 gather reads |
-| 128 | 24,512 operations, 3 layers | 40,768 operations, 4 layers | 57,664 operations, 6 layers, 128 gather reads |
+Reading "the height at sorted position p" uses the bits `[rank[item] == p]`, which form a one-hot over items for each p, so each read is a masked sum that compiles to one gather. Together these n² bits form a permutation matrix, a table of bits with exactly one 1 in each row and in each column. In the example, the height at each of 64 sorted positions brings the program to 14,496 operations in 6 layers, with 64 gather reads.
 
 ### A sorting network instead
 
@@ -476,32 +193,9 @@ The runtime notes measured an odd-even merge network over 64 keys, without a pay
 
 ### An incremental update when one item moves
 
-A drag moves one item from rank `fromRank` to rank `toRank`. Only the items in between change rank, each by 1, so each item needs a few comparisons against the two shared ranks rather than against every other item:
+The pattern doc's update finds the dragged card's new rank from the pointer's position. rank-sort.ts's `buildMoveRanks` instead takes the dragged item's rank before and after the move, `fromRank` and `toRank`, and matches `order.splice(fromRank, 1); order.splice(toRank, 0, draggedItem)`: only the items between the two ranks change rank, each by 1, so each item compares its own rank with the two shared ranks instead of with every other item. For example, moving the item at rank 1 to rank 3, with items ranked 0, 1, 2 and 3, gives the ranks 0, 3, 1 and 2. That's 17 operations per item in 5 layers, e.g. 17,409 operations for 1,024 items. In lists' port of draggable-cards, recomputing the ranks every frame made its two O(n²) parts 18% of the circuit at 20 cards and 68% at 200 cards, where the circuit was 208,703 operations, against 71,807 with the incremental update ([lists](../../lists/README.md)).
 
-```ts
-// buildMoveRanks in rank-sort.ts, per item
-const afterFrom = emitIntegerAtLeastZero(circuit, [[rank, 1], [fromRank, -1]], -1) // [rank > fromRank]
-const beforeFrom = emitIntegerAtLeastZero(circuit, [[fromRank, 1], [rank, -1]], -1) // [rank < fromRank]
-const atOrBeforeTo = emitIntegerAtLeastZero(circuit, [[toRank, 1], [rank, -1]], 0) // [rank <= toRank]
-const atOrAfterTo = emitIntegerAtLeastZero(circuit, [[rank, 1], [toRank, -1]], 0) // [rank >= toRank]
-const shiftsUp = circuit.reglu([], 1, [[afterFrom, 1], [atOrBeforeTo, 1]], -1) // AND of two bits: relu(a + b - 1)
-const shiftsDown = circuit.reglu([], 1, [[beforeFrom, 1], [atOrAfterTo, 1]], -1)
-const isDragged = circuit.roundAffine([[afterFrom, -1], [beforeFrom, -1]], 1) // [rank == fromRank]
-const nextRank = circuit.roundAffine([[rank, 1], [shiftsUp, -1], [shiftsDown, 1], [circuit.multiply(rankShift, isDragged), 1]])
-```
-
-`rankShift` is `toRank − fromRank`, and the JavaScript reference is `order.splice(fromRank, 1); order.splice(toRank, 0, draggedItem)`. For example, moving the item at rank 1 to rank 3, with items ranked 0, 1, 2 and 3, gives the ranks 0, 3, 1 and 2: the dragged item goes to rank 3, and the two items it passed each move up by one. The update is O(n) operations at O(1) depth: 17 operations per item in 5 layers, e.g. 17,409 operations for 1,024 items.
-
-`toRank` is itself a count: lists' port of vibescript's draggable-cards counts the cards ranked before the dragged card whose midpoint is below the pointer, and the cards ranked after it whose midpoint is above the pointer.
-
-lists measured both forms in that port. Recomputing ranks and the stack layout every frame is 69,653 operations at 100 cards and 208,703 at 200 cards, and its two O(n²) parts are 18% of the circuit at 20 cards, 35% at 50, 51% at 100 and 68% at 200. The incremental layout is 36,207 operations at 100 cards and 71,807 at 200 cards. Both layouts matched the demo's card order, z index, dragged card, cursor and pointer buffer length on all 284,000 compared frames at 5 to 100 cards. Most of what remains is springs.
-
-### When not to use it, and pitfalls
-
-- Pairwise ranks get expensive from about a hundred items.
-- The incremental update depends on laid-out state from earlier frames: the cards port needs every resting card's destination from last frame, so its incremental layout can't start from arbitrary state the way the demo's first frame does.
-- Keys have to compare exactly: integers, or positions on a known grid. Keys that drift in FP32 can flip a comparison near a tie.
-- Store order as ranks, or as a permutation matrix in the source table the way IndirectOS stores its 4 × 4 window stacking order, rather than as a link from each item to the next. Following links needs reads at computed positions. outside-techniques estimated pointer jumping over links, which replaces each link by its target's link in every round, at about 8n² operations per round with one-hots.
+Store order as ranks, or as a permutation matrix in the source table the way IndirectOS stores its 4 × 4 window stacking order, rather than as a link from each item to the next. Following links needs reads at computed positions: outside-techniques estimated pointer jumping over links, which replaces each link by its target's link in every round, at about 8n² operations per round with one-hots.
 
 ## 6. Grow and shrink with min and max (water filling)
 
@@ -546,34 +240,7 @@ Attention scores stored keys against a query and returns stored values weighted 
 
 ## 8. Common UI jobs and their formulations
 
-n is the item count, K the number of DOM slots or possible results, L the number of line slots (a line slot is the group of outputs reserved for one line of text: its start, its end and its width), and the lookahead is how many segments after a line's start the line walker compares. "Index reads" means the index read instruction, measured in index-read's copy of the runtime, which numeric-ui-core.ts now has as `circuit.indexRead`. Pointer jumping builds, for every line start, where the line 2, 4, 8, ... lines later starts, by reading the previous table at the positions that table holds. The [executor](executor.md) section has a wider table that also covers comparisons, springs and instancing. Several rows have a pattern doc with a runnable example, e.g. [compaction into K DOM slots](../patterns/compaction-into-slots.md) for a filtered list in K DOM nodes, and [following links by doubling](../patterns/pointer-jumping.md) for line starts from a next-start table.
-
-| UI job | Formulation | Operations | Depth | Measured |
-| --- | --- | --- | --- | --- |
-| first visible row, rows of different heights | count of monotone bits | O(n) | O(1) after the row bottoms | example, 10,000 rows: 30,001 operations and 3 layers on top of the row tops; index-read, row tops from JavaScript, 24 DOM slots with 2 fields each: 30,143 operations, 5 layers |
-| | binary search with index reads | O(log n) | O(log n) | index-read, the same list: 215 operations, 57 layers |
-| first visible row, rows of one height | floor of scrollTop / rowHeight | O(1) | O(1) | lists, with 24 DOM slots: 280 operations, 19 layers at any row count |
-| visible rows into K DOM nodes | the first visible row's one-hot, then one gather per DOM slot and field | O(n + K) operations, and each gather stores O(n) positions | O(1) | lists, rows of one height with data in source cells, 10,000 rows: 20,305 operations, 19 layers; index-read with index reads, 3 fields per DOM slot: 153 operations, 9 layers |
-| row tops | chain | O(n) | O(n) | example, 1,024 rows: 1,023 operations, 1,023 layers, 2,046 weights |
-| | wide sums | O(n) operations, O(n²) weights | O(1) | example, 1,024 rows: 1,023 operations, 1 layer, 524,799 weights |
-| | Brent-Kung network | O(n) | O(log n) | example, 1,024 rows: 2,036 operations, 18 layers, 4,072 weights |
-| overlapping hit test | tournament | O(n) | O(log n) | example, 1,024 items: 5,116 operations, 51 layers |
-| | earlier-hit counts, wide sums | O(n) operations, O(n²) weights | O(1) | example, 1,024 items: 2,046 operations, 2 layers, 525,822 weights; gallery, 221 photos: whole circuit 41 layers instead of 61 |
-| | earlier-hit counts, Brent-Kung | O(n) | O(log n) | example, 1,024 items: 3,050 operations, 19 layers |
-| sorting by a runtime key | ranks by counting | O(n²) | O(1) | example, 64 items: 6,112 operations and 3 layers, or 14,496 operations and 6 layers with sorted reads; outside-techniques, 64 items with a payload: 16,512 operations, 5 layers |
-| | sorting network | O(n log² n) | O(log² n) | outside-techniques, 64 items with a payload: 10,624 operations, 105 layers |
-| | incremental update when one item moves | O(n) | O(1) | example, 1,024 items: 17,409 operations, 5 layers; lists, whole cards circuit at 100 cards: 36,207 operations against 69,653 |
-| a filtered list in K DOM nodes, where DOM slot k shows the (k + 1)-th visible item | one equality bit `[visible items before item == k]` per item and DOM slot (hn-thread calls these rank slots) | O(n × K) | O(1) to O(log n), depending on the prefix counts | index-read, 1,000 items into 20 DOM slots, wide prefix counts: 81,961 operations, 6 layers, 660,424 weights; hn-thread, 251 comments into 48 DOM slots: 25,616 operations |
-| | neighbor differences of `[visible items through item <= k]` | O(n × K) | O(log n) | lists, 1,000 into 20 with Brent-Kung prefix counts: 49,224 operations, 27 layers, 140,408 weights |
-| | prefix counts, then a binary search per DOM slot with index reads | O(n log n + K log n) | O(log n) | index-read, 1,000 into 20: 10,000 operations, 49 layers; 10,000 into 24: 125,324 operations, 69 layers |
-| | DOM slot k shows the first visible row + k, since visible rows are contiguous (hn-thread calls these window slots) | O(n + K) | O(1) | hn-thread, 48 DOM slots: 1,269 operations, but zero-height rows use up DOM slots: a settled collapsed subtree in view needed 32 window slots where rank slots needed 7 |
-| column count | threshold count | O(K) | O(1) | example: 19 operations, 3 layers; gallery, with the photo width: 30 operations, 6 layers |
-| grow and shrink with min and max | water filling | O(n) with constant clamp points, O(n²) with runtime ones | O(1) | layout-tree, widths pass at 64 children: 784 operations and 9 layers with constant fit widths, 5,601 operations and 12 layers with runtime fit widths |
-| flex-wrap | scan one child at a time | O(n) | O(n) | layout-tree, 64 children: 1,185 operations, 276 layers |
-| greedy line breaking over n segments | the line walker unrolled one segment at a time | O(n) | O(n) | text-walker, 1,023 segments: 23,496 operations, 9,204 layers |
-| | a next-start table (where a line starting at each segment ends, as a count), then one line slot at a time through one-hots | O(n × lookahead + L × n) | O(L) | text-walker, 1,023 segments, 157 line slots: 457,882 operations, 725 layers |
-| | the same table, then one line slot at a time with index reads | O(n × lookahead + L) | O(L) | index-read: 191,688 operations, of which 190,279 build the table, 490 layers |
-| | the same table, then pointer jumping with index reads | O(n × lookahead + n log L) | O(log L) after the table | index-read: 226,193 operations, 66 layers |
+executor.md's [UI jobs under each choice](executor.md#ui-jobs-under-each-choice) lists this section's UI jobs, the ways to compute each and their measured sizes, next to comparisons, springs and instancing, e.g. hn-thread's window slots, and five ways to break a paragraph of 1,023 segments into lines.
 
 ## Files
 
@@ -584,5 +251,5 @@ n is the item count, K the number of DOM slots or possible results, L the number
 - [column-count.ts](../examples/loops/column-count.ts): the gallery's column count by threshold counts, with each item's row and column.
 - [rank-sort.ts](../examples/loops/rank-sort.ts): ranks, item tops and sorted reads, and the incremental rank update when one item moves.
 - [water-fill.ts](../examples/loops/water-fill.ts): grow with min and max as clamp bits, and a JavaScript loop that walks the sorted clamp points.
-- [loops.test.ts](../examples/loops/loops.test.ts): 17 tests in about 0.2 s, run with `bun test lab/ui-exploration/guide/examples/loops` from the repo root. They check the first visible row at every quarter-pixel scrollTop of a 48-row list; row tops of every form against a sequential `Math.fround` loop, with exact equality; the first hit on random hit patterns; the column count, rows and columns at every width from 0 to 8,192 px; ranks against a stable sort with many equal keys; every move of one rank against `splice`; water filling against its JavaScript reference; and every worked example quoted in this section.
-- [report.ts](../examples/loops/report.ts): prints the sizes, the 8-row Brent-Kung network, and the precision numbers quoted above.
+- [loops.test.ts](../examples/loops/loops.test.ts): 17 tests in about 0.2 s, run with `bun test lab/ui-exploration/guide/examples/loops` from the repo root. They check the first visible row at every quarter-pixel scrollTop of a 48-row list; row tops of every form against a sequential `Math.fround` loop, with exact equality; the first hit on random hit patterns; the column count, rows and columns at every width from 0 to 8,192 px; ranks against a stable sort with many equal keys; every move of one rank against `splice`; water filling against its JavaScript reference; and worked examples, e.g. the first hit of the bits 0, 1, 0, 1, 1.
+- [report.ts](../examples/loops/report.ts): prints the sizes of every form, the 8-row Brent-Kung network, and the precision numbers.

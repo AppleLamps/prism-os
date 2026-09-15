@@ -16,7 +16,7 @@ bun lab/ui-exploration/notation/indirect-os.html   # the rewrite on the original
 bun lab/ui-exploration/notation/demo.html          # the settings panel
 ```
 
-Nobody was awake to grant browser permissions, so neither page was opened in a browser. Both pages bundle with `bun build`, and `dom.test.ts` runs their projection code against fake DOM elements.
+Nobody was awake to grant browser permissions, so neither page was opened in a browser. A later Chrome check opened both pages, see [Browser check](#browser-check). Both pages bundle with `bun build`, and `dom.test.ts` runs their projection code against fake DOM elements.
 
 ## What was built
 

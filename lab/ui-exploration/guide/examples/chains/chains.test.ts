@@ -107,7 +107,7 @@ describe('a queue of button events', () => {
     }
   })
 
-  test('sizes quoted in the section', () => {
+  test('sizes printed by report.ts', () => {
     const sizes = (slotCount: number, outputs: Parameters<typeof buildButtonQueue>[2]) =>
       buttonForms(slotCount).map(({label, form}) => {
         const built = buildButtonQueue(slotCount, form, outputs)
@@ -169,7 +169,7 @@ describe('one circuit for any 4-state machine', () => {
     }
   })
 
-  test('sizes quoted in the section', () => {
+  test('sizes printed by report.ts', () => {
     const sizes = [4, 16, 64].map(slotCount => {
       const built = buildTableMachine(slotCount)
       const {operations, layers, storedWeights, gatherReads} = measureProgram(built.circuit, built.roots)
@@ -217,7 +217,7 @@ describe('line starts from a next-start table', () => {
     }
   })
 
-  test('sizes quoted in the section', () => {
+  test('sizes printed by report.ts', () => {
     const sizes = ([[15, 8], [63, 32]] as const).flatMap(([segmentCount, lineSlots]) =>
       (['sequential', 'pointer jumping'] as const).map(form => {
         const built = buildLineStarts(segmentCount, lineSlots, form)

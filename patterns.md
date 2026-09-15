@@ -328,7 +328,7 @@ the program:            ancestor = ancestorAtLevel[row × 4 + level], 1 operatio
 
 The exploration found more loops that no entry covers yet. Each one is explained in a section or a prototype:
 
-- Window slots: DOM slot k shows `firstVisibleRow + k` when the visible rows form one run, e.g. hn-thread's 48 window slots, 1,269 operations ([loops, section 8](lab/ui-exploration/guide/sections/loops.md#8-common-ui-jobs-and-their-formulations)).
+- Window slots: DOM slot k shows `firstVisibleRow + k` when the visible rows form one run, e.g. hn-thread's 48 window slots, 1,269 operations ([executor, UI jobs under each choice](lab/ui-exploration/guide/sections/executor.md#ui-jobs-under-each-choice)).
 - Floor division by a constant with a correction step, index-read's `emitFloorDivide`, 8 operations in 7 layers, and division by a runtime count through reciprocals read from the count's one-hot, as in codegen's life-calendar ([loops, section 4](lab/ui-exploration/guide/sections/loops.md#other-uses)).
 - Other ways to find the first hit: earlier-hit counts `relu(hit − hitsBefore)` ([loops, way 1](lab/ui-exploration/guide/sections/loops.md#circuit-way-1-count-the-earlier-hits)), the largest key ([way 3](lab/ui-exploration/guide/sections/loops.md#circuit-way-3-the-largest-key)), and numeric-library's exact minimum by counting.
 - Per-item constants moved from weights to inputs ([instancing](lab/ui-exploration/guide/sections/instancing.md#per-item-constants-from-weights-to-inputs)).

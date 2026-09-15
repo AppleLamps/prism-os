@@ -237,7 +237,7 @@ Unrolling Clay's loop into layers would need a bound of hundreds of rounds and w
 ### What stayed outside the circuit
 
 - The prepare step: segmenting and measuring text, then tabulating line counts by bisection. Headless it uses pretext with a fake canvas; the browser demo uses canvas `measureText` and a greedy word wrap.
-- The DOM projection: nested transforms and sizes, font loading, and the browser's own line breaking inside each text box. The demo relies on the canvas staircase agreeing with the browser's line breaks, which I did not verify, since nobody was awake to grant browser automation.
+- The DOM projection: nested transforms and sizes, font loading, and the browser's own line breaking inside each text box. The demo relies on the canvas staircase agreeing with the browser's line breaks, which I did not verify, since nobody was awake to grant browser automation. A later Chrome check found the browser's line breaks agreeing with the staircase for all 80 texts, see [Browser check](#browser-check).
 - Event plumbing: JS accumulates wheel deltas into the scroll cell and keeps the cell within its declared range of 0..8192, records press coordinates, and measures frame time. The circuit clamps the scroll position to the content's bottom and writes it back.
 - The tree's structure. Children cannot appear or disappear at runtime. A list whose length changes would need a fixed capacity plus presence bits, and changes of structure would need the constructions in outside-techniques.md.
 

@@ -1,10 +1,12 @@
 # Vibescript demos as circuits
 
+Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS still describes window-manager.ts, which hasn't changed since commit a915dcb.
+
 This note reads every demo under ~/github/vibescript/demos and asks, for each one, what it would take to write it in the IndirectOS style: a Float32Array source table, one compiled circuit of affine, ReGLU and boolean operations, and JS that records inputs, writes the next-source outputs back, and projects the remaining outputs onto the DOM. For each demo it covers what the demo does, its algorithms with file:line references, the state it keeps, how it animates, the computational shape of its logic, and a circuit sketch. It ends with patterns shared across demos and a ranking of which demos would teach us the most if ported.
 
 Line numbers in `numeric-ui-core.ts` refer to commit c3d8e54 (September 5, 2026); on September 14, 2026 the file grew from 1,653 to 3,158 lines.
 
-While reading, several demo algorithms looked impossible or expensive as circuits until they were reformulated. I tested seven of those reformulations with small scripts against the real builder in `numeric-ui-core.ts`. The scripts are in scratchpad/phase1/demos/ and each one prints the numbers quoted here. All timings are CPU JavaScript on this laptop.
+While reading, several demo algorithms looked impossible or expensive as circuits until they were reformulated. I tested seven of those reformulations with small scripts against the real builder in `numeric-ui-core.ts`. The scripts are in scratchpad/phase1/demos/ (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/demos/`) and each one prints the numbers quoted here. All timings are CPU JavaScript on this laptop.
 
 ## Baseline: IndirectOS today
 

@@ -6,13 +6,13 @@ The demo is a Notes window whose width springs while you drag its right edge. A 
 
 How to run it, from `~/github/indirect`:
 
-- Demo: `bun lab/ui-exploration/text-tabulated/demo.html`. The panel shows a live check of every frame against pretext's own `layoutWithLines`, `measureLineStats`, and the bubbles demo's tight-width search, using the browser's real fonts. It counts frames with a wrong decision (line count, tight width, cursor, or line text) separately from the widest width drift, because delta rows add up width deltas in FP32 and real advances don't add up exactly. I haven't run the demo myself. A verification run in Chrome, made before the check was split, showed `maxLineWidth 589.6193237304688 != 589.6194152832031` on the first frame, a drift of 9.2e-5px. That old check required bit-equal widths, so it counted all 7 frames as divergent and couldn't show whether any decision was wrong. Every headless check below uses a fake canvas.
+- Demo: `bun lab/ui-exploration/text-tabulated/demo.html`. The panel shows a live check of every frame against pretext's own `layoutWithLines`, `measureLineStats`, and the bubbles demo's tight-width search, using the browser's real fonts. It counts frames with a wrong decision (line count, tight width, cursor, or line text) separately from the widest width drift, because delta rows add up width deltas in FP32 and real advances don't add up exactly. I haven't run the demo myself. A later Chrome check ran the demo, see [Browser check](#browser-check). A verification run in Chrome, made before the check was split, showed `maxLineWidth 589.6193237304688 != 589.6194152832031` on the first frame, a drift of 9.2e-5px. That old check required bit-equal widths, so it counted all 7 frames as divergent and couldn't show whether any decision was wrong. Every headless check below uses a fake canvas.
 - Tests (about 0.4 seconds): `bun test lab/ui-exploration/text-tabulated`
 - Types: `bunx tsgo -p lab/ui-exploration/text-tabulated`
 - Measurements: `bun lab/ui-exploration/text-tabulated/report.ts [corpora] [hn] [oracle] [long] [rich] [prewrap] [notes] [edit] [scale] [nondyadic]`. With no arguments it runs everything, which takes a few minutes. `nondyadic` uses a different fake canvas, so it runs on its own or in a second process.
 - Monotonicity search, one engine profile per process: `bun lab/ui-exploration/text-tabulated/monotone-search.ts blink|webkit|gecko [--kerning] [--only text|rich] [--texts 400] [--seed 11] [--out file.json] [--no-shrink]`
 
-`pretext/` is an unmodified copy of pretext's `src/` (clone revision 477510e4, without `layout.test.ts` and `test-data.ts`), so the folder runs on its own. `report.ts` reads pretext's corpora and `src/test-data.ts` from the clone in the session scratchpad (`scratchpad/pretext-copy`), and the HN thread from `~/github/vibescript/demos/nicer-hacker-news/data.ts`. No runtime files were changed; the prototype imports `numeric-ui-core.ts` as is.
+`pretext/` is an unmodified copy of pretext's `src/` (clone revision 477510e4, without `layout.test.ts` and `test-data.ts`), so the folder runs on its own. `report.ts` reads pretext's corpora and `src/test-data.ts` from the clone in the session scratchpad (`scratchpad/pretext-copy`, backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/pretext-copy`), and the HN thread from `~/github/vibescript/demos/nicer-hacker-news/data.ts`. No runtime files were changed; the prototype imports `numeric-ui-core.ts` as is.
 
 ## What was built
 
@@ -205,7 +205,7 @@ Tabulation can only miss a change that changes back between two widths it compar
 - Preparing text (segmentation, measurement), finding thresholds (thousands of pretext calls), and turning cursor ids into strings.
 - Decoding the frame clock into step bits, and recording pointer events.
 - Anything where a block's width isn't a single monotone function of one runtime value, e.g. a different width per line around an obstacle. That needs per-start rows (phase 1's section 5.4) or the algorithm itself in the circuit.
-- Real fonts. Every headless check uses a fake canvas, with dyadic widths, or non-dyadic widths in `report.ts nondyadic`. The demo runs the same frame-by-frame comparison with the browser's canvas and counts wrong decisions apart from width drift, but I haven't run it since that change.
+- Real fonts. Every headless check uses a fake canvas, with dyadic widths, or non-dyadic widths in `report.ts nondyadic`. The demo runs the same frame-by-frame comparison with the browser's canvas and counts wrong decisions apart from width drift, but I haven't run it since that change. A later Chrome check ran the demo, see [Browser check](#browser-check).
 
 ## Open questions and next steps
 

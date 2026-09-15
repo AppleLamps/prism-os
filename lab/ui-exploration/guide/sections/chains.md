@@ -4,7 +4,7 @@ A compiled circuit runs in layers. Every operation in a layer reads only values 
 
 Three measures appear throughout this section. Operations are the total work of one evaluation. Depth is the number of layers, e.g. a loop that updates a button's state once per queued event is at least k layers deep for k events, however few operations each update takes. Stored weights are the nonzero coefficients the compiled layers keep, where O(n²) growth often shows first, e.g. the running totals of 1,024 row heights written as one sum per total are 1,023 operations but 524,799 stored weights.
 
-This section explains the known ways to shorten a chain, each with a UI example, its cost, and what the prototypes measured. The runnable examples are in [examples/chains/](../examples/chains/).
+This section explains the known ways to shorten a chain, each with a UI example, its cost, and what the prototypes measured. The runnable examples are in [examples/chains/](../examples/chains/). Ways 1 to 3 have long pattern docs with their own runnable examples, and their short entries are in the repo root's [patterns.md](../../../../patterns.md). Way 4 and most of way 5 change what the user sees, and their short entries are in [behavior-choices.md](../../../../behavior-choices.md).
 
 ## Why depth matters, and when
 
@@ -96,87 +96,11 @@ The full code is in [button-machine.ts](../examples/chains/button-machine.ts) an
 
 ## Way 1: combine steps with a prefix scan
 
-The pattern doc [events through a state machine, as a prefix scan](../patterns/state-machine-prefix-scan.md) builds the same button with integer tables in cells, where combining two tables is S index reads instead of S³ products, with a runnable example and a test.
+A loop over k events is k layers deep, because each step reads the state that the previous step computed. The loop above is a reduce, `events.reduce(nextButtonState, initialState)`, and reducing over functions instead of states removes that dependency: each event becomes a table from state to next state, and combining two tables, first the earlier event, then the later event, gives a table of the same kind. Combining is associative, since `combine(combine(a, b), c)` and `combine(a, combine(b, c))` both mean "a, then b, then c", so a prefix network can compute the state before every event with a chain of combines that grows like log k. The pattern doc [events through a state machine, as a prefix scan](../patterns/state-machine-prefix-scan.md) builds the same button with integer tables in cells, where combining two tables is S index reads for S states, with its sizes, when it's exact and when not to use it.
 
-### The problem
+A prefix network is a fixed arrangement of combines that computes every prefix combination, and [prefix-networks.ts](../examples/chains/prefix-networks.ts) has two. Sklansky's network (1960) uses (k / 2) × log2(k) combines, with a longest chain of log2(k) combines. The Brent-Kung network (1982), the same up-sweep and down-sweep shape as Blelloch's scan (1990), uses 2k − 2 − log2(k) combines for k at least 4, with a longest chain of 2 × log2(k) − 2. A third common network, Kogge-Stone (1973), uses about k × log2(k) combines at log2(k) depth: index-read used it for prefix counts of visibility bits, and [examples/executor/prefix-sums.ts](../examples/executor/prefix-sums.ts) builds it for running totals, 9,217 operations in 10 layers at 1,024 rows.
 
-A loop over k steps is k steps deep, because each step reads the state that the previous step computed. The goal is to compute the state after every step with a chain that grows like log k instead of k.
-
-### The familiar JavaScript way
-
-The loop above is a reduce, `events.reduce(nextButtonState, initialState)`, and a reduce can only run one call after another, since each call reads the previous call's result. The trick is to reduce over functions instead of states. Represent each event as a table from state to next state; combining two tables gives a table of the same kind.
-
-```ts
-// table[state] is the state after the event.
-const tables = events.map(event => [idle, armed, pressedOutside].map(state => nextButtonState(state, event)))
-// Two events as one table: first `earlier`, then `later`.
-const combine = (earlier: number[], later: number[]) => earlier.map(state => later[state]!)
-const total = tables.reduce(combine)
-const finalState = total[initialState]
-```
-
-`combine` is associative: `combine(combine(a, b), c)` equals `combine(a, combine(b, c))`, because both mean "a, then b, then c". So the reduce doesn't have to go left to right. A reduce over tables can combine events 0 and 1, events 2 and 3, and so on at the same time, then combine those pairs, like the rounds of a tournament.
-
-### The circuit way
-
-A transition matrix is the same table written as one-hot rows, and combining two matrices is a matrix product of bits: entry `[from][to]` of the combined matrix is 1 when the earlier event takes `from` to some middle state and the later event takes that middle state to `to`. Row `from` of the earlier matrix is itself a one-hot state, so combining applies the later matrix to every row.
-
-```ts
-// Two events as one matrix.
-function composeTransitions(circuit: Circuit, earlier: TransitionMatrix, later: TransitionMatrix) {
-  return earlier.map(row => applyTransitions(circuit, row, later))
-}
-
-const prefixes = sklanskyPrefix(matrices, (earlier, later) => composeTransitions(circuit, earlier, later))
-// prefixes[i] describes events 0..i for every possible starting state at once.
-const statesAfter = prefixes.map(prefix => applyTransitions(circuit, initialState, prefix))
-```
-
-A prefix scan computes every prefix combination `x[0]`, `x[0] ∘ x[1]`, `x[0] ∘ x[1] ∘ x[2]`, ... of an associative combine `∘`. Prefix sums, i.e. running totals, are the best-known prefix scan, with `+` as the combine. A prefix network is a fixed arrangement of combines that computes all prefixes. [prefix-networks.ts](../examples/chains/prefix-networks.ts) has two:
-
-- Sklansky's network (1960): for blocks of size 2, 4, 8, ..., the last prefix of each block's left half is combined into every prefix of the block's right half. For k steps that's (k / 2) × log2(k) combines, and the longest chain of combines is log2(k).
-- The Brent-Kung network (1982), the same up-sweep and down-sweep shape as Blelloch's scan (1990): the up-sweep builds a balanced tree of combines, and the down-sweep fills in the prefixes the tree skipped. For k steps (at least 4) that's 2k − 2 − log2(k) combines, and the longest chain is 2 × log2(k) − 2 combines.
-
-A third common network, Kogge-Stone (1973), uses about k × log2(k) combines at log2(k) depth, and no combine's result is read by more than 2 later combines. index-read used it for prefix counts of visibility bits; this folder doesn't build it.
-
-### Why it works
-
-Every form of the button circuit computes the same product of transition matrices, `initialState × M[0] × M[1] × ... × M[k − 1]`. Associativity means any grouping of that product gives the same bits. The loop groups the product as `((initialState × M[0]) × M[1]) × ...`, and a prefix network groups the product as a tree. The one requirement is that combining two steps gives a step of the same kind, here a 3 × 3 matrix of bits, so the tree's inner nodes are the same size as its leaves.
-
-Once the state before every event is computed, per-event outputs don't read each other. The click count is `sum over i of (armed before event i AND up at event i)`, one layer after the scan.
-
-### Cost
-
-For a machine with S states, one combine is up to S³ ANDs, since each of the S × S entries sums over S middle states. So for k events:
-
-| Form | Operations | Depth |
-| --- | --- | --- |
-| Loop | O(k × S²) | O(k) |
-| Sklansky prefix scan | O(k × log k × S³) | O(log k) |
-| Brent-Kung prefix scan | O(k × S³) | O(log k), about twice Sklansky's |
-
-Measured on the button (S = 3), with the final state and the click count as outputs:
-
-| Events k | Form | Operations | Layers | Stored weights |
-| ---: | --- | ---: | ---: | ---: |
-| 4 | loop | 36 | 5 | 123 |
-| 4 | prefix scan, Sklansky | 100 | 5 | 350 |
-| 4 | prefix scan, Brent-Kung | 100 | 5 | 350 |
-| 16 | loop | 132 | 17 | 507 |
-| 16 | prefix scan, Sklansky | 568 | 7 | 2,459 |
-| 16 | prefix scan, Brent-Kung | 586 | 9 | 2,540 |
-| 64 | loop | 516 | 65 | 2,043 |
-| 64 | prefix scan, Sklansky | 2,872 | 9 | 13,487 |
-| 64 | prefix scan, Brent-Kung | 2,692 | 13 | 12,272 |
-
-At 64 events, Sklansky's scan is 7 times shallower than the loop for 5.6 times the operations. The layer counts are the combine levels plus 3 layers: applying each prefix to the initial state, the click bits, and the click sum.
-
-Sklansky's network has more combines than Brent-Kung's at 64 events (192 against 120), yet about as many operations, because of what the outputs read. The click count only reads the `armed` column of each prefix, and the compiler removes operations that no output reads. Most of Sklansky's prefixes feed no later combine, so most of their ANDs for the other two columns are removed. With the 3 state bits after every event as outputs, at 64 events Sklansky's scan is 5,666 operations, Brent-Kung's 3,722 and the loop 705, in the same 9, 13 and 65 layers. So when every step's state is an output, Brent-Kung's network costs about two thirds of Sklansky's, for 4 more layers.
-
-The prototypes measured the same trade at other sizes:
-
-- input's keyboard focus as 13 × 13 transition matrices (12 controls plus "no focus"; Tab, Shift+Tab, arrows and Escape only), at 16 queued key events: the Sklansky scan was 59,730 operations, 31 layers and 173,001 stored weights, against 27,698 operations, 53 layers and 83,769 weights for multiplying the focus one-hot by each matrix in turn. Both forms matched a reference implementation on 3,000 frames per queue size. The scan saved 22 layers for about twice the operations. The saving was small because both forms first spend the same layers computing the matrices, and multiplying a one-hot vector by a matrix already adds only about 2 layers per event.
-- A running maximum over 64 items, in phase 1's outside-techniques survey: 189 layers as a loop of `emitMaximum`, 18 layers with Sklansky's network (576 operations against 189), and 30 layers with Brent-Kung's (360 operations). Each result matched plain JavaScript on random inputs.
+This section's [button-forms.ts](../examples/chains/button-forms.ts) stores each event's table as a transition matrix of bits instead, and `composeTransitions` combines two matrices with a matrix product of bits, up to S³ ANDs per combine. At 64 events, with the final state and the click count as outputs, Sklansky's scan is 2,872 operations in 9 layers and Brent-Kung's 2,692 in 13, against 516 in 65 for the loop, where the pattern doc's Sklansky scan over integer tables is 897 operations in 10 layers. The work depends on which prefixes the app reads, since the compiler removes operations that no output reads: with the 3 state bits after every event as outputs, at 64 events Sklansky's scan is 5,666 operations, Brent-Kung's 3,722 and the loop 705, in the same 9, 13 and 65 layers.
 
 ### Which steps combine into a step of the same kind
 
@@ -193,77 +117,17 @@ input used latches, counts and ORs for pointer moves. Prefix sums of down and up
 
 When every step is the same, e.g. a spring with constant stiffness and damping stepping 4 ms at a time, the scan gets cheaper still. N steps are the step matrix to the power N, which can be built from precomputed powers selected by the binary digits of N, or read directly from a table. spring-bank computes the step count with 33 exact threshold bits and reads two constant tables: the clock and the frame matrix, i.e. the step matrix raised to this frame's step count, cost 163 operations and 13 layers once per circuit, and each animated value then costs 4 products. IndirectOS went from 5,253 operations and 192 layers to 3,580 and 137, with window positions within 7.8e-5 px of float64 loops along a scripted session with minimizes, drags, maximizes and a live resize, at 30 and 120 fps. See [springs.md](springs.md).
 
-### When not to use it
-
-- On today's CPU executor, where time grows with the number of operations, a scan is slower than the loop it replaces.
-- When the steps have a cheaper special structure. The button's state, for instance, is "pressed" (downs minus ups) plus "was the latest move inside", a count and a latch, which is how input handled moves at no extra depth. Look for counts, latches and ORs before writing general transition matrices.
-- When S is large. 13 states already cost 2,197 products per combine. With a read at a computed index (see [indexing.md](indexing.md)), a combine over tables is S reads instead of S³ products. This folder doesn't build that form, but [events through a state machine](../patterns/state-machine-prefix-scan.md) does: Sklansky's scan over 64 events of the same button is 897 operations in 10 layers there, against 2,872 operations in 9 layers with transition matrices here.
-
-### Pitfalls
-
-- Every step's matrix has to be computable without the state. If classifying an event needs state, e.g. whether a move is past the drag threshold needs the press point, compute that state with its own scan first, as input did for the press point.
-- A scan changes the grouping of the combines. Bits and integers below 2^24 give the same result in any grouping. Fractional sums don't: in instanced-items at 10,000 photos, sequential prefix sums put row tops up to 40.7 px away from native index.ts, while Brent-Kung sums kept every decision equal to index.ts. So the grouping is part of the result, and the JavaScript reference has to use the same grouping.
-- Per-event outputs need every prefix, which Sklansky's and Brent-Kung's networks give. A plain balanced tree of k − 1 combines only gives the final state.
-- The work depends on which intermediate states the app reads, as the Sklansky and Brent-Kung numbers above show, so measure with the outputs the app actually reads.
-
 ## Way 2: speculation
 
-The pattern doc [speculation](../patterns/speculation.md) runs keyboard focus in a toolbar over a queue of key events, and selects each block's run with one index read, with a runnable example and a test.
+One step's input is the previous step's outcome, and the outcome isn't computed until the previous step finishes. But when the outcome has only a few possible values, the next block of steps can run once for each of them before the previous step finishes, and a select picks the run that starts where the state actually is. A carry-select adder (Bedrij 1962) uses the same idea for addition: each block adds its digits once for an incoming carry of 0 and once for an incoming carry of 1, and a chain of selects, one per block, picks each block's result by the carry that actually comes in. The pattern doc [speculation](../patterns/speculation.md) runs keyboard focus in a toolbar over a queue of key events and picks each block's run with one index read, with its sizes, when it's exact and when not to use it.
 
-### The problem
-
-One step's input is the previous step's outcome, and the outcome isn't computed until the previous step finishes. But when the outcome has only a few possible values, the next step can run for each of them before the previous step finishes, and a select picks the right result afterwards. A select is `bit ? on : off` written as arithmetic, `bit × on + (1 − bit) × off`; for a one-hot state, selecting among runs is the same sum of ANDs as applying a transition matrix.
-
-A carry-select adder (Bedrij 1962) uses the same idea for addition. The adder splits a long addition into blocks. Each block adds its digits twice, once for an incoming carry of 0 and once for an incoming carry of 1, without reading the carries from the blocks below it. Then a chain of selects, one per block, picks each block's result by the carry that actually comes in. Branch prediction in CPUs is related: the processor guesses a branch's outcome and runs ahead.
-
-### The familiar JavaScript way
-
-```ts
-// For each block, where does the block end from each possible start state?
-const blockEnds = blocks.map(block =>
-  [idle, armed, pressedOutside].map(start => block.reduce(nextButtonState, start)))
-// Then pick, one block after another.
-let state = initialState
-for (const ends of blockEnds) state = ends[state]!
-```
-
-### The circuit way
-
-```ts
-for (let firstEvent = 0; firstEvent < matrices.length; firstEvent += blockSize) {
-  // runsFromEveryStart[t][start] is the state after event t of the block when the block
-  // starts in `start`. No block reads another block's runs.
-  const runsFromEveryStart: TransitionMatrix[] = []
-  for (const matrix of matrices.slice(firstEvent, firstEvent + blockSize)) {
-    const previousRuns = runsFromEveryStart.at(-1)
-    runsFromEveryStart.push(previousRuns === undefined ? matrix : composeTransitions(circuit, previousRuns, matrix))
-  }
-  // The select: apply the runs to the actual start state.
-  blockStartState = applyTransitions(circuit, blockStartState, runsFromEveryStart.at(-1)!)
-}
-```
+In this section's button-forms.ts, the state is a one-hot, so picking among runs is the same sum of ANDs as applying a transition matrix. At 64 events, blocks of 8 are 1,612 operations in 17 layers, against 516 operations in 65 layers for the loop: running every block 3 times, once per possible start state, gave 3.1 times the loop's operations and a quarter of its depth. Every run computes in every evaluation, including the runs that end up unselected, so a run that overflows can turn a masked sum into `0 × Infinity = NaN`, as happened in lists with a zero-gated path.
 
 ### Why it works, and how it relates to way 1
 
 Running a block from every possible start state gives, for each start, where the block ends. Written as a table indexed by the start state, those ends are exactly the block's transition matrix. So speculation and transition matrices are two descriptions of the same computation: the rows of a transition matrix are the speculative runs, one per guess. Speculation is one more grouping of the matrix product: products inside blocks, computed in parallel across blocks, then applied to the state block after block.
 
 With blocks of about √k events, the runs are √k deep and the selects are k / √k = √k deep, so depth is O(√k). Doubling the idea, i.e. building each block's runs by speculation over two half-blocks, then over halves of those, gives the conditional-sum adder (Sklansky 1960) at O(log k) depth, which is the prefix scan of way 1.
-
-### Cost
-
-Speculation costs S times the loop's work, where S is the number of possible outcomes of a step: O(k × S × S²) operations for the button, at O(√k) depth. Measured on the button, next to way 1:
-
-| Events k | Form | Operations | Layers | Stored weights |
-| ---: | --- | ---: | ---: | ---: |
-| 4 | loop | 36 | 5 | 123 |
-| 4 | speculation, blocks of 2 | 70 | 5 | 223 |
-| 16 | loop | 132 | 17 | 507 |
-| 16 | speculation, blocks of 4 | 360 | 9 | 1,355 |
-| 64 | loop | 516 | 65 | 2,043 |
-| 64 | speculation, blocks of 8 | 1,612 | 17 | 6,427 |
-| 64 | prefix scan, Sklansky | 2,872 | 9 | 13,487 |
-
-At 64 events, running every block 3 times, once per possible start state, gave 3.1 times the loop's operations and a quarter of its depth. The 17 layers are 7 layers of combines, which every block runs at the same time (a block's first event needs no combine), then 8 layers of selects, one per block, then 1 layer of click bits and 1 for the click sum.
 
 ### When the outcomes don't stay few
 
@@ -273,184 +137,25 @@ Doubling needs the combined outcome of two blocks to again be one of few values,
 
 A CPU's branch predictor saves time because the processor keeps executing instead of stalling until the branch condition is computed, and on a wrong guess the processor throws the work away and redoes it. A fixed circuit computes every path in every evaluation anyway, so a guess can't skip work. A guess only shortens the chain if the frame shows the guessed result now and the corrected result one frame later, which is a delay (way 4) with a correction.
 
-### When not to use it
-
-- When S is large, since every block runs S times.
-- When a prefix scan applies: speculation with blocks of √k sits between the loop and the scan in both work and depth, and the scan is the same idea taken all the way.
-
-### Pitfalls
-
-- The guesses have to cover every state a block can start in. When no run covers the actual start state, no run is selected: in the button circuit, applying runs that lack the row for the actual start state returns all 3 state bits as 0, a state that doesn't exist, and every later block starts from that nonexistent state.
-- Every guess runs in every evaluation, including the guesses that end up unselected. An unselected run still computes, so a run that overflows can turn a masked sum into `0 × Infinity = NaN`, as happened in lists with a zero-gated path.
-- The block size is fixed while building, like every capacity, so the depth is planned for the queue's capacity, not for the number of events that actually arrive.
-
 ## Way 3: pointer jumping for linked structures
 
-The pattern doc [following links by doubling](../patterns/pointer-jumping.md) builds pointer jumping with `circuit.indexRead`, 342 operations in 7 layers at 63 segments and 32 line slots, with a runnable example and a test.
+Some chains follow links. Given a next-start table, where `nextStart[s]` is the first segment of the next line when a line starts at segment s, line L's start takes L lookups one after another, e.g. index-read's recovery of 157 line starts from pretext's next-start table was 490 layers. Pointer jumping (Wyllie 1979) replaces every link by the link it points to, so each round doubles how far every link reaches, and L line slots need about log2 L rounds. The pattern doc [following links by doubling](../patterns/pointer-jumping.md) builds it with `circuit.indexRead`, 342 operations in 7 layers at 63 segments and 32 line slots, with when it's exact and when not to use it. `jumps[level]` is a table of a function from a line's start to where 2^level lines end, and combining a table with itself is function composition, which is associative, as in way 1. Pointer jumping is also speculation over every possible start: every round computes the jump from every position, including positions where no line of the paragraph starts.
 
-### The problem
-
-Some chains follow links. Given a next-start table, where `nextStart[s]` is the first segment of the next line when a line starts at segment s, the third line starts at `nextStart[nextStart[0]]`, and line L's start takes L lookups one after another. Line walks were among the deepest parts of the prototypes, e.g. index-read's recovery of 157 line starts from pretext's next-start table was 490 layers.
-
-### The familiar JavaScript way
-
-The walk, and pointer jumping (Wyllie 1979): replace every pointer by the pointer it points to, so each round doubles how far every pointer reaches.
-
-```ts
-// The walk: L lookups one after another.
-let start = 0
-for (let line = 0; line < lineSlots; line++) {
-  starts.push(start)
-  if (start < segmentCount) start = nextStart[start]!
-}
-
-// Pointer jumping. jumps[level][s] is where 2^level lines starting at segment s end.
-// Position segmentCount means past the end, and a line starting there ends there.
-const jumps = [[...nextStart, segmentCount]]
-for (let level = 1; 2 ** level < lineSlots; level++) {
-  const previous = jumps[level - 1]!
-  jumps.push(previous.map(target => previous[target]!))
-}
-// Line `line` is 2^level lines after line `line - 2^level`.
-for (let line = 1; line < lineSlots; line++) {
-  const level = Math.floor(Math.log2(line))
-  starts.push(jumps[level]![starts[line - 2 ** level]!]!)
-}
-```
-
-### The circuit way
-
-Each `previous[target]` is a read at a computed index. [pointer-jumping.ts](../examples/chains/pointer-jumping.ts) was written before numeric-ui-core.ts had an index read instruction, so it builds a one-hot of the index and a masked sum, and declares the one-hot so the compiler turns the masked sum into one gather read (an indexed read of the selected value, see [indexing.md](indexing.md)). In the code, `[condition]` means 1 when the condition holds and 0 otherwise.
-
-```ts
-// [value >= threshold] for an integer-valued wire: exactly 0 or 1.
-const atLeast = (value: Wire, threshold: number) => circuit.affine([
-  [circuit.reglu([], 1, [[value, 1]], 1 - threshold), 1],
-  [circuit.reglu([], 1, [[value, 1]], -threshold), -1],
-])
-
-function readAtIndex(circuit: Circuit, table: readonly Wire[], index: Wire): Wire {
-  // Member j is [index >= j] - [index >= j + 1].
-  const members = table.map((_, position) => circuit.affine([
-    ...(position > 0 ? [[atLeast(index, position), 1]] : []),
-    ...(position + 1 < table.length ? [[atLeast(index, position + 1), -1]] : []),
-  ], position === 0 ? 1 : 0))
-  circuit.assumeOneHot(members)
-  return circuit.affine(members.map((member, position) => [circuit.multiply(table[position]!, member), 1]))
-}
-
-// One round of pointer jumping.
-jumps.push(previous.map((target, start) =>
-  start === segmentCount ? pastTheEnd : readAtIndex(circuit, previous, target)))
-```
-
-### Why it works
-
-`jumps[level]` is a table of a function from a line's start to where 2^level lines end, and combining a table with itself is function composition, which is associative, as in way 1. Pointer jumping is also speculation over every possible start: the carried state is a segment position, one of n + 1 values, and every round computes the jump from every position, including positions where no line of the paragraph starts.
-
-### Cost
-
-A line slot is the group of outputs reserved for one line of text, and here each line slot holds only the line's start. Each round is n + 1 reads at computed indices, and L line slots need log2(L) rounds, so pointer jumping is O(n × log L) reads at O(log L) depth, against L reads at O(L) depth for the walk. The rest depends on what a read costs. When each read builds a one-hot over n + 1 positions, as in pointer-jumping.ts, a read costs about 3 operations per position, so pointer jumping is O(n² × log L) operations. With the index read instruction, which index-read built first and numeric-ui-core.ts now has as `circuit.indexRead`, a read is 1 operation, and pointer jumping is O(n × log L) operations.
-
-Measured in this folder with numeric-ui-core.ts and one-hot reads, on 150 random paragraphs per circuit (segment widths from 20 to 80 px against a 160 px line), all equal to the walk:
-
-| Segments n | Line slots L | Form | Operations | Layers | Stored weights | Gather reads |
-| ---: | ---: | --- | ---: | ---: | ---: | ---: |
-| 15 | 8 | walk | 215 | 20 | 400 | 6 |
-| 15 | 8 | pointer jumping | 1,043 | 11 | 1,950 | 34 |
-| 63 | 32 | walk | 3,935 | 92 | 7,744 | 30 |
-| 63 | 32 | pointer jumping | 34,007 | 19 | 66,926 | 278 |
-
-In index-read's runtime copy, with the index read instruction, on a 1,023-segment paragraph with 157 line slots: the next-start table was 190,279 operations in 7 layers. Recovering the line starts by walking cost 1,409 more operations and 490 layers, and pointer jumping cost 35,914 more operations and 66 layers. Both matched pretext's line count and widest line at 21 widths, and the walk also matched every line's start and width at 22 widths. index-read didn't build pointer jumping with one-hots at that size; phase 1 estimated 7 to 10 million operations.
-
-### When not to use it
-
-- When the table itself dominates. At 1,023 segments, pointer jumping's 35,914 operations came on top of the next-start table's 190,279.
-- When reads cost O(n) each, i.e. without an index read, and n is large: the one-hots grow like n² per round.
-- When few links need following, e.g. a card caption with at most 3 lines.
-
-The trade also runs the other way. With reads at computed indices, a binary search finds the first visible row of 10,000 variable-height rows in 215 operations and 57 layers, where counting the rows above the scroll position takes 30,143 operations and 5 layers (index-read, checked at 303 scroll offsets). A count is shallow and wide; a search is narrow and deep.
-
-### Pitfalls
-
-- The index has to be an exact integer, or the one-hot interpolates between neighboring entries.
-- The table needs a past-the-end entry, so a walk that runs out of lines keeps reading the end instead of reading out of range.
-- Tables of positions can grow large, and operation counts don't show it. index-read's pointer jumping first stored 1,854,682 table entries at 1,023 segments, because every read whose candidates reached the end of the text also included the past-the-end entry as a constant. Dropping that entry, and clamping the index to the last segment instead, whose next start already is the end, made the count 0.
+This section's [pointer-jumping.ts](../examples/chains/pointer-jumping.ts) was written before numeric-ui-core.ts had an index read instruction, so each read builds a one-hot of the index over n + 1 positions, about 3 operations per position, and pointer jumping grows like n² × log L: 34,007 operations in 19 layers at 63 segments and 32 line slots, against 3,935 in 92 for the walk. The one-hot form needs an exact integer index, or the one-hot interpolates between neighboring entries, and a past-the-end entry, so a walk that runs out of lines keeps reading the end. In index-read's copy of the runtime, with the index read instruction, on a 1,023-segment paragraph with 157 line slots, pointer jumping cost 35,914 operations and 66 layers on top of the next-start table's 190,279, against 1,409 operations and 490 layers for the walk ([index-read](../../index-read/README.md)).
 
 ## Way 4: read last frame's value
 
-The pattern doc [read last frame's value](../patterns/read-last-frame.md) measures a delay on a drawer whose thumbnail grid reflows while the drawer springs, with a runnable example and a test.
+Some values sit deep in the chain but change slowly, e.g. a window's content size during most frames. A stage that reads the value's stored copy from the previous frame doesn't depend on the operations that compute the value: the copy is one more source cell, written back after each evaluation like the other next-state values, and the longest chain through the value becomes the longer of the part that computes the value and the part that reads it. The price is that the stage's output is off by how far the value moves in one frame. In hardware, a pipeline register holds a value from the previous clock tick the same way, and retiming (Leiserson and Saxe) moves registers to shorten the longest path while delaying every path from inputs to outputs by the same number of ticks, whereas a single delay in a UI circuit leaves the delayed value one frame older than the values around it. The pattern doc [read last frame's value](../patterns/read-last-frame.md) measures a delay on a drawer whose thumbnail grid reflows while the drawer springs, and [behavior-choices.md](../../../../behavior-choices.md#read-last-frames-value) says what the user sees and when to choose it.
 
-### The problem
-
-Some values sit deep in the chain but change slowly, e.g. a window's content size during most frames. If a stage reads the value's copy from the previous frame instead, none of the operations that compute the value has to run before the stage.
-
-### The familiar JavaScript way
-
-Layout code that keeps a value from the previous frame and reads that copy instead of this frame's value:
-
-```ts
-// Photos lays out for last frame's window size, so it doesn't read this frame's window layout.
-const photosLayout = layoutPhotos(previousPhotosContentWidth)
-const windowLayout = layoutWindows(windowState, events)
-render(windowLayout, photosLayout)
-previousPhotosContentWidth = windowLayout.photos.contentWidth
-```
-
-### The hardware way
-
-In hardware, a pipeline register holds a value from the previous clock tick, so logic after the register doesn't depend on logic before it within one tick. Retiming (Leiserson and Saxe) moves registers along a circuit to shorten its longest path, while keeping every path from inputs to outputs delayed by the same number of ticks, so outputs arrive later but are consistent with each other.
-
-### The circuit way
-
-A delayed value is one more source cell, written back after each evaluation like every other next-state value.
-
-```ts
-// Source cell previousContentWidth holds last frame's contentWidth. After each evaluation,
-// JS copies the contentWidth output into it, next to the other next-state cells.
-const photosLayout = buildPhotosLayout(circuit, previousContentWidth) // instead of contentWidth
-```
-
-A single delay in a UI circuit doesn't keep paths consistent with each other the way hardware retiming does: the delayed value is one frame older than the values around it.
-
-### Cost
-
-A delay adds no operations, only one source cell per delayed value and one more copy per frame when JavaScript writes next-state values back. The longest chain through the delayed value becomes the longer of two parts, the operations that compute the value and the operations that read it, instead of both parts added together. E.g. if a value sits 100 layers into a 190-layer chain, reading last frame's copy leaves a longest chain of 100 layers. The price is error: a delayed value is off by how far the value moves in one frame.
-
-### What the prototypes measured
-
-retiming turned delays into a program transformation and searched for them. The search replayed traces, i.e. recorded or generated sequences of input events and frame times, with each frame's state, including the delayed values, feeding the next frame, against a budget of 1 px, 0.02 opacity, and no changed decisions.
-
-- None of the hand-chosen delays fit that budget. Photos reading last frame's content size and opacity took IndirectOS's longest chain from 191 to 116 layers, and cost 88.9 px at 60 fps and 161 px at 10 fps. layout-tree's app shell reading last frame's sidebar spring took the shell from 115 to 83 layers, and cost 1,380 px and 116 decision mismatches in 41 frames, e.g. caption line counts.
-- A px budget means nothing without a statement of how fast inputs move, since a delay's error is how far the delayed value moves in one frame: the same Photos delay is 88.9 px at 60 fps and 161 px at 10 fps.
-- A search overfits to the traces it replays, because a trace only tests values that change in the trace. Searched on one live resize trace, IndirectOS with spring-bank's springs reached 84 layers at 0 px, and the same delays produced over 7,000 decision mismatches on random interaction traces. Searched on scripted and random traces together, the critical-values strategy, which cuts values that every longest chain passes through at one depth, took the longest chain from 136 to 123 operations with 0 px and 0 mismatches on three random traces the search never replayed. The minimum-cut strategy, which cuts the smallest set of values that brings every chain to a target length, reached the same 123 and failed on one of those traces (996 px, 33 mismatches).
-- Delays on chains with a decision at every stage removed almost no layers. In the gallery, the only delays that passed every searched trace removed 1 layer, through values those traces never changed, and those delays failed on 2 of 6 new traces.
-
-A better option than a delay is often an earlier value from the same frame. With spring-bank's springs, Photos can read the window springs' positions right after this frame's spring steps, before settled springs are set exactly to their destinations. Those stepped positions depend only on source cells and the shared frame matrix, so they're computed early. IndirectOS went from 137 to 91 layers, and Photos lagged only during a live resize, by that frame's resize delta (6.6 px in the trace), against 85.7 px when reading last frame's value.
-
-### When not to use it
-
-- For decisions. A photo focused a frame late is a lost or misdirected click, and on the gallery's chain retiming's searches kept almost no delay for that reason.
-- For values that move far in one frame, e.g. window geometry during a maximize, or any geometry at a low frame rate.
-- When display frames don't write state back. In event-time, where state is committed only at events, "previous" meant the last commit, and Photos reading the last commit was 507 px off during a maximize, against 35.7 px when every 240 fps frame wrote back.
-
-### Pitfalls
-
-- A delay can change timing everywhere. In indirect-os-2, text obstacles read from the windows' springs right after this frame's steps used last frame's stacking, so words started moving one rendered frame after a click: 16.7 ms later at 60 fps and 8.3 ms later at 120 fps. All springs share one clock that restarts when something starts moving, so every later animation shifted, and windows differed by 28.8 px between 60 fps and 120 fps.
-- Traces for a search have to change the delayed values. In retiming, 23 of the 49 delayed values chosen on one trace never changed in that trace, so replaying that trace couldn't show any error from them.
-- An open question from retiming: delay every path at a stage boundary by one frame, as hardware retiming does, so outputs are one frame late but consistent with each other. Consistent delays would trade the inconsistency above for input latency, and they weren't measured.
+[retiming](../../retiming/README.md) turned delays into a program transformation and searched for them over replayed traces. Photos reading last frame's content size and opacity took IndirectOS's longest chain from 191 to 116 layers, but hand-chosen delays were 85.7 to 1,380 px off, and delays searched on too few traces failed on traces that changed the delayed values. An open question from retiming: delay every path at a stage boundary by one frame, as hardware retiming does, so outputs are one frame late but consistent with each other, which trades the inconsistency for input latency and wasn't measured.
 
 ## Way 5: change what the app computes
 
-Some chains are long because of the behavior the app computes, and a change in behavior removes the dependency instead of shortening the chain. Two of these changes have pattern docs with runnable examples: [hit-test destinations instead of drawn positions](../patterns/hit-test-destinations.md) and [commit state at events](../patterns/commit-at-events.md).
-
-**Hit-test destinations instead of animated positions.** vibescript's ui.md recommends hit-testing against an animated element's destination, the stable position its spring is heading to, instead of its moving position. The reason there is behavior: no mis-clicks on moving elements, and rapid repeated clicks work. In a circuit there's also a structural reason: destinations are computed before springs, so a decision that reads destinations doesn't depend on the springs. In window-manager.ts, Photos hit-tests clicks against its layout at the animated window size, so which photo a click lands on depends on spring timing: with the spring bank's trajectories, a click during a Photos window animation landed on a different photo in 2 of 8 random 400-frame traces. indirect-os-2's event queue hit-tests at the destination size, which removes that dependency.
+Some chains are long because of the behavior the app computes, and a change in behavior removes the dependency instead of shortening the chain. [behavior-choices.md](../../../../behavior-choices.md) lists these choices, each with what the user sees differently. Two have pattern docs with runnable examples: [hit-test destinations instead of drawn positions](../patterns/hit-test-destinations.md), where destinations are computed before springs, so a decision that reads destinations doesn't depend on the springs, and [commit state at events](../patterns/commit-at-events.md), where state is written back only at events and settle checks, so stored state doesn't depend on which frames ran. The prototypes measured more changes of this kind:
 
 **Lay text out around the windows' destinations.** indirect-os-2 flows a Notes paragraph around the other windows. With the windows' destinations as obstacles, the whole program was 19,854 operations and 343 layers; with their animated geometry, 19,861 and 368. Destinations also kept every animated value within 2.4e-4 px between 60 fps and 120 fps, where animated obstacles made words differ by 25.4 px, since each frame rate moved the words' destinations through a different sequence of values.
 
-**Step springs toward last frame's destination.** Retargeting means changing a spring's destination while the spring is still moving. spring-bank's deferred retargeting makes this frame's spring steps move toward last frame's destination, stored in one cell per animated value, and the new destination takes effect from this frame's time. Deferred retargeting is a delay chosen for its semantics: with deferred retargeting, runs at 10 fps to 120 fps and through 500 ms and 2 s stalls differed by at most 0.003 px when presses landed on 30 fps frame times, where the two presses that fall between 10 fps frames start no animation. Deferred retargeting also puts the stepped positions early in the circuit, which is what let Photos read the window springs' positions right after this frame's steps, in way 4.
-
-**Commit at events, and sample time independently.** event-time writes state back only at event timestamps and at settle times derived from the committed state, and display frames evaluate a copy without writing back. Committed tables were identical in every bit at 10 to 240 fps and through stalls, over 6 traces. From one commit, the sample i fixed 4 ms steps later reads the spring matrix to the power i from 4 per-sample cells, so the 301 samples of the next 1.2 s are independent evaluations of one program instead of a chain across frames: 2,007 of the display program's 3,360 operations depend on the sample, the other 1,353 run once, and all samples matched 301 separate evaluations bit for bit over 4.7 million values.
+**Step springs toward last frame's destination.** Retargeting means changing a spring's destination while the spring is still moving. spring-bank's deferred retargeting makes this frame's spring steps move toward last frame's destination, stored in one cell per animated value, and the new destination takes effect from this frame's time. Deferred retargeting is a delay chosen for its semantics: with deferred retargeting, runs at 10 fps to 120 fps and through 500 ms and 2 s stalls differed by at most 0.003 px when presses landed on 30 fps frame times, where the two presses that fall between 10 fps frames start no animation. Deferred retargeting also puts the stepped positions early in the circuit, which is what let Photos read the window springs' positions right after this frame's steps ([read last frame's value](../patterns/read-last-frame.md#when-not-to-use-it)).
 
 **Rewrite one stage with fewer layers.** The gallery's click tournament accounts for about 20 of its 61 layers. Selecting the click by counting earlier hits instead brought the total to 41 layers, at 23,000 more stored weights.
 
@@ -541,7 +246,7 @@ Run from the repo root:
 
 - `bun test lab/ui-exploration/guide/examples/chains` runs 10 tests in about a second.
 - `bunx tsgo -p lab/ui-exploration/guide/examples/chains` typechecks the folder.
-- `bun lab/ui-exploration/guide/examples/chains/report.ts` prints every size table in this section, with W / D for the button forms, and the button forms with every state after every event as outputs.
+- `bun lab/ui-exploration/guide/examples/chains/report.ts` prints the sizes of the button forms with W / D, both with the final state and clicks and with every state after every event as outputs, and the sizes of the line starts and of the 4-state machine.
 
 Files:
 

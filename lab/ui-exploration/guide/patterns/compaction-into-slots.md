@@ -81,5 +81,5 @@ When fewer than k + 1 items are visible, the search ends past the last item, whe
 - [lists](../../lists/README.md): capacity routing, 1,000 items into 20 DOM slots, 0 mismatches over 208 visibility patterns.
 - [hn-thread](../../hn-thread/README.md): rank slots for the comments in view, and window slots.
 - [index-read](../../index-read/README.md): prefix counts and a binary search per slot, 10,000 operations and 49 layers for 1,000 items into 20, in its copy of the runtime.
-- [Loops, section 8](../sections/loops.md#8-common-ui-jobs-and-their-formulations): the forms side by side, and the first visible row of a scrolled list.
+- [Executor, UI jobs under each choice](../sections/executor.md#ui-jobs-under-each-choice): the forms side by side, and the first visible row of a scrolled list.
 - Example and test: [compaction-into-slots.ts](../examples/patterns/every-item/compaction-into-slots.ts) and [compaction-into-slots.test.ts](../examples/patterns/every-item/compaction-into-slots.test.ts), which compare both forms with the loop on none, all, exactly K − 1, K and K + 1 visible items at the end, only the first or last item, and random filters, in both evaluators.

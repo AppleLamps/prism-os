@@ -1,10 +1,12 @@
 # Lab experiments, read for how UI gets written in circuits
 
+Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS still describes window-manager.ts, which hasn't changed since commit a915dcb.
+
 This note covers `lab/trace-compiler`, `lab/event-window`, `lab/generative-fields`, `lab/reusable-layout` (text and layout files), `lab/data-adapter`, and `lab/gather-lowering`, read only for what they show about writing and executing UI. Training, gradient studies, and learned interpreters are ignored. Nothing under `exp/` or `lab/briefs/` was read.
 
 Line numbers in `numeric-ui-core.ts` refer to commit c3d8e54 (September 5, 2026); on September 14, 2026 the file grew from 1,653 to 3,158 lines.
 
-I also ran the repo's report scripts and three scratch scripts. The scratch scripts live in `scratchpad/phase1/lab-ui/`:
+I also ran the repo's report scripts and three scratch scripts. The scratch scripts live in `scratchpad/phase1/lab-ui/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/lab-ui/`):
 
 - `lab-circuit-sizes.ts` prints the current size of each lab circuit next to IndirectOS.
 - `text-wrap-circuit.ts` builds greedy word wrapping over prepared word widths three ways and checks every variant against a JS reference.

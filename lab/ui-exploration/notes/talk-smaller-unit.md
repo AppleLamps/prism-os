@@ -1,8 +1,10 @@
 # A smaller unit of composition
 
+Status, September 15, 2026: four of this note's six ideas were built as prototypes after it was written: [streaming-words](../streaming-words/README.md) (idea 1), [event-time](../event-time/README.md) (3), [learned-bits](../learned-bits/README.md) (4) and [instanced-items](../instanced-items/README.md) (5). The per-pixel owner map (2) and field morphs (6) weren't built. [guide/sections/talk.md](../guide/sections/talk.md) explains each prototype.
+
 This note reads Cheng's talk "Repeatable breakthrough" through its first step, taking a smaller unit of composition, and asks what the UI analog of triangles, pixels, subword tokens and individual bits is for Indirect. It is grounded in the thirteen phase 2 prototypes in this folder and in three short scratch experiments. It ends with six prototype ideas and a list of assumptions that look like premature compression.
 
-The scratch scripts are in `scratchpad/phase3-ideas/smaller-unit/`: `streaming.ts`, `gates.ts` and `tab-baseline.ts`. Each one imports the repo's files unchanged.
+The scratch scripts are in `scratchpad/phase3-ideas/smaller-unit/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase3-ideas/smaller-unit/`): `streaming.ts`, `gates.ts` and `tab-baseline.ts`. Each one imports the repo's files unchanged.
 
 ## How this lens reads tonight's results
 

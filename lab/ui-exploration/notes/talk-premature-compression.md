@@ -1,8 +1,10 @@
 # Premature compression, and going all the way to the bottom
 
+Status, September 15, 2026: all six of this note's ideas were built as prototypes after it was written: [exactness-budget](../exactness-budget/README.md) (idea 1), [event-time](../event-time/README.md) (2), [retiming](../retiming/README.md) (3), [pixel-output](../pixel-output/README.md) (4), [learned-bits](../learned-bits/README.md) (5) and [code-points](../code-points/README.md) (6). [guide/sections/talk.md](../guide/sections/talk.md) explains each prototype.
+
 This note reads tonight's thirteen prototypes through two lines of Cheng's talk "Repeatable breakthrough": that we "prematurely compress concepts", and that "maybe to reach all the way up, you need to understand all the way til the bottom." It lists the places where going one level lower already gave a higher-level capability, assumptions in tonight's work that look like premature compressions (with the numbers that show their cost), three scratch experiments run for this note, and six proposals.
 
-Scratch scripts live in `scratchpad/phase3-ideas/premature-compression/`: `time-instance.ts`, `perturbed-executor.ts`, and `difflogic-tab.ts`. Each runs with `bun <file>` and only imports from the prototype folders. Timings are rough, because other agents share the machine.
+Scratch scripts live in `scratchpad/phase3-ideas/premature-compression/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase3-ideas/premature-compression/`): `time-instance.ts`, `perturbed-executor.ts`, and `difflogic-tab.ts`. Each runs with `bun <file>` and only imports from the prototype folders. Timings are rough, because other agents share the machine.
 
 ## Where going one level lower already gave a higher-level capability
 

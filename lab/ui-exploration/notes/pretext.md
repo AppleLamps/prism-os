@@ -1,6 +1,8 @@
 # pretext's layout-time algorithms as circuits
 
-These notes describe what pretext computes at prepare time and at layout time, the exact control flow of its line walkers, and several ways to express that layout work in Indirect's affine, ReGLU and boolean atoms. Every formulation below was built with `numeric-ui-core.ts` and checked against pretext's own output under bun, with zero mismatches. All file:line references point into the pretext clone at `scratchpad/pretext-copy`. The scripts live in `scratchpad/phase1/pretext/`.
+Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS still describes window-manager.ts, which hasn't changed since commit a915dcb.
+
+These notes describe what pretext computes at prepare time and at layout time, the exact control flow of its line walkers, and several ways to express that layout work in Indirect's affine, ReGLU and boolean atoms. Every formulation below was built with `numeric-ui-core.ts` and checked against pretext's own output under bun, with zero mismatches. All file:line references point into the pretext clone at `scratchpad/pretext-copy`. The scripts live in `scratchpad/phase1/pretext/`. Both are backed up under `~/github/indirect-scratch-backup/2026-09-15/scratchpad/` at the same relative paths.
 
 The short version:
 
@@ -339,7 +341,7 @@ Per-word positions for animating reflow word by word: `x(i) = prefix[i] - prefix
 
 ### Recipe: prepared widths and kinds under bun
 
-Scripts: `scratchpad/phase1/pretext/`. `pretext-src/` is a copy of the clone's `src/`, so experiments never touch the clone.
+Scripts: `scratchpad/phase1/pretext/`. `pretext-src/` is a copy of the clone's `src/`, so experiments never touch the clone. The scripts are backed up at `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/pretext/`.
 
 ```sh
 bun scratchpad/phase1/pretext/print-prepared.ts

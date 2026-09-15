@@ -92,7 +92,7 @@ const frameDuration = emitMultiply(
 const springTimestep = circuit.affine([[frameDuration, 0.001 / 4]])
 ```
 
-`springMaxFrameDuration` is 32 ms (window-manager.ts:1206). The host writes each frame's requestAnimationFrame timestamp into the `frameTime` cell (window-manager.ts:1287), and the program copies `frameTime` into `previousFrameTime` for the next frame (window-manager.ts:1023). `emitSpring` (numeric-ui-core.ts:2268-2323) loops 4 times while building, and each copy of the step uses `springTimestep` as its length. photo-gallery.ts on its own writes a constant timestep of 0.004 s (photo-gallery.ts:591), so every evaluation of the standalone gallery simulates 16 ms, however long the frame was.
+`springMaxFrameDuration` is 32 ms (window-manager.ts:1206). The host writes each frame's requestAnimationFrame timestamp into the `frameTime` cell (window-manager.ts:1287), and the program copies `frameTime` into `previousFrameTime` for the next frame (window-manager.ts:1023). `emitSpring` in numeric-ui-core.ts loops 4 times while building, and each copy of the step uses `springTimestep` as its length. photo-gallery.ts on its own writes a constant timestep of 0.004 s (photo-gallery.ts:591), so every evaluation of the standalone gallery simulates 16 ms, however long the frame was.
 
 Three things make IndirectOS's timing frame-rate dependent:
 
@@ -100,7 +100,7 @@ Three things make IndirectOS's timing frame-rate dependent:
 - Frames longer than 32 ms lose time. At 10 fps each 100 ms frame simulates 32 ms, so motion runs at about a third of its speed, and a 500 ms stall moves the springs forward by 32 ms.
 - The page requests another frame only while the `animationActive` output is above 0 (window-manager.ts:1472-1473), or after an input event. So after a period with no frames, the first frame computes its duration from the last rendered frame, which can be seconds earlier, and the 32 ms clamp makes that frame simulate 32 ms toward the new destinations at any frame rate. At 120 fps, the first frame after a press moves the springs as far as about 4 frames' worth of time.
 
-`emitSpring`'s settle rule also differs from index.ts's snap. `active` is `100 × relu(distance − 0.01) + 100 × relu(speed − 0.01)`, clamped to 0..1 (numeric-ui-core.ts:2302-2317, with the thresholds and scales from window-manager.ts:1207-1210), and the drawn position is `active × steppedPosition + (1 − active) × destination`. So a spring 0.015 px from its destination and nearly at rest is drawn halfway between its stepped position and its destination, and its velocity is halved.
+`emitSpring`'s settle rule also differs from index.ts's snap. `active` is `100 × relu(distance − 0.01) + 100 × relu(speed − 0.01)`, clamped to 0..1 (at the end of `emitSpring`, with the thresholds and scales from window-manager.ts:1207-1210), and the drawn position is `active × steppedPosition + (1 − active) × destination`. So a spring 0.015 px from its destination and nearly at rest is drawn halfway between its stepped position and its destination, and its velocity is halved.
 
 spring-bank measured IndirectOS's timing on a scripted IndirectOS session, comparing each rate with 120 fps at the timestamps both runs rendered: 318 px apart at 10 fps, 183 px at 30 fps, 72 px at 60 fps, and 401 px at 60 fps with a 500 ms stall. At 10 fps, every animation ended about 1 s late ([spring-bank](../../spring-bank/README.md)).
 
@@ -110,7 +110,7 @@ The same substep timing in float64, over this section's random press traces ([fr
 
 A builder function runs once, at startup. Its loops run then, and each iteration appends operations, e.g. `for (let step = 0; step < 4; step++)` inside `emitSpring` appends 4 copies of the step's operations. The compiled program is that fixed list of operations, grouped into layers.
 
-`executeTensorProgram` (numeric-ui-core.ts:1580-1621) runs the program with `for (const layer of layers)`: one sparse matrix multiplication per layer, each layer exactly once, from the first layer to the last. The program has no instruction that jumps back to an earlier layer, and no instruction that repeats a layer a number of times read from a cell. So `for (let i = 0; i < steps; i++)`, where `steps` comes from this frame's timestamp, has no direct translation: the number of copies has to be chosen while building, before any timestamp exists. A neural network's forward pass has the same property: its number of layers is fixed when the network is built.
+`executeTensorProgram` in numeric-ui-core.ts runs the program with `for (const layer of layers)`: one sparse matrix multiplication per layer, each layer exactly once, from the first layer to the last. The program has no instruction that jumps back to an earlier layer, and no instruction that repeats a layer a number of times read from a cell. So `for (let i = 0; i < steps; i++)`, where `steps` comes from this frame's timestamp, has no direct translation: the number of copies has to be chosen while building, before any timestamp exists. A neural network's forward pass has the same property: its number of layers is fixed when the network is built.
 
 JavaScript can evaluate the whole program several times within one frame, e.g. once per 4 ms step, but each evaluation runs the entire UI, not only the springs. event-time's commits, described below, use that idea with one evaluation per event instead of one per step.
 
@@ -185,76 +185,14 @@ outputs = springs.map(spring => {
 
 ### 2. Powers of the step matrix, chosen by the step count's binary digits
 
-**The familiar JavaScript.** This is exponentiation by squaring. A step count below 512 is a sum of distinct powers of two, e.g. 300 = 256 + 32 + 8 + 4, so running `steps` steps is the same as running 2^digit steps for every binary digit of `steps` that is 1:
+This is exponentiation by squaring. A step count below 512 is a sum of distinct powers of two, e.g. 300 = 256 + 32 + 8 + 4, so running `steps` steps is running 2^digit steps for every binary digit of `steps` that is 1. In the pattern doc [repeated steps as one matrix power](../patterns/matrix-powers.md), build 2 computes the digits with `emitCompare` and multiplies one factor per digit, `I + digit × (M^(2^digit) − I)`, in a balanced tree of 2×2 products: 208 operations in 40 layers for one spring. This section's examples compute the digits with 3-operation integer bits instead of `emitCompare`, and build the power two ways:
 
-```ts
-for (let digit = 8; digit >= 0; digit--) {
-  if ((steps >> digit) & 1) state = runSteps(state, 2 ** digit)
-}
-```
+- **A chain of steps per spring** (2a in the table, `emitSpringSteps` in [spring-catch-up.ts](../examples/springs/spring-catch-up.ts)). For each digit, a chain of 2^digit steps, and a select keeps the state before or after the chain. Each step is an affine sum of fewer than 4 terms, which the builder copies into the sums that read it, so a chain of 256 steps compiles to 2 affine sums whose weights are the entries of `M^256`, and what remains is 2 selects per digit per spring, 72 operations for 9 digits.
+- **One matrix per stiffness and damping pair** (2b), the pattern doc's form, with about 14 more operations per spring. spring-bank's `split-table` variant reads the frame matrix from two constant tables through one-hots instead, `M^(16c)` for c whole 64 ms chunks and `M^f` for the f remaining 4 ms steps ([spring-bank](../../spring-bank/README.md)).
 
-**The circuit way, with a chain of steps per spring.** `emitSpringSteps` in [spring-catch-up.ts](../examples/springs/spring-catch-up.ts) writes a chain of 2^digit steps for each digit, and a select keeps either the state before the chain or the state after it:
+Most of the depth is in computing the digits. [spring-clock.ts](../examples/springs/spring-clock.ts) gets them by long division from the top digit down, 9 tests in a row, so the clock is 43 operations in 34 layers. Applying the top digit first lets the per-spring chain run alongside the division: the clock followed by one spring's steps is 33 layers with the most significant digit first, and 57 layers with the least significant digit first, with the same 120 operations (`measureDigitOrderDepth` in checks.ts).
 
-```ts
-export function emitSpringSteps(
-  circuit: Circuit,
-  spring: RelativeSpring,
-  stepBits: readonly Wire[],
-  constants: SpringConstants,
-  digitOrder: DigitOrder = 'most significant first',
-): RelativeSpring {
-  const digits = Array.from(
-    {length: stepBits.length},
-    (_, index) => digitOrder === 'most significant first' ? stepBits.length - 1 - index : index,
-  )
-  let current = spring
-  for (const digit of digits) {
-    let advanced = current
-    for (let step = 0; step < 2 ** digit; step++) advanced = emitSpringStep(circuit, advanced, constants)
-    const runsThisDigit = stepBits[digit]!
-    current = {
-      displacement: emitSelect(circuit, runsThisDigit, current.displacement, advanced.displacement),
-      velocity: emitSelect(circuit, runsThisDigit, current.velocity, advanced.velocity),
-    }
-  }
-  return current
-}
-```
-
-**Why the chains add almost nothing.** Each step is an affine sum with constant weights, and the builder copies an affine sum with fewer than 4 terms into every sum that reads it (numeric-ui-core.ts:1468-1493). A chain of 256 steps therefore ends up as 2 affine sums whose weights are the entries of `M^256`. `checkSpringStep` in checks.ts measures a chain of 300 steps as 2 live operations in 1 layer, with 4 stored weights.
-
-**Cost of the chain form.** What remains is 2 selects per digit per spring, 72 operations per spring for 9 digits, plus the operations that compute the digits. One spring, including the digits of a step count read from a cell, is 116 operations in 29 layers, and 20 springs are 1,484 operations: O(S·log N) operations and O(log N) layers.
-
-**The circuit way, with one matrix per stiffness and damping pair.** The shared form multiplies matrices once for every group of springs with the same stiffness and damping. Each digit's factor is `M^(2^digit)` when the digit is 1 and the identity matrix `I` when the digit is 0. The factor is affine in the digit, `I + digit × (M^(2^digit) − I)`, with the powers computed in float64 while building. A balanced tree of 2×2 matrix products combines the factors into `M^steps`, and every spring then applies the frame matrix, i.e. `M^steps` for this frame, with 4 products:
-
-```ts
-const step = springStepMatrix(constants)
-let level: WireMatrix[] = digits.map((digit, index) => {
-  const power = matrixPower(step, 2 ** index)
-  const entry = (entryIndex: number) =>
-    circuit.roundAffine([[digit, power[entryIndex]! - identityMatrix[entryIndex]!]], identityMatrix[entryIndex]!)
-  return [entry(0), entry(1), entry(2), entry(3)]
-})
-while (level.length > 1) {
-  const next: WireMatrix[] = []
-  for (let index = 0; index < level.length; index += 2) {
-    const right = level[index + 1]
-    next.push(right === undefined ? level[index]! : emitMatrixProduct(circuit, level[index]!, right))
-  }
-  level = next
-}
-// then, for every spring: emitApplyMatrix(circuit, level[0]!, spring)
-```
-
-**Cost of the shared form.** 217 operations for one spring and 483 for 20, i.e. about 14 more operations per spring: O(G·log N + S) operations. spring-bank's `split-table` variant reads the frame matrix from two constant tables instead, `M^(16c)` and `M^f`, where c counts whole 64 ms chunks and f counts the remaining 4 ms steps. The tables are read through one-hot bits of c and f, where a one-hot is a group of bits in which exactly one bit is 1. In spring-bank's IndirectOS copy, the window springs went from 1,240 operations to 523, and the Photos thumbnail springs from 1,116 to 468.
-
-**Where the depth goes: computing the digits.** [spring-clock.ts](../examples/springs/spring-clock.ts) gets the digits by long division, from the top digit down: test `remaining >= 4 ms × 2^digit`, then subtract when the test passes. Long division takes 9 tests in a row, and the whole clock is 43 operations in 34 layers. Testing every multiple of 4 ms at once would take O(N) tests at constant depth. spring-bank's clock sits in between, with 18 tests of multiples of 64 ms followed by 15 tests of multiples of 4 ms: 108 operations in 13 layers.
-
-**The order of the digits changes depth, not the result.** All chains are powers of the same matrix, so applying them in another order gives the same float64 result. The per-spring chain can apply the top digit first, as soon as long division has produced that digit, and run alongside the division instead of after it. The clock followed by one spring's steps is 33 layers with the most significant digit first, and 57 layers with the least significant digit first, with the same 120 operations (`measureDigitOrderDepth` in checks.ts).
-
-**When not to use it.** Don't use either binary form for springs that aren't linear with constant coefficients, or for items whose springs affect each other. If a step multiplies runtime values, a chain of steps no longer collapses into 2 affine sums: with stiffness and damping read from cells, the per-spring form is 2,142 operations in 1,295 layers, deeper than unrolling, because the chains for all 9 digits add up to 511 steps. spring-bank keeps stiffness and damping editable another way: JavaScript writes the power tables into cells whenever the constants change (its `source-table` variant, 4 operations more than constant tables).
-
-**Pitfalls.** The digits have to stay exact bits inside the sums that read them, so spring-clock.ts keeps each digit as its own `roundAffine` wire; the pitfalls section below explains why. And the builder still creates each step of each chain as its own operations, which only compiling drops, e.g. the app example below created 3,275 operations, of which 234 are live.
+Don't use either binary form for steps that aren't linear with constant coefficients. With stiffness and damping read from cells, a chain of steps no longer collapses into 2 affine sums, and the per-spring form is 2,142 operations in 1,295 layers, deeper than unrolling, because the chains for all 9 digits add up to 511 steps. Keep each digit as its own `roundAffine` wire, as spring-clock.ts does, for the reason under [Pitfalls the prototypes hit](#pitfalls-the-prototypes-hit).
 
 ### 3. JavaScript writes the step count's digits
 
@@ -273,36 +211,9 @@ for (let digit = 0; digit < 9; digit++) source[digitCells[digit]] = (steps >> di
 
 ### 4. JavaScript writes the frame matrix
 
-**The familiar JavaScript.** JavaScript keeps the clock and computes the frame matrix in float64, once per frame for each stiffness and damping pair:
+This form has been the default spring since September 14, 2026, and [execution-model.md](../../../../execution-model.md#springs-and-time) has its contract. JavaScript keeps the clock, computes `M^steps` by squaring in float64 once per frame for each stiffness and damping pair, e.g. `matrixPower(springStepMatrix({stiffness: 290, damping: 30}), steps)`, and writes the 4 entries into cells. Every spring applies them with 4 products, so FP32 rounds the spring's state once per frame instead of once per step. Both the entries and the state can be negative, so each product is 3 operations, which gives the table's 14 operations in 3 layers per spring, while JavaScript does O(G·log N) float64 work per frame. The pattern doc's build 1 shows the host code with a test, and in spring-bank's IndirectOS copy this `source-matrix` variant was the smallest, 3,413 operations.
 
-```ts
-const steps = Math.min(300, Math.floor((now - animatedUntilTime) / 4))
-const frameMatrix = matrixPower(springStepMatrix({stiffness: 290, damping: 30}), steps)
-for (let entry = 0; entry < 4; entry++) source[matrixCells[entry]!] = frameMatrix[entry]!
-```
-
-**The circuit way.** Every spring applies the matrix with 4 products (`emitApplyMatrix` in costs.ts):
-
-```ts
-export function emitApplyMatrix(circuit: Circuit, frame: WireMatrix, spring: RelativeSpring): RelativeSpring {
-  return {
-    displacement: circuit.roundAffine([
-      [circuit.multiply(frame[0], spring.displacement), 1],
-      [circuit.multiply(frame[1], spring.velocity), 1],
-    ]),
-    velocity: circuit.roundAffine([
-      [circuit.multiply(frame[2], spring.displacement), 1],
-      [circuit.multiply(frame[3], spring.velocity), 1],
-    ]),
-  }
-}
-```
-
-**Why it gives the same result.** `matrixPower` computes `M^steps` by squaring in float64, so the program receives the effect of all the steps as 4 numbers, and FP32 rounds the spring's state once per frame instead of once per step.
-
-**Cost.** Both the matrix entries and the spring's state can be negative, so each product is 3 operations (two ReLU-gated products and their difference), and one spring is 14 operations in 3 layers. 20 springs are 280 operations: O(S) operations at constant depth, while JavaScript does O(G·log N) float64 work per frame. In spring-bank's IndirectOS copy, this `source-matrix` variant was the smallest, 3,413 operations.
-
-**In numeric-ui-core.ts.** This form is now the default spring. `emitApplySpringMatrix(circuit, matrix, displacement, velocity)` is `emitApplyMatrix` above, 14 operations in 3 layers, and throws unless the 4 matrix wires have finite declared ranges, e.g. `±springMatrixBound(constants)` from host-timing.ts, so a host that writes an overflowing matrix fails the source range check instead of stepping springs to Infinity. host-timing.ts's `springStepMatrix` and `springMatrixPower` compute the matrix like `springStepMatrix` and `matrixPower` above. `emitAnimatedObject(circuit, springs, {settleCheck, snap})` steps every spring of one animated object, e.g. a window's x, y, width and height, and settles them together with one exact bit, which can only be 1 while the host's settle check cell holds 1, or while every spring is exactly at rest. Each spring stores its displacement from its destination, and the drawn position is computed but not stored. When a destination changes, the displacement is rebased onto the new destination once, as `f(f(destinationDuringSteps − destination) + displacement)`, so FP32 rounds the stored state at the size of the displacement rather than of the position. An object of one spring is 29 operations in 11 layers, against 46 operations and 33 layers for `emitSpring`. From [shared-runtime-springs.ts](../examples/springs/shared-runtime-springs.ts), shortened:
+numeric-ui-core.ts builds it with `emitApplySpringMatrix(circuit, matrix, displacement, velocity)`, which is costs.ts's `emitApplyMatrix`, and `emitAnimatedObject(circuit, springs, {settleCheck, snap})`, which steps every spring of one object, stores displacements from destinations instead of positions, and settles the object with one exact bit: 29 operations in 11 layers for an object of one spring, against 46 operations and 33 layers for `emitSpring`. From [shared-runtime-springs.ts](../examples/springs/shared-runtime-springs.ts), shortened:
 
 ```ts
 const bound = springMatrixBound({stiffness: 290, damping: 30})
@@ -321,44 +232,17 @@ const highlight = emitAnimatedObject(circuit, [{
 }], {settleCheck: highlightCell.settleCheck, snap: highlightCell.snap})
 ```
 
-**When not to use it.** Stiffness and damping stay editable, since they only enter the float64 computation in JavaScript. What the program loses is a description of how time passes: to evaluate the program at many future times, JavaScript has to write one matrix per time. event-time does exactly that, writing `M^0` to `M^300` into the 4 matrix cells of each of 301 samples ([event-time](../../event-time/README.md)).
-
-**An option nobody built yet.** The matrix doesn't have to be a power of the Euler step. With a constant destination, the spring equation `(e, v)' = A × (e, v)`, with `A = [[0, 1], [−k, −b]]`, has the exact solution `(e, v)(t) = exp(A × t) × (e, v)(0)`, where `exp(A × t)` is a matrix exponential and also a 2×2 matrix. So JavaScript could write `exp(A × elapsedSeconds)` for the time since the last frame, which would be Animation.md's closed-form spring with no step count at all. spring-bank's README lists exact per-step matrices as a next step, and Cheng's decision keeps the closed form for later: JavaScript would write `exp(A × elapsedSeconds)` into the same 4 cells, without changing the program.
+Stiffness and damping stay editable, since they only enter the float64 computation in JavaScript. What the program loses is a description of how time passes: to evaluate the program at many future times, JavaScript writes one matrix per time, as event-time does for 301 samples. The matrix also doesn't have to be a power of the Euler step: JavaScript could write the closed-form spring's `exp(A × elapsedSeconds)`, with `A = [[0, 1], [−k, −b]]`, into the same 4 cells without changing the program, which none of the prototypes built.
 
 ### 5. Commit state only at event timestamps
 
-The pattern doc [commit state at events](../patterns/commit-at-events.md) runs a toast stack through `advanceFrame` at several frame rates, with a runnable example and a test.
+In every form above, each frame both computes what's on screen and writes the next state back, so which frames happened to run becomes part of the state. Form 5 writes state back only at events and at settle checks, and evaluates each frame on a copy of the table. The pattern doc [commit state at events](../patterns/commit-at-events.md) has a toast stack example that runs this way, with a test, behavior-choices.md's [entry](../../../../behavior-choices.md#apply-events-at-their-timestamps-and-write-state-back-only-at-events-and-settle-checks) says what the user sees differently, and execution-model.md's [Which evaluations write state back](../../../../execution-model.md#which-evaluations-write-state-back) has the contract of host-timing.ts's `advanceFrame` with `'events and settle checks'`.
 
-**The problem.** In every form above, each frame both computes what's on screen and writes the next state back, so which frames happened to run becomes part of the state.
-
-**The familiar JavaScript.** Make the state a function of the events alone: apply each event at its own timestamp, and draw each frame from the last committed state and the time since that commit, without assigning the state:
-
-```ts
-window.addEventListener('pointerdown', event => {
-  committedState = advanceAndApply(committedState, event.timeStamp, event)
-})
-function render(now: number) {
-  drawScreen(stateAt(committedState, now)) // reads committedState, never assigns it
-}
-```
-
-**The circuit way.** event-time runs the same program in two kinds of evaluation. A commit evaluation runs at each event's timestamp, and at settle times computed from the committed state, and writes the next state back into the table. A display evaluation runs at a frame's timestamp on a copy of the last committed table, with the time since that commit, and throws its next-state values away. The program didn't change; only when JavaScript copies next-state values back changed.
-
-**Why it works.** No frame writes state, so the committed tables depend only on the event list and the settle times computed from it.
-
-**Measured.** The committed tables came out as the same bits at 10, 30, 60, 120 and 240 fps and through 500 ms and 2 s stalls. Over 6 traces, 4 variants and 7 frame schedules, 0 bits differed in committed tables and 0 bits in displayed outputs at shared timestamps ([event-time](../../event-time/README.md)).
-
-**Cost.** The program's size and depth don't change. Total work is one evaluation per distinct event timestamp, plus a settle commit whenever an animation outlives the last event, plus one display evaluation per frame while something moves. A commit costs about what a frame costs, e.g. 8.0 to 22.5 µs with generated JS in event-time's runs, and an idle page runs no commits.
-
-**When not to use it, and pitfalls.** JavaScript now runs a schedule: timers for settle commits, running due settle commits before any later display, and redoing settle commits when an event arrives with a timestamp before settle commits that already ran. A value that the program reads from the previous evaluation now comes from the last commit, which can be hundreds of milliseconds old: Photos reading the window size from the last commit was up to 507 px off during the maximize and restore animations, where frames that write back at 240 fps were up to 35.7 px off. And the program's settle decision can flip back: along one trace, 12 samples after a settle step reported animating again, at most 0.00104 px from the settle sample. event-time commits at the first settled sample among multiples of 16 steps, and shows that sample from then on.
-
-**In host-timing.ts.** `advanceFrame(clock, frameTimeStamp, events, evaluate, writeBack)` runs a frame's evaluations, and with `writeBack` set to `'events and settle checks'`, only the evaluations at event timestamps, at settle checks and at snaps write state back, while the `'frame'` evaluation runs on a copy of the table. It doesn't redo settle commits for a late event: an event with a timestamp before the last evaluation that wrote state back applies at that evaluation's time.
+event-time built this first, for IndirectOS: over 6 traces, 4 variants and 7 frame schedules, committed tables and displayed outputs at shared timestamps differed in 0 bits ([event-time](../../event-time/README.md)). JavaScript there runs a schedule: settle commits at computed times, run before any later display, and redone when an event arrives with a timestamp before settle commits that already ran. `advanceFrame` doesn't redo them: a late event applies at the time of the last evaluation that wrote state back.
 
 ### Which form to use
 
-On September 14, 2026 Cheng made form 4 the default, and form 5 a choice of `advanceFrame`'s `writeBack` argument for where stored state must be bit-identical across frame rates.
-
-For linear springs with constant stiffness and damping, form 4 is the smallest and shallowest, and it keeps stiffness and damping editable. Form 2 keeps the clock inside the program, so the host only writes a frame delta. Form 1 is for steps that aren't linear, with a small maximum count. Form 5 is for state that must be bit-identical across frame rates. Form 5 is a rule for when the host copies state back, so it works with any of the other forms; event-time used spring-bank's split-table and source-matrix variants.
+Form 4, with `emitAnimatedObject` and `advanceFrame`, is the default, and `advanceFrame`'s `writeBack` argument adds form 5 where stored state must be bit-identical across frame rates ([execution-model.md](../../../../execution-model.md#springs-and-time)). Form 2 keeps the clock inside the program, so the host only writes a frame delta, and form 1 is for steps that aren't linear, with a small maximum count.
 
 ## ui.md's render order is frame-rate dependent when a destination changes between frames
 
@@ -428,22 +312,13 @@ In the binary-digit forms and the matrix form, the intermediate steps don't exis
 
 ### The fix in a circuit
 
-spring-bank's deferred retargeting is the circuit form of stepping to the frame's timestamp before applying the frame's events. A frame's steps move toward last frame's destination, read from one extra cell per spring, and the spring starts moving toward this frame's destination from this frame's timestamp. With presses on 30 fps frame times, where the two presses that 10 fps applies late start no animation, the runs at 10 to 120 fps and through the stalls stayed within 0.003 px of each other, where ui.md's order differed by 513, 157 and 57 px at 10, 30 and 60 fps. The extra cells cost 44 cells and 252 stored weights in IndirectOS.
+numeric-ui-core.ts and host-timing.ts have both pieces. `emitAnimatedObject` steps each spring toward its `destinationDuringSteps` wire, the destination the previous evaluation wrote back, and `advanceFrame` runs an `'events'` evaluation at each distinct event timestamp, which steps to that timestamp and then applies the events, plus a settle check every 64 ms of simulated time. execution-model.md's [The ordering rule](../../../../execution-model.md#the-ordering-rule), [Settling at fixed simulated times](../../../../execution-model.md#settling-at-fixed-simulated-times) and [Which evaluations write state back](../../../../execution-model.md#which-evaluations-write-state-back) have the contract and what spring-matrix.test.ts measured over 8 traces of 12 presses between frames, e.g. every stored table identical in every bit at 10, 30, 60 and 120 fps with `'events and settle checks'`, where ui.md's order differed from 120 fps by up to 359 px at 10 fps. [shared-runtime-springs.test.ts](../examples/springs/shared-runtime-springs.test.ts) checks a smaller app, a selection highlight, the same way, including a 3,050 ms stall that every rate resumes from at 3,200 ms, where the highlight snaps onto its destination in the first frame.
 
-When presses fall between frames, deferred retargeting alone still differed by up to 514 px at 10 fps, because a frame's timestamp isn't the press's timestamp. spring-bank added one evaluation at each event's timestamp, without rendering, and the runs at every rate then stayed within 0.0051 px of each other over five traces with presses between frames. event-time's commits went further and gave identical bits, as described in form 5 above.
-
-numeric-ui-core.ts and host-timing.ts now have both pieces. `emitAnimatedObject` steps each spring toward its `destinationDuringSteps` wire, the destination the previous evaluation wrote back, and `advanceFrame` runs an `'events'` evaluation at each distinct event timestamp, which steps to that timestamp and then applies the events. In spring-matrix.test.ts in the repo root, over 8 traces of 12 presses between frames at 10, 30, 60 and 120 fps and through 500 ms stalls:
-
-- With `'events and settle checks'`, every stored table and every displayed output at shared timestamps was identical in every bit, and every run settled at the same simulated times as frame-free float64 springs, within 7.4e-5 px of them.
-- Writing back every evaluation stayed within 1.4e-4 px of float64 and 1.5e-4 px of 120 fps, and every run settled at the same simulated times as float64. When `emitAnimatedObject` stored positions instead of displacements, the same traces drifted up to 7.3e-4 px, and FP32 drift moved a settle in 2 of 48 runs.
-- ui.md's order, which applies the presses and then catches up, differed from 120 fps by up to 359, 124 and 53 px at 10, 30 and 60 fps in float64.
-- Through a 3 s stall, no frame ran more than 300 steps, one snap committed every object onto its destination, and the committed tables were identical in every bit at 10, 30, 60 and 120 fps, which all resume at the same frame time. Whether a snap runs depends on the frame times: springs snap when stepping from where they last stepped in stored state would run more than 300 steps. With `'events and settle checks'`, a frame evaluates a copy, so those steps count from the last event or settle check, which can be up to 64 ms before the previous frame. A frame gap from just above 1,140 ms can then snap at one frame rate and not at another, and make stored state differ across frame rates. With `'every evaluation'`, only a frame gap above 1,200 ms can.
-
-[shared-runtime-springs.test.ts](../examples/springs/shared-runtime-springs.test.ts) checks a smaller app, a selection highlight, the same way: with `'events and settle checks'`, the drawn positions at 10, 30, 60 and 120 fps and through 500 ms stalls are identical in every bit at shared timestamps, and every run settles at the same simulated times as float64, also when writing back every evaluation. After a 3,050 ms stall that every rate resumes from at 3,200 ms, the highlight snaps onto its destination in the first frame, no frame runs more than 300 steps, and the committed tables are identical in every bit across rates.
+Before these pieces, spring-bank built the circuit form of stepping first, deferred retargeting: a frame's steps move toward last frame's destination, read from one extra cell per spring. With one more evaluation at each event's timestamp, runs at every rate stayed within 0.0051 px of each other over five traces with presses between frames ([spring-bank](../../spring-bank/README.md)).
 
 ## Composing a spring at three levels
 
-The examples mirror index.ts's structure:
+The default spring is `emitAnimatedObject` in numeric-ui-core.ts, with host-timing.ts's `countSpringSteps` and `advanceFrame` moving the clock into JavaScript: `countSpringSteps` counts the steps, carries the time below one step, and returns `snap: true` when a frame would need more than 300 steps. This part builds the digit-based form instead, forms 2 and 3, to show how builders compose, at three levels that mirror index.ts's structure:
 
 | index.ts | Circuit builder | Example file |
 | --- | --- | --- |
@@ -455,8 +330,6 @@ The examples mirror index.ts's structure:
 The app is a list of 12 rows with a highlight behind the selected row. ArrowDown and ArrowUp move the selection, and holding the pointer down shrinks the highlight to 97%. The highlight's top springs with stiffness 290 and damping 30, and its scale with stiffness 333 and damping 20.
 
 The checks are in [checks.ts](../examples/springs/checks.ts), and [springs.test.ts](../examples/springs/springs.test.ts) runs them.
-
-The decided counterparts in the repo root are `emitAnimatedObject` in numeric-ui-core.ts for level 2, which steps by a matrix instead of by digits and settles one whole object, and host-timing.ts for the clock, which moves into JavaScript: `countSpringSteps` counts the steps, carries the time below one step, and returns `snap: true` when a frame would need more than 300 steps, in which case springs snap instead, and `advanceFrame` plans the evaluations.
 
 ### Level 1: one step
 
@@ -475,13 +348,13 @@ export function emitSpringStep(circuit: Circuit, spring: RelativeSpring, constan
 
 `RelativeSpring` holds the spring's displacement from its destination and its velocity. The destination doesn't change during one frame's steps, so stepping the displacement is the same as stepping the position, and FP32 rounding then scales with the distance to rest instead of with the position.
 
-`dt`, `stiffness` and `damping` are numbers while building, so the step multiplies wires only by constants: three affine sums and no products. The builder copies an affine sum with fewer than 4 terms into every sum that reads it (numeric-ui-core.ts:1468-1493), so the builder writes `acceleration`'s terms into `velocity`, and `velocity`'s terms into `displacement`. One step compiles to 2 live operations in 1 layer, within 7.3e-5 px of float64 over 2,000 random springs.
+`dt`, `stiffness` and `damping` are numbers while building, so the step multiplies wires only by constants: three affine sums and no products. The builder copies an affine sum with fewer than 4 terms into every sum that reads it (`affineShareThreshold` in numeric-ui-core.ts), so the builder writes `acceleration`'s terms into `velocity`, and `velocity`'s terms into `displacement`. One step compiles to 2 live operations in 1 layer, within 7.3e-5 px of float64 over 2,000 random springs.
 
 Calling the step builder on its own output produces another pair of affine sums over the same two inputs, with the weights multiplied out. A chain of 300 calls still compiles to 2 live operations in 1 layer, with 4 stored weights. The builder did create 900 operations, and compiling with the chain's outputs as the roots dropped the other 898.
 
 ### Level 2: a runtime number of steps, then settle
 
-`emitStepSpringTo` measures the spring from its destination, runs `emitSpringSteps` (shown in form 2 above), and then settles the spring the way index.ts does:
+`emitStepSpringTo` measures the spring from its destination, runs `emitSpringSteps`, form 2's chain of steps per spring, and then settles the spring the way index.ts does:
 
 ```ts
 const exceedance = circuit.roundAffine([
@@ -622,9 +495,9 @@ Values pass between builders as wires, e.g. `emitStepSpringTo` returns `{positio
 
 The builder also merges work across calls. When a call builds an operation identical to an existing one, the builder returns the existing wire, e.g. both `emitSelect` calls for the same digit share one `1 − digit` operation, and so do the two springs in the app. And it copies small affine sums into the sums that read them, which is why a chain of affine steps collapses.
 
-Recursion over structure known while building works too, e.g. `emitArgmax` builds its selection by recursing over the tournament tree it built (numeric-ui-core.ts:2606-2621), and layout-tree compiles Clay's layout passes over a tree whose structure is fixed while building ([layout-tree](../../layout-tree/README.md)).
+Recursion over structure known while building works too, e.g. `emitArgmax` builds its selection by recursing over the tournament tree it built (`routeArgmax` in numeric-ui-core.ts), and layout-tree compiles Clay's layout passes over a tree whose structure is fixed while building ([layout-tree](../../layout-tree/README.md)).
 
-Whole circuits compose. window-manager.ts copies the Photos circuit into its own circuit with `inlineCircuit` (numeric-ui-core.ts:2749), which maps Photos' source cells to window-manager wires. notation replaced that with components, i.e. a list of cells plus a build function that reads the parent's wires, and the result compiled to the same circuit ([notation](../../notation/README.md)).
+Whole circuits compose. window-manager.ts copies the Photos circuit into its own circuit with `inlineCircuit` in numeric-ui-core.ts, which maps Photos' source cells to window-manager wires. notation replaced that with components, i.e. a list of cells plus a build function that reads the parent's wires, and the result compiled to the same circuit ([notation](../../notation/README.md)).
 
 Savings add up across compositions. In indirect-os-2, replacing `emitSpring` with the spring bank saved 1,353 operations in IndirectOS with event latches, and 4,478 operations once the Notes paragraph was added ([indirect-os-2](../../indirect-os-2/README.md)).
 
@@ -644,7 +517,7 @@ Savings add up across compositions. In indirect-os-2, replacing `emitSpring` wit
 
 **A range declared after an operation reads a wire doesn't change that operation.** `circuit.multiply(value, timestep)` builds one ReLU-gated product when `timestep`'s range is already declared nonnegative, and three operations, `value × max(0, timestep)`, `value × max(0, −timestep)` and their difference, when it isn't. window-manager.ts never declares the spring timestep's range itself; the declaration only arrives when the Photos circuit is inlined, after the window springs exist. Declaring the range where the timestep is computed saves 320 live operations with bit-identical outputs ([notation](../../notation/README.md)). [build-order.ts](../examples/springs/build-order.ts) shows the same with one product: 1 live operation with the range declared first, 3 with the range declared after, and the same values over 100,000 random inputs. The builders here declare every cell's range before building behavior. The [model](model.md#why-declared-ranges-matter) section lists the other places declared ranges matter.
 
-**The order in which wires are created changes FP32 results.** An ordinary affine sum adds its terms in wire-number order (numeric-ui-core.ts:1509-1518), and wire numbers follow creation order. With a bias and two fractional terms, moving one statement changes rounding: in build-order.ts, `0.3 + 0.1 × left + 0.7 × right` gave a different FP32 result for 30,293 of 100,000 random inputs, depending only on whether `left` or `right` was created first. notation had to create IndirectOS's window center before its dock center to reproduce the original circuit bit for bit.
+**The order in which wires are created changes FP32 results.** An ordinary affine sum adds its terms in wire-number order (`normalizeTerms` in numeric-ui-core.ts), and wire numbers follow creation order. With a bias and two fractional terms, moving one statement changes rounding: in build-order.ts, `0.3 + 0.1 × left + 0.7 × right` gave a different FP32 result for 30,293 of 100,000 random inputs, depending only on whether `left` or `right` was created first. notation had to create IndirectOS's window center before its dock center to reproduce the original circuit bit for bit.
 
 **An exact bit stops being exact inside a large sum.** A bit written as `relu(k + 1) − relu(k)` is a small affine sum, so the builder copies both ReLU terms into every sum that reads the bit, and large ReLU values times large weights can push partial sums past 2^24, where FP32 stops holding every integer. The [comparisons](comparisons.md#form-1-integer-bits) section has the failures this caused in lists and input. spring-clock.ts keeps its digits as their own `roundAffine` wires, whose ReLU values reach 2^16 and whose weights reach 1,024.
 

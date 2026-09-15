@@ -1,6 +1,8 @@
 # IndirectOS as a body of UI code
 
-This note covers `window-manager.ts` (1,839 lines), `photo-gallery.ts` (967 lines), `index.html`, and `window-manager.css`. I skimmed both test files and also read `candidate-gallery.ts` and `hard-attend.ts` for more UI patterns. Every number was measured on commit `c3d8e54` with Bun. The scripts are listed at the end and live in `scratchpad/phase1/indirect-os/`. The only repo file changed is this note.
+Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS still describes window-manager.ts, which hasn't changed since commit a915dcb.
+
+This note covers `window-manager.ts` (1,839 lines), `photo-gallery.ts` (967 lines), `index.html`, and `window-manager.css`. I skimmed both test files and also read `candidate-gallery.ts` and `hard-attend.ts` for more UI patterns. Every number was measured on commit `c3d8e54` with Bun. The scripts are listed at the end and live in `scratchpad/phase1/indirect-os/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/indirect-os/`). The only repo file changed is this note.
 
 ## Numbers at a glance
 
@@ -327,7 +329,7 @@ In rough order of line savings:
 
 ## Scripts
 
-All scripts are in `scratchpad/phase1/indirect-os/`. Run them from the repo root with `bun <script>`.
+All scripts are in `scratchpad/phase1/indirect-os/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/indirect-os/`). Run them from the repo root with `bun <script>`.
 
 - `attribute-ops.ts`: per-behavior operation counts, stored weights, gathers, depth ranges, the deepest path, and step timing.
 - `timing.ts`: build time and per-frame breakdown without instrumentation.
