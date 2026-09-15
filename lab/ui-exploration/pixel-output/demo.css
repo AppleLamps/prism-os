@@ -1,0 +1,36 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: rgb(240, 240, 229);
+  font-family: Verdana, Geneva, sans-serif;
+}
+#gpu-canvas, #cpu-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  touch-action: none;
+}
+#cpu-canvas {
+  image-rendering: pixelated;
+}
+.panel {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: 11px/15px ui-monospace, Menlo, monospace;
+  color: #5c5c5c;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  padding: 8px 10px;
+  max-width: 420px;
+}
+.panel pre {
+  margin: 0;
+  white-space: pre-wrap;
+}

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IndirectOS Event Time</title>
+  <link rel="stylesheet" href="../../../window-manager.css">
+  <style>
+    #demo-controls { position: fixed; left: 50%; top: 6px; transform: translateX(-50%); z-index: 1000; display: flex; gap: 14px; align-items: center; font: 12px system-ui, sans-serif; color: rgba(255, 255, 255, 0.75); white-space: nowrap; }
+    #demo-controls a { color: inherit; text-decoration: none; padding: 2px 6px; border-radius: 6px; }
+    #demo-controls a.selected { background: rgba(255, 255, 255, 0.2); color: white; }
+    #demo-controls button { font: inherit; }
+    #demo-controls button.armed { background: #61dafb; }
+  </style>
+</head>
+<body>
+  <main id="desktop">
+    <header id="system-bar">
+      <div class="system-mark"><span></span>IndirectOS</div>
+    </header>
+    <div id="demo-controls">
+      <span>presenter <a data-presenter="keyframes">predicted keyframes</a><a data-presenter="frames">display frames</a></span>
+      <button id="stall" type="button">stall 500 ms</button>
+      <button id="stall-next" type="button">stall 500 ms once the next animation starts</button>
+    </div>
+
+    <section class="window window-files">
+      <div class="titlebar">
+        <div class="window-title"><span class="app-dot dot-files"></span>Files</div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content files-content">
+        <aside class="file-sidebar">
+          <strong>Favorites</strong>
+          <span class="selected">Desktop</span>
+          <span>Documents</span>
+          <span>Downloads</span>
+          <span>Archive</span>
+        </aside>
+        <div class="file-grid">
+          <div class="folder"><i></i><span>Experiments</span><small>18 items</small></div>
+          <div class="folder"><i></i><span>References</span><small>32 items</small></div>
+          <div class="folder"><i></i><span>Weights</span><small>9 items</small></div>
+          <div class="folder"><i></i><span>Exports</span><small>5 items</small></div>
+        </div>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <section class="window window-notes">
+      <div class="titlebar">
+        <div class="window-title"><span class="app-dot dot-notes"></span>Notes</div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content notes-content">
+        <p class="note-date">EVENT TIME</p>
+        <h1>State changes only at events.</h1>
+        <p>Every event commits new state at its own timestamp. One run of the circuit then computes all 301 samples until the next 1.2 s, and the page hands them to Web Animations.</p>
+        <div class="note-rule"></div>
+        <p class="note-small">Press the second button above, then minimize a window. Motion keeps playing while the main thread is blocked.</p>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <section class="window window-monitor">
+      <div class="titlebar">
+        <div class="window-title"><span class="app-dot dot-monitor"></span>System Monitor</div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content monitor-content">
+        <div class="monitor-heading"><span>COMMIT PER EVENT</span><strong>LIVE</strong></div>
+        <div class="metric-row"><span>commits</span><b id="monitor-commits"></b></div>
+        <div class="metric-row"><span>last commit</span><b id="monitor-commit-time"></b></div>
+        <div class="metric-row"><span>prediction</span><b id="monitor-prediction"></b></div>
+        <div class="metric-row"><span>rows</span><b id="monitor-rows"></b></div>
+        <div class="metric-row"><span>animations</span><b id="monitor-animated"></b></div>
+        <div class="metric-row"><span>settle commit</span><b id="monitor-settle"></b></div>
+        <div class="metric-row"><span>presenter</span><b id="monitor-presenter"></b></div>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <section class="window window-photos">
+      <div class="titlebar">
+        <div class="window-title">
+          <span class="app-dot dot-photos"></span>Photos
+        </div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content photos-content">
+        <div class="photos-backdrop"></div>
+        <div class="photos-control photos-previous">&larr;</div>
+        <div class="photos-control photos-next">&rarr;</div>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <nav id="dock">
+      <div class="dock-item dock-files"><span>F</span><i></i></div>
+      <div class="dock-item dock-notes"><span>N</span><i></i></div>
+      <div class="dock-item dock-monitor"><span>M</span><i></i></div>
+      <div class="dock-item dock-photos"><span>P</span><i></i></div>
+    </nav>
+  </main>
+  <script type="module" src="./demo.ts"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Circuit Virtualized List</title>
+  <style>
+    body { margin: 0; font: 14px system-ui; background: #f4f4f2; color: #222; }
+    header { padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
+    #stats { font: 12px ui-monospace, monospace; color: #555; width: 100%; }
+    #scroller { position: relative; overflow: auto; height: min(800px, calc(100vh - 130px)); margin: 0 16px; background: white; border: 1px solid #ddd; }
+    #spacer { position: relative; width: 100%; }
+    .slot { position: absolute; left: 0; right: 0; top: 0; box-sizing: border-box; padding: 0 12px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #eee; overflow: hidden; }
+    .swatch { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+    .slot-index { color: #999; font: 11px ui-monospace, monospace; margin-left: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <label><input type="radio" name="kind" value="uniform" checked> Uniform rows (40 px)</label>
+    <label><input type="radio" name="kind" value="variable"> Variable heights (36 to 72 px, prefix sum in the circuit)</label>
+    <label><input type="checkbox" id="one-hot"> Read row colors through the circuit's slot one-hots</label>
+    <button id="new-heights" type="button">New heights</button>
+    <div id="stats"></div>
+  </header>
+  <div id="scroller"><div id="spacer"></div></div>
+  <script type="module" src="./list-demo.ts"></script>
+</body>
+</html>

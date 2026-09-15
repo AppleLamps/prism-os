@@ -1,0 +1,57 @@
+{
+  "runtime": "Node v23.10.0 (Dawn)",
+  "note": "Each guard ran in its own process with 16,384 users (64 stage 1 settings x 256 users) x 600 frames and 2% janky frames. The other WebGPU stack ran on the same machine at the same time, so timings are rough. Command: gpu-population.ts 256 600 <guard>.",
+  "results": [
+    {
+      "guard": "max",
+      "userCount": 16384,
+      "frames": 600,
+      "outputsCompared": 629145600,
+      "mismatches": 0,
+      "mismatchedFrames": 0,
+      "maximumDifference": 0,
+      "firstMismatch": null,
+      "shaderStatements": 2141,
+      "shaderBytes": 192493,
+      "exposure": {
+        "inexactProducts": 680,
+        "additions": 5202,
+        "guards": 5882,
+        "booleanRows": 0,
+        "gatherReads": 35
+      },
+      "shaderCompileMilliseconds": 113.1,
+      "perUserSourceBytesPerFrame": 9371648,
+      "medianUploadMillisecondsLaterFrames": 2.38,
+      "medianDispatchAndReadbackMillisecondsLaterFrames": 1.1,
+      "medianCpuInstanceLoopMillisecondsLaterFrames": 84.54
+    },
+    {
+      "guard": "none",
+      "userCount": 16384,
+      "frames": 600,
+      "outputsCompared": 629145600,
+      "mismatches": 0,
+      "mismatchedFrames": 0,
+      "maximumDifference": 0,
+      "firstMismatch": null,
+      "shaderStatements": 2141,
+      "shaderBytes": 127791,
+      "exposure": {
+        "inexactProducts": 680,
+        "additions": 5202,
+        "guards": 0,
+        "booleanRows": 0,
+        "gatherReads": 35
+      },
+      "shaderCompileMilliseconds": 89.4,
+      "perUserSourceBytesPerFrame": 9371648,
+      "medianUploadMillisecondsLaterFrames": 2.36,
+      "medianDispatchAndReadbackMillisecondsLaterFrames": 0.85,
+      "medianCpuInstanceLoopMillisecondsLaterFrames": 74.64
+    }
+  ],
+  "adapter": {
+    "subgroupMatrixConfigs": []
+  }
+}

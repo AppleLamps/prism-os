@@ -1,0 +1,1405 @@
+{
+  "scale 30": {
+    "sourceCells": 131,
+    "operationsBuilt": 21002,
+    "liveOperations": 7362,
+    "layers": 59,
+    "widestLayer": 750,
+    "storedWeights": 23222,
+    "gatherReads": 439,
+    "gatherTableEntries": 13148,
+    "booleans": 488,
+    "reglus": 3367,
+    "roots": 1304,
+    "liveBySection": [
+      {
+        "name": "comment heights from breakpoints",
+        "liveOperations": 938,
+        "storedWeights": 1367,
+        "deepestLayer": 4
+      },
+      {
+        "name": "collapse and natural heights",
+        "liveOperations": 90,
+        "storedWeights": 288,
+        "deepestLayer": 6
+      },
+      {
+        "name": "natural prefix sums",
+        "liveOperations": 51,
+        "storedWeights": 102,
+        "deepestLayer": 13
+      },
+      {
+        "name": "scroll smoothing",
+        "liveOperations": 13,
+        "storedWeights": 19,
+        "deepestLayer": 9
+      },
+      {
+        "name": "vertical sizing",
+        "liveOperations": 32,
+        "storedWeights": 55,
+        "deepestLayer": 20
+      },
+      {
+        "name": "hit test",
+        "liveOperations": 241,
+        "storedWeights": 596,
+        "deepestLayer": 27
+      },
+      {
+        "name": "gutter peek",
+        "liveOperations": 117,
+        "storedWeights": 275,
+        "deepestLayer": 44
+      },
+      {
+        "name": "collapse toggle",
+        "liveOperations": 100,
+        "storedWeights": 258,
+        "deepestLayer": 39
+      },
+      {
+        "name": "height easing",
+        "liveOperations": 528,
+        "storedWeights": 1106,
+        "deepestLayer": 47
+      },
+      {
+        "name": "visual prefix sums",
+        "liveOperations": 64,
+        "storedWeights": 592,
+        "deepestLayer": 43
+      },
+      {
+        "name": "visual rows and gutters",
+        "liveOperations": 1650,
+        "storedWeights": 2610,
+        "deepestLayer": 59
+      },
+      {
+        "name": "DOM slots",
+        "liveOperations": 3522,
+        "storedWeights": 15922,
+        "deepestLayer": 58
+      },
+      {
+        "name": "cursor",
+        "liveOperations": 12,
+        "storedWeights": 28,
+        "deepestLayer": 48
+      }
+    ],
+    "demo": {
+      "sourceCells": 131,
+      "operationsBuilt": 21002,
+      "liveOperations": 7362,
+      "layers": 59,
+      "widestLayer": 750,
+      "storedWeights": 23222,
+      "gatherReads": 439,
+      "gatherTableEntries": 13148,
+      "booleans": 488,
+      "reglus": 3367,
+      "roots": 794,
+      "liveBySection": [
+        {
+          "name": "comment heights from breakpoints",
+          "liveOperations": 938,
+          "storedWeights": 1367,
+          "deepestLayer": 4
+        },
+        {
+          "name": "collapse and natural heights",
+          "liveOperations": 90,
+          "storedWeights": 288,
+          "deepestLayer": 6
+        },
+        {
+          "name": "natural prefix sums",
+          "liveOperations": 51,
+          "storedWeights": 102,
+          "deepestLayer": 13
+        },
+        {
+          "name": "scroll smoothing",
+          "liveOperations": 13,
+          "storedWeights": 19,
+          "deepestLayer": 9
+        },
+        {
+          "name": "vertical sizing",
+          "liveOperations": 32,
+          "storedWeights": 55,
+          "deepestLayer": 20
+        },
+        {
+          "name": "hit test",
+          "liveOperations": 241,
+          "storedWeights": 596,
+          "deepestLayer": 27
+        },
+        {
+          "name": "gutter peek",
+          "liveOperations": 117,
+          "storedWeights": 275,
+          "deepestLayer": 44
+        },
+        {
+          "name": "collapse toggle",
+          "liveOperations": 100,
+          "storedWeights": 258,
+          "deepestLayer": 39
+        },
+        {
+          "name": "height easing",
+          "liveOperations": 528,
+          "storedWeights": 1106,
+          "deepestLayer": 47
+        },
+        {
+          "name": "visual prefix sums",
+          "liveOperations": 64,
+          "storedWeights": 592,
+          "deepestLayer": 43
+        },
+        {
+          "name": "visual rows and gutters",
+          "liveOperations": 1650,
+          "storedWeights": 2610,
+          "deepestLayer": 59
+        },
+        {
+          "name": "DOM slots",
+          "liveOperations": 3522,
+          "storedWeights": 15922,
+          "deepestLayer": 58
+        },
+        {
+          "name": "cursor",
+          "liveOperations": 12,
+          "storedWeights": 28,
+          "deepestLayer": 48
+        }
+      ]
+    },
+    "sizes": {
+      "breakpoints": 232,
+      "maxBreakpointsPerComment": 76,
+      "ancestorTableEntries": 240,
+      "ancestorListEntries": 64,
+      "subtreeEndEntries": 30
+    },
+    "buildMilliseconds": 30.673250000000003,
+    "compileMilliseconds": 14.31025000000001,
+    "circuitMicroseconds": 52.78,
+    "referenceMicroseconds": 2.09
+  },
+  "scale 60": {
+    "sourceCells": 251,
+    "operationsBuilt": 41225,
+    "liveOperations": 13981,
+    "layers": 61,
+    "widestLayer": 1467,
+    "storedWeights": 47267,
+    "gatherReads": 439,
+    "gatherTableEntries": 26289,
+    "booleans": 951,
+    "reglus": 6633,
+    "roots": 2054,
+    "liveBySection": [
+      {
+        "name": "comment heights from breakpoints",
+        "liveOperations": 1853,
+        "storedWeights": 2742,
+        "deepestLayer": 4
+      },
+      {
+        "name": "collapse and natural heights",
+        "liveOperations": 180,
+        "storedWeights": 569,
+        "deepestLayer": 6
+      },
+      {
+        "name": "natural prefix sums",
+        "liveOperations": 110,
+        "storedWeights": 220,
+        "deepestLayer": 15
+      },
+      {
+        "name": "scroll smoothing",
+        "liveOperations": 13,
+        "storedWeights": 19,
+        "deepestLayer": 9
+      },
+      {
+        "name": "vertical sizing",
+        "liveOperations": 32,
+        "storedWeights": 55,
+        "deepestLayer": 21
+      },
+      {
+        "name": "hit test",
+        "liveOperations": 397,
+        "storedWeights": 1134,
+        "deepestLayer": 28
+      },
+      {
+        "name": "gutter peek",
+        "liveOperations": 207,
+        "storedWeights": 515,
+        "deepestLayer": 45
+      },
+      {
+        "name": "collapse toggle",
+        "liveOperations": 190,
+        "storedWeights": 498,
+        "deepestLayer": 40
+      },
+      {
+        "name": "height easing",
+        "liveOperations": 1038,
+        "storedWeights": 2186,
+        "deepestLayer": 48
+      },
+      {
+        "name": "visual prefix sums",
+        "liveOperations": 124,
+        "storedWeights": 2077,
+        "deepestLayer": 44
+      },
+      {
+        "name": "visual rows and gutters",
+        "liveOperations": 3300,
+        "storedWeights": 5220,
+        "deepestLayer": 60
+      },
+      {
+        "name": "DOM slots",
+        "liveOperations": 6521,
+        "storedWeights": 32000,
+        "deepestLayer": 61
+      },
+      {
+        "name": "cursor",
+        "liveOperations": 12,
+        "storedWeights": 28,
+        "deepestLayer": 49
+      }
+    ],
+    "demo": {
+      "sourceCells": 251,
+      "operationsBuilt": 41225,
+      "liveOperations": 13981,
+      "layers": 61,
+      "widestLayer": 1467,
+      "storedWeights": 47267,
+      "gatherReads": 439,
+      "gatherTableEntries": 26289,
+      "booleans": 951,
+      "reglus": 6633,
+      "roots": 1034,
+      "liveBySection": [
+        {
+          "name": "comment heights from breakpoints",
+          "liveOperations": 1853,
+          "storedWeights": 2742,
+          "deepestLayer": 4
+        },
+        {
+          "name": "collapse and natural heights",
+          "liveOperations": 180,
+          "storedWeights": 569,
+          "deepestLayer": 6
+        },
+        {
+          "name": "natural prefix sums",
+          "liveOperations": 110,
+          "storedWeights": 220,
+          "deepestLayer": 15
+        },
+        {
+          "name": "scroll smoothing",
+          "liveOperations": 13,
+          "storedWeights": 19,
+          "deepestLayer": 9
+        },
+        {
+          "name": "vertical sizing",
+          "liveOperations": 32,
+          "storedWeights": 55,
+          "deepestLayer": 21
+        },
+        {
+          "name": "hit test",
+          "liveOperations": 397,
+          "storedWeights": 1134,
+          "deepestLayer": 28
+        },
+        {
+          "name": "gutter peek",
+          "liveOperations": 207,
+          "storedWeights": 515,
+          "deepestLayer": 45
+        },
+        {
+          "name": "collapse toggle",
+          "liveOperations": 190,
+          "storedWeights": 498,
+          "deepestLayer": 40
+        },
+        {
+          "name": "height easing",
+          "liveOperations": 1038,
+          "storedWeights": 2186,
+          "deepestLayer": 48
+        },
+        {
+          "name": "visual prefix sums",
+          "liveOperations": 124,
+          "storedWeights": 2077,
+          "deepestLayer": 44
+        },
+        {
+          "name": "visual rows and gutters",
+          "liveOperations": 3300,
+          "storedWeights": 5220,
+          "deepestLayer": 60
+        },
+        {
+          "name": "DOM slots",
+          "liveOperations": 6521,
+          "storedWeights": 32000,
+          "deepestLayer": 61
+        },
+        {
+          "name": "cursor",
+          "liveOperations": 12,
+          "storedWeights": 28,
+          "deepestLayer": 49
+        }
+      ]
+    },
+    "sizes": {
+      "breakpoints": 497,
+      "maxBreakpointsPerComment": 93,
+      "ancestorTableEntries": 540,
+      "ancestorListEntries": 126,
+      "subtreeEndEntries": 60
+    },
+    "buildMilliseconds": 41.27133299999991,
+    "compileMilliseconds": 20.039416999999958,
+    "circuitMicroseconds": 109.85,
+    "referenceMicroseconds": 4.08
+  },
+  "scale 125": {
+    "sourceCells": 511,
+    "operationsBuilt": 85378,
+    "liveOperations": 28591,
+    "layers": 65,
+    "widestLayer": 2764,
+    "storedWeights": 103251,
+    "gatherReads": 439,
+    "gatherTableEntries": 54761,
+    "booleans": 2022,
+    "reglus": 13845,
+    "roots": 3679,
+    "liveBySection": [
+      {
+        "name": "comment heights from breakpoints",
+        "liveOperations": 4107,
+        "storedWeights": 6287,
+        "deepestLayer": 4
+      },
+      {
+        "name": "collapse and natural heights",
+        "liveOperations": 375,
+        "storedWeights": 1280,
+        "deepestLayer": 6
+      },
+      {
+        "name": "natural prefix sums",
+        "liveOperations": 237,
+        "storedWeights": 474,
+        "deepestLayer": 17
+      },
+      {
+        "name": "scroll smoothing",
+        "liveOperations": 13,
+        "storedWeights": 19,
+        "deepestLayer": 9
+      },
+      {
+        "name": "vertical sizing",
+        "liveOperations": 32,
+        "storedWeights": 55,
+        "deepestLayer": 24
+      },
+      {
+        "name": "hit test",
+        "liveOperations": 734,
+        "storedWeights": 2434,
+        "deepestLayer": 31
+      },
+      {
+        "name": "gutter peek",
+        "liveOperations": 402,
+        "storedWeights": 1035,
+        "deepestLayer": 48
+      },
+      {
+        "name": "collapse toggle",
+        "liveOperations": 385,
+        "storedWeights": 1018,
+        "deepestLayer": 43
+      },
+      {
+        "name": "height easing",
+        "liveOperations": 2143,
+        "storedWeights": 4526,
+        "deepestLayer": 51
+      },
+      {
+        "name": "visual prefix sums",
+        "liveOperations": 254,
+        "storedWeights": 8382,
+        "deepestLayer": 47
+      },
+      {
+        "name": "visual rows and gutters",
+        "liveOperations": 6875,
+        "storedWeights": 10875,
+        "deepestLayer": 63
+      },
+      {
+        "name": "DOM slots",
+        "liveOperations": 13018,
+        "storedWeights": 66834,
+        "deepestLayer": 65
+      },
+      {
+        "name": "cursor",
+        "liveOperations": 12,
+        "storedWeights": 28,
+        "deepestLayer": 52
+      }
+    ],
+    "demo": {
+      "sourceCells": 511,
+      "operationsBuilt": 85378,
+      "liveOperations": 28591,
+      "layers": 65,
+      "widestLayer": 2764,
+      "storedWeights": 103251,
+      "gatherReads": 439,
+      "gatherTableEntries": 54761,
+      "booleans": 2022,
+      "reglus": 13845,
+      "roots": 1554,
+      "liveBySection": [
+        {
+          "name": "comment heights from breakpoints",
+          "liveOperations": 4107,
+          "storedWeights": 6287,
+          "deepestLayer": 4
+        },
+        {
+          "name": "collapse and natural heights",
+          "liveOperations": 375,
+          "storedWeights": 1280,
+          "deepestLayer": 6
+        },
+        {
+          "name": "natural prefix sums",
+          "liveOperations": 237,
+          "storedWeights": 474,
+          "deepestLayer": 17
+        },
+        {
+          "name": "scroll smoothing",
+          "liveOperations": 13,
+          "storedWeights": 19,
+          "deepestLayer": 9
+        },
+        {
+          "name": "vertical sizing",
+          "liveOperations": 32,
+          "storedWeights": 55,
+          "deepestLayer": 24
+        },
+        {
+          "name": "hit test",
+          "liveOperations": 734,
+          "storedWeights": 2434,
+          "deepestLayer": 31
+        },
+        {
+          "name": "gutter peek",
+          "liveOperations": 402,
+          "storedWeights": 1035,
+          "deepestLayer": 48
+        },
+        {
+          "name": "collapse toggle",
+          "liveOperations": 385,
+          "storedWeights": 1018,
+          "deepestLayer": 43
+        },
+        {
+          "name": "height easing",
+          "liveOperations": 2143,
+          "storedWeights": 4526,
+          "deepestLayer": 51
+        },
+        {
+          "name": "visual prefix sums",
+          "liveOperations": 254,
+          "storedWeights": 8382,
+          "deepestLayer": 47
+        },
+        {
+          "name": "visual rows and gutters",
+          "liveOperations": 6875,
+          "storedWeights": 10875,
+          "deepestLayer": 63
+        },
+        {
+          "name": "DOM slots",
+          "liveOperations": 13018,
+          "storedWeights": 66834,
+          "deepestLayer": 65
+        },
+        {
+          "name": "cursor",
+          "liveOperations": 12,
+          "storedWeights": 28,
+          "deepestLayer": 52
+        }
+      ]
+    },
+    "sizes": {
+      "breakpoints": 1297,
+      "maxBreakpointsPerComment": 205,
+      "ancestorTableEntries": 1375,
+      "ancestorListEntries": 310,
+      "subtreeEndEntries": 125
+    },
+    "buildMilliseconds": 104.2417089999999,
+    "compileMilliseconds": 43.78491699999995,
+    "circuitMicroseconds": 225.81,
+    "referenceMicroseconds": 8.05
+  },
+  "scale 251": {
+    "sourceCells": 1015,
+    "operationsBuilt": 166952,
+    "liveOperations": 53703,
+    "layers": 69,
+    "widestLayer": 5050,
+    "storedWeights": 218170,
+    "gatherReads": 439,
+    "gatherTableEntries": 109949,
+    "booleans": 3296,
+    "reglus": 26221,
+    "roots": 6829,
+    "liveBySection": [
+      {
+        "name": "comment heights from breakpoints",
+        "liveOperations": 5283,
+        "storedWeights": 8084,
+        "deepestLayer": 4
+      },
+      {
+        "name": "collapse and natural heights",
+        "liveOperations": 753,
+        "storedWeights": 2094,
+        "deepestLayer": 6
+      },
+      {
+        "name": "natural prefix sums",
+        "liveOperations": 487,
+        "storedWeights": 974,
+        "deepestLayer": 19
+      },
+      {
+        "name": "scroll smoothing",
+        "liveOperations": 13,
+        "storedWeights": 19,
+        "deepestLayer": 9
+      },
+      {
+        "name": "vertical sizing",
+        "liveOperations": 32,
+        "storedWeights": 55,
+        "deepestLayer": 26
+      },
+      {
+        "name": "hit test",
+        "liveOperations": 1364,
+        "storedWeights": 4941,
+        "deepestLayer": 33
+      },
+      {
+        "name": "gutter peek",
+        "liveOperations": 780,
+        "storedWeights": 2043,
+        "deepestLayer": 50
+      },
+      {
+        "name": "collapse toggle",
+        "liveOperations": 763,
+        "storedWeights": 2026,
+        "deepestLayer": 45
+      },
+      {
+        "name": "height easing",
+        "liveOperations": 4285,
+        "storedWeights": 9062,
+        "deepestLayer": 53
+      },
+      {
+        "name": "visual prefix sums",
+        "liveOperations": 506,
+        "storedWeights": 32637,
+        "deepestLayer": 49
+      },
+      {
+        "name": "visual rows and gutters",
+        "liveOperations": 13805,
+        "storedWeights": 21837,
+        "deepestLayer": 65
+      },
+      {
+        "name": "DOM slots",
+        "liveOperations": 25616,
+        "storedWeights": 134366,
+        "deepestLayer": 69
+      },
+      {
+        "name": "cursor",
+        "liveOperations": 12,
+        "storedWeights": 28,
+        "deepestLayer": 54
+      }
+    ],
+    "demo": {
+      "sourceCells": 1015,
+      "operationsBuilt": 166952,
+      "liveOperations": 53703,
+      "layers": 69,
+      "widestLayer": 5050,
+      "storedWeights": 218170,
+      "gatherReads": 439,
+      "gatherTableEntries": 109949,
+      "booleans": 3296,
+      "reglus": 26221,
+      "roots": 2562,
+      "liveBySection": [
+        {
+          "name": "comment heights from breakpoints",
+          "liveOperations": 5283,
+          "storedWeights": 8084,
+          "deepestLayer": 4
+        },
+        {
+          "name": "collapse and natural heights",
+          "liveOperations": 753,
+          "storedWeights": 2094,
+          "deepestLayer": 6
+        },
+        {
+          "name": "natural prefix sums",
+          "liveOperations": 487,
+          "storedWeights": 974,
+          "deepestLayer": 19
+        },
+        {
+          "name": "scroll smoothing",
+          "liveOperations": 13,
+          "storedWeights": 19,
+          "deepestLayer": 9
+        },
+        {
+          "name": "vertical sizing",
+          "liveOperations": 32,
+          "storedWeights": 55,
+          "deepestLayer": 26
+        },
+        {
+          "name": "hit test",
+          "liveOperations": 1364,
+          "storedWeights": 4941,
+          "deepestLayer": 33
+        },
+        {
+          "name": "gutter peek",
+          "liveOperations": 780,
+          "storedWeights": 2043,
+          "deepestLayer": 50
+        },
+        {
+          "name": "collapse toggle",
+          "liveOperations": 763,
+          "storedWeights": 2026,
+          "deepestLayer": 45
+        },
+        {
+          "name": "height easing",
+          "liveOperations": 4285,
+          "storedWeights": 9062,
+          "deepestLayer": 53
+        },
+        {
+          "name": "visual prefix sums",
+          "liveOperations": 506,
+          "storedWeights": 32637,
+          "deepestLayer": 49
+        },
+        {
+          "name": "visual rows and gutters",
+          "liveOperations": 13805,
+          "storedWeights": 21837,
+          "deepestLayer": 65
+        },
+        {
+          "name": "DOM slots",
+          "liveOperations": 25616,
+          "storedWeights": 134366,
+          "deepestLayer": 69
+        },
+        {
+          "name": "cursor",
+          "liveOperations": 12,
+          "storedWeights": 28,
+          "deepestLayer": 54
+        }
+      ]
+    },
+    "sizes": {
+      "breakpoints": 1768,
+      "maxBreakpointsPerComment": 205,
+      "ancestorTableEntries": 2761,
+      "ancestorListEntries": 377,
+      "subtreeEndEntries": 251
+    },
+    "buildMilliseconds": 216.4175839999998,
+    "compileMilliseconds": 117.5570829999997,
+    "circuitMicroseconds": 481.18,
+    "referenceMicroseconds": 14.5
+  },
+  "breakpoints": {
+    "comments": 251,
+    "samples": 828551,
+    "heightChangesSeenAtQuarterPixels": 1755,
+    "increasesWithWidth": 0,
+    "tabulatedBreakpoints": 1768,
+    "staircaseMismatches": 0,
+    "maxBreakpointsPerComment": 205,
+    "sweepSeconds": "0.5",
+    "tabulateMilliseconds": "147",
+    "prepareMilliseconds": "18"
+  },
+  "slots": [
+    {
+      "states": "random states (10% of rows mid-animation at 0px)",
+      "rankSlotsMedian": 8,
+      "rankSlotsP99": 20,
+      "rankSlotsMax": 27,
+      "windowSlotsMedian": 8,
+      "windowSlotsP99": 28,
+      "windowSlotsMax": 42
+    },
+    {
+      "states": "settled states",
+      "rankSlotsMedian": 8,
+      "rankSlotsP99": 17,
+      "rankSlotsMax": 19,
+      "windowSlotsMedian": 8,
+      "windowSlotsP99": 27,
+      "windowSlotsMax": 51
+    },
+    {
+      "states": "collapsing comment 0 (25 descendants) in view, 90 frames",
+      "rankSlotsMedian": "settled 7",
+      "rankSlotsP99": "",
+      "rankSlotsMax": 32,
+      "windowSlotsMedian": "settled 32",
+      "windowSlotsP99": "",
+      "windowSlotsMax": 32
+    }
+  ],
+  "differential 3 random single frames": {
+    "frames": 2000,
+    "tieFrames": 0,
+    "comparison": {
+      "decisionMismatches": [],
+      "tieMismatches": [
+        {
+          "path": "rows[1].gutterVisible",
+          "reference": 1,
+          "circuit": 0,
+          "margin": 0
+        },
+        {
+          "path": "rows[2].visible",
+          "reference": 1,
+          "circuit": 0,
+          "margin": 0
+        },
+        {
+          "path": "rows[2].gutterVisible",
+          "reference": 1,
+          "circuit": 0,
+          "margin": 0
+        },
+        {
+          "path": "rows[2].gutterVisible",
+          "reference": 1,
+          "circuit": 0,
+          "margin": 0
+        },
+        {
+          "path": "rows[2].gutterVisible",
+          "reference": 0,
+          "circuit": 1,
+          "margin": 5.684341886080802e-14
+        },
+        {
+          "path": "rows[2].gutterVisible",
+          "reference": 1,
+          "circuit": 0,
+          "margin": 0
+        }
+      ],
+      "positionMismatches": [],
+      "maxDrift": 0.00005493164064773737,
+      "maxDriftPath": "global.placeholderHeight",
+      "decisions": 87908,
+      "positions": 150004
+    },
+    "fitsFrames": 1727,
+    "smoothingFrames": 941,
+    "widthChangedFrames": 1905,
+    "toggleFrames": 63,
+    "peekFrames": 156,
+    "shrinkFrames": 11,
+    "overflowFrames": 0,
+    "collapseFrames": 62,
+    "expandFrames": 1,
+    "targetMisses": 0
+  },
+  "differential 60 random single frames, 16 rank slots": {
+    "frames": 4000,
+    "tieFrames": 0,
+    "comparison": {
+      "decisionMismatches": [],
+      "tieMismatches": [
+        {
+          "path": "global.cursorCode",
+          "reference": 2,
+          "circuit": 0,
+          "margin": 5.684341886080802e-14
+        },
+        {
+          "path": "rows[38].gutterVisible",
+          "reference": 0,
+          "circuit": 1,
+          "margin": 2.2737367544323206e-13
+        },
+        {
+          "path": "rows[35].visible",
+          "reference": 1,
+          "circuit": 0,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "rows[35].occupiesSlot",
+          "reference": 1,
+          "circuit": 0,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "rows[36].visible",
+          "reference": 1,
+          "circuit": 0,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[0].row",
+          "reference": 35,
+          "circuit": 37,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[1].row",
+          "reference": 37,
+          "circuit": 38,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[2].row",
+          "reference": 38,
+          "circuit": 39,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[3].row",
+          "reference": 39,
+          "circuit": 40,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[4].row",
+          "reference": 40,
+          "circuit": 41,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[5].row",
+          "reference": 41,
+          "circuit": 42,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[6].row",
+          "reference": 42,
+          "circuit": 43,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[7].row",
+          "reference": 43,
+          "circuit": 44,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[8].row",
+          "reference": 44,
+          "circuit": 45,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[9].row",
+          "reference": 45,
+          "circuit": 46,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[10].row",
+          "reference": 46,
+          "circuit": 47,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[11].row",
+          "reference": 47,
+          "circuit": 48,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[12].row",
+          "reference": 48,
+          "circuit": 49,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[13].row",
+          "reference": 49,
+          "circuit": 50,
+          "margin": 7.105427357601002e-15
+        },
+        {
+          "path": "slots[14].row",
+          "reference": 50,
+          "circuit": 51,
+          "margin": 7.105427357601002e-15
+        }
+      ],
+      "positionMismatches": [],
+      "maxDrift": 0.002343750003092282,
+      "maxDriftPath": "rows[56].userTop",
+      "decisions": 2337833,
+      "positions": 3612596
+    },
+    "fitsFrames": 0,
+    "smoothingFrames": 1966,
+    "widthChangedFrames": 3825,
+    "toggleFrames": 573,
+    "peekFrames": 776,
+    "shrinkFrames": 389,
+    "overflowFrames": 227,
+    "collapseFrames": 511,
+    "expandFrames": 62,
+    "targetMisses": 0
+  },
+  "differential 60 every comment: banner clicks from both states and a gutter press": {
+    "frames": 180,
+    "tieFrames": 0,
+    "comparison": {
+      "decisionMismatches": [],
+      "tieMismatches": [],
+      "positionMismatches": [],
+      "maxDrift": 0.0015624999996362021,
+      "maxDriftPath": "global.placeholderHeight",
+      "decisions": 105951,
+      "positions": 164303
+    },
+    "fitsFrames": 0,
+    "smoothingFrames": 0,
+    "widthChangedFrames": 0,
+    "toggleFrames": 120,
+    "peekFrames": 60,
+    "shrinkFrames": 27,
+    "overflowFrames": 4,
+    "collapseFrames": 60,
+    "expandFrames": 60,
+    "targetMisses": 0
+  },
+  "differential 60 scripted session (82 frames with a collapsed comment)": {
+    "frames": 900,
+    "tieFrames": 0,
+    "comparison": {
+      "decisionMismatches": [],
+      "tieMismatches": [],
+      "positionMismatches": [],
+      "maxDrift": 0.0005455554601212498,
+      "maxDriftPath": "global.placeholderHeight",
+      "decisions": 523699,
+      "positions": 810710
+    },
+    "fitsFrames": 0,
+    "smoothingFrames": 183,
+    "widthChangedFrames": 162,
+    "toggleFrames": 2,
+    "peekFrames": 125,
+    "shrinkFrames": 125,
+    "overflowFrames": 8,
+    "collapseFrames": 1,
+    "expandFrames": 1,
+    "targetMisses": 0,
+    "collapsedFrames": 82
+  },
+  "differential 60 random single frames, 16 window slots": {
+    "frames": 2000,
+    "tieFrames": 0,
+    "comparison": {
+      "decisionMismatches": [],
+      "tieMismatches": [],
+      "positionMismatches": [],
+      "maxDrift": 0.0017578125007275958,
+      "maxDriftPath": "global.placeholderHeight",
+      "decisions": 1172842,
+      "positions": 1815332
+    },
+    "fitsFrames": 0,
+    "smoothingFrames": 984,
+    "widthChangedFrames": 1926,
+    "toggleFrames": 265,
+    "peekFrames": 432,
+    "shrinkFrames": 233,
+    "overflowFrames": 249,
+    "collapseFrames": 237,
+    "expandFrames": 28,
+    "targetMisses": 0
+  },
+  "differential 251 random single frames, 48 rank slots": {
+    "frames": 1500,
+    "tieFrames": 0,
+    "comparison": {
+      "decisionMismatches": [],
+      "tieMismatches": [],
+      "positionMismatches": [],
+      "maxDrift": 0.01464843750181899,
+      "maxDriftPath": "rows[218].gutterBottom",
+      "decisions": 3507388,
+      "positions": 5349879
+    },
+    "fitsFrames": 0,
+    "smoothingFrames": 781,
+    "widthChangedFrames": 1432,
+    "toggleFrames": 210,
+    "peekFrames": 273,
+    "shrinkFrames": 96,
+    "overflowFrames": 0,
+    "collapseFrames": 197,
+    "expandFrames": 13,
+    "targetMisses": 0
+  },
+  "differential 251 every comment: banner clicks from both states and a gutter press": {
+    "frames": 753,
+    "tieFrames": 0,
+    "comparison": {
+      "decisionMismatches": [],
+      "tieMismatches": [],
+      "positionMismatches": [],
+      "maxDrift": 0.025976562517826096,
+      "maxDriftPath": "rows[249].gutterBottom",
+      "decisions": 1764278,
+      "positions": 2693311
+    },
+    "fitsFrames": 0,
+    "smoothingFrames": 0,
+    "widthChangedFrames": 0,
+    "toggleFrames": 502,
+    "peekFrames": 251,
+    "shrinkFrames": 67,
+    "overflowFrames": 0,
+    "collapseFrames": 251,
+    "expandFrames": 251,
+    "targetMisses": 0
+  },
+  "differential 251 scripted session (82 frames with a collapsed comment)": {
+    "frames": 900,
+    "tieFrames": 0,
+    "comparison": {
+      "decisionMismatches": [],
+      "tieMismatches": [],
+      "positionMismatches": [],
+      "maxDrift": 0.0024620429685455747,
+      "maxDriftPath": "next.scrollDeltaPrevious",
+      "decisions": 2102176,
+      "positions": 3223419
+    },
+    "fitsFrames": 0,
+    "smoothingFrames": 279,
+    "widthChangedFrames": 162,
+    "toggleFrames": 2,
+    "peekFrames": 125,
+    "shrinkFrames": 125,
+    "overflowFrames": 0,
+    "collapseFrames": 1,
+    "expandFrames": 1,
+    "targetMisses": 0,
+    "collapsedFrames": 82
+  },
+  "differential 251 random single frames, 48 window slots": {
+    "frames": 600,
+    "tieFrames": 0,
+    "comparison": {
+      "decisionMismatches": [],
+      "tieMismatches": [],
+      "positionMismatches": [],
+      "maxDrift": 0.013281250001455192,
+      "maxDriftPath": "global.placeholderHeight",
+      "decisions": 1403887,
+      "positions": 2141977
+    },
+    "fitsFrames": 0,
+    "smoothingFrames": 280,
+    "widthChangedFrames": 563,
+    "toggleFrames": 88,
+    "peekFrames": 139,
+    "shrinkFrames": 52,
+    "overflowFrames": 0,
+    "collapseFrames": 81,
+    "expandFrames": 7,
+    "targetMisses": 0
+  },
+  "variants": [
+    {
+      "variant": "default: 48 slots, natural Brent-Kung, visual fold",
+      "liveOperations": 53703,
+      "layers": 69,
+      "storedWeights": 218170,
+      "demoLiveOperations": 53703,
+      "demoLayers": 69,
+      "slotOperations": 25616,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "1.56e-2",
+      "positionMismatches": 0
+    },
+    {
+      "variant": "natural fold",
+      "liveOperations": 53467,
+      "layers": 57,
+      "storedWeights": 248822,
+      "demoLiveOperations": 53467,
+      "demoLayers": 57,
+      "slotOperations": 25616,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "1.56e-2",
+      "positionMismatches": 0
+    },
+    {
+      "variant": "visual Brent-Kung",
+      "liveOperations": 53939,
+      "layers": 79,
+      "storedWeights": 187518,
+      "demoLiveOperations": 53939,
+      "demoLayers": 79,
+      "slotOperations": 25616,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "6.25e-3",
+      "positionMismatches": 0
+    },
+    {
+      "variant": "both Brent-Kung",
+      "liveOperations": 53939,
+      "layers": 79,
+      "storedWeights": 187518,
+      "demoLiveOperations": 53939,
+      "demoLayers": 79,
+      "slotOperations": 25616,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "6.25e-3",
+      "positionMismatches": 0
+    },
+    {
+      "variant": "0 slots (per-row outputs only)",
+      "liveOperations": 28340,
+      "layers": 68,
+      "storedWeights": 84308,
+      "demoLiveOperations": 26474,
+      "demoLayers": 68,
+      "slotOperations": 253,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "1.56e-2",
+      "positionMismatches": 0
+    },
+    {
+      "variant": "16 slots",
+      "liveOperations": 37287,
+      "layers": 69,
+      "storedWeights": 129914,
+      "demoLiveOperations": 37287,
+      "demoLayers": 69,
+      "slotOperations": 9200,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "1.56e-2",
+      "positionMismatches": 0
+    },
+    {
+      "variant": "32 slots",
+      "liveOperations": 45495,
+      "layers": 69,
+      "storedWeights": 174042,
+      "demoLiveOperations": 45495,
+      "demoLayers": 69,
+      "slotOperations": 17408,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "1.56e-2",
+      "positionMismatches": 0
+    },
+    {
+      "variant": "96 slots",
+      "liveOperations": 78327,
+      "layers": 69,
+      "storedWeights": 350554,
+      "demoLiveOperations": 78327,
+      "demoLayers": 69,
+      "slotOperations": 50240,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "1.56e-2",
+      "positionMismatches": 0
+    },
+    {
+      "variant": "48 window slots",
+      "liveOperations": 29356,
+      "layers": 68,
+      "storedWeights": 97331,
+      "demoLiveOperations": 27599,
+      "demoLayers": 68,
+      "slotOperations": 1269,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "1.56e-2",
+      "positionMismatches": 0
+    },
+    {
+      "variant": "96 window slots",
+      "liveOperations": 29884,
+      "layers": 68,
+      "storedWeights": 109379,
+      "demoLiveOperations": 28127,
+      "demoLayers": 68,
+      "slotOperations": 1797,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "1.56e-2",
+      "positionMismatches": 0
+    },
+    {
+      "variant": "48 window slots, both prefix sums fold",
+      "liveOperations": 29120,
+      "layers": 56,
+      "storedWeights": 127983,
+      "demoLiveOperations": 27363,
+      "demoLayers": 56,
+      "slotOperations": 1269,
+      "decisionMismatches": 0,
+      "tieFrames": 0,
+      "maxPositionDrift": "1.56e-2",
+      "positionMismatches": 0
+    }
+  ],
+  "codegen": [
+    {
+      "comments": 30,
+      "statementBudget": 100,
+      "liveOperations": 7362,
+      "generatedFunctions": 426,
+      "generatedStatements": 47592,
+      "liveWireMismatches": 0,
+      "µs after 10 frames": "2416",
+      "µs after 100 frames": "2498",
+      "µs after 1000 frames": "51",
+      "µs after 3000 frames": "51",
+      "µs after 6000 frames": "51",
+      "µs after 10000 frames": "52",
+      "executor µs": 54.4
+    },
+    {
+      "comments": 30,
+      "statementBudget": 300,
+      "liveOperations": 7362,
+      "generatedFunctions": 152,
+      "generatedStatements": 47318,
+      "liveWireMismatches": 0,
+      "µs after 10 frames": "2338",
+      "µs after 100 frames": "2512",
+      "µs after 1000 frames": "48",
+      "µs after 3000 frames": "48",
+      "µs after 6000 frames": "46",
+      "µs after 10000 frames": "46",
+      "executor µs": 52.57
+    },
+    {
+      "comments": 251,
+      "statementBudget": 100,
+      "liveOperations": 53703,
+      "generatedFunctions": 3110,
+      "generatedStatements": 397475,
+      "liveWireMismatches": 0,
+      "µs after 10 frames": "24019",
+      "µs after 100 frames": "35037",
+      "µs after 1000 frames": "12711",
+      "µs after 3000 frames": "1111",
+      "µs after 6000 frames": "1015",
+      "µs after 10000 frames": "967",
+      "executor µs": 439.83
+    },
+    {
+      "comments": 251,
+      "statementBudget": 300,
+      "liveOperations": 53703,
+      "generatedFunctions": 1136,
+      "generatedStatements": 395501,
+      "liveWireMismatches": 0,
+      "µs after 10 frames": "23228",
+      "µs after 100 frames": "34064",
+      "µs after 1000 frames": "17755",
+      "µs after 3000 frames": "911",
+      "µs after 6000 frames": "824",
+      "µs after 10000 frames": "924",
+      "executor µs": 437.43
+    }
+  ]
+}

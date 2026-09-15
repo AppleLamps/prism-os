@@ -1,0 +1,153 @@
+:root {
+  color-scheme: light;
+  --ink: #1f1d1a;
+  --muted: #6b665e;
+  --paper: #faf8f4;
+  --line: #e4ded3;
+  --accent: #2f6fdb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.page h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.page p.lead {
+  margin: 0 0 16px;
+  color: var(--muted);
+  max-width: 720px;
+}
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.stage {
+  position: relative;
+  flex: 0 0 auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.slot {
+  position: absolute;
+  background: rgba(47, 111, 219, 0.05);
+  border-left: 2px solid rgba(47, 111, 219, 0.18);
+  pointer-events: none;
+}
+
+.word {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: pre;
+  cursor: pointer;
+  will-change: transform;
+  user-select: none;
+}
+
+.word.bold {
+  font-weight: bold;
+}
+
+.word:hover {
+  color: var(--accent);
+}
+
+.window {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.window .title {
+  height: 28px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ece8e1;
+  cursor: grab;
+  font-size: 12px;
+  color: var(--muted);
+  /* Dragging the title bar moves the window. Without this, the drag also selected the "Drag me" text. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.window .title:active {
+  cursor: grabbing;
+}
+
+.window .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d8d2c7;
+}
+
+.window .body {
+  padding: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.panel {
+  flex: 1 1 260px;
+  min-width: 240px;
+}
+
+.panel label {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.panel input[type="range"] {
+  width: 100%;
+}
+
+.panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel td {
+  padding: 3px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel td:last-child {
+  text-align: right;
+}
+
+.error {
+  color: #b3261e;
+}

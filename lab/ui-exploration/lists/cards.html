@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Circuit Draggable Cards</title>
+  <style>
+    body { font: 16px system-ui; user-select: none; -webkit-user-select: none; background-color: #eee; margin: 0; }
+    .row { position: absolute; left: 0; top: 0; display: grid; place-items: center; overflow: hidden; touch-action: none; transition: box-shadow 0.25s ease-out, opacity 0.25s ease-out; }
+    #panel { position: fixed; top: 8px; left: 8px; z-index: 100000; font: 12px ui-monospace, monospace; background: rgba(255, 255, 255, 0.85); padding: 6px 8px; border-radius: 6px; max-width: calc(100vw - 32px); }
+    #spacer { position: absolute; left: 0; top: 0; width: 1px; }
+  </style>
+</head>
+<body>
+  <div id="panel">
+    <label>Cards <select id="count"><option>5</option><option>20</option><option>100</option></select></label>
+    <div id="stats"></div>
+  </div>
+  <div id="spacer"></div>
+  <script type="module" src="./cards-demo.ts"></script>
+</body>
+</html>

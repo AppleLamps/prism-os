@@ -1,0 +1,146 @@
+:root {
+  color-scheme: light;
+  --ink: #1f1d1a;
+  --muted: #6b665e;
+  --paper: #faf8f4;
+  --line: #e4ded3;
+  --accent: #2f6fdb;
+  --user: #dbe7fb;
+  --assistant: #efebe4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.page h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.page p.lead {
+  margin: 0 0 16px;
+  color: var(--muted);
+  max-width: 760px;
+}
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.stage {
+  position: relative;
+  flex: 0 0 auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 14px;
+  will-change: transform, width, height, opacity;
+}
+
+.bubble.user {
+  background: var(--user);
+}
+
+.bubble.assistant {
+  background: var(--assistant);
+}
+
+.word {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: pre;
+  will-change: transform, opacity;
+  user-select: none;
+  pointer-events: none;
+}
+
+.panel {
+  flex: 1 1 280px;
+  min-width: 260px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.controls button {
+  font: inherit;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.controls button.stop {
+  border-color: #c9473f;
+  color: #c9473f;
+}
+
+.panel label {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.panel select {
+  font: inherit;
+  margin-left: 6px;
+}
+
+.panel input[type="range"] {
+  width: 100%;
+}
+
+.panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel td {
+  padding: 3px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel td:last-child {
+  text-align: right;
+}
+
+.mismatch {
+  color: #b3261e;
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.error {
+  color: #b3261e;
+}

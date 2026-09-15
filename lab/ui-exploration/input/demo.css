@@ -1,0 +1,194 @@
+:root {
+  color-scheme: light;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  --ink: #1d1f24;
+  --muted: #6b7280;
+  --line: #d6d9df;
+  --accent: #2f6fde;
+  --accent-soft: #dbe7fb;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #eef0f3;
+  color: var(--ink);
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 20%, #f7f8fa, #e3e7ed);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--line);
+  border-style: solid;
+  border-width: 0;
+  z-index: 900;
+}
+
+.menubar { top: 0; border-bottom-width: 1px; }
+.statusbar { bottom: 0; border-top-width: 1px; }
+
+.status-text {
+  position: absolute;
+  left: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: calc(100% - 140px);
+}
+
+.menu-title {
+  position: absolute;
+  top: 0;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  border-radius: 5px;
+  outline: none;
+}
+
+.menu-title[data-open="1"] { background: var(--accent); color: white; }
+.menu-title[data-focused="1"] { box-shadow: inset 0 0 0 2px var(--accent); }
+
+.menu-panel {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 4px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  box-shadow: 0 10px 30px rgba(20, 30, 50, 0.18);
+  z-index: 1000;
+}
+
+.menu-panel[hidden] { display: none; }
+
+.menu-item {
+  display: block;
+  width: 100%;
+  height: 26px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  padding: 0 10px;
+  color: var(--ink);
+  outline: none;
+}
+
+.menu-item[data-highlighted="1"] { background: var(--accent); color: white; }
+.menu-item[data-enabled="0"] { color: #aab0ba; }
+.menu-item[hidden] { display: none; }
+
+.window {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  border: 1px solid #c5cad3;
+  border-radius: 9px;
+  background: white;
+  box-shadow: 0 6px 24px rgba(20, 30, 50, 0.14);
+  overflow: hidden;
+  will-change: transform;
+}
+
+.window[data-focused="1"] { border-color: var(--accent); box-shadow: 0 10px 34px rgba(30, 60, 120, 0.25); }
+.window[data-maximized="1"] { border-radius: 0; }
+.window[data-dragging="1"] { cursor: grabbing; }
+
+.window-title {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+  font-weight: 600;
+  background: #f4f5f7;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+
+.window[data-focused="1"] .window-title { background: var(--accent-soft); }
+
+.maximize-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.window-body {
+  position: absolute;
+  inset: 28px 0 0 0;
+  padding: 12px 14px;
+  line-height: 1.45;
+  color: #374151;
+}
+
+.window-body pre {
+  margin: 0;
+  font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+}
+
+.key {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fafbfc;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  outline: none;
+}
+
+.key b { font-size: 20px; }
+.key small { color: var(--muted); font-variant-numeric: tabular-nums; }
+.key[data-focused="1"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.key[data-pressed="1"] { background: var(--accent-soft); }
+.key[data-enabled="0"] { opacity: 0.35; }
+
+.toast {
+  position: absolute;
+  left: 50%;
+  top: 44px;
+  transform: translateX(-50%);
+  max-width: 460px;
+  padding: 10px 14px;
+  background: #1f2937;
+  color: white;
+  border-radius: 8px;
+  line-height: 1.45;
+  z-index: 1100;
+}
+
+.toast[hidden] { display: none; }

@@ -1,0 +1,1234 @@
+{
+  "counts": {
+    "threadRows": [
+      {
+        "variant": "hn-thread default: 48 rank slots, every per-row output",
+        "liveOperations": 53703,
+        "layers": 69,
+        "storedWeights": 218170,
+        "slotSectionOperations": 25616,
+        "slotSectionWeights": 134366
+      },
+      {
+        "variant": "rank slots with slotCount 0 (hn-thread \"no slots\")",
+        "liveOperations": 28340,
+        "layers": 68,
+        "storedWeights": 84308,
+        "slotSectionOperations": 253,
+        "slotSectionWeights": 504
+      },
+      {
+        "variant": "slotMode 'none', every per-row output",
+        "liveOperations": 28087,
+        "layers": 65,
+        "storedWeights": 83804,
+        "slotSectionOperations": 0,
+        "slotSectionWeights": 0
+      }
+    ],
+    "pixelRows": [
+      {
+        "variant": "count, bars",
+        "sourceCells": 1017,
+        "liveOperations": 24930,
+        "layers": 74,
+        "storedWeights": 80177,
+        "sharedRows": 23315,
+        "sharedWeights": 77021,
+        "perPixelRows": 1615,
+        "perPixelWeights": 3156,
+        "perPixelLayers": 24,
+        "perPixelComparisons": 307,
+        "gatherReads": 64,
+        "indexReads": 0,
+        "perPixelIndexReads": 0,
+        "shaderStatements": 15088,
+        "shaderKilobytes": 1165,
+        "guards": 29369,
+        "buildMs": "50",
+        "compileAndPlanMs": "35"
+      },
+      {
+        "variant": "binary-search, bars",
+        "sourceCells": 4531,
+        "liveOperations": 23630,
+        "layers": 102,
+        "storedWeights": 77554,
+        "sharedRows": 23316,
+        "sharedWeights": 77022,
+        "perPixelRows": 314,
+        "perPixelWeights": 532,
+        "perPixelLayers": 54,
+        "perPixelComparisons": 55,
+        "gatherReads": 7,
+        "indexReads": 25,
+        "perPixelIndexReads": 24,
+        "shaderStatements": 346,
+        "shaderKilobytes": 22,
+        "guards": 385,
+        "buildMs": "27",
+        "compileAndPlanMs": "26"
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "sourceCells": 212288,
+        "liveOperations": 23771,
+        "layers": 196,
+        "storedWeights": 77861,
+        "sharedRows": 23316,
+        "sharedWeights": 77022,
+        "perPixelRows": 455,
+        "perPixelWeights": 839,
+        "perPixelLayers": 148,
+        "perPixelComparisons": 76,
+        "gatherReads": 7,
+        "indexReads": 50,
+        "perPixelIndexReads": 49,
+        "shaderStatements": 512,
+        "shaderKilobytes": 35,
+        "guards": 632,
+        "buildMs": "43",
+        "compileAndPlanMs": "56"
+      }
+    ],
+    "sectionRows": [
+      {
+        "variant": "count, bars",
+        "section": "comment heights from breakpoints",
+        "liveOperations": 5283,
+        "storedWeights": 8084
+      },
+      {
+        "variant": "count, bars",
+        "section": "collapse and natural heights",
+        "liveOperations": 753,
+        "storedWeights": 2094
+      },
+      {
+        "variant": "count, bars",
+        "section": "natural prefix sums",
+        "liveOperations": 487,
+        "storedWeights": 974
+      },
+      {
+        "variant": "count, bars",
+        "section": "scroll smoothing",
+        "liveOperations": 13,
+        "storedWeights": 19
+      },
+      {
+        "variant": "count, bars",
+        "section": "vertical sizing",
+        "liveOperations": 32,
+        "storedWeights": 55
+      },
+      {
+        "variant": "count, bars",
+        "section": "hit test",
+        "liveOperations": 1364,
+        "storedWeights": 4941
+      },
+      {
+        "variant": "count, bars",
+        "section": "gutter peek",
+        "liveOperations": 780,
+        "storedWeights": 2043
+      },
+      {
+        "variant": "count, bars",
+        "section": "collapse toggle",
+        "liveOperations": 763,
+        "storedWeights": 2026
+      },
+      {
+        "variant": "count, bars",
+        "section": "height easing",
+        "liveOperations": 4285,
+        "storedWeights": 9062
+      },
+      {
+        "variant": "count, bars",
+        "section": "visual prefix sums",
+        "liveOperations": 506,
+        "storedWeights": 32637
+      },
+      {
+        "variant": "count, bars",
+        "section": "visual rows and gutters",
+        "liveOperations": 9036,
+        "storedWeights": 15060
+      },
+      {
+        "variant": "count, bars",
+        "section": "DOM slots",
+        "liveOperations": 0,
+        "storedWeights": 0
+      },
+      {
+        "variant": "count, bars",
+        "section": "cursor",
+        "liveOperations": 11,
+        "storedWeights": 24
+      },
+      {
+        "variant": "count, bars",
+        "section": "per-pixel program",
+        "liveOperations": 1615,
+        "storedWeights": 3156
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "comment heights from breakpoints",
+        "liveOperations": 5283,
+        "storedWeights": 8084
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "collapse and natural heights",
+        "liveOperations": 753,
+        "storedWeights": 2094
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "natural prefix sums",
+        "liveOperations": 487,
+        "storedWeights": 974
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "scroll smoothing",
+        "liveOperations": 13,
+        "storedWeights": 19
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "vertical sizing",
+        "liveOperations": 32,
+        "storedWeights": 55
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "hit test",
+        "liveOperations": 1364,
+        "storedWeights": 4941
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "gutter peek",
+        "liveOperations": 780,
+        "storedWeights": 2043
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "collapse toggle",
+        "liveOperations": 763,
+        "storedWeights": 2026
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "height easing",
+        "liveOperations": 4285,
+        "storedWeights": 9062
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "visual prefix sums",
+        "liveOperations": 506,
+        "storedWeights": 32637
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "visual rows and gutters",
+        "liveOperations": 9036,
+        "storedWeights": 15060
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "DOM slots",
+        "liveOperations": 0,
+        "storedWeights": 0
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "cursor",
+        "liveOperations": 11,
+        "storedWeights": 24
+      },
+      {
+        "variant": "binary-search, bars",
+        "section": "per-pixel program",
+        "liveOperations": 315,
+        "storedWeights": 533
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "comment heights from breakpoints",
+        "liveOperations": 5283,
+        "storedWeights": 8084
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "collapse and natural heights",
+        "liveOperations": 753,
+        "storedWeights": 2094
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "natural prefix sums",
+        "liveOperations": 487,
+        "storedWeights": 974
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "scroll smoothing",
+        "liveOperations": 13,
+        "storedWeights": 19
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "vertical sizing",
+        "liveOperations": 32,
+        "storedWeights": 55
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "hit test",
+        "liveOperations": 1364,
+        "storedWeights": 4941
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "gutter peek",
+        "liveOperations": 780,
+        "storedWeights": 2043
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "collapse toggle",
+        "liveOperations": 763,
+        "storedWeights": 2026
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "height easing",
+        "liveOperations": 4285,
+        "storedWeights": 9062
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "visual prefix sums",
+        "liveOperations": 506,
+        "storedWeights": 32637
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "visual rows and gutters",
+        "liveOperations": 9036,
+        "storedWeights": 15060
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "DOM slots",
+        "liveOperations": 0,
+        "storedWeights": 0
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "cursor",
+        "liveOperations": 11,
+        "storedWeights": 24
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "section": "per-pixel program",
+        "liveOperations": 456,
+        "storedWeights": 840
+      }
+    ],
+    "scalingRows": [
+      {
+        "comments": 60,
+        "maxIndent": 8,
+        "countPerPixelRows": 634,
+        "binarySearchPerPixelRows": 306
+      },
+      {
+        "comments": 120,
+        "maxIndent": 10,
+        "countPerPixelRows": 960,
+        "binarySearchPerPixelRows": 314
+      },
+      {
+        "comments": 180,
+        "maxIndent": 10,
+        "countPerPixelRows": 1260,
+        "binarySearchPerPixelRows": 314
+      },
+      {
+        "comments": 251,
+        "maxIndent": 10,
+        "countPerPixelRows": 1615,
+        "binarySearchPerPixelRows": 314
+      }
+    ],
+    "textRows": [
+      {
+        "containerWidth": 375,
+        "lines": 2599,
+        "characters": 89249,
+        "mostLinesPerComment": 257,
+        "mostCharactersPerLine": 58
+      },
+      {
+        "containerWidth": 1024,
+        "lines": 881,
+        "characters": 89249,
+        "mostLinesPerComment": 38,
+        "mostCharactersPerLine": 168
+      },
+      {
+        "containerWidth": 1200,
+        "lines": 794,
+        "characters": 89249,
+        "mostLinesPerComment": 34,
+        "mostCharactersPerLine": 197
+      }
+    ],
+    "textCapacity": {
+      "lines": 2793,
+      "characters": 91290
+    }
+  },
+  "gpu-compare": {
+    "rows": [
+      {
+        "runtime": "cpu (generated JS instance loop)",
+        "lookup": "count",
+        "text": "bars",
+        "guard": "-",
+        "state": "settled-hover-level-2",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 0,
+        "largestReferenceColorDifference": 0,
+        "bannerEmphasisSamples": 0,
+        "gutterEmphasisSamples": 620,
+        "gpuMilliseconds": null,
+        "gpuDispatchOnlyMilliseconds": null,
+        "cpuMilliseconds": 2115.9
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "count",
+        "text": "bars",
+        "guard": "none",
+        "state": "settled-hover-level-2",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 1245968,
+        "largestGpuCpuDifference": 53,
+        "referenceDecisionMismatches": 311492,
+        "referenceAmbiguousSamples": 0,
+        "largestReferenceColorDifference": 0,
+        "bannerEmphasisSamples": 0,
+        "gutterEmphasisSamples": 620,
+        "gpuMilliseconds": 59.57,
+        "gpuDispatchOnlyMilliseconds": 0.23,
+        "cpuMilliseconds": 2115.9
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "count",
+        "text": "bars",
+        "guard": "max",
+        "state": "settled-hover-level-2",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 0,
+        "largestReferenceColorDifference": 0,
+        "bannerEmphasisSamples": 0,
+        "gutterEmphasisSamples": 620,
+        "gpuMilliseconds": 62.72,
+        "gpuDispatchOnlyMilliseconds": 0.13,
+        "cpuMilliseconds": 2115.9
+      },
+      {
+        "runtime": "cpu (generated JS instance loop)",
+        "lookup": "count",
+        "text": "bars",
+        "guard": "-",
+        "state": "animated-peek-seed-6",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 24,
+        "largestReferenceColorDifference": 0.000012207031232946974,
+        "bannerEmphasisSamples": 27648,
+        "gutterEmphasisSamples": 532,
+        "gpuMilliseconds": null,
+        "gpuDispatchOnlyMilliseconds": null,
+        "cpuMilliseconds": 2130.7
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "count",
+        "text": "bars",
+        "guard": "none",
+        "state": "animated-peek-seed-6",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 665152,
+        "largestGpuCpuDifference": 53,
+        "referenceDecisionMismatches": 165948,
+        "referenceAmbiguousSamples": 24,
+        "largestReferenceColorDifference": 0.000009155273417604803,
+        "bannerEmphasisSamples": 27648,
+        "gutterEmphasisSamples": 532,
+        "gpuMilliseconds": 58.42,
+        "gpuDispatchOnlyMilliseconds": 0.1,
+        "cpuMilliseconds": 2130.7
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "count",
+        "text": "bars",
+        "guard": "max",
+        "state": "animated-peek-seed-6",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 24,
+        "largestReferenceColorDifference": 0.000012207031232946974,
+        "bannerEmphasisSamples": 27648,
+        "gutterEmphasisSamples": 532,
+        "gpuMilliseconds": 63.23,
+        "gpuDispatchOnlyMilliseconds": 0.15,
+        "cpuMilliseconds": 2130.7
+      },
+      {
+        "runtime": "cpu (generated JS instance loop)",
+        "lookup": "binary-search",
+        "text": "bars",
+        "guard": "-",
+        "state": "settled-hover-level-2",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 0,
+        "largestReferenceColorDifference": 0,
+        "bannerEmphasisSamples": 0,
+        "gutterEmphasisSamples": 620,
+        "gpuMilliseconds": null,
+        "gpuDispatchOnlyMilliseconds": null,
+        "cpuMilliseconds": 167.8
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "binary-search",
+        "text": "bars",
+        "guard": "none",
+        "state": "settled-hover-level-2",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 1245968,
+        "largestGpuCpuDifference": 53,
+        "referenceDecisionMismatches": 311492,
+        "referenceAmbiguousSamples": 0,
+        "largestReferenceColorDifference": 0,
+        "bannerEmphasisSamples": 0,
+        "gutterEmphasisSamples": 620,
+        "gpuMilliseconds": 16.42,
+        "gpuDispatchOnlyMilliseconds": 0.15,
+        "cpuMilliseconds": 167.8
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "binary-search",
+        "text": "bars",
+        "guard": "max",
+        "state": "settled-hover-level-2",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 0,
+        "largestReferenceColorDifference": 0,
+        "bannerEmphasisSamples": 0,
+        "gutterEmphasisSamples": 620,
+        "gpuMilliseconds": 17.47,
+        "gpuDispatchOnlyMilliseconds": 0.14,
+        "cpuMilliseconds": 167.8
+      },
+      {
+        "runtime": "cpu (generated JS instance loop)",
+        "lookup": "binary-search",
+        "text": "bars",
+        "guard": "-",
+        "state": "animated-peek-seed-6",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 24,
+        "largestReferenceColorDifference": 0.000012207031232946974,
+        "bannerEmphasisSamples": 27648,
+        "gutterEmphasisSamples": 532,
+        "gpuMilliseconds": null,
+        "gpuDispatchOnlyMilliseconds": null,
+        "cpuMilliseconds": 166.4
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "binary-search",
+        "text": "bars",
+        "guard": "none",
+        "state": "animated-peek-seed-6",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 665152,
+        "largestGpuCpuDifference": 53,
+        "referenceDecisionMismatches": 165948,
+        "referenceAmbiguousSamples": 24,
+        "largestReferenceColorDifference": 0.000009155273417604803,
+        "bannerEmphasisSamples": 27648,
+        "gutterEmphasisSamples": 532,
+        "gpuMilliseconds": 18.17,
+        "gpuDispatchOnlyMilliseconds": 0.16,
+        "cpuMilliseconds": 166.4
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "binary-search",
+        "text": "bars",
+        "guard": "max",
+        "state": "animated-peek-seed-6",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 24,
+        "largestReferenceColorDifference": 0.000012207031232946974,
+        "bannerEmphasisSamples": 27648,
+        "gutterEmphasisSamples": 532,
+        "gpuMilliseconds": 17.79,
+        "gpuDispatchOnlyMilliseconds": 0.19,
+        "cpuMilliseconds": 166.4
+      },
+      {
+        "runtime": "cpu (generated JS instance loop)",
+        "lookup": "binary-search",
+        "text": "glyphs",
+        "guard": "-",
+        "state": "settled-hover-level-2",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 0,
+        "largestReferenceColorDifference": 0,
+        "bannerEmphasisSamples": 0,
+        "gutterEmphasisSamples": 620,
+        "gpuMilliseconds": null,
+        "gpuDispatchOnlyMilliseconds": null,
+        "cpuMilliseconds": 304.5
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "binary-search",
+        "text": "glyphs",
+        "guard": "none",
+        "state": "settled-hover-level-2",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 199440,
+        "largestGpuCpuDifference": 218,
+        "referenceDecisionMismatches": 49860,
+        "referenceAmbiguousSamples": 0,
+        "largestReferenceColorDifference": 0,
+        "bannerEmphasisSamples": 0,
+        "gutterEmphasisSamples": 620,
+        "gpuMilliseconds": 17.25,
+        "gpuDispatchOnlyMilliseconds": 0.16,
+        "cpuMilliseconds": 304.5
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "binary-search",
+        "text": "glyphs",
+        "guard": "max",
+        "state": "settled-hover-level-2",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 0,
+        "largestReferenceColorDifference": 0,
+        "bannerEmphasisSamples": 0,
+        "gutterEmphasisSamples": 620,
+        "gpuMilliseconds": 17.13,
+        "gpuDispatchOnlyMilliseconds": 0.2,
+        "cpuMilliseconds": 304.5
+      },
+      {
+        "runtime": "cpu (generated JS instance loop)",
+        "lookup": "binary-search",
+        "text": "glyphs",
+        "guard": "-",
+        "state": "animated-peek-seed-6",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 24,
+        "largestReferenceColorDifference": 0.000012207031232946974,
+        "bannerEmphasisSamples": 27648,
+        "gutterEmphasisSamples": 532,
+        "gpuMilliseconds": null,
+        "gpuDispatchOnlyMilliseconds": null,
+        "cpuMilliseconds": 305.2
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "binary-search",
+        "text": "glyphs",
+        "guard": "none",
+        "state": "animated-peek-seed-6",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 135924,
+        "largestGpuCpuDifference": 218,
+        "referenceDecisionMismatches": 33641,
+        "referenceAmbiguousSamples": 24,
+        "largestReferenceColorDifference": 0.000009155273417604803,
+        "bannerEmphasisSamples": 27648,
+        "gutterEmphasisSamples": 532,
+        "gpuMilliseconds": 17.31,
+        "gpuDispatchOnlyMilliseconds": 0.14,
+        "cpuMilliseconds": 305.2
+      },
+      {
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "lookup": "binary-search",
+        "text": "glyphs",
+        "guard": "max",
+        "state": "animated-peek-seed-6",
+        "outputsCompared": 6144000,
+        "gpuCpuMismatches": 0,
+        "largestGpuCpuDifference": 0,
+        "referenceDecisionMismatches": 0,
+        "referenceAmbiguousSamples": 24,
+        "largestReferenceColorDifference": 0.000012207031232946974,
+        "bannerEmphasisSamples": 27648,
+        "gutterEmphasisSamples": 532,
+        "gpuMilliseconds": 16.01,
+        "gpuDispatchOnlyMilliseconds": 0.21,
+        "cpuMilliseconds": 305.2
+      }
+    ],
+    "compileRows": [
+      {
+        "caseName": "count-bars",
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "guard": "none",
+        "statements": 15088,
+        "compileMilliseconds": 1882.2,
+        "warmCompileMilliseconds": 283.2
+      },
+      {
+        "caseName": "count-bars",
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "guard": "max",
+        "statements": 15088,
+        "compileMilliseconds": 4558,
+        "warmCompileMilliseconds": 390.6
+      },
+      {
+        "caseName": "binary-search-bars",
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "guard": "none",
+        "statements": 346,
+        "compileMilliseconds": 19.1,
+        "warmCompileMilliseconds": 2.2
+      },
+      {
+        "caseName": "binary-search-bars",
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "guard": "max",
+        "statements": 346,
+        "compileMilliseconds": 33.6,
+        "warmCompileMilliseconds": 3.4
+      },
+      {
+        "caseName": "binary-search-glyphs",
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "guard": "none",
+        "statements": 512,
+        "compileMilliseconds": 34.1,
+        "warmCompileMilliseconds": 4.1
+      },
+      {
+        "caseName": "binary-search-glyphs",
+        "runtime": "Deno 1.42.4 (wgpu)",
+        "guard": "max",
+        "statements": 512,
+        "compileMilliseconds": 40.1,
+        "warmCompileMilliseconds": 4.9
+      }
+    ],
+    "png": {
+      "file": "~/github/indirect/lab/ui-exploration/pixel-output/gpu-frame-glyphs.png",
+      "state": "animated-peek-seed-6",
+      "emphasis": {
+        "banner": 27648,
+        "gutter": 532
+      }
+    }
+  },
+  "cpu": [
+    {
+      "variant": "count, bars",
+      "pixels": 64000,
+      "firstFrameMs": "1189",
+      "frameMs": "265.9",
+      "sharedPartMs": "2.95",
+      "nanosecondsPerPixel": "4109",
+      "textLayoutMsOnWidthChange": "-"
+    },
+    {
+      "variant": "binary-search, bars",
+      "pixels": 64000,
+      "firstFrameMs": "213",
+      "frameMs": "22.9",
+      "sharedPartMs": "3.08",
+      "nanosecondsPerPixel": "309",
+      "textLayoutMsOnWidthChange": "-"
+    },
+    {
+      "variant": "binary-search, glyphs",
+      "pixels": 64000,
+      "firstFrameMs": "375",
+      "frameMs": "43.2",
+      "sharedPartMs": "2.92",
+      "nanosecondsPerPixel": "629",
+      "textLayoutMsOnWidthChange": "13.9"
+    }
+  ],
+  "random": {
+    "grid": {
+      "width": 320,
+      "height": 200,
+      "stride": 4,
+      "offset": 0.5
+    },
+    "rows": [
+      {
+        "variant": "count, bars",
+        "frames": 60,
+        "peekFrames": 20,
+        "collapseClicks": 8,
+        "sortedFramesWithBannerEmphasis": 0,
+        "sortedFramesWithGutterEmphasis": 2,
+        "sorted": {
+          "endToEnd": {
+            "frames": 40,
+            "ambiguousSamples": 15210,
+            "decisionMismatches": 0,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000012207031261368684,
+            "inkSamples": 239118,
+            "inkSamplesCompared": 234232,
+            "firstMismatches": []
+          },
+          "perPixel": {
+            "frames": 40,
+            "ambiguousSamples": 12727,
+            "decisionMismatches": 0,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000009059906005859375,
+            "inkSamples": 239118,
+            "inkSamplesCompared": 235386,
+            "firstMismatches": []
+          }
+        },
+        "unsorted": {
+          "endToEnd": {
+            "frames": 20,
+            "ambiguousSamples": 12252,
+            "decisionMismatches": 1728,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000012207031261368684,
+            "inkSamples": 125352,
+            "inkSamplesCompared": 121794,
+            "firstMismatches": [
+              "frame 13: sample 17,115: circuit layer 3 row 237 emphasis 0, reference layer 5 row 237 emphasis 0",
+              "frame 19: sample 0,67: circuit layer 3 row 194 emphasis 0, reference layer 7 row 194 emphasis 0"
+            ]
+          },
+          "perPixel": {
+            "frames": 20,
+            "ambiguousSamples": 6289,
+            "decisionMismatches": 1728,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000009059906005859375,
+            "inkSamples": 125352,
+            "inkSamplesCompared": 124051,
+            "firstMismatches": [
+              "frame 13: sample 17,115: circuit layer 3 row 237 emphasis 0, reference layer 5 row 237 emphasis 0",
+              "frame 19: sample 0,67: circuit layer 3 row 194 emphasis 0, reference layer 7 row 194 emphasis 0"
+            ]
+          }
+        }
+      },
+      {
+        "variant": "binary-search, bars",
+        "frames": 60,
+        "peekFrames": 20,
+        "collapseClicks": 8,
+        "sortedFramesWithBannerEmphasis": 0,
+        "sortedFramesWithGutterEmphasis": 2,
+        "sorted": {
+          "endToEnd": {
+            "frames": 40,
+            "ambiguousSamples": 15210,
+            "decisionMismatches": 0,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000012207031261368684,
+            "inkSamples": 239118,
+            "inkSamplesCompared": 234232,
+            "firstMismatches": []
+          },
+          "perPixel": {
+            "frames": 40,
+            "ambiguousSamples": 12727,
+            "decisionMismatches": 0,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000009059906005859375,
+            "inkSamples": 239118,
+            "inkSamplesCompared": 235386,
+            "firstMismatches": []
+          }
+        },
+        "unsorted": {
+          "endToEnd": {
+            "frames": 20,
+            "ambiguousSamples": 12252,
+            "decisionMismatches": 1728,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000012207031261368684,
+            "inkSamples": 125352,
+            "inkSamplesCompared": 121794,
+            "firstMismatches": [
+              "frame 13: sample 17,115: circuit layer 5 row 238 emphasis 0, reference layer 5 row 237 emphasis 0",
+              "frame 19: sample 0,67: circuit layer 7 row 193 emphasis 0, reference layer 7 row 194 emphasis 0"
+            ]
+          },
+          "perPixel": {
+            "frames": 20,
+            "ambiguousSamples": 6289,
+            "decisionMismatches": 1728,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000009059906005859375,
+            "inkSamples": 125352,
+            "inkSamplesCompared": 124051,
+            "firstMismatches": [
+              "frame 13: sample 17,115: circuit layer 5 row 238 emphasis 0, reference layer 5 row 237 emphasis 0",
+              "frame 19: sample 0,67: circuit layer 7 row 193 emphasis 0, reference layer 7 row 194 emphasis 0"
+            ]
+          }
+        }
+      },
+      {
+        "variant": "binary-search, glyphs",
+        "frames": 60,
+        "peekFrames": 20,
+        "collapseClicks": 8,
+        "sortedFramesWithBannerEmphasis": 0,
+        "sortedFramesWithGutterEmphasis": 2,
+        "sorted": {
+          "endToEnd": {
+            "frames": 40,
+            "ambiguousSamples": 76156,
+            "decisionMismatches": 0,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000012207031261368684,
+            "inkSamples": 41055,
+            "inkSamplesCompared": 33771,
+            "firstMismatches": []
+          },
+          "perPixel": {
+            "frames": 40,
+            "ambiguousSamples": 66823,
+            "decisionMismatches": 0,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000009059906005859375,
+            "inkSamples": 41055,
+            "inkSamplesCompared": 34966,
+            "firstMismatches": []
+          }
+        },
+        "unsorted": {
+          "endToEnd": {
+            "frames": 20,
+            "ambiguousSamples": 33107,
+            "decisionMismatches": 1728,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000012207031261368684,
+            "inkSamples": 20561,
+            "inkSamplesCompared": 18239,
+            "firstMismatches": [
+              "frame 13: sample 17,115: circuit layer 5 row 238 emphasis 0, reference layer 5 row 237 emphasis 0",
+              "frame 19: sample 0,67: circuit layer 7 row 193 emphasis 0, reference layer 7 row 194 emphasis 0"
+            ]
+          },
+          "perPixel": {
+            "frames": 20,
+            "ambiguousSamples": 15254,
+            "decisionMismatches": 1728,
+            "ambiguousMismatches": 0,
+            "largestColorDifference": 0.000009059906005859375,
+            "inkSamples": 20561,
+            "inkSamplesCompared": 19754,
+            "firstMismatches": [
+              "frame 13: sample 17,115: circuit layer 5 row 238 emphasis 0, reference layer 5 row 237 emphasis 0",
+              "frame 19: sample 0,67: circuit layer 7 row 193 emphasis 0, reference layer 7 row 194 emphasis 0"
+            ]
+          }
+        }
+      }
+    ],
+    "countVersusBinarySearchDifferingValues": 0
+  },
+  "session": [
+    {
+      "variant": "count, bars",
+      "frames": 300,
+      "unsortedFrames": 0,
+      "containerWidthChanges": 55,
+      "rasterizedFramesWithBannerEmphasis": 8,
+      "rasterizedFramesWithGutterEmphasis": 18,
+      "sorted": {
+        "endToEnd": {
+          "frames": 60,
+          "ambiguousSamples": 473068,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 523,
+          "largestColorDifference": 0.000030863281267556886,
+          "inkSamples": 752943,
+          "inkSamplesCompared": 617132,
+          "firstMismatches": []
+        },
+        "perPixel": {
+          "frames": 60,
+          "ambiguousSamples": 10065,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 523,
+          "largestColorDifference": 0.000008106231689453125,
+          "inkSamples": 752943,
+          "inkSamplesCompared": 750900,
+          "firstMismatches": []
+        }
+      },
+      "unsorted": {
+        "endToEnd": {
+          "frames": 0,
+          "ambiguousSamples": 0,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 0,
+          "largestColorDifference": 0,
+          "inkSamples": 0,
+          "inkSamplesCompared": 0,
+          "firstMismatches": []
+        },
+        "perPixel": {
+          "frames": 0,
+          "ambiguousSamples": 0,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 0,
+          "largestColorDifference": 0,
+          "inkSamples": 0,
+          "inkSamplesCompared": 0,
+          "firstMismatches": []
+        }
+      }
+    },
+    {
+      "variant": "binary-search, bars",
+      "frames": 300,
+      "unsortedFrames": 0,
+      "containerWidthChanges": 55,
+      "rasterizedFramesWithBannerEmphasis": 8,
+      "rasterizedFramesWithGutterEmphasis": 18,
+      "sorted": {
+        "endToEnd": {
+          "frames": 60,
+          "ambiguousSamples": 473068,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 523,
+          "largestColorDifference": 0.000030863281267556886,
+          "inkSamples": 752943,
+          "inkSamplesCompared": 617132,
+          "firstMismatches": []
+        },
+        "perPixel": {
+          "frames": 60,
+          "ambiguousSamples": 10065,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 523,
+          "largestColorDifference": 0.000008106231689453125,
+          "inkSamples": 752943,
+          "inkSamplesCompared": 750900,
+          "firstMismatches": []
+        }
+      },
+      "unsorted": {
+        "endToEnd": {
+          "frames": 0,
+          "ambiguousSamples": 0,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 0,
+          "largestColorDifference": 0,
+          "inkSamples": 0,
+          "inkSamplesCompared": 0,
+          "firstMismatches": []
+        },
+        "perPixel": {
+          "frames": 0,
+          "ambiguousSamples": 0,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 0,
+          "largestColorDifference": 0,
+          "inkSamples": 0,
+          "inkSamplesCompared": 0,
+          "firstMismatches": []
+        }
+      }
+    },
+    {
+      "variant": "binary-search, glyphs",
+      "frames": 300,
+      "unsortedFrames": 0,
+      "containerWidthChanges": 55,
+      "rasterizedFramesWithBannerEmphasis": 8,
+      "rasterizedFramesWithGutterEmphasis": 18,
+      "sorted": {
+        "endToEnd": {
+          "frames": 60,
+          "ambiguousSamples": 1327063,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 523,
+          "largestColorDifference": 0.000030863281267556886,
+          "inkSamples": 113689,
+          "inkSamplesCompared": 28353,
+          "firstMismatches": []
+        },
+        "perPixel": {
+          "frames": 60,
+          "ambiguousSamples": 56567,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 523,
+          "largestColorDifference": 0.000008106231689453125,
+          "inkSamples": 113689,
+          "inkSamplesCompared": 109336,
+          "firstMismatches": []
+        }
+      },
+      "unsorted": {
+        "endToEnd": {
+          "frames": 0,
+          "ambiguousSamples": 0,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 0,
+          "largestColorDifference": 0,
+          "inkSamples": 0,
+          "inkSamplesCompared": 0,
+          "firstMismatches": []
+        },
+        "perPixel": {
+          "frames": 0,
+          "ambiguousSamples": 0,
+          "decisionMismatches": 0,
+          "ambiguousMismatches": 0,
+          "largestColorDifference": 0,
+          "inkSamples": 0,
+          "inkSamplesCompared": 0,
+          "firstMismatches": []
+        }
+      }
+    }
+  ],
+  "wgsl": [
+    {
+      "variant": "count, bars",
+      "guard": "none",
+      "statements": 15088,
+      "kilobytes": 849,
+      "guards": 0,
+      "gatherSwitches": 57,
+      "indexReads": 0,
+      "packedTables": 0,
+      "compared": 15360,
+      "mismatches": 0
+    },
+    {
+      "variant": "count, bars",
+      "guard": "max",
+      "statements": 15088,
+      "kilobytes": 1165,
+      "guards": 29369,
+      "gatherSwitches": 57,
+      "indexReads": 0,
+      "packedTables": 0,
+      "compared": 15360,
+      "mismatches": 0
+    },
+    {
+      "variant": "binary-search, bars",
+      "guard": "none",
+      "statements": 346,
+      "kilobytes": 18,
+      "guards": 0,
+      "gatherSwitches": 0,
+      "indexReads": 24,
+      "packedTables": 5,
+      "compared": 15360,
+      "mismatches": 0
+    },
+    {
+      "variant": "binary-search, bars",
+      "guard": "max",
+      "statements": 346,
+      "kilobytes": 22,
+      "guards": 385,
+      "gatherSwitches": 0,
+      "indexReads": 24,
+      "packedTables": 5,
+      "compared": 15360,
+      "mismatches": 0
+    },
+    {
+      "variant": "binary-search, glyphs",
+      "guard": "none",
+      "statements": 512,
+      "kilobytes": 28,
+      "guards": 0,
+      "gatherSwitches": 0,
+      "indexReads": 49,
+      "packedTables": 5,
+      "compared": 15360,
+      "mismatches": 0
+    },
+    {
+      "variant": "binary-search, glyphs",
+      "guard": "max",
+      "statements": 512,
+      "kilobytes": 35,
+      "guards": 632,
+      "gatherSwitches": 0,
+      "indexReads": 49,
+      "packedTables": 5,
+      "compared": 15360,
+      "mismatches": 0
+    }
+  ]
+}

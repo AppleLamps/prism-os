@@ -1,23 +1,89 @@
-// Three runtime atoms, plus compile-time expansions that lower into those atoms.
+// Three runtime atoms and one index read instruction, plus compile-time
+// expansions that lower into those.
 export type Wire = number
 
 export type Terms = readonly (readonly [wire: Wire, coefficient: number])[]
 
-type AtomKind = 'affine' | 'reglu' | 'boolean'
+// 'index' is the index read instruction, built only by indexReadAffine.
+type AtomKind = 'affine' | 'reglu' | 'boolean' | 'index'
 
 type Macro =
   | {kind: 'multiply', left: Wire, right: Wire}
   | {kind: 'select', gate: Wire, off: Wire, on: Wire}
 
+// What an index read returns when floor(index) is outside 0..count-1: 'clamp'
+// reads the nearest end of the table, 'zero' reads +0.
+export type OutOfRange = 'clamp' | 'zero'
+
+// Checked at runtime too, since JavaScript callers can pass any string, and any
+// rule other than 'zero' would otherwise read as 'clamp'.
+const outOfRangeRules: ReadonlySet<string> = new Set<OutOfRange>(['clamp', 'zero'])
+
+// One distinct candidates array, registered once per circuit. Later reads of
+// the same array find it by identity, so a large table read by thousands of
+// operations is checked and keyed once instead of once per read (ported from
+// lab/ui-exploration/code-points, which reads a 24,192-entry table of line
+// break classes once per text cell).
+type CandidateTable = {
+  id: number
+  candidates: readonly Wire[]
+  maximumDepth: number
+  // The union of candidate ranges, per reachable span of positions and
+  // out-of-range rules.
+  rangeByReach: Map<string, NumericRange>
+}
+
+type IndexRead = {
+  table: CandidateTable
+  below: OutOfRange
+  above: OutOfRange
+  // The index range the builder accepted: the range inferred from the index
+  // form's operands, narrowed by a declared range, e.g. the range declared on the
+  // index wire of indexRead. The read's own range and validateIndexReads use it.
+  indexRange: NumericRange
+}
+
+// Why an operation is a rounding point, i.e. an operation whose evaluation, term
+// order or operand wires carry meaning, and what a backend that reorders, fuses or
+// copies sums elsewhere, or evaluates sums in float64, has to keep there:
+// - 'boolean': a boolean atom, recorded automatically. Its (score + K) - K only
+//   rounds to a bit when evaluated in FP32 as written, so a backend keeps the
+//   stored FP32 evaluation, e.g. a shader compiler must not simplify it to score.
+// - 'integer bit': an operation of emitCompare's integer bits on grids, e.g. the
+//   ramp relu(-D) or the bit relu(1 - relu(-D)) on D = (a - b) / grid. Every
+//   product and partial sum of its sums is a whole number of grid steps within
+//   2^24, so a backend may add its terms in any order, fuse them or evaluate them
+//   in float64 and get the same bits, as long as each operation stays its own
+//   operation.
+// - 'sign cascade': an operation of emitCompare's sign cascade, i.e. the kept
+//   difference f(a - b), which only has to keep the sign of a - b, or a stage
+//   min(limit, scale × input), which computes exact values in real arithmetic. A
+//   backend may evaluate an operation's own sum in any order or in float64, but
+//   must keep each operation separate and reading the same wires, e.g. copying a
+//   stage into the next stage regroups terms at large magnitudes, and the partial
+//   sums round. The smallest differences also need subnormal values: a backend
+//   that turns them into 0 reads differences below 2^-126 as equality.
+// - 'marked': recorded by the caller with markRoundingPoint, e.g. a step of a
+//   round or floor chain. A backend keeps the stored FP32 evaluation, term order
+//   and operand wires, like at a boolean atom.
+export type RoundingPointKind = 'boolean' | 'integer bit' | 'sign cascade' | 'marked'
+
 type Operation = {
   kind: AtomKind
   leftTerms: Terms
   leftBias: number
+  // For an index read, gateTerms and gateBias hold the index form, and the
+  // left side is empty.
   gateTerms: Terms
   gateBias: number
   depth: number
   preserveRounding?: true
   macro?: Macro
+  indexRead?: IndexRead
+  roundingPoint?: RoundingPointKind
+  // Set on the bit emitCompare returns, so isProvenBit knows the wire holds
+  // exactly 0 or 1. The operations inside the comparison don't get it.
+  comparisonBit?: true
 }
 
 type NumericRange = {
@@ -58,6 +124,23 @@ type TensorGatherRead = {
   candidatePositions: UnsignedIndexArray
 }
 
+// One index read instruction inside a tensor layer. Its index form is an extra
+// projection row after the gate rows; the executor floors that row's value and
+// copies the selected candidate's packed value into the output row. When
+// candidatePositions is empty, candidate k sits at
+// candidateBase + k * candidateStride, e.g. a run of source cells, so the table
+// stores no positions.
+type TensorIndexRead = {
+  row: number
+  indexRow: number
+  belowZero: boolean
+  aboveZero: boolean
+  candidateCount: number
+  candidateBase: number
+  candidateStride: number
+  candidatePositions: UnsignedIndexArray
+}
+
 type TensorLayer = {
   inputIndices: UnsignedIndexArray
   inputSize: number
@@ -70,6 +153,7 @@ type TensorLayer = {
   weights: Float32Array
   gatherComputes: TensorGatherCompute[]
   gatherReads: TensorGatherRead[]
+  indexReads: TensorIndexRead[]
 }
 
 type TensorProgram = {
@@ -98,6 +182,29 @@ type GatherPlan = {
   candidateWires: readonly Wire[]
 }
 
+type PackedCandidateTable = {
+  candidateCount: number
+  candidateBase: number
+  candidateStride: number
+  candidatePositions: UnsignedIndexArray
+}
+
+export type CompileOptions = {
+  // Place each live operation one layer after the deepest value it reads in the
+  // compiled program, instead of at its build-time depth. A lowered gather read
+  // then stops waiting for the products it replaced, and everything downstream
+  // can move up. Off by default, since it changes the layers of existing
+  // programs, e.g. IndirectOS.
+  recomputeDepths?: boolean
+}
+
+// Every integer within ±2^24 is an FP32 value, so an index form whose range lies
+// strictly inside these bounds can hold each position exactly. Ranges follow FP32
+// rounding, so an endpoint on ±2^24 can stand for a larger real value, e.g. a cell
+// declared within 0..2^24 plus 1 has the endpoint f(2^24 + 1) = 2^24, and at that
+// cell value the read would land one position early. Such ranges are refused.
+const indexMagnitudeLimit = 2 ** 24
+
 export class Circuit {
   sourceSize: number
   operations: Operation[]
@@ -105,8 +212,15 @@ export class Circuit {
   constants: (number | undefined)[]
   expressionWires: Map<string, Wire>
   ranges: NumericRange[]
+  // The power of two every value of a wire is a multiple of, e.g. 1/64 for a
+  // pointer coordinate the host writes in 1/64 px, or undefined when unknown.
+  // Declared with assumeGrid, or inferred for sums and products whose operands
+  // have grids and whose declared ranges prove that nothing rounds.
+  grids: (number | undefined)[]
   oneHotGroups: OneHotGroup[]
   tensorProgram: TensorProgram | null
+  candidateTablesByArray: WeakMap<readonly Wire[], CandidateTable>
+  candidateTablesByContent: Map<string, CandidateTable>
 
   constructor(sourceSize: number) {
     this.sourceSize = sourceSize
@@ -115,8 +229,11 @@ export class Circuit {
     this.constants = Array<number | undefined>(sourceSize).fill(undefined)
     this.expressionWires = new Map()
     this.ranges = Array.from({length: sourceSize}, unknownRange)
+    this.grids = Array<number | undefined>(sourceSize).fill(undefined)
     this.oneHotGroups = []
     this.tensorProgram = null
+    this.candidateTablesByArray = new WeakMap()
+    this.candidateTablesByContent = new Map()
   }
 
   assumeRange(wire: Wire, minimum: number, maximum: number) {
@@ -151,6 +268,40 @@ export class Circuit {
     }
     this.oneHotGroups.push({members: [...members], allowAllZero})
     this.tensorProgram = null
+  }
+
+  // Declare that every value of this wire is a multiple of step, a power of
+  // two, e.g. assumeGrid(pointerX, 1 / 64) when the host writes pointer
+  // coordinates in 1/64 px. Like assumeRange, the declaration is a caller
+  // promise, checkable in tests with validateGrids. emitCompare uses it to
+  // build integer bits instead of a sign cascade. A coarser declared or
+  // inferred grid is kept, since its multiples are also multiples of the finer
+  // step.
+  assumeGrid(wire: Wire, step: number) {
+    assertWire(wire, this.sourceSize + this.operations.length)
+    invariant(isPowerOfTwoGrid(step), `a grid step must be a power of two from 2^-149 to 2^127, got ${step}`)
+    this.grids[wire] = Math.max(this.grids[wire] ?? step, step)
+  }
+
+  // Record an operation as a rounding point, e.g. each step of a round chain
+  // like (x + 2^23 + 2^22) - (2^23 + 2^22) built with roundAffine. See
+  // RoundingPointKind.
+  markRoundingPoint(wire: Wire) {
+    recordRoundingPoint(this, wire, 'marked')
+  }
+
+  // Every rounding point in wire order: boolean atoms, the operations of
+  // emitCompare, and wires marked with markRoundingPoint. A backend that
+  // reorders or fuses sums, or a GPU backend that guards against its shader
+  // compiler folding (x + K) - K, can keep the stored FP32 evaluation at these
+  // operations and relax it everywhere else.
+  roundingPoints(): {wire: Wire, kind: RoundingPointKind}[] {
+    const points: {wire: Wire, kind: RoundingPointKind}[] = []
+    for (let operationIndex = 0; operationIndex < this.operations.length; operationIndex++) {
+      const kind = this.operations[operationIndex]!.roundingPoint
+      if (kind !== undefined) points.push({wire: this.sourceSize + operationIndex, kind})
+    }
+    return points
   }
 
   isNonNegative(wire: Wire) {
@@ -199,8 +350,104 @@ export class Circuit {
     return this.append('boolean', [[value, 1]], 0, [], 0)
   }
 
+  // Read candidates[floor(index)] as one instruction, e.g. a row's height at a
+  // computed row. The index needs a declared range strictly inside ±2^24 and must
+  // hold an integer, which validateIndexReads checks in tests. The range declared on the
+  // index wire counts even when the builder copies a small affine index into the
+  // read, e.g. row = affine([[firstRow, 1], [offset, 1]]) declared within 0..999
+  // while firstRow and offset have no declared ranges: the copied form adds the
+  // same terms in the same order from the same bias, so it holds the exact value
+  // of row. Outside the table the read clamps to the nearest end, or reads +0
+  // with {outOfRange: 'zero'}. The selected value is copied without rounding.
+  // Candidates may repeat, may be infinite, and need no declared range. The
+  // builder freezes the candidates array, so changing it after a read throws
+  // instead of silently changing what the earlier read meant.
+  indexRead(index: Wire, candidates: readonly Wire[], options: {outOfRange?: OutOfRange} = {}): Wire {
+    assertWire(index, this.sourceSize + this.operations.length)
+    const outOfRange = options.outOfRange ?? 'clamp'
+    return this.indexReadAffine([[index, 1]], 0, candidates, outOfRange, outOfRange, {indexRange: this.ranges[index]!})
+  }
+
+  // The same instruction with the index written as an affine form and one rule
+  // per side, e.g. [[firstRow, 1]] with bias 3 and 'clamp', 'zero' reads the
+  // fourth visible row, and +0 past the end of the table. Small affine producers
+  // compose into the form, as they compose into a ReGLU gate. The index range is
+  // inferred from the declared ranges of the operands after composing, then
+  // narrowed by options.indexRange, a caller promise about the form's value like
+  // assumeRange, which validateIndexReads checks in tests.
+  indexReadAffine(
+    indexTerms: Terms,
+    indexBias: number,
+    candidates: readonly Wire[],
+    below: OutOfRange,
+    above: OutOfRange,
+    options: {indexRange?: NumericRange} = {},
+  ): Wire {
+    const width = this.sourceSize + this.operations.length
+    invariant(outOfRangeRules.has(below) && outOfRangeRules.has(above), 'index read sides must be clamp or zero')
+    for (const [wire, coefficient] of indexTerms) {
+      assertWire(wire, width)
+      invariant(Number.isFinite(coefficient), 'index coefficient must be finite')
+    }
+    invariant(Number.isFinite(indexBias), 'index bias must be finite')
+    const table = registerCandidateTable(this, candidates)
+    let [terms, bias] = foldConstantTerms(normalizeTerms(indexTerms), indexBias, this.constants)
+    ;[terms, bias] = composeAffineTerms(terms, bias, this.sourceSize, this.operations)
+    if (terms.length === 0) {
+      // A constant index selects its candidate while building.
+      const constantIndex = Math.fround(bias)
+      invariant(!Number.isNaN(constantIndex), 'a constant index must not be NaN')
+      const position = resolveIndexPosition(
+        constantIndex,
+        table.candidates.length,
+        below === 'zero',
+        above === 'zero',
+      )
+      return position >= 0 ? table.candidates[position]! : this.affine([], 0)
+    }
+    let indexRange = evaluateAffineRange(terms, bias, this.ranges)
+    if (options.indexRange !== undefined) {
+      indexRange = {
+        minimum: Math.max(indexRange.minimum, options.indexRange.minimum),
+        maximum: Math.min(indexRange.maximum, options.indexRange.maximum),
+      }
+      // A NaN endpoint passes here and fails the magnitude check below.
+      invariant(
+        !(indexRange.minimum > indexRange.maximum),
+        'the declared index range contradicts the range inferred from the index form',
+      )
+    }
+    if (!(indexRange.minimum > -indexMagnitudeLimit && indexRange.maximum < indexMagnitudeLimit)) {
+      invariant(
+        false,
+        `index read needs an index range declared strictly inside ±2^24, got ${indexRange.minimum}..${indexRange.maximum}`,
+      )
+    }
+    const expressionKey = `${serializeExpression('index', [], 0, terms, bias)}|${below},${above}|table${table.id}`
+    const existingWire = this.expressionWires.get(expressionKey)
+    if (existingWire !== undefined) return existingWire
+    let depth = table.maximumDepth
+    for (const [dependency] of terms) depth = Math.max(depth, this.depths[dependency]!)
+    this.operations.push({
+      kind: 'index',
+      leftTerms: [],
+      leftBias: 0,
+      gateTerms: terms,
+      gateBias: bias,
+      depth: depth + 1,
+      indexRead: {table, below, above, indexRange},
+    })
+    this.depths.push(depth + 1)
+    this.constants.push(undefined)
+    this.grids.push(undefined)
+    this.ranges.push(indexReadRange(table, indexRange, below, above, this.ranges))
+    this.expressionWires.set(expressionKey, width)
+    this.tensorProgram = null
+    return width
+  }
+
   append(
-    kind: AtomKind,
+    kind: Exclude<AtomKind, 'index'>,
     leftTerms: Terms,
     leftBias: number,
     gateTerms: Terms,
@@ -252,9 +499,19 @@ export class Circuit {
     const dependencies = kind === 'reglu' ? [...leftTerms, ...gateTerms] : leftTerms
     let depth = 0
     for (const [dependency] of dependencies) depth = Math.max(depth, this.depths[dependency]!)
-    this.operations.push({kind, leftTerms, leftBias, gateTerms, gateBias, depth: depth + 1, ...options})
+    this.operations.push({
+      kind,
+      leftTerms,
+      leftBias,
+      gateTerms,
+      gateBias,
+      depth: depth + 1,
+      ...options,
+      ...(kind === 'boolean' ? {roundingPoint: 'boolean'} as const : {}),
+    })
     this.depths.push(depth + 1)
     this.constants.push(!options.preserveRounding && kind === 'affine' && leftTerms.length === 0 ? leftBias : undefined)
+    this.grids.push(inferOperationGrid(kind, leftTerms, leftBias, gateTerms, gateBias, this.grids, this.ranges))
     const leftRange = evaluateAffineRange(leftTerms, leftBias, this.ranges)
     this.ranges.push(
       kind === 'affine'
@@ -276,7 +533,10 @@ export class Circuit {
   backpropagateReference(
     values: Float32Array,
     outputGradients: Float32Array,
-    options: {booleanGradient?: 'reject' | 'straight-through'} = {},
+    options: {
+      booleanGradient?: 'reject' | 'straight-through'
+      indexGradient?: 'reject' | 'zero' | 'backward-difference'
+    } = {},
   ): Float32Array {
     const width = this.sourceSize + this.operations.length
     invariant(values.length === width, 'forward values have the wrong length')
@@ -298,6 +558,40 @@ export class Circuit {
         const gate = values[macro.gate]!
         accumulateTermGradients(gradients, [[macro.off, 1 - gate], [macro.on, gate]], outputGradient)
         accumulateTermGradients(gradients, [[macro.gate, values[macro.on]! - values[macro.off]!]], outputGradient)
+        continue
+      }
+      if (operation.kind === 'index') {
+        // The selected candidate receives the output gradient, like the backward
+        // pass of a gather. The read is a step function of the index: its
+        // derivative is 0 between integers and undefined at them, so the caller
+        // chooses what the index form receives.
+        const read = operation.indexRead!
+        const indexGradient = options.indexGradient ?? 'reject'
+        if (indexGradient === 'reject') {
+          throw new Error('cannot backpropagate into the index of an index read; pass indexGradient')
+        }
+        const indexValue = evaluateTerms(values, operation.gateTerms, operation.gateBias)
+        const position = resolveIndexPosition(
+          indexValue,
+          read.table.candidates.length,
+          read.below === 'zero',
+          read.above === 'zero',
+        )
+        if (position >= 0) {
+          accumulateTermGradients(gradients, [[read.table.candidates[position]!, 1]], outputGradient)
+        }
+        if (indexGradient === 'backward-difference' && Number.isFinite(indexValue)) {
+          // What this backward pass gives a ReLU one-hot masked sum at an integer
+          // index i, with bits built from relu(i - j + 1) - relu(i - j): the ReLU
+          // at its corner gets slope 0, so the index receives read(i) - read(i - 1),
+          // with the same rule outside the table. Ported from
+          // lab/ui-exploration/index-read, which compared the two on every source
+          // wire.
+          const floorIndex = Math.floor(indexValue)
+          const difference = readIndexedValue(values, read, floorIndex)
+            - readIndexedValue(values, read, floorIndex - 1)
+          accumulateTermGradients(gradients, operation.gateTerms, Math.fround(outputGradient * difference))
+        }
         continue
       }
       if (operation.kind === 'boolean') {
@@ -336,8 +630,11 @@ export class Circuit {
   }
 
   // The returned output array is reused and overwritten on the next call.
-  createTensorEvaluator(roots: readonly Wire[]): (source: Float32Array) => Float32Array {
-    const program = this.compileTensorProgram(roots)
+  createTensorEvaluator(
+    roots: readonly Wire[],
+    options: CompileOptions = {},
+  ): (source: Float32Array) => Float32Array {
+    const program = this.compileTensorProgram(roots, true, options)
     const workspace = createTensorWorkspace(program)
     const positions = roots.map(root => program.wireOrder.indexOf(root))
     const outputs = new Float32Array(roots.length)
@@ -363,7 +660,11 @@ export class Circuit {
     }
   }
 
-  compileTensorProgram(roots?: readonly Wire[], lowerGathers = true): TensorProgram {
+  compileTensorProgram(
+    roots?: readonly Wire[],
+    lowerGathers = true,
+    options: CompileOptions = {},
+  ): TensorProgram {
     const width = this.sourceSize + this.operations.length
     const normalizedRoots = roots ?? Array.from(
       {length: this.operations.length},
@@ -378,11 +679,16 @@ export class Circuit {
       gatherPlans,
       this.oneHotGroups,
     )
+    const compiledDepths = options.recomputeDepths === true
+      ? computeCompiledDepths(this, liveOperations, gatherPlans)
+      : null
     const operationsByLayer: number[][] = []
     for (let operationIndex = 0; operationIndex < this.operations.length; operationIndex++) {
       if (liveOperations[operationIndex] === 0) continue
-      const operation = this.operations[operationIndex]!
-      const layerIndex = operation.depth - 1
+      const depth = compiledDepths === null
+        ? this.operations[operationIndex]!.depth
+        : compiledDepths[operationIndex]!
+      const layerIndex = depth - 1
       const operationIndices = operationsByLayer[layerIndex] ??= []
       operationIndices.push(operationIndex)
     }
@@ -399,6 +705,7 @@ export class Circuit {
     }
     let availableValues = this.sourceSize
     const slotByGroup = new Map<number, number>()
+    const packedTables = new Map<CandidateTable, PackedCandidateTable>()
     for (let layerIndex = 0; layerIndex < operationsByLayer.length; layerIndex++) {
       const operationIndices = operationsByLayer[layerIndex]
       if (operationIndices === undefined) continue
@@ -418,10 +725,12 @@ export class Circuit {
       const inputSize = orderedInputWires.length
       let gateCount = 0
       let booleanCount = 0
+      let indexReadCount = 0
       for (const operationIndex of operationIndices) {
         const kind = this.operations[operationIndex]!.kind
         if (kind === 'reglu') gateCount++
         else if (kind === 'boolean') booleanCount++
+        else if (kind === 'index') indexReadCount++
       }
       const inputIndices = compactUnsignedIndices(
         orderedInputWires.map(wire => packedIndexByWire[wire]!),
@@ -431,13 +740,17 @@ export class Circuit {
       for (let column = 0; column < inputSize; column++) {
         inputColumnByWire[orderedInputWires[column]!] = column
       }
-      const projectionSize = outputSize + gateCount
+      // Projection rows: one per output, then one gate row per ReGLU, then one
+      // index row per index read.
+      const projectionSize = outputSize + gateCount + indexReadCount
       const bias = new Float32Array(projectionSize)
       const gateRows: number[] = []
       const booleanRows: number[] = []
       const projectionTerms = Array<Terms>(projectionSize)
       const pendingGatherReads: {row: number, plan: GatherPlan}[] = []
+      const pendingIndexReads: {row: number, indexRow: number, read: IndexRead}[] = []
       let gateRow = 0
+      let indexReadRow = 0
       for (let row = 0; row < operationIndices.length; row++) {
         const operationIndex = operationIndices[row]!
         const operation = this.operations[operationIndex]!
@@ -463,6 +776,14 @@ export class Circuit {
           gateRow++
         } else if (operation.kind === 'boolean') {
           booleanRows.push(row)
+        } else if (operation.kind === 'index') {
+          // The output row keeps zero bias and no weights; the executor copies
+          // the selected candidate into it.
+          const indexRow = outputSize + gateCount + indexReadRow
+          bias[indexRow] = operation.gateBias
+          projectionTerms[indexRow] = operation.gateTerms
+          pendingIndexReads.push({row, indexRow, read: operation.indexRead!})
+          indexReadRow++
         }
       }
       const gatherComputes: TensorGatherCompute[] = []
@@ -495,6 +816,23 @@ export class Circuit {
           candidatePositions: compactUnsignedIndices(candidatePositions),
         })
       }
+      const indexReads: TensorIndexRead[] = []
+      for (const {row, indexRow, read} of pendingIndexReads) {
+        let packed = packedTables.get(read.table)
+        if (packed === undefined) {
+          // Candidates sit at strictly earlier depths than every read of their
+          // table, so the first read already finds them packed.
+          packed = packCandidateTable(read.table, packedIndexByWire, availableValues)
+          packedTables.set(read.table, packed)
+        }
+        indexReads.push({
+          row,
+          indexRow,
+          belowZero: read.below === 'zero',
+          aboveZero: read.above === 'zero',
+          ...packed,
+        })
+      }
       const rowOffsets = Array<number>(projectionSize + 1).fill(0)
       for (let row = 0; row < projectionSize; row++) {
         rowOffsets[row + 1] = rowOffsets[row]! + projectionTerms[row]!.length
@@ -524,6 +862,7 @@ export class Circuit {
         weights,
         gatherComputes,
         gatherReads,
+        indexReads,
       })
       availableValues += outputSize
     }
@@ -542,6 +881,105 @@ export class Circuit {
 
 function unknownRange(): NumericRange {
   return {minimum: Number.NEGATIVE_INFINITY, maximum: Number.POSITIVE_INFINITY}
+}
+
+// FP32 represents every multiple of a power of two with at most 24 significant
+// bits, e.g. every multiple of 1/64 within ±2^18. A sum or product of values on
+// grids is a multiple of the smallest of those grids, so it evaluates without
+// rounding while it stays within this many grid steps.
+const exactGridSteps = 2 ** 24
+const smallestGrid = 2 ** -149
+const largestGrid = 2 ** 127
+
+const float64Scratch = new DataView(new ArrayBuffer(8))
+
+// The largest power of two dividing a finite nonzero value, e.g. 4 for 12 and
+// 0.25 for 0.75. Every finite float is an integer times a power of two, so
+// every FP32 constant and coefficient has one.
+function lowestPowerOfTwo(value: number): number {
+  float64Scratch.setFloat64(0, value)
+  const high = float64Scratch.getUint32(0)
+  const low = float64Scratch.getUint32(4)
+  const biasedExponent = (high >>> 20) & 0x7ff
+  // FP32 values are normal float64 values, so the implicit leading mantissa bit is set.
+  const exponent = biasedExponent - 1075
+  const trailingZeros = low !== 0
+    ? countTrailingZeros(low)
+    : 32 + countTrailingZeros((high & 0xfffff) | 0x100000)
+  return 2 ** (exponent + trailingZeros)
+}
+
+function countTrailingZeros(bits: number) {
+  return 31 - Math.clz32(bits & -bits)
+}
+
+function isPowerOfTwoGrid(step: number) {
+  return Number.isFinite(step) && step >= smallestGrid && step <= largestGrid && lowestPowerOfTwo(step) === step
+}
+
+type GridForm = {grid: number, magnitude: number}
+
+// The grid of an affine form evaluated in FP32, when every term reads a wire
+// with a grid and the declared ranges keep every product and partial sum
+// within 2^24 grid steps, so nothing rounds. magnitude bounds |bias| plus every
+// |coefficient × operand|, which bounds every partial sum in any term order.
+function inferFormGrid(
+  terms: Terms,
+  bias: number,
+  grids: readonly (number | undefined)[],
+  ranges: readonly NumericRange[],
+): GridForm | undefined {
+  const roundedBias = Math.fround(bias)
+  let grid = roundedBias === 0 ? Number.POSITIVE_INFINITY : lowestPowerOfTwo(roundedBias)
+  let magnitude = Math.abs(roundedBias)
+  for (const [wire, coefficient] of terms) {
+    const wireGrid = grids[wire]
+    if (wireGrid === undefined) return undefined
+    const range = ranges[wire]!
+    const largestOperand = Math.max(Math.abs(range.minimum), Math.abs(range.maximum))
+    // An open range can hold Infinity, and f(0 × Infinity) is NaN.
+    if (!Number.isFinite(largestOperand)) return undefined
+    const roundedCoefficient = Math.fround(coefficient)
+    if (roundedCoefficient === 0) continue
+    grid = Math.min(grid, wireGrid * lowestPowerOfTwo(roundedCoefficient))
+    magnitude += Math.abs(roundedCoefficient) * largestOperand
+  }
+  if (!(Number.isFinite(grid) && grid >= smallestGrid && magnitude <= exactGridSteps * grid)) return undefined
+  // A finite FP32 multiple of a power of two above 2^127 can only be 0, which
+  // is also a multiple of 2^127.
+  return {grid: Math.min(grid, largestGrid), magnitude}
+}
+
+// The grid of an operation's result, inferred at append time: an affine sum
+// takes its form's grid, a ReGLU product the product of both forms' grids while
+// the product stays within 2^24 grid steps, and a boolean atom returns 0 or 1.
+// Index reads get no grid.
+function inferOperationGrid(
+  kind: Exclude<AtomKind, 'index'>,
+  leftTerms: Terms,
+  leftBias: number,
+  gateTerms: Terms,
+  gateBias: number,
+  grids: readonly (number | undefined)[],
+  ranges: readonly NumericRange[],
+): number | undefined {
+  if (kind === 'boolean') return 1
+  const left = inferFormGrid(leftTerms, leftBias, grids, ranges)
+  if (left === undefined) return undefined
+  if (kind === 'affine') return left.grid
+  const gate = inferFormGrid(gateTerms, gateBias, grids, ranges)
+  if (gate === undefined) return undefined
+  const grid = left.grid * gate.grid
+  if (!(grid >= smallestGrid && left.magnitude * gate.magnitude <= exactGridSteps * grid)) return undefined
+  return Math.min(grid, largestGrid)
+}
+
+// Earlier records win, e.g. a boolean atom that emitCompare returns stays
+// 'boolean'.
+function recordRoundingPoint(circuit: Circuit, wire: Wire, kind: RoundingPointKind) {
+  assertWire(wire, circuit.sourceSize + circuit.operations.length)
+  invariant(wire >= circuit.sourceSize, 'a rounding point must be an operation, not a source cell')
+  circuit.operations[wire - circuit.sourceSize]!.roundingPoint ??= kind
 }
 
 function evaluateAffineRange(
@@ -592,6 +1030,8 @@ function findLiveOperations(
 ): Uint8Array {
   const liveOperations = new Uint8Array(operations.length)
   const pending = [...roots]
+  // A table read by many operations contributes its candidates once.
+  const visitedTables = new Set<CandidateTable>()
   while (pending.length > 0) {
     const wire = pending.pop()!
     assertWire(wire, width)
@@ -611,8 +1051,153 @@ function findLiveOperations(
     const operation = operations[operationIndex]!
     for (const [dependency] of operation.leftTerms) pending.push(dependency)
     for (const [dependency] of operation.gateTerms) pending.push(dependency)
+    const read = operation.indexRead
+    if (read !== undefined && !visitedTables.has(read.table)) {
+      visitedTables.add(read.table)
+      for (const candidate of read.table.candidates) pending.push(candidate)
+    }
   }
   return liveOperations
+}
+
+// The depth of every live operation from what it reads in the compiled program:
+// a lowered masked sum reads its group's bits and its candidates instead of its
+// products, and an index read reads its index form and its candidates.
+// Operations come after everything they read, so one pass in operation order
+// suffices. Without gather plans this reproduces the build-time depths.
+// Ported from lab/ui-exploration/index-read.
+function computeCompiledDepths(
+  circuit: Circuit,
+  liveOperations: Uint8Array,
+  gatherPlans: ReadonlyMap<number, GatherPlan>,
+): Int32Array {
+  const depths = new Int32Array(circuit.operations.length)
+  const depthOf = (wire: Wire) => (wire < circuit.sourceSize ? 0 : depths[wire - circuit.sourceSize]!)
+  const tableDepths = new Map<CandidateTable, number>()
+  for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
+    if (liveOperations[operationIndex] === 0) continue
+    let depth = 0
+    const plan = gatherPlans.get(operationIndex)
+    if (plan === undefined) {
+      const operation = circuit.operations[operationIndex]!
+      for (const [wire] of operation.leftTerms) depth = Math.max(depth, depthOf(wire))
+      for (const [wire] of operation.gateTerms) depth = Math.max(depth, depthOf(wire))
+      const read = operation.indexRead
+      if (read !== undefined) {
+        // Every candidate comes before the table's first read, so its depth is
+        // final by then and later reads can reuse the table's depth.
+        let tableDepth = tableDepths.get(read.table)
+        if (tableDepth === undefined) {
+          tableDepth = 0
+          for (const candidate of read.table.candidates) tableDepth = Math.max(tableDepth, depthOf(candidate))
+          tableDepths.set(read.table, tableDepth)
+        }
+        depth = Math.max(depth, tableDepth)
+      }
+    } else {
+      for (const member of circuit.oneHotGroups[plan.groupIndex]!.members) depth = Math.max(depth, depthOf(member))
+      for (const candidate of plan.candidateWires) depth = Math.max(depth, depthOf(candidate))
+    }
+    depths[operationIndex] = depth + 1
+  }
+  return depths
+}
+
+// Register a candidates array once per circuit: check every candidate, record
+// the deepest one, and freeze the array so a later change throws instead of
+// silently changing reads that were already built. Arrays with the same
+// content share one table, e.g. a table rebuilt with .map in every loop
+// iteration.
+function registerCandidateTable(circuit: Circuit, candidates: readonly Wire[]): CandidateTable {
+  const registered = circuit.candidateTablesByArray.get(candidates)
+  if (registered !== undefined) return registered
+  invariant(candidates.length > 0, 'an index read needs at least one candidate')
+  const width = circuit.sourceSize + circuit.operations.length
+  let maximumDepth = 0
+  for (const candidate of candidates) {
+    assertWire(candidate, width)
+    maximumDepth = Math.max(maximumDepth, circuit.depths[candidate]!)
+  }
+  Object.freeze(candidates)
+  const contentKey = candidates.join(',')
+  let table = circuit.candidateTablesByContent.get(contentKey)
+  if (table === undefined) {
+    table = {id: circuit.candidateTablesByContent.size, candidates, maximumDepth, rangeByReach: new Map()}
+    circuit.candidateTablesByContent.set(contentKey, table)
+  }
+  circuit.candidateTablesByArray.set(candidates, table)
+  return table
+}
+
+// The union of the ranges of every candidate an index within indexRange can
+// reach, plus 0 where a side that reads zero is reachable. Cached per table and
+// reachable span, so a large table read many times is scanned once per span.
+// Narrowing a candidate's range after a read keeps the wider union for later
+// reads with the same span, which is still a sound bound.
+function indexReadRange(
+  table: CandidateTable,
+  indexRange: NumericRange,
+  below: OutOfRange,
+  above: OutOfRange,
+  ranges: readonly NumericRange[],
+): NumericRange {
+  const {candidates} = table
+  const count = candidates.length
+  const lowestPosition = Math.max(-1, Math.min(count, Math.floor(indexRange.minimum)))
+  const highestPosition = Math.max(-1, Math.min(count, Math.floor(indexRange.maximum)))
+  const key = `${lowestPosition},${highestPosition},${below},${above}`
+  let range = table.rangeByReach.get(key)
+  if (range === undefined) {
+    let minimum = Number.POSITIVE_INFINITY
+    let maximum = Number.NEGATIVE_INFINITY
+    const include = (candidateRange: NumericRange) => {
+      minimum = Math.min(minimum, candidateRange.minimum)
+      maximum = Math.max(maximum, candidateRange.maximum)
+    }
+    const lastDirectPosition = Math.min(highestPosition, count - 1)
+    for (let position = Math.max(lowestPosition, 0); position <= lastDirectPosition; position++) {
+      include(ranges[candidates[position]!]!)
+    }
+    const zeroRange = {minimum: 0, maximum: 0}
+    if (lowestPosition < 0) include(below === 'zero' ? zeroRange : ranges[candidates[0]!]!)
+    if (highestPosition > count - 1) include(above === 'zero' ? zeroRange : ranges[candidates[count - 1]!]!)
+    range = {minimum, maximum}
+    table.rangeByReach.set(key, range)
+  }
+  // Each wire gets its own object, since assumeRange replaces a wire's range.
+  return {minimum: range.minimum, maximum: range.maximum}
+}
+
+// Store a candidate table as a base position and a stride when the candidates
+// sit at evenly spaced packed positions, e.g. a run of source cells, a reversed
+// run, or one repeated wire; otherwise store one position per candidate. Ported
+// from lab/ui-exploration/index-read, where a 10,000-row list read into 24
+// slots stored no positions.
+function packCandidateTable(
+  table: CandidateTable,
+  packedIndexByWire: Int32Array,
+  availableValues: number,
+): PackedCandidateTable {
+  const positions = table.candidates.map(candidate => {
+    const position = packedIndexByWire[candidate]!
+    invariant(position >= 0 && position < availableValues, 'index read candidate is not available')
+    return position
+  })
+  const base = positions[0]!
+  const stride = positions.length > 1 ? positions[1]! - base : 0
+  let evenlySpaced = true
+  for (let position = 2; position < positions.length; position++) {
+    if (positions[position] !== base + position * stride) {
+      evenlySpaced = false
+      break
+    }
+  }
+  return {
+    candidateCount: positions.length,
+    candidateBase: base,
+    candidateStride: stride,
+    candidatePositions: evenlySpaced ? new Uint8Array(0) : compactUnsignedIndices(positions),
+  }
 }
 
 type MaskedProduct = {
@@ -951,6 +1536,12 @@ function evaluateOperationStream(
       )
     } else if (operation.kind === 'boolean') {
       value = evaluateBoolean(value)
+    } else if (operation.kind === 'index') {
+      value = readIndexedValue(
+        values,
+        operation.indexRead!,
+        evaluateTerms(values, operation.gateTerms, operation.gateBias),
+      )
     }
     values[circuit.sourceSize + operationIndex] = value
   }
@@ -1012,6 +1603,9 @@ function executeTensorProgram(
     if (layer.gatherReads.length > 0) {
       applyGathers(layer, packedValues, projection, gatherIndices, gatherMasses)
     }
+    if (layer.indexReads.length > 0) {
+      applyIndexReads(layer, packedValues, projection)
+    }
     for (let gateRow = 0; gateRow < layer.gateRows.length; gateRow++) {
       const outputRow = layer.gateRows[gateRow]!
       projection[outputRow] = Math.fround(
@@ -1060,6 +1654,61 @@ function applyGathers(
     if (read.masked) contribution = Math.fround(gatherMasses[read.slot]! * contribution)
     projection[read.row] = Math.fround(projection[read.row]! + contribution)
   }
+}
+
+// Kept out of executeTensorProgram for the same reason as applyGathers.
+function applyIndexReads(
+  layer: TensorLayer,
+  packedValues: Float32Array,
+  projection: Float32Array,
+) {
+  for (const read of layer.indexReads) {
+    const position = resolveIndexPosition(
+      projection[read.indexRow]!,
+      read.candidateCount,
+      read.belowZero,
+      read.aboveZero,
+    )
+    if (position >= 0) {
+      projection[read.row] = packedValues[
+        read.candidatePositions.length === 0
+          ? read.candidateBase + position * read.candidateStride
+          : read.candidatePositions[position]!
+      ]!
+    } else {
+      projection[read.row] = position === -1 ? 0 : Number.NaN
+    }
+  }
+}
+
+// floor(index) as a table position: 0..count-1 inside the table; outside it
+// the nearest end, or -1 where that side reads +0; -2 for a NaN index. floor
+// and the comparisons run in float64 on an FP32 value, so nothing rounds, e.g.
+// an index of 3.999 (the FP32 value nearest it) reads position 3.
+function resolveIndexPosition(
+  index: number,
+  count: number,
+  belowZero: boolean,
+  aboveZero: boolean,
+): number {
+  if (Number.isNaN(index)) return -2
+  const position = Math.floor(index)
+  if (position < 0) return belowZero ? -1 : 0
+  if (position > count - 1) return aboveZero ? -1 : count - 1
+  return position
+}
+
+// The index read instruction on one index value: copy the selected candidate's
+// FP32 value, +0 where that side reads zero, and NaN for a NaN index.
+function readIndexedValue(values: Float32Array, read: IndexRead, index: number): number {
+  const position = resolveIndexPosition(
+    index,
+    read.table.candidates.length,
+    read.below === 'zero',
+    read.above === 'zero',
+  )
+  if (position >= 0) return values[read.table.candidates[position]!]!
+  return position === -1 ? 0 : Number.NaN
 }
 
 function sparseMatmulAddBias(
@@ -1162,6 +1811,460 @@ export function emitSelect(circuit: Circuit, gate: Wire, off: Wire, on: Wire): W
   return circuit.select(gate, off, on)
 }
 
+export type Relation = '>' | '>=' | '<' | '<=' | '==='
+
+export type CompareOptions = {
+  // End with a boolean atom instead of a ReLU stage, e.g. [a > b] for operands
+  // within 0..16,384 takes 13 layers instead of 15, and [a >= b] on a 1/64
+  // grid is one atom. Needs an executor that keeps FP32 rounding at the atom,
+  // and backpropagateReference rejects the atom unless booleanGradient is
+  // 'straight-through'.
+  endWithBoolean?: boolean
+}
+
+const compareRelations: ReadonlySet<string> = new Set<Relation>(['>', '>=', '<', '<=', '==='])
+
+type SignTest = 'greater' | 'atLeast' | 'equal'
+
+// One side of a comparison. A constant has no wire, a range of one value, and
+// the grid of its value, or Infinity for 0, which lies on every grid.
+type CompareOperand = {
+  wire: Wire | undefined
+  value: number
+  range: NumericRange
+  grid: number | undefined
+}
+
+// [a relation b] as an exact bit, e.g. emitCompare(circuit, pointerX, '>=',
+// windowLeft), equal to JavaScript's comparison of the two wires' FP32 values
+// for every pair of values within the declared ranges. A threshold is a
+// constant wire, e.g. emitCompare(circuit, openWindowCount, '>',
+// circuit.affine([], 3)), which folds into the bias. JavaScript compares an FP32
+// value with a threshold that isn't an FP32 value, e.g. 5/24, like it compares
+// with the smallest FP32 value at or above it, not like f(5 / 24), which is
+// below 5/24, so pick the FP32 threshold before building. The form comes from
+// declarations, not from the call site:
+// - Both operands need finite declared ranges. The builder refuses an open
+//   range, e.g. a raw requestAnimationFrame timestamp.
+// - When both operands lie on grids (see assumeGrid) and the ranges stay within
+//   2^24 grid steps, the bit is built from the integer D = (a - b) / grid, e.g.
+//   [a >= b] is relu(1 - relu(-D)), which equals relu(D + 1) - relu(D) at every
+//   integer, in 2 operations and 2 layers.
+// - Otherwise the difference d = f(a - b) stays its own operation, and a sign
+//   cascade lifts every nonzero d, down to 2^-149, to at least 1 in stages that
+//   multiply by powers of two and clamp, with no rounding inside. E.g. [a >= b]
+//   for operands within 0..16,384 is 15 operations and 14 layers.
+// Every operation built here is recorded as a rounding point, of kind 'integer
+// bit' or 'sign cascade' by construction, and emitFirstActive counts the returned
+// bit as a proven bit. The operands are read as wires, so a small affine operand,
+// which readers normally copy in, becomes its own operation.
+export function emitCompare(
+  circuit: Circuit,
+  a: Wire,
+  relation: Relation,
+  b: Wire,
+  options: CompareOptions = {},
+): Wire {
+  invariant(compareRelations.has(relation), `comparison relation must be >, >=, <, <= or ===, got ${String(relation)}`)
+  let left = compareOperand(circuit, a)
+  let right = compareOperand(circuit, b)
+  if (relation === '<' || relation === '<=') [left, right] = [right, left]
+  const test: SignTest = relation === '>' || relation === '<'
+    ? 'greater'
+    : relation === '===' ? 'equal' : 'atLeast'
+  if (left.wire === undefined && right.wire === undefined) {
+    const holds = test === 'greater'
+      ? left.value > right.value
+      : test === 'atLeast' ? left.value >= right.value : left.value === right.value
+    return circuit.affine([], holds ? 1 : 0)
+  }
+  for (const operand of [left, right]) {
+    const {minimum, maximum} = operand.range
+    if (!(Number.isFinite(minimum) && Number.isFinite(maximum))) {
+      invariant(false, `emitCompare needs finite declared ranges on both operands, got ${minimum}..${maximum}`)
+    }
+  }
+  // A wire equals itself for every value its finite declared range allows. This
+  // comes after the range check, since a wire with an open range can be NaN,
+  // e.g. Infinity × 0, and NaN >= NaN is false.
+  if (left.wire === right.wire) return circuit.affine([], test === 'greater' ? 0 : 1)
+  const differenceBound = Math.max(
+    Math.abs(left.range.maximum - right.range.minimum),
+    Math.abs(left.range.minimum - right.range.maximum),
+  )
+  // Rounding is monotone, so every f(a - b) stays within f(differenceBound).
+  invariant(
+    Number.isFinite(Math.fround(differenceBound)),
+    'the difference of the declared operand ranges can overflow FP32',
+  )
+  const terms: [wire: Wire, coefficient: number][] = []
+  if (left.wire !== undefined) terms.push([left.wire, 1])
+  if (right.wire !== undefined) terms.push([right.wire, -1])
+  // At most one side is a constant, so the bias is exactly that constant or its negation.
+  const bias = left.value - right.value
+  const endWithBoolean = options.endWithBoolean === true
+  const bit = emitGridCompare(circuit, left, right, terms, bias, test, endWithBoolean)
+    ?? emitCascadeCompare(circuit, terms, bias, Math.fround(differenceBound), test, endWithBoolean)
+  circuit.assumeRange(bit, 0, 1)
+  circuit.assumeGrid(bit, 1)
+  // Both constructions end with an operation, a ReGLU product or a boolean atom.
+  if (bit >= circuit.sourceSize) circuit.operations[bit - circuit.sourceSize]!.comparisonBit = true
+  return bit
+}
+
+function compareOperand(circuit: Circuit, operand: Wire): CompareOperand {
+  assertWire(operand, circuit.sourceSize + circuit.operations.length)
+  const constant = circuit.constants[operand]
+  if (constant !== undefined) {
+    // A constant wire holds f(bias).
+    const value = Math.fround(constant)
+    invariant(Number.isFinite(value), 'a constant comparison operand must be finite')
+    return constantOperand(value)
+  }
+  return {wire: operand, value: 0, range: circuit.ranges[operand]!, grid: circuit.grids[operand]}
+}
+
+function constantOperand(value: number): CompareOperand {
+  // -0 and +0 compare equal, so a zero constant becomes +0.
+  const normalized = value === 0 ? 0 : value
+  return {
+    wire: undefined,
+    value: normalized,
+    range: {minimum: normalized, maximum: normalized},
+    grid: normalized === 0 ? Number.POSITIVE_INFINITY : lowestPowerOfTwo(normalized),
+  }
+}
+
+// Integer bits for operands on grids. D = (a - b) / grid is an integer, and
+// every product and partial sum below is an integer number of grid steps within
+// 2^24, so nothing rounds, and float64, reordered or fused sums give the same
+// bits (lab/ui-exploration/guide/examples/comparisons/rewrites.ts measured this
+// for relu(D + 1) - relu(D)). Returns undefined when an operand has no grid or
+// the ranges are too wide, and emitCompare then builds a sign cascade.
+function emitGridCompare(
+  circuit: Circuit,
+  left: CompareOperand,
+  right: CompareOperand,
+  terms: Terms,
+  bias: number,
+  test: SignTest,
+  endWithBoolean: boolean,
+): Wire | undefined {
+  if (left.grid === undefined || right.grid === undefined) return undefined
+  const grid = Math.min(left.grid, right.grid)
+  // The largest partial sum of sign × D + offset in stored order, bias first,
+  // in grid steps. Every partial sum is an integer number of grid steps, so a
+  // float64 bound that is at most a power of two can't hide a larger integer.
+  const largestSteps = (sign: number, offset: number) => largestPartialSum(
+    terms.map(([wire, coefficient]) => [wire, sign * coefficient / grid]),
+    sign * bias / grid + offset,
+    circuit.ranges,
+  )
+  const emitted: Wire[] = []
+  let bit: Wire
+  if (endWithBoolean) {
+    // text-editing's one-atom integer comparison: the score
+    // 0.5 + (D - offset) × 2^-24, added bias first, is a multiple of 2^-24 within
+    // 0.25..0.75 while every partial sum stays within 2^22 grid steps, which FP32
+    // represents exactly. So D = 0 scores exactly 0.5 and rounds to 1, and
+    // D = -1 scores 0.5 - 2^-24 and rounds to 0.
+    const scoreScale = 2 ** -24 / grid
+    const fits = test === 'equal'
+      ? largestSteps(1, 0) <= 2 ** 22 && largestSteps(-1, 0) <= 2 ** 22
+      : largestSteps(1, test === 'greater' ? -1 : 0) <= 2 ** 22
+    if (!(fits && scoreScale >= smallestGrid && scoreScale <= largestGrid)) return undefined
+    const emitAtom = (sign: number, offset: number) => {
+      const atom = circuit.append(
+        'boolean',
+        terms.map(([wire, coefficient]) => [wire, sign * coefficient * scoreScale]),
+        0.5 + (sign * bias / grid - offset) * 2 ** -24,
+        [],
+        0,
+        {preserveRounding: true},
+      )
+      emitted.push(atom)
+      return atom
+    }
+    if (test === 'equal') {
+      bit = circuit.reglu([], 1, [[emitAtom(1, 0), 1], [emitAtom(-1, 0), 1]], -1)
+      emitted.push(bit)
+    } else {
+      bit = emitAtom(1, test === 'greater' ? 1 : 0)
+    }
+  } else {
+    const scale = 1 / grid
+    // The bit's own sum, 1 - ramp, adds one more step.
+    const fits = test === 'equal'
+      ? largestSteps(1, 0) < exactGridSteps && largestSteps(-1, 0) < exactGridSteps
+      : largestSteps(-1, test === 'greater' ? 1 : 0) < exactGridSteps
+    if (!(fits && scale <= largestGrid)) return undefined
+    // relu(sign × D + offset), reading the operand wires as written.
+    bit = emitIntegerBit(circuit, test, emitted, (sign, offset) => circuit.append(
+      'reglu',
+      [],
+      1,
+      terms.map(([wire, coefficient]) => [wire, sign * coefficient * scale]),
+      sign * bias / grid + offset,
+      {preserveRounding: true},
+    ))
+  }
+  for (const wire of emitted) recordRoundingPoint(circuit, wire, 'integer bit')
+  return bit
+}
+
+// The largest magnitude of any product or partial sum of bias + Σ coefficient ×
+// operand, added in stored order, from the declared operand ranges.
+function largestPartialSum(terms: Terms, bias: number, ranges: readonly NumericRange[]) {
+  let minimum = bias
+  let maximum = bias
+  let largest = Math.abs(bias)
+  for (const [wire, coefficient] of terms) {
+    const range = ranges[wire]!
+    const low = coefficient >= 0 ? coefficient * range.minimum : coefficient * range.maximum
+    const high = coefficient >= 0 ? coefficient * range.maximum : coefficient * range.minimum
+    minimum += low
+    maximum += high
+    largest = Math.max(largest, Math.abs(low), Math.abs(high), Math.abs(minimum), Math.abs(maximum))
+  }
+  return largest
+}
+
+// The exact bit of D > 0, D >= 0 or D === 0, when every value of D is 0 or at
+// least 1 away from 0, e.g. an integer. emitRamp(sign, offset) builds
+// relu(sign × D + offset):
+// - D >= 0 is relu(1 - relu(-D)), which equals relu(D + 1) - relu(D) there.
+// - D > 0 is relu(1 - relu(1 - D)).
+// - D === 0 is relu(1 - relu(D) - relu(-D)).
+// The bit is a ReGLU product rather than a sum of ReLUs, so readers can't copy
+// large ReLU values into their own sums, the pitfall lab/ui-exploration/input
+// and lists hit with the sum form.
+function emitIntegerBit(
+  circuit: Circuit,
+  test: SignTest,
+  emitted: Wire[],
+  emitRamp: (sign: number, offset: number) => Wire,
+): Wire {
+  const ramps = test === 'equal'
+    ? [emitRamp(1, 0), emitRamp(-1, 0)]
+    : [emitRamp(-1, test === 'greater' ? 1 : 0)]
+  const bit = circuit.reglu([], 1, ramps.map(ramp => [ramp, -1]), 1)
+  emitted.push(...ramps, bit)
+  return bit
+}
+
+// Every nonzero FP32 difference, down to 2^-149, lifted to at least 1.
+const fullLiftExponent = 149
+// Every nonzero FP32 difference lifted to at least 2^-45, which a final
+// rounding stage with scale 2^22 resolves.
+const roundingStageLiftExponent = 104
+
+type CascadeStage = {scale: number, limit: number}
+
+// Stages of min(limit, scale × input), ported from planSignCascade in
+// lab/ui-exploration/guide/examples/comparisons/sign-cascade.ts. Multiplying by
+// a power of two only changes the exponent, and min(limit, x) = x - relu(x - limit)
+// is exact while x is at most 2^24 × limit, since x - limit is an FP32 value
+// there. So the first stage multiplies as far as the difference bound allows,
+// each later stage by up to 2^24, until the product of the scales reaches
+// 2^liftExponent. A bound above 2^24 first comes down by up to 2^24 per stage
+// without multiplying, since multiplying by less than 1 would round the smallest
+// differences to 0. E.g. a bound of 16,384 with liftExponent 149 gives scales
+// 2^10, 2^24, 2^24, 2^24, 2^24, 2^24 and 2^19, all with limit 1. Any finite
+// bound needs at most 12 stages.
+function planSignCascade(differenceBound: number, liftExponent: number): CascadeStage[] {
+  const boundExponent = powerOfTwoExponentAtLeast(Math.max(differenceBound, smallestGrid))
+  const stages: CascadeStage[] = []
+  let limitExponent = boundExponent
+  let gainExponent = 0
+  while (stages.length === 0 || limitExponent > 0 || gainExponent < liftExponent) {
+    const nextLimitExponent = Math.max(0, limitExponent - 24)
+    // A coefficient above 2^127 isn't an FP32 value, e.g. for a bound below 2^-103.
+    const room = Math.min(127, 24 + nextLimitExponent - limitExponent)
+    const scaleExponent = Math.min(room, Math.max(0, liftExponent - gainExponent))
+    stages.push({scale: 2 ** scaleExponent, limit: 2 ** nextLimitExponent})
+    limitExponent = nextLimitExponent
+    gainExponent += scaleExponent
+  }
+  return stages
+}
+
+// The smallest integer e with 2^e >= value, for a finite positive value.
+function powerOfTwoExponentAtLeast(value: number) {
+  let exponent = Math.ceil(Math.log2(value))
+  while (2 ** exponent < value) exponent++
+  while (2 ** (exponent - 1) >= value) exponent--
+  return exponent
+}
+
+// The sign cascade on d = f(a - b), ported from
+// lab/ui-exploration/guide/examples/comparisons/sign-cascade.ts, which checked
+// it against JavaScript over every class of FP32 difference and found no stage
+// operation that rounds. lab/trace-compiler's exactPositiveBit is the same idea
+// with each multiplication as its own operation. The final stage here is one or
+// two ReGLU products, e.g. relu(1 - scale × stage) for a >= b, instead of a
+// clamp and a negation.
+function emitCascadeCompare(
+  circuit: Circuit,
+  terms: Terms,
+  bias: number,
+  differenceBound: number,
+  test: SignTest,
+  endWithBoolean: boolean,
+): Wire {
+  const emitted: Wire[] = []
+  // For finite FP32 operands, f(a - b) is 0 exactly when a === b, and otherwise
+  // has the sign of a - b, since subnormal values fill the gap next to 0. A
+  // comparison against 0 reads its operand directly.
+  let difference: Wire
+  let differenceSign: number
+  if (bias === 0 && terms.length === 1) {
+    ;[difference, differenceSign] = terms[0]!
+  } else {
+    difference = circuit.roundAffine(terms, bias)
+    differenceSign = 1
+    emitted.push(difference)
+  }
+  const stages = planSignCascade(differenceBound, endWithBoolean ? roundingStageLiftExponent : fullLiftExponent)
+  // After clamp stage k, the output is min(limit_k, scale_1 × ... × scale_k ×
+  // relu(sign × d)).
+  const emitClampStages = (sign: number, clampStages: readonly CascadeStage[]) => {
+    let stageOutput = difference
+    clampStages.forEach(({scale, limit}, index) => {
+      let scaledTerm: [wire: Wire, coefficient: number]
+      let aboveLimit: Wire
+      if (index === 0) {
+        // The first stage reads the signed difference as written, and keeps only its positive side.
+        const gateTerms: Terms = [[difference, sign * differenceSign * scale]]
+        const scaledPositive = circuit.append('reglu', [], 1, gateTerms, 0, {preserveRounding: true})
+        aboveLimit = circuit.append('reglu', [], 1, gateTerms, -limit, {preserveRounding: true})
+        scaledTerm = [scaledPositive, 1]
+        emitted.push(scaledPositive)
+      } else {
+        aboveLimit = circuit.reglu([], 1, [[stageOutput, scale]], -limit)
+        scaledTerm = [stageOutput, scale]
+      }
+      // Its own operation: copied into the next stage, the regrouped partial sums would round.
+      stageOutput = circuit.roundAffine([scaledTerm, [aboveLimit, -1]])
+      circuit.assumeRange(stageOutput, 0, limit)
+      emitted.push(aboveLimit, stageOutput)
+    })
+    return stageOutput
+  }
+  let bit: Wire
+  if (endWithBoolean) {
+    // numeric-library's final rounding stage: the clamp stages lift every
+    // positive difference to at least 2^-45, and 2^22 × 2^-45 moves a score
+    // next to 0.5 across 0.5.
+    const scoreScale = 2 ** 22
+    if (test === 'greater') {
+      const stageOutput = emitClampStages(1, stages)
+      // The FP32 value just below 0.5, so d = 0 rounds to 0.
+      const justBelowHalf = 0.5 - 2 ** -25
+      const scoreAboveZero = circuit.reglu([], 1, [[stageOutput, scoreScale]], justBelowHalf)
+      const scoreAboveOne = circuit.reglu([], 1, [[stageOutput, scoreScale]], justBelowHalf - 1)
+      const score = circuit.affine([[scoreAboveZero, 1], [scoreAboveOne, -1]])
+      circuit.assumeRange(score, 0, 1)
+      emitted.push(scoreAboveZero, scoreAboveOne)
+      bit = circuit.boolean(score)
+    } else {
+      // a >= b scores 0.5 - 2^22 × (the stages lifting b - a), and equality also
+      // subtracts the stages lifting a - b. The score stays within 0..0.5, so it
+      // needs no upper clamp.
+      const gateTerms: [wire: Wire, coefficient: number][] = [[emitClampStages(-1, stages), -scoreScale]]
+      if (test === 'equal') gateTerms.push([emitClampStages(1, stages), -scoreScale])
+      const score = circuit.reglu([], 1, gateTerms, 0.5)
+      emitted.push(score)
+      bit = circuit.boolean(score)
+    }
+    emitted.push(bit)
+  } else {
+    const finalScale = stages.at(-1)!.scale
+    const clampStages = stages.slice(0, -1)
+    if (clampStages.length === 0) {
+      // One stage lifts the signed difference itself, so D = scale × d is 0 or at least 1 away from 0.
+      bit = emitIntegerBit(circuit, test, emitted, (sign, offset) => circuit.append(
+        'reglu',
+        [],
+        1,
+        [[difference, sign * differenceSign * finalScale]],
+        offset,
+        {preserveRounding: true},
+      ))
+    } else if (test === 'greater') {
+      // scale × stage is 0 when d <= 0, and at least 1 when d > 0.
+      const notGreater = circuit.reglu([], 1, [[emitClampStages(1, clampStages), -finalScale]], 1)
+      bit = circuit.reglu([], 1, [[notGreater, -1]], 1)
+      emitted.push(notGreater, bit)
+    } else {
+      const gateTerms: [wire: Wire, coefficient: number][] = [[emitClampStages(-1, clampStages), -finalScale]]
+      if (test === 'equal') gateTerms.push([emitClampStages(1, clampStages), -finalScale])
+      bit = circuit.reglu([], 1, gateTerms, 1)
+      emitted.push(bit)
+    }
+  }
+  for (const wire of emitted) recordRoundingPoint(circuit, wire, 'sign cascade')
+  return bit
+}
+
+// Math.min(a, b) as exactly one of the operands, e.g. 0.3 for min(1000.37, 0.3),
+// where emitMinimum rebuilds the result through a rounded difference and
+// returns 0.29998779. Ties return a, so the result differs from Math.min at
+// most in the sign of zero. Needs finite declared ranges, like emitCompare.
+// Ported from lab/ui-exploration/numeric-library/comparison.ts.
+export function emitMinimumExact(circuit: Circuit, a: Wire, b: Wire): Wire {
+  const aIsSmaller = emitCompare(circuit, a, '<=', b)
+  const aRange = compareOperand(circuit, a).range
+  const bRange = compareOperand(circuit, b).range
+  return emitSelectOperand(
+    circuit,
+    aIsSmaller,
+    b,
+    a,
+    Math.min(aRange.minimum, bRange.minimum),
+    Math.min(aRange.maximum, bRange.maximum),
+  )
+}
+
+// Math.max(a, b) as exactly one of the operands. Ties return a.
+export function emitMaximumExact(circuit: Circuit, a: Wire, b: Wire): Wire {
+  const aIsLarger = emitCompare(circuit, a, '>=', b)
+  const aRange = compareOperand(circuit, a).range
+  const bRange = compareOperand(circuit, b).range
+  return emitSelectOperand(
+    circuit,
+    aIsLarger,
+    b,
+    a,
+    Math.max(aRange.minimum, bRange.minimum),
+    Math.max(aRange.maximum, bRange.maximum),
+  )
+}
+
+// Math.min(Math.max(value, minimum), maximum), e.g. maximum when minimum > maximum.
+export function emitClampExact(circuit: Circuit, value: Wire, minimum: Wire, maximum: Wire): Wire {
+  return emitMinimumExact(circuit, emitMaximumExact(circuit, value, minimum), maximum)
+}
+
+// on × relu(bit) + off × relu(1 - bit) for an exact bit. The unselected product
+// is f(off × 0) = ±0, so the sum returns the selected operand exactly, up to the
+// sign of zero. The sum is an ordinary affine, so an affine reader composes it
+// without changing any value. Ported from emitSelectBit in
+// lab/ui-exploration/numeric-library/comparison.ts.
+function emitSelectOperand(
+  circuit: Circuit,
+  bit: Wire,
+  off: Wire,
+  on: Wire,
+  minimum: number,
+  maximum: number,
+): Wire {
+  const selectedOn = circuit.reglu([[on, 1]], 0, [[bit, 1]], 0)
+  const selectedOff = circuit.reglu([[off, 1]], 0, [[bit, -1]], 1)
+  const result = circuit.affine([[selectedOn, 1], [selectedOff, 1]])
+  circuit.assumeRange(result, minimum, maximum)
+  return result
+}
+
 export function emitSpring(
   circuit: Circuit,
   positionSource: Wire,
@@ -1215,6 +2318,210 @@ export function emitSpring(
   return {
     position: emitSelect(circuit, active, destination, position),
     velocity: emitMultiply(circuit, active, velocity),
+    active,
+  }
+}
+
+// The 4 cells of a spring matrix that the host writes before each evaluation,
+// once per stiffness and damping pair, e.g.
+// springMatrixPower(springStepMatrix({stiffness: 290, damping: 30}), steps) from
+// host-timing.ts:
+//   displacement' = m[0] × displacement + m[1] × velocity
+//   velocity'     = m[2] × displacement + m[3] × velocity
+export type SpringMatrixWires = readonly [
+  displacementFromDisplacement: Wire,
+  displacementFromVelocity: Wire,
+  velocityFromDisplacement: Wire,
+  velocityFromVelocity: Wire,
+]
+
+// One spring's displacement from its destination and its velocity after every
+// step the matrix describes, e.g. all of one evaluation's 4 ms steps at once. The
+// matrix cells need finite declared ranges, e.g. ±springMatrixBound(constants)
+// from host-timing.ts, so a host that writes an overflowing matrix fails the
+// source range check instead of stepping springs to Infinity. Each product goes
+// through circuit.multiply, so the backward pass differentiates whole products,
+// including at a matrix entry of exactly 0. Cost: 14 operations in 3 layers.
+// Ported from emitApplyMatrix in lab/ui-exploration/guide/examples/springs/costs.ts
+// and spring-bank's source-matrix springs.
+export function emitApplySpringMatrix(
+  circuit: Circuit,
+  matrix: SpringMatrixWires,
+  displacement: Wire,
+  velocity: Wire,
+): {displacement: Wire, velocity: Wire} {
+  // JavaScript callers can pass any array.
+  const entryCount: number = matrix.length
+  invariant(entryCount === 4, `a spring matrix needs 4 wires, got ${entryCount}`)
+  for (const entry of matrix) {
+    assertWire(entry, circuit.sourceSize + circuit.operations.length)
+    invariant(hasFiniteRange(circuit, entry), 'spring matrix wires need finite declared ranges, e.g. ±springMatrixBound(constants)')
+  }
+  return {
+    displacement: circuit.roundAffine([
+      [circuit.multiply(matrix[0], displacement), 1],
+      [circuit.multiply(matrix[1], velocity), 1],
+    ]),
+    velocity: circuit.roundAffine([
+      [circuit.multiply(matrix[2], displacement), 1],
+      [circuit.multiply(matrix[3], velocity), 1],
+    ]),
+  }
+}
+
+export type AnimatedSpring = {
+  matrix: SpringMatrixWires
+  // The spring's displacement from destinationDuringSteps, usually a state cell
+  // that the previous evaluation wrote back, e.g. 0 for a spring at rest.
+  displacement: Wire
+  velocity: Wire
+  // The destination from this evaluation's time on, after its events.
+  destination: Wire
+  // The destination the stored displacement is measured from, i.e. the one in
+  // effect during this evaluation's steps, usually the state cell that holds the
+  // destination the previous evaluation wrote back. The steps simulate time before
+  // this evaluation's events, so they pull toward it. Omit it when this evaluation
+  // can't change the destination, and the steps then pull toward `destination`.
+  destinationDuringSteps?: Wire
+}
+
+export type AnimatedObjectOptions = {
+  // An exact bit the host writes: 1 when this evaluation ends at a fixed
+  // simulated settle time, e.g. PlannedEvaluation.settleCheck from host-timing.ts,
+  // and 0 otherwise. The object can only settle when it is 1, so whether a
+  // spring settles doesn't depend on which step counts the frames land on.
+  settleCheck: Wire
+  // An exact bit that pins every spring onto its destination with zero velocity,
+  // e.g. while the user drags the object, or PlannedEvaluation.snap from
+  // host-timing.ts when a frame would need more steps than its cap.
+  snap?: Wire
+  // index.ts's thresholds, 0.01 px and 0.01 px/s by default. Each must be at
+  // least 2^-22, see below.
+  settleDistance?: number
+  settleSpeed?: number
+}
+
+export type AnimatedObject = {
+  // Next state for each spring: its displacement from `destination` after this
+  // evaluation, and its velocity. Write both back, and `destination` as the next
+  // evaluation's destinationDuringSteps.
+  displacements: Wire[]
+  velocities: Wire[]
+  // What to draw, destination + displacement, rounded once at the destination's
+  // magnitude. Not state, so this rounding never builds up.
+  positions: Wire[]
+  // 1 when this evaluation checks settling and every spring is within both
+  // thresholds, or when every spring is exactly at rest, i.e. every displacement
+  // and velocity is ±0, e.g. right after a snap.
+  settled: Wire
+  // 1 while the object keeps moving: not settled and not snapped. A host stops
+  // the clock once every object's active bit is 0.
+  active: Wire
+}
+
+// Springs of one animated object, e.g. a window's x, y, width, height and scale,
+// stepped by their matrices and settled together with one exact bit. Each spring
+// stores its displacement from its destination and its velocity rather than a
+// position, so FP32 rounds the state at the size of the displacement, e.g. finely
+// near rest even at 100,000 px, where positions are 1/128 px apart. When the object
+// settles or snaps, every displacement and velocity becomes 0, up to the sign of
+// zero, so every spring lands exactly on its destination. Ported from
+// spring-bank's emitSpringBox with deferred retargeting, and from the displacement
+// cells of lab/ui-exploration/gallery's kit.ts.
+//
+// For each spring:
+//   (displacement', velocity') = matrix × (displacement, velocity)
+//   displacement'' = f(f(destinationDuringSteps - destination) + displacement')
+// The second line rebases the displacement onto this evaluation's destination. It
+// adds the destination difference first, so an unchanged destination adds exactly
+// 0 and returns displacement' unchanged, and rounding happens once per retarget
+// instead of once per evaluation.
+//
+// exceedance is the sum over springs of relu(|displacement''| - distance) and
+// relu(|velocity'| - speed). A sum of nonnegative FP32 values is 0 only when every
+// term is 0, so exceedance is 0 exactly when every spring is within both
+// thresholds, e.g. |displacement''| <= f(0.01). atRest is 1 when every
+// displacement'' and velocity' is ±0. Then settled = boolean(relu(0.5 ×
+// settleCheck + 0.5 × atRest - 2^20 × exceedance)). A nonzero
+// relu(|displacement''| - distance) is at least the FP32 spacing above the
+// threshold, 2^-45 or more for thresholds of at least 2^-22, so 2^20 × exceedance
+// moves the score below 0.5 and the atom rounds it to 0. A huge exceedance, even
+// Infinity, clamps the score at 0. Exact rest settles without a settle check,
+// since steps keep a spring at exact rest there until a destination changes,
+// whichever step counts the frames land on.
+export function emitAnimatedObject(
+  circuit: Circuit,
+  springs: readonly AnimatedSpring[],
+  options: AnimatedObjectOptions,
+): AnimatedObject {
+  invariant(springs.length > 0, 'an animated object needs at least one spring')
+  const width = circuit.sourceSize + circuit.operations.length
+  const settleDistance = Math.fround(options.settleDistance ?? 0.01)
+  const settleSpeed = Math.fround(options.settleSpeed ?? 0.01)
+  for (const threshold of [settleDistance, settleSpeed]) {
+    invariant(
+      Number.isFinite(threshold) && threshold >= 2 ** -22,
+      `settle thresholds must be finite and at least 2^-22, got ${threshold}`,
+    )
+  }
+  for (const bit of options.snap === undefined ? [options.settleCheck] : [options.settleCheck, options.snap]) {
+    assertWire(bit, width)
+    const range = circuit.ranges[bit]!
+    invariant(range.minimum >= 0 && range.maximum <= 1, 'settleCheck and snap must be declared within 0..1')
+  }
+  const exceedanceTerms: [wire: Wire, coefficient: number][] = []
+  const restTerms: [wire: Wire, coefficient: number][] = []
+  const stepped = springs.map(spring => {
+    const next = emitApplySpringMatrix(circuit, spring.matrix, spring.displacement, spring.velocity)
+    // Its own operation, so each threshold ReLU reads one FP32 value and a
+    // nonzero ReLU is at least the spacing above the threshold.
+    const displacement = spring.destinationDuringSteps === undefined || spring.destinationDuringSteps === spring.destination
+      ? next.displacement
+      : circuit.roundAffine([[spring.destinationDuringSteps, 1], [spring.destination, -1], [next.displacement, 1]])
+    for (const [value, threshold] of [[displacement, settleDistance], [next.velocity, settleSpeed]] as const) {
+      const positivePart = circuit.reglu([], 1, [[value, 1]], 0)
+      const negativePart = circuit.reglu([], 1, [[value, -1]], 0)
+      // relu(|value| - threshold), with |value| = relu(value) + relu(-value). One of
+      // the two parts is 0, so the gate adds the same FP32 values as
+      // relu(value - threshold) or relu(-value - threshold).
+      exceedanceTerms.push([circuit.reglu([], 1, [[positivePart, 1], [negativePart, 1]], -threshold), 1])
+      restTerms.push([positivePart, 2 ** 127], [negativePart, 2 ** 127])
+    }
+    return {displacement, velocity: next.velocity}
+  })
+  const exceedance = circuit.roundAffine(exceedanceTerms)
+  // Each lifted term is 0, at least 2^127 × 2^-149 = 2^-22, or Infinity, so the
+  // lifted sum is 0 exactly when every displacement'' and velocity' is ±0, and
+  // relu(1 - 2^22 × liftedRest) is the atRest bit. The terms are kept as written,
+  // since combining a repeated part would give the coefficient 2^128, which isn't
+  // an FP32 value. The lift is a ReLU rather than an affine sum, so at exact rest
+  // the backward pass stops at its corner instead of scaling gradients by 2^149.
+  const liftedRest = circuit.append('reglu', [], 1, restTerms, 0, {preserveRounding: true})
+  const atRest = circuit.reglu([], 1, [[liftedRest, -(2 ** 22)]], 1)
+  // settleCheck and atRest first, so the partial sum is exactly 0, 0.5 or 1 before
+  // the exceedance is subtracted, and 0.5 - 2^20 × 2^-45 is the FP32 value just
+  // below 0.5. At exact rest the exceedance is 0. Recorded as a rounding point,
+  // since the score only resolves next to 0.5 as FP32 values.
+  const settledScore = circuit.append(
+    'reglu',
+    [],
+    1,
+    [[options.settleCheck, 0.5], [atRest, 0.5], [exceedance, -(2 ** 20)]],
+    0,
+    {preserveRounding: true},
+  )
+  circuit.markRoundingPoint(settledScore)
+  const settled = circuit.boolean(settledScore)
+  const notSettled = circuit.roundAffine([[settled, -1]], 1)
+  const active = options.snap === undefined
+    ? notSettled
+    : circuit.multiply(notSettled, circuit.roundAffine([[options.snap, -1]], 1))
+  const displacements = stepped.map(({displacement}) => circuit.multiply(displacement, active))
+  return {
+    displacements,
+    velocities: stepped.map(({velocity}) => circuit.multiply(velocity, active)),
+    positions: springs.map((spring, index) => circuit.roundAffine([[spring.destination, 1], [displacements[index]!, 1]])),
+    settled,
     active,
   }
 }
@@ -1366,25 +2673,60 @@ export function emitFirstActive(
 }
 
 // A wire that provably holds an exact 0 or 1: its declared range pins it to
-// one of the two values, a boolean atom produced it, or it belongs to a
-// declared one-hot group (whose members are exactly 0 or 1 by contract, in
-// all-zero-allowed groups too). A plain 0..1 range is NOT enough — it admits
-// fractional values.
+// one of the two values, a boolean atom produced it, emitCompare returned it, it
+// belongs to a declared one-hot group (whose members are exactly 0 or 1 by
+// contract, in all-zero-allowed groups too), or it's an index read whose
+// reachable candidates are all proven bits, e.g. a read over a table of
+// comparison bits, where a side that reads zero adds +0, which is also a bit. A
+// plain 0..1 range is NOT enough — it admits fractional values — and neither is
+// an operation inside emitCompare, e.g. a sign cascade stage within 0..1.
 function isProvenBit(circuit: Circuit, wire: Wire): boolean {
+  // Reads of reads are followed with a stack, and each wire is checked once.
+  const pending = [wire]
+  const visited = new Set<Wire>()
+  while (pending.length > 0) {
+    const current = pending.pop()!
+    if (visited.has(current)) continue
+    visited.add(current)
+    if (isBitByConstruction(circuit, current)) continue
+    const read = current >= circuit.sourceSize ? circuit.operations[current - circuit.sourceSize]!.indexRead : undefined
+    if (read === undefined) return false
+    for (const candidate of reachableCandidates(read)) pending.push(candidate)
+  }
+  return true
+}
+
+function isBitByConstruction(circuit: Circuit, wire: Wire): boolean {
   const range = circuit.ranges[wire]!
   if (range.minimum === range.maximum && (range.minimum === 0 || range.minimum === 1)) {
     return true
   }
-  if (
-    wire >= circuit.sourceSize
-    && circuit.operations[wire - circuit.sourceSize]!.kind === 'boolean'
-  ) {
-    return true
+  if (wire >= circuit.sourceSize) {
+    const operation = circuit.operations[wire - circuit.sourceSize]!
+    if (operation.kind === 'boolean' || operation.comparisonBit === true) return true
   }
   for (const group of circuit.oneHotGroups) {
     if (group.members.includes(wire)) return true
   }
   return false
+}
+
+// The candidates an index read can return for an index within the range the
+// builder accepted, like indexReadRange. A side that reads zero adds +0 instead
+// of a candidate.
+function reachableCandidates(read: IndexRead): Wire[] {
+  const {candidates} = read.table
+  const count = candidates.length
+  const lowestPosition = Math.max(-1, Math.min(count, Math.floor(read.indexRange.minimum)))
+  const highestPosition = Math.max(-1, Math.min(count, Math.floor(read.indexRange.maximum)))
+  const reachable: Wire[] = []
+  const lastDirectPosition = Math.min(highestPosition, count - 1)
+  for (let position = Math.max(lowestPosition, 0); position <= lastDirectPosition; position++) {
+    reachable.push(candidates[position]!)
+  }
+  if (lowestPosition < 0 && read.below === 'clamp') reachable.push(candidates[0]!)
+  if (highestPosition > count - 1 && read.above === 'clamp') reachable.push(candidates[count - 1]!)
+  return reachable
 }
 
 function routeWinner(
@@ -1414,7 +2756,11 @@ export function inlineCircuit(
   for (let wire = 0; wire < source.sourceSize; wire++) {
     const range = source.ranges[wire]!
     target.assumeRange(sourceWires[wire]!, range.minimum, range.maximum)
+    const grid = source.grids[wire]
+    if (grid !== undefined) target.assumeGrid(sourceWires[wire]!, grid)
   }
+  // Map each distinct table once, so reads of one large table share one mapped array.
+  const mappedTables = new Map<CandidateTable, readonly Wire[]>()
   for (let operationIndex = 0; operationIndex < source.operations.length; operationIndex++) {
     const operation = source.operations[operationIndex]!
     const mapTerms = (terms: Terms): Terms =>
@@ -1432,6 +2778,26 @@ export function inlineCircuit(
         operation.gateBias,
         operation.preserveRounding ? {preserveRounding: true} : {},
       )
+    } else if (operation.kind === 'index') {
+      const read = operation.indexRead!
+      let mappedCandidates = mappedTables.get(read.table)
+      if (mappedCandidates === undefined) {
+        mappedCandidates = read.table.candidates.map(candidate => wireMap[candidate]!)
+        mappedTables.set(read.table, mappedCandidates)
+      }
+      // The accepted index range carries over, e.g. a range declared on a small
+      // affine index that the target infers again from undeclared cells.
+      wire = target.indexReadAffine(
+        mapTerms(operation.gateTerms),
+        operation.gateBias,
+        mappedCandidates,
+        read.below,
+        read.above,
+        {indexRange: read.indexRange},
+      )
+    } else if (operation.kind === 'boolean' && operation.preserveRounding) {
+      // emitCompare's atom on grid operands reads its score terms directly.
+      wire = target.append('boolean', mapTerms(operation.leftTerms), operation.leftBias, [], 0, {preserveRounding: true})
     } else {
       const value = operation.preserveRounding
         ? target.roundAffine(mapTerms(operation.leftTerms), operation.leftBias)
@@ -1441,6 +2807,18 @@ export function inlineCircuit(
     const sourceWire = source.sourceSize + operationIndex
     const range = source.ranges[sourceWire]!
     target.assumeRange(wire, range.minimum, range.maximum)
+    const grid = source.grids[sourceWire]
+    if (grid !== undefined) target.assumeGrid(wire, grid)
+    // A marked affine can fold into a source cell in the target, e.g. when two
+    // of its terms map to one wire, and a source cell has no operation to record.
+    if (operation.roundingPoint !== undefined && wire >= target.sourceSize) {
+      recordRoundingPoint(target, wire, operation.roundingPoint)
+    }
+    // The mapped operation computes the same values from the mapped operands, so
+    // it still holds exactly 0 or 1.
+    if (operation.comparisonBit === true && wire >= target.sourceSize) {
+      target.operations[wire - target.sourceSize]!.comparisonBit = true
+    }
     wireMap.push(wire)
   }
   // Declared one-hot groups survive inlining: the property is about runtime
@@ -1456,12 +2834,39 @@ export function inlineCircuit(
 
 export function validateCircuit(circuit: Circuit): number {
   const wireCount = circuit.sourceSize + circuit.operations.length
+  // The largest candidate wire per table, so a table read many times is scanned once.
+  const largestCandidateByTable = new Map<CandidateTable, Wire>()
   for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
     const operation = circuit.operations[operationIndex]!
     invariant(Number.isFinite(operation.leftBias), 'left bias must be finite')
     invariant(Number.isFinite(operation.gateBias), 'gate bias must be finite')
     validateTerms(operation.leftTerms, circuit.sourceSize + operationIndex)
     validateTerms(operation.gateTerms, circuit.sourceSize + operationIndex)
+    const read = operation.indexRead
+    invariant((operation.kind === 'index') === (read !== undefined), 'only index reads carry a candidate table')
+    if (read === undefined) continue
+    invariant(
+      operation.leftTerms.length === 0 && operation.leftBias === 0,
+      'an index read keeps its index form on the gate side',
+    )
+    invariant(operation.gateTerms.length > 0, 'an index read needs a runtime index')
+    invariant(
+      read.indexRange.minimum > -indexMagnitudeLimit
+        && read.indexRange.minimum <= read.indexRange.maximum
+        && read.indexRange.maximum < indexMagnitudeLimit,
+      'an index read needs an accepted index range strictly inside ±2^24',
+    )
+    invariant(read.table.candidates.length > 0, 'an index read needs at least one candidate')
+    let largestCandidate = largestCandidateByTable.get(read.table)
+    if (largestCandidate === undefined) {
+      largestCandidate = 0
+      for (const candidate of read.table.candidates) {
+        assertWire(candidate, wireCount)
+        largestCandidate = Math.max(largestCandidate, candidate)
+      }
+      largestCandidateByTable.set(read.table, largestCandidate)
+    }
+    invariant(largestCandidate < circuit.sourceSize + operationIndex, 'index read candidates must be earlier wires')
   }
   return wireCount
 }
@@ -1478,6 +2883,9 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
     seenWires[wire] = 1
   }
   const resolvedGatherSlots = new Uint8Array(program.gatherSlotCount)
+  // Explicit candidate position arrays already checked, so reads sharing one
+  // table are checked once.
+  const checkedCandidatePositions = new Set<UnsignedIndexArray>()
   let availableValues = circuit.sourceSize
   for (const layer of layers) {
     const {outputSize} = layer
@@ -1487,7 +2895,7 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
       invariant(inputIndex < availableValues, 'tensor layer input is not available')
     }
     const gateSize = layer.gateRows.length
-    const projectionSize = outputSize + gateSize
+    const projectionSize = outputSize + gateSize + layer.indexReads.length
     invariant(layer.bias.length === projectionSize, 'projection bias shape mismatch')
     const seenGateRows = new Uint8Array(outputSize)
     for (const gateRow of layer.gateRows) {
@@ -1546,6 +2954,56 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
         invariant(candidatePosition < availableValues, 'gather candidate is not available')
       }
     }
+    const seenReadRows = new Uint8Array(outputSize)
+    for (const read of layer.gatherReads) seenReadRows[read.row] = 1
+    const seenIndexRows = new Uint8Array(projectionSize)
+    for (const read of layer.indexReads) {
+      invariant(read.row < outputSize, 'index read output row is invalid')
+      invariant(seenGateRows[read.row] === 0, 'index read output row cannot be gated')
+      invariant(seenBooleanRows[read.row] === 0, 'index read output row cannot be boolean')
+      invariant(seenReadRows[read.row] === 0, 'index read output row must be unique')
+      seenReadRows[read.row] = 1
+      invariant(
+        layer.rowOffsets[read.row] === layer.rowOffsets[read.row + 1] && layer.bias[read.row] === 0,
+        'index read output row must store no weights and no bias',
+      )
+      invariant(
+        read.indexRow >= outputSize + gateSize && read.indexRow < projectionSize,
+        'index row must follow the gate rows',
+      )
+      invariant(seenIndexRows[read.indexRow] === 0, 'index row must be unique')
+      seenIndexRows[read.indexRow] = 1
+      invariant(
+        layer.rowOffsets[read.indexRow]! < layer.rowOffsets[read.indexRow + 1]!,
+        'index row must read a runtime index',
+      )
+      invariant(
+        Number.isInteger(read.candidateCount) && read.candidateCount > 0,
+        'index read needs at least one candidate',
+      )
+      if (read.candidatePositions.length === 0) {
+        // Evenly spaced positions lie between the first and the last, so both
+        // ends being available covers every candidate.
+        const lastPosition = read.candidateBase + (read.candidateCount - 1) * read.candidateStride
+        invariant(
+          Number.isInteger(read.candidateBase)
+            && Number.isInteger(read.candidateStride)
+            && read.candidateBase >= 0
+            && read.candidateBase < availableValues
+            && lastPosition >= 0
+            && lastPosition < availableValues,
+          'evenly spaced index read candidates are not available',
+        )
+      } else {
+        invariant(read.candidatePositions.length === read.candidateCount, 'index read candidate table size mismatch')
+        if (!checkedCandidatePositions.has(read.candidatePositions)) {
+          for (const candidatePosition of read.candidatePositions) {
+            invariant(candidatePosition < availableValues, 'index read candidate is not available')
+          }
+          checkedCandidatePositions.add(read.candidatePositions)
+        }
+      }
+    }
     assertFiniteValues(layer.bias, 'projection bias')
     assertFiniteValues(layer.weights, 'projection matrix')
     for (let row = 0; row < outputSize; row++) {
@@ -1583,6 +3041,53 @@ export function validateOneHotGroups(circuit: Circuit, values: Float32Array) {
     }
     if (!(mass === 1 || (group.allowAllZero && mass === 0))) {
       invariant(false, `one-hot group must have exactly one active member, got mass ${mass}`)
+    }
+  }
+}
+
+// Check the promise behind every index read against evaluated wire values: the
+// index form holds an integer within the range the builder accepted, including
+// a range declared on the index wire, so floor changes nothing and the read
+// equals a one-hot masked sum over the same table. E.g. an index built as
+// scrollTop / 28 fails here at scrollTop 14. Meant for tests; the evaluators
+// never pay this cost on their own.
+export function validateIndexReads(circuit: Circuit, values: Float32Array) {
+  invariant(
+    values.length === circuit.sourceSize + circuit.operations.length,
+    'index read validation needs the full wire values',
+  )
+  for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
+    const operation = circuit.operations[operationIndex]!
+    if (operation.kind !== 'index') continue
+    const index = evaluateTerms(values, operation.gateTerms, operation.gateBias)
+    const range = operation.indexRead!.indexRange
+    if (!(Number.isInteger(index) && index >= range.minimum && index <= range.maximum)) {
+      invariant(
+        false,
+        `index read wire ${circuit.sourceSize + operationIndex} needs an integer index within `
+          + `${range.minimum}..${range.maximum}, got ${index}`,
+      )
+    }
+  }
+}
+
+// Check every declared or inferred grid against evaluated wire values: each
+// wire with a grid holds a finite multiple of it. E.g. a pointer cell declared
+// on a 1/64 grid fails here at 100.01. Inferred grids rest on the declared grids
+// and ranges of their operands, so one false declaration can fail many wires.
+// Meant for tests; the evaluators never pay this cost on their own.
+export function validateGrids(circuit: Circuit, values: Float32Array) {
+  invariant(
+    values.length === circuit.sourceSize + circuit.operations.length,
+    'grid validation needs the full wire values',
+  )
+  for (let wire = 0; wire < values.length; wire++) {
+    const grid = circuit.grids[wire]
+    if (grid === undefined) continue
+    const value = values[wire]!
+    // Dividing by a power of two is exact in float64 for these magnitudes.
+    if (!(Number.isFinite(value) && Number.isInteger(value / grid))) {
+      invariant(false, `wire ${wire} must be a multiple of ${grid}, got ${value}`)
     }
   }
 }

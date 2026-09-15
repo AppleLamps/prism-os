@@ -1,0 +1,857 @@
+{
+  "runtime": "Node v23.10.0 (Dawn)",
+  "adapter": {
+    "subgroupMatrixConfigs": []
+  },
+  "probeSummary": {
+    "contraction / one expression": {
+      "strict": 0,
+      "optimized": 8,
+      "other": 0
+    },
+    "contraction / let": {
+      "strict": 0,
+      "optimized": 8,
+      "other": 0
+    },
+    "contraction / var": {
+      "strict": 0,
+      "optimized": 8,
+      "other": 0
+    },
+    "contraction / runtime zero": {
+      "strict": 0,
+      "optimized": 8,
+      "other": 0
+    },
+    "contraction / max guard": {
+      "strict": 8,
+      "optimized": 0,
+      "other": 0
+    },
+    "reordering / one expression": {
+      "strict": 2,
+      "optimized": 0,
+      "other": 0
+    },
+    "reordering / let": {
+      "strict": 2,
+      "optimized": 0,
+      "other": 0
+    },
+    "reordering / var": {
+      "strict": 2,
+      "optimized": 0,
+      "other": 0
+    },
+    "reordering / max guard": {
+      "strict": 2,
+      "optimized": 0,
+      "other": 0
+    },
+    "boolean atom / one expression": {
+      "strict": 0,
+      "optimized": 2,
+      "other": 0
+    },
+    "boolean atom / let": {
+      "strict": 0,
+      "optimized": 2,
+      "other": 0
+    },
+    "boolean atom / var": {
+      "strict": 0,
+      "optimized": 2,
+      "other": 0
+    },
+    "boolean atom / max guard": {
+      "strict": 2,
+      "optimized": 0,
+      "other": 0
+    }
+  },
+  "results": [
+    {
+      "workload": "IndirectOS ownership map, 1280×800 pixels",
+      "guard": "none",
+      "instanceRows": 458,
+      "sharedRows": 116,
+      "shaderStatements": 510,
+      "shaderBytes": 22391,
+      "exposure": {
+        "inexactProducts": 69,
+        "additions": 468,
+        "guards": 0,
+        "booleanRows": 28,
+        "gatherReads": 8
+      },
+      "comparedOutputs": 2048000,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 10.8,
+      "instanceSourceBytes": 8192000,
+      "instanceSourceUploadMilliseconds": 1.8,
+      "medianCpuMilliseconds": 302.61,
+      "medianGpuMilliseconds": 1.42
+    },
+    {
+      "workload": "life-calendar, 27,393 cells",
+      "guard": "none",
+      "instanceRows": 63,
+      "sharedRows": 1991,
+      "shaderStatements": 74,
+      "shaderBytes": 3951,
+      "exposure": {
+        "inexactProducts": 12,
+        "additions": 55,
+        "guards": 0,
+        "booleanRows": 4,
+        "gatherReads": 0
+      },
+      "comparedOutputs": 547860,
+      "mismatches": 266476,
+      "maximumDifference": 687.18896484375,
+      "shaderCompileMilliseconds": 1.4,
+      "instanceSourceBytes": 109572,
+      "instanceSourceUploadMilliseconds": 0.81,
+      "medianCpuMilliseconds": 2.27,
+      "medianGpuMilliseconds": 0.68
+    },
+    {
+      "workload": "candidate-gallery, 256 viewport widths",
+      "guard": "none",
+      "instanceRows": 111,
+      "sharedRows": 25,
+      "shaderStatements": 303,
+      "shaderBytes": 11204,
+      "exposure": {
+        "inexactProducts": 29,
+        "additions": 141,
+        "guards": 0,
+        "booleanRows": 2,
+        "gatherReads": 26
+      },
+      "comparedOutputs": 15104,
+      "mismatches": 1130,
+      "maximumDifference": 0.00006103515625,
+      "shaderCompileMilliseconds": 3,
+      "instanceSourceBytes": 1024,
+      "instanceSourceUploadMilliseconds": 0.49,
+      "medianCpuMilliseconds": 0.8,
+      "medianGpuMilliseconds": 0.59
+    },
+    {
+      "workload": "candidate-gallery, 256×256 width × height grid",
+      "guard": "none",
+      "instanceRows": 135,
+      "sharedRows": 1,
+      "shaderStatements": 328,
+      "shaderBytes": 11855,
+      "exposure": {
+        "inexactProducts": 44,
+        "additions": 157,
+        "guards": 0,
+        "booleanRows": 2,
+        "gatherReads": 26
+      },
+      "comparedOutputs": 3866624,
+      "mismatches": 327231,
+      "maximumDifference": 0.000244140625,
+      "shaderCompileMilliseconds": 2.7,
+      "instanceSourceBytes": 524288,
+      "instanceSourceUploadMilliseconds": 0.54,
+      "medianCpuMilliseconds": 13.32,
+      "medianGpuMilliseconds": 1.38
+    },
+    {
+      "workload": "SDF shapes, 560×360 pixels",
+      "guard": "none",
+      "instanceRows": 756,
+      "sharedRows": 591,
+      "shaderStatements": 762,
+      "shaderBytes": 32293,
+      "exposure": {
+        "inexactProducts": 297,
+        "additions": 490,
+        "guards": 0,
+        "booleanRows": 6,
+        "gatherReads": 0
+      },
+      "comparedOutputs": 1612800,
+      "mismatches": 45241,
+      "maximumDifference": 0.00164794921875,
+      "shaderCompileMilliseconds": 8.6,
+      "instanceSourceBytes": 1612800,
+      "instanceSourceUploadMilliseconds": 0.6,
+      "medianCpuMilliseconds": 94.08,
+      "medianGpuMilliseconds": 1.04
+    },
+    {
+      "workload": "random circuit 1, 256 instances",
+      "guard": "none",
+      "instanceRows": 5,
+      "sharedRows": 560,
+      "shaderStatements": 87,
+      "shaderBytes": 6902,
+      "exposure": {
+        "inexactProducts": 4,
+        "additions": 4,
+        "guards": 0,
+        "booleanRows": 0,
+        "gatherReads": 1
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 1.9,
+      "instanceSourceBytes": 4096,
+      "instanceSourceUploadMilliseconds": 0.64,
+      "medianCpuMilliseconds": 0.25,
+      "medianGpuMilliseconds": 0.35
+    },
+    {
+      "workload": "random circuit 2, 256 instances",
+      "guard": "none",
+      "instanceRows": 434,
+      "sharedRows": 16,
+      "shaderStatements": 604,
+      "shaderBytes": 25959,
+      "exposure": {
+        "inexactProducts": 207,
+        "additions": 392,
+        "guards": 0,
+        "booleanRows": 28,
+        "gatherReads": 14
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 3720,
+      "maximumDifference": 6311248128,
+      "shaderCompileMilliseconds": 5.8,
+      "instanceSourceBytes": 6144,
+      "instanceSourceUploadMilliseconds": 0.6,
+      "medianCpuMilliseconds": 3.02,
+      "medianGpuMilliseconds": 0.69
+    },
+    {
+      "workload": "random circuit 3, 256 instances",
+      "guard": "none",
+      "instanceRows": 405,
+      "sharedRows": 34,
+      "shaderStatements": 580,
+      "shaderBytes": 25032,
+      "exposure": {
+        "inexactProducts": 202,
+        "additions": 357,
+        "guards": 0,
+        "booleanRows": 27,
+        "gatherReads": 16
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 429,
+      "maximumDifference": 137438953472,
+      "shaderCompileMilliseconds": 8,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.66,
+      "medianCpuMilliseconds": 2.77,
+      "medianGpuMilliseconds": 0.69
+    },
+    {
+      "workload": "random circuit 4, 256 instances",
+      "guard": "none",
+      "instanceRows": 523,
+      "sharedRows": 28,
+      "shaderStatements": 732,
+      "shaderBytes": 30902,
+      "exposure": {
+        "inexactProducts": 246,
+        "additions": 463,
+        "guards": 0,
+        "booleanRows": 36,
+        "gatherReads": 21
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 1969,
+      "maximumDifference": 71.53125,
+      "shaderCompileMilliseconds": 6.7,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.62,
+      "medianCpuMilliseconds": 3.36,
+      "medianGpuMilliseconds": 0.69
+    },
+    {
+      "workload": "random circuit 5, 256 instances",
+      "guard": "none",
+      "instanceRows": 379,
+      "sharedRows": 121,
+      "shaderStatements": 584,
+      "shaderBytes": 26284,
+      "exposure": {
+        "inexactProducts": 233,
+        "additions": 335,
+        "guards": 0,
+        "booleanRows": 19,
+        "gatherReads": 20
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 1222,
+      "maximumDifference": 0.125,
+      "shaderCompileMilliseconds": 11.3,
+      "instanceSourceBytes": 4096,
+      "instanceSourceUploadMilliseconds": 0.6,
+      "medianCpuMilliseconds": 2.55,
+      "medianGpuMilliseconds": 0.68
+    },
+    {
+      "workload": "random circuit 6, 256 instances",
+      "guard": "none",
+      "instanceRows": 592,
+      "sharedRows": 103,
+      "shaderStatements": 836,
+      "shaderBytes": 37172,
+      "exposure": {
+        "inexactProducts": 360,
+        "additions": 524,
+        "guards": 0,
+        "booleanRows": 34,
+        "gatherReads": 25
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 3233,
+      "maximumDifference": 144663937.5,
+      "shaderCompileMilliseconds": 7.4,
+      "instanceSourceBytes": 6144,
+      "instanceSourceUploadMilliseconds": 0.57,
+      "medianCpuMilliseconds": 4.07,
+      "medianGpuMilliseconds": 0.73
+    },
+    {
+      "workload": "random circuit 7, 256 instances",
+      "guard": "none",
+      "instanceRows": 418,
+      "sharedRows": 99,
+      "shaderStatements": 632,
+      "shaderBytes": 27103,
+      "exposure": {
+        "inexactProducts": 230,
+        "additions": 358,
+        "guards": 0,
+        "booleanRows": 24,
+        "gatherReads": 22
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 228,
+      "maximumDifference": 0.015625,
+      "shaderCompileMilliseconds": 8.3,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.61,
+      "medianCpuMilliseconds": 2.98,
+      "medianGpuMilliseconds": 0.69
+    },
+    {
+      "workload": "random circuit 8, 256 instances",
+      "guard": "none",
+      "instanceRows": 621,
+      "sharedRows": 96,
+      "shaderStatements": 842,
+      "shaderBytes": 37061,
+      "exposure": {
+        "inexactProducts": 332,
+        "additions": 514,
+        "guards": 0,
+        "booleanRows": 40,
+        "gatherReads": 22
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 2982,
+      "maximumDifference": 464003.34375,
+      "shaderCompileMilliseconds": 8.5,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.64,
+      "medianCpuMilliseconds": 4.28,
+      "medianGpuMilliseconds": 0.69
+    },
+    {
+      "workload": "random circuit 9, 256 instances",
+      "guard": "none",
+      "instanceRows": 121,
+      "sharedRows": 426,
+      "shaderStatements": 272,
+      "shaderBytes": 13334,
+      "exposure": {
+        "inexactProducts": 82,
+        "additions": 103,
+        "guards": 0,
+        "booleanRows": 4,
+        "gatherReads": 12
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 3.1,
+      "instanceSourceBytes": 4096,
+      "instanceSourceUploadMilliseconds": 0.7,
+      "medianCpuMilliseconds": 1.01,
+      "medianGpuMilliseconds": 0.6
+    },
+    {
+      "workload": "random circuit 10, 256 instances",
+      "guard": "none",
+      "instanceRows": 598,
+      "sharedRows": 20,
+      "shaderStatements": 827,
+      "shaderBytes": 35910,
+      "exposure": {
+        "inexactProducts": 331,
+        "additions": 527,
+        "guards": 0,
+        "booleanRows": 38,
+        "gatherReads": 23
+      },
+      "comparedOutputs": 17664,
+      "mismatches": 2199,
+      "maximumDifference": 1691100,
+      "shaderCompileMilliseconds": 7.7,
+      "instanceSourceBytes": 6144,
+      "instanceSourceUploadMilliseconds": 0.62,
+      "medianCpuMilliseconds": 3.9,
+      "medianGpuMilliseconds": 0.71
+    },
+    {
+      "workload": "random circuit 11, 256 instances",
+      "guard": "none",
+      "instanceRows": 383,
+      "sharedRows": 49,
+      "shaderStatements": 546,
+      "shaderBytes": 23935,
+      "exposure": {
+        "inexactProducts": 187,
+        "additions": 330,
+        "guards": 0,
+        "booleanRows": 25,
+        "gatherReads": 14
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 2101,
+      "maximumDifference": 0.5,
+      "shaderCompileMilliseconds": 6.4,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.57,
+      "medianCpuMilliseconds": 2.46,
+      "medianGpuMilliseconds": 0.7
+    },
+    {
+      "workload": "random circuit 12, 256 instances",
+      "guard": "none",
+      "instanceRows": 376,
+      "sharedRows": 35,
+      "shaderStatements": 532,
+      "shaderBytes": 22339,
+      "exposure": {
+        "inexactProducts": 161,
+        "additions": 299,
+        "guards": 0,
+        "booleanRows": 23,
+        "gatherReads": 13
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 2399,
+      "maximumDifference": 3973853.53125,
+      "shaderCompileMilliseconds": 7.4,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.59,
+      "medianCpuMilliseconds": 2.35,
+      "medianGpuMilliseconds": 0.62
+    },
+    {
+      "workload": "IndirectOS ownership map, 1280×800 pixels",
+      "guard": "max",
+      "instanceRows": 458,
+      "sharedRows": 116,
+      "shaderStatements": 510,
+      "shaderBytes": 28298,
+      "exposure": {
+        "inexactProducts": 69,
+        "additions": 468,
+        "guards": 537,
+        "booleanRows": 28,
+        "gatherReads": 8
+      },
+      "comparedOutputs": 2048000,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 7,
+      "instanceSourceBytes": 8192000,
+      "instanceSourceUploadMilliseconds": 1.7,
+      "medianCpuMilliseconds": 300.85,
+      "medianGpuMilliseconds": 1.82
+    },
+    {
+      "workload": "life-calendar, 27,393 cells",
+      "guard": "max",
+      "instanceRows": 63,
+      "sharedRows": 1991,
+      "shaderStatements": 74,
+      "shaderBytes": 4688,
+      "exposure": {
+        "inexactProducts": 12,
+        "additions": 55,
+        "guards": 67,
+        "booleanRows": 4,
+        "gatherReads": 0
+      },
+      "comparedOutputs": 547860,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 1.5,
+      "instanceSourceBytes": 109572,
+      "instanceSourceUploadMilliseconds": 0.72,
+      "medianCpuMilliseconds": 2.25,
+      "medianGpuMilliseconds": 0.67
+    },
+    {
+      "workload": "candidate-gallery, 256 viewport widths",
+      "guard": "max",
+      "instanceRows": 111,
+      "sharedRows": 25,
+      "shaderStatements": 303,
+      "shaderBytes": 13074,
+      "exposure": {
+        "inexactProducts": 29,
+        "additions": 141,
+        "guards": 170,
+        "booleanRows": 2,
+        "gatherReads": 26
+      },
+      "comparedOutputs": 15104,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 3.3,
+      "instanceSourceBytes": 1024,
+      "instanceSourceUploadMilliseconds": 0.52,
+      "medianCpuMilliseconds": 0.84,
+      "medianGpuMilliseconds": 0.66
+    },
+    {
+      "workload": "candidate-gallery, 256×256 width × height grid",
+      "guard": "max",
+      "instanceRows": 135,
+      "sharedRows": 1,
+      "shaderStatements": 328,
+      "shaderBytes": 14066,
+      "exposure": {
+        "inexactProducts": 44,
+        "additions": 157,
+        "guards": 201,
+        "booleanRows": 2,
+        "gatherReads": 26
+      },
+      "comparedOutputs": 3866624,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 6,
+      "instanceSourceBytes": 524288,
+      "instanceSourceUploadMilliseconds": 0.58,
+      "medianCpuMilliseconds": 13.48,
+      "medianGpuMilliseconds": 1.26
+    },
+    {
+      "workload": "SDF shapes, 560×360 pixels",
+      "guard": "max",
+      "instanceRows": 756,
+      "sharedRows": 591,
+      "shaderStatements": 762,
+      "shaderBytes": 40950,
+      "exposure": {
+        "inexactProducts": 297,
+        "additions": 490,
+        "guards": 787,
+        "booleanRows": 6,
+        "gatherReads": 0
+      },
+      "comparedOutputs": 1612800,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 10.4,
+      "instanceSourceBytes": 1612800,
+      "instanceSourceUploadMilliseconds": 0.6,
+      "medianCpuMilliseconds": 93.31,
+      "medianGpuMilliseconds": 1.21
+    },
+    {
+      "workload": "random circuit 1, 256 instances",
+      "guard": "max",
+      "instanceRows": 5,
+      "sharedRows": 560,
+      "shaderStatements": 87,
+      "shaderBytes": 6990,
+      "exposure": {
+        "inexactProducts": 4,
+        "additions": 4,
+        "guards": 8,
+        "booleanRows": 0,
+        "gatherReads": 1
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 1.9,
+      "instanceSourceBytes": 4096,
+      "instanceSourceUploadMilliseconds": 0.62,
+      "medianCpuMilliseconds": 0.24,
+      "medianGpuMilliseconds": 0.29
+    },
+    {
+      "workload": "random circuit 2, 256 instances",
+      "guard": "max",
+      "instanceRows": 434,
+      "sharedRows": 16,
+      "shaderStatements": 604,
+      "shaderBytes": 32548,
+      "exposure": {
+        "inexactProducts": 207,
+        "additions": 392,
+        "guards": 599,
+        "booleanRows": 28,
+        "gatherReads": 14
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 9.8,
+      "instanceSourceBytes": 6144,
+      "instanceSourceUploadMilliseconds": 0.58,
+      "medianCpuMilliseconds": 2.93,
+      "medianGpuMilliseconds": 0.7
+    },
+    {
+      "workload": "random circuit 3, 256 instances",
+      "guard": "max",
+      "instanceRows": 405,
+      "sharedRows": 34,
+      "shaderStatements": 580,
+      "shaderBytes": 31181,
+      "exposure": {
+        "inexactProducts": 202,
+        "additions": 357,
+        "guards": 559,
+        "booleanRows": 27,
+        "gatherReads": 16
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 6.9,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.61,
+      "medianCpuMilliseconds": 2.72,
+      "medianGpuMilliseconds": 0.65
+    },
+    {
+      "workload": "random circuit 4, 256 instances",
+      "guard": "max",
+      "instanceRows": 523,
+      "sharedRows": 28,
+      "shaderStatements": 732,
+      "shaderBytes": 38701,
+      "exposure": {
+        "inexactProducts": 246,
+        "additions": 463,
+        "guards": 709,
+        "booleanRows": 36,
+        "gatherReads": 21
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 11.8,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.73,
+      "medianCpuMilliseconds": 3.42,
+      "medianGpuMilliseconds": 0.72
+    },
+    {
+      "workload": "random circuit 5, 256 instances",
+      "guard": "max",
+      "instanceRows": 379,
+      "sharedRows": 121,
+      "shaderStatements": 584,
+      "shaderBytes": 32532,
+      "exposure": {
+        "inexactProducts": 233,
+        "additions": 335,
+        "guards": 568,
+        "booleanRows": 19,
+        "gatherReads": 20
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 7.6,
+      "instanceSourceBytes": 4096,
+      "instanceSourceUploadMilliseconds": 0.58,
+      "medianCpuMilliseconds": 2.81,
+      "medianGpuMilliseconds": 0.69
+    },
+    {
+      "workload": "random circuit 6, 256 instances",
+      "guard": "max",
+      "instanceRows": 592,
+      "sharedRows": 103,
+      "shaderStatements": 836,
+      "shaderBytes": 46896,
+      "exposure": {
+        "inexactProducts": 360,
+        "additions": 524,
+        "guards": 884,
+        "booleanRows": 34,
+        "gatherReads": 25
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 11,
+      "instanceSourceBytes": 6144,
+      "instanceSourceUploadMilliseconds": 0.65,
+      "medianCpuMilliseconds": 4.59,
+      "medianGpuMilliseconds": 0.73
+    },
+    {
+      "workload": "random circuit 7, 256 instances",
+      "guard": "max",
+      "instanceRows": 418,
+      "sharedRows": 99,
+      "shaderStatements": 632,
+      "shaderBytes": 33571,
+      "exposure": {
+        "inexactProducts": 230,
+        "additions": 358,
+        "guards": 588,
+        "booleanRows": 24,
+        "gatherReads": 22
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 7.7,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.7,
+      "medianCpuMilliseconds": 2.63,
+      "medianGpuMilliseconds": 0.71
+    },
+    {
+      "workload": "random circuit 8, 256 instances",
+      "guard": "max",
+      "instanceRows": 621,
+      "sharedRows": 96,
+      "shaderStatements": 842,
+      "shaderBytes": 46367,
+      "exposure": {
+        "inexactProducts": 332,
+        "additions": 514,
+        "guards": 846,
+        "booleanRows": 40,
+        "gatherReads": 22
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 12.8,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.58,
+      "medianCpuMilliseconds": 4.02,
+      "medianGpuMilliseconds": 0.71
+    },
+    {
+      "workload": "random circuit 9, 256 instances",
+      "guard": "max",
+      "instanceRows": 121,
+      "sharedRows": 426,
+      "shaderStatements": 272,
+      "shaderBytes": 15369,
+      "exposure": {
+        "inexactProducts": 82,
+        "additions": 103,
+        "guards": 185,
+        "booleanRows": 4,
+        "gatherReads": 12
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 3.8,
+      "instanceSourceBytes": 4096,
+      "instanceSourceUploadMilliseconds": 0.62,
+      "medianCpuMilliseconds": 1.03,
+      "medianGpuMilliseconds": 0.63
+    },
+    {
+      "workload": "random circuit 10, 256 instances",
+      "guard": "max",
+      "instanceRows": 598,
+      "sharedRows": 20,
+      "shaderStatements": 827,
+      "shaderBytes": 45348,
+      "exposure": {
+        "inexactProducts": 331,
+        "additions": 527,
+        "guards": 858,
+        "booleanRows": 38,
+        "gatherReads": 23
+      },
+      "comparedOutputs": 17664,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 12.6,
+      "instanceSourceBytes": 6144,
+      "instanceSourceUploadMilliseconds": 0.64,
+      "medianCpuMilliseconds": 4.16,
+      "medianGpuMilliseconds": 0.72
+    },
+    {
+      "workload": "random circuit 11, 256 instances",
+      "guard": "max",
+      "instanceRows": 383,
+      "sharedRows": 49,
+      "shaderStatements": 546,
+      "shaderBytes": 29622,
+      "exposure": {
+        "inexactProducts": 187,
+        "additions": 330,
+        "guards": 517,
+        "booleanRows": 25,
+        "gatherReads": 14
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 7.5,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.52,
+      "medianCpuMilliseconds": 2.32,
+      "medianGpuMilliseconds": 0.65
+    },
+    {
+      "workload": "random circuit 12, 256 instances",
+      "guard": "max",
+      "instanceRows": 376,
+      "sharedRows": 35,
+      "shaderStatements": 532,
+      "shaderBytes": 27399,
+      "exposure": {
+        "inexactProducts": 161,
+        "additions": 299,
+        "guards": 460,
+        "booleanRows": 23,
+        "gatherReads": 13
+      },
+      "comparedOutputs": 17920,
+      "mismatches": 0,
+      "maximumDifference": 0,
+      "shaderCompileMilliseconds": 6.3,
+      "instanceSourceBytes": 2048,
+      "instanceSourceUploadMilliseconds": 0.61,
+      "medianCpuMilliseconds": 2.42,
+      "medianGpuMilliseconds": 0.66
+    }
+  ]
+}

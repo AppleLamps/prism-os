@@ -1,0 +1,1406 @@
+{
+  "list": [
+    {
+      "label": "uniform, data in JS, 1000 rows",
+      "sourceCells": 2,
+      "buildMs": 1.9,
+      "liveOperations": 280,
+      "layers": 19,
+      "storedWeights": 625,
+      "gatherReads": 0,
+      "maximumLayerWidth": 120,
+      "compileMs": 1,
+      "microsecondsPerFrame": 1.84,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "uniform, data in JS, 10000 rows",
+      "sourceCells": 2,
+      "buildMs": 1.5,
+      "liveOperations": 280,
+      "layers": 19,
+      "storedWeights": 625,
+      "gatherReads": 0,
+      "maximumLayerWidth": 120,
+      "compileMs": 0.3,
+      "microsecondsPerFrame": 1.83,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "uniform, data in JS, 100000 rows",
+      "sourceCells": 2,
+      "buildMs": 0.7,
+      "liveOperations": 280,
+      "layers": 19,
+      "storedWeights": 625,
+      "gatherReads": 0,
+      "maximumLayerWidth": 120,
+      "compileMs": 0.3,
+      "microsecondsPerFrame": 1.86,
+      "trials": 300,
+      "mismatches": 0
+    },
+    {
+      "label": "uniform, data through one-hot, 1000 rows",
+      "sourceCells": 1002,
+      "buildMs": 6.6,
+      "liveOperations": 2305,
+      "layers": 19,
+      "storedWeights": 5578,
+      "gatherReads": 24,
+      "maximumLayerWidth": 1002,
+      "compileMs": 3,
+      "microsecondsPerFrame": 14.4,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "uniform, data through one-hot, 3000 rows",
+      "sourceCells": 3002,
+      "buildMs": 11.9,
+      "liveOperations": 6305,
+      "layers": 19,
+      "storedWeights": 15578,
+      "gatherReads": 24,
+      "maximumLayerWidth": 3002,
+      "compileMs": 6.4,
+      "microsecondsPerFrame": 39.18,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "uniform, data through one-hot, 10000 rows",
+      "sourceCells": 10002,
+      "buildMs": 32,
+      "liveOperations": 20305,
+      "layers": 19,
+      "storedWeights": 50578,
+      "gatherReads": 24,
+      "maximumLayerWidth": 10002,
+      "compileMs": 14.7,
+      "microsecondsPerFrame": 120.6,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "uniform, data through one-hot, 30000 rows",
+      "sourceCells": 30002,
+      "buildMs": 71.9,
+      "liveOperations": 60305,
+      "layers": 19,
+      "storedWeights": 150578,
+      "gatherReads": 24,
+      "maximumLayerWidth": 30002,
+      "compileMs": 43.3,
+      "microsecondsPerFrame": 387.92,
+      "trials": 300,
+      "mismatches": 0
+    },
+    {
+      "label": "variable, prefix in circuit (Brent-Kung), data in JS, 1000 rows",
+      "sourceCells": 1002,
+      "buildMs": 6.1,
+      "liveOperations": 6177,
+      "layers": 25,
+      "storedWeights": 14279,
+      "gatherReads": 24,
+      "maximumLayerWidth": 809,
+      "compileMs": 2.9,
+      "microsecondsPerFrame": 41.36,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "variable, prefix in circuit (Brent-Kung), data in JS, 3000 rows",
+      "sourceCells": 3002,
+      "buildMs": 15.4,
+      "liveOperations": 18174,
+      "layers": 28,
+      "storedWeights": 42273,
+      "gatherReads": 24,
+      "maximumLayerWidth": 2349,
+      "compileMs": 8.9,
+      "microsecondsPerFrame": 117.89,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "variable, prefix in circuit (Brent-Kung), data in JS, 10000 rows",
+      "sourceCells": 10002,
+      "buildMs": 48.1,
+      "liveOperations": 60174,
+      "layers": 32,
+      "storedWeights": 140273,
+      "gatherReads": 24,
+      "maximumLayerWidth": 7654,
+      "compileMs": 34.5,
+      "microsecondsPerFrame": 368.68,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "variable, prefix in circuit (Brent-Kung), data in JS, 30000 rows",
+      "sourceCells": 30002,
+      "buildMs": 167.4,
+      "liveOperations": 180171,
+      "layers": 35,
+      "storedWeights": 420267,
+      "gatherReads": 24,
+      "maximumLayerWidth": 22040,
+      "compileMs": 137.1,
+      "microsecondsPerFrame": 1163.51,
+      "trials": 300,
+      "mismatches": 0
+    },
+    {
+      "label": "variable, prefix in circuit (Brent-Kung), data through one-hot, 10000 rows",
+      "sourceCells": 20002,
+      "buildMs": 55.6,
+      "liveOperations": 60198,
+      "layers": 32,
+      "storedWeights": 140273,
+      "gatherReads": 48,
+      "maximumLayerWidth": 7654,
+      "compileMs": 34.7,
+      "microsecondsPerFrame": 416.76,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "variable, prefix in circuit (blocked), data in JS, 10000 rows",
+      "sourceCells": 10002,
+      "buildMs": 74.2,
+      "liveOperations": 60092,
+      "layers": 11,
+      "storedWeights": 629961,
+      "gatherReads": 24,
+      "maximumLayerWidth": 19899,
+      "compileMs": 50.1,
+      "microsecondsPerFrame": 848.04,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "variable, bottoms from JS, data in JS, 10000 rows",
+      "sourceCells": 10002,
+      "buildMs": 42.4,
+      "liveOperations": 40193,
+      "layers": 8,
+      "storedWeights": 100311,
+      "gatherReads": 24,
+      "maximumLayerWidth": 20001,
+      "compileMs": 21.3,
+      "microsecondsPerFrame": 258.18,
+      "trials": 2000,
+      "mismatches": 0
+    },
+    {
+      "label": "variable, bottoms from JS, data through one-hot, 10000 rows",
+      "sourceCells": 20002,
+      "buildMs": 49.3,
+      "liveOperations": 40217,
+      "layers": 8,
+      "storedWeights": 100311,
+      "gatherReads": 48,
+      "maximumLayerWidth": 20001,
+      "compileMs": 24.4,
+      "microsecondsPerFrame": 275.46,
+      "trials": 2000,
+      "mismatches": 0
+    }
+  ],
+  "list-sweep": [
+    {
+      "label": "every quarter-pixel scrollTop of 10,000 uniform rows, viewport 600: rows, y, and slots against the occlusion test",
+      "scrollTops": 1600001,
+      "mismatches": 0,
+      "ms": 3904.9
+    },
+    {
+      "label": "every quarter-pixel scrollTop of 10,000 uniform rows, viewport 920: rows, y, and slots against the occlusion test",
+      "scrollTops": 1600001,
+      "mismatches": 0,
+      "ms": 4164.2
+    }
+  ],
+  "routing": [
+    {
+      "itemCount": 100,
+      "slotCount": 10,
+      "buildMs": 6.2,
+      "liveOperations": 3010,
+      "layers": 21,
+      "storedWeights": 8200,
+      "gatherReads": 30,
+      "maximumLayerWidth": 416,
+      "compileMs": 2.2,
+      "microsecondsPerFrame": 21.31,
+      "patterns": 208,
+      "mismatches": 0,
+      "visibilityOperations": 700,
+      "prefixCountOperations": 190,
+      "routingAndSlotOperations": 2120
+    },
+    {
+      "itemCount": 100,
+      "slotCount": 20,
+      "buildMs": 9.7,
+      "liveOperations": 5130,
+      "layers": 21,
+      "storedWeights": 14420,
+      "gatherReads": 60,
+      "maximumLayerWidth": 826,
+      "compileMs": 3.9,
+      "microsecondsPerFrame": 35.79,
+      "patterns": 208,
+      "mismatches": 0,
+      "visibilityOperations": 700,
+      "prefixCountOperations": 190,
+      "routingAndSlotOperations": 4240
+    },
+    {
+      "itemCount": 100,
+      "slotCount": 40,
+      "buildMs": 15.4,
+      "liveOperations": 9370,
+      "layers": 21,
+      "storedWeights": 26860,
+      "gatherReads": 120,
+      "maximumLayerWidth": 1646,
+      "compileMs": 6.5,
+      "microsecondsPerFrame": 69.07,
+      "patterns": 208,
+      "mismatches": 0,
+      "visibilityOperations": 700,
+      "prefixCountOperations": 190,
+      "routingAndSlotOperations": 8480
+    },
+    {
+      "itemCount": 300,
+      "slotCount": 10,
+      "buildMs": 18,
+      "liveOperations": 8807,
+      "layers": 24,
+      "storedWeights": 24194,
+      "gatherReads": 30,
+      "maximumLayerWidth": 1219,
+      "compileMs": 6.3,
+      "microsecondsPerFrame": 61.22,
+      "patterns": 208,
+      "mismatches": 0,
+      "visibilityOperations": 2100,
+      "prefixCountOperations": 587,
+      "routingAndSlotOperations": 6120
+    },
+    {
+      "itemCount": 300,
+      "slotCount": 20,
+      "buildMs": 23.6,
+      "liveOperations": 14927,
+      "layers": 24,
+      "storedWeights": 42414,
+      "gatherReads": 60,
+      "maximumLayerWidth": 2409,
+      "compileMs": 11.2,
+      "microsecondsPerFrame": 99.96,
+      "patterns": 208,
+      "mismatches": 0,
+      "visibilityOperations": 2100,
+      "prefixCountOperations": 587,
+      "routingAndSlotOperations": 12240
+    },
+    {
+      "itemCount": 300,
+      "slotCount": 40,
+      "buildMs": 47.4,
+      "liveOperations": 27167,
+      "layers": 24,
+      "storedWeights": 78854,
+      "gatherReads": 120,
+      "maximumLayerWidth": 4789,
+      "compileMs": 20.9,
+      "microsecondsPerFrame": 186.84,
+      "patterns": 208,
+      "mismatches": 0,
+      "visibilityOperations": 2100,
+      "prefixCountOperations": 587,
+      "routingAndSlotOperations": 24480
+    },
+    {
+      "itemCount": 1000,
+      "slotCount": 10,
+      "buildMs": 43.7,
+      "liveOperations": 29104,
+      "layers": 27,
+      "storedWeights": 80188,
+      "gatherReads": 30,
+      "maximumLayerWidth": 4000,
+      "compileMs": 21.4,
+      "microsecondsPerFrame": 196.44,
+      "patterns": 208,
+      "mismatches": 0,
+      "visibilityOperations": 7000,
+      "prefixCountOperations": 1984,
+      "routingAndSlotOperations": 20120
+    },
+    {
+      "itemCount": 1000,
+      "slotCount": 20,
+      "buildMs": 79.1,
+      "liveOperations": 49224,
+      "layers": 27,
+      "storedWeights": 140408,
+      "gatherReads": 60,
+      "maximumLayerWidth": 7094,
+      "compileMs": 39,
+      "microsecondsPerFrame": 339.04,
+      "patterns": 208,
+      "mismatches": 0,
+      "visibilityOperations": 7000,
+      "prefixCountOperations": 1984,
+      "routingAndSlotOperations": 40240
+    },
+    {
+      "itemCount": 1000,
+      "slotCount": 40,
+      "buildMs": 174.4,
+      "liveOperations": 89464,
+      "layers": 27,
+      "storedWeights": 260848,
+      "gatherReads": 120,
+      "maximumLayerWidth": 14034,
+      "compileMs": 81.7,
+      "microsecondsPerFrame": 647.14,
+      "patterns": 208,
+      "mismatches": 0,
+      "visibilityOperations": 7000,
+      "prefixCountOperations": 1984,
+      "routingAndSlotOperations": 80480
+    },
+    {
+      "itemCount": 3000,
+      "slotCount": 10,
+      "buildMs": 152,
+      "liveOperations": 87101,
+      "layers": 30,
+      "storedWeights": 240182,
+      "gatherReads": 30,
+      "maximumLayerWidth": 12000,
+      "compileMs": 70.7,
+      "microsecondsPerFrame": 671.45,
+      "patterns": 48,
+      "mismatches": 0,
+      "visibilityOperations": 21000,
+      "prefixCountOperations": 5981,
+      "routingAndSlotOperations": 60120
+    },
+    {
+      "itemCount": 3000,
+      "slotCount": 20,
+      "buildMs": 296.6,
+      "liveOperations": 147221,
+      "layers": 30,
+      "storedWeights": 420402,
+      "gatherReads": 60,
+      "maximumLayerWidth": 21104,
+      "compileMs": 136.7,
+      "microsecondsPerFrame": 1094.66,
+      "patterns": 48,
+      "mismatches": 0,
+      "visibilityOperations": 21000,
+      "prefixCountOperations": 5981,
+      "routingAndSlotOperations": 120240
+    },
+    {
+      "itemCount": 3000,
+      "slotCount": 40,
+      "buildMs": 551.5,
+      "liveOperations": 267461,
+      "layers": 30,
+      "storedWeights": 780842,
+      "gatherReads": 120,
+      "maximumLayerWidth": 41884,
+      "compileMs": 265.6,
+      "microsecondsPerFrame": 2117.99,
+      "patterns": 48,
+      "mismatches": 0,
+      "visibilityOperations": 21000,
+      "prefixCountOperations": 5981,
+      "routingAndSlotOperations": 240480
+    }
+  ],
+  "routing-prefix": [
+    {
+      "prefix": "chain",
+      "buildMs": 101.3,
+      "liveOperations": 48239,
+      "layers": 1009,
+      "storedWeights": 138438,
+      "gatherReads": 60,
+      "maximumLayerWidth": 4000,
+      "compileMs": 70.6,
+      "mismatches": 0
+    },
+    {
+      "prefix": "blocked",
+      "buildMs": 101.5,
+      "liveOperations": 49207,
+      "layers": 13,
+      "storedWeights": 155244,
+      "gatherReads": 60,
+      "maximumLayerWidth": 19380,
+      "compileMs": 45.8,
+      "mismatches": 0
+    },
+    {
+      "prefix": "brentKung",
+      "buildMs": 77.5,
+      "liveOperations": 49224,
+      "layers": 27,
+      "storedWeights": 140408,
+      "gatherReads": 60,
+      "maximumLayerWidth": 7094,
+      "compileMs": 40.9,
+      "mismatches": 0
+    },
+    {
+      "prefix": "wide",
+      "buildMs": 97.4,
+      "liveOperations": 48239,
+      "layers": 11,
+      "storedWeights": 636939,
+      "gatherReads": 60,
+      "maximumLayerWidth": 20000,
+      "compileMs": 49.6,
+      "mismatches": 0
+    }
+  ],
+  "cards": [
+    {
+      "layout": "rankCount",
+      "cardCount": 5,
+      "sourceCells": 166,
+      "buildMs": 5.4,
+      "liveOperations": 2393,
+      "layers": 86,
+      "storedWeights": 5577,
+      "gatherReads": 112,
+      "maximumLayerWidth": 109,
+      "compileMs": 3,
+      "microsecondsPerFrame": 16.67,
+      "seeds": 20,
+      "framesPerSeed": 3000,
+      "differentialFrames": 60000,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 1,
+      "runsWithAnimatingMismatch": 1,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0.00958251953125,
+      "maximumPositionError": 0.00958251953125,
+      "runsWithPositionErrorAbove1px": 0,
+      "maximumScaleError": 2.8448488809118544e-7,
+      "reorderFrames": 2926,
+      "cardReleases": 1855,
+      "clampedReleases": 2,
+      "sections": [
+        {
+          "name": "clock and step bits",
+          "liveOperations": 50,
+          "storedWeights": 62
+        },
+        {
+          "name": "pointer state and buffer",
+          "liveOperations": 219,
+          "storedWeights": 222
+        },
+        {
+          "name": "hit tests",
+          "liveOperations": 117,
+          "storedWeights": 210
+        },
+        {
+          "name": "first match by rank",
+          "liveOperations": 91,
+          "storedWeights": 149
+        },
+        {
+          "name": "drag ownership and pins",
+          "liveOperations": 36,
+          "storedWeights": 79
+        },
+        {
+          "name": "release velocity",
+          "liveOperations": 296,
+          "storedWeights": 1799
+        },
+        {
+          "name": "rank update",
+          "liveOperations": 114,
+          "storedWeights": 252
+        },
+        {
+          "name": "stack layout",
+          "liveOperations": 35,
+          "storedWeights": 80
+        },
+        {
+          "name": "springs",
+          "liveOperations": 1343,
+          "storedWeights": 2522
+        },
+        {
+          "name": "z, cursor, and commit",
+          "liveOperations": 92,
+          "storedWeights": 202
+        }
+      ]
+    },
+    {
+      "layout": "rankCount",
+      "cardCount": 20,
+      "sourceCells": 316,
+      "buildMs": 9.4,
+      "liveOperations": 8813,
+      "layers": 96,
+      "storedWeights": 18307,
+      "gatherReads": 142,
+      "maximumLayerWidth": 500,
+      "compileMs": 5.2,
+      "microsecondsPerFrame": 50.81,
+      "seeds": 20,
+      "framesPerSeed": 2000,
+      "differentialFrames": 40000,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 7,
+      "runsWithAnimatingMismatch": 2,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0.0093994140625,
+      "maximumPositionError": 21.244114434621224,
+      "runsWithPositionErrorAbove1px": 1,
+      "maximumScaleError": 0.025945844794933004,
+      "reorderFrames": 3531,
+      "cardReleases": 1262,
+      "clampedReleases": 7,
+      "sections": [
+        {
+          "name": "clock and step bits",
+          "liveOperations": 50,
+          "storedWeights": 62
+        },
+        {
+          "name": "pointer state and buffer",
+          "liveOperations": 219,
+          "storedWeights": 222
+        },
+        {
+          "name": "hit tests",
+          "liveOperations": 462,
+          "storedWeights": 840
+        },
+        {
+          "name": "first match by rank",
+          "liveOperations": 976,
+          "storedWeights": 1824
+        },
+        {
+          "name": "drag ownership and pins",
+          "liveOperations": 96,
+          "storedWeights": 244
+        },
+        {
+          "name": "release velocity",
+          "liveOperations": 296,
+          "storedWeights": 1799
+        },
+        {
+          "name": "rank update",
+          "liveOperations": 444,
+          "storedWeights": 1002
+        },
+        {
+          "name": "stack layout",
+          "liveOperations": 590,
+          "storedWeights": 1520
+        },
+        {
+          "name": "springs",
+          "liveOperations": 5363,
+          "storedWeights": 10082
+        },
+        {
+          "name": "z, cursor, and commit",
+          "liveOperations": 317,
+          "storedWeights": 712
+        }
+      ]
+    },
+    {
+      "layout": "rankCount",
+      "cardCount": 50,
+      "sourceCells": 616,
+      "buildMs": 32.2,
+      "liveOperations": 26378,
+      "layers": 100,
+      "storedWeights": 54564,
+      "gatherReads": 202,
+      "maximumLayerWidth": 2750,
+      "compileMs": 17,
+      "microsecondsPerFrame": 431.65,
+      "seeds": 20,
+      "framesPerSeed": 1500,
+      "differentialFrames": 30000,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 3,
+      "runsWithAnimatingMismatch": 3,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0.01025390625,
+      "maximumPositionError": 49.383349207696824,
+      "runsWithPositionErrorAbove1px": 1,
+      "maximumScaleError": 0.003142505302068832,
+      "reorderFrames": 2946,
+      "cardReleases": 931,
+      "clampedReleases": 13,
+      "sections": [
+        {
+          "name": "clock and step bits",
+          "liveOperations": 50,
+          "storedWeights": 62
+        },
+        {
+          "name": "pointer state and buffer",
+          "liveOperations": 219,
+          "storedWeights": 222
+        },
+        {
+          "name": "hit tests",
+          "liveOperations": 1152,
+          "storedWeights": 2100
+        },
+        {
+          "name": "first match by rank",
+          "liveOperations": 5446,
+          "storedWeights": 10571
+        },
+        {
+          "name": "drag ownership and pins",
+          "liveOperations": 216,
+          "storedWeights": 574
+        },
+        {
+          "name": "release velocity",
+          "liveOperations": 296,
+          "storedWeights": 1799
+        },
+        {
+          "name": "rank update",
+          "liveOperations": 1104,
+          "storedWeights": 2502
+        },
+        {
+          "name": "stack layout",
+          "liveOperations": 3725,
+          "storedWeights": 9800
+        },
+        {
+          "name": "springs",
+          "liveOperations": 13403,
+          "storedWeights": 25202
+        },
+        {
+          "name": "z, cursor, and commit",
+          "liveOperations": 767,
+          "storedWeights": 1732
+        }
+      ]
+    },
+    {
+      "layout": "rankCount",
+      "cardCount": 100,
+      "sourceCells": 1116,
+      "buildMs": 65.8,
+      "liveOperations": 69653,
+      "layers": 105,
+      "storedWeights": 146992,
+      "gatherReads": 302,
+      "maximumLayerWidth": 10500,
+      "compileMs": 33.8,
+      "microsecondsPerFrame": 406.37,
+      "seeds": 20,
+      "framesPerSeed": 600,
+      "differentialFrames": 12000,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 70,
+      "runsWithAnimatingMismatch": 7,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0.010294979420905292,
+      "maximumPositionError": 21.498932291207893,
+      "runsWithPositionErrorAbove1px": 3,
+      "maximumScaleError": 0.027824038331914158,
+      "reorderFrames": 1152,
+      "cardReleases": 390,
+      "clampedReleases": 13,
+      "sections": [
+        {
+          "name": "clock and step bits",
+          "liveOperations": 50,
+          "storedWeights": 62
+        },
+        {
+          "name": "pointer state and buffer",
+          "liveOperations": 219,
+          "storedWeights": 222
+        },
+        {
+          "name": "hit tests",
+          "liveOperations": 2302,
+          "storedWeights": 4200
+        },
+        {
+          "name": "first match by rank",
+          "liveOperations": 20896,
+          "storedWeights": 41149
+        },
+        {
+          "name": "drag ownership and pins",
+          "liveOperations": 416,
+          "storedWeights": 1124
+        },
+        {
+          "name": "release velocity",
+          "liveOperations": 296,
+          "storedWeights": 1799
+        },
+        {
+          "name": "rank update",
+          "liveOperations": 2204,
+          "storedWeights": 5002
+        },
+        {
+          "name": "stack layout",
+          "liveOperations": 14950,
+          "storedWeights": 39600
+        },
+        {
+          "name": "springs",
+          "liveOperations": 26803,
+          "storedWeights": 50402
+        },
+        {
+          "name": "z, cursor, and commit",
+          "liveOperations": 1517,
+          "storedWeights": 3432
+        }
+      ]
+    },
+    {
+      "layout": "rankCount",
+      "cardCount": 200,
+      "sourceCells": 2116,
+      "buildMs": 210.4,
+      "liveOperations": 208703,
+      "layers": 110,
+      "storedWeights": 451849,
+      "gatherReads": 502,
+      "maximumLayerWidth": 41000,
+      "compileMs": 115,
+      "microsecondsPerFrame": 1308.45,
+      "seeds": 0,
+      "framesPerSeed": 0,
+      "differentialFrames": 0,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 0,
+      "runsWithAnimatingMismatch": 0,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0,
+      "maximumPositionError": 0,
+      "runsWithPositionErrorAbove1px": 0,
+      "maximumScaleError": 0,
+      "reorderFrames": 0,
+      "cardReleases": 0,
+      "clampedReleases": 0,
+      "sections": [
+        {
+          "name": "clock and step bits",
+          "liveOperations": 50,
+          "storedWeights": 62
+        },
+        {
+          "name": "pointer state and buffer",
+          "liveOperations": 219,
+          "storedWeights": 222
+        },
+        {
+          "name": "hit tests",
+          "liveOperations": 4602,
+          "storedWeights": 8400
+        },
+        {
+          "name": "first match by rank",
+          "liveOperations": 81796,
+          "storedWeights": 162306
+        },
+        {
+          "name": "drag ownership and pins",
+          "liveOperations": 816,
+          "storedWeights": 2224
+        },
+        {
+          "name": "release velocity",
+          "liveOperations": 296,
+          "storedWeights": 1799
+        },
+        {
+          "name": "rank update",
+          "liveOperations": 4404,
+          "storedWeights": 10002
+        },
+        {
+          "name": "stack layout",
+          "liveOperations": 59900,
+          "storedWeights": 159200
+        },
+        {
+          "name": "springs",
+          "liveOperations": 53603,
+          "storedWeights": 100802
+        },
+        {
+          "name": "z, cursor, and commit",
+          "liveOperations": 3017,
+          "storedWeights": 6832
+        }
+      ]
+    },
+    {
+      "layout": "incremental",
+      "cardCount": 5,
+      "sourceCells": 166,
+      "buildMs": 3.4,
+      "liveOperations": 2387,
+      "layers": 82,
+      "storedWeights": 5628,
+      "gatherReads": 103,
+      "maximumLayerWidth": 109,
+      "compileMs": 1.4,
+      "microsecondsPerFrame": 16.7,
+      "seeds": 20,
+      "framesPerSeed": 3000,
+      "differentialFrames": 60000,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 1,
+      "runsWithAnimatingMismatch": 1,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0.00958251953125,
+      "maximumPositionError": 0.00958251953125,
+      "runsWithPositionErrorAbove1px": 0,
+      "maximumScaleError": 2.8448488809118544e-7,
+      "reorderFrames": 2926,
+      "cardReleases": 1855,
+      "clampedReleases": 2,
+      "sections": [
+        {
+          "name": "clock and step bits",
+          "liveOperations": 50,
+          "storedWeights": 62
+        },
+        {
+          "name": "pointer state and buffer",
+          "liveOperations": 219,
+          "storedWeights": 222
+        },
+        {
+          "name": "hit tests",
+          "liveOperations": 117,
+          "storedWeights": 210
+        },
+        {
+          "name": "first match by rank",
+          "liveOperations": 67,
+          "storedWeights": 175
+        },
+        {
+          "name": "drag ownership and pins",
+          "liveOperations": 36,
+          "storedWeights": 79
+        },
+        {
+          "name": "release velocity",
+          "liveOperations": 296,
+          "storedWeights": 1799
+        },
+        {
+          "name": "rank update",
+          "liveOperations": 114,
+          "storedWeights": 252
+        },
+        {
+          "name": "stack layout",
+          "liveOperations": 53,
+          "storedWeights": 105
+        },
+        {
+          "name": "springs",
+          "liveOperations": 1343,
+          "storedWeights": 2522
+        },
+        {
+          "name": "z, cursor, and commit",
+          "liveOperations": 92,
+          "storedWeights": 202
+        }
+      ]
+    },
+    {
+      "layout": "incremental",
+      "cardCount": 20,
+      "sourceCells": 316,
+      "buildMs": 6.9,
+      "liveOperations": 7727,
+      "layers": 84,
+      "storedWeights": 16098,
+      "gatherReads": 103,
+      "maximumLayerWidth": 289,
+      "compileMs": 3.4,
+      "microsecondsPerFrame": 44.14,
+      "seeds": 20,
+      "framesPerSeed": 2000,
+      "differentialFrames": 40000,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 7,
+      "runsWithAnimatingMismatch": 2,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0.0093994140625,
+      "maximumPositionError": 21.244114434621224,
+      "runsWithPositionErrorAbove1px": 1,
+      "maximumScaleError": 0.025945844794933004,
+      "reorderFrames": 3531,
+      "cardReleases": 1262,
+      "clampedReleases": 7,
+      "sections": [
+        {
+          "name": "clock and step bits",
+          "liveOperations": 50,
+          "storedWeights": 62
+        },
+        {
+          "name": "pointer state and buffer",
+          "liveOperations": 219,
+          "storedWeights": 222
+        },
+        {
+          "name": "hit tests",
+          "liveOperations": 462,
+          "storedWeights": 840
+        },
+        {
+          "name": "first match by rank",
+          "liveOperations": 277,
+          "storedWeights": 715
+        },
+        {
+          "name": "drag ownership and pins",
+          "liveOperations": 96,
+          "storedWeights": 244
+        },
+        {
+          "name": "release velocity",
+          "liveOperations": 296,
+          "storedWeights": 1799
+        },
+        {
+          "name": "rank update",
+          "liveOperations": 444,
+          "storedWeights": 1002
+        },
+        {
+          "name": "stack layout",
+          "liveOperations": 203,
+          "storedWeights": 420
+        },
+        {
+          "name": "springs",
+          "liveOperations": 5363,
+          "storedWeights": 10082
+        },
+        {
+          "name": "z, cursor, and commit",
+          "liveOperations": 317,
+          "storedWeights": 712
+        }
+      ]
+    },
+    {
+      "layout": "incremental",
+      "cardCount": 50,
+      "sourceCells": 616,
+      "buildMs": 13.2,
+      "liveOperations": 18407,
+      "layers": 87,
+      "storedWeights": 37038,
+      "gatherReads": 103,
+      "maximumLayerWidth": 649,
+      "compileMs": 7.8,
+      "microsecondsPerFrame": 109.82,
+      "seeds": 20,
+      "framesPerSeed": 1500,
+      "differentialFrames": 30000,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 3,
+      "runsWithAnimatingMismatch": 3,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0.01025390625,
+      "maximumPositionError": 49.383349207696824,
+      "runsWithPositionErrorAbove1px": 1,
+      "maximumScaleError": 0.003142505302068832,
+      "reorderFrames": 2946,
+      "cardReleases": 931,
+      "clampedReleases": 13,
+      "sections": [
+        {
+          "name": "clock and step bits",
+          "liveOperations": 50,
+          "storedWeights": 62
+        },
+        {
+          "name": "pointer state and buffer",
+          "liveOperations": 219,
+          "storedWeights": 222
+        },
+        {
+          "name": "hit tests",
+          "liveOperations": 1152,
+          "storedWeights": 2100
+        },
+        {
+          "name": "first match by rank",
+          "liveOperations": 697,
+          "storedWeights": 1795
+        },
+        {
+          "name": "drag ownership and pins",
+          "liveOperations": 216,
+          "storedWeights": 574
+        },
+        {
+          "name": "release velocity",
+          "liveOperations": 296,
+          "storedWeights": 1799
+        },
+        {
+          "name": "rank update",
+          "liveOperations": 1104,
+          "storedWeights": 2502
+        },
+        {
+          "name": "stack layout",
+          "liveOperations": 503,
+          "storedWeights": 1050
+        },
+        {
+          "name": "springs",
+          "liveOperations": 13403,
+          "storedWeights": 25202
+        },
+        {
+          "name": "z, cursor, and commit",
+          "liveOperations": 767,
+          "storedWeights": 1732
+        }
+      ]
+    },
+    {
+      "layout": "incremental",
+      "cardCount": 100,
+      "sourceCells": 1116,
+      "buildMs": 32.2,
+      "liveOperations": 36207,
+      "layers": 90,
+      "storedWeights": 71938,
+      "gatherReads": 103,
+      "maximumLayerWidth": 1249,
+      "compileMs": 17.7,
+      "microsecondsPerFrame": 213.71,
+      "seeds": 20,
+      "framesPerSeed": 600,
+      "differentialFrames": 12000,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 70,
+      "runsWithAnimatingMismatch": 7,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0.010294979420905292,
+      "maximumPositionError": 21.498932291207893,
+      "runsWithPositionErrorAbove1px": 3,
+      "maximumScaleError": 0.027824038331914158,
+      "reorderFrames": 1152,
+      "cardReleases": 390,
+      "clampedReleases": 13,
+      "sections": [
+        {
+          "name": "clock and step bits",
+          "liveOperations": 50,
+          "storedWeights": 62
+        },
+        {
+          "name": "pointer state and buffer",
+          "liveOperations": 219,
+          "storedWeights": 222
+        },
+        {
+          "name": "hit tests",
+          "liveOperations": 2302,
+          "storedWeights": 4200
+        },
+        {
+          "name": "first match by rank",
+          "liveOperations": 1397,
+          "storedWeights": 3595
+        },
+        {
+          "name": "drag ownership and pins",
+          "liveOperations": 416,
+          "storedWeights": 1124
+        },
+        {
+          "name": "release velocity",
+          "liveOperations": 296,
+          "storedWeights": 1799
+        },
+        {
+          "name": "rank update",
+          "liveOperations": 2204,
+          "storedWeights": 5002
+        },
+        {
+          "name": "stack layout",
+          "liveOperations": 1003,
+          "storedWeights": 2100
+        },
+        {
+          "name": "springs",
+          "liveOperations": 26803,
+          "storedWeights": 50402
+        },
+        {
+          "name": "z, cursor, and commit",
+          "liveOperations": 1517,
+          "storedWeights": 3432
+        }
+      ]
+    },
+    {
+      "layout": "incremental",
+      "cardCount": 200,
+      "sourceCells": 2116,
+      "buildMs": 52.7,
+      "liveOperations": 71807,
+      "layers": 93,
+      "storedWeights": 141738,
+      "gatherReads": 103,
+      "maximumLayerWidth": 2449,
+      "compileMs": 34.5,
+      "microsecondsPerFrame": 432.83,
+      "seeds": 0,
+      "framesPerSeed": 0,
+      "differentialFrames": 0,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 0,
+      "runsWithAnimatingMismatch": 0,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0,
+      "maximumPositionError": 0,
+      "runsWithPositionErrorAbove1px": 0,
+      "maximumScaleError": 0,
+      "reorderFrames": 0,
+      "cardReleases": 0,
+      "clampedReleases": 0,
+      "sections": [
+        {
+          "name": "clock and step bits",
+          "liveOperations": 50,
+          "storedWeights": 62
+        },
+        {
+          "name": "pointer state and buffer",
+          "liveOperations": 219,
+          "storedWeights": 222
+        },
+        {
+          "name": "hit tests",
+          "liveOperations": 4602,
+          "storedWeights": 8400
+        },
+        {
+          "name": "first match by rank",
+          "liveOperations": 2797,
+          "storedWeights": 7195
+        },
+        {
+          "name": "drag ownership and pins",
+          "liveOperations": 816,
+          "storedWeights": 2224
+        },
+        {
+          "name": "release velocity",
+          "liveOperations": 296,
+          "storedWeights": 1799
+        },
+        {
+          "name": "rank update",
+          "liveOperations": 4404,
+          "storedWeights": 10002
+        },
+        {
+          "name": "stack layout",
+          "liveOperations": 2003,
+          "storedWeights": 4200
+        },
+        {
+          "name": "springs",
+          "liveOperations": 53603,
+          "storedWeights": 100802
+        },
+        {
+          "name": "z, cursor, and commit",
+          "liveOperations": 3017,
+          "storedWeights": 6832
+        }
+      ]
+    }
+  ],
+  "flick": [
+    {
+      "sourceCells": 92,
+      "buildMs": 2.6,
+      "liveOperations": 854,
+      "layers": 118,
+      "storedWeights": 2288,
+      "gatherReads": 64,
+      "maximumLayerWidth": 66,
+      "compileMs": 0.7,
+      "microsecondsPerFrame": 9.47,
+      "seeds": 25,
+      "framesPerSeed": 5000,
+      "frames": 125000,
+      "flicks": 4312,
+      "clampedFlicks": 0,
+      "decisionMismatchFrames": 0,
+      "scheduleMismatchFrames": 678,
+      "maximumPositionError": 0.016647688911746172,
+      "maximumRestError": 0.016663278136377357,
+      "maximumFlickSpeed": 20300.073492942665
+    }
+  ],
+  "hazard": [
+    {
+      "seedForm": "composed",
+      "newtonSteps": 0,
+      "dtValues": 8192,
+      "worstRelativeErrorOfReciprocal": 2.3312177658081055,
+      "worstAtDt": 127.96875,
+      "valuesAbove1Percent": 8043
+    },
+    {
+      "seedForm": "composed",
+      "newtonSteps": 4,
+      "dtValues": 8192,
+      "worstRelativeErrorOfReciprocal": 8.997719764709473,
+      "worstAtDt": 96.03125,
+      "valuesAbove1Percent": 1709
+    },
+    {
+      "seedForm": "materialized",
+      "newtonSteps": 0,
+      "dtValues": 8192,
+      "worstRelativeErrorOfReciprocal": 0.3333333730697632,
+      "worstAtDt": 128,
+      "valuesAbove1Percent": 7946
+    },
+    {
+      "seedForm": "materialized",
+      "newtonSteps": 4,
+      "dtValues": 8192,
+      "worstRelativeErrorOfReciprocal": 1.3750104699283838e-7,
+      "worstAtDt": 119.984375,
+      "valuesAbove1Percent": 0
+    }
+  ],
+  "pieces": [
+    {
+      "label": "one spring lane: 9 matrix-power stages plus settling (position, destination, velocity, and step bits as source cells)",
+      "liveOperations": 84,
+      "layers": 41,
+      "storedWeights": 152,
+      "gatherReads": 0,
+      "maximumLayerWidth": 4
+    },
+    {
+      "label": "IndirectOS emitSpring: 4 substeps of a runtime timestep (parameters as source cells)",
+      "liveOperations": 46,
+      "layers": 33,
+      "storedWeights": 104,
+      "gatherReads": 0,
+      "maximumLayerWidth": 4
+    },
+    {
+      "label": "catch-up clock: min(300, floor(elapsed / 4)) and its 9 bits, including the animating gate and the 2^15 ms clamp on elapsed",
+      "liveOperations": 49,
+      "layers": 15,
+      "storedWeights": 62,
+      "gatherReads": 0,
+      "maximumLayerWidth": 9,
+      "inputsChecked": 2297153,
+      "mismatches": 0,
+      "ms": 1701.8
+    },
+    {
+      "label": "release velocity: 24 samples, window search, gather, 4 Newton steps (samples as source cells)",
+      "liveOperations": 289,
+      "layers": 32,
+      "storedWeights": 1787,
+      "gatherReads": 3,
+      "maximumLayerWidth": 73,
+      "checked": 3949,
+      "failures": 0,
+      "worstRelativeError": 1.87162604730659e-7,
+      "clampedTrials": 0
+    },
+    {
+      "label": "release velocity with the ±2^16 px/s clamp (samples as source cells)",
+      "liveOperations": 295,
+      "layers": 34,
+      "storedWeights": 1797,
+      "gatherReads": 3,
+      "maximumLayerWidth": 73,
+      "checked": 3949,
+      "failures": 0,
+      "worstRelativeError": 1.87162604730659e-7,
+      "clampedTrials": 69
+    }
+  ],
+  "cards-seeds": [
+    {
+      "layout": "incremental",
+      "cardCount": 50,
+      "seeds": 61,
+      "framesPerSeed": 1500,
+      "stoppedRuns": [],
+      "differentialFrames": 91500,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 52,
+      "runsWithAnimatingMismatch": 15,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0.01025390625,
+      "maximumPositionError": 49.383349207696824,
+      "runsWithPositionErrorAbove1px": 3,
+      "cardReleases": 2923,
+      "clampedReleases": 47
+    },
+    {
+      "layout": "incremental",
+      "cardCount": 100,
+      "seeds": 61,
+      "framesPerSeed": 1200,
+      "stoppedRuns": [],
+      "differentialFrames": 73200,
+      "decisionMismatchFrames": 0,
+      "animatingMismatchFrames": 150,
+      "runsWithAnimatingMismatch": 24,
+      "maximumPositionErrorBeforeAnimatingMismatch": 0.010294979420905292,
+      "maximumPositionError": 173.07539041024967,
+      "runsWithPositionErrorAbove1px": 11,
+      "cardReleases": 2348,
+      "clampedReleases": 79
+    }
+  ]
+}

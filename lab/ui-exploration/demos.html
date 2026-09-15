@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Indirect demos</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --page: #f5f5f2;
+      --card: #ffffff;
+      --text: #1c1c1a;
+      --muted: #5f5f59;
+      --line: #dcdcd5;
+      --link: #1d5bb8;
+      --visited: #6b43a6;
+      --code: #ececE6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page: #131312;
+        --card: #1d1d1b;
+        --text: #e6e6e0;
+        --muted: #a2a29a;
+        --line: #33332e;
+        --link: #82b4ff;
+        --visited: #c4a6ff;
+        --code: #2a2a26;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--page); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 1200px; margin: 0 auto; padding: 32px 20px 56px; }
+    h1 { font-size: 26px; line-height: 1.2; margin: 0 0 6px; }
+    .lede { margin: 0; color: var(--muted); max-width: 72ch; }
+    h2 { font-size: 18px; margin: 40px 0 4px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+    .section-note { margin: 8px 0 14px; color: var(--muted); font-size: 14px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr)); gap: 12px; margin-top: 14px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .card h3 { margin: 0; font-size: 16px; line-height: 1.3; }
+    .card p { margin: 0; }
+    .path { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--muted); overflow-wrap: anywhere; }
+    .try-label { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+    ul { margin: 0; padding-left: 18px; }
+    li + li { margin-top: 4px; }
+    .note { font-size: 13px; color: var(--muted); }
+    .links { margin-top: auto; padding-top: 4px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; }
+    a { color: var(--link); text-underline-offset: 2px; }
+    a:visited { color: var(--visited); }
+    a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 2px; }
+    code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code); padding: 0 4px; border-radius: 4px; }
+    footer { margin-top: 44px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Indirect demos</h1>
+  <p class="lede">Every demo page in this repo, from one server: each page compiles a UI into one fixed numeric program, and JavaScript only records input, runs the program, and copies its outputs onto the page.</p>
+
+  <section>
+    <h2>Original repo demos</h2>
+    <div class="cards">
+      <article class="card">
+        <h3><a href="/index.html">IndirectOS</a></h3>
+        <p class="path">index.html</p>
+        <p>A desktop with four windows, a dock and a Photos app, where focus, stacking, dragging, resizing, window buttons, springs and the photo viewer all run in one compiled program.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag a title bar, resize a window from its corner, and use the three window buttons; a closed window comes back from the dock.</li>
+          <li>In Photos, click a photo to open it, then use the arrow controls.</li>
+        </ul>
+        <p class="links"><a href="/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/candidate-gallery.html">Candidate gallery</a></h3>
+        <p class="path">candidate-gallery.html</p>
+        <p>Three photo layouts, Cinema, Contact and Story, score themselves against the same viewport inside one program, and the page shows the winner.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Resize the browser window and watch the three scores and the selected layout change.</li>
+        </ul>
+        <p class="links"><a href="/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/learned-gallery.html">Learned gallery</a></h3>
+        <p class="path">learned-gallery.html</p>
+        <p>Backpropagation trains a small geometry network so that its photo layout matches rectangles you sketch.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>In Target, drag a rectangle to move it, drag its corner to scale it, click empty space to add one, or press Delete to remove one; Learned follows.</li>
+          <li>Watch the loss in the footer go down while it trains.</li>
+        </ul>
+        <p class="links"><a href="/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/hard-attend.html">Hard attend walkthrough</a></h3>
+        <p class="path">hard-attend.html</p>
+        <p>Reading one of three items with a query: the highest score picks the item, and three ways of reading it are shown side by side.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Move the query slider or pick a preset, and compare the one-hot gather, the direct gather and the softmax gather.</li>
+          <li>Drag the sharpness slider to see the softmax result approach the exact one.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/generative-fields/demo.html">Generative fields</a></h3>
+        <p class="path">lab/generative-fields/demo.html</p>
+        <p>One 16-slot layout program that becomes a grid, a hero layout, a mosaic, a list or a filmstrip purely from numbers, with interpolation between layouts repaired by the program's own validity outputs.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Click Grid, Hero, Mosaic, List or Filmstrip, then drag the scrubber or press play, and compare the naive stage with the repaired one.</li>
+          <li>Press Generate for searched layouts, or click a tile to move the hero there.</li>
+        </ul>
+        <p class="links"><a href="/lab/generative-fields/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/event-window/demo.html">Event window</a></h3>
+        <p class="path">lab/event-window/demo.html</p>
+        <p>Four windows whose dragging, focus and click-to-maximize come from one latched press record plus the live pointer, checked every frame against a plain TypeScript reference.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag a title bar; click a window to focus it, then click its body again to maximize it.</li>
+          <li>Turn on "body drags" or move the slop slider: the behavior changes without recompiling, and the agreement counter stays at 0 divergences.</li>
+        </ul>
+        <p class="links"><a href="/lab/event-window/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/reusable-layout/demo.html">Reusable photo layout</a></h3>
+        <p class="path">lab/reusable-layout/demo.html</p>
+        <p>A small learned function proposes each photo's width from the viewport and the photo's content, compared with plain wrapping and a search per layout.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag the Viewport slider and switch between Wrapping, Per-layout search and Shared rule.</li>
+          <li>Press New collection or switch the captions, and read the comparison table.</li>
+        </ul>
+        <p class="links"><a href="/lab/reusable-layout/README.md">README</a></p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Overnight prototypes, round 2</h2>
+    <p class="section-note">Each folder's README has measurements and a "Browser check" section. Overview: <a href="/lab/ui-exploration/README.md">lab/ui-exploration/README.md</a>.</p>
+    <div class="cards">
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/text-walker/demo.html">text-walker</a></h3>
+        <p class="path">lab/ui-exploration/text-walker/demo.html</p>
+        <p>pretext's line breaking written as program arithmetic: a paragraph flows around a draggable window, and every word has its own spring.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag the window by its title bar and watch the lines reflow around it.</li>
+          <li>Click a word to make it bold, or move the column width slider; the side panel counts mismatches against pretext.</li>
+        </ul>
+        <p class="note">Compiles for a few seconds after load.</p>
+        <p class="links"><a href="/lab/ui-exploration/text-walker/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/text-tabulated/demo.html">text-tabulated</a></h3>
+        <p class="path">lab/ui-exploration/text-tabulated/demo.html</p>
+        <p>A Notes window whose heading, paragraphs and chat bubbles reflow from widths found ahead of time, so the program only compares the current width with stored thresholds.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag the window's right edge; the ruler above it marks every width where some line count changes.</li>
+          <li>Press the autopilot button; the check panel should keep reporting 0 frames with a wrong line break against pretext.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/text-tabulated/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/index-read/demo.html">index-read</a></h3>
+        <p class="path">lab/ui-exploration/index-read/demo.html</p>
+        <p>A runtime copy with an instruction that reads a table at an integer index: a 10,000-row list filled through 24 DOM slots, and a 221-photo strip centered on the focused photo.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Scroll the list, then switch the circuit menu to compare operation counts. The two relu one-hot choices freeze the page for a few seconds while they build.</li>
+          <li>In the photo strip, use the left and right arrow keys or click a photo.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/index-read/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/spring-bank/demo.html">spring-bank: predicted keyframes</a></h3>
+        <p class="path">lab/ui-exploration/spring-bank/demo.html</p>
+        <p>Fixed 4 ms springs computed as shared matrix powers. Each click predicts 1.2 seconds of motion and hands it to Web Animations, while the page itself renders only every 300 ms.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Click anywhere to fling the five shapes.</li>
+          <li>Switch Prediction between 301 separate evaluations and one batched evaluation, and read the timing in the header.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/spring-bank/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/spring-bank/indirect-os.html">spring-bank: IndirectOS</a></h3>
+        <p class="path">lab/ui-exploration/spring-bank/indirect-os.html</p>
+        <p>IndirectOS with the spring bank, plus controls for the spring variant, when a new destination takes effect, the frame rate, and a 500 ms main-thread stall.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Maximize Photos, then press "stall 500 ms" or switch to 10 fps: animations still end on time. With the original springs at 10 fps they end about a second late.</li>
+          <li>Compare the System Monitor with the original springs: 3,580 against 5,253 operations.</li>
+        </ul>
+        <p class="links">
+          <a href="/lab/ui-exploration/spring-bank/indirect-os.html?springs=original"><code>?springs=original</code></a>
+          <a href="/lab/ui-exploration/spring-bank/indirect-os.html?fps=10"><code>?fps=10</code></a>
+          <a href="/lab/ui-exploration/spring-bank/indirect-os.html?springs=original&amp;fps=10"><code>?springs=original&amp;fps=10</code></a>
+          <a href="/lab/ui-exploration/spring-bank/README.md">README</a>
+        </p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/notation/indirect-os.html">notation: IndirectOS</a></h3>
+        <p class="path">lab/ui-exploration/notation/indirect-os.html</p>
+        <p>IndirectOS rewritten with a table allocator and helper functions over wires. It compiles to exactly the same program as the original.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag and resize windows, maximize Photos and open a photo, as in the original.</li>
+          <li>Check the System Monitor against the original's counts: 5,253 operations, 192 layers and 11,598 weights.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/notation/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/notation/demo.html">notation: settings panel</a></h3>
+        <p class="path">lab/ui-exploration/notation/demo.html</p>
+        <p>A new settings panel written with the same notation: three toggles, a segmented control, a slider and a reset button, all animated by springs.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Toggle Bluetooth, choose Dark, drag the volume slider, then press Reset.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/notation/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/lists/list.html">lists: virtualized list</a></h3>
+        <p class="path">lab/ui-exploration/lists/list.html</p>
+        <p>A virtualized list of 10,000 rows in a native scroll container. The program fills 24 DOM slots, and with uniform rows its size doesn't depend on the row count.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Scroll with uniform rows, then pick variable heights and press New heights.</li>
+          <li>Check "Read row colors through the circuit's slot one-hots" and scroll again; the stats line shows the program grow.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/lists/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/lists/cards.html">lists: draggable cards</a></h3>
+        <p class="path">lab/ui-exploration/lists/cards.html</p>
+        <p>vibescript's draggable cards ported into one program: counting how many cards the dragged card has passed decides the order, and fixed-step springs move the cards.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag a card past its neighbors to reorder the stack.</li>
+          <li>Switch Cards to 20 or 100 and drag again; the panel shows the program's size.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/lists/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/input/demo.html">input</a></h3>
+        <p class="path">lab/ui-exploration/input/demo.html</p>
+        <p>A menu bar, three windows and a 12-key keypad in one program that handles every queued pointer and key event of a frame, with a divergence counter against a one-event-at-a-time reference.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag the Notes title bar, double-click it to maximize, and click Layout at the bottom right to open its menu upward.</li>
+          <li>Click key 5, then use the arrow keys, Tab and Enter. Open Help, then "About this demo".</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/input/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/text-editing/demo.html">text-editing</a></h3>
+        <p class="path">lab/ui-exploration/text-editing/demo.html</p>
+        <p>A text field whose editing model runs inside the program: insert and delete, caret and word movement, selection, paste, wrapping, and click to place the caret.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Click to place the caret and type; Option+Left jumps by word, and Shift+Right extends the selection.</li>
+          <li>Drag across two lines to select, or press ArrowDown twice, then ArrowUp, to see the caret keep its x.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/text-editing/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/layout-tree/demo.html">layout-tree</a></h3>
+        <p class="path">lab/ui-exploration/layout-tree/demo.html</p>
+        <p>Clay-style layout passes as program layers: an app shell with a springing sidebar, sticky section headers, a wrapping tag row and grids of cards.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Click the black menu button to spring the sidebar closed and open; the cards widen and their captions rewrap.</li>
+          <li>Resize the window to see the grid change its column count.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/layout-tree/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/gallery/demo.html">gallery</a></h3>
+        <p class="path">lab/ui-exploration/gallery/demo.html</p>
+        <p>The render path of chenglou.github.io's 221-photo gallery as one program. Photos show as colored rectangles with each photo's aspect ratio.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Hover a photo and click it to open the strip, use the arrow keys, then press Escape.</li>
+          <li>Scroll down the grid; photos far outside the viewport have no DOM nodes.</li>
+        </ul>
+        <p class="links">
+          <a href="/lab/ui-exploration/gallery/demo.html?photos=cdn"><code>?photos=cdn</code></a> real photos from Midjourney's CDN
+          <a href="/lab/ui-exploration/gallery/README.md">README</a>
+        </p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/hn-thread/demo.html">hn-thread</a></h3>
+        <p class="path">lab/ui-exploration/hn-thread/demo.html</p>
+        <p>The nicer-hacker-news thread with 251 comments as one program, with comment heights from line breaks found ahead of time, and sticky user banners.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Scroll the thread, and click a user banner to collapse that comment.</li>
+          <li>Hover a gutter line, then press and hold it: the ancestor's banner is emphasized and the rows below move down.</li>
+        </ul>
+        <p class="note">Setup takes a few seconds after load.</p>
+        <p class="links"><a href="/lab/ui-exploration/hn-thread/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/codegen/demo.html">codegen</a></h3>
+        <p class="path">lab/ui-exploration/codegen/demo.html</p>
+        <p>One compiled program evaluated once per pixel or grid cell, as generated JavaScript or as a WebGPU compute shader, with the two compared bit for bit.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Switch between the four workloads and hover the canvas, e.g. the IndirectOS press map names the window part under the pointer.</li>
+          <li>Uncheck "max guard in the shader" and read how many GPU outputs stop matching generated JavaScript.</li>
+        </ul>
+        <p class="note">The GPU backend needs WebGPU.</p>
+        <p class="links"><a href="/lab/ui-exploration/codegen/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/numeric-library/demo.html">numeric-library</a></h3>
+        <p class="path">lab/ui-exploration/numeric-library/demo.html</p>
+        <p>A magnifying dock and a spinning progress ring, built from exact comparisons, floor, square root, sine, cosine and a hash inside the program.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Move the pointer near the dock: the icons magnify around it, and exactly one gets the nearest outline.</li>
+          <li>Watch the ring: the number of lit ticks matches the percent label.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/numeric-library/README.md">README</a></p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Round 3: consolidation</h2>
+    <div class="cards">
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/indirect-os-2/indirect-os.html">indirect-os-2</a></h3>
+        <p class="path">lab/ui-exploration/indirect-os-2/indirect-os.html</p>
+        <p>IndirectOS rebuilt with the notation, the spring bank and an exact event queue, plus a Notes paragraph that flows around the other windows with a spring per word.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag Photos over Notes and watch the paragraph reflow around it.</li>
+          <li>Press Files' close button, move away and back, then release: Files stays open, while a quick click closes it.</li>
+        </ul>
+        <p class="note">Switches to generated JavaScript during idle time, which can stall one frame for about half a second.</p>
+        <p class="links"><a href="/lab/ui-exploration/indirect-os-2/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/instanced-items/demo.html">instanced-items</a></h3>
+        <p class="path">lab/ui-exploration/instanced-items/demo.html</p>
+        <p>The photo gallery written as per-photo programs that run over every photo, with a few reductions across photos between them, here at 10,000 synthetic photos.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Scroll far down the page; only the 12 to 16 photos near the viewport get DOM nodes.</li>
+          <li>Click a photo to open the strip, use the arrow keys, then press Escape.</li>
+        </ul>
+        <p class="links">
+          <a href="/lab/ui-exploration/instanced-items/demo.html?count=221"><code>?count=221</code></a> the real photo list
+          <a href="/lab/ui-exploration/instanced-items/demo.html?count=1000"><code>?count=1000</code></a>
+          <a href="/lab/ui-exploration/instanced-items/README.md">README</a>
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Round 3: after the talk</h2>
+    <div class="cards">
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/streaming-words/demo.html">streaming-words</a></h3>
+        <p class="path">lab/ui-exploration/streaming-words/demo.html</p>
+        <p>A streamed chat conversation where every arriving word springs into place, each bubble is computed from its words, and Stop writes back how many words had arrived.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Press Stop while a reply streams, then Restart.</li>
+          <li>Drag the width slider, or change the chunk size and how arriving words start; the panel counts states checked against pretext.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/streaming-words/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/drag-knobs/demo.html">drag-knobs</a></h3>
+        <p class="path">lab/ui-exploration/drag-knobs/demo.html</p>
+        <p>Dragging a card edge in layout-tree's app shell changes five design numbers (card padding, grid gap, minimum card width, sidebar width, title scale) through one backward pass, with a search when the gradient can't get there.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag the right edge of a card to the left; the panel shows how the frame was solved, and the grid may gain a column.</li>
+          <li>Uncheck some of the design numbers, drag a bottom edge, then press the reset button.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/drag-knobs/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/event-time/demo.html">event-time</a></h3>
+        <p class="path">lab/ui-exploration/event-time/demo.html</p>
+        <p>IndirectOS where state changes only at event timestamps, and what's on screen comes from predictions: Web Animations keyframes by default, or one evaluation per frame.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Maximize Photos and read the monitor's commit and animation counts.</li>
+          <li>Press "stall 500 ms once the next animation starts", then minimize a window. Repeat with display frames.</li>
+        </ul>
+        <p class="links">
+          <a href="/lab/ui-exploration/event-time/demo.html?presenter=frames"><code>?presenter=frames</code></a> display frames
+          <a href="/lab/ui-exploration/event-time/README.md">README</a>
+        </p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/pixel-output/demo.html">pixel-output</a></h3>
+        <p class="path">lab/ui-exploration/pixel-output/demo.html</p>
+        <p>The HN thread drawn per pixel by a WebGPU fragment shader: each pixel finds its own row, line and character, so there are no DOM slots and no second text layout.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>With "index reads, glyph text", scroll with the wheel and hover a gutter line.</li>
+          <li>Switch Backend to CPU to compare, or pick "row counts and gathers, gray bars (large shader)", whose shader can take seconds to compile.</li>
+        </ul>
+        <p class="note">Needs WebGPU. The README's Chrome check ran on a scratch copy with the same fix as this folder.</p>
+        <p class="links"><a href="/lab/ui-exploration/pixel-output/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3><a href="/lab/ui-exploration/code-points/demo.html">code-points</a></h3>
+        <p class="path">lab/ui-exploration/code-points/demo.html</p>
+        <p>A text field whose cells hold Unicode code points, with line break classes, break rules and advances read from tables inside the program, so Chinese, Japanese and Korean wrap as in pretext.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Press Insert Chinese, Insert Korean or Insert mixed, then drag the Width slider: no line starts with 、 or 。.</li>
+          <li>Press the font size button: only advance table entries are rewritten, and no text cells.</li>
+        </ul>
+        <p class="links"><a href="/lab/ui-exploration/code-points/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3>user-population</h3>
+        <p class="path">lab/ui-exploration/user-population/README.md</p>
+        <p>Simulated users run input's window program as thousands of instances, to choose the drag threshold and double-click settings for each tremor level.</p>
+        <p class="note">No demo page; see the folder's README.</p>
+        <p class="links"><a href="/lab/ui-exploration/user-population/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3>exactness-budget</h3>
+        <p class="path">lab/ui-exploration/exactness-budget/README.md</p>
+        <p>Seven UIs run through executors that add terms in different orders or in float64, to find which exactness each UI actually depends on.</p>
+        <p class="note">No demo page; see the folder's README.</p>
+        <p class="links"><a href="/lab/ui-exploration/exactness-budget/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3>learned-bits</h3>
+        <p class="path">lab/ui-exploration/learned-bits/README.md</p>
+        <p>UI decision rules such as Tab with disabled controls, learned as networks of 2-input gates or of counting units, and checked on every input case.</p>
+        <p class="note">No demo page; see the folder's README.</p>
+        <p class="links"><a href="/lab/ui-exploration/learned-bits/README.md">README</a></p>
+      </article>
+
+      <article class="card">
+        <h3>retiming</h3>
+        <p class="path">lab/ui-exploration/retiming/README.md</p>
+        <p>A search for values that may read last frame's copy instead of this frame's, trading program depth against visible error.</p>
+        <p class="note">No demo page; see the folder's README.</p>
+        <p class="links"><a href="/lab/ui-exploration/retiming/README.md">README</a></p>
+      </article>
+    </div>
+  </section>
+
+  <footer>Served by <code>bun lab/ui-exploration/serve-demos.ts</code> from the repo root; pass <code>--port</code> or set <code>PORT</code> to change the default port 4321.</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,328 @@
+{
+  "structure": {
+    "rootCount": 429,
+    "strict": {
+      "matchingRoots": 429,
+      "liveOnlyInOriginal": 0,
+      "liveOnlyInRewrite": 0
+    },
+    "relaxed": {
+      "matchingRoots": 429,
+      "liveOnlyInOriginal": 0,
+      "liveOnlyInRewrite": 0
+    },
+    "original": {
+      "built": 6146,
+      "live": 5253,
+      "layers": 192,
+      "weights": 11598,
+      "gatherReads": 12
+    },
+    "rewrite": {
+      "built": 6146,
+      "live": 5253,
+      "layers": 192,
+      "weights": 11598,
+      "gatherReads": 12
+    },
+    "sameLayerWidths": true
+  },
+  "traces": {
+    "scripted": {
+      "frames": 401,
+      "comparedValues": 172029,
+      "mismatchedValues": 0,
+      "firstMismatch": null,
+      "originalRejections": 1,
+      "rewriteRejections": 1,
+      "disagreements": 0,
+      "firstOriginalRejection": "frame 357: thumbnail left must be non-negative and finite, got -6.6127824783325195",
+      "firstRewriteRejection": "frame 357: IndirectOS photos.thumbnails[0].left must be finite and within 0..Infinity, got -6.6127824783325195",
+      "coverage": {
+        "heldDragMoves": 2,
+        "heldResizeMoves": 2,
+        "focusAndSelect": 1
+      },
+      "checks": {
+        "a click raises and focuses window 0": true,
+        "a title bar press starts a drag and moves window 1 in the same frame": true,
+        "a held drag stops at the left and top edges": true,
+        "a held drag stops at the right and bottom edges": true,
+        "releasing the pointer ends the drag": true,
+        "a grip press starts a resize": true,
+        "a held resize grows window 2": true,
+        "a held resize stops at the minimum size": true,
+        "releasing the pointer ends the resize": true,
+        "the maximize button works on window 3": true,
+        "the minimize button works on window 3": true,
+        "the dock item restores minimized window 3": true,
+        "the close button closes window 3": true,
+        "the dock item reopens closed window 3": true,
+        "a grid click opens photo 5": true,
+        "next shows photo 6": true,
+        "previous twice shows photo 4": true,
+        "a thumbnail click shows photo 8": true,
+        "close returns to the grid": true,
+        "a click on window 0 takes focus from Photos": true,
+        "one click focuses Photos and opens photo 3 in the same evaluation": true,
+        "the lightbox stays open through viewports 0×0 and 40×40": true
+      }
+    },
+    "random": [
+      {
+        "frames": 3001,
+        "comparedValues": 1287429,
+        "mismatchedValues": 0,
+        "firstMismatch": null,
+        "originalRejections": 0,
+        "rewriteRejections": 0,
+        "disagreements": 0,
+        "firstOriginalRejection": null,
+        "firstRewriteRejection": null,
+        "coverage": {
+          "heldDragMoves": 55,
+          "heldResizeMoves": 30,
+          "focusAndSelect": 2
+        }
+      },
+      {
+        "frames": 3001,
+        "comparedValues": 1287429,
+        "mismatchedValues": 0,
+        "firstMismatch": null,
+        "originalRejections": 0,
+        "rewriteRejections": 0,
+        "disagreements": 0,
+        "firstOriginalRejection": null,
+        "firstRewriteRejection": null,
+        "coverage": {
+          "heldDragMoves": 29,
+          "heldResizeMoves": 17,
+          "focusAndSelect": 2
+        }
+      },
+      {
+        "frames": 3001,
+        "comparedValues": 1287429,
+        "mismatchedValues": 0,
+        "firstMismatch": null,
+        "originalRejections": 0,
+        "rewriteRejections": 0,
+        "disagreements": 0,
+        "firstOriginalRejection": null,
+        "firstRewriteRejection": null,
+        "coverage": {
+          "heldDragMoves": 53,
+          "heldResizeMoves": 24,
+          "focusAndSelect": 3
+        }
+      },
+      {
+        "frames": 3001,
+        "comparedValues": 1287429,
+        "mismatchedValues": 0,
+        "firstMismatch": null,
+        "originalRejections": 0,
+        "rewriteRejections": 0,
+        "disagreements": 0,
+        "firstOriginalRejection": null,
+        "firstRewriteRejection": null,
+        "coverage": {
+          "heldDragMoves": 15,
+          "heldResizeMoves": 15,
+          "focusAndSelect": 1
+        }
+      },
+      {
+        "frames": 3001,
+        "comparedValues": 1287429,
+        "mismatchedValues": 0,
+        "firstMismatch": null,
+        "originalRejections": 0,
+        "rewriteRejections": 0,
+        "disagreements": 0,
+        "firstOriginalRejection": null,
+        "firstRewriteRejection": null,
+        "coverage": {
+          "heldDragMoves": 46,
+          "heldResizeMoves": 7,
+          "focusAndSelect": 1
+        }
+      }
+    ]
+  },
+  "timestepVariant": {
+    "stats": {
+      "built": 5826,
+      "live": 4933,
+      "layers": 184,
+      "weights": 10958,
+      "gatherReads": 12
+    },
+    "comparedValues": 858429,
+    "mismatchedValues": 0
+  },
+  "lines": {
+    "before": {
+      "behavior": {
+        "lines": 1085,
+        "characters": 29944
+      },
+      "helpers": {
+        "lines": 74,
+        "characters": 2207
+      },
+      "bookkeeping": {
+        "lines": 641,
+        "characters": 20744
+      },
+      "declarations": {
+        "lines": 275,
+        "characters": 7682
+      },
+      "wiring": {
+        "lines": 366,
+        "characters": 13062
+      },
+      "validation": {
+        "lines": 357,
+        "characters": 12000
+      },
+      "host": {
+        "lines": 392,
+        "characters": 13836
+      },
+      "imports": {
+        "lines": 49,
+        "characters": 891
+      },
+      "total": {
+        "lines": 2598,
+        "characters": 79622
+      },
+      "standalone": {
+        "lines": 68,
+        "characters": 2133
+      },
+      "comments": 30
+    },
+    "after": {
+      "behavior": {
+        "lines": 306,
+        "characters": 17476
+      },
+      "helpers": {
+        "lines": 0,
+        "characters": 0
+      },
+      "bookkeeping": {
+        "lines": 110,
+        "characters": 4731
+      },
+      "declarations": {
+        "lines": 82,
+        "characters": 3270
+      },
+      "wiring": {
+        "lines": 28,
+        "characters": 1461
+      },
+      "validation": {
+        "lines": 11,
+        "characters": 948
+      },
+      "host": {
+        "lines": 209,
+        "characters": 9726
+      },
+      "imports": {
+        "lines": 40,
+        "characters": 911
+      },
+      "total": {
+        "lines": 676,
+        "characters": 33792
+      },
+      "standalone": {
+        "lines": 0,
+        "characters": 0
+      },
+      "comments": 48
+    },
+    "library": {
+      "lines": 402,
+      "characters": 18009
+    },
+    "settingsPanel": {
+      "behavior": {
+        "lines": 72,
+        "characters": 4652
+      },
+      "helpers": {
+        "lines": 0,
+        "characters": 0
+      },
+      "bookkeeping": {
+        "lines": 48,
+        "characters": 2294
+      },
+      "declarations": {
+        "lines": 38,
+        "characters": 1699
+      },
+      "wiring": {
+        "lines": 10,
+        "characters": 595
+      },
+      "validation": {
+        "lines": 8,
+        "characters": 232
+      },
+      "host": {
+        "lines": 35,
+        "characters": 1436
+      },
+      "imports": {
+        "lines": 21,
+        "characters": 443
+      },
+      "total": {
+        "lines": 184,
+        "characters": 9057
+      },
+      "standalone": {
+        "lines": 0,
+        "characters": 0
+      },
+      "comments": 14
+    }
+  },
+  "timings": {
+    "originalStep": 129.9,
+    "rewriteStep": 41.4,
+    "evaluateTensor": 41,
+    "derivedSourceValidator": 0.3
+  },
+  "settingsPanel": {
+    "stats": {
+      "built": 800,
+      "live": 670,
+      "layers": 75,
+      "weights": 1374,
+      "gatherReads": 0
+    },
+    "sources": 54
+  },
+  "reciprocal": {
+    "stats": {
+      "built": 101,
+      "live": 72,
+      "layers": 19,
+      "weights": 109,
+      "gatherReads": 0
+    },
+    "samples": 36384,
+    "maximumRelativeError": 9.729410521686077e-8,
+    "bitEqualShare": 0.6959927440633246
+  }
+}

@@ -1,0 +1,1614 @@
+{
+  "appShellChain": [
+    {
+      "tag": "app",
+      "layers": 39
+    },
+    {
+      "tag": "2 widths:0",
+      "layers": 2
+    },
+    {
+      "tag": "2 widths:1",
+      "layers": 3
+    },
+    {
+      "tag": "2 widths:2",
+      "layers": 2
+    },
+    {
+      "tag": "2 widths:3",
+      "layers": 37
+    },
+    {
+      "tag": "4 fit heights:3",
+      "layers": 22
+    },
+    {
+      "tag": "4 fit heights:1",
+      "layers": 2
+    },
+    {
+      "tag": "5 heights:0",
+      "layers": 1
+    },
+    {
+      "tag": "5 heights:1",
+      "layers": 1
+    },
+    {
+      "tag": "6 positions:2",
+      "layers": 2
+    },
+    {
+      "tag": "6 positions:3",
+      "layers": 4
+    }
+  ],
+  "appShellVariants": [
+    [
+      "as built (spring feeds this frame's layout, tags wrap)",
+      2806,
+      115,
+      7451
+    ],
+    [
+      "layout reads the previous frame's spring position",
+      2806,
+      83,
+      7451
+    ],
+    [
+      "no tags wrap",
+      2481,
+      85,
+      6695
+    ],
+    [
+      "previous frame's spring position, no tags wrap",
+      2481,
+      48,
+      6695
+    ]
+  ],
+  "appShellRectGroups": {
+    "size and position do not read the body row's height": {
+      "count": 23,
+      "firstDepth": 1,
+      "lastDepth": 30,
+      "names": [
+        "header",
+        "menuButton",
+        "title",
+        "headerSpacer",
+        "actions",
+        "shareButton",
+        "shareButton.label",
+        "exportButton",
+        "exportButton.label",
+        "newButton",
+        "newButton.label",
+        "nav0",
+        "nav0.label",
+        "nav1",
+        "nav1.label",
+        "nav2",
+        "nav2.label",
+        "nav3",
+        "nav3.label",
+        "nav4",
+        "nav4.label",
+        "nav5",
+        "nav5.label"
+      ]
+    },
+    "size or position reads the body row's height": {
+      "count": 162,
+      "firstDepth": 109,
+      "lastDepth": 115,
+      "names": [
+        "body",
+        "sidebar",
+        "main",
+        "tags",
+        "tag0",
+        "tag0.label",
+        "tag1",
+        "tag1.label",
+        "tag2",
+        "tag2.label",
+        "tag3",
+        "tag3.label",
+        "tag4",
+        "tag4.label",
+        "tag5",
+        "tag5.label",
+        "tag6",
+        "tag6.label",
+        "tag7",
+        "tag7.label",
+        "tag8",
+        "tag8.label",
+        "tag9",
+        "tag9.label",
+        "recent",
+        "recent.header",
+        "recent.title",
+        "recent.grid",
+        "card0",
+        "card0.thumb",
+        "card0.title",
+        "card0.caption",
+        "card0.spacer",
+        "card0.meta",
+        "card0.kind",
+        "card0.metaSpacer",
+        "card0.date",
+        "card1",
+        "card1.thumb",
+        "card1.title",
+        "card1.caption",
+        "card1.spacer",
+        "card1.meta",
+        "card1.kind",
+        "card1.metaSpacer",
+        "card1.date",
+        "card2",
+        "card2.thumb",
+        "card2.title",
+        "card2.caption",
+        "card2.spacer",
+        "card2.meta",
+        "card2.kind",
+        "card2.metaSpacer",
+        "card2.date",
+        "card3",
+        "card3.thumb",
+        "card3.title",
+        "card3.caption",
+        "card3.spacer",
+        "card3.meta",
+        "card3.kind",
+        "card3.metaSpacer",
+        "card3.date",
+        "card4",
+        "card4.thumb",
+        "card4.title",
+        "card4.caption",
+        "card4.spacer",
+        "card4.meta",
+        "card4.kind",
+        "card4.metaSpacer",
+        "card4.date",
+        "card5",
+        "card5.thumb",
+        "card5.title",
+        "card5.caption",
+        "card5.spacer",
+        "card5.meta",
+        "card5.kind",
+        "card5.metaSpacer",
+        "card5.date",
+        "card6",
+        "card6.thumb",
+        "card6.title",
+        "card6.caption",
+        "card6.spacer",
+        "card6.meta",
+        "card6.kind",
+        "card6.metaSpacer",
+        "card6.date",
+        "card7",
+        "card7.thumb",
+        "card7.title",
+        "card7.caption",
+        "card7.spacer",
+        "card7.meta",
+        "card7.kind",
+        "card7.metaSpacer",
+        "card7.date",
+        "shared",
+        "shared.header",
+        "shared.title",
+        "shared.grid",
+        "card8",
+        "card8.thumb",
+        "card8.title",
+        "card8.caption",
+        "card8.spacer",
+        "card8.meta",
+        "card8.kind",
+        "card8.metaSpacer",
+        "card8.date",
+        "card9",
+        "card9.thumb",
+        "card9.title",
+        "card9.caption",
+        "card9.spacer",
+        "card9.meta",
+        "card9.kind",
+        "card9.metaSpacer",
+        "card9.date",
+        "card10",
+        "card10.thumb",
+        "card10.title",
+        "card10.caption",
+        "card10.spacer",
+        "card10.meta",
+        "card10.kind",
+        "card10.metaSpacer",
+        "card10.date",
+        "card11",
+        "card11.thumb",
+        "card11.title",
+        "card11.caption",
+        "card11.spacer",
+        "card11.meta",
+        "card11.kind",
+        "card11.metaSpacer",
+        "card11.date",
+        "card12",
+        "card12.thumb",
+        "card12.title",
+        "card12.caption",
+        "card12.spacer",
+        "card12.meta",
+        "card12.kind",
+        "card12.metaSpacer",
+        "card12.date",
+        "card13",
+        "card13.thumb",
+        "card13.title",
+        "card13.caption",
+        "card13.spacer",
+        "card13.meta",
+        "card13.kind",
+        "card13.metaSpacer",
+        "card13.date",
+        "footer",
+        "footer.status",
+        "footerSpacer",
+        "footer.version"
+      ]
+    }
+  },
+  "appShellRectDepthHistogram": [
+    [
+      1,
+      7
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      6,
+      5
+    ],
+    [
+      7,
+      1
+    ],
+    [
+      12,
+      1
+    ],
+    [
+      16,
+      1
+    ],
+    [
+      27,
+      6
+    ],
+    [
+      30,
+      1
+    ],
+    [
+      109,
+      5
+    ],
+    [
+      110,
+      2
+    ],
+    [
+      112,
+      31
+    ],
+    [
+      113,
+      81
+    ],
+    [
+      114,
+      39
+    ],
+    [
+      115,
+      4
+    ]
+  ],
+  "appShell": {
+    "stats": {
+      "sources": 544,
+      "operationsBuilt": 3957,
+      "liveOperations": 2806,
+      "layers": 115,
+      "storedWeights": 7451,
+      "widestLayer": 573,
+      "gatherReads": 28
+    },
+    "kinds": {
+      "containers": 61,
+      "boxes": 45,
+      "texts": 80,
+      "maxLevel": 7
+    },
+    "thresholdCount": 153,
+    "byPass": {
+      "app": {
+        "liveOperations": 67,
+        "storedWeights": 152,
+        "firstLayer": 0,
+        "lastLayer": 38
+      },
+      "untagged": {
+        "liveOperations": 1,
+        "storedWeights": 0,
+        "firstLayer": 0,
+        "lastLayer": 0
+      },
+      "1 fit widths": {
+        "liveOperations": 26,
+        "storedWeights": 67,
+        "firstLayer": 0,
+        "lastLayer": 6
+      },
+      "2 widths": {
+        "liveOperations": 1064,
+        "storedWeights": 2746,
+        "firstLayer": 0,
+        "lastLayer": 83
+      },
+      "4 fit heights": {
+        "liveOperations": 305,
+        "storedWeights": 868,
+        "firstLayer": 0,
+        "lastLayer": 106
+      },
+      "5 heights": {
+        "liveOperations": 36,
+        "storedWeights": 97,
+        "firstLayer": 0,
+        "lastLayer": 109
+      },
+      "6 positions": {
+        "liveOperations": 294,
+        "storedWeights": 885,
+        "firstLayer": 0,
+        "lastLayer": 114
+      },
+      "3 text lines": {
+        "liveOperations": 1013,
+        "storedWeights": 2636,
+        "firstLayer": 2,
+        "lastLayer": 64
+      }
+    },
+    "byLevel": {
+      "0": {
+        "liveOperations": 11,
+        "storedWeights": 29,
+        "firstLayer": 0,
+        "lastLayer": 108
+      },
+      "1": {
+        "liveOperations": 112,
+        "storedWeights": 318,
+        "firstLayer": 0,
+        "lastLayer": 109
+      },
+      "2": {
+        "liveOperations": 146,
+        "storedWeights": 374,
+        "firstLayer": 0,
+        "lastLayer": 111
+      },
+      "3": {
+        "liveOperations": 263,
+        "storedWeights": 656,
+        "firstLayer": 0,
+        "lastLayer": 114
+      },
+      "4": {
+        "liveOperations": 328,
+        "storedWeights": 729,
+        "firstLayer": 0,
+        "lastLayer": 114
+      },
+      "5": {
+        "liveOperations": 288,
+        "storedWeights": 825,
+        "firstLayer": 48,
+        "lastLayer": 112
+      },
+      "6": {
+        "liveOperations": 1366,
+        "storedWeights": 3892,
+        "firstLayer": 0,
+        "lastLayer": 113
+      },
+      "7": {
+        "liveOperations": 224,
+        "storedWeights": 476,
+        "firstLayer": 61,
+        "lastLayer": 64
+      },
+      "-": {
+        "liveOperations": 68,
+        "storedWeights": 152,
+        "firstLayer": 0,
+        "lastLayer": 38
+      }
+    },
+    "outputDepthByLevel": {
+      "0": 1,
+      "1": 109,
+      "2": 110,
+      "3": 112,
+      "4": 115,
+      "5": 115,
+      "6": 113,
+      "7": 114
+    },
+    "circuitMicroseconds": 24.63125,
+    "stepMicroseconds": 35.70805666666672,
+    "referenceMicroseconds": 97.37430333333332
+  },
+  "appShellFrames": {
+    "frames": 319,
+    "worstDrift": 0.0001220703125,
+    "discrete": 29348,
+    "mismatches": 0
+  },
+  "scaling": {
+    "row of grow boxes with min and max, constant fit widths (grow)": [
+      {
+        "count": 2,
+        "sources": 2,
+        "operationsBuilt": 43,
+        "liveOperations": 32,
+        "layers": 9,
+        "storedWeights": 53,
+        "widestLayer": 11,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 27,
+          "storedWeights": 52,
+          "firstLayer": 0,
+          "lastLayer": 8
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1111,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 0,
+        "mismatches": 0
+      },
+      {
+        "count": 4,
+        "sources": 2,
+        "operationsBuilt": 80,
+        "liveOperations": 60,
+        "layers": 9,
+        "storedWeights": 124,
+        "widestLayer": 20,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 51,
+          "storedWeights": 115,
+          "firstLayer": 0,
+          "lastLayer": 8
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1111,
+        "maxDrift": 0.00004069010424245789,
+        "worst": "width 549.5, child3.x: expected 409.33333333333326, got 409.3333740234375",
+        "maxWidthDrift": 0.000010172526032192764,
+        "discrete": 0,
+        "mismatches": 0
+      },
+      {
+        "count": 8,
+        "sources": 2,
+        "operationsBuilt": 163,
+        "liveOperations": 122,
+        "layers": 9,
+        "storedWeights": 342,
+        "widestLayer": 41,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 105,
+          "storedWeights": 298,
+          "firstLayer": 0,
+          "lastLayer": 8
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1097,
+        "maxDrift": 0.0004882812509094947,
+        "worst": "width 6001.5, child7.x: expected 5762.499999999999, got 5762.50048828125",
+        "maxWidthDrift": 0.00016276041696983157,
+        "discrete": 0,
+        "mismatches": 0
+      },
+      {
+        "count": 16,
+        "sources": 2,
+        "operationsBuilt": 318,
+        "liveOperations": 239,
+        "layers": 9,
+        "storedWeights": 998,
+        "widestLayer": 79,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 207,
+          "storedWeights": 803,
+          "firstLayer": 0,
+          "lastLayer": 8
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1066,
+        "maxDrift": 0.0008138020839396631,
+        "worst": "width 4783.5, child15.x: expected 4263.416666666666, got 4263.41748046875",
+        "maxWidthDrift": 0.00008138020848491578,
+        "discrete": 0,
+        "mismatches": 0
+      },
+      {
+        "count": 32,
+        "sources": 2,
+        "operationsBuilt": 635,
+        "liveOperations": 479,
+        "layers": 9,
+        "storedWeights": 3298,
+        "widestLayer": 158,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 416,
+          "storedWeights": 2482,
+          "firstLayer": 0,
+          "lastLayer": 8
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 994,
+        "maxDrift": 0.0024414062518189894,
+        "worst": "width 4239.75, child31.x: expected 4128.749999999998, got 4128.75244140625",
+        "maxWidthDrift": 0.000027743252871914592,
+        "discrete": 0,
+        "mismatches": 0
+      },
+      {
+        "count": 64,
+        "sources": 2,
+        "operationsBuilt": 1150,
+        "liveOperations": 897,
+        "layers": 9,
+        "storedWeights": 10728,
+        "widestLayer": 271,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 784,
+          "storedWeights": 7389,
+          "firstLayer": 0,
+          "lastLayer": 8
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 850,
+        "maxDrift": 0.008554687507967174,
+        "worst": "width 7741.5, child63.x: expected 7614.009999999992, got 7614.0185546875",
+        "maxWidthDrift": 0.00000762939453125,
+        "discrete": 0,
+        "mismatches": 0
+      }
+    ],
+    "row of grow containers with min and max, runtime fit widths (grow)": [
+      {
+        "count": 2,
+        "sources": 4,
+        "operationsBuilt": 48,
+        "liveOperations": 38,
+        "layers": 12,
+        "storedWeights": 85,
+        "widestLayer": 6,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 32,
+          "storedWeights": 80,
+          "firstLayer": 0,
+          "lastLayer": 11
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1111,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 0,
+        "mismatches": 0
+      },
+      {
+        "count": 4,
+        "sources": 6,
+        "operationsBuilt": 93,
+        "liveOperations": 80,
+        "layers": 13,
+        "storedWeights": 226,
+        "widestLayer": 12,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 70,
+          "storedWeights": 211,
+          "firstLayer": 0,
+          "lastLayer": 11
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1102,
+        "maxDrift": 0.00004069010424245789,
+        "worst": "width 549.5, child3.x: expected 409.33333333333326, got 409.3333740234375",
+        "maxWidthDrift": 0.000010172526032192764,
+        "discrete": 0,
+        "mismatches": 0
+      },
+      {
+        "count": 8,
+        "sources": 10,
+        "operationsBuilt": 227,
+        "liveOperations": 202,
+        "layers": 13,
+        "storedWeights": 754,
+        "widestLayer": 55,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 182,
+          "storedWeights": 699,
+          "firstLayer": 0,
+          "lastLayer": 11
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1078,
+        "maxDrift": 0.0004882812509094947,
+        "worst": "width 6001.5, child7.x: expected 5762.499999999999, got 5762.50048828125",
+        "maxWidthDrift": 0.00016276041696983157,
+        "discrete": 0,
+        "mismatches": 0
+      },
+      {
+        "count": 16,
+        "sources": 18,
+        "operationsBuilt": 589,
+        "liveOperations": 542,
+        "layers": 13,
+        "storedWeights": 2544,
+        "widestLayer": 215,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 504,
+          "storedWeights": 2349,
+          "firstLayer": 0,
+          "lastLayer": 11
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1032,
+        "maxDrift": 0.0006510416678793263,
+        "worst": "width 7857.5, child13.x: expected 6458.083333333332, got 6458.083984375",
+        "maxWidthDrift": 0.00008138020848491578,
+        "discrete": 0,
+        "mismatches": 0
+      },
+      {
+        "count": 32,
+        "sources": 34,
+        "operationsBuilt": 1797,
+        "liveOperations": 1694,
+        "layers": 13,
+        "storedWeights": 9470,
+        "widestLayer": 903,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 1618,
+          "storedWeights": 8735,
+          "firstLayer": 0,
+          "lastLayer": 11
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 939,
+        "maxDrift": 0.0019531250018189894,
+        "worst": "width 4239.75, child31.x: expected 4128.749999999998, got 4128.751953125",
+        "maxWidthDrift": 0.000027743252871914592,
+        "discrete": 0,
+        "mismatches": 0
+      },
+      {
+        "count": 64,
+        "sources": 66,
+        "operationsBuilt": 5956,
+        "liveOperations": 5750,
+        "layers": 13,
+        "storedWeights": 35976,
+        "widestLayer": 3591,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 5601,
+          "storedWeights": 33141,
+          "firstLayer": 0,
+          "lastLayer": 11
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 750,
+        "maxDrift": 0.006113281257967174,
+        "worst": "width 7741.5, child63.x: expected 7614.009999999992, got 7614.01611328125",
+        "maxWidthDrift": 0.00000762939453125,
+        "discrete": 0,
+        "mismatches": 0
+      }
+    ],
+    "row of grow texts with min and max (grow and shrink)": [
+      {
+        "count": 2,
+        "sources": 12,
+        "operationsBuilt": 124,
+        "liveOperations": 96,
+        "layers": 16,
+        "storedWeights": 242,
+        "widestLayer": 13,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 73,
+          "storedWeights": 199,
+          "firstLayer": 0,
+          "lastLayer": 12
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1111,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 2222,
+        "mismatches": 0
+      },
+      {
+        "count": 4,
+        "sources": 22,
+        "operationsBuilt": 254,
+        "liveOperations": 205,
+        "layers": 16,
+        "storedWeights": 645,
+        "widestLayer": 30,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 160,
+          "storedWeights": 555,
+          "firstLayer": 0,
+          "lastLayer": 12
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1111,
+        "maxDrift": 0.00004069010424245789,
+        "worst": "width 549.5, child3.x: expected 409.33333333333326, got 409.3333740234375",
+        "maxWidthDrift": 0.000010172526032192764,
+        "discrete": 4444,
+        "mismatches": 0
+      },
+      {
+        "count": 8,
+        "sources": 42,
+        "operationsBuilt": 596,
+        "liveOperations": 501,
+        "layers": 16,
+        "storedWeights": 2066,
+        "widestLayer": 140,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 408,
+          "storedWeights": 1864,
+          "firstLayer": 0,
+          "lastLayer": 12
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1103,
+        "maxDrift": 0.0004882812509094947,
+        "worst": "width 6001.5, child7.x: expected 5762.499999999999, got 5762.50048828125",
+        "maxWidthDrift": 0.00016276041696983157,
+        "discrete": 8888,
+        "mismatches": 0
+      },
+      {
+        "count": 16,
+        "sources": 82,
+        "operationsBuilt": 1516,
+        "liveOperations": 1329,
+        "layers": 16,
+        "storedWeights": 6953,
+        "widestLayer": 550,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 1144,
+          "storedWeights": 6485,
+          "firstLayer": 0,
+          "lastLayer": 12
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1083,
+        "maxDrift": 0.0006510416678793263,
+        "worst": "width 7857.5, child13.x: expected 6458.083333333332, got 6458.083984375",
+        "maxWidthDrift": 0.00008138020848491578,
+        "discrete": 17776,
+        "mismatches": 0
+      },
+      {
+        "count": 32,
+        "sources": 162,
+        "operationsBuilt": 4418,
+        "liveOperations": 4037,
+        "layers": 16,
+        "storedWeights": 25602,
+        "widestLayer": 2268,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 3664,
+          "storedWeights": 24404,
+          "firstLayer": 0,
+          "lastLayer": 12
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 1044,
+        "maxDrift": 0.0014648437518189894,
+        "worst": "width 3812, child31.x: expected 3701.000000000002, got 3700.99853515625",
+        "maxWidthDrift": 0.000027743252871914592,
+        "discrete": 35552,
+        "mismatches": 0
+      },
+      {
+        "count": 64,
+        "sources": 322,
+        "operationsBuilt": 14268,
+        "liveOperations": 13505,
+        "layers": 16,
+        "storedWeights": 97145,
+        "widestLayer": 9030,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 12760,
+          "storedWeights": 93725,
+          "firstLayer": 0,
+          "lastLayer": 12
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 964,
+        "maxDrift": 0.005625000007967174,
+        "worst": "width 7741.5, child63.x: expected 7614.009999999992, got 7614.015625",
+        "maxWidthDrift": 0.00000762939453125,
+        "discrete": 71104,
+        "mismatches": 0
+      }
+    ],
+    "row of fit texts (shrink)": [
+      {
+        "count": 2,
+        "sources": 14,
+        "operationsBuilt": 90,
+        "liveOperations": 73,
+        "layers": 15,
+        "storedWeights": 167,
+        "widestLayer": 12,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 42,
+          "storedWeights": 106,
+          "firstLayer": 0,
+          "lastLayer": 10
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 25,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 2222,
+        "mismatches": 0
+      },
+      {
+        "count": 4,
+        "sources": 26,
+        "operationsBuilt": 188,
+        "liveOperations": 157,
+        "layers": 15,
+        "storedWeights": 440,
+        "widestLayer": 30,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 96,
+          "storedWeights": 306,
+          "firstLayer": 0,
+          "lastLayer": 10
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 64,
+        "maxDrift": 0.00004069010424245789,
+        "worst": "width 564, child3.x: expected 421.33333333333326, got 421.3333740234375",
+        "maxWidthDrift": 0.000010172526032192764,
+        "discrete": 4444,
+        "mismatches": 0
+      },
+      {
+        "count": 8,
+        "sources": 50,
+        "operationsBuilt": 432,
+        "liveOperations": 373,
+        "layers": 15,
+        "storedWeights": 1310,
+        "widestLayer": 122,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 252,
+          "storedWeights": 994,
+          "firstLayer": 0,
+          "lastLayer": 10
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 147,
+        "maxDrift": 0.00020926339266225114,
+        "worst": "width 1064.25, child7.x: expected 931.6428571428573, got 931.64306640625",
+        "maxWidthDrift": 0.000013078962069812405,
+        "discrete": 8888,
+        "mismatches": 0
+      },
+      {
+        "count": 16,
+        "sources": 98,
+        "operationsBuilt": 1112,
+        "liveOperations": 997,
+        "layers": 15,
+        "storedWeights": 4346,
+        "widestLayer": 498,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 756,
+          "storedWeights": 3522,
+          "firstLayer": 0,
+          "lastLayer": 10
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 305,
+        "maxDrift": 0.0009114583331211179,
+        "worst": "width 2108.25, child15.x: expected 1976.7666666666669, got 1976.767578125",
+        "maxWidthDrift": 0.000020345052064385527,
+        "discrete": 17776,
+        "mismatches": 0
+      },
+      {
+        "count": 32,
+        "sources": 194,
+        "operationsBuilt": 3240,
+        "liveOperations": 3013,
+        "layers": 15,
+        "storedWeights": 15602,
+        "widestLayer": 2018,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 2532,
+          "storedWeights": 13186,
+          "firstLayer": 0,
+          "lastLayer": 10
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 623,
+        "maxDrift": 0.003780241932872741,
+        "worst": "width 4239.75, child31.x: expected 4107.370967741933, got 4107.3671875",
+        "maxWidthDrift": 0.000020345052064385527,
+        "discrete": 35552,
+        "mismatches": 0
+      },
+      {
+        "count": 64,
+        "sources": 386,
+        "operationsBuilt": 10568,
+        "liveOperations": 10117,
+        "layers": 15,
+        "storedWeights": 58850,
+        "widestLayer": 8130,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 9156,
+          "storedWeights": 50946,
+          "firstLayer": 0,
+          "lastLayer": 10
+        },
+        "sweptWidths": 1111,
+        "freeWidths": 522,
+        "maxDrift": 0.013444010419334518,
+        "worst": "width 5465, child63.x: expected 5379.816666666669, got 5379.80322265625",
+        "maxWidthDrift": 0.00000762939453125,
+        "discrete": 71104,
+        "mismatches": 0
+      }
+    ],
+    "column of fit texts inside a row (widest child, stacked heights)": [
+      {
+        "count": 2,
+        "sources": 14,
+        "operationsBuilt": 68,
+        "liveOperations": 43,
+        "layers": 11,
+        "storedWeights": 106,
+        "widestLayer": 16,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 2,
+          "storedWeights": 4,
+          "firstLayer": 0,
+          "lastLayer": 0
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 2222,
+        "mismatches": 0
+      },
+      {
+        "count": 4,
+        "sources": 26,
+        "operationsBuilt": 122,
+        "liveOperations": 81,
+        "layers": 13,
+        "storedWeights": 215,
+        "widestLayer": 32,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 6,
+          "storedWeights": 16,
+          "firstLayer": 0,
+          "lastLayer": 1
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 4444,
+        "mismatches": 0
+      },
+      {
+        "count": 8,
+        "sources": 50,
+        "operationsBuilt": 230,
+        "liveOperations": 154,
+        "layers": 14,
+        "storedWeights": 450,
+        "widestLayer": 64,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 16,
+          "storedWeights": 52,
+          "firstLayer": 0,
+          "lastLayer": 3
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 8888,
+        "mismatches": 0
+      },
+      {
+        "count": 16,
+        "sources": 98,
+        "operationsBuilt": 446,
+        "liveOperations": 300,
+        "layers": 16,
+        "storedWeights": 889,
+        "widestLayer": 128,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 34,
+          "storedWeights": 108,
+          "firstLayer": 0,
+          "lastLayer": 4
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 17776,
+        "mismatches": 0
+      },
+      {
+        "count": 32,
+        "sources": 194,
+        "operationsBuilt": 878,
+        "liveOperations": 593,
+        "layers": 17,
+        "storedWeights": 2089,
+        "widestLayer": 256,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 70,
+          "storedWeights": 224,
+          "firstLayer": 0,
+          "lastLayer": 5
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 35552,
+        "mismatches": 0
+      },
+      {
+        "count": 64,
+        "sources": 386,
+        "operationsBuilt": 1742,
+        "liveOperations": 1178,
+        "layers": 18,
+        "storedWeights": 5318,
+        "widestLayer": 512,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 144,
+          "storedWeights": 468,
+          "firstLayer": 0,
+          "lastLayer": 7
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 71104,
+        "mismatches": 0
+      }
+    ],
+    "wrap of fixed boxes (greedy lines)": [
+      {
+        "count": 2,
+        "sources": 2,
+        "operationsBuilt": 34,
+        "liveOperations": 23,
+        "layers": 8,
+        "storedWeights": 27,
+        "widestLayer": 8,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 6,
+          "storedWeights": 7,
+          "firstLayer": 0,
+          "lastLayer": 2
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 2222,
+        "mismatches": 0
+      },
+      {
+        "count": 4,
+        "sources": 2,
+        "operationsBuilt": 84,
+        "liveOperations": 61,
+        "layers": 16,
+        "storedWeights": 103,
+        "widestLayer": 12,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 18,
+          "storedWeights": 30,
+          "firstLayer": 0,
+          "lastLayer": 8
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 4444,
+        "mismatches": 0
+      },
+      {
+        "count": 8,
+        "sources": 2,
+        "operationsBuilt": 186,
+        "liveOperations": 139,
+        "layers": 34,
+        "storedWeights": 263,
+        "widestLayer": 20,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 42,
+          "storedWeights": 79,
+          "firstLayer": 0,
+          "lastLayer": 20
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 8888,
+        "mismatches": 0
+      },
+      {
+        "count": 16,
+        "sources": 2,
+        "operationsBuilt": 386,
+        "liveOperations": 292,
+        "layers": 68,
+        "storedWeights": 575,
+        "widestLayer": 35,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 90,
+          "storedWeights": 174,
+          "firstLayer": 0,
+          "lastLayer": 44
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 17776,
+        "mismatches": 0
+      },
+      {
+        "count": 32,
+        "sources": 2,
+        "operationsBuilt": 780,
+        "liveOperations": 596,
+        "layers": 138,
+        "storedWeights": 1207,
+        "widestLayer": 61,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 186,
+          "storedWeights": 367,
+          "firstLayer": 0,
+          "lastLayer": 92
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 35552,
+        "mismatches": 0
+      },
+      {
+        "count": 64,
+        "sources": 2,
+        "operationsBuilt": 1551,
+        "liveOperations": 1185,
+        "layers": 276,
+        "storedWeights": 2463,
+        "widestLayer": 96,
+        "gatherReads": 0,
+        "pass": {
+          "liveOperations": 378,
+          "storedWeights": 750,
+          "firstLayer": 0,
+          "lastLayer": 188
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0,
+        "worst": "",
+        "maxWidthDrift": 0,
+        "discrete": 71104,
+        "mismatches": 0
+      }
+    ],
+    "grid of texts, maxColumns 6 (column-count variants)": [
+      {
+        "count": 2,
+        "sources": 14,
+        "operationsBuilt": 104,
+        "liveOperations": 61,
+        "layers": 12,
+        "storedWeights": 106,
+        "widestLayer": 14,
+        "gatherReads": 3,
+        "pass": {
+          "liveOperations": 5,
+          "storedWeights": 7,
+          "firstLayer": 8,
+          "lastLayer": 9
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0.00008138020848491578,
+        "worst": "width 6110.25, child1.x: expected 1025.0416666666665, got 1025.041748046875",
+        "maxWidthDrift": 0.00008138020837122895,
+        "discrete": 3333,
+        "mismatches": 0
+      },
+      {
+        "count": 4,
+        "sources": 26,
+        "operationsBuilt": 172,
+        "liveOperations": 105,
+        "layers": 14,
+        "storedWeights": 193,
+        "widestLayer": 28,
+        "gatherReads": 7,
+        "pass": {
+          "liveOperations": 17,
+          "storedWeights": 34,
+          "firstLayer": 8,
+          "lastLayer": 10
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0.00024414062545474735,
+        "worst": "width 6153.75, child3.x: expected 3080.8749999999995, got 3080.875244140625",
+        "maxWidthDrift": 0.00008138020837122895,
+        "discrete": 5555,
+        "mismatches": 0
+      },
+      {
+        "count": 8,
+        "sources": 50,
+        "operationsBuilt": 318,
+        "liveOperations": 199,
+        "layers": 15,
+        "storedWeights": 402,
+        "widestLayer": 56,
+        "gatherReads": 15,
+        "pass": {
+          "liveOperations": 47,
+          "storedWeights": 125,
+          "firstLayer": 8,
+          "lastLayer": 11
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0.0006510416678793263,
+        "worst": "width 6153.75, child5.x: expected 5129.458333333332, got 5129.458984375",
+        "maxWidthDrift": 0.00008138020837122895,
+        "discrete": 9999,
+        "mismatches": 0
+      },
+      {
+        "count": 16,
+        "sources": 98,
+        "operationsBuilt": 594,
+        "liveOperations": 382,
+        "layers": 15,
+        "storedWeights": 913,
+        "widestLayer": 112,
+        "gatherReads": 31,
+        "pass": {
+          "liveOperations": 102,
+          "storedWeights": 400,
+          "firstLayer": 8,
+          "lastLayer": 11
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0.0006510416678793263,
+        "worst": "width 6153.75, child5.x: expected 5129.458333333332, got 5129.458984375",
+        "maxWidthDrift": 0.00008138020837122895,
+        "discrete": 18887,
+        "mismatches": 0
+      },
+      {
+        "count": 32,
+        "sources": 194,
+        "operationsBuilt": 1141,
+        "liveOperations": 747,
+        "layers": 15,
+        "storedWeights": 2323,
+        "widestLayer": 224,
+        "gatherReads": 63,
+        "pass": {
+          "liveOperations": 211,
+          "storedWeights": 1337,
+          "firstLayer": 8,
+          "lastLayer": 11
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0.0006510416678793263,
+        "worst": "width 6153.75, child5.x: expected 5129.458333333332, got 5129.458984375",
+        "maxWidthDrift": 0.00008138020837122895,
+        "discrete": 36663,
+        "mismatches": 0
+      },
+      {
+        "count": 64,
+        "sources": 386,
+        "operationsBuilt": 2222,
+        "liveOperations": 1464,
+        "layers": 15,
+        "storedWeights": 6706,
+        "widestLayer": 444,
+        "gatherReads": 127,
+        "pass": {
+          "liveOperations": 429,
+          "storedWeights": 4800,
+          "firstLayer": 8,
+          "lastLayer": 11
+        },
+        "sweptWidths": 1111,
+        "freeWidths": null,
+        "maxDrift": 0.0006510416678793263,
+        "worst": "width 6153.75, child5.x: expected 5129.458333333332, got 5129.458984375",
+        "maxWidthDrift": 0.00008138020837122895,
+        "discrete": 72215,
+        "mismatches": 0
+      }
+    ]
+  },
+  "nesting": [
+    {
+      "depth": 1,
+      "sources": 8,
+      "operationsBuilt": 39,
+      "liveOperations": 23,
+      "layers": 7,
+      "storedWeights": 42,
+      "widestLayer": 7,
+      "gatherReads": 0,
+      "leafDepth": 6,
+      "maxDrift": 0,
+      "mismatches": 0
+    },
+    {
+      "depth": 2,
+      "sources": 8,
+      "operationsBuilt": 57,
+      "liveOperations": 34,
+      "layers": 11,
+      "storedWeights": 74,
+      "widestLayer": 11,
+      "gatherReads": 0,
+      "leafDepth": 8,
+      "maxDrift": 0,
+      "mismatches": 0
+    },
+    {
+      "depth": 4,
+      "sources": 8,
+      "operationsBuilt": 96,
+      "liveOperations": 57,
+      "layers": 20,
+      "storedWeights": 132,
+      "widestLayer": 11,
+      "gatherReads": 0,
+      "leafDepth": 13,
+      "maxDrift": 0,
+      "mismatches": 0
+    },
+    {
+      "depth": 8,
+      "sources": 8,
+      "operationsBuilt": 174,
+      "liveOperations": 103,
+      "layers": 35,
+      "storedWeights": 252,
+      "widestLayer": 11,
+      "gatherReads": 0,
+      "leafDepth": 23,
+      "maxDrift": 0,
+      "mismatches": 0
+    },
+    {
+      "depth": 16,
+      "sources": 8,
+      "operationsBuilt": 330,
+      "liveOperations": 195,
+      "layers": 67,
+      "storedWeights": 492,
+      "widestLayer": 11,
+      "gatherReads": 0,
+      "leafDepth": 43,
+      "maxDrift": 0,
+      "mismatches": 0
+    },
+    {
+      "depth": 32,
+      "sources": 8,
+      "operationsBuilt": 642,
+      "liveOperations": 379,
+      "layers": 131,
+      "storedWeights": 972,
+      "widestLayer": 11,
+      "gatherReads": 0,
+      "leafDepth": 83,
+      "maxDrift": 0,
+      "mismatches": 0
+    }
+  ],
+  "differential": [
+    {
+      "gridAlignedText": false,
+      "seeds": 300,
+      "viewportsPerTree": 20,
+      "continuous": 388840,
+      "worst": 0.00040321488631889224,
+      "p99": 0.00024414062498578915,
+      "discrete": 48420,
+      "mismatches": 0,
+      "averageLive": 229.19666666666666,
+      "maxLive": 1187,
+      "maxLayers": 67,
+      "coverage": {
+        "column": 503,
+        "wrap": 391,
+        "text": 1302,
+        "grid": 351,
+        "sticky flag where the rule does not apply": 490,
+        "box": 1287,
+        "row": 729,
+        "column (scroll)": 238,
+        "sticky node where the rule applies": 47
+      }
+    },
+    {
+      "gridAlignedText": true,
+      "seeds": 300,
+      "viewportsPerTree": 20,
+      "continuous": 388840,
+      "worst": 0.00040321488631889224,
+      "p99": 0.00024414062498578915,
+      "discrete": 48420,
+      "mismatches": 0,
+      "averageLive": 229.19666666666666,
+      "maxLive": 1187,
+      "maxLayers": 67,
+      "coverage": {
+        "column": 503,
+        "wrap": 391,
+        "text": 1302,
+        "grid": 351,
+        "sticky flag where the rule does not apply": 490,
+        "box": 1287,
+        "row": 729,
+        "column (scroll)": 238,
+        "sticky node where the rule applies": 47
+      }
+    }
+  ],
+  "clayGrowLoop": [
+    {
+      "count": 2,
+      "averageRounds": 4.996,
+      "maxRounds": 14,
+      "maxDifference": 0.009920175187289715
+    },
+    {
+      "count": 4,
+      "averageRounds": 9.941,
+      "maxRounds": 113,
+      "maxDifference": 0.009966554120182991
+    },
+    {
+      "count": 16,
+      "averageRounds": 20.749,
+      "maxRounds": 104,
+      "maxDifference": 0.009812891483306885
+    },
+    {
+      "count": 64,
+      "averageRounds": 52.471,
+      "maxRounds": 226,
+      "maxDifference": 0.009367159089521238
+    }
+  ]
+}

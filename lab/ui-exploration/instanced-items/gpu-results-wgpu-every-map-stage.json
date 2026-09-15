@@ -1,0 +1,281 @@
+{
+  "runtime": "Deno 1.42.4 (wgpu)",
+  "results": [
+    {
+      "photos": 221,
+      "guard": "max",
+      "frames": 60,
+      "comparedValues": 1668960,
+      "mismatches": 0,
+      "firstMismatches": [],
+      "medianCpuExecutorMilliseconds": 0.597,
+      "medianGpuPipelineMilliseconds": 298.712,
+      "stages": [
+        {
+          "name": "click hit test",
+          "shaderStatements": 15,
+          "guards": 12,
+          "compileMilliseconds": 43.5,
+          "medianCpuAndPackMilliseconds": 0.013,
+          "medianUploadMilliseconds": 0.216,
+          "medianDispatchAndReadbackMilliseconds": 14.771,
+          "medianUnpackMilliseconds": 0.004
+        },
+        {
+          "name": "sizes and focus relation",
+          "shaderStatements": 45,
+          "guards": 54,
+          "compileMilliseconds": 14.7,
+          "medianCpuAndPackMilliseconds": 0.019,
+          "medianUploadMilliseconds": 0.205,
+          "medianDispatchAndReadbackMilliseconds": 14.839,
+          "medianUnpackMilliseconds": 0.012
+        },
+        {
+          "name": "row step, 1 columns",
+          "shaderStatements": 3,
+          "guards": 1,
+          "compileMilliseconds": 7.3,
+          "medianCpuAndPackMilliseconds": 0.008,
+          "medianUploadMilliseconds": 0.183,
+          "medianDispatchAndReadbackMilliseconds": 14.846,
+          "medianUnpackMilliseconds": 0.004
+        },
+        {
+          "name": "row centers, 1 columns",
+          "shaderStatements": 4,
+          "guards": 1,
+          "compileMilliseconds": 7.3,
+          "medianCpuAndPackMilliseconds": 0.01,
+          "medianUploadMilliseconds": 0.191,
+          "medianDispatchAndReadbackMilliseconds": 14.783,
+          "medianUnpackMilliseconds": 0.004
+        },
+        {
+          "name": "grid targets and hover",
+          "shaderStatements": 89,
+          "guards": 50,
+          "compileMilliseconds": 21.2,
+          "medianCpuAndPackMilliseconds": 0.042,
+          "medianUploadMilliseconds": 0.168,
+          "medianDispatchAndReadbackMilliseconds": 14.709,
+          "medianUnpackMilliseconds": 0.006
+        },
+        {
+          "name": "destinations",
+          "shaderStatements": 49,
+          "guards": 91,
+          "compileMilliseconds": 18.8,
+          "medianCpuAndPackMilliseconds": 0.026,
+          "medianUploadMilliseconds": 0.177,
+          "medianDispatchAndReadbackMilliseconds": 14.747,
+          "medianUnpackMilliseconds": 0.01
+        },
+        {
+          "name": "anchor predicate",
+          "shaderStatements": 10,
+          "guards": 6,
+          "compileMilliseconds": 9.1,
+          "medianCpuAndPackMilliseconds": 0.013,
+          "medianUploadMilliseconds": 0.191,
+          "medianDispatchAndReadbackMilliseconds": 14.806,
+          "medianUnpackMilliseconds": 0.004
+        },
+        {
+          "name": "springs and occlusion",
+          "shaderStatements": 204,
+          "guards": 235,
+          "compileMilliseconds": 32,
+          "medianCpuAndPackMilliseconds": 0.042,
+          "medianUploadMilliseconds": 0.194,
+          "medianDispatchAndReadbackMilliseconds": 14.846,
+          "medianUnpackMilliseconds": 0.014
+        }
+      ]
+    },
+    {
+      "photos": 1000,
+      "guard": "max",
+      "frames": 60,
+      "comparedValues": 7528380,
+      "mismatches": 0,
+      "firstMismatches": [],
+      "medianCpuExecutorMilliseconds": 0.358,
+      "medianGpuPipelineMilliseconds": 288.34,
+      "stages": [
+        {
+          "name": "click hit test",
+          "shaderStatements": 15,
+          "guards": 12,
+          "compileMilliseconds": 0.5,
+          "medianCpuAndPackMilliseconds": 0.006,
+          "medianUploadMilliseconds": 0.057,
+          "medianDispatchAndReadbackMilliseconds": 14.673,
+          "medianUnpackMilliseconds": 0.002
+        },
+        {
+          "name": "sizes and focus relation",
+          "shaderStatements": 45,
+          "guards": 54,
+          "compileMilliseconds": 0.5,
+          "medianCpuAndPackMilliseconds": 0.009,
+          "medianUploadMilliseconds": 0.052,
+          "medianDispatchAndReadbackMilliseconds": 14.653,
+          "medianUnpackMilliseconds": 0.011
+        },
+        {
+          "name": "row step, 1 columns",
+          "shaderStatements": 3,
+          "guards": 1,
+          "compileMilliseconds": 0.1,
+          "medianCpuAndPackMilliseconds": 0.003,
+          "medianUploadMilliseconds": 0.047,
+          "medianDispatchAndReadbackMilliseconds": 14.653,
+          "medianUnpackMilliseconds": 0.002
+        },
+        {
+          "name": "row centers, 1 columns",
+          "shaderStatements": 4,
+          "guards": 1,
+          "compileMilliseconds": 0.1,
+          "medianCpuAndPackMilliseconds": 0.004,
+          "medianUploadMilliseconds": 0.044,
+          "medianDispatchAndReadbackMilliseconds": 14.654,
+          "medianUnpackMilliseconds": 0.001
+        },
+        {
+          "name": "grid targets and hover",
+          "shaderStatements": 89,
+          "guards": 50,
+          "compileMilliseconds": 0.6,
+          "medianCpuAndPackMilliseconds": 0.04,
+          "medianUploadMilliseconds": 0.056,
+          "medianDispatchAndReadbackMilliseconds": 14.65,
+          "medianUnpackMilliseconds": 0.004
+        },
+        {
+          "name": "destinations",
+          "shaderStatements": 49,
+          "guards": 91,
+          "compileMilliseconds": 0.6,
+          "medianCpuAndPackMilliseconds": 0.022,
+          "medianUploadMilliseconds": 0.047,
+          "medianDispatchAndReadbackMilliseconds": 14.648,
+          "medianUnpackMilliseconds": 0.008
+        },
+        {
+          "name": "anchor predicate",
+          "shaderStatements": 10,
+          "guards": 6,
+          "compileMilliseconds": 0.2,
+          "medianCpuAndPackMilliseconds": 0.006,
+          "medianUploadMilliseconds": 0.045,
+          "medianDispatchAndReadbackMilliseconds": 14.638,
+          "medianUnpackMilliseconds": 0.001
+        },
+        {
+          "name": "springs and occlusion",
+          "shaderStatements": 204,
+          "guards": 235,
+          "compileMilliseconds": 1.7,
+          "medianCpuAndPackMilliseconds": 0.036,
+          "medianUploadMilliseconds": 0.056,
+          "medianDispatchAndReadbackMilliseconds": 14.658,
+          "medianUnpackMilliseconds": 0.013
+        }
+      ]
+    },
+    {
+      "photos": 10000,
+      "guard": "max",
+      "frames": 60,
+      "comparedValues": 75229020,
+      "mismatches": 0,
+      "firstMismatches": [],
+      "medianCpuExecutorMilliseconds": 4.597,
+      "medianGpuPipelineMilliseconds": 291.865,
+      "stages": [
+        {
+          "name": "click hit test",
+          "shaderStatements": 15,
+          "guards": 12,
+          "compileMilliseconds": 0.4,
+          "medianCpuAndPackMilliseconds": 0.047,
+          "medianUploadMilliseconds": 0.107,
+          "medianDispatchAndReadbackMilliseconds": 14.704,
+          "medianUnpackMilliseconds": 0.007
+        },
+        {
+          "name": "sizes and focus relation",
+          "shaderStatements": 45,
+          "guards": 54,
+          "compileMilliseconds": 0.5,
+          "medianCpuAndPackMilliseconds": 0.069,
+          "medianUploadMilliseconds": 0.074,
+          "medianDispatchAndReadbackMilliseconds": 14.692,
+          "medianUnpackMilliseconds": 0.096
+        },
+        {
+          "name": "row step, 1 columns",
+          "shaderStatements": 3,
+          "guards": 1,
+          "compileMilliseconds": 0.1,
+          "medianCpuAndPackMilliseconds": 0.013,
+          "medianUploadMilliseconds": 0.055,
+          "medianDispatchAndReadbackMilliseconds": 14.656,
+          "medianUnpackMilliseconds": 0.007
+        },
+        {
+          "name": "row centers, 1 columns",
+          "shaderStatements": 4,
+          "guards": 1,
+          "compileMilliseconds": 0.1,
+          "medianCpuAndPackMilliseconds": 0.024,
+          "medianUploadMilliseconds": 0.063,
+          "medianDispatchAndReadbackMilliseconds": 14.662,
+          "medianUnpackMilliseconds": 0.007
+        },
+        {
+          "name": "grid targets and hover",
+          "shaderStatements": 89,
+          "guards": 50,
+          "compileMilliseconds": 0.6,
+          "medianCpuAndPackMilliseconds": 0.456,
+          "medianUploadMilliseconds": 0.168,
+          "medianDispatchAndReadbackMilliseconds": 14.699,
+          "medianUnpackMilliseconds": 0.03
+        },
+        {
+          "name": "destinations",
+          "shaderStatements": 49,
+          "guards": 91,
+          "compileMilliseconds": 0.6,
+          "medianCpuAndPackMilliseconds": 0.218,
+          "medianUploadMilliseconds": 0.114,
+          "medianDispatchAndReadbackMilliseconds": 14.678,
+          "medianUnpackMilliseconds": 0.066
+        },
+        {
+          "name": "anchor predicate",
+          "shaderStatements": 10,
+          "guards": 6,
+          "compileMilliseconds": 0.1,
+          "medianCpuAndPackMilliseconds": 0.047,
+          "medianUploadMilliseconds": 0.067,
+          "medianDispatchAndReadbackMilliseconds": 14.656,
+          "medianUnpackMilliseconds": 0.007
+        },
+        {
+          "name": "springs and occlusion",
+          "shaderStatements": 204,
+          "guards": 235,
+          "compileMilliseconds": 1.6,
+          "medianCpuAndPackMilliseconds": 0.437,
+          "medianUploadMilliseconds": 0.168,
+          "medianDispatchAndReadbackMilliseconds": 14.699,
+          "medianUnpackMilliseconds": 0.13
+        }
+      ]
+    }
+  ]
+}

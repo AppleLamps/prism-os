@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HN thread drawn per pixel</title>
+  <link rel="stylesheet" href="./demo.css">
+  <script type="module" src="./demo.ts"></script>
+</head>
+<body>
+  <canvas id="gpu-canvas"></canvas>
+  <canvas id="cpu-canvas"></canvas>
+  <div class="panel">
+    <label>Program <select id="variant"></select></label>
+    <label>Backend <select id="backend">
+      <option value="webgpu">WebGPU fragment shader</option>
+      <option value="cpu">CPU, generated JS, every 2nd pixel</option>
+    </select></label>
+    <pre id="stats">Preparing breakpoints, text tables and the circuit…</pre>
+  </div>
+</body>
+</html>

@@ -1,0 +1,192 @@
+{
+  "runtime": "Deno 1.42.4 (wgpu)",
+  "adapter": null,
+  "results": [
+    {
+      "photos": 221,
+      "guard": "max",
+      "frames": 60,
+      "comparedValues": 1668960,
+      "mismatches": 0,
+      "firstMismatches": [],
+      "medianCpuExecutorMilliseconds": 0.57,
+      "medianGpuPipelineMilliseconds": 74.016,
+      "stages": [
+        {
+          "name": "click hit test",
+          "shaderStatements": 15,
+          "guards": 12,
+          "compileMilliseconds": 3.7,
+          "medianCpuAndPackMilliseconds": 0.007,
+          "medianUploadMilliseconds": 0.175,
+          "medianDispatchAndReadbackMilliseconds": 14.726,
+          "medianUnpackMilliseconds": 0.003
+        },
+        {
+          "name": "sizes and focus relation",
+          "shaderStatements": 45,
+          "guards": 54,
+          "compileMilliseconds": 1.1,
+          "medianCpuAndPackMilliseconds": 0.01,
+          "medianUploadMilliseconds": 0.155,
+          "medianDispatchAndReadbackMilliseconds": 14.881,
+          "medianUnpackMilliseconds": 0.008
+        },
+        {
+          "name": "grid targets and hover",
+          "shaderStatements": 89,
+          "guards": 50,
+          "compileMilliseconds": 1.3,
+          "medianCpuAndPackMilliseconds": 0.026,
+          "medianUploadMilliseconds": 0.152,
+          "medianDispatchAndReadbackMilliseconds": 14.901,
+          "medianUnpackMilliseconds": 0.005
+        },
+        {
+          "name": "destinations",
+          "shaderStatements": 49,
+          "guards": 91,
+          "compileMilliseconds": 1.3,
+          "medianCpuAndPackMilliseconds": 0.016,
+          "medianUploadMilliseconds": 0.157,
+          "medianDispatchAndReadbackMilliseconds": 14.91,
+          "medianUnpackMilliseconds": 0.007
+        },
+        {
+          "name": "springs and occlusion",
+          "shaderStatements": 204,
+          "guards": 235,
+          "compileMilliseconds": 6.1,
+          "medianCpuAndPackMilliseconds": 0.024,
+          "medianUploadMilliseconds": 0.153,
+          "medianDispatchAndReadbackMilliseconds": 14.9,
+          "medianUnpackMilliseconds": 0.009
+        }
+      ]
+    },
+    {
+      "photos": 1000,
+      "guard": "max",
+      "frames": 60,
+      "comparedValues": 7528380,
+      "mismatches": 0,
+      "firstMismatches": [],
+      "medianCpuExecutorMilliseconds": 0.677,
+      "medianGpuPipelineMilliseconds": 73.614,
+      "stages": [
+        {
+          "name": "click hit test",
+          "shaderStatements": 15,
+          "guards": 12,
+          "compileMilliseconds": 0.9,
+          "medianCpuAndPackMilliseconds": 0.014,
+          "medianUploadMilliseconds": 0.15,
+          "medianDispatchAndReadbackMilliseconds": 14.892,
+          "medianUnpackMilliseconds": 0.004
+        },
+        {
+          "name": "sizes and focus relation",
+          "shaderStatements": 45,
+          "guards": 54,
+          "compileMilliseconds": 1.2,
+          "medianCpuAndPackMilliseconds": 0.02,
+          "medianUploadMilliseconds": 0.137,
+          "medianDispatchAndReadbackMilliseconds": 14.876,
+          "medianUnpackMilliseconds": 0.023
+        },
+        {
+          "name": "grid targets and hover",
+          "shaderStatements": 89,
+          "guards": 50,
+          "compileMilliseconds": 1.5,
+          "medianCpuAndPackMilliseconds": 0.088,
+          "medianUploadMilliseconds": 0.141,
+          "medianDispatchAndReadbackMilliseconds": 14.845,
+          "medianUnpackMilliseconds": 0.009
+        },
+        {
+          "name": "destinations",
+          "shaderStatements": 49,
+          "guards": 91,
+          "compileMilliseconds": 1.4,
+          "medianCpuAndPackMilliseconds": 0.051,
+          "medianUploadMilliseconds": 0.138,
+          "medianDispatchAndReadbackMilliseconds": 14.888,
+          "medianUnpackMilliseconds": 0.017
+        },
+        {
+          "name": "springs and occlusion",
+          "shaderStatements": 204,
+          "guards": 235,
+          "compileMilliseconds": 3.7,
+          "medianCpuAndPackMilliseconds": 0.083,
+          "medianUploadMilliseconds": 0.143,
+          "medianDispatchAndReadbackMilliseconds": 14.887,
+          "medianUnpackMilliseconds": 0.028
+        }
+      ]
+    },
+    {
+      "photos": 10000,
+      "guard": "max",
+      "frames": 60,
+      "comparedValues": 75229020,
+      "mismatches": 0,
+      "firstMismatches": [],
+      "medianCpuExecutorMilliseconds": 7.221,
+      "medianGpuPipelineMilliseconds": 78.051,
+      "stages": [
+        {
+          "name": "click hit test",
+          "shaderStatements": 15,
+          "guards": 12,
+          "compileMilliseconds": 0.7,
+          "medianCpuAndPackMilliseconds": 0.102,
+          "medianUploadMilliseconds": 0.2,
+          "medianDispatchAndReadbackMilliseconds": 14.924,
+          "medianUnpackMilliseconds": 0.016
+        },
+        {
+          "name": "sizes and focus relation",
+          "shaderStatements": 45,
+          "guards": 54,
+          "compileMilliseconds": 1.1,
+          "medianCpuAndPackMilliseconds": 0.166,
+          "medianUploadMilliseconds": 0.176,
+          "medianDispatchAndReadbackMilliseconds": 14.905,
+          "medianUnpackMilliseconds": 0.196
+        },
+        {
+          "name": "grid targets and hover",
+          "shaderStatements": 89,
+          "guards": 50,
+          "compileMilliseconds": 1.4,
+          "medianCpuAndPackMilliseconds": 0.85,
+          "medianUploadMilliseconds": 0.315,
+          "medianDispatchAndReadbackMilliseconds": 14.919,
+          "medianUnpackMilliseconds": 0.063
+        },
+        {
+          "name": "destinations",
+          "shaderStatements": 49,
+          "guards": 91,
+          "compileMilliseconds": 1.5,
+          "medianCpuAndPackMilliseconds": 0.449,
+          "medianUploadMilliseconds": 0.235,
+          "medianDispatchAndReadbackMilliseconds": 14.937,
+          "medianUnpackMilliseconds": 0.136
+        },
+        {
+          "name": "springs and occlusion",
+          "shaderStatements": 204,
+          "guards": 235,
+          "compileMilliseconds": 3.7,
+          "medianCpuAndPackMilliseconds": 0.791,
+          "medianUploadMilliseconds": 0.307,
+          "medianDispatchAndReadbackMilliseconds": 14.806,
+          "medianUnpackMilliseconds": 0.245
+        }
+      ]
+    }
+  ]
+}

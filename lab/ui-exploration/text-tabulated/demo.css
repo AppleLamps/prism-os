@@ -1,0 +1,178 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #e9e6df;
+  color: #1d1b18;
+  font: 14px/1.4 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  overflow: hidden;
+  touch-action: none;
+  /* A press within 8 px of the window's right edge starts a resize, and half of that band lies outside the window, on
+     the page background. So only the notes and the panel start text selections, and dragging the grip doesn't select
+     the notes text. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.notes-content, .notes-panel {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+#ruler {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 26px;
+  pointer-events: none;
+}
+
+.ruler-tick {
+  position: absolute;
+  top: 8px;
+  width: 1px;
+  height: 12px;
+  background: rgba(40, 36, 30, 0.35);
+}
+
+#ruler-marker {
+  position: absolute;
+  top: 2px;
+  width: 2px;
+  height: 22px;
+  background: #d2542f;
+}
+
+.notes-window {
+  position: absolute;
+  left: 40px;
+  top: 40px;
+  background: #fdfcf9;
+  border-radius: 12px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06), 0 18px 50px rgba(40, 30, 10, 0.18);
+  overflow: hidden;
+}
+
+.notes-title {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  font-weight: 600;
+  color: #6e675c;
+  border-bottom: 1px solid #ece7de;
+  user-select: none;
+}
+
+.notes-dots {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.notes-dots i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #e0dad0;
+}
+
+.notes-content {
+  position: absolute;
+  left: 24px;
+  top: 60px;
+  right: 24px;
+  bottom: 24px;
+}
+
+.notes-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: pre;
+  will-change: transform, opacity;
+}
+
+.notes-heading {
+  color: #1d1b18;
+}
+
+.notes-paragraph {
+  color: #3a362f;
+}
+
+.notes-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 16px;
+  background: #ece8e0;
+}
+
+.notes-bubble.mine {
+  background: #2f7cf6;
+}
+
+.notes-line.mine {
+  color: #ffffff;
+}
+
+.notes-grip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  bottom: 0;
+  cursor: ew-resize;
+}
+
+.notes-grip::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  width: 4px;
+  height: 44px;
+  margin-top: -22px;
+  border-radius: 2px;
+  background: #d9d2c5;
+}
+
+.notes-panel {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 300px;
+  padding: 14px 16px;
+  background: rgba(253, 252, 249, 0.92);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(40, 30, 10, 0.14);
+}
+
+.notes-panel h1 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.notes-panel p {
+  margin: 0 0 10px;
+  color: #5b554b;
+}
+
+.panel-stats, .panel-agreement {
+  font: 12px/1.5 ui-monospace, Menlo, monospace;
+  color: #4a453c;
+  white-space: pre-wrap;
+}
+
+.panel-agreement {
+  margin: 8px 0 10px;
+}
+
+#autopilot {
+  font: inherit;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #cfc7b8;
+  background: #fff;
+}

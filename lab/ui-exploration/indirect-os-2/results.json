@@ -1,0 +1,1002 @@
+{
+  "structure": {
+    "sizes": {
+      "original window-manager.ts (notation rewrite)": {
+        "live": 5253,
+        "layers": 192,
+        "weights": 11598,
+        "gatherReads": 12,
+        "widestLayer": 123,
+        "sourceCells": 201,
+        "buildMilliseconds": 15.428583
+      },
+      "1. timestep declared nonnegative": {
+        "live": 4933,
+        "layers": 184,
+        "weights": 10958,
+        "gatherReads": 12,
+        "widestLayer": 123,
+        "sourceCells": 201,
+        "buildMilliseconds": 8.884625
+      },
+      "2a. spring bank": {
+        "live": 3580,
+        "layers": 137,
+        "weights": 8447,
+        "gatherReads": 12,
+        "widestLayer": 365,
+        "sourceCells": 245,
+        "buildMilliseconds": 8.959124999999993
+      },
+      "2b. Photos reads stepped springs": {
+        "live": 3583,
+        "layers": 91,
+        "weights": 8455,
+        "gatherReads": 12,
+        "widestLayer": 365,
+        "sourceCells": 245,
+        "buildMilliseconds": 7.122624999999999
+      },
+      "3. event queue, 8 slots, 2 downs, key routing": {
+        "live": 8059,
+        "layers": 169,
+        "weights": 21611,
+        "gatherReads": 91,
+        "widestLayer": 387,
+        "sourceCells": 309,
+        "buildMilliseconds": 18.956958
+      },
+      "4. Notes flow around the windows' destinations, word springs": {
+        "live": 19854,
+        "layers": 343,
+        "weights": 49900,
+        "gatherReads": 987,
+        "widestLayer": 1133,
+        "sourceCells": 759,
+        "buildMilliseconds": 146.546542
+      },
+      "queue with 1 down per evaluation": {
+        "live": 5816,
+        "layers": 129,
+        "weights": 15409,
+        "gatherReads": 64,
+        "widestLayer": 385,
+        "sourceCells": 309,
+        "buildMilliseconds": 11.829541000000006
+      },
+      "queue with 16 slots": {
+        "live": 9002,
+        "layers": 169,
+        "weights": 25775,
+        "gatherReads": 91,
+        "widestLayer": 442,
+        "sourceCells": 373,
+        "buildMilliseconds": 12.254334000000028
+      },
+      "queue with gathered key gates": {
+        "live": 7984,
+        "layers": 257,
+        "weights": 20221,
+        "gatherReads": 99,
+        "widestLayer": 369,
+        "sourceCells": 309,
+        "buildMilliseconds": 8.898124999999993
+      },
+      "Notes around current-frame obstacles": {
+        "live": 19861,
+        "layers": 368,
+        "weights": 49919,
+        "gatherReads": 987,
+        "widestLayer": 1133,
+        "sourceCells": 759,
+        "buildMilliseconds": 118.39154200000002
+      },
+      "Notes around stepped-springs obstacles": {
+        "live": 20034,
+        "layers": 264,
+        "weights": 50221,
+        "gatherReads": 987,
+        "widestLayer": 1133,
+        "sourceCells": 759,
+        "buildMilliseconds": 119.61870799999997
+      },
+      "Notes around destinations, 1 down per evaluation": {
+        "live": 17608,
+        "layers": 304,
+        "weights": 43698,
+        "gatherReads": 960,
+        "widestLayer": 1131,
+        "sourceCells": 759,
+        "buildMilliseconds": 107.00012500000003
+      },
+      "queue with original springs (timestep declared)": {
+        "live": 9409,
+        "layers": 204,
+        "weights": 24114,
+        "gatherReads": 91,
+        "widestLayer": 124,
+        "sourceCells": 265,
+        "buildMilliseconds": 13.563041999999996
+      },
+      "queue, bank, Photos at current frame": {
+        "live": 8056,
+        "layers": 169,
+        "weights": 21603,
+        "gatherReads": 91,
+        "widestLayer": 387,
+        "sourceCells": 309,
+        "buildMilliseconds": 11.660750000000007
+      },
+      "Notes with original springs (timestep declared)": {
+        "live": 24332,
+        "layers": 367,
+        "weights": 58087,
+        "gatherReads": 987,
+        "widestLayer": 666,
+        "sourceCells": 715,
+        "buildMilliseconds": 135.36008300000003
+      }
+    },
+    "breakdowns": {
+      "2b. Photos reads stepped springs": {
+        "breakdown": [
+          {
+            "label": "desktop with latches",
+            "live": 1179,
+            "weights": 2339
+          },
+          {
+            "label": "photos with latches",
+            "live": 1093,
+            "weights": 2664
+          },
+          {
+            "label": "box",
+            "live": 824,
+            "weights": 2376
+          },
+          {
+            "label": "window springs and projection",
+            "live": 261,
+            "weights": 482
+          },
+          {
+            "label": "clock",
+            "live": 143,
+            "weights": 264
+          },
+          {
+            "label": "other",
+            "live": 59,
+            "weights": 158
+          },
+          {
+            "label": "group",
+            "live": 24,
+            "weights": 172
+          }
+        ],
+        "path": {
+          "depth": 91,
+          "sections": [
+            [
+              "desktop with latches",
+              46
+            ],
+            [
+              "photos with latches",
+              24
+            ],
+            [
+              "other",
+              13
+            ],
+            [
+              "box",
+              8
+            ]
+          ]
+        },
+        "oneHotOperations": 0
+      },
+      "3. event queue, 8 slots, 2 downs, key routing": {
+        "breakdown": [
+          {
+            "label": "photos clicks",
+            "live": 1973,
+            "weights": 4831
+          },
+          {
+            "label": "down update",
+            "live": 1756,
+            "weights": 4084
+          },
+          {
+            "label": "up update",
+            "live": 947,
+            "weights": 2877
+          },
+          {
+            "label": "box",
+            "live": 824,
+            "weights": 2376
+          },
+          {
+            "label": "photos render",
+            "live": 454,
+            "weights": 1148
+          },
+          {
+            "label": "key gates",
+            "live": 432,
+            "weights": 1968
+          },
+          {
+            "label": "queue counts, slop, pointer",
+            "live": 400,
+            "weights": 1346
+          },
+          {
+            "label": "focus at chain points",
+            "live": 297,
+            "weights": 625
+          },
+          {
+            "label": "photos keys",
+            "live": 248,
+            "weights": 680
+          },
+          {
+            "label": "window springs and projection",
+            "live": 233,
+            "weights": 426
+          },
+          {
+            "label": "end of evaluation",
+            "live": 194,
+            "weights": 503
+          },
+          {
+            "label": "clock",
+            "live": 143,
+            "weights": 264
+          },
+          {
+            "label": "other",
+            "live": 134,
+            "weights": 311
+          },
+          {
+            "label": "group",
+            "live": 24,
+            "weights": 172
+          }
+        ],
+        "path": {
+          "depth": 170,
+          "sections": [
+            [
+              "photos clicks",
+              74
+            ],
+            [
+              "down update",
+              30
+            ],
+            [
+              "up update",
+              14
+            ],
+            [
+              "photos render",
+              12
+            ],
+            [
+              "photos keys",
+              12
+            ],
+            [
+              "focus at chain points",
+              10
+            ],
+            [
+              "box",
+              8
+            ],
+            [
+              "other",
+              8
+            ],
+            [
+              "key gates",
+              2
+            ]
+          ]
+        },
+        "oneHotOperations": 136
+      },
+      "4. Notes flow around the windows' destinations, word springs": {
+        "breakdown": [
+          {
+            "label": "notes line walker",
+            "live": 8221,
+            "weights": 17786
+          },
+          {
+            "label": "box",
+            "live": 2534,
+            "weights": 7371
+          },
+          {
+            "label": "photos clicks",
+            "live": 1973,
+            "weights": 4831
+          },
+          {
+            "label": "down update",
+            "live": 1756,
+            "weights": 4084
+          },
+          {
+            "label": "up update",
+            "live": 947,
+            "weights": 2877
+          },
+          {
+            "label": "notes band blocking",
+            "live": 912,
+            "weights": 2992
+          },
+          {
+            "label": "notes slots per obstacle subset",
+            "live": 807,
+            "weights": 1860
+          },
+          {
+            "label": "photos render",
+            "live": 454,
+            "weights": 1148
+          },
+          {
+            "label": "key gates",
+            "live": 432,
+            "weights": 1968
+          },
+          {
+            "label": "queue counts, slop, pointer",
+            "live": 400,
+            "weights": 1346
+          },
+          {
+            "label": "focus at chain points",
+            "live": 297,
+            "weights": 625
+          },
+          {
+            "label": "photos keys",
+            "live": 248,
+            "weights": 680
+          },
+          {
+            "label": "window springs and projection",
+            "live": 233,
+            "weights": 426
+          },
+          {
+            "label": "end of evaluation",
+            "live": 194,
+            "weights": 503
+          },
+          {
+            "label": "clock",
+            "live": 143,
+            "weights": 264
+          },
+          {
+            "label": "other",
+            "live": 134,
+            "weights": 313
+          },
+          {
+            "label": "notes word springs",
+            "live": 95,
+            "weights": 411
+          },
+          {
+            "label": "group",
+            "live": 46,
+            "weights": 338
+          },
+          {
+            "label": "notes obstacles",
+            "live": 28,
+            "weights": 77
+          }
+        ],
+        "path": {
+          "depth": 343,
+          "sections": [
+            [
+              "notes line walker",
+              173
+            ],
+            [
+              "down update",
+              52
+            ],
+            [
+              "notes slots per obstacle subset",
+              50
+            ],
+            [
+              "up update",
+              41
+            ],
+            [
+              "other",
+              13
+            ],
+            [
+              "end of evaluation",
+              8
+            ],
+            [
+              "notes word springs",
+              3
+            ],
+            [
+              "notes band blocking",
+              2
+            ],
+            [
+              "box",
+              1
+            ]
+          ]
+        },
+        "oneHotOperations": 2984
+      },
+      "Notes around current-frame obstacles": {
+        "breakdown": [
+          {
+            "label": "notes line walker",
+            "live": 8221,
+            "weights": 17786
+          },
+          {
+            "label": "box",
+            "live": 2534,
+            "weights": 7371
+          },
+          {
+            "label": "photos clicks",
+            "live": 1973,
+            "weights": 4831
+          },
+          {
+            "label": "down update",
+            "live": 1756,
+            "weights": 4084
+          },
+          {
+            "label": "up update",
+            "live": 947,
+            "weights": 2877
+          },
+          {
+            "label": "notes band blocking",
+            "live": 912,
+            "weights": 2992
+          },
+          {
+            "label": "notes slots per obstacle subset",
+            "live": 807,
+            "weights": 1854
+          },
+          {
+            "label": "photos render",
+            "live": 454,
+            "weights": 1148
+          },
+          {
+            "label": "key gates",
+            "live": 432,
+            "weights": 1968
+          },
+          {
+            "label": "queue counts, slop, pointer",
+            "live": 400,
+            "weights": 1346
+          },
+          {
+            "label": "focus at chain points",
+            "live": 297,
+            "weights": 625
+          },
+          {
+            "label": "photos keys",
+            "live": 248,
+            "weights": 680
+          },
+          {
+            "label": "window springs and projection",
+            "live": 233,
+            "weights": 426
+          },
+          {
+            "label": "end of evaluation",
+            "live": 194,
+            "weights": 503
+          },
+          {
+            "label": "clock",
+            "live": 143,
+            "weights": 264
+          },
+          {
+            "label": "other",
+            "live": 134,
+            "weights": 313
+          },
+          {
+            "label": "notes word springs",
+            "live": 95,
+            "weights": 411
+          },
+          {
+            "label": "group",
+            "live": 46,
+            "weights": 338
+          },
+          {
+            "label": "notes obstacles",
+            "live": 35,
+            "weights": 102
+          }
+        ],
+        "path": {
+          "depth": 369,
+          "sections": [
+            [
+              "notes line walker",
+              173
+            ],
+            [
+              "down update",
+              52
+            ],
+            [
+              "notes slots per obstacle subset",
+              50
+            ],
+            [
+              "up update",
+              41
+            ],
+            [
+              "window springs and projection",
+              18
+            ],
+            [
+              "other",
+              13
+            ],
+            [
+              "box",
+              8
+            ],
+            [
+              "end of evaluation",
+              8
+            ],
+            [
+              "notes word springs",
+              3
+            ],
+            [
+              "notes band blocking",
+              2
+            ],
+            [
+              "notes obstacles",
+              1
+            ]
+          ]
+        },
+        "oneHotOperations": 2984
+      }
+    }
+  },
+  "traces": {
+    "declared seed 1": {
+      "frames": 2001,
+      "comparedValues": 858429,
+      "mismatchedValues": 0,
+      "firstMismatch": null,
+      "originalRejections": 1,
+      "rewriteRejections": 0,
+      "firstRewriteRejection": null,
+      "coverage": {
+        "heldDragMoves": 19,
+        "heldResizeMoves": 4,
+        "focusAndSelect": 2,
+        "photoFocusChanges": 16,
+        "closes": 33
+      }
+    },
+    "declared seed 2": {
+      "frames": 2001,
+      "comparedValues": 858429,
+      "mismatchedValues": 0,
+      "firstMismatch": null,
+      "originalRejections": 0,
+      "rewriteRejections": 0,
+      "firstRewriteRejection": null,
+      "coverage": {
+        "heldDragMoves": 16,
+        "heldResizeMoves": 12,
+        "focusAndSelect": 0,
+        "photoFocusChanges": 8,
+        "closes": 27
+      }
+    },
+    "declared seed 3": {
+      "frames": 2001,
+      "comparedValues": 858429,
+      "mismatchedValues": 0,
+      "firstMismatch": null,
+      "originalRejections": 0,
+      "rewriteRejections": 0,
+      "firstRewriteRejection": null,
+      "coverage": {
+        "heldDragMoves": 23,
+        "heldResizeMoves": 14,
+        "focusAndSelect": 0,
+        "photoFocusChanges": 5,
+        "closes": 36
+      }
+    },
+    "bank seed 5": {
+      "frames": 3001,
+      "comparedValues": 204068,
+      "mismatchedValues": 0,
+      "firstMismatch": null,
+      "originalRejections": 0,
+      "rewriteRejections": 0,
+      "firstRewriteRejection": null,
+      "coverage": {
+        "heldDragMoves": 29,
+        "heldResizeMoves": 17,
+        "focusAndSelect": 2,
+        "photoFocusChanges": 33,
+        "closes": 53
+      }
+    },
+    "bank, Photos stepped springs seed 12": {
+      "frames": 3001,
+      "comparedValues": 204068,
+      "mismatchedValues": 0,
+      "firstMismatch": null,
+      "originalRejections": 0,
+      "rewriteRejections": 0,
+      "firstRewriteRejection": null,
+      "coverage": {
+        "heldDragMoves": 53,
+        "heldResizeMoves": 33,
+        "focusAndSelect": 1,
+        "photoFocusChanges": 17,
+        "closes": 56
+      }
+    },
+    "bank, Photos stepped springs seed 6": {
+      "frames": 3001,
+      "comparedValues": 204068,
+      "mismatchedValues": 0,
+      "firstMismatch": null,
+      "originalRejections": 0,
+      "rewriteRejections": 0,
+      "firstRewriteRejection": null,
+      "coverage": {
+        "heldDragMoves": 39,
+        "heldResizeMoves": 43,
+        "focusAndSelect": 1,
+        "photoFocusChanges": 31,
+        "closes": 57
+      }
+    },
+    "oracle seed 1": {
+      "frames": 3000,
+      "events": 8247,
+      "keys": 1308,
+      "mismatches": 0,
+      "redraws": 0,
+      "dropped": 0
+    },
+    "oracle seed 2": {
+      "frames": 3000,
+      "events": 8443,
+      "keys": 1252,
+      "mismatches": 0,
+      "redraws": 0,
+      "dropped": 0
+    },
+    "oracle seed 3": {
+      "frames": 3000,
+      "events": 8259,
+      "keys": 1250,
+      "mismatches": 0,
+      "redraws": 0,
+      "dropped": 0
+    },
+    "oracle seed 4": {
+      "frames": 3000,
+      "events": 8180,
+      "keys": 1236,
+      "mismatches": 0,
+      "redraws": 2,
+      "dropped": 0
+    },
+    "float64 boxes": {
+      "evaluations": 3000,
+      "evaluationsWithSteps": 1093,
+      "boxesChecked": 183000,
+      "maxPositionError": 0.00011580240334296832,
+      "maxVelocityError": 0.0008690448175912024,
+      "settleMismatches": 0,
+      "clockMismatches": 0,
+      "firstSettleMismatch": null
+    },
+    "notes vs pretext": {
+      "arrangements": 150,
+      "wordsChecked": 6750,
+      "wordMismatches": 0,
+      "bandsChecked": 2400,
+      "bandMismatches": 0,
+      "multiSlotBands": 778,
+      "overflowStates": 0
+    },
+    "generated wires": {
+      "evaluations": 800,
+      "checked": 16490400,
+      "mismatches": 0
+    }
+  },
+  "framerate": {
+    "2b. Photos reads stepped springs": {
+      "sharedFrames": 400,
+      "windows": 0.000244140625,
+      "thumbnails": 0.00018310546875,
+      "words": 0,
+      "worstWordTime": -1,
+      "discreteMismatches": 0,
+      "animationMismatches": 1
+    },
+    "3. event queue, 8 slots, 2 downs, key routing": {
+      "sharedFrames": 400,
+      "windows": 0.000244140625,
+      "thumbnails": 0.00018310546875,
+      "words": 0,
+      "worstWordTime": -1,
+      "discreteMismatches": 0,
+      "animationMismatches": 1
+    },
+    "Notes around current-frame obstacles": {
+      "sharedFrames": 400,
+      "windows": 0.000244140625,
+      "thumbnails": 0.00018310546875,
+      "words": 25.378814697265625,
+      "worstWordTime": 5322.0625,
+      "discreteMismatches": 0,
+      "animationMismatches": 0
+    },
+    "Notes around stepped-springs obstacles": {
+      "sharedFrames": 400,
+      "windows": 28.8172607421875,
+      "thumbnails": 14.40863037109375,
+      "words": 69.7467041015625,
+      "worstWordTime": 2068,
+      "discreteMismatches": 0,
+      "animationMismatches": 1
+    },
+    "Notes around destination obstacles": {
+      "sharedFrames": 400,
+      "windows": 0.000244140625,
+      "thumbnails": 0.00018310546875,
+      "words": 0.000152587890625,
+      "worstWordTime": 2068,
+      "discreteMismatches": 0,
+      "animationMismatches": 0
+    }
+  },
+  "timings": {
+    "original window-manager.ts (notation rewrite)": {
+      "executor": 42.5,
+      "generated32": 3.1,
+      "generated128": 3.3,
+      "evaluations": 400
+    },
+    "1. timestep declared nonnegative": {
+      "executor": 39.3,
+      "generated32": 3.1,
+      "generated128": 2.8,
+      "evaluations": 400
+    },
+    "2a. spring bank": {
+      "executor": 29.6,
+      "generated32": 2,
+      "generated128": 1.9,
+      "evaluations": 400
+    },
+    "2b. Photos reads stepped springs": {
+      "executor": 28.2,
+      "generated32": 1.7,
+      "generated128": 1.9,
+      "evaluations": 400
+    },
+    "3. event queue, 8 slots, 2 downs, key routing": {
+      "executor": 65.9,
+      "generated32": 6.7,
+      "generated128": 7.8,
+      "evaluations": 400
+    },
+    "4. Notes flow around the windows' destinations, word springs": {
+      "executor": 159.1,
+      "generated32": 29.3,
+      "generated128": 33.2,
+      "evaluations": 400
+    },
+    "Notes around current-frame obstacles": {
+      "executor": 159.7,
+      "generated32": 30.1,
+      "generated128": 48.7,
+      "evaluations": 400
+    },
+    "Notes around stepped-springs obstacles": {
+      "executor": 153,
+      "generated32": 29.1,
+      "generated128": 80.8,
+      "evaluations": 400
+    },
+    "wholeStepMicroseconds": 40.8750000060536,
+    "validatorMicroseconds": 0.750000006519258
+  },
+  "tierup": [
+    {
+      "backend": "executor",
+      "setupMilliseconds": 46.186083999999994,
+      "totalMilliseconds": 13848.147791,
+      "buckets": [
+        {
+          "low": 1,
+          "high": 1,
+          "microseconds": 258.9580000000069
+        },
+        {
+          "low": 2,
+          "high": 10,
+          "microseconds": 134.47200000000396
+        },
+        {
+          "low": 11,
+          "high": 100,
+          "microseconds": 126.0527444444411
+        },
+        {
+          "low": 101,
+          "high": 1000,
+          "microseconds": 130.2654133333343
+        },
+        {
+          "low": 1001,
+          "high": 10000,
+          "microseconds": 133.3251542222214
+        },
+        {
+          "low": 10001,
+          "high": 30000,
+          "microseconds": 132.39520589999975
+        },
+        {
+          "low": 30001,
+          "high": 100000,
+          "microseconds": 140.83979564285713
+        }
+      ],
+      "promotion": null
+    },
+    {
+      "backend": "generated",
+      "setupMilliseconds": 23.472082999999998,
+      "totalMilliseconds": 7116.9385839999995,
+      "buckets": [
+        {
+          "low": 1,
+          "high": 1,
+          "microseconds": 31152.625
+        },
+        {
+          "low": 2,
+          "high": 10,
+          "microseconds": 1469.4445555555574
+        },
+        {
+          "low": 11,
+          "high": 100,
+          "microseconds": 3766.0796555555626
+        },
+        {
+          "low": 101,
+          "high": 1000,
+          "microseconds": 1445.542222222232
+        },
+        {
+          "low": 1001,
+          "high": 10000,
+          "microseconds": 100.48791733333339
+        },
+        {
+          "low": 10001,
+          "high": 30000,
+          "microseconds": 83.09352789999639
+        },
+        {
+          "low": 30001,
+          "high": 100000,
+          "microseconds": 40.75214444285867
+        }
+      ],
+      "promotion": null
+    },
+    {
+      "backend": "tiered",
+      "setupMilliseconds": 53.79370800000004,
+      "totalMilliseconds": 8041.8451669999995,
+      "buckets": [
+        {
+          "low": 1,
+          "high": 1,
+          "microseconds": 320.7919999999831
+        },
+        {
+          "low": 2,
+          "high": 10,
+          "microseconds": 165.4998888888915
+        },
+        {
+          "low": 11,
+          "high": 100,
+          "microseconds": 152.6412000000012
+        },
+        {
+          "low": 101,
+          "high": 1000,
+          "microseconds": 144.30287555555216
+        },
+        {
+          "low": 1001,
+          "high": 10000,
+          "microseconds": 182.24047799999758
+        },
+        {
+          "low": 10001,
+          "high": 30000,
+          "microseconds": 100.87615270000018
+        },
+        {
+          "low": 30001,
+          "high": 100000,
+          "microseconds": 45.64765541428423
+        }
+      ],
+      "promotion": {
+        "generateMilliseconds": 14.25041699999997,
+        "compileMilliseconds": 7.770792000000029,
+        "warmupMilliseconds": 1001.521,
+        "warmupRuns": 223,
+        "verifiedWires": 20613,
+        "functionCount": 621,
+        "sourceBytes": 1278154
+      }
+    }
+  ]
+}

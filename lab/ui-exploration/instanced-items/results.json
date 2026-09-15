@@ -1,0 +1,6506 @@
+{
+ "staged gallery at 221 photos: stages and reductions": [
+  {
+   "name": "pointer",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 18,
+   "layers": 6,
+   "storedWeights": 34,
+   "gatherReads": 0
+  },
+  {
+   "name": "keys",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 20,
+   "layers": 5,
+   "storedWeights": 49,
+   "gatherReads": 0
+  },
+  {
+   "name": "click hit test",
+   "kind": "map",
+   "axis": "photos",
+   "instances": 221,
+   "liveOperations": 10,
+   "layers": 4,
+   "storedWeights": 19,
+   "gatherReads": 0
+  },
+  {
+   "name": "click selection",
+   "kind": "firstActive"
+  },
+  {
+   "name": "focus",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 16,
+   "layers": 7,
+   "storedWeights": 48,
+   "gatherReads": 0
+  },
+  {
+   "name": "column count",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 31,
+   "layers": 5,
+   "storedWeights": 55,
+   "gatherReads": 1
+  },
+  {
+   "name": "sizes and focus relation",
+   "kind": "map",
+   "axis": "photos",
+   "instances": 221,
+   "liveOperations": 25,
+   "layers": 7,
+   "storedWeights": 56,
+   "gatherReads": 0
+  },
+  {
+   "name": "row maxima, 1 columns",
+   "kind": "groupMax"
+  },
+  {
+   "name": "row step, 1 columns",
+   "kind": "map",
+   "axis": "rows for 1 columns",
+   "instances": 221,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 1,
+   "gatherReads": 0
+  },
+  {
+   "name": "row tops, 1 columns",
+   "kind": "prefix",
+   "order": "sequential"
+  },
+  {
+   "name": "row centers, 1 columns",
+   "kind": "map",
+   "axis": "rows for 1 columns",
+   "instances": 221,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 2,
+   "gatherReads": 0
+  },
+  {
+   "name": "row values back to photos, 1 columns",
+   "kind": "gatherIndexed"
+  },
+  {
+   "name": "row maxima, 2 columns",
+   "kind": "groupMax"
+  },
+  {
+   "name": "row step, 2 columns",
+   "kind": "map",
+   "axis": "rows for 2 columns",
+   "instances": 111,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 1,
+   "gatherReads": 0
+  },
+  {
+   "name": "row tops, 2 columns",
+   "kind": "prefix",
+   "order": "sequential"
+  },
+  {
+   "name": "row centers, 2 columns",
+   "kind": "map",
+   "axis": "rows for 2 columns",
+   "instances": 111,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 2,
+   "gatherReads": 0
+  },
+  {
+   "name": "row values back to photos, 2 columns",
+   "kind": "gatherIndexed"
+  },
+  {
+   "name": "row maxima, 3 columns",
+   "kind": "groupMax"
+  },
+  {
+   "name": "row step, 3 columns",
+   "kind": "map",
+   "axis": "rows for 3 columns",
+   "instances": 74,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 1,
+   "gatherReads": 0
+  },
+  {
+   "name": "row tops, 3 columns",
+   "kind": "prefix",
+   "order": "sequential"
+  },
+  {
+   "name": "row centers, 3 columns",
+   "kind": "map",
+   "axis": "rows for 3 columns",
+   "instances": 74,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 2,
+   "gatherReads": 0
+  },
+  {
+   "name": "row values back to photos, 3 columns",
+   "kind": "gatherIndexed"
+  },
+  {
+   "name": "row maxima, 4 columns",
+   "kind": "groupMax"
+  },
+  {
+   "name": "row step, 4 columns",
+   "kind": "map",
+   "axis": "rows for 4 columns",
+   "instances": 56,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 1,
+   "gatherReads": 0
+  },
+  {
+   "name": "row tops, 4 columns",
+   "kind": "prefix",
+   "order": "sequential"
+  },
+  {
+   "name": "row centers, 4 columns",
+   "kind": "map",
+   "axis": "rows for 4 columns",
+   "instances": 56,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 2,
+   "gatherReads": 0
+  },
+  {
+   "name": "row values back to photos, 4 columns",
+   "kind": "gatherIndexed"
+  },
+  {
+   "name": "row maxima, 5 columns",
+   "kind": "groupMax"
+  },
+  {
+   "name": "row step, 5 columns",
+   "kind": "map",
+   "axis": "rows for 5 columns",
+   "instances": 45,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 1,
+   "gatherReads": 0
+  },
+  {
+   "name": "row tops, 5 columns",
+   "kind": "prefix",
+   "order": "sequential"
+  },
+  {
+   "name": "row centers, 5 columns",
+   "kind": "map",
+   "axis": "rows for 5 columns",
+   "instances": 45,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 2,
+   "gatherReads": 0
+  },
+  {
+   "name": "row values back to photos, 5 columns",
+   "kind": "gatherIndexed"
+  },
+  {
+   "name": "row maxima, 6 columns",
+   "kind": "groupMax"
+  },
+  {
+   "name": "row step, 6 columns",
+   "kind": "map",
+   "axis": "rows for 6 columns",
+   "instances": 37,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 1,
+   "gatherReads": 0
+  },
+  {
+   "name": "row tops, 6 columns",
+   "kind": "prefix",
+   "order": "sequential"
+  },
+  {
+   "name": "row centers, 6 columns",
+   "kind": "map",
+   "axis": "rows for 6 columns",
+   "instances": 37,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 2,
+   "gatherReads": 0
+  },
+  {
+   "name": "row values back to photos, 6 columns",
+   "kind": "gatherIndexed"
+  },
+  {
+   "name": "row maxima, 7 columns",
+   "kind": "groupMax"
+  },
+  {
+   "name": "row step, 7 columns",
+   "kind": "map",
+   "axis": "rows for 7 columns",
+   "instances": 32,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 1,
+   "gatherReads": 0
+  },
+  {
+   "name": "row tops, 7 columns",
+   "kind": "prefix",
+   "order": "sequential"
+  },
+  {
+   "name": "row centers, 7 columns",
+   "kind": "map",
+   "axis": "rows for 7 columns",
+   "instances": 32,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 2,
+   "gatherReads": 0
+  },
+  {
+   "name": "row values back to photos, 7 columns",
+   "kind": "gatherIndexed"
+  },
+  {
+   "name": "grid targets and hover",
+   "kind": "map",
+   "axis": "photos",
+   "instances": 221,
+   "liveOperations": 19,
+   "layers": 8,
+   "storedWeights": 32,
+   "gatherReads": 4
+  },
+  {
+   "name": "grid hover count",
+   "kind": "sum"
+  },
+  {
+   "name": "strip lefts",
+   "kind": "prefix",
+   "order": "sequential"
+  },
+  {
+   "name": "strip left at the focus",
+   "kind": "gatherAt"
+  },
+  {
+   "name": "strip left after the focus",
+   "kind": "gatherAt"
+  },
+  {
+   "name": "strip hover and cursor",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 17,
+   "layers": 6,
+   "storedWeights": 33,
+   "gatherReads": 0
+  },
+  {
+   "name": "destinations",
+   "kind": "map",
+   "axis": "photos",
+   "instances": 221,
+   "liveOperations": 20,
+   "layers": 4,
+   "storedWeights": 86,
+   "gatherReads": 0
+  },
+  {
+   "name": "row top at the old focus",
+   "kind": "gatherAt"
+  },
+  {
+   "name": "height at the old focus",
+   "kind": "gatherAt"
+  },
+  {
+   "name": "destination at the anchor",
+   "kind": "gatherAt"
+  },
+  {
+   "name": "scroll",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 33,
+   "layers": 13,
+   "storedWeights": 63,
+   "gatherReads": 0
+  },
+  {
+   "name": "anchor predicate",
+   "kind": "map",
+   "axis": "photos",
+   "instances": 221,
+   "liveOperations": 5,
+   "layers": 5,
+   "storedWeights": 9,
+   "gatherReads": 0
+  },
+  {
+   "name": "row starts below the threshold",
+   "kind": "sum"
+  },
+  {
+   "name": "anchor",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 12,
+   "layers": 4,
+   "storedWeights": 16,
+   "gatherReads": 1
+  },
+  {
+   "name": "clock",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 248,
+   "layers": 19,
+   "storedWeights": 618,
+   "gatherReads": 0
+  },
+  {
+   "name": "springs and occlusion",
+   "kind": "map",
+   "axis": "photos",
+   "instances": 221,
+   "liveOperations": 154,
+   "layers": 13,
+   "storedWeights": 311,
+   "gatherReads": 0
+  },
+  {
+   "name": "active springs",
+   "kind": "sum"
+  },
+  {
+   "name": "outputs",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 6,
+   "layers": 3,
+   "storedWeights": 9,
+   "gatherReads": 1
+  }
+ ],
+ "staged gallery at 221 photos: live operations per axis (map stages over photos run once per photo)": {
+  "shared": 401,
+  "photos": 233,
+  "rows for 1 columns": 2,
+  "rows for 2 columns": 2,
+  "rows for 3 columns": 2,
+  "rows for 4 columns": 2,
+  "rows for 5 columns": 2,
+  "rows for 6 columns": 2,
+  "rows for 7 columns": 2
+ },
+ "duplicated circuit of the staged gallery at 221 photos": [
+  {
+   "name": "sequential prefix sums, triangle lowering",
+   "liveOperations": 55627,
+   "layers": 64,
+   "storedWeights": 182635,
+   "gatherReads": 892,
+   "widestLayer": 4617
+  },
+  {
+   "name": "sequential prefix sums, chain lowering",
+   "liveOperations": 55627,
+   "layers": 260,
+   "storedWeights": 122314,
+   "gatherReads": 892,
+   "widestLayer": 4549
+  },
+  {
+   "name": "Brent-Kung prefix sums",
+   "liveOperations": 57135,
+   "layers": 67,
+   "storedWeights": 124533,
+   "gatherReads": 892,
+   "widestLayer": 4650
+  }
+ ],
+ "gallery-circuit.ts at 221 photos": [
+  {
+   "name": "triangle prefix sums (default)",
+   "liveOperations": 48411,
+   "layers": 61,
+   "storedWeights": 174708,
+   "gatherReads": 457,
+   "widestLayer": 4641
+  },
+  {
+   "name": "Brent-Kung prefix sums",
+   "liveOperations": 49837,
+   "layers": 61,
+   "storedWeights": 116442,
+   "gatherReads": 457,
+   "widestLayer": 4703
+  }
+ ],
+ "6 random traces of 600 frames, dyadic frame times, free-running: staged program against index.ts": {
+  "traces": 6,
+  "frames": 3600,
+  "framesIn1D": 2192,
+  "animatingFrames": 3428,
+  "events": {
+   "frame": 3600,
+   "mousemove": 1814,
+   "scroll": 86,
+   "popstate": 26,
+   "click": 434,
+   "key": 348,
+   "resize": 88,
+   "reducedMotion": 28
+  },
+  "decisionChecks": 957258,
+  "decisionMismatches": 0,
+  "how often index.ts changed each decision": {
+   "animation steps": 2628,
+   "anchor": 160,
+   "cursor": 1077,
+   "URL focus opened by a click": 103,
+   "URL focus": 643,
+   "pushState called": 624,
+   "body overflow": 377,
+   "visible": 5865,
+   "scrollTo called": 136,
+   "filter kind": 945,
+   "z-index": 639,
+   "prompt overflow": 639,
+   "prompt height": 639,
+   "line clamp": 639,
+   "image display": 639,
+   "still animating": 94,
+   "full resolution source": 21,
+   "prompt selected": 20
+  },
+  "firstMismatches": [],
+  "maximumAbsoluteErrors": {
+   "scroll position": 0.04065008038014639,
+   "committed scroll": 0.04065008038014639,
+   "placeholder height": 0.12185409989615437,
+   "sizeX position": 0.00028835808166149945,
+   "sizeX velocity": 0.0026669043736546882,
+   "sizeY position": 0.0003204950402277973,
+   "sizeY velocity": 0.002301796209646767,
+   "x position": 0.24531249990104698,
+   "x velocity": 1.7442749907495454,
+   "y position": 0.12469791219336912,
+   "y velocity": 0.8126921724760905,
+   "scale position": 7.613065200473557e-8,
+   "scale velocity": 1.459980380758008e-7,
+   "fxFactor position": 0.000002333946248711527,
+   "fxFactor velocity": 0.000025417522635962086,
+   "destination x": 0.2499999999126885,
+   "destination y": 0.12029159990197513,
+   "destination width": 0.00017089843748863132,
+   "destination height": 0.00031738281245452526,
+   "style filter": 0.00014700454107696714,
+   "style transform": 0.04970713137299754,
+   "style width": 0.0001856195156051399,
+   "style prompt top": 0.00025720757219005463
+  }
+ },
+ "6 random traces of 600 frames, realistic frame times, free-running: staged program against index.ts": {
+  "traces": 6,
+  "frames": 3600,
+  "framesIn1D": 2338,
+  "animatingFrames": 3435,
+  "events": {
+   "frame": 3600,
+   "mousemove": 1798,
+   "resize": 84,
+   "key": 361,
+   "popstate": 44,
+   "click": 406,
+   "reducedMotion": 31,
+   "scroll": 75
+  },
+  "decisionChecks": 939289,
+  "decisionMismatches": 0,
+  "how often index.ts changed each decision": {
+   "animation steps": 2478,
+   "scrollTo called": 135,
+   "cursor": 1113,
+   "URL focus": 637,
+   "pushState called": 605,
+   "body overflow": 387,
+   "visible": 5775,
+   "z-index": 572,
+   "prompt overflow": 572,
+   "prompt height": 572,
+   "line clamp": 572,
+   "image display": 572,
+   "filter kind": 862,
+   "URL focus opened by a click": 106,
+   "still animating": 99,
+   "full resolution source": 29,
+   "anchor": 158,
+   "prompt selected": 15
+  },
+  "firstMismatches": [],
+  "maximumAbsoluteErrors": {
+   "scroll position": 0.03485013153112959,
+   "committed scroll": 0.03485013153112959,
+   "placeholder height": 0.12185409989615437,
+   "sizeX position": 0.0002775090749764786,
+   "sizeX velocity": 0.0023977016217031633,
+   "sizeY position": 0.0003564903776691608,
+   "sizeY velocity": 0.0024887848013861458,
+   "x position": 0.2468169243002194,
+   "x velocity": 2.3361981146153994,
+   "y position": 0.12122794796596281,
+   "y velocity": 0.8672099973773584,
+   "scale position": 7.613065200473557e-8,
+   "scale velocity": 1.459980380758008e-7,
+   "fxFactor position": 0.000002373522789866911,
+   "fxFactor velocity": 0.00001727093641790134,
+   "destination x": 0.27220394751930144,
+   "destination y": 0.12029159990197513,
+   "destination width": 0.000244140625,
+   "destination height": 0.00034179687497726263,
+   "style filter": 0.00022258686021814356,
+   "style transform": 0.10089323610577594,
+   "style width": 0.00027279370237920375,
+   "style prompt top": 0.0003064048328269564
+  }
+ },
+ "scripted trace: staged program against index.ts": {
+  "traces": 1,
+  "frames": 420,
+  "framesIn1D": 200,
+  "animatingFrames": 420,
+  "events": {
+   "frame": 420,
+   "mousemove": 2,
+   "click": 3,
+   "key": 7,
+   "resize": 2,
+   "scroll": 1,
+   "popstate": 3
+  },
+  "decisionChecks": 126182,
+  "decisionMismatches": 0,
+  "how often index.ts changed each decision": {
+   "animation steps": 105,
+   "visible": 176,
+   "cursor": 9,
+   "URL focus opened by a click": 1,
+   "URL focus": 11,
+   "pushState called": 8,
+   "body overflow": 6,
+   "filter kind": 15,
+   "z-index": 13,
+   "prompt overflow": 13,
+   "prompt height": 13,
+   "line clamp": 13,
+   "image display": 13,
+   "anchor": 3,
+   "scrollTo called": 2,
+   "prompt selected": 1
+  },
+  "firstMismatches": [],
+  "maximumAbsoluteErrors": {
+   "scroll position": 0.0016927083270275034,
+   "committed scroll": 0.0020833333273913013,
+   "placeholder height": 0.006640624993451638,
+   "sizeX position": 0.0001309976886432196,
+   "sizeX velocity": 0.0009201786547237134,
+   "sizeY position": 0.0001580243163061823,
+   "sizeY velocity": 0.0010488952002560836,
+   "x position": 0.18386912447749637,
+   "x velocity": 1.339598900754936,
+   "y position": 0.007880884155383683,
+   "y velocity": 0.060341976619383786,
+   "scale position": 7.613065200473557e-8,
+   "scale velocity": 1.399776993760149e-7,
+   "fxFactor position": 0.0000011402358444101424,
+   "fxFactor velocity": 0.000010639677768153888,
+   "destination x": 0.17793100542621687,
+   "destination y": 0.0074218749923602445,
+   "destination width": 0.00007120768236745789,
+   "destination height": 0.00012207031261368684,
+   "style filter": 0.00011402358444456695,
+   "style transform": 0.007276622097947438,
+   "style width": 0.0001139877431342029,
+   "style prompt top": 0.0001450753094331958
+  }
+ },
+ "scripted trace: staged program against gallery-circuit.ts": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2543535,
+  "identicalFraction": 0.8815,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.001953125
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.001953125
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "destSizeY": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "destX": {
+    "identical": 60520,
+    "compared": 92820,
+    "maximumDifference": 0.03125
+   },
+   "destY": {
+    "identical": 80730,
+    "compared": 92820,
+    "maximumDifference": 0.001953125
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 79250,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.destination": {
+    "identical": 78740,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.displacement": {
+    "identical": 87255,
+    "compared": 92820,
+    "maximumDifference": 0.000017583370208740234
+   },
+   "fxFactor.velocity": {
+    "identical": 87300,
+    "compared": 92820,
+    "maximumDifference": 0.0000820159912109375
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 130,
+    "compared": 420,
+    "maximumDifference": 0.001953125
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 88509,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.destination": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.displacement": {
+    "identical": 82288,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.velocity": {
+    "identical": 82880,
+    "compared": 92820,
+    "maximumDifference": 0.00030517578125
+   },
+   "sizeY": {
+    "identical": 87324,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.destination": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.displacement": {
+    "identical": 78572,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.velocity": {
+    "identical": 79529,
+    "compared": 92820,
+    "maximumDifference": 0.0006103515625
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 88647,
+    "compared": 92820,
+    "maximumDifference": 0.015625
+   },
+   "x.destination": {
+    "identical": 60520,
+    "compared": 92820,
+    "maximumDifference": 0.03125
+   },
+   "x.displacement": {
+    "identical": 61508,
+    "compared": 92820,
+    "maximumDifference": 0.03125
+   },
+   "x.velocity": {
+    "identical": 62213,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "y": {
+    "identical": 89731,
+    "compared": 92820,
+    "maximumDifference": 0.009765625
+   },
+   "y.destination": {
+    "identical": 80730,
+    "compared": 92820,
+    "maximumDifference": 0.001953125
+   },
+   "y.displacement": {
+    "identical": 83036,
+    "compared": 92820,
+    "maximumDifference": 0.010711906477808952
+   },
+   "y.velocity": {
+    "identical": 83365,
+    "compared": 92820,
+    "maximumDifference": 0.011773144826292992
+   }
+  }
+ },
+ "2 random traces of 300 frames: staged executor against the staged program's duplicated circuit": {
+  "frames": 600,
+  "compared": 4122000,
+  "identical": 4122000,
+  "identicalFraction": 1,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "blurred": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "destSizeY": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "destX": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "destY": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "focusChanged": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "fxFactor.destination": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "fxFactor.displacement": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "fxFactor.velocity": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "newFocusedIndex": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "scale": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "sizeX.destination": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "sizeX.displacement": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "sizeX.velocity": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "sizeY": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "sizeY.destination": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "sizeY.displacement": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "sizeY.velocity": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "steps": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 600,
+    "compared": 600,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "x.destination": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "x.displacement": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "x.velocity": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "y": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "y.destination": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "y.displacement": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   },
+   "y.velocity": {
+    "identical": 132600,
+    "compared": 132600,
+    "maximumDifference": 0
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "fold orders, scripted trace: staged, sequential prefix sums, against staged, Brent-Kung prefix sums": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2615925,
+  "identicalFraction": 0.9066,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.0009765625
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.0009765625
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destSizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destX": {
+    "identical": 57840,
+    "compared": 92820,
+    "maximumDifference": 0.1640625
+   },
+   "destY": {
+    "identical": 63300,
+    "compared": 92820,
+    "maximumDifference": 0.0078125
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 0,
+    "compared": 420,
+    "maximumDifference": 0.0078125
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 80271,
+    "compared": 92820,
+    "maximumDifference": 0.015625
+   },
+   "x.destination": {
+    "identical": 57840,
+    "compared": 92820,
+    "maximumDifference": 0.1640625
+   },
+   "x.displacement": {
+    "identical": 57849,
+    "compared": 92820,
+    "maximumDifference": 0.1640625
+   },
+   "x.velocity": {
+    "identical": 57989,
+    "compared": 92820,
+    "maximumDifference": 0.75
+   },
+   "y": {
+    "identical": 86731,
+    "compared": 92820,
+    "maximumDifference": 0.009765625
+   },
+   "y.destination": {
+    "identical": 63300,
+    "compared": 92820,
+    "maximumDifference": 0.0078125
+   },
+   "y.displacement": {
+    "identical": 66740,
+    "compared": 92820,
+    "maximumDifference": 0.010916410014033318
+   },
+   "y.velocity": {
+    "identical": 67287,
+    "compared": 92820,
+    "maximumDifference": 0.03515625
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "fold orders, scripted trace: staged, Brent-Kung prefix sums, against gallery-circuit.ts": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2401260,
+  "identicalFraction": 0.8322,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.0009765625
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.0009765625
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "destSizeY": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "destX": {
+    "identical": 50180,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "destY": {
+    "identical": 58320,
+    "compared": 92820,
+    "maximumDifference": 0.0078125
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 79250,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.destination": {
+    "identical": 78740,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.displacement": {
+    "identical": 87255,
+    "compared": 92820,
+    "maximumDifference": 0.000017583370208740234
+   },
+   "fxFactor.velocity": {
+    "identical": 87300,
+    "compared": 92820,
+    "maximumDifference": 0.0000820159912109375
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 0,
+    "compared": 420,
+    "maximumDifference": 0.0078125
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 88509,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.destination": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.displacement": {
+    "identical": 82288,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.velocity": {
+    "identical": 82880,
+    "compared": 92820,
+    "maximumDifference": 0.00030517578125
+   },
+   "sizeY": {
+    "identical": 87324,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.destination": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.displacement": {
+    "identical": 78572,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.velocity": {
+    "identical": 79529,
+    "compared": 92820,
+    "maximumDifference": 0.0006103515625
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 76759,
+    "compared": 92820,
+    "maximumDifference": 0.015625
+   },
+   "x.destination": {
+    "identical": 50180,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "x.displacement": {
+    "identical": 51134,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "x.velocity": {
+    "identical": 51391,
+    "compared": 92820,
+    "maximumDifference": 0.875
+   },
+   "y": {
+    "identical": 85438,
+    "compared": 92820,
+    "maximumDifference": 0.009765625
+   },
+   "y.destination": {
+    "identical": 58320,
+    "compared": 92820,
+    "maximumDifference": 0.0078125
+   },
+   "y.displacement": {
+    "identical": 63146,
+    "compared": 92820,
+    "maximumDifference": 0.015610169619321823
+   },
+   "y.velocity": {
+    "identical": 63987,
+    "compared": 92820,
+    "maximumDifference": 0.03515625
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "fold orders, scripted trace: staged, Brent-Kung prefix sums, against its duplicated circuit": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2885400,
+  "identicalFraction": 1,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destSizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "IndirectOS sizes": {
+  "window-manager.ts": {
+   "liveOperations": 5253,
+   "layers": 192,
+   "storedWeights": 11598,
+   "gatherReads": 12,
+   "widestLayer": 123
+  },
+  "staged program, duplicated circuit": {
+   "liveOperations": 6282,
+   "layers": 215,
+   "storedWeights": 13346,
+   "gatherReads": 36,
+   "widestLayer": 242
+  },
+  "staged program, live operations per axis": {
+   "shared": 254,
+   "windows": 681,
+   "dock items": 19,
+   "photos": 270
+  }
+ },
+ "IndirectOS staged stages and reductions": [
+  {
+   "name": "workspace, dock layout, pointer",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 73,
+   "layers": 19,
+   "storedWeights": 129,
+   "gatherReads": 0
+  },
+  {
+   "name": "window hits",
+   "kind": "map",
+   "axis": "windows",
+   "instances": 4,
+   "liveOperations": 105,
+   "layers": 15,
+   "storedWeights": 213,
+   "gatherReads": 0
+  },
+  {
+   "name": "frontmost press key",
+   "kind": "max"
+  },
+  {
+   "name": "dock items",
+   "kind": "map",
+   "axis": "dock items",
+   "instances": 4,
+   "liveOperations": 19,
+   "layers": 11,
+   "storedWeights": 42,
+   "gatherReads": 0
+  },
+  {
+   "name": "dock item of each window",
+   "kind": "gatherIndexed"
+  },
+  {
+   "name": "presses and geometry",
+   "kind": "map",
+   "axis": "windows",
+   "instances": 4,
+   "liveOperations": 93,
+   "layers": 19,
+   "storedWeights": 178,
+   "gatherReads": 0
+  },
+  {
+   "name": "selection mass",
+   "kind": "sum"
+  },
+  {
+   "name": "selected rank",
+   "kind": "sum"
+  },
+  {
+   "name": "selection",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 12,
+   "layers": 2,
+   "storedWeights": 29,
+   "gatherReads": 0
+  },
+  {
+   "name": "next stack and visibility",
+   "kind": "map",
+   "axis": "windows",
+   "instances": 4,
+   "liveOperations": 53,
+   "layers": 5,
+   "storedWeights": 117,
+   "gatherReads": 0
+  },
+  {
+   "name": "frontmost visible key",
+   "kind": "max"
+  },
+  {
+   "name": "window springs and projection",
+   "kind": "map",
+   "axis": "windows",
+   "instances": 4,
+   "liveOperations": 430,
+   "layers": 59,
+   "storedWeights": 920,
+   "gatherReads": 0
+  },
+  {
+   "name": "active windows",
+   "kind": "sum"
+  },
+  {
+   "name": "Photos window index",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 1,
+   "layers": 1,
+   "storedWeights": 0,
+   "gatherReads": 0
+  },
+  {
+   "name": "Photos content width",
+   "kind": "gatherAt"
+  },
+  {
+   "name": "Photos content height",
+   "kind": "gatherAt"
+  },
+  {
+   "name": "Photos opacity",
+   "kind": "gatherAt"
+  },
+  {
+   "name": "Photos focused",
+   "kind": "gatherAt"
+  },
+  {
+   "name": "previous focus",
+   "kind": "firstActive"
+  },
+  {
+   "name": "Photos layout and controls",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 140,
+   "layers": 18,
+   "storedWeights": 251,
+   "gatherReads": 0
+  },
+  {
+   "name": "thumbnail and grid hits",
+   "kind": "map",
+   "axis": "photos",
+   "instances": 12,
+   "liveOperations": 58,
+   "layers": 19,
+   "storedWeights": 111,
+   "gatherReads": 2
+  },
+  {
+   "name": "first thumbnail under the click",
+   "kind": "firstActive"
+  },
+  {
+   "name": "Photos click priority",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 4,
+   "layers": 1,
+   "storedWeights": 14,
+   "gatherReads": 0
+  },
+  {
+   "name": "thumbnail click",
+   "kind": "scatter"
+  },
+  {
+   "name": "focus of the next photo",
+   "kind": "gatherIndexed"
+  },
+  {
+   "name": "focus of the previous photo",
+   "kind": "gatherIndexed"
+  },
+  {
+   "name": "next focus",
+   "kind": "map",
+   "axis": "photos",
+   "instances": 12,
+   "liveOperations": 8,
+   "layers": 3,
+   "storedWeights": 19,
+   "gatherReads": 0
+  },
+  {
+   "name": "new focus",
+   "kind": "firstActive"
+  },
+  {
+   "name": "Photos grid shown",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 16,
+   "layers": 2,
+   "storedWeights": 31,
+   "gatherReads": 0
+  },
+  {
+   "name": "thumbnails and photo boxes",
+   "kind": "map",
+   "axis": "photos",
+   "instances": 12,
+   "liveOperations": 204,
+   "layers": 59,
+   "storedWeights": 434,
+   "gatherReads": 1
+  },
+  {
+   "name": "active thumbnail springs",
+   "kind": "sum"
+  },
+  {
+   "name": "animation activity",
+   "kind": "shared",
+   "axis": "shared",
+   "instances": 1,
+   "liveOperations": 8,
+   "layers": 4,
+   "storedWeights": 14,
+   "gatherReads": 0
+  }
+ ],
+ "IndirectOS against window-manager.ts, free-running": {
+  "frames": 220,
+  "compared": 94380,
+  "identical": 93249,
+  "decisionMismatches": 0,
+  "differing": {
+   "thumbnail left": {
+    "identical": 2315,
+    "compared": 2640,
+    "maximumDifference": 0.001220703125
+   },
+   "next thumbnail spring centerX": {
+    "identical": 2312,
+    "compared": 2640,
+    "maximumDifference": 0.001220703125
+   },
+   "next thumbnail spring centerX velocity": {
+    "identical": 2162,
+    "compared": 2640,
+    "maximumDifference": 0.012746214866638184
+   }
+  }
+ },
+ "IndirectOS against window-manager.ts, cells copied every frame": {
+  "frames": 220,
+  "compared": 94380,
+  "identical": 93764,
+  "decisionMismatches": 0,
+  "differing": {
+   "thumbnail left": {
+    "identical": 2570,
+    "compared": 2640,
+    "maximumDifference": 0.00103759765625
+   },
+   "next thumbnail spring centerX": {
+    "identical": 2570,
+    "compared": 2640,
+    "maximumDifference": 0.00103759765625
+   },
+   "next thumbnail spring centerX velocity": {
+    "identical": 2164,
+    "compared": 2640,
+    "maximumDifference": 0.002348368987441063
+   }
+  }
+ },
+ "IndirectOS rough µs per evaluation": {
+  "window-manager.ts executor (evaluateTensor, no validation)": 58.9,
+  "staged executor (generated JS per stage)": 9.1
+ },
+ "the same dyadic traces: staged program against gallery-circuit.ts, one evaluation from identical cells per frame": {
+  "frames": 3600,
+  "compared": 24732000,
+  "identical": 21450076,
+  "identicalFraction": 0.8673,
+  "decisionMismatches": 102,
+  "firstDecisionMismatches": [
+   "frame 411 stillAnimating : primary 0, secondary 1",
+   "frame 411 cell animating : primary 0, secondary 1",
+   "frame 412 stillAnimating : primary 0, secondary 1",
+   "frame 412 cell animating : primary 0, secondary 1",
+   "frame 413 stillAnimating : primary 0, secondary 1",
+   "frame 413 cell animating : primary 0, secondary 1",
+   "frame 414 stillAnimating : primary 0, secondary 1",
+   "frame 414 cell animating : primary 0, secondary 1",
+   "frame 462 stillAnimating : primary 0, secondary 1",
+   "frame 462 cell animating : primary 0, secondary 1"
+  ],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 3567,
+    "compared": 3600,
+    "maximumDifference": 0.0078125
+   },
+   "blurred": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 3549,
+    "compared": 3600,
+    "maximumDifference": 1
+   },
+   "cell committedScrollY": {
+    "identical": 3567,
+    "compared": 3600,
+    "maximumDifference": 0.0078125
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 690215,
+    "compared": 795600,
+    "maximumDifference": 0.00018310546875
+   },
+   "destSizeY": {
+    "identical": 624035,
+    "compared": 795600,
+    "maximumDifference": 0.00030517578125
+   },
+   "destX": {
+    "identical": 494736,
+    "compared": 795600,
+    "maximumDifference": 0.0546875
+   },
+   "destY": {
+    "identical": 601836,
+    "compared": 795600,
+    "maximumDifference": 0.015625
+   },
+   "focusChanged": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 701922,
+    "compared": 795600,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.destination": {
+    "identical": 688319,
+    "compared": 795600,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.displacement": {
+    "identical": 732906,
+    "compared": 795600,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.velocity": {
+    "identical": 734388,
+    "compared": 795600,
+    "maximumDifference": 0.00011348724365234375
+   },
+   "newFocusedIndex": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 1706,
+    "compared": 3600,
+    "maximumDifference": 0.0078125
+   },
+   "scale": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 770776,
+    "compared": 795600,
+    "maximumDifference": 0.00018310546875
+   },
+   "sizeX.destination": {
+    "identical": 690215,
+    "compared": 795600,
+    "maximumDifference": 0.00018310546875
+   },
+   "sizeX.displacement": {
+    "identical": 710412,
+    "compared": 795600,
+    "maximumDifference": 0.00018310546875
+   },
+   "sizeX.velocity": {
+    "identical": 720047,
+    "compared": 795600,
+    "maximumDifference": 0.01015531551092863
+   },
+   "sizeY": {
+    "identical": 760142,
+    "compared": 795600,
+    "maximumDifference": 0.00030517578125
+   },
+   "sizeY.destination": {
+    "identical": 624035,
+    "compared": 795600,
+    "maximumDifference": 0.00030517578125
+   },
+   "sizeY.displacement": {
+    "identical": 650832,
+    "compared": 795600,
+    "maximumDifference": 0.00030517578125
+   },
+   "sizeY.velocity": {
+    "identical": 666570,
+    "compared": 795600,
+    "maximumDifference": 0.0015869140625
+   },
+   "steps": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 3549,
+    "compared": 3600,
+    "maximumDifference": 1
+   },
+   "visible": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 722087,
+    "compared": 795600,
+    "maximumDifference": 0.046875
+   },
+   "x.destination": {
+    "identical": 494736,
+    "compared": 795600,
+    "maximumDifference": 0.0546875
+   },
+   "x.displacement": {
+    "identical": 537359,
+    "compared": 795600,
+    "maximumDifference": 0.0625
+   },
+   "x.velocity": {
+    "identical": 564110,
+    "compared": 795600,
+    "maximumDifference": 0.3125
+   },
+   "y": {
+    "identical": 752387,
+    "compared": 795600,
+    "maximumDifference": 0.015625
+   },
+   "y.destination": {
+    "identical": 601836,
+    "compared": 795600,
+    "maximumDifference": 0.015625
+   },
+   "y.displacement": {
+    "identical": 628552,
+    "compared": 795600,
+    "maximumDifference": 0.015625
+   },
+   "y.velocity": {
+    "identical": 652085,
+    "compared": 795600,
+    "maximumDifference": 0.125
+   }
+  }
+ },
+ "the same realistic traces: staged program against gallery-circuit.ts, one evaluation from identical cells per frame": {
+  "frames": 3600,
+  "compared": 24732000,
+  "identical": 21282210,
+  "identicalFraction": 0.8605,
+  "decisionMismatches": 64,
+  "firstDecisionMismatches": [
+   "frame 60 stillAnimating : primary 0, secondary 1",
+   "frame 60 cell animating : primary 0, secondary 1",
+   "frame 61 stillAnimating : primary 0, secondary 1",
+   "frame 61 cell animating : primary 0, secondary 1",
+   "frame 62 stillAnimating : primary 0, secondary 1",
+   "frame 62 cell animating : primary 0, secondary 1",
+   "frame 203 stillAnimating : primary 0, secondary 1",
+   "frame 203 cell animating : primary 0, secondary 1",
+   "frame 204 stillAnimating : primary 0, secondary 1",
+   "frame 204 cell animating : primary 0, secondary 1"
+  ],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 3573,
+    "compared": 3600,
+    "maximumDifference": 0.0078125
+   },
+   "blurred": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 3568,
+    "compared": 3600,
+    "maximumDifference": 1
+   },
+   "cell committedScrollY": {
+    "identical": 3573,
+    "compared": 3600,
+    "maximumDifference": 0.0078125
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 675746,
+    "compared": 795600,
+    "maximumDifference": 0.00018310546875
+   },
+   "destSizeY": {
+    "identical": 608600,
+    "compared": 795600,
+    "maximumDifference": 0.0003662109375
+   },
+   "destX": {
+    "identical": 457127,
+    "compared": 795600,
+    "maximumDifference": 0.0625
+   },
+   "destY": {
+    "identical": 638279,
+    "compared": 795600,
+    "maximumDifference": 0.015625
+   },
+   "focusChanged": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 693114,
+    "compared": 795600,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.destination": {
+    "identical": 674531,
+    "compared": 795600,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.displacement": {
+    "identical": 716693,
+    "compared": 795600,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.velocity": {
+    "identical": 717960,
+    "compared": 795600,
+    "maximumDifference": 0.00010764598846435547
+   },
+   "newFocusedIndex": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 1903,
+    "compared": 3600,
+    "maximumDifference": 0.0078125
+   },
+   "scale": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 769954,
+    "compared": 795600,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeX.destination": {
+    "identical": 675746,
+    "compared": 795600,
+    "maximumDifference": 0.00018310546875
+   },
+   "sizeX.displacement": {
+    "identical": 697023,
+    "compared": 795600,
+    "maximumDifference": 0.00018310546875
+   },
+   "sizeX.velocity": {
+    "identical": 709194,
+    "compared": 795600,
+    "maximumDifference": 0.0011334419250488281
+   },
+   "sizeY": {
+    "identical": 755576,
+    "compared": 795600,
+    "maximumDifference": 0.000244140625
+   },
+   "sizeY.destination": {
+    "identical": 608600,
+    "compared": 795600,
+    "maximumDifference": 0.0003662109375
+   },
+   "sizeY.displacement": {
+    "identical": 640555,
+    "compared": 795600,
+    "maximumDifference": 0.0003662109375
+   },
+   "sizeY.velocity": {
+    "identical": 654773,
+    "compared": 795600,
+    "maximumDifference": 0.002266407012939453
+   },
+   "steps": {
+    "identical": 3600,
+    "compared": 3600,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 3568,
+    "compared": 3600,
+    "maximumDifference": 1
+   },
+   "visible": {
+    "identical": 795600,
+    "compared": 795600,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 722291,
+    "compared": 795600,
+    "maximumDifference": 0.056640625
+   },
+   "x.destination": {
+    "identical": 457127,
+    "compared": 795600,
+    "maximumDifference": 0.0625
+   },
+   "x.displacement": {
+    "identical": 501325,
+    "compared": 795600,
+    "maximumDifference": 0.0625
+   },
+   "x.velocity": {
+    "identical": 528584,
+    "compared": 795600,
+    "maximumDifference": 0.34375
+   },
+   "y": {
+    "identical": 761039,
+    "compared": 795600,
+    "maximumDifference": 0.015625
+   },
+   "y.destination": {
+    "identical": 638279,
+    "compared": 795600,
+    "maximumDifference": 0.015625
+   },
+   "y.displacement": {
+    "identical": 661972,
+    "compared": 795600,
+    "maximumDifference": 0.015625
+   },
+   "y.velocity": {
+    "identical": 682337,
+    "compared": 795600,
+    "maximumDifference": 0.125
+   }
+  }
+ },
+ "scaling, 221 photos (Brent-Kung prefix sums, mid-animation frame)": {
+  "photos": 221,
+  "stagedBuildMilliseconds": 4,
+  "stagedExecutorCreateMilliseconds": 2,
+  "stagedMicroseconds": 65.4,
+  "stagedPerPhotoOperations": 233,
+  "slowestSteps": [
+   {
+    "step": "map: springs and occlusion",
+    "microseconds": 23.1
+   },
+   {
+    "step": "map: destinations",
+    "microseconds": 7.2
+   },
+   {
+    "step": "map: grid targets and hover",
+    "microseconds": 7.1
+   },
+   {
+    "step": "map: sizes and focus relation",
+    "microseconds": 4.7
+   },
+   {
+    "step": "map: click hit test",
+    "microseconds": 2
+   },
+   {
+    "step": "shared: clock",
+    "microseconds": 1.4
+   },
+   {
+    "step": "map: anchor predicate",
+    "microseconds": 1.4
+   },
+   {
+    "step": "map: row step, 1 columns",
+    "microseconds": 0.8
+   }
+  ],
+  "duplicatedExpandMilliseconds": 49,
+  "duplicatedCompileMilliseconds": 39,
+  "duplicatedLiveOperations": 57135,
+  "duplicatedLayers": 67,
+  "duplicatedStoredWeights": 124533,
+  "duplicatedExecutorMicroseconds": 546,
+  "originalLiveOperations": 49837,
+  "originalLayers": 61,
+  "originalStoredWeights": 116442,
+  "originalExecutorMicroseconds": 459.3,
+  "indexTsRenderMicroseconds": 21.3,
+  "heapMegabytes": 215
+ },
+ "scaling, 1000 photos (Brent-Kung prefix sums, mid-animation frame)": {
+  "photos": 1000,
+  "stagedBuildMilliseconds": 5,
+  "stagedExecutorCreateMilliseconds": 2,
+  "stagedMicroseconds": 310.2,
+  "stagedPerPhotoOperations": 233,
+  "slowestSteps": [
+   {
+    "step": "map: springs and occlusion",
+    "microseconds": 119.4
+   },
+   {
+    "step": "map: grid targets and hover",
+    "microseconds": 38.3
+   },
+   {
+    "step": "map: destinations",
+    "microseconds": 35
+   },
+   {
+    "step": "map: sizes and focus relation",
+    "microseconds": 22.3
+   },
+   {
+    "step": "map: click hit test",
+    "microseconds": 8
+   },
+   {
+    "step": "map: anchor predicate",
+    "microseconds": 5.4
+   },
+   {
+    "step": "map: row centers, 1 columns",
+    "microseconds": 2.7
+   },
+   {
+    "step": "prefix: row tops, 1 columns",
+    "microseconds": 2.7
+   }
+  ],
+  "duplicatedExpandMilliseconds": 235,
+  "duplicatedCompileMilliseconds": 218,
+  "duplicatedLiveOperations": 257433,
+  "duplicatedLayers": 71,
+  "duplicatedStoredWeights": 560955,
+  "duplicatedExecutorMicroseconds": 2568.8,
+  "originalLiveOperations": 228506,
+  "originalLayers": 67,
+  "originalStoredWeights": 536271,
+  "originalExecutorMicroseconds": 2286.9,
+  "indexTsRenderMicroseconds": 100.3,
+  "heapMegabytes": 402
+ },
+ "scaling, 10000 photos (Brent-Kung prefix sums, mid-animation frame)": {
+  "photos": 10000,
+  "stagedBuildMilliseconds": 22,
+  "stagedExecutorCreateMilliseconds": 3,
+  "stagedMicroseconds": 4105.8,
+  "stagedPerPhotoOperations": 233,
+  "slowestSteps": [
+   {
+    "step": "map: springs and occlusion",
+    "microseconds": 1809
+   },
+   {
+    "step": "map: destinations",
+    "microseconds": 538.9
+   },
+   {
+    "step": "map: grid targets and hover",
+    "microseconds": 538.4
+   },
+   {
+    "step": "map: sizes and focus relation",
+    "microseconds": 470.5
+   },
+   {
+    "step": "map: click hit test",
+    "microseconds": 80.1
+   },
+   {
+    "step": "map: anchor predicate",
+    "microseconds": 52.9
+   },
+   {
+    "step": "prefix: strip lefts",
+    "microseconds": 26.3
+   },
+   {
+    "step": "map: row centers, 1 columns",
+    "microseconds": 26.1
+   }
+  ],
+  "duplicatedExpandMilliseconds": 2626,
+  "duplicatedCompileMilliseconds": 2099,
+  "duplicatedLiveOperations": 2571887,
+  "duplicatedLayers": 80,
+  "duplicatedStoredWeights": 5603733,
+  "duplicatedExecutorMicroseconds": 43026.6,
+  "indexTsRenderMicroseconds": 3054.6,
+  "heapMegabytes": 1969
+ },
+ "scaling summary": [
+  {
+   "photos": 221,
+   "stagedBuildMilliseconds": 4,
+   "stagedExecutorCreateMilliseconds": 2,
+   "stagedMicroseconds": 65.4,
+   "stagedPerPhotoOperations": 233,
+   "slowestSteps": [
+    {
+     "step": "map: springs and occlusion",
+     "microseconds": 23.1
+    },
+    {
+     "step": "map: destinations",
+     "microseconds": 7.2
+    },
+    {
+     "step": "map: grid targets and hover",
+     "microseconds": 7.1
+    },
+    {
+     "step": "map: sizes and focus relation",
+     "microseconds": 4.7
+    },
+    {
+     "step": "map: click hit test",
+     "microseconds": 2
+    },
+    {
+     "step": "shared: clock",
+     "microseconds": 1.4
+    },
+    {
+     "step": "map: anchor predicate",
+     "microseconds": 1.4
+    },
+    {
+     "step": "map: row step, 1 columns",
+     "microseconds": 0.8
+    }
+   ],
+   "duplicatedExpandMilliseconds": 49,
+   "duplicatedCompileMilliseconds": 39,
+   "duplicatedLiveOperations": 57135,
+   "duplicatedLayers": 67,
+   "duplicatedStoredWeights": 124533,
+   "duplicatedExecutorMicroseconds": 546,
+   "originalLiveOperations": 49837,
+   "originalLayers": 61,
+   "originalStoredWeights": 116442,
+   "originalExecutorMicroseconds": 459.3,
+   "indexTsRenderMicroseconds": 21.3,
+   "heapMegabytes": 215
+  },
+  {
+   "photos": 1000,
+   "stagedBuildMilliseconds": 5,
+   "stagedExecutorCreateMilliseconds": 2,
+   "stagedMicroseconds": 310.2,
+   "stagedPerPhotoOperations": 233,
+   "slowestSteps": [
+    {
+     "step": "map: springs and occlusion",
+     "microseconds": 119.4
+    },
+    {
+     "step": "map: grid targets and hover",
+     "microseconds": 38.3
+    },
+    {
+     "step": "map: destinations",
+     "microseconds": 35
+    },
+    {
+     "step": "map: sizes and focus relation",
+     "microseconds": 22.3
+    },
+    {
+     "step": "map: click hit test",
+     "microseconds": 8
+    },
+    {
+     "step": "map: anchor predicate",
+     "microseconds": 5.4
+    },
+    {
+     "step": "map: row centers, 1 columns",
+     "microseconds": 2.7
+    },
+    {
+     "step": "prefix: row tops, 1 columns",
+     "microseconds": 2.7
+    }
+   ],
+   "duplicatedExpandMilliseconds": 235,
+   "duplicatedCompileMilliseconds": 218,
+   "duplicatedLiveOperations": 257433,
+   "duplicatedLayers": 71,
+   "duplicatedStoredWeights": 560955,
+   "duplicatedExecutorMicroseconds": 2568.8,
+   "originalLiveOperations": 228506,
+   "originalLayers": 67,
+   "originalStoredWeights": 536271,
+   "originalExecutorMicroseconds": 2286.9,
+   "indexTsRenderMicroseconds": 100.3,
+   "heapMegabytes": 402
+  },
+  {
+   "photos": 10000,
+   "stagedBuildMilliseconds": 22,
+   "stagedExecutorCreateMilliseconds": 3,
+   "stagedMicroseconds": 4105.8,
+   "stagedPerPhotoOperations": 233,
+   "slowestSteps": [
+    {
+     "step": "map: springs and occlusion",
+     "microseconds": 1809
+    },
+    {
+     "step": "map: destinations",
+     "microseconds": 538.9
+    },
+    {
+     "step": "map: grid targets and hover",
+     "microseconds": 538.4
+    },
+    {
+     "step": "map: sizes and focus relation",
+     "microseconds": 470.5
+    },
+    {
+     "step": "map: click hit test",
+     "microseconds": 80.1
+    },
+    {
+     "step": "map: anchor predicate",
+     "microseconds": 52.9
+    },
+    {
+     "step": "prefix: strip lefts",
+     "microseconds": 26.3
+    },
+    {
+     "step": "map: row centers, 1 columns",
+     "microseconds": 26.1
+    }
+   ],
+   "duplicatedExpandMilliseconds": 2626,
+   "duplicatedCompileMilliseconds": 2099,
+   "duplicatedLiveOperations": 2571887,
+   "duplicatedLayers": 80,
+   "duplicatedStoredWeights": 5603733,
+   "duplicatedExecutorMicroseconds": 43026.6,
+   "indexTsRenderMicroseconds": 3054.6,
+   "heapMegabytes": 1969
+  }
+ ],
+ "1000 synthetic photos, sequential prefix sums, 2 random traces of 300 frames, free-running: staged program against index.ts": {
+  "traces": 2,
+  "frames": 600,
+  "framesIn1D": 298,
+  "animatingFrames": 588,
+  "events": {
+   "frame": 600,
+   "mousemove": 598,
+   "key": 112,
+   "click": 160,
+   "resize": 35,
+   "scroll": 38,
+   "popstate": 10,
+   "reducedMotion": 8
+  },
+  "decisionChecks": 618401,
+  "decisionMismatches": 0,
+  "how often index.ts changed each decision": {
+   "animation steps": 450,
+   "cursor": 331,
+   "URL focus": 198,
+   "pushState called": 192,
+   "body overflow": 149,
+   "visible": 927,
+   "prompt selected": 6,
+   "URL focus opened by a click": 47,
+   "filter kind": 168,
+   "z-index": 91,
+   "prompt overflow": 91,
+   "prompt height": 91,
+   "line clamp": 91,
+   "image display": 91,
+   "scrollTo called": 53,
+   "anchor": 62,
+   "still animating": 14,
+   "full resolution source": 3
+  },
+  "firstMismatches": [],
+  "maximumAbsoluteErrors": {
+   "scroll position": 1.0573035714332946,
+   "committed scroll": 1.0573035714332946,
+   "placeholder height": 1.6161551073309965,
+   "sizeX position": 0.00021972656247726263,
+   "sizeX velocity": 0.0019827615451504244,
+   "sizeY position": 0.00031127929685226263,
+   "sizeY velocity": 0.003175514201302576,
+   "x position": 4.325746571295895,
+   "x velocity": 45.913043084554374,
+   "y position": 1.2308426806121133,
+   "y velocity": 9.746604989748448,
+   "scale position": 7.613065200473557e-8,
+   "scale velocity": 1.399776993760149e-7,
+   "fxFactor position": 0.00000316078941686726,
+   "fxFactor velocity": 0.000018178563720994134,
+   "destination x": 4.540677017183043,
+   "destination y": 1.6099051073542796,
+   "destination width": 0.0002278645833939663,
+   "destination height": 0.00031127929685226263,
+   "style filter": 0.00001294382403216332,
+   "style transform": 0.058837360244069714,
+   "style width": 0.00012871023545812932,
+   "style prompt top": 0.00016855765485956908
+  },
+  "perTrace": [
+   {
+    "seed": 7000,
+    "viewport": "1440x900",
+    "decisionChecks": 308709,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 0.05315452382637886,
+     "committed scroll": 0.05315452382637886,
+     "placeholder height": 1.6161551073309965,
+     "sizeX position": 0.00017906703237713373,
+     "sizeX velocity": 0.0019827615451504244,
+     "sizeY position": 0.0001653631472890993,
+     "sizeY velocity": 0.0016715187684894772,
+     "x position": 3.4310273920418695,
+     "x velocity": 45.913043084554374,
+     "y position": 1.2132732058817055,
+     "y velocity": 9.746604989748448,
+     "scale position": 7.613065200473557e-8,
+     "scale velocity": 1.3621048838841077e-7,
+     "fxFactor position": 0.0000011083824666968667,
+     "fxFactor velocity": 0.000016075253910230458,
+     "destination x": 4.405268426169641,
+     "destination y": 1.6099051073542796,
+     "destination width": 0.00016515395213900774,
+     "destination height": 0.000244140625,
+     "style filter": 0.000010263647418184974,
+     "style transform": 0.058837360244069714,
+     "style width": 0.00008479792927573726,
+     "style prompt top": 0.00008524495945039234
+    },
+    "worst": {
+     "destination x": "frame 187 photo 999: expected 680586.5302684262, got 680582.125",
+     "destination y": "frame 8 photo 999: expected 450371.04634489265, got 450372.65625",
+     "style transform": "frame 245 photo 561: expected 47003.355225139756, got 47003.4140625"
+    }
+   },
+   {
+    "seed": 7001,
+    "viewport": "2560x1400",
+    "decisionChecks": 309692,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 1.0573035714332946,
+     "committed scroll": 1.0573035714332946,
+     "placeholder height": 1.4557358133024536,
+     "sizeX position": 0.00021972656247726263,
+     "sizeX velocity": 0.0017617971452636993,
+     "sizeY position": 0.00031127929685226263,
+     "sizeY velocity": 0.003175514201302576,
+     "x position": 4.325746571295895,
+     "x velocity": 29.2210476975888,
+     "y position": 1.2308426806121133,
+     "y velocity": 8.311656229197979,
+     "scale position": 7.613065200473557e-8,
+     "scale velocity": 1.399776993760149e-7,
+     "fxFactor position": 0.00000316078941686726,
+     "fxFactor velocity": 0.000018178563720994134,
+     "destination x": 4.540677017183043,
+     "destination y": 1.4828140537720174,
+     "destination width": 0.0002278645833939663,
+     "destination height": 0.00031127929685226263,
+     "style filter": 0.00001294382403216332,
+     "style transform": 0.04721728840377182,
+     "style width": 0.00012871023545812932,
+     "style prompt top": 0.00016855765485956908
+    },
+    "worst": {
+     "destination x": "frame 37 photo 999: expected 445252.9469270172, got 445248.40625",
+     "destination y": "frame 133 photo 991: expected 386946.3921859462, got 386947.875",
+     "style transform": "frame 202 photo 746: expected 39020.202782711596, got 39020.25"
+    }
+   }
+  ]
+ },
+ "1000 synthetic photos, sequential prefix sums, 2 random traces of 300 frames, state copied from index.ts every frame: staged program against index.ts": {
+  "traces": 2,
+  "frames": 600,
+  "framesIn1D": 298,
+  "animatingFrames": 588,
+  "events": {
+   "frame": 600,
+   "mousemove": 598,
+   "key": 112,
+   "click": 160,
+   "resize": 35,
+   "scroll": 38,
+   "popstate": 10,
+   "reducedMotion": 8
+  },
+  "decisionChecks": 618401,
+  "decisionMismatches": 0,
+  "how often index.ts changed each decision": {
+   "animation steps": 450,
+   "cursor": 331,
+   "URL focus": 198,
+   "pushState called": 192,
+   "body overflow": 149,
+   "visible": 927,
+   "prompt selected": 6,
+   "URL focus opened by a click": 47,
+   "filter kind": 168,
+   "z-index": 91,
+   "prompt overflow": 91,
+   "prompt height": 91,
+   "line clamp": 91,
+   "image display": 91,
+   "scrollTo called": 53,
+   "anchor": 62,
+   "still animating": 14,
+   "full resolution source": 3
+  },
+  "firstMismatches": [],
+  "maximumAbsoluteErrors": {
+   "scroll position": 1.0573035714332946,
+   "committed scroll": 1.0573035714332946,
+   "placeholder height": 1.6161551073309965,
+   "sizeX position": 0.00026925841234515246,
+   "sizeX velocity": 0.0015591096507705515,
+   "sizeY position": 0.0003179545298621633,
+   "sizeY velocity": 0.002630620112086035,
+   "x position": 4.532958149226033,
+   "x velocity": 26.823799504432827,
+   "y position": 1.6364258415414952,
+   "y velocity": 6.2786854961887,
+   "scale position": 7.726119988227254e-8,
+   "scale velocity": 1.1990145669382724e-7,
+   "fxFactor position": 0.0000012534407840547601,
+   "fxFactor velocity": 0.000016075253910230458,
+   "destination x": 4.540677017183043,
+   "destination y": 1.6099051073542796,
+   "destination width": 0.0002278645833939663,
+   "destination height": 0.00031127929685226263,
+   "style filter": 0.000008636838124687074,
+   "style transform": 0.5795546162760274,
+   "style width": 0.0001856507601019075,
+   "style prompt top": 0.0002492302284622383
+  },
+  "perTrace": [
+   {
+    "seed": 7000,
+    "viewport": "1440x900",
+    "decisionChecks": 308709,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 0.05315452382637886,
+     "committed scroll": 0.05315452382637886,
+     "placeholder height": 1.6161551073309965,
+     "sizeX position": 0.0002267079597686461,
+     "sizeX velocity": 0.0015591096507705515,
+     "sizeY position": 0.00026468919168110006,
+     "sizeY velocity": 0.0016514419338591324,
+     "x position": 4.431666509422939,
+     "x velocity": 24.806047726189718,
+     "y position": 1.6364258415414952,
+     "y velocity": 6.2786854961887,
+     "scale position": 7.726119988227254e-8,
+     "scale velocity": 1.1990145669382724e-7,
+     "fxFactor position": 0.0000011083824666968667,
+     "fxFactor velocity": 0.000016075253910230458,
+     "destination x": 4.405268426169641,
+     "destination y": 1.6099051073542796,
+     "destination width": 0.00016515395213900774,
+     "destination height": 0.000244140625,
+     "style filter": 0.000008181609970847603,
+     "style transform": 0.07902167078023581,
+     "style width": 0.0001502026256616773,
+     "style prompt top": 0.0001922129389413385
+    },
+    "worst": {
+     "destination x": "frame 187 photo 999: expected 680586.5302684262, got 680582.125",
+     "destination y": "frame 8 photo 999: expected 450371.04634489265, got 450372.65625",
+     "style transform": "frame 173 photo 933: expected -185.07527520421976, got -185.154296875"
+    }
+   },
+   {
+    "seed": 7001,
+    "viewport": "2560x1400",
+    "decisionChecks": 309692,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 1.0573035714332946,
+     "committed scroll": 1.0573035714332946,
+     "placeholder height": 1.4557358133024536,
+     "sizeX position": 0.00026925841234515246,
+     "sizeX velocity": 0.0013529510358694097,
+     "sizeY position": 0.0003179545298621633,
+     "sizeY velocity": 0.002630620112086035,
+     "x position": 4.532958149226033,
+     "x velocity": 26.823799504432827,
+     "y position": 1.4959291394916363,
+     "y velocity": 5.275172558089253,
+     "scale position": 7.726119988227254e-8,
+     "scale velocity": 1.1990145669382724e-7,
+     "fxFactor position": 0.0000012534407840547601,
+     "fxFactor velocity": 0.000007910608189831692,
+     "destination x": 4.540677017183043,
+     "destination y": 1.4828140537720174,
+     "destination width": 0.0002278645833939663,
+     "destination height": 0.00031127929685226263,
+     "style filter": 0.000008636838124687074,
+     "style transform": 0.5795546162760274,
+     "style width": 0.0001856507601019075,
+     "style prompt top": 0.0002492302284622383
+    },
+    "worst": {
+     "destination x": "frame 37 photo 999: expected 445252.9469270172, got 445248.40625",
+     "destination y": "frame 133 photo 991: expected 386946.3921859462, got 386947.875",
+     "style transform": "frame 286 photo 477: expected 37.09517961627603, got 36.515625"
+    }
+   }
+  ]
+ },
+ "1000 synthetic photos, brent-kung prefix sums, 2 random traces of 300 frames, free-running: staged program against index.ts": {
+  "traces": 2,
+  "frames": 600,
+  "framesIn1D": 298,
+  "animatingFrames": 588,
+  "events": {
+   "frame": 600,
+   "mousemove": 598,
+   "key": 112,
+   "click": 160,
+   "resize": 35,
+   "scroll": 38,
+   "popstate": 10,
+   "reducedMotion": 8
+  },
+  "decisionChecks": 618401,
+  "decisionMismatches": 0,
+  "how often index.ts changed each decision": {
+   "animation steps": 450,
+   "cursor": 331,
+   "URL focus": 198,
+   "pushState called": 192,
+   "body overflow": 149,
+   "visible": 927,
+   "prompt selected": 6,
+   "URL focus opened by a click": 47,
+   "filter kind": 168,
+   "z-index": 91,
+   "prompt overflow": 91,
+   "prompt height": 91,
+   "line clamp": 91,
+   "image display": 91,
+   "scrollTo called": 53,
+   "anchor": 62,
+   "still animating": 14,
+   "full resolution source": 3
+  },
+  "firstMismatches": [],
+  "maximumAbsoluteErrors": {
+   "scroll position": 0.009264806496503297,
+   "committed scroll": 0.009264806496503297,
+   "placeholder height": 0.021465999467181973,
+   "sizeX position": 0.00021972656247726263,
+   "sizeX velocity": 0.0019827615451504244,
+   "sizeY position": 0.00031127929685226263,
+   "sizeY velocity": 0.003175514201302576,
+   "x position": 0.18570847460068762,
+   "x velocity": 1.652447586413473,
+   "y position": 0.12572737428126857,
+   "y velocity": 0.7762729534879327,
+   "scale position": 7.613065200473557e-8,
+   "scale velocity": 1.399776993760149e-7,
+   "fxFactor position": 0.00000316078941686726,
+   "fxFactor velocity": 0.000018178563720994134,
+   "destination x": 0.21275400812737644,
+   "destination y": 0.06719439348671585,
+   "destination width": 0.0002278645833939663,
+   "destination height": 0.00031127929685226263,
+   "style filter": 0.00001294382403216332,
+   "style transform": 0.03058894095102005,
+   "style width": 0.00012871023545812932,
+   "style prompt top": 0.00016855765485956908
+  },
+  "perTrace": [
+   {
+    "seed": 7000,
+    "viewport": "1440x900",
+    "decisionChecks": 308709,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 0.004035009027575143,
+     "committed scroll": 0.004035009027575143,
+     "placeholder height": 0.021465999467181973,
+     "sizeX position": 0.00017906703237713373,
+     "sizeX velocity": 0.0019827615451504244,
+     "sizeY position": 0.0001653631472890993,
+     "sizeY velocity": 0.0016715187684894772,
+     "x position": 0.18570847460068762,
+     "x velocity": 1.5333067080937326,
+     "y position": 0.12572737428126857,
+     "y velocity": 0.7762729534879327,
+     "scale position": 7.613065200473557e-8,
+     "scale velocity": 1.3621048838841077e-7,
+     "fxFactor position": 0.0000011083824666968667,
+     "fxFactor velocity": 0.000016075253910230458,
+     "destination x": 0.1266671292250976,
+     "destination y": 0.06385697546647862,
+     "destination width": 0.00016515395213900774,
+     "destination height": 0.000244140625,
+     "style filter": 0.000010263647418184974,
+     "style transform": 0.028645278272051655,
+     "style width": 0.00008479792927573726,
+     "style prompt top": 0.00008524495945039234
+    },
+    "worst": {
+     "destination x": "frame 290 photo 991: expected 384739.3141671292, got 384739.1875",
+     "destination y": "frame 8 photo 729: expected 327212.09239302453, got 327212.15625",
+     "style transform": "frame 175 photo 940: expected 819.794026137647, got 819.765380859375"
+    }
+   },
+   {
+    "seed": 7001,
+    "viewport": "2560x1400",
+    "decisionChecks": 309692,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 0.009264806496503297,
+     "committed scroll": 0.009264806496503297,
+     "placeholder height": 0.014562980810296722,
+     "sizeX position": 0.00021972656247726263,
+     "sizeX velocity": 0.0017617971452636993,
+     "sizeY position": 0.00031127929685226263,
+     "sizeY velocity": 0.003175514201302576,
+     "x position": 0.162924136093352,
+     "x velocity": 1.652447586413473,
+     "y position": 0.05332516792259412,
+     "y velocity": 0.46298084425507113,
+     "scale position": 7.613065200473557e-8,
+     "scale velocity": 1.399776993760149e-7,
+     "fxFactor position": 0.00000316078941686726,
+     "fxFactor velocity": 0.000018178563720994134,
+     "destination x": 0.21275400812737644,
+     "destination y": 0.06719439348671585,
+     "destination width": 0.0002278645833939663,
+     "destination height": 0.00031127929685226263,
+     "style filter": 0.00001294382403216332,
+     "style transform": 0.03058894095102005,
+     "style width": 0.00012871023545812932,
+     "style prompt top": 0.00016855765485956908
+    },
+    "worst": {
+     "destination x": "frame 50 photo 827: expected 544934.0877540081, got 544933.875",
+     "destination y": "frame 133 photo 895: expected 349011.3171943935, got 349011.25",
+     "style transform": "frame 209 photo 282: expected 413.750803784701, got 413.72021484375"
+    }
+   }
+  ]
+ },
+ "1000 synthetic photos, brent-kung prefix sums, 2 random traces of 300 frames, state copied from index.ts every frame: staged program against index.ts": {
+  "traces": 2,
+  "frames": 600,
+  "framesIn1D": 298,
+  "animatingFrames": 588,
+  "events": {
+   "frame": 600,
+   "mousemove": 598,
+   "key": 112,
+   "click": 160,
+   "resize": 35,
+   "scroll": 38,
+   "popstate": 10,
+   "reducedMotion": 8
+  },
+  "decisionChecks": 618401,
+  "decisionMismatches": 0,
+  "how often index.ts changed each decision": {
+   "animation steps": 450,
+   "cursor": 331,
+   "URL focus": 198,
+   "pushState called": 192,
+   "body overflow": 149,
+   "visible": 927,
+   "prompt selected": 6,
+   "URL focus opened by a click": 47,
+   "filter kind": 168,
+   "z-index": 91,
+   "prompt overflow": 91,
+   "prompt height": 91,
+   "line clamp": 91,
+   "image display": 91,
+   "scrollTo called": 53,
+   "anchor": 62,
+   "still animating": 14,
+   "full resolution source": 3
+  },
+  "firstMismatches": [],
+  "maximumAbsoluteErrors": {
+   "scroll position": 0.009264806496503297,
+   "committed scroll": 0.009264806496503297,
+   "placeholder height": 0.021465999467181973,
+   "sizeX position": 0.00026925841234515246,
+   "sizeX velocity": 0.0015591096507705515,
+   "sizeY position": 0.0003179545298621633,
+   "sizeY velocity": 0.002630620112086035,
+   "x position": 0.22479446497163735,
+   "x velocity": 1.2112092459574342,
+   "y position": 0.09140975459013134,
+   "y velocity": 0.41998238838277757,
+   "scale position": 7.726119988227254e-8,
+   "scale velocity": 1.1990145669382724e-7,
+   "fxFactor position": 0.0000012534407840547601,
+   "fxFactor velocity": 0.000016075253910230458,
+   "destination x": 0.21275400812737644,
+   "destination y": 0.06719439348671585,
+   "destination width": 0.0002278645833939663,
+   "destination height": 0.00031127929685226263,
+   "style filter": 0.000008636838124687074,
+   "style transform": 0.04784961324389769,
+   "style width": 0.0001856507601019075,
+   "style prompt top": 0.0002492302284622383
+  },
+  "perTrace": [
+   {
+    "seed": 7000,
+    "viewport": "1440x900",
+    "decisionChecks": 308709,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 0.004035009027575143,
+     "committed scroll": 0.004035009027575143,
+     "placeholder height": 0.021465999467181973,
+     "sizeX position": 0.0002267079597686461,
+     "sizeX velocity": 0.0015591096507705515,
+     "sizeY position": 0.00026468919168110006,
+     "sizeY velocity": 0.0016514419338591324,
+     "x position": 0.15905185154406354,
+     "x velocity": 1.06633575912565,
+     "y position": 0.09140975459013134,
+     "y velocity": 0.41998238838277757,
+     "scale position": 7.726119988227254e-8,
+     "scale velocity": 1.1990145669382724e-7,
+     "fxFactor position": 0.0000011083824666968667,
+     "fxFactor velocity": 0.000016075253910230458,
+     "destination x": 0.1266671292250976,
+     "destination y": 0.06385697546647862,
+     "destination width": 0.00016515395213900774,
+     "destination height": 0.000244140625,
+     "style filter": 0.000008181609970847603,
+     "style transform": 0.04784961324389769,
+     "style width": 0.0001502026256616773,
+     "style prompt top": 0.0001922129389413385
+    },
+    "worst": {
+     "destination x": "frame 290 photo 991: expected 384739.3141671292, got 384739.1875",
+     "destination y": "frame 8 photo 729: expected 327212.09239302453, got 327212.15625",
+     "style transform": "frame 160 photo 828: expected 527.5229472694939, got 527.47509765625"
+    }
+   },
+   {
+    "seed": 7001,
+    "viewport": "2560x1400",
+    "decisionChecks": 309692,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 0.009264806496503297,
+     "committed scroll": 0.009264806496503297,
+     "placeholder height": 0.014562980810296722,
+     "sizeX position": 0.00026925841234515246,
+     "sizeX velocity": 0.0013529510358694097,
+     "sizeY position": 0.0003179545298621633,
+     "sizeY velocity": 0.002630620112086035,
+     "x position": 0.22479446497163735,
+     "x velocity": 1.2112092459574342,
+     "y position": 0.08066891792259412,
+     "y velocity": 0.35469711675250437,
+     "scale position": 7.726119988227254e-8,
+     "scale velocity": 1.1990145669382724e-7,
+     "fxFactor position": 0.0000012534407840547601,
+     "fxFactor velocity": 0.000007910608189831692,
+     "destination x": 0.21275400812737644,
+     "destination y": 0.06719439348671585,
+     "destination width": 0.0002278645833939663,
+     "destination height": 0.00031127929685226263,
+     "style filter": 0.000008636838124687074,
+     "style transform": 0.044250274887190244,
+     "style width": 0.0001856507601019075,
+     "style prompt top": 0.0002492302284622383
+    },
+    "worst": {
+     "destination x": "frame 50 photo 827: expected 544934.0877540081, got 544933.875",
+     "destination y": "frame 133 photo 895: expected 349011.3171943935, got 349011.25",
+     "style transform": "frame 188 photo 745: expected 1284.3286741030122, got 1284.284423828125"
+    }
+   }
+  ]
+ },
+ "10000 synthetic photos, sequential prefix sums, 2 random traces of 120 frames, free-running: staged program against index.ts": {
+  "traces": 2,
+  "frames": 240,
+  "framesIn1D": 134,
+  "animatingFrames": 223,
+  "events": {
+   "frame": 240,
+   "mousemove": 238,
+   "key": 42,
+   "click": 62,
+   "resize": 12,
+   "scroll": 11,
+   "reducedMotion": 6,
+   "popstate": 3
+  },
+  "decisionChecks": 2407967,
+  "decisionMismatches": 74,
+  "how often index.ts changed each decision": {
+   "animation steps": 161,
+   "cursor": 129,
+   "URL focus": 78,
+   "pushState called": 77,
+   "body overflow": 60,
+   "visible": 375,
+   "prompt selected": 3,
+   "URL focus opened by a click": 21,
+   "filter kind": 80,
+   "z-index": 47,
+   "prompt overflow": 47,
+   "prompt height": 47,
+   "line clamp": 47,
+   "image display": 47,
+   "scrollTo called": 23,
+   "anchor": 23,
+   "still animating": 6,
+   "full resolution source": 3
+  },
+  "firstMismatches": [
+   {
+    "frame": 29,
+    "kind": "cursor",
+    "detail": "expected auto, got zoom-in"
+   },
+   {
+    "frame": 98,
+    "kind": "anchor",
+    "detail": "expected 6206, got 6208"
+   },
+   {
+    "frame": 99,
+    "kind": "anchor",
+    "detail": "expected 6206, got 6208"
+   },
+   {
+    "frame": 100,
+    "kind": "URL focus",
+    "detail": "expected , got #synthetic-6208"
+   },
+   {
+    "frame": 100,
+    "kind": "pushState called",
+    "detail": "expected 0, got 1"
+   }
+  ],
+  "maximumAbsoluteErrors": {
+   "scroll position": 92427.73547357763,
+   "committed scroll": 92427.73547357763,
+   "placeholder height": 102.21935804001987,
+   "sizeX position": 54.4698314404468,
+   "sizeX velocity": 1660.0871579959187,
+   "sizeY position": 52.535283706052155,
+   "sizeY velocity": 918.6575163125565,
+   "x position": 652903.5357853381,
+   "x velocity": 9073590.042332632,
+   "y position": 403210.723147086,
+   "y velocity": 6206447.957768248,
+   "scale position": 0.0042760372161865234,
+   "scale velocity": 0.11758182976669763,
+   "fxFactor position": 0.5170202029722308,
+   "fxFactor velocity": 6.907199122509381,
+   "destination x": 2733792.75,
+   "destination y": 901453.9704310345,
+   "destination width": 327.00352260044644,
+   "destination height": 229.6170382714738,
+   "style filter": 0.000009890540610513199,
+   "style transform": 13.255552223301493,
+   "style width": 0.0001220703125,
+   "style prompt top": 0.0001656699909631243
+  },
+  "perTrace": [
+   {
+    "seed": 7000,
+    "viewport": "1440x900",
+    "decisionChecks": 1203976,
+    "decisionMismatches": 74,
+    "maximumAbsoluteErrors": {
+     "scroll position": 92427.73547357763,
+     "committed scroll": 92427.73547357763,
+     "placeholder height": 102.21935804001987,
+     "sizeX position": 54.4698314404468,
+     "sizeX velocity": 1660.0871579959187,
+     "sizeY position": 52.535283706052155,
+     "sizeY velocity": 918.6575163125565,
+     "x position": 652903.5357853381,
+     "x velocity": 9073590.042332632,
+     "y position": 403210.723147086,
+     "y velocity": 6206447.957768248,
+     "scale position": 0.0042760372161865234,
+     "scale velocity": 0.11758182976669763,
+     "fxFactor position": 0.5170202029722308,
+     "fxFactor velocity": 6.907199122509381,
+     "destination x": 2733792.75,
+     "destination y": 901453.9704310345,
+     "destination width": 327.00352260044644,
+     "destination height": 229.6170382714738,
+     "style filter": 0.000009890540610513199,
+     "style transform": 1.1590854734531604,
+     "style width": 0.0001220703125,
+     "style prompt top": 0.0001656699909631243
+    },
+    "worst": {
+     "destination x": "frame 107 photo 0: expected 24, got -2733768.75",
+     "destination y": "frame 100 photo 0: expected 96.15456896551726, got 901550.125",
+     "style transform": "frame 42 photo 4510: expected 268997.34091452655, got 268998.5"
+    }
+   },
+   {
+    "seed": 7001,
+    "viewport": "2560x1400",
+    "decisionChecks": 1203991,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 13.202419168315828,
+     "committed scroll": 13.202419168315828,
+     "placeholder height": 40.74554854212329,
+     "sizeX position": 0.00011997524489970601,
+     "sizeX velocity": 0.0008213831847569963,
+     "sizeY position": 0.00016027109950300655,
+     "sizeY velocity": 0.0011768682470574277,
+     "x position": 319.38002290483564,
+     "x velocity": 2832.842949744314,
+     "y position": 27.29482099181041,
+     "y velocity": 189.57134436815977,
+     "scale position": 6.036479383020321e-8,
+     "scale velocity": 1.1990145669382724e-7,
+     "fxFactor position": 0.000002688295889896608,
+     "fxFactor velocity": 0.00002681816565086592,
+     "destination x": 472.8251748275943,
+     "destination y": 40.74682679772377,
+     "destination width": 0.00020823759200538916,
+     "destination height": 0.00030517578125,
+     "style filter": 0.000009471764712998265,
+     "style transform": 13.255552223301493,
+     "style width": 0.00009772395839036108,
+     "style prompt top": 0.00015433725036473334
+    },
+    "worst": {
+     "destination x": "frame 6 photo 9999: expected 2481025.8251748276, got 2480553",
+     "destination y": "frame 69 photo 9991: expected 1404954.9968267977, got 1404914.25",
+     "style transform": "frame 73 photo 6173: expected 866636.1930522233, got 866622.9375"
+    }
+   }
+  ]
+ },
+ "10000 synthetic photos, sequential prefix sums, 2 random traces of 120 frames, state copied from index.ts every frame: staged program against index.ts": {
+  "traces": 2,
+  "frames": 240,
+  "framesIn1D": 134,
+  "animatingFrames": 223,
+  "events": {
+   "frame": 240,
+   "mousemove": 238,
+   "key": 42,
+   "click": 62,
+   "resize": 12,
+   "scroll": 11,
+   "reducedMotion": 6,
+   "popstate": 3
+  },
+  "decisionChecks": 2407967,
+  "decisionMismatches": 55,
+  "how often index.ts changed each decision": {
+   "animation steps": 161,
+   "cursor": 129,
+   "URL focus": 78,
+   "pushState called": 77,
+   "body overflow": 60,
+   "visible": 375,
+   "prompt selected": 3,
+   "URL focus opened by a click": 21,
+   "filter kind": 80,
+   "z-index": 47,
+   "prompt overflow": 47,
+   "prompt height": 47,
+   "line clamp": 47,
+   "image display": 47,
+   "scrollTo called": 23,
+   "anchor": 23,
+   "still animating": 6,
+   "full resolution source": 3
+  },
+  "firstMismatches": [
+   {
+    "frame": 29,
+    "kind": "cursor",
+    "detail": "expected auto, got zoom-in"
+   },
+   {
+    "frame": 98,
+    "kind": "anchor",
+    "detail": "expected 6206, got 6208"
+   },
+   {
+    "frame": 100,
+    "kind": "URL focus",
+    "detail": "expected , got #synthetic-6208"
+   },
+   {
+    "frame": 100,
+    "kind": "pushState called",
+    "detail": "expected 0, got 1"
+   },
+   {
+    "frame": 100,
+    "kind": "cursor",
+    "detail": "expected auto, got zoom-out"
+   }
+  ],
+  "maximumAbsoluteErrors": {
+   "scroll position": 92427.73547357763,
+   "committed scroll": 92427.73547357763,
+   "placeholder height": 102.21935804001987,
+   "sizeX position": 327.0035409253807,
+   "sizeX velocity": 2231.0889210342393,
+   "sizeY position": 229.6170239003148,
+   "sizeY velocity": 1185.4892160121944,
+   "x position": 2733792.788428888,
+   "x velocity": 8954717.45396075,
+   "y position": 901453.9617919017,
+   "y velocity": 5299730.430544592,
+   "scale position": 0.019907236099243164,
+   "scale velocity": 0.1233649030327797,
+   "fxFactor position": 0.8000000535385391,
+   "fxFactor velocity": 9.406546258754256,
+   "destination x": 2733792.75,
+   "destination y": 901453.9704310345,
+   "destination width": 327.00352260044644,
+   "destination height": 229.6170382714738,
+   "style filter": 0.00000979514999244202,
+   "style transform": 13.308259879122488,
+   "style width": 0.0001220703125,
+   "style prompt top": 0.0001656699909631243
+  },
+  "perTrace": [
+   {
+    "seed": 7000,
+    "viewport": "1440x900",
+    "decisionChecks": 1203976,
+    "decisionMismatches": 55,
+    "maximumAbsoluteErrors": {
+     "scroll position": 92427.73547357763,
+     "committed scroll": 92427.73547357763,
+     "placeholder height": 102.21935804001987,
+     "sizeX position": 327.0035409253807,
+     "sizeX velocity": 2231.0889210342393,
+     "sizeY position": 229.6170239003148,
+     "sizeY velocity": 1185.4892160121944,
+     "x position": 2733792.788428888,
+     "x velocity": 8954717.45396075,
+     "y position": 901453.9617919017,
+     "y velocity": 5299730.430544592,
+     "scale position": 0.019907236099243164,
+     "scale velocity": 0.1233649030327797,
+     "fxFactor position": 0.8000000535385391,
+     "fxFactor velocity": 9.406546258754256,
+     "destination x": 2733792.75,
+     "destination y": 901453.9704310345,
+     "destination width": 327.00352260044644,
+     "destination height": 229.6170382714738,
+     "style filter": 0.000009035689103598088,
+     "style transform": 1.1590854734531604,
+     "style width": 0.0001220703125,
+     "style prompt top": 0.0001656699909631243
+    },
+    "worst": {
+     "destination x": "frame 107 photo 0: expected 24, got -2733768.75",
+     "destination y": "frame 100 photo 0: expected 96.15456896551726, got 901550.125",
+     "style transform": "frame 42 photo 4510: expected 268997.34091452655, got 268998.5"
+    }
+   },
+   {
+    "seed": 7001,
+    "viewport": "2560x1400",
+    "decisionChecks": 1203991,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 13.202419168315828,
+     "committed scroll": 13.202419168315828,
+     "placeholder height": 40.74554854212329,
+     "sizeX position": 0.00021578983074732605,
+     "sizeX velocity": 0.0008943067418840656,
+     "sizeY position": 0.00028454466672656054,
+     "sizeY velocity": 0.001171238634697147,
+     "x position": 472.8223056360148,
+     "x velocity": 1808.6112153306603,
+     "y position": 40.80368074926082,
+     "y velocity": 105.47263811761513,
+     "scale position": 7.056806250460568e-8,
+     "scale velocity": 1.1990145669382724e-7,
+     "fxFactor position": 8.781252285317009e-7,
+     "fxFactor velocity": 0.000007950924739930088,
+     "destination x": 472.8251748275943,
+     "destination y": 40.74682679772377,
+     "destination width": 0.00020823759200538916,
+     "destination height": 0.00030517578125,
+     "style filter": 0.00000979514999244202,
+     "style transform": 13.308259879122488,
+     "style width": 0.00008139205846191544,
+     "style prompt top": 0.00012277320598741426
+    },
+    "worst": {
+     "destination x": "frame 6 photo 9999: expected 2481025.8251748276, got 2480553",
+     "destination y": "frame 69 photo 9991: expected 1404954.9968267977, got 1404914.25",
+     "style transform": "frame 70 photo 6170: expected 866244.9957598791, got 866231.6875"
+    }
+   }
+  ]
+ },
+ "10000 synthetic photos, brent-kung prefix sums, 2 random traces of 120 frames, free-running: staged program against index.ts": {
+  "traces": 2,
+  "frames": 240,
+  "framesIn1D": 134,
+  "animatingFrames": 223,
+  "events": {
+   "frame": 240,
+   "mousemove": 238,
+   "key": 42,
+   "click": 62,
+   "resize": 12,
+   "scroll": 11,
+   "reducedMotion": 6,
+   "popstate": 3
+  },
+  "decisionChecks": 2408107,
+  "decisionMismatches": 0,
+  "how often index.ts changed each decision": {
+   "animation steps": 161,
+   "cursor": 129,
+   "URL focus": 78,
+   "pushState called": 77,
+   "body overflow": 60,
+   "visible": 375,
+   "prompt selected": 3,
+   "URL focus opened by a click": 21,
+   "filter kind": 82,
+   "z-index": 49,
+   "prompt overflow": 49,
+   "prompt height": 49,
+   "line clamp": 49,
+   "image display": 49,
+   "scrollTo called": 23,
+   "anchor": 23,
+   "still animating": 6,
+   "full resolution source": 3
+  },
+  "firstMismatches": [],
+  "maximumAbsoluteErrors": {
+   "scroll position": 0.047973577631637454,
+   "committed scroll": 0.047973577631637454,
+   "placeholder height": 0.2193580400198698,
+   "sizeX position": 0.00017903645834849158,
+   "sizeX velocity": 0.0013712370105167793,
+   "sizeY position": 0.00032958984377273737,
+   "sizeY velocity": 0.0025514399569601665,
+   "x position": 2.1776701345224865,
+   "x velocity": 18.075371503829956,
+   "y position": 1.4899467648938298,
+   "y velocity": 10.187747851014137,
+   "scale position": 6.32609171713483e-8,
+   "scale velocity": 1.2541512464658844e-7,
+   "fxFactor position": 0.000002688295889896608,
+   "fxFactor velocity": 0.00002681816565086592,
+   "destination x": 3.3295419518835843,
+   "destination y": 1.0800135862082243,
+   "destination width": 0.00021972656250568434,
+   "destination height": 0.00034179687497726263,
+   "style filter": 0.000009890540610513199,
+   "style transform": 0.1768865412835794,
+   "style width": 0.0001220703125,
+   "style prompt top": 0.0001656699909631243
+  },
+  "perTrace": [
+   {
+    "seed": 7000,
+    "viewport": "1440x900",
+    "decisionChecks": 1204116,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 0.047973577631637454,
+     "committed scroll": 0.047973577631637454,
+     "placeholder height": 0.2193580400198698,
+     "sizeX position": 0.00017903645834849158,
+     "sizeX velocity": 0.0013712370105167793,
+     "sizeY position": 0.00032958984377273737,
+     "sizeY velocity": 0.0025514399569601665,
+     "x position": 1.6628602584823966,
+     "x velocity": 14.060277983546257,
+     "y position": 1.4899467648938298,
+     "y velocity": 10.187747851014137,
+     "scale position": 6.32609171713483e-8,
+     "scale velocity": 1.2541512464658844e-7,
+     "fxFactor position": 0.0000011083824666968667,
+     "fxFactor velocity": 0.000016075253910230458,
+     "destination x": 1.6628602584823966,
+     "destination y": 1.0800135862082243,
+     "destination width": 0.00021972656250568434,
+     "destination height": 0.00034179687497726263,
+     "style filter": 0.000009890540610513199,
+     "style transform": 0.09001645435404271,
+     "style width": 0.0001220703125,
+     "style prompt top": 0.0001656699909631243
+    },
+    "worst": {
+     "destination x": "frame 45 photo 9039: expected 3636691.1628602585, got 3636689.5",
+     "destination y": "frame 8 photo 9723: expected 4396238.419986414, got 4396239.5",
+     "style transform": "frame 117 photo 4651: expected -168.54914370189596, got -168.63916015625"
+    }
+   },
+   {
+    "seed": 7001,
+    "viewport": "2560x1400",
+    "decisionChecks": 1203991,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 0.047580831684172153,
+     "committed scroll": 0.047580831684172153,
+     "placeholder height": 0.12945145787671208,
+     "sizeX position": 0.00011997524489970601,
+     "sizeX velocity": 0.0008213831847569963,
+     "sizeY position": 0.00016027109950300655,
+     "sizeY velocity": 0.0011768682470574277,
+     "x position": 2.1776701345224865,
+     "x velocity": 18.075371503829956,
+     "y position": 0.327669118065387,
+     "y velocity": 2.51270305365324,
+     "scale position": 6.036479383020321e-8,
+     "scale velocity": 1.1990145669382724e-7,
+     "fxFactor position": 0.000002688295889896608,
+     "fxFactor velocity": 0.00002681816565086592,
+     "destination x": 3.3295419518835843,
+     "destination y": 0.3123538475483656,
+     "destination width": 0.00020823759200538916,
+     "destination height": 0.00030517578125,
+     "style filter": 0.000009471764712998265,
+     "style transform": 0.1768865412835794,
+     "style width": 0.00009772395839036108,
+     "style prompt top": 0.00015433725036473334
+    },
+    "worst": {
+     "destination x": "frame 5 photo 9621: expected 3309003.579541952, got 3309000.25",
+     "destination y": "frame 69 photo 9719: expected 1366554.0626461525, got 1366554.375",
+     "style transform": "frame 102 photo 5089: expected -366.6536931819086, got -366.476806640625"
+    }
+   }
+  ]
+ },
+ "10000 synthetic photos, brent-kung prefix sums, 2 random traces of 120 frames, state copied from index.ts every frame: staged program against index.ts": {
+  "traces": 2,
+  "frames": 240,
+  "framesIn1D": 134,
+  "animatingFrames": 223,
+  "events": {
+   "frame": 240,
+   "mousemove": 238,
+   "key": 42,
+   "click": 62,
+   "resize": 12,
+   "scroll": 11,
+   "reducedMotion": 6,
+   "popstate": 3
+  },
+  "decisionChecks": 2408107,
+  "decisionMismatches": 0,
+  "how often index.ts changed each decision": {
+   "animation steps": 161,
+   "cursor": 129,
+   "URL focus": 78,
+   "pushState called": 77,
+   "body overflow": 60,
+   "visible": 375,
+   "prompt selected": 3,
+   "URL focus opened by a click": 21,
+   "filter kind": 82,
+   "z-index": 49,
+   "prompt overflow": 49,
+   "prompt height": 49,
+   "line clamp": 49,
+   "image display": 49,
+   "scrollTo called": 23,
+   "anchor": 23,
+   "still animating": 6,
+   "full resolution source": 3
+  },
+  "firstMismatches": [],
+  "maximumAbsoluteErrors": {
+   "scroll position": 0.047973577631637454,
+   "committed scroll": 0.047973577631637454,
+   "placeholder height": 0.2193580400198698,
+   "sizeX position": 0.0002252895761500895,
+   "sizeX velocity": 0.001259937944723788,
+   "sizeY position": 0.0003558831253940298,
+   "sizeY velocity": 0.0023267838205356384,
+   "x position": 3.3717114804312587,
+   "x velocity": 13.394334126263857,
+   "y position": 1.2252193393651396,
+   "y velocity": 6.059183321893215,
+   "scale position": 7.726119988227254e-8,
+   "scale velocity": 1.1990145669382724e-7,
+   "fxFactor position": 0.0000011083824666968667,
+   "fxFactor velocity": 0.000016075253910230458,
+   "destination x": 3.3295419518835843,
+   "destination y": 1.0800135862082243,
+   "destination width": 0.00021972656250568434,
+   "destination height": 0.00034179687497726263,
+   "style filter": 0.00000979514999244202,
+   "style transform": 0.23375507835226017,
+   "style width": 0.00014531005058415758,
+   "style prompt top": 0.0001656699909631243
+  },
+  "perTrace": [
+   {
+    "seed": 7000,
+    "viewport": "1440x900",
+    "decisionChecks": 1204116,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 0.047973577631637454,
+     "committed scroll": 0.047973577631637454,
+     "placeholder height": 0.2193580400198698,
+     "sizeX position": 0.0002252895761500895,
+     "sizeX velocity": 0.001259937944723788,
+     "sizeY position": 0.0003558831253940298,
+     "sizeY velocity": 0.0023267838205356384,
+     "x position": 1.6628602584823966,
+     "x velocity": 12.987588495016098,
+     "y position": 1.2252193393651396,
+     "y velocity": 6.059183321893215,
+     "scale position": 7.726119988227254e-8,
+     "scale velocity": 1.1990145669382724e-7,
+     "fxFactor position": 0.0000011083824666968667,
+     "fxFactor velocity": 0.000016075253910230458,
+     "destination x": 1.6628602584823966,
+     "destination y": 1.0800135862082243,
+     "destination width": 0.00021972656250568434,
+     "destination height": 0.00034179687497726263,
+     "style filter": 0.000009035689103598088,
+     "style transform": 0.1466570793540427,
+     "style width": 0.00014531005058415758,
+     "style prompt top": 0.0001656699909631243
+    },
+    "worst": {
+     "destination x": "frame 45 photo 9039: expected 3636691.1628602585, got 3636689.5",
+     "destination y": "frame 8 photo 9723: expected 4396238.419986414, got 4396239.5",
+     "style transform": "frame 117 photo 4651: expected -168.54914370189596, got -168.69580078125"
+    }
+   },
+   {
+    "seed": 7001,
+    "viewport": "2560x1400",
+    "decisionChecks": 1203991,
+    "decisionMismatches": 0,
+    "maximumAbsoluteErrors": {
+     "scroll position": 0.047580831684172153,
+     "committed scroll": 0.047580831684172153,
+     "placeholder height": 0.12945145787671208,
+     "sizeX position": 0.00021578983074732605,
+     "sizeX velocity": 0.0008943067418840656,
+     "sizeY position": 0.00028454466672656054,
+     "sizeY velocity": 0.001171238634697147,
+     "x position": 3.3717114804312587,
+     "x velocity": 13.394334126263857,
+     "y position": 0.3398422385798767,
+     "y velocity": 1.4402839876711369,
+     "scale position": 7.056806250460568e-8,
+     "scale velocity": 1.1990145669382724e-7,
+     "fxFactor position": 8.781252285317009e-7,
+     "fxFactor velocity": 0.000007950924739930088,
+     "destination x": 3.3295419518835843,
+     "destination y": 0.3123538475483656,
+     "destination width": 0.00020823759200538916,
+     "destination height": 0.00030517578125,
+     "style filter": 0.00000979514999244202,
+     "style transform": 0.23375507835226017,
+     "style width": 0.00008139205846191544,
+     "style prompt top": 0.00012277320598741426
+    },
+    "worst": {
+     "destination x": "frame 5 photo 9621: expected 3309003.579541952, got 3309000.25",
+     "destination y": "frame 69 photo 9719: expected 1366554.0626461525, got 1366554.375",
+     "style transform": "frame 45 photo 6172: expected 790.685354199446, got 790.4515991210938"
+    }
+   }
+  ]
+ },
+ "rebuild rule, gallery at 221 photos (sequential prefix sums as triangles): sizes": {
+  "with the rule": {
+   "operationsPerAxis": {
+    "shared": 401,
+    "photos": 233,
+    "rows for 1 columns": 2,
+    "rows for 2 columns": 2,
+    "rows for 3 columns": 2,
+    "rows for 4 columns": 2,
+    "rows for 5 columns": 2,
+    "rows for 6 columns": 2,
+    "rows for 7 columns": 2
+   },
+   "photoStages": {
+    "click hit test": 10,
+    "sizes and focus relation": 25,
+    "grid targets and hover": 19,
+    "destinations": 20,
+    "anchor predicate": 5,
+    "springs and occlusion": 154
+   },
+   "duplicated": {
+    "liveOperations": 55627,
+    "layers": 64,
+    "storedWeights": 182635,
+    "gatherReads": 892,
+    "widestLayer": 4617
+   }
+  },
+  "without the rule": {
+   "operationsPerAxis": {
+    "shared": 403,
+    "photos": 228,
+    "rows for 1 columns": 2,
+    "rows for 2 columns": 2,
+    "rows for 3 columns": 2,
+    "rows for 4 columns": 2,
+    "rows for 5 columns": 2,
+    "rows for 6 columns": 2,
+    "rows for 7 columns": 2
+   },
+   "photoStages": {
+    "click hit test": 10,
+    "sizes and focus relation": 27,
+    "grid targets and hover": 16,
+    "destinations": 20,
+    "anchor predicate": 4,
+    "springs and occlusion": 151
+   },
+   "duplicated": {
+    "liveOperations": 56515,
+    "layers": 64,
+    "storedWeights": 181970,
+    "gatherReads": 892,
+    "widestLayer": 4617
+   }
+  }
+ },
+ "rebuild rule, scripted trace, sequential prefix sums: with the rule, against gallery-circuit.ts": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2543535,
+  "identicalFraction": 0.8815,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.001953125
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.001953125
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "destSizeY": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "destX": {
+    "identical": 60520,
+    "compared": 92820,
+    "maximumDifference": 0.03125
+   },
+   "destY": {
+    "identical": 80730,
+    "compared": 92820,
+    "maximumDifference": 0.001953125
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 79250,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.destination": {
+    "identical": 78740,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.displacement": {
+    "identical": 87255,
+    "compared": 92820,
+    "maximumDifference": 0.000017583370208740234
+   },
+   "fxFactor.velocity": {
+    "identical": 87300,
+    "compared": 92820,
+    "maximumDifference": 0.0000820159912109375
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 130,
+    "compared": 420,
+    "maximumDifference": 0.001953125
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 88509,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.destination": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.displacement": {
+    "identical": 82288,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.velocity": {
+    "identical": 82880,
+    "compared": 92820,
+    "maximumDifference": 0.00030517578125
+   },
+   "sizeY": {
+    "identical": 87324,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.destination": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.displacement": {
+    "identical": 78572,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.velocity": {
+    "identical": 79529,
+    "compared": 92820,
+    "maximumDifference": 0.0006103515625
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 88647,
+    "compared": 92820,
+    "maximumDifference": 0.015625
+   },
+   "x.destination": {
+    "identical": 60520,
+    "compared": 92820,
+    "maximumDifference": 0.03125
+   },
+   "x.displacement": {
+    "identical": 61508,
+    "compared": 92820,
+    "maximumDifference": 0.03125
+   },
+   "x.velocity": {
+    "identical": 62213,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "y": {
+    "identical": 89731,
+    "compared": 92820,
+    "maximumDifference": 0.009765625
+   },
+   "y.destination": {
+    "identical": 80730,
+    "compared": 92820,
+    "maximumDifference": 0.001953125
+   },
+   "y.displacement": {
+    "identical": 83036,
+    "compared": 92820,
+    "maximumDifference": 0.010711906477808952
+   },
+   "y.velocity": {
+    "identical": 83365,
+    "compared": 92820,
+    "maximumDifference": 0.011773144826292992
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "rebuild rule, scripted trace, sequential prefix sums: without the rule, against gallery-circuit.ts": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2543509,
+  "identicalFraction": 0.8815,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.001953125
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.001953125
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "destSizeY": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "destX": {
+    "identical": 60520,
+    "compared": 92820,
+    "maximumDifference": 0.03125
+   },
+   "destY": {
+    "identical": 80730,
+    "compared": 92820,
+    "maximumDifference": 0.001953125
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 79250,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.destination": {
+    "identical": 78740,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.displacement": {
+    "identical": 87255,
+    "compared": 92820,
+    "maximumDifference": 0.000017583370208740234
+   },
+   "fxFactor.velocity": {
+    "identical": 87300,
+    "compared": 92820,
+    "maximumDifference": 0.0000820159912109375
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 130,
+    "compared": 420,
+    "maximumDifference": 0.001953125
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 88509,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.destination": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.displacement": {
+    "identical": 82288,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.velocity": {
+    "identical": 82880,
+    "compared": 92820,
+    "maximumDifference": 0.00030517578125
+   },
+   "sizeY": {
+    "identical": 87324,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.destination": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.displacement": {
+    "identical": 78572,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.velocity": {
+    "identical": 79529,
+    "compared": 92820,
+    "maximumDifference": 0.0006103515625
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 88655,
+    "compared": 92820,
+    "maximumDifference": 0.015625
+   },
+   "x.destination": {
+    "identical": 60520,
+    "compared": 92820,
+    "maximumDifference": 0.03125
+   },
+   "x.displacement": {
+    "identical": 61495,
+    "compared": 92820,
+    "maximumDifference": 0.03125
+   },
+   "x.velocity": {
+    "identical": 62192,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "y": {
+    "identical": 89731,
+    "compared": 92820,
+    "maximumDifference": 0.009765625
+   },
+   "y.destination": {
+    "identical": 80730,
+    "compared": 92820,
+    "maximumDifference": 0.001953125
+   },
+   "y.displacement": {
+    "identical": 83036,
+    "compared": 92820,
+    "maximumDifference": 0.010711906477808952
+   },
+   "y.velocity": {
+    "identical": 83365,
+    "compared": 92820,
+    "maximumDifference": 0.011773144826292992
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "rebuild rule, scripted trace, sequential prefix sums: without the rule, against with the rule": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2885183,
+  "identicalFraction": 0.9999,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destSizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destX": {
+    "identical": 92760,
+    "compared": 92820,
+    "maximumDifference": 0.000030517578125
+   },
+   "destY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 92808,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "x.destination": {
+    "identical": 92760,
+    "compared": 92820,
+    "maximumDifference": 0.000030517578125
+   },
+   "x.displacement": {
+    "identical": 92774,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "x.velocity": {
+    "identical": 92781,
+    "compared": 92820,
+    "maximumDifference": 0.00048828125
+   },
+   "y": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "rebuild rule, scripted trace, sequential prefix sums: without the rule, against its own duplicated circuit": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2885400,
+  "identicalFraction": 1,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destSizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "rebuild rule, scripted trace, brent-kung prefix sums: with the rule, against gallery-circuit.ts": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2401260,
+  "identicalFraction": 0.8322,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.0009765625
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.0009765625
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "destSizeY": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "destX": {
+    "identical": 50180,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "destY": {
+    "identical": 58320,
+    "compared": 92820,
+    "maximumDifference": 0.0078125
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 79250,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.destination": {
+    "identical": 78740,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.displacement": {
+    "identical": 87255,
+    "compared": 92820,
+    "maximumDifference": 0.000017583370208740234
+   },
+   "fxFactor.velocity": {
+    "identical": 87300,
+    "compared": 92820,
+    "maximumDifference": 0.0000820159912109375
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 0,
+    "compared": 420,
+    "maximumDifference": 0.0078125
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 88509,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.destination": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.displacement": {
+    "identical": 82288,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.velocity": {
+    "identical": 82880,
+    "compared": 92820,
+    "maximumDifference": 0.00030517578125
+   },
+   "sizeY": {
+    "identical": 87324,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.destination": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.displacement": {
+    "identical": 78572,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.velocity": {
+    "identical": 79529,
+    "compared": 92820,
+    "maximumDifference": 0.0006103515625
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 76759,
+    "compared": 92820,
+    "maximumDifference": 0.015625
+   },
+   "x.destination": {
+    "identical": 50180,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "x.displacement": {
+    "identical": 51134,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "x.velocity": {
+    "identical": 51391,
+    "compared": 92820,
+    "maximumDifference": 0.875
+   },
+   "y": {
+    "identical": 85438,
+    "compared": 92820,
+    "maximumDifference": 0.009765625
+   },
+   "y.destination": {
+    "identical": 58320,
+    "compared": 92820,
+    "maximumDifference": 0.0078125
+   },
+   "y.displacement": {
+    "identical": 63146,
+    "compared": 92820,
+    "maximumDifference": 0.015610169619321823
+   },
+   "y.velocity": {
+    "identical": 63987,
+    "compared": 92820,
+    "maximumDifference": 0.03515625
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "rebuild rule, scripted trace, brent-kung prefix sums: without the rule, against gallery-circuit.ts": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2401234,
+  "identicalFraction": 0.8322,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.0009765625
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 419,
+    "compared": 420,
+    "maximumDifference": 0.0009765625
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "destSizeY": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "destX": {
+    "identical": 50180,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "destY": {
+    "identical": 58320,
+    "compared": 92820,
+    "maximumDifference": 0.0078125
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 79250,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.destination": {
+    "identical": 78740,
+    "compared": 92820,
+    "maximumDifference": 0.000018298625946044922
+   },
+   "fxFactor.displacement": {
+    "identical": 87255,
+    "compared": 92820,
+    "maximumDifference": 0.000017583370208740234
+   },
+   "fxFactor.velocity": {
+    "identical": 87300,
+    "compared": 92820,
+    "maximumDifference": 0.0000820159912109375
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 0,
+    "compared": 420,
+    "maximumDifference": 0.0078125
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 88509,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.destination": {
+    "identical": 78330,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.displacement": {
+    "identical": 82288,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "sizeX.velocity": {
+    "identical": 82880,
+    "compared": 92820,
+    "maximumDifference": 0.00030517578125
+   },
+   "sizeY": {
+    "identical": 87324,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.destination": {
+    "identical": 73400,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.displacement": {
+    "identical": 78572,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "sizeY.velocity": {
+    "identical": 79529,
+    "compared": 92820,
+    "maximumDifference": 0.0006103515625
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 76767,
+    "compared": 92820,
+    "maximumDifference": 0.015625
+   },
+   "x.destination": {
+    "identical": 50180,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "x.displacement": {
+    "identical": 51121,
+    "compared": 92820,
+    "maximumDifference": 0.1875
+   },
+   "x.velocity": {
+    "identical": 51370,
+    "compared": 92820,
+    "maximumDifference": 0.875
+   },
+   "y": {
+    "identical": 85438,
+    "compared": 92820,
+    "maximumDifference": 0.009765625
+   },
+   "y.destination": {
+    "identical": 58320,
+    "compared": 92820,
+    "maximumDifference": 0.0078125
+   },
+   "y.displacement": {
+    "identical": 63146,
+    "compared": 92820,
+    "maximumDifference": 0.015610169619321823
+   },
+   "y.velocity": {
+    "identical": 63987,
+    "compared": 92820,
+    "maximumDifference": 0.03515625
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "rebuild rule, scripted trace, brent-kung prefix sums: without the rule, against with the rule": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2885183,
+  "identicalFraction": 0.9999,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destSizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destX": {
+    "identical": 92760,
+    "compared": 92820,
+    "maximumDifference": 0.000030517578125
+   },
+   "destY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 92808,
+    "compared": 92820,
+    "maximumDifference": 0.00006103515625
+   },
+   "x.destination": {
+    "identical": 92760,
+    "compared": 92820,
+    "maximumDifference": 0.000030517578125
+   },
+   "x.displacement": {
+    "identical": 92774,
+    "compared": 92820,
+    "maximumDifference": 0.0001220703125
+   },
+   "x.velocity": {
+    "identical": 92781,
+    "compared": 92820,
+    "maximumDifference": 0.00048828125
+   },
+   "y": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "rebuild rule, scripted trace, brent-kung prefix sums: without the rule, against its own duplicated circuit": {
+  "frames": 420,
+  "compared": 2885400,
+  "identical": 2885400,
+  "identicalFraction": 1,
+  "decisionMismatches": 0,
+  "firstDecisionMismatches": [],
+  "outputs": {
+   "adjustedScrollTop": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "blurred": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "cell anchor": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell animating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell committedScrollY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell leftoverMilliseconds": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerX": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cell pointerY": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "columns": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomIn": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "cursorZoomOut": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "destSizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destSizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "destY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "focusChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "focused": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "fxFactor.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "newFocusedIndex": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "newFocusedPresent": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "placeholderHeight": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "scale": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scale.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "scrollChanged": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "selectPrompt": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "sizeX": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeX.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "sizeY.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "steps": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "stillAnimating": {
+    "identical": 420,
+    "compared": 420,
+    "maximumDifference": 0
+   },
+   "visible": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "x.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.destination": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.displacement": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   },
+   "y.velocity": {
+    "identical": 92820,
+    "compared": 92820,
+    "maximumDifference": 0
+   }
+  },
+  "decisionMismatchesAgainstIndexTs": 0
+ },
+ "rebuild rule, IndirectOS": {
+  "with the rule": {
+   "operationsPerAxis": {
+    "shared": 254,
+    "windows": 681,
+    "dock items": 19,
+    "photos": 270
+   },
+   "duplicated": {
+    "liveOperations": 6282,
+    "layers": 215,
+    "storedWeights": 13346,
+    "gatherReads": 36,
+    "widestLayer": 242
+   }
+  },
+  "without the rule": {
+   "operationsPerAxis": {
+    "shared": 268,
+    "windows": 671,
+    "dock items": 20,
+    "photos": 263
+   },
+   "duplicated": {
+    "liveOperations": 6266,
+    "layers": 214,
+    "storedWeights": 13255,
+    "gatherReads": 36,
+    "widestLayer": 254
+   },
+   "against window-manager.ts, free-running": {
+    "frames": 220,
+    "compared": 94380,
+    "identical": 93249,
+    "decisionMismatches": 0,
+    "differing": {
+     "thumbnail left": {
+      "identical": 2315,
+      "compared": 2640,
+      "maximumDifference": 0.001220703125
+     },
+     "next thumbnail spring centerX": {
+      "identical": 2312,
+      "compared": 2640,
+      "maximumDifference": 0.001220703125
+     },
+     "next thumbnail spring centerX velocity": {
+      "identical": 2162,
+      "compared": 2640,
+      "maximumDifference": 0.012746214866638184
+     }
+    }
+   },
+   "against window-manager.ts, cells copied every frame": {
+    "frames": 220,
+    "compared": 94380,
+    "identical": 93764,
+    "decisionMismatches": 0,
+    "differing": {
+     "thumbnail left": {
+      "identical": 2570,
+      "compared": 2640,
+      "maximumDifference": 0.00103759765625
+     },
+     "next thumbnail spring centerX": {
+      "identical": 2570,
+      "compared": 2640,
+      "maximumDifference": 0.00103759765625
+     },
+     "next thumbnail spring centerX velocity": {
+      "identical": 2164,
+      "compared": 2640,
+      "maximumDifference": 0.002348368987441063
+     }
+    }
+   }
+  },
+  "without the rule against with the rule, free-running over the session": {
+   "frames": 220,
+   "compared": 94380,
+   "identical": 94380,
+   "differing": {}
+  }
+ }
+}

@@ -1,0 +1,1070 @@
+{
+  "macros": {
+    "rows": [
+      {
+        "label": "a >= b and min(a, b), integers to 2^20, resolution 1",
+        "liveOperations": 10,
+        "layers": 5,
+        "storedWeights": 16,
+        "gatherReads": 0,
+        "booleans": 2,
+        "trials": 1000000,
+        "worst": 0
+      },
+      {
+        "label": "a >= b and min(a, b), pixels to 2^14, resolution 2^-30 (operands >= 2^-7)",
+        "liveOperations": 10,
+        "layers": 5,
+        "storedWeights": 16,
+        "gatherReads": 0,
+        "booleans": 2,
+        "trials": 1000000,
+        "worst": 0
+      },
+      {
+        "label": "a >= b and min(a, b), pixels to 2^14, every FP32 pair",
+        "liveOperations": 46,
+        "layers": 17,
+        "storedWeights": 64,
+        "gatherReads": 0,
+        "booleans": 2,
+        "trials": 1000000,
+        "worst": 0
+      },
+      {
+        "label": "max(a, b), pixels to 2^14, resolution 2^-30",
+        "liveOperations": 7,
+        "layers": 5,
+        "storedWeights": 12,
+        "gatherReads": 0,
+        "booleans": 1,
+        "trials": 500000,
+        "worst": 0
+      },
+      {
+        "label": "minimum of 8 values by counting, pixels, resolution 2^-27",
+        "liveOperations": 121,
+        "layers": 5,
+        "storedWeights": 224,
+        "gatherReads": 1,
+        "booleans": 28,
+        "trials": 200000,
+        "worst": 0
+      },
+      {
+        "label": "round, |x| < 2^22",
+        "liveOperations": 2,
+        "layers": 2,
+        "storedWeights": 2,
+        "gatherReads": 0,
+        "booleans": 0,
+        "trials": 1000000,
+        "worst": 0
+      },
+      {
+        "label": "floor on a 1/64 grid, |x| < 2^16",
+        "liveOperations": 3,
+        "layers": 3,
+        "storedWeights": 3,
+        "gatherReads": 0,
+        "booleans": 0,
+        "trials": 1000000,
+        "worst": 0
+      },
+      {
+        "label": "floor, any FP32 x in [0, 2^22)",
+        "liveOperations": 7,
+        "layers": 6,
+        "storedWeights": 10,
+        "gatherReads": 0,
+        "booleans": 1,
+        "trials": 1000000,
+        "worst": 0
+      },
+      {
+        "label": "floor, any FP32 x in (-2^22, 2^22)",
+        "liveOperations": 22,
+        "layers": 16,
+        "storedWeights": 30,
+        "gatherReads": 0,
+        "booleans": 1,
+        "trials": 1000000,
+        "worst": 0
+      },
+      {
+        "label": "reciprocal on [1, 16384], 1 per octave (relative error)",
+        "liveOperations": 50,
+        "layers": 13,
+        "storedWeights": 85,
+        "gatherReads": 0,
+        "booleans": 13,
+        "trials": 1000000,
+        "worst": 1.1920928955078125e-7
+      },
+      {
+        "label": "reciprocal on [1, 16384], 2 per octave (relative error)",
+        "liveOperations": 90,
+        "layers": 11,
+        "storedWeights": 151,
+        "gatherReads": 0,
+        "booleans": 27,
+        "trials": 1000000,
+        "worst": 1.2454057696231757e-7
+      },
+      {
+        "label": "reciprocal on [1, 16384], 4 per octave (relative error)",
+        "liveOperations": 172,
+        "layers": 9,
+        "storedWeights": 287,
+        "gatherReads": 0,
+        "booleans": 55,
+        "trials": 1000000,
+        "worst": 1.5267605135704798e-7
+      },
+      {
+        "label": "divide by [1, 16384], numerator in [-16384, 16384] (relative error)",
+        "liveOperations": 51,
+        "layers": 14,
+        "storedWeights": 87,
+        "gatherReads": 0,
+        "booleans": 13,
+        "trials": 1000000,
+        "worst": 1.5145470777522263e-7
+      },
+      {
+        "label": "sqrt on {0} and [1, 2^22], 1 per octave (relative error)",
+        "liveOperations": 80,
+        "layers": 19,
+        "storedWeights": 137,
+        "gatherReads": 0,
+        "booleans": 21,
+        "trials": 1000000,
+        "worst": 1.4782546675640162e-7
+      },
+      {
+        "label": "sqrt on {0} and [1, 2^22], 2 per octave (relative error)",
+        "liveOperations": 143,
+        "layers": 16,
+        "storedWeights": 241,
+        "gatherReads": 0,
+        "booleans": 43,
+        "trials": 1000000,
+        "worst": 1.5068886938252035e-7
+      },
+      {
+        "label": "sin and cos, |angle| <= 190, 10% within 4 FP32 steps of a quadrant switch, 1% within 6 steps of an endpoint (absolute error)",
+        "liveOperations": 34,
+        "layers": 14,
+        "storedWeights": 52,
+        "gatherReads": 2,
+        "booleans": 0,
+        "trials": 1000000,
+        "worst": 8.11122702337741e-8
+      },
+      {
+        "label": "sin and cos, every FP32 angle in [3.5, 4] (absolute error)",
+        "liveOperations": 34,
+        "layers": 14,
+        "storedWeights": 52,
+        "gatherReads": 2,
+        "booleans": 0,
+        "trials": 2097153,
+        "worst": 8.629061720721865e-8
+      },
+      {
+        "label": "sin and cos, every FP32 angle in [128, 190] (absolute error)",
+        "liveOperations": 34,
+        "layers": 14,
+        "storedWeights": 52,
+        "gatherReads": 2,
+        "booleans": 0,
+        "trials": 4063233,
+        "worst": 8.488340375034653e-8
+      },
+      {
+        "label": "exp, |x| <= 0.5, random with both endpoints (relative error)",
+        "liveOperations": 8,
+        "layers": 8,
+        "storedWeights": 15,
+        "gatherReads": 0,
+        "booleans": 0,
+        "trials": 1000000,
+        "worst": 1.1124192034195346e-7
+      },
+      {
+        "label": "exp, |x| <= 2, random with both endpoints (relative error)",
+        "liveOperations": 9,
+        "layers": 9,
+        "storedWeights": 18,
+        "gatherReads": 0,
+        "booleans": 0,
+        "trials": 1000000,
+        "worst": 5.249696752862576e-7
+      },
+      {
+        "label": "exp, |x| <= 8, random with both endpoints (relative error)",
+        "liveOperations": 11,
+        "layers": 11,
+        "storedWeights": 22,
+        "gatherReads": 0,
+        "booleans": 0,
+        "trials": 1000000,
+        "worst": 0.0000021119254645096674
+      },
+      {
+        "label": "exp, |x| <= 16, random with both endpoints (relative error)",
+        "liveOperations": 12,
+        "layers": 12,
+        "storedWeights": 24,
+        "gatherReads": 0,
+        "booleans": 0,
+        "trials": 1000000,
+        "worst": 0.0000043212236400247406
+      },
+      {
+        "label": "smoothstep with constant edges -40..120, x in [-2000, 2000], a quarter within 3 FP32 steps of an edge, a quarter in [-200, 200] (absolute error)",
+        "liveOperations": 5,
+        "layers": 4,
+        "storedWeights": 8,
+        "gatherReads": 0,
+        "booleans": 0,
+        "trials": 1000000,
+        "worst": 1.3403039389459082e-7
+      },
+      {
+        "label": "runtime remap, input span in [1, 999], half the inputs inside the span (error over max(1, |result|, |(x - inMinimum) * outSpan / inSpan|))",
+        "liveOperations": 46,
+        "layers": 18,
+        "storedWeights": 81,
+        "gatherReads": 0,
+        "booleans": 9,
+        "trials": 1000000,
+        "worst": 3.2846829886435884e-7
+      },
+      {
+        "label": "mix(a, b, t), a and b in [-1024, 1024] (error in ulps of max(|a|, |b|))",
+        "liveOperations": 4,
+        "layers": 3,
+        "storedWeights": 7,
+        "gatherReads": 0,
+        "booleans": 0,
+        "trials": 1000000,
+        "worst": 1.105459227396797
+      },
+      {
+        "label": "hash, keys in [0, 2^20] (mismatches against the FP32 reference)",
+        "liveOperations": 19,
+        "layers": 17,
+        "storedWeights": 29,
+        "gatherReads": 0,
+        "booleans": 2,
+        "trials": 1048577,
+        "worst": 0
+      }
+    ],
+    "hashQuality": [
+      {
+        "keys": 1024,
+        "chiSquareOver64Buckets": 68.1,
+        "pValueWith63DegreesOfFreedom": 0.31
+      },
+      {
+        "keys": 16384,
+        "chiSquareOver64Buckets": 88.7,
+        "pValueWith63DegreesOfFreedom": 0.018
+      },
+      {
+        "keys": 65536,
+        "chiSquareOver64Buckets": 702.9,
+        "pValueWith63DegreesOfFreedom": 7.6e-109
+      },
+      {
+        "keys": 163872,
+        "chiSquareOver64Buckets": 3181.6,
+        "pValueWith63DegreesOfFreedom": 0
+      },
+      {
+        "keys": 1048576,
+        "chiSquareOver64Buckets": 162964.4,
+        "pValueWith63DegreesOfFreedom": 0
+      }
+    ]
+  },
+  "plans": [
+    {
+      "label": "integers in [0, 16384]",
+      "operations": 4,
+      "layers": 3,
+      "plan": {
+        "differenceBound": 32768,
+        "resolution": 1,
+        "clampScales": [],
+        "finalScale": 128
+      }
+    },
+    {
+      "label": "pixels in [0, 16384], operands >= 2^-7 or 0",
+      "operations": 4,
+      "layers": 3,
+      "plan": {
+        "differenceBound": 32768,
+        "resolution": 9.313225746154785e-10,
+        "clampScales": [],
+        "finalScale": 128
+      }
+    },
+    {
+      "label": "pixels in [0, 16384], operands >= 2^-31 or 0",
+      "operations": 10,
+      "layers": 7,
+      "plan": {
+        "differenceBound": 32768,
+        "resolution": 5.551115123125783e-17,
+        "clampScales": [
+          256,
+          8388608
+        ],
+        "finalScale": 4194304
+      }
+    },
+    {
+      "label": "pixels in [0, 16384], every FP32 value",
+      "operations": 22,
+      "layers": 15,
+      "plan": {
+        "differenceBound": 32768,
+        "resolution": 1.401298464324817e-45,
+        "clampScales": [
+          256,
+          8388608,
+          8388608,
+          8388608,
+          8388608,
+          8388608
+        ],
+        "finalScale": 4194304
+      }
+    },
+    {
+      "label": "unit interval, every FP32 value",
+      "operations": 19,
+      "layers": 13,
+      "plan": {
+        "differenceBound": 2,
+        "resolution": 1.401298464324817e-45,
+        "clampScales": [
+          4194304,
+          8388608,
+          8388608,
+          8388608,
+          8388608
+        ],
+        "finalScale": 4194304
+      }
+    }
+  ],
+  "minimum": [
+    {
+      "a": "[0, 8]",
+      "b": "[0, 8]",
+      "trials": 200000,
+      "driftingNotEqualToMathMin": 29993,
+      "driftingMaximumError": 2.384185791015625e-7,
+      "exactNotEqualToMathMin": 0
+    },
+    {
+      "a": "[512, 16384]",
+      "b": "[0, 8]",
+      "trials": 200000,
+      "driftingNotEqualToMathMin": 199818,
+      "driftingMaximumError": 0.00048828125,
+      "exactNotEqualToMathMin": 0
+    },
+    {
+      "a": "[0, 8]",
+      "b": "[512, 16384]",
+      "trials": 200000,
+      "driftingNotEqualToMathMin": 0,
+      "driftingMaximumError": 0,
+      "exactNotEqualToMathMin": 0
+    },
+    {
+      "a": "[900, 1000]",
+      "b": "[900, 1000]",
+      "trials": 200000,
+      "driftingNotEqualToMathMin": 0,
+      "driftingMaximumError": 0,
+      "exactNotEqualToMathMin": 0
+    }
+  ],
+  "indirect-os": {
+    "sizes": [
+      {
+        "mode": "drifting",
+        "liveOperations": 5253,
+        "layers": 192,
+        "storedWeights": 11598,
+        "booleans": 64,
+        "sites": {
+          "exact": 0,
+          "promised": 0,
+          "drifting": 273,
+          "fallback": 0,
+          "comparisonLayers": {},
+          "fallbackOrigins": {},
+          "promisedOperandWires": 0,
+          "fallbackExamples": []
+        },
+        "executorMicroseconds": 54.9
+      },
+      {
+        "mode": "exact-one-stage",
+        "liveOperations": 5406,
+        "layers": 203,
+        "storedWeights": 11864,
+        "booleans": 106,
+        "sites": {
+          "exact": 42,
+          "promised": 0,
+          "drifting": 0,
+          "fallback": 231,
+          "comparisonLayers": {
+            "3": 42
+          },
+          "fallbackOrigins": {
+            "window-manager-copy.ts:1614": 37,
+            "window-manager-copy.ts:414": 1,
+            "window-manager-copy.ts:1588": 28,
+            "window-manager-copy.ts:1589": 17,
+            "window-manager-copy.ts:1586": 28,
+            "window-manager-copy.ts:747": 4,
+            "window-manager-copy.ts:753": 4,
+            "window-manager-copy.ts:767": 4,
+            "window-manager-copy.ts:776": 4,
+            "window-manager-copy.ts:945": 4,
+            "window-manager-copy.ts:955": 4,
+            "window-manager-copy.ts:961": 4,
+            "window-manager-copy.ts:971": 4,
+            "window-manager-copy.ts:977": 4,
+            "photo-gallery-copy.ts:815": 36,
+            "photo-gallery-copy.ts:486": 12,
+            "photo-gallery-copy.ts:484": 12,
+            "photo-gallery-copy.ts:496": 12,
+            "photo-gallery-copy.ts:494": 12
+          },
+          "promisedOperandWires": 0,
+          "fallbackExamples": [
+            "maximum: [-Infinity, Infinity] against [0, 0]",
+            "minimum: [0, Infinity] against [0, Infinity]",
+            "minimum: [-Infinity, Infinity] against [-Infinity, Infinity]"
+          ]
+        },
+        "executorMicroseconds": 58.1
+      },
+      {
+        "mode": "exact-one-stage-pointer-ranges",
+        "liveOperations": 5898,
+        "layers": 211,
+        "storedWeights": 13142,
+        "booleans": 247,
+        "sites": {
+          "exact": 183,
+          "promised": 0,
+          "drifting": 0,
+          "fallback": 90,
+          "comparisonLayers": {
+            "3": 183
+          },
+          "fallbackOrigins": {
+            "window-manager-copy.ts:1614": 21,
+            "window-manager-copy.ts:414": 1,
+            "window-manager-copy.ts:945": 4,
+            "window-manager-copy.ts:955": 4,
+            "window-manager-copy.ts:961": 4,
+            "window-manager-copy.ts:971": 4,
+            "window-manager-copy.ts:977": 4,
+            "photo-gallery-copy.ts:486": 12,
+            "photo-gallery-copy.ts:484": 12,
+            "photo-gallery-copy.ts:496": 12,
+            "photo-gallery-copy.ts:494": 12
+          },
+          "promisedOperandWires": 0,
+          "fallbackExamples": [
+            "maximum: [-Infinity, Infinity] against [0, 0]",
+            "minimum: [0, Infinity] against [0, Infinity]",
+            "maximum: [-Infinity, Infinity] against [0, 0]"
+          ]
+        },
+        "executorMicroseconds": 61.9
+      },
+      {
+        "mode": "exact-one-stage-promised",
+        "liveOperations": 6180,
+        "layers": 217,
+        "storedWeights": 13661,
+        "booleans": 337,
+        "sites": {
+          "exact": 183,
+          "promised": 90,
+          "drifting": 0,
+          "fallback": 0,
+          "comparisonLayers": {
+            "3": 273
+          },
+          "fallbackOrigins": {},
+          "promisedOperandWires": 112,
+          "fallbackExamples": []
+        },
+        "executorMicroseconds": 60.6
+      },
+      {
+        "mode": "exact-every-float32",
+        "liveOperations": 6075,
+        "layers": 283,
+        "storedWeights": 12756,
+        "booleans": 106,
+        "sites": {
+          "exact": 42,
+          "promised": 0,
+          "drifting": 0,
+          "fallback": 231,
+          "comparisonLayers": {
+            "13": 29,
+            "15": 13
+          },
+          "fallbackOrigins": {
+            "window-manager-copy.ts:1614": 37,
+            "window-manager-copy.ts:414": 1,
+            "window-manager-copy.ts:1588": 28,
+            "window-manager-copy.ts:1589": 17,
+            "window-manager-copy.ts:1586": 28,
+            "window-manager-copy.ts:747": 4,
+            "window-manager-copy.ts:753": 4,
+            "window-manager-copy.ts:767": 4,
+            "window-manager-copy.ts:776": 4,
+            "window-manager-copy.ts:945": 4,
+            "window-manager-copy.ts:955": 4,
+            "window-manager-copy.ts:961": 4,
+            "window-manager-copy.ts:971": 4,
+            "window-manager-copy.ts:977": 4,
+            "photo-gallery-copy.ts:815": 36,
+            "photo-gallery-copy.ts:486": 12,
+            "photo-gallery-copy.ts:484": 12,
+            "photo-gallery-copy.ts:496": 12,
+            "photo-gallery-copy.ts:494": 12
+          },
+          "promisedOperandWires": 0,
+          "fallbackExamples": [
+            "maximum: [-Infinity, Infinity] against [0, 0]",
+            "minimum: [0, Infinity] against [0, Infinity]",
+            "minimum: [-Infinity, Infinity] against [-Infinity, Infinity]"
+          ]
+        },
+        "executorMicroseconds": 57.1
+      }
+    ],
+    "settled": [
+      {
+        "mode": "drifting",
+        "totals": {
+          "windows": {
+            "outputs": 4800,
+            "notEqualToFround": 476,
+            "notEqualToFroundByField": {
+              "translateX": 255,
+              "translateY": 219,
+              "width": 1,
+              "height": 0,
+              "contentWidth": 1,
+              "contentHeight": 0
+            },
+            "maximumAbsoluteDifference": 0.00006103515625
+          },
+          "dock": {
+            "outputs": 3200,
+            "notEqualToFround": 5,
+            "notEqualToFroundByField": {
+              "left": 5,
+              "top": 0,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.00006103515625
+          },
+          "photos": {
+            "outputs": 9600,
+            "notEqualToFround": 1484,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 428,
+              "width": 0,
+              "height": 1056
+            },
+            "maximumAbsoluteDifference": 0.000030517578125
+          },
+          "controls": {
+            "outputs": 1600,
+            "notEqualToFround": 100,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 100,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.000017801920591864473
+          },
+          "storedRectangles": {
+            "outputs": 3200,
+            "notEqualToFround": 6,
+            "notEqualToFroundByField": {
+              "left": 3,
+              "top": 2,
+              "width": 1,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.000030517578125
+          }
+        },
+        "unsettled": 0,
+        "averageFrames": 30.58,
+        "promiseViolations": 0
+      },
+      {
+        "mode": "exact-one-stage",
+        "totals": {
+          "windows": {
+            "outputs": 4800,
+            "notEqualToFround": 476,
+            "notEqualToFroundByField": {
+              "translateX": 255,
+              "translateY": 219,
+              "width": 1,
+              "height": 0,
+              "contentWidth": 1,
+              "contentHeight": 0
+            },
+            "maximumAbsoluteDifference": 0.00006103515625
+          },
+          "dock": {
+            "outputs": 3200,
+            "notEqualToFround": 31,
+            "notEqualToFroundByField": {
+              "left": 31,
+              "top": 0,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.00006103515625
+          },
+          "photos": {
+            "outputs": 9600,
+            "notEqualToFround": 1484,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 428,
+              "width": 0,
+              "height": 1056
+            },
+            "maximumAbsoluteDifference": 0.000030517578125
+          },
+          "controls": {
+            "outputs": 1600,
+            "notEqualToFround": 84,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 84,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.000017801920591864473
+          },
+          "storedRectangles": {
+            "outputs": 3200,
+            "notEqualToFround": 6,
+            "notEqualToFroundByField": {
+              "left": 3,
+              "top": 2,
+              "width": 1,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.000030517578125
+          }
+        },
+        "unsettled": 0,
+        "averageFrames": 30.58,
+        "promiseViolations": 0
+      },
+      {
+        "mode": "exact-one-stage-pointer-ranges",
+        "totals": {
+          "windows": {
+            "outputs": 4800,
+            "notEqualToFround": 471,
+            "notEqualToFroundByField": {
+              "translateX": 252,
+              "translateY": 219,
+              "width": 0,
+              "height": 0,
+              "contentWidth": 0,
+              "contentHeight": 0
+            },
+            "maximumAbsoluteDifference": 0.00006103515625
+          },
+          "dock": {
+            "outputs": 3200,
+            "notEqualToFround": 31,
+            "notEqualToFroundByField": {
+              "left": 31,
+              "top": 0,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.00006103515625
+          },
+          "photos": {
+            "outputs": 9600,
+            "notEqualToFround": 1484,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 428,
+              "width": 0,
+              "height": 1056
+            },
+            "maximumAbsoluteDifference": 0.000030517578125
+          },
+          "controls": {
+            "outputs": 1600,
+            "notEqualToFround": 84,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 84,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.000017801920591864473
+          },
+          "storedRectangles": {
+            "outputs": 3200,
+            "notEqualToFround": 0,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 0,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.000030517578125
+          }
+        },
+        "unsettled": 0,
+        "averageFrames": 30.58,
+        "promiseViolations": 0
+      },
+      {
+        "mode": "exact-one-stage-promised",
+        "totals": {
+          "windows": {
+            "outputs": 4800,
+            "notEqualToFround": 471,
+            "notEqualToFroundByField": {
+              "translateX": 252,
+              "translateY": 219,
+              "width": 0,
+              "height": 0,
+              "contentWidth": 0,
+              "contentHeight": 0
+            },
+            "maximumAbsoluteDifference": 0.00006103515625
+          },
+          "dock": {
+            "outputs": 3200,
+            "notEqualToFround": 31,
+            "notEqualToFroundByField": {
+              "left": 31,
+              "top": 0,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.00006103515625
+          },
+          "photos": {
+            "outputs": 9600,
+            "notEqualToFround": 1484,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 428,
+              "width": 0,
+              "height": 1056
+            },
+            "maximumAbsoluteDifference": 0.000030517578125
+          },
+          "controls": {
+            "outputs": 1600,
+            "notEqualToFround": 84,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 84,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.000017801920591864473
+          },
+          "storedRectangles": {
+            "outputs": 3200,
+            "notEqualToFround": 0,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 0,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.000030517578125
+          }
+        },
+        "unsettled": 0,
+        "averageFrames": 30.58,
+        "promiseViolations": 0
+      },
+      {
+        "mode": "exact-every-float32",
+        "totals": {
+          "windows": {
+            "outputs": 4800,
+            "notEqualToFround": 476,
+            "notEqualToFroundByField": {
+              "translateX": 255,
+              "translateY": 219,
+              "width": 1,
+              "height": 0,
+              "contentWidth": 1,
+              "contentHeight": 0
+            },
+            "maximumAbsoluteDifference": 0.00006103515625
+          },
+          "dock": {
+            "outputs": 3200,
+            "notEqualToFround": 31,
+            "notEqualToFroundByField": {
+              "left": 31,
+              "top": 0,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.00006103515625
+          },
+          "photos": {
+            "outputs": 9600,
+            "notEqualToFround": 1484,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 428,
+              "width": 0,
+              "height": 1056
+            },
+            "maximumAbsoluteDifference": 0.000030517578125
+          },
+          "controls": {
+            "outputs": 1600,
+            "notEqualToFround": 84,
+            "notEqualToFroundByField": {
+              "left": 0,
+              "top": 84,
+              "width": 0,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.000017801920591864473
+          },
+          "storedRectangles": {
+            "outputs": 3200,
+            "notEqualToFround": 6,
+            "notEqualToFroundByField": {
+              "left": 3,
+              "top": 2,
+              "width": 1,
+              "height": 0
+            },
+            "maximumAbsoluteDifference": 0.000030517578125
+          }
+        },
+        "unsettled": 0,
+        "averageFrames": 30.58,
+        "promiseViolations": 0
+      }
+    ],
+    "edges": [
+      {
+        "mode": "drifting",
+        "trials": 3000,
+        "skipped": 57,
+        "mismatches": 0,
+        "nearDecisions": 2190,
+        "examples": [],
+        "promiseViolations": 0
+      },
+      {
+        "mode": "exact-one-stage",
+        "trials": 3000,
+        "skipped": 57,
+        "mismatches": 0,
+        "nearDecisions": 2190,
+        "examples": [],
+        "promiseViolations": 0
+      },
+      {
+        "mode": "exact-one-stage-pointer-ranges",
+        "trials": 3000,
+        "skipped": 57,
+        "mismatches": 0,
+        "nearDecisions": 2190,
+        "examples": [],
+        "promiseViolations": 0
+      },
+      {
+        "mode": "exact-one-stage-promised",
+        "trials": 3000,
+        "skipped": 57,
+        "mismatches": 0,
+        "nearDecisions": 2190,
+        "examples": [],
+        "promiseViolations": 0
+      },
+      {
+        "mode": "exact-every-float32",
+        "trials": 3000,
+        "skipped": 57,
+        "mismatches": 0,
+        "nearDecisions": 2190,
+        "examples": [],
+        "promiseViolations": 0
+      }
+    ],
+    "actions": {
+      "actions": 3000,
+      "modes": [
+        {
+          "mode": "drifting",
+          "decisionDivergences": 0,
+          "firstDivergence": null,
+          "maximumSourceDifferenceFromFirstMode": 0,
+          "promiseViolations": 0
+        },
+        {
+          "mode": "exact-one-stage",
+          "decisionDivergences": 0,
+          "firstDivergence": null,
+          "maximumSourceDifferenceFromFirstMode": 0.00000762939453125,
+          "promiseViolations": 0
+        },
+        {
+          "mode": "exact-one-stage-pointer-ranges",
+          "decisionDivergences": 0,
+          "firstDivergence": null,
+          "maximumSourceDifferenceFromFirstMode": 0.00000762939453125,
+          "promiseViolations": 0
+        },
+        {
+          "mode": "exact-one-stage-promised",
+          "decisionDivergences": 0,
+          "firstDivergence": null,
+          "maximumSourceDifferenceFromFirstMode": 0.00000762939453125,
+          "promiseViolations": 0
+        },
+        {
+          "mode": "exact-every-float32",
+          "decisionDivergences": 0,
+          "firstDivergence": null,
+          "maximumSourceDifferenceFromFirstMode": 0.00000762939453125,
+          "promiseViolations": 0
+        }
+      ],
+      "nonBitDecisions": 0
+    }
+  },
+  "workload": {
+    "size": {
+      "liveOperations": 2230,
+      "layers": 41,
+      "storedWeights": 3932,
+      "gatherReads": 4,
+      "booleans": 298
+    },
+    "dockSize": {
+      "liveOperations": 1018,
+      "layers": 41,
+      "storedWeights": 2091,
+      "gatherReads": 0,
+      "booleans": 198
+    },
+    "ringSize": {
+      "liveOperations": 1212,
+      "layers": 28,
+      "storedWeights": 1841,
+      "gatherReads": 4,
+      "booleans": 100
+    },
+    "trials": 100000,
+    "worstPosition": 0.0003212071906091296,
+    "litMismatches": 0,
+    "percentMismatches": 0,
+    "nearestChecked": 79670,
+    "nearestMismatches": 0,
+    "thresholds": {
+      "percentBoundaryValues": 707,
+      "workloadPercentMismatches": 0,
+      "roundedProductPercentMismatches": 58,
+      "tickBoundaryValues": 168,
+      "workloadLitMismatches": 0,
+      "roundedThresholdLitMismatches": 7,
+      "splitPercentSize": {
+        "liveOperations": 25,
+        "layers": 20,
+        "storedWeights": 37,
+        "gatherReads": 0,
+        "booleans": 3
+      },
+      "roundedProductPercentSize": {
+        "liveOperations": 8,
+        "layers": 7,
+        "storedWeights": 11,
+        "gatherReads": 0,
+        "booleans": 1
+      }
+    },
+    "spinClock": {
+      "secondsStepBelow16384": 0.0009765625,
+      "cycleStepNear16384Seconds": 0.00048828125,
+      "largestTickMovePerSecondsStep": 0.19500316979605098
+    }
+  },
+  "rectangle-hit": [
+    {
+      "variant": "drifting nested",
+      "liveOperations": 16,
+      "layers": 9,
+      "storedWeights": 29,
+      "gatherReads": 0,
+      "booleans": 1,
+      "trials": 1000000,
+      "mismatchesAgainstFloat64": 2351
+    },
+    {
+      "variant": "exact nested",
+      "liveOperations": 27,
+      "layers": 12,
+      "storedWeights": 58,
+      "gatherReads": 0,
+      "booleans": 4,
+      "trials": 1000000,
+      "mismatchesAgainstFloat64": 0
+    },
+    {
+      "variant": "exact counting",
+      "liveOperations": 36,
+      "layers": 8,
+      "storedWeights": 62,
+      "gatherReads": 1,
+      "booleans": 7,
+      "trials": 1000000,
+      "mismatchesAgainstFloat64": 0
+    }
+  ]
+}

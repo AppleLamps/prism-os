@@ -106,7 +106,7 @@ function runAll() {
   const buildMs = performance.now() - buildStart
 
   // Circuit statistics.
-  const opCounts = {affine: 0, reglu: 0, boolean: 0}
+  const opCounts = {affine: 0, reglu: 0, boolean: 0, index: 0}
   for (const operation of machine.circuit.operations) opCounts[operation.kind]++
   let storedWeights = 0
   let maxWidth = 0

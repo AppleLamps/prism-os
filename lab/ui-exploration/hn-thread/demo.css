@@ -1,0 +1,126 @@
+* {
+  touch-action: pan-y;
+}
+body {
+  font-family: Verdana, Geneva, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+  margin: 0;
+  background-color: rgb(240, 240, 229);
+}
+.status {
+  position: absolute;
+  left: 16px;
+  top: 12px;
+  font-size: 12px;
+  color: #5c5c5c;
+}
+.stats {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 10;
+  font: 11px/15px ui-monospace, Menlo, monospace;
+  color: #5c5c5c;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 6px;
+  padding: 6px 8px;
+  pointer-events: none;
+  white-space: pre;
+}
+.thread-container {
+  position: absolute;
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0 0 8px 4px;
+  background-color: white;
+  overflow: hidden;
+}
+.submission-lines {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.submission-line-1 {
+  position: absolute;
+  display: flex;
+  gap: 4px;
+  left: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.submission-line-2 {
+  position: absolute;
+  left: 24px;
+  font-size: 11px;
+  color: #5c5c5c;
+  white-space: nowrap;
+}
+.comments-scroller {
+  position: absolute;
+  left: 0;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+/* The display stays pinned inside the scroller, so wheel and touch scrolling over comments still reach the scroller. */
+.comments-display {
+  position: sticky;
+  top: 0;
+  overflow: hidden;
+  background-color: hsl(60deg 28% 95%);
+}
+.user {
+  position: absolute;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  color: #5c5c5c;
+  overflow: hidden;
+  z-index: 1;
+}
+.user-text {
+  position: absolute;
+  left: 8px;
+  white-space: nowrap;
+}
+.comment {
+  position: absolute;
+  font: 12px/14px Verdana, Geneva, sans-serif;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+/* Only a <p> or <pre> with no text before it loses its top margin. See markLeadingBlock in demo.ts. */
+.comment > .leading-block {
+  margin-top: 0;
+}
+.comment p {
+  margin: 8px 0 0 0;
+}
+.comment pre {
+  margin: 8px 0 0 0;
+  white-space: pre-wrap;
+  font: 12px/14px monospace;
+}
+.comment code {
+  font: inherit;
+}
+.comment a {
+  color: black;
+  cursor: pointer;
+}
+.comment a:visited {
+  color: rgb(130, 130, 130);
+}
+.gutters {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}

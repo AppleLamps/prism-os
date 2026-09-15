@@ -1,0 +1,1505 @@
+{
+  "indirectOSSizes": [
+    {
+      "variant": "original window-manager.ts",
+      "sources": 201,
+      "live": 5253,
+      "layers": 192,
+      "widest": 123,
+      "weights": 11598,
+      "reglu": 2843,
+      "booleans": 64,
+      "gathers": 12,
+      "window spring builder live ops": 1240,
+      "Photos spring builder live ops (inlined)": "n/a",
+      "µs per evaluation (rough)": 52.88875
+    },
+    {
+      "variant": "copy, springs: original",
+      "sources": 392,
+      "live": 5253,
+      "layers": 192,
+      "widest": 123,
+      "weights": 11598,
+      "reglu": 2843,
+      "booleans": 64,
+      "gathers": 12,
+      "window spring builder live ops": 1240,
+      "Photos spring builder live ops (inlined)": 1116,
+      "µs per evaluation (rough)": 51.47791666666668
+    },
+    {
+      "variant": "copy, original springs, Photos reads previous frame",
+      "sources": 392,
+      "live": 5255,
+      "layers": 118,
+      "widest": 150,
+      "weights": 11603,
+      "reglu": 2845,
+      "booleans": 64,
+      "gathers": 12,
+      "window spring builder live ops": 1240,
+      "Photos spring builder live ops (inlined)": 1116,
+      "µs per evaluation (rough)": 48.66819333333334
+    },
+    {
+      "variant": "bank split-table",
+      "sources": 392,
+      "live": 3580,
+      "layers": 137,
+      "widest": 365,
+      "weights": 8447,
+      "reglu": 1944,
+      "booleans": 113,
+      "gathers": 12,
+      "window spring builder live ops": 523,
+      "Photos spring builder live ops (inlined)": 468,
+      "µs per evaluation (rough)": 44.446249999999736
+    },
+    {
+      "variant": "bank binary-powers",
+      "sources": 392,
+      "live": 3644,
+      "layers": 137,
+      "widest": 384,
+      "weights": 8513,
+      "reglu": 2014,
+      "booleans": 113,
+      "gathers": 12,
+      "window spring builder live ops": 587,
+      "Photos spring builder live ops (inlined)": 468,
+      "µs per evaluation (rough)": 45.067916666666484
+    },
+    {
+      "variant": "bank source-table",
+      "sources": 392,
+      "live": 3584,
+      "layers": 137,
+      "widest": 369,
+      "weights": 8323,
+      "reglu": 1948,
+      "booleans": 113,
+      "gathers": 20,
+      "window spring builder live ops": 527,
+      "Photos spring builder live ops (inlined)": 468,
+      "µs per evaluation (rough)": 45.22375000000011
+    },
+    {
+      "variant": "bank source-matrix",
+      "sources": 392,
+      "live": 3413,
+      "layers": 137,
+      "widest": 430,
+      "weights": 8011,
+      "reglu": 1863,
+      "booleans": 80,
+      "gathers": 12,
+      "window spring builder live ops": 356,
+      "Photos spring builder live ops (inlined)": 468,
+      "µs per evaluation (rough)": 43.41305666666661
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "sources": 392,
+      "live": 3580,
+      "layers": 141,
+      "widest": 189,
+      "weights": 8195,
+      "reglu": 1944,
+      "booleans": 113,
+      "gathers": 12,
+      "window spring builder live ops": 523,
+      "Photos spring builder live ops (inlined)": 468,
+      "µs per evaluation (rough)": 44.2536099999999
+    },
+    {
+      "variant": "bank split-table, Photos reads previous frame",
+      "sources": 392,
+      "live": 3582,
+      "layers": 91,
+      "widest": 392,
+      "weights": 8452,
+      "reglu": 1946,
+      "booleans": 113,
+      "gathers": 12,
+      "window spring builder live ops": 523,
+      "Photos spring builder live ops (inlined)": 468,
+      "µs per evaluation (rough)": 42.116946666666685
+    },
+    {
+      "variant": "bank split-table, Photos reads stepped springs",
+      "sources": 392,
+      "live": 3583,
+      "layers": 91,
+      "widest": 365,
+      "weights": 8455,
+      "reglu": 1946,
+      "booleans": 113,
+      "gathers": 12,
+      "window spring builder live ops": 523,
+      "Photos spring builder live ops (inlined)": 468,
+      "µs per evaluation (rough)": 42.31958333333372
+    },
+    {
+      "variant": "bank source-matrix, Photos reads stepped springs",
+      "sources": 392,
+      "live": 3416,
+      "layers": 91,
+      "widest": 430,
+      "weights": 8019,
+      "reglu": 1865,
+      "booleans": 80,
+      "gathers": 12,
+      "window spring builder live ops": 356,
+      "Photos spring builder live ops (inlined)": 468,
+      "µs per evaluation (rough)": 40.69305666666651
+    }
+  ],
+  "deepestPath": [
+    {
+      "variant": "copy, springs: original",
+      "path operations": 193,
+      "spring operations on the path": 74,
+      "most spring operations on any deepest chain": 74,
+      "other": 119,
+      "Photos emitSpring": 33,
+      "emitSpring": 41
+    },
+    {
+      "variant": "copy, original springs, Photos reads previous frame",
+      "path operations": 118,
+      "spring operations on the path": 33,
+      "most spring operations on any deepest chain": 33,
+      "other": 85,
+      "Photos emitSpring": 33
+    },
+    {
+      "variant": "bank split-table",
+      "path operations": 138,
+      "spring operations on the path": 15,
+      "most spring operations on any deepest chain": 15,
+      "other": 123,
+      "Photos bank box": 8,
+      "bank box": 7
+    },
+    {
+      "variant": "bank binary-powers",
+      "path operations": 138,
+      "spring operations on the path": 15,
+      "most spring operations on any deepest chain": 15,
+      "other": 123,
+      "Photos bank box": 8,
+      "bank box": 7
+    },
+    {
+      "variant": "bank source-table",
+      "path operations": 138,
+      "spring operations on the path": 15,
+      "most spring operations on any deepest chain": 15,
+      "other": 123,
+      "Photos bank box": 8,
+      "bank box": 7
+    },
+    {
+      "variant": "bank source-matrix",
+      "path operations": 138,
+      "spring operations on the path": 15,
+      "most spring operations on any deepest chain": 15,
+      "other": 123,
+      "Photos bank box": 8,
+      "bank box": 7
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "path operations": 142,
+      "spring operations on the path": 19,
+      "most spring operations on any deepest chain": 19,
+      "other": 123,
+      "Photos bank box": 10,
+      "bank box": 9
+    },
+    {
+      "variant": "bank split-table, Photos reads previous frame",
+      "path operations": 91,
+      "spring operations on the path": 8,
+      "most spring operations on any deepest chain": 8,
+      "other": 83,
+      "Photos bank box": 8
+    },
+    {
+      "variant": "bank split-table, Photos reads stepped springs",
+      "path operations": 91,
+      "spring operations on the path": 8,
+      "most spring operations on any deepest chain": 8,
+      "other": 83,
+      "Photos bank box": 8
+    },
+    {
+      "variant": "bank source-matrix, Photos reads stepped springs",
+      "path operations": 91,
+      "spring operations on the path": 8,
+      "most spring operations on any deepest chain": 8,
+      "other": 83,
+      "Photos bank box": 8
+    }
+  ],
+  "photosSizes": [
+    {
+      "variant": "original photo-gallery.ts",
+      "sources": 82,
+      "live": 2358,
+      "layers": 91,
+      "widest": 98,
+      "weights": 5574,
+      "reglu": 1287,
+      "booleans": 36,
+      "gathers": 0,
+      "thumbnail spring builder live ops": 1116
+    },
+    {
+      "variant": "copy, bank springs with a JS-written fixed 16 ms frame matrix (no clock)",
+      "sources": 110,
+      "live": 1563,
+      "layers": 64,
+      "widest": 247,
+      "weights": 3974,
+      "reglu": 854,
+      "booleans": 48,
+      "gathers": 0,
+      "thumbnail spring builder live ops": 468
+    }
+  ],
+  "unitCosts": [
+    {
+      "construction": "emitSpring, one lane (runtime stiffness, damping, timestep)",
+      "sources": 11,
+      "live": 46,
+      "layers": 33,
+      "widest": 4,
+      "weights": 104,
+      "reglu": 29,
+      "booleans": 0,
+      "gathers": 0
+    },
+    {
+      "construction": "clock: step count and leftover",
+      "sources": 4,
+      "live": 108,
+      "layers": 13,
+      "widest": 36,
+      "weights": 196,
+      "reglu": 69,
+      "booleans": 33,
+      "gathers": 0
+    },
+    {
+      "construction": "clock plus one split-table group frame matrix",
+      "sources": 4,
+      "live": 163,
+      "layers": 13,
+      "widest": 36,
+      "weights": 398,
+      "reglu": 80,
+      "booleans": 33,
+      "gathers": 0
+    },
+    {
+      "construction": "clock plus one binary-powers group frame matrix",
+      "sources": 4,
+      "live": 227,
+      "layers": 18,
+      "widest": 50,
+      "weights": 464,
+      "reglu": 150,
+      "booleans": 33,
+      "gathers": 0
+    },
+    {
+      "construction": "clock plus one source-table group frame matrix",
+      "sources": 144,
+      "live": 167,
+      "layers": 13,
+      "widest": 36,
+      "weights": 274,
+      "reglu": 84,
+      "booleans": 33,
+      "gathers": 8
+    },
+    {
+      "construction": "one box of 1 lane, frame matrix given",
+      "sources": 12,
+      "live": 21,
+      "layers": 8,
+      "widest": 8,
+      "weights": 58,
+      "reglu": 15,
+      "booleans": 1,
+      "gathers": 0
+    },
+    {
+      "construction": "one box of 1 lane with a snap bit, frame matrix given",
+      "sources": 12,
+      "live": 21,
+      "layers": 9,
+      "widest": 8,
+      "weights": 58,
+      "reglu": 16,
+      "booleans": 1,
+      "gathers": 0
+    },
+    {
+      "construction": "one box of 2 lanes, frame matrix given",
+      "sources": 16,
+      "live": 38,
+      "layers": 8,
+      "widest": 16,
+      "weights": 112,
+      "reglu": 29,
+      "booleans": 1,
+      "gathers": 0
+    },
+    {
+      "construction": "one box of 2 lanes with a snap bit, frame matrix given",
+      "sources": 16,
+      "live": 38,
+      "layers": 9,
+      "widest": 16,
+      "weights": 110,
+      "reglu": 30,
+      "booleans": 1,
+      "gathers": 0
+    },
+    {
+      "construction": "one box of 5 lanes, frame matrix given",
+      "sources": 28,
+      "live": 89,
+      "layers": 8,
+      "widest": 40,
+      "weights": 274,
+      "reglu": 71,
+      "booleans": 1,
+      "gathers": 0
+    },
+    {
+      "construction": "one box of 5 lanes with a snap bit, frame matrix given",
+      "sources": 28,
+      "live": 89,
+      "layers": 9,
+      "widest": 40,
+      "weights": 266,
+      "reglu": 72,
+      "booleans": 1,
+      "gathers": 0
+    }
+  ],
+  "frameRateIndependence": [
+    {
+      "variant": "bank split-table, deferred retarget",
+      "compared with 120 fps": "10 fps",
+      "shared frames": 111,
+      "max position difference (px)": 0.003021240234375,
+      "at time (ms)": 5500,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "compared with 120 fps": "30 fps",
+      "shared frames": 331,
+      "max position difference (px)": 0.00299072265625,
+      "at time (ms)": 5500,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "compared with 120 fps": "60 fps",
+      "shared frames": 661,
+      "max position difference (px)": 0.00042724609375,
+      "at time (ms)": 5617,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "compared with 120 fps": "60 fps, 500 ms stall during an animation",
+      "shared frames": 631,
+      "max position difference (px)": 0.00042724609375,
+      "at time (ms)": 5617,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "compared with 120 fps": "60 fps, 2 s stall during an animation",
+      "shared frames": 541,
+      "max position difference (px)": 0.00042724609375,
+      "at time (ms)": 5617,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "compared with 120 fps": "10 fps",
+      "shared frames": 111,
+      "max position difference (px)": 0.003021240234375,
+      "at time (ms)": 5500,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "compared with 120 fps": "30 fps",
+      "shared frames": 331,
+      "max position difference (px)": 0.00299072265625,
+      "at time (ms)": 5500,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "compared with 120 fps": "60 fps",
+      "shared frames": 661,
+      "max position difference (px)": 0.00042724609375,
+      "at time (ms)": 5617,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "compared with 120 fps": "60 fps, 500 ms stall during an animation",
+      "shared frames": 631,
+      "max position difference (px)": 0.00042724609375,
+      "at time (ms)": 5617,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "compared with 120 fps": "60 fps, 2 s stall during an animation",
+      "shared frames": 541,
+      "max position difference (px)": 0.00042724609375,
+      "at time (ms)": 5617,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "compared with 120 fps": "10 fps",
+      "shared frames": 111,
+      "max position difference (px)": 512.5236206054688,
+      "at time (ms)": 2700,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 3
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "compared with 120 fps": "30 fps",
+      "shared frames": 331,
+      "max position difference (px)": 156.59228515625,
+      "at time (ms)": 2700,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 3
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "compared with 120 fps": "60 fps",
+      "shared frames": 661,
+      "max position difference (px)": 57.236572265625,
+      "at time (ms)": 2717,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 2
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "compared with 120 fps": "60 fps, 500 ms stall during an animation",
+      "shared frames": 631,
+      "max position difference (px)": 45.588623046875,
+      "at time (ms)": 2700,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 2
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "compared with 120 fps": "60 fps, 2 s stall during an animation",
+      "shared frames": 541,
+      "max position difference (px)": 57.236572265625,
+      "at time (ms)": 2717,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 2
+    },
+    {
+      "variant": "original window-manager.ts",
+      "compared with 120 fps": "10 fps",
+      "shared frames": 111,
+      "max position difference (px)": 317.70220947265625,
+      "at time (ms)": 2700,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 40
+    },
+    {
+      "variant": "original window-manager.ts",
+      "compared with 120 fps": "30 fps",
+      "shared frames": 331,
+      "max position difference (px)": 183.198974609375,
+      "at time (ms)": 2733,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 4
+    },
+    {
+      "variant": "original window-manager.ts",
+      "compared with 120 fps": "60 fps",
+      "shared frames": 661,
+      "max position difference (px)": 71.83251953125,
+      "at time (ms)": 2733,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 5
+    },
+    {
+      "variant": "original window-manager.ts",
+      "compared with 120 fps": "60 fps, 500 ms stall during an animation",
+      "shared frames": 631,
+      "max position difference (px)": 401.1749267578125,
+      "at time (ms)": 3217,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 33
+    },
+    {
+      "variant": "original window-manager.ts",
+      "compared with 120 fps": "60 fps, 2 s stall during an animation",
+      "shared frames": 541,
+      "max position difference (px)": 311.04486083984375,
+      "at time (ms)": 9017,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 36
+    }
+  ],
+  "settleTimes": [
+    {
+      "variant": "bank split-table, deferred retarget",
+      "run": "120 fps",
+      "animation end times (ms)": "983.3, 3291.7, 5666.7, 7583.3"
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "run": "10 fps",
+      "animation end times (ms)": "1000.0, 3300.0, 5700.0, 7600.0"
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "run": "30 fps",
+      "animation end times (ms)": "1000.0, 3300.0, 5666.7, 7600.0"
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "run": "60 fps",
+      "animation end times (ms)": "983.3, 3300.0, 5666.7, 7583.3"
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "run": "60 fps, 500 ms stall during an animation",
+      "animation end times (ms)": "983.3, 3300.0, 5666.7, 7583.3"
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "run": "60 fps, 2 s stall during an animation",
+      "animation end times (ms)": "983.3, 3300.0, 5666.7, 9016.7"
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "run": "120 fps",
+      "animation end times (ms)": "983.3, 3291.7, 5666.7, 7583.3"
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "run": "10 fps",
+      "animation end times (ms)": "1000.0, 3300.0, 5700.0, 7600.0"
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "run": "30 fps",
+      "animation end times (ms)": "1000.0, 3300.0, 5666.7, 7600.0"
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "run": "60 fps",
+      "animation end times (ms)": "983.3, 3300.0, 5666.7, 7583.3"
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "run": "60 fps, 500 ms stall during an animation",
+      "animation end times (ms)": "983.3, 3300.0, 5666.7, 7583.3"
+    },
+    {
+      "variant": "bank source-matrix, deferred retarget",
+      "run": "60 fps, 2 s stall during an animation",
+      "animation end times (ms)": "983.3, 3300.0, 5666.7, 9016.7"
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "run": "120 fps",
+      "animation end times (ms)": "975.0, 3283.3, 5650.0, 7583.3"
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "run": "10 fps",
+      "animation end times (ms)": "900.0, 3200.0, 5600.0, 7600.0"
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "run": "30 fps",
+      "animation end times (ms)": "966.7, 3266.7, 5633.3, 7600.0"
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "run": "60 fps",
+      "animation end times (ms)": "966.7, 3266.7, 5650.0, 7583.3"
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "run": "60 fps, 500 ms stall during an animation",
+      "animation end times (ms)": "966.7, 3266.7, 5650.0, 7583.3"
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "run": "60 fps, 2 s stall during an animation",
+      "animation end times (ms)": "966.7, 3266.7, 5650.0, 9016.7"
+    },
+    {
+      "variant": "original window-manager.ts",
+      "run": "120 fps",
+      "animation end times (ms)": "950.0, 3250.0, 5633.3, 7550.0"
+    },
+    {
+      "variant": "original window-manager.ts",
+      "run": "10 fps",
+      "animation end times (ms)": "2000.0, 4400.0, 6600.0, 8600.0"
+    },
+    {
+      "variant": "original window-manager.ts",
+      "run": "30 fps",
+      "animation end times (ms)": "933.3, 3233.3, 5600.0, 7533.3"
+    },
+    {
+      "variant": "original window-manager.ts",
+      "run": "60 fps",
+      "animation end times (ms)": "966.7, 3283.3, 5650.0, 7566.7"
+    },
+    {
+      "variant": "original window-manager.ts",
+      "run": "60 fps, 500 ms stall during an animation",
+      "animation end times (ms)": "966.7, 3750.0, 5650.0, 7566.7"
+    },
+    {
+      "variant": "original window-manager.ts",
+      "run": "60 fps, 2 s stall during an animation",
+      "animation end times (ms)": "966.7, 3283.3, 5650.0, 9550.0"
+    }
+  ],
+  "frameRateIndependenceLiveResize": [
+    {
+      "variant": "bank split-table, deferred retarget",
+      "compared with 120 fps": "10 fps",
+      "shared frames": 111,
+      "max position difference (px)": 13.8829345703125,
+      "at time (ms)": 5600,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 1
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "compared with 120 fps": "30 fps",
+      "shared frames": 331,
+      "max position difference (px)": 3.94183349609375,
+      "at time (ms)": 5633,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 1
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "compared with 120 fps": "60 fps",
+      "shared frames": 661,
+      "max position difference (px)": 1.260711669921875,
+      "at time (ms)": 5633,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank split-table, deferred retarget",
+      "compared with 120 fps": "60 fps, 500 ms stall during an animation",
+      "shared frames": 631,
+      "max position difference (px)": 1.260711669921875,
+      "at time (ms)": 5633,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank split-table, deferred retarget, event-time evaluations",
+      "compared with 120 fps": "10 fps",
+      "shared frames": 111,
+      "max position difference (px)": 0.002349853515625,
+      "at time (ms)": 6000,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank split-table, deferred retarget, event-time evaluations",
+      "compared with 120 fps": "30 fps",
+      "shared frames": 331,
+      "max position difference (px)": 0.007904052734375,
+      "at time (ms)": 5933,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank split-table, deferred retarget, event-time evaluations",
+      "compared with 120 fps": "60 fps",
+      "shared frames": 661,
+      "max position difference (px)": 0.009124755859375,
+      "at time (ms)": 5917,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "bank split-table, deferred retarget, event-time evaluations",
+      "compared with 120 fps": "60 fps, 500 ms stall during an animation",
+      "shared frames": 631,
+      "max position difference (px)": 0.009124755859375,
+      "at time (ms)": 5917,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 0
+    },
+    {
+      "variant": "original window-manager.ts",
+      "compared with 120 fps": "10 fps",
+      "shared frames": 111,
+      "max position difference (px)": 317.70220947265625,
+      "at time (ms)": 2700,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 37
+    },
+    {
+      "variant": "original window-manager.ts",
+      "compared with 120 fps": "30 fps",
+      "shared frames": 331,
+      "max position difference (px)": 183.198974609375,
+      "at time (ms)": 2733,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 4
+    },
+    {
+      "variant": "original window-manager.ts",
+      "compared with 120 fps": "60 fps",
+      "shared frames": 661,
+      "max position difference (px)": 71.83251953125,
+      "at time (ms)": 2733,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 4
+    },
+    {
+      "variant": "original window-manager.ts",
+      "compared with 120 fps": "60 fps, 500 ms stall during an animation",
+      "shared frames": 631,
+      "max position difference (px)": 401.1749267578125,
+      "at time (ms)": 3217,
+      "frames with different focus, stack, flags": 0,
+      "frames with different animationActive": 32
+    }
+  ],
+  "pressesBetweenFrames": [
+    {
+      "trace": "every event 1 ms later",
+      "variant": "bank split-table, deferred retarget",
+      "10 fps (px)": 505.332275390625,
+      "30 fps (px)": 168.0255126953125,
+      "60 fps (px)": 57.66094970703125,
+      "60 fps, 500 ms stall (px)": 696.0040893554688,
+      "frames with different animationActive": 39,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "every event 1 ms later",
+      "variant": "bank split-table, doctrine retarget",
+      "10 fps (px)": 505.332275390625,
+      "30 fps (px)": 168.0255126953125,
+      "60 fps (px)": 57.66094970703125,
+      "60 fps, 500 ms stall (px)": 57.66094970703125,
+      "frames with different animationActive": 4,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "every event 1 ms later",
+      "variant": "original window-manager.ts",
+      "10 fps (px)": 356.547119140625,
+      "30 fps (px)": 30.7012939453125,
+      "60 fps (px)": 13.7215576171875,
+      "60 fps, 500 ms stall (px)": 503.6090087890625,
+      "frames with different animationActive": 83,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "every event 1 ms later",
+      "variant": "bank split-table, deferred retarget, event-time evaluations",
+      "10 fps (px)": 0.003204345703125,
+      "30 fps (px)": 0.003204345703125,
+      "60 fps (px)": 0.000244140625,
+      "60 fps, 500 ms stall (px)": 0.000244140625,
+      "frames with different animationActive": 0,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "every event 1 ms later",
+      "variant": "bank split-table, doctrine retarget, event-time evaluations",
+      "10 fps (px)": 0.002777099609375,
+      "30 fps (px)": 0.002777099609375,
+      "60 fps (px)": 0.000244140625,
+      "60 fps, 500 ms stall (px)": 0.000244140625,
+      "frames with different animationActive": 2,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "every event 1 ms later",
+      "variant": "original window-manager.ts, event-time evaluations",
+      "10 fps (px)": 351.2366943359375,
+      "30 fps (px)": 36.38037109375,
+      "60 fps (px)": 12.67425537109375,
+      "60 fps, 500 ms stall (px)": 498.8701171875,
+      "frames with different animationActive": 80,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 7",
+      "variant": "bank split-table, deferred retarget",
+      "10 fps (px)": 513.6168823242188,
+      "30 fps (px)": 193.4730224609375,
+      "60 fps (px)": 57.40899658203125,
+      "60 fps, 500 ms stall (px)": 696.004150390625,
+      "frames with different animationActive": 36,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 7",
+      "variant": "bank split-table, doctrine retarget",
+      "10 fps (px)": 390.6160888671875,
+      "30 fps (px)": 143.06381225585938,
+      "60 fps (px)": 44.5712890625,
+      "60 fps, 500 ms stall (px)": 44.5712890625,
+      "frames with different animationActive": 5,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 7",
+      "variant": "original window-manager.ts",
+      "10 fps (px)": 275.60675048828125,
+      "30 fps (px)": 180.6473388671875,
+      "60 fps (px)": 70.94580078125,
+      "60 fps, 500 ms stall (px)": 501.0028076171875,
+      "frames with different animationActive": 85,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 7",
+      "variant": "bank split-table, deferred retarget, event-time evaluations",
+      "10 fps (px)": 0.000152587890625,
+      "30 fps (px)": 0.000152587890625,
+      "60 fps (px)": 0.00042724609375,
+      "60 fps, 500 ms stall (px)": 0.00042724609375,
+      "frames with different animationActive": 0,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 7",
+      "variant": "bank split-table, doctrine retarget, event-time evaluations",
+      "10 fps (px)": 77.88760375976562,
+      "30 fps (px)": 123.8175048828125,
+      "60 fps (px)": 43.7552490234375,
+      "60 fps, 500 ms stall (px)": 43.7552490234375,
+      "frames with different animationActive": 4,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 7",
+      "variant": "original window-manager.ts, event-time evaluations",
+      "10 fps (px)": 269.57354736328125,
+      "30 fps (px)": 183.298583984375,
+      "60 fps (px)": 66.32470703125,
+      "60 fps, 500 ms stall (px)": 493.94464111328125,
+      "frames with different animationActive": 77,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 99",
+      "variant": "bank split-table, deferred retarget",
+      "10 fps (px)": 469.532958984375,
+      "30 fps (px)": 129.8818359375,
+      "60 fps (px)": 44.5712890625,
+      "60 fps, 500 ms stall (px)": 696.00537109375,
+      "frames with different animationActive": 35,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 99",
+      "variant": "bank split-table, doctrine retarget",
+      "10 fps (px)": 469.532958984375,
+      "30 fps (px)": 129.8818359375,
+      "60 fps (px)": 57.236572265625,
+      "60 fps, 500 ms stall (px)": 44.5712890625,
+      "frames with different animationActive": 7,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 99",
+      "variant": "original window-manager.ts",
+      "10 fps (px)": 324.77734375,
+      "30 fps (px)": 87.19580078125,
+      "60 fps (px)": 71.8304443359375,
+      "60 fps, 500 ms stall (px)": 503.61004638671875,
+      "frames with different animationActive": 83,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 99",
+      "variant": "bank split-table, deferred retarget, event-time evaluations",
+      "10 fps (px)": 0.004150390625,
+      "30 fps (px)": 0.004150390625,
+      "60 fps (px)": 0.00506591796875,
+      "60 fps, 500 ms stall (px)": 0.00506591796875,
+      "frames with different animationActive": 0,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 99",
+      "variant": "bank split-table, doctrine retarget, event-time evaluations",
+      "10 fps (px)": 29.11273193359375,
+      "30 fps (px)": 55.993408203125,
+      "60 fps (px)": 55.993408203125,
+      "60 fps, 500 ms stall (px)": 19.457176208496094,
+      "frames with different animationActive": 1,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "random press offsets in 0..30 ms, seed 99",
+      "variant": "original window-manager.ts, event-time evaluations",
+      "10 fps (px)": 266.51171875,
+      "30 fps (px)": 75.09716796875,
+      "60 fps (px)": 66.9368896484375,
+      "60 fps, 500 ms stall (px)": 440.86920166015625,
+      "frames with different animationActive": 78,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 7",
+      "variant": "bank split-table, deferred retarget",
+      "10 fps (px)": 513.6168823242188,
+      "30 fps (px)": 193.4730224609375,
+      "60 fps (px)": 57.40899658203125,
+      "60 fps, 500 ms stall (px)": 696.004150390625,
+      "frames with different animationActive": 32,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 7",
+      "variant": "bank split-table, doctrine retarget",
+      "10 fps (px)": 390.6160888671875,
+      "30 fps (px)": 143.06381225585938,
+      "60 fps (px)": 44.5712890625,
+      "60 fps, 500 ms stall (px)": 44.5712890625,
+      "frames with different animationActive": 5,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 7",
+      "variant": "original window-manager.ts",
+      "10 fps (px)": 275.60675048828125,
+      "30 fps (px)": 180.6473388671875,
+      "60 fps (px)": 70.94580078125,
+      "60 fps, 500 ms stall (px)": 501.0028076171875,
+      "frames with different animationActive": 81,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 7",
+      "variant": "bank split-table, deferred retarget, event-time evaluations",
+      "10 fps (px)": 0.0012359619140625,
+      "30 fps (px)": 0.0041351318359375,
+      "60 fps (px)": 0.004791259765625,
+      "60 fps, 500 ms stall (px)": 0.004791259765625,
+      "frames with different animationActive": 0,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 7",
+      "variant": "bank split-table, doctrine retarget, event-time evaluations",
+      "10 fps (px)": 77.88760375976562,
+      "30 fps (px)": 123.8175048828125,
+      "60 fps (px)": 43.7552490234375,
+      "60 fps, 500 ms stall (px)": 43.7552490234375,
+      "frames with different animationActive": 4,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 7",
+      "variant": "original window-manager.ts, event-time evaluations",
+      "10 fps (px)": 269.57354736328125,
+      "30 fps (px)": 183.298583984375,
+      "60 fps (px)": 66.32470703125,
+      "60 fps, 500 ms stall (px)": 493.94464111328125,
+      "frames with different animationActive": 73,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 99",
+      "variant": "bank split-table, deferred retarget",
+      "10 fps (px)": 469.532958984375,
+      "30 fps (px)": 129.8818359375,
+      "60 fps (px)": 44.5712890625,
+      "60 fps, 500 ms stall (px)": 696.00537109375,
+      "frames with different animationActive": 32,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 99",
+      "variant": "bank split-table, doctrine retarget",
+      "10 fps (px)": 469.532958984375,
+      "30 fps (px)": 129.8818359375,
+      "60 fps (px)": 57.236572265625,
+      "60 fps, 500 ms stall (px)": 44.5712890625,
+      "frames with different animationActive": 3,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 99",
+      "variant": "original window-manager.ts",
+      "10 fps (px)": 324.77734375,
+      "30 fps (px)": 103.11007690429688,
+      "60 fps (px)": 71.8304443359375,
+      "60 fps, 500 ms stall (px)": 503.61004638671875,
+      "frames with different animationActive": 77,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 99",
+      "variant": "bank split-table, deferred retarget, event-time evaluations",
+      "10 fps (px)": 0.004302978515625,
+      "30 fps (px)": 0.002960205078125,
+      "60 fps (px)": 0.0029449462890625,
+      "60 fps, 500 ms stall (px)": 0.0029449462890625,
+      "frames with different animationActive": 2,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 99",
+      "variant": "bank split-table, doctrine retarget, event-time evaluations",
+      "10 fps (px)": 29.11273193359375,
+      "30 fps (px)": 55.993408203125,
+      "60 fps (px)": 55.993408203125,
+      "60 fps, 500 ms stall (px)": 19.457176208496094,
+      "frames with different animationActive": 1,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "trace": "live resize, random press offsets in 0..30 ms, seed 99",
+      "variant": "original window-manager.ts, event-time evaluations",
+      "10 fps (px)": 266.51171875,
+      "30 fps (px)": 98.80621337890625,
+      "60 fps (px)": 66.9368896484375,
+      "60 fps, 500 ms stall (px)": 440.86920166015625,
+      "frames with different animationActive": 71,
+      "frames with different focus, stack, flags": 0
+    }
+  ],
+  "pressesBetweenFramesWorst": [
+    {
+      "variant": "bank split-table, deferred retarget",
+      "10 fps (px)": 513.6168823242188,
+      "30 fps (px)": 193.4730224609375,
+      "60 fps (px)": 57.66094970703125,
+      "60 fps, 500 ms stall (px)": 696.00537109375,
+      "frames with different animationActive": 174,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "variant": "bank split-table, doctrine retarget",
+      "10 fps (px)": 505.332275390625,
+      "30 fps (px)": 168.0255126953125,
+      "60 fps (px)": 57.66094970703125,
+      "60 fps, 500 ms stall (px)": 57.66094970703125,
+      "frames with different animationActive": 24,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "variant": "original window-manager.ts",
+      "10 fps (px)": 356.547119140625,
+      "30 fps (px)": 180.6473388671875,
+      "60 fps (px)": 71.8304443359375,
+      "60 fps, 500 ms stall (px)": 503.61004638671875,
+      "frames with different animationActive": 409,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "variant": "bank split-table, deferred retarget, event-time evaluations",
+      "10 fps (px)": 0.004302978515625,
+      "30 fps (px)": 0.004150390625,
+      "60 fps (px)": 0.00506591796875,
+      "60 fps, 500 ms stall (px)": 0.00506591796875,
+      "frames with different animationActive": 2,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "variant": "bank split-table, doctrine retarget, event-time evaluations",
+      "10 fps (px)": 77.88760375976562,
+      "30 fps (px)": 123.8175048828125,
+      "60 fps (px)": 55.993408203125,
+      "60 fps, 500 ms stall (px)": 43.7552490234375,
+      "frames with different animationActive": 12,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "variant": "original window-manager.ts, event-time evaluations",
+      "10 fps (px)": 351.2366943359375,
+      "30 fps (px)": 183.298583984375,
+      "60 fps (px)": 66.9368896484375,
+      "60 fps, 500 ms stall (px)": 498.8701171875,
+      "frames with different animationActive": 379,
+      "frames with different focus, stack, flags": 0
+    }
+  ],
+  "float64Check": [
+    {
+      "springs": "split-table",
+      "retarget": "deferred",
+      "fps": 30,
+      "frames": 271,
+      "frames with steps": 100,
+      "max position error (px)": 0.00007752801570859447,
+      "max velocity error (px/s)": 0.00026951545623887796,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "split-table",
+      "retarget": "deferred",
+      "fps": 120,
+      "frames": 1081,
+      "frames with steps": 391,
+      "max position error (px)": 0.00006255715607039747,
+      "max velocity error (px/s)": 0.00036455078134167707,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "split-table",
+      "retarget": "doctrine",
+      "fps": 30,
+      "frames": 271,
+      "frames with steps": 97,
+      "max position error (px)": 0.00005622343223876669,
+      "max velocity error (px/s)": 0.00028378305569276563,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "split-table",
+      "retarget": "doctrine",
+      "fps": 120,
+      "frames": 1081,
+      "frames with steps": 388,
+      "max position error (px)": 0.00007072724997669866,
+      "max velocity error (px/s)": 0.0005554843746722327,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "binary-powers",
+      "retarget": "deferred",
+      "fps": 30,
+      "frames": 271,
+      "frames with steps": 100,
+      "max position error (px)": 0.00007752801570859447,
+      "max velocity error (px/s)": 0.0002803440161187609,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "binary-powers",
+      "retarget": "deferred",
+      "fps": 120,
+      "frames": 1081,
+      "frames with steps": 391,
+      "max position error (px)": 0.00006255715607039747,
+      "max velocity error (px/s)": 0.00037863671877857996,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "binary-powers",
+      "retarget": "doctrine",
+      "fps": 30,
+      "frames": 271,
+      "frames with steps": 97,
+      "max position error (px)": 0.00005622343223876669,
+      "max velocity error (px/s)": 0.0006310849648798467,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "binary-powers",
+      "retarget": "doctrine",
+      "fps": 120,
+      "frames": 1081,
+      "frames with steps": 388,
+      "max position error (px)": 0.00007072724997669866,
+      "max velocity error (px/s)": 0.0005554843746722327,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "source-table",
+      "retarget": "deferred",
+      "fps": 30,
+      "frames": 271,
+      "frames with steps": 100,
+      "max position error (px)": 0.00007752801570859447,
+      "max velocity error (px/s)": 0.00026951545623887796,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "source-table",
+      "retarget": "deferred",
+      "fps": 120,
+      "frames": 1081,
+      "frames with steps": 391,
+      "max position error (px)": 0.00006255715607039747,
+      "max velocity error (px/s)": 0.00036455078134167707,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "source-table",
+      "retarget": "doctrine",
+      "fps": 30,
+      "frames": 271,
+      "frames with steps": 97,
+      "max position error (px)": 0.00005622343223876669,
+      "max velocity error (px/s)": 0.00028378305569276563,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "source-table",
+      "retarget": "doctrine",
+      "fps": 120,
+      "frames": 1081,
+      "frames with steps": 388,
+      "max position error (px)": 0.00007072724997669866,
+      "max velocity error (px/s)": 0.0005554843746722327,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "source-matrix",
+      "retarget": "deferred",
+      "fps": 30,
+      "frames": 271,
+      "frames with steps": 100,
+      "max position error (px)": 0.00007752801570859447,
+      "max velocity error (px/s)": 0.00026951545623887796,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "source-matrix",
+      "retarget": "deferred",
+      "fps": 120,
+      "frames": 1081,
+      "frames with steps": 391,
+      "max position error (px)": 0.00006255715607039747,
+      "max velocity error (px/s)": 0.00036455078134167707,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "source-matrix",
+      "retarget": "doctrine",
+      "fps": 30,
+      "frames": 271,
+      "frames with steps": 97,
+      "max position error (px)": 0.00005622343223876669,
+      "max velocity error (px/s)": 0.00028378305569276563,
+      "settle bit mismatches": 0
+    },
+    {
+      "springs": "source-matrix",
+      "retarget": "doctrine",
+      "fps": 120,
+      "frames": 1081,
+      "frames with steps": 388,
+      "max position error (px)": 0.00007072724997669866,
+      "max velocity error (px/s)": 0.0005554843746722327,
+      "settle bit mismatches": 0
+    }
+  ],
+  "standaloneBankAccuracy": [
+    {
+      "powers": "split-table",
+      "retarget": "deferred",
+      "restarted every frame, 400 frames: max position error (px)": 0.00018498179997550324,
+      "restarted: frames with a different settle bit": 0,
+      "free-running, 3,000 frames: max position error while both animate (px)": 0.0003054745852750784,
+      "free-running: max position error (px)": 0.003387646672763367,
+      "free-running: frames with a different settle bit": 10
+    },
+    {
+      "powers": "split-table",
+      "retarget": "doctrine",
+      "restarted every frame, 400 frames: max position error (px)": 0.00014700916517540463,
+      "restarted: frames with a different settle bit": 0,
+      "free-running, 3,000 frames: max position error while both animate (px)": 0.0003054745852750784,
+      "free-running: max position error (px)": 0.000529466939269696,
+      "free-running: frames with a different settle bit": 3
+    },
+    {
+      "powers": "binary-powers",
+      "retarget": "deferred",
+      "restarted every frame, 400 frames: max position error (px)": 0.00018496289339964278,
+      "restarted: frames with a different settle bit": 0,
+      "free-running, 3,000 frames: max position error while both animate (px)": 0.0003756327696464723,
+      "free-running: max position error (px)": 0.003387646672763367,
+      "free-running: frames with a different settle bit": 10
+    },
+    {
+      "powers": "binary-powers",
+      "retarget": "doctrine",
+      "restarted every frame, 400 frames: max position error (px)": 0.00014700916517540463,
+      "restarted: frames with a different settle bit": 0,
+      "free-running, 3,000 frames: max position error while both animate (px)": 0.0004412447124195751,
+      "free-running: max position error (px)": 0.000529466939269696,
+      "free-running: frames with a different settle bit": 3
+    },
+    {
+      "powers": "source-table",
+      "retarget": "deferred",
+      "restarted every frame, 400 frames: max position error (px)": 0.00018498179997550324,
+      "restarted: frames with a different settle bit": 0,
+      "free-running, 3,000 frames: max position error while both animate (px)": 0.0003054745852750784,
+      "free-running: max position error (px)": 0.003387646672763367,
+      "free-running: frames with a different settle bit": 10
+    },
+    {
+      "powers": "source-table",
+      "retarget": "doctrine",
+      "restarted every frame, 400 frames: max position error (px)": 0.00014700916517540463,
+      "restarted: frames with a different settle bit": 0,
+      "free-running, 3,000 frames: max position error while both animate (px)": 0.0003054745852750784,
+      "free-running: max position error (px)": 0.000529466939269696,
+      "free-running: frames with a different settle bit": 3
+    },
+    {
+      "powers": "source-matrix",
+      "retarget": "deferred",
+      "restarted every frame, 400 frames: max position error (px)": 0.00018498179997550324,
+      "restarted: frames with a different settle bit": 0,
+      "free-running, 3,000 frames: max position error while both animate (px)": 0.0003054745852750784,
+      "free-running: max position error (px)": 0.003387646672763367,
+      "free-running: frames with a different settle bit": 10
+    },
+    {
+      "powers": "source-matrix",
+      "retarget": "doctrine",
+      "restarted every frame, 400 frames: max position error (px)": 0.00014700916517540463,
+      "restarted: frames with a different settle bit": 0,
+      "free-running, 3,000 frames: max position error while both animate (px)": 0.0003054745852750784,
+      "free-running: max position error (px)": 0.000529466939269696,
+      "free-running: frames with a different settle bit": 3
+    }
+  ],
+  "earlyPhotosInputs": [
+    {
+      "Photos reads": "previous-frame",
+      "frames": 541,
+      "max window geometry difference (px)": 0,
+      "max Photos difference (px)": 85.69970703125,
+      "max Photos difference during the live resize (px)": 6.5999755859375,
+      "frames where Photos differs by more than 0.001 px": 85,
+      "frames with different focus, stack, flags": 0
+    },
+    {
+      "Photos reads": "stepped-springs",
+      "frames": 541,
+      "max window geometry difference (px)": 0,
+      "max Photos difference (px)": 6.5999755859375,
+      "max Photos difference during the live resize (px)": 6.5999755859375,
+      "frames where Photos differs by more than 0.001 px": 41,
+      "frames with different focus, stack, flags": 0
+    }
+  ],
+  "largestPhotosWindowWidthChangePerFrame": 114.26629638671875,
+  "predictionUnsnaps": 0,
+  "predictiveCosts": [
+    {
+      "prediction": "301 separate evaluations, split-table",
+      "sources": 66,
+      "live": 467,
+      "layers": 22,
+      "widest": 120,
+      "weights": 1436,
+      "reglu": 306,
+      "booleans": 38,
+      "gathers": 0,
+      "µs per sample (rough)": 5.86960132891197
+    },
+    {
+      "prediction": "one batched evaluation of 301 samples",
+      "sources": 48,
+      "live": 31620,
+      "layers": 7,
+      "widest": 18030,
+      "weights": 102295,
+      "reglu": 24080,
+      "booleans": 1505,
+      "gathers": 0,
+      "µs per sample (rough)": 1.9754983388755565
+    },
+    {
+      "prediction": "plain JS loop carrying state, for context",
+      "µs per sample (rough)": 0.8680764119685365
+    },
+    {
+      "prediction": "301 separate evaluations, binary-powers",
+      "sources": 66,
+      "live": 617,
+      "layers": 27,
+      "widest": 120,
+      "weights": 1564,
+      "reglu": 442,
+      "booleans": 38,
+      "gathers": 0,
+      "µs per sample (rough)": 8.013152823923368
+    },
+    {
+      "prediction": "301 separate evaluations, source-matrix",
+      "sources": 74,
+      "live": 280,
+      "layers": 9,
+      "widest": 121,
+      "weights": 840,
+      "reglu": 217,
+      "booleans": 5,
+      "gathers": 0,
+      "µs per sample (rough)": 3.8816445182760995
+    },
+    {
+      "prediction": "whole IndirectOS bank circuit per sample, for scale",
+      "sources": 392,
+      "live": 3580,
+      "layers": 137,
+      "widest": 365,
+      "weights": 8447,
+      "reglu": 1944,
+      "booleans": 113,
+      "gathers": 12,
+      "µs per sample (rough)": 46.58652666667573
+    }
+  ],
+  "frameMatrixBounds": [
+    {
+      "constants": "stiffness 650, damping 45 (IndirectOS)",
+      "bound": 10.360505768479474
+    },
+    {
+      "constants": "stiffness 290, damping 24",
+      "bound": 7.868179320637878
+    },
+    {
+      "constants": "stiffness 333, damping 12",
+      "bound": 11.966462190313603
+    }
+  ]
+}

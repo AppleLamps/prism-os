@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Instance Backends</title>
+  <link rel="stylesheet" href="./demo.css">
+  <script type="module" src="./demo.ts"></script>
+</head>
+<body>
+  <header>
+    <h1>One circuit over many instances</h1>
+    <p>Each canvas is one compiled circuit evaluated once per pixel or cell. Shared work (hover, window geometry, grid sizing) runs once on the CPU; the per-instance part runs as generated JavaScript or as a WebGPU compute shader, and the page compares the two bit for bit.</p>
+  </header>
+  <section class="controls" aria-label="Settings">
+    <fieldset>
+      <legend>Workload</legend>
+      <label><input type="radio" name="workload" value="shapes" checked> SDF shapes</label>
+      <label><input type="radio" name="workload" value="ownership"> IndirectOS press map</label>
+      <label><input type="radio" name="workload" value="life"> life-calendar cells</label>
+      <label><input type="radio" name="workload" value="grid"> candidate-gallery layout map</label>
+    </fieldset>
+    <fieldset>
+      <legend>Backend</legend>
+      <label><input type="radio" name="backend" value="cpu"> generated JS</label>
+      <label><input type="radio" name="backend" value="gpu" checked> WebGPU</label>
+      <label><input type="checkbox" id="guard" checked> max guard in the shader</label>
+    </fieldset>
+  </section>
+  <main>
+    <div class="stage"><canvas id="canvas"></canvas><output id="pointer"></output></div>
+    <aside>
+      <h2>Circuit</h2>
+      <dl id="counts"></dl>
+      <h2>This frame</h2>
+      <dl id="frame"></dl>
+      <h2>GPU compiler probes</h2>
+      <table><thead><tr><th>Probe</th><th>Strict</th><th>Optimized</th></tr></thead><tbody id="probes"></tbody></table>
+      <p id="status"></p>
+    </aside>
+  </main>
+</body>
+</html>

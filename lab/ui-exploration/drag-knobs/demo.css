@@ -1,0 +1,152 @@
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #f4f2ec;
+  color: #1f1d1a;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+}
+
+.text {
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
+.role-header,
+.role-footer {
+  background: #fffdf8;
+}
+
+.role-header {
+  box-shadow: inset 0 -1px 0 #e2ddd1;
+}
+
+.role-footer {
+  box-shadow: inset 0 1px 0 #e2ddd1;
+  color: #6b665c;
+}
+
+.role-menu {
+  border-radius: 10px;
+  background: #1f1d1a;
+}
+
+.role-button {
+  border-radius: 8px;
+  background: #ece8de;
+}
+
+.role-sidebar {
+  overflow: hidden;
+  background: #ebe7dd;
+}
+
+.role-nav {
+  border-radius: 8px;
+}
+
+.role-nav:first-child {
+  background: #fffdf8;
+}
+
+.role-main {
+  overflow: hidden;
+}
+
+.role-chip {
+  border-radius: 999px;
+  background: #dfe8f1;
+  color: #27466a;
+}
+
+.role-section-header {
+  z-index: 1;
+  border-radius: 10px;
+  background: rgba(244, 242, 236, 0.9);
+}
+
+.role-card {
+  border-radius: 12px;
+  background: #fffdf8;
+  box-shadow: 0 1px 2px rgba(31, 29, 26, 0.06), 0 6px 18px rgba(31, 29, 26, 0.05);
+}
+
+.role-thumb {
+  border-radius: 8px;
+}
+
+.text-caption {
+  color: #4a463f;
+}
+
+.text-meta {
+  color: #7a7468;
+}
+
+.edge-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  border-radius: 2px;
+  background: #e0582a;
+  pointer-events: none;
+}
+
+#panel {
+  position: fixed;
+  right: 12px;
+  bottom: 44px;
+  z-index: 4;
+  width: min(360px, calc(100vw - 48px));
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(31, 29, 26, 0.9);
+  color: #f4f2ec;
+  font: 12px/17px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#panel .heading {
+  margin-bottom: 6px;
+  color: #d9d3c6;
+}
+
+#panel .knob {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 6px;
+}
+
+#panel .status {
+  margin-top: 8px;
+  color: #ffd9a8;
+}
+
+#panel .flips {
+  margin: 8px 0;
+  padding-left: 16px;
+}
+
+#panel button {
+  font: inherit;
+}

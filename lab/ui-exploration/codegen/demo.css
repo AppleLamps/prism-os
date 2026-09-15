@@ -1,0 +1,114 @@
+:root {
+  color-scheme: dark;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  background: #111318;
+  color: #e6e8ee;
+}
+
+body {
+  margin: 0;
+  padding: 16px 24px 32px;
+}
+
+header h1 {
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+header p {
+  max-width: 820px;
+  margin: 0 0 12px;
+  color: #a9afbd;
+  line-height: 1.45;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  border: 1px solid #2b2f3a;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+legend {
+  color: #8d93a1;
+  font-size: 12px;
+}
+
+main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+canvas {
+  width: min(720px, 100%);
+  image-rendering: pixelated;
+  border-radius: 8px;
+  background: #000;
+  cursor: crosshair;
+}
+
+output {
+  color: #c7ccd8;
+  font-variant-numeric: tabular-nums;
+}
+
+aside {
+  flex: 1 1 320px;
+  max-width: 460px;
+}
+
+aside h2 {
+  margin: 12px 0 6px;
+  font-size: 14px;
+  color: #8d93a1;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+dt {
+  color: #a9afbd;
+}
+
+dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th, td {
+  text-align: left;
+  padding: 3px 6px;
+  border-bottom: 1px solid #252933;
+}
+
+#status {
+  color: #ff9a8a;
+}

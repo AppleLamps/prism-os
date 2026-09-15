@@ -1,0 +1,337 @@
+{
+  "bun": "1.4.0",
+  "note": "rough medians on a shared machine",
+  "IndirectOS evaluation, warm µs per evaluation": {
+    "executor, reusable evaluator": 30.094,
+    "generated, 16 rows per function": {
+      "functions": 329,
+      "sourceKilobytes": 264.5,
+      "microseconds": 3.96
+    },
+    "generated, 64 rows per function": {
+      "functions": 83,
+      "sourceKilobytes": 256.2,
+      "microseconds": 3.012
+    },
+    "generated, 128 rows per function": {
+      "functions": 42,
+      "sourceKilobytes": 254.8,
+      "microseconds": 3.329
+    },
+    "generated, 128 rows per function, Math.fround called directly": {
+      "functions": 42,
+      "sourceKilobytes": 287.7,
+      "microseconds": 3.471
+    },
+    "generated, 256 rows per function": {
+      "functions": 21,
+      "sourceKilobytes": 254.2,
+      "microseconds": 3.144
+    },
+    "generated, 512 rows per function": {
+      "functions": 11,
+      "sourceKilobytes": 253.8,
+      "microseconds": 2.978
+    },
+    "generated, 1024 rows per function": {
+      "functions": 6,
+      "sourceKilobytes": 253.7,
+      "microseconds": 12.552
+    },
+    "generated, one function": {
+      "functions": 1,
+      "sourceKilobytes": 253.5,
+      "microseconds": 219.908
+    }
+  },
+  "IndirectOS frame loop, warm µs per frame": {
+    "production machine.step (validation, evaluateTensor, writeback)": 110.785,
+    "copy, executor, no validation": 31.538,
+    "copy, generated 128 rows, no validation": 3.574,
+    "copy, generated 128 rows, validation": 49.637
+  },
+  "IndirectOS cold start, fresh processes": [
+    {
+      "variant": "executor",
+      "constructMilliseconds": 35.3,
+      "buildAndCompileMilliseconds": 28.4,
+      "generateMilliseconds": 0,
+      "newFunctionMilliseconds": 0,
+      "sourceKilobytes": 0,
+      "functionCount": 0,
+      "firstFrameMicroseconds": 597.8,
+      "frames2to10MedianMicroseconds": 171.5,
+      "frames11to100MedianMicroseconds": 49.17,
+      "frames101to1000MedianMicroseconds": 30,
+      "frames1001to3000MedianMicroseconds": 29.46,
+      "totalMillisecondsFor3000Frames": 99.7
+    },
+    {
+      "variant": "generated:64",
+      "constructMilliseconds": 33.1,
+      "buildAndCompileMilliseconds": 27.2,
+      "generateMilliseconds": 4.1,
+      "newFunctionMilliseconds": 1.4,
+      "sourceKilobytes": 256.2,
+      "functionCount": 83,
+      "firstFrameMicroseconds": 5397.2,
+      "frames2to10MedianMicroseconds": 257.2,
+      "frames11to100MedianMicroseconds": 252.42,
+      "frames101to1000MedianMicroseconds": 24.75,
+      "frames1001to3000MedianMicroseconds": 12.38,
+      "totalMillisecondsFor3000Frames": 143.2
+    },
+    {
+      "variant": "generated:128",
+      "constructMilliseconds": 32.5,
+      "buildAndCompileMilliseconds": 26.7,
+      "generateMilliseconds": 3.9,
+      "newFunctionMilliseconds": 1.5,
+      "sourceKilobytes": 254.8,
+      "functionCount": 42,
+      "firstFrameMicroseconds": 5299.8,
+      "frames2to10MedianMicroseconds": 259.9,
+      "frames11to100MedianMicroseconds": 248.96,
+      "frames101to1000MedianMicroseconds": 75.42,
+      "frames1001to3000MedianMicroseconds": 11.54,
+      "totalMillisecondsFor3000Frames": 158.4
+    },
+    {
+      "variant": "generated:512",
+      "constructMilliseconds": 32.3,
+      "buildAndCompileMilliseconds": 26.9,
+      "generateMilliseconds": 3.7,
+      "newFunctionMilliseconds": 1.4,
+      "sourceKilobytes": 253.8,
+      "functionCount": 11,
+      "firstFrameMicroseconds": 5157.1,
+      "frames2to10MedianMicroseconds": 275.5,
+      "frames11to100MedianMicroseconds": 232.58,
+      "frames101to1000MedianMicroseconds": 192.25,
+      "frames1001to3000MedianMicroseconds": 13.88,
+      "totalMillisecondsFor3000Frames": 244.7
+    },
+    {
+      "variant": "generated:monolithic",
+      "constructMilliseconds": 32.4,
+      "buildAndCompileMilliseconds": 26.6,
+      "generateMilliseconds": 3.8,
+      "newFunctionMilliseconds": 1.5,
+      "sourceKilobytes": 253.5,
+      "functionCount": 1,
+      "firstFrameMicroseconds": 5153.8,
+      "frames2to10MedianMicroseconds": 246,
+      "frames11to100MedianMicroseconds": 244,
+      "frames101to1000MedianMicroseconds": 220.21,
+      "frames1001to3000MedianMicroseconds": 213.29,
+      "totalMillisecondsFor3000Frames": 677
+    }
+  ],
+  "JavaScriptCore size limits, warm µs per frame in fresh processes": {
+    "generated:128, default options": 3.473,
+    "generated:1024, default options": 11.833,
+    "generated:monolithic, default options": 224.75,
+    "generated:monolithic, BUN_JSC_maximumOptimizationCandidateBytecodeCost=100000000": 13.716,
+    "generated:monolithic, that plus BUN_JSC_maximumFTLCandidateBytecodeCost=100000000": 11.636
+  },
+  "instance workloads": [
+    {
+      "workload": "IndirectOS ownership map, 1280×800 pixels",
+      "instances": 1024000,
+      "liveOperations": 574,
+      "layers": 39,
+      "storedWeights": 1164,
+      "sharedRows": 116,
+      "instanceRows": 458,
+      "sharedWeights": 238,
+      "instanceWeights": 926,
+      "instanceLayers": 23,
+      "nanosecondsPerInstance": {
+        "executorPerInstance": 3895.1,
+        "generatedPerInstance": 270.3,
+        "batchedExecutor": 466.5,
+        "generatedInstanceLoop": 179.5
+      },
+      "millisecondsForAllInstances": {
+        "batchedExecutor": 477.65,
+        "generatedInstanceLoop": 183.83
+      }
+    },
+    {
+      "workload": "life-calendar, 27,393 cells",
+      "instances": 27393,
+      "liveOperations": 2054,
+      "layers": 30,
+      "storedWeights": 3789,
+      "sharedRows": 1991,
+      "instanceRows": 63,
+      "sharedWeights": 3678,
+      "instanceWeights": 111,
+      "instanceLayers": 19,
+      "nanosecondsPerInstance": {
+        "executorPerInstance": 10633.6,
+        "generatedPerInstance": 869.7,
+        "batchedExecutor": 67.5,
+        "generatedInstanceLoop": 42.5
+      },
+      "millisecondsForAllInstances": {
+        "batchedExecutor": 1.85,
+        "generatedInstanceLoop": 1.16
+      }
+    },
+    {
+      "workload": "candidate-gallery, 256 viewport widths",
+      "instances": 256,
+      "liveOperations": 136,
+      "layers": 27,
+      "storedWeights": 199,
+      "sharedRows": 25,
+      "instanceRows": 111,
+      "sharedWeights": 43,
+      "instanceWeights": 156,
+      "instanceLayers": 27,
+      "nanosecondsPerInstance": {
+        "executorPerInstance": 1506.7,
+        "generatedPerInstance": 131.3,
+        "batchedExecutor": 147.2,
+        "generatedInstanceLoop": 108.5
+      },
+      "millisecondsForAllInstances": {
+        "batchedExecutor": 0.04,
+        "generatedInstanceLoop": 0.03
+      }
+    },
+    {
+      "workload": "candidate-gallery, 256×256 width × height grid",
+      "instances": 65536,
+      "liveOperations": 136,
+      "layers": 27,
+      "storedWeights": 199,
+      "sharedRows": 1,
+      "instanceRows": 135,
+      "sharedWeights": 0,
+      "instanceWeights": 199,
+      "instanceLayers": 27,
+      "nanosecondsPerInstance": {
+        "executorPerInstance": 1495,
+        "generatedPerInstance": 141.3,
+        "batchedExecutor": 166.3,
+        "generatedInstanceLoop": 115.7
+      },
+      "millisecondsForAllInstances": {
+        "batchedExecutor": 10.9,
+        "generatedInstanceLoop": 7.59
+      }
+    },
+    {
+      "workload": "SDF shapes, 560×360 pixels",
+      "instances": 201600,
+      "liveOperations": 1347,
+      "layers": 58,
+      "storedWeights": 2314,
+      "sharedRows": 591,
+      "instanceRows": 756,
+      "sharedWeights": 1008,
+      "instanceWeights": 1306,
+      "instanceLayers": 57,
+      "nanosecondsPerInstance": {
+        "executorPerInstance": 8043.7,
+        "generatedPerInstance": 533.7,
+        "batchedExecutor": 702.5,
+        "generatedInstanceLoop": 358.2
+      },
+      "millisecondsForAllInstances": {
+        "batchedExecutor": 141.62,
+        "generatedInstanceLoop": 72.21
+      }
+    },
+    {
+      "workload": "SDF shapes, 560×360 pixels",
+      "instances": 201600,
+      "liveOperations": 3651,
+      "layers": 64,
+      "storedWeights": 6346,
+      "sharedRows": 1743,
+      "instanceRows": 1908,
+      "sharedWeights": 3024,
+      "instanceWeights": 3322,
+      "instanceLayers": 63,
+      "nanosecondsPerInstance": {
+        "executorPerInstance": 19419.7,
+        "generatedPerInstance": 1418.8,
+        "batchedExecutor": 1750,
+        "generatedInstanceLoop": 786.2
+      },
+      "millisecondsForAllInstances": {
+        "batchedExecutor": 352.8,
+        "generatedInstanceLoop": 158.5
+      }
+    }
+  ],
+  "block size sweep, ownership map at 320×200": [
+    {
+      "backend": "generated instance loop",
+      "blockSize": 1,
+      "nanosecondsPerInstance": 223.7
+    },
+    {
+      "backend": "batched executor",
+      "blockSize": 1,
+      "nanosecondsPerInstance": 9688.5
+    },
+    {
+      "backend": "generated instance loop",
+      "blockSize": 16,
+      "nanosecondsPerInstance": 185.9
+    },
+    {
+      "backend": "batched executor",
+      "blockSize": 16,
+      "nanosecondsPerInstance": 1017.7
+    },
+    {
+      "backend": "generated instance loop",
+      "blockSize": 256,
+      "nanosecondsPerInstance": 195.6
+    },
+    {
+      "backend": "batched executor",
+      "blockSize": 256,
+      "nanosecondsPerInstance": 517.3
+    },
+    {
+      "backend": "generated instance loop",
+      "blockSize": 1024,
+      "nanosecondsPerInstance": 202.4
+    },
+    {
+      "backend": "batched executor",
+      "blockSize": 1024,
+      "nanosecondsPerInstance": 514.3
+    },
+    {
+      "backend": "generated instance loop",
+      "blockSize": 4096,
+      "nanosecondsPerInstance": 211.9
+    },
+    {
+      "backend": "batched executor",
+      "blockSize": 4096,
+      "nanosecondsPerInstance": 480.5
+    },
+    {
+      "backend": "generated instance loop",
+      "blockSize": 16384,
+      "nanosecondsPerInstance": 239.9
+    },
+    {
+      "backend": "batched executor",
+      "blockSize": 16384,
+      "nanosecondsPerInstance": 482.2
+    }
+  ],
+  "life-calendar sizing sweep": {
+    "viewports": 197232,
+    "countMismatches": 0
+  }
+}

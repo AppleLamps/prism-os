@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tabulated text</title>
+  <link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+  <main id="notes-demo">
+    <div id="ruler" aria-hidden="true"><div id="ruler-marker"></div></div>
+    <section class="notes-window" id="notes-window" aria-label="Notes window">
+      <div class="notes-title"><span class="notes-dots"><i></i><i></i><i></i></span>Notes</div>
+      <div class="notes-content" id="notes-content"></div>
+      <div class="notes-grip" id="notes-grip" title="Drag to resize"></div>
+    </section>
+    <aside class="notes-panel" id="notes-panel">
+      <h1>Tabulated text</h1>
+      <p>
+        Drag the window's right edge. Line counts, block heights, bubble widths, the balanced heading,
+        and every line's start and end come out of one compiled circuit reading the springing width.
+        Ticks on the ruler mark widths where some block's line count changes.
+      </p>
+      <div class="panel-stats" id="panel-stats">preparing…</div>
+      <div class="panel-agreement" id="panel-agreement">·</div>
+      <button id="autopilot" type="button">autopilot off</button>
+    </aside>
+  </main>
+  <script type="module" src="./demo.ts"></script>
+</body>
+</html>
