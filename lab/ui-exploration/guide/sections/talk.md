@@ -6,7 +6,7 @@ The talk pairs the third step with homogeneity. When the small units are all ali
 
 The talk also warns about premature compression: treating something as one indivisible unit because its smaller parts seem inefficient or incomprehensible, e.g. "there's no way this desk isn't a single continuous piece of matter".
 
-After the first two rounds of prototypes, three agents read the talk and looked at those prototypes through one of its ideas each: a smaller unit of composition, homogeneity allowing one uniform way of directing a UI, and premature compression. Their notes are [talk-smaller-unit.md](../../notes/talk-smaller-unit.md), [talk-uniform-direction.md](../../notes/talk-uniform-direction.md) and [talk-premature-compression.md](../../notes/talk-premature-compression.md). Nine prototypes came out of those notes. Two more ran at the same time as consolidation checks: indirect-os-2, which isn't from the talk, and instanced-items, which carries out one of the notes' ideas, writing the per-photo program once. This section explains all eleven.
+After the first two rounds of prototypes, three agents read the talk and looked at those prototypes through one of its ideas each: a smaller unit of composition, homogeneity allowing one uniform way of directing a UI, and premature compression. Their notes are [talk-smaller-unit.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/talk-smaller-unit.md), [talk-uniform-direction.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/talk-uniform-direction.md) and [talk-premature-compression.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/talk-premature-compression.md). Nine prototypes came out of those notes. Two more ran at the same time as consolidation checks: indirect-os-2, which isn't from the talk, and instanced-items, which carries out one of the notes' ideas, writing the per-photo program once. This section explains all eleven.
 
 Each prototype gets the same parts: the idea from the talk in one sentence, the UI problem in familiar front-end terms, what was built, what it showed with a few numbers and their conditions, how its cost grows where that matters, what to try in its demo or how to run it, and its main limitation. The prototypes are grouped by the talk idea each one tests most directly, which isn't always the note that proposed it.
 
@@ -41,15 +41,15 @@ These terms come up in several prototypes. The [glossary](../README.md#glossary)
 | [user-population](../../user-population/README.md) | a simulated city of agents | choosing the drag threshold and the double-click numbers | no |
 | [drag-knobs](../../drag-knobs/README.md) | one command directs every unit | dragging an edge to tune padding, gaps and widths | yes |
 | [instanced-items](../../instanced-items/README.md) | one program per item, like a shader per pixel | a photo gallery at 221 to 10,000 photos | yes |
-| [exactness-budget](../../exactness-budget/README.md) | premature compression of "every value is exact" | whether GPUs and parallel adders change a UI's decisions | no |
-| [retiming](../../retiming/README.md) | premature compression of "one frame" | long dependency chains, and reading last frame's values | no |
+| [exactness-budget](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/exactness-budget) | premature compression of "every value is exact" | whether GPUs and parallel adders change a UI's decisions | no |
+| [retiming](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/retiming) | premature compression of "one frame" | long dependency chains, and reading last frame's values | no |
 | [indirect-os-2](../../indirect-os-2/README.md) | not from the talk: a consolidation check | do the earlier improvements add up in one IndirectOS? | yes |
 
 ## Running the demos
 
 Run every command below from the repo root. `bun lab/ui-exploration/serve-demos.ts` serves every demo from one server, with an index page at http://127.0.0.1:4321/, and each page sits at its path in the repo, e.g. http://127.0.0.1:4321/lab/ui-exploration/streaming-words/demo.html. `bun lab/ui-exploration/streaming-words/demo.html` serves one page on its own.
 
-The browser checks quoted below ran in a hidden Chrome tab with `requestAnimationFrame` replaced by a timer, so those checks give no information about real frame pacing, window resizes or how motion looks. [notes/browser-check.md](../../notes/browser-check.md) records what each check found.
+The browser checks quoted below ran in a hidden Chrome tab with `requestAnimationFrame` replaced by a timer, so those checks give no information about real frame pacing, window resizes or how motion looks. [notes/browser-check.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/browser-check.md) records what each check found.
 
 ## A smaller unit of composition
 
@@ -317,7 +317,7 @@ The interpreter replaced the executor inside seven UIs: IndirectOS, the photo ga
 - One kind of value needs more than rounding points: a value compared with its own stored copy from last frame. The gallery's settle test compares a destination recomputed this frame with last frame's FP32 copy. At 50,607 px, the float64 recomputation differs from the copy by 0.0105 px, just above the 0.01 threshold, so springs kept animating, with 108 mismatches against index.ts.
 - On the GPU, max guards only at rounding points gave 0 decision mismatches through wgpu and Dawn on codegen's five workloads and 12 random circuits, with 84 guards instead of 537 for IndirectOS's press map, a program that computes which window would receive a press at each pixel.
 
-**How to run it.** There's no demo. `bun test lab/ui-exploration/exactness-budget` runs 8 tests in 1 to 2 s.
+**How to run it.** There's no demo. The folder was removed on September 16, 2026. At the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/exactness-budget), `bun test lab/ui-exploration/exactness-budget` runs 8 tests in 1 to 2 s, and codegen's README keeps [its findings](../../codegen/README.md#merged-from-exactness-budget-september-16-2026).
 
 **Main limitation.** Rounding points are guessed from compiled operations. The life calendar's grid sizing clamps with a scale that the pattern doesn't recognize, and that UI kept its decisions because its thresholds have margin, not because the pattern found those clamps. A comparison that sits exactly on its threshold still reads drifted state: under fused order, one FP32 step of drift in a card's position flipped 4 hit-test bits at an exact card edge, without changing any output. And the seven UIs weren't run on the GPU.
 
@@ -338,7 +338,7 @@ A greedy search keeps the candidate that removes the most layers per px of error
 - A search on one trace overfits. On the live resize trace, IndirectOS with the spring bank reached 84 layers at 0 px, and the same cuts made over 7,000 decision mismatches on random traces, because 23 of its 49 registers never changed in the searched trace.
 - Searched on scripted and random traces together, the search over values that every longest chain passes through took IndirectOS with the spring bank from a longest chain of 136 operations to 123, with 8 registers, at 0 px and 0 mismatches on three held-out random traces. The search over minimum cuts reached the same 123 with 8 registers, and failed on one of those traces with 996 px and 33 mismatches. The search only rediscovered the hand-chosen Photos delay once px could be spent and `animationActive`, which is only used to choose whether to request another frame, was allowed to be one frame late.
 
-**How to run it.** There's no demo. `bun test lab/ui-exploration/retiming` runs 11 tests in about 2 s.
+**How to run it.** There's no demo. The folder was removed on September 16, 2026. At the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/retiming), `bun test lab/ui-exploration/retiming` runs 11 tests in about 2 s.
 
 **Main limitation.** A trace only tests values that change in it, so a search's result is only as good as its traces, and a px budget only means something together with a statement of how fast inputs move. Chains with a decision at every stage don't get shorter: the gallery lost 1 layer, and only through registers that its searched traces never changed. And depth only costs time for an executor that runs a whole layer at once, e.g. on a GPU. Neither today's executor nor generated JS runs layers in parallel.
 

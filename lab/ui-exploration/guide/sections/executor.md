@@ -23,7 +23,7 @@ The examples for this section are in [examples/executor/](../examples/executor/)
 
 **Layers** count depth: the longest chain of operations in which each operation reads the result of the one before. The compiler puts each operation in the first layer after everything the operation reads, so the number of layers equals the length of the longest dependency chain. IndirectOS is 124 layers deep.
 
-**Layer width** is the number of operations in one layer, i.e. how much work could run at the same time on hardware that runs a whole layer at once. IndirectOS has a median of 23 operations per layer and at most 426, so it's narrow and deep: a long chain of dependencies, not a stack of wide matrices. Before September 15, 2026, it had a median of 24 and at most 123 ([notes/runtime.md](../../notes/runtime.md)).
+**Layer width** is the number of operations in one layer, i.e. how much work could run at the same time on hardware that runs a whole layer at once. IndirectOS has a median of 23 operations per layer and at most 426, so it's narrow and deep: a long chain of dependencies, not a stack of wide matrices. Before September 15, 2026, it had a median of 24 and at most 123 ([notes/runtime.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md)).
 
 Two more counts matter once the others are small. **Table entries** are the integer positions that direct reads store, described under sparsification below. **Source cells** are checked against their declared ranges on every evaluation, which is O(source cells) work. For example, index-read's list of 10,000 rows shown through 24 DOM nodes compiles to 153 operations, and most of its evaluation time went to checking 30,001 source cells.
 
@@ -188,7 +188,7 @@ Pitfall: `roundAffine` keeps the caller's term order in its key, so the same ter
 
 ### Products, selects, minimums and maximums keep their operands
 
-`multiply`, `select`, `emitMinimum`, `emitMaximum` and `roundAffine` fix their FP32 steps, so the builder never copies an affine operand into them, and the operand stays its own operation, one layer earlier. This is why one animated number built with `emitSpring` is 46 operations and 33 layers. In each of its 4 integration substeps, the acceleration, the new velocity and the new position each become their own operation before the next product reads them ([notes/runtime.md](../../notes/runtime.md)).
+`multiply`, `select`, `emitMinimum`, `emitMaximum` and `roundAffine` fix their FP32 steps, so the builder never copies an affine operand into them, and the operand stays its own operation, one layer earlier. This is why one animated number built with `emitSpring` is 46 operations and 33 layers. In each of its 4 integration substeps, the acceleration, the new velocity and the new position each become their own operation before the next product reads them ([notes/runtime.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md)).
 
 ### Declared ranges determine the form of a product
 
@@ -227,7 +227,7 @@ What the compiler doesn't do today: it doesn't recompute depths after gather low
 
 A schedule assigns each operation to a layer, and any layer after every value the operation reads works. Moving an operation to a later layer doesn't change any result, because the operation still reads the same values. No schedule can have fewer layers than the longest dependency chain, so scheduling changes memory and layer widths, not depth.
 
-The as-soon-as-possible schedule can keep values alive for a long time. E.g. a value computed in layer 1 and first read in layer 190 has to be stored across 189 layers. Today's executor keeps every value for the whole evaluation anyway. A backend with a fixed width, like a transformer's residual stream (the vector of numbers that every layer reads and adds to), pays for the largest number of values alive at once. The repo [README](../../../../README.md)'s TODO names Percepta's mixed-integer formulation as the reference approach for scheduling. [notes/outside-techniques.md](../../notes/outside-techniques.md) describes that approach: an integer optimization places operations into layers while minimizing the peak number of live values, and interval coloring, i.e. giving two values the same position whenever the layers in which they're alive don't overlap, then reuses positions of the residual stream.
+The as-soon-as-possible schedule can keep values alive for a long time. E.g. a value computed in layer 1 and first read in layer 190 has to be stored across 189 layers. Today's executor keeps every value for the whole evaluation anyway. A backend with a fixed width, like a transformer's residual stream (the vector of numbers that every layer reads and adds to), pays for the largest number of values alive at once. The repo [README](../../../../README.md)'s TODO names Percepta's mixed-integer formulation as the reference approach for scheduling. [notes/outside-techniques.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md) describes that approach: an integer optimization places operations into layers while minimizing the peak number of live values, and interval coloring, i.e. giving two values the same position whenever the layers in which they're alive don't overlap, then reuses positions of the residual stream.
 
 ## Sparsification: direct reads instead of masked sums
 
@@ -266,7 +266,7 @@ A masked sum is a form of attention, i.e. a weighted sum of values whose weights
 Two other sparsifications came up:
 
 - A constant per pair of items became a table. IndirectOS's Photos computes each thumbnail's offset from the focused photo as `Σ over focused photos f of focus[f] × constant(thumbnail, f)`, one weight per (thumbnail, focused photo) pair. At 1,024 photos that's 1,063,936 stored weights. Stored instead as a table of 2 × 1,024 cells per field and read once per thumbnail, the offsets take 3,072 stored weights ([index-read](../../index-read/README.md)).
-- Matrix rows stay sparse. IndirectOS averages 1.39 stored weights per matrix row, against 1.43 before September 15, 2026, when a dense matrix per layer would have stored about 26 times as many numbers ([notes/runtime.md](../../notes/runtime.md)).
+- Matrix rows stay sparse. IndirectOS averages 1.39 stored weights per matrix row, against 1.43 before September 15, 2026, when a dense matrix per layer would have stored about 26 times as many numbers ([notes/runtime.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md)).
 
 Pitfalls:
 
@@ -302,7 +302,7 @@ Skipping FP32 rounding is the extreme case. `round(x) = (x + 2^23 + 2^22) - (2^2
 
 ### Which exactness the UIs actually used
 
-[exactness-budget](../../exactness-budget/README.md) calls an operation a rounding point when FP32 rounding turns its value into a decision, or when the operation feeds such a decision: a boolean atom, each step of a round or floor chain like `(x + 2^23 + 2^22) - (2^23 + 2^22)`, a ReLU that scales one runtime value by a power of two of at least 2^8, e.g. the gallery's `relu(2^40 × difference + 0.5)`, and the difference that a comparison feeds into one of these. That ReLU pattern also matches the stages of a sign cascade, although a sign cascade gives the same bits without any rounding. For example, numeric-library's exact comparison `[a >= b]` has four rounding points: its difference `roundAffine([[a, 1], [b, -1]])`, the two ReLUs of its clamp, and its boolean atom. A blend like `0.3 × a + 0.7 × b` isn't a rounding point. Rounding points were 1.6% of operations in vibescript's life-calendar, 4.9% in IndirectOS (256 of 5,253), 43% in the photo gallery, and 61% in numeric-library's dock and progress ring.
+[exactness-budget](../../codegen/README.md#merged-from-exactness-budget-september-16-2026), since merged into codegen's README, called an operation a rounding point when FP32 rounding turns its value into a decision, or when the operation feeds such a decision: a boolean atom, each step of a round or floor chain like `(x + 2^23 + 2^22) - (2^23 + 2^22)`, a ReLU that scales one runtime value by a power of two of at least 2^8, e.g. the gallery's `relu(2^40 × difference + 0.5)`, and the difference that a comparison feeds into one of these. That ReLU pattern also matches the stages of a sign cascade, although a sign cascade gives the same bits without any rounding. For example, numeric-library's exact comparison `[a >= b]` has four rounding points: its difference `roundAffine([[a, 1], [b, -1]])`, the two ReLUs of its clamp, and its boolean atom. A blend like `0.3 × a + 0.7 × b` isn't a rounding point. Rounding points were 1.6% of operations in vibescript's life-calendar, 4.9% in IndirectOS (256 of 5,253), 43% in the photo gallery, and 61% in numeric-library's dock and progress ring.
 
 exactness-budget replaced the executor with an interpreter that adds terms eight ways: stored order, reversed, balanced like a parallel reduction, fused, balanced and fused, float64, and two modes that keep the stored FP32 order only at rounding points and use balanced fused sums or float64 everywhere else. It ran seven UIs through each mode with each prototype's own page logic and reference checks: IndirectOS, the gallery, hn-thread, lists' draggable cards, text-editing, numeric-library's dock and ring, and life-calendar.
 
@@ -384,7 +384,7 @@ A comparison's cost is multiplied by the number of comparisons a UI makes. Every
 
 The trace compiler lowered every comparison to a sign cascade and every running total to a chain. Its slice of the gallery's 1D photo strip came out at 21,213 operations and 1,580 layers. Written by hand with 4-operation comparisons and one wide sum per running total, the same outputs are 3,399 operations in 9 layers ([gallery](../../gallery/README.md)).
 
-Choosing among items is a comparison structure too. A tournament, which compares items in pairs, then compares the pairs' results, until one item remains, e.g. `emitArgmax`, is O(n) operations and O(log n) layers: 437 operations and 33 layers for 64 scores ([the highest score, in a tree](../patterns/highest-score-tree.md)). Counting, where an item is selected when it's below every other item, is O(n²) comparisons at constant depth: numeric-library's exact minimum of 8 values is 121 operations and 5 layers. Sorting 64 integer keys is 2,172 operations and 63 layers as a Batcher network (a fixed arrangement of compare-and-swap steps), and 20,418 operations and 6 layers as ranks by counting, with each sorted position read through a one-hot of its rank ([notes/runtime.md](../../notes/runtime.md)).
+Choosing among items is a comparison structure too. A tournament, which compares items in pairs, then compares the pairs' results, until one item remains, e.g. `emitArgmax`, is O(n) operations and O(log n) layers: 437 operations and 33 layers for 64 scores ([the highest score, in a tree](../patterns/highest-score-tree.md)). Counting, where an item is selected when it's below every other item, is O(n²) comparisons at constant depth: numeric-library's exact minimum of 8 values is 121 operations and 5 layers. Sorting 64 integer keys is 2,172 operations and 63 layers as a Batcher network (a fixed arrangement of compare-and-swap steps), and 20,418 operations and 6 layers as ranks by counting, with each sorted position read through a one-hot of its rank ([notes/runtime.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md)).
 
 ### Whether per-item programs exist
 
@@ -406,7 +406,7 @@ Every capacity is paid on every evaluation, whether or not it's used: queue entr
 
 ### Whether a value may be one frame late
 
-Reading last frame's value from a source cell cuts a chain at that value, like a register in hardware, which holds a value from the previous clock tick. The delay adds no operations, but the value lags by one frame. In [retiming](../../retiming/README.md)'s measurements, Photos reading its window's content size and opacity from last frame took IndirectOS's longest chain from 191 to 116 layers, and was 88.9 px off during a maximize or restore at 60 fps. A search over such delays with retiming's critical-values strategy took the longest chain of spring-bank's IndirectOS from 136 to 123 operations, with 0 px of error on three random traces it never replayed, while the minimum-cut strategy reached the same length and failed on one of those traces (996 px, 33 mismatches). Chains with a decision at every stage, like the gallery's, lost almost no layers. The [chains](chains.md#way-4-read-last-frames-value) section covers these measurements.
+Reading last frame's value from a source cell cuts a chain at that value, like a register in hardware, which holds a value from the previous clock tick. The delay adds no operations, but the value lags by one frame. In [retiming](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/retiming/README.md)'s measurements, Photos reading its window's content size and opacity from last frame took IndirectOS's longest chain from 191 to 116 layers, and was 88.9 px off during a maximize or restore at 60 fps. A search over such delays with retiming's critical-values strategy took the longest chain of spring-bank's IndirectOS from 136 to 123 operations, with 0 px of error on three random traces it never replayed, while the minimum-cut strategy reached the same length and failed on one of those traces (996 px, 33 mismatches). Chains with a decision at every stage, like the gallery's, lost almost no layers. The [chains](chains.md#way-4-read-last-frames-value) section covers these measurements.
 
 ## UI jobs under each choice
 
@@ -438,16 +438,16 @@ Operations and layers for one evaluation, from the prototypes' READMEs, this gui
 | | one wide sum per total | 1,023 (524,799 weights) | 1 | O(n²) weights, constant depth | this section |
 | | Brent-Kung network | 2,036 | 18 | O(n) work, O(log n) depth | this section |
 | | Kogge-Stone network | 9,217 | 10 | O(n log n) work, O(log n) depth | this section |
-| sort 64 integer keys | Batcher network | 2,172 | 63 | O(n log² n) work, O(log² n) depth | notes/runtime.md |
-| | ranks by counting | 20,418 | 6 | O(n²) work, constant depth | notes/runtime.md |
+| sort 64 integer keys | Batcher network | 2,172 | 63 | O(n log² n) work, O(log² n) depth | [notes/runtime.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md) |
+| | ranks by counting | 20,418 | 6 | O(n²) work, constant depth | [notes/runtime.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md) |
 | | ranks alone, with `emitCompare` bits | 4,096 | 3 | O(n²) work, constant depth | patterns/ranks-instead-of-sorting.md |
-| sort 64 integer keys, carrying one payload value each | bitonic network | 10,624 | 105 | O(n log² n) work, O(log² n) depth | notes/outside-techniques.md |
-| | ranks by counting, with gathers | 16,512 | 5 | O(n²) work, constant depth | notes/outside-techniques.md |
+| sort 64 integer keys, carrying one payload value each | bitonic network | 10,624 | 105 | O(n log² n) work, O(log² n) depth | [notes/outside-techniques.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md) |
+| | ranks by counting, with gathers | 16,512 | 5 | O(n²) work, constant depth | [notes/outside-techniques.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md) |
 | drag to reorder 100 cards, whole circuit | recount every card's rank each frame | 69,653 | 105 | O(n²) | lists |
 | | update the layout from the one card that moves | 36,207 | 90 | O(n) | lists |
 | a dragged card's next rank among 100 cards | count the cards the pointer passes, `emitCompare` bits | 1,404 | 8 | O(n) | patterns/ranks-instead-of-sorting.md |
 | `[a > b]` on continuous values within 16,384 | sign cascade, every pair of FP32 values | 16 | 15 | constant | comparisons |
-| | the trace compiler's layout of that cascade | 26 | 26 | constant | notes/runtime.md |
+| | the trace compiler's layout of that cascade | 26 | 26 | constant | [notes/runtime.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md) |
 | | one rounding stage, 2^45 ratio | 4 | 3 | constant | numeric-library |
 | gallery's 1D photo strip, 221 photos | sign cascades and chains (trace compiler) | 21,213 | 1,580 | | gallery |
 | | one rounding stage per comparison, one wide sum per total | 3,399 | 9 | | gallery |
@@ -488,7 +488,7 @@ Some terms in the table: a parallel prefix network computes running totals as a 
 
 - Parallel formulations cost more work than serial ones, e.g. the Kogge-Stone running totals are 9,217 operations against the chain's 1,023. On a serial executor they buy nothing, and they pay off only on an executor that runs a layer's operations at the same time.
 - One wide sum per total keeps the sequential loop's FP32 steps exactly, at n²/2 stored weights, so it flattens depth without changing results. Balanced networks change the steps.
-- Depth that comes from the UI's own chain of decisions can't be removed by rewriting loops. The gallery's 61 layers are the chain from the click to the focus, the strip positions, the destinations, the scroll anchor, the scroll adjustment, the springs and occlusion, and retiming's search found almost nothing on that chain that could be one frame late. The [chains](chains.md) section covers the ways to shorten repeated steps.
+- Depth that comes from the UI's own chain of decisions can't be removed by rewriting loops. The gallery's 61 layers are the chain from the click to the focus, the strip positions, the destinations, the scroll anchor, the scroll adjustment, the springs and occlusion, and [retiming](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/retiming)'s search found almost nothing on that chain that could be one frame late. The [chains](chains.md) section covers the ways to shorten repeated steps.
 
 ## Pitfalls
 

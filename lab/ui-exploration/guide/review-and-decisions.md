@@ -84,7 +84,7 @@ The results that carry over to writing apps:
 - A fixed capacity plus a count of how many entries are real, e.g. streaming-words builds for 95 segments and writes `arrivedCount`, and whole-text outputs like the line count read that count.
 - Layout and hit tests against destinations instead of drawn positions, e.g. indirect-os-2's Notes paragraph flows around the other windows' destinations, which kept 60 and 120 fps within 2.4e-4 px.
 
-learned-bits' learned rules, retiming's searched delays, pixel-output's per-pixel programs and exactness-budget's relaxed order of additions are research directions, not building blocks.
+learned-bits' learned rules, [retiming](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/retiming)'s searched delays, pixel-output's per-pixel programs and [exactness-budget](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/exactness-budget)'s relaxed order of additions are research directions, not building blocks.
 
 ### Springs and time
 
@@ -110,7 +110,7 @@ The ten section reports carried 36 decisions. [Decisions for you](#decisions-for
 
 ### The demo directory
 
-Run `bun lab/ui-exploration/serve-demos.ts` from the repo root to serve every demo from one server, with [demos.html](../demos.html) as its index page at http://127.0.0.1:4321/. The script was still being built when this answer was written, and notes/browser-check.md's [Demo directory check, 2026-09-14](../notes/browser-check.md#demo-directory-check-2026-09-14) later opened all 37 page links through it. The [talk](sections/talk.md#running-the-demos) section says what to try in each talk-inspired demo, with the real control labels, and [notes/browser-check.md](../notes/browser-check.md) records what a Chrome check of each demo found, and what that check couldn't measure because its tab was hidden.
+Run `bun lab/ui-exploration/serve-demos.ts` from the repo root to serve every demo from one server, with [demos.html](../demos.html) as its index page at http://127.0.0.1:4321/. The script was still being built when this answer was written, and notes/browser-check.md's [Demo directory check, 2026-09-14](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/browser-check.md#demo-directory-check-2026-09-14) later opened all 37 page links through it. The [talk](sections/talk.md#running-the-demos) section says what to try in each talk-inspired demo, with the real control labels, and [notes/browser-check.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/browser-check.md) records what a Chrome check of each demo found, and what that check couldn't measure because its tab was hidden.
 
 ## Decisions for you
 
