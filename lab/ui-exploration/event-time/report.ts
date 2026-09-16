@@ -19,7 +19,7 @@ import {type EventTimeOptions, createEventTimeMachine, displayLayout} from './ev
 import {planInstances} from '../codegen/instance.ts'
 import {createTracks, planKeyframes, trackKeyframes} from './keyframes.ts'
 import {compareScreens, holdLastFrame, screenGroups, simulateKeyframePresenter, staleWindow, stallWindow, type Stall} from './playback.ts'
-import {controlField, photoField} from '../spring-bank/photo-gallery.ts'
+import {controlField, photoField} from './photo-gallery.ts'
 import {createPredictor, frameCells, sampleCount, snapStatistics} from './prediction.ts'
 import {checkCommitSprings, createDisplaySpringCheck} from './springs-check.ts'
 import {
@@ -32,7 +32,7 @@ import {
   randomPressOffsets,
   replayTrace,
   scheduleFrameTimes,
-} from '../spring-bank/trace.ts'
+} from './trace.ts'
 import {createWgslInterpreter} from '../codegen/wgsl-interpreter.ts'
 import {emitInstanceWgsl, packSharedBuffer} from '../codegen/wgsl.ts'
 import {
@@ -43,7 +43,7 @@ import {
   photoSourceField,
   sourceField,
   windowOutputField,
-} from '../spring-bank/window-manager.ts'
+} from './window-manager.ts'
 
 const results: Record<string, unknown> = {}
 const reportStart = performance.now()

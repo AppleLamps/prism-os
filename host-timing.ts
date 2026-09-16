@@ -10,9 +10,9 @@
 // snap every animated object onto its destination because a frame would need
 // more steps than its static cap.
 //
-// Ported from lab/ui-exploration/spring-bank (spring-math.ts: the step matrix,
-// matrix powers, and the capped clock), lab/ui-exploration/event-time (commits at
-// event timestamps, and settle checks at multiples of 16 steps),
+// Ported from lab/ui-exploration/event-time (spring-math.ts, from spring-bank: the
+// step matrix, matrix powers, and the capped clock; commits at event timestamps,
+// and settle checks at multiples of 16 steps),
 // lab/ui-exploration/input (event times relative to the frame), and
 // lab/ui-exploration/guide/examples/springs (frame-rate-check.ts: stepping to each
 // event's timestamp before applying the event).

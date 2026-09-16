@@ -1,6 +1,6 @@
 // Commit per event, sample per frame.
 //
-// IndirectOS (spring-bank's bank circuit, deferred
+// IndirectOS (spring-bank's bank circuit in window-manager.ts, deferred
 // retargeting) writes its next-source outputs back only in commit evaluations:
 // at event timestamps, and at fixed simulated times after them (commits.ts).
 // A display evaluation computes what the screen shows at a frame's timestamp
@@ -9,7 +9,7 @@
 // were rendered.
 import {type Wire, invariant} from '../../../numeric-ui-core.ts'
 import {compileScalarProgram} from '../codegen/codegen.ts'
-import {advanceReferenceClock, defaultClockConfig, quantizeFrameTime} from '../spring-bank/spring-math.ts'
+import {advanceReferenceClock, defaultClockConfig, quantizeFrameTime} from './spring-math.ts'
 import {
   type WindowManagerOptions,
   bankOptions,
@@ -19,7 +19,7 @@ import {
   validateWindowManagerOutput,
   validateWindowManagerSource,
   writeBankFrame,
-} from '../spring-bank/window-manager.ts'
+} from './window-manager.ts'
 
 export type EventTimeOptions = {
   springs: 'split-table' | 'source-matrix'

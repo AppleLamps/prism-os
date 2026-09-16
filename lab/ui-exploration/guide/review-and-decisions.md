@@ -182,7 +182,7 @@ Cheng decided questions 1 to 3 on September 14, 2026, choosing the recommended o
 - Changed: an object whose springs are all exactly at rest, e.g. right after a snap, has an `active` bit of 0 at any evaluation, instead of keeping it at 1 until the next settle check.
 - Changed: when a frame would need more than 300 steps, `advanceFrame` plans a `'snap'` evaluation that lands every animated object on its destination and stops the clock, instead of carrying the backlog into later frames. `maxCarriedMs` is gone, and `quantizeFrameTiming` clamps durations and event times at 1,200 ms.
 - Documented: inputs that change destinations, e.g. a viewport resize, should reach `advanceFrame` as timestamped events when stored state must be frame-rate independent.
-- Kept: `emitApplySpringMatrix` uses `circuit.multiply` (14 operations and 3 layers, with the right gradient at a matrix entry of exactly 0) rather than spring-bank's signed products (10 operations and 2 layers), a settle check costs one extra evaluation, an event with a timestamp before the last evaluation that wrote state back applies at that evaluation's time, and settle thresholds are numbers fixed while building.
+- Kept: `emitApplySpringMatrix` uses `circuit.multiply` (14 operations and 3 layers, with the right gradient at a matrix entry of exactly 0) rather than [spring-bank](../event-time/README.md#merged-from-spring-bank-september-16-2026)'s signed products (10 operations and 2 layers), a settle check costs one extra evaluation, an event with a timestamp before the last evaluation that wrote state back applies at that evaluation's time, and settle thresholds are numbers fixed while building.
 
 **Still open.**
 

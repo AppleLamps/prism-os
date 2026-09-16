@@ -336,7 +336,7 @@ Operator fusion, in ML compilers, merges several operations into one step so the
 
 - Copying small sums into their readers merges an affine sum into the next operation, and a ReLU-gated product computes an affine gate, a ReLU and a product as one operation.
 - [numeric-library](../../numeric-library/README.md) computes one Newton step of a reciprocal as `estimate × relu(2 - x × estimate)`, 2 operations, and one Horner step of a polynomial as 1 operation, with each gate computed inside its ReLU-gated product. That took sine and cosine from 100 operations to 34.
-- Linear steps with constant coefficients merge into one matrix. [spring-bank](../../spring-bank/README.md) computes a frame's N fixed 4 ms spring steps as the constant matrix M^N read from tables, so every animated number then costs 4 products, where `emitSpring` costs 46 operations and 33 layers. IndirectOS went from 5,253 operations and 192 layers to 3,580 and 137.
+- Linear steps with constant coefficients merge into one matrix. [spring-bank](../../event-time/README.md#merged-from-spring-bank-september-16-2026) computes a frame's N fixed 4 ms spring steps as the constant matrix M^N read from tables, so every animated number then costs 4 products, where `emitSpring` costs 46 operations and 33 layers. IndirectOS went from 5,253 operations and 192 layers to 3,580 and 137.
 
 A merge between rounding points only moves positions by FP32 steps. A merge across a rounding point can change decisions.
 

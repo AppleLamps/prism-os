@@ -9,8 +9,8 @@ import {invariant} from '../../../numeric-ui-core.ts'
 import {lastSettleCheckSteps, settleCheckStepMultiple} from './commits.ts'
 import {type EventTimeMachine, displayLayout} from './event-machine.ts'
 import {compileInstanceProgram, planInstances} from '../codegen/instance.ts'
-import {defaultClockConfig, eulerStepMatrix, matrixPower, quantizeFrameTime} from '../spring-bank/spring-math.ts'
-import {bankSourceField, sourceField} from '../spring-bank/window-manager.ts'
+import {defaultClockConfig, eulerStepMatrix, matrixPower, quantizeFrameTime} from './spring-math.ts'
+import {bankSourceField, sourceField} from './window-manager.ts'
 
 export const sampleCount = defaultClockConfig.maxSteps + 1
 export const frameCells = [0, 1, 2, 3].map(entry => bankSourceField.springFrameStart + entry)

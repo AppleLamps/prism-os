@@ -1,4 +1,5 @@
-// spring-bank's source-matrix variant in miniature: JS computes M^steps in float64
+// spring-bank's source-matrix variant in miniature (createSourceMatrixGroup in
+// lab/ui-exploration/event-time/spring-bank.ts): JS computes M^steps in float64
 // and writes 4 cells, and the circuit only applies those cells to the spring.
 // Stiffness and damping stay editable, but no wire in the circuit depends on them,
 // so the backward pass stops at the 4 matrix cells. A training loop can finish the

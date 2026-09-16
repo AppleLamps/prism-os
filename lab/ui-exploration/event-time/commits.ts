@@ -19,9 +19,9 @@
 // `lateEvents`.
 import {invariant} from '../../../numeric-ui-core.ts'
 import {type EventTimeMachine, type Evaluation, type MachineSnapshot, displayLayout, readWire} from './event-machine.ts'
-import {itemCount as photoCount, photoField} from '../spring-bank/photo-gallery.ts'
-import {defaultClockConfig, quantizeFrameTime} from '../spring-bank/spring-math.ts'
-import {type TraceEvent, applyEvent, traceViewport} from '../spring-bank/trace.ts'
+import {itemCount as photoCount, photoField} from './photo-gallery.ts'
+import {defaultClockConfig, quantizeFrameTime} from './spring-math.ts'
+import {type TraceEvent, applyEvent, traceViewport} from './trace.ts'
 import {
   dragSourceField,
   photoFocusSourceField,
@@ -31,7 +31,7 @@ import {
   windowOutputField,
   windowSourceField,
   windowStateField,
-} from '../spring-bank/window-manager.ts'
+} from './window-manager.ts'
 
 export type CommitKind = 'mount' | 'event' | 'settle'
 export type SettlePolicy = 'interval' | 'predicted'

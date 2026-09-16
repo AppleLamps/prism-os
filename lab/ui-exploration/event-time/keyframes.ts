@@ -12,10 +12,10 @@
 // stacking changes wait for the main thread.
 import {invariant} from '../../../numeric-ui-core.ts'
 import {type EventTimeMachine, displayLayout} from './event-machine.ts'
-import {controlField, itemCount as photoCount, photoField} from '../spring-bank/photo-gallery.ts'
+import {controlField, itemCount as photoCount, photoField} from './photo-gallery.ts'
 import {type Prediction, lastPlayedSample} from './prediction.ts'
-import {defaultClockConfig} from '../spring-bank/spring-math.ts'
-import {windowCount, windowOutputField} from '../spring-bank/window-manager.ts'
+import {defaultClockConfig} from './spring-math.ts'
+import {windowCount, windowOutputField} from './window-manager.ts'
 
 export type TrackKind = 'window' | 'photo' | 'thumbnail' | 'previousControl' | 'nextControl' | 'backdrop'
 export type TrackPart = 'composited' | 'layout'

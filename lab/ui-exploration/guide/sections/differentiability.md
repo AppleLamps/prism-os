@@ -156,7 +156,7 @@ Each subsection says what the trick is, gives a UI example, says what the trick 
 
 **What it changes.** Nothing at run time. The randomness becomes an input.
 
-**Complexity.** Low, and it only matters if a program samples random values. None of the prototypes samples inside a circuit: e.g. spring-bank's random fling destinations are computed in JavaScript at event time and written into cells, so a gradient stops at the destination cell. To learn how far flings travel, the circuit would compute each destination from a learned spread cell and a noise cell that JavaScript writes, e.g. `flingDestination = releasePosition + flingSpread × noise`.
+**Complexity.** Low, and it only matters if a program samples random values. None of the prototypes samples inside a circuit: e.g. spring-bank's random fling destinations ([predictive.ts at the tag](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/spring-bank/predictive.ts)) are computed in JavaScript at event time and written into cells, so a gradient stops at the destination cell. To learn how far flings travel, the circuit would compute each destination from a learned spread cell and a noise cell that JavaScript writes, e.g. `flingDestination = releasePosition + flingSpread × noise`.
 
 **Used here?** No.
 
@@ -272,7 +272,7 @@ For a spring with stiffness 290 and damping 30 moving from 0 toward 100 px, afte
 
 ### spring-bank's fast variants stop the gradient at the frame matrix
 
-None of spring-bank's four ways to compute the frame matrix makes stiffness or damping a wire:
+None of spring-bank's four ways to compute the frame matrix, in [event-time/spring-bank.ts](../../event-time/spring-bank.ts) since September 16, 2026, makes stiffness or damping a wire:
 
 - `split-table` and `binary-powers`: `createConstantPowerGroup(circuit, clock, constants, powers)` takes stiffness and damping as JavaScript numbers, computes `eulerStepMatrix(constants, config.stepMs)` and `matrixPower(step, 2 ** index)` in float64 while building (spring-bank.ts:283-285, and `powerTables` at spring-bank.ts:215-223), and puts the matrix entries into the circuit as coefficients of affine sums (`readConstantTable`, spring-bank.ts:247-254).
 - `source-table`: JavaScript writes the power tables into 140 source cells whenever stiffness or damping change, and the circuit reads them through gathers (`createSourceTableGroup`, spring-bank.ts:314-334).

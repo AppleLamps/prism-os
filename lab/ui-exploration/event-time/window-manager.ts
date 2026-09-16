@@ -2120,4 +2120,4 @@ function assertApproximatelyOne(value: number, label: string, tolerance = 1e-8) 
   invariant(Math.abs(value - 1) <= tolerance, `${label} must equal one`)
 }
 
-// This copy doesn't mount itself; indirect-os-demo.ts calls mountWindowManager.
+// This copy doesn't mount itself. spring-bank's indirect-os-demo.ts called mountWindowManager, see https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/spring-bank/indirect-os-demo.ts

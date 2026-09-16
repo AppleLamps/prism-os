@@ -1,8 +1,10 @@
 // The settle snap on top of spring-power.ts: when the stepped spring is within
 // 0.01 px and 0.01 px/s, select the destination and zero velocity on an exact bit,
-// the way spring-bank's boxes do. The circuit also has a second output that makes
-// the same selection on a copy of the settle bit held in a cell, so the backward
-// pass treats the decision as data, i.e. gradient 0 through the decision.
+// the way spring-bank's boxes do (emitSpringBox, in
+// lab/ui-exploration/event-time/spring-bank.ts). The circuit also has a second
+// output that makes the same selection on a copy of the settle bit held in a
+// cell, so the backward pass treats the decision as data, i.e. gradient 0 through
+// the decision.
 import {Circuit, emitSelect, asWire} from '../../../../../numeric-ui-core.ts'
 import {
   type ParameterName,

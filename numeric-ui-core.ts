@@ -2445,7 +2445,7 @@ export type SpringMatrixWires = readonly [
 // through circuit.multiply, so the backward pass differentiates whole products,
 // including at a matrix entry of exactly 0. Cost: 14 operations in 3 layers.
 // Ported from emitApplyMatrix in lab/ui-exploration/guide/examples/springs/costs.ts
-// and spring-bank's source-matrix springs.
+// and the source-matrix springs of lab/ui-exploration/event-time/spring-bank.ts.
 export function emitApplySpringMatrix(
   circuit: Circuit,
   matrix: SpringMatrixWires,
@@ -2527,9 +2527,9 @@ export type AnimatedObject = {
 // position, so FP32 rounds the state at the size of the displacement, e.g. finely
 // near rest even at 100,000 px, where positions are 1/128 px apart. When the object
 // settles or snaps, every displacement and velocity becomes 0, up to the sign of
-// zero, so every spring lands exactly on its destination. Ported from
-// spring-bank's emitSpringBox with deferred retargeting, and from the displacement
-// cells of lab/ui-exploration/gallery's kit.ts.
+// zero, so every spring lands exactly on its destination. Ported from emitSpringBox
+// in lab/ui-exploration/event-time/spring-bank.ts with deferred retargeting, and
+// from the displacement cells of lab/ui-exploration/gallery's kit.ts.
 //
 // For each spring:
 //   (displacement', velocity') = matrix × (displacement, velocity)
