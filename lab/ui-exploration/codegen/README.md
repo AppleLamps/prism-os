@@ -10,7 +10,7 @@ Update, September 15, 2026: window-manager.ts and photo-gallery.ts moved to host
 
 From the repository root:
 
-- `bun test lab/ui-exploration/codegen` runs the 20 tests (about 3 seconds).
+- `bun test lab/ui-exploration/codegen` runs the 21 tests (about 4 to 6 seconds).
 - `bunx tsgo -p lab/ui-exploration/codegen` typechecks the folder.
 - `bun lab/ui-exploration/codegen/report.ts` runs the timing study and writes `results.json` (several minutes; it spawns fresh Bun processes for cold-start numbers).
 - `deno run --unstable-webgpu --allow-all lab/ui-exploration/codegen/gpu-headless.ts` runs every workload's shader on the GPU through Deno's WebGPU (wgpu, naga to Metal) and compares with the CPU. The saved output is `gpu-results-wgpu.json`.
@@ -20,7 +20,7 @@ From the repository root:
 ## What was built
 
 - `codegen.ts` flattens a compiled program into rows in execution order and writes one JavaScript statement per live value, grouped into functions of a bounded row count and compiled with `new Function`. Each statement keeps the executor's FP32 accumulation order, so results are identical. A few rewrites keep that exactness while removing work, e.g. `fround(1 * x)` is `x`, and a store into a `Float32Array` already rounds, so the outermost `fround` of a statement is dropped.
-- `indirect-os-machine.ts` is a copy of `createWindowManagerMachine` whose step uses either the executor or generated JS, with the per-frame JavaScript validation switchable. It also holds a deterministic 240-frame session over IndirectOS's initial layout at 1280×800: drag window 0 by its title bar, resize it by its grip, close window 1 and reopen it from the dock, maximize Photos, click a photo in the Photos grid, go to the next photo and back, close the photo, restore Photos, and minimize window 1, with a 90 ms stall in the middle. Its test checks what's under each press with the press map's float64 reference, and that each event changes the state it should, e.g. window 0's width after the resize and window 1's open flag after the close.
+- `indirect-os-machine.ts` is a copy of `createWindowManagerMachine` whose step uses the executor, generated JS, or `tiered.ts`, which starts on the executor and switches to generated JS, with the per-frame JavaScript validation switchable. It also holds a deterministic 240-frame session over IndirectOS's initial layout at 1280×800: drag window 0 by its title bar, resize it by its grip, close window 1 and reopen it from the dock, maximize Photos, click a photo in the Photos grid, go to the next photo and back, close the photo, restore Photos, and minimize window 1, with a 90 ms stall in the middle. Its test checks what's under each press with the press map's float64 reference, and that each event changes the state it should, e.g. window 0's width after the resize and window 1's open flag after the close.
 - `instance.ts` splits a program into shared values and per-instance values. A value is per-instance when it reads a per-instance source cell, directly or indirectly. For example, in a per-pixel map of which window receives a press, the press position is per-instance and all window geometry is shared. The shared part runs once; the per-instance part runs over blocks of instances through two backends:
   - generated JS that loops over a block's instances inside each generated function, reading shared values as hoisted locals;
   - a batched executor that visits each row once per block and loops over the block's instances inside that row, so interpreting a row is paid once per block instead of once per instance.
@@ -33,6 +33,7 @@ From the repository root:
 - `render.ts` and `demo-model.ts` hold the canvas projections and the per-workload page logic, so tests cover them without a browser; `demo.ts` only wires the DOM.
 - `candidate-gallery-copy.ts` and `window-manager-copy.ts` are copies of `candidate-gallery.ts` and `window-manager.ts` from the repo root, without the code that mounts their own pages at import time, which made `demo.html` throw while its modules loaded. Every module in this folder imports the copies, the tests and `report.ts` included. `root-copies.test.ts` checks that each copy compiles to the same program as its root module, and that the IndirectOS copy steps to bit-identical values over the scripted session.
 - `random-circuit.ts` builds random circuits over every atom and macro, including argmax, first-active selections, and declared one-hot groups, for differential tests.
+- `tiered.ts` starts on the executor and switches to generated JS after a check of every live wire, see [Merged from indirect-os-2](#merged-from-indirect-os-2-september-16-2026).
 
 ## Measured results
 
@@ -171,7 +172,7 @@ The builder's ranges don't track NaN. `Math.max(0, NaN)` is NaN, yet a relu of a
 
 ### What got awkward
 
-- Cold start works against generated code. The first frame costs about 5 ms and the first hundred frames are several times slower than the executor, so the speedup only shows after a warmup that a page's first seconds don't have. One large function never gets optimized at all in JavaScriptCore.
+- Cold start works against generated code. The first frame costs about 5 ms and the first hundred frames are several times slower than the executor, so the speedup only shows after a warmup that a page's first seconds don't have. One large function never gets optimized at all in JavaScriptCore. [Merged from indirect-os-2](#merged-from-indirect-os-2-september-16-2026) measures a backend that stays on the executor until the generated functions are warm.
 - The GPU compiler measured here doesn't keep per-operation FP32 rounding by default. Exactness needed a guard around nearly every operation, and the guard relies on the compiler not seeing through a runtime value. That held today, but no spec promises it, and only Apple's Metal compiler was tested.
 - The batched interpreter was slower than generated code for most workloads. Visiting a row once per block only paid off when the per-instance part was tiny.
 - The polygon length is an approximation: exact decisions away from edges, but colors differ from true Euclidean shading by a few units out of 255 at 16 directions.
@@ -188,7 +189,6 @@ The builder's ranges don't track NaN. `Math.max(0, NaN)` is NaN, yet a relu of a
 
 ## Open questions and next steps
 
-- Tiered execution: start with the executor, warm generated functions during idle time, then switch. That would keep the executor's cold behavior and the generated code's warm speed.
 - Check the guard on other WebGPU backends (Dawn on D3D12 and Vulkan, Safari's implementation), and on other Metal compile settings. If a backend exposes strict math, the guard could be dropped there.
 - Instance axis inside IndirectOS itself: windows, dock items, or thumbnails as instances of one per-item program instead of copied operations, with a reduction (frontmost, first active) across instances.
 - Search and training in parallel: many candidate parameter sets or behavior variants as instances of one circuit, e.g. hundreds of spring settings evaluated over a gesture at once.
@@ -206,6 +206,15 @@ The builder's ranges don't track NaN. `Math.max(0, NaN)` is NaN, yet a relu of a
 - **GPU guards.** Wrapping only rounding points in `max(x, lowest)` gave 0 decision mismatches through wgpu and Dawn on this folder's five instance workloads and 12 random circuits, with 84 guards on the press map, 25 on life-calendar and 30 on the SDF shapes, against the full counts in [WGSL on two GPU stacks](#wgsl-on-two-gpu-stacks) (537, 67 and 787). The gallery and the other UIs weren't run on the GPU.
 - **The "13.9 px spike"** that an earlier scratch run reported was Photos' z-index output, which multiplied spring speed by 4,000, not a window position. IndirectOS's z-index is an integer since September 15, 2026.
 - **Open ideas.** Give settle tests and hit tests on spring positions rounding points of their own, e.g. compare a destination change quantized to 1/64 px. Store round chain values as `i32` in WGSL to remove their guards. Derive which operations must stay strict from an error budget per output, e.g. positions within 0.05 px and z-index exact, instead of from construction patterns.
+
+## Merged from indirect-os-2, September 16, 2026
+
+[indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2) combined the second round's improvements in one IndirectOS program, including the spring bank, input's event queue and a Notes paragraph flowing around the windows. Root IndirectOS took its Notes flow on September 16, 2026, so the folder was removed, and [input's README](../input/README.md#merged-from-indirect-os-2-september-16-2026) keeps its event queue. Its tiered execution moved here as `tiered.ts`. It now compiles with this folder's `codegen.ts`, which differs from indirect-os-2's copy only by that copy's `termsPerFunction` option, a budget of terms per generated function that changed no timing.
+
+- **How it switches.** `tiered.ts` evaluates with the executor. To promote, it compiles the generated functions, runs them on copies of the table so the engine optimizes them, compares every live wire with the executor on the current table, and switches only when all of them match. Compiling, warming and the check are separate functions, so a page can spread them over idle callbacks, and indirect-os-2's demo spent 3 seconds of idle time warming. `tiered.test.ts` switches during Photos' maximize animation in this folder's scripted session, and every written-back cell and every output stays bit-identical to an executor-only machine.
+- **How generated code gets fast.** Measured in fresh Bun processes on September 13, 2026, on indirect-os-2's whole program with a spring per word (19,854 operations, 343 layers), at 32 rows per function. The executor took 126 to 141 µs per evaluation after its first. Generated code took 31 ms for its first evaluation and 1.4 to 3.8 ms per evaluation for the next thousand, while JavaScriptCore ran the big functions before optimizing them. It passed the executor after about a thousand evaluations, took about 100 µs from the 1,001st to the 10,000th, and reached about 41 µs only after 30,000. The tiered backend stayed on the executor for 1,000 evaluations, then promoted with 1 second of warmup. On September 15, 2026, without the word springs (18,027 operations), generated code took 26.7 ms for its first evaluation, 81 µs from the 1,001st to the 10,000th, and 34 µs after 30,000.
+- **In Chrome.** On September 13, 2026, indirect-os-2's demo promoted while a script dragged Photos over Notes for 11 s, in two runs whose idle callbacks ran once per clock tick. Both switched after 5.3 s of dragging. One warmup step in the middle of the drag took 446 ms in one run and 506 ms in the other, and the first step, which compiles and then warms, took 87 to 191 ms, since a warmup step checks the clock only between runs of the generated functions. Frames took a median 2.1 to 2.3 ms on the executor and 1.1 to 1.4 ms on generated code. A page loaded in a hidden tab never promoted: the demo asked for idle callbacks without a timeout, and the hidden tab ran an idle callback only once its timeout expired.
+- **Open ideas.** Warming the functions ahead of time, or a backend whose functions don't need thousands of runs to get fast, and warmup steps whose single run of the generated functions can't overrun a frame.
 
 ## Browser check
 

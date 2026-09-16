@@ -25,7 +25,7 @@ pressedIndex = items.findIndex(item => contains(item.destinationRect, pointer))
 
 **Don't use it when.** The element is dragged: ui.md keeps the drawn position for drag targets, so a card can be grabbed where it's drawn. A press should act on what's drawn under the pointer, e.g. chenglou.github.io's index.ts tests grid clicks against the rectangles it presented. Destinations of present elements can overlap: pick one hit with `emitFirstActive`.
 
-**Contract, long form, tests.** execution-model.md's [Comparisons](execution-model.md#comparisons) and [Grids](execution-model.md#grids); [hit-test-destinations.md](lab/ui-exploration/guide/patterns/hit-test-destinations.md), tested by [hit-test-destinations.test.ts](lab/ui-exploration/guide/examples/patterns/fewer-dependencies/hit-test-destinations.test.ts). window-manager.ts lays out Photos at the window's destination size, and reads a Photos click relative to the content box at the window's destination, as [indirect-os-2](lab/ui-exploration/indirect-os-2/README.md) does.
+**Contract, long form, tests.** execution-model.md's [Comparisons](execution-model.md#comparisons) and [Grids](execution-model.md#grids); [hit-test-destinations.md](lab/ui-exploration/guide/patterns/hit-test-destinations.md), tested by [hit-test-destinations.test.ts](lab/ui-exploration/guide/examples/patterns/fewer-dependencies/hit-test-destinations.test.ts). window-manager.ts lays out Photos at the window's destination size, and reads a Photos click relative to the content box at the window's destination, as [indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2) did.
 
 ## Apply events at their timestamps, and write state back only at events and settle checks
 
@@ -76,7 +76,7 @@ previousContainerWidth = containerWidth.pos // stored with the rest of the state
 
 ## Flow text around destinations, in a fixed number of lines
 
-In IndirectOS, the Notes paragraph flows around the windows stacked above it. The text is laid out around each window's destination rectangle, where its springs are heading, and around the windows that are visible after this evaluation's events, so the paragraph reflows once per event instead of once per animated frame. The flow has a fixed number of line slots, 16, and lines past the last usable slot aren't laid out. ui.md doesn't document text flowing around moving elements; the lab's [indirect-os-2](lab/ui-exploration/indirect-os-2/README.md) compared this choice with obstacles read from the drawn frames and from the stepped springs.
+In IndirectOS, the Notes paragraph flows around the windows stacked above it. The text is laid out around each window's destination rectangle, where its springs are heading, and around the windows that are visible after this evaluation's events, so the paragraph reflows once per event instead of once per animated frame. The flow has a fixed number of line slots, 16, and lines past the last usable slot aren't laid out. ui.md doesn't document text flowing around moving elements; the lab's [indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2) compared this choice with obstacles read from the drawn frames and from the stepped springs.
 
 ```js
 // familiar: reflow every frame around the windows as they're drawn
@@ -95,7 +95,7 @@ obstacles = windows.filter(window => window.visibleAfterEvents && window.stack >
 
 **Don't use it when.** The text should visibly flow with a moving frame, e.g. a caption inside a dragged card. The paragraph must always be complete: raise the band count, at about 550 operations per band, or lay it out in JavaScript.
 
-**Contract, long form, tests.** execution-model.md's [Static bounds](execution-model.md#static-bounds); indirect-os-2's README, [section 4](lab/ui-exploration/indirect-os-2/README.md#4-the-notes-flow) and [Words without springs](lab/ui-exploration/indirect-os-2/README.md#words-without-springs-2026-09-15); tested by [notes.test.ts](notes.test.ts), which checks settled flows against pretext's `layoutNextLineRange` line for line and word for word, the height gate and the truncation, and by window-manager.test.ts's session, where the words change only at events.
+**Contract, long form, tests.** execution-model.md's [Static bounds](execution-model.md#static-bounds); indirect-os-2's README at the exploration-2026-09 tag, [section 4](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/indirect-os-2/README.md#4-the-notes-flow) and [Words without springs](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/indirect-os-2/README.md#words-without-springs-2026-09-15); tested by [notes.test.ts](notes.test.ts), which checks settled flows against pretext's `layoutNextLineRange` line for line and word for word, the height gate and the truncation, and by window-manager.test.ts's session, where the words change only at events.
 
 ## A fixed maximum with a named fallback
 
@@ -111,7 +111,7 @@ const visibleRows = rows.filter(isVisible) // one DOM node per visible row
 
 **Circuit version.** Give each quantity a maximum and one of these fallbacks: snap, e.g. `advanceFrame` runs a snap evaluation when a frame would need more than `maxStepsPerFrame` steps; carry, e.g. ui.md's backlog of steps; split, e.g. input's JavaScript splits a frame's events into several evaluations; report, e.g. hn-thread's `slotOverflow` output; drop, e.g. rows past the last DOM slot get no node; clamp, e.g. lists' release velocity at ±2^16 px/s; or throw, e.g. the range check on every source cell.
 
-**Cost.** Every capacity is paid on every evaluation, whether or not it's used, e.g. about 210 operations per text cell in text-editing, and about 2,200 operations and 40 layers per press session per evaluation in indirect-os-2.
+**Cost.** Every capacity is paid on every evaluation, whether or not it's used, e.g. about 210 operations per text cell in text-editing, and about 2,200 operations and 40 layers per press session per evaluation in indirect-os-2's event queue over the whole IndirectOS ([input](lab/ui-exploration/input/README.md#merged-from-indirect-os-2-september-16-2026)).
 
 **Why choose it.** The program keeps a fixed size, and so does its backward pass, e.g. 562 operations per frame for differentiability.md's spring built on a matrix power, whether the frame runs 2 steps or 300. A fallback turns a limit into defined behavior that a JavaScript reference can reproduce, e.g. lists' JavaScript reference clamps the release velocity the way the circuit does.
 

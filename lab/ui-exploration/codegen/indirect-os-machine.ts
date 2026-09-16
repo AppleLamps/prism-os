@@ -28,8 +28,11 @@ import {
 } from './window-manager-copy.ts'
 import {itemCount as photoCount, thumbnailSpringField, validatePhotoGalleryOutput} from './photo-gallery-copy.ts'
 import {compileScalarProgram, type FroundAccess} from './codegen.ts'
+import {createTieredEvaluator} from './tiered.ts'
 
-export type Evaluator = 'executor' | 'generated'
+// 'tiered' starts on the executor, and machine.tiered.promote(source) switches it to
+// generated JS once every live wire matches the executor.
+export type Evaluator = 'executor' | 'generated' | 'tiered'
 
 export type IndirectOSMachineOptions = {
   evaluator: Evaluator
@@ -79,8 +82,12 @@ export function createIndirectOSMachine(options: IndirectOSMachineOptions) {
   let compileMilliseconds = 0
   let sourceBytes = 0
   let functionCount = 0
-  if (options.evaluator === 'executor') {
-    const evaluator = circuit.createTensorEvaluator(roots)
+  const tiered = options.evaluator === 'tiered'
+    ? createTieredEvaluator(circuit, roots, options.rowsPerFunction === undefined ? {} : {rowsPerFunction: options.rowsPerFunction})
+    : null
+  if (options.evaluator === 'executor' || tiered !== null) {
+    // Both return root values in the order of roots.
+    const evaluator = tiered === null ? circuit.createTensorEvaluator(roots) : (input: Float32Array) => tiered.evaluate(input)
     indexOfWire = new Int32Array(program.width).fill(-1)
     roots.forEach((root, index) => {
       if (indexOfWire[root] === -1) indexOfWire[root] = index
@@ -127,6 +134,7 @@ export function createIndirectOSMachine(options: IndirectOSMachineOptions) {
     program,
     values,
     indexOfWire,
+    tiered,
     cold: {buildAndCompileMilliseconds, generateMilliseconds, compileMilliseconds, sourceBytes, functionCount},
     read(wire: Wire) {
       return values[indexOfWire[wire]!]!

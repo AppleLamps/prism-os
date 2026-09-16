@@ -2,7 +2,8 @@
 // in the same circuit as the window manager. Ported from
 // lab/ui-exploration/indirect-os-2's notes.ts (configuration 4, with the obstacles
 // read from destinations), rewritten on cells.ts declarations and
-// numeric-ui-core.ts's helpers.
+// numeric-ui-core.ts's helpers. indirect-os-2 was removed on September 16, 2026, and
+// stays at https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2
 //
 // Coordinates are local to the Notes content box. Each other window's destination
 // rectangle, where the window is going, becomes an obstacle while the window is

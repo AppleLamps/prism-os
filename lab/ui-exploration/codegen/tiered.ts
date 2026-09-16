@@ -1,6 +1,8 @@
 // Tiered execution: start on the shared executor, and switch to generated
 // JavaScript (codegen.ts) once its functions are compiled, warmed, and checked
 // bit for bit on every live wire against the executor on the current table.
+// Moved here from lab/ui-exploration/indirect-os-2 on September 16, 2026;
+// tiered.test.ts switches in the middle of indirect-os-machine.ts's session.
 //
 // Generated code starts slow: JavaScriptCore interprets big functions before it
 // optimizes them, so codegen measured about 5 ms for the first frame and about

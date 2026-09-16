@@ -21,7 +21,7 @@ The same theorem says how much such an executor could gain at most. With unlimit
 | IndirectOS since September 15, 2026 | 3,654 | 124 | 29 |
 | input's window circuit, 16 queued events with at most 2 presses | 1,494 | 55 | 27 |
 | IndirectOS with spring-bank's springs, Photos reading its window's springs right after this frame's steps | 3,583 | 91 | 39 |
-| indirect-os-2, the whole program with Notes and word springs, before September 15, 2026 | 19,854 | 343 | 58 |
+| [indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2), the whole program with Notes and word springs, before September 15, 2026 | 19,854 | 343 | 58 |
 | indirect-os-2, the whole program with Notes, since September 15, 2026 | 18,027 | 337 | 53 |
 | text-editing, one key at 256 characters | 54,431 | 239 | 228 |
 | hn-thread, 251 comments | 53,703 | 69 | 778 |
@@ -133,7 +133,7 @@ With blocks of about √k events, the runs are √k deep and the selects are k /
 
 ### When the outcomes don't stay few
 
-Doubling needs the combined outcome of two blocks to again be one of few values, as a state machine's end state is one of S states however many events came before. Press sessions in a window manager make that condition hard to meet. input's open question proposes running press session s + 1's hit test against each possible outcome of session s (which window committed a drag, toggled maximize, or rose to the front) and selecting the matching result. A drag commit's outcome includes where the dragged window landed, a continuous position, so which values a block of press sessions should pass to the next block, and how many possible outcomes those values have, is the unbuilt part of the idea. Today each press session costs input about 427 operations and 17 layers, and indirect-os-2's event queue alone added 78 layers.
+Doubling needs the combined outcome of two blocks to again be one of few values, as a state machine's end state is one of S states however many events came before. Press sessions in a window manager make that condition hard to meet. input's open question proposes running press session s + 1's hit test against each possible outcome of session s (which window committed a drag, toggled maximize, or rose to the front) and selecting the matching result. A drag commit's outcome includes where the dragged window landed, a continuous position, so which values a block of press sessions should pass to the next block, and how many possible outcomes those values have, is the unbuilt part of the idea. Today each press session costs input about 427 operations and 17 layers, and indirect-os-2's event queue alone added 78 layers ([input](../../input/README.md#merged-from-indirect-os-2-september-16-2026)).
 
 ### Guessing in a fixed circuit
 

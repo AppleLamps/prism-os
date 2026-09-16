@@ -80,6 +80,6 @@ The stored copy equals this evaluation's value while the value doesn't move betw
 
 - [Long dependency chains](../sections/chains.md#way-4-read-last-frames-value), way 4, and the glossary's [delay](../README.md#chains-of-steps).
 - [retiming](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/retiming/README.md) turned delays into a program transformation and searched for them. Hand-chosen delays were 86 to 1,380 px off, e.g. layout-tree's app shell reading last frame's sidebar spring went from 115 to 83 layers and was 1,380 px off, and delays searched on one trace produced over 7,000 decision mismatches on random traces.
-- [indirect-os-2](../../indirect-os-2/README.md), where text obstacles that read last frame's stacking made words start moving a rendered frame later, and the shared clock then put windows 28.8 px apart between 60 and 120 fps.
+- [indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2), where text obstacles that read last frame's stacking made words start moving a rendered frame later, and the shared clock then put windows 28.8 px apart between 60 and 120 fps.
 - [event-time](../../event-time/README.md), which measured what a delayed read costs when only commits write back.
 - Example and test: [drawer-grid.ts](../examples/patterns/fewer-dependencies/drawer-grid.ts) and [read-last-frame.test.ts](../examples/patterns/fewer-dependencies/read-last-frame.test.ts).

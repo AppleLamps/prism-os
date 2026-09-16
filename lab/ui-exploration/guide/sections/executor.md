@@ -194,7 +194,7 @@ Pitfall: `roundAffine` keeps the caller's term order in its key, so the same ter
 
 `multiply(a, b)` puts an operand known to be nonnegative into the ReLU's gate, which costs 1 operation. When neither operand is known to be nonnegative, `multiply` builds two ReLU-gated products of opposite signs and subtracts them: 3 operations and 2 layers. In builder-steps.ts, `velocity × timestep` is 1 operation, 1 layer and 2 stored weights when the timestep's range is declared before the product, and 3 operations, 2 layers and 6 stored weights when the range is declared after.
 
-A range declared after an operation was built doesn't change that operation. Until September 15, 2026, IndirectOS declared its spring timestep's range after the window springs existed, and declaring the range where the timestep was computed saved 320 operations, 8 layers and 640 stored weights, with bit-identical outputs ([notation](../../notation/README.md), [indirect-os-2](../../indirect-os-2/README.md)).
+A range declared after an operation was built doesn't change that operation. Until September 15, 2026, IndirectOS declared its spring timestep's range after the window springs existed, and declaring the range where the timestep was computed saved 320 operations, 8 layers and 640 stored weights, with bit-identical outputs ([notation](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notation), [indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2)).
 
 ## What `compileTensorProgram` does
 
@@ -402,7 +402,7 @@ IndirectOS keeps one latch per event kind, i.e. a source cell that holds the lat
 
 ### Fixed capacities
 
-Every capacity is paid on every evaluation, whether or not it's used: queue entries per evaluation, text cells, line outputs, DOM nodes. input's window circuit with the event step written out for 16 events costs as much for an empty frame as for a full one. [text-editing](../../text-editing/README.md) costs about 210 operations per text cell, and 8 more layers per doubling of the capacity. [indirect-os-2](../../indirect-os-2/README.md)'s event queue costs 4,476 more operations and 78 more layers than latches. Each press session it handles per evaluation, i.e. one down with the moves and the up after it, costs about 2,200 operations and 40 layers whether or not a press arrives. Allowing one press per evaluation, with JavaScript splitting the rare frame that has two, brings the queue's cost down to 2,233 operations.
+Every capacity is paid on every evaluation, whether or not it's used: queue entries per evaluation, text cells, line outputs, DOM nodes. input's window circuit with the event step written out for 16 events costs as much for an empty frame as for a full one. [text-editing](../../text-editing/README.md) costs about 210 operations per text cell, and 8 more layers per doubling of the capacity. indirect-os-2's event queue over the whole IndirectOS ([input](../../input/README.md#merged-from-indirect-os-2-september-16-2026)) cost 4,476 more operations and 78 more layers than latches. Each press session it handled per evaluation, i.e. one down with the moves and the up after it, cost about 2,200 operations and 40 layers whether or not a press arrived. Allowing one press per evaluation, with JavaScript splitting the rare frame that has two, brought the queue's cost down to 2,233 operations.
 
 ### Whether a value may be one frame late
 

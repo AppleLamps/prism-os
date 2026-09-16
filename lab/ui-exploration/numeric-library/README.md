@@ -1,6 +1,6 @@
 # A tested numeric library for UI circuits
 
-This folder adds the missing operations from phase one to the macro library: exact comparisons with a cost chosen from declared ranges, exact minimum and maximum, round and floor, reciprocal, division, square root, sine and cosine, exp, smoothstep, remap, mix, and a float hash. Each operation has a written contract below, and dense tests check it against native JavaScript. The folder also holds a copy of IndirectOS whose minimum and maximum can be switched between the drifting macros and the exact ones, plus a small shader-style workload: a magnifying dock and a spinning progress ring.
+This folder adds the missing operations from phase one to the macro library: exact comparisons with a cost chosen from declared ranges, exact minimum and maximum, round and floor, reciprocal, division, square root, sine and cosine, exp, smoothstep, remap, mix, and a float hash. Each operation has a written contract below, and dense tests check it against native JavaScript. The folder also holds a small shader-style workload: a magnifying dock and a spinning progress ring.
 
 `numeric-ui-core.ts` is unchanged. Everything imports it with a relative path.
 
@@ -8,13 +8,15 @@ Update, September 14, 2026: the repo root `numeric-ui-core.ts` now has its own `
 
 Update, September 15, 2026: window-manager.ts now declares pointer coordinates within ±32,768 px on a 1/64 px grid, and its window hit tests compare each edge distance with `emitCompare`. What this README says about IndirectOS describes this folder's copies of the older window-manager.ts and photo-gallery.ts.
 
+Update, September 16, 2026: those copies, with their minimum and maximum modes and float64 references, were removed, since the exact minimum, maximum and clamp are in the root runtime (`emitMinimumExact`, `emitMaximumExact`, `emitClampExact`). They stay at the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/numeric-library), and [IndirectOS with exact minimum and maximum](#indirectos-with-exact-minimum-and-maximum) stays as a record of what they measured.
+
 ## How to run it
 
 From the repo root:
 
-- `bun test lab/ui-exploration/numeric-library` runs 47 tests in about 1.5 to 3 seconds. That covers library sweeps with asserted bounds, the workload against float64, and `window-manager.test.ts` rerun against the IndirectOS copy in two exact modes.
+- `bun test lab/ui-exploration/numeric-library` runs 19 tests in about 1 to 3 seconds. That covers library sweeps with asserted bounds and the workload against float64.
 - `bunx tsgo -p lab/ui-exploration/numeric-library` typechecks.
-- `bun lab/ui-exploration/numeric-library/report.ts [section...]` runs the heavy measurements and merges them into `report-output.json`. The sections are `macros` (about 27 s), `plans`, `minimum`, `rectangle-hit`, `indirect-os` (about 13 s), and `workload`. All numbers in this README come from that file. Timings are rough, because other agents share the machine.
+- `bun lab/ui-exploration/numeric-library/report.ts [section...]` runs the heavy measurements and merges them into `report-output.json`. The sections are `macros` (about 27 s), `plans`, `minimum`, `rectangle-hit`, and `workload`. All numbers in this README come from that file, except the IndirectOS modes, which come from the file's `indirect-os` section at the exploration-2026-09 tag. Timings are rough, because other agents share the machine.
 - `bun lab/ui-exploration/numeric-library/demo.html` serves the workload as a page: the dock magnifies around the pointer, and the ring spins and fills.
 
 ## What was built
@@ -28,10 +30,7 @@ From the repo root:
 | `shaping.ts` | `emitMix`, `emitRemap`, `emitRemapRuntime`, `emitSmoothstep`, `emitSmoothstepRuntime`, `emitExp`, `emitHash`, `hashReference` |
 | `library.ts` | re-exports all of the above |
 | `library.test.ts` | dense and boundary sampling for every macro, asserting the bounds in the contract table |
-| `window-manager-copy.ts`, `photo-gallery-copy.ts` | copies of IndirectOS whose `emitMinimum` and `emitMaximum` calls go through `min-max-mode.ts`. In some modes they also declare pointer coordinate ranges. |
-| `min-max-mode.ts` | the five minimum and maximum modes, with counts of converted and fallback call sites |
-| `indirect-os-agreement.ts` | a float64 reference for the settled IndirectOS layout, a float64 edge-press reference, and side-by-side random action runs |
-| `window-manager-copy.test.ts` | `window-manager.test.ts` pointed at the copy, run in `exact-one-stage` and `exact-one-stage-promised` |
+| `window-manager-copy.ts`, `photo-gallery-copy.ts`, `min-max-mode.ts`, `indirect-os-agreement.ts`, `window-manager-copy.test.ts` | removed on September 16, 2026, and kept at the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/numeric-library): copies of IndirectOS whose `emitMinimum` and `emitMaximum` calls went through five modes, float64 references for the settled layout and for presses near edges, and `window-manager.test.ts` pointed at the copy |
 | `workload.ts`, `workload.test.ts`, `demo.html`, `demo.ts` | the dock and progress ring circuit, `emitPercentOfUnit`, the float64 reference, and the page |
 | `report.ts`, `report-output.json`, `measure.ts` | measurement script, its output, shared helpers (seeded random values, FP32 stepping, `ceilFloat32`, chi-square p-values) |
 
@@ -102,7 +101,7 @@ The counting form is one layer shallower than the drifting form it replaces.
 
 ### IndirectOS with exact minimum and maximum
 
-IndirectOS has 273 unique minimum and maximum call sites, Photos included. Exact forms need finite declared ranges on both operands, and today most operands have open ranges. The modes (`report.ts indirect-os`):
+Measured on September 13, 2026, with this folder's copies of the window-manager.ts and photo-gallery.ts from before September 15, which stay at the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/numeric-library). IndirectOS has 273 unique minimum and maximum call sites, Photos included. Exact forms need finite declared ranges on both operands, and today most operands have open ranges. The modes (`report.ts indirect-os` at the tag):
 
 - `drifting`: today's macros.
 - `exact-one-stage`: exact where both declared ranges are finite, with the one-stage resolution of 2^-45 times the difference bound (2^-30 px for operands in [0, 16384]).

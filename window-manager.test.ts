@@ -960,9 +960,9 @@ test('a window button acts at a release over the button that the press armed, ev
   assert.equal(machine.source[armedSourceField('close', 0)], 1)
   assert.equal(filesOpen(), 1)
   // The pointer moves off the button and back, 4 ms apart, and the release over the
-  // button closes Files. In lab/ui-exploration/indirect-os-2, the first named case of
-  // queue.test.ts expects this path to act on nothing, since the pointer moved more
-  // than 4 px away from the press.
+  // button closes Files. In lab/ui-exploration/input, windows.test.ts's case "moving
+  // outward past slop and back cancels the click, within one frame" expects no click
+  // on this path, since the pointer moved more than 4 px away from the press.
   machine.pointerMove(filesClose.x + 40, filesClose.y + 30, eventTime(machine, 1))
   machine.pointerMove(filesClose.x, filesClose.y, eventTime(machine, 5))
   step(machine)

@@ -630,8 +630,9 @@ function buildWindowManager(notesOptions: NotesOptions) {
   // pointercancel, acts on nothing. The path between the press and the release
   // doesn't matter, e.g. a press on Files' close button that moves off the button and
   // back, then releases over the button, closes Files. This differs from
-  // lab/ui-exploration/indirect-os-2, where a press that moves more than 4 px away
-  // from where it started acts on nothing, even when the pointer comes back.
+  // lab/ui-exploration/input's window circuit, and from indirect-os-2 at the
+  // exploration-2026-09 tag, where a press that moves more than 4 px away from where
+  // it started turns into a drag, so a release back over the button doesn't click.
   //
   // A release is tested against the stored geometry, like a press, e.g. the window's
   // destination during an animation. The armed button's window is frontmost from the

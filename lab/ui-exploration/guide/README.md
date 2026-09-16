@@ -28,7 +28,7 @@ The sections use each of these terms with the meaning given here.
 - **Source table**: the `Float32Array` that holds every number a frame reads, i.e. inputs that JavaScript writes and state that the program computes. E.g. IndirectOS's source table has 241 cells, including the viewport width and each window's left edge.
 - **Cell**: one number at a fixed position in the source table, with a declared range and a policy: constant, input, event latch or state. E.g. `downActive` is the event latch cell that holds 1 after a pointer press.
 - **Latch**: a stored value that keeps its most recently written value until the next write. E.g. an event latch cell holds 1 after a pointer press until a frame reads it, and the frame's next value for that cell is 0.
-- **Event queue**: a fixed number of queue entries in the source table, each holding one event's kind bits and coordinates, for when the order of several events within one frame matters. E.g. indirect-os-2's queue has 8 entries and handles at most 2 presses per evaluation.
+- **Event queue**: a fixed number of queue entries in the source table, each holding one event's kind bits and coordinates, for when the order of several events within one frame matters. E.g. input's folded window circuit has 16 queue entries per evaluation.
 - **Press session**: one pointer down, the moves after it, and its up. E.g. input's window circuit handles at most 2 press sessions per evaluation.
 - **Builder code**: ordinary JavaScript that runs once at startup and appends operations to a `Circuit` instead of computing values. E.g. a `for` loop over 4 windows appends every window's hit test 4 times, and at runtime there's no loop.
 - **Wire**: the position of a value in the array that an evaluation fills, with source cells first and then one position per appended operation. E.g. in the toggle switch example, wire 0 is the viewport width cell, and wire 16, the constant 1, is the first appended operation.
@@ -143,7 +143,7 @@ The sections use each of these terms with the meaning given here.
 - **Segment**: pretext's unit of text, e.g. a word or a space, which pretext measures as one width. E.g. "The quick" is 3 segments: "The", " " and "quick".
 - **Tabulation**: finding in JavaScript the widths where a paragraph's layout result changes, so the circuit only compares the runtime width with those thresholds and adds constants. E.g. the Notes window's 10 text blocks are 1,041 operations in 4 layers.
 - **Line walker**: pretext's greedy line breaking, which adds segments to a line until the next segment doesn't fit. E.g. text-walker computes a line's end as a count of "the line through segment j fits" bits.
-- **Lookahead**: how many segments after a line's start the line walker compares, which caps how many segments one line can hold. E.g. 26 in indirect-os-2's Notes flow, and 21 in text-walker's circuits for a 1,023-segment paragraph.
+- **Lookahead**: how many segments after a line's start the line walker compares, which caps how many segments one line can hold. E.g. 26 in IndirectOS's Notes flow at the paragraph widths baked into notes-paragraph.ts, and 21 in text-walker's circuits for a 1,023-segment paragraph.
 
 ### Checking
 
@@ -174,7 +174,7 @@ A circuit can be wrong in ways a plain JavaScript app can't: a declaration that 
 
 ### Compare with a plain JavaScript reference
 
-Write the same app as plain JavaScript in ui.md's shape, without importing any circuit code, run both versions over the same traces, and compare every decision exactly and every position within a stated tolerance. input's reference applies a frame's events one at a time, so the comparison also checks how the circuit handles several events in one frame, e.g. indirect-os-2's named case where a press must read the result of a drag commit earlier in the same frame.
+Write the same app as plain JavaScript in ui.md's shape, without importing any circuit code, run both versions over the same traces, and compare every decision exactly and every position within a stated tolerance. input's reference applies a frame's events one at a time, so the comparison also checks how the circuit handles several events in one frame, e.g. input's named case where a press must read the result of a drag commit earlier in the same frame.
 
 This comparison catches wrong semantics, NaN from masked paths, and FP32 drift that crosses a threshold. gallery's differential tests found springs near 100,000 px that could never come within 0.01 px of their destination, so the page never stopped animating, and a table lookup over threshold bits whose entry near 1e-6 carried 10% error after a 912 ms stall.
 
@@ -186,7 +186,7 @@ Evaluate the same table with `evaluateReference` and with the compiled executor,
 
 ### Validate ranges, exact bits, one-hot groups and index reads
 
-The executors check every source cell against its declared range on every evaluation and reject NaN, but accept Infinity in an open range and 0.5 in a cell that should hold an exact bit. So the host should also check finiteness and exact bits, on the table before a frame and on the next-state values before copying them back, e.g. the toggle switch's `validateCells`, or notation's validators derived from cell declarations, which cost about 1 µs per frame on IndirectOS. Tests should run `validateOneHotGroups` on evaluated values, `validateIndexReads` wherever the index read instruction is used, and `validateGrids` wherever a grid is declared.
+The executors check every source cell against its declared range on every evaluation and reject NaN, but accept Infinity in an open range and 0.5 in a cell that should hold an exact bit. So the host should also check finiteness and exact bits, on the table before a frame and on the next-state values before copying them back, e.g. the toggle switch's `validateCells`, or the validator that the repo root's cells.ts derives from cell declarations. cells.ts took those declarations from [notation](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notation), whose derived validators cost about 1 µs per frame on IndirectOS. Tests should run `validateOneHotGroups` on evaluated values, `validateIndexReads` wherever the index read instruction is used, and `validateGrids` wherever a grid is declared.
 
 These checks catch the host writing values outside their ranges, state that leaves its range, and ranges that are false in FP32. layout-tree declared a timestep cell's maximum as 0.008, which a `Float32Array` stores as 0.0080000004, so every frame of 32 ms or more threw. A validator that throws can also be the rule that's wrong: photo-gallery.ts's output check rejected a thumbnail's left edge at -6.61 px, but thumbnails legitimately spring in past the left edge.
 
@@ -218,7 +218,7 @@ Two more checks measure what differential tests can't. The comparisons examples 
 
 ### Open the page in a browser
 
-Headless tests missed several problems that a Chrome check found ([browser check](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/browser-check.md)). layout-tree's machine threw on every frame of 32 ms or more. streaming-words stepped its springs through up to 1,020 ms of idle time on the first frame after an input. pixel-output's generated code nested `Math.fround` 1,003 deep, and V8 throws a stack overflow error at about 665 levels, while Bun's JavaScriptCore runs the same code. indirect-os-2's switch to generated code stalled an animation with a warmup step of about 500 ms. The check ran in a hidden tab with `requestAnimationFrame` replaced by a timer, so it couldn't check real frame pacing or window resizes.
+Headless tests missed several problems that a Chrome check found ([browser check](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/browser-check.md)). layout-tree's machine threw on every frame of 32 ms or more. streaming-words stepped its springs through up to 1,020 ms of idle time on the first frame after an input. pixel-output's generated code nested `Math.fround` 1,003 deep, and V8 throws a stack overflow error at about 665 levels, while Bun's JavaScriptCore runs the same code. indirect-os-2's switch to generated code stalled an animation with a warmup step of about 500 ms ([codegen](../codegen/README.md#merged-from-indirect-os-2-september-16-2026)). The check ran in a hidden tab with `requestAnimationFrame` replaced by a timer, so it couldn't check real frame pacing or window resizes.
 
 ## Running the examples
 

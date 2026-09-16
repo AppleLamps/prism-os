@@ -2,9 +2,11 @@
 // letter spacing, every line at least as wide as the widest segment) as circuit
 // arithmetic over runtime segment widths and break-after bits, plus the circuit
 // helpers it builds on: exact integer comparisons, integer one-hots and masked
-// reads. Ported from lab/ui-exploration/indirect-os-2's fast-walker.ts and
-// text-kit.ts, which were validated line for line against pretext's
-// layoutNextLineRange; notes.ts builds the Notes flow on it.
+// reads. Ported from lab/ui-exploration/text-walker's fast-walker.ts and its helpers,
+// through indirect-os-2's trimmed copies, fast-walker.ts and text-kit.ts, which were
+// validated line for line against pretext's layoutNextLineRange; notes.ts builds the
+// Notes flow on it. indirect-os-2 was removed on September 16, 2026, and stays at
+// https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2
 //
 // Shared tables, all computed in the circuit:
 //   S[j]         inclusive prefix sum of widths, a Brent-Kung network (exact for widths on a 1/64 px grid)

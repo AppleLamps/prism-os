@@ -82,7 +82,7 @@ The results that carry over to writing apps:
 - Committing state only at event timestamps, while frames evaluate a copy of the table without writing it back, e.g. event-time's committed tables were identical in every bit at 10 to 240 fps.
 - Design and behavior numbers in cells instead of constants, e.g. drag-knobs moved card padding, the grid gap and three more design numbers into cells for 60 operations, so a designer's drag can change them.
 - A fixed capacity plus a count of how many entries are real, e.g. streaming-words builds for 95 segments and writes `arrivedCount`, and whole-text outputs like the line count read that count.
-- Layout and hit tests against destinations instead of drawn positions, e.g. indirect-os-2's Notes paragraph flows around the other windows' destinations, which kept 60 and 120 fps within 2.4e-4 px.
+- Layout and hit tests against destinations instead of drawn positions, e.g. [indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2)'s Notes paragraph flows around the other windows' destinations, which kept 60 and 120 fps within 2.4e-4 px.
 
 learned-bits' learned rules, [retiming](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/retiming)'s searched delays, pixel-output's per-pixel programs and [exactness-budget](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/exactness-budget)'s relaxed order of additions are research directions, not building blocks.
 
@@ -98,7 +98,7 @@ Cheng made that order the default on September 14, 2026. host-timing.ts's `advan
 
 ### Composability
 
-Builder code composes like ordinary functions, because builder code is ordinary JavaScript: the springs section builds a step, a catch-up that calls the step, and a per-frame app that calls the catch-up for two springs sharing one clock, and the app matched a float64 copy of index.ts's `render()` in every step count and settle decision over 15,000 random frames. notation's components, i.e. cell declarations plus a build function that reads the parent's wires, compiled IndirectOS to the identical program.
+Builder code composes like ordinary functions, because builder code is ordinary JavaScript: the springs section builds a step, a catch-up that calls the step, and a per-frame app that calls the catch-up for two springs sharing one clock, and the app matched a float64 copy of index.ts's `render()` in every step count and settle decision over 15,000 random frames. [notation](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notation)'s components, i.e. cell declarations plus a build function that reads the parent's wires, compiled IndirectOS to the identical program.
 
 What doesn't compose at runtime: loop counts and recursion that depend on data; early exits; state kept between frames, which needs a cell that the caller allocates before building; and springs coupled through one shared clock. E.g. in indirect-os-2, text obstacles read from last frame's stacking made Notes' words start moving one rendered frame later, the shared clock restarted in different frames at 60 and 120 fps, and windows ended up 28.8 px apart between the two rates.
 
@@ -205,7 +205,7 @@ Cheng decided questions 1 to 3 on September 14, 2026, choosing the recommended o
 
 ### 4. What should agents build apps from?
 
-**Options.** Raw numeric-ui-core.ts calls with hand-kept offsets, or notation's declarations (cells with range, policy and initial value, and `table.next`); buttons that act on press, or on release; several presses per evaluation, or one press per evaluation with JavaScript splitting the frame; each app's own validator, or one shared host check.
+**Options.** Raw numeric-ui-core.ts calls with hand-kept offsets, or [notation](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notation)'s declarations (cells with range, policy and initial value, and `table.next`); buttons that act on press, or on release; several presses per evaluation, or one press per evaluation with JavaScript splitting the frame; each app's own validator, or one shared host check.
 
 **Recommendation.** notation's declarations for app code, and raw calls only in the model section, where every operation should stay visible. Buttons act on release, like native buttons. When the table keeps one latch per event kind, a button needs one extra state bit, `armed`, as in the toggle switch example. When the table holds an event queue, a button is the chains section's 3-state machine (idle, armed, and pressed with the pointer outside), which arms again when the pointer moves back inside before the release. indirect-os-2's buttons use a stricter rule: a press that moves more than 4 px from the press point turns into a drag, so moving back onto the button before the release doesn't click. One press per evaluation, with JavaScript splitting the rare frame that has more.
 

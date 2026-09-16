@@ -1,8 +1,10 @@
 // Heavy measurement for README.md: macro costs and dense error sweeps, comparison
-// plans, drifting against exact minimum, the rectangle hit test, IndirectOS in five
-// minimum and maximum modes, and the workload.
+// plans, drifting against exact minimum, the rectangle hit test, and the workload.
+// The section that ran IndirectOS in five minimum and maximum modes was removed on
+// September 16, 2026, with the IndirectOS copies it built, and stays at the
+// exploration-2026-09 tag.
 // Run: bun lab/ui-exploration/numeric-library/report.ts [section...]
-// Sections: macros, plans, minimum, rectangle-hit, indirect-os, workload.
+// Sections: macros, plans, minimum, rectangle-hit, workload.
 // Merges results into report-output.json.
 import {Circuit, emitMinimum, type Wire} from '../../../numeric-ui-core.ts'
 import {
@@ -27,10 +29,7 @@ import {
   planCompare,
 } from './library.ts'
 import {emitSignBit} from './comparison.ts'
-import {edgePressAgreement, randomActionComparison, settledLayoutAgreement, viewportCases} from './indirect-os-agreement.ts'
 import {chiSquarePValue, chiSquareStatistic, createRandom, f, measureProgram, randomLogUniform, roundHalfEven, stepFloat32} from './measure.ts'
-import {type MinMaxMode} from './min-max-mode.ts'
-import {createWindowManagerMachine} from './window-manager-copy.ts'
 import {
   createWorkloadCircuit,
   emitPercentOfUnit,
@@ -193,43 +192,6 @@ function minimumContrast() {
   })
 }
 
-function indirectOS() {
-  const modes: MinMaxMode[] = ['drifting', 'exact-one-stage', 'exact-one-stage-pointer-ranges', 'exact-one-stage-promised', 'exact-every-float32']
-  const sizes = modes.map(mode => {
-    const machine = createWindowManagerMachine(mode)
-    const program = machine.tensorProgram
-    let storedWeights = 0
-    let booleans = 0
-    for (const layer of program.layers) {
-      storedWeights += layer.weights.length
-      booleans += layer.booleanRows.length
-    }
-    // Rough executor timing: a dozen other agents share this machine.
-    const run = machine.circuit.createTensorEvaluator([...program.roots])
-    const source = Float32Array.from(machine.source)
-    for (let warmup = 0; warmup < 500; warmup++) run(source)
-    const start = Bun.nanoseconds()
-    const repetitions = 3000
-    for (let repetition = 0; repetition < repetitions; repetition++) run(source)
-    const microseconds = (Bun.nanoseconds() - start) / repetitions / 1000
-    const {fallbackBounds, promisedOperands, promisedOrigins, ...sites} = machine.minMaxSites
-    return {
-      mode,
-      liveOperations: program.valueCount - program.sourceSize,
-      layers: program.layers.length,
-      storedWeights,
-      booleans,
-      sites: {...sites, promisedOperandWires: promisedOperands.length, fallbackExamples: fallbackBounds.slice(0, 3)},
-      executorMicroseconds: Number(microseconds.toFixed(1)),
-    }
-  })
-  const viewports = viewportCases(200, 1)
-  const settled = modes.map(mode => ({mode, ...settledLayoutAgreement(mode, viewports, 2)}))
-  const edges = modes.map(mode => ({mode, ...edgePressAgreement(mode, 3000, 3)}))
-  const actions = randomActionComparison(modes, 3000, 0x51a7e)
-  return {sizes, settled, edges, actions}
-}
-
 function workload() {
   const {circuit, output} = createWorkloadCircuit()
   const roots = workloadRoots(output)
@@ -385,7 +347,7 @@ function rectangleHit() {
   })
 }
 
-const sections: Record<string, () => unknown> = {macros, plans, minimum: minimumContrast, 'rectangle-hit': rectangleHit, 'indirect-os': indirectOS, workload}
+const sections: Record<string, () => unknown> = {macros, plans, minimum: minimumContrast, 'rectangle-hit': rectangleHit, workload}
 const selected = process.argv.length > 2 ? process.argv.slice(2) : Object.keys(sections)
 const outputPath = new URL('./report-output.json', import.meta.url).pathname
 const previous = await Bun.file(outputPath).exists() ? await Bun.file(outputPath).json() as Record<string, unknown> : {}
