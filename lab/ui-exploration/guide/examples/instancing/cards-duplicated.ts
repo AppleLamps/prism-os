@@ -1,7 +1,7 @@
 // Before: the card row as one circuit, with the per-card arithmetic written out once per card.
 //
 // The builder is ordinary JavaScript that loops over the cards and appends each card's operations to
-// one Circuit, the way lab/ui-exploration/gallery/gallery-circuit.ts appends each photo's. A card's
+// one Circuit, the way lab/ui-exploration/instanced-items/gallery-circuit.ts appends each photo's. A card's
 // natural size is a build-time constant, so it becomes a weight. The loops across cards (the tallest
 // card, the running left edge, the first card under the pointer) become constructions whose operation
 // count and depth grow with the card count.

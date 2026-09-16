@@ -63,7 +63,7 @@ const rows = items.map((_, item) => circuit.affine(hasColumns.map((bit, index) =
 
 ## Where it's used
 
-- [gallery](../../gallery/README.md): the column count, which matched index.ts at every whole-pixel width from 320 to 3,840 px, including the 6 widths where the reciprocal fails.
+- The gallery in [instanced-items](../../instanced-items/README.md#merged-from-gallery-september-16-2026): the column count, which matched index.ts at every whole-pixel width from 320 to 3,840 px, including the 6 widths where the reciprocal fails.
 - [hn-thread](../../hn-thread/README.md): all 251 comment heights at any window width, from 1,768 width thresholds found in JavaScript: 5,283 operations in 4 layers.
 - [Text, idea 1](../sections/text.md#idea-1-tabulation) and [text-tabulated](../../text-tabulated/README.md): a paragraph's height as `baseHeight + Σ heightChange × [width >= threshold]`, e.g. text-tabulated's Notes window, whose 10 text blocks with 244 thresholds are 1,041 operations in 4 layers with every painting output.
 - [codegen](../../codegen/README.md): life-calendar's grid, where 141 threshold tests replace `Math.sqrt`, a division, floor and ceil.

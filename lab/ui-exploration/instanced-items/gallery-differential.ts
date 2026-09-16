@@ -1,14 +1,14 @@
 // Differential runs: the same interaction trace goes through the native fixture (reference.ts) and
 // the gallery host (gallery-host.ts) over any GalleryEngine, each with its own FakeBrowser. After
 // every frame, decisions are compared exactly and continuous values are compared as measured errors.
-// Adapted from lab/ui-exploration/gallery/differential.ts: the harness reads the engine surface
+// Adapted from differential.ts in this folder: the harness reads the engine surface
 // instead of the original circuit's wires, and accepts other photo lists.
-import {FakeBrowser} from '../gallery/fake-dom.ts'
-import {springNames} from '../gallery/gallery-circuit.ts'
+import {FakeBrowser} from './fake-dom.ts'
+import {springNames} from './gallery-circuit.ts'
 import type {GalleryEngine} from './gallery-engine.ts'
 import {createGalleryApp, type BoxStyle, type GalleryApp, type GalleryView} from './gallery-host.ts'
-import type {PhotoData} from '../gallery/photo-data.ts'
-import {createReferenceGallery, type ReferenceGallery} from '../gallery/reference.ts'
+import type {PhotoData} from './photo-data.ts'
+import {createReferenceGallery, type ReferenceGallery} from './reference.ts'
 
 export type Action =
   | {kind: 'frame', duration: number}
@@ -91,7 +91,7 @@ export type ScenarioOptions = {
   photos: readonly PhotoData[]
   engine: GalleryEngine
   // Copy the reference's committed state into the engine before every frame, so each frame checks one
-  // render against the original (see lab/ui-exploration/gallery/differential.ts for the one artifact).
+  // render against the original (see differential.ts's resync option for the one artifact).
   resync?: boolean
   // 'dyadic' frame durations are exact in FP32; 'realistic' uses 16.667ms-style durations.
   durations?: 'dyadic' | 'realistic'

@@ -1,5 +1,5 @@
 // Exact bits from comparisons, used by both card row versions. These are the constructions of
-// lab/ui-exploration/gallery/kit.ts (emitAll and the integer ramps); the comparisons section of the
+// lab/ui-exploration/instanced-items/kit.ts (emitAll and the integer ramps); the comparisons section of the
 // guide explains why they give exact 0/1 results.
 import {Circuit, type Terms, type Wire} from '../../../../../numeric-ui-core.ts'
 

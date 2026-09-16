@@ -137,7 +137,7 @@ h0   h1   h2   h3
 - **Cost.** At 1,024 rows, the chain is 1,023 operations in 1,023 layers, wide sums 1,023 operations in 1 layer with 524,799 stored weights, i.e. O(n²) weights, and Brent-Kung about 2n operations in about 2 log2 n layers, 2,036 in 18.
 - **Exact when.** The chain and wide sums take the loop's rounding steps, so they equal a loop that rounds every addition to FP32, bit for bit. Brent-Kung equals that loop only when every partial sum is exact, e.g. quarter-pixel heights with a content height within 2^22 px, or counts below 2^24. On long pages Brent-Kung is the more precise grouping: at 10,000 rows of 20 to 300 px, the loop's totals are up to 5.67 px from float64 sums of the same FP32 heights, and Brent-Kung's up to 0.26 px.
 - **Don't use it when.** Depth doesn't matter, as on today's CPU executor: the chain is the least work. A reference that adds one row at a time must match bit for bit on fractional heights: use the chain or wide sums. There are more than a few hundred rows: wide sums store n²/2 weights.
-- **Used in, long form, test.** gallery's strip edges, hn-thread's row tops, lists' counts of visible items. [running-totals.md](lab/ui-exploration/guide/patterns/running-totals.md), tested by [running-totals.test.ts](lab/ui-exploration/guide/examples/patterns/combining-steps/running-totals.test.ts).
+- **Used in, long form, test.** instanced-items' photo strip edges, hn-thread's row tops, lists' counts of visible items. [running-totals.md](lab/ui-exploration/guide/patterns/running-totals.md), tested by [running-totals.test.ts](lab/ui-exploration/guide/examples/patterns/combining-steps/running-totals.test.ts).
 
 ### A linear step repeated a runtime number of times
 

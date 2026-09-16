@@ -18,7 +18,7 @@
 //   and next are gathers at per-instance constant indices.
 import {emitMaximum, emitMinimum, emitMultiply, emitRelu, emitSelect, emitSpring, type Circuit, type Terms, type Wire} from '../../../numeric-ui-core.ts'
 import {createExecutor} from './executor.ts'
-import {emitAnd, emitGather} from '../gallery/kit.ts'
+import {emitAnd, emitGather} from './kit.ts'
 import {StagedProgram, type Value} from './staged.ts'
 
 export const windowCount = 4

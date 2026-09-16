@@ -535,7 +535,7 @@ Savings add up across compositions. In indirect-os-2, replacing `emitSpring` wit
 
 **Settle decisions on drifting FP32 state.** FP32 and float64 now and then cross the 0.01 thresholds in different frames. When the last moving spring settles one frame earlier in one run, that run's clock restarts in a different frame, and animations that start afterwards run up to a frame apart: in lists, card positions then differed by up to 21 px, while card order still matched on every frame ([synthesis](../../README.md)). One settle decision per animated object, and settling at fixed simulated times, reduce how often this happens, and `emitAnimatedObject` with `advanceFrame` does both.
 
-**Large absolute positions.** The gallery prototype found that spring positions near 100,000 px never settled in FP32, and stores each spring as a displacement plus its destination ([synthesis](../../README.md)). The examples here step the displacement for the same reason, and so does `emitAnimatedObject`: in spring-matrix.test.ts's traces moved to 65,536 and 131,072 px, stored displacements stayed within 1.4e-4 px of float64, and every run settled like float64.
+**Large absolute positions.** The gallery prototype found that spring positions near 100,000 px never settled in FP32, and stores each spring as a displacement plus its destination ([instanced-items](../../instanced-items/README.md#merged-from-gallery-september-16-2026)). The examples here step the displacement for the same reason, and so does `emitAnimatedObject`: in spring-matrix.test.ts's traces moved to 65,536 and 131,072 px, stored displacements stayed within 1.4e-4 px of float64, and every run settled like float64.
 
 ## Limits
 

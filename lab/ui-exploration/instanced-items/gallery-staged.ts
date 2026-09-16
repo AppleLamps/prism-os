@@ -1,6 +1,6 @@
 // chenglou.github.io's photo gallery render path as a staged program: the same
-// behavior as gallery-circuit.ts (the duplicated circuit from
-// lab/ui-exploration/gallery), with each per-photo section written once as a
+// behavior as gallery-circuit.ts (the duplicated circuit in this folder),
+// with each per-photo section written once as a
 // map stage and every loop across photos written as a reduction.
 //
 // Section by section against gallery-circuit.ts:
@@ -25,7 +25,7 @@
 //   integers only when the widths are, so positions drift apart by FP32
 //   rounding.
 import {Circuit, type Wire} from '../../../numeric-ui-core.ts'
-import {galleryConstants, springNames, type SpringName} from '../gallery/gallery-circuit.ts'
+import {galleryConstants, springNames, type SpringName} from './gallery-circuit.ts'
 import {
   aboveZero,
   atLeastZero,
@@ -44,8 +44,8 @@ import {
   type SpringBank,
   type SpringProducts,
   type WireMatrix,
-} from '../gallery/kit.ts'
-import type {PhotoData} from '../gallery/photo-data.ts'
+} from './kit.ts'
+import type {PhotoData} from './photo-data.ts'
 import {type InstanceArray, type PrefixOrder, StagedProgram, type Value} from './staged.ts'
 
 export type StagedGalleryOptions = {

@@ -9,7 +9,7 @@
 import {createExecutor} from '../../../instanced-items/executor.ts'
 import {generateColumnInstanceModule} from '../../../instanced-items/columns.ts'
 import {planInstances} from '../../../codegen/instance.ts'
-import {aboveZero, atLeastZero, emitAll} from '../../../gallery/kit.ts'
+import {aboveZero, atLeastZero, emitAll} from '../../../instanced-items/kit.ts'
 import {StagedProgram} from '../../../instanced-items/staged.ts'
 import {emitInstanceWgsl} from '../../../codegen/wgsl.ts'
 

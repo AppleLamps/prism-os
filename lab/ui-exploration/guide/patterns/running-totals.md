@@ -75,7 +75,7 @@ Sums round in FP32, so the grouping is part of the result. The tests compare wit
 ## Where it's used
 
 - [loops, section 3](../sections/loops.md#3-prefix-sums-three-ways): what the prototypes measured with each form, and how far the loop's totals and Brent-Kung's drift from exact sums at 1,000 and 10,000 rows. [Instancing](../sections/instancing.md#accumulation-order-is-part-of-the-result) explains why the order of additions is part of the result.
-- [gallery](../../gallery/README.md): the photo strip's left edges, 9 layers with wide sums and 21 with Brent-Kung sums.
+- The gallery in [instanced-items](../../instanced-items/README.md#merged-from-gallery-september-16-2026): the photo strip's left edges, 9 layers with wide sums and 21 with Brent-Kung sums.
 - [hn-thread](../../hn-thread/README.md): 251 animated row tops as wide sums, and the natural row tops as a Brent-Kung network over integer heights.
 - [lists](../../lists/README.md): counts of the visible items before each item, when routing 1,000 items into 20 DOM slots, 1,009 layers with a chain of counts, 27 with Brent-Kung counts and 11 with wide sums.
 - [instanced-items](../../instanced-items/README.md): Brent-Kung row tops and strip edges kept every decision equal to index.ts at 10,000 photos, where sums added one photo at a time flipped 74 decisions.

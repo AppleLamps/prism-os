@@ -6,7 +6,7 @@
 // Blink user agent. So the widths are fake per-character advances, not DM Sans: real fonts move the
 // breakpoints, and a browser page would compute its own table at load.
 //
-// Run: PRETEXT_SRC=<folder holding pretext's src/ files> bun lab/ui-exploration/gallery/prepare-captions.ts
+// Run: PRETEXT_SRC=<folder holding pretext's src/ files> bun lab/ui-exploration/instanced-items/prepare-captions.ts
 // The copy of pretext's src/ this script ran with was a session scratch copy (pretext commit 477510e4,
 // https://github.com/chenglou/pretext), not in the repo; lab/ui-exploration/text-tabulated/pretext/
 // holds the same files.

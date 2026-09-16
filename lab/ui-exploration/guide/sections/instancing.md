@@ -2,7 +2,7 @@
 
 Many UIs show a collection of similar items, e.g. photos in a gallery, cards in a row, windows on a desktop. In JavaScript you write the per-item work once, inside a loop. Indirect's first hand-written gallery circuit instead contained the per-photo arithmetic once per photo, 221 copies in one circuit. The instanced-items prototype built the alternative, the way a GPU shader is written: write the per-photo program once, run that program for every photo, and put the few computations that read many photos' values between those runs.
 
-This section covers the Photos gallery before and after (lab/ui-exploration/gallery and lab/ui-exploration/instanced-items), which parts of the gallery needed computations across photos and why, what each form costs, why the order of additions matters, why staging IndirectOS made it bigger, how a staged program runs on the CPU and the GPU, a runnable example of a row of cards, and what all of this has in common with a transformer.
+This section covers the Photos gallery before and after (gallery-circuit.ts and gallery-staged.ts, both in lab/ui-exploration/instanced-items), which parts of the gallery needed computations across photos and why, what each form costs, why the order of additions matters, why staging IndirectOS made it bigger, how a staged program runs on the CPU and the GPU, a runnable example of a row of cards, and what all of this has in common with a transformer.
 
 Instancing isn't a line-by-line translation of JavaScript loops. A loop over items becomes a list of steps, where each step is either one small program that runs for every item, or one computation across all items. A few habits change along the way, e.g. an item's program no longer reads its neighbor's value directly, and an item's constants are no longer written into the code.
 
@@ -32,7 +32,7 @@ The numbers below use four measures. **Live operations**, or just operations, ar
 
 ## Short answers
 
-**What changed for Photos?** Before, lab/ui-exploration/gallery/gallery-circuit.ts appended every photo's operations to one circuit, with each photo's constants written into the weights: 48,411 operations and 61 layers for 221 photos. After, lab/ui-exploration/instanced-items/gallery-staged.ts writes 6 per-photo stages once, 233 operations per photo at 221, 1,000 and 10,000 photos, with 31 computations across photos between them, e.g. the tallest photo in each row, the running totals of row heights, and the first photo under a click. Both forms made 0 decision mismatches against native index.ts over the same random and scripted traces at 221 photos. On synthetic photos with other random traces, the staged form made 0 mismatches at 1,000 photos, and at 10,000 photos only with Brent-Kung prefix sums: adding one item at a time flipped 74 decisions there.
+**What changed for Photos?** Before, lab/ui-exploration/instanced-items/gallery-circuit.ts appended every photo's operations to one circuit, with each photo's constants written into the weights: 48,411 operations and 61 layers for 221 photos. After, lab/ui-exploration/instanced-items/gallery-staged.ts writes 6 per-photo stages once, 233 operations per photo at 221, 1,000 and 10,000 photos, with 31 computations across photos between them, e.g. the tallest photo in each row, the running totals of row heights, and the first photo under a click. Both forms made 0 decision mismatches against native index.ts over the same random and scripted traces at 221 photos. On synthetic photos with other random traces, the staged form made 0 mismatches at 1,000 photos, and at 10,000 photos only with Brent-Kung prefix sums: adding one item at a time flipped 74 decisions there.
 
 **Which parts needed computations across photos?** Only the parts where one photo's result depends on other photos, or where one shared result depends on every photo: row maxima, row tops, strip left edges, the clicked photo, whether any photo is hovered, the scroll anchor, reads at the focused photo or the anchor photo, and whether anything is still animating. Sizes, the focus relation, grid targets, hover, destinations, springs and occlusion stayed per photo.
 
@@ -135,7 +135,7 @@ if (index + 1 < count) blurTerms.push([newFocus.members[index + 1]!, 1])
 
 ### What the duplicated circuit costs
 
-At 221 photos, gallery-circuit.ts has 48,411 live operations, 61 layers and 174,708 stored weights, and building it takes about 100 ms ([gallery README](../../gallery/README.md)). Springs are 31,191 of those operations (64%): 6 springs per photo, 1,326 in all.
+At 221 photos, gallery-circuit.ts has 48,411 live operations, 61 layers and 174,708 stored weights, and building it takes about 100 ms ([instanced-items](../../instanced-items/README.md#merged-from-gallery-september-16-2026)). Springs are 31,191 of those operations (64%): 6 springs per photo, 1,326 in all.
 
 Every copy adds its own operations, so the program's size, build time and memory grow with the photo count. instanced-items expanded its staged gallery into a duplicated circuit at larger counts, with Brent-Kung prefix sums (explained under "Accumulation order"):
 
@@ -358,7 +358,7 @@ A gather is a read of one value at a position, like `table[index]`. In a circuit
 | `sum`, `countBits` | `total += value` | O(n) | one sum: 1 operation, 1 layer, n stored weights |
 | `prefixSum`, one item at a time | `before[i] = running; running += value` | O(n) | a chain: n operations in n layers; or wide sums: n operations in 1 layer with about n²/2 stored weights |
 | `prefixSum`, Brent-Kung | the same outputs | O(n) | about 2n operations in about 2 log2 n layers |
-| `firstActive` | `if (bits[i] === 1) return i` | O(n) | a tournament: about 2.7n operations in about 3 log2 n layers, e.g. 172 operations and 17 layers for 64 items with gallery/kit.ts's `emitFirstSetBit`, a different helper from numeric-ui-core.ts's `emitFirstActive`, which is 316 operations in 31 layers |
+| `firstActive` | `if (bits[i] === 1) return i` | O(n) | a tournament: about 2.7n operations in about 3 log2 n layers, e.g. 172 operations and 17 layers for 64 items with instanced-items/kit.ts's `emitFirstSetBit`, a different helper from numeric-ui-core.ts's `emitFirstActive`, which is 316 operations in 31 layers |
 | `argmax` | the index of the highest score | O(n) | `emitArgmax`'s tournament: O(n) operations in O(log n) layers |
 | `max`, `groupMax` | `tallest = Math.max(tallest, value)` | O(n) | a chain of maxima: 3 operations and 3 layers per item |
 | `gatherAt` | `values[index]`, with index a shared value | O(1) | the index's one-hot from about n ReLUs, then one gather |
@@ -817,6 +817,6 @@ The structure lines up: a staged program alternates per-item programs with compu
 
 ## Files
 
-- Prototypes: [gallery](../../gallery/README.md) (gallery-circuit.ts, the duplicated circuit) and [instanced-items](../../instanced-items/README.md) (staged.ts, gallery-staged.ts, indirect-os-staged.ts, expand.ts, executor.ts, gpu-executor.ts, wgsl.ts).
+- Prototype: [instanced-items](../../instanced-items/README.md) (gallery-circuit.ts, the duplicated circuit, [merged from gallery](../../instanced-items/README.md#merged-from-gallery-september-16-2026); staged.ts, gallery-staged.ts, indirect-os-staged.ts, expand.ts, executor.ts, gpu-executor.ts, wgsl.ts).
 - Source: lab/trace-compiler/fixtures/index.ts.txt, photo-gallery.ts and window-manager.ts.
 - Examples: [examples/instancing](../examples/instancing/).

@@ -2529,7 +2529,7 @@ export type AnimatedObject = {
 // settles or snaps, every displacement and velocity becomes 0, up to the sign of
 // zero, so every spring lands exactly on its destination. Ported from emitSpringBox
 // in lab/ui-exploration/event-time/spring-bank.ts with deferred retargeting, and
-// from the displacement cells of lab/ui-exploration/gallery's kit.ts.
+// from the displacement cells of lab/ui-exploration/instanced-items/gallery-circuit.ts.
 //
 // For each spring:
 //   (displacement', velocity') = matrix × (displacement, velocity)

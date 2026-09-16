@@ -2,7 +2,7 @@ import {expect, test} from 'bun:test'
 import {Circuit, emitMaximum, emitMinimum, emitRelu, type Wire} from '../../../numeric-ui-core.ts'
 import {createExecutor} from './executor.ts'
 import {createDuplicatedMachine, expandDuplicated, liveOperations} from './expand.ts'
-import {emitGather, emitIndexOneHot} from '../gallery/kit.ts'
+import {emitGather, emitIndexOneHot} from './kit.ts'
 import {StagedProgram, type Value} from './staged.ts'
 
 export function createRandom(seed: number) {
