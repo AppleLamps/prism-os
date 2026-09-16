@@ -1,6 +1,5 @@
 import {
-  Circuit,
-  type SpringMatrixWires,
+  type Circuit,
   type Wire,
   assertFiniteValues,
   assertNonNegativeFinite,
@@ -12,7 +11,6 @@ import {
   emitMultiply,
   emitRelu,
   emitSelect,
-  inlineCircuit,
   invariant,
   validateCircuit,
   validateTensorProgram,
@@ -31,32 +29,32 @@ import {
   stoppedSpringClock,
 } from './host-timing.ts'
 import {
-  type PhotoGalleryOutput,
-  createPhotoGalleryCircuit,
+  type PhotoOutputs,
+  buildPhotos,
   createPhotoGalleryRenderer,
-  focusField as localPhotoFocusField,
-  itemCount as photoCount,
-  sourceField as localPhotoSourceField,
+  photoCells,
+  photoEvents,
   springConstants,
-  thumbnailSpringField,
-  thumbnailSpringSourceField as localThumbnailSpringSourceField,
   validatePhotoGalleryOutput,
   validatePhotoGalleryOutputWires,
 } from './photo-gallery.ts'
+import {
+  type Range,
+  anyNumber,
+  constant,
+  createSourceTable,
+  event,
+  fieldIndices,
+  input,
+  list,
+  oneHot,
+  permutation,
+  state,
+  stateBit,
+  unitInterval,
+} from './cells.ts'
 
 export const windowCount = 4
-
-export const windowStateField = {
-  left: 0,
-  top: 1,
-  width: 2,
-  height: 3,
-  open: 4,
-  minimized: 5,
-  maximized: 6,
-  present: 7,
-  size: 8,
-} as const
 
 // translateX, translateY, width, height and scale are where a window's frame is
 // drawn while its springs animate. contentWidth and contentHeight are the content
@@ -94,103 +92,6 @@ export const dockOutputField = {
 const animationFields = ['centerX', 'centerY', 'width', 'height', 'scale'] as const
 type AnimationField = (typeof animationFields)[number]
 
-// Per window, for each of the 5 springs in animationFields order: its displacement
-// from the destination in effect, its velocity, and that destination. The drawn
-// value is destination + displacement, which the program computes and doesn't store.
-const springStateField = {
-  displacement: 0,
-  velocity: 1,
-  destination: 2,
-  size: 3,
-} as const
-const windowSpringSize = animationFields.length * springStateField.size
-
-const windowStateStart = 31
-const dragStart = windowStateStart + windowCount * windowStateField.size
-const resizeStart = dragStart + windowCount
-const stackStart = resizeStart + windowCount
-const springStart = stackStart + windowCount * windowCount
-const photoStart = springStart + windowCount * windowSpringSize
-
-export const photoSourceField = {
-  gap: photoStart,
-  mainInset: photoStart + 1,
-  thumbnailHeight: photoStart + 2,
-  controlSize: photoStart + 3,
-  clickActive: photoStart + 4,
-  clickX: photoStart + 5,
-  clickY: photoStart + 6,
-  previousActive: photoStart + 7,
-  nextActive: photoStart + 8,
-  closeActive: photoStart + 9,
-  focusStart: photoStart + 10,
-  thumbnailSpringStart: photoStart + 10 + photoCount,
-  size: photoStart + 10 + photoCount + photoCount * thumbnailSpringField.size,
-} as const
-const sourceSize = photoSourceField.size
-
-export const sourceField = {
-  viewportWidth: 0,
-  viewportHeight: 1,
-  unit: 2,
-  margin: 3,
-  titleHeight: 4,
-  minWidth: 5,
-  minHeight: 6,
-  resizeGrip: 7,
-  buttonSize: 8,
-  buttonGap: 9,
-  dockHeight: 10,
-  dockGap: 11,
-  dockItemWidth: 12,
-  downActive: 13,
-  downX: 14,
-  downY: 15,
-  moveActive: 16,
-  moveX: 17,
-  moveY: 18,
-  upActive: 19,
-  upX: 20,
-  upY: 21,
-  pointerX: 22,
-  pointerY: 23,
-  systemBarHeight: 24,
-  // The spring matrix, settle check bit and snap bit that the host writes before
-  // each evaluation, see advanceFrame in host-timing.ts.
-  springMatrixStart: 25,
-  settleCheck: 29,
-  snap: 30,
-  windowStart: windowStateStart,
-  dragStart,
-  resizeStart,
-  stackStart,
-  springStart,
-  photoStart,
-  size: sourceSize,
-} as const
-
-const photosWindowIndex = windowCount - 1
-const geometryFields = ['left', 'top', 'width', 'height'] as const
-const transformFields = ['translateX', 'translateY', 'scale'] as const
-const springMatrixFields: SpringMatrixWires = [
-  sourceField.springMatrixStart,
-  sourceField.springMatrixStart + 1,
-  sourceField.springMatrixStart + 2,
-  sourceField.springMatrixStart + 3,
-]
-const eventActiveFields = [
-  sourceField.downActive,
-  sourceField.moveActive,
-  sourceField.upActive,
-] as const
-const eventCoordinateFields = [
-  sourceField.downX,
-  sourceField.downY,
-  sourceField.moveX,
-  sourceField.moveY,
-  sourceField.upX,
-  sourceField.upY,
-] as const
 // The machine rounds pointer coordinates and the viewport to multiples of this
 // many px, and clamps pointer coordinates within ±pointerCoordinateBound px.
 const pixelGrid = 1 / 64
@@ -198,50 +99,221 @@ const pixelGrid = 1 / 64
 // could span more than 2^24 steps of its 1/128 px grid, and emitCompare would
 // build a sign cascade for it instead of integer bits.
 const pointerCoordinateBound = 32_768
-const pointerCoordinateFields = [
-  ...eventCoordinateFields,
-  sourceField.pointerX,
-  sourceField.pointerY,
+// Pixel-space cells carry an honest finite ceiling: 16384 covers the
+// largest real displays (8K is 7680 wide) with headroom while staying far
+// inside FP32's exact-integer band (macro-ranges.md keeps operands well
+// under 2^23). Finite bounds make geometry eligible for gather lowering
+// (see lab/gather-lowering); a range that admits Infinity cannot lower.
+const pixel: Range = [0, 16_384]
+// The machine writes the viewport and pointer coordinates on the 1/64 px grid.
+// With the pixel constants, window geometry and bit cells below also declared on
+// grids, the edge distances of every window rectangle lie on a grid, so the hit
+// tests' comparisons are integer bits (see emitRectangleHit).
+const coordinate = () => input([-pointerCoordinateBound, pointerCoordinateBound], {grid: pixelGrid})
+// Margins, the title bar, buttons, and dock geometry are constants in the
+// tens to hundreds of pixels; 1024 is generous.
+const pixelConstant = (value: number) => constant(value, [0, 1024], {grid: pixelGrid})
+// Every FP32 matrix entry the host writes for up to 300 steps stays within this
+// bound.
+const matrixBound = springMatrixBound(springConstants)
+const initialGeometry = [
+  [54, 54, 520, 340],
+  [410, 104, 500, 366],
+  [174, 344, 470, 300],
+  [650, 190, 560, 430],
 ] as const
-const photoEventActiveFields = [
-  photoSourceField.clickActive,
-  photoSourceField.previousActive,
-  photoSourceField.nextActive,
-  photoSourceField.closeActive,
-] as const
-const photoEventCoordinateFields = [
-  photoSourceField.clickX,
-  photoSourceField.clickY,
-] as const
-const photoConstantFields = [
-  photoSourceField.gap,
-  photoSourceField.mainInset,
-  photoSourceField.thumbnailHeight,
-  photoSourceField.controlSize,
-] as const
-const pixelConstantFields = [
-  sourceField.margin,
-  sourceField.titleHeight,
-  sourceField.minWidth,
-  sourceField.minHeight,
-  sourceField.resizeGrip,
-  sourceField.buttonSize,
-  sourceField.buttonGap,
-  sourceField.dockHeight,
-  sourceField.dockGap,
-  sourceField.dockItemWidth,
-  sourceField.systemBarHeight,
-] as const
+
+// One spring of a window: its displacement from the destination in effect, its
+// velocity, and that destination. The drawn value is destination + displacement,
+// which the program computes and doesn't store. Displacements and velocities need
+// no declared range. Each window starts at rest on its destinations.
+const springCells = (destination: Range, initialDestination: number) => ({
+  displacement: state(anyNumber),
+  velocity: state(anyNumber),
+  destination: state(destination, {initial: initialDestination}),
+})
+
+const windowManagerCells = {
+  viewportWidth: input(pixel, {grid: pixelGrid}),
+  viewportHeight: input(pixel, {grid: pixelGrid}),
+  unit: constant(1, [1, 1], {grid: 1}),
+  margin: pixelConstant(12),
+  titleHeight: pixelConstant(44),
+  minWidth: pixelConstant(280),
+  minHeight: pixelConstant(190),
+  resizeGrip: pixelConstant(24),
+  buttonSize: pixelConstant(18),
+  buttonGap: pixelConstant(10),
+  dockHeight: pixelConstant(76),
+  dockGap: pixelConstant(12),
+  dockItemWidth: pixelConstant(50),
+  down: {active: event({grid: 1}), x: coordinate(), y: coordinate()},
+  move: {active: event({grid: 1}), x: coordinate(), y: coordinate()},
+  up: {active: event({grid: 1}), x: coordinate(), y: coordinate()},
+  // Where the pointer was at the last event, which a drag or a resize measures from.
+  pointer: {
+    x: state([-pointerCoordinateBound, pointerCoordinateBound], {grid: pixelGrid}),
+    y: state([-pointerCoordinateBound, pointerCoordinateBound], {grid: pixelGrid}),
+  },
+  systemBarHeight: pixelConstant(36),
+  // The spring matrix, settle check bit and snap bit that the host writes before
+  // each evaluation, see advanceFrame in host-timing.ts.
+  springMatrix: [
+    state([-matrixBound, matrixBound], {initial: 1}),
+    state([-matrixBound, matrixBound]),
+    state([-matrixBound, matrixBound]),
+    state([-matrixBound, matrixBound], {initial: 1}),
+  ] as const,
+  settleCheck: stateBit(),
+  snap: stateBit(),
+  // Window geometry is clamped to the viewport every frame before writeback,
+  // so the viewport ceiling is honest for the stored state as well. Pointer
+  // deltas and clamps against the viewport and the constants keep it on the
+  // 1/64 px grid.
+  windows: list(windowCount, windowIndex => {
+    const [left, top, width, height] = initialGeometry[windowIndex]!
+    return {
+      left: state(pixel, {initial: left, grid: pixelGrid}),
+      top: state(pixel, {initial: top, grid: pixelGrid}),
+      width: state(pixel, {initial: width, grid: pixelGrid}),
+      height: state(pixel, {initial: height, grid: pixelGrid}),
+      open: stateBit(1, {grid: 1}),
+      minimized: stateBit(0, {grid: 1}),
+      maximized: stateBit(0, {grid: 1}),
+      present: stateBit(1, {grid: 1}),
+    }
+  }),
+  // The window that a title bar press drags, and the window that a grip press
+  // resizes, if any.
+  drag: oneHot(list(windowCount, () => stateBit(0, {grid: 1})), {allowAllZero: true, declareToCircuit: false}),
+  resize: oneHot(list(windowCount, () => stateBit(0, {grid: 1})), {allowAllZero: true, declareToCircuit: false}),
+  // The stacking state is a permutation matrix: exactly one window per rank
+  // and exactly one rank per window. Declared as one-hot groups, the
+  // frontmost-window selection sums lower to gather reads (see lab/gather-lowering).
+  stack: permutation(list(windowCount, windowIndex => windowIndex), {grid: 1}),
+  // The destinations written back are this evaluation's targets. A center can
+  // sit a little outside the viewport, e.g. a dock item in a 2 px wide viewport
+  // is centered at -4.8e-7 px after FP32 rounds a third, so centers get
+  // -16,384..32,768.
+  springs: list(windowCount, windowIndex => {
+    const [left, top, width, height] = initialGeometry[windowIndex]!
+    return {
+      centerX: springCells([-16_384, 32_768], left + width / 2),
+      centerY: springCells([-16_384, 32_768], top + height / 2),
+      width: springCells(pixel, width),
+      height: springCells(pixel, height),
+      scale: springCells(unitInterval, 1),
+    }
+  }),
+  photos: photoCells,
+}
+
+// The cell positions under their earlier names, e.g. sourceField.downX is the
+// position of down.x, and windowStateField.top is the index of top within one
+// window's cells.
+const layout = createSourceTable()
+const positions = layout.declare(windowManagerCells)
+
+export const windowStateField = fieldIndices(windowManagerCells.windows[0]!)
+
+export const photoSourceField = {
+  gap: positions.photos.gap,
+  mainInset: positions.photos.mainInset,
+  thumbnailHeight: positions.photos.thumbnailHeight,
+  controlSize: positions.photos.controlSize,
+  clickActive: positions.photos.click.active,
+  clickX: positions.photos.click.x,
+  clickY: positions.photos.click.y,
+  previousActive: positions.photos.previous,
+  nextActive: positions.photos.next,
+  closeActive: positions.photos.close,
+  focusStart: positions.photos.focus[0]!,
+  thumbnailSpringStart: positions.photos.thumbnails[0]!.centerXDisplacement,
+  size: layout.size,
+}
+
+export const sourceField = {
+  viewportWidth: positions.viewportWidth,
+  viewportHeight: positions.viewportHeight,
+  unit: positions.unit,
+  margin: positions.margin,
+  titleHeight: positions.titleHeight,
+  minWidth: positions.minWidth,
+  minHeight: positions.minHeight,
+  resizeGrip: positions.resizeGrip,
+  buttonSize: positions.buttonSize,
+  buttonGap: positions.buttonGap,
+  dockHeight: positions.dockHeight,
+  dockGap: positions.dockGap,
+  dockItemWidth: positions.dockItemWidth,
+  downActive: positions.down.active,
+  downX: positions.down.x,
+  downY: positions.down.y,
+  moveActive: positions.move.active,
+  moveX: positions.move.x,
+  moveY: positions.move.y,
+  upActive: positions.up.active,
+  upX: positions.up.x,
+  upY: positions.up.y,
+  pointerX: positions.pointer.x,
+  pointerY: positions.pointer.y,
+  systemBarHeight: positions.systemBarHeight,
+  springMatrixStart: positions.springMatrix[0],
+  settleCheck: positions.settleCheck,
+  snap: positions.snap,
+  windowStart: positions.windows[0]!.left,
+  dragStart: positions.drag[0]!,
+  resizeStart: positions.resize[0]!,
+  stackStart: positions.stack[0]![0]!,
+  springStart: positions.springs[0]!.centerX.displacement,
+  photoStart: positions.photos.gap,
+  size: layout.size,
+}
+
+// A list's element at a checked index, e.g. cellAt(positions.drag, 5, 'drag window
+// index') throws 'drag window index is invalid'.
+function cellAt<Element>(cells: readonly Element[], index: number, label: string) {
+  invariant(Number.isInteger(index) && index >= 0 && index < cells.length, `${label} is invalid`)
+  return cells[index]!
+}
+
+export function windowSourceField(windowIndex: number, field: number) {
+  return cellAt(Object.values(cellAt(positions.windows, windowIndex, 'window index')), field, 'window field')
+}
+
+export function dragSourceField(windowIndex: number) {
+  return cellAt(positions.drag, windowIndex, 'drag window index')
+}
+
+export function resizeSourceField(windowIndex: number) {
+  return cellAt(positions.resize, windowIndex, 'resize window index')
+}
+
+export function stackSourceField(rank: number, windowIndex: number) {
+  return cellAt(cellAt(positions.stack, rank, 'stack rank'), windowIndex, 'stack window index')
+}
+
+export function photoFocusSourceField(item: number) {
+  return cellAt(positions.photos.focus, item, 'photo index')
+}
+
+export function photoThumbnailSpringSourceField(item: number, field: number) {
+  return cellAt(
+    Object.values(cellAt(positions.photos.thumbnails, item, 'photo index')),
+    field,
+    'photo thumbnail spring field',
+  )
+}
+
+const photosWindowIndex = windowCount - 1
+const geometryFields = ['left', 'top', 'width', 'height'] as const
+const transformFields = ['translateX', 'translateY', 'scale'] as const
 type Geometry = Record<(typeof geometryFields)[number], Wire>
 type Transform = Record<(typeof transformFields)[number], Wire>
 type WindowAnimation = {
   width: Wire
   height: Wire
   transform: Transform
-  // Next state, in animationFields order.
-  displacements: Wire[]
-  velocities: Wire[]
-  destinations: Record<AnimationField, Wire>
   active: Wire
 }
 
@@ -250,230 +322,43 @@ type WindowManagerOutput = {
   windows: Wire[]
   dockItems: Wire[]
   animationActive: Wire
-  photos: PhotoGalleryOutput
+  photos: PhotoOutputs
 }
 
-export function windowSourceField(windowIndex: number, field: number) {
-  invariant(
-    Number.isInteger(windowIndex) && windowIndex >= 0 && windowIndex < windowCount,
-    'window index is invalid',
-  )
-  invariant(
-    Number.isInteger(field) && field >= 0 && field < windowStateField.size,
-    'window field is invalid',
-  )
-  return sourceField.windowStart + windowIndex * windowStateField.size + field
-}
+function buildWindowManager() {
+  const table = createSourceTable()
+  const cells = table.declare(windowManagerCells)
+  table.atMostOne('photos events', photoEvents(cells.photos))
+  const circuit = table.createCircuit()
 
-export function dragSourceField(windowIndex: number) {
-  invariant(
-    Number.isInteger(windowIndex) && windowIndex >= 0 && windowIndex < windowCount,
-    'drag window index is invalid',
-  )
-  return sourceField.dragStart + windowIndex
-}
-
-export function resizeSourceField(windowIndex: number) {
-  invariant(
-    Number.isInteger(windowIndex) && windowIndex >= 0 && windowIndex < windowCount,
-    'resize window index is invalid',
-  )
-  return sourceField.resizeStart + windowIndex
-}
-
-export function stackSourceField(rank: number, windowIndex: number) {
-  invariant(Number.isInteger(rank) && rank >= 0 && rank < windowCount, 'stack rank is invalid')
-  invariant(
-    Number.isInteger(windowIndex) && windowIndex >= 0 && windowIndex < windowCount,
-    'stack window index is invalid',
-  )
-  return sourceField.stackStart + rank * windowCount + windowIndex
-}
-
-function springSourceField(windowIndex: number, spring: AnimationField, field: number) {
-  invariant(
-    Number.isInteger(windowIndex) && windowIndex >= 0 && windowIndex < windowCount,
-    'spring window index is invalid',
-  )
-  invariant(
-    Number.isInteger(field) && field >= 0 && field < springStateField.size,
-    'spring field is invalid',
-  )
-  return sourceField.springStart
-    + windowIndex * windowSpringSize
-    + animationFields.indexOf(spring) * springStateField.size
-    + field
-}
-
-export function photoFocusSourceField(item: number) {
-  invariant(
-    Number.isInteger(item) && item >= 0 && item < photoCount,
-    'photo index is invalid',
-  )
-  return photoSourceField.focusStart + item
-}
-
-export function photoThumbnailSpringSourceField(item: number, field: number) {
-  invariant(Number.isInteger(item) && item >= 0 && item < photoCount, 'photo index is invalid')
-  invariant(
-    Number.isInteger(field) && field >= 0 && field < thumbnailSpringField.size,
-    'photo thumbnail spring field is invalid',
-  )
-  return photoSourceField.thumbnailSpringStart + item * thumbnailSpringField.size + field
-}
-
-function compileWindowManagerCircuit() {
-  const circuit = new Circuit(sourceField.size)
-  // Pixel-space sources carry an honest finite ceiling: 16384 covers the
-  // largest real displays (8K is 7680 wide) with headroom while staying far
-  // inside FP32's exact-integer band (macro-ranges.md keeps operands well
-  // under 2^23). Finite bounds make geometry eligible for gather lowering
-  // (see lab/gather-lowering); a range that admits Infinity cannot lower.
-  circuit.assumeRange(sourceField.viewportWidth, 0, 16_384)
-  circuit.assumeRange(sourceField.viewportHeight, 0, 16_384)
-  circuit.assumeRange(sourceField.unit, 1, 1)
-  // The machine writes the viewport and pointer coordinates on the 1/64 px grid.
-  // With the pixel constants, window geometry and bit cells below also declared on
-  // grids, the edge distances of every window rectangle lie on a grid, so the hit
-  // tests' comparisons are integer bits (see emitRectangleHit).
-  circuit.assumeGrid(sourceField.viewportWidth, pixelGrid)
-  circuit.assumeGrid(sourceField.viewportHeight, pixelGrid)
-  circuit.assumeGrid(sourceField.unit, 1)
-  for (const field of pointerCoordinateFields) {
-    circuit.assumeRange(field, -pointerCoordinateBound, pointerCoordinateBound)
-    circuit.assumeGrid(field, pixelGrid)
-  }
-  // Every FP32 matrix entry the host writes for up to 300 steps stays within this
-  // bound.
-  const matrixBound = springMatrixBound(springConstants)
-  for (const field of springMatrixFields) circuit.assumeRange(field, -matrixBound, matrixBound)
-  circuit.assumeRange(sourceField.settleCheck, 0, 1)
-  circuit.assumeRange(sourceField.snap, 0, 1)
-  // Margins, the title bar, buttons, and dock geometry are constants in the
-  // tens to hundreds of pixels; 1024 is generous.
-  for (const field of pixelConstantFields) {
-    circuit.assumeRange(field, 0, 1024)
-    circuit.assumeGrid(field, pixelGrid)
-  }
-  for (const field of eventActiveFields) {
-    circuit.assumeRange(field, 0, 1)
-    circuit.assumeGrid(field, 1)
-  }
-  for (const field of photoConstantFields) {
-    circuit.assumeRange(field, 0, 1024)
-  }
-  for (const field of photoEventActiveFields) circuit.assumeRange(field, 0, 1)
-  for (let item = 0; item < photoCount; item++) {
-    circuit.assumeRange(photoFocusSourceField(item), 0, 1)
-    // The same ranges as photo-gallery.ts declares, whose inlined declarations
-    // land on these wires.
-    circuit.assumeRange(
-      photoThumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination),
-      -16_384,
-      32_768,
-    )
-    circuit.assumeRange(
-      photoThumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination),
-      0,
-      1,
-    )
-  }
-  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    // Window geometry is clamped to the viewport every frame before writeback,
-    // so the viewport ceiling is honest for the stored state as well. Pointer
-    // deltas and clamps against the viewport and the constants keep it on the
-    // 1/64 px grid.
-    for (const field of [
-      windowStateField.left,
-      windowStateField.top,
-      windowStateField.width,
-      windowStateField.height,
-    ]) {
-      circuit.assumeRange(windowSourceField(windowIndex, field), 0, 16_384)
-      circuit.assumeGrid(windowSourceField(windowIndex, field), pixelGrid)
-    }
-    for (const field of [
-      windowStateField.open,
-      windowStateField.minimized,
-      windowStateField.maximized,
-      windowStateField.present,
-    ]) {
-      circuit.assumeRange(windowSourceField(windowIndex, field), 0, 1)
-      circuit.assumeGrid(windowSourceField(windowIndex, field), 1)
-    }
-    circuit.assumeRange(dragSourceField(windowIndex), 0, 1)
-    circuit.assumeGrid(dragSourceField(windowIndex), 1)
-    circuit.assumeRange(resizeSourceField(windowIndex), 0, 1)
-    circuit.assumeGrid(resizeSourceField(windowIndex), 1)
-    // The destinations written back are this evaluation's targets. A center can
-    // sit a little outside the viewport, e.g. a dock item in a 2 px wide viewport
-    // is centered at -4.8e-7 px after FP32 rounds a third, so centers get
-    // -16,384..32,768. Displacements and velocities need no declared range.
-    for (const field of ['centerX', 'centerY'] as const) {
-      circuit.assumeRange(
-        springSourceField(windowIndex, field, springStateField.destination),
-        -16_384,
-        32_768,
-      )
-    }
-    for (const field of ['width', 'height'] as const) {
-      circuit.assumeRange(
-        springSourceField(windowIndex, field, springStateField.destination),
-        0,
-        16_384,
-      )
-    }
-    circuit.assumeRange(springSourceField(windowIndex, 'scale', springStateField.destination), 0, 1)
-    for (let rank = 0; rank < windowCount; rank++) {
-      circuit.assumeRange(stackSourceField(rank, windowIndex), 0, 1)
-      circuit.assumeGrid(stackSourceField(rank, windowIndex), 1)
-    }
-  }
-  // The stacking state is a permutation matrix: exactly one window per rank
-  // and exactly one rank per window, asserted by validateWindowManagerSource
-  // every frame. Declared as one-hot groups, the frontmost-window selection
-  // sums lower to gather reads (see lab/gather-lowering).
-  for (let rank = 0; rank < windowCount; rank++) {
-    circuit.assumeOneHot(Array.from(
-      {length: windowCount},
-      (_, windowIndex) => stackSourceField(rank, windowIndex),
-    ))
-  }
-  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    circuit.assumeOneHot(Array.from(
-      {length: windowCount},
-      (_, rank) => stackSourceField(rank, windowIndex),
-    ))
-  }
-
-  const unit = sourceField.unit
-  const zero = circuit.affine([])
+  const unit = cells.unit
+  const zero = circuit.constant(0)
   const effectiveDockHeight = emitMinimum(
     circuit,
-    sourceField.dockHeight,
-    sourceField.viewportHeight,
+    cells.dockHeight,
+    cells.viewportHeight,
   )
   const dockTop = circuit.affine([
-    [sourceField.viewportHeight, 1],
+    [cells.viewportHeight, 1],
     [effectiveDockHeight, -1],
   ])
-  const workspaceTop = emitMinimum(circuit, sourceField.systemBarHeight, dockTop)
+  const workspaceTop = emitMinimum(circuit, cells.systemBarHeight, dockTop)
   const workspaceHeight = circuit.affine([[dockTop, 1], [workspaceTop, -1]])
   const maximumLeft = emitMinimum(
     circuit,
-    sourceField.margin,
-    circuit.affine([[sourceField.viewportWidth, 0.5]]),
+    cells.margin,
+    circuit.affine([[cells.viewportWidth, 0.5]]),
   )
   const maximumTopInset = emitMinimum(
     circuit,
-    sourceField.margin,
+    cells.margin,
     circuit.affine([[workspaceHeight, 0.5]]),
   )
   const maximumGeometry: Geometry = {
     left: maximumLeft,
     top: circuit.affine([[workspaceTop, 1], [maximumTopInset, 1]]),
     width: emitRelu(circuit, circuit.affine([
-      [sourceField.viewportWidth, 1],
+      [cells.viewportWidth, 1],
       [maximumLeft, -2],
     ])),
     height: emitRelu(circuit, circuit.affine([
@@ -496,16 +381,16 @@ function compileWindowManagerCircuit() {
 
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const normalGeometry = {
-      left: windowSourceField(windowIndex, windowStateField.left),
-      top: windowSourceField(windowIndex, windowStateField.top),
-      width: windowSourceField(windowIndex, windowStateField.width),
-      height: windowSourceField(windowIndex, windowStateField.height),
+      left: cells.windows[windowIndex]!.left,
+      top: cells.windows[windowIndex]!.top,
+      width: cells.windows[windowIndex]!.width,
+      height: cells.windows[windowIndex]!.height,
     }
     currentNormalGeometry.push(normalGeometry)
-    const open = windowSourceField(windowIndex, windowStateField.open)
-    const minimized = windowSourceField(windowIndex, windowStateField.minimized)
-    const maximized = windowSourceField(windowIndex, windowStateField.maximized)
-    const present = windowSourceField(windowIndex, windowStateField.present)
+    const open = cells.windows[windowIndex]!.open
+    const minimized = cells.windows[windowIndex]!.minimized
+    const maximized = cells.windows[windowIndex]!.maximized
+    const present = cells.windows[windowIndex]!.present
     currentOpen.push(open)
     currentMinimized.push(minimized)
     currentMaximized.push(maximized)
@@ -521,34 +406,34 @@ function compileWindowManagerCircuit() {
     windowHit.push(emitMultiply(
       circuit,
       visible,
-      emitRectangleHit(circuit, sourceField.downX, sourceField.downY, geometry),
+      emitRectangleHit(circuit, cells.down.x, cells.down.y, geometry),
     ))
 
     const buttonTop = circuit.affine([
       [geometry.top, 1],
-      [sourceField.titleHeight, 0.5],
-      [sourceField.buttonSize, -0.5],
+      [cells.titleHeight, 0.5],
+      [cells.buttonSize, -0.5],
     ])
     const closeLeft = circuit.affine([
       [geometry.left, 1],
       [geometry.width, 1],
-      [sourceField.buttonGap, -1],
-      [sourceField.buttonSize, -1],
+      [cells.buttonGap, -1],
+      [cells.buttonSize, -1],
     ])
     const maximizeLeft = circuit.affine([
       [closeLeft, 1],
-      [sourceField.buttonGap, -1],
-      [sourceField.buttonSize, -1],
+      [cells.buttonGap, -1],
+      [cells.buttonSize, -1],
     ])
     const minimizeLeft = circuit.affine([
       [maximizeLeft, 1],
-      [sourceField.buttonGap, -1],
-      [sourceField.buttonSize, -1],
+      [cells.buttonGap, -1],
+      [cells.buttonSize, -1],
     ])
-    const buttonHitInset = circuit.affine([[sourceField.buttonGap, 0.5]])
+    const buttonHitInset = circuit.affine([[cells.buttonGap, 0.5]])
     const buttonHitSize = circuit.affine([
-      [sourceField.buttonSize, 1],
-      [sourceField.buttonGap, 1],
+      [cells.buttonSize, 1],
+      [cells.buttonGap, 1],
     ])
     const buttonHitGeometry = (left: Wire): Geometry => ({
       left: circuit.affine([[left, 1], [buttonHitInset, -1]]),
@@ -558,74 +443,74 @@ function compileWindowManagerCircuit() {
     })
     closeHit.push(emitRectangleHit(
       circuit,
-      sourceField.downX,
-      sourceField.downY,
+      cells.down.x,
+      cells.down.y,
       buttonHitGeometry(closeLeft),
     ))
     maximizeHit.push(emitRectangleHit(
       circuit,
-      sourceField.downX,
-      sourceField.downY,
+      cells.down.x,
+      cells.down.y,
       buttonHitGeometry(maximizeLeft),
     ))
     minimizeHit.push(emitRectangleHit(
       circuit,
-      sourceField.downX,
-      sourceField.downY,
+      cells.down.x,
+      cells.down.y,
       buttonHitGeometry(minimizeLeft),
     ))
     dragHit.push(emitRectangleHit(
       circuit,
-      sourceField.downX,
-      sourceField.downY,
+      cells.down.x,
+      cells.down.y,
       {
         left: geometry.left,
         top: geometry.top,
         width: emitRelu(circuit, circuit.affine([
           [minimizeLeft, 1],
-          [sourceField.buttonGap, -1],
+          [cells.buttonGap, -1],
           [geometry.left, -1],
         ])),
-        height: sourceField.titleHeight,
+        height: cells.titleHeight,
       },
     ))
     resizeHit.push(emitRectangleHit(
       circuit,
-      sourceField.downX,
-      sourceField.downY,
+      cells.down.x,
+      cells.down.y,
       {
         left: circuit.affine([
           [geometry.left, 1],
           [geometry.width, 1],
-          [sourceField.resizeGrip, -1],
+          [cells.resizeGrip, -1],
         ]),
         top: circuit.affine([
           [geometry.top, 1],
           [geometry.height, 1],
-          [sourceField.resizeGrip, -1],
+          [cells.resizeGrip, -1],
         ]),
-        width: sourceField.resizeGrip,
-        height: sourceField.resizeGrip,
+        width: cells.resizeGrip,
+        height: cells.resizeGrip,
       },
     ))
   }
 
   const currentStack = Array.from({length: windowCount}, (_, rank) =>
     Array.from({length: windowCount}, (_, windowIndex) =>
-      stackSourceField(rank, windowIndex)))
+      cells.stack[rank]![windowIndex]!))
   const selectedCanvas = emitFrontmost(circuit, currentStack, windowHit, unit)
 
   const dockGap = emitMinimum(
     circuit,
-    sourceField.dockGap,
+    cells.dockGap,
     emitMinimum(
       circuit,
-      circuit.affine([[sourceField.viewportWidth, 1 / (windowCount - 1)]]),
+      circuit.affine([[cells.viewportWidth, 1 / (windowCount - 1)]]),
       circuit.affine([[effectiveDockHeight, 0.5]]),
     ),
   )
   const dockHorizontalSpace = emitRelu(circuit, circuit.affine([
-    [sourceField.viewportWidth, 1],
+    [cells.viewportWidth, 1],
     [dockGap, -(windowCount - 1)],
   ]))
   const dockVerticalSpace = emitRelu(circuit, circuit.affine([
@@ -634,7 +519,7 @@ function compileWindowManagerCircuit() {
   ]))
   const dockItemSize = emitMinimum(
     circuit,
-    sourceField.dockItemWidth,
+    cells.dockItemWidth,
     emitMinimum(
       circuit,
       circuit.affine([[dockHorizontalSpace, 1 / windowCount]]),
@@ -646,7 +531,7 @@ function compileWindowManagerCircuit() {
     [dockGap, windowCount - 1],
   ])
   const dockLeft = circuit.affine([
-    [sourceField.viewportWidth, 0.5],
+    [cells.viewportWidth, 0.5],
     [dockTotalWidth, -0.5],
   ])
   const dockItemTop = circuit.affine([
@@ -670,8 +555,8 @@ function compileWindowManagerCircuit() {
     dockGeometry.push(geometry)
     dockHit.push(emitDockItemHit(
       circuit,
-      sourceField.downX,
-      sourceField.downY,
+      cells.down.x,
+      cells.down.y,
       geometry,
       unit,
     ))
@@ -686,8 +571,8 @@ function compileWindowManagerCircuit() {
   const dragPress: Wire[] = []
   const resizePress: Wire[] = []
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    const canvas = emitMultiply(circuit, sourceField.downActive, selectedCanvas[windowIndex]!)
-    const dock = emitMultiply(circuit, sourceField.downActive, dockHit[windowIndex]!)
+    const canvas = emitMultiply(circuit, cells.down.active, selectedCanvas[windowIndex]!)
+    const dock = emitMultiply(circuit, cells.down.active, dockHit[windowIndex]!)
     canvasPress.push(canvas)
     dockPress.push(dock)
     const selected = emitClampZeroOne(circuit, circuit.affine([[canvas, 1], [dock, 1]]), unit)
@@ -710,23 +595,23 @@ function compileWindowManagerCircuit() {
 
   const baselineX = emitSelect(
     circuit,
-    sourceField.downActive,
-    sourceField.pointerX,
-    sourceField.downX,
+    cells.down.active,
+    cells.pointer.x,
+    cells.down.x,
   )
   const baselineY = emitSelect(
     circuit,
-    sourceField.downActive,
-    sourceField.pointerY,
-    sourceField.downY,
+    cells.down.active,
+    cells.pointer.y,
+    cells.down.y,
   )
-  const movedX = emitSelect(circuit, sourceField.moveActive, baselineX, sourceField.moveX)
-  const movedY = emitSelect(circuit, sourceField.moveActive, baselineY, sourceField.moveY)
-  const pointerX = emitSelect(circuit, sourceField.upActive, movedX, sourceField.upX)
-  const pointerY = emitSelect(circuit, sourceField.upActive, movedY, sourceField.upY)
+  const movedX = emitSelect(circuit, cells.move.active, baselineX, cells.move.x)
+  const movedY = emitSelect(circuit, cells.move.active, baselineY, cells.move.y)
+  const pointerX = emitSelect(circuit, cells.up.active, movedX, cells.up.x)
+  const pointerY = emitSelect(circuit, cells.up.active, movedY, cells.up.y)
   const deltaX = circuit.affine([[pointerX, 1], [baselineX, -1]])
   const deltaY = circuit.affine([[pointerY, 1], [baselineY, -1]])
-  const pointerStillDown = emitComplement(circuit, sourceField.upActive, unit)
+  const pointerStillDown = emitComplement(circuit, cells.up.active, unit)
 
   const nextNormalGeometry: Geometry[] = []
   const nextOpen: Wire[] = []
@@ -738,14 +623,14 @@ function compileWindowManagerCircuit() {
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const dragForMotion = emitSelect(
       circuit,
-      sourceField.downActive,
-      dragSourceField(windowIndex),
+      cells.down.active,
+      cells.drag[windowIndex]!,
       dragPress[windowIndex]!,
     )
     const resizeForMotion = emitSelect(
       circuit,
-      sourceField.downActive,
-      resizeSourceField(windowIndex),
+      cells.down.active,
+      cells.resize[windowIndex]!,
       resizePress[windowIndex]!,
     )
     nextDrag.push(emitMultiply(circuit, dragForMotion, pointerStillDown))
@@ -768,17 +653,17 @@ function compileWindowManagerCircuit() {
     const width = emitClampDynamic(
       circuit,
       widthCandidate,
-      emitMinimum(circuit, sourceField.minWidth, sourceField.viewportWidth),
-      sourceField.viewportWidth,
+      emitMinimum(circuit, cells.minWidth, cells.viewportWidth),
+      cells.viewportWidth,
     )
     const height = emitClampDynamic(
       circuit,
       heightCandidate,
-      emitMinimum(circuit, sourceField.minHeight, workspaceHeight),
+      emitMinimum(circuit, cells.minHeight, workspaceHeight),
       workspaceHeight,
     )
     const maximumLeft = emitRelu(circuit, circuit.affine([
-      [sourceField.viewportWidth, 1],
+      [cells.viewportWidth, 1],
       [width, -1],
     ]))
     const maximumTop = emitRelu(circuit, circuit.affine([
@@ -912,7 +797,7 @@ function compileWindowManagerCircuit() {
   const destinationContentHeight = effectiveGeometry.map(geometry =>
     emitRelu(circuit, circuit.affine([
       [geometry.height, 1],
-      [sourceField.titleHeight, -1],
+      [cells.titleHeight, -1],
       [windowBorderSpan, -1],
     ])))
   const focusedWindow = emitFrontmost(circuit, nextStack, nextVisible, unit)
@@ -963,30 +848,41 @@ function compileWindowManagerCircuit() {
     const object = emitAnimatedObject(
       circuit,
       animationFields.map(field => ({
-        matrix: springMatrixFields,
-        displacement: springSourceField(windowIndex, field, springStateField.displacement),
-        velocity: springSourceField(windowIndex, field, springStateField.velocity),
+        matrix: cells.springMatrix,
+        displacement: cells.springs[windowIndex]![field].displacement,
+        velocity: cells.springs[windowIndex]![field].velocity,
         destination: target[field],
-        destinationDuringSteps: springSourceField(windowIndex, field, springStateField.destination),
+        destinationDuringSteps: cells.springs[windowIndex]![field].destination,
       })),
       {
-        settleCheck: sourceField.settleCheck,
-        snap: emitClampZeroOne(circuit, circuit.affine([[direct, 1], [sourceField.snap, 1]]), unit),
+        settleCheck: cells.settleCheck,
+        snap: emitClampZeroOne(circuit, circuit.affine([[direct, 1], [cells.snap, 1]]), unit),
       },
     )
     const [centerXPosition, centerYPosition, widthPosition, heightPosition, scalePosition] =
       object.positions as [Wire, Wire, Wire, Wire, Wire]
+    // Each spring's next displacement and velocity, and the destination that the
+    // next evaluation's steps pull toward.
+    const nextSpring = (springIndex: number, destination: Wire) =>
+      ({displacement: object.displacements[springIndex]!, velocity: object.velocities[springIndex]!, destination})
+    table.next(cells.springs[windowIndex]!, {
+      centerX: nextSpring(0, target.centerX),
+      centerY: nextSpring(1, target.centerY),
+      width: nextSpring(2, target.width),
+      height: nextSpring(3, target.height),
+      scale: nextSpring(4, target.scale),
+    })
     const width = emitClampDynamic(
       circuit,
       widthPosition,
       zero,
-      sourceField.viewportWidth,
+      cells.viewportWidth,
     )
     const height = emitClampDynamic(
       circuit,
       heightPosition,
       zero,
-      sourceField.viewportHeight,
+      cells.viewportHeight,
     )
     // Clamped only where drawn, e.g. a scale that undershoots 0 while springing
     // keeps its stored displacement.
@@ -999,13 +895,13 @@ function compileWindowManagerCircuit() {
       circuit,
       centerXPosition,
       scaledHalfWidth,
-      circuit.affine([[sourceField.viewportWidth, 1], [scaledHalfWidth, -1]]),
+      circuit.affine([[cells.viewportWidth, 1], [scaledHalfWidth, -1]]),
     )
     const centerY = emitClampDynamic(
       circuit,
       centerYPosition,
       scaledHalfHeight,
-      circuit.affine([[sourceField.viewportHeight, 1], [scaledHalfHeight, -1]]),
+      circuit.affine([[cells.viewportHeight, 1], [scaledHalfHeight, -1]]),
     )
     windowAnimations.push({
       width,
@@ -1021,9 +917,6 @@ function compileWindowManagerCircuit() {
         ]),
         scale,
       },
-      displacements: object.displacements,
-      velocities: object.velocities,
-      destinations: target,
       active: object.active,
     })
   }
@@ -1046,46 +939,25 @@ function compileWindowManagerCircuit() {
       unit,
     ))
 
-  const nextSource = Array.from({length: sourceField.size}, (_, field) => field)
-  for (const field of eventActiveFields) nextSource[field] = zero
-  nextSource[sourceField.pointerX] = pointerX
-  nextSource[sourceField.pointerY] = pointerY
+  table.next(cells.pointer, {x: pointerX, y: pointerY})
   // The stored table holds the identity matrix and no settle check or snap, so
   // evaluating it directly runs 0 steps.
-  nextSource[sourceField.springMatrixStart] = unit
-  nextSource[sourceField.springMatrixStart + 1] = zero
-  nextSource[sourceField.springMatrixStart + 2] = zero
-  nextSource[sourceField.springMatrixStart + 3] = unit
-  nextSource[sourceField.settleCheck] = zero
-  nextSource[sourceField.snap] = zero
+  table.next(
+    {springMatrix: cells.springMatrix, settleCheck: cells.settleCheck, snap: cells.snap},
+    {springMatrix: [unit, zero, zero, unit], settleCheck: zero, snap: zero},
+  )
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    const geometry = nextNormalGeometry[windowIndex]!
-    nextSource[windowSourceField(windowIndex, windowStateField.left)] = geometry.left
-    nextSource[windowSourceField(windowIndex, windowStateField.top)] = geometry.top
-    nextSource[windowSourceField(windowIndex, windowStateField.width)] = geometry.width
-    nextSource[windowSourceField(windowIndex, windowStateField.height)] = geometry.height
-    nextSource[windowSourceField(windowIndex, windowStateField.open)] = nextOpen[windowIndex]!
-    nextSource[windowSourceField(windowIndex, windowStateField.minimized)] =
-      nextMinimized[windowIndex]!
-    nextSource[windowSourceField(windowIndex, windowStateField.maximized)] =
-      nextMaximized[windowIndex]!
-    nextSource[windowSourceField(windowIndex, windowStateField.present)] =
-      nextPresent[windowIndex]!
-    nextSource[dragSourceField(windowIndex)] = nextDrag[windowIndex]!
-    nextSource[resizeSourceField(windowIndex)] = nextResize[windowIndex]!
-    for (let rank = 0; rank < windowCount; rank++) {
-      nextSource[stackSourceField(rank, windowIndex)] = nextStack[rank]![windowIndex]!
-    }
-    const animation = windowAnimations[windowIndex]!
-    animationFields.forEach((field, springIndex) => {
-      nextSource[springSourceField(windowIndex, field, springStateField.displacement)] =
-        animation.displacements[springIndex]!
-      nextSource[springSourceField(windowIndex, field, springStateField.velocity)] =
-        animation.velocities[springIndex]!
-      nextSource[springSourceField(windowIndex, field, springStateField.destination)] =
-        animation.destinations[field]
+    table.next(cells.windows[windowIndex]!, {
+      ...nextNormalGeometry[windowIndex]!,
+      open: nextOpen[windowIndex]!,
+      minimized: nextMinimized[windowIndex]!,
+      maximized: nextMaximized[windowIndex]!,
+      present: nextPresent[windowIndex]!,
     })
   }
+  table.next(cells.drag, nextDrag)
+  table.next(cells.resize, nextResize)
+  table.next(cells.stack, nextStack)
 
   const windows: Wire[] = []
   const dockItems: Wire[] = []
@@ -1125,94 +997,39 @@ function compileWindowManagerCircuit() {
 
   const photosWindowOutputStart = photosWindowIndex * windowOutputField.size
   const photosDestination = effectiveGeometry[photosWindowIndex]!
-  const photoSourceWires = Array<Wire>(localPhotoSourceField.size)
   // Photos lays out, hit-tests and draws at the window's destination content size,
   // e.g. the maximized size from the press on, and not at the animated size. So
   // which photo a click lands on doesn't depend on spring timing, and the
   // thumbnail destinations change only at events, which keeps stored state
   // independent of frame times.
-  photoSourceWires[localPhotoSourceField.viewportWidth] = destinationContentWidth[photosWindowIndex]!
-  photoSourceWires[localPhotoSourceField.viewportHeight] = destinationContentHeight[photosWindowIndex]!
-  photoSourceWires[localPhotoSourceField.gap] = photoSourceField.gap
-  photoSourceWires[localPhotoSourceField.mainInset] = photoSourceField.mainInset
-  photoSourceWires[localPhotoSourceField.thumbnailHeight] =
-    photoSourceField.thumbnailHeight
-  photoSourceWires[localPhotoSourceField.controlSize] = photoSourceField.controlSize
-  photoSourceWires[localPhotoSourceField.clickActive] = photoSourceField.clickActive
-  // A click arrives in viewport coordinates, and Photos reads it relative to the
-  // content box at the window's destination, like presses hit-test window
-  // destinations. E.g. a click during a maximize lands on the photo that ends up
-  // under the pointer.
-  photoSourceWires[localPhotoSourceField.clickX] = circuit.affine([
-    [photoSourceField.clickX, 1],
-    [photosDestination.left, -1],
-    [unit, -1],
-  ])
-  photoSourceWires[localPhotoSourceField.clickY] = circuit.affine([
-    [photoSourceField.clickY, 1],
-    [photosDestination.top, -1],
-    [sourceField.titleHeight, -1],
-    [unit, -1],
-  ])
-  photoSourceWires[localPhotoSourceField.previousActive] =
-    photoSourceField.previousActive
-  photoSourceWires[localPhotoSourceField.nextActive] = photoSourceField.nextActive
-  photoSourceWires[localPhotoSourceField.closeActive] = photoSourceField.closeActive
-  for (let item = 0; item < photoCount; item++) {
-    photoSourceWires[localPhotoFocusField(item)] = photoFocusSourceField(item)
-    for (let field = 0; field < thumbnailSpringField.size; field++) {
-      photoSourceWires[localThumbnailSpringSourceField(item, field)] =
-        photoThumbnailSpringSourceField(item, field)
-    }
-  }
-  photoSourceWires[localPhotoSourceField.present] =
-    windows[photosWindowOutputStart + windowOutputField.opacity]!
-  photoSourceWires[localPhotoSourceField.interactive] =
-    windows[photosWindowOutputStart + windowOutputField.focused]!
-  photoSourceWires[localPhotoSourceField.unit] = sourceField.unit
-  // Thumbnails and windows share stiffness and damping, so one matrix serves both.
-  springMatrixFields.forEach((field, entry) => {
-    photoSourceWires[localPhotoSourceField.springMatrixStart + entry] = field
+  const photos = buildPhotos(circuit, table, cells.photos, {
+    viewportWidth: destinationContentWidth[photosWindowIndex]!,
+    viewportHeight: destinationContentHeight[photosWindowIndex]!,
+    // A click arrives in viewport coordinates, and Photos reads it relative to the
+    // content box at the window's destination, like presses hit-test window
+    // destinations. E.g. a click during a maximize lands on the photo that ends up
+    // under the pointer.
+    click: {
+      x: circuit.affine([
+        [cells.photos.click.x, 1],
+        [photosDestination.left, -1],
+        [unit, -1],
+      ]),
+      y: circuit.affine([
+        [cells.photos.click.y, 1],
+        [photosDestination.top, -1],
+        [cells.titleHeight, -1],
+        [unit, -1],
+      ]),
+    },
+    present: windows[photosWindowOutputStart + windowOutputField.opacity]!,
+    interactive: windows[photosWindowOutputStart + windowOutputField.focused]!,
+    unit,
+    // Thumbnails and windows share stiffness and damping, so one matrix serves both.
+    springMatrix: cells.springMatrix,
+    settleCheck: cells.settleCheck,
+    snap: cells.snap,
   })
-  photoSourceWires[localPhotoSourceField.settleCheck] = sourceField.settleCheck
-  photoSourceWires[localPhotoSourceField.snap] = sourceField.snap
-
-  const photoDefinition = createPhotoGalleryCircuit()
-  const photoWireMap = inlineCircuit(circuit, photoDefinition.circuit, photoSourceWires)
-  const mapPhotoWires = (wires: readonly Wire[]) =>
-    wires.map(wire => photoWireMap[wire]!)
-  const photos: PhotoGalleryOutput = {
-    nextSource: mapPhotoWires(photoDefinition.output.nextSource),
-    backdropOpacity: photoWireMap[photoDefinition.output.backdropOpacity]!,
-    animationActive: photoWireMap[photoDefinition.output.animationActive]!,
-    photos: mapPhotoWires(photoDefinition.output.photos),
-    thumbnails: mapPhotoWires(photoDefinition.output.thumbnails),
-    previousControl: mapPhotoWires(photoDefinition.output.previousControl),
-    nextControl: mapPhotoWires(photoDefinition.output.nextControl),
-  }
-  const photoSourceBindings = [
-    [localPhotoSourceField.gap, photoSourceField.gap],
-    [localPhotoSourceField.mainInset, photoSourceField.mainInset],
-    [localPhotoSourceField.thumbnailHeight, photoSourceField.thumbnailHeight],
-    [localPhotoSourceField.controlSize, photoSourceField.controlSize],
-    [localPhotoSourceField.clickActive, photoSourceField.clickActive],
-    // clickX and clickY aren't bound: Photos' next state passes its local click
-    // coordinates through, and the stored cells keep the viewport coordinates.
-    [localPhotoSourceField.previousActive, photoSourceField.previousActive],
-    [localPhotoSourceField.nextActive, photoSourceField.nextActive],
-    [localPhotoSourceField.closeActive, photoSourceField.closeActive],
-  ] as const
-  for (const [localField, field] of photoSourceBindings) {
-    nextSource[field] = photos.nextSource[localField]!
-  }
-  for (let item = 0; item < photoCount; item++) {
-    nextSource[photoFocusSourceField(item)] =
-      photos.nextSource[localPhotoFocusField(item)]!
-    for (let field = 0; field < thumbnailSpringField.size; field++) {
-      nextSource[photoThumbnailSpringSourceField(item, field)] =
-        photos.nextSource[localThumbnailSpringSourceField(item, field)]!
-    }
-  }
   const animationActive = emitClampZeroOne(
     circuit,
     circuit.affine([
@@ -1222,16 +1039,9 @@ function compileWindowManagerCircuit() {
     unit,
   )
 
-  return {
-    circuit,
-    output: {
-      nextSource,
-      windows,
-      dockItems,
-      animationActive,
-      photos,
-    },
-  }
+  const {nextSource, initialSource, validate} = table.finish()
+  const output: WindowManagerOutput = {nextSource, windows, dockItems, animationActive, photos}
+  return {circuit, cells, output, initialSource, validate}
 }
 
 // What the host writes into the 4 matrix cells for each step count, see
@@ -1285,53 +1095,8 @@ type WindowManagerObserver = {
 // copy of the table, so the stored table depends only on the timestamped events.
 export function createWindowManagerMachine(options: {writeBack?: WriteBack} = {}) {
   const writeBack = options.writeBack ?? 'events and settle checks'
-  const source = new Float32Array(sourceField.size)
-  source[sourceField.unit] = 1
-  source[sourceField.margin] = 12
-  source[sourceField.titleHeight] = 44
-  source[sourceField.minWidth] = 280
-  source[sourceField.minHeight] = 190
-  source[sourceField.resizeGrip] = 24
-  source[sourceField.buttonSize] = 18
-  source[sourceField.buttonGap] = 10
-  source[sourceField.dockHeight] = 76
-  source[sourceField.dockGap] = 12
-  source[sourceField.dockItemWidth] = 50
-  source[sourceField.systemBarHeight] = 36
-  source.set(springMatrixPowers[0]!, sourceField.springMatrixStart)
-  source[photoSourceField.gap] = 18
-  source[photoSourceField.mainInset] = 92
-  source[photoSourceField.thumbnailHeight] = 82
-  source[photoSourceField.controlSize] = 52
-  const initialGeometry = [
-    [54, 54, 520, 340],
-    [410, 104, 500, 366],
-    [174, 344, 470, 300],
-    [650, 190, 560, 430],
-  ] as const
-  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    const geometry = initialGeometry[windowIndex]!
-    source[windowSourceField(windowIndex, windowStateField.left)] = geometry[0]
-    source[windowSourceField(windowIndex, windowStateField.top)] = geometry[1]
-    source[windowSourceField(windowIndex, windowStateField.width)] = geometry[2]
-    source[windowSourceField(windowIndex, windowStateField.height)] = geometry[3]
-    source[windowSourceField(windowIndex, windowStateField.open)] = 1
-    source[windowSourceField(windowIndex, windowStateField.present)] = 1
-    source[stackSourceField(windowIndex, windowIndex)] = 1
-    // Each window rests on its destinations, with displacements and velocities 0.
-    const destinations: Record<AnimationField, number> = {
-      centerX: geometry[0] + geometry[2] / 2,
-      centerY: geometry[1] + geometry[3] / 2,
-      width: geometry[2],
-      height: geometry[3],
-      scale: 1,
-    }
-    for (const field of animationFields) {
-      source[springSourceField(windowIndex, field, springStateField.destination)] = destinations[field]
-    }
-  }
-
-  const {circuit, output} = compileWindowManagerCircuit()
+  const {circuit, cells, output, initialSource, validate} = buildWindowManager()
+  const source = new Float32Array(initialSource)
   const wireCount = validateCircuit(circuit)
   validateWindowManagerOutputWires(output, wireCount)
   const roots = [
@@ -1351,7 +1116,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack} = {}
   // `values`, which the validators and callers index by wire.
   const evaluateRoots = circuit.createTensorEvaluator(roots)
   const values = new Float32Array(wireCount)
-  const scratch = new Float32Array(sourceField.size)
+  const scratch = new Float32Array(source.length)
   const numericTolerance = 1e-5
   let clock: SpringClock = stoppedSpringClock
   let queued: (Omit<WindowManagerEvent, 'timeStamp'> & {timeStamp: number | undefined})[] = []
@@ -1379,8 +1144,8 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack} = {}
   function queueViewport(kind: 'mount' | 'resize', width: number, height: number, timeStamp: number | undefined) {
     queuedViewport = [width, height]
     queue(kind, timeStamp, table => {
-      table[sourceField.viewportWidth] = width
-      table[sourceField.viewportHeight] = height
+      table[cells.viewportWidth] = width
+      table[cells.viewportHeight] = height
     })
   }
 
@@ -1388,9 +1153,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack} = {}
   // declares, e.g. 100.001 becomes 100 and -50,000 becomes -32,768.
   function receivePointer(
     kind: 'pointer down' | 'pointer move' | 'pointer up',
-    activeField: number,
-    xField: number,
-    yField: number,
+    latch: {active: Wire, x: Wire, y: Wire},
     x: number,
     y: number,
     timeStamp: number | undefined,
@@ -1399,26 +1162,26 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack} = {}
     const clampedX = Math.min(pointerCoordinateBound, Math.max(-pointerCoordinateBound, quantizePixels(x)))
     const clampedY = Math.min(pointerCoordinateBound, Math.max(-pointerCoordinateBound, quantizePixels(y)))
     queue(kind, timeStamp, table => {
-      table[activeField] = 1
-      table[xField] = clampedX
-      table[yField] = clampedY
+      table[latch.active] = 1
+      table[latch.x] = clampedX
+      table[latch.y] = clampedY
     })
   }
 
   // Photos events that share an evaluation are mutually exclusive; the last one wins.
   function receivePhotoEvent(
     kind: 'photo click' | 'photo previous' | 'photo next' | 'photo close',
-    field: number,
+    field: Wire,
     timeStamp: number | undefined,
     x?: number,
     y?: number,
   ) {
     queue(kind, timeStamp, table => {
-      for (const eventField of photoEventActiveFields) table[eventField] = 0
+      for (const eventField of photoEvents(cells.photos)) table[eventField] = 0
       table[field] = 1
       if (x !== undefined && y !== undefined) {
-        table[photoSourceField.clickX] = x
-        table[photoSourceField.clickY] = y
+        table[cells.photos.click.x] = x
+        table[cells.photos.click.y] = y
       }
     })
   }
@@ -1429,15 +1192,19 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack} = {}
   function evaluate(evaluation: PlannedEvaluation<WindowManagerEvent>) {
     const table = evaluation.writesBack ? source : scratch
     if (!evaluation.writesBack) scratch.set(source)
-    table.set(springMatrixPowers[evaluation.steps]!, sourceField.springMatrixStart)
-    table[sourceField.settleCheck] = evaluation.settleCheck ? 1 : 0
-    table[sourceField.snap] = evaluation.snap ? 1 : 0
+    table.set(springMatrixPowers[evaluation.steps]!, cells.springMatrix[0])
+    table[cells.settleCheck] = evaluation.settleCheck ? 1 : 0
+    table[cells.snap] = evaluation.snap ? 1 : 0
     for (const event of evaluation.events) event.apply(table)
-    validateWindowManagerSource(table, numericTolerance)
-    validateSourceGrids(circuit, table)
+    // Checks every declared range and grid. The window hit tests' integer bits rely
+    // on the grids: a press written straight into the table at x = 54.5 - 1/256 px
+    // put windows 0 and 3 each half in front, before the grids were checked.
+    validate(table)
     for (const observer of observers) observer.beforeEvaluate?.(table, evaluation)
     const rootValues = evaluateRoots(table)
     for (let index = 0; index < roots.length; index++) values[roots[index]!] = rootValues[index]!
+    // The next-state values are the first roots.
+    validate(rootValues.subarray(0, output.nextSource.length))
     validateWindowManagerOutput(values, output, numericTolerance)
     if (evaluation.writesBack) {
       for (let field = 0; field < source.length; field++) {
@@ -1457,6 +1224,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack} = {}
 
   return {
     circuit,
+    cells,
     output,
     source,
     tensorProgram,
@@ -1514,28 +1282,28 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack} = {}
       queueViewport('resize', quantizePixels(width), quantizePixels(height), timeStamp)
     },
     pointerDown(x: number, y: number, timeStamp?: number) {
-      receivePointer('pointer down', sourceField.downActive, sourceField.downX, sourceField.downY, x, y, timeStamp)
+      receivePointer('pointer down', cells.down, x, y, timeStamp)
     },
     pointerMove(x: number, y: number, timeStamp?: number) {
-      receivePointer('pointer move', sourceField.moveActive, sourceField.moveX, sourceField.moveY, x, y, timeStamp)
+      receivePointer('pointer move', cells.move, x, y, timeStamp)
     },
     pointerUp(x: number, y: number, timeStamp?: number) {
-      receivePointer('pointer up', sourceField.upActive, sourceField.upX, sourceField.upY, x, y, timeStamp)
+      receivePointer('pointer up', cells.up, x, y, timeStamp)
     },
     // x and y are viewport coordinates, e.g. event.clientX and event.clientY, like
     // the pointer methods. The program reads them relative to Photos' content box at
     // the window's destination.
     photoClick(x: number, y: number, timeStamp?: number) {
-      receivePhotoEvent('photo click', photoSourceField.clickActive, timeStamp, x, y)
+      receivePhotoEvent('photo click', cells.photos.click.active, timeStamp, x, y)
     },
     photoPrevious(timeStamp?: number) {
-      receivePhotoEvent('photo previous', photoSourceField.previousActive, timeStamp)
+      receivePhotoEvent('photo previous', cells.photos.previous, timeStamp)
     },
     photoNext(timeStamp?: number) {
-      receivePhotoEvent('photo next', photoSourceField.nextActive, timeStamp)
+      receivePhotoEvent('photo next', cells.photos.next, timeStamp)
     },
     photoClose(timeStamp?: number) {
-      receivePhotoEvent('photo close', photoSourceField.closeActive, timeStamp)
+      receivePhotoEvent('photo close', cells.photos.close, timeStamp)
     },
   }
 }
@@ -1628,14 +1396,14 @@ function mountWindowManager(document: Document, window: Window) {
   domCache.monitorFrame.textContent = '—'
   domCache.monitorRaf.textContent = 'no'
 
-  domCache.desktop.style.setProperty('--title-height', `${machine.source[sourceField.titleHeight]}px`)
-  domCache.desktop.style.setProperty('--button-size', `${machine.source[sourceField.buttonSize]}px`)
-  domCache.desktop.style.setProperty('--button-gap', `${machine.source[sourceField.buttonGap]}px`)
-  domCache.desktop.style.setProperty('--resize-grip', `${machine.source[sourceField.resizeGrip]}px`)
-  domCache.desktop.style.setProperty('--dock-height', `${machine.source[sourceField.dockHeight]}px`)
+  domCache.desktop.style.setProperty('--title-height', `${machine.source[machine.cells.titleHeight]}px`)
+  domCache.desktop.style.setProperty('--button-size', `${machine.source[machine.cells.buttonSize]}px`)
+  domCache.desktop.style.setProperty('--button-gap', `${machine.source[machine.cells.buttonGap]}px`)
+  domCache.desktop.style.setProperty('--resize-grip', `${machine.source[machine.cells.resizeGrip]}px`)
+  domCache.desktop.style.setProperty('--dock-height', `${machine.source[machine.cells.dockHeight]}px`)
   domCache.desktop.style.setProperty(
     '--system-bar-height',
-    `${machine.source[sourceField.systemBarHeight]}px`,
+    `${machine.source[machine.cells.systemBarHeight]}px`,
   )
 
   let scheduledRaf: number | null = null
@@ -1838,7 +1606,7 @@ function emitRectangleHit(
   y: Wire,
   geometry: Geometry,
 ) {
-  const half = circuit.affine([], 0.5)
+  const half = circuit.constant(0.5)
   const edgeBits = [
     circuit.affine([[x, 1], [geometry.left, -1]]),
     circuit.affine([[geometry.left, 1], [geometry.width, 1], [x, -1]]),
@@ -1905,173 +1673,7 @@ function emitComplement(circuit: Circuit, value: Wire, unit: Wire) {
   return circuit.affine([[unit, 1], [value, -1]])
 }
 
-// Every source cell declared on a grid must hold a multiple of that grid, e.g. a
-// pointer coordinate on the 1/64 px grid. The window hit tests' integer bits rely on
-// these grids: a press written straight into the table at x = 54.5 - 1/256 px put
-// windows 0 and 3 each half in front, instead of throwing.
-function validateSourceGrids(circuit: Circuit, table: Float32Array) {
-  for (let field = 0; field < table.length; field++) {
-    const grid = circuit.grids[field]
-    if (grid !== undefined && !Number.isInteger(table[field]! / grid)) {
-      invariant(false, `source cell ${field} must be a multiple of ${grid}, got ${table[field]}`)
-    }
-  }
-}
-
-function validateWindowManagerSource(values: unknown, tolerance = 1e-9) {
-  invariant(
-    values instanceof Float32Array,
-    'source table must be a Float32Array',
-  )
-  invariant(values.length === sourceField.size, 'source table has the wrong length')
-  assertFiniteValues(values, 'source table')
-  assertNonNegativeFinite(values[sourceField.viewportWidth], 'viewport width')
-  assertNonNegativeFinite(values[sourceField.viewportHeight], 'viewport height')
-  invariant(values[sourceField.unit] === 1, 'unit cell must equal one')
-  for (const field of springMatrixFields) {
-    invariant(Number.isFinite(values[field]), 'spring matrix entries must be finite')
-  }
-  assertBit(values[sourceField.settleCheck], 'settle check')
-  assertBit(values[sourceField.snap], 'snap')
-  for (const field of pixelConstantFields) {
-    assertNonNegativeFinite(values[field], 'window manager constant')
-  }
-  for (const field of eventActiveFields) {
-    assertUnitInterval(values[field], 'event latch', tolerance)
-  }
-  for (const field of eventCoordinateFields) {
-    invariant(Number.isFinite(values[field]), 'event coordinate must be finite')
-  }
-  for (const field of photoConstantFields) {
-    assertNonNegativeFinite(values[field], 'Photos constant')
-  }
-  let photoEventMass = 0
-  for (const field of photoEventActiveFields) {
-    assertUnitInterval(values[field], 'Photos event latch', tolerance)
-    photoEventMass += values[field]
-  }
-  invariant(photoEventMass <= 1 + tolerance, 'Photos event mass must not exceed one')
-  for (const field of photoEventCoordinateFields) {
-    invariant(Number.isFinite(values[field]), 'Photos event coordinate must be finite')
-  }
-  let photoFocusMass = 0
-  for (let item = 0; item < photoCount; item++) {
-    const focus = values[photoFocusSourceField(item)]
-    assertUnitInterval(focus, `photo focus ${item}`, tolerance)
-    photoFocusMass += focus
-    for (const field of [
-      thumbnailSpringField.centerXDisplacement,
-      thumbnailSpringField.centerXVelocity,
-      thumbnailSpringField.scaleDisplacement,
-      thumbnailSpringField.scaleVelocity,
-    ]) {
-      invariant(
-        Number.isFinite(values[photoThumbnailSpringSourceField(item, field)]),
-        `photo thumbnail ${item} spring state must be finite`,
-      )
-    }
-    assertWithin(
-      values[photoThumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination)],
-      -16_384,
-      32_768,
-      `photo thumbnail ${item} center destination`,
-    )
-    assertUnitInterval(
-      values[photoThumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination)],
-      `photo thumbnail ${item} scale destination`,
-      tolerance,
-    )
-  }
-  invariant(photoFocusMass <= 1 + tolerance, 'photo focus mass must not exceed one')
-  invariant(Number.isFinite(values[sourceField.pointerX]), 'pointer x must be finite')
-  invariant(Number.isFinite(values[sourceField.pointerY]), 'pointer y must be finite')
-  let dragMass = 0
-  let resizeMass = 0
-  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    for (const field of [
-      windowStateField.left,
-      windowStateField.top,
-      windowStateField.width,
-      windowStateField.height,
-    ]) {
-      assertNonNegativeFinite(
-        values[windowSourceField(windowIndex, field)],
-        'window geometry',
-      )
-    }
-    for (const field of [
-      windowStateField.open,
-      windowStateField.minimized,
-      windowStateField.maximized,
-      windowStateField.present,
-    ]) {
-      assertUnitInterval(
-        values[windowSourceField(windowIndex, field)],
-        'window flag',
-        tolerance,
-      )
-    }
-    const drag = values[dragSourceField(windowIndex)]
-    const resize = values[resizeSourceField(windowIndex)]
-    assertUnitInterval(drag, 'drag target', tolerance)
-    assertUnitInterval(resize, 'resize target', tolerance)
-    dragMass += drag
-    resizeMass += resize
-    for (const field of animationFields) {
-      invariant(
-        Number.isFinite(values[springSourceField(windowIndex, field, springStateField.displacement)]),
-        'spring displacement must be finite',
-      )
-      invariant(
-        Number.isFinite(values[springSourceField(windowIndex, field, springStateField.velocity)]),
-        'spring velocity must be finite',
-      )
-    }
-    for (const field of ['centerX', 'centerY'] as const) {
-      assertWithin(
-        values[springSourceField(windowIndex, field, springStateField.destination)],
-        -16_384,
-        32_768,
-        'spring center destination',
-      )
-    }
-    for (const field of ['width', 'height'] as const) {
-      assertWithin(
-        values[springSourceField(windowIndex, field, springStateField.destination)],
-        0,
-        16_384,
-        'spring size destination',
-      )
-    }
-    assertUnitInterval(
-      values[springSourceField(windowIndex, 'scale', springStateField.destination)],
-      'spring scale destination',
-      tolerance,
-    )
-  }
-  invariant(dragMass <= 1 + tolerance, 'drag target mass must not exceed one')
-  invariant(resizeMass <= 1 + tolerance, 'resize target mass must not exceed one')
-
-  for (let rank = 0; rank < windowCount; rank++) {
-    let rankMass = 0
-    for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-      const stack = values[stackSourceField(rank, windowIndex)]
-      assertUnitInterval(stack, 'stack cell', tolerance)
-      rankMass += stack
-    }
-    assertApproximatelyOne(rankMass, 'stack rank mass', tolerance)
-  }
-  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    let windowMass = 0
-    for (let rank = 0; rank < windowCount; rank++) {
-      windowMass += values[stackSourceField(rank, windowIndex)]!
-    }
-    assertApproximatelyOne(windowMass, 'stack window mass', tolerance)
-  }
-}
-
 function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount: number) {
-  validateWireView(output.nextSource, sourceField.size, wireCount)
   validateWireView(output.windows, windowCount * windowOutputField.size, wireCount)
   validateWireView(output.dockItems, windowCount * dockOutputField.size, wireCount)
   validateWireView([output.animationActive], 1, wireCount)
@@ -2084,14 +1686,6 @@ function validateWindowManagerOutput(
   tolerance = 1e-9,
 ) {
   assertFiniteValues(values, 'tensor output')
-  const nextSource = Float32Array.from(output.nextSource, wire => values[wire]!)
-  validateWindowManagerSource(nextSource, tolerance)
-  for (const field of eventActiveFields) {
-    invariant(nextSource[field] === 0, 'event latch must reset after refresh')
-  }
-  for (const field of photoEventActiveFields) {
-    invariant(nextSource[field] === 0, 'Photos event latch must reset after refresh')
-  }
   validatePhotoGalleryOutput(values, output.photos, tolerance)
   assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
@@ -2134,6 +1728,9 @@ function validateWindowManagerOutput(
       tolerance,
     )
   }
+  // Photos reads the Photos window's focus bit as whether Photos takes events.
+  const photosFocused = values[output.windows[photosWindowIndex * windowOutputField.size + windowOutputField.focused]!]
+  invariant(photosFocused === 0 || photosFocused === 1, `Photos interactive must equal zero or one, got ${photosFocused}`)
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const outputStart = windowIndex * dockOutputField.size
     for (const field of geometryFields) {
@@ -2155,21 +1752,6 @@ function validateWindowManagerOutput(
       )
     }
   }
-}
-
-function assertApproximatelyOne(value: number, label: string, tolerance = 1e-8) {
-  invariant(Math.abs(value - 1) <= tolerance, `${label} must equal one`)
-}
-
-function assertBit(value: number | undefined, label: string) {
-  invariant(value === 0 || value === 1, `${label} must equal zero or one, got ${value}`)
-}
-
-function assertWithin(value: number | undefined, minimum: number, maximum: number, label: string) {
-  invariant(
-    value !== undefined && value >= minimum && value <= maximum,
-    `${label} must be within ${minimum}..${maximum}, got ${value}`,
-  )
 }
 
 if (typeof document !== 'undefined' && typeof window !== 'undefined') {

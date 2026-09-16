@@ -52,7 +52,7 @@ export const heightLimit = 2 ** 25
 // A circuit whose source cells are the row heights.
 export function buildRunningTotals(rowCount: number, form: RunningTotalsForm) {
   const circuit = new Circuit(rowCount)
-  const heights = Array.from({length: rowCount}, (_, row) => row)
+  const heights = Array.from({length: rowCount}, (_, row) => circuit.source(row))
   for (const height of heights) circuit.assumeRange(height, 0, heightLimit)
   return {circuit, heights, totals: emitRunningTotals(circuit, heights, form)}
 }

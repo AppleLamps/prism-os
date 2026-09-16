@@ -13,7 +13,7 @@
 //    operation, because `multiply`, `select`, `roundAffine`, `emitMinimum` and
 //    `emitMaximum` keep their operands as wires and the builder doesn't fold
 //    through them.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 
 // [left < right] for integer-valued wires: relu(d) - relu(d - 1) with d = right - left.
 function lessThan(circuit: Circuit, left: Wire, right: Wire): Wire {
@@ -37,10 +37,10 @@ export function buildRanksFromConstants(widths: readonly number[]): RankCircuit 
 // Source layout: one integer width per item.
 export function buildRanksFromCells(itemCount: number): RankCircuit {
   const circuit = new Circuit(itemCount)
-  for (let item = 0; item < itemCount; item++) circuit.assumeRange(item, 0, 4096)
+  for (let item = 0; item < itemCount; item++) circuit.assumeRange(asWire(item), 0, 4096)
   const ranks = Array.from({length: itemCount}, (_, item) => circuit.affine(
     Array.from({length: itemCount}, (_, other) => other).flatMap((other): [Wire, number][] =>
-      other === item ? [] : [[lessThan(circuit, other, item), 1]]),
+      other === item ? [] : [[lessThan(circuit, asWire(other), asWire(item)), 1]]),
   ))
   return {circuit, ranks}
 }
@@ -58,10 +58,13 @@ export function rankReference(widths: ArrayLike<number>): number[] {
 // Source layout: velocity, timestep.
 export function buildVelocityStep(declareTimestepFirst: boolean): {circuit: Circuit, distance: Wire} {
   const circuit = new Circuit(2)
-  circuit.assumeRange(0, -4096, 4096)
-  if (declareTimestepFirst) circuit.assumeRange(1, 0, 0.032)
-  const distance = circuit.multiply(0, 1)
-  if (!declareTimestepFirst) circuit.assumeRange(1, 0, 0.032)
+  const velocity = circuit.source(0)
+  const timestep = circuit.source(1)
+  circuit.assumeRange(velocity, -4096, 4096)
+  if (declareTimestepFirst) circuit.assumeRange(timestep, 0, 0.032)
+  const distance = circuit.multiply(velocity, timestep)
+  // The builder refuses a range declared after operations read the wire, unless the declaration opts in.
+  if (!declareTimestepFirst) circuit.assumeRange(timestep, 0, 0.032, {allowExistingReaders: true})
   return {circuit, distance}
 }
 
@@ -71,9 +74,9 @@ export const fixedTimestep = 0.004
 
 export function buildFixedTimestepProduct(form: 'weight' | 'constant wire'): {circuit: Circuit, distance: Wire} {
   const circuit = new Circuit(1)
-  circuit.assumeRange(0, -4096, 4096)
+  circuit.assumeRange(circuit.source(0), -4096, 4096)
   const distance = form === 'weight'
-    ? circuit.affine([[0, fixedTimestep]])
-    : circuit.multiply(0, circuit.affine([], fixedTimestep))
+    ? circuit.affine([[circuit.source(0), fixedTimestep]])
+    : circuit.multiply(circuit.source(0), circuit.affine([], fixedTimestep))
   return {circuit, distance}
 }

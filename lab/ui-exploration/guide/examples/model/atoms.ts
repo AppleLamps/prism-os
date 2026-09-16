@@ -15,8 +15,8 @@ export type Example<Inputs extends readonly number[]> = {
 // An affine sum. JS: trackLeft + trackWidth / 2
 export function trackCenter(): Example<[trackLeft: number, trackWidth: number]> {
   const circuit = new Circuit(2)
-  const trackLeft = 0
-  const trackWidth = 1
+  const trackLeft = circuit.source(0)
+  const trackWidth = circuit.source(1)
   circuit.assumeRange(trackLeft, 0, 16_384)
   circuit.assumeRange(trackWidth, 0, 1024)
   const trackCenterX = circuit.affine([[trackLeft, 1], [trackWidth, 0.5]])
@@ -26,8 +26,8 @@ export function trackCenter(): Example<[trackLeft: number, trackWidth: number]> 
 // A ReLU, which is a ReLU-gated product whose left side is the constant 1. JS: Math.max(0, contentHeight - viewportHeight)
 export function scrollOverflow(): Example<[contentHeight: number, viewportHeight: number]> {
   const circuit = new Circuit(2)
-  const contentHeight = 0
-  const viewportHeight = 1
+  const contentHeight = circuit.source(0)
+  const viewportHeight = circuit.source(1)
   circuit.assumeRange(contentHeight, 0, 1_048_576)
   circuit.assumeRange(viewportHeight, 0, 16_384)
   const overflow = emitRelu(circuit, circuit.affine([[contentHeight, 1], [viewportHeight, -1]]))
@@ -37,8 +37,8 @@ export function scrollOverflow(): Example<[contentHeight: number, viewportHeight
 // A ReLU-gated product used as a mask. JS: hovered ? highlightOpacity : 0
 export function hoverOpacity(): Example<[hovered: number, highlightOpacity: number]> {
   const circuit = new Circuit(2)
-  const hovered = 0
-  const highlightOpacity = 1
+  const hovered = circuit.source(0)
+  const highlightOpacity = circuit.source(1)
   circuit.assumeRange(hovered, 0, 1)
   circuit.assumeRange(highlightOpacity, 0, 1)
   // highlightOpacity is declared nonnegative, so it can sit in the gate: hovered * max(0, highlightOpacity).
@@ -49,7 +49,7 @@ export function hoverOpacity(): Example<[hovered: number, highlightOpacity: numb
 // The exact bit. JS: score >= 0.5 ? 1 : 0, for a score in 0..1
 export function roundScore(): Example<[score: number]> {
   const circuit = new Circuit(1)
-  const score = 0
+  const score = circuit.source(0)
   circuit.assumeRange(score, 0, 1)
   return {circuit, output: circuit.boolean(score), reference: value => value >= 0.5 ? 1 : 0}
 }
@@ -57,9 +57,9 @@ export function roundScore(): Example<[score: number]> {
 // if/else as a select. JS: isOn ? onColor : offColor
 export function thumbColor(): Example<[isOn: number, offColor: number, onColor: number]> {
   const circuit = new Circuit(3)
-  const isOn = 0
-  const offColor = 1
-  const onColor = 2
+  const isOn = circuit.source(0)
+  const offColor = circuit.source(1)
+  const onColor = circuit.source(2)
   circuit.assumeRange(isOn, 0, 1)
   // isOn * onColor + (1 - isOn) * offColor: two masked products and a sum. Both products run whatever isOn is.
   const color = emitSelect(circuit, isOn, offColor, onColor)
@@ -69,8 +69,8 @@ export function thumbColor(): Example<[isOn: number, offColor: number, onColor: 
 // JS: Math.min(maxPanelWidth, availableWidth)
 export function panelWidth(): Example<[maxPanelWidth: number, availableWidth: number]> {
   const circuit = new Circuit(2)
-  const maxPanelWidth = 0
-  const availableWidth = 1
+  const maxPanelWidth = circuit.source(0)
+  const availableWidth = circuit.source(1)
   circuit.assumeRange(maxPanelWidth, 0, 16_384)
   circuit.assumeRange(availableWidth, 0, 16_384)
   // maxPanelWidth - relu(maxPanelWidth - availableWidth)
@@ -81,8 +81,8 @@ export function panelWidth(): Example<[maxPanelWidth: number, availableWidth: nu
 // A clamp between runtime bounds, the way window-manager.ts writes it. JS: Math.min(Math.max(windowLeft, 0), maxLeft)
 export function clampWindowLeft(): Example<[windowLeft: number, maxLeft: number]> {
   const circuit = new Circuit(2)
-  const windowLeft = 0
-  const maxLeft = 1
+  const windowLeft = circuit.source(0)
+  const maxLeft = circuit.source(1)
   circuit.assumeRange(windowLeft, -16_384, 16_384)
   circuit.assumeRange(maxLeft, 0, 16_384)
   const left = emitMinimum(circuit, emitMaximum(circuit, windowLeft, emitConstant(circuit, 0)), maxLeft)
@@ -92,7 +92,7 @@ export function clampWindowLeft(): Example<[windowLeft: number, maxLeft: number]
 // JS: Math.min(1, Math.max(0, thumbPosition))
 export function fillAmount(): Example<[thumbPosition: number]> {
   const circuit = new Circuit(1)
-  const thumbPosition = 0
+  const thumbPosition = circuit.source(0)
   circuit.assumeRange(thumbPosition, -1_048_576, 1_048_576)
   return {circuit, output: emitClampZeroOne(circuit, thumbPosition), reference: value => Math.min(1, Math.max(0, value))}
 }
@@ -100,8 +100,8 @@ export function fillAmount(): Example<[thumbPosition: number]> {
 // A decision bit on continuous values. JS: pointerX >= trackLeft ? 1 : 0
 export function pointerPastTrackLeft(): Example<[pointerX: number, trackLeft: number]> {
   const circuit = new Circuit(2)
-  const pointerX = 0
-  const trackLeft = 1
+  const pointerX = circuit.source(0)
+  const trackLeft = circuit.source(1)
   circuit.assumeRange(pointerX, -16_384, 16_384)
   circuit.assumeRange(trackLeft, 0, 16_384)
   // |pointerX - trackLeft| <= 32,768 = 2^15, so a scale of 64 keeps 64 * |difference| <= 2^21.
@@ -112,7 +112,7 @@ export function pointerPastTrackLeft(): Example<[pointerX: number, trackLeft: nu
 // A decision bit on an integer. JS: columnCount >= 3 ? 1 : 0
 export function atLeastThreeColumns(): Example<[columnCount: number]> {
   const circuit = new Circuit(1)
-  const columnCount = 0
+  const columnCount = circuit.source(0)
   circuit.assumeRange(columnCount, 0, 64)
   return {circuit, output: emitIntegerAtLeast(circuit, columnCount, 3), reference: count => count >= 3 ? 1 : 0}
 }
@@ -121,8 +121,8 @@ export function atLeastThreeColumns(): Example<[columnCount: number]> {
 // still computes scale * scale, which overflows FP32 to Infinity, and 0 * Infinity is NaN.
 export function selectAfterOverflow(): Example<[isOpen: number, scale: number]> {
   const circuit = new Circuit(2)
-  const isOpen = 0
-  const scale = 1
+  const isOpen = circuit.source(0)
+  const scale = circuit.source(1)
   circuit.assumeRange(isOpen, 0, 1)
   circuit.assumeRange(scale, 0, Math.fround(1e30))
   const squared = emitMultiply(circuit, scale, scale)
@@ -133,8 +133,8 @@ export function selectAfterOverflow(): Example<[isOpen: number, scale: number]> 
 // Declared ranges determine how a product compiles. JS: velocity * timestep
 export function velocityTimesTimestep(declareTimestepNonNegative: boolean): Example<[velocity: number, timestep: number]> {
   const circuit = new Circuit(2)
-  const velocity = 0
-  const timestep = 1
+  const velocity = circuit.source(0)
+  const timestep = circuit.source(1)
   circuit.assumeRange(velocity, -1_048_576, 1_048_576)
   if (declareTimestepNonNegative) circuit.assumeRange(timestep, 0, Math.fround(0.008))
   // With the declaration: velocity * max(0, timestep), 1 operation.
@@ -148,8 +148,8 @@ export function velocityTimesTimestep(declareTimestepNonNegative: boolean): Exam
 // from 2^22 ms (about 70 minutes after page load), so the duration comes out as a multiple of 0.5 ms.
 export function frameDurationFromTimestamps(): Example<[frameTime: number, previousFrameTime: number]> {
   const circuit = new Circuit(2)
-  const frameTime = 0
-  const previousFrameTime = 1
+  const frameTime = circuit.source(0)
+  const previousFrameTime = circuit.source(1)
   circuit.assumeRange(frameTime, 0, Number.POSITIVE_INFINITY)
   circuit.assumeRange(previousFrameTime, 0, Number.POSITIVE_INFINITY)
   const duration = circuit.roundAffine([[frameTime, 1], [previousFrameTime, -1]])
@@ -160,7 +160,7 @@ export function frameDurationFromTimestamps(): Example<[frameTime: number, previ
 // A small affine read by an ordinary affine is copied into it, and an identical expression returns the existing wire.
 export function buttonTopReadTwice() {
   const circuit = new Circuit(1)
-  const windowTop = 0
+  const windowTop = circuit.source(0)
   circuit.assumeRange(windowTop, 0, 16_384)
   const buttonTop = circuit.affine([[windowTop, 1]], 13)
   const closeBottom = circuit.affine([[buttonTop, 1]], 18)

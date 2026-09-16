@@ -3,7 +3,7 @@
 // where f is Math.fround. This file shows what changes when a backend adds the
 // same terms in another order, fuses a product into the addition, or skips
 // FP32 rounding altogether, as GPU shader compilers and parallel kernels do.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 
 export type Terms = readonly (readonly [weight: number, input: number])[]
 
@@ -46,26 +46,26 @@ export function addBalanced(bias: number, terms: Terms): number {
 // Source layout: position, step, destination.
 export function buildTermOrders(): {circuit: Circuit, addThenSubtract: Wire, subtractThenAdd: Wire} {
   const circuit = new Circuit(3)
-  for (let wire = 0; wire < 3; wire++) circuit.assumeRange(wire, -2048, 2048)
-  const addThenSubtract = circuit.roundAffine([[0, 1], [1, 1], [2, -1]])
-  const subtractThenAdd = circuit.roundAffine([[0, 1], [2, -1], [1, 1]])
+  for (let wire = 0; wire < 3; wire++) circuit.assumeRange(asWire(wire), -2048, 2048)
+  const addThenSubtract = circuit.roundAffine([[circuit.source(0), 1], [circuit.source(1), 1], [circuit.source(2), -1]])
+  const subtractThenAdd = circuit.roundAffine([[circuit.source(0), 1], [circuit.source(2), -1], [circuit.source(1), 1]])
   return {circuit, addThenSubtract, subtractThenAdd}
 }
 
 // `1 + 0.1 * count`: the executor rounds the product before adding it.
 export function buildScaledCount(): {circuit: Circuit, scaled: Wire} {
   const circuit = new Circuit(1)
-  circuit.assumeRange(0, 0, 1024)
-  return {circuit, scaled: circuit.roundAffine([[0, 0.1]], 1)}
+  circuit.assumeRange(circuit.source(0), 0, 1024)
+  return {circuit, scaled: circuit.roundAffine([[circuit.source(0), 0.1]], 1)}
 }
 
 // A difference of two values has the same FP32 result in every order, with or
 // without fusion: the first term enters exactly, and one addition remains.
 export function buildDifference(): {circuit: Circuit, difference: Wire} {
   const circuit = new Circuit(2)
-  circuit.assumeRange(0, -16_384, 16_384)
-  circuit.assumeRange(1, -16_384, 16_384)
-  return {circuit, difference: circuit.roundAffine([[0, 1], [1, -1]])}
+  circuit.assumeRange(circuit.source(0), -16_384, 16_384)
+  circuit.assumeRange(circuit.source(1), -16_384, 16_384)
+  return {circuit, difference: circuit.roundAffine([[circuit.source(0), 1], [circuit.source(1), -1]])}
 }
 
 // round(x) for |x| < 2^22: FP32 values above 2^23 are whole numbers, so adding
@@ -75,8 +75,8 @@ const roundShift = 2 ** 23 + 2 ** 22
 
 export function buildRound(): {circuit: Circuit, rounded: Wire} {
   const circuit = new Circuit(1)
-  circuit.assumeRange(0, -(2 ** 21), 2 ** 21)
-  const shifted = circuit.roundAffine([[0, 1]], roundShift)
+  circuit.assumeRange(circuit.source(0), -(2 ** 21), 2 ** 21)
+  const shifted = circuit.roundAffine([[circuit.source(0), 1]], roundShift)
   return {circuit, rounded: circuit.roundAffine([[shifted, 1]], -roundShift)}
 }
 

@@ -11,7 +11,7 @@
 // per-page losses with a softmax over those scores (soft attention). The circuit a UI would
 // run picks the highest score with emitArgmax (hard attention). The authored weights are
 // weightRelease 1, weightVelocity 1 / 4.5 and bias 3.5.
-import {Circuit, emitArgmax, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, emitArgmax, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 import {createRandom} from '../../../index-read/measure.ts'
 import {sharpnessSchedule} from './query-descent.ts'
 import {emitSoftAttentionRead, maximumSharpness, minimumSharpness} from './soft-attention.ts'
@@ -39,22 +39,22 @@ export function snapPageReference(releasePage: number, releaseVelocity: number):
 export const cells = {releasePage: 0, releaseVelocity: 1, weightRelease: 2, weightVelocity: 3, bias: 4, sharpness: 5, firstPageLoss: 6}
 
 function declareReleaseAndWeights(circuit: Circuit) {
-  circuit.assumeRange(cells.releasePage, 0, lastPage)
-  circuit.assumeRange(cells.releaseVelocity, -maximumReleaseVelocity, maximumReleaseVelocity)
-  circuit.assumeRange(cells.weightRelease, -2, 2)
-  circuit.assumeRange(cells.weightVelocity, -2, 2)
-  circuit.assumeRange(cells.bias, -8, 8)
+  circuit.assumeRange(asWire(cells.releasePage), 0, lastPage)
+  circuit.assumeRange(asWire(cells.releaseVelocity), -maximumReleaseVelocity, maximumReleaseVelocity)
+  circuit.assumeRange(asWire(cells.weightRelease), -2, 2)
+  circuit.assumeRange(asWire(cells.weightVelocity), -2, 2)
+  circuit.assumeRange(asWire(cells.bias), -8, 8)
 }
 
 // Measuring the release position from the middle page keeps the gradients of the
 // three weights on similar scales, so one learning rate works for all three.
 function emitQuery(circuit: Circuit): Wire {
-  const releaseOffset = circuit.roundAffine([[cells.releasePage, 1]], -middlePage)
+  const releaseOffset = circuit.roundAffine([[asWire(cells.releasePage), 1]], -middlePage)
   circuit.assumeRange(releaseOffset, -middlePage, middlePage)
   const projectedPage = circuit.roundAffine([
-    [circuit.multiply(cells.weightRelease, releaseOffset), 1],
-    [circuit.multiply(cells.weightVelocity, cells.releaseVelocity), 1],
-    [cells.bias, 1],
+    [circuit.multiply(asWire(cells.weightRelease), releaseOffset), 1],
+    [circuit.multiply(asWire(cells.weightVelocity), asWire(cells.releaseVelocity)), 1],
+    [asWire(cells.bias), 1],
   ])
   const aboveFirstPage = circuit.reglu([], 1, [[projectedPage, 1]], 0)
   const aboveLastPage = circuit.reglu([], 1, [[projectedPage, 1]], -lastPage)
@@ -72,11 +72,11 @@ function releaseAndWeights(release: Release, weights: QueryWeights) {
 export function buildTrainingCircuit() {
   const circuit = new Circuit(cells.firstPageLoss + pageCount)
   declareReleaseAndWeights(circuit)
-  circuit.assumeRange(cells.sharpness, minimumSharpness, maximumSharpness)
-  const pageLosses = Array.from({length: pageCount}, (_, page) => cells.firstPageLoss + page)
+  circuit.assumeRange(asWire(cells.sharpness), minimumSharpness, maximumSharpness)
+  const pageLosses = Array.from({length: pageCount}, (_, page) => circuit.source(cells.firstPageLoss + page))
   for (const wire of pageLosses) circuit.assumeRange(wire, 0, 1)
   const query = emitQuery(circuit)
-  const {read} = emitSoftAttentionRead(circuit, query, cells.sharpness, pageLosses)
+  const {read} = emitSoftAttentionRead(circuit, query, asWire(cells.sharpness), pageLosses)
   const source = (release: Release, weights: QueryWeights, sharpness: number, pageLossValues: readonly number[]) =>
     Float32Array.from([...releaseAndWeights(release, weights), sharpness, ...pageLossValues])
   return {circuit, query, read, source}
@@ -88,9 +88,9 @@ export function buildSquaredErrorCircuit() {
   const targetPage = cells.sharpness
   const circuit = new Circuit(targetPage + 1)
   declareReleaseAndWeights(circuit)
-  circuit.assumeRange(targetPage, 0, lastPage)
+  circuit.assumeRange(asWire(targetPage), 0, lastPage)
   const query = emitQuery(circuit)
-  const error = circuit.roundAffine([[query, 1], [targetPage, -1]])
+  const error = circuit.roundAffine([[query, 1], [asWire(targetPage), -1]])
   circuit.assumeRange(error, -lastPage, lastPage)
   const loss = circuit.multiply(error, error)
   const source = (release: Release, weights: QueryWeights, targetPageValue: number) =>

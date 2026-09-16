@@ -107,8 +107,8 @@ type CandidateWires = {score: Wire, hero: RectWires, heroPresent: Wire, thumbnai
 export function buildCandidateGallery() {
   // Source cells: the viewport width and height.
   const circuit = new Circuit(2)
-  const viewportWidth: Wire = 0
-  const viewportHeight: Wire = 1
+  const viewportWidth = circuit.source(0)
+  const viewportHeight = circuit.source(1)
   circuit.assumeRange(viewportWidth, 0, viewportLimit)
   circuit.assumeRange(viewportHeight, 0, viewportLimit)
   const constant = (value: number) => circuit.affine([], value)

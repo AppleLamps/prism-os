@@ -5,7 +5,7 @@
 //    preparing, and the circuit reads the loop's result with one index read.
 // 2. The spring matrix. host-timing.ts computes the matrix of all of this evaluation's 4 ms steps for one
 //    stiffness and damping pair, and every spring with those constants applies the same 4 cells.
-import {Circuit, type SpringMatrixWires, emitApplySpringMatrix, invariant} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, type SpringMatrixWires, emitApplySpringMatrix, invariant, asWire} from '../../../../../../numeric-ui-core.ts'
 import {type SpringConstants, type SpringMatrix, defaultSpringClockConfig} from '../../../../../../host-timing.ts'
 
 // hn.js line 333, the loop the ancestor table replaces.
@@ -33,16 +33,16 @@ export function buildAncestorLookup(rowCapacity: number, levelCount: number) {
   // pointer, then the ancestor table, then every row's top.
   const cells = {pointedRow: 0, pointedLevel: 1, tableStart: 2, rowTopsStart: 2 + rowCapacity * levelCount}
   const circuit = new Circuit(cells.rowTopsStart + rowCapacity)
-  circuit.assumeRange(cells.pointedRow, 0, rowCapacity - 1)
-  circuit.assumeRange(cells.pointedLevel, 0, levelCount - 1)
+  circuit.assumeRange(asWire(cells.pointedRow), 0, rowCapacity - 1)
+  circuit.assumeRange(asWire(cells.pointedLevel), 0, levelCount - 1)
   const ancestorTable = Array.from({length: rowCapacity * levelCount}, (_, entry) => cells.tableStart + entry)
-  for (const cell of ancestorTable) circuit.assumeRange(cell, 0, rowCapacity - 1)
+  for (const cell of ancestorTable) circuit.assumeRange(asWire(cell), 0, rowCapacity - 1)
   const rowTops = Array.from({length: rowCapacity}, (_, row) => cells.rowTopsStart + row)
-  for (const cell of rowTops) circuit.assumeRange(cell, 0, 2 ** 20)
+  for (const cell of rowTops) circuit.assumeRange(asWire(cell), 0, 2 ** 20)
   // JS: let ancestor = row; while (ancestor > 0 && indents[ancestor] > level) ancestor--
-  const ancestor = circuit.indexReadAffine([[cells.pointedRow, levelCount], [cells.pointedLevel, 1]], 0, ancestorTable, 'clamp', 'clamp')
+  const ancestor = circuit.indexReadAffine([[asWire(cells.pointedRow), levelCount], [asWire(cells.pointedLevel), 1]], 0, ancestorTable.map(asWire), 'clamp', 'clamp')
   // JS: rowTops[ancestor]
-  const ancestorTop = circuit.indexRead(ancestor, rowTops)
+  const ancestorTop = circuit.indexRead(ancestor, rowTops.map(asWire))
   return {circuit, cells, ancestorTable, rowTops, ancestor, ancestorTop, roots: [ancestor, ancestorTop]}
 }
 
@@ -71,11 +71,11 @@ export function stepSpringsReference(
 export function buildSharedSpring(springCount: number, matrixBound: number) {
   // Source cells: the spring matrix, then each spring's displacement and velocity.
   const circuit = new Circuit(4 + 2 * springCount)
-  const matrix: SpringMatrixWires = [0, 1, 2, 3]
+  const matrix: SpringMatrixWires = [asWire(0), asWire(1), asWire(2), asWire(3)]
   for (const cell of matrix) circuit.assumeRange(cell, -matrixBound, matrixBound)
   const springs = Array.from({length: springCount}, (_, spring) => ({displacement: 4 + 2 * spring, velocity: 5 + 2 * spring}))
   // JS: for (let step = 0; step < steps; step++) { velocity += ...; displacement += velocity × dt }
-  const stepped = springs.map(spring => emitApplySpringMatrix(circuit, matrix, spring.displacement, spring.velocity))
+  const stepped = springs.map(spring => emitApplySpringMatrix(circuit, matrix, asWire(spring.displacement), asWire(spring.velocity)))
   return {circuit, matrix, springs, roots: stepped.flatMap(({displacement, velocity}) => [displacement, velocity])}
 }
 

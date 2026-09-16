@@ -18,6 +18,7 @@ import {
   Circuit,
   type SpringMatrixWires,
   type Wire,
+  asWire,
   emitAnimatedObject,
   emitApplySpringMatrix,
   emitCompare,
@@ -45,14 +46,14 @@ export const velocityLimit = 65_536
 
 export const drawerCell = {
   matrixStart: 0,
-  settleCheck: 4,
-  snap: 5,
-  toggleActive: 6,
-  open: 7,
-  displacement: 8,
-  velocity: 9,
+  settleCheck: asWire(4),
+  snap: asWire(5),
+  toggleActive: asWire(6),
+  open: asWire(7),
+  displacement: asWire(8),
+  velocity: asWire(9),
   // Only the 'last evaluation' layout reads this cell; every variant writes it back.
-  previousWidth: 10,
+  previousWidth: asWire(10),
   size: 11,
 } as const
 
@@ -73,7 +74,7 @@ export function buildDrawerGrid(widthSource: WidthSource) {
   const circuit = new Circuit(drawerCell.size)
   const bound = springMatrixBound(drawerSpring)
   const {matrixStart} = drawerCell
-  const matrix: SpringMatrixWires = [matrixStart, matrixStart + 1, matrixStart + 2, matrixStart + 3]
+  const matrix: SpringMatrixWires = [circuit.source(matrixStart), circuit.source(matrixStart + 1), circuit.source(matrixStart + 2), circuit.source(matrixStart + 3)]
   for (const entry of matrix) circuit.assumeRange(entry, -bound, bound)
   for (const bit of [drawerCell.settleCheck, drawerCell.snap, drawerCell.toggleActive, drawerCell.open]) circuit.assumeRange(bit, 0, 1)
   circuit.assumeRange(drawerCell.displacement, -displacementLimit, displacementLimit)
@@ -132,7 +133,7 @@ export function buildDrawerGrid(widthSource: WidthSource) {
     emitMultiply(circuit, byColumnCount(columns => Math.floor(index / columns)), cellSize))
 
   const zero = constant(0)
-  const nextSource: Wire[] = Array.from({length: drawerCell.size}, (_, wire) => wire)
+  const nextSource: Wire[] = Array.from({length: drawerCell.size}, (_, wire) => circuit.source(wire))
   nextSource[drawerCell.toggleActive] = zero
   nextSource[drawerCell.snap] = zero
   nextSource[drawerCell.open] = nextOpen

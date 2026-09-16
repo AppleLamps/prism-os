@@ -24,8 +24,8 @@ export function firstVisibleRowReference(heights: ArrayLike<number>, scrollTop: 
 export function buildFirstVisibleRow(rowCount: number, slotCount: number) {
   invariant(rowCount >= 1, 'a list needs at least one row')
   const circuit = new Circuit(1 + rowCount)
-  const scrollTop = 0
-  const heights = Array.from({length: rowCount}, (_, row) => 1 + row)
+  const scrollTop = circuit.source(0)
+  const heights = Array.from({length: rowCount}, (_, row) => circuit.source(1 + row))
   circuit.assumeRange(scrollTop, 0, 2 ** 20)
   for (const height of heights) circuit.assumeRange(height, 0, 1024)
   const rowTops = emitRowTopsBrentKung(circuit, heights)

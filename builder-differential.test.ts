@@ -5,6 +5,7 @@ import {
   type Wire,
   invariant,
   validateCircuit,
+  asWire,
 } from './numeric-ui-core.ts'
 
 // Differential oracle for the builder's emit-time rewrites.
@@ -84,7 +85,7 @@ function evaluateNaiveAffine(terms: Terms, bias: number, values: Map<Wire, numbe
 // 0.5-rounds-up rule the reference uses so their bits can be compared exactly.
 function evaluateShadow(shadow: ShadowCircuit, source: Float32Array): Map<Wire, number> {
   const values = new Map<Wire, number>()
-  for (let wire = 0; wire < source.length; wire++) values.set(wire, source[wire]!)
+  for (let wire = 0; wire < source.length; wire++) values.set(asWire(wire), source[wire]!)
   for (const op of shadow.ops) {
     const left = evaluateNaiveAffine(op.leftTerms, op.leftBias, values)
     let value: number
@@ -244,11 +245,11 @@ describe('builder rewrite differential oracle', () => {
       const sourceSize = 3 + randomInteger(random, 4)
       const shadow = new ShadowCircuit(sourceSize)
       // The first two source wires stay within zero and one to seed booleans.
-      shadow.circuit.assumeRange(0, 0, 1)
-      shadow.circuit.assumeRange(1, 0, 1)
+      shadow.circuit.assumeRange(shadow.circuit.source(0), 0, 1)
+      shadow.circuit.assumeRange(shadow.circuit.source(1), 0, 1)
 
-      const wires: Wire[] = Array.from({length: sourceSize}, (_, wire) => wire)
-      const unitWires: Wire[] = [0, 1]
+      const wires: Wire[] = Array.from({length: sourceSize}, (_, wire) => asWire(wire))
+      const unitWires: Wire[] = [asWire(0), asWire(1)]
       const constantWires: Wire[] = []
       const affineWires: Wire[] = []
       const operationCount = 10 + randomInteger(random, 50)
@@ -302,15 +303,15 @@ describe('builder rewrite differential oracle', () => {
   test('hand-built rewrite shapes evaluate exactly to their intent', () => {
     // Composition three deep, with merging, folding, and demotion mixed in.
     const shadow = new ShadowCircuit(2)
-    shadow.circuit.assumeRange(0, 0, 1)
+    shadow.circuit.assumeRange(shadow.circuit.source(0), 0, 1)
     const constant = shadow.affine([], 2) // wire 2, constant 2
-    const first = shadow.affine([[0, 3], [constant, 1]], 1) // 3*v0 + 2 + 1 = 3*v0 + 3
-    const second = shadow.affine([[first, 2], [0, 0.5], [0, 0.5]], -1) // 2*first + v0 - 1
+    const first = shadow.affine([[asWire(0), 3], [constant, 1]], 1) // 3*v0 + 2 + 1 = 3*v0 + 3
+    const second = shadow.affine([[first, 2], [asWire(0), 0.5], [asWire(0), 0.5]], -1) // 2*first + v0 - 1
     const third = shadow.affine([[second, 1], [first, -1]], 0) // second - first
     // Constant gate < 0 must demote to exactly zero.
-    const demotedNegative = shadow.reglu([[0, 5]], 7, [[constant, -1]], 0)
+    const demotedNegative = shadow.reglu([[asWire(0), 5]], 7, [[constant, -1]], 0)
     // Constant gate > 0 scales the left form.
-    const demotedPositive = shadow.reglu([[0, 5]], 7, [[constant, 1]], 0)
+    const demotedPositive = shadow.reglu([[asWire(0), 5]], 7, [[constant, 1]], 0)
     // Identity alias returns the input wire without allocating.
     const alias = shadow.affine([[third, 1]], 0)
 

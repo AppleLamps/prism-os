@@ -21,9 +21,9 @@ const BIG = 3.4e38
 // max(a, b) expanded as b + relu(a - b), evaluated through the real circuit.
 function evaluateMaximum(a: number, b: number): number {
   const circuit = new Circuit(2)
-  circuit.assumeRange(0, -BIG, BIG)
-  circuit.assumeRange(1, -BIG, BIG)
-  const result = emitMaximum(circuit, 0, 1)
+  circuit.assumeRange(circuit.source(0), -BIG, BIG)
+  circuit.assumeRange(circuit.source(1), -BIG, BIG)
+  const result = emitMaximum(circuit, circuit.source(0), circuit.source(1))
   const reference = circuit.evaluateReference(Float32Array.from([a, b]))
   const tensor = circuit.evaluateTensor(Float32Array.from([a, b]))
   // The compiled and literal evaluators must agree bit-for-bit regardless of magnitude.
@@ -34,9 +34,9 @@ function evaluateMaximum(a: number, b: number): number {
 // min(a, b) expanded as a - relu(a - b).
 function evaluateMinimum(a: number, b: number): number {
   const circuit = new Circuit(2)
-  circuit.assumeRange(0, -BIG, BIG)
-  circuit.assumeRange(1, -BIG, BIG)
-  const result = emitMinimum(circuit, 0, 1)
+  circuit.assumeRange(circuit.source(0), -BIG, BIG)
+  circuit.assumeRange(circuit.source(1), -BIG, BIG)
+  const result = emitMinimum(circuit, circuit.source(0), circuit.source(1))
   const reference = circuit.evaluateReference(Float32Array.from([a, b]))
   const tensor = circuit.evaluateTensor(Float32Array.from([a, b]))
   expect(tensor[result]).toBe(reference[result])
@@ -46,10 +46,10 @@ function evaluateMinimum(a: number, b: number): number {
 // select(gate, off, on) expanded as off + gate * (on - off).
 function evaluateSelect(gate: number, off: number, on: number): number {
   const circuit = new Circuit(3)
-  circuit.assumeRange(0, 0, 1)
-  circuit.assumeRange(1, -BIG, BIG)
-  circuit.assumeRange(2, -BIG, BIG)
-  const result = emitSelect(circuit, 0, 1, 2)
+  circuit.assumeRange(circuit.source(0), 0, 1)
+  circuit.assumeRange(circuit.source(1), -BIG, BIG)
+  circuit.assumeRange(circuit.source(2), -BIG, BIG)
+  const result = emitSelect(circuit, circuit.source(0), circuit.source(1), circuit.source(2))
   const reference = circuit.evaluateReference(Float32Array.from([gate, off, on]))
   const tensor = circuit.evaluateTensor(Float32Array.from([gate, off, on]))
   expect(tensor[result]).toBe(reference[result])
@@ -59,9 +59,9 @@ function evaluateSelect(gate: number, off: number, on: number): number {
 // multiply(a, b); ranges chosen so each operand keeps its sign freedom.
 function evaluateMultiply(a: number, b: number): number {
   const circuit = new Circuit(2)
-  circuit.assumeRange(0, a < 0 ? -BIG : 0, BIG)
-  circuit.assumeRange(1, b < 0 ? -BIG : 0, BIG)
-  const result = emitMultiply(circuit, 0, 1)
+  circuit.assumeRange(circuit.source(0), a < 0 ? -BIG : 0, BIG)
+  circuit.assumeRange(circuit.source(1), b < 0 ? -BIG : 0, BIG)
+  const result = emitMultiply(circuit, circuit.source(0), circuit.source(1))
   const reference = circuit.evaluateReference(Float32Array.from([a, b]))
   const tensor = circuit.evaluateTensor(Float32Array.from([a, b]))
   expect(tensor[result]).toBe(reference[result])
@@ -76,10 +76,10 @@ function evaluateMultiply(a: number, b: number): number {
 // with unit pinned to 1.
 function evaluateClampZeroOne(v: number): number {
   const circuit = new Circuit(2)
-  circuit.assumeRange(0, -BIG, BIG)
-  circuit.assumeRange(1, 1, 1)
-  const value = 0
-  const unit = 1
+  circuit.assumeRange(circuit.source(0), -BIG, BIG)
+  circuit.assumeRange(circuit.source(1), 1, 1)
+  const value = circuit.source(0)
+  const unit = circuit.source(1)
   const positive = emitRelu(circuit, value)
   const aboveOne = emitRelu(circuit, circuit.affine([[value, 1], [unit, -1]]))
   const result = circuit.affine([[positive, 1], [aboveOne, -1]])
@@ -221,18 +221,20 @@ describe('emitSpring settled branch', () => {
   // settleDistance, settleSpeed, settleDistanceScale, settleSpeedScale, unit.
   function buildSettledSpring(initialPosition: number, destination: number, initialVelocity: number) {
     const circuit = new Circuit(11)
-    circuit.assumeRange(0, -1e6, 1e6)
-    circuit.assumeRange(1, -1e6, 1e6)
-    circuit.assumeRange(2, -1e6, 1e6)
-    circuit.assumeRange(3, 0, 1000)
-    circuit.assumeRange(4, 0, 1000)
-    circuit.assumeRange(5, 0, 1)
-    circuit.assumeRange(6, 0, 1e6)
-    circuit.assumeRange(7, 0, 1e6)
-    circuit.assumeRange(8, 0, 1e6)
-    circuit.assumeRange(9, 0, 1e6)
-    circuit.assumeRange(10, 1, 1)
-    const spring = emitSpring(circuit, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    circuit.assumeRange(circuit.source(0), -1e6, 1e6)
+    circuit.assumeRange(circuit.source(1), -1e6, 1e6)
+    circuit.assumeRange(circuit.source(2), -1e6, 1e6)
+    circuit.assumeRange(circuit.source(3), 0, 1000)
+    circuit.assumeRange(circuit.source(4), 0, 1000)
+    circuit.assumeRange(circuit.source(5), 0, 1)
+    circuit.assumeRange(circuit.source(6), 0, 1e6)
+    circuit.assumeRange(circuit.source(7), 0, 1e6)
+    circuit.assumeRange(circuit.source(8), 0, 1e6)
+    circuit.assumeRange(circuit.source(9), 0, 1e6)
+    circuit.assumeRange(circuit.source(10), 1, 1)
+    const [position0, destination0, velocity0, stiffness, damping, timestep, settleDistance, settleSpeed, settleDistanceScale, settleSpeedScale, unit] =
+      Array.from({length: 11}, (_, cell) => circuit.source(cell))
+    const spring = emitSpring(circuit, position0!, destination0!, velocity0!, stiffness!, damping!, timestep!, settleDistance!, settleSpeed!, settleDistanceScale!, settleSpeedScale!, unit!)
     let position = initialPosition
     let velocity = initialVelocity
     let active = 1
@@ -306,8 +308,8 @@ describe('emitMultiply exact-product property', () => {
     // fast path; the assumed range is then enforced at evaluation time. (Lifted
     // from the former numeric-ui-atoms suite — the one assertion not covered here.)
     const circuit = new Circuit(2)
-    circuit.assumeRange(1, 0, Number.POSITIVE_INFINITY)
-    const product = emitMultiply(circuit, 0, 1)
+    circuit.assumeRange(circuit.source(1), 0, Number.POSITIVE_INFINITY)
+    const product = emitMultiply(circuit, circuit.source(0), circuit.source(1))
     expect(circuit.operations.length).toBe(1)
     expect(circuit.operations[0]!.kind).toBe('reglu')
     expect(circuit.evaluateTensor(Float32Array.from([-3, 2]))[product]).toBe(-6)

@@ -2,6 +2,7 @@ import {
   Circuit,
   type Wire,
   assertFiniteValues,
+  asWire,
   emitMultiply,
   invariant,
   validateCircuit,
@@ -90,7 +91,7 @@ function createParameterLayout(
 }
 
 function parameterField(start: number, row: number, width: number, column: number) {
-  return start + row * width + column
+  return asWire(start + row * width + column)
 }
 
 function emitDynamicProjection(
@@ -144,7 +145,7 @@ function createTrainableGeometryCircuit(
           feature,
         ],
       )
-      leftTerms.push([parameters.firstLeftBiases + neuron, 1])
+      leftTerms.push([asWire(parameters.firstLeftBiases + neuron), 1])
       const gateTerms = features.map(
         (feature, column): readonly [Wire, number] => [
           parameterField(
@@ -156,7 +157,7 @@ function createTrainableGeometryCircuit(
           feature,
         ],
       )
-      gateTerms.push([parameters.firstGateBiases + neuron, 1])
+      gateTerms.push([asWire(parameters.firstGateBiases + neuron), 1])
       first.push(circuit.reglu(leftTerms, 0, gateTerms, 0))
     }
 
@@ -168,7 +169,7 @@ function createTrainableGeometryCircuit(
             circuit,
             first,
             parameters.secondLeftWeights,
-            parameters.secondLeftBiases + neuron,
+            asWire(parameters.secondLeftBiases + neuron),
             neuron,
           ),
           1,
@@ -179,7 +180,7 @@ function createTrainableGeometryCircuit(
             circuit,
             first,
             parameters.secondGateWeights,
-            parameters.secondGateBiases + neuron,
+            asWire(parameters.secondGateBiases + neuron),
             neuron,
           ),
           1,
@@ -194,7 +195,7 @@ function createTrainableGeometryCircuit(
         circuit,
         second,
         parameters.outputWeights,
-        parameters.outputBiases + field,
+        asWire(parameters.outputBiases + field),
         field,
       ))
     }

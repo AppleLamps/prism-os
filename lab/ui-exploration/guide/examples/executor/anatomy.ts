@@ -18,7 +18,7 @@
 //
 // `describeProgram` prints each compiled layer: its operations, how many values
 // it reads, its matrix rows, and its stored weights.
-import {Circuit, type Terms, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 
 export const buttonSize = 16
 export const buttonInset = 6
@@ -55,9 +55,13 @@ function emitAtLeastZero(
 export function buildCloseButtonHitTest(keepButtonEdges: boolean): HitTestCircuit {
   // Source layout: pointerX, pointerY, windowLeft, windowTop, windowWidth.
   const circuit = new Circuit(cellNames.length)
-  const [pointerX, pointerY, windowLeft, windowTop, windowWidth] = [0, 1, 2, 3, 4] as const
-  for (let wire = 0; wire < cellNames.length; wire++) circuit.assumeRange(wire, 0, 16_384)
-  const names = new Map<Wire, string>(cellNames.map((name, wire) => [wire, name]))
+  const pointerX = circuit.source(0)
+  const pointerY = circuit.source(1)
+  const windowLeft = circuit.source(2)
+  const windowTop = circuit.source(3)
+  const windowWidth = circuit.source(4)
+  for (let wire = 0; wire < cellNames.length; wire++) circuit.assumeRange(circuit.source(wire), 0, 16_384)
+  const names = new Map<Wire, string>(cellNames.map((name, wire) => [circuit.source(wire), name]))
 
   const edgeTerms: [Terms, number][] = [
     [[[windowLeft, 1], [windowWidth, 1]], -buttonInset - buttonSize],
@@ -142,7 +146,7 @@ export function describeProgram(
     )
     for (let row = 0; row < layer.outputSize; row++) {
       const wire = program.wireOrder[availableValues + row]!
-      lines.push(`  ${names.get(wire) ?? `value${wire}`} = ${formatOperation(circuit, wire, names)}`)
+      lines.push(`  ${names.get(asWire(wire)) ?? `value${wire}`} = ${formatOperation(circuit, asWire(wire), names)}`)
     }
     if (showMatrix) {
       lines.push(`  rowOffsets [${[...layer.rowOffsets].join(', ')}]`)

@@ -13,7 +13,7 @@
 //   boolean-atom margin policy. Exact forward decisions do not imply useful training gradients.
 
 import ts from 'typescript'
-import {Circuit, type Wire, invariant} from '../../numeric-ui-core.ts'
+import {Circuit, type Wire, invariant, asWire} from '../../numeric-ui-core.ts'
 import {
   type FitAnnotations,
   emptyFitAnnotations,
@@ -1666,9 +1666,9 @@ export class Compilation {
   constructor(sourceFile: ts.SourceFile, inputSpecs: {name: string, spec: InputSpec}[], options: CompileOptions = {}) {
     this.sourceFile = sourceFile
     this.circuit = new Circuit(1 + inputSpecs.length)
-    this.circuit.assumeRange(0, 1, 1)
+    this.circuit.assumeRange(this.circuit.source(0), 1, 1)
     this.inputs = inputSpecs.map(({name, spec}, index) => {
-      const wire = 1 + index
+      const wire = this.circuit.source(1 + index)
       // Widen by fround so an FP32-rounded sample of a float64 bound still passes the source
       // range check.
       this.circuit.assumeRange(
@@ -1865,7 +1865,7 @@ export function compileFunctionFromSource(
       declaration,
       program: {
         circuit: compilation.circuit,
-        oneWire: 0,
+        oneWire: asWire(0),
         inputs: compilation.inputs,
         outputs,
         comparisonSites: compilation.emitter.comparisonSites,

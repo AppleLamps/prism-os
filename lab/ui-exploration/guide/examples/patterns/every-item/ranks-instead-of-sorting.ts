@@ -2,7 +2,7 @@
 // gives which of the two comes first, all in the same layers, and each rank counts those bits. When one item
 // moves, e.g. a dragged card, each card gets a bit that is 1 when the dragged card passes it, and the ranks
 // update from those bits and two counts.
-import {Circuit, emitCompare, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, type Wire, asWire} from '../../../../../../numeric-ui-core.ts'
 
 // Host contract for ranks: keys are integers within 0..65,535, e.g. dates as day numbers, and heights are
 // multiples of 1/4 px within 0..1,024, so every top is an exact FP32 sum while the total stays below 2^22 px.
@@ -29,12 +29,12 @@ export function buildRanks(itemCount: number) {
   const keys = Array.from({length: itemCount}, (_, item) => item)
   const heights = Array.from({length: itemCount}, (_, item) => itemCount + item)
   for (const key of keys) {
-    circuit.assumeRange(key, 0, keyMaximum)
-    circuit.assumeGrid(key, 1)
+    circuit.assumeRange(asWire(key), 0, keyMaximum)
+    circuit.assumeGrid(asWire(key), 1)
   }
   for (const height of heights) {
-    circuit.assumeRange(height, 0, heightMaximum)
-    circuit.assumeGrid(height, 1 / 4)
+    circuit.assumeRange(asWire(height), 0, heightMaximum)
+    circuit.assumeGrid(asWire(height), 1 / 4)
   }
 
   // earlierFirst[earlier][later] = [keys[earlier] <= keys[later]], 1 when the earlier item comes first. Equal keys
@@ -43,7 +43,7 @@ export function buildRanks(itemCount: number) {
   const earlierFirst: Wire[][] = keys.map(() => [])
   for (let later = 1; later < itemCount; later++) {
     for (let earlier = 0; earlier < later; earlier++) {
-      earlierFirst[earlier]![later] = emitCompare(circuit, keys[earlier]!, '<=', keys[later]!)
+      earlierFirst[earlier]![later] = emitCompare(circuit, asWire(keys[earlier]!), '<=', asWire(keys[later]!))
     }
   }
 
@@ -67,8 +67,8 @@ export function buildRanks(itemCount: number) {
   const itemTops = keys.map((_, item) => {
     const terms: [Wire, number][] = []
     for (let other = 0; other < itemCount; other++) {
-      if (other < item) terms.push([circuit.multiply(earlierFirst[other]![item]!, heights[other]!), 1])
-      if (other > item) terms.push([heights[other]!, 1], [circuit.multiply(earlierFirst[item]![other]!, heights[other]!), -1])
+      if (other < item) terms.push([circuit.multiply(earlierFirst[other]![item]!, asWire(heights[other]!)), 1])
+      if (other > item) terms.push([asWire(heights[other]!), 1], [circuit.multiply(earlierFirst[item]![other]!, asWire(heights[other]!)), -1])
     }
     return circuit.roundAffine(terms)
   })
@@ -121,28 +121,28 @@ export function buildDragReorder(cardCount: number) {
   const fromRank = 3 * cardCount
   const pointerY = 3 * cardCount + 1
   for (const rank of [...ranks, fromRank]) {
-    circuit.assumeRange(rank, 0, cardCount - 1)
-    circuit.assumeGrid(rank, 1)
+    circuit.assumeRange(asWire(rank), 0, cardCount - 1)
+    circuit.assumeGrid(asWire(rank), 1)
   }
   for (const top of cardTops) {
-    circuit.assumeRange(top, 0, positionMaximum)
-    circuit.assumeGrid(top, 1 / 64)
+    circuit.assumeRange(asWire(top), 0, positionMaximum)
+    circuit.assumeGrid(asWire(top), 1 / 64)
   }
   for (const height of cardHeights) {
-    circuit.assumeRange(height, 0, heightMaximum)
-    circuit.assumeGrid(height, 1 / 64)
+    circuit.assumeRange(asWire(height), 0, heightMaximum)
+    circuit.assumeGrid(asWire(height), 1 / 64)
   }
-  circuit.assumeRange(pointerY, -heightMaximum, positionMaximum)
-  circuit.assumeGrid(pointerY, 1 / 64)
+  circuit.assumeRange(asWire(pointerY), -heightMaximum, positionMaximum)
+  circuit.assumeGrid(asWire(pointerY), 1 / 64)
 
   const cards = ranks.map((rank, card) => {
-    const before = emitCompare(circuit, rank, '<', fromRank)
-    const after = emitCompare(circuit, rank, '>', fromRank)
-    const midpoint = circuit.roundAffine([[cardTops[card]!, 1], [cardHeights[card]!, 0.5]])
+    const before = emitCompare(circuit, asWire(rank), '<', asWire(fromRank))
+    const after = emitCompare(circuit, asWire(rank), '>', asWire(fromRank))
+    const midpoint = circuit.roundAffine([[asWire(cardTops[card]!), 1], [asWire(cardHeights[card]!), 0.5]])
     // passedUpward and passedDownward are 1 when the dragged card passes this card. The AND of two bits is
     // relu(a + b - 1).
-    const passedUpward = circuit.reglu([], 1, [[before, 1], [emitCompare(circuit, pointerY, '<', midpoint), 1]], -1)
-    const passedDownward = circuit.reglu([], 1, [[after, 1], [emitCompare(circuit, pointerY, '>', midpoint), 1]], -1)
+    const passedUpward = circuit.reglu([], 1, [[before, 1], [emitCompare(circuit, asWire(pointerY), '<', midpoint), 1]], -1)
+    const passedDownward = circuit.reglu([], 1, [[after, 1], [emitCompare(circuit, asWire(pointerY), '>', midpoint), 1]], -1)
     const isDragged = circuit.roundAffine([[before, -1], [after, -1]], 1)
     for (const bit of [passedUpward, passedDownward, isDragged]) circuit.assumeRange(bit, 0, 1)
     return {rank, passedUpward, passedDownward, isDragged}
@@ -154,12 +154,12 @@ export function buildDragReorder(cardCount: number) {
   const passedDownwardCount = circuit.roundAffine(cards.map(card => [card.passedDownward, 1]))
   const rankShift = circuit.roundAffine([[passedDownwardCount, 1], [passedUpwardCount, -1]])
   circuit.assumeRange(rankShift, -(cardCount - 1), cardCount - 1)
-  const toRank = circuit.roundAffine([[fromRank, 1], [rankShift, 1]])
+  const toRank = circuit.roundAffine([[asWire(fromRank), 1], [rankShift, 1]])
   // A card passed upward moves one rank later, a card passed downward one rank earlier, and the dragged card
   // moves by the shift.
   const nextRanks = cards.map(card => {
     const nextRank = circuit.roundAffine([
-      [card.rank, 1],
+      [asWire(card.rank), 1],
       [card.passedUpward, 1],
       [card.passedDownward, -1],
       [circuit.multiply(rankShift, card.isDragged), 1],

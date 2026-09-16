@@ -2,6 +2,8 @@
 
 An Indirect program has one fixed source width and an ordered instruction list. State, constants, and browser inputs enter through a `Float32Array`. Each instruction appends one number; a wire is its numeric position.
 
+Wires have a type of their own, `Wire`, so a plain number doesn't type-check where a wire is expected, e.g. `emitMinimum(circuit, availableWidth, 1)` is refused instead of reading wire 1. `circuit.source(index)` returns a source cell's wire, `circuit.constant(value)` a constant, and `asWire(position)` turns a position counted by hand into a wire.
+
 ## FP32
 
 `f(x)` means `Math.fround(x)`. Affine terms run in stored order:

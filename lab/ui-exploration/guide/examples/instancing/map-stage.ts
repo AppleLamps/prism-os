@@ -30,14 +30,13 @@ export function buildMapStage<S extends string, F extends string, O extends stri
   const circuit = new Circuit(sharedNames.length + fieldNames.length)
   const shared = {} as Record<S, Wire>
   sharedNames.forEach((key, wire) => {
-    shared[key] = wire
-    circuit.assumeRange(wire, sharedRanges[key][0], sharedRanges[key][1])
+    shared[key] = circuit.source(wire)
+    circuit.assumeRange(shared[key], sharedRanges[key][0], sharedRanges[key][1])
   })
   const fields = {} as Record<F, Wire>
   fieldNames.forEach((key, position) => {
-    const wire = sharedNames.length + position
-    fields[key] = wire
-    circuit.assumeRange(wire, fieldRanges[key][0], fieldRanges[key][1])
+    fields[key] = circuit.source(sharedNames.length + position)
+    circuit.assumeRange(fields[key], fieldRanges[key][0], fieldRanges[key][1])
   })
   const outputs = build(circuit, shared, fields)
   const outputNames = Object.keys(outputs) as O[]

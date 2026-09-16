@@ -19,8 +19,8 @@ export function buildDuplicatedRow(cards: readonly Card[], options: {prefixLower
   const circuit = new Circuit(sharedCells.length)
   const cell = {} as Record<SharedCell, Wire>
   sharedCells.forEach((name, wire) => {
-    cell[name] = wire
-    circuit.assumeRange(wire, sharedRanges[name][0], sharedRanges[name][1])
+    cell[name] = circuit.source(wire)
+    circuit.assumeRange(cell[name], sharedRanges[name][0], sharedRanges[name][1])
   })
 
   // Sizes, once per card. The card's natural size is a weight.

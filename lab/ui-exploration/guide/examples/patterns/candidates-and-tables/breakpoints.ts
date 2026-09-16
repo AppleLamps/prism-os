@@ -132,7 +132,7 @@ export function findBreakpoints(layoutAt: (containerWidth: number) => number[], 
 export function buildBreakpointLayout(table: BreakpointTable) {
   // Source cell 0: the container width.
   const circuit = new Circuit(1)
-  const containerWidth: Wire = 0
+  const containerWidth = circuit.source(0)
   circuit.assumeRange(containerWidth, minimumContainerWidth, maximumContainerWidth)
   circuit.assumeGrid(containerWidth, 1 / widthGridSteps)
   // [containerWidth >= threshold]. Both operands lie on the 1/64 px grid, so emitCompare builds an

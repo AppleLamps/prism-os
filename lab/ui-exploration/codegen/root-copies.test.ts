@@ -10,7 +10,7 @@ import * as windowManagerCopy from './window-manager-copy.ts'
 // module, e.g. after someone edits the root module and forgets the copy.
 
 test('candidate-gallery-copy.ts builds the same program and steps to the same values as candidate-gallery.ts', () => {
-  expect(candidateGalleryCopy.sourceField).toEqual(rootCandidateGallery.sourceField)
+  expect<unknown>(candidateGalleryCopy.sourceField).toEqual(rootCandidateGallery.sourceField)
   expect(candidateGalleryCopy.geometryField).toEqual(rootCandidateGallery.geometryField)
   expect(candidateGalleryCopy.layoutNames).toEqual(rootCandidateGallery.layoutNames)
   expect(candidateGalleryCopy.photoCount).toBe(rootCandidateGallery.photoCount)

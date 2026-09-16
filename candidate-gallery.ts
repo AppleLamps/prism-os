@@ -4,6 +4,7 @@ import {
   assertFiniteValues,
   assertNonNegativeFinite,
   assertUnitInterval,
+  asWire,
   emitArgmax,
   emitFirstActive,
   emitMinimum,
@@ -26,22 +27,22 @@ export const layout = {
 } as const
 
 export const sourceField = {
-  viewportWidth: 0,
-  viewportHeight: 1,
-  gap: 2,
-  clickActive: 3,
-  clickX: 4,
-  clickY: 5,
+  viewportWidth: asWire(0),
+  viewportHeight: asWire(1),
+  gap: asWire(2),
+  clickActive: asWire(3),
+  clickX: asWire(4),
+  clickY: asWire(5),
   focusStart: 6,
-  unit: 18,
-  contactCellScale: 19,
-  cinemaHeroWidthScale: 20,
-  cinemaHeroHeightScale: 21,
-  cinemaThumbnailScale: 22,
-  storyHeroWidthScale: 23,
-  storyHeroHeightScale: 24,
-  storyThumbnailScale: 25,
-  cinemaRailMaximum: 26,
+  unit: asWire(18),
+  contactCellScale: asWire(19),
+  cinemaHeroWidthScale: asWire(20),
+  cinemaHeroHeightScale: asWire(21),
+  cinemaThumbnailScale: asWire(22),
+  storyHeroWidthScale: asWire(23),
+  storyHeroHeightScale: asWire(24),
+  storyThumbnailScale: asWire(25),
+  cinemaRailMaximum: asWire(26),
   size: 27,
 } as const
 
@@ -95,7 +96,7 @@ const photoNames = [
 
 export function focusField(item: number) {
   invariant(Number.isInteger(item) && item >= 0 && item < photoCount, 'photo index is invalid')
-  return sourceField.focusStart + item
+  return asWire(sourceField.focusStart + item)
 }
 
 export function createCandidateGalleryCircuit() {
@@ -138,7 +139,7 @@ export function createCandidateGalleryCircuit() {
     circuit.assumeRange(focusField(item), 0, 1)
   }
 
-  const zero = circuit.affine([])
+  const zero = circuit.constant(0)
   const unit = sourceField.unit
   const focus = Array.from({length: photoCount}, (_, item) => focusField(item))
 
@@ -376,7 +377,7 @@ export function createCandidateGalleryCircuit() {
     [clicked[item]!, 1],
     [emitMultiply(circuit, keepFocus, wire), 1],
   ]))
-  const nextSource = Array.from({length: sourceField.size}, (_, field) => field)
+  const nextSource = Array.from({length: sourceField.size}, (_, field) => circuit.source(field))
   nextSource[sourceField.clickActive] = zero
   for (let item = 0; item < photoCount; item++) {
     nextSource[focusField(item)] = nextFocus[item]!

@@ -33,10 +33,10 @@ export const positionLimit = 65_536
 // 0..65,536 px that never decrease.
 export function buildPointedRow(rowCount: number, form: PointedRowForm) {
   const circuit = new Circuit(1 + rowCount)
-  const pointerY = 0
+  const pointerY = circuit.source(0)
   circuit.assumeRange(pointerY, -positionLimit, positionLimit)
   circuit.assumeGrid(pointerY, 1 / 64)
-  const rowBottoms = Array.from({length: rowCount}, (_, row) => 1 + row)
+  const rowBottoms = Array.from({length: rowCount}, (_, row) => circuit.source(1 + row))
   for (const bottom of rowBottoms) {
     circuit.assumeRange(bottom, 0, positionLimit)
     circuit.assumeGrid(bottom, 1 / 4)

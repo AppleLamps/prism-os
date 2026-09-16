@@ -140,7 +140,7 @@ export type TabulatedCircuit = {
 // Source cell 0 is the runtime width. Outputs: line count, widest line, and every line slot's end.
 export function buildTabulatedCircuit(table: WidthTable): TabulatedCircuit {
   const circuit = new Circuit(1)
-  const width: Wire = 0
+  const width = circuit.source(0)
   circuit.assumeRange(width, 0, 8192)
   const bits = table.thresholds.map(threshold => emitWidthAtLeast(circuit, width, threshold))
   const rows = [
@@ -165,8 +165,8 @@ export function buildTabulatedCircuit(table: WidthTable): TabulatedCircuit {
 // Only the line count, from a table restricted with restrictToLineCount.
 export function buildLineCountCircuit(table: WidthTable): {circuit: Circuit, roots: Wire[], evaluate: (maxWidth: number) => number} {
   const circuit = new Circuit(1)
-  circuit.assumeRange(0, 0, 8192)
-  const bits = table.thresholds.map(threshold => emitWidthAtLeast(circuit, 0, threshold))
+  circuit.assumeRange(circuit.source(0), 0, 8192)
+  const bits = table.thresholds.map(threshold => emitWidthAtLeast(circuit, circuit.source(0), threshold))
   const roots = [emitDeltaSum(circuit, bits, table.summaries.map(summary => summary.lineCount))]
   const evaluateRoots = circuit.createTensorEvaluator(roots)
   const source = new Float32Array(1)

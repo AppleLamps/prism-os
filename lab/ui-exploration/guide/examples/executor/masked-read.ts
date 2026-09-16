@@ -11,7 +11,7 @@
 // Each circuit compiles two ways: dense, where the executor runs every product,
 // and with gather lowering, where the compiler recognizes the masked sum over a
 // declared one-hot group and reads the selected candidate by position instead.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 
 export type ReadCircuit = {circuit: Circuit, selectedTop: Wire}
 
@@ -24,33 +24,33 @@ function relu(circuit: Circuit, terms: readonly (readonly [Wire, number])[], bia
 // Source layout: selectedIndex in cell 0, rowTops in cells 1..rowCount.
 export function buildIntegerIndexRead(rowCount: number): ReadCircuit {
   const circuit = new Circuit(1 + rowCount)
-  circuit.assumeRange(0, 0, rowCount - 1)
-  for (let row = 0; row < rowCount; row++) circuit.assumeRange(1 + row, 0, maximumRowTop)
+  circuit.assumeRange(circuit.source(0), 0, rowCount - 1)
+  for (let row = 0; row < rowCount; row++) circuit.assumeRange(asWire(1 + row), 0, maximumRowTop)
   // For an integer index i, relu(i - p + 1) - 2 relu(i - p) + relu(i - p - 1)
   // is 1 at i = p and 0 at every other integer. Neighboring members share
   // relus, because the builder returns the existing wire for an identical
   // expression.
   const members = Array.from({length: rowCount}, (_, position) => circuit.affine([
-    [relu(circuit, [[0, 1]], -position + 1), 1],
-    [relu(circuit, [[0, 1]], -position), -2],
-    [relu(circuit, [[0, 1]], -position - 1), 1],
+    [relu(circuit, [[circuit.source(0), 1]], -position + 1), 1],
+    [relu(circuit, [[circuit.source(0), 1]], -position), -2],
+    [relu(circuit, [[circuit.source(0), 1]], -position - 1), 1],
   ]))
   circuit.assumeOneHot(members)
   const selectedTop = circuit.affine(members.map((member, row): [Wire, number] =>
-    [circuit.multiply(member, 1 + row), 1]))
+    [circuit.multiply(member, asWire(1 + row)), 1]))
   return {circuit, selectedTop}
 }
 
 // Source layout: rowTops in cells 0..rowCount-1, selection bits in cells rowCount..2*rowCount-1.
 export function buildStoredOneHotRead(rowCount: number): ReadCircuit {
   const circuit = new Circuit(2 * rowCount)
-  for (let row = 0; row < rowCount; row++) circuit.assumeRange(row, 0, maximumRowTop)
-  const bits = Array.from({length: rowCount}, (_, row) => rowCount + row)
+  for (let row = 0; row < rowCount; row++) circuit.assumeRange(asWire(row), 0, maximumRowTop)
+  const bits = Array.from({length: rowCount}, (_, row) => circuit.source(rowCount + row))
   // Declares that the host writes a one-hot, like assumeRange. Only the 0..1 ranges are
   // checked on every evaluation; validateOneHotGroups checks the rest in tests.
   circuit.assumeOneHot(bits)
   const selectedTop = circuit.affine(bits.map((bit, row): [Wire, number] =>
-    [circuit.multiply(bit, row), 1]))
+    [circuit.multiply(asWire(bit), asWire(row)), 1]))
   return {circuit, selectedTop}
 }
 

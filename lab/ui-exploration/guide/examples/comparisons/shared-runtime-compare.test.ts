@@ -2,7 +2,7 @@
 // against native JavaScript comparisons and against this folder's hand-built sign cascade.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/comparisons
 import {expect, test} from 'bun:test'
-import {Circuit, type Relation, emitCompare, emitMinimumExact, validateGrids} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Relation, emitCompare, emitMinimumExact, validateGrids, asWire} from '../../../../../numeric-ui-core.ts'
 import {createRandom, differenceClasses, f, measureCost} from './fp32.ts'
 import {pairWithDifference, randomPixelPairs} from './measure.ts'
 import {buildMinimums, buildSharedCompare, relations} from './shared-runtime-compare.ts'
@@ -42,9 +42,9 @@ test('emitCompare equals JavaScript on every class of FP32 difference, as a sign
 
 test('without a grid, the helper gives the same bits as the hand-built sign cascade in sign-cascade.ts', () => {
   const {circuit, bits} = buildSharedCompare()
-  const greater = emitGreater(circuit, 0, 1)
-  const atLeast = emitAtLeast(circuit, 0, 1)
-  const equal = emitEqual(circuit, 0, 1)
+  const greater = emitGreater(circuit, circuit.source(0), circuit.source(1))
+  const atLeast = emitAtLeast(circuit, circuit.source(0), circuit.source(1))
+  const equal = emitEqual(circuit, circuit.source(0), circuit.source(1))
   for (const [a, b] of randomPixelPairs(9, 3_000)) {
     const values = circuit.evaluateReference(Float32Array.of(a, b))
     expect([values[bits[0]!], values[bits[1]!], values[bits[4]!]]).toEqual([values[greater], values[atLeast], values[equal]])
@@ -122,7 +122,7 @@ test('rounding points: every live operation emitCompare builds is recorded, as i
           const wire = program.wireOrder[packed]!
           const operation = circuit.operations[wire - circuit.sourceSize]!
           // Operands within 0..16,384 on a 1/64 grid are 2^20 grid steps, so the grid comparisons build integer bits.
-          expect(kinds.get(wire)).toBe(operation.kind === 'boolean' ? 'boolean' : grid === undefined ? 'sign cascade' : 'integer bit')
+          expect(kinds.get(asWire(wire))).toBe(operation.kind === 'boolean' ? 'boolean' : grid === undefined ? 'sign cascade' : 'integer bit')
         }
       }
     }
@@ -131,12 +131,12 @@ test('rounding points: every live operation emitCompare builds is recorded, as i
 
 test("emitCompare throws unless both operands have finite declared ranges and their difference can't overflow FP32", () => {
   const open = new Circuit(2)
-  open.assumeRange(0, 0, 16_384)
-  expect(() => emitCompare(open, 0, '>=', 1)).toThrow('finite declared ranges')
+  open.assumeRange(open.source(0), 0, 16_384)
+  expect(() => emitCompare(open, open.source(0), '>=', open.source(1))).toThrow('finite declared ranges')
   const huge = new Circuit(2)
-  huge.assumeRange(0, -3.4e38, 3.4e38)
-  huge.assumeRange(1, -3.4e38, 3.4e38)
-  expect(() => emitCompare(huge, 0, '>', 1)).toThrow('can overflow FP32')
+  huge.assumeRange(huge.source(0), -3.4e38, 3.4e38)
+  huge.assumeRange(huge.source(1), -3.4e38, 3.4e38)
+  expect(() => emitCompare(huge, huge.source(0), '>', huge.source(1))).toThrow('can overflow FP32')
 })
 
 test('emitMinimumExact returns one operand exactly where emitMinimum drifts', () => {
@@ -156,10 +156,10 @@ test('emitMinimumExact returns one operand exactly where emitMinimum drifts', ()
 test('emitMinimumExact on operands declared on a 1/64 grid is 5 operations in 4 layers', () => {
   const circuit = new Circuit(2)
   for (const wire of [0, 1]) {
-    circuit.assumeRange(wire, 0, 16_384)
-    circuit.assumeGrid(wire, 1 / 64)
+    circuit.assumeRange(asWire(wire), 0, 16_384)
+    circuit.assumeGrid(asWire(wire), 1 / 64)
   }
-  const exact = emitMinimumExact(circuit, 0, 1)
+  const exact = emitMinimumExact(circuit, circuit.source(0), circuit.source(1))
   const random = createRandom(13)
   const gridValue = () => Math.floor(random() * 16_384 * 64) / 64
   let wrong = 0

@@ -38,10 +38,10 @@ for (const count of [3, 8, 64]) {
 console.log('emitArgmax keeps the left candidate over a larger right score')
 {
   const circuit = new Circuit(3)
-  circuit.assumeRange(0, 0, 1)
-  circuit.assumeRange(1, 0, 1)
-  circuit.assumeRange(2, 1, 1)
-  const {selected} = emitArgmax(circuit, [0, 1], 2)
+  circuit.assumeRange(circuit.source(0), 0, 1)
+  circuit.assumeRange(circuit.source(1), 0, 1)
+  circuit.assumeRange(circuit.source(2), 1, 1)
+  const {selected} = emitArgmax(circuit, [circuit.source(0), circuit.source(1)], circuit.source(2))
   const evaluate = circuit.createTensorEvaluator(selected)
   let largestKept = 0
   let smallestLost = Infinity

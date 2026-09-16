@@ -45,13 +45,18 @@ function emitFocusStep(circuit: Circuit, buttonCount: number, focusedIndex: Wire
 export function buildFocusQueue(buttonCount: number, entryCount: number, form: FocusForm) {
   // Source cells: the focused index before the queue, then 4 bits per queue entry.
   const circuit = new Circuit(1 + 4 * entryCount)
-  const initialFocus: Wire = 0
+  const initialFocus = circuit.source(0)
   circuit.assumeRange(initialFocus, 0, buttonCount - 1)
   const entries = Array.from({length: entryCount}, (_, entry): KeyEntry => {
     const firstCell = 1 + 4 * entry
-    return {arrowLeft: firstCell, arrowRight: firstCell + 1, home: firstCell + 2, end: firstCell + 3}
+    return {
+      arrowLeft: circuit.source(firstCell),
+      arrowRight: circuit.source(firstCell + 1),
+      home: circuit.source(firstCell + 2),
+      end: circuit.source(firstCell + 3),
+    }
   })
-  for (let cell = 1; cell < circuit.sourceSize; cell++) circuit.assumeRange(cell, 0, 1)
+  for (let cell = 1; cell < circuit.sourceSize; cell++) circuit.assumeRange(circuit.source(cell), 0, 1)
   const step = (focusedIndex: Wire, entry: KeyEntry) => emitFocusStep(circuit, buttonCount, focusedIndex, entry)
 
   let finalFocus: Wire = initialFocus

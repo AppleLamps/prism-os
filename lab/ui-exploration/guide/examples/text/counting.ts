@@ -4,7 +4,7 @@
 // For a line that starts at the word lineStart, fits[j] = [the line from lineStart through segment j fits]
 // reads 1, 1, ..., 1, 0, 0, ... as j grows, because widths are nonnegative. So the first segment that
 // doesn't fit is lineStart + 1 + (the number of ones): a count, not a search.
-import {Circuit, type Terms, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 import {lineFitEpsilon, type Paragraph} from './paragraph.ts'
 
 export type WalkerSource = {
@@ -22,10 +22,10 @@ export type WalkerSource = {
 export function createWalkerSource(segmentCount: number): WalkerSource {
   return {
     sourceSize: 3 + segmentCount,
-    unit: 0,
-    maxWidth: 1,
-    firstLineStart: 2,
-    segmentWidths: Array.from({length: segmentCount}, (_, index) => 3 + index),
+    unit: asWire(0),
+    maxWidth: asWire(1),
+    firstLineStart: asWire(2),
+    segmentWidths: Array.from({length: segmentCount}, (_, index) => 3 + index).map(asWire),
   }
 }
 

@@ -36,9 +36,10 @@ export type MaximumOrder = 'item order' | 'tree'
 // Heights live in source cells 0..count - 1.
 export function buildMaximumCircuit(count: number, order: MaximumOrder) {
   const circuit = new Circuit(count)
-  const heights: Wire[] = Array.from({length: count}, (_, wire) => {
-    circuit.assumeRange(wire, 0, 8192)
-    return wire
+  const heights: Wire[] = Array.from({length: count}, (_, cell) => {
+    const height = circuit.source(cell)
+    circuit.assumeRange(height, 0, 8192)
+    return height
   })
   let tallest: Wire
   if (order === 'item order') {

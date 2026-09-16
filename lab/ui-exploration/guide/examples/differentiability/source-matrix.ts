@@ -3,7 +3,7 @@
 // Stiffness and damping stay editable, but no wire in the circuit depends on them,
 // so the backward pass stops at the 4 matrix cells. A training loop can finish the
 // chain rule in JS.
-import {Circuit} from '../../../../../numeric-ui-core.ts'
+import {Circuit, asWire} from '../../../../../numeric-ui-core.ts'
 import {
   type SpringParameters,
   type WireMatrix,
@@ -16,13 +16,13 @@ import {
 } from './spring-power.ts'
 
 export const sourceMatrixCells = {
-  stiffness: 0,
-  damping: 1,
-  stepSeconds: 2,
-  destination: 3,
-  position: 4,
-  velocity: 5,
-  frame: [6, 7, 8, 9] as WireMatrix,
+  stiffness: asWire(0),
+  damping: asWire(1),
+  stepSeconds: asWire(2),
+  destination: asWire(3),
+  position: asWire(4),
+  velocity: asWire(5),
+  frame: [asWire(6), asWire(7), asWire(8), asWire(9)] as WireMatrix,
 }
 
 export function buildSourceMatrixCircuit() {

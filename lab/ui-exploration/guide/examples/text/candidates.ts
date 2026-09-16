@@ -8,7 +8,7 @@
 // text-walker/rows.ts derives the same lists from pretext's walkers, including hard breaks, long words, soft
 // hyphens, letter spacing and tabs, and text-walker/rows-circuit.ts reads each line's list at that line's
 // start through a one-hot, the way counting.ts reads line ends.
-import {Circuit, invariant, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 import {emitFits} from './counting.ts'
 import {lineFitEpsilon, type Line, type Paragraph} from './paragraph.ts'
 
@@ -98,13 +98,13 @@ export function writeCandidates(source: CandidateSource, list: CandidateList, ma
 export function buildCandidateCircuit(segmentCount: number, capacity: number) {
   const source: CandidateSource = {
     sourceSize: 4 + 3 * capacity,
-    unit: 0,
-    maxWidth: 1,
-    firstEnd: 2,
-    firstPaintedWidth: 3,
-    fitWidths: Array.from({length: capacity}, (_, index) => 4 + index),
-    endChanges: Array.from({length: capacity}, (_, index) => 4 + capacity + index),
-    paintedWidthChanges: Array.from({length: capacity}, (_, index) => 4 + 2 * capacity + index),
+    unit: asWire(0),
+    maxWidth: asWire(1),
+    firstEnd: asWire(2),
+    firstPaintedWidth: asWire(3),
+    fitWidths: Array.from({length: capacity}, (_, index) => 4 + index).map(asWire),
+    endChanges: Array.from({length: capacity}, (_, index) => 4 + capacity + index).map(asWire),
+    paintedWidthChanges: Array.from({length: capacity}, (_, index) => 4 + 2 * capacity + index).map(asWire),
   }
   const circuit = new Circuit(source.sourceSize)
   circuit.assumeRange(source.unit, 1, 1)

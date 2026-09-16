@@ -44,11 +44,16 @@ export type ButtonQueueCircuit = {
 
 export function createButtonQueueCircuit(slotCount: number): ButtonQueueCircuit {
   const circuit = new Circuit(stateCount + 4 * slotCount)
-  for (let wire = 0; wire < circuit.sourceSize; wire++) circuit.assumeRange(wire, 0, 1)
-  const initialState = Array.from({length: stateCount}, (_, state) => state)
+  for (let wire = 0; wire < circuit.sourceSize; wire++) circuit.assumeRange(circuit.source(wire), 0, 1)
+  const initialState = Array.from({length: stateCount}, (_, state) => circuit.source(state))
   const slots = Array.from({length: slotCount}, (_, slot) => {
     const firstCell = stateCount + 4 * slot
-    return {downOnButton: firstCell, moveInside: firstCell + 1, moveOutside: firstCell + 2, up: firstCell + 3}
+    return {
+      downOnButton: circuit.source(firstCell),
+      moveInside: circuit.source(firstCell + 1),
+      moveOutside: circuit.source(firstCell + 2),
+      up: circuit.source(firstCell + 3),
+    }
   })
   return {circuit, initialState, slots}
 }

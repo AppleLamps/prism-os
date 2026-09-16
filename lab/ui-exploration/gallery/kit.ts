@@ -1,6 +1,6 @@
 // Reusable constructions for hand-authoring UI circuits, plus measurement helpers.
 // Every construction lowers into the three runtime atoms through the shared builder.
-import {Circuit, invariant, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, asWire, invariant, type Terms, type Wire} from '../../../numeric-ui-core.ts'
 
 export type Program = ReturnType<Circuit['compileTensorProgram']>
 export type Matrix = [number, number, number, number]
@@ -18,7 +18,7 @@ export class SourceLayout {
     this.names.push(name)
     this.minimums.push(minimum)
     this.maximums.push(maximum)
-    return this.names.length - 1
+    return asWire(this.names.length - 1)
   }
 
   get size() {
@@ -26,7 +26,7 @@ export class SourceLayout {
   }
 
   applyRanges(circuit: Circuit) {
-    for (let wire = 0; wire < this.size; wire++) circuit.assumeRange(wire, this.minimums[wire]!, this.maximums[wire]!)
+    for (let wire = 0; wire < this.size; wire++) circuit.assumeRange(circuit.source(wire), this.minimums[wire]!, this.maximums[wire]!)
   }
 }
 
@@ -93,7 +93,7 @@ export function measureProgram(circuit: Circuit, roots: readonly Wire[], section
     }
   }
   const bySection = new Map<string, SectionStats>()
-  const record = (wire: Wire, weights: number, layerIndex: number, isOutputRow: boolean) => {
+  const record = (wire: number, weights: number, layerIndex: number, isOutputRow: boolean) => {
     const name = sectionByOperation.get(wire - program.sourceSize) ?? 'unattributed'
     let entry = bySection.get(name)
     if (entry === undefined) {
@@ -258,7 +258,7 @@ export function emitIndexOneHot(circuit: Circuit, index: Wire, count: number, pr
       const {terms, bias} = combine([[k, 1], [k + 1, -2], [k + 2, 1]])
       member = circuit.affine(terms, bias)
     }
-    circuit.assumeRange(member, 0, 1)
+    circuit.assumeRange(member, 0, 1, {allowExistingReaders: true})
     members.push(member)
   }
   circuit.assumeOneHot(members, present !== undefined)

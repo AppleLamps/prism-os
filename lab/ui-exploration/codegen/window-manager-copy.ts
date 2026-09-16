@@ -1136,7 +1136,7 @@ function compileWindowManagerCircuit() {
     sourceField.springSettleSpeedScale
 
   const photoDefinition = createPhotoGalleryCircuit()
-  const photoWireMap = inlineCircuit(circuit, photoDefinition.circuit, photoSourceWires)
+  const photoWireMap = inlineCircuit(circuit, photoDefinition.circuit, photoSourceWires, {allowExistingReaders: true})
   const mapPhotoWires = (wires: readonly Wire[]) =>
     wires.map(wire => photoWireMap[wire]!)
   const photos: PhotoGalleryOutput = {

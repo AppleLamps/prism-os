@@ -1,6 +1,29 @@
 // Three runtime atoms and one index read instruction, plus compile-time
 // expansions that lower into those.
-export type Wire = number
+
+declare const wireBrand: unique symbol
+
+// A wire is a position in the array an evaluation fills: source cells first,
+// then one position per operation. It's a number with a type of its own, so a
+// plain number doesn't type-check as a wire, e.g. emitMinimum(circuit, width, 1)
+// is refused instead of reading wire 1, which might be the viewport height cell.
+// Wires come from circuit.source(index), circuit.constant(value) and the
+// operations that return them, and asWire(position) turns a position counted by
+// hand into a wire.
+export type Wire = number & WireBrand
+
+// Lab folders written before wires had their own type set looseWires with
+// lab/types/loose-wires.d.ts in their tsconfig, so plain numbers still
+// type-check as wires there.
+export interface WireTypeOptions {}
+type WireBrand = WireTypeOptions extends {looseWires: true} ? unknown : {readonly [wireBrand]: true}
+
+// A position counted by hand as a wire, e.g. the position of a source cell before
+// the circuit exists. Checks that the position is a nonnegative integer.
+export function asWire(position: number): Wire {
+  invariant(Number.isInteger(position) && position >= 0, `a wire must be a nonnegative integer, got ${position}`)
+  return position as Wire
+}
 
 export type Terms = readonly (readonly [wire: Wire, coefficient: number])[]
 
@@ -198,6 +221,12 @@ export type CompileOptions = {
   recomputeDepths?: boolean
 }
 
+export type DeclarationOptions = {
+  // Declare a range or grid even though operations already read the wire. Those
+  // operations keep the range or grid they were built with, see assumeRange.
+  allowExistingReaders?: boolean
+}
+
 // Every integer within ±2^24 is an FP32 value, so an index form whose range lies
 // strictly inside these bounds can hold each position exactly. Ranges follow FP32
 // rounding, so an endpoint on ±2^24 can stand for a larger real value, e.g. a cell
@@ -217,6 +246,9 @@ export class Circuit {
   // Declared with assumeGrid, or inferred for sums and products whose operands
   // have grids and whose declared ranges prove that nothing rounds.
   grids: (number | undefined)[]
+  // True for a wire once an operation reads it, so assumeRange can refuse a
+  // declaration that would come too late for those operations.
+  hasReaders: boolean[]
   oneHotGroups: OneHotGroup[]
   tensorProgram: TensorProgram | null
   candidateTablesByArray: WeakMap<readonly Wire[], CandidateTable>
@@ -230,13 +262,21 @@ export class Circuit {
     this.expressionWires = new Map()
     this.ranges = Array.from({length: sourceSize}, unknownRange)
     this.grids = Array<number | undefined>(sourceSize).fill(undefined)
+    this.hasReaders = Array<boolean>(sourceSize).fill(false)
     this.oneHotGroups = []
     this.tensorProgram = null
     this.candidateTablesByArray = new WeakMap()
     this.candidateTablesByContent = new Map()
   }
 
-  assumeRange(wire: Wire, minimum: number, maximum: number) {
+  // Operations built before a declaration keep the range they were built with,
+  // e.g. multiply(velocity, timestep) builds 3 operations for a timestep whose
+  // range admits negative values, and declaring the timestep nonnegative later
+  // doesn't turn them into 1. So a declaration that narrows the range of a wire
+  // that operations already read throws, unless the caller passes
+  // {allowExistingReaders: true}. The declaration then only affects operations
+  // built afterwards, the compiler's gather lowering and the source range check.
+  assumeRange(wire: Wire, minimum: number, maximum: number, options: DeclarationOptions = {}) {
     assertWire(wire, this.sourceSize + this.operations.length)
     invariant(minimum <= maximum, 'numeric range is inverted')
     const current = this.ranges[wire]!
@@ -245,6 +285,15 @@ export class Circuit {
       maximum: Math.min(current.maximum, maximum),
     }
     invariant(narrowed.minimum <= narrowed.maximum, 'numeric range contradicts known bounds')
+    const narrows = narrowed.minimum > current.minimum || narrowed.maximum < current.maximum
+    if (narrows && this.hasReaders[wire] === true && options.allowExistingReaders !== true) {
+      invariant(
+        false,
+        `operations that already read wire ${wire} were built with its range ${current.minimum}..${current.maximum}, `
+          + `and declaring ${minimum}..${maximum} now doesn't change them. Declare the range before the first operation `
+          + 'that reads the wire, or pass {allowExistingReaders: true}',
+      )
+    }
     this.ranges[wire] = narrowed
   }
 
@@ -257,14 +306,22 @@ export class Circuit {
   // fractional scores are legal inputs there and break the property.
   // Hand-declared groups (e.g. a focus one-hot stored in the source table) are
   // the caller's promise, checkable with validateOneHotGroups.
-  assumeOneHot(members: readonly Wire[], allowAllZero = false) {
+  // Like a range, a group doesn't change builder code that already ran, e.g.
+  // emitFirstActive declares a group on its selection only when its candidates
+  // are proven exact bits, e.g. members of a declared group, so a call that ran
+  // before the group was declared left its selection without a group. Narrowing
+  // a member's range throws as in assumeRange, but a group whose members already
+  // have 0..1 ranges doesn't throw, so declare a group before the builder code
+  // that reads its members. Gather lowering, which runs while compiling, reads
+  // every group, including one declared late.
+  assumeOneHot(members: readonly Wire[], allowAllZero = false, options: DeclarationOptions = {}) {
     invariant(members.length > 0, 'a one-hot group needs at least one member')
     const seen = new Set<Wire>()
     for (const member of members) {
       assertWire(member, this.sourceSize + this.operations.length)
       invariant(!seen.has(member), 'one-hot group members must be distinct wires')
       seen.add(member)
-      this.assumeRange(member, 0, 1)
+      this.assumeRange(member, 0, 1, options)
     }
     this.oneHotGroups.push({members: [...members], allowAllZero})
     this.tensorProgram = null
@@ -276,11 +333,24 @@ export class Circuit {
   // promise, checkable in tests with validateGrids. emitCompare uses it to
   // build integer bits instead of a sign cascade. A coarser declared or
   // inferred grid is kept, since its multiples are also multiples of the finer
-  // step.
-  assumeGrid(wire: Wire, step: number) {
+  // step. Like assumeRange, a declaration that changes the grid of a wire that
+  // operations already read throws unless the caller passes
+  // {allowExistingReaders: true}, e.g. a sign cascade that emitCompare built
+  // before the grid existed stays a sign cascade.
+  assumeGrid(wire: Wire, step: number, options: DeclarationOptions = {}) {
     assertWire(wire, this.sourceSize + this.operations.length)
     invariant(isPowerOfTwoGrid(step), `a grid step must be a power of two from 2^-149 to 2^127, got ${step}`)
-    this.grids[wire] = Math.max(this.grids[wire] ?? step, step)
+    const current = this.grids[wire]
+    const grid = Math.max(current ?? step, step)
+    if (grid !== current && this.hasReaders[wire] === true && options.allowExistingReaders !== true) {
+      invariant(
+        false,
+        `operations that already read wire ${wire} were built ${current === undefined ? 'without a grid' : `with its grid ${current}`}, `
+          + `and declaring the grid ${step} now doesn't change them. Declare the grid before the first operation `
+          + 'that reads the wire, or pass {allowExistingReaders: true}',
+      )
+    }
+    this.grids[wire] = grid
   }
 
   // Record an operation as a rounding point, e.g. each step of a round chain
@@ -299,13 +369,25 @@ export class Circuit {
     const points: {wire: Wire, kind: RoundingPointKind}[] = []
     for (let operationIndex = 0; operationIndex < this.operations.length; operationIndex++) {
       const kind = this.operations[operationIndex]!.roundingPoint
-      if (kind !== undefined) points.push({wire: this.sourceSize + operationIndex, kind})
+      if (kind !== undefined) points.push({wire: (this.sourceSize + operationIndex) as Wire, kind})
     }
     return points
   }
 
   isNonNegative(wire: Wire) {
     return this.ranges[wire]!.minimum >= 0
+  }
+
+  // The wire of source cell `index`, e.g. circuit.source(0) for the first cell.
+  source(index: number): Wire {
+    invariant(Number.isInteger(index) && index >= 0 && index < this.sourceSize, `source cell ${index} is outside the source table`)
+    return index as Wire
+  }
+
+  // A wire that always holds f(value), e.g. circuit.constant(1). An ordinary
+  // affine that reads it adds the value to its bias instead.
+  constant(value: number): Wire {
+    return this.affine([], value)
   }
 
   affine(terms: Terms, bias = 0): Wire {
@@ -383,7 +465,7 @@ export class Circuit {
     above: OutOfRange,
     options: {indexRange?: NumericRange} = {},
   ): Wire {
-    const width = this.sourceSize + this.operations.length
+    const width = (this.sourceSize + this.operations.length) as Wire
     invariant(outOfRangeRules.has(below) && outOfRangeRules.has(above), 'index read sides must be clamp or zero')
     for (const [wire, coefficient] of indexTerms) {
       assertWire(wire, width)
@@ -392,6 +474,9 @@ export class Circuit {
     invariant(Number.isFinite(indexBias), 'index bias must be finite')
     const table = registerCandidateTable(this, candidates)
     let [terms, bias] = foldConstantTerms(normalizeTerms(indexTerms), indexBias, this.constants)
+    // The wires that the read's index form reads, counted like append's: after dropping zero coefficients and folding
+    // constant wires into the bias, but before copying small affine producers in.
+    const readTerms = terms
     ;[terms, bias] = composeAffineTerms(terms, bias, this.sourceSize, this.operations)
     if (terms.length === 0) {
       // A constant index selects its candidate while building.
@@ -440,6 +525,8 @@ export class Circuit {
     this.depths.push(depth + 1)
     this.constants.push(undefined)
     this.grids.push(undefined)
+    this.hasReaders.push(false)
+    for (const [wire] of readTerms) this.hasReaders[wire] = true
     this.ranges.push(indexReadRange(table, indexRange, below, above, this.ranges))
     this.expressionWires.set(expressionKey, width)
     this.tensorProgram = null
@@ -454,12 +541,23 @@ export class Circuit {
     gateBias: number,
     options: {preserveRounding?: true, macro?: Macro} = {},
   ): Wire {
+    // The wires that the operation reads, so assumeRange and assumeGrid can refuse
+    // a declaration that comes after it. Without preserveRounding, these are the
+    // terms after dropping zero coefficients and folding constant wires into the
+    // bias, but before copying small affine producers in, so a producer counts as
+    // read even when the operation reads the producer's own terms instead. A side
+    // that ends up with no terms reads nothing, e.g. reglu([[x, 1]], 0, [], -1)
+    // folds to the constant 0 and doesn't read x.
+    let readLeftTerms = leftTerms
+    let readGateTerms = gateTerms
     if (options.preserveRounding) {
       leftTerms = leftTerms.map(([wire, coefficient]) => [wire, coefficient])
       gateTerms = gateTerms.map(([wire, coefficient]) => [wire, coefficient])
     } else {
       ;[leftTerms, leftBias] = foldConstantTerms(normalizeTerms(leftTerms), leftBias, this.constants)
       ;[gateTerms, gateBias] = foldConstantTerms(normalizeTerms(gateTerms), gateBias, this.constants)
+      readLeftTerms = leftTerms
+      readGateTerms = gateTerms
       const initialAlias = kind === 'affine' ? identityWire(leftTerms, leftBias) : undefined
       if (initialAlias !== undefined) return initialAlias
       ;[leftTerms, leftBias] = composeAffineTerms(
@@ -495,7 +593,7 @@ export class Circuit {
       + (options.macro === undefined ? '' : `|${JSON.stringify(options.macro)}`)
     const existingWire = this.expressionWires.get(expressionKey)
     if (existingWire !== undefined) return existingWire
-    const wire = this.sourceSize + this.operations.length
+    const wire = (this.sourceSize + this.operations.length) as Wire
     const dependencies = kind === 'reglu' ? [...leftTerms, ...gateTerms] : leftTerms
     let depth = 0
     for (const [dependency] of dependencies) depth = Math.max(depth, this.depths[dependency]!)
@@ -512,6 +610,9 @@ export class Circuit {
     this.depths.push(depth + 1)
     this.constants.push(!options.preserveRounding && kind === 'affine' && leftTerms.length === 0 ? leftBias : undefined)
     this.grids.push(inferOperationGrid(kind, leftTerms, leftBias, gateTerms, gateBias, this.grids, this.ranges))
+    this.hasReaders.push(false)
+    if (leftTerms.length > 0) for (const [dependency] of readLeftTerms) this.hasReaders[dependency] = true
+    if (gateTerms.length > 0) for (const [dependency] of readGateTerms) this.hasReaders[dependency] = true
     const leftRange = evaluateAffineRange(leftTerms, leftBias, this.ranges)
     this.ranges.push(
       kind === 'affine'
@@ -668,7 +769,7 @@ export class Circuit {
     const width = this.sourceSize + this.operations.length
     const normalizedRoots = roots ?? Array.from(
       {length: this.operations.length},
-      (_, operationIndex) => this.sourceSize + operationIndex,
+      (_, operationIndex) => (this.sourceSize + operationIndex) as Wire,
     )
     const gatherPlans = lowerGathers ? planGatherLowering(this) : new Map<number, GatherPlan>()
     const liveOperations = findLiveOperations(
@@ -1124,6 +1225,7 @@ function registerCandidateTable(circuit: Circuit, candidates: readonly Wire[]): 
   if (table === undefined) {
     table = {id: circuit.candidateTablesByContent.size, candidates, maximumDepth, rangeByReach: new Map()}
     circuit.candidateTablesByContent.set(contentKey, table)
+    for (const candidate of candidates) circuit.hasReaders[candidate] = true
   }
   circuit.candidateTablesByArray.set(candidates, table)
   return table
@@ -2746,18 +2848,22 @@ function routeWinner(
   routeWinner(circuit, node.right, rightRoute, selected)
 }
 
+// options.allowExistingReaders applies to the source circuit's declared ranges
+// and grids landing on target wires that operations already read, e.g. a timestep that
+// the target's springs read before the source circuit declares it nonnegative.
 export function inlineCircuit(
   target: Circuit,
   source: Circuit,
   sourceWires: readonly Wire[],
+  options: DeclarationOptions = {},
 ): Wire[] {
   invariant(sourceWires.length === source.sourceSize, 'inlined source mapping has the wrong length')
   const wireMap = [...sourceWires]
   for (let wire = 0; wire < source.sourceSize; wire++) {
     const range = source.ranges[wire]!
-    target.assumeRange(sourceWires[wire]!, range.minimum, range.maximum)
+    target.assumeRange(sourceWires[wire]!, range.minimum, range.maximum, options)
     const grid = source.grids[wire]
-    if (grid !== undefined) target.assumeGrid(sourceWires[wire]!, grid)
+    if (grid !== undefined) target.assumeGrid(sourceWires[wire]!, grid, options)
   }
   // Map each distinct table once, so reads of one large table share one mapped array.
   const mappedTables = new Map<CandidateTable, readonly Wire[]>()
@@ -2806,9 +2912,9 @@ export function inlineCircuit(
     }
     const sourceWire = source.sourceSize + operationIndex
     const range = source.ranges[sourceWire]!
-    target.assumeRange(wire, range.minimum, range.maximum)
+    target.assumeRange(wire, range.minimum, range.maximum, options)
     const grid = source.grids[sourceWire]
-    if (grid !== undefined) target.assumeGrid(wire, grid)
+    if (grid !== undefined) target.assumeGrid(wire, grid, options)
     // A marked affine can fold into a source cell in the target, e.g. when two
     // of its terms map to one wire, and a source cell has no operation to record.
     if (operation.roundingPoint !== undefined && wire >= target.sourceSize) {
@@ -2827,6 +2933,7 @@ export function inlineCircuit(
     target.assumeOneHot(
       group.members.map(member => wireMap[member]!),
       group.allowAllZero,
+      options,
     )
   }
   return wireMap
@@ -2835,7 +2942,7 @@ export function inlineCircuit(
 export function validateCircuit(circuit: Circuit): number {
   const wireCount = circuit.sourceSize + circuit.operations.length
   // The largest candidate wire per table, so a table read many times is scanned once.
-  const largestCandidateByTable = new Map<CandidateTable, Wire>()
+  const largestCandidateByTable = new Map<CandidateTable, number>()
   for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
     const operation = circuit.operations[operationIndex]!
     invariant(Number.isFinite(operation.leftBias), 'left bias must be finite')
@@ -3090,6 +3197,101 @@ export function validateGrids(circuit: Circuit, values: Float32Array) {
       invariant(false, `wire ${wire} must be a multiple of ${grid}, got ${value}`)
     }
   }
+}
+
+// Check that no evaluated wire is NaN, and name the operation that produced the
+// first NaN. Range propagation doesn't track NaN, so the builder can't refuse
+// what produces one, e.g. both sides of a select always compute, and an
+// overflowing side the gate doesn't pick still gives f(Infinity × 0) = NaN.
+// `values` holds every wire, e.g. from evaluateReference, or from evaluateTensor,
+// which leaves the wires that the compiled program removed at 0. With `roots`,
+// only the roots and the wires they read, directly or through other operations,
+// are checked, e.g. only the outputs that came out NaN. Meant for tests and error
+// messages; the evaluators never pay this cost on their own.
+export function validateNoNaN(circuit: Circuit, values: Float32Array, roots?: readonly Wire[]) {
+  invariant(
+    values.length === circuit.sourceSize + circuit.operations.length,
+    'NaN validation needs the full wire values',
+  )
+  const checked = roots === undefined ? undefined : markWiresRead(circuit, roots)
+  for (let wire = 0; wire < circuit.sourceSize; wire++) {
+    if (Number.isNaN(values[wire]) && checked?.[wire] !== 0) invariant(false, `source cell ${wire} is NaN`)
+  }
+  for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
+    const wire = (circuit.sourceSize + operationIndex) as Wire
+    if (!Number.isNaN(values[wire]) || checked?.[wire] === 0) continue
+    // Operations only read earlier wires, so the first NaN comes from inputs that aren't NaN.
+    const operation = circuit.operations[operationIndex]!
+    const describeTerms = (terms: Terms) => terms.map(([input]) => `wire ${input} = ${values[input]}`).join(', ')
+    let description: string
+    if (operation.kind === 'reglu') {
+      description = `f(left × max(0, gate)) with left = ${evaluateTerms(values, operation.leftTerms, operation.leftBias)} `
+        + `and gate = ${evaluateTerms(values, operation.gateTerms, operation.gateBias)}`
+    } else if (operation.kind === 'index') {
+      description = `an index read whose index form is NaN, from ${describeTerms(operation.gateTerms)}`
+    } else {
+      description = `a sum of ${describeTerms(operation.leftTerms)}`
+    }
+    let context = ''
+    // The multiply and select that contain the operation, e.g. a select's product
+    // of its unpicked side. A multiply or select contains the operation when its
+    // result reads the operation and none of its operands does, so a NaN operand,
+    // e.g. a sum of Infinity and -Infinity on the side the gate picks, gets no
+    // context.
+    let reading = markWiresReading(circuit, wire)
+    for (let reader = operationIndex; reader < circuit.operations.length; reader++) {
+      const macro = circuit.operations[reader]!.macro
+      if (macro === undefined || reading[circuit.sourceSize + reader] === 0) continue
+      const operands = macro.kind === 'multiply' ? [macro.left, macro.right] : [macro.gate, macro.off, macro.on]
+      if (operands.some(operand => reading[operand] === 1)) continue
+      if (macro.kind === 'multiply') {
+        context += `, in multiply(wire ${macro.left} = ${values[macro.left]}, wire ${macro.right} = ${values[macro.right]})`
+        reading = markWiresReading(circuit, (circuit.sourceSize + reader) as Wire)
+      } else {
+        context += `, in select(gate wire ${macro.gate} = ${values[macro.gate]}, off wire ${macro.off} = ${values[macro.off]}, `
+          + `on wire ${macro.on} = ${values[macro.on]}). Both sides of a select always compute, so a side the gate `
+          + "doesn't pick must stay finite"
+        break
+      }
+    }
+    invariant(false, `wire ${wire} is the first NaN: ${description}${context}`)
+  }
+}
+
+// Marks the roots, and every wire they read directly or through other operations, with 1.
+function markWiresRead(circuit: Circuit, roots: readonly Wire[]): Uint8Array {
+  const read = new Uint8Array(circuit.sourceSize + circuit.operations.length)
+  for (const root of roots) {
+    assertWire(root, read.length)
+    read[root] = 1
+  }
+  for (let operationIndex = circuit.operations.length - 1; operationIndex >= 0; operationIndex--) {
+    if (read[circuit.sourceSize + operationIndex] === 1) {
+      forEachInput(circuit.operations[operationIndex]!, input => {
+        read[input] = 1
+      })
+    }
+  }
+  return read
+}
+
+// Marks `wire`, and every operation that reads it directly or through other operations, with 1.
+function markWiresReading(circuit: Circuit, wire: Wire): Uint8Array {
+  const reading = new Uint8Array(circuit.sourceSize + circuit.operations.length)
+  reading[wire] = 1
+  for (let operationIndex = Math.max(0, wire - circuit.sourceSize + 1); operationIndex < circuit.operations.length; operationIndex++) {
+    forEachInput(circuit.operations[operationIndex]!, input => {
+      if (reading[input] === 1) reading[circuit.sourceSize + operationIndex] = 1
+    })
+  }
+  return reading
+}
+
+// Visits every wire an operation reads: its terms, and an index read's candidates.
+function forEachInput(operation: Circuit['operations'][number], visit: (input: Wire) => void) {
+  for (const [input] of operation.leftTerms) visit(input)
+  for (const [input] of operation.gateTerms) visit(input)
+  for (const candidate of operation.indexRead?.table.candidates ?? []) visit(candidate)
 }
 
 export function validateTensorEvaluation(

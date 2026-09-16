@@ -70,9 +70,9 @@ export function emitSoftAttentionRead(circuit: Circuit, query: Wire, sharpness: 
 // Source table: [query, sharpness, table[0], ..., table[count - 1]].
 export function buildSoftAttentionRead(count: number) {
   const circuit = new Circuit(2 + count)
-  const query = 0
-  const sharpness = 1
-  const table = Array.from({length: count}, (_, position) => 2 + position)
+  const query = circuit.source(0)
+  const sharpness = circuit.source(1)
+  const table = Array.from({length: count}, (_, position) => circuit.source(2 + position))
   circuit.assumeRange(query, 0, count - 1)
   circuit.assumeRange(sharpness, minimumSharpness, maximumSharpness)
   for (const wire of table) circuit.assumeRange(wire, -1e6, 1e6)

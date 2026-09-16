@@ -86,8 +86,8 @@ export function createExecutor(program: StagedProgram, options: ExecutorOptions 
     const instanceSources: Wire[] = []
     const sharedInputs: {wire: Wire, slot: number}[] = []
     stage.sourceValues.forEach((id, wire) => {
-      if (values[id]!.axis === 'shared') sharedInputs.push({wire, slot: slot(id)})
-      else instanceSources.push(wire)
+      if (values[id]!.axis === 'shared') sharedInputs.push({wire: stage.circuit.source(wire), slot: slot(id)})
+      else instanceSources.push(stage.circuit.source(wire))
     })
     const plan = planInstances(compiled, instanceSources, roots)
     const runner = compileColumnInstanceProgram(plan, {rowsPerFunction, blockSize})

@@ -97,7 +97,7 @@ export function buildLineStarts(
   form: 'sequential' | 'pointer jumping',
 ): LineStartsCircuit {
   const circuit = new Circuit(segmentCount)
-  const nextStartCells = Array.from({length: segmentCount}, (_, segment) => segment)
+  const nextStartCells = Array.from({length: segmentCount}, (_, segment) => circuit.source(segment))
   for (const cell of nextStartCells) circuit.assumeRange(cell, 1, segmentCount)
   const pastTheEnd = circuit.affine([], segmentCount)
   const jumps: Wire[][] = [[...nextStartCells, pastTheEnd]]

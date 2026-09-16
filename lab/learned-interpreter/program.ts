@@ -6,6 +6,7 @@ import {
   validateCircuit,
   validateTensorProgram,
   validateWireView,
+  asWire,
 } from '../../numeric-ui-core.ts'
 
 export const inputNames = ['pointerX', 'panelLeft', 'scale', 'distractor'] as const
@@ -70,7 +71,7 @@ export function createProgramLayout(instructionCount: 1 | 2 = 2): ProgramLayout 
     const candidates = createCandidates(inputNames.length + instruction)
     const sourceWires = Array.from(
       {length: candidates.length},
-      (_, index) => nextSource + index,
+      (_, index) => asWire(nextSource + index),
     )
     instructionGroups.push({
       name: `instruction ${instruction}`,
@@ -84,7 +85,7 @@ export function createProgramLayout(instructionCount: 1 | 2 = 2): ProgramLayout 
   return {
     sourceSize: nextSource,
     programCellCount: nextParameter,
-    inputWires: inputNames.map((_, index) => index),
+    inputWires: inputNames.map((_, index) => asWire(index)),
     instructionGroups,
   }
 }

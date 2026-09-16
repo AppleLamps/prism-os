@@ -730,6 +730,38 @@ test('a press hits a window when it is at least half a pixel inside, with pointe
   )
 })
 
+test('the machine checks the table against its rules before an evaluation, and the next-state values after it', () => {
+  // Values written before the first step commit with the mount, so the table check before the mount evaluation sees them.
+  const writtenBeforeFirstStep = (write: (machine: Machine) => void) => () => {
+    const machine = createWindowManagerMachine()
+    write(machine)
+    step(machine)
+  }
+  assert.throws(writtenBeforeFirstStep(machine => {
+    machine.source[machine.cells.photos.previous] = 1
+    machine.source[machine.cells.photos.next] = 1
+  }), /photos events breaks its atMostOne rule with mass 2/)
+  assert.throws(writtenBeforeFirstStep(machine => {
+    machine.source[machine.cells.drag[0]!] = 1
+    machine.source[machine.cells.drag[1]!] = 1
+  }), /drag breaks its oneHot rule with mass 2/)
+  assert.throws(writtenBeforeFirstStep(machine => {
+    machine.source[machine.cells.stack[0]![0]!] = 0.5
+  }), /stack\[0\]\[0\] must be exactly 0 or 1, got 0.5/)
+  // Written after the table check, just before the frame's own evaluation, e.g. by an observer with a bug. No event
+  // releases a drag, so both drag bits reach the next-state values. The frame's evaluation runs on a copy of the table,
+  // so no later table check sees the bits, and the next-state check is what throws.
+  const machine = createWindowManagerMachine()
+  machine.observe({
+    beforeEvaluate(table, evaluation) {
+      if (evaluation.writesBack) return
+      table[machine.cells.drag[0]!] = 1
+      table[machine.cells.drag[1]!] = 1
+    },
+  })
+  assert.throws(() => step(machine), /drag breaks its oneHot rule with mass 2/)
+})
+
 test('next state is a direct numeric view and runtime atoms remain fixed', () => {
   const machine = createWindowManagerMachine()
   machine.pointerDown(100, 80)

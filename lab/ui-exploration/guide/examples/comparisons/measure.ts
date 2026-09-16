@@ -8,15 +8,15 @@ import {emitPositiveBit, emitTraceCompilerCascade, planSignCascade} from './sign
 // Two source cells a and b in [0, 16384], so |a - b| <= 2^14, like pixel coordinates.
 export function pixelPair(): Circuit {
   const circuit = new Circuit(2)
-  circuit.assumeRange(0, 0, 16384)
-  circuit.assumeRange(1, 0, 16384)
+  circuit.assumeRange(circuit.source(0), 0, 16384)
+  circuit.assumeRange(circuit.source(1), 0, 16384)
   return circuit
 }
 
 // One source cell holding the difference itself, within ±differenceBound.
 export function differenceCell(differenceBound: number): Circuit {
   const circuit = new Circuit(1)
-  circuit.assumeRange(0, -differenceBound, differenceBound)
+  circuit.assumeRange(circuit.source(0), -differenceBound, differenceBound)
   return circuit
 }
 
@@ -57,7 +57,7 @@ export type SignTest = {
 export function cascadeSignTest(differenceBound: number, stageExponent = 24, inlineStageOutputs = false): SignTest {
   const circuit = differenceCell(differenceBound)
   const plan = planSignCascade({differenceBound, stageExponent})
-  const {bit, stageOutputs} = emitPositiveBit(circuit, 0, plan, {inlineStageOutputs})
+  const {bit, stageOutputs} = emitPositiveBit(circuit, circuit.source(0), plan, {inlineStageOutputs})
   return {
     circuit,
     differenceBound,
@@ -75,7 +75,7 @@ export function cascadeSignTest(differenceBound: number, stageExponent = 24, inl
 // [difference > 0] as the trace compiler lays it out, on a cell that holds the difference.
 export function traceCompilerSignTest(differenceBound: number, stageExponent: number): SignTest {
   const circuit = differenceCell(differenceBound)
-  const {bit, clampInputs, clampOutputs} = emitTraceCompilerCascade(circuit, 0, differenceBound, stageExponent)
+  const {bit, clampInputs, clampOutputs} = emitTraceCompilerCascade(circuit, circuit.source(0), differenceBound, stageExponent)
   return {
     circuit,
     differenceBound,
@@ -88,7 +88,7 @@ export function traceCompilerSignTest(differenceBound: number, stageExponent: nu
 export function roundingSignTest(differenceBound: number, resolution?: number): SignTest {
   const circuit = differenceCell(differenceBound)
   const plan = planRoundingCompare(resolution === undefined ? {differenceBound} : {differenceBound, resolution})
-  return {circuit, differenceBound, bit: emitPositiveBitByRounding(circuit, 0, plan)}
+  return {circuit, differenceBound, bit: emitPositiveBitByRounding(circuit, circuit.source(0), plan)}
 }
 
 export type ClassResult = {label: string, tested: number, wrong: number, firstWrong: string}
@@ -140,11 +140,11 @@ export function checkDifferenceClasses(test: SignTest, options: {seed: number, r
 // is one FP32 step below 7, while float64 gives exactly 7.
 export function columnsAtLeastSevenAt1732(emit: (circuit: Circuit, columnsReal: Wire, seven: Wire) => Wire) {
   const circuit = new Circuit(2)
-  circuit.assumeRange(0, 0, 16384)
-  circuit.assumeRange(1, 7, 7)
-  const widthMinusGutter = circuit.roundAffine([[0, 1]], -24)
+  circuit.assumeRange(circuit.source(0), 0, 16384)
+  circuit.assumeRange(circuit.source(1), 7, 7)
+  const widthMinusGutter = circuit.roundAffine([[circuit.source(0), 1]], -24)
   const columnsReal = circuit.roundAffine([[widthMinusGutter, f(1 / 244)]])
-  const bit = emit(circuit, columnsReal, 1)
+  const bit = emit(circuit, columnsReal, circuit.source(1))
   const values = circuit.evaluateReference(Float32Array.of(1732, 7))
   return {columnsReal: values[columnsReal]!, bit: values[bit]!}
 }

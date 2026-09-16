@@ -2,7 +2,7 @@
 // springs, in both evaluators, and pins the sizes that patterns/matrix-powers.md quotes.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/patterns/combining-steps
 import {describe, expect, test} from 'bun:test'
-import {validateGrids, validateIndexReads} from '../../../../../../numeric-ui-core.ts'
+import {validateGrids, validateIndexReads, asWire} from '../../../../../../numeric-ui-core.ts'
 import {springMatrixPower, springStepMatrix} from '../../../../../../host-timing.ts'
 import {
   buildDigitPowers,
@@ -137,7 +137,7 @@ describe('repeated steps as matrix powers', () => {
 
   test('sizes quoted in the doc', () => {
     const size = (label: string, built: {circuit: Parameters<typeof measureProgram>[0], roots: number[]}) => {
-      const {operations, layers, indexReads} = measureProgram(built.circuit, built.roots)
+      const {operations, layers, indexReads} = measureProgram(built.circuit, built.roots.map(asWire))
       return `${label}: ${operations} operations, ${layers} layers, ${indexReads} index reads`
     }
     const digits = buildDigitPowers(1)

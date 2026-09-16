@@ -9,24 +9,24 @@
 // - Copied: each item's label top is one sum with a term for every height. That is what
 //   the builder does on its own for sums of fewer than 4 terms, and what it did
 //   for every sum before the threshold existed.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 
 export type ItemCircuit = {circuit: Circuit, labelTops: Wire[]}
 
 // Source layout: heights in cells 0..itemCount-1, offsets in cells itemCount..2*itemCount-1.
 function createItemCircuit(itemCount: number): Circuit {
   const circuit = new Circuit(2 * itemCount)
-  for (let wire = 0; wire < 2 * itemCount; wire++) circuit.assumeRange(wire, 0, 1024)
+  for (let wire = 0; wire < 2 * itemCount; wire++) circuit.assumeRange(asWire(wire), 0, 1024)
   return circuit
 }
 
 export function buildSharedTotal(itemCount: number): ItemCircuit {
   const circuit = createItemCircuit(itemCount)
   const totalHeight = circuit.affine(
-    Array.from({length: itemCount}, (_, item): [Wire, number] => [item, 1]),
+    Array.from({length: itemCount}, (_, item): [Wire, number] => [circuit.source(item), 1]),
   )
   const labelTops = Array.from({length: itemCount}, (_, item) =>
-    circuit.affine([[totalHeight, 0.5], [itemCount + item, 1]]))
+    circuit.affine([[totalHeight, 0.5], [circuit.source(itemCount + item), 1]]))
   return {circuit, labelTops}
 }
 
@@ -34,8 +34,8 @@ export function buildCopiedTotal(itemCount: number): ItemCircuit {
   const circuit = createItemCircuit(itemCount)
   const labelTops = Array.from({length: itemCount}, (_, item) =>
     circuit.affine([
-      ...Array.from({length: itemCount}, (_, other): [Wire, number] => [other, 0.5]),
-      [itemCount + item, 1],
+      ...Array.from({length: itemCount}, (_, other): [Wire, number] => [circuit.source(other), 0.5]),
+      [circuit.source(itemCount + item), 1],
     ]))
   return {circuit, labelTops}
 }

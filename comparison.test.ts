@@ -14,6 +14,7 @@ import {
   validateCircuit,
   validateGrids,
   validateTensorProgram,
+  asWire,
 } from './numeric-ui-core.ts'
 
 // Tests for emitCompare, grids and rounding points, ported from
@@ -227,10 +228,10 @@ function evaluateWithMode(circuit: Circuit, source: Float32Array, mode: Executor
 function buildPairCircuit(minimum: number, maximum: number, options: {grid?: number, endWithBoolean?: boolean} = {}) {
   const circuit = new Circuit(2)
   for (const wire of [0, 1]) {
-    circuit.assumeRange(wire, minimum, maximum)
-    if (options.grid !== undefined) circuit.assumeGrid(wire, options.grid)
+    circuit.assumeRange(asWire(wire), minimum, maximum)
+    if (options.grid !== undefined) circuit.assumeGrid(asWire(wire), options.grid)
   }
-  const bits = relations.map(relation => emitCompare(circuit, 0, relation, 1, {endWithBoolean: options.endWithBoolean === true}))
+  const bits = relations.map(relation => emitCompare(circuit, circuit.source(0), relation, circuit.source(1), {endWithBoolean: options.endWithBoolean === true}))
   return {circuit, bits}
 }
 
@@ -279,7 +280,7 @@ describe('sign cascade', () => {
           .filter(({operation, operationIndex}) =>
             operation.roundingPoint === 'sign cascade'
             && !(operation.kind === 'affine' && operation.leftTerms.every(([wire]) => wire < circuit.sourceSize))
-            && !atomOperands.has(circuit.sourceSize + operationIndex))
+            && !atomOperands.has(asWire(circuit.sourceSize + operationIndex)))
           .map(({operationIndex}) => operationIndex)
         expect(stageOperations.some(operationIndex => circuit.operations[operationIndex]!.kind === 'affine')).toBe(true)
         let wrong = 0
@@ -321,10 +322,10 @@ describe('sign cascade', () => {
 
   test('a comparison against 0 reads its operand directly, constants fold, and a wire equals itself', () => {
     const circuit = new Circuit(1)
-    circuit.assumeRange(0, -16_384, 16_384)
+    circuit.assumeRange(circuit.source(0), -16_384, 16_384)
     const zero = circuit.affine([], 0)
-    const positive = emitCompare(circuit, 0, '>', zero)
-    const notNegative = emitCompare(circuit, zero, '<=', 0)
+    const positive = emitCompare(circuit, circuit.source(0), '>', zero)
+    const notNegative = emitCompare(circuit, zero, '<=', circuit.source(0))
     expect(cost(circuit, positive)).toEqual({operations: 15, layers: 14})
     for (const value of [0, -0, smallestSubnormal, -smallestSubnormal, 1, -16_384, nextDown(16_384)]) {
       const values = circuit.evaluateReference(Float32Array.of(value))
@@ -332,43 +333,43 @@ describe('sign cascade', () => {
     }
     // A threshold that isn't 0 keeps its difference as an operation.
     const threshold = f(0.3)
-    const aboveThreshold = emitCompare(circuit, 0, '>=', circuit.affine([], threshold))
+    const aboveThreshold = emitCompare(circuit, circuit.source(0), '>=', circuit.affine([], threshold))
     for (const value of [threshold, nextDown(threshold), nextUp(threshold), 0.3]) {
       expect(circuit.evaluateReference(Float32Array.of(value))[aboveThreshold]).toBe(f(value) >= threshold ? 1 : 0)
     }
     const seven = circuit.affine([], 7)
     const constantBit = emitCompare(circuit, seven, '>', circuit.affine([], 3))
     expect(circuit.constants[constantBit]).toBe(1)
-    expect(circuit.constants[emitCompare(circuit, 0, '===', 0)]).toBe(1)
-    expect(circuit.constants[emitCompare(circuit, 0, '<', 0)]).toBe(0)
+    expect(circuit.constants[emitCompare(circuit, circuit.source(0), '===', circuit.source(0))]).toBe(1)
+    expect(circuit.constants[emitCompare(circuit, circuit.source(0), '<', circuit.source(0))]).toBe(0)
   })
 
   test('refuses open ranges, overflowing differences and unknown relations', () => {
     const circuit = new Circuit(3)
-    circuit.assumeRange(0, 0, 16_384)
-    circuit.assumeRange(1, 0, Number.POSITIVE_INFINITY)
-    circuit.assumeRange(2, -largestFinite, largestFinite)
-    expect(() => emitCompare(circuit, 0, '>', 1)).toThrow('finite declared ranges')
+    circuit.assumeRange(circuit.source(0), 0, 16_384)
+    circuit.assumeRange(circuit.source(1), 0, Number.POSITIVE_INFINITY)
+    circuit.assumeRange(circuit.source(2), -largestFinite, largestFinite)
+    expect(() => emitCompare(circuit, circuit.source(0), '>', circuit.source(1))).toThrow('finite declared ranges')
     const unrangedCircuit = new Circuit(2)
-    unrangedCircuit.assumeRange(0, 0, 1)
-    expect(() => emitCompare(unrangedCircuit, 0, '>=', 1)).toThrow('finite declared ranges')
+    unrangedCircuit.assumeRange(unrangedCircuit.source(0), 0, 1)
+    expect(() => emitCompare(unrangedCircuit, unrangedCircuit.source(0), '>=', unrangedCircuit.source(1))).toThrow('finite declared ranges')
     // A wire compared with itself folds to a constant only with a finite declared
     // range: a product of undeclared cells can be NaN, e.g. Infinity × 0, and NaN >= NaN is false.
     const productCircuit = new Circuit(2)
-    const product = productCircuit.multiply(0, 1)
+    const product = productCircuit.multiply(productCircuit.source(0), productCircuit.source(1))
     for (const relation of relations) {
       expect(() => emitCompare(productCircuit, product, relation, product)).toThrow('finite declared ranges')
     }
     // f(largestFinite - -largestFinite) is Infinity.
-    expect(() => emitCompare(circuit, 2, '>', circuit.affine([[2, -1]]))).toThrow('can overflow FP32')
-    expect(() => emitCompare(circuit, 0, '!==' as Relation, 2)).toThrow('comparison relation')
+    expect(() => emitCompare(circuit, circuit.source(2), '>', circuit.affine([[circuit.source(2), -1]]))).toThrow('can overflow FP32')
+    expect(() => emitCompare(circuit, circuit.source(0), '!==' as Relation, circuit.source(2))).toThrow('comparison relation')
   })
 
   test('the 1732 px column boundary reads the FP32 value, not float64', () => {
     // lab/trace-compiler: f(f(1732 - 24) × f(1/244)) is one FP32 step below 7, while float64 gives exactly 7.
     const circuit = new Circuit(1)
-    circuit.assumeRange(0, 0, 16_384)
-    const widthMinusGutter = circuit.roundAffine([[0, 1]], -24)
+    circuit.assumeRange(circuit.source(0), 0, 16_384)
+    const widthMinusGutter = circuit.roundAffine([[circuit.source(0), 1]], -24)
     const columnsReal = circuit.roundAffine([[widthMinusGutter, f(1 / 244)]])
     const atLeastSeven = emitCompare(circuit, columnsReal, '>=', circuit.affine([], 7))
     const values = circuit.evaluateReference(Float32Array.of(1732))
@@ -420,12 +421,12 @@ describe('grids', () => {
     ])
     // A 1/64 grid against a 1/4 grid resolves on the finer grid, and a constant threshold on the grid folds into the bias.
     const mixed = new Circuit(2)
-    mixed.assumeRange(0, 0, 4096)
-    mixed.assumeGrid(0, 1 / 64)
-    mixed.assumeRange(1, 0, 4096)
-    mixed.assumeGrid(1, 1 / 4)
-    const pointerPastEdge = emitCompare(mixed, 0, '>', 1)
-    const pointerPastHalf = emitCompare(mixed, 0, '>=', mixed.affine([], 7.5))
+    mixed.assumeRange(mixed.source(0), 0, 4096)
+    mixed.assumeGrid(mixed.source(0), 1 / 64)
+    mixed.assumeRange(mixed.source(1), 0, 4096)
+    mixed.assumeGrid(mixed.source(1), 1 / 4)
+    const pointerPastEdge = emitCompare(mixed, mixed.source(0), '>', mixed.source(1))
+    const pointerPastHalf = emitCompare(mixed, mixed.source(0), '>=', mixed.affine([], 7.5))
     expect([cost(mixed, pointerPastEdge), cost(mixed, pointerPastHalf)]).toEqual([{operations: 2, layers: 2}, {operations: 2, layers: 2}])
     for (const [pointer, edge] of [[10, 10], [10 + 1 / 64, 10], [7.5 - 1 / 64, 0], [7.5, 4096], [4096, 4096]] as const) {
       const values = mixed.evaluateReference(Float32Array.of(pointer, edge))
@@ -433,9 +434,9 @@ describe('grids', () => {
     }
     // f(0.3) sits on a grid of 2^-25, so operands up to 16,384 are too many grid steps: the cascade takes over.
     const threshold = mixed.affine([], f(0.3))
-    expect(cost(mixed, emitCompare(mixed, 0, '>=', threshold))).toEqual({operations: 15, layers: 14})
+    expect(cost(mixed, emitCompare(mixed, mixed.source(0), '>=', threshold))).toEqual({operations: 15, layers: 14})
     // Operands within 0..2^17 on a 1/64 grid fit 2^24 grid steps; 0..2^18 doesn't.
-    expect(cost(buildPairCircuit(0, 2 ** 17, {grid: 1 / 64}).circuit, 3)).toEqual({operations: 2, layers: 2})
+    expect(cost(buildPairCircuit(0, 2 ** 17, {grid: 1 / 64}).circuit, asWire(3))).toEqual({operations: 2, layers: 2})
     const wide = buildPairCircuit(0, 2 ** 18, {grid: 1 / 64})
     expect(cost(wide.circuit, wide.bits[1]!)).toEqual({operations: 15, layers: 14})
     const wideRounding = buildPairCircuit(0, 2 ** 18, {grid: 1 / 64, endWithBoolean: true})
@@ -476,31 +477,31 @@ describe('grids', () => {
 
   test('grids are inferred through sums and products that cannot round', () => {
     const circuit = new Circuit(4)
-    circuit.assumeRange(0, 0, 16_384)
-    circuit.assumeGrid(0, 1 / 64)
-    circuit.assumeRange(1, -8, 8)
-    circuit.assumeGrid(1, 1 / 4)
-    circuit.assumeRange(2, 0, 1)
-    circuit.assumeRange(3, 0, 1)
-    expect(circuit.grids[circuit.affine([[0, 1], [1, -1]], 3)]).toBe(1 / 64)
-    expect(circuit.grids[circuit.affine([[0, 0.5], [1, 3]])]).toBe(1 / 128)
-    expect(circuit.grids[circuit.reglu([], 1, [[0, 1]], -100)]).toBe(1 / 64)
+    circuit.assumeRange(circuit.source(0), 0, 16_384)
+    circuit.assumeGrid(circuit.source(0), 1 / 64)
+    circuit.assumeRange(circuit.source(1), -8, 8)
+    circuit.assumeGrid(circuit.source(1), 1 / 4)
+    circuit.assumeRange(circuit.source(2), 0, 1)
+    circuit.assumeRange(circuit.source(3), 0, 1)
+    expect(circuit.grids[circuit.affine([[circuit.source(0), 1], [circuit.source(1), -1]], 3)]).toBe(1 / 64)
+    expect(circuit.grids[circuit.affine([[circuit.source(0), 0.5], [circuit.source(1), 3]])]).toBe(1 / 128)
+    expect(circuit.grids[circuit.reglu([], 1, [[circuit.source(0), 1]], -100)]).toBe(1 / 64)
     // f(1/3) is 11184811 × 2^-25, so 16,384 / 3 needs more than 2^24 steps of 2^-31.
-    expect(circuit.grids[circuit.affine([[0, 1 / 3]])]).toBeUndefined()
+    expect(circuit.grids[circuit.affine([[circuit.source(0), 1 / 3]])]).toBeUndefined()
     // 8 × 16,384 = 2^17 isn't a multiple of 1/256 within 2^24 steps.
-    expect(circuit.grids[circuit.multiply(0, 1)]).toBeUndefined()
-    expect(circuit.grids[circuit.affine([[0, 1], [2, 1]])]).toBeUndefined()
-    circuit.assumeRange(3, 0, 1)
-    expect(circuit.grids[circuit.boolean(3)]).toBe(1)
-    expect(circuit.grids[circuit.indexRead(circuit.affine([], 0), [0, 1])]).toBe(1 / 64)
-    circuit.assumeRange(2, 0, 1)
-    expect(circuit.grids[circuit.indexRead(emitCompare(circuit, 0, '>', circuit.affine([], 5)), [0, 1])]).toBeUndefined()
-    // A coarser declaration is kept.
-    circuit.assumeGrid(0, 1)
-    circuit.assumeGrid(0, 1 / 64)
+    expect(circuit.grids[circuit.multiply(circuit.source(0), circuit.source(1))]).toBeUndefined()
+    expect(circuit.grids[circuit.affine([[circuit.source(0), 1], [circuit.source(2), 1]])]).toBeUndefined()
+    circuit.assumeRange(circuit.source(3), 0, 1)
+    expect(circuit.grids[circuit.boolean(circuit.source(3))]).toBe(1)
+    expect(circuit.grids[circuit.indexRead(circuit.affine([], 0), [circuit.source(0), circuit.source(1)])]).toBe(1 / 64)
+    circuit.assumeRange(circuit.source(2), 0, 1)
+    expect(circuit.grids[circuit.indexRead(emitCompare(circuit, circuit.source(0), '>', circuit.affine([], 5)), [circuit.source(0), circuit.source(1)])]).toBeUndefined()
+    // A coarser declaration is kept. Operations already read source 0, so the late declaration needs the opt-out.
+    circuit.assumeGrid(circuit.source(0), 1, {allowExistingReaders: true})
+    circuit.assumeGrid(circuit.source(0), 1 / 64)
     expect(circuit.grids[0]).toBe(1)
-    expect(() => circuit.assumeGrid(1, 0.3)).toThrow('power of two')
-    expect(() => circuit.assumeGrid(1, 0)).toThrow('power of two')
+    expect(() => circuit.assumeGrid(circuit.source(1), 0.3)).toThrow('power of two')
+    expect(() => circuit.assumeGrid(circuit.source(1), 0)).toThrow('power of two')
     expect(() => validateGrids(circuit, circuit.evaluateReference(Float32Array.of(100.5, 0.25, 0, 0)))).toThrow('multiple of 1')
   })
 
@@ -513,10 +514,10 @@ describe('grids', () => {
       const sourceGrids = [1 / 64, 1 / 4, 1, 2 ** -10]
       const circuit = new Circuit(sourceGrids.length)
       sourceGrids.forEach((grid, wire) => {
-        circuit.assumeRange(wire, -512, 512)
-        circuit.assumeGrid(wire, grid)
+        circuit.assumeRange(asWire(wire), -512, 512)
+        circuit.assumeGrid(asWire(wire), grid)
       })
-      const pickWire = () => Math.floor(random() * (circuit.sourceSize + circuit.operations.length))
+      const pickWire = () => asWire(Math.floor(random() * (circuit.sourceSize + circuit.operations.length)))
       const pickTerms = (): Terms => Array.from({length: 1 + Math.floor(random() * 3)}, () => [pickWire(), coefficients[Math.floor(random() * coefficients.length)]!] as const)
       for (let operationIndex = 0; operationIndex < 30; operationIndex++) {
         const choice = Math.floor(random() * 4)
@@ -556,18 +557,18 @@ describe('backward pass', () => {
 
   test('grid bits have slope 1 on fractional inputs, and atoms throw without straight-through', () => {
     const circuit = new Circuit(1)
-    circuit.assumeRange(0, -1000, 1000)
-    circuit.assumeGrid(0, 1)
-    const atLeastFive = emitCompare(circuit, 0, '>=', circuit.affine([], 5))
+    circuit.assumeRange(circuit.source(0), -1000, 1000)
+    circuit.assumeGrid(circuit.source(0), 1)
+    const atLeastFive = emitCompare(circuit, circuit.source(0), '>=', circuit.affine([], 5))
     expect([3, 4, 4.5, 5, 6].map(value => gradientsAt(circuit, atLeastFive, Float32Array.of(value))[0])).toEqual([0, 0, 1, 0, 0])
     expect(circuit.evaluateReference(Float32Array.of(4.5))[atLeastFive]).toBe(0.5)
     for (const grid of [1, undefined]) {
       const rounding = new Circuit(2)
       for (const wire of [0, 1]) {
-        rounding.assumeRange(wire, 0, 16_384)
-        if (grid !== undefined) rounding.assumeGrid(wire, grid)
+        rounding.assumeRange(asWire(wire), 0, 16_384)
+        if (grid !== undefined) rounding.assumeGrid(asWire(wire), grid)
       }
-      const bit = emitCompare(rounding, 0, '>', 1, {endWithBoolean: true})
+      const bit = emitCompare(rounding, rounding.source(0), '>', rounding.source(1), {endWithBoolean: true})
       expect(() => gradientsAt(rounding, bit, Float32Array.of(3, 2))).toThrow('cannot backpropagate through a boolean atom')
       expect(Number.isFinite(gradientsAt(rounding, bit, Float32Array.of(3, 2), {booleanGradient: 'straight-through'})[0])).toBe(true)
     }
@@ -581,17 +582,17 @@ describe('rounding points', () => {
         for (const relation of relations) {
           const circuit = new Circuit(2)
           for (const wire of [0, 1]) {
-            circuit.assumeRange(wire, 0, 4096)
-            if (grid !== undefined) circuit.assumeGrid(wire, grid)
+            circuit.assumeRange(asWire(wire), 0, 4096)
+            if (grid !== undefined) circuit.assumeGrid(asWire(wire), grid)
           }
-          const bit = emitCompare(circuit, 0, relation, 1, {endWithBoolean})
+          const bit = emitCompare(circuit, circuit.source(0), relation, circuit.source(1), {endWithBoolean})
           const recorded = new Map(circuit.roundingPoints().map(({wire, kind}) => [wire, kind]))
           const program = circuit.compileTensorProgram([bit])
           for (let packed = circuit.sourceSize; packed < program.valueCount; packed++) {
             const wire = program.wireOrder[packed]!
             const operation = circuit.operations[wire - circuit.sourceSize]!
             // Operands within 0..4096 on a 1/64 grid are 2^18 grid steps, so every grid comparison builds integer bits.
-            expect(recorded.get(wire)).toBe(operation.kind === 'boolean' ? 'boolean' : grid === undefined ? 'sign cascade' : 'integer bit')
+            expect(recorded.get(asWire(wire))).toBe(operation.kind === 'boolean' ? 'boolean' : grid === undefined ? 'sign cascade' : 'integer bit')
           }
           // The only unrecorded operation is the score the atom of a strict rounding stage copies in.
           expect(circuit.operations.length - recorded.size).toBe(grid === undefined && endWithBoolean && (relation === '>' || relation === '<') ? 1 : 0)
@@ -603,29 +604,29 @@ describe('rounding points', () => {
   test('existing circuits record exactly their boolean atoms', () => {
     const {circuit} = createCandidateGalleryMachine()
     const points = circuit.roundingPoints()
-    const booleanWires = circuit.operations.flatMap((operation, operationIndex) => (operation.kind === 'boolean' ? [circuit.sourceSize + operationIndex] : []))
+    const booleanWires = circuit.operations.flatMap((operation, operationIndex) => (operation.kind === 'boolean' ? [asWire(circuit.sourceSize + operationIndex)] : []))
     expect(booleanWires.length).toBe(14)
     expect(points).toEqual(booleanWires.map(wire => ({wire, kind: 'boolean'})))
   })
 
   test('marking, and inlining keeps records, grids and values', () => {
     const child = new Circuit(3)
-    child.assumeRange(0, 0, 4096)
-    child.assumeRange(1, 0, 4096)
-    child.assumeGrid(0, 1 / 64)
-    child.assumeGrid(1, 1 / 64)
-    child.assumeRange(2, -100, 100)
-    const roundChain = child.roundAffine([[2, 1]], 2 ** 23 + 2 ** 22)
+    child.assumeRange(child.source(0), 0, 4096)
+    child.assumeRange(child.source(1), 0, 4096)
+    child.assumeGrid(child.source(0), 1 / 64)
+    child.assumeGrid(child.source(1), 1 / 64)
+    child.assumeRange(child.source(2), -100, 100)
+    const roundChain = child.roundAffine([[child.source(2), 1]], 2 ** 23 + 2 ** 22)
     child.markRoundingPoint(roundChain)
-    expect(() => child.markRoundingPoint(2)).toThrow('not a source cell')
+    expect(() => child.markRoundingPoint(child.source(2))).toThrow('not a source cell')
     const roots = [
-      emitCompare(child, 0, '>=', 1),
-      emitCompare(child, 0, '===', 1, {endWithBoolean: true}),
-      emitCompare(child, 2, '<', child.affine([], f(0.3))),
-      emitMinimumExact(child, 2, child.affine([], 1.5)),
+      emitCompare(child, child.source(0), '>=', child.source(1)),
+      emitCompare(child, child.source(0), '===', child.source(1), {endWithBoolean: true}),
+      emitCompare(child, child.source(2), '<', child.affine([], f(0.3))),
+      emitMinimumExact(child, child.source(2), child.affine([], 1.5)),
     ]
     const parent = new Circuit(3)
-    const wireMap = inlineCircuit(parent, child, [1, 0, 2])
+    const wireMap = inlineCircuit(parent, child, [parent.source(1), parent.source(0), parent.source(2)])
     const parentKinds = new Map(parent.roundingPoints().map(({wire, kind}) => [wire, kind]))
     for (const {wire, kind} of child.roundingPoints()) expect(parentKinds.get(wireMap[wire]!)).toBe(kind)
     expect(parentKinds.get(wireMap[roundChain]!)).toBe('marked')
@@ -642,11 +643,11 @@ describe('rounding points', () => {
 describe('exact minimum, maximum and clamp', () => {
   test('return exactly Math.min, Math.max and the clamp, including mixed magnitudes and subnormal values', () => {
     const circuit = new Circuit(2)
-    circuit.assumeRange(0, -16_384, 16_384)
-    circuit.assumeRange(1, -16_384, 16_384)
-    const minimum = emitMinimumExact(circuit, 0, 1)
-    const maximum = emitMaximumExact(circuit, 0, 1)
-    const drifting = emitMinimum(circuit, 0, 1)
+    circuit.assumeRange(circuit.source(0), -16_384, 16_384)
+    circuit.assumeRange(circuit.source(1), -16_384, 16_384)
+    const minimum = emitMinimumExact(circuit, circuit.source(0), circuit.source(1))
+    const maximum = emitMaximumExact(circuit, circuit.source(0), circuit.source(1))
+    const drifting = emitMinimum(circuit, circuit.source(0), circuit.source(1))
     expect([circuit.ranges[minimum], circuit.ranges[maximum]]).toEqual([{minimum: -16_384, maximum: 16_384}, {minimum: -16_384, maximum: 16_384}])
     const pairs = [...operandPairs(-16_384, 16_384, 31, 300), [f(1000.37), f(0.3)] as [number, number]]
     let wrong = 0
@@ -661,11 +662,11 @@ describe('exact minimum, maximum and clamp', () => {
     checkTensorAgreement(circuit, [minimum, maximum], pairs.slice(0, 50).map(([a, b]) => Float32Array.of(a, b)))
 
     const clampCircuit = new Circuit(3)
-    clampCircuit.assumeRange(0, -100, 100)
-    clampCircuit.assumeRange(1, -50, 50)
-    clampCircuit.assumeRange(2, -50, 50)
-    const clamped = emitClampExact(clampCircuit, 0, 1, 2)
-    const toSixteen = emitClampExact(clampCircuit, 0, clampCircuit.affine([], 0), clampCircuit.affine([], 16))
+    clampCircuit.assumeRange(clampCircuit.source(0), -100, 100)
+    clampCircuit.assumeRange(clampCircuit.source(1), -50, 50)
+    clampCircuit.assumeRange(clampCircuit.source(2), -50, 50)
+    const clamped = emitClampExact(clampCircuit, clampCircuit.source(0), clampCircuit.source(1), clampCircuit.source(2))
+    const toSixteen = emitClampExact(clampCircuit, clampCircuit.source(0), clampCircuit.affine([], 0), clampCircuit.affine([], 16))
     expect(clampCircuit.ranges[toSixteen]).toEqual({minimum: 0, maximum: 16})
     const random = createRandom(32)
     for (let sample = 0; sample < 2000; sample++) {

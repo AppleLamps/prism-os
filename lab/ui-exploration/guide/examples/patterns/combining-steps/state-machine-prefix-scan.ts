@@ -7,7 +7,7 @@
 // - 'sklansky' and 'brent-kung': turn each event into a table from state to next state,
 //   combine tables with a prefix network, where combining two tables is one index read
 //   per state, and read each prefix at the initial state.
-import {Circuit, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../../numeric-ui-core.ts'
 import {brentKungPrefix, sklanskyPrefix} from './prefix-networks.ts'
 
 export const buttonEvents = ['none', 'downOnButton', 'moveInside', 'moveOutside', 'up'] as const
@@ -92,10 +92,10 @@ export function buildEventQueue(stateCount: number, queueLength: number, form: S
   const circuit = new Circuit(1 + 2 * tableSize + queueLength)
   // Cells: the initial state, the next-state table, the click table, then one event
   // kind per queue entry, e.g. 4 for 'up' and 0 for an empty entry.
-  const initialState = 0
-  const nextCells = Array.from({length: tableSize}, (_, pair) => 1 + pair)
-  const clickCells = Array.from({length: tableSize}, (_, pair) => 1 + tableSize + pair)
-  const eventKinds = Array.from({length: queueLength}, (_, entry) => 1 + 2 * tableSize + entry)
+  const initialState = circuit.source(0)
+  const nextCells = Array.from({length: tableSize}, (_, pair) => circuit.source(1 + pair))
+  const clickCells = Array.from({length: tableSize}, (_, pair) => circuit.source(1 + tableSize + pair))
+  const eventKinds = Array.from({length: queueLength}, (_, entry) => circuit.source(1 + 2 * tableSize + entry))
   circuit.assumeRange(initialState, 0, stateCount - 1)
   for (const cell of nextCells) circuit.assumeRange(cell, 0, stateCount - 1)
   for (const cell of clickCells) circuit.assumeRange(cell, 0, 1)
@@ -111,14 +111,14 @@ export function buildEventQueue(stateCount: number, queueLength: number, form: S
     let state: Wire = initialState
     for (const kind of eventKinds) {
       statesBefore.push(state)
-      state = readPair(state, kind, nextCells)
+      state = readPair(state, asWire(kind), nextCells)
     }
     finalState = state
   } else {
     // tables[event][state] is the state after this event from that state: one index read
     // per state, all in the first layer.
     const tables = eventKinds.map(kind => Array.from({length: stateCount}, (_, state) =>
-      circuit.indexReadAffine([[kind, 1]], state * eventKindCount, nextCells, 'clamp', 'clamp')))
+      circuit.indexReadAffine([[asWire(kind), 1]], state * eventKindCount, nextCells, 'clamp', 'clamp')))
     const network = form === 'sklansky' ? sklanskyPrefix : brentKungPrefix
     // Two events as one table: first `earlier`, then `later`, i.e. later[earlier[state]].
     const prefixes = network(tables, (earlier, later) => earlier.map(middle => circuit.indexRead(middle, later)))
@@ -127,7 +127,7 @@ export function buildEventQueue(stateCount: number, queueLength: number, form: S
     finalState = statesAfter.at(-1)!
   }
   // The click bits depend only on the state before each event and the event kinds, not on each other.
-  const clicks = circuit.affine(statesBefore.map((state, entry) => [readPair(state, eventKinds[entry]!, clickCells), 1] as const))
+  const clicks = circuit.affine(statesBefore.map((state, entry) => [readPair(state, asWire(eventKinds[entry]!), clickCells), 1] as const))
   return {circuit, initialState, nextCells, clickCells, eventKinds, statesBefore, finalState, clicks}
 }
 

@@ -4,7 +4,7 @@
 // one compiled program, which is what lets different chains of logic run together
 // as instances of that program. The price is interpreter overhead: for every event,
 // the circuit reads the table through a one-hot over all (state, event kind) pairs.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 import {type ButtonEvent, type EventSlot, and, armed, buttonEvents, nextButtonState} from './button-machine.ts'
 
 export const tableStateCount = 4
@@ -66,7 +66,7 @@ export type TableMachineCircuit = {
 
 export function buildTableMachine(slotCount: number): TableMachineCircuit {
   let cellCount = 0
-  const allocate = () => cellCount++
+  const allocate = () => asWire(cellCount++)
   const initialState = Array.from({length: tableStateCount}, allocate)
   const nextCells = Array.from({length: tableStateCount}, () =>
     Array.from({length: eventKindCount}, () => Array.from({length: tableStateCount}, allocate)))
@@ -74,7 +74,7 @@ export function buildTableMachine(slotCount: number): TableMachineCircuit {
   const slots = Array.from({length: slotCount}, (): EventSlot =>
     ({downOnButton: allocate(), moveInside: allocate(), moveOutside: allocate(), up: allocate()}))
   const circuit = new Circuit(cellCount)
-  for (let wire = 0; wire < circuit.sourceSize; wire++) circuit.assumeRange(wire, 0, 1)
+  for (let wire = 0; wire < circuit.sourceSize; wire++) circuit.assumeRange(circuit.source(wire), 0, 1)
 
   let state: Wire[] = initialState
   const countTerms: [Wire, number][] = []

@@ -11,7 +11,7 @@
 // - 'table of powers': JavaScript writes M^0 to M^300 into cells once per stiffness and
 //   damping pair, and index reads pick M^i at a computed step count, e.g. to sample
 //   where a spring will be i steps from now.
-import {Circuit, type SpringMatrixWires, type Wire, emitApplySpringMatrix, emitCompare} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, type SpringMatrixWires, type Wire, emitApplySpringMatrix, emitCompare, asWire} from '../../../../../../numeric-ui-core.ts'
 import {
   type SpringConstants,
   type SpringMatrix,
@@ -50,7 +50,7 @@ export type SpringCells = {displacement: Wire, velocity: Wire}
 
 function declareSprings(circuit: Circuit, firstCell: number, springCount: number): SpringCells[] {
   return Array.from({length: springCount}, (_, spring) => {
-    const cells = {displacement: firstCell + 2 * spring, velocity: firstCell + 2 * spring + 1}
+    const cells = {displacement: circuit.source(firstCell + 2 * spring), velocity: circuit.source(firstCell + 2 * spring + 1)}
     circuit.assumeRange(cells.displacement, -displacementLimit, displacementLimit)
     circuit.assumeRange(cells.velocity, -velocityLimit, velocityLimit)
     return cells
@@ -67,7 +67,7 @@ function roots(circuit: Circuit, matrix: SpringMatrixWires, springs: readonly Sp
 // Cells: the 4 matrix entries, then each spring's displacement and velocity.
 export function buildHostMatrix(springCount: number) {
   const circuit = new Circuit(4 + 2 * springCount)
-  const matrix: SpringMatrixWires = [0, 1, 2, 3]
+  const matrix: SpringMatrixWires = [asWire(0), asWire(1), asWire(2), asWire(3)]
   const bound = springMatrixBound(springConstants)
   for (const entry of matrix) circuit.assumeRange(entry, -bound, bound)
   const springs = declareSprings(circuit, 4, springCount)
@@ -122,7 +122,7 @@ export function emitDigitPowers(circuit: Circuit, stepCount: Wire, constants: Sp
 // Cells: the step count, then each spring's displacement and velocity.
 export function buildDigitPowers(springCount: number) {
   const circuit = new Circuit(1 + 2 * springCount)
-  const stepCount = 0
+  const stepCount = circuit.source(0)
   circuit.assumeRange(stepCount, 0, maxSteps)
   circuit.assumeGrid(stepCount, 1)
   const {digits, matrix} = emitDigitPowers(circuit, stepCount, springConstants)
@@ -137,15 +137,15 @@ export const tableSampleCount = maxSteps + 1
 // source cells, so every index read stores a base position and a stride.
 export function buildTableOfPowers() {
   const circuit = new Circuit(1 + 4 * tableSampleCount + 2)
-  const sampleSteps = 0
+  const sampleSteps = circuit.source(0)
   circuit.assumeRange(sampleSteps, 0, maxSteps)
   const bound = springMatrixBound(springConstants)
   const entryTables = [0, 1, 2, 3].map(entry =>
     Array.from({length: tableSampleCount}, (_, steps) => 1 + entry * tableSampleCount + steps))
   for (const table of entryTables) {
-    for (const cell of table) circuit.assumeRange(cell, -bound, bound)
+    for (const cell of table) circuit.assumeRange(asWire(cell), -bound, bound)
   }
-  const read = (entry: number) => circuit.indexRead(sampleSteps, entryTables[entry]!)
+  const read = (entry: number) => circuit.indexRead(sampleSteps, entryTables[entry]!.map(asWire))
   const matrix: SpringMatrixWires = [read(0), read(1), read(2), read(3)]
   const springs = declareSprings(circuit, 1 + 4 * tableSampleCount, 1)
   return {circuit, sampleSteps, matrix, springs, roots: roots(circuit, matrix, springs)}

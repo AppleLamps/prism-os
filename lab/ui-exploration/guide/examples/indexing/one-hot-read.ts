@@ -54,8 +54,8 @@ export function emitMaskedSum(circuit: Circuit, weights: readonly Wire[], table:
 // which lets the compiler lower the masked sum to a gather.
 export function buildOneHotRead(count: number, options: {declareOneHot: boolean}) {
   const circuit = new Circuit(1 + count)
-  const index = 0
-  const table = Array.from({length: count}, (_, position) => 1 + position)
+  const index = circuit.source(0)
+  const table = Array.from({length: count}, (_, position) => circuit.source(1 + position))
   circuit.assumeRange(index, -4, count + 4)
   for (const wire of table) circuit.assumeRange(wire, -1e6, 1e6)
   const weights = emitTentWeights(circuit, index, count)

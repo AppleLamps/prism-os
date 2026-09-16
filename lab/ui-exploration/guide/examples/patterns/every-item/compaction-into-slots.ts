@@ -5,7 +5,7 @@
 // operations after the counts.
 //
 // Host contract: prices, minPrice and maxPrice are integers within 0..1,024.
-import {Circuit, emitCompare, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, type Wire, asWire} from '../../../../../../numeric-ui-core.ts'
 
 export const priceMaximum = 1024
 
@@ -31,17 +31,17 @@ export type SlotWires = {present: Wire, item: Wire, price: Wire, steps: {count: 
 // Source table: [minPrice, maxPrice, prices[0], ..., prices[n - 1]].
 export function buildCompaction(itemCount: number, slotCount: number, form: CompactionForm) {
   const circuit = new Circuit(2 + itemCount)
-  const minPrice = 0
-  const maxPrice = 1
-  const prices = Array.from({length: itemCount}, (_, item) => 2 + item)
+  const minPrice = circuit.source(0)
+  const maxPrice = circuit.source(1)
+  const prices = Array.from({length: itemCount}, (_, item) => circuit.source(2 + item))
   for (const wire of [minPrice, maxPrice, ...prices]) {
-    circuit.assumeRange(wire, 0, priceMaximum)
-    circuit.assumeGrid(wire, 1)
+    circuit.assumeRange(asWire(wire), 0, priceMaximum)
+    circuit.assumeGrid(asWire(wire), 1)
   }
 
   // Every item's filter test, all in the same layers: [minPrice <= price && price < maxPrice].
   const visible = prices.map(price => {
-    const bit = circuit.reglu([], 1, [[emitCompare(circuit, price, '>=', minPrice), 1], [emitCompare(circuit, price, '<', maxPrice), 1]], -1)
+    const bit = circuit.reglu([], 1, [[emitCompare(circuit, asWire(price), '>=', minPrice), 1], [emitCompare(circuit, asWire(price), '<', maxPrice), 1]], -1)
     circuit.assumeRange(bit, 0, 1)
     circuit.assumeGrid(bit, 1)
     return bit

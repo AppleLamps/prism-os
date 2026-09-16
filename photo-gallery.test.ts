@@ -244,8 +244,37 @@ test('visual presence and exact interactivity remain separate host facts', () =>
   assertOneFocus(machine, 3)
   assert.throws(
     () => machine.step(viewportWidth, viewportHeight, 0.35, 0.5),
-    /interactive must equal zero or one/,
+    /interactive must be exactly 0 or 1, got 0.5/,
   )
+})
+
+test('the machine checks the table against its rules before an evaluation, and the next-state values after it', () => {
+  // Values written before the first step commit with the mount, so the table check before the mount evaluation sees them.
+  const writtenBeforeFirstStep = (write: (machine: ReturnType<typeof createPhotoGalleryMachine>) => void) => () => {
+    const machine = createPhotoGalleryMachine()
+    write(machine)
+    machine.step(viewportWidth, viewportHeight)
+  }
+  assert.throws(writtenBeforeFirstStep(machine => {
+    machine.source[machine.cells.previous] = 1
+    machine.source[machine.cells.next] = 1
+  }), /events breaks its atMostOne rule with mass 2/)
+  assert.throws(writtenBeforeFirstStep(machine => {
+    machine.source[machine.cells.focus[0]!] = 1
+    machine.source[machine.cells.focus[1]!] = 1
+  }), /focus breaks its oneHot rule with mass 2/)
+  // Written after the table check, just before the frame's own evaluation, e.g. by an observer with a bug. With two
+  // photos focused, the thumbnails' scale destinations add up past their range. The frame's evaluation runs on a copy
+  // of the table, so no later table check sees the focus bits, and the next-state check is what throws.
+  const machine = createPhotoGalleryMachine()
+  machine.observe({
+    beforeEvaluate(table, evaluation) {
+      if (evaluation.writesBack) return
+      table[machine.cells.focus[0]!] = 1
+      table[machine.cells.focus[1]!] = 1
+    },
+  })
+  assert.throws(() => machine.step(viewportWidth, viewportHeight), /thumbnails\[0\]\.scaleDestination must be finite and within 0\.\.1, got 1\.77/)
 })
 
 test('clicking the main image preserves it and tiny viewports remain finite', () => {

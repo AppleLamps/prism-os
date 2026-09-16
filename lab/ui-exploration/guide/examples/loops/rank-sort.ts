@@ -5,7 +5,7 @@
 //
 // Host contract: keys are integers in 0..65,535, e.g. a date as a day number. Heights are multiples
 // of 1/4 px in 0..1024, and the total height stays below 2^21 px.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 import {emitIntegerAtLeastZero} from './kit.ts'
 
 export function rankSortReference(keys: ArrayLike<number>, heights: ArrayLike<number>) {
@@ -26,8 +26,8 @@ export function rankSortReference(keys: ArrayLike<number>, heights: ArrayLike<nu
 // Source layout: cells 0..n-1 are keys, cells n..2n-1 are heights.
 export function buildRankSort(itemCount: number) {
   const circuit = new Circuit(2 * itemCount)
-  const keys = Array.from({length: itemCount}, (_, item) => item)
-  const heights = Array.from({length: itemCount}, (_, item) => itemCount + item)
+  const keys = Array.from({length: itemCount}, (_, item) => circuit.source(item))
+  const heights = Array.from({length: itemCount}, (_, item) => circuit.source(itemCount + item))
   for (const key of keys) circuit.assumeRange(key, 0, 65_535)
   for (const height of heights) circuit.assumeRange(height, 0, 1024)
 
@@ -37,7 +37,7 @@ export function buildRankSort(itemCount: number) {
   const earlierFirst: Wire[][] = keys.map(() => [])
   for (let later = 1; later < itemCount; later++) {
     for (let earlier = 0; earlier < later; earlier++) {
-      earlierFirst[earlier]![later] = emitIntegerAtLeastZero(circuit, [[keys[later]!, 1], [keys[earlier]!, -1]], 0)
+      earlierFirst[earlier]![later] = emitIntegerAtLeastZero(circuit, [[asWire(keys[later]!), 1], [asWire(keys[earlier]!), -1]], 0)
     }
   }
 
@@ -61,10 +61,10 @@ export function buildRankSort(itemCount: number) {
   const itemTops = keys.map((_, item) => {
     const terms: [Wire, number][] = []
     for (let other = 0; other < itemCount; other++) {
-      if (other < item) terms.push([circuit.multiply(earlierFirst[other]![item]!, heights[other]!), 1])
+      if (other < item) terms.push([circuit.multiply(earlierFirst[other]![item]!, asWire(heights[other]!)), 1])
       if (other > item) {
-        terms.push([heights[other]!, 1])
-        terms.push([circuit.multiply(earlierFirst[item]![other]!, heights[other]!), -1])
+        terms.push([asWire(heights[other]!), 1])
+        terms.push([circuit.multiply(earlierFirst[item]![other]!, asWire(heights[other]!)), -1])
       }
     }
     return circuit.roundAffine(terms)
@@ -82,7 +82,7 @@ export function buildRankSort(itemCount: number) {
       return bit
     })
     circuit.assumeOneHot(atPosition)
-    return circuit.affine(atPosition.map((bit, item) => [circuit.multiply(heights[item]!, bit), 1] as const))
+    return circuit.affine(atPosition.map((bit, item) => [circuit.multiply(asWire(heights[item]!), bit), 1] as const))
   })
   return {circuit, keys, heights, ranks, itemTops, sortedHeights}
 }
@@ -107,22 +107,22 @@ export function moveRanksReference(ranks: ArrayLike<number>, fromRank: number, t
 // fromRank and cell n + 1 holds toRank.
 export function buildMoveRanks(itemCount: number) {
   const circuit = new Circuit(itemCount + 2)
-  const ranks = Array.from({length: itemCount}, (_, item) => item)
+  const ranks = Array.from({length: itemCount}, (_, item) => circuit.source(item))
   const fromRank = itemCount
   const toRank = itemCount + 1
-  for (const wire of [...ranks, fromRank, toRank]) circuit.assumeRange(wire, 0, itemCount - 1)
-  const rankShift = circuit.roundAffine([[toRank, 1], [fromRank, -1]])
+  for (const wire of [...ranks, fromRank, toRank]) circuit.assumeRange(asWire(wire), 0, itemCount - 1)
+  const rankShift = circuit.roundAffine([[asWire(toRank), 1], [asWire(fromRank), -1]])
   const nextRanks = ranks.map(rank => {
-    const afterFrom = emitIntegerAtLeastZero(circuit, [[rank, 1], [fromRank, -1]], -1) // [rank > fromRank]
-    const beforeFrom = emitIntegerAtLeastZero(circuit, [[fromRank, 1], [rank, -1]], -1) // [rank < fromRank]
-    const atOrBeforeTo = emitIntegerAtLeastZero(circuit, [[toRank, 1], [rank, -1]], 0) // [rank <= toRank]
-    const atOrAfterTo = emitIntegerAtLeastZero(circuit, [[rank, 1], [toRank, -1]], 0) // [rank >= toRank]
+    const afterFrom = emitIntegerAtLeastZero(circuit, [[asWire(rank), 1], [asWire(fromRank), -1]], -1) // [rank > fromRank]
+    const beforeFrom = emitIntegerAtLeastZero(circuit, [[asWire(fromRank), 1], [asWire(rank), -1]], -1) // [rank < fromRank]
+    const atOrBeforeTo = emitIntegerAtLeastZero(circuit, [[asWire(toRank), 1], [asWire(rank), -1]], 0) // [rank <= toRank]
+    const atOrAfterTo = emitIntegerAtLeastZero(circuit, [[asWire(rank), 1], [asWire(toRank), -1]], 0) // [rank >= toRank]
     // The AND of two bits is relu(a + b - 1).
     const shiftsUp = circuit.reglu([], 1, [[afterFrom, 1], [atOrBeforeTo, 1]], -1) // rank in (fromRank, toRank]
     const shiftsDown = circuit.reglu([], 1, [[beforeFrom, 1], [atOrAfterTo, 1]], -1) // rank in [toRank, fromRank)
     const isDragged = circuit.roundAffine([[afterFrom, -1], [beforeFrom, -1]], 1) // [rank == fromRank]
     circuit.assumeRange(isDragged, 0, 1)
-    const nextRank = circuit.roundAffine([[rank, 1], [shiftsUp, -1], [shiftsDown, 1], [circuit.multiply(rankShift, isDragged), 1]])
+    const nextRank = circuit.roundAffine([[asWire(rank), 1], [shiftsUp, -1], [shiftsDown, 1], [circuit.multiply(rankShift, isDragged), 1]])
     circuit.assumeRange(nextRank, 0, itemCount - 1)
     return nextRank
   })

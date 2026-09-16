@@ -2,7 +2,7 @@
 // advanceFrame, against plain float64 springs with no frames, and across frame rates.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/springs
 import {expect, test} from 'bun:test'
-import {Circuit, type Wire, emitApplySpringMatrix} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitApplySpringMatrix, asWire} from '../../../../../numeric-ui-core.ts'
 import {quantizeFrameTiming} from '../../../../../host-timing.ts'
 import {frameTimesAt} from './frame-rate-check.ts'
 import {type SelectRow, buildHighlight, highlightReference, rowHeight, runHighlight, selectEvents} from './shared-runtime-springs.ts'
@@ -47,15 +47,15 @@ function maxTopDifference(left: ReadonlyMap<number, number>, right: ReadonlyMap<
 
 test('costs: one spring matrix is 14 operations in 3 layers, and a matrix cell needs a declared range', () => {
   const circuit = new Circuit(6)
-  for (let entry = 0; entry < 4; entry++) circuit.assumeRange(entry, -7, 7)
-  const stepped = emitApplySpringMatrix(circuit, [0, 1, 2, 3], 4, 5)
+  for (let entry = 0; entry < 4; entry++) circuit.assumeRange(asWire(entry), -7, 7)
+  const stepped = emitApplySpringMatrix(circuit, [circuit.source(0), circuit.source(1), circuit.source(2), circuit.source(3)], circuit.source(4), circuit.source(5))
   expect(counts(circuit, [stepped.displacement, stepped.velocity])).toEqual({operations: 14, layers: 3})
   // The whole highlight: the select event's destination, one animated object of one
   // spring with a separate destination during steps and a snap bit, and the latch resets.
   const {circuit: highlight, roots} = buildHighlight()
   expect(counts(highlight, roots)).toEqual({operations: 38, layers: 13})
   const undeclared = new Circuit(6)
-  expect(() => emitApplySpringMatrix(undeclared, [0, 1, 2, 3], 4, 5)).toThrow('finite declared ranges')
+  expect(() => emitApplySpringMatrix(undeclared, [undeclared.source(0), undeclared.source(1), undeclared.source(2), undeclared.source(3)], undeclared.source(4), undeclared.source(5))).toThrow('finite declared ranges')
 })
 
 test("with 'events and settle checks', the drawn top is bit-identical at 10, 30, 60 and 120 fps and through 500 ms stalls, and settles like frame-free float64 springs", () => {

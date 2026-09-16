@@ -256,8 +256,9 @@ export class StagedProgram {
     const circuit = new Circuit(sourceValues.length)
     const wireOfValue = new Map<number, Wire>()
     const valueOfWire = new Map<Wire, number>()
-    sourceValues.forEach((id, wire) => {
+    sourceValues.forEach((id, cell) => {
       const {range} = this.values[id]!
+      const wire = circuit.source(cell)
       circuit.assumeRange(wire, range.minimum, range.maximum)
       wireOfValue.set(id, wire)
       valueOfWire.set(wire, id)

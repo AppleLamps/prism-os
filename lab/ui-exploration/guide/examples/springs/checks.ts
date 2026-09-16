@@ -1,6 +1,6 @@
 // Checks shared by springs.test.ts and report.ts: each circuit example against
 // plain float64 JavaScript.
-import {Circuit} from '../../../../../numeric-ui-core.ts'
+import {Circuit, asWire} from '../../../../../numeric-ui-core.ts'
 import {
   type ReferenceState,
   cell,
@@ -20,7 +20,7 @@ import {emitSpringStep, matrixPower, referenceSpringStep, springStepMatrix, step
 // Level 1: one step, and 300 steps chained at build time.
 export function checkSpringStep(sampleCount: number) {
   const circuit = new Circuit(2)
-  const start = {displacement: 0, velocity: 1}
+  const start = {displacement: circuit.source(0), velocity: circuit.source(1)}
   const oneStep = emitSpringStep(circuit, start, topConstants)
   let chained = start
   for (let step = 0; step < 300; step++) chained = emitSpringStep(circuit, chained, topConstants)
@@ -66,8 +66,8 @@ function stepsWithoutSnap(position: number, velocity: number, destination: numbe
 export function checkStepSpringTo(seed: number, sampleCount: number) {
   const circuit = new Circuit(3 + stepDigitCount)
   const stepBits = Array.from({length: stepDigitCount}, (_, digit) => 3 + digit)
-  for (const bit of stepBits) circuit.assumeRange(bit, 0, 1)
-  const stepped = emitStepSpringTo(circuit, {position: 0, velocity: 1}, 2, stepBits, topConstants)
+  for (const bit of stepBits) circuit.assumeRange(asWire(bit), 0, 1)
+  const stepped = emitStepSpringTo(circuit, {position: circuit.source(0), velocity: circuit.source(1)}, circuit.source(2), stepBits.map(asWire), topConstants)
   const roots = [stepped.position, stepped.velocity, stepped.stillAnimating]
   const evaluate = circuit.createTensorEvaluator(roots)
   const random = seededRandom(seed)
@@ -122,9 +122,9 @@ export function checkGoToEnd(seed: number, sampleCount: number) {
   const goToEndCell = 3 + stepDigitCount
   const circuit = new Circuit(4 + stepDigitCount)
   const stepBits = Array.from({length: stepDigitCount}, (_, digit) => 3 + digit)
-  for (const bit of stepBits) circuit.assumeRange(bit, 0, 1)
-  circuit.assumeRange(goToEndCell, 0, 1)
-  const stepped = emitStepSpringTo(circuit, {position: 0, velocity: 1}, 2, stepBits, topConstants, goToEndCell)
+  for (const bit of stepBits) circuit.assumeRange(asWire(bit), 0, 1)
+  circuit.assumeRange(asWire(goToEndCell), 0, 1)
+  const stepped = emitStepSpringTo(circuit, {position: circuit.source(0), velocity: circuit.source(1)}, circuit.source(2), stepBits.map(asWire), topConstants, asWire(goToEndCell))
   const evaluate = circuit.createTensorEvaluator([stepped.position, stepped.velocity, stepped.stillAnimating])
   const random = seededRandom(seed)
   const source = new Float32Array(circuit.sourceSize)
@@ -155,7 +155,7 @@ export function checkGoToEnd(seed: number, sampleCount: number) {
 // The clock: min(300, floor(pending / 4)) steps and the carried leftover.
 export function checkClock(seed: number) {
   const circuit = new Circuit(3)
-  const cells = {frameDeltaMs: 0, leftoverMs: 1, running: 2}
+  const cells = {frameDeltaMs: circuit.source(0), leftoverMs: circuit.source(1), running: circuit.source(2)}
   declareClockRanges(circuit, cells)
   const clock = emitSpringClock(circuit, cells)
   const roots = [clock.stepCount, clock.nextLeftoverMs]
@@ -190,10 +190,10 @@ export function checkClock(seed: number) {
 export function measureDigitOrderDepth() {
   const build = (digitOrder: 'most significant first' | 'least significant first') => {
     const circuit = new Circuit(5)
-    const cells = {frameDeltaMs: 0, leftoverMs: 1, running: 2}
+    const cells = {frameDeltaMs: circuit.source(0), leftoverMs: circuit.source(1), running: circuit.source(2)}
     declareClockRanges(circuit, cells)
     const clock = emitSpringClock(circuit, cells)
-    const stepped = emitSpringSteps(circuit, {displacement: 3, velocity: 4}, clock.stepBits, topConstants, digitOrder)
+    const stepped = emitSpringSteps(circuit, {displacement: circuit.source(3), velocity: circuit.source(4)}, clock.stepBits, topConstants, digitOrder)
     return measureProgram(circuit, [stepped.displacement, stepped.velocity])
   }
   return {mostSignificantFirst: build('most significant first'), leastSignificantFirst: build('least significant first')}

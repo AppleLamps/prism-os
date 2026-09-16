@@ -34,7 +34,7 @@ export function emitAtLeastOnGrid(circuit: Circuit, value: Wire, threshold: numb
 // division, most significant digit first: each digit is one threshold test on
 // what's left, so the digitCount tests run one after another.
 export function emitBinaryDigits(circuit: Circuit, value: Wire, unit: number, digitCount: number, grid: number): Wire[] {
-  const digits: Wire[] = Array.from({length: digitCount}, () => -1)
+  const digits = Array<Wire>(digitCount)
   let remaining = value
   for (let digit = digitCount - 1; digit >= 0; digit--) {
     const chunk = unit * 2 ** digit

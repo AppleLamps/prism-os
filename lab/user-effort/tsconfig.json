@@ -1,4 +1,4 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["*.ts", "*.json"]
+  "include": ["*.ts", "*.json", "../types/loose-wires.d.ts"]
 }

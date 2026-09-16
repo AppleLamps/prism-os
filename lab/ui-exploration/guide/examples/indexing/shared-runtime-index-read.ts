@@ -9,8 +9,8 @@ import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
 // declared range strictly inside ±2^24, or the builder throws.
 export function buildSharedIndexRead(count: number) {
   const circuit = new Circuit(1 + count)
-  const index = 0
-  const table = Array.from({length: count}, (_, position) => 1 + position)
+  const index = circuit.source(0)
+  const table = Array.from({length: count}, (_, position) => circuit.source(1 + position))
   circuit.assumeRange(index, -4, count + 4)
   for (const wire of table) circuit.assumeRange(wire, -1e6, 1e6)
   const read = circuit.indexRead(index, table)
@@ -29,8 +29,8 @@ export function buildSharedIndexRead(count: number) {
 export function buildSharedLinearRead(count: number) {
   if (count < 2) throw new Error('a table read needs at least two entries')
   const circuit = new Circuit(1 + count)
-  const index = 0
-  const table = Array.from({length: count}, (_, position) => 1 + position)
+  const index = circuit.source(0)
+  const table = Array.from({length: count}, (_, position) => circuit.source(1 + position))
   circuit.assumeRange(index, -4, count + 4)
   for (const wire of table) circuit.assumeRange(wire, -1e6, 1e6)
   const last = count - 1
@@ -60,8 +60,8 @@ export function buildSharedLinearRead(count: number) {
 // Source table: [firstVisibleRow, rowTops[0], ..., rowTops[rowCount - 1]].
 export function buildVisibleRowTops(rowCount: number, slotCount: number) {
   const circuit = new Circuit(1 + rowCount)
-  const firstVisibleRow = 0
-  const rowTops = Array.from({length: rowCount}, (_, row) => 1 + row)
+  const firstVisibleRow = circuit.source(0)
+  const rowTops = Array.from({length: rowCount}, (_, row) => circuit.source(1 + row))
   circuit.assumeRange(firstVisibleRow, 0, rowCount - 1)
   const slotTops = Array.from({length: slotCount}, (_, slot) =>
     circuit.indexReadAffine([[firstVisibleRow, 1]], slot, rowTops, 'clamp', 'zero'))

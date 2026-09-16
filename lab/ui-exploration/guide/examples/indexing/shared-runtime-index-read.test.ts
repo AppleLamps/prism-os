@@ -96,12 +96,12 @@ test('the contract: a declared index range, an integer index, a copy without rou
   // Building a read over an index cell without a declared range throws, and so does a range that reaches ±2^24.
   // Source table: [index, wideIndex, table[0], table[1]].
   const undeclared = new Circuit(4)
-  expect(() => undeclared.indexRead(0, [2, 3])).toThrow('index range declared strictly inside ±2^24')
-  undeclared.assumeRange(1, 0, 2 ** 25)
-  expect(() => undeclared.indexRead(1, [2, 3])).toThrow('index range declared strictly inside ±2^24')
+  expect(() => undeclared.indexRead(undeclared.source(0), [undeclared.source(2), undeclared.source(3)])).toThrow('index range declared strictly inside ±2^24')
+  undeclared.assumeRange(undeclared.source(1), 0, 2 ** 25)
+  expect(() => undeclared.indexRead(undeclared.source(1), [undeclared.source(2), undeclared.source(3)])).toThrow('index range declared strictly inside ±2^24')
   // An endpoint on 2^24 throws too, e.g. when FP32 rounds 2^24 + 1 onto 2^24.
-  undeclared.assumeRange(1, 0, 2 ** 24)
-  expect(() => undeclared.indexReadAffine([[1, 1]], 1, [2, 3], 'clamp', 'clamp')).toThrow('index range declared strictly inside ±2^24')
+  undeclared.assumeRange(undeclared.source(1), 0, 2 ** 24)
+  expect(() => undeclared.indexReadAffine([[undeclared.source(1), 1]], 1, [undeclared.source(2), undeclared.source(3)], 'clamp', 'clamp')).toThrow('index range declared strictly inside ±2^24')
 
   // A fractional index makes the one-hot declaration false: the read floors, while the ReLU one-hot interpolates.
   const shared = buildSharedIndexRead(8)
@@ -117,10 +117,10 @@ test('the contract: a declared index range, an integer index, a copy without rou
   const withInfinity = [...rowHeights]
   withInfinity[5] = Number.POSITIVE_INFINITY
   const infiniteCircuit = new Circuit(9)
-  infiniteCircuit.assumeRange(0, 0, 7)
-  const entries = Array.from({length: 8}, (_, position) => 1 + position)
-  const infiniteRead = infiniteCircuit.indexRead(0, entries)
-  const infiniteMaskedSum = emitMaskedSum(infiniteCircuit, emitTentWeights(infiniteCircuit, 0, 8), entries)
+  infiniteCircuit.assumeRange(infiniteCircuit.source(0), 0, 7)
+  const entries = Array.from({length: 8}, (_, position) => infiniteCircuit.source(1 + position))
+  const infiniteRead = infiniteCircuit.indexRead(infiniteCircuit.source(0), entries)
+  const infiniteMaskedSum = emitMaskedSum(infiniteCircuit, emitTentWeights(infiniteCircuit, infiniteCircuit.source(0), 8), entries)
   const infiniteValues = (index: number) => infiniteCircuit.evaluateReference(Float32Array.from([index, ...withInfinity]))
   expect(infiniteValues(5)[infiniteRead]).toBe(Infinity)
   expect(infiniteValues(4)[infiniteRead]).toBe(36)
@@ -128,7 +128,7 @@ test('the contract: a declared index range, an integer index, a copy without rou
 
   // The builder freezes the candidates array, so changing it after a read throws.
   expect(() => {
-    shared.table[2] = 7
+    shared.table[2] = shared.circuit.source(7)
   }).toThrow()
 })
 

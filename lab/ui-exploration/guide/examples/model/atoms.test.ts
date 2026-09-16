@@ -1,6 +1,6 @@
 // Checks every example in atoms.ts against the plain JavaScript it replaces, and pins the compiled sizes the guide quotes.
 import {expect, test} from 'bun:test'
-import {Circuit} from '../../../../../numeric-ui-core.ts'
+import {Circuit, asWire} from '../../../../../numeric-ui-core.ts'
 import * as atoms from './atoms.ts'
 import {emitAtLeast, measure} from './helpers.ts'
 
@@ -133,7 +133,7 @@ test('an exact comparison on continuous values gives the correct bit for neighbo
   expect(compared).toBe(20_029)
   expect(measure(pointerPastTrackLeft.circuit, [pointerPastTrackLeft.output])).toEqual({liveOperations: 4, layers: 3, storedWeights: 6})
   // Without declared ranges there is no bound on the difference, so the helper throws while building.
-  expect(() => emitAtLeast(new Circuit(2), 0, 1, 64)).toThrow()
+  expect(() => emitAtLeast(new Circuit(2), asWire(0), asWire(1), 64)).toThrow()
 })
 
 test('an integer comparison is 3 operations and 2 layers', () => {

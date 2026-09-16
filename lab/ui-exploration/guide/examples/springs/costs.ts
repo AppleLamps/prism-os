@@ -3,7 +3,7 @@
 // count into one cell. In 'JS writes the digits', JS writes the step count's 9
 // binary digits into 9 cells instead, and in 'JS writes the matrix', JS writes
 // M^steps into 4 cells. There's no settle snap here; spring-catch-up.ts adds one.
-import {Circuit, type Wire, emitSelect, emitSpring} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitSelect, emitSpring, asWire} from '../../../../../numeric-ui-core.ts'
 import {emitSpringSteps} from './spring-catch-up.ts'
 import {emitAtLeastOnGrid, emitBinaryDigits, maxSteps, stepDigitCount} from './spring-clock.ts'
 import {
@@ -34,14 +34,14 @@ export const catchUpForms: readonly CatchUpForm[] = [
 
 export type WireMatrix = readonly [Wire, Wire, Wire, Wire]
 
-export const stepCountCell = 0
-export const matrixCells: WireMatrix = [1, 2, 3, 4]
+export const stepCountCell = asWire(0)
+export const matrixCells: WireMatrix = [asWire(1), asWire(2), asWire(3), asWire(4)]
 export function springCells(springIndex: number): RelativeSpring {
-  return {displacement: 5 + 2 * springIndex, velocity: 6 + 2 * springIndex}
+  return {displacement: asWire(5 + 2 * springIndex), velocity: asWire(6 + 2 * springIndex)}
 }
 // The step count's binary digits, least significant first, after every spring's cells.
 export function digitCells(springCount: number): Wire[] {
-  return Array.from({length: stepDigitCount}, (_, digit) => 5 + 2 * springCount + digit)
+  return Array.from({length: stepDigitCount}, (_, digit) => asWire(5 + 2 * springCount + digit))
 }
 
 // Largest |entry| of M^n over n = 0..300, for declared ranges.
@@ -154,13 +154,13 @@ export function buildCatchUpWithConstantCells(form: 'unrolled, one mask per step
   const dampingCell = stiffnessCell + 1
   const circuit = new Circuit(7 + 2 * springCount)
   circuit.assumeRange(stepCountCell, 0, maxSteps)
-  circuit.assumeRange(stiffnessCell, 0, 10_000)
-  circuit.assumeRange(dampingCell, 0, 1_000)
+  circuit.assumeRange(asWire(stiffnessCell), 0, 10_000)
+  circuit.assumeRange(asWire(dampingCell), 0, 1_000)
   const dt = stepMs / 1000
   const step = (spring: RelativeSpring): RelativeSpring => {
     const acceleration = circuit.affine([
-      [circuit.multiply(spring.displacement, stiffnessCell), -1],
-      [circuit.multiply(spring.velocity, dampingCell), -1],
+      [circuit.multiply(spring.displacement, asWire(stiffnessCell)), -1],
+      [circuit.multiply(spring.velocity, asWire(dampingCell)), -1],
     ])
     const velocity = circuit.affine([[spring.velocity, 1], [acceleration, dt]])
     const displacement = circuit.affine([[spring.displacement, 1], [velocity, dt]])
@@ -193,8 +193,17 @@ export function buildCatchUpWithConstantCells(form: 'unrolled, one mask per step
 // IndirectOS's emitSpring for one spring, with every parameter declared nonnegative.
 export function buildIndirectOsSpring() {
   const circuit = new Circuit(11)
-  const [position, destination, velocity, stiffness, damping, timestep, settleDistance, settleSpeed, distanceScale, speedScale, unit] =
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const
+  const position = circuit.source(0)
+  const destination = circuit.source(1)
+  const velocity = circuit.source(2)
+  const stiffness = circuit.source(3)
+  const damping = circuit.source(4)
+  const timestep = circuit.source(5)
+  const settleDistance = circuit.source(6)
+  const settleSpeed = circuit.source(7)
+  const distanceScale = circuit.source(8)
+  const speedScale = circuit.source(9)
+  const unit = circuit.source(10)
   for (const parameter of [stiffness, damping, timestep, settleDistance, settleSpeed, distanceScale, speedScale]) {
     circuit.assumeRange(parameter, 0, Number.POSITIVE_INFINITY)
   }

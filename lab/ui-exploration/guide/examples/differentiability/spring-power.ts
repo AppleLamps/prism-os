@@ -11,7 +11,7 @@
 //   [1 - stiffness * dt * dt,  dt * (1 - damping * dt)]
 //   [-stiffness * dt,          1 - damping * dt       ]
 // so n steps are that matrix to the power n.
-import {Circuit, type Wire, emitSelect} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitSelect, asWire} from '../../../../../numeric-ui-core.ts'
 
 // Step counts 0..511, which covers vibescript's 300-step cap.
 export const stepBitCount = 9
@@ -42,13 +42,13 @@ export type ParameterName = typeof parameterNames[number]
 export type WireMatrix = readonly [Wire, Wire, Wire, Wire]
 
 export const springCells: SpringCells = {
-  stiffness: 0,
-  damping: 1,
-  stepSeconds: 2,
-  destination: 3,
-  position: 4,
-  velocity: 5,
-  stepBits: Array.from({length: stepBitCount}, (_, digit) => 6 + digit),
+  stiffness: asWire(0),
+  damping: asWire(1),
+  stepSeconds: asWire(2),
+  destination: asWire(3),
+  position: asWire(4),
+  velocity: asWire(5),
+  stepBits: Array.from({length: stepBitCount}, (_, digit) => 6 + digit).map(asWire),
 }
 export const springSourceSize = 6 + stepBitCount
 

@@ -13,7 +13,7 @@
 // The circuit tests every target at once, then picks the first hit, either with a chain that visits
 // one candidate after another, or with emitFirstActive's tree, which takes the maximum of neighboring
 // candidates up a balanced tree and routes the gate back down to the first candidate that holds a 1.
-import {Circuit, emitCompare, emitFirstActive, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, emitFirstActive, type Wire, asWire} from '../../../../../../numeric-ui-core.ts'
 
 export type Rectangle = {left: number, top: number, width: number, height: number}
 
@@ -55,9 +55,9 @@ function emitFirstActiveForm(circuit: Circuit, gate: Wire, candidates: readonly 
 // Source table: [gate, then one hit bit per candidate in priority order].
 export function buildFirstActiveSelection(candidateCount: number, form: FirstActiveForm) {
   const circuit = new Circuit(1 + candidateCount)
-  const gate = 0
-  const hits = Array.from({length: candidateCount}, (_, candidate) => 1 + candidate)
-  for (let wire = 0; wire < circuit.sourceSize; wire++) circuit.assumeRange(wire, 0, 1)
+  const gate = circuit.source(0)
+  const hits = Array.from({length: candidateCount}, (_, candidate) => circuit.source(1 + candidate))
+  for (let wire = 0; wire < circuit.sourceSize; wire++) circuit.assumeRange(circuit.source(wire), 0, 1)
   const selected = emitFirstActiveForm(circuit, gate, hits, form)
   return {circuit, gate, hits, selected}
 }
@@ -70,9 +70,9 @@ export const rectangleLimit = 8_192
 // rectangle fields are multiples of 1/4 px within 0..8,192 px.
 export function buildFirstTargetUnderPointer(targetCount: number, form: FirstActiveForm) {
   const circuit = new Circuit(3 + 4 * targetCount)
-  const pressed = 0
-  const pointerX = 1
-  const pointerY = 2
+  const pressed = circuit.source(0)
+  const pointerX = circuit.source(1)
+  const pointerY = circuit.source(2)
   circuit.assumeRange(pressed, 0, 1)
   for (const coordinate of [pointerX, pointerY]) {
     circuit.assumeRange(coordinate, -pointerLimit, pointerLimit)
@@ -80,7 +80,12 @@ export function buildFirstTargetUnderPointer(targetCount: number, form: FirstAct
   }
   const targets = Array.from({length: targetCount}, (_, target) => {
     const firstCell = 3 + 4 * target
-    const rectangle = {left: firstCell, top: firstCell + 1, width: firstCell + 2, height: firstCell + 3}
+    const rectangle = {
+      left: circuit.source(firstCell),
+      top: circuit.source(firstCell + 1),
+      width: circuit.source(firstCell + 2),
+      height: circuit.source(firstCell + 3),
+    }
     for (const field of [rectangle.left, rectangle.top, rectangle.width, rectangle.height]) {
       circuit.assumeRange(field, 0, rectangleLimit)
       circuit.assumeGrid(field, 1 / 4)
@@ -114,6 +119,6 @@ export function buildFirstTargetUnderPointer(targetCount: number, form: FirstAct
   const pressedAny = circuit.roundAffine(selected.map(bit => [bit, 1] as const))
   // The pressed target's left edge, e.g. where a drag starts: a masked sum over the one-hot, which the
   // compiler lowers to one gather.
-  const pressedLeft = circuit.affine(selected.map((bit, target) => [circuit.multiply(targets[target]!.left, bit), 1] as const))
+  const pressedLeft = circuit.affine(selected.map((bit, target) => [circuit.multiply(asWire(targets[target]!.left), bit), 1] as const))
   return {circuit, pressed, pointerX, pointerY, targets, hits, selected, pressedTarget, pressedAny, pressedLeft}
 }

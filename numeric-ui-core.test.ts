@@ -6,15 +6,16 @@ import {
   emitArgmax,
   emitFirstActive,
   inlineCircuit,
+  asWire,
 } from './numeric-ui-core.ts'
 
 test('inlined circuits become one graph and share matching expressions', () => {
   const child = new Circuit(2)
-  const childSum = child.affine([[0, 1], [1, 1]])
-  const childProduct = child.reglu([[childSum, 1]], 0, [[0, 1]], 0)
+  const childSum = child.affine([[child.source(0), 1], [child.source(1), 1]])
+  const childProduct = child.reglu([[childSum, 1]], 0, [[child.source(0), 1]], 0)
   const parent = new Circuit(2)
-  const existingSum = parent.affine([[0, 1], [1, 1]])
-  const wireMap = inlineCircuit(parent, child, [0, 1])
+  const existingSum = parent.affine([[parent.source(0), 1], [parent.source(1), 1]])
+  const wireMap = inlineCircuit(parent, child, [parent.source(0), parent.source(1)])
 
   assert.equal(wireMap[childSum], existingSum)
   const output = wireMap[childProduct]!
@@ -25,9 +26,9 @@ test('inlined circuits become one graph and share matching expressions', () => {
 
 test('tensor layers append only their new values', () => {
   const circuit = new Circuit(2)
-  const first = circuit.affine([[0, 2]])
+  const first = circuit.affine([[circuit.source(0), 2]])
   circuit.affine([[first, 4]])
-  circuit.affine([[1, 3]])
+  circuit.affine([[circuit.source(1), 3]])
   const program = circuit.compileTensorProgram()
 
   assert.deepEqual(
@@ -48,7 +49,7 @@ test('tensor layers append only their new values', () => {
 
 test('compiled tensor constants use native FP32 storage', () => {
   const circuit = new Circuit(1)
-  circuit.affine([[0, 1 / 3]], 1 / 10)
+  circuit.affine([[circuit.source(0), 1 / 3]], 1 / 10)
   const layer = circuit.compileTensorProgram().layers[0]!
 
   assert.ok(layer.weights instanceof Float32Array)
@@ -59,7 +60,7 @@ test('compiled tensor constants use native FP32 storage', () => {
 
 test('compiled indices use the smallest safe unsigned width', () => {
   const small = new Circuit(255)
-  const smallOutput = small.affine([[254, 2]])
+  const smallOutput = small.affine([[small.source(254), 2]])
   const smallProgram = small.compileTensorProgram([smallOutput])
   assert.ok(smallProgram.roots instanceof Uint8Array)
   assert.ok(smallProgram.wireOrder instanceof Uint8Array)
@@ -67,7 +68,7 @@ test('compiled indices use the smallest safe unsigned width', () => {
 
   const medium = new Circuit(257)
   const mediumOutput = medium.affine(
-    Array.from({length: 257}, (_, wire) => [wire, 1] as const),
+    Array.from({length: 257}, (_, wire) => [medium.source(wire), 1] as const),
   )
   const mediumProgram = medium.compileTensorProgram([mediumOutput])
   assert.ok(mediumProgram.roots instanceof Uint16Array)
@@ -77,7 +78,7 @@ test('compiled indices use the smallest safe unsigned width', () => {
   assert.ok(mediumProgram.layers[0]!.rowOffsets instanceof Uint16Array)
 
   const large = new Circuit(65_537)
-  const largeOutput = large.affine([[65_536, 2]])
+  const largeOutput = large.affine([[large.source(65_536), 2]])
   const largeProgram = large.compileTensorProgram([largeOutput])
   assert.ok(largeProgram.roots instanceof Uint32Array)
   assert.ok(largeProgram.wireOrder instanceof Uint32Array)
@@ -87,11 +88,11 @@ test('compiled indices use the smallest safe unsigned width', () => {
 test('first-active selection resolves ordered candidates through a balanced tree', () => {
   const candidateCount = 16
   const circuit = new Circuit(candidateCount + 1)
-  for (let wire = 0; wire < circuit.sourceSize; wire++) circuit.assumeRange(wire, 0, 1)
+  for (let wire = 0; wire < circuit.sourceSize; wire++) circuit.assumeRange(asWire(wire), 0, 1)
   const selected = emitFirstActive(
     circuit,
-    0,
-    Array.from({length: candidateCount}, (_, item) => item + 1),
+    circuit.source(0),
+    Array.from({length: candidateCount}, (_, item) => item + 1).map(asWire),
   )
   circuit.tensorProgram = circuit.compileTensorProgram(selected)
 
@@ -121,12 +122,12 @@ test('first-active selection resolves ordered candidates through a balanced tree
 test('argmax resolves continuous scores through a balanced tree', () => {
   const candidateCount = 7
   const circuit = new Circuit(candidateCount + 1)
-  for (let wire = 0; wire < candidateCount; wire++) circuit.assumeRange(wire, 0, 1)
-  circuit.assumeRange(candidateCount, 1, 1)
+  for (let wire = 0; wire < candidateCount; wire++) circuit.assumeRange(asWire(wire), 0, 1)
+  circuit.assumeRange(circuit.source(candidateCount), 1, 1)
   const winner = emitArgmax(
     circuit,
-    Array.from({length: candidateCount}, (_, item) => item),
-    candidateCount,
+    Array.from({length: candidateCount}, (_, item) => item).map(asWire),
+    circuit.source(candidateCount),
   )
   circuit.tensorProgram = circuit.compileTensorProgram([
     ...winner.selected,
@@ -164,12 +165,12 @@ test('argmax breaks exact ties toward the lower-indexed candidate', () => {
   // pins the tie-break direction the agreement oracles cannot see.
   const candidateCount = 4
   const circuit = new Circuit(candidateCount + 1)
-  for (let wire = 0; wire < candidateCount; wire++) circuit.assumeRange(wire, 0, 1)
-  circuit.assumeRange(candidateCount, 1, 1)
+  for (let wire = 0; wire < candidateCount; wire++) circuit.assumeRange(asWire(wire), 0, 1)
+  circuit.assumeRange(circuit.source(candidateCount), 1, 1)
   const winner = emitArgmax(
     circuit,
-    Array.from({length: candidateCount}, (_, item) => item),
-    candidateCount,
+    Array.from({length: candidateCount}, (_, item) => item).map(asWire),
+    circuit.source(candidateCount),
   )
   circuit.tensorProgram = circuit.compileTensorProgram(winner.selected)
 
@@ -182,7 +183,7 @@ test('argmax breaks exact ties toward the lower-indexed candidate', () => {
 
 test('the reference and tensor evaluators round every arithmetic step', () => {
   const circuit = new Circuit(2)
-  const sum = circuit.affine([[0, 1], [1, 1]])
+  const sum = circuit.affine([[circuit.source(0), 1], [circuit.source(1), 1]])
   const source = new Float32Array([16_777_216, 1])
 
   const reference = circuit.evaluateReference(source)
@@ -196,9 +197,9 @@ test('the reference and tensor evaluators round every arithmetic step', () => {
 test('reference backpropagation follows affine and ReGLU atoms', () => {
   const circuit = new Circuit(3)
   const output = circuit.reglu(
-    [[0, 2], [2, 1]],
+    [[circuit.source(0), 2], [circuit.source(2), 1]],
     0,
-    [[0, 3], [1, -1]],
+    [[circuit.source(0), 3], [circuit.source(1), -1]],
     0,
   )
   const values = circuit.evaluateReference(new Float32Array([2, 1, -1]))
@@ -212,8 +213,8 @@ test('reference backpropagation follows affine and ReGLU atoms', () => {
 
 test('reference backpropagation rejects hard boolean decisions', () => {
   const circuit = new Circuit(1)
-  circuit.assumeRange(0, 0, 1)
-  const output = circuit.boolean(0)
+  circuit.assumeRange(circuit.source(0), 0, 1)
+  const output = circuit.boolean(circuit.source(0))
   const values = circuit.evaluateReference(new Float32Array([0.4]))
   const outputGradients = new Float32Array(values.length)
   outputGradients[output] = 1
@@ -226,7 +227,7 @@ test('reference backpropagation rejects hard boolean decisions', () => {
 
 test('tensor and reference evaluators both reject a wrong-sized source table', () => {
   const circuit = new Circuit(2)
-  circuit.affine([[0, 1], [1, 1]])
+  circuit.affine([[circuit.source(0), 1], [circuit.source(1), 1]])
 
   for (const source of [
     new Float32Array([7]),
@@ -246,12 +247,12 @@ test('tensor and reference evaluators both reject a wrong-sized source table', (
 test('weighted sums normalize duplicate, zero, and unordered terms', () => {
   const circuit = new Circuit(3)
   circuit.affine([
-    [2, 0],
-    [1, 4],
-    [0, 3],
-    [1, -1],
-    [0, -3],
-    [2, 5],
+    [circuit.source(2), 0],
+    [circuit.source(1), 4],
+    [circuit.source(0), 3],
+    [circuit.source(1), -1],
+    [circuit.source(0), -3],
+    [circuit.source(2), 5],
   ], 7)
 
   assert.deepEqual(circuit.operations[0]!.leftTerms, [[1, 3], [2, 5]])
@@ -264,12 +265,12 @@ test('a sum shared by many consumers stays one materialized wire', () => {
   // wire that consumers reference, so total stored weights stay linear in n.
   function sharedSumWeights(n: number) {
     const circuit = new Circuit(n + n)
-    for (let wire = 0; wire < n; wire++) circuit.assumeRange(wire, 0, 1)
+    for (let wire = 0; wire < n; wire++) circuit.assumeRange(asWire(wire), 0, 1)
     const shared = circuit.affine(
-      Array.from({length: n}, (_, wire): [Wire, number] => [wire, 1]),
+      Array.from({length: n}, (_, wire): [Wire, number] => [asWire(wire), 1]),
     )
     const outputs = Array.from({length: n}, (_, item) =>
-      circuit.affine([[shared, 0.5], [n + item, 1]]))
+      circuit.affine([[shared, 0.5], [asWire(n + item), 1]]))
     const program = circuit.compileTensorProgram(outputs)
     let weights = 0
     for (const layer of program.layers) weights += layer.weights.length
@@ -292,7 +293,7 @@ test('wide affine sharing is independent of consumer order', () => {
 
   function build(withUnusedConsumer: boolean) {
     const circuit = new Circuit(4)
-    const shared = circuit.affine([[0, 1], [1, 1], [2, 1], [3, 1]])
+    const shared = circuit.affine([[circuit.source(0), 1], [circuit.source(1), 1], [circuit.source(2), 1], [circuit.source(3), 1]])
     if (withUnusedConsumer) circuit.affine([[shared, 2]], 1)
     const live = circuit.affine([[shared, 2]], 1)
     return {circuit, live}
@@ -308,7 +309,7 @@ test('wide affine sharing is independent of consumer order', () => {
 
 test('identical consumers of a wide affine share one wire', () => {
   const circuit = new Circuit(4)
-  const shared = circuit.affine([[0, 1], [1, 1], [2, 1], [3, 1]])
+  const shared = circuit.affine([[circuit.source(0), 1], [circuit.source(1), 1], [circuit.source(2), 1], [circuit.source(3), 1]])
   const first = circuit.affine([[shared, 2]], 1)
   const second = circuit.affine([[shared, 2]], 1)
 
@@ -322,7 +323,7 @@ test('duplicate-wire terms merge into one exact FP32 coefficient', () => {
   // evaluators run the same stored stream, so only this build-time check sees it.
   const merged = 1 / 3 + 0.1
   const circuit = new Circuit(1)
-  const sum = circuit.affine([[0, 1 / 3], [0, 0.1]])
+  const sum = circuit.affine([[circuit.source(0), 1 / 3], [circuit.source(0), 0.1]])
   assert.deepEqual(circuit.operations[0]!.leftTerms, [[0, merged]])
 
   const x = -17.309
@@ -338,9 +339,9 @@ test('duplicate-wire terms merge into one exact FP32 coefficient', () => {
 test('constant terms and constant gates fold before compilation', () => {
   const circuit = new Circuit(1)
   const three = circuit.affine([], 3)
-  circuit.affine([[0, 4], [three, 2]], 1)
-  circuit.reglu([[0, 2]], 5, [[three, 1]], -1)
-  circuit.reglu([[0, 7]], 11, [[three, -1]], 2)
+  circuit.affine([[circuit.source(0), 4], [three, 2]], 1)
+  circuit.reglu([[circuit.source(0), 2]], 5, [[three, 1]], -1)
+  circuit.reglu([[circuit.source(0), 7]], 11, [[three, -1]], 2)
 
   assert.deepEqual(circuit.operations.map(operation => ({
     kind: operation.kind,
@@ -360,7 +361,7 @@ test('constant terms and constant gates fold before compilation', () => {
 
 test('identity affine operations return an alias without allocating a wire', () => {
   const circuit = new Circuit(2)
-  const alias = circuit.affine([[1, 1]])
+  const alias = circuit.affine([[circuit.source(1), 1]])
 
   assert.equal(alias, 1)
   assert.equal(circuit.operations.length, 0)
@@ -369,8 +370,8 @@ test('identity affine operations return an alias without allocating a wire', () 
 
 test('affine forms compose through affine producers', () => {
   const circuit = new Circuit(2)
-  const first = circuit.affine([[0, 2], [1, -1]], 3)
-  const second = circuit.affine([[first, 4], [1, 5]], -2)
+  const first = circuit.affine([[circuit.source(0), 2], [circuit.source(1), -1]], 3)
+  const second = circuit.affine([[first, 4], [circuit.source(1), 5]], -2)
   circuit.reglu([[second, 2]], 1, [[first, -3]], 7)
 
   assert.deepEqual(circuit.operations[1], {
@@ -387,10 +388,10 @@ test('affine forms compose through affine producers', () => {
 
 test('identical normalized expressions share one wire', () => {
   const circuit = new Circuit(2)
-  const firstAffine = circuit.affine([[1, 3], [0, 2]], 4)
-  const secondAffine = circuit.affine([[0, 1], [1, 3], [0, 1]], 4)
-  const firstReglu = circuit.reglu([[firstAffine, 2]], 1, [[1, -1]], 3)
-  const secondReglu = circuit.reglu([[secondAffine, 2]], 1, [[1, -1]], 3)
+  const firstAffine = circuit.affine([[circuit.source(1), 3], [circuit.source(0), 2]], 4)
+  const secondAffine = circuit.affine([[circuit.source(0), 1], [circuit.source(1), 3], [circuit.source(0), 1]], 4)
+  const firstReglu = circuit.reglu([[firstAffine, 2]], 1, [[circuit.source(1), -1]], 3)
+  const secondReglu = circuit.reglu([[secondAffine, 2]], 1, [[circuit.source(1), -1]], 3)
 
   assert.equal(secondAffine, firstAffine)
   assert.equal(secondReglu, firstReglu)
@@ -399,9 +400,9 @@ test('identical normalized expressions share one wire', () => {
 
 test('tensor roots remove operations that cannot affect an output', () => {
   const circuit = new Circuit(2)
-  const liveDependency = circuit.reglu([[0, 2]], 0, [[1, 1]], 0)
+  const liveDependency = circuit.reglu([[circuit.source(0), 2]], 0, [[circuit.source(1), 1]], 0)
   const liveOutput = circuit.affine([[liveDependency, 1]], 3)
-  circuit.reglu([[0, 7]], 11, [[1, -2]], 5)
+  circuit.reglu([[circuit.source(0), 7]], 11, [[circuit.source(1), -2]], 5)
   const program = circuit.compileTensorProgram([liveOutput])
 
   assert.equal(program.width, 5)
@@ -412,7 +413,7 @@ test('tensor roots remove operations that cannot affect an output', () => {
 
 test('tensor layers gather only the values they read', () => {
   const circuit = new Circuit(2)
-  const first = circuit.reglu([[0, 1]], 0, [[1, 1]], 0)
+  const first = circuit.reglu([[circuit.source(0), 1]], 0, [[circuit.source(1), 1]], 0)
   const second = circuit.reglu([[first, 2]], 1, [[first, -1]], 5)
   const program = circuit.compileTensorProgram([second])
 
@@ -428,8 +429,8 @@ test('tensor layers gather only the values they read', () => {
 
 test('affine outputs do not allocate fake gate rows', () => {
   const circuit = new Circuit(2)
-  const affine = circuit.affine([[0, 2]], 1)
-  const reglu = circuit.reglu([[0, 3]], 2, [[1, -1]], 5)
+  const affine = circuit.affine([[circuit.source(0), 2]], 1)
+  const reglu = circuit.reglu([[circuit.source(0), 3]], 2, [[circuit.source(1), -1]], 5)
   const program = circuit.compileTensorProgram([affine, reglu])
   const layer = program.layers[0]!
 
@@ -445,8 +446,8 @@ test('affine outputs do not allocate fake gate rows', () => {
 
 test('boolean outputs make complete decisions with an explicit tie rule', () => {
   const circuit = new Circuit(1)
-  circuit.assumeRange(0, 0, 1)
-  const decision = circuit.boolean(0)
+  circuit.assumeRange(circuit.source(0), 0, 1)
+  const decision = circuit.boolean(circuit.source(0))
   const program = circuit.compileTensorProgram([decision])
 
   assert.equal(circuit.operations[0]!.kind, 'boolean')

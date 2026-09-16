@@ -13,6 +13,7 @@ import {
   Circuit,
   type SpringMatrixWires,
   type Wire,
+  asWire,
   emitAnimatedObject,
   emitApplySpringMatrix,
   emitCompare,
@@ -44,12 +45,12 @@ export const velocityLimit = 65_536
 
 export const toastCell = {
   matrixStart: 0,
-  settleCheck: 4,
-  snap: 5,
-  pressActive: 6,
-  pressX: 7,
-  pressY: 8,
-  showAllActive: 9,
+  settleCheck: asWire(4),
+  snap: asWire(5),
+  pressActive: asWire(6),
+  pressX: asWire(7),
+  pressY: asWire(8),
+  showAllActive: asWire(9),
   // Then present, displacement and velocity, for each toast.
   firstToast: 10,
   size: 10 + 3 * toastLayout.count,
@@ -57,7 +58,7 @@ export const toastCell = {
 
 export function toastCells(index: number) {
   const base = toastCell.firstToast + 3 * index
-  return {present: base, displacement: base + 1, velocity: base + 2}
+  return {present: asWire(base), displacement: asWire(base + 1), velocity: asWire(base + 2)}
 }
 
 // Positions in the evaluator's output: the next-state values first, then these.
@@ -74,7 +75,7 @@ export function buildToastStack(hitTestSource: HitTestSource) {
   const circuit = new Circuit(toastCell.size)
   const bound = springMatrixBound(toastSpring)
   const {matrixStart} = toastCell
-  const matrix: SpringMatrixWires = [matrixStart, matrixStart + 1, matrixStart + 2, matrixStart + 3]
+  const matrix: SpringMatrixWires = [circuit.source(matrixStart), circuit.source(matrixStart + 1), circuit.source(matrixStart + 2), circuit.source(matrixStart + 3)]
   for (const entry of matrix) circuit.assumeRange(entry, -bound, bound)
   for (const bit of [toastCell.settleCheck, toastCell.snap, toastCell.pressActive, toastCell.showAllActive]) circuit.assumeRange(bit, 0, 1)
   // The host writes pointer coordinates on a 1/64 px grid.
@@ -146,7 +147,7 @@ export function buildToastStack(hitTestSource: HitTestSource) {
   }], {settleCheck: toastCell.settleCheck, snap: toastCell.snap}))
 
   const zero = constant(0)
-  const nextSource: Wire[] = Array.from({length: toastCell.size}, (_, wire) => wire)
+  const nextSource: Wire[] = Array.from({length: toastCell.size}, (_, wire) => circuit.source(wire))
   for (const latch of [toastCell.pressActive, toastCell.showAllActive, toastCell.snap]) nextSource[latch] = zero
   toasts.forEach((toast, index) => {
     nextSource[toast.present] = nextPresent[index]!

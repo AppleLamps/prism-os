@@ -41,7 +41,7 @@ export function buildMaskedUnrolledSpring(maximumSteps: number) {
   const cells = unrolledCells
   const circuit = new Circuit(unrolledSourceSize + maximumSteps)
   declareSpringRanges(circuit, cells)
-  const runsStep = Array.from({length: maximumSteps}, (_, index) => unrolledSourceSize + index)
+  const runsStep = Array.from({length: maximumSteps}, (_, index) => circuit.source(unrolledSourceSize + index))
   for (const bit of runsStep) circuit.assumeRange(bit, 0, 1)
   let displacement = circuit.roundAffine([[cells.position, 1], [cells.destination, -1]])
   let velocity: Wire = cells.velocity

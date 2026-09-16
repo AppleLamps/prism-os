@@ -110,7 +110,7 @@ test('signed values lower through the mixed-sign product pair', () => {
   const read = circuit.affine(
     bits.map((bit, slot) => [emitMultiply(circuit, bit, values[slot]!), 1]),
   )
-  circuit.assumeOneHot(bits)
+  circuit.assumeOneHot(bits, false, {allowExistingReaders: true})
   const {lowered} = compileBoth(circuit, [read])
   expect(gatherStatistics(lowered).readCount).toBe(1)
 
@@ -454,7 +454,7 @@ test('candidates with unbounded declared ranges are refused in every orientation
       emitMultiply(circuit, bit, 2 + item),
       1,
     ]))
-    if (!declareBitsFirst) circuit.assumeOneHot(bits)
+    if (!declareBitsFirst) circuit.assumeOneHot(bits, false, {allowExistingReaders: true})
     return {circuit, read}
   }
 

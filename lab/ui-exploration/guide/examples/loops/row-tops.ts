@@ -1,6 +1,6 @@
 // Row tops, rowTops[r] = heights[0] + ... + heights[r - 1], written three ways. Every form returns
 // rowCount + 1 wires: rowTops[0] is 0 and rowTops[rowCount] is the content height.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 
 // The plain JS loop, in FP32 like the circuit. Its accumulation order,
 // ((heights[0] + heights[1]) + heights[2]) + ..., is the order the chain and the wide sums keep.
@@ -69,7 +69,7 @@ export function emitRowTops(circuit: Circuit, heights: readonly Wire[], form: Ro
 // A circuit whose source cells are the row heights, for tests and measurements.
 export function buildRowTops(rowCount: number, form: RowTopsForm) {
   const circuit = new Circuit(rowCount)
-  const heights = Array.from({length: rowCount}, (_, row) => row)
+  const heights = Array.from({length: rowCount}, (_, row) => circuit.source(row))
   for (const height of heights) circuit.assumeRange(height, 0, 1024)
   return {circuit, heights, rowTops: emitRowTops(circuit, heights, form)}
 }
@@ -86,7 +86,7 @@ export type PrefixAddition = {
 // them. Assumes source cell r holds heights[r], as in buildRowTops. Used to print a small network.
 export function describeAdditions(circuit: Circuit): PrefixAddition[] {
   const covered = new Map<Wire, [number, number]>()
-  for (let wire = 0; wire < circuit.sourceSize; wire++) covered.set(wire, [wire, wire])
+  for (let wire = 0; wire < circuit.sourceSize; wire++) covered.set(asWire(wire), [wire, wire])
   const additions: PrefixAddition[] = []
   circuit.operations.forEach((operation, index) => {
     const operands: [number, number][] = []
@@ -97,7 +97,7 @@ export function describeAdditions(circuit: Circuit): PrefixAddition[] {
     if (operands.length === 0) return
     const firstRow = Math.min(...operands.map(([first]) => first))
     const lastRow = Math.max(...operands.map(([, last]) => last))
-    covered.set(circuit.sourceSize + index, [firstRow, lastRow])
+    covered.set(asWire(circuit.sourceSize + index), [firstRow, lastRow])
     additions.push({layer: operation.depth, operands, firstRow, lastRow})
   })
   return additions

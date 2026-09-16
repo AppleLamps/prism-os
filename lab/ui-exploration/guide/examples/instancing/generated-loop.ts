@@ -45,7 +45,7 @@ export function generatedCode() {
   const {stage} = step
   const roots = program.stageRoots(stage)
   const compiled = stage.circuit.compileTensorProgram(roots)
-  const perCardSources = stage.sourceValues.flatMap((id, wire) => program.values[id]!.axis === 'shared' ? [] : [wire])
+  const perCardSources = stage.sourceValues.flatMap((id, wire) => program.values[id]!.axis === 'shared' ? [] : [stage.circuit.source(wire)])
   const plan = planInstances(compiled, perCardSources, roots)
   const js = generateColumnInstanceModule(plan, {rowsPerFunction: 128})
   const wgsl = emitInstanceWgsl(plan, {guard: 'max', workgroupSize: 64})

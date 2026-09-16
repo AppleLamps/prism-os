@@ -109,12 +109,12 @@ export function buildMapStage<S extends string, F extends string, O extends stri
   }
   const shared = {} as Record<S, Wire>
   sharedNames.forEach((name, wire) => {
-    shared[name] = wire
-    declare(wire, sharedCells[name])
+    shared[name] = circuit.source(wire)
+    declare(shared[name], sharedCells[name])
   })
   const fields = {} as Record<F, Wire>
   fieldNames.forEach((name, position) => {
-    fields[name] = sharedNames.length + position
+    fields[name] = circuit.source(sharedNames.length + position)
     declare(fields[name], fieldCells[name])
   })
   const outputs = build(circuit, shared, fields)
@@ -193,13 +193,19 @@ export function runListStages(stages: ReturnType<typeof buildListStages>, shared
 // every row. The stages are the same builder functions, called once per row, and the prefix sum is a chain.
 export function buildDuplicatedList(rowCount: number) {
   const circuit = new Circuit(5 + 2 * rowCount)
-  const shared = {headerHeight: 0, lineHeight: 1, scrollTop: 2, viewportHeight: 3, pointerY: 4}
+  const shared = {
+    headerHeight: circuit.source(0),
+    lineHeight: circuit.source(1),
+    scrollTop: circuit.source(2),
+    viewportHeight: circuit.source(3),
+    pointerY: circuit.source(4),
+  }
   const declare = (wire: Wire, [minimum, maximum, grid]: Range) => {
     circuit.assumeRange(wire, minimum, maximum)
     circuit.assumeGrid(wire, grid)
   }
   for (const name of Object.keys(shared) as (keyof ListShared)[]) declare(shared[name], sharedRanges[name])
-  const rows = Array.from({length: rowCount}, (_, row) => ({lineCount: 5 + 2 * row, expanded: 6 + 2 * row}))
+  const rows = Array.from({length: rowCount}, (_, row) => ({lineCount: circuit.source(5 + 2 * row), expanded: circuit.source(6 + 2 * row)}))
   for (const row of rows) {
     declare(row.lineCount, rowRanges.lineCount)
     declare(row.expanded, rowRanges.expanded)

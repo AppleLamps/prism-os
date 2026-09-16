@@ -1139,7 +1139,7 @@ function compileWindowManagerCircuit() {
     sourceField.springSettleSpeedScale
 
   const photoDefinition = createPhotoGalleryCircuit()
-  const photoWireMap = inlineCircuit(circuit, photoDefinition.circuit, photoSourceWires)
+  const photoWireMap = inlineCircuit(circuit, photoDefinition.circuit, photoSourceWires, {allowExistingReaders: true})
   // Added in the copy: promised operands recorded while building Photos move onto this circuit.
   remapPromisedOperands(photoDefinition.circuit, circuit, photoWireMap)
   const mapPhotoWires = (wires: readonly Wire[]) =>

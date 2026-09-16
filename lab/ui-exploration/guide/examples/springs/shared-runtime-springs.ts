@@ -12,7 +12,7 @@
 // The other files in this folder build each piece by hand; this file uses the
 // shared helpers, and shared-runtime-springs.test.ts checks it against plain
 // float64 springs with no frames.
-import {Circuit, type SpringMatrixWires, type Wire, emitAnimatedObject, emitSelect} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type SpringMatrixWires, type Wire, asWire, emitAnimatedObject, emitSelect} from '../../../../../numeric-ui-core.ts'
 import {
   type WriteBack,
   advanceFrame,
@@ -33,7 +33,17 @@ export const rowCount = 12
 // next to its row, and the highlight's displacement from the destination in effect,
 // its velocity and that destination. The drawn top is destination + displacement,
 // which the program computes for display and doesn't store.
-export const highlightCell = {matrixStart: 0, settleCheck: 4, snap: 5, selectActive: 6, selectedRow: 7, displacement: 8, velocity: 9, destination: 10, size: 11} as const
+export const highlightCell = {
+  matrixStart: 0,
+  settleCheck: asWire(4),
+  snap: asWire(5),
+  selectActive: asWire(6),
+  selectedRow: asWire(7),
+  displacement: asWire(8),
+  velocity: asWire(9),
+  destination: asWire(10),
+  size: 11,
+} as const
 // Positions in the evaluator's output: the next-state values first, then these.
 export const highlightOutput = {top: highlightCell.size, active: highlightCell.size + 1, settled: highlightCell.size + 2} as const
 
@@ -42,7 +52,7 @@ export function buildHighlight() {
   // Every FP32 matrix entry the host writes for up to 300 steps stays within this bound.
   const bound = springMatrixBound(highlightConstants)
   const {matrixStart} = highlightCell
-  const matrix: SpringMatrixWires = [matrixStart, matrixStart + 1, matrixStart + 2, matrixStart + 3]
+  const matrix: SpringMatrixWires = [circuit.source(matrixStart), circuit.source(matrixStart + 1), circuit.source(matrixStart + 2), circuit.source(matrixStart + 3)]
   for (const entry of matrix) circuit.assumeRange(entry, -bound, bound)
   circuit.assumeRange(highlightCell.settleCheck, 0, 1)
   circuit.assumeRange(highlightCell.snap, 0, 1)
@@ -64,7 +74,7 @@ export function buildHighlight() {
     // the destination the previous evaluation wrote back.
     destinationDuringSteps: highlightCell.destination,
   }], {settleCheck: highlightCell.settleCheck, snap: highlightCell.snap})
-  const nextSource: Wire[] = Array.from({length: highlightCell.size}, (_, wire) => wire)
+  const nextSource: Wire[] = Array.from({length: highlightCell.size}, (_, wire) => circuit.source(wire))
   const zero = circuit.affine([], 0)
   nextSource[highlightCell.selectActive] = zero
   nextSource[highlightCell.snap] = zero

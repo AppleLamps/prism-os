@@ -6,7 +6,7 @@
 // Host contract: the container width is a whole number of pixels in 0..16,384, every low and high is
 // a whole number of pixels in 0..4,096, every child's low is at most its high, and there are at most
 // 64 children, so every sum below is an integer smaller than 2^23.
-import {Circuit, invariant, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 import {emitIntegerAtLeastZero} from './kit.ts'
 
 // JS reference, a plain loop that stops early. total(level) = Σ clamp(level, low, high) never
@@ -34,9 +34,9 @@ export function waterFillReference(lows: readonly number[], highs: readonly numb
 export function buildWaterFill(childCount: number) {
   invariant(childCount >= 1 && childCount <= 64, 'this example handles 1 to 64 children')
   const circuit = new Circuit(1 + 2 * childCount)
-  const containerWidth = 0
-  const lows = Array.from({length: childCount}, (_, child) => 1 + child)
-  const highs = Array.from({length: childCount}, (_, child) => 1 + childCount + child)
+  const containerWidth = circuit.source(0)
+  const lows = Array.from({length: childCount}, (_, child) => circuit.source(1 + child))
+  const highs = Array.from({length: childCount}, (_, child) => circuit.source(1 + childCount + child))
   circuit.assumeRange(containerWidth, 0, 16_384)
   for (const wire of [...lows, ...highs]) circuit.assumeRange(wire, 0, 4_096)
 
@@ -52,7 +52,7 @@ export function buildWaterFill(childCount: number) {
     const key = `${first},${second}`
     let relu = sharedRelus.get(key)
     if (relu === undefined) {
-      relu = circuit.reglu([], 1, [[first, 1], [second, -1]], 0)
+      relu = circuit.reglu([], 1, [[asWire(first), 1], [asWire(second), -1]], 0)
       sharedRelus.set(key, relu)
     }
     return a === first ? [[relu, 1]] : [[relu, 1], [a, 1], [b, -1]]
@@ -66,20 +66,20 @@ export function buildWaterFill(childCount: number) {
     const terms: [Wire, number][] = []
     for (let other = 0; other < childCount; other++) {
       if (other === child) {
-        if (pointIsHigh) terms.push([highs[child]!, 1], [lows[child]!, -1])
+        if (pointIsHigh) terms.push([asWire(highs[child]!), 1], [lows[child]!, -1])
         continue
       }
-      terms.push(...reluDifference(point, lows[other]!))
-      for (const [wire, coefficient] of reluDifference(point, highs[other]!)) terms.push([wire, -coefficient])
+      terms.push(...reluDifference(point, asWire(lows[other]!)))
+      for (const [wire, coefficient] of reluDifference(point, asWire(highs[other]!))) terms.push([wire, -coefficient])
     }
     return circuit.affine(terms)
   }
 
   // atLow[i] = [filledAt(low_i) >= excess]: the level stays at or below child i's low, so the child keeps its low.
-  const atLow = lows.map((low, child) => emitIntegerAtLeastZero(circuit, [[filledAt(low, child, false), 1], [excess, -1]], 0))
+  const atLow = lows.map((low, child) => emitIntegerAtLeastZero(circuit, [[filledAt(asWire(low), child, false), 1], [excess, -1]], 0))
   // atHigh[i] = [filledAt(high_i) <= excess] AND NOT atLow[i]: the level reaches child i's high.
   const atHigh = highs.map((high, child) => {
-    const reachesHigh = emitIntegerAtLeastZero(circuit, [[excess, 1], [filledAt(high, child, true), -1]], 0)
+    const reachesHigh = emitIntegerAtLeastZero(circuit, [[excess, 1], [filledAt(asWire(high), child, true), -1]], 0)
     const bit = circuit.reglu([], 1, [[reachesHigh, 1], [atLow[child]!, -1]], 0) // a AND NOT b = relu(a - b)
     circuit.assumeRange(bit, 0, 1)
     return bit
@@ -104,21 +104,21 @@ export function buildWaterFill(childCount: number) {
 
   // level × freeCount = excess - Σ atHigh[i] (high_i - low_i) + Σ free[i] low_i, an integer.
   const raisedToHigh = highs.map((high, child) => {
-    const span = circuit.roundAffine([[high, 1], [lows[child]!, -1]])
+    const span = circuit.roundAffine([[asWire(high), 1], [asWire(lows[child]!), -1]])
     circuit.assumeRange(span, 0, 4_096)
     return circuit.multiply(atHigh[child]!, span)
   })
   const numerator = circuit.roundAffine([
     [excess, 1],
     ...raisedToHigh.map(product => [product, -1] as const),
-    ...lows.map((low, child) => [circuit.multiply(free[child]!, low), 1] as const),
+    ...lows.map((low, child) => [circuit.multiply(free[child]!, asWire(low)), 1] as const),
   ])
   const level = circuit.multiply(numerator, reciprocal)
 
   // size[i] = low_i + atHigh[i] (high_i - low_i) + free[i] relu(level - low_i)
   const sizes = lows.map((low, child) => {
-    const share = circuit.reglu([[free[child]!, 1]], 0, [[level, 1], [low, -1]], 0)
-    return circuit.roundAffine([[low, 1], [raisedToHigh[child]!, 1], [share, 1]])
+    const share = circuit.reglu([[free[child]!, 1]], 0, [[level, 1], [asWire(low), -1]], 0)
+    return circuit.roundAffine([[asWire(low), 1], [raisedToHigh[child]!, 1], [share, 1]])
   })
   return {circuit, containerWidth, lows, highs, atLow, atHigh, free, level, sizes}
 }

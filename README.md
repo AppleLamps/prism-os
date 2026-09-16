@@ -8,6 +8,7 @@ bun run start:candidates
 bun run start:hard-attend
 bun run start:learning
 bun run start:reusable
+bun run start:template
 bun lab/ui-exploration/serve-demos.ts
 bun run test
 bun run check
@@ -50,12 +51,14 @@ Builder functions, also called macros, e.g. `emitMinimum` (3 operations) or `emi
 
 Independent instructions share a layer, and today's executor is serial JavaScript on the CPU ([execution-model.md](execution-model.md#compilation)). `bun lab/runtime-cost/report.ts` reports current program sizes and CPU costs; old size and timing tables don't apply to a changed program.
 
-Reading list: start with this README, expressions.md, patterns.md, behavior-choices.md, and [lab/status.md](lab/status.md) for current results, known issues and open decisions. Implementers and agents continue with execution-model.md, macro-ranges.md, [the guide](lab/ui-exploration/guide/README.md), and the lab READMEs.
+Reading list: start with this README, [tutorial.md](tutorial.md), expressions.md, patterns.md, behavior-choices.md, and [lab/status.md](lab/status.md) for current results, known issues and open decisions. Implementers and agents continue with execution-model.md, macro-ranges.md, [the guide](lab/ui-exploration/guide/README.md), and the lab READMEs.
 
 ## Files
 
 - `numeric-ui-core.ts`: circuit construction, compilation, and execution
 - `host-timing.ts`: frame timing, spring step counts and matrices, and the evaluations between frames, computed in host JavaScript
+- `cells.ts`: cell declarations, which give each cell its position in the source table, the circuit's declarations, the initial table, a validator, and next values for write-back
+- `template/`, `tutorial.md`: a toggle switch to start an app from, checked against plain JavaScript, and a walkthrough of it
 - `index-read.test.ts`, `comparison.test.ts`, `spring-matrix.test.ts`: tests for index reads, exact comparisons, and springs whose matrix the host writes
 - `index.html`, `window-manager.ts`: IndirectOS page, circuit and DOM projection
 - `photo-gallery.ts`: Photos circuit and DOM projection

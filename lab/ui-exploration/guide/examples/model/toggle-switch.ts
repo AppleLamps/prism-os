@@ -5,7 +5,7 @@
 // (~/github/vibescript/docs/ui.md): layout and cursor, handle inputs, animation tick, commit state, DOM writes.
 // toggle-switch-reference.ts is the same app as plain JavaScript, and toggle-switch.test.ts runs both over
 // toggle-switch-trace.ts. Nothing in this file runs at import.
-import {Circuit, type Wire, emitMinimum, emitSelect, emitSpring, invariant} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire, emitMinimum, emitSelect, emitSpring, invariant} from '../../../../../numeric-ui-core.ts'
 import {emitAll, emitAtLeast, emitClampZeroOne, emitConstant, emitNot} from './helpers.ts'
 
 export const layout = {trackWidth: 52, trackHeight: 32, thumbInset: 4, maxFrameDuration: 32} as const
@@ -29,7 +29,7 @@ export function buildToggleSwitch() {
   const specs: CellSpec[] = []
   const cell = (name: string, policy: CellPolicy, minimum: number, maximum: number, initial = 0, exactBit = false): Wire => {
     specs.push({name, policy, minimum, maximum, initial, exactBit})
-    return specs.length - 1
+    return asWire(specs.length - 1)
   }
   const open = Number.POSITIVE_INFINITY
   const cells = {
@@ -56,7 +56,7 @@ export function buildToggleSwitch() {
     thumbVelocity: cell('thumbVelocity', 'state', -open, open),
   }
   const circuit = new Circuit(specs.length)
-  for (const [wire, spec] of specs.entries()) circuit.assumeRange(wire, spec.minimum, spec.maximum)
+  for (const [wire, spec] of specs.entries()) circuit.assumeRange(asWire(wire), spec.minimum, spec.maximum)
   const unit = emitConstant(circuit, 1)
   const zero = emitConstant(circuit, 0)
 
@@ -101,7 +101,7 @@ export function buildToggleSwitch() {
 
   // Commit state: one next value per cell. Inputs keep their value, event latches go back to 0, and every state cell
   // must receive a wire.
-  const nextSource: Wire[] = specs.map((spec, wire) => spec.policy === 'event' ? zero : wire)
+  const nextSource: Wire[] = specs.map((spec, wire) => spec.policy === 'event' ? zero : circuit.source(wire))
   nextSource[cells.on] = nextOn
   nextSource[cells.armed] = nextArmed
   nextSource[cells.thumbPosition] = thumb.position

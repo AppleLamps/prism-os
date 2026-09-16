@@ -7,14 +7,15 @@ import {seededRandom} from './frame-rate-check.ts'
 // 1. A declared range only affects operations created after the declaration.
 // multiply(value, timestep) is one ReLU-gated product when the timestep's range
 // is already declared nonnegative, and three operations (two ReLU-gated products
-// and their difference) when it isn't.
+// and their difference) when it isn't. The builder refuses the late declaration
+// unless it's passed {allowExistingReaders: true}.
 export function buildProduct(declareTimestepRange: 'before the product' | 'after the product') {
   const circuit = new Circuit(2)
-  const value = 0
-  const timestep = 1
+  const value = circuit.source(0)
+  const timestep = circuit.source(1)
   if (declareTimestepRange === 'before the product') circuit.assumeRange(timestep, 0, 0.032)
   const product = circuit.multiply(value, timestep)
-  if (declareTimestepRange === 'after the product') circuit.assumeRange(timestep, 0, 0.032)
+  if (declareTimestepRange === 'after the product') circuit.assumeRange(timestep, 0, 0.032, {allowExistingReaders: true})
   return {circuit, product, size: measureProgram(circuit, [product])}
 }
 
@@ -26,11 +27,11 @@ export function buildWeightedSum(firstProduct: 'left' | 'right') {
   let left: Wire
   let right: Wire
   if (firstProduct === 'left') {
-    left = circuit.multiply(0, 1)
-    right = circuit.multiply(2, 3)
+    left = circuit.multiply(circuit.source(0), circuit.source(1))
+    right = circuit.multiply(circuit.source(2), circuit.source(3))
   } else {
-    right = circuit.multiply(2, 3)
-    left = circuit.multiply(0, 1)
+    right = circuit.multiply(circuit.source(2), circuit.source(3))
+    left = circuit.multiply(circuit.source(0), circuit.source(1))
   }
   const sum = circuit.affine([[left, 0.1], [right, 0.7]], 0.3)
   return {circuit, sum}

@@ -11,31 +11,31 @@
 // Every form adds exact quarter-pixel heights exactly. With fractional
 // heights, the chain and the triangle take the same FP32 steps as a plain
 // sequential loop, and the networks take their own steps.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
 
 export type PrefixCircuit = {circuit: Circuit, rowBottoms: Wire[]}
 
 function createHeightCircuit(rowCount: number): Circuit {
   const circuit = new Circuit(rowCount)
-  for (let row = 0; row < rowCount; row++) circuit.assumeRange(row, 0, 1024)
+  for (let row = 0; row < rowCount; row++) circuit.assumeRange(asWire(row), 0, 1024)
   return circuit
 }
 
 export function buildChain(rowCount: number): PrefixCircuit {
   const circuit = createHeightCircuit(rowCount)
-  const rowBottoms: Wire[] = [0]
+  const rowBottoms: Wire[] = [asWire(0)]
   for (let row = 1; row < rowCount; row++) {
-    rowBottoms.push(circuit.roundAffine([[rowBottoms[row - 1]!, 1], [row, 1]]))
+    rowBottoms.push(circuit.roundAffine([[rowBottoms[row - 1]!, 1], [asWire(row), 1]]))
   }
   return {circuit, rowBottoms}
 }
 
 export function buildTriangle(rowCount: number): PrefixCircuit {
   const circuit = createHeightCircuit(rowCount)
-  const rowBottoms: Wire[] = [0]
+  const rowBottoms: Wire[] = [asWire(0)]
   for (let row = 1; row < rowCount; row++) {
     rowBottoms.push(circuit.roundAffine(
-      Array.from({length: row + 1}, (_, earlier): [Wire, number] => [earlier, 1]),
+      Array.from({length: row + 1}, (_, earlier): [Wire, number] => [asWire(earlier), 1]),
     ))
   }
   return {circuit, rowBottoms}
@@ -43,9 +43,9 @@ export function buildTriangle(rowCount: number): PrefixCircuit {
 
 export function buildOrdinaryAffineChain(rowCount: number): PrefixCircuit {
   const circuit = createHeightCircuit(rowCount)
-  const rowBottoms: Wire[] = [0]
+  const rowBottoms: Wire[] = [asWire(0)]
   for (let row = 1; row < rowCount; row++) {
-    rowBottoms.push(circuit.affine([[rowBottoms[row - 1]!, 1], [row, 1]]))
+    rowBottoms.push(circuit.affine([[rowBottoms[row - 1]!, 1], [asWire(row), 1]]))
   }
   return {circuit, rowBottoms}
 }
@@ -87,7 +87,7 @@ export function koggeStoneNetwork(rowCount: number): PrefixNetwork {
 
 export function buildNetwork(rowCount: number, network: PrefixNetwork): PrefixCircuit {
   const circuit = createHeightCircuit(rowCount)
-  const totals: Wire[] = Array.from({length: rowCount}, (_, row) => row)
+  const totals: Wire[] = Array.from({length: rowCount}, (_, row) => circuit.source(row))
   for (const level of network) {
     const previous = [...totals]
     for (const [target, left] of level) {

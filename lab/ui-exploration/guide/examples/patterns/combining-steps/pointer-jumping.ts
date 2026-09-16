@@ -55,7 +55,7 @@ export type LineStartsForm = 'walk' | 'pointer jumping'
 // nextStart[segmentCount - 1] must be segmentCount, as greedy line breaking gives.
 export function buildLineStarts(segmentCount: number, lineSlots: number, form: LineStartsForm) {
   const circuit = new Circuit(segmentCount)
-  const nextStart = Array.from({length: segmentCount}, (_, segment) => segment)
+  const nextStart = Array.from({length: segmentCount}, (_, segment) => circuit.source(segment))
   for (const cell of nextStart) circuit.assumeRange(cell, 1, segmentCount)
   // Position segmentCount lies past the table and clamps to the last segment, whose
   // next start is always segmentCount, so no past-the-end entry is needed.

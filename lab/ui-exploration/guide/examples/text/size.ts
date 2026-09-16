@@ -10,7 +10,7 @@ export type ProgramSize = {
   trackedOperations: number
 }
 
-export function programSize(circuit: Circuit, roots: readonly Wire[], trackedWires: ReadonlySet<Wire> = new Set()): ProgramSize {
+export function programSize(circuit: Circuit, roots: readonly Wire[], trackedWires: ReadonlySet<number> = new Set()): ProgramSize {
   const program = circuit.compileTensorProgram(roots)
   let storedWeights = 0
   let gatherReads = 0

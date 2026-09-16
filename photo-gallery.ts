@@ -1,5 +1,5 @@
 import {
-  Circuit,
+  type Circuit,
   type SpringMatrixWires,
   type Wire,
   assertFiniteValues,
@@ -30,6 +30,22 @@ import {
   springStepMatrix,
   stoppedSpringClock,
 } from './host-timing.ts'
+import {
+  type CellWires,
+  type SourceTable,
+  anyNumber,
+  constant,
+  createSourceTable,
+  event,
+  fieldIndices,
+  input,
+  inputBit,
+  list,
+  oneHot,
+  state,
+  stateBit,
+  unitInterval,
+} from './cells.ts'
 
 export const itemCount = 12
 export const columnCount = 4
@@ -38,44 +54,124 @@ export const rowCount = 3
 // Thumbnails and IndirectOS's windows share these constants, so one spring matrix
 // serves both.
 export const springConstants: SpringConstants = {stiffness: 650, damping: 45}
+// Every FP32 matrix entry the host writes for up to 300 steps stays within this
+// bound.
+const matrixBound = springMatrixBound(springConstants)
 
 // Per thumbnail: each spring's displacement from the destination in effect, its
 // velocity, and that destination. The drawn value is destination + displacement,
-// which the program computes and doesn't store.
-export const thumbnailSpringField = {
-  centerXDisplacement: 0,
-  centerXVelocity: 1,
-  centerXDestination: 2,
-  scaleDisplacement: 3,
-  scaleVelocity: 4,
-  scaleDestination: 5,
-  size: 6,
-} as const
+// which the program computes and doesn't store. Displacements and velocities need
+// no declared range. The destinations written back are this evaluation's thumbnail
+// targets. A target center is the viewport's middle plus at most about 232 px
+// either way, so -16,384..32,768 holds it for any viewport within 0..16,384.
+const thumbnailSpringCells = {
+  centerXDisplacement: state(anyNumber),
+  centerXVelocity: state(anyNumber),
+  centerXDestination: state([-16_384, 32_768]),
+  scaleDisplacement: state(anyNumber),
+  scaleVelocity: state(anyNumber),
+  scaleDestination: state(unitInterval),
+}
 
-export const sourceField = {
-  viewportWidth: 0,
-  viewportHeight: 1,
-  gap: 2,
-  mainInset: 3,
-  thumbnailHeight: 4,
-  controlSize: 5,
-  clickActive: 6,
-  clickX: 7,
-  clickY: 8,
-  previousActive: 9,
-  nextActive: 10,
-  closeActive: 11,
-  focusStart: 12,
-  present: 24,
-  interactive: 25,
-  unit: 26,
+// Photos' own cells. A host declares them once, e.g. nested as {photos: photoCells}
+// in IndirectOS, adds the rule for photoEvents, and passes the cells' wires to
+// buildPhotos.
+export const photoCells = {
+  // Spacing and control-size constants live in the tens of pixels; 1024 is
+  // generous.
+  gap: constant(18, [0, 1024]),
+  mainInset: constant(92, [0, 1024]),
+  thumbnailHeight: constant(82, [0, 1024]),
+  controlSize: constant(52, [0, 1024]),
+  // x and y are in the host's coordinates, e.g. IndirectOS's viewport coordinates.
+  // The host passes buildPhotos the click position relative to Photos' content box.
+  click: {active: event(), x: input(anyNumber), y: input(anyNumber)},
+  previous: event(),
+  next: event(),
+  close: event(),
+  // The open photo, or none while the grid shows.
+  focus: oneHot(list(itemCount, () => stateBit()), {allowAllZero: true, declareToCircuit: false}),
+  thumbnails: list(itemCount, () => thumbnailSpringCells),
+}
+type PhotoCells = CellWires<typeof photoCells>
+
+// Photos' event cells. A later event within one evaluation replaces an earlier one,
+// so at most one of them is 1, e.g. table.atMostOne('photos events',
+// photoEvents(cells.photos)).
+export function photoEvents(cells: PhotoCells) {
+  return [cells.click.active, cells.previous, cells.next, cells.close]
+}
+
+const {thumbnails: thumbnailCells, ...photoCellsBeforeThumbnails} = photoCells
+// Photos on its own, with the cells that a host otherwise provides: the viewport,
+// how visible Photos is, whether Photos takes events, the unit, and what advanceFrame
+// plans. The table keeps the layout it had before Photos became a component, with
+// these cells between the focus cells and the thumbnails.
+const photoGalleryCells = {
+  viewportWidth: input([0, 16_384]),
+  viewportHeight: input([0, 16_384]),
+  ...photoCellsBeforeThumbnails,
+  present: input(unitInterval, {initial: 1}),
+  interactive: inputBit(1),
+  unit: constant(1, [1, 1]),
   // The spring matrix, settle check bit and snap bit that the host writes before
   // each evaluation, see advanceFrame in host-timing.ts.
-  springMatrixStart: 27,
-  settleCheck: 31,
-  snap: 32,
-  thumbnailSpringStart: 33,
-  size: 33 + itemCount * thumbnailSpringField.size,
+  springMatrix: [
+    state([-matrixBound, matrixBound], {initial: 1}),
+    state([-matrixBound, matrixBound]),
+    state([-matrixBound, matrixBound]),
+    state([-matrixBound, matrixBound], {initial: 1}),
+  ] as const,
+  settleCheck: stateBit(),
+  snap: stateBit(),
+  thumbnails: thumbnailCells,
+}
+
+// The standalone table's cell positions under their earlier names, e.g.
+// sourceField.clickX is the position of click.x, and
+// thumbnailSpringField.centerXDestination is the index of centerXDestination within
+// one thumbnail's spring cells.
+const layout = createSourceTable()
+const positions = layout.declare(photoGalleryCells)
+
+export const thumbnailSpringField = fieldIndices(thumbnailSpringCells)
+
+export const sourceField = {
+  viewportWidth: positions.viewportWidth,
+  viewportHeight: positions.viewportHeight,
+  gap: positions.gap,
+  mainInset: positions.mainInset,
+  thumbnailHeight: positions.thumbnailHeight,
+  controlSize: positions.controlSize,
+  clickActive: positions.click.active,
+  clickX: positions.click.x,
+  clickY: positions.click.y,
+  previousActive: positions.previous,
+  nextActive: positions.next,
+  closeActive: positions.close,
+  focusStart: positions.focus[0]!,
+  present: positions.present,
+  interactive: positions.interactive,
+  unit: positions.unit,
+  springMatrixStart: positions.springMatrix[0],
+  settleCheck: positions.settleCheck,
+  snap: positions.snap,
+  thumbnailSpringStart: positions.thumbnails[0]!.centerXDisplacement,
+  size: layout.size,
+}
+
+export function focusField(item: number) {
+  invariant(Number.isInteger(item) && item >= 0 && item < itemCount, 'photo index is invalid')
+  return positions.focus[item]!
+}
+
+export function thumbnailSpringSourceField(item: number, field: number) {
+  invariant(Number.isInteger(item) && item >= 0 && item < itemCount, 'photo index is invalid')
+  invariant(
+    Number.isInteger(field) && field >= 0 && field < thumbnailSpringField.size,
+    'thumbnail spring field is invalid',
+  )
+  return Object.values(positions.thumbnails[item]!)[field]!
 }
 
 export const photoField = {
@@ -100,12 +196,6 @@ export const controlField = {
 }
 
 const geometryFields = ['left', 'top', 'width', 'height'] as const
-const eventFields = [
-  sourceField.clickActive,
-  sourceField.previousActive,
-  sourceField.nextActive,
-  sourceField.closeActive,
-] as const
 
 type Geometry = Record<(typeof geometryFields)[number], Wire>
 
@@ -120,14 +210,32 @@ type ThumbnailTarget = {
   focused: Wire
 }
 
-export type PhotoGalleryOutput = {
-  nextSource: Wire[]
+// What buildPhotos returns, e.g. IndirectOS's output.photos.
+export type PhotoOutputs = {
   backdropOpacity: Wire
   animationActive: Wire
   photos: Wire[]
   thumbnails: Wire[]
   previousControl: Wire[]
   nextControl: Wire[]
+}
+
+// The standalone gallery's outputs, with the wire that holds each cell's next value.
+export type PhotoGalleryOutput = PhotoOutputs & {nextSource: Wire[]}
+
+// The host's wires that Photos reads: the content box's size, the click position
+// relative to the content box, how visible Photos is, whether Photos takes events,
+// the unit, and what advanceFrame plans.
+type PhotoHost = {
+  viewportWidth: Wire
+  viewportHeight: Wire
+  click: {x: Wire, y: Wire}
+  present: Wire
+  interactive: Wire
+  unit: Wire
+  springMatrix: SpringMatrixWires
+  settleCheck: Wire
+  snap: Wire
 }
 
 const photoNames = [
@@ -145,93 +253,49 @@ const photoNames = [
   'Autumn Road',
 ] as const
 
-export function focusField(item: number) {
-  return sourceField.focusStart + item
-}
-
-export function thumbnailSpringSourceField(item: number, field: number) {
-  invariant(Number.isInteger(item) && item >= 0 && item < itemCount, 'photo index is invalid')
-  invariant(
-    Number.isInteger(field) && field >= 0 && field < thumbnailSpringField.size,
-    'thumbnail spring field is invalid',
-  )
-  return sourceField.thumbnailSpringStart + item * thumbnailSpringField.size + field
-}
-
-export function createPhotoGalleryCircuit() {
-  const circuit = new Circuit(sourceField.size)
-  // Pixel-space sources carry an honest finite ceiling: 16384 covers the
-  // largest real displays (8K is 7680 wide) with headroom while staying far
-  // inside FP32's exact-integer band (macro-ranges.md keeps operands well
-  // under 2^23). Finite bounds also make the geometry eligible for gather
-  // lowering, and when this circuit is inlined into the window manager the
-  // bounds become contracts on the window content dimensions, which are
-  // clamped to the viewport and so honor them.
-  circuit.assumeRange(sourceField.viewportWidth, 0, 16_384)
-  circuit.assumeRange(sourceField.viewportHeight, 0, 16_384)
-  // Spacing and control-size constants live in the tens of pixels; 1024 is
-  // generous.
-  for (const field of [
-    sourceField.gap,
-    sourceField.mainInset,
-    sourceField.thumbnailHeight,
-    sourceField.controlSize,
-  ]) {
-    circuit.assumeRange(field, 0, 1024)
-  }
-  for (const field of eventFields) circuit.assumeRange(field, 0, 1)
-  circuit.assumeRange(sourceField.present, 0, 1)
-  circuit.assumeRange(sourceField.interactive, 0, 1)
-  circuit.assumeRange(sourceField.unit, 1, 1)
-  // Every FP32 matrix entry the host writes for up to 300 steps stays within this
-  // bound.
-  const matrixBound = springMatrixBound(springConstants)
-  for (let entry = 0; entry < 4; entry++) {
-    circuit.assumeRange(sourceField.springMatrixStart + entry, -matrixBound, matrixBound)
-  }
-  circuit.assumeRange(sourceField.settleCheck, 0, 1)
-  circuit.assumeRange(sourceField.snap, 0, 1)
-  for (let item = 0; item < itemCount; item++) circuit.assumeRange(focusField(item), 0, 1)
-  for (let item = 0; item < itemCount; item++) {
-    // The destinations written back are this evaluation's thumbnail targets. A
-    // target center is the viewport's middle plus at most about 232 px either
-    // way, so -16,384..32,768 holds it for any viewport within 0..16,384.
-    // Displacements and velocities need no declared range.
-    circuit.assumeRange(
-      thumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination),
-      -16_384,
-      32_768,
-    )
-    circuit.assumeRange(
-      thumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination),
-      0,
-      1,
-    )
-  }
-  const zero = circuit.affine([])
+// Builds Photos into the host's circuit, pairs Photos' state cells with their next
+// values, and returns Photos' outputs.
+export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCells, host: PhotoHost): PhotoOutputs {
+  // The ranges that Photos assumes of the host's wires. Pixel-space sizes carry an
+  // honest finite ceiling: 16384 covers the largest real displays (8K is 7680 wide)
+  // with headroom while staying far inside FP32's exact-integer band
+  // (macro-ranges.md keeps operands well under 2^23). Finite bounds also make the
+  // geometry eligible for gather lowering. In IndirectOS, the bounds are contracts on
+  // the window's content size, which is clamped to the viewport and so honors them.
+  circuit.assumeRange(host.viewportWidth, 0, 16_384)
+  circuit.assumeRange(host.viewportHeight, 0, 16_384)
+  circuit.assumeRange(host.present, 0, 1)
+  circuit.assumeRange(host.interactive, 0, 1)
+  circuit.assumeRange(host.unit, 1, 1)
+  for (const entry of host.springMatrix) circuit.assumeRange(entry, -matrixBound, matrixBound)
+  circuit.assumeRange(host.settleCheck, 0, 1)
+  circuit.assumeRange(host.snap, 0, 1)
+  const {viewportWidth, viewportHeight, click, present, interactive, unit} = host
+  const events = photoEvents(cells)
+  const zero = circuit.constant(0)
   const gridWidth = emitRelu(
     circuit,
     circuit.affine([
-      [sourceField.viewportWidth, 1 / columnCount],
-      [sourceField.gap, -(columnCount + 1) / columnCount],
+      [viewportWidth, 1 / columnCount],
+      [cells.gap, -(columnCount + 1) / columnCount],
     ]),
   )
   const gridHeight = emitRelu(
     circuit,
     circuit.affine([
-      [sourceField.viewportHeight, 1 / rowCount],
-      [sourceField.gap, -(rowCount + 1) / rowCount],
+      [viewportHeight, 1 / rowCount],
+      [cells.gap, -(rowCount + 1) / rowCount],
     ]),
   )
 
   const gridLeft = Array.from({length: columnCount}, (_, column) =>
-    circuit.affine([[sourceField.gap, 1 + column], [gridWidth, column]]))
+    circuit.affine([[cells.gap, 1 + column], [gridWidth, column]]))
   const gridTop = Array.from({length: rowCount}, (_, row) =>
-    circuit.affine([[sourceField.gap, 1 + row], [gridHeight, row]]))
+    circuit.affine([[cells.gap, 1 + row], [gridHeight, row]]))
   const gridColumnHit = gridLeft.map(left =>
-    emitIntervalHit(circuit, sourceField.clickX, left, gridWidth))
+    emitIntervalHit(circuit, click.x, left, gridWidth))
   const gridRowHit = gridTop.map(top =>
-    emitIntervalHit(circuit, sourceField.clickY, top, gridHeight))
+    emitIntervalHit(circuit, click.y, top, gridHeight))
   const gridHit: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
     const column = item % columnCount
@@ -241,58 +305,58 @@ export function createPhotoGalleryCircuit() {
 
   const thumbnailBaseSize = emitMinimum(
     circuit,
-    sourceField.thumbnailHeight,
+    cells.thumbnailHeight,
     emitMinimum(
       circuit,
-      circuit.affine([[sourceField.viewportWidth, 1 / 6]]),
-      circuit.affine([[sourceField.viewportHeight, 0.24]]),
+      circuit.affine([[viewportWidth, 1 / 6]]),
+      circuit.affine([[viewportHeight, 0.24]]),
     ),
   )
   const mainInset = emitMinimum(
     circuit,
-    sourceField.mainInset,
-    circuit.affine([[sourceField.viewportWidth, 0.08]]),
+    cells.mainInset,
+    circuit.affine([[viewportWidth, 0.08]]),
   )
   const main: Geometry = {
     left: mainInset,
-    top: sourceField.gap,
+    top: cells.gap,
     width: emitRelu(circuit, circuit.affine([
-      [sourceField.viewportWidth, 1],
+      [viewportWidth, 1],
       [mainInset, -2],
     ])),
     height: emitRelu(circuit, circuit.affine([
-      [sourceField.viewportHeight, 1],
+      [viewportHeight, 1],
       [thumbnailBaseSize, -1],
-      [sourceField.gap, -3],
+      [cells.gap, -3],
     ])),
   }
-  const mainHit = emitRectangleHit(circuit, main)
+  const mainHit = emitRectangleHit(circuit, click, main)
 
-  const previousFocus = Array.from({length: itemCount}, (_, item) => focusField(item))
+  const previousFocus = Array.from({length: itemCount}, (_, item) => cells.focus[item]!)
   const previousFocusMass = circuit.affine(previousFocus.map(wire => [wire, 1]))
   circuit.assumeRange(previousFocusMass, 0, 1)
   const previousGridMass = circuit.affine([[previousFocusMass, -1]], 1)
 
   const thumbnailOuterInset = emitMinimum(
     circuit,
-    sourceField.gap,
-    circuit.affine([[sourceField.viewportWidth, 0.5]]),
+    cells.gap,
+    circuit.affine([[viewportWidth, 0.5]]),
   )
   const thumbnailImageSpan = circuit.affine([
     [thumbnailBaseSize, thumbnailFalloffMass()],
   ])
   const thumbnailGap = emitMinimum(
     circuit,
-    circuit.affine([], 12),
+    circuit.constant(12),
     emitRelu(circuit, circuit.affine([
-      [sourceField.viewportWidth, 1 / 8],
+      [viewportWidth, 1 / 8],
       [thumbnailOuterInset, -2 / 8],
       [thumbnailImageSpan, -1 / 8],
     ])),
   )
   const thumbnailCenterY = circuit.affine([
-    [sourceField.viewportHeight, 1],
-    [sourceField.gap, -1],
+    [viewportHeight, 1],
+    [cells.gap, -1],
     [thumbnailBaseSize, -0.5],
   ])
   function projectThumbnailTargets(focus: readonly Wire[], focusMass: Wire) {
@@ -324,7 +388,7 @@ export function createPhotoGalleryCircuit() {
         [distance, -0.22],
       ]))
       const centerX = circuit.affine([
-        [sourceField.viewportWidth, 0.5],
+        [viewportWidth, 0.5],
         [emitMultiply(circuit, thumbnailBaseSize, spread), 1],
         [emitMultiply(circuit, thumbnailGap, offset), 1],
       ])
@@ -338,7 +402,7 @@ export function createPhotoGalleryCircuit() {
   }
 
   function projectThumbnail(target: ThumbnailTarget): PhotoProjection {
-    const visibleScale = emitMultiply(circuit, sourceField.present, target.scale)
+    const visibleScale = emitMultiply(circuit, present, target.scale)
     const size = emitMultiply(circuit, thumbnailBaseSize, visibleScale)
     return {
       left: circuit.affine([[target.centerX, 1], [size, -0.5]]),
@@ -353,42 +417,42 @@ export function createPhotoGalleryCircuit() {
   const currentThumbnailTargets = projectThumbnailTargets(previousFocus, previousFocusMass)
   const thumbnailHit: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
-    thumbnailHit.push(emitRectangleHit(circuit, projectThumbnail(currentThumbnailTargets[item]!)))
+    thumbnailHit.push(emitRectangleHit(circuit, click, projectThumbnail(currentThumbnailTargets[item]!)))
   }
 
   const controlTop = emitRelu(circuit, circuit.affine([
-    [sourceField.gap, 1],
+    [cells.gap, 1],
     [main.height, 0.5],
-    [sourceField.controlSize, -0.5],
+    [cells.controlSize, -0.5],
   ]))
-  const controlInset = circuit.affine([[sourceField.gap, 0.5]])
+  const controlInset = circuit.affine([[cells.gap, 0.5]])
   const previousControl: Geometry = {
     left: controlInset,
     top: controlTop,
-    width: sourceField.controlSize,
-    height: sourceField.controlSize,
+    width: cells.controlSize,
+    height: cells.controlSize,
   }
   const nextControl: Geometry = {
     left: emitRelu(circuit, circuit.affine([
-      [sourceField.viewportWidth, 1],
+      [viewportWidth, 1],
       [controlInset, -1],
-      [sourceField.controlSize, -1],
+      [cells.controlSize, -1],
     ])),
     top: controlTop,
-    width: sourceField.controlSize,
-    height: sourceField.controlSize,
+    width: cells.controlSize,
+    height: cells.controlSize,
   }
   const controlVerticalHit = emitIntervalHit(
     circuit,
-    sourceField.clickY,
+    click.y,
     controlTop,
-    sourceField.controlSize,
+    cells.controlSize,
   )
   const previousControlHit = emitMinimum(
     circuit,
     emitIntervalHit(
       circuit,
-      sourceField.clickX,
+      click.x,
       previousControl.left,
       previousControl.width,
     ),
@@ -398,15 +462,15 @@ export function createPhotoGalleryCircuit() {
     circuit,
     emitIntervalHit(
       circuit,
-      sourceField.clickX,
+      click.x,
       nextControl.left,
       nextControl.width,
     ),
     controlVerticalHit,
   )
 
-  const effectiveEvents = eventFields.map(wire =>
-    emitMultiply(circuit, sourceField.interactive, wire))
+  const effectiveEvents = events.map(wire =>
+    emitMultiply(circuit, interactive, wire))
   const eventMass = circuit.affine(effectiveEvents.map(wire => [wire, 1]))
   circuit.assumeRange(eventMass, 0, 1)
   const eventInactive = circuit.affine([[eventMass, -1]], 1)
@@ -461,17 +525,10 @@ export function createPhotoGalleryCircuit() {
   const animateThumbnails = emitMultiply(circuit, previousFocusMass, nextFocusMass)
   const snapThumbnails = emitClampZeroOne(
     circuit,
-    circuit.affine([[animateThumbnails, -1], [sourceField.snap, 1]], 1),
+    circuit.affine([[animateThumbnails, -1], [host.snap, 1]], 1),
   )
-  const springMatrix: SpringMatrixWires = [
-    sourceField.springMatrixStart,
-    sourceField.springMatrixStart + 1,
-    sourceField.springMatrixStart + 2,
-    sourceField.springMatrixStart + 3,
-  ]
   const thumbnailProjections: PhotoProjection[] = []
   const thumbnailActivityTerms: [Wire, number][] = []
-  const nextThumbnailSprings: Wire[][] = []
   for (let item = 0; item < itemCount; item++) {
     const target = thumbnailTargets[item]!
     // centerX and scale settle together. The steps simulate time before this
@@ -479,40 +536,40 @@ export function createPhotoGalleryCircuit() {
     // evaluation wrote back.
     const thumbnail = emitAnimatedObject(circuit, [
       {
-        matrix: springMatrix,
-        displacement: thumbnailSpringSourceField(item, thumbnailSpringField.centerXDisplacement),
-        velocity: thumbnailSpringSourceField(item, thumbnailSpringField.centerXVelocity),
+        matrix: host.springMatrix,
+        displacement: cells.thumbnails[item]!.centerXDisplacement,
+        velocity: cells.thumbnails[item]!.centerXVelocity,
         destination: target.centerX,
-        destinationDuringSteps: thumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination),
+        destinationDuringSteps: cells.thumbnails[item]!.centerXDestination,
       },
       {
-        matrix: springMatrix,
-        displacement: thumbnailSpringSourceField(item, thumbnailSpringField.scaleDisplacement),
-        velocity: thumbnailSpringSourceField(item, thumbnailSpringField.scaleVelocity),
+        matrix: host.springMatrix,
+        displacement: cells.thumbnails[item]!.scaleDisplacement,
+        velocity: cells.thumbnails[item]!.scaleVelocity,
         destination: target.scale,
-        destinationDuringSteps: thumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination),
+        destinationDuringSteps: cells.thumbnails[item]!.scaleDestination,
       },
-    ], {settleCheck: sourceField.settleCheck, snap: snapThumbnails})
+    ], {settleCheck: host.settleCheck, snap: snapThumbnails})
     // Clamped only where drawn, e.g. a scale that undershoots 0 while springing
     // keeps its stored displacement.
     const centerX = emitMinimum(
       circuit,
       emitMaximum(circuit, zero, thumbnail.positions[0]!),
-      sourceField.viewportWidth,
+      viewportWidth,
     )
     const scale = emitMinimum(
       circuit,
       emitMaximum(circuit, zero, thumbnail.positions[1]!),
-      sourceField.unit,
+      unit,
     )
-    nextThumbnailSprings.push([
-      thumbnail.displacements[0]!,
-      thumbnail.velocities[0]!,
-      target.centerX,
-      thumbnail.displacements[1]!,
-      thumbnail.velocities[1]!,
-      target.scale,
-    ])
+    table.next(cells.thumbnails[item]!, {
+      centerXDisplacement: thumbnail.displacements[0]!,
+      centerXVelocity: thumbnail.velocities[0]!,
+      centerXDestination: target.centerX,
+      scaleDisplacement: thumbnail.displacements[1]!,
+      scaleVelocity: thumbnail.velocities[1]!,
+      scaleDestination: target.scale,
+    })
     thumbnailProjections.push(projectThumbnail({
       centerX,
       scale,
@@ -539,57 +596,67 @@ export function createPhotoGalleryCircuit() {
       height: project(projectedGridHeight, main.height),
       opacity: emitMultiply(
         circuit,
-        sourceField.present,
+        present,
         circuit.affine([[nextGridMass, 1], [thisFocused, 1]]),
       ),
       focused: thisFocused,
     })
   }
 
-  const nextSource = Array.from({length: sourceField.size}, (_, field) => field)
-  for (const eventField of eventFields) nextSource[eventField] = zero
-  // The stored table holds the identity matrix and no settle check or snap, so
-  // evaluating it directly runs 0 steps.
-  nextSource[sourceField.springMatrixStart] = sourceField.unit
-  nextSource[sourceField.springMatrixStart + 1] = zero
-  nextSource[sourceField.springMatrixStart + 2] = zero
-  nextSource[sourceField.springMatrixStart + 3] = sourceField.unit
-  nextSource[sourceField.settleCheck] = zero
-  nextSource[sourceField.snap] = zero
-  for (let item = 0; item < itemCount; item++) {
-    nextSource[focusField(item)] = nextFocus[item]!
-    const spring = nextThumbnailSprings[item]!
-    for (let field = 0; field < thumbnailSpringField.size; field++) {
-      nextSource[thumbnailSpringSourceField(item, field)] = spring[field]!
-    }
-  }
+  table.next(cells.focus, nextFocus)
   const previousControlOutput = [
     previousControl.left,
     previousControl.top,
     previousControl.width,
     previousControl.height,
-    emitMultiply(circuit, sourceField.present, nextFocusMass),
+    emitMultiply(circuit, present, nextFocusMass),
   ]
   const nextControlOutput = [
     nextControl.left,
     nextControl.top,
     nextControl.width,
     nextControl.height,
-    emitMultiply(circuit, sourceField.present, nextFocusMass),
+    emitMultiply(circuit, present, nextFocusMass),
   ]
 
   return {
-    circuit,
-    output: {
-      nextSource,
-      backdropOpacity: emitMultiply(circuit, sourceField.present, nextFocusMass),
-      animationActive,
-      photos: flattenProjections(photos),
-      thumbnails: flattenProjections(thumbnailProjections),
-      previousControl: previousControlOutput,
-      nextControl: nextControlOutput,
-    },
+    backdropOpacity: emitMultiply(circuit, present, nextFocusMass),
+    animationActive,
+    photos: flattenProjections(photos),
+    thumbnails: flattenProjections(thumbnailProjections),
+    previousControl: previousControlOutput,
+    nextControl: nextControlOutput,
   }
+}
+
+// Photos on its own, in a table that also holds the host's cells. The program writes
+// back the identity matrix and 0 settle check and snap bits.
+export function createPhotoGalleryCircuit() {
+  const table = createSourceTable()
+  const cells = table.declare(photoGalleryCells)
+  table.atMostOne('events', photoEvents(cells))
+  const circuit = table.createCircuit()
+  const photos = buildPhotos(circuit, table, cells, {
+    viewportWidth: cells.viewportWidth,
+    viewportHeight: cells.viewportHeight,
+    click: cells.click,
+    present: cells.present,
+    interactive: cells.interactive,
+    unit: cells.unit,
+    springMatrix: cells.springMatrix,
+    settleCheck: cells.settleCheck,
+    snap: cells.snap,
+  })
+  // The stored table holds the identity matrix and no settle check or snap, so
+  // evaluating it directly runs 0 steps.
+  const zero = circuit.constant(0)
+  table.next(
+    {springMatrix: cells.springMatrix, settleCheck: cells.settleCheck, snap: cells.snap},
+    {springMatrix: [cells.unit, zero, zero, cells.unit], settleCheck: zero, snap: zero},
+  )
+  const {nextSource, initialSource, validate} = table.finish()
+  const output: PhotoGalleryOutput = {nextSource, ...photos}
+  return {circuit, cells, output, initialSource, validate}
 }
 
 // What the host writes into the 4 matrix cells for each step count, see
@@ -627,16 +694,8 @@ type PhotoGalleryObserver = {
 
 export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {}) {
   const writeBack = options.writeBack ?? 'events and settle checks'
-  const source = new Float32Array(sourceField.size)
-  source[sourceField.gap] = 18
-  source[sourceField.mainInset] = 92
-  source[sourceField.thumbnailHeight] = 82
-  source[sourceField.controlSize] = 52
-  source[sourceField.present] = 1
-  source[sourceField.interactive] = 1
-  source[sourceField.unit] = 1
-  source.set(springMatrixPowers[0]!, sourceField.springMatrixStart)
-  const {circuit, output} = createPhotoGalleryCircuit()
+  const {circuit, cells, output, initialSource, validate} = createPhotoGalleryCircuit()
+  const source = new Float32Array(initialSource)
   const wireCount = validateCircuit(circuit)
   validatePhotoGalleryOutputWires(output, wireCount)
   const roots = [
@@ -654,7 +713,7 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
   // `values`, which the validators and callers index by wire.
   const evaluateRoots = circuit.createTensorEvaluator(roots)
   const values = new Float32Array(wireCount)
-  const scratch = new Float32Array(sourceField.size)
+  const scratch = new Float32Array(source.length)
   const numericTolerance = 1e-5
   let clock: SpringClock = stoppedSpringClock
   let queued: (Omit<PhotoGalleryEvent, 'timeStamp'> & {timeStamp: number | undefined})[] = []
@@ -680,24 +739,24 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
   function queueViewport(kind: 'mount' | 'resize', width: number, height: number, timeStamp: number | undefined) {
     queuedViewport = [width, height]
     queue(kind, timeStamp, table => {
-      table[sourceField.viewportWidth] = width
-      table[sourceField.viewportHeight] = height
+      table[cells.viewportWidth] = width
+      table[cells.viewportHeight] = height
     })
   }
 
   function receiveEvent(
     kind: 'click' | 'previous' | 'next' | 'close',
-    field: number,
+    field: Wire,
     timeStamp: number | undefined,
     x?: number,
     y?: number,
   ) {
     queue(kind, timeStamp, table => {
-      for (const eventField of eventFields) table[eventField] = 0
+      for (const eventField of photoEvents(cells)) table[eventField] = 0
       table[field] = 1
       if (x !== undefined && y !== undefined) {
-        table[sourceField.clickX] = x
-        table[sourceField.clickY] = y
+        table[cells.click.x] = x
+        table[cells.click.y] = y
       }
     })
   }
@@ -708,18 +767,20 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
   function evaluate(evaluation: PlannedEvaluation<PhotoGalleryEvent>) {
     const table = evaluation.writesBack ? source : scratch
     if (!evaluation.writesBack) scratch.set(source)
-    table.set(springMatrixPowers[evaluation.steps]!, sourceField.springMatrixStart)
-    table[sourceField.settleCheck] = evaluation.settleCheck ? 1 : 0
-    table[sourceField.snap] = evaluation.snap ? 1 : 0
+    table.set(springMatrixPowers[evaluation.steps]!, cells.springMatrix[0])
+    table[cells.settleCheck] = evaluation.settleCheck ? 1 : 0
+    table[cells.snap] = evaluation.snap ? 1 : 0
     // present and interactive set no destination, so every evaluation of a step
     // reads the ones passed to that step, e.g. a click's evaluation.
-    table[sourceField.present] = present
-    table[sourceField.interactive] = interactive
+    table[cells.present] = present
+    table[cells.interactive] = interactive
     for (const event of evaluation.events) event.apply(table)
-    validateGallerySource(table, numericTolerance)
+    validate(table)
     for (const observer of observers) observer.beforeEvaluate?.(table, evaluation)
     const rootValues = evaluateRoots(table)
     for (let index = 0; index < roots.length; index++) values[roots[index]!] = rootValues[index]!
+    // The next-state values are the first roots.
+    validate(rootValues.subarray(0, output.nextSource.length))
     validatePhotoGalleryOutput(values, output, numericTolerance)
     if (evaluation.writesBack) {
       for (let field = 0; field < source.length; field++) {
@@ -739,6 +800,7 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
 
   return {
     circuit,
+    cells,
     output,
     source,
     tensorProgram,
@@ -797,16 +859,16 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
       queueViewport('resize', width, height, timeStamp)
     },
     click(x: number, y: number, timeStamp?: number) {
-      receiveEvent('click', sourceField.clickActive, timeStamp, x, y)
+      receiveEvent('click', cells.click.active, timeStamp, x, y)
     },
     previous(timeStamp?: number) {
-      receiveEvent('previous', sourceField.previousActive, timeStamp)
+      receiveEvent('previous', cells.previous, timeStamp)
     },
     next(timeStamp?: number) {
-      receiveEvent('next', sourceField.nextActive, timeStamp)
+      receiveEvent('next', cells.next, timeStamp)
     },
     close(timeStamp?: number) {
-      receiveEvent('close', sourceField.closeActive, timeStamp)
+      receiveEvent('close', cells.close, timeStamp)
     },
   }
 }
@@ -919,7 +981,7 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
   }
 
   return {
-    render(values: Float32Array, output: PhotoGalleryOutput) {
+    render(values: Float32Array, output: PhotoOutputs) {
       backdrop.style.opacity = `${values[output.backdropOpacity]}`
       for (let item = 0; item < itemCount; item++) {
         projectItem(
@@ -949,16 +1011,16 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
   }
 }
 
-function emitRectangleHit(circuit: Circuit, geometry: Geometry): Wire {
+function emitRectangleHit(circuit: Circuit, click: {x: Wire, y: Wire}, geometry: Geometry): Wire {
   const horizontalHit = emitIntervalHit(
     circuit,
-    sourceField.clickX,
+    click.x,
     geometry.left,
     geometry.width,
   )
   const verticalHit = emitIntervalHit(
     circuit,
-    sourceField.clickY,
+    click.y,
     geometry.top,
     geometry.height,
   )
@@ -980,74 +1042,10 @@ function emitIntervalDistance(circuit: Circuit, position: Wire, start: Wire, siz
   )
 }
 
-function validateGallerySource(values: unknown, tolerance = 1e-9) {
-  invariant(
-    values instanceof Float32Array,
-    'source table must be a Float32Array',
-  )
-  invariant(values.length === sourceField.size, 'source table has the wrong length')
-  assertFiniteValues(values, 'source table')
-  assertNonNegativeFinite(values[sourceField.viewportWidth], 'viewport width')
-  assertNonNegativeFinite(values[sourceField.viewportHeight], 'viewport height')
-  assertNonNegativeFinite(values[sourceField.gap], 'gap')
-  assertNonNegativeFinite(values[sourceField.mainInset], 'main inset')
-  assertNonNegativeFinite(values[sourceField.thumbnailHeight], 'thumbnail height')
-  assertNonNegativeFinite(values[sourceField.controlSize], 'control size')
-  assertUnitInterval(values[sourceField.present], 'present', tolerance)
-  assertBit(values[sourceField.interactive], 'interactive')
-  invariant(values[sourceField.unit] === 1, 'unit must equal one')
-  for (let entry = 0; entry < 4; entry++) {
-    invariant(
-      Number.isFinite(values[sourceField.springMatrixStart + entry]),
-      'spring matrix entries must be finite',
-    )
-  }
-  assertBit(values[sourceField.settleCheck], 'settle check')
-  assertBit(values[sourceField.snap], 'snap')
-  invariant(Number.isFinite(values[sourceField.clickX]), 'click x must be finite')
-  invariant(Number.isFinite(values[sourceField.clickY]), 'click y must be finite')
-  let eventMass = 0
-  for (const eventField of eventFields) {
-    assertUnitInterval(values[eventField], 'event latch', tolerance)
-    eventMass += values[eventField]
-  }
-  invariant(eventMass <= 1 + tolerance, 'event mass must not exceed 1')
-  let focusMass = 0
-  for (let item = 0; item < itemCount; item++) {
-    const focus = values[focusField(item)]
-    assertUnitInterval(focus, `focus ${item}`, tolerance)
-    focusMass += focus
-    for (const field of [
-      thumbnailSpringField.centerXDisplacement,
-      thumbnailSpringField.centerXVelocity,
-      thumbnailSpringField.scaleDisplacement,
-      thumbnailSpringField.scaleVelocity,
-    ]) {
-      invariant(
-        Number.isFinite(values[thumbnailSpringSourceField(item, field)]),
-        `thumbnail ${item} spring state must be finite`,
-      )
-    }
-    const centerDestination =
-      values[thumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination)]!
-    invariant(
-      centerDestination >= -16_384 && centerDestination <= 32_768,
-      `thumbnail ${item} center destination must be within -16384..32768, got ${centerDestination}`,
-    )
-    assertUnitInterval(
-      values[thumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination)],
-      `thumbnail ${item} scale destination`,
-      tolerance,
-    )
-  }
-  invariant(focusMass <= 1 + tolerance, 'focus mass must not exceed 1')
-}
-
 export function validatePhotoGalleryOutputWires(
-  output: PhotoGalleryOutput,
+  output: PhotoOutputs,
   wireCount: number,
 ) {
-  validateWireView(output.nextSource, sourceField.size, wireCount)
   assertWire(output.backdropOpacity, wireCount)
   assertWire(output.animationActive, wireCount)
   validateWireView(output.photos, itemCount * photoField.size, wireCount)
@@ -1058,15 +1056,10 @@ export function validatePhotoGalleryOutputWires(
 
 export function validatePhotoGalleryOutput(
   values: Float32Array,
-  output: PhotoGalleryOutput,
+  output: PhotoOutputs,
   tolerance = 1e-9,
 ) {
   assertFiniteValues(values, 'tensor output')
-  const nextSource = Float32Array.from(output.nextSource, wire => values[wire]!)
-  validateGallerySource(nextSource, tolerance)
-  for (const eventField of eventFields) {
-    invariant(nextSource[eventField] === 0, 'event latch must reset after refresh')
-  }
   assertUnitInterval(values[output.backdropOpacity], 'backdrop opacity', tolerance)
   assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
   for (let item = 0; item < itemCount; item++) {
@@ -1118,8 +1111,4 @@ function emitClampZeroOne(circuit: Circuit, value: Wire): Wire {
   const result = circuit.affine([[positive, 1], [aboveOne, -1]])
   circuit.assumeRange(result, 0, 1)
   return result
-}
-
-function assertBit(value: number | undefined, label: string): asserts value is number {
-  invariant(value === 0 || value === 1, `${label} must equal zero or one, got ${value}`)
 }

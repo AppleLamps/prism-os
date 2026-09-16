@@ -1,7 +1,7 @@
 // What the reference backward pass reports for each kind of operation, next to float64
 // finite differences of the same arithmetic. Every row is one small circuit, one input wire
 // and one output wire.
-import {Circuit, type Wire, emitRelu, emitSelect} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitRelu, emitSelect, asWire} from '../../../../../numeric-ui-core.ts'
 
 // smooth: the arithmetic is smooth at this input, and the backward pass should give its slope.
 // corner: the arithmetic has a corner at this input, and the backward pass gives one side's slope.
@@ -26,7 +26,7 @@ export type GradientRow = {
 
 type Built = {circuit: Circuit, output: Wire}
 
-function runBackward(built: Built, source: readonly number[], wire: Wire, straightThrough = false) {
+function runBackward(built: Built, source: readonly number[], wire: number, straightThrough = false) {
   const values = built.circuit.evaluateReference(Float32Array.from(source))
   const output = values[built.output]!
   const seeds = new Float32Array(values.length)
@@ -51,7 +51,7 @@ function differences(evaluate: (value: number) => number, value: number, step: n
 }
 
 // The float64 arithmetic with one source value replaced.
-function changedSource(source: readonly number[], wire: Wire, value: number) {
+function changedSource(source: readonly number[], wire: number, value: number) {
   const changed = [...source]
   changed[wire] = value
   return changed
@@ -72,7 +72,7 @@ export function basicGradientRows(): GradientRow[] {
 
   {
     const circuit = new Circuit(2)
-    const output = circuit.roundAffine([[0, 0.25], [1, 3]], 1)
+    const output = circuit.roundAffine([[circuit.source(0), 0.25], [circuit.source(1), 3]], 1)
     const source = [10, -2]
     const reference = (values: readonly number[]) => 0.25 * values[0]! + 3 * values[1]! + 1
     for (const [name, wire] of [['a', 0], ['b', 1]] as const) {
@@ -86,9 +86,9 @@ export function basicGradientRows(): GradientRow[] {
     // Both operands may be negative, so circuit.multiply expands into two ReLU-gated products and
     // their difference, and records the product as a macro that the backward pass differentiates whole.
     const circuit = new Circuit(2)
-    circuit.assumeRange(0, -10, 10)
-    circuit.assumeRange(1, -10, 10)
-    const output = circuit.multiply(0, 1)
+    circuit.assumeRange(circuit.source(0), -10, 10)
+    circuit.assumeRange(circuit.source(1), -10, 10)
+    const output = circuit.multiply(circuit.source(0), circuit.source(1))
     push('`circuit.multiply(a, x)`', 'a = 3, x = 0', 'x', 'smooth',
       runBackward({circuit, output}, [3, 0], 1),
       differences(x => 3 * x, 0, 1e-6))
@@ -99,8 +99,8 @@ export function basicGradientRows(): GradientRow[] {
     // a × max(0, x) − a × max(0, −x). Both ReLUs sit at their corner, where the backward pass
     // uses slope 0, so no gradient reaches x even though the product has slope 3 there.
     const circuit = new Circuit(2)
-    const positiveArm = circuit.reglu([[0, 1]], 0, [[1, 1]], 0)
-    const negativeArm = circuit.reglu([[0, 1]], 0, [[1, -1]], 0)
+    const positiveArm = circuit.reglu([[circuit.source(0), 1]], 0, [[circuit.source(1), 1]], 0)
+    const negativeArm = circuit.reglu([[circuit.source(0), 1]], 0, [[circuit.source(1), -1]], 0)
     const output = circuit.roundAffine([[positiveArm, 1], [negativeArm, -1]])
     push('two ReLU arms with no macro, `a × max(0, x) − a × max(0, −x)`', 'a = 3, x = 0', 'x', 'wrong',
       runBackward({circuit, output}, [3, 0], 1),
@@ -109,7 +109,7 @@ export function basicGradientRows(): GradientRow[] {
 
   {
     const circuit = new Circuit(1)
-    const output = emitRelu(circuit, 0)
+    const output = emitRelu(circuit, circuit.source(0))
     for (const [x, kind] of [[0, 'corner'], [2, 'smooth']] as const) {
       push('`emitRelu(x)`', `x = ${x}`, 'x', kind, runBackward({circuit, output}, [x], 0), differences(relu, x, 1e-6))
     }
@@ -117,10 +117,10 @@ export function basicGradientRows(): GradientRow[] {
 
   {
     const circuit = new Circuit(3)
-    circuit.assumeRange(0, 0, 1)
-    circuit.assumeRange(1, -100, 100)
-    circuit.assumeRange(2, -100, 100)
-    const output = emitSelect(circuit, 0, 1, 2)
+    circuit.assumeRange(circuit.source(0), 0, 1)
+    circuit.assumeRange(circuit.source(1), -100, 100)
+    circuit.assumeRange(circuit.source(2), -100, 100)
+    const output = emitSelect(circuit, circuit.source(0), circuit.source(1), circuit.source(2))
     const blend = (values: readonly number[]) => values[0]! * values[2]! + (1 - values[0]!) * values[1]!
     for (const gate of [0.25, 1]) {
       const source = [gate, 10, 40]
@@ -136,8 +136,8 @@ export function basicGradientRows(): GradientRow[] {
     // [value >= 5] as relu(value − 4) − relu(value − 5): exactly 0 or 1 for whole numbers, and a
     // ramp from 0 to 1 between 4 and 5.
     const circuit = new Circuit(1)
-    const upper = circuit.reglu([], 1, [[0, 1]], -4)
-    const lower = circuit.reglu([], 1, [[0, 1]], -5)
+    const upper = circuit.reglu([], 1, [[circuit.source(0), 1]], -4)
+    const lower = circuit.reglu([], 1, [[circuit.source(0), 1]], -5)
     const output = circuit.roundAffine([[upper, 1], [lower, -1]])
     const reference = (value: number) => relu(value - 4) - relu(value - 5)
     for (const [value, kind] of [[4, 'corner'], [4.5, 'smooth'], [5, 'corner'], [6, 'smooth']] as const) {
@@ -150,9 +150,9 @@ export function basicGradientRows(): GradientRow[] {
   {
     // [a > b] as one rounding stage: clamp01(0.5 − 2^-25 + 256 × (a − b)), rounded by the boolean atom.
     const circuit = new Circuit(2)
-    circuit.assumeRange(0, 0, 16384)
-    circuit.assumeRange(1, 0, 16384)
-    const difference = circuit.roundAffine([[0, 1], [1, -1]])
+    circuit.assumeRange(circuit.source(0), 0, 16384)
+    circuit.assumeRange(circuit.source(1), 0, 16384)
+    const difference = circuit.roundAffine([[circuit.source(0), 1], [circuit.source(1), -1]])
     const justBelowHalf = 0.5 - 2 ** -25
     const positivePart = circuit.reglu([], 1, [[difference, 256]], justBelowHalf)
     const aboveOne = circuit.reglu([], 1, [[difference, 256]], justBelowHalf - 1)
@@ -174,10 +174,10 @@ export function basicGradientRows(): GradientRow[] {
     // exactly d = 2^-30 the output is 1, but the last stage's upper ReLU sits at its corner and
     // passes nothing, so the backward pass still reports the ramp's slope.
     const circuit = new Circuit(1)
-    circuit.assumeRange(0, -16384, 16384)
+    circuit.assumeRange(circuit.source(0), -16384, 16384)
     const firstStage = circuit.roundAffine([
-      [circuit.reglu([], 1, [[0, 2 ** 10]], 0), 1],
-      [circuit.reglu([], 1, [[0, 2 ** 10]], -1), -1],
+      [circuit.reglu([], 1, [[circuit.source(0), 2 ** 10]], 0), 1],
+      [circuit.reglu([], 1, [[circuit.source(0), 2 ** 10]], -1), -1],
     ])
     circuit.assumeRange(firstStage, 0, 1)
     const output = circuit.roundAffine([
@@ -197,16 +197,16 @@ export function basicGradientRows(): GradientRow[] {
     // arithmetic of the hats interpolates linearly between neighboring entries.
     const rowHeights = [28, 44, 28, 60, 36, 52, 20, 40]
     const circuit = new Circuit(1 + rowHeights.length)
-    circuit.assumeRange(0, 0, rowHeights.length - 1)
-    for (let entry = 0; entry < rowHeights.length; entry++) circuit.assumeRange(1 + entry, 0, 100)
+    circuit.assumeRange(circuit.source(0), 0, rowHeights.length - 1)
+    for (let entry = 0; entry < rowHeights.length; entry++) circuit.assumeRange(asWire(1 + entry), 0, 100)
     const terms = rowHeights.map((_, position): [Wire, number] => {
       const member = circuit.roundAffine([
-        [circuit.reglu([], 1, [[0, 1]], 1 - position), 1],
-        [circuit.reglu([], 1, [[0, 1]], -position), -2],
-        [circuit.reglu([], 1, [[0, 1]], -1 - position), 1],
+        [circuit.reglu([], 1, [[circuit.source(0), 1]], 1 - position), 1],
+        [circuit.reglu([], 1, [[circuit.source(0), 1]], -position), -2],
+        [circuit.reglu([], 1, [[circuit.source(0), 1]], -1 - position), 1],
       ])
       circuit.assumeRange(member, 0, 1)
-      return [circuit.multiply(member, 1 + position), 1]
+      return [circuit.multiply(member, asWire(1 + position)), 1]
     })
     const output = circuit.roundAffine(terms)
     const interpolate = (values: readonly number[]) => {

@@ -8,9 +8,10 @@
     "start:hard-attend": "bun ./hard-attend.html",
     "start:learning": "bun ./learned-gallery.html",
     "start:reusable": "bun ./lab/reusable-layout/demo.html",
+    "start:template": "bun ./template/index.html",
     "check": "bun scripts/check.ts",
     "knip": "knip",
-    "test": "bun test ./*.test.ts lab"
+    "test": "bun test ./*.test.ts template lab"
   },
   "devDependencies": {
     "@types/bun": "latest",

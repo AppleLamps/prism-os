@@ -95,7 +95,7 @@ function brentKungPrefix(circuit: Circuit, values: readonly Wire[]): Wire[] {
       prefix[index] = circuit.roundAffine([[prefix[index - span]!, 1], [prefix[index]!, 1]])
     }
   }
-  for (const wire of prefix) circuit.assumeRange(wire, 0, maximumParagraphWidth)
+  for (const wire of prefix) circuit.assumeRange(wire, 0, maximumParagraphWidth, {allowExistingReaders: true})
   return prefix
 }
 

@@ -11,6 +11,7 @@ import {
   validateIndexReads,
   validateOneHotGroups,
   validateTensorProgram,
+  asWire,
 } from './numeric-ui-core.ts'
 
 // Tests for the index read instruction, ported from
@@ -152,19 +153,19 @@ function emitOneHotMaskedRead(circuit: Circuit, index: Wire, values: readonly Wi
 // index cell, then one cell per table entry.
 function buildPair(count: number, style: DenseStyle, valueRange: number) {
   const sourceSize = 1 + count
-  const index: Wire = 0
+  const index = asWire(0)
   const values = Array.from({length: count}, (_, position) => 1 + position)
   const declareRanges = (circuit: Circuit) => {
     circuit.assumeRange(index, -8, count + 8)
-    for (const value of values) circuit.assumeRange(value, -valueRange, valueRange)
+    for (const value of values) circuit.assumeRange(asWire(value), -valueRange, valueRange)
   }
   const dense = new Circuit(sourceSize)
   declareRanges(dense)
-  const {members, read: denseRead} = emitOneHotMaskedRead(dense, index, values, style)
+  const {members, read: denseRead} = emitOneHotMaskedRead(dense, index, values.map(asWire), style)
   const instruction = new Circuit(sourceSize)
   declareRanges(instruction)
   const above: OutOfRange = style === 'clamp' ? 'clamp' : 'zero'
-  const instructionRead = instruction.indexReadAffine([[index, 1]], 0, [...values], 'clamp', above)
+  const instructionRead = instruction.indexReadAffine([[index, 1]], 0, ([...values]).map(asWire), 'clamp', above)
   return {sourceSize, index, values, dense, members, denseRead, instruction, instructionRead, above}
 }
 
@@ -181,10 +182,10 @@ describe('index read instruction', () => {
     ]
     const count = candidateValues.length
     const circuit = new Circuit(1 + count)
-    circuit.assumeRange(0, -8, count + 8)
+    circuit.assumeRange(circuit.source(0), -8, count + 8)
     const candidates = candidateValues.map((_, position) => 1 + position)
     const sideRules = [['clamp', 'clamp'], ['zero', 'zero'], ['zero', 'clamp'], ['clamp', 'zero']] as const
-    const reads = sideRules.map(([below, above]) => circuit.indexReadAffine([[0, 1]], 0, candidates, below, above))
+    const reads = sideRules.map(([below, above]) => circuit.indexReadAffine([[circuit.source(0), 1]], 0, candidates.map(asWire), below, above))
     const indices = [-8, -3, -1, -0.5, -0, 0, 0.25, 1, 2, 3.999, 4, 5, 6, 6.5, 7, 8, count + 8]
     const sources = indices.map(index => Float32Array.from([index, ...candidateValues]))
     const references = checkEveryCompileMode(circuit, reads, sources)
@@ -204,11 +205,11 @@ describe('index read instruction', () => {
   test('a broken range promise: NaN and infinite indices read the same in every compile mode', () => {
     const circuit = new Circuit(5)
     // difference is NaN when both cells hold Infinity, although its range was declared.
-    const difference = circuit.roundAffine([[0, 1], [1, -1]])
+    const difference = circuit.roundAffine([[circuit.source(0), 1], [circuit.source(1), -1]])
     circuit.assumeRange(difference, 0, 2)
     const candidates = [2, 3, 4]
-    const clampRead = circuit.indexRead(difference, candidates)
-    const zeroRead = circuit.indexRead(difference, candidates, {outOfRange: 'zero'})
+    const clampRead = circuit.indexRead(difference, candidates.map(asWire))
+    const zeroRead = circuit.indexRead(difference, candidates.map(asWire), {outOfRange: 'zero'})
     const cellPairs = [
       [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY],
       [Number.POSITIVE_INFINITY, 0],
@@ -326,28 +327,28 @@ describe('index read instruction', () => {
 
   test('duplicate candidates, composed index forms, and chained reads match plain JavaScript', () => {
     const random = createRandom(7)
-    const start = 0
+    const start = asWire(0)
     const nextStarts = Array.from({length: 10}, (_, position) => 1 + position)
     const payload = Array.from({length: 4}, (_, position) => 11 + position)
     const circuit = new Circuit(15)
     circuit.assumeRange(start, 0, 9)
-    for (const wire of nextStarts) circuit.assumeRange(wire, 0, 9)
-    for (const wire of payload) circuit.assumeRange(wire, -1000, 1000)
+    for (const wire of nextStarts) circuit.assumeRange(asWire(wire), 0, 9)
+    for (const wire of payload) circuit.assumeRange(asWire(wire), -1000, 1000)
     const cursors: Wire[] = []
     let cursor: Wire = start
     for (let hop = 0; hop < 3; hop++) {
-      cursor = circuit.indexRead(cursor, nextStarts)
+      cursor = circuit.indexRead(cursor, nextStarts.map(asWire))
       cursors.push(cursor)
     }
     // A small affine producer composes into the index form.
     const cursorPlusTwo = circuit.affine([[cursor, 1]], 2)
-    const composedRead = circuit.indexRead(cursorPlusTwo, nextStarts, {outOfRange: 'zero'})
+    const composedRead = circuit.indexRead(cursorPlusTwo, nextStarts.map(asWire), {outOfRange: 'zero'})
     const composedOperation = circuit.operations[composedRead - circuit.sourceSize]!
     expect(composedOperation.gateTerms).toEqual([[cursor, 1]])
     expect(composedOperation.gateBias).toBe(2)
     const repeatedTable = [payload[0]!, payload[0]!, payload[2]!, payload[1]!, payload[0]!]
-    const shifted = circuit.indexReadAffine([[cursor, 1]], -7, repeatedTable, 'clamp', 'zero')
-    const sameWire = circuit.indexReadAffine([[circuit.indexRead(cursors[1]!, nextStarts), 1]], -7, [...repeatedTable], 'clamp', 'zero')
+    const shifted = circuit.indexReadAffine([[cursor, 1]], -7, repeatedTable.map(asWire), 'clamp', 'zero')
+    const sameWire = circuit.indexReadAffine([[circuit.indexRead(cursors[1]!, nextStarts.map(asWire)), 1]], -7, ([...repeatedTable]).map(asWire), 'clamp', 'zero')
     expect(sameWire).toBe(shifted)
     const roots = [...cursors, composedRead, shifted]
     const sources = Array.from({length: 200}, () => {
@@ -376,17 +377,17 @@ describe('index read instruction', () => {
   test('evenly spaced tables store a base and a stride; other tables store positions shared by every read', () => {
     const count = 1024
     const circuit = new Circuit(1 + count)
-    circuit.assumeRange(0, 0, count - 1)
+    circuit.assumeRange(circuit.source(0), 0, count - 1)
     const values = Array.from({length: count}, (_, position) => 1 + position)
-    for (const wire of values) circuit.assumeRange(wire, -1e6, 1e6)
-    const contiguous = circuit.indexRead(0, values)
-    const reversed = circuit.indexRead(0, [...values].reverse())
-    const everyOther = circuit.indexRead(0, values.filter((_, position) => position % 2 === 1))
-    const repeatedWire = circuit.indexRead(0, [values[5]!, values[5]!, values[5]!])
+    for (const wire of values) circuit.assumeRange(asWire(wire), -1e6, 1e6)
+    const contiguous = circuit.indexRead(circuit.source(0), values.map(asWire))
+    const reversed = circuit.indexRead(circuit.source(0), [...values].reverse().map(asWire))
+    const everyOther = circuit.indexRead(circuit.source(0), values.filter((_, position) => position % 2 === 1).map(asWire))
+    const repeatedWire = circuit.indexRead(circuit.source(0), [asWire(values[5]!), asWire(values[5]!), asWire(values[5]!)])
     const random = createRandom(3)
     const shuffled = [...values].sort(() => random() - 0.5)
-    const scattered = circuit.indexRead(0, shuffled)
-    const scatteredNext = circuit.indexReadAffine([[0, 1]], 1, shuffled, 'clamp', 'zero')
+    const scattered = circuit.indexRead(circuit.source(0), shuffled.map(asWire))
+    const scatteredNext = circuit.indexReadAffine([[circuit.source(0), 1]], 1, shuffled.map(asWire), 'clamp', 'zero')
     const contiguousProgram = circuit.compileTensorProgram([contiguous])
     expect(programCounts(contiguousProgram)).toEqual({liveOperations: 1, layers: 1, storedWeights: 1, gatherReads: 0, indexReads: 1})
     expect(contiguousProgram.layers[0]!.indexReads[0]!).toMatchObject({candidateCount: count, candidateBase: 1, candidateStride: 1})
@@ -423,70 +424,70 @@ describe('index read instruction', () => {
 
   test('candidate tables are registered once, frozen, and shared by arrays with the same content', () => {
     const circuit = new Circuit(6)
-    circuit.assumeRange(0, 0, 3)
-    const candidates = [1, 2, 3, 4]
-    const first = circuit.indexRead(0, candidates)
-    expect(circuit.indexRead(0, candidates)).toBe(first)
-    expect(circuit.indexRead(0, [1, 2, 3, 4])).toBe(first)
-    expect(circuit.indexRead(0, candidates, {outOfRange: 'zero'})).not.toBe(first)
-    expect(circuit.indexRead(0, [1, 2, 3, 5])).not.toBe(first)
+    circuit.assumeRange(circuit.source(0), 0, 3)
+    const candidates = [1, 2, 3, 4].map(asWire)
+    const first = circuit.indexRead(circuit.source(0), candidates)
+    expect(circuit.indexRead(circuit.source(0), candidates)).toBe(first)
+    expect(circuit.indexRead(circuit.source(0), [circuit.source(1), circuit.source(2), circuit.source(3), circuit.source(4)])).toBe(first)
+    expect(circuit.indexRead(circuit.source(0), candidates, {outOfRange: 'zero'})).not.toBe(first)
+    expect(circuit.indexRead(circuit.source(0), [circuit.source(1), circuit.source(2), circuit.source(3), circuit.source(5)])).not.toBe(first)
     expect(Object.isFrozen(candidates)).toBe(true)
-    expect(() => candidates.push(5)).toThrow(TypeError)
+    expect(() => candidates.push(circuit.source(5))).toThrow(TypeError)
   })
 
   test('a constant index selects its candidate while building', () => {
     const circuit = new Circuit(5)
     const three = circuit.affine([], 3)
     const nine = circuit.affine([], 9)
-    expect(circuit.indexRead(three, [1, 2, 3, 4])).toBe(4)
-    expect(circuit.indexRead(nine, [1, 2, 3, 4])).toBe(4)
-    expect(circuit.indexReadAffine([[three, -1]], 1, [1, 2, 3, 4], 'clamp', 'zero')).toBe(1)
-    const beyond = circuit.indexRead(nine, [1, 2, 3, 4], {outOfRange: 'zero'})
+    expect(circuit.indexRead(three, [circuit.source(1), circuit.source(2), circuit.source(3), circuit.source(4)])).toBe(asWire(4))
+    expect(circuit.indexRead(nine, [circuit.source(1), circuit.source(2), circuit.source(3), circuit.source(4)])).toBe(asWire(4))
+    expect(circuit.indexReadAffine([[three, -1]], 1, [circuit.source(1), circuit.source(2), circuit.source(3), circuit.source(4)], 'clamp', 'zero')).toBe(asWire(1))
+    const beyond = circuit.indexRead(nine, [circuit.source(1), circuit.source(2), circuit.source(3), circuit.source(4)], {outOfRange: 'zero'})
     expect(circuit.constants[beyond]).toBe(0)
-    const belowZero = circuit.indexReadAffine([[three, 1]], -5, [1, 2, 3, 4], 'zero', 'clamp')
+    const belowZero = circuit.indexReadAffine([[three, 1]], -5, [circuit.source(1), circuit.source(2), circuit.source(3), circuit.source(4)], 'zero', 'clamp')
     expect(circuit.constants[belowZero]).toBe(0)
   })
 
   test('the builder refuses reads that break the contract', () => {
     const circuit = new Circuit(4)
-    circuit.assumeRange(1, 0, 2 ** 24 - 1)
-    circuit.assumeRange(2, -(2 ** 25), 0)
+    circuit.assumeRange(circuit.source(1), 0, 2 ** 24 - 1)
+    circuit.assumeRange(circuit.source(2), -(2 ** 25), 0)
     // An index cell with no declared range, and one declared past -2^24.
-    expect(() => circuit.indexRead(0, [3])).toThrow('index range')
-    expect(() => circuit.indexRead(2, [3])).toThrow('index range')
+    expect(() => circuit.indexRead(circuit.source(0), [circuit.source(3)])).toThrow('index range')
+    expect(() => circuit.indexRead(circuit.source(2), [circuit.source(3)])).toThrow('index range')
     // Both endpoints must lie strictly inside ±2^24: 0..2^24 - 1 builds, and adding 1 reaches 2^24.
-    expect(circuit.indexRead(1, [3])).toBe(4)
-    expect(() => circuit.indexReadAffine([[1, 1]], 1, [3], 'clamp', 'clamp')).toThrow('strictly inside ±2^24')
-    expect(() => circuit.indexRead(1, [])).toThrow('at least one candidate')
-    expect(() => circuit.indexRead(1, [1000])).toThrow('wire is outside')
-    expect(() => circuit.indexRead(1, [3], {outOfRange: 'wrap' as OutOfRange})).toThrow('clamp or zero')
-    expect(() => circuit.indexReadAffine([[1, Number.NaN]], 0, [3], 'clamp', 'clamp')).toThrow('finite')
+    expect(circuit.indexRead(circuit.source(1), [circuit.source(3)])).toBe(asWire(4))
+    expect(() => circuit.indexReadAffine([[circuit.source(1), 1]], 1, [circuit.source(3)], 'clamp', 'clamp')).toThrow('strictly inside ±2^24')
+    expect(() => circuit.indexRead(circuit.source(1), [])).toThrow('at least one candidate')
+    expect(() => circuit.indexRead(circuit.source(1), [asWire(1000)])).toThrow('wire is outside')
+    expect(() => circuit.indexRead(circuit.source(1), [circuit.source(3)], {outOfRange: 'wrap' as OutOfRange})).toThrow('clamp or zero')
+    expect(() => circuit.indexReadAffine([[circuit.source(1), Number.NaN]], 0, [circuit.source(3)], 'clamp', 'clamp')).toThrow('finite')
     const positiveInfinity = circuit.affine([], Number.POSITIVE_INFINITY)
     const negativeInfinity = circuit.affine([], Number.NEGATIVE_INFINITY)
-    expect(() => circuit.indexReadAffine([[positiveInfinity, 1], [negativeInfinity, 1]], 0, [3], 'clamp', 'clamp'))
+    expect(() => circuit.indexReadAffine([[positiveInfinity, 1], [negativeInfinity, 1]], 0, [circuit.source(3)], 'clamp', 'clamp'))
       .toThrow('must not be NaN')
   })
 
   test('an index range is accepted only strictly inside ±2^24, so an endpoint that FP32 rounded onto 2^24 is refused', () => {
     const circuit = new Circuit(4)
-    circuit.assumeRange(0, 0, 2 ** 24)
-    circuit.assumeRange(1, -(2 ** 24), 0)
-    circuit.assumeRange(2, 0, 2 ** 24 - 2)
+    circuit.assumeRange(circuit.source(0), 0, 2 ** 24)
+    circuit.assumeRange(circuit.source(1), -(2 ** 24), 0)
+    circuit.assumeRange(circuit.source(2), 0, 2 ** 24 - 2)
     // f(2^24 + 1) = 2^24, so the form's range ends on 2^24, and at cell value 2^24
     // the read would land one position early.
     expect(Math.fround(2 ** 24 + 1)).toBe(2 ** 24)
-    expect(() => circuit.indexReadAffine([[0, 1]], 1, [3], 'clamp', 'clamp')).toThrow('strictly inside ±2^24')
-    expect(() => circuit.indexRead(0, [3])).toThrow('strictly inside ±2^24')
+    expect(() => circuit.indexReadAffine([[circuit.source(0), 1]], 1, [circuit.source(3)], 'clamp', 'clamp')).toThrow('strictly inside ±2^24')
+    expect(() => circuit.indexRead(circuit.source(0), [circuit.source(3)])).toThrow('strictly inside ±2^24')
     // The negative mirror: f(-2^24 - 1) = -2^24.
-    expect(() => circuit.indexReadAffine([[1, 1]], -1, [3], 'clamp', 'clamp')).toThrow('strictly inside ±2^24')
-    expect(() => circuit.indexRead(1, [3])).toThrow('strictly inside ±2^24')
+    expect(() => circuit.indexReadAffine([[circuit.source(1), 1]], -1, [circuit.source(3)], 'clamp', 'clamp')).toThrow('strictly inside ±2^24')
+    expect(() => circuit.indexRead(circuit.source(1), [circuit.source(3)])).toThrow('strictly inside ±2^24')
     // One position inside the limit on either side builds.
-    const upper = circuit.indexReadAffine([[2, 1]], 1, [3], 'clamp', 'clamp')
+    const upper = circuit.indexReadAffine([[circuit.source(2), 1]], 1, [circuit.source(3)], 'clamp', 'clamp')
     expect(circuit.operations[upper - circuit.sourceSize]!.indexRead!.indexRange).toEqual({minimum: 1, maximum: 2 ** 24 - 1})
-    const lower = circuit.indexReadAffine([[2, -1]], -1, [3], 'clamp', 'clamp')
+    const lower = circuit.indexReadAffine([[circuit.source(2), -1]], -1, [circuit.source(3)], 'clamp', 'clamp')
     expect(circuit.operations[lower - circuit.sourceSize]!.indexRead!.indexRange).toEqual({minimum: -(2 ** 24 - 1), maximum: -1})
     // A range declared on the form can't put an endpoint on the limit either.
-    expect(() => circuit.indexReadAffine([[0, 1]], 0, [3], 'clamp', 'clamp', {indexRange: {minimum: 0, maximum: 2 ** 24}})).toThrow('strictly inside ±2^24')
+    expect(() => circuit.indexReadAffine([[circuit.source(0), 1]], 0, [circuit.source(3)], 'clamp', 'clamp', {indexRange: {minimum: 0, maximum: 2 ** 24}})).toThrow('strictly inside ±2^24')
     validateCircuit(circuit)
     const operation = circuit.operations[upper - circuit.sourceSize]!
     operation.indexRead = {...operation.indexRead!, indexRange: {minimum: 0, maximum: 2 ** 24}}
@@ -496,42 +497,42 @@ describe('index read instruction', () => {
   test('the read range is the union of the reachable candidates, plus 0 where a zero side is reachable', () => {
     const circuit = new Circuit(9)
     const candidateRanges = [[0.5, 1], [2, 3], [-5, -4], [10, 20]] as const
-    candidateRanges.forEach(([minimum, maximum], position) => circuit.assumeRange(1 + position, minimum, maximum))
+    candidateRanges.forEach(([minimum, maximum], position) => circuit.assumeRange(asWire(1 + position), minimum, maximum))
     const candidates = [1, 2, 3, 4]
     const indexCell = (wire: Wire, minimum: number, maximum: number) => {
       circuit.assumeRange(wire, minimum, maximum)
       return wire
     }
-    const inside = circuit.indexRead(indexCell(5, 1, 2), candidates)
+    const inside = circuit.indexRead(indexCell(circuit.source(5), 1, 2), candidates.map(asWire))
     expect(circuit.ranges[inside]).toEqual({minimum: -5, maximum: 3})
-    const zeroBelow = circuit.indexReadAffine([[indexCell(6, -3, 1), 1]], 0, candidates, 'zero', 'clamp')
+    const zeroBelow = circuit.indexReadAffine([[indexCell(circuit.source(6), -3, 1), 1]], 0, candidates.map(asWire), 'zero', 'clamp')
     expect(circuit.ranges[zeroBelow]).toEqual({minimum: 0, maximum: 3})
-    const clampBelow = circuit.indexReadAffine([[6, 1]], 0, candidates, 'clamp', 'clamp')
+    const clampBelow = circuit.indexReadAffine([[circuit.source(6), 1]], 0, candidates.map(asWire), 'clamp', 'clamp')
     expect(circuit.ranges[clampBelow]).toEqual({minimum: 0.5, maximum: 3})
-    const zeroAbove = circuit.indexReadAffine([[indexCell(7, 2, 9), 1]], 0, candidates, 'clamp', 'zero')
+    const zeroAbove = circuit.indexReadAffine([[indexCell(circuit.source(7), 2, 9), 1]], 0, candidates.map(asWire), 'clamp', 'zero')
     expect(circuit.ranges[zeroAbove]).toEqual({minimum: -5, maximum: 20})
     // Index ranges entirely below the table reach only the 'zero' side, whatever
     // their distance; they share one cached union, and each read gets its own object.
-    const justBelow = circuit.indexReadAffine([[6, 1]], -2, candidates, 'zero', 'clamp')
-    const fartherBelow = circuit.indexReadAffine([[6, 1]], -50, candidates, 'zero', 'clamp')
+    const justBelow = circuit.indexReadAffine([[circuit.source(6), 1]], -2, candidates.map(asWire), 'zero', 'clamp')
+    const fartherBelow = circuit.indexReadAffine([[circuit.source(6), 1]], -50, candidates.map(asWire), 'zero', 'clamp')
     expect(circuit.ranges[justBelow]).toEqual({minimum: 0, maximum: 0})
     expect(circuit.ranges[fartherBelow]).toEqual({minimum: 0, maximum: 0})
     expect(circuit.ranges[fartherBelow]).not.toBe(circuit.ranges[justBelow])
-    const clampedFartherBelow = circuit.indexReadAffine([[6, 1]], -50, candidates, 'clamp', 'clamp')
+    const clampedFartherBelow = circuit.indexReadAffine([[circuit.source(6), 1]], -50, candidates.map(asWire), 'clamp', 'clamp')
     expect(circuit.ranges[clampedFartherBelow]).toEqual({minimum: 0.5, maximum: 1})
     // Cell 8 has no declared range. It opens the read's range only where the index can reach it.
-    const unreachableUnknown = circuit.indexRead(5, [8, 1])
+    const unreachableUnknown = circuit.indexRead(circuit.source(5), [circuit.source(8), circuit.source(1)])
     expect(circuit.ranges[unreachableUnknown]).toEqual({minimum: 0.5, maximum: 1})
-    const reachableUnknown = circuit.indexRead(5, [1, 8])
+    const reachableUnknown = circuit.indexRead(circuit.source(5), [circuit.source(1), circuit.source(8)])
     expect(circuit.ranges[reachableUnknown]).toEqual({minimum: Number.NEGATIVE_INFINITY, maximum: Number.POSITIVE_INFINITY})
   })
 
   test('backward pass: the selected candidate gets the gradient; the index gradient is rejected by default', () => {
     const circuit = new Circuit(4)
-    circuit.assumeRange(0, -2, 5)
+    circuit.assumeRange(circuit.source(0), -2, 5)
     const candidates = [1, 2, 3]
-    const read = circuit.indexRead(0, candidates, {outOfRange: 'zero'})
-    const readAgain = circuit.indexReadAffine([[0, 1]], 0, candidates, 'clamp', 'clamp')
+    const read = circuit.indexRead(circuit.source(0), candidates.map(asWire), {outOfRange: 'zero'})
+    const readAgain = circuit.indexReadAffine([[circuit.source(0), 1]], 0, candidates.map(asWire), 'clamp', 'clamp')
     const sum = circuit.roundAffine([[read, 3], [readAgain, 1]])
     const outputGradients = (values: Float32Array) => {
       const gradients = new Float32Array(values.length)
@@ -597,13 +598,13 @@ describe('index read instruction', () => {
     const scoreCount = 5
     const circuit = new Circuit(2 * scoreCount + 1)
     const unit = 2 * scoreCount
-    circuit.assumeRange(unit, 1, 1)
+    circuit.assumeRange(asWire(unit), 1, 1)
     const scores = Array.from({length: scoreCount}, (_, item) => item)
     const values = Array.from({length: scoreCount}, (_, item) => scoreCount + item)
-    for (const score of scores) circuit.assumeRange(score, 0, 1)
-    for (const value of values) circuit.assumeRange(value, -100, 100)
-    const {selected} = emitArgmax(circuit, scores, unit)
-    const selectedValue = circuit.roundAffine(selected.map((bit, item) => [circuit.multiply(bit, values[item]!), 1] as const))
+    for (const score of scores) circuit.assumeRange(asWire(score), 0, 1)
+    for (const value of values) circuit.assumeRange(asWire(value), -100, 100)
+    const {selected} = emitArgmax(circuit, scores.map(asWire), asWire(unit))
+    const selectedValue = circuit.roundAffine(selected.map((bit, item) => [circuit.multiply(bit, asWire(values[item]!)), 1] as const))
     const downstream = circuit.roundAffine([[selectedValue, 2]], 1)
     // The compiled program skips depths with no live operation, so the removed
     // products only cost a layer while another live operation shares their depth.
@@ -651,22 +652,22 @@ describe('index read instruction', () => {
       const unitWires: Wire[] = []
       let cell = 0
       for (let item = 0; item < integerCellCount; item++, cell++) {
-        circuit.assumeRange(cell, -integerLimit, integerLimit)
-        integerWires.push(cell)
-        finiteWires.push(cell)
+        circuit.assumeRange(asWire(cell), -integerLimit, integerLimit)
+        integerWires.push(asWire(cell))
+        finiteWires.push(asWire(cell))
       }
       for (let item = 0; item < valueCellCount; item++, cell++) {
-        circuit.assumeRange(cell, -100, 100)
-        finiteWires.push(cell)
+        circuit.assumeRange(asWire(cell), -100, 100)
+        finiteWires.push(asWire(cell))
       }
-      for (let item = 0; item < extremeCellCount; item++, cell++) anyWires.push(cell)
+      for (let item = 0; item < extremeCellCount; item++, cell++) anyWires.push(asWire(cell))
       for (let item = 0; item < unitCellCount; item++, cell++) {
-        circuit.assumeRange(cell, 0, 1)
-        unitWires.push(cell)
+        circuit.assumeRange(asWire(cell), 0, 1)
+        unitWires.push(asWire(cell))
       }
-      circuit.assumeRange(unit, 1, 1)
+      circuit.assumeRange(asWire(unit), 1, 1)
       anyWires.push(...finiteWires)
-      const pick = (wires: readonly Wire[]) => wires[randomInteger(random, wires.length)]!
+      const pick = <Item>(items: readonly Item[]) => items[randomInteger(random, items.length)]!
       // Plain JavaScript intent for every index read, checked against the reference evaluator.
       const intents: {wire: Wire, indexWire: Wire, bias: number, candidates: Wire[], below: OutOfRange, above: OutOfRange}[] = []
       const readTable = (candidates: Wire[]) => {
@@ -705,7 +706,7 @@ describe('index read instruction', () => {
         } else {
           // An argmax selection whose masked sum reads finite wires, e.g. index reads, and lowers to a gather.
           const scores = Array.from({length: 2 + randomInteger(random, 3)}, () => pick(unitWires))
-          const {selected} = emitArgmax(circuit, scores, unit)
+          const {selected} = emitArgmax(circuit, scores, asWire(unit))
           const wire = circuit.roundAffine(selected.map(bit => [circuit.multiply(bit, pick(finiteWires)), 1] as const))
           finiteWires.push(wire)
           anyWires.push(wire)
@@ -750,9 +751,9 @@ describe('index read instruction', () => {
     const random = createRandom(0xdee9)
     for (let circuitIndex = 0; circuitIndex < 40; circuitIndex++) {
       const circuit = new Circuit(6)
-      for (let wire = 0; wire < 3; wire++) circuit.assumeRange(wire, 0, 7)
-      const integerWires: Wire[] = [0, 1, 2]
-      const wires: Wire[] = [0, 1, 2, 3, 4, 5]
+      for (let wire = 0; wire < 3; wire++) circuit.assumeRange(asWire(wire), 0, 7)
+      const integerWires: Wire[] = [asWire(0), asWire(1), asWire(2)]
+      const wires: Wire[] = [asWire(0), asWire(1), asWire(2), asWire(3), asWire(4), asWire(5)]
       for (let operation = 0; operation < 25; operation++) {
         const choice = randomInteger(random, 3)
         if (choice === 0) {
@@ -774,14 +775,14 @@ describe('index read instruction', () => {
   test('a range declared on the index wire counts, also when the builder copies a small affine index into the read', () => {
     // Cells 0 and 1 (firstRow and offset) have no declared ranges. Candidate cell k is within 10k..10k + 5.
     const circuit = new Circuit(6)
-    for (let wire = 2; wire < 6; wire++) circuit.assumeRange(wire, 10 * wire, 10 * wire + 5)
+    for (let wire = 2; wire < 6; wire++) circuit.assumeRange(asWire(wire), 10 * wire, 10 * wire + 5)
     const candidates = [2, 3, 4, 5]
-    const row = circuit.affine([[0, 1], [1, 1]])
-    expect(() => circuit.indexRead(row, candidates)).toThrow('index range')
+    const row = circuit.affine([[circuit.source(0), 1], [circuit.source(1), 1]])
+    expect(() => circuit.indexRead(row, candidates.map(asWire))).toThrow('index range')
     circuit.assumeRange(row, 0, 3)
-    const read = circuit.indexRead(row, candidates, {outOfRange: 'zero'})
+    const read = circuit.indexRead(row, candidates.map(asWire), {outOfRange: 'zero'})
     // The read copies firstRow + offset, so the affine row isn't live.
-    expect(circuit.operations[read - circuit.sourceSize]!.gateTerms).toEqual([[0, 1], [1, 1]])
+    expect(circuit.operations[read - circuit.sourceSize]!.gateTerms).toEqual([[circuit.source(0), 1], [circuit.source(1), 1]])
     expect(programCounts(circuit.compileTensorProgram([read])).liveOperations).toBe(1)
     // The declared range 0..3 can't reach the zero sides.
     expect(circuit.ranges[read]).toEqual({minimum: 20, maximum: 55})
@@ -795,26 +796,26 @@ describe('index read instruction', () => {
       else expect(() => validateIndexReads(circuit, values)).toThrow('index read wire')
     })
     // indexReadAffine takes the same promise as an option. Without it, the same form is refused, although a read of it exists.
-    expect(() => circuit.indexReadAffine([[0, 1], [1, 1]], 0, candidates, 'zero', 'zero')).toThrow('index range')
-    expect(circuit.indexReadAffine([[0, 1], [1, 1]], 0, candidates, 'zero', 'zero', {indexRange: {minimum: 0, maximum: 3}})).toBe(read)
-    expect(() => circuit.indexReadAffine([[0, 1], [1, 1]], 0, candidates, 'zero', 'zero', {indexRange: {minimum: 0, maximum: 2 ** 25}}))
+    expect(() => circuit.indexReadAffine([[circuit.source(0), 1], [circuit.source(1), 1]], 0, candidates.map(asWire), 'zero', 'zero')).toThrow('index range')
+    expect(circuit.indexReadAffine([[circuit.source(0), 1], [circuit.source(1), 1]], 0, candidates.map(asWire), 'zero', 'zero', {indexRange: {minimum: 0, maximum: 3}})).toBe(read)
+    expect(() => circuit.indexReadAffine([[circuit.source(0), 1], [circuit.source(1), 1]], 0, candidates.map(asWire), 'zero', 'zero', {indexRange: {minimum: 0, maximum: 2 ** 25}}))
       .toThrow('index range')
     // Inlining keeps the accepted range, although the target infers the copied form from undeclared cells again.
     const parent = new Circuit(6)
-    const wireMap = inlineCircuit(parent, circuit, [0, 1, 2, 3, 4, 5])
+    const wireMap = inlineCircuit(parent, circuit, [parent.source(0), parent.source(1), parent.source(2), parent.source(3), parent.source(4), parent.source(5)])
     expect(parent.ranges[wireMap[read]!]).toEqual({minimum: 20, maximum: 55})
     const parentReferences = checkEveryCompileMode(parent, [wireMap[read]!], sources)
     parentReferences.forEach((values, sourceIndex) => expect(Object.is(values[wireMap[read]!], references[sourceIndex]![read])).toBe(true))
 
     // A declared range narrows which candidates the read can reach, and operands with wide ranges don't matter.
     const wide = new Circuit(6)
-    wide.assumeRange(0, 0, 2 ** 30)
-    wide.assumeRange(1, 0, 2 ** 30)
-    for (let wire = 2; wire < 6; wire++) wide.assumeRange(wire, 10 * wire, 10 * wire + 5)
-    const difference = wide.affine([[0, 1], [1, -1]])
-    expect(() => wide.indexRead(difference, candidates)).toThrow('index range')
+    wide.assumeRange(wide.source(0), 0, 2 ** 30)
+    wide.assumeRange(wide.source(1), 0, 2 ** 30)
+    for (let wire = 2; wire < 6; wire++) wide.assumeRange(asWire(wire), 10 * wire, 10 * wire + 5)
+    const difference = wide.affine([[wide.source(0), 1], [wide.source(1), -1]])
+    expect(() => wide.indexRead(difference, candidates.map(asWire))).toThrow('index range')
     wide.assumeRange(difference, 1, 2)
-    const narrowRead = wide.indexRead(difference, candidates)
+    const narrowRead = wide.indexRead(difference, candidates.map(asWire))
     expect(wide.ranges[narrowRead]).toEqual({minimum: 30, maximum: 45})
     // FP32 holds each operand exactly, e.g. not 2^30 - 1, which rounds to 2^30.
     const wideSources = [[2 ** 24 - 1, 2 ** 24 - 3], [2 ** 23 + 2, 2 ** 23 + 1], [7, 6]].map(([left, right]) => Float32Array.from([left!, right!, 20, 30, 40, 50]))
@@ -824,22 +825,22 @@ describe('index read instruction', () => {
     }
     // A declared range that contradicts the inferred one is refused.
     const contradiction = new Circuit(3)
-    contradiction.assumeRange(0, 0, 3)
-    expect(() => contradiction.indexReadAffine([[0, 1]], 0, [1, 2], 'clamp', 'clamp', {indexRange: {minimum: 5, maximum: 9}}))
+    contradiction.assumeRange(contradiction.source(0), 0, 3)
+    expect(() => contradiction.indexReadAffine([[contradiction.source(0), 1]], 0, [contradiction.source(1), contradiction.source(2)], 'clamp', 'clamp', {indexRange: {minimum: 5, maximum: 9}}))
       .toThrow('contradicts')
   })
 
   test('inlining carries index reads, and the inlined circuit agrees with the original', () => {
     const child = new Circuit(5)
-    child.assumeRange(0, 0, 3)
-    for (let wire = 1; wire < 5; wire++) child.assumeRange(wire, -10, 10)
-    const doubled = Array.from({length: 4}, (_, position) => child.roundAffine([[1 + position, 2]]))
-    const readSource = child.indexRead(0, [1, 2, 3, 4], {outOfRange: 'zero'})
-    const readComputed = child.indexReadAffine([[0, 1]], 1, doubled, 'clamp', 'zero')
+    child.assumeRange(child.source(0), 0, 3)
+    for (let wire = 1; wire < 5; wire++) child.assumeRange(asWire(wire), -10, 10)
+    const doubled = Array.from({length: 4}, (_, position) => child.roundAffine([[asWire(1 + position), 2]]))
+    const readSource = child.indexRead(child.source(0), [child.source(1), child.source(2), child.source(3), child.source(4)], {outOfRange: 'zero'})
+    const readComputed = child.indexReadAffine([[child.source(0), 1]], 1, doubled, 'clamp', 'zero')
     const parent = new Circuit(5)
     const sourceWires = [4, 3, 2, 1, 0]
-    const wireMap = inlineCircuit(parent, child, sourceWires)
-    expect(inlineCircuit(parent, child, sourceWires)).toEqual(wireMap)
+    const wireMap = inlineCircuit(parent, child, sourceWires.map(asWire))
+    expect(inlineCircuit(parent, child, sourceWires.map(asWire))).toEqual(wireMap)
     const random = createRandom(5)
     for (let trial = 0; trial < 50; trial++) {
       const childSource = Float32Array.from([randomInteger(random, 4), ...Array.from({length: 4}, () => randomInteger(random, 21) - 10)])
@@ -856,10 +857,10 @@ describe('index read instruction', () => {
 
   test('validators reject malformed index read programs and circuits', () => {
     const circuit = new Circuit(8)
-    circuit.assumeRange(0, 0, 5)
-    const gate = circuit.reglu([[1, 1]], 0, [[2, 1]], 0)
-    const contiguousRead = circuit.indexRead(0, [1, 2, 3, 4])
-    const scatteredRead = circuit.indexRead(0, [5, 1, 7, 6])
+    circuit.assumeRange(circuit.source(0), 0, 5)
+    const gate = circuit.reglu([[circuit.source(1), 1]], 0, [[circuit.source(2), 1]], 0)
+    const contiguousRead = circuit.indexRead(circuit.source(0), [circuit.source(1), circuit.source(2), circuit.source(3), circuit.source(4)])
+    const scatteredRead = circuit.indexRead(circuit.source(0), [circuit.source(5), circuit.source(1), circuit.source(7), circuit.source(6)])
     const roots = [gate, contiguousRead, scatteredRead]
     const program = circuit.compileTensorProgram(roots)
     validateTensorProgram(circuit, program)
@@ -896,7 +897,7 @@ describe('index read instruction', () => {
     })).toThrow('projection bias shape mismatch')
     const operation = circuit.operations[contiguousRead - circuit.sourceSize]!
     const table = operation.indexRead!.table
-    operation.indexRead = {...operation.indexRead!, table: {...table, candidates: [1, contiguousRead]}}
+    operation.indexRead = {...operation.indexRead!, table: {...table, candidates: [asWire(1), contiguousRead]}}
     expect(() => validateCircuit(circuit)).toThrow('earlier wires')
     operation.indexRead = {...operation.indexRead, table}
     validateCircuit(circuit)
@@ -909,19 +910,19 @@ describe('proven bits', () => {
     // Cells 0 and 1: pointer coordinates on a 1/64 grid. Cells 2 and 3: widths with
     // no grid. Cell 4: a row index. Cell 5: a fraction. Cell 6: a bit the host writes.
     for (const wire of [0, 1]) {
-      circuit.assumeRange(wire, -1024, 1024)
-      circuit.assumeGrid(wire, 1 / 64)
+      circuit.assumeRange(asWire(wire), -1024, 1024)
+      circuit.assumeGrid(asWire(wire), 1 / 64)
     }
-    circuit.assumeRange(2, 0, 16_384)
-    circuit.assumeRange(3, 0, 16_384)
-    circuit.assumeRange(4, 0, 2)
-    circuit.assumeRange(5, 0, 1)
-    circuit.assumeRange(6, 0, 1)
+    circuit.assumeRange(circuit.source(2), 0, 16_384)
+    circuit.assumeRange(circuit.source(3), 0, 16_384)
+    circuit.assumeRange(circuit.source(4), 0, 2)
+    circuit.assumeRange(circuit.source(5), 0, 1)
+    circuit.assumeRange(circuit.source(6), 0, 1)
     const groupCount = () => circuit.oneHotGroups.length
-    const gridBit = emitCompare(circuit, 0, '>=', 1)
-    const cascadeBit = emitCompare(circuit, 2, '>', 3)
-    const atomBit = emitCompare(circuit, 2, '===', 3, {endWithBoolean: true})
-    const active = circuit.boolean(6)
+    const gridBit = emitCompare(circuit, circuit.source(0), '>=', circuit.source(1))
+    const cascadeBit = emitCompare(circuit, circuit.source(2), '>', circuit.source(3))
+    const atomBit = emitCompare(circuit, circuit.source(2), '===', circuit.source(3), {endWithBoolean: true})
+    const active = circuit.boolean(circuit.source(6))
     emitFirstActive(circuit, active, [gridBit, cascadeBit, atomBit])
     expect(groupCount()).toBe(1)
     // A clamp stage's output within 0..1 is recorded as a sign cascade rounding point, and isn't a bit.
@@ -931,39 +932,39 @@ describe('proven bits', () => {
         operation.roundingPoint === 'sign cascade' && operation.kind === 'affine'
         && circuit.ranges[wire]!.minimum === 0 && circuit.ranges[wire]!.maximum === 1)
     expect(stage).toBeDefined()
-    emitFirstActive(circuit, active, [gridBit, stage!.wire])
+    emitFirstActive(circuit, active, [gridBit, asWire(stage!.wire)])
     expect(groupCount()).toBe(1)
     // Reads of bits, a side that reads +0, and a read of reads.
     const table = [gridBit, cascadeBit, atomBit]
-    const clampedRead = circuit.indexRead(4, table)
-    const zeroRead = circuit.indexReadAffine([[4, 1]], 1, table, 'zero', 'zero')
-    const readOfReads = circuit.indexReadAffine([[4, 1]], -1, [clampedRead, zeroRead], 'zero', 'clamp')
+    const clampedRead = circuit.indexRead(circuit.source(4), table)
+    const zeroRead = circuit.indexReadAffine([[circuit.source(4), 1]], 1, table, 'zero', 'zero')
+    const readOfReads = circuit.indexReadAffine([[circuit.source(4), 1]], -1, [clampedRead, zeroRead], 'zero', 'clamp')
     emitFirstActive(circuit, active, [clampedRead, zeroRead, readOfReads])
     expect(groupCount()).toBe(2)
     // A fraction in the table only matters when the index can reach it.
     const withFraction = [gridBit, cascadeBit, 5]
-    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[4, 1]], 1, withFraction, 'clamp', 'clamp')])
+    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[circuit.source(4), 1]], 1, withFraction.map(asWire), 'clamp', 'clamp')])
     expect(groupCount()).toBe(2)
-    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[4, 1]], -2, withFraction, 'zero', 'clamp')])
+    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[circuit.source(4), 1]], -2, withFraction.map(asWire), 'zero', 'clamp')])
     expect(groupCount()).toBe(3)
     // Index -1..1 over 2 candidates reaches the fraction directly at position 0, and
     // through the clamp below. The +0 side above can't be reached.
-    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[4, 1]], -1, [5, cascadeBit], 'clamp', 'zero')])
+    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[circuit.source(4), 1]], -1, [circuit.source(5), cascadeBit], 'clamp', 'zero')])
     expect(groupCount()).toBe(3)
     // Index 2..4 over 2 candidates only reaches past the end: 'clamp' above reads the
     // last candidate, a fraction, and 'zero' above reads +0.
-    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[4, 1]], 2, [gridBit, 5], 'zero', 'clamp')])
+    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[circuit.source(4), 1]], 2, [gridBit, circuit.source(5)], 'zero', 'clamp')])
     expect(groupCount()).toBe(3)
-    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[4, 1]], 2, [gridBit, 5], 'clamp', 'zero')])
+    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[circuit.source(4), 1]], 2, [gridBit, circuit.source(5)], 'clamp', 'zero')])
     expect(groupCount()).toBe(4)
     // The mirror: index -4..-2 only reaches before the start.
-    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[4, 1]], -4, [5, gridBit], 'clamp', 'zero')])
+    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[circuit.source(4), 1]], -4, [circuit.source(5), gridBit], 'clamp', 'zero')])
     expect(groupCount()).toBe(4)
-    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[4, 1]], -4, [5, gridBit], 'zero', 'clamp')])
+    emitFirstActive(circuit, active, [gridBit, circuit.indexReadAffine([[circuit.source(4), 1]], -4, [circuit.source(5), gridBit], 'zero', 'clamp')])
     expect(groupCount()).toBe(5)
     // Inlining keeps the comparison bits proven.
     const parent = new Circuit(8)
-    const wireMap = inlineCircuit(parent, circuit, [0, 1, 2, 3, 4, 5, 6, 7])
+    const wireMap = inlineCircuit(parent, circuit, [parent.source(0), parent.source(1), parent.source(2), parent.source(3), parent.source(4), parent.source(5), parent.source(6), parent.source(7)])
     const parentGroups = parent.oneHotGroups.length
     emitFirstActive(parent, wireMap[active]!, [wireMap[gridBit]!, wireMap[cascadeBit]!, wireMap[zeroRead]!])
     expect(parent.oneHotGroups.length).toBe(parentGroups + 1)
@@ -987,33 +988,33 @@ describe('proven bits', () => {
       const valueCells = [10, 11, 12]
       const circuit = new Circuit(13)
       for (const wire of integerCells) {
-        circuit.assumeRange(wire, -6, 6)
-        circuit.assumeGrid(wire, 1)
+        circuit.assumeRange(asWire(wire), -6, 6)
+        circuit.assumeGrid(asWire(wire), 1)
       }
       for (const wire of pointerCells) {
-        circuit.assumeRange(wire, -512, 512)
-        circuit.assumeGrid(wire, 1 / 64)
+        circuit.assumeRange(asWire(wire), -512, 512)
+        circuit.assumeGrid(asWire(wire), 1 / 64)
       }
-      for (const wire of widthCells) circuit.assumeRange(wire, 0, 4096)
-      for (const wire of fractionCells) circuit.assumeRange(wire, 0, 1)
-      for (const wire of valueCells) circuit.assumeRange(wire, -100, 100)
+      for (const wire of widthCells) circuit.assumeRange(asWire(wire), 0, 4096)
+      for (const wire of fractionCells) circuit.assumeRange(asWire(wire), 0, 1)
+      for (const wire of valueCells) circuit.assumeRange(asWire(wire), -100, 100)
       const pick = <Item>(items: readonly Item[]) => items[randomInteger(random, items.length)]!
       // What the test knows to be bits, and wires within 0..1 that can hold fractions.
       const bits: Wire[] = []
-      const unitWires: Wire[] = [...fractionCells]
+      const unitWires: Wire[] = fractionCells.map(asWire)
       const comparisonsAndReads = new Set<Wire>()
-      const values: Wire[] = [...valueCells]
+      const values: Wire[] = valueCells.map(asWire)
       const roots: Wire[] = []
       const operationCount = 12 + randomInteger(random, 12)
       for (let operation = 0; operation < operationCount; operation++) {
         const choice = randomInteger(random, 6)
         if (choice === 0 || bits.length < 2) {
           const operands = random() < 0.4 ? pointerCells : random() < 0.5 ? widthCells : integerCells
-          const bit = emitCompare(circuit, pick(operands), pick(relations), pick(operands), {endWithBoolean: random() < 0.25})
+          const bit = emitCompare(circuit, asWire(pick(operands)), pick(relations), asWire(pick(operands)), {endWithBoolean: random() < 0.25})
           bits.push(bit)
           comparisonsAndReads.add(bit)
         } else if (choice === 1) {
-          bits.push(circuit.boolean(pick(fractionCells)))
+          bits.push(circuit.boolean(asWire(pick(fractionCells))))
         } else if (choice === 2) {
           // A table of bits, sometimes with a fraction, read at an integer cell with random sides.
           const table = Array.from({length: 1 + randomInteger(random, 5)}, () => (random() < 0.15 ? pick(unitWires) : pick(bits)))
@@ -1023,7 +1024,7 @@ describe('proven bits', () => {
           const bias = randomInteger(random, 19) - 9
           const below: OutOfRange = random() < 0.5 ? 'clamp' : 'zero'
           const above: OutOfRange = random() < 0.5 ? 'clamp' : 'zero'
-          const read = circuit.indexReadAffine([[indexCell, 1]], bias, table, below, above)
+          const read = circuit.indexReadAffine([[asWire(indexCell), 1]], bias, table, below, above)
           if (-6 + bias > table.length - 1 || 6 + bias < 0) readsOnlyThroughASide++
           // The two pools never share a wire, so a table of bits only holds wires from `bits`.
           if (table.every(wire => bits.includes(wire))) bits.push(read)
@@ -1045,7 +1046,7 @@ describe('proven bits', () => {
           roots.push(sum)
           unitWires.push(...selected)
         } else if (choice === 4) {
-          values.push(circuit.indexRead(pick(integerCells), Array.from({length: 1 + randomInteger(random, 4)}, () => pick(values))))
+          values.push(circuit.indexRead(asWire(pick(integerCells)), Array.from({length: 1 + randomInteger(random, 4)}, () => pick(values))))
         } else {
           roots.push(circuit.select(pick(bits), pick(values), pick(values)))
         }

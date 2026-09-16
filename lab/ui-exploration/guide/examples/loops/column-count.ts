@@ -22,7 +22,7 @@ export function columnLayoutReference(containerWidth: number, itemCount: number)
 // Source layout: cell 0 is the container width.
 export function buildColumnLayout(itemCount: number) {
   const circuit = new Circuit(1)
-  const containerWidth = 0
+  const containerWidth = circuit.source(0)
   circuit.assumeRange(containerWidth, 0, 16_384)
 
   // For x >= 0, floor(x / d) is how many multiples of d fit at or below x. So

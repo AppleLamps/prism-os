@@ -27,20 +27,20 @@ const exponentLabel = (value: number) => `2^${Math.log2(value)}`
   const rows: Row[] = []
   for (const stageExponent of [1, 8, 23, 24]) {
     const circuit = pixelPair()
-    const {operations, layers} = measureCost(circuit, [emitGreater(circuit, 0, 1, {stageExponent})])
+    const {operations, layers} = measureCost(circuit, [emitGreater(circuit, circuit.source(0), circuit.source(1), {stageExponent})])
     const stages = planSignCascade({differenceBound: 16384, stageExponent}).stages.length
     rows.push([`scale inside the ReLU's gate, at most 2^${stageExponent} per later stage`, stages, operations, layers])
   }
   for (const stageExponent of [1, 8, 23]) {
     const circuit = pixelPair()
-    const difference = circuit.roundAffine([[0, 1], [1, -1]])
+    const difference = circuit.roundAffine([[circuit.source(0), 1], [circuit.source(1), -1]])
     const {bit, clampInputs} = emitTraceCompilerCascade(circuit, difference, 16384, stageExponent)
     const {operations, layers} = measureCost(circuit, [bit])
     rows.push([`trace compiler layout, 2^${stageExponent} per later stage`, clampInputs.length, operations, layers])
   }
   {
     const circuit = pixelPair()
-    const {operations, layers} = measureCost(circuit, [emitGreaterByRounding(circuit, 0, 1)])
+    const {operations, layers} = measureCost(circuit, [emitGreaterByRounding(circuit, circuit.source(0), circuit.source(1))])
     const plan = planRoundingCompare({differenceBound: 16384})
     rows.push(['clamp stages, then a rounding stage', `${plan.clampStages?.stages.length ?? 0} + 1`, operations, layers])
   }
@@ -53,9 +53,9 @@ const exponentLabel = (value: number) => `2^${Math.log2(value)}`
   const rows: Row[] = []
   for (const resolution of [2 ** -149, 2 ** -60, 2 ** -30, 2 ** -10, 2 ** -6, 1]) {
     const cascadeCircuit = pixelPair()
-    const cascade = measureCost(cascadeCircuit, [emitGreater(cascadeCircuit, 0, 1, {resolution})])
+    const cascade = measureCost(cascadeCircuit, [emitGreater(cascadeCircuit, cascadeCircuit.source(0), cascadeCircuit.source(1), {resolution})])
     const roundingCircuit = pixelPair()
-    const rounding = measureCost(roundingCircuit, [emitGreaterByRounding(roundingCircuit, 0, 1, {resolution})])
+    const rounding = measureCost(roundingCircuit, [emitGreaterByRounding(roundingCircuit, roundingCircuit.source(0), roundingCircuit.source(1), {resolution})])
     const cascadeStages = planSignCascade({differenceBound: 16384, resolution}).stages.length
     const roundingPlan = planRoundingCompare({differenceBound: 16384, resolution})
     rows.push([
@@ -73,28 +73,28 @@ const exponentLabel = (value: number) => `2^${Math.log2(value)}`
   const rows: Row[] = []
   {
     const circuit = new Circuit(1)
-    circuit.assumeRange(0, -(2 ** 20), 2 ** 20)
-    rows.push(['integer bit [value >= 7], value from a source cell', ...Object.values(measureCost(circuit, [emitAtLeastInteger(circuit, 0, 7)]))])
+    circuit.assumeRange(circuit.source(0), -(2 ** 20), 2 ** 20)
+    rows.push(['integer bit [value >= 7], value from a source cell', ...Object.values(measureCost(circuit, [emitAtLeastInteger(circuit, circuit.source(0), 7)]))])
   }
   {
     const circuit = pixelPair()
-    rows.push(['integer bit [a >= b], a and b on a 1/64 grid', ...Object.values(measureCost(circuit, [emitAtLeastOnGrid(circuit, 0, 1, 1 / 64)]))])
+    rows.push(['integer bit [a >= b], a and b on a 1/64 grid', ...Object.values(measureCost(circuit, [emitAtLeastOnGrid(circuit, circuit.source(0), circuit.source(1), 1 / 64)]))])
   }
   {
     const circuit = new Circuit(2)
-    circuit.assumeRange(0, 0, 2 ** 22)
-    circuit.assumeRange(1, 0, 2 ** 22)
-    rows.push(['one boolean atom [a >= b], integers in [0, 2^22]', ...Object.values(measureCost(circuit, [emitAtLeastIntegerByRounding(circuit, 0, 1)]))])
+    circuit.assumeRange(circuit.source(0), 0, 2 ** 22)
+    circuit.assumeRange(circuit.source(1), 0, 2 ** 22)
+    rows.push(['one boolean atom [a >= b], integers in [0, 2^22]', ...Object.values(measureCost(circuit, [emitAtLeastIntegerByRounding(circuit, circuit.source(0), circuit.source(1))]))])
   }
   {
     const circuit = pixelPair()
-    const bit = emitAtLeast(circuit, 0, 1, {resolution: 1 / 64})
+    const bit = emitAtLeast(circuit, circuit.source(0), circuit.source(1), {resolution: 1 / 64})
     // Read the negation from a product, the way a select would, so the negation is copied in.
-    rows.push(['sign cascade [a >= b] at resolution 1/64, read by one product', ...Object.values(measureCost(circuit, [circuit.reglu([[0, 1]], 0, [[bit, 1]], 0)]))])
+    rows.push(['sign cascade [a >= b] at resolution 1/64, read by one product', ...Object.values(measureCost(circuit, [circuit.reglu([[circuit.source(0), 1]], 0, [[bit, 1]], 0)]))])
   }
   {
     const circuit = pixelPair()
-    rows.push(['sign cascade [a === b], every FP32 value', ...Object.values(measureCost(circuit, [emitEqual(circuit, 0, 1)]))])
+    rows.push(['sign cascade [a === b], every FP32 value', ...Object.values(measureCost(circuit, [emitEqual(circuit, circuit.source(0), circuit.source(1))]))])
   }
   printTable('Integer forms and equality', ['form', 'operations', 'layers'], rows)
 }
@@ -141,10 +141,10 @@ const exponentLabel = (value: number) => `2^${Math.log2(value)}`
 {
   const pairs = randomPixelPairs(11, 20000)
   const forms: [string, (circuit: Circuit) => [Wire, Wire, Wire | null]][] = [
-    ['sign cascade, every FP32 value', circuit => [emitGreater(circuit, 0, 1), emitAtLeast(circuit, 0, 1), emitEqual(circuit, 0, 1)]],
-    ['sign cascade, resolution 2^-10', circuit => [emitGreater(circuit, 0, 1, {resolution: 2 ** -10}), emitAtLeast(circuit, 0, 1, {resolution: 2 ** -10}), null]],
-    ['clamp stages + rounding stage, every FP32 value', circuit => [emitGreaterByRounding(circuit, 0, 1), emitAtLeastByRounding(circuit, 0, 1), null]],
-    ['one rounding stage, resolution 2^-31', circuit => [emitGreaterByRounding(circuit, 0, 1, {resolution: 2 ** -31}), emitAtLeastByRounding(circuit, 0, 1, {resolution: 2 ** -31}), null]],
+    ['sign cascade, every FP32 value', circuit => [emitGreater(circuit, circuit.source(0), circuit.source(1)), emitAtLeast(circuit, circuit.source(0), circuit.source(1)), emitEqual(circuit, circuit.source(0), circuit.source(1))]],
+    ['sign cascade, resolution 2^-10', circuit => [emitGreater(circuit, circuit.source(0), circuit.source(1), {resolution: 2 ** -10}), emitAtLeast(circuit, circuit.source(0), circuit.source(1), {resolution: 2 ** -10}), null]],
+    ['clamp stages + rounding stage, every FP32 value', circuit => [emitGreaterByRounding(circuit, circuit.source(0), circuit.source(1)), emitAtLeastByRounding(circuit, circuit.source(0), circuit.source(1)), null]],
+    ['one rounding stage, resolution 2^-31', circuit => [emitGreaterByRounding(circuit, circuit.source(0), circuit.source(1), {resolution: 2 ** -31}), emitAtLeastByRounding(circuit, circuit.source(0), circuit.source(1), {resolution: 2 ** -31}), null]],
   ]
   const rows: Row[] = []
   for (const [label, build] of forms) {
@@ -194,9 +194,9 @@ const exponentLabel = (value: number) => `2^${Math.log2(value)}`
   const rows: Row[] = []
   for (const bound of [2 ** 15, 2 ** 23, 2 ** 30, 2 ** 60]) {
     const circuit = new Circuit(2)
-    circuit.assumeRange(0, -bound / 2, bound / 2)
-    circuit.assumeRange(1, -bound / 2, bound / 2)
-    const bit = emitCompare(circuit, 0, 1, '>')
+    circuit.assumeRange(circuit.source(0), -bound / 2, bound / 2)
+    circuit.assumeRange(circuit.source(1), -bound / 2, bound / 2)
+    const bit = emitCompare(circuit, circuit.source(0), circuit.source(1), '>')
     const values = circuit.evaluateReference(Float32Array.of(smallestSubnormal, 0))
     rows.push([exponentLabel(bound), planCompare(bound).clampScales[0] ?? '-', values[bit]!])
   }
@@ -213,27 +213,27 @@ const exponentLabel = (value: number) => `2^${Math.log2(value)}`
   const forms: Form[] = []
   {
     const circuit = new Circuit(1)
-    circuit.assumeRange(0, -1000, 1000)
+    circuit.assumeRange(circuit.source(0), -1000, 1000)
     const cases = Array.from({length: 2001}, (_, index) => ({source: Float32Array.of(index - 1000), expected: index - 1000 >= 7 ? 1 : 0}))
-    forms.push({label: 'integer bit [value >= 7]', circuit, bit: emitAtLeastInteger(circuit, 0, 7), cases})
+    forms.push({label: 'integer bit [value >= 7]', circuit, bit: emitAtLeastInteger(circuit, circuit.source(0), 7), cases})
   }
   {
     const circuit = pixelPair()
     const cases = Array.from({length: 4000}, () => [Math.round(random() * 16384 * 64) / 64, Math.round(random() * 16384 * 64) / 64] as const)
       .concat([[100, 100], [100, 100 + 1 / 64], [100 + 1 / 64, 100]])
       .map(([a, b]) => ({source: Float32Array.of(a, b), expected: a >= b ? 1 : 0}))
-    forms.push({label: 'integer bit [a >= b] on a 1/64 grid', circuit, bit: emitAtLeastOnGrid(circuit, 0, 1, 1 / 64), cases})
+    forms.push({label: 'integer bit [a >= b] on a 1/64 grid', circuit, bit: emitAtLeastOnGrid(circuit, circuit.source(0), circuit.source(1), 1 / 64), cases})
   }
   {
     const circuit = new Circuit(2)
-    circuit.assumeRange(0, 0, 2 ** 22)
-    circuit.assumeRange(1, 0, 2 ** 22)
+    circuit.assumeRange(circuit.source(0), 0, 2 ** 22)
+    circuit.assumeRange(circuit.source(1), 0, 2 ** 22)
     const cases = Array.from({length: 4000}, (_, index) => {
       const a = Math.floor(random() * 2 ** 22)
       const b = index % 3 === 0 ? a : index % 3 === 1 ? Math.min(2 ** 22, a + 1) : Math.floor(random() * 2 ** 22)
       return {source: Float32Array.of(a, b), expected: a >= b ? 1 : 0}
     })
-    forms.push({label: 'one boolean atom [a >= b], integers in [0, 2^22]', circuit, bit: emitAtLeastIntegerByRounding(circuit, 0, 1), cases})
+    forms.push({label: 'one boolean atom [a >= b], integers in [0, 2^22]', circuit, bit: emitAtLeastIntegerByRounding(circuit, circuit.source(0), circuit.source(1)), cases})
   }
   for (const [label, build] of [
     ['sign cascade [difference > 0], every FP32 value', () => cascadeSignTest(16384)],
@@ -278,29 +278,29 @@ const exponentLabel = (value: number) => `2^${Math.log2(value)}`
   }
   const rows: Row[] = []
   const cascadeCircuit = pixelPair()
-  const cascadeBit = emitGreater(cascadeCircuit, 0, 1)
+  const cascadeBit = emitGreater(cascadeCircuit, cascadeCircuit.source(0), cascadeCircuit.source(1))
   for (const difference of [-1, 0, smallestSubnormal, 2 ** -148, 2 ** -30, 0.3, 100]) {
     rows.push(gradientRow(`sign cascade [a > b], every FP32 value, a - b = ${difference}`, cascadeCircuit, cascadeBit, pairWithDifference(difference)))
   }
   const rampCircuit = pixelPair()
-  const rampBit = emitGreater(rampCircuit, 0, 1, {resolution: 1})
+  const rampBit = emitGreater(rampCircuit, rampCircuit.source(0), rampCircuit.source(1), {resolution: 1})
   for (const difference of [-0.5, 0.5, 1, 2]) {
     rows.push(gradientRow(`sign cascade at resolution 1 (one clamp), a - b = ${difference}`, rampCircuit, rampBit, pairWithDifference(difference)))
   }
   const roundingCircuit = pixelPair()
-  const roundingBit = emitGreaterByRounding(roundingCircuit, 0, 1, {resolution: 2 ** -31})
+  const roundingBit = emitGreaterByRounding(roundingCircuit, roundingCircuit.source(0), roundingCircuit.source(1), {resolution: 2 ** -31})
   rows.push(gradientRow('one rounding stage, a - b = 0.25, no option', roundingCircuit, roundingBit, pairWithDifference(0.25)))
   for (const difference of [-1, 0, 2 ** -10, 0.25, 100]) {
     rows.push(gradientRow(`one rounding stage, straight-through, a - b = ${difference}`, roundingCircuit, roundingBit, pairWithDifference(difference), {booleanGradient: 'straight-through'}))
   }
   const endCircuit = pixelPair()
-  const endBit = emitGreaterByRounding(endCircuit, 0, 1)
+  const endBit = emitGreaterByRounding(endCircuit, endCircuit.source(0), endCircuit.source(1))
   for (const difference of [-1, smallestSubnormal, 2 ** -130, 2 ** -100, 0.3]) {
     rows.push(gradientRow(`clamp stages + rounding stage, straight-through, a - b = ${difference}`, endCircuit, endBit, pairWithDifference(difference), {booleanGradient: 'straight-through'}))
   }
   const integerCircuit = new Circuit(1)
-  integerCircuit.assumeRange(0, -1000, 1000)
-  const integerBit = emitAtLeastInteger(integerCircuit, 0, 5)
+  integerCircuit.assumeRange(integerCircuit.source(0), -1000, 1000)
+  const integerBit = emitAtLeastInteger(integerCircuit, integerCircuit.source(0), 5)
   for (const value of [3, 4, 4.5, 5, 6]) {
     rows.push(gradientRow(`integer bit [value >= 5], value = ${value}`, integerCircuit, integerBit, Float32Array.of(value)))
   }

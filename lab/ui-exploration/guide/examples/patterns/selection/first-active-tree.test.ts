@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {Circuit, emitCompare, emitFirstActive, validateOneHotGroups} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, emitFirstActive, validateOneHotGroups, asWire} from '../../../../../../numeric-ui-core.ts'
 import {
   buildFirstActiveSelection,
   buildFirstTargetUnderPointer,
@@ -130,12 +130,12 @@ describe('the first active candidate, in a tree', () => {
   test('emitFirstActive declares a one-hot group over emitCompare bits, and not over an AND of them built with a ReLU', () => {
     const circuit = new Circuit(3)
     for (const wire of [0, 1, 2]) {
-      circuit.assumeRange(wire, 0, 64)
-      circuit.assumeGrid(wire, 1)
+      circuit.assumeRange(asWire(wire), 0, 64)
+      circuit.assumeGrid(asWire(wire), 1)
     }
-    const gate = emitCompare(circuit, 0, '>=', 1)
-    const firstBit = emitCompare(circuit, 0, '<', 2)
-    const secondBit = emitCompare(circuit, 1, '<', 2)
+    const gate = emitCompare(circuit, circuit.source(0), '>=', circuit.source(1))
+    const firstBit = emitCompare(circuit, circuit.source(0), '<', circuit.source(2))
+    const secondBit = emitCompare(circuit, circuit.source(1), '<', circuit.source(2))
     emitFirstActive(circuit, gate, [firstBit, secondBit])
     expect(circuit.oneHotGroups.length).toBe(1)
     const both = circuit.reglu([], 1, [[firstBit, 1], [secondBit, 1]], -1)

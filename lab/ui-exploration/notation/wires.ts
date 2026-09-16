@@ -57,7 +57,7 @@ export function createNotation(circuit: Circuit, unit: Wire) {
   const max = (first: Wire, ...rest: Wire[]) => rest.reduce((result, wire) => emitMaximum(circuit, result, wire), first)
   const clamp = (value: Wire, low: Wire, high: Wire) => min(max(value, low), high)
   const assume = (wire: Wire, minimum: number, maximum: number) => {
-    circuit.assumeRange(wire, minimum, maximum)
+    circuit.assumeRange(wire, minimum, maximum, {allowExistingReaders: true})
     return wire
   }
   // `one` is the unit wire by default; pass the number 1 to put the offset in the bias instead.

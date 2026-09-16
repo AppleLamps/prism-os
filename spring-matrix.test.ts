@@ -7,6 +7,7 @@ import {
   inlineCircuit,
   validateCircuit,
   validateTensorProgram,
+  asWire,
 } from './numeric-ui-core.ts'
 import {
   type PlannedEvaluation,
@@ -199,8 +200,8 @@ function animatedObjectFp32(
 describe('applying a spring matrix', () => {
   test('equals float64 Euler steps, every compile mode matches the reference evaluator, and the cost is pinned', () => {
     const circuit = new Circuit(6)
-    for (let cell = 0; cell < 4; cell++) circuit.assumeRange(cell, -matrixBound, matrixBound)
-    const next = emitApplySpringMatrix(circuit, [0, 1, 2, 3], 4, 5)
+    for (let cell = 0; cell < 4; cell++) circuit.assumeRange(asWire(cell), -matrixBound, matrixBound)
+    const next = emitApplySpringMatrix(circuit, [circuit.source(0), circuit.source(1), circuit.source(2), circuit.source(3)], circuit.source(4), circuit.source(5))
     const roots = [next.displacement, next.velocity]
     expect(programCounts(circuit.compileTensorProgram(roots))).toEqual({liveOperations: 14, layers: 3, storedWeights: 28})
     const evaluate = circuit.createTensorEvaluator(roots)
@@ -231,8 +232,8 @@ describe('applying a spring matrix', () => {
 
   test('zero steps return the state unchanged, and extreme states stay FP32 products', () => {
     const circuit = new Circuit(6)
-    for (let cell = 0; cell < 4; cell++) circuit.assumeRange(cell, -matrixBound, matrixBound)
-    const next = emitApplySpringMatrix(circuit, [0, 1, 2, 3], 4, 5)
+    for (let cell = 0; cell < 4; cell++) circuit.assumeRange(asWire(cell), -matrixBound, matrixBound)
+    const next = emitApplySpringMatrix(circuit, [circuit.source(0), circuit.source(1), circuit.source(2), circuit.source(3)], circuit.source(4), circuit.source(5))
     const evaluate = circuit.createTensorEvaluator([next.displacement, next.velocity])
     const largest = f(3.4028234663852886e38)
     for (const [displacement, velocity] of [[123.456, -7.5], [-0, 0], [f(1e-45), -f(1e-45)], [largest, -largest], [f(2 ** 24 + 2), 3]]) {
@@ -250,10 +251,10 @@ describe('applying a spring matrix', () => {
 
   test('refuses matrix wires without finite declared ranges', () => {
     const circuit = new Circuit(6)
-    for (let cell = 0; cell < 3; cell++) circuit.assumeRange(cell, -matrixBound, matrixBound)
-    expect(() => emitApplySpringMatrix(circuit, [0, 1, 2, 3], 4, 5)).toThrow('finite declared ranges')
-    circuit.assumeRange(3, -matrixBound, Number.POSITIVE_INFINITY)
-    expect(() => emitApplySpringMatrix(circuit, [0, 1, 2, 3], 4, 5)).toThrow('finite declared ranges')
+    for (let cell = 0; cell < 3; cell++) circuit.assumeRange(asWire(cell), -matrixBound, matrixBound)
+    expect(() => emitApplySpringMatrix(circuit, [circuit.source(0), circuit.source(1), circuit.source(2), circuit.source(3)], circuit.source(4), circuit.source(5))).toThrow('finite declared ranges')
+    circuit.assumeRange(circuit.source(3), -matrixBound, Number.POSITIVE_INFINITY)
+    expect(() => emitApplySpringMatrix(circuit, [circuit.source(0), circuit.source(1), circuit.source(2), circuit.source(3)], circuit.source(4), circuit.source(5))).toThrow('finite declared ranges')
   })
 })
 
@@ -265,22 +266,22 @@ function buildObject(springCount: number, separateDestinationDuringSteps: boolea
   const settleCheckCell = springCount * fieldsPerSpring
   const snapCell = settleCheckCell + 1
   const circuit = new Circuit(snapCell + 1)
-  circuit.assumeRange(settleCheckCell, 0, 1)
-  circuit.assumeRange(snapCell, 0, 1)
+  circuit.assumeRange(asWire(settleCheckCell), 0, 1)
+  circuit.assumeRange(asWire(snapCell), 0, 1)
   const springs = Array.from({length: springCount}, (_, index) => {
     const start = index * fieldsPerSpring
-    for (let cell = start; cell < start + 4; cell++) circuit.assumeRange(cell, -matrixBound, matrixBound)
+    for (let cell = start; cell < start + 4; cell++) circuit.assumeRange(asWire(cell), -matrixBound, matrixBound)
     return {
-      matrix: [start, start + 1, start + 2, start + 3] as const,
-      displacement: start + 4,
-      velocity: start + 5,
-      destination: start + 6,
-      ...(separateDestinationDuringSteps ? {destinationDuringSteps: start + 7} : {}),
+      matrix: [circuit.source(start), circuit.source(start + 1), circuit.source(start + 2), circuit.source(start + 3)] as const,
+      displacement: circuit.source(start + 4),
+      velocity: circuit.source(start + 5),
+      destination: circuit.source(start + 6),
+      ...(separateDestinationDuringSteps ? {destinationDuringSteps: circuit.source(start + 7)} : {}),
     }
   })
   const object = emitAnimatedObject(circuit, springs, {
-    settleCheck: settleCheckCell,
-    ...(withSnap ? {snap: snapCell} : {}),
+    settleCheck: circuit.source(settleCheckCell),
+    ...(withSnap ? {snap: circuit.source(snapCell)} : {}),
     ...thresholds,
   })
   const roots = [...object.displacements, ...object.positions, ...object.velocities, object.settled, object.active]
@@ -490,18 +491,19 @@ describe('animated objects', () => {
 
   test('refuses settle check and snap wires outside 0..1, and objects without springs', () => {
     const circuit = new Circuit(8)
-    for (let cell = 0; cell < 4; cell++) circuit.assumeRange(cell, -matrixBound, matrixBound)
-    const spring = {matrix: [0, 1, 2, 3] as const, displacement: 4, velocity: 5, destination: 6}
-    expect(() => emitAnimatedObject(circuit, [spring], {settleCheck: 7})).toThrow('within 0..1')
-    circuit.assumeRange(7, 0, 1)
-    expect(() => emitAnimatedObject(circuit, [], {settleCheck: 7})).toThrow('at least one spring')
-    expect(() => emitAnimatedObject(circuit, [spring], {settleCheck: 7, snap: 6})).toThrow('within 0..1')
+    for (let cell = 0; cell < 4; cell++) circuit.assumeRange(asWire(cell), -matrixBound, matrixBound)
+    const [matrix0, matrix1, matrix2, matrix3, displacement, velocity, destination, settleCheck] = Array.from({length: 8}, (_, cell) => circuit.source(cell))
+    const spring = {matrix: [matrix0!, matrix1!, matrix2!, matrix3!] as const, displacement: displacement!, velocity: velocity!, destination: destination!}
+    expect(() => emitAnimatedObject(circuit, [spring], {settleCheck: settleCheck!})).toThrow('within 0..1')
+    circuit.assumeRange(settleCheck!, 0, 1)
+    expect(() => emitAnimatedObject(circuit, [], {settleCheck: settleCheck!})).toThrow('at least one spring')
+    expect(() => emitAnimatedObject(circuit, [spring], {settleCheck: settleCheck!, snap: destination!})).toThrow('within 0..1')
   })
 
   test('inlining keeps the values and the rounding points', () => {
     const {circuit, roots, settleCheckCell} = buildObject(2, true, true)
     const target = new Circuit(circuit.sourceSize)
-    const wireMap = inlineCircuit(target, circuit, Array.from({length: circuit.sourceSize}, (_, wire) => wire))
+    const wireMap = inlineCircuit(target, circuit, Array.from({length: circuit.sourceSize}, (_, wire) => wire).map(asWire))
     const random = createRandom(5)
     for (let sample = 0; sample < 200; sample++) {
       const source = new Float32Array(circuit.sourceSize)
@@ -928,29 +930,29 @@ function createApp() {
   const circuit = new Circuit(appCell.size)
   appPairs.forEach((constants, pair) => {
     const bound = springMatrixBound(constants)
-    for (let entry = 0; entry < 4; entry++) circuit.assumeRange(appCell.matrixStart + 4 * pair + entry, -bound, bound)
+    for (let entry = 0; entry < 4; entry++) circuit.assumeRange(asWire(appCell.matrixStart + 4 * pair + entry), -bound, bound)
   })
-  circuit.assumeRange(appCell.settleCheck, 0, 1)
+  circuit.assumeRange(circuit.source(appCell.settleCheck), 0, 1)
   for (let object = 0; object < 2; object++) {
-    circuit.assumeRange(appCell.eventActiveStart + object, 0, 1)
-    circuit.assumeRange(appCell.snapStart + object, 0, 1)
+    circuit.assumeRange(asWire(appCell.eventActiveStart + object), 0, 1)
+    circuit.assumeRange(asWire(appCell.snapStart + object), 0, 1)
   }
   const objectOfSpring = (spring: number) => appObjectSprings.findIndex(members => members.includes(spring))
   const destinations = appSpringPair.map((_, spring) => circuit.select(
-    appCell.eventActiveStart + objectOfSpring(spring),
-    appSpringCell(spring, 2),
-    appCell.eventDestinationStart + spring,
+    asWire(appCell.eventActiveStart + objectOfSpring(spring)),
+    asWire(appSpringCell(spring, 2)),
+    asWire(appCell.eventDestinationStart + spring),
   ))
   const objects = appObjectSprings.map((members, objectIndex) => emitAnimatedObject(circuit, members.map(spring => {
     const start = appCell.matrixStart + 4 * appSpringPair[spring]!
     return {
-      matrix: [start, start + 1, start + 2, start + 3] as const,
-      displacement: appSpringCell(spring, 0),
-      velocity: appSpringCell(spring, 1),
+      matrix: [circuit.source(start), circuit.source(start + 1), circuit.source(start + 2), circuit.source(start + 3)] as const,
+      displacement: circuit.source(appSpringCell(spring, 0)),
+      velocity: circuit.source(appSpringCell(spring, 1)),
       destination: destinations[spring]!,
-      destinationDuringSteps: appSpringCell(spring, 2),
+      destinationDuringSteps: circuit.source(appSpringCell(spring, 2)),
     }
-  }), {settleCheck: appCell.settleCheck, snap: appCell.snapStart + objectIndex}))
+  }), {settleCheck: circuit.source(appCell.settleCheck), snap: circuit.source(appCell.snapStart + objectIndex)}))
   const positions: Wire[] = []
   const displacements: Wire[] = []
   const velocities: Wire[] = []
@@ -960,7 +962,7 @@ function createApp() {
     velocities[spring] = object.velocities[index]!
   }))
   const zero = circuit.affine([], 0)
-  const nextSource: Wire[] = Array.from({length: appCell.size}, (_, wire) => wire)
+  const nextSource: Wire[] = Array.from({length: appCell.size}, (_, wire) => circuit.source(wire))
   for (let object = 0; object < 2; object++) {
     nextSource[appCell.eventActiveStart + object] = zero
     nextSource[appCell.snapStart + object] = zero

@@ -3,7 +3,7 @@
 // one-hot of the highest score instead of a softmax. emitArgmax builds that
 // one-hot with a tournament of pairwise comparisons, declares it as a one-hot,
 // and the masked sum over it lowers to a gather.
-import {Circuit, emitArgmax} from '../../../../../numeric-ui-core.ts'
+import {Circuit, emitArgmax, asWire} from '../../../../../numeric-ui-core.ts'
 import {emitMaskedSum} from './one-hot-read.ts'
 
 // Plain JS: the entry with the highest score; ties go to the lower position.
@@ -23,8 +23,8 @@ export function nearestPositionRead(table: readonly number[], query: number): nu
 // Source table: [query, table[0], ..., table[count - 1]].
 export function buildHardAttentionRead(count: number) {
   const circuit = new Circuit(1 + count)
-  const query = 0
-  const table = Array.from({length: count}, (_, position) => 1 + position)
+  const query = circuit.source(0)
+  const table = Array.from({length: count}, (_, position) => circuit.source(1 + position))
   circuit.assumeRange(query, 0, count - 1)
   for (const wire of table) circuit.assumeRange(wire, -1e6, 1e6)
   const unit = circuit.affine([], 1)
@@ -68,8 +68,8 @@ export function nearestTargetReference(targetPositions: readonly number[], point
 // is exact in FP32, and two different scores differ by at least 1/2 before scaling.
 export function buildRuntimeKeyHardAttention(count: number, maximumPosition: number) {
   const circuit = new Circuit(1 + count)
-  const pointerX = 0
-  const targetPositions = Array.from({length: count}, (_, target) => 1 + target)
+  const pointerX = circuit.source(0)
+  const targetPositions = Array.from({length: count}, (_, target) => circuit.source(1 + target))
   circuit.assumeRange(pointerX, 0, maximumPosition)
   for (const wire of targetPositions) circuit.assumeRange(wire, 0, maximumPosition)
   const unit = circuit.affine([], 1)
@@ -78,8 +78,8 @@ export function buildRuntimeKeyHardAttention(count: number, maximumPosition: num
   const scoreOffset = maximumPosition ** 2
   const scale = 2 ** -Math.ceil(Math.log2(2 * scoreOffset))
   const scores = targetPositions.map(target => {
-    const pointerTimesTarget = circuit.multiply(pointerX, target)
-    const targetSquared = circuit.multiply(target, target)
+    const pointerTimesTarget = circuit.multiply(pointerX, asWire(target))
+    const targetSquared = circuit.multiply(asWire(target), target)
     const score = circuit.roundAffine([[pointerTimesTarget, 2 * scale], [targetSquared, -scale]], scoreOffset * scale)
     circuit.assumeRange(score, 0, 1)
     return score

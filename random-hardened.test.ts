@@ -12,6 +12,7 @@ import {
   validateCircuit,
   validateTensorEvaluation,
   validateTensorProgram,
+  asWire,
 } from './numeric-ui-core.ts'
 
 // Seeded hash, copied from numeric-ui-core.test.ts so the suite stays deterministic.
@@ -75,15 +76,15 @@ describe('hardened random verification', () => {
       const unitWire = unitSourceCount + freeSourceCount
       const sourceSize = unitWire + 1
       const circuit = new Circuit(sourceSize)
-      for (let wire = 0; wire < unitSourceCount; wire++) circuit.assumeRange(wire, 0, 1)
+      for (let wire = 0; wire < unitSourceCount; wire++) circuit.assumeRange(asWire(wire), 0, 1)
       // Free sources span a non-trivial signed range so products and selects vary.
-      for (let wire = unitSourceCount; wire < unitWire; wire++) circuit.assumeRange(wire, -2, 2)
-      circuit.assumeRange(unitWire, 1, 1)
+      for (let wire = unitSourceCount; wire < unitWire; wire++) circuit.assumeRange(asWire(wire), -2, 2)
+      circuit.assumeRange(asWire(unitWire), 1, 1)
 
       // unitWires: provably within [0,1], legal for boolean/argmax/firstActive.
-      const unitWires: Wire[] = Array.from({length: unitSourceCount}, (_, wire) => wire)
+      const unitWires: Wire[] = Array.from({length: unitSourceCount}, (_, wire) => asWire(wire))
       // allWires: anything, legal as affine/reglu/multiply operands.
-      const allWires: Wire[] = Array.from({length: sourceSize}, (_, wire) => wire)
+      const allWires: Wire[] = Array.from({length: sourceSize}, (_, wire) => asWire(wire))
 
       const pickUnit = () => unitWires[randomInteger(random, unitWires.length)]!
       const pickAny = () => allWires[randomInteger(random, allWires.length)]!
@@ -127,7 +128,7 @@ describe('hardened random verification', () => {
         } else if (choice === 7) {
           const scoreCount = 2 + randomInteger(random, 6)
           const scores = Array.from({length: scoreCount}, () => pickUnit())
-          const winner = emitArgmax(circuit, scores, unitWire)
+          const winner = emitArgmax(circuit, scores, asWire(unitWire))
           macroApplications++
           // One-hot selectors are exact bits in [0,1]; the kept score is in [0,1].
           for (const selector of winner.selected) {
@@ -173,7 +174,7 @@ describe('hardened random verification', () => {
             settleSpeed,
             scale,
             scale,
-            unitWire,
+            asWire(unitWire),
           )
           macroApplications++
           // active is the clamp result, provably in [0,1].
@@ -229,8 +230,8 @@ describe('boolean boundary battery', () => {
 
   test('boolean rounds adjacent-ulp scores identically in both evaluators', () => {
     const circuit = new Circuit(1)
-    circuit.assumeRange(0, 0, 1)
-    const decision = circuit.boolean(0)
+    circuit.assumeRange(circuit.source(0), 0, 1)
+    const decision = circuit.boolean(circuit.source(0))
     circuit.tensorProgram = circuit.compileTensorProgram([decision])
 
     for (const [score, expected] of cases) {
@@ -250,12 +251,12 @@ describe('argmax sub-margin and exact ties', () => {
   function buildArgmax(scoreCount: number) {
     const circuit = new Circuit(scoreCount + 1)
     const unitWire = scoreCount
-    for (let wire = 0; wire < scoreCount; wire++) circuit.assumeRange(wire, 0, 1)
-    circuit.assumeRange(unitWire, 1, 1)
+    for (let wire = 0; wire < scoreCount; wire++) circuit.assumeRange(asWire(wire), 0, 1)
+    circuit.assumeRange(asWire(unitWire), 1, 1)
     const winner = emitArgmax(
       circuit,
-      Array.from({length: scoreCount}, (_, item) => item),
-      unitWire,
+      Array.from({length: scoreCount}, (_, item) => item).map(asWire),
+      asWire(unitWire),
     )
     circuit.tensorProgram = circuit.compileTensorProgram([...winner.selected, winner.score])
     return {circuit, winner, unitWire}

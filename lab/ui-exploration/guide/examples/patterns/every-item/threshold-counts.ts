@@ -27,7 +27,7 @@ export function columnLayoutReference(containerWidth: number, itemCount: number)
 // Source table: [containerWidth].
 export function buildColumnLayout(itemCount: number) {
   const circuit = new Circuit(1)
-  const containerWidth = 0
+  const containerWidth = circuit.source(0)
   circuit.assumeRange(containerWidth, 0, 16_384)
   circuit.assumeGrid(containerWidth, 1)
 

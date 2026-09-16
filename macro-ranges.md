@@ -28,7 +28,7 @@ The builder preserves multiplication as metadata on its expanded result. Backpro
 
 The older `off + gate * (on - off)` expansion could lose a small selected value, or overflow `on - off` even when both candidates were finite. Both failures are covered by regression tests. The current two-product expansion avoids subtracting the candidates during forward execution.
 
-With a fractional gate, the selection interpolates between the operands with FP32 rounding; the interpolation is not an exact real-number calculation. Infinite or NaN candidates are outside the finite-operand contract because an unselected product can still compute `0 * Infinity`.
+With a fractional gate, the selection interpolates between the operands with FP32 rounding; the interpolation is not an exact real-number calculation. Infinite or NaN candidates are outside the finite-operand contract because an unselected product can still compute `0 * Infinity`. Range propagation doesn't track NaN, and many operands have open declared ranges, e.g. every window spring position in IndirectOS, so the builder doesn't refuse them. In tests, `validateNoNaN(circuit, values)` names the operation that produced the first NaN, e.g. the product of a select's unpicked side, with the select's gate and operand values.
 
 ## Minimum and maximum
 
@@ -81,5 +81,7 @@ Grid inference follows the same rule as integer bits: a sum or product has a gri
 Inferred ranges follow the rounded coefficient, product, and accumulated sum at each FP32 step. Potentially nonfinite products are not treated as finite zero. Gather lowering requires finite FP32 candidate bounds, not merely finite float64 endpoints.
 
 `Circuit.affine` remains a builder expression that may combine small affine producers. Use `Circuit.roundAffine` when an evaluation must remain a separate rounding point. It also preserves term order, including constant and duplicate terms. Multiplication and selection preserve their operand wires automatically.
+
+A declaration doesn't change operations built before it, e.g. `multiply(velocity, timestep)` stays 3 operations when the timestep is declared nonnegative afterwards, so `assumeRange`, and `assumeOneHot` through it, throws when it narrows the range of a wire that an operation already reads, and `assumeGrid` throws when it changes the grid of such a wire, unless the caller passes `{allowExistingReaders: true}`. `inlineCircuit` takes the same option for the source circuit's declared ranges and grids. A one-hot group whose members already have 0..1 ranges doesn't throw, although builder code that ran before the group doesn't change either, e.g. `emitFirstActive` declares a group on its selection only when its candidates are proven exact bits, e.g. members of a declared group, so a call that ran before the group was declared left its selection without a group.
 
 `assumeRange`, `assumeGrid` and `assumeOneHot` are caller contracts, not proofs, and so are the integer index of an index read and the exact 0 or 1 in an animated object's `settleCheck` and `snap` cells. A false declaration can still lead to an invalid optimization, e.g. a false grid turns an integer bit into a fraction. See `numeric-semantics.test.ts`, `macro-ranges.test.ts`, `index-read.test.ts`, `comparison.test.ts`, `spring-matrix.test.ts`, and the gather differential tests.

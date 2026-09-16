@@ -47,7 +47,7 @@ function probeLossScaling() {
 function probeMultiplicationGradient() {
   for (const [left, right] of [[0, 1], [1, 0]] as const) {
     const circuit = new Circuit(2)
-    const output = emitMultiply(circuit, left, right)
+    const output = emitMultiply(circuit, circuit.source(left), circuit.source(right))
     const source = new Float32Array([3, 0])
     const values = circuit.evaluateReference(source)
     const outputGradients = new Float32Array(values.length)
@@ -110,15 +110,15 @@ function probeCompiler() {
 
 function probeGatherOverflow() {
   const circuit = new Circuit(4)
-  circuit.assumeRange(0, 0, 1)
-  circuit.assumeRange(1, 0, 1)
-  circuit.assumeOneHot([0, 1])
-  circuit.assumeRange(2, 5, 5)
-  circuit.assumeRange(3, 0, 3.4e38)
-  const twice = circuit.reglu([[3, 2]], 0, [], 1)
+  circuit.assumeRange(circuit.source(0), 0, 1)
+  circuit.assumeRange(circuit.source(1), 0, 1)
+  circuit.assumeOneHot([circuit.source(0), circuit.source(1)])
+  circuit.assumeRange(circuit.source(2), 5, 5)
+  circuit.assumeRange(circuit.source(3), 0, 3.4e38)
+  const twice = circuit.reglu([[circuit.source(3), 2]], 0, [], 1)
   const output = circuit.affine([
-    [emitMultiply(circuit, 2, 0), 1],
-    [emitMultiply(circuit, twice, 1), 1],
+    [emitMultiply(circuit, circuit.source(2), circuit.source(0)), 1],
+    [emitMultiply(circuit, twice, circuit.source(1)), 1],
   ])
   circuit.tensorProgram = circuit.compileTensorProgram([output])
   const source = new Float32Array([1, 0, 5, 3e38])

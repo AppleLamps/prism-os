@@ -44,14 +44,14 @@ const itemWidthLimit = 1024
 // Source cells: maxWidth, lineStart, then one width per item.
 export function buildLineFill(form: ChainForm, itemCount: number) {
   const circuit = new Circuit(2 + itemCount)
-  const maxWidth: Wire = 0
-  const lineStart: Wire = 1
+  const maxWidth = circuit.source(0)
+  const lineStart = circuit.source(1)
   circuit.assumeRange(maxWidth, 0, maxWidthLimit)
   circuit.assumeRange(lineStart, 0, lineStartLimit)
   const placed: Wire[] = []
   let lineWidth: Wire = lineStart
   for (let item = 0; item < itemCount; item++) {
-    const itemWidth: Wire = 2 + item
+    const itemWidth = circuit.source(2 + item)
     circuit.assumeRange(itemWidth, 0, itemWidthLimit)
     let placedWidth: Wire
     if (form === 'atomOnGrid' || form === 'integerBitOnGrid') {

@@ -92,10 +92,10 @@ export type HighestScoreForm = 'emitArgmax' | 'exact tree' | 'exact chain'
 // emitCompare builds integer bits instead of a sign cascade.
 export function buildBestLayout(layoutCount: number, form: HighestScoreForm, options: {grid?: number} = {}) {
   const circuit = new Circuit(1 + 2 * layoutCount)
-  const unit = 0
+  const unit = circuit.source(0)
   circuit.assumeRange(unit, 1, 1)
-  const scores = Array.from({length: layoutCount}, (_, layout) => 1 + 2 * layout)
-  const thumbnailWidths = Array.from({length: layoutCount}, (_, layout) => 2 + 2 * layout)
+  const scores = Array.from({length: layoutCount}, (_, layout) => circuit.source(1 + 2 * layout))
+  const thumbnailWidths = Array.from({length: layoutCount}, (_, layout) => circuit.source(2 + 2 * layout))
   for (const score of scores) {
     circuit.assumeRange(score, 0, 1)
     if (options.grid !== undefined) circuit.assumeGrid(score, options.grid)

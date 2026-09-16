@@ -3,7 +3,7 @@
 // the way spring-bank's boxes do. The circuit also has a second output that makes
 // the same selection on a copy of the settle bit held in a cell, so the backward
 // pass treats the decision as data, i.e. gradient 0 through the decision.
-import {Circuit, emitSelect} from '../../../../../numeric-ui-core.ts'
+import {Circuit, emitSelect, asWire} from '../../../../../numeric-ui-core.ts'
 import {
   type ParameterName,
   type SpringParameters,
@@ -30,7 +30,7 @@ const settledAsDataCell = springSourceSize
 export function buildSnappedSpringCircuit() {
   const circuit = new Circuit(springSourceSize + 1)
   declareSpringRanges(circuit, springCells)
-  circuit.assumeRange(settledAsDataCell, 0, 1)
+  circuit.assumeRange(asWire(settledAsDataCell), 0, 1)
   const frame = emitMatrixPower(circuit, emitStepMatrix(circuit, springCells), springCells.stepBits)
   const stepped = emitApplyFrameMatrix(circuit, frame, springCells)
   // Each ReLU is exactly 0 when its side is within the threshold, and a sum of
@@ -47,7 +47,7 @@ export function buildSnappedSpringCircuit() {
   const zero = circuit.affine([], 0)
   const position = emitSelect(circuit, settled, stepped.position, springCells.destination)
   const velocity = emitSelect(circuit, settled, stepped.velocity, zero)
-  const positionWithDecisionAsData = emitSelect(circuit, settledAsDataCell, stepped.position, springCells.destination)
+  const positionWithDecisionAsData = emitSelect(circuit, asWire(settledAsDataCell), stepped.position, springCells.destination)
   return {circuit, cells: springCells, settledAsDataCell, stepped, exceedance, settled, position, velocity, positionWithDecisionAsData}
 }
 

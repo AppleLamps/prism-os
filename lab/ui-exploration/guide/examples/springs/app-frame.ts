@@ -4,7 +4,7 @@
 // pointer down shrinks the highlight a little. The highlight's top and scale are
 // two springs with different stiffness and damping. One clock counts this
 // frame's 4 ms steps, and both springs step by its binary digits.
-import {Circuit, type Wire, emitMaximum, emitMinimum} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire, emitMaximum, emitMinimum} from '../../../../../numeric-ui-core.ts'
 import {type Spring, seededRandom, spring, springStillAnimating, stepSpringTo} from './frame-rate-check.ts'
 import {emitStepSpringTo} from './spring-catch-up.ts'
 import {type ClockCells, declareClockRanges, emitSpringClock, maxCarriedMs, maxSteps, timeGrid} from './spring-clock.ts'
@@ -20,18 +20,18 @@ export const pressedScale = 0.97
 // cell; the builder functions keep no state of their own.
 export const cell = {
   // Written by JS every frame.
-  frameDeltaMs: 0,
-  arrowDown: 1,
-  arrowUp: 2,
-  pointerHeld: 3,
+  frameDeltaMs: asWire(0),
+  arrowDown: asWire(1),
+  arrowUp: asWire(2),
+  pointerHeld: asWire(3),
   // State, written back from the next-state outputs.
-  leftoverMs: 4,
-  running: 5,
-  selectedIndex: 6,
-  topPosition: 7,
-  topVelocity: 8,
-  scalePosition: 9,
-  scaleVelocity: 10,
+  leftoverMs: asWire(4),
+  running: asWire(5),
+  selectedIndex: asWire(6),
+  topPosition: asWire(7),
+  topVelocity: asWire(8),
+  scalePosition: asWire(9),
+  scaleVelocity: asWire(10),
   size: 11,
 } as const
 
@@ -74,7 +74,7 @@ export function buildHighlightFrame(circuit: Circuit) {
   const stillAnimating = emitMaximum(circuit, top.stillAnimating, scale.stillAnimating)
 
   // Commit state. Cells that JS writes every frame pass through unchanged.
-  const nextSource: Wire[] = Array.from({length: cell.size}, (_, index) => index)
+  const nextSource: Wire[] = Array.from({length: cell.size}, (_, index) => circuit.source(index))
   nextSource[cell.leftoverMs] = clock.nextLeftoverMs
   nextSource[cell.running] = stillAnimating
   nextSource[cell.selectedIndex] = selectedIndex

@@ -15,8 +15,8 @@ export const relations: readonly Relation[] = ['>', '>=', '<', '<=', '===']
 // Source table: [pointerX, windowLeft].
 export function buildSharedCompare(options: {grid?: number, endWithBoolean?: boolean} = {}) {
   const circuit = new Circuit(2)
-  const pointerX = 0
-  const windowLeft = 1
+  const pointerX = circuit.source(0)
+  const windowLeft = circuit.source(1)
   for (const wire of [pointerX, windowLeft]) {
     circuit.assumeRange(wire, 0, 16_384)
     if (options.grid !== undefined) circuit.assumeGrid(wire, options.grid)
@@ -32,9 +32,9 @@ export function buildSharedCompare(options: {grid?: number, endWithBoolean?: boo
 // Source table: [a, b].
 export function buildMinimums() {
   const circuit = new Circuit(2)
-  circuit.assumeRange(0, 0, 16_384)
-  circuit.assumeRange(1, 0, 16_384)
-  const drifting = emitMinimum(circuit, 0, 1)
-  const exact = emitMinimumExact(circuit, 0, 1)
+  circuit.assumeRange(circuit.source(0), 0, 16_384)
+  circuit.assumeRange(circuit.source(1), 0, 16_384)
+  const drifting = emitMinimum(circuit, circuit.source(0), circuit.source(1))
+  const exact = emitMinimumExact(circuit, circuit.source(0), circuit.source(1))
   return {circuit, drifting, exact}
 }

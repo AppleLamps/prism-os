@@ -267,7 +267,7 @@ test('seeded circuits with gathers match the reference on every wire', () => {
       }
     }
     for (const declaration of lateDeclarations) {
-      circuit.assumeOneHot(declaration.members, declaration.allowAllZero)
+      circuit.assumeOneHot(declaration.members, declaration.allowAllZero, {allowExistingReaders: true})
     }
     if (usedPairForm) pairFormCircuits++
 

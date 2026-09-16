@@ -121,6 +121,6 @@ export function evaluateStagedRow(program: StagedRow, cards: readonly Card[], in
 export function stagedStageSizes(program: StagedRow) {
   return [program.sizes, program.placement, program.hover].map(stage => ({
     name: stage.name,
-    ...measureCircuit(stage.circuit, Object.values<number>(stage.outputs)),
+    ...measureCircuit(stage.circuit, Object.values(stage.outputs)),
   }))
 }
