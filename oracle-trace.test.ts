@@ -7,13 +7,14 @@ import {
   sourceField as windowSourceFieldTable,
   windowCount,
   windowOutputField,
+  windowSourceField,
+  windowStateField,
 } from './window-manager.ts'
 import {
   controlField,
   createPhotoGalleryMachine,
   itemCount as photoItemCount,
   photoField,
-  sourceField as photoSourceTable,
   thumbnailField,
 } from './photo-gallery.ts'
 import {
@@ -57,25 +58,37 @@ function verifyStep(machine: Machine, prefields: readonly (readonly [number, num
   return machine.circuit.tensorProgram!.wireOrder.length
 }
 
+// Machines on host-timed springs run several evaluations per step: one per event
+// timestamp, settle checks between frames, and the frame. The observer compares
+// the reference and tensor evaluators on the exact table of every evaluation.
+function verifyEvaluations(machine: Machine & {
+  observe(observer: {beforeEvaluate?: (table: Float32Array) => void}): void
+}) {
+  const counts = {evaluations: 0, comparisons: 0}
+  machine.observe({
+    beforeEvaluate(table) {
+      const tensorValues = machine.circuit.evaluateTensor(table)
+      validateTensorEvaluation(table, machine.circuit, tensorValues)
+      counts.evaluations++
+      counts.comparisons += machine.circuit.tensorProgram!.wireOrder.length
+    },
+  })
+  return counts
+}
+
 describe('production circuits match the reference interpreter across scripted traces', () => {
   test('window manager: drags, controls, photos, and viewport resizes', () => {
     const machine = createWindowManagerMachine()
+    const checked = verifyEvaluations(machine)
     const random = createRandom(0x0c1a5e)
     let frameClock = 0
-    let comparisons = 0
     let steps = 0
     let width = 1280
     let height = 800
 
-    // Drive one frame: snapshot/verify against the exact pre-writeback source,
-    // then let the machine advance and write nextSource back into its table.
+    // Drive one frame. The observer checks every evaluation the step runs.
     function advance(elapsed: number) {
       frameClock += elapsed
-      comparisons += verifyStep(machine, [
-        [windowSourceFieldTable.viewportWidth, width],
-        [windowSourceFieldTable.viewportHeight, height],
-        [windowSourceFieldTable.frameTime, frameClock],
-      ])
       steps++
       return machine.step(width, height, frameClock)
     }
@@ -200,10 +213,16 @@ describe('production circuits match the reference interpreter across scripted tr
         height: values[photos[start + photoField.height]!]!,
       }
     }
-    // Select a grid photo (local coordinates feed the inlined photo click latch).
+    // Select a grid photo. photoClick takes viewport coordinates, and the program
+    // reads them relative to Photos' content box at the window's destination, which
+    // for a window that isn't maximized is its stored left and top.
     {
       const photo = photoLocal(values, 5)
-      machine.photoClick(photo.left + photo.width / 2, photo.top + photo.height / 2)
+      expect(machine.source[windowSourceField(photosWindowIndex, windowStateField.maximized)]).toBe(0)
+      const contentLeft = machine.source[windowSourceField(photosWindowIndex, windowStateField.left)]! + 1
+      const contentTop = machine.source[windowSourceField(photosWindowIndex, windowStateField.top)]!
+        + machine.source[windowSourceFieldTable.titleHeight]! + 1
+      machine.photoClick(contentLeft + photo.left + photo.width / 2, contentTop + photo.top + photo.height / 2)
       values = advance(irregularFrameTime(random))
       for (let settle = 0; settle < 3; settle++) values = advance(irregularFrameTime(random))
     }
@@ -238,28 +257,23 @@ describe('production circuits match the reference interpreter across scripted tr
 
     expect(steps).toBeGreaterThanOrEqual(100)
     expect(machine.source[photoSourceField.clickActive]).toBe(0)
-    expect(comparisons).toBeGreaterThan(0)
+    expect(checked.evaluations).toBeGreaterThan(steps)
     // Surface the totals for the run report.
-    console.log(`window manager: ${steps} steps, ${comparisons} wire comparisons`)
+    console.log(`window manager: ${steps} steps, ${checked.evaluations} evaluations, ${checked.comparisons} wire comparisons`)
   })
 
   test('photo gallery: selection, wraparound navigation, lightbox close, tiny viewports', () => {
     const machine = createPhotoGalleryMachine()
+    const checked = verifyEvaluations(machine)
     const random = createRandom(0x70a9ce)
-    let comparisons = 0
     let steps = 0
     let width = 1280
     let height = 720
     let present = 1
     let interactive = 1
 
+    // Drive one frame. The observer checks every evaluation the step runs.
     function advance() {
-      comparisons += verifyStep(machine, [
-        [photoSourceTable.viewportWidth, width],
-        [photoSourceTable.viewportHeight, height],
-        [photoSourceTable.present, present],
-        [photoSourceTable.interactive, interactive],
-      ])
       steps++
       return machine.step(width, height, present, interactive)
     }
@@ -363,8 +377,8 @@ describe('production circuits match the reference interpreter across scripted tr
     }
 
     expect(steps).toBeGreaterThanOrEqual(100)
-    expect(comparisons).toBeGreaterThan(0)
-    console.log(`photo gallery: ${steps} steps, ${comparisons} wire comparisons`)
+    expect(checked.evaluations).toBeGreaterThan(steps)
+    console.log(`photo gallery: ${steps} steps, ${checked.evaluations} evaluations, ${checked.comparisons} wire comparisons`)
   })
 
   test('candidate gallery: layout tournament, focus clicks, tiny viewports', () => {

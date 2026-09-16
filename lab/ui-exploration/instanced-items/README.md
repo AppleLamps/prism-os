@@ -4,6 +4,8 @@ This prototype asks whether UI can be written the way a shader is written: one p
 
 It adds a small builder on top of `Circuit` for staged programs, three executors for the same program (the duplicated circuit, generated JS with one instance loop per stage, and WGSL compute shaders for the per-item stages), and applies them to chenglou.github.io's photo gallery at 221, 1,000 and 10,000 photos and to IndirectOS's windows, dock items and photos. `numeric-ui-core.ts` is unchanged; every file imports it.
 
+Update, September 15, 2026: window-manager.ts and photo-gallery.ts moved to host-timed springs, so `indirect-os-compare.ts` and `report.ts` import the pre-change IndirectOS from codegen's `window-manager-copy.ts` and `photo-gallery-copy.ts`.
+
 ## What it is and how to run it
 
 From the repository root:

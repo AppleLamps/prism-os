@@ -13,7 +13,7 @@ import {
   windowOutputField,
   windowSourceField,
   windowStateField,
-} from '../../../window-manager.ts'
+} from '../codegen/window-manager-copy.ts'
 import {type IndirectOSMachine, type IndirectOSOptions, type MachineOptions, createIndirectOSMachine, windowCount} from './indirect-os.ts'
 import {photoCount} from './photos.ts'
 import {leafWires} from './table.ts'

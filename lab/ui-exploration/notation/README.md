@@ -4,6 +4,8 @@ This prototype asks how much of writing UI in this approach is essential UI logi
 
 `numeric-ui-core.ts` is imported unchanged. No repository file outside this folder was edited.
 
+Update, September 15, 2026: window-manager.ts and photo-gallery.ts moved to host-timed springs, so `equivalence.test.ts` and `traces.ts` compare the rewrite with the pre-change IndirectOS from codegen's `window-manager-copy.ts` and `photo-gallery-copy.ts`.
+
 ## How to run
 
 From the repository root:

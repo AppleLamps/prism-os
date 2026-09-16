@@ -5,7 +5,7 @@
 // (several minutes; the 10,000-photo duplicated circuit needs about 3 GB of heap). Results merge
 // into results.json. Run one process at a time: each process rewrites results.json from what it read at start.
 import {existsSync, readFileSync, writeFileSync} from 'node:fs'
-import {createWindowManagerMachine} from '../../../window-manager.ts'
+import {createWindowManagerMachine} from '../codegen/window-manager-copy.ts'
 import {createExecutor} from './executor.ts'
 import {createDuplicatedMachine, expandDuplicated, measureCircuit, type PrefixLowering} from './expand.ts'
 import {FakeBrowser} from '../gallery/fake-dom.ts'

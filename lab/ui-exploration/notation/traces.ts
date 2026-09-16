@@ -5,8 +5,8 @@ import {
   createWindowManagerMachine,
   dockOutputField,
   windowOutputField,
-} from '../../../window-manager.ts'
-import {controlField, photoField} from '../../../photo-gallery.ts'
+} from '../codegen/window-manager-copy.ts'
+import {controlField, photoField} from '../codegen/photo-gallery-copy.ts'
 import {type IndirectOSMachine, createIndirectOSMachine, windowCount} from './indirect-os.ts'
 import {leafWires} from './table.ts'
 import {read} from './wires.ts'

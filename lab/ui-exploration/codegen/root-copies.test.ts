@@ -1,14 +1,13 @@
 import {expect, test} from 'bun:test'
 import * as rootCandidateGallery from '../../../candidate-gallery.ts'
-import * as rootWindowManager from '../../../window-manager.ts'
 import * as candidateGalleryCopy from './candidate-gallery-copy.ts'
 import {applyInteraction, interactionFrameTime} from './indirect-os-machine.ts'
 import * as windowManagerCopy from './window-manager-copy.ts'
 
 // The folder imports copies of candidate-gallery.ts and window-manager.ts without their mount at import time (see the
 // comment at the top of each copy). Headless runs have no `document`, so the root modules can be imported here without
-// mounting anything, and these tests check that each copy still builds the same program as its root module, e.g. after
-// someone edits the root module and forgets the copy.
+// mounting anything, and the candidate-gallery test checks that its copy still builds the same program as its root
+// module, e.g. after someone edits the root module and forgets the copy.
 
 test('candidate-gallery-copy.ts builds the same program and steps to the same values as candidate-gallery.ts', () => {
   expect(candidateGalleryCopy.sourceField).toEqual(rootCandidateGallery.sourceField)
@@ -28,25 +27,25 @@ test('candidate-gallery-copy.ts builds the same program and steps to the same va
   }
 })
 
-test('window-manager-copy.ts builds the same program as window-manager.ts and tracks it over the scripted session', () => {
-  expect(windowManagerCopy.sourceField).toEqual(rootWindowManager.sourceField)
-  expect(windowManagerCopy.windowStateField).toEqual(rootWindowManager.windowStateField)
-  expect(windowManagerCopy.windowOutputField).toEqual(rootWindowManager.windowOutputField)
-  expect(windowManagerCopy.dockOutputField).toEqual(rootWindowManager.dockOutputField)
-  expect(windowManagerCopy.photoSourceField).toEqual(rootWindowManager.photoSourceField)
-  const root = rootWindowManager.createWindowManagerMachine()
+// Until September 15, 2026, this test compared window-manager-copy.ts with window-manager.ts. The root module then moved
+// to host-timed springs, and the copy, with photo-gallery-copy.ts, keeps the program from commit 4a91fec, which the lab
+// folders that measure the original IndirectOS import. So the test pins that program and the table after the session.
+test('window-manager-copy.ts keeps the IndirectOS program from commit 4a91fec and steps to the same table over the scripted session', () => {
   const copy = windowManagerCopy.createWindowManagerMachine()
-  expect(copy.tensorProgram).toEqual(root.tensorProgram)
-  expect(copy.output).toEqual(root.output)
-  expect(copy.source).toEqual(root.source)
+  const program = copy.tensorProgram
+  expect([
+    program.valueCount - program.sourceSize,
+    program.layers.length,
+    program.layers.reduce((sum, layer) => sum + layer.weights.length, 0),
+    program.layers.reduce((sum, layer) => sum + layer.gatherReads.length, 0),
+  ]).toEqual([5253, 192, 11598, 12])
   for (let frame = 0; frame < 240; frame++) {
-    applyInteraction(root, frame)
     applyInteraction(copy, frame)
-    const rootValues = root.step(1280, 800, interactionFrameTime(frame))
-    const copyValues = copy.step(1280, 800, interactionFrameTime(frame))
-    if (!Buffer.from(copyValues.buffer, copyValues.byteOffset, copyValues.byteLength).equals(Buffer.from(rootValues.buffer, rootValues.byteOffset, rootValues.byteLength))) {
-      throw new Error(`frame ${frame}: the copy's values differ from window-manager.ts`)
-    }
+    copy.step(1280, 800, interactionFrameTime(frame))
   }
-  expect(copy.source).toEqual(root.source)
+  const tableHash = new Bun.CryptoHasher('sha256')
+    .update(new Uint8Array(copy.source.buffer, copy.source.byteOffset, copy.source.byteLength))
+    .digest('hex')
+  // Recorded at commit 4a91fec, when the copy built the same program as window-manager.ts.
+  expect(tableHash).toBe('0953827a90136c395b05c7dc1e838978dee586a02e75b4cd2cf597105e026915')
 })

@@ -4,6 +4,8 @@
 
 In IndirectOS today, one frame is one evaluation at one time: the frame both computes what's on screen and writes the next state back. This prototype separates the two. State is written back only by commit evaluations, which run at each event's timestamp and at settle times derived from the committed state. What's on screen comes from display evaluations, which run from the last committed table with the time since that commit, and discard their next-source outputs. Because no frame ever writes state, the committed tables are the same bits at 10 fps, 240 fps, and through 500 ms and 2 s stalls, and so is everything displayed at a shared timestamp. The prototype then treats time as an instance axis: from a commit, all 301 fixed 4 ms samples until the 300-step cap are instances of one program, where instance i holds M^i in the 4 spring-matrix cells. Those samples become Web Animations keyframes. In a model of how those animations play, transform and opacity keep playing while the main thread is blocked, and width, height and z-index wait for it.
 
+Update, September 15, 2026: window-manager.ts now commits this way too. host-timing.ts's `advanceFrame` runs an evaluation at each event's timestamp and at settle checks, only those evaluations and snaps write state back, and a frame's evaluation runs on a copy of the table ([execution-model.md](../../../execution-model.md#which-evaluations-write-state-back)). This folder's predicted keyframes aren't in the repo root.
+
 Run from the repo root:
 
 - `bun test lab/ui-exploration/event-time` runs 10 tests in about 3 to 5 s.

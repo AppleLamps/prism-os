@@ -1,5 +1,7 @@
 import {validateTensorProgram} from '../../numeric-ui-core.ts'
+import {springMatrixPower, springStepMatrix} from '../../host-timing.ts'
 import {createCandidateGalleryMachine} from '../../candidate-gallery.ts'
+import {springConstants} from '../../photo-gallery.ts'
 import {
   createWindowManagerMachine,
   sourceField as windowSourceField,
@@ -54,7 +56,13 @@ function measure(circuitName: string, lower: boolean): Measurement {
     machine.step(1280, 800, 48)
     machine.source[windowSourceField.viewportWidth] = 1280
     machine.source[windowSourceField.viewportHeight] = 800
-    machine.source[windowSourceField.frameTime] = 64
+    // The stored table holds the identity spring matrix, which runs 0 steps. Time
+    // evaluations that step springs 4 times, like one 16 ms frame. The stored
+    // settle check and snap cells are already 0.
+    machine.source.set(
+      springMatrixPower(springStepMatrix(springConstants), 4),
+      windowSourceField.springMatrixStart,
+    )
     circuit = machine.circuit
     source = machine.source
     programRoots = [...machine.tensorProgram.roots]

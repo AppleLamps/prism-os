@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
+import {type WriteBack, quantizeTimeMs} from './host-timing.ts'
+import {validateGrids} from './numeric-ui-core.ts'
 import {
   createWindowManagerMachine,
   dockOutputField,
   dragSourceField,
   photoFocusSourceField,
   photoSourceField,
+  photoThumbnailSpringSourceField,
+  projectWindowElements,
   resizeSourceField,
   sourceField,
   stackSourceField,
@@ -14,7 +18,7 @@ import {
   windowSourceField,
   windowStateField,
 } from './window-manager.ts'
-import {itemCount as photoCount, photoField} from './photo-gallery.ts'
+import {itemCount as photoCount, photoField, thumbnailSpringField} from './photo-gallery.ts'
 
 const viewportWidth = 1280
 const viewportHeight = 800
@@ -70,6 +74,8 @@ function projectWindows(machine: Machine, values: Float32Array) {
       maximized: values[output[start + windowOutputField.maximized]!]!,
       contentWidth: values[output[start + windowOutputField.contentWidth]!]!,
       contentHeight: values[output[start + windowOutputField.contentHeight]!]!,
+      destinationWidth: values[output[start + windowOutputField.destinationWidth]!]!,
+      destinationHeight: values[output[start + windowOutputField.destinationHeight]!]!,
     }
   })
 }
@@ -102,9 +108,17 @@ function assertCenteredOnDock(
   ) < 1e-9)
 }
 
+// 8 ms before the next frame of step(), so that frame steps springs for 8 ms after
+// the press. A press at the frame's own time runs 0 steps in that frame, and the
+// frame shows where the animation starts.
+function pressTime(machine: Machine) {
+  return (frameTimeByMachine.get(machine) ?? 0) + frameDuration - 8
+}
+
 function click(machine: Machine, x: number, y: number) {
-  machine.pointerDown(x, y)
-  machine.pointerUp(x, y)
+  const timeStamp = pressTime(machine)
+  machine.pointerDown(x, y, timeStamp)
+  machine.pointerUp(x, y, timeStamp)
   return step(machine)
 }
 
@@ -307,6 +321,20 @@ function createRandomAction(
   }
 }
 
+// Checks every declared and inferred grid on every evaluation's table, e.g. that
+// stored window geometry stays on the 1/64 px grid, which the hit tests' integer
+// bits rely on.
+function checkGridsOnEveryEvaluation(machine: Machine) {
+  const counts = {evaluations: 0}
+  machine.observe({
+    beforeEvaluate(table) {
+      validateGrids(machine.circuit, machine.circuit.evaluateReference(table))
+      counts.evaluations++
+    },
+  })
+  return counts
+}
+
 function applyRandomAction(machine: Machine, action: RandomAction) {
   for (const event of action.events) {
     if (event.kind === 'down') machine.pointerDown(event.x, event.y)
@@ -338,6 +366,8 @@ test('the fixed table projects four bounded windows and one focused front window
     maximized: 0,
     contentWidth: 518,
     contentHeight: 294,
+    destinationWidth: 520,
+    destinationHeight: 340,
   })
   for (let rank = 0; rank < windowCount; rank++) {
     assert.equal(machine.source[stackSourceField(rank, rank)], 1)
@@ -657,8 +687,9 @@ test('a hidden window tracks a resized dock without becoming visible', () => {
   assertCenteredOnDock(window, dock)
 })
 
-test('long mixed event sequences preserve Boolean state and stacking', () => {
+test('long mixed event sequences preserve Boolean state, stacking and grids', () => {
   const machine = createWindowManagerMachine()
+  const gridChecks = checkGridsOnEveryEvaluation(machine)
   const random = createRandom(0x51a7e)
   let width = viewportWidth
   let height = viewportHeight
@@ -672,6 +703,31 @@ test('long mixed event sequences preserve Boolean state and stacking', () => {
     values = step(machine, width, height, 1 + random() * 40)
     assertWindowManagerInvariants(machine, values, width, height)
   }
+  assert.ok(gridChecks.evaluations > 2_000, `${gridChecks.evaluations} evaluations checked`)
+})
+
+test('a press hits a window when it is at least half a pixel inside, with pointer coordinates on a 1/64 px grid within ±32,768 px', () => {
+  // Window 0 spans x from 54 to 574, and no other window covers (54.5, 224).
+  // Window 3 starts in front.
+  for (const {x, focused} of [
+    {x: 54.5 - 1 / 64, focused: 3},
+    {x: 54.5, focused: 0},
+    // Rounds to 54.5.
+    {x: 54.495, focused: 0},
+  ]) {
+    const machine = createWindowManagerMachine()
+    step(machine)
+    assertFocused(projectWindows(machine, click(machine, x, 224)), focused)
+  }
+
+  const machine = createWindowManagerMachine()
+  step(machine)
+  machine.pointerMove(-50_000, 100.001)
+  step(machine)
+  assert.deepEqual(
+    [machine.source[sourceField.pointerX], machine.source[sourceField.pointerY]],
+    [-32_768, 100],
+  )
 })
 
 test('next state is a direct numeric view and runtime atoms remain fixed', () => {
@@ -703,16 +759,35 @@ test('Photos state and behavior run inside the one window-manager program', () =
     height: values[machine.output.photos.photos[firstPhotoStart + photoField.height]!]!,
   }
 
+  // photoClick takes viewport coordinates. Photos rests at its destination, so its
+  // content box starts 1 px inside the frame and below the title bar.
+  const photosWindow = projectWindows(machine, values)[3]!
   machine.photoClick(
-    firstPhoto.left + firstPhoto.width / 2,
-    firstPhoto.top + firstPhoto.height / 2,
+    photosWindow.left + 1 + firstPhoto.left + firstPhoto.width / 2,
+    photosWindow.top + machine.source[sourceField.titleHeight]! + 1 + firstPhoto.top + firstPhoto.height / 2,
   )
   values = step(machine)
   assert.equal(machine.source[photoFocusSourceField(0)], 1)
   assert.equal(machine.source[photoSourceField.clickActive], 0)
 
-  machine.photoNext()
+  // A frame evaluates a copy of the table, and its next state has stepped springs
+  // since the last commit, so the direct wire view is checked on the evaluation
+  // that applies the event and writes its next state back.
+  let commits = 0
+  machine.observe({
+    afterEvaluate(evaluationValues, table, evaluation) {
+      if (!evaluation.events.some(event => event.kind === 'photo next')) return
+      assert.equal(evaluation.writesBack, true)
+      commits++
+      assert.deepEqual(
+        machine.output.nextSource.map(wire => evaluationValues[wire]!),
+        [...table],
+      )
+    },
+  })
+  machine.photoNext(pressTime(machine))
   values = step(machine)
+  assert.equal(commits, 1)
   assert.equal(animationActive(machine, values), 1)
   assert.equal(machine.source[photoFocusSourceField(0)], 0)
   assert.equal(machine.source[photoFocusSourceField(1)], 1)
@@ -721,10 +796,6 @@ test('Photos state and behavior run inside the one window-manager program', () =
       machine.source[photoFocusSourceField(item)]!)
       .reduce((sum, focus) => sum + focus, 0),
     1,
-  )
-  assert.deepEqual(
-    machine.output.nextSource.map(wire => values[wire]!),
-    [...machine.source],
   )
   assert.equal(machine.tensorProgram.sourceSize, machine.source.length)
   values = settle(machine)
@@ -754,9 +825,431 @@ test('one click can focus Photos and select a photo in the same evaluation', () 
 
   machine.pointerDown(globalX, globalY)
   machine.pointerUp(globalX, globalY)
-  machine.photoClick(localX, localY)
+  machine.photoClick(globalX, globalY)
   values = step(machine)
 
   assertFocused(projectWindows(machine, values), 3)
   assert.equal(machine.source[photoFocusSourceField(item)], 1)
+})
+
+// A stand-in for an element: projectWindowElements only writes style properties.
+function createFakeElement() {
+  const style: Record<string, unknown> = {}
+  style['setProperty'] = (name: string, value: string) => {
+    style[name] = value
+  }
+  return {style} as unknown as HTMLElement
+}
+
+test('while a window frame animates its size, the content box already has the destination size', () => {
+  const machine = createWindowManagerMachine()
+  const frames = Array.from({length: windowCount}, createFakeElement)
+  const contents = Array.from({length: windowCount}, createFakeElement)
+  const notes = 1
+  let values = step(machine)
+  projectWindowElements(frames, contents, values, machine.output.windows)
+  assert.deepEqual(
+    [frames[notes]!.style.width, frames[notes]!.style.height, contents[notes]!.style.width, contents[notes]!.style.height],
+    ['500px', '366px', '498px', '320px'],
+  )
+
+  // Maximize Notes, then restore it. From the first frame after each press, the
+  // content box has the destination size, so Notes' text reflows once per press,
+  // while the frame draws in-between widths.
+  const presses = [
+    {contentWidth: '1254px', contentHeight: '618px', frameWidth: 1256},
+    {contentWidth: '498px', contentHeight: '320px', frameWidth: 500},
+  ]
+  for (const press of presses) {
+    values = clickWindowControl(machine, values, notes, 'maximize')
+    let inBetweenFrames = 0
+    for (let frame = 0; ; frame++) {
+      assert.ok(frame < 240, 'the animation did not settle')
+      projectWindowElements(frames, contents, values, machine.output.windows)
+      assert.equal(contents[notes]!.style.width, press.contentWidth)
+      assert.equal(contents[notes]!.style.height, press.contentHeight)
+      if (Number.parseFloat(frames[notes]!.style.width) !== press.frameWidth) inBetweenFrames++
+      if (animationActive(machine, values) === 0) break
+      values = step(machine)
+    }
+    assert.ok(inBetweenFrames > 5, `${inBetweenFrames} frames at in-between widths`)
+    assert.equal(frames[notes]!.style.width, `${press.frameWidth}px`)
+  }
+})
+
+function photoCenter(machine: Machine, values: Float32Array, item: number) {
+  const start = item * photoField.size
+  const photos = machine.output.photos.photos
+  return {
+    x: values[photos[start + photoField.left]!]! + values[photos[start + photoField.width]!]! / 2,
+    y: values[photos[start + photoField.top]!]! + values[photos[start + photoField.height]!]! / 2,
+  }
+}
+
+test('a Photos click during a maximize lands on the photo whose destination is under the pointer, at 30, 60 and 120 fps', () => {
+  // Photo 5's center in the maximized layout, in viewport coordinates, from a
+  // machine that maximized Photos and settled. At this click's time, a Photos laid
+  // out at the drawn frame's size, reading the click relative to the drawn frame,
+  // has no photo under this point. Photo 11, the bottom-right cell, would be under
+  // the point in both layouts, so a click on photo 11 couldn't tell them apart.
+  const settledMachine = createWindowManagerMachine()
+  let settledValues = step(settledMachine)
+  const maximizePoint = windowControlPoint(settledMachine, settledValues, 3, 'maximize')
+  clickWindowControl(settledMachine, settledValues, 3, 'maximize')
+  settledValues = settle(settledMachine)
+  const maximized = projectWindows(settledMachine, settledValues)[3]!
+  const localCenter = photoCenter(settledMachine, settledValues, 5)
+  const titleHeight = settledMachine.source[sourceField.titleHeight]!
+  const clickX = maximized.left + 1 + localCenter.x
+  const clickY = maximized.top + titleHeight + 1 + localCenter.y
+
+  for (const hz of [30, 60, 120]) {
+    const machine = createWindowManagerMachine()
+    // Press maximize, then about 80 ms later press photo 5 and release, which the
+    // browser follows with a click at the same time.
+    const events: {timeStamp: number, send: () => void}[] = [
+      {timeStamp: 103.3, send: () => machine.pointerDown(maximizePoint.x, maximizePoint.y, 103.3)},
+      {timeStamp: 151.7, send: () => machine.pointerUp(maximizePoint.x, maximizePoint.y, 151.7)},
+      {timeStamp: 160.1, send: () => machine.pointerDown(clickX, clickY, 160.1)},
+      {
+        timeStamp: 183.9,
+        send: () => {
+          machine.pointerUp(clickX, clickY, 183.9)
+          machine.photoClick(clickX, clickY, 183.9)
+        },
+      },
+    ]
+    let lastFrameBeforeClick: Float32Array | null = null
+    for (let frame = 0; frame * 1000 / hz <= 1500; frame++) {
+      const frameTime = frame * 1000 / hz
+      while (events.length > 0 && events[0]!.timeStamp <= frameTime) events.shift()!.send()
+      const values = machine.step(viewportWidth, viewportHeight, frameTime)
+      if (frameTime < 183.9) lastFrameBeforeClick = values
+    }
+    // The last frame before the click draws Photos mid-maximize, and the click point
+    // lies inside that frame's content box, so the page delivers the click to Photos.
+    const drawn = projectWindows(machine, lastFrameBeforeClick!)[3]!
+    assert.equal(drawn.maximized, 1)
+    assert.ok(drawn.width < maximized.width, `drawn width ${drawn.width} at ${hz} fps`)
+    assert.ok(
+      clickX > drawn.left + 1 && clickX < drawn.left + drawn.width - 1
+        && clickY > drawn.top + titleHeight + 1 && clickY < drawn.top + drawn.height - 1,
+      `the click point lies inside the drawn content box at ${hz} fps`,
+    )
+    assert.equal(machine.source[photoFocusSourceField(5)], 1, `photo 5 focused at ${hz} fps`)
+  }
+})
+
+test('the first step mounts the viewport as an event, so a small viewport clamps the windows and animates them there', () => {
+  const machine = createWindowManagerMachine()
+  step(machine, 400, 300)
+  assert.deepEqual(machine.evaluations.map(evaluation => [evaluation.kind, evaluation.events]), [
+    ['events', ['mount']],
+    ['frame', []],
+  ])
+  assert.notEqual(machine.clock.animatedUntilMs, null)
+  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+    const left = machine.source[windowSourceField(windowIndex, windowStateField.left)]!
+    const width = machine.source[windowSourceField(windowIndex, windowStateField.width)]!
+    assert.ok(left + width <= 400)
+  }
+  const settled = projectWindows(machine, settle(machine, 400, 300))
+  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+    assert.equal(settled[windowIndex]!.left, machine.source[windowSourceField(windowIndex, windowStateField.left)])
+    assert.equal(settled[windowIndex]!.width, machine.source[windowSourceField(windowIndex, windowStateField.width)])
+  }
+})
+
+// A session of timestamped events off the frame grid, replayed at several frame
+// rates. Presses sit between frames, pointer moves are 4 ms apart like coalesced
+// samples, and every destination change, including each viewport resize, reaches
+// the machine as an event.
+type SessionEvent =
+  | {kind: 'down' | 'move' | 'up', x: number, y: number, timeStamp: number}
+  | {kind: 'photo click', x: number, y: number, timeStamp: number}
+  | {kind: 'photo next' | 'photo close', timeStamp: number}
+  | {kind: 'resize', width: number, height: number, timeStamp: number}
+
+const sessionEndMs = 9500
+// The Photos click during the second maximize, 68.6 ms after the maximize press.
+const sessionPhotoClickMs = 4912.1
+
+function createSessionEvents() {
+  const events: SessionEvent[] = []
+  const press = (x: number, y: number, downTime: number, upTime: number) => {
+    events.push({kind: 'down', x, y, timeStamp: downTime}, {kind: 'up', x, y, timeStamp: upTime})
+  }
+  // Minimize Files, and restore it from its dock item while it flies to the dock.
+  press(499, 76, 203.3, 251.9)
+  press(547, 762, 331.1, 380.6)
+  // Hover moves during that animation.
+  for (let index = 0; index <= 20; index++) {
+    events.push({kind: 'move', x: 900 + 4 * index, y: 700 + 2 * index, timeStamp: 400.2 + 4 * index})
+  }
+  // Drag Notes by its title bar past the left edge and back. The drag clamps the
+  // window at every move, so Notes ends at left 300.
+  let time = 1003.1
+  let pointerX = 700
+  events.push({kind: 'down', x: pointerX, y: 126, timeStamp: time})
+  for (let index = 0; index < 25; index++) {
+    events.push({kind: 'move', x: pointerX -= 40, y: 126, timeStamp: time += 4})
+  }
+  for (let index = 0; index < 10; index++) {
+    events.push({kind: 'move', x: pointerX += 30, y: 126, timeStamp: time += 4})
+  }
+  events.push({kind: 'up', x: pointerX, y: 126, timeStamp: time + 4})
+  // Resize System Monitor with its grip past the minimum size and back, which
+  // ends at 480×350.
+  time = 1603.3
+  let gripX = 632
+  let gripY = 632
+  events.push({kind: 'down', x: gripX, y: gripY, timeStamp: time})
+  for (let index = 0; index < 20; index++) {
+    events.push({kind: 'move', x: gripX -= 20, y: gripY -= 15, timeStamp: time += 4})
+  }
+  for (let index = 0; index < 8; index++) {
+    events.push({kind: 'move', x: gripX += 25, y: gripY += 20, timeStamp: time += 4})
+  }
+  events.push({kind: 'up', x: gripX, y: gripY, timeStamp: time + 4})
+  // Close System Monitor, focus Photos, open photo 5, and maximize Photos while
+  // the photo is open. Photos clicks are in viewport coordinates: Photos' content
+  // box starts at (651, 235) at its normal size, and at (13, 93) maximized.
+  press(635, 366, 2003.3, 2051.7)
+  press(900, 212, 2203.4, 2250.8)
+  events.push({kind: 'photo click', x: 862.5, y: 427, timeStamp: 2403.2})
+  press(1163, 212, 2803.7, 2851.1)
+  events.push({kind: 'photo next', timeStamp: 3003.3})
+  events.push({kind: 'photo close', timeStamp: 3603.9})
+  // Restore Photos, maximize it again, and click photo 5 while the window grows, at
+  // the photo's center in the maximized layout. At 10 fps too, a frame drawn
+  // mid-maximize covers the click point, and a Photos laid out at the drawn size
+  // would put photo 4 under the point instead.
+  press(1221, 70, 4003.2, 4051.6)
+  press(1163, 212, 4843.5, 4891.9)
+  events.push({kind: 'photo click', x: 485.5, y: 402, timeStamp: sessionPhotoClickMs})
+  events.push({kind: 'photo next', timeStamp: 5303.7})
+  // Resize the viewport while Photos is maximized with a photo open, and back.
+  events.push({kind: 'resize', width: 1100, height: 760, timeStamp: 5503.4})
+  events.push({kind: 'resize', width: 1280, height: 800, timeStamp: 5903.9})
+  events.push({kind: 'photo close', timeStamp: 6103.1})
+  // Restore Photos, minimize Files, and resize the viewport while Files is minimized.
+  press(1221, 70, 6503.2, 6551.6)
+  press(499, 76, 7103.3, 7151.7)
+  events.push({kind: 'resize', width: 1000, height: 700, timeStamp: 7803.6})
+  events.push({kind: 'resize', width: 1280, height: 800, timeStamp: 8203.1})
+  return events
+}
+
+const sessionEvents = createSessionEvents()
+
+// A rate of 120, 60, 30 or 10 fps takes every (120 / hz)th tick of k × 1000 / 120,
+// so shared frame times are the same numbers. A stall drops the ticks inside it.
+function sessionFrameTimes(hz: number, stall?: {startMs: number, lengthMs: number}) {
+  const frameTimes: number[] = []
+  for (let tick = 0; tick * 1000 / 120 <= sessionEndMs; tick += 120 / hz) {
+    const frameTime = tick * 1000 / 120
+    if (stall !== undefined && frameTime > stall.startMs && frameTime < stall.startMs + stall.lengthMs) continue
+    frameTimes.push(frameTime)
+  }
+  return frameTimes
+}
+
+type SessionRun = {
+  // Every evaluation that wrote state back, with the table after it.
+  commits: {kind: string, timeMs: number, events: string[], table: Float32Array}[]
+  // Each frame's window, dock, Photos and animationActive outputs.
+  frames: Map<number, Float32Array>
+  mostStepsInOneFrame: number
+  // Times of the evaluations after which nothing animated anymore.
+  clockStops: number[]
+  // Destination cells where a 'frame' evaluation's next state differed from the
+  // stored table. Destinations must change only at events.
+  destinationMismatches: number
+  // The kind of each evaluation that applied a resize.
+  resizeEvaluationKinds: string[]
+}
+
+function runSession(frameTimes: readonly number[], writeBack: WriteBack): SessionRun {
+  const machine = createWindowManagerMachine({writeBack})
+  const outputWires = [
+    ...machine.output.windows,
+    ...machine.output.dockItems,
+    machine.output.animationActive,
+    machine.output.photos.backdropOpacity,
+    ...machine.output.photos.photos,
+    ...machine.output.photos.thumbnails,
+    ...machine.output.photos.previousControl,
+    ...machine.output.photos.nextControl,
+  ]
+  // Each window stores 5 springs as displacement, velocity and destination, and
+  // each thumbnail stores 2 destinations.
+  const destinationCells = [
+    ...Array.from({length: windowCount * 5}, (_, spring) => sourceField.springStart + 3 * spring + 2),
+    ...Array.from({length: photoCount}, (_, item) => [
+      photoThumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination),
+      photoThumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination),
+    ]).flat(),
+  ]
+  const run: SessionRun = {
+    commits: [],
+    frames: new Map(),
+    mostStepsInOneFrame: 0,
+    clockStops: [],
+    destinationMismatches: 0,
+    resizeEvaluationKinds: [],
+  }
+  let animating = false
+  checkGridsOnEveryEvaluation(machine)
+  machine.observe({
+    afterEvaluate(values, table, evaluation) {
+      const eventKinds = evaluation.events.map(event => event.kind)
+      if (eventKinds.includes('resize')) run.resizeEvaluationKinds.push(evaluation.kind)
+      if (!evaluation.writesBack) {
+        for (const cell of destinationCells) {
+          if (values[machine.output.nextSource[cell]!] !== table[cell]) run.destinationMismatches++
+        }
+        return
+      }
+      run.commits.push({kind: evaluation.kind, timeMs: evaluation.timeMs, events: eventKinds, table: Float32Array.from(table)})
+      const nowAnimating = values[machine.output.animationActive]! > 0
+      if (animating && !nowAnimating) run.clockStops.push(evaluation.timeMs)
+      animating = nowAnimating
+    },
+  })
+  let viewport = {width: 1280, height: 800}
+  let nextEvent = 0
+  for (const frameTime of frameTimes) {
+    while (nextEvent < sessionEvents.length && sessionEvents[nextEvent]!.timeStamp <= frameTime) {
+      const event = sessionEvents[nextEvent++]!
+      switch (event.kind) {
+        case 'down':
+          machine.pointerDown(event.x, event.y, event.timeStamp)
+          break
+        case 'move':
+          machine.pointerMove(event.x, event.y, event.timeStamp)
+          break
+        case 'up':
+          machine.pointerUp(event.x, event.y, event.timeStamp)
+          break
+        case 'photo click':
+          machine.photoClick(event.x, event.y, event.timeStamp)
+          break
+        case 'photo next':
+          machine.photoNext(event.timeStamp)
+          break
+        case 'photo close':
+          machine.photoClose(event.timeStamp)
+          break
+        case 'resize':
+          // Like the page: the resize handler queues the event, and later frames
+          // pass the same viewport to step().
+          viewport = {width: event.width, height: event.height}
+          machine.resize(event.width, event.height, event.timeStamp)
+          break
+      }
+    }
+    const values = machine.step(viewport.width, viewport.height, frameTime)
+    run.frames.set(frameTime, Float32Array.from(outputWires, wire => values[wire]!))
+    const steps = machine.evaluations.reduce((sum, evaluation) => sum + evaluation.steps, 0)
+    run.mostStepsInOneFrame = Math.max(run.mostStepsInOneFrame, steps)
+  }
+  return run
+}
+
+function differingBits(left: Float32Array, right: Float32Array) {
+  let count = 0
+  for (let index = 0; index < left.length; index++) {
+    if (!Object.is(left[index], right[index])) count++
+  }
+  return count
+}
+
+const commitLabel = (commit: SessionRun['commits'][number]) => `${commit.kind}@${commit.timeMs}`
+
+test("with 'events and settle checks', the session commits bit-identical tables and draws bit-identical outputs at shared times at 120, 60, 30 and 10 fps and through 500 ms stalls", () => {
+  const baseline = runSession(sessionFrameTimes(120), 'events and settle checks')
+  // The session did what it says.
+  const final = baseline.commits.at(-1)!.table
+  assert.equal(final[windowSourceField(0, windowStateField.minimized)], 1)
+  assert.equal(final[windowSourceField(1, windowStateField.left)], 300)
+  assert.deepEqual(
+    [final[windowSourceField(2, windowStateField.open)], final[windowSourceField(2, windowStateField.width)], final[windowSourceField(2, windowStateField.height)]],
+    [0, 480, 350],
+  )
+  const photoClick = baseline.commits.find(commit => commit.events.includes('photo click') && commit.timeMs > 4800)!
+  assert.equal(photoClick.table[photoFocusSourceField(5)], 1)
+  assert.equal(baseline.clockStops.length > 5, true)
+
+  const stall = {startMs: 2900, lengthMs: 500}
+  const runs = [
+    baseline,
+    runSession(sessionFrameTimes(60), 'events and settle checks'),
+    runSession(sessionFrameTimes(30), 'events and settle checks'),
+    runSession(sessionFrameTimes(10), 'events and settle checks'),
+    runSession(sessionFrameTimes(60, stall), 'events and settle checks'),
+    runSession(sessionFrameTimes(120, stall), 'events and settle checks'),
+  ]
+  for (const run of runs) {
+    assert.deepEqual(run.commits.map(commitLabel), baseline.commits.map(commitLabel))
+    run.commits.forEach((commit, index) => {
+      assert.equal(differingBits(commit.table, baseline.commits[index]!.table), 0, `table after ${commitLabel(commit)}`)
+    })
+    for (const [time, outputs] of run.frames) {
+      assert.equal(differingBits(outputs, baseline.frames.get(time)!), 0, `outputs at ${time} ms`)
+    }
+    assert.ok(run.mostStepsInOneFrame <= 300)
+    assert.equal(run.commits.some(commit => commit.kind === 'snap'), false)
+    assert.equal(run.destinationMismatches, 0)
+    // One 'events' evaluation per resize event: step() adds no resize of its own.
+    assert.deepEqual(run.resizeEvaluationKinds, ['events', 'events', 'events', 'events'])
+    // The page can deliver the Photos click at this rate: the content box of the
+    // Photos frame drawn before the click covers the click point.
+    const frameBeforeClick = run.frames.get(Math.max(...[...run.frames.keys()].filter(time => time < sessionPhotoClickMs)))!
+    const photosFrame = (field: number) => frameBeforeClick[3 * windowOutputField.size + field]!
+    const left = photosFrame(windowOutputField.translateX)
+    const top = photosFrame(windowOutputField.translateY)
+    assert.ok(
+      485.5 > left + 1 && 485.5 < left + photosFrame(windowOutputField.width) - 1
+        && 402 > top + 45 && 402 < top + photosFrame(windowOutputField.height) - 1,
+      'the Photos click point lies inside the drawn content box',
+    )
+  }
+  // A stall loses no time: the first frame after the stall draws what 120 fps
+  // draws at the same time.
+  const stalled = runs[4]!
+  const resumeTime = [...stalled.frames.keys()].find(time => time >= stall.startMs + stall.lengthMs)!
+  assert.equal(resumeTime, 3400)
+  assert.equal(differingBits(stalled.frames.get(resumeTime)!, baseline.frames.get(resumeTime)!), 0)
+})
+
+test('a 2 s stall that holds presses and resizes snaps once, applies each event at its own timestamp, and commits the same tables at 60 and 120 fps', () => {
+  const stall = {startMs: 7000, lengthMs: 2000}
+  const runs = [60, 120].map(hz => runSession(sessionFrameTimes(hz, stall), 'events and settle checks'))
+  for (const run of runs) {
+    assert.equal(run.commits.filter(commit => commit.kind === 'snap').length, 1)
+    assert.ok(run.mostStepsInOneFrame <= 300)
+    // No frame ran between 7,000 and 9,000 ms, and the press that minimizes Files
+    // still applies at its own time.
+    assert.ok(run.commits.some(commit =>
+      commit.kind === 'events' && commit.events.includes('pointer down') && commit.timeMs === quantizeTimeMs(7103.3)))
+    assert.deepEqual(run.commits.map(commitLabel), runs[0]!.commits.map(commitLabel))
+    run.commits.forEach((commit, index) => {
+      assert.equal(differingBits(commit.table, runs[0]!.commits[index]!.table), 0, `table after ${commitLabel(commit)}`)
+    })
+  }
+})
+
+test("writing back every evaluation draws within 5e-4 px of the committed session at 60 fps, and stops the clock at the same times", () => {
+  const frameTimes = sessionFrameTimes(60)
+  const committed = runSession(frameTimes, 'events and settle checks')
+  const everyEvaluation = runSession(frameTimes, 'every evaluation')
+  let worst = 0
+  for (const [time, outputs] of everyEvaluation.frames) {
+    const other = committed.frames.get(time)!
+    outputs.forEach((value, index) => {
+      worst = Math.max(worst, Math.abs(value - other[index]!))
+    })
+  }
+  assert.ok(worst < 5e-4, `worst difference ${worst} px`)
+  assert.deepEqual(everyEvaluation.clockStops, committed.clockStops)
 })

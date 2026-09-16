@@ -197,7 +197,7 @@ Measured:
 
 ### The problem
 
-A paragraph flows around a window you drag, and every word springs to its new place, as in text-walker's demo and the Notes window in indirect-os-2. Every line gets its own width from the obstacle, every word needs its own x and line, and clicking a word makes it bold, which changes its width while the page runs.
+A paragraph flows around a window you drag, and every word moves to its new place, as in text-walker's demo, where each word springs there, and the Notes window in indirect-os-2. Every line gets its own width from the obstacle, every word needs its own x and line, and clicking a word makes it bold, which changes its width while the page runs.
 
 The familiar way is the greedy walker above, called once per line with that line's width, e.g. pretext's dynamic-layout demo calls `layoutNextLine(prepared, cursor, width)` for every band of the column, i.e. every horizontal strip one line tall, with the width left over by the obstacles in that band.
 
@@ -358,9 +358,9 @@ streaming-words used the fast-path walker for a streamed chat reply. The circuit
 
 ### In IndirectOS: the Notes window
 
-indirect-os-2 put a Notes window into IndirectOS whose paragraph flows around the three other windows, with a spring per word: 45 words and 89 segments in 16 bands, i.e. horizontal strips one line tall, of 22 px each, in a column of at most 440 px, and the walker compares at most 26 segments from each line start. Adding the Notes flow cost 11,795 live operations, 174 layers and 28,289 stored weights, more than the whole original desktop's 5,253 operations, and its line walker alone is 8,221 operations.
+indirect-os-2 put a Notes window into IndirectOS whose paragraph flows around the three other windows, with a spring per word: 45 words and 89 segments in 16 bands, i.e. horizontal strips one line tall, of 22 px each, in a column of at most 440 px, and the walker compares at most 26 segments from each line start. Adding the Notes flow cost 11,795 live operations, 174 layers and 28,289 stored weights, more than the whole original desktop's 5,253 operations, and its line walker alone is 8,221 operations. On September 15, 2026, the word springs were removed, and the Notes flow now costs 9,968 operations, 168 layers and 22,715 stored weights.
 
-Obstacles should be the windows' destinations, not their drawn positions. With window destinations as obstacles, every animated value differed by at most 2.4e-4 px between 60 and 120 fps, on a scripted session whose events all sit on 60 fps frame times. With the windows' geometry as drawn on the current frame, words differed by 25.4 px, because the words' destinations then follow windows that are still animating, and each frame rate retargets the words toward a different series of destinations.
+Obstacles should be the windows' destinations, not their drawn positions. With window destinations as obstacles, every animated value differed by at most 2.4e-4 px between 60 and 120 fps, on a scripted session whose events all sit on 60 fps frame times. With the windows' geometry as drawn on the current frame, words differed by 25.4 px, because the words' destinations then follow windows that are still animating, and each frame rate retargets the words toward a different series of destinations. Since the word springs were removed, words at shared timestamps are identical with either obstacle source, and the windows' current geometry instead makes the text reflow in 8 frames with no event while Photos maximizes and restores.
 
 ### Cost summary
 

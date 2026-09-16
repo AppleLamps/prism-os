@@ -24,8 +24,8 @@ import {
   windowOutputField,
   windowSourceField,
   windowStateField,
-} from '../../../../../window-manager.ts'
-import {itemCount as photoCount, thumbnailSpringField, validatePhotoGalleryOutput} from '../../../../../photo-gallery.ts'
+} from '../../../codegen/window-manager-copy.ts'
+import {itemCount as photoCount, thumbnailSpringField, validatePhotoGalleryOutput} from '../../../codegen/photo-gallery-copy.ts'
 import {compileScalarProgram, type FroundAccess} from './codegen.ts'
 
 export type Evaluator = 'executor' | 'generated'

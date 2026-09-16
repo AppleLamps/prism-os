@@ -1,7 +1,8 @@
 // Replays the scripted session at 60 and 120 fps and compares the two at the
 // timestamps both render. Every event of the session sits on a 60 fps frame time,
 // which 120 fps also renders, so both runs apply each event at its own time.
-// Positions are compared separately for windows, thumbnails, and words.
+// Positions are compared separately for windows, thumbnails, and words, and the
+// 60 fps run counts the frames where words moved with no event in that frame.
 import type {QueuedEvent} from './events.ts'
 import {type IndirectOSMachine, type IndirectOSOptions, createIndirectOSMachine} from './indirect-os.ts'
 import {sessionEvents, sessionFrameCount, sessionViewport} from './session.ts'
@@ -24,7 +25,7 @@ export function stepSessionFrame(machine: IndirectOSMachine, events: readonly Qu
   return machine.step(sessionViewport.width, sessionViewport.height, frameTime)
 }
 
-type Snapshot = {windows: number[], thumbnails: number[], words: number[], discrete: string, animating: boolean}
+type Snapshot = {windows: number[], thumbnails: number[], words: number[], discrete: string, animating: boolean, events: number}
 
 export function replaySessionAtRate(options: IndirectOSOptions, framesPerSixtyFrame: number) {
   const machine = createIndirectOSMachine(options, {validate: false})
@@ -33,7 +34,8 @@ export function replaySessionAtRate(options: IndirectOSOptions, framesPerSixtyFr
     const time = 1000 + frame * 16.6875 / framesPerSixtyFrame
     const onSixty = frame % framesPerSixtyFrame === 0
     const sixtyFrame = frame / framesPerSixtyFrame
-    const values = stepSessionFrame(machine, onSixty ? sessionEvents(sixtyFrame) : [], time, onSixty && sixtyFrame === 170 ? {x: 472, y: 309} : null)
+    const events = onSixty ? sessionEvents(sixtyFrame) : []
+    const values = stepSessionFrame(machine, events, time, onSixty && sixtyFrame === 170 ? {x: 472, y: 309} : null)
     if (!onSixty) continue
     const output = read(values, machine.output)
     const {source, cells} = machine
@@ -48,6 +50,7 @@ export function replaySessionAtRate(options: IndirectOSOptions, framesPerSixtyFr
         output.notes?.words.map(word => word.visible) ?? [],
       ]),
       animating: output.animationActive > 0,
+      events: events.length,
     })
   }
   return snapshots
@@ -56,8 +59,15 @@ export function replaySessionAtRate(options: IndirectOSOptions, framesPerSixtyFr
 export function compareFrameRates(options: IndirectOSOptions) {
   const sixty = replaySessionAtRate(options, 1)
   const hundredTwenty = replaySessionAtRate(options, 2)
-  const result = {sharedFrames: 0, windows: 0, thumbnails: 0, words: 0, worstWordTime: -1, discreteMismatches: 0, animationMismatches: 0}
+  const result = {sharedFrames: 0, windows: 0, thumbnails: 0, words: 0, worstWordTime: -1, discreteMismatches: 0, animationMismatches: 0, wordMovesWithoutEvents: 0}
   const maximumDifference = (left: readonly number[], right: readonly number[]) => left.reduce((maximum, value, index) => Math.max(maximum, Math.abs(value - right[index]!)), 0)
+  // Frames at 60 fps where a word moved although no event arrived in that frame,
+  // e.g. text reflowing around a window that is still animating.
+  let previousWords: readonly number[] | null = null
+  for (const snapshot of sixty.values()) {
+    if (previousWords !== null && snapshot.events === 0 && maximumDifference(snapshot.words, previousWords) > 0) result.wordMovesWithoutEvents++
+    previousWords = snapshot.words
+  }
   for (const [time, snapshot] of sixty) {
     const other = hundredTwenty.get(time)
     if (other === undefined) continue

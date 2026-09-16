@@ -1,6 +1,6 @@
 # Runtime and vocabulary
 
-Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS still describes window-manager.ts, which hasn't changed since commit a915dcb.
+Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS describes window-manager.ts before September 15, 2026, when its springs, hit tests, Photos clicks and window content sizes changed ([lab/status.md](../../status.md#runtime-additions-since-september-14-2026)).
 
 These are phase-one reader notes on Indirect's numeric runtime. They cover the atoms and macros a UI author can use today, how the compiler and executor turn them into layers, measured sizes and CPU times for the production circuits, the operations that don't exist yet (with prototyped constructions and their measured costs), and what a GPU or batched backend would look like for this program shape.
 

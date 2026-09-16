@@ -88,7 +88,7 @@ learned-bits' learned rules, retiming's searched delays, pixel-output's per-pixe
 
 ### Springs and time
 
-IndirectOS's frame-rate dependence is a choice in IndirectOS's code, not a limit: window-manager.ts runs 4 substeps per frame, each a quarter of min(frame duration, 32 ms), so the step length follows the frame rate and frames longer than 32 ms lose time.
+IndirectOS's frame-rate dependence is a choice in IndirectOS's code, not a limit: window-manager.ts runs 4 substeps per frame, each a quarter of min(frame duration, 32 ms), so the step length follows the frame rate and frames longer than 32 ms lose time. Since September 15, 2026, window-manager.ts steps springs with `emitAnimatedObject` and `advanceFrame` instead.
 
 What the approach does force is a maximum step count fixed while building, with the count arriving as data: masks over up to 300 unrolled steps (902 layers), the count's binary digits choosing powers of the step matrix (27 to 40 layers), or a frame matrix that JavaScript computes and writes into 4 cells (14 operations and 3 layers for one spring).
 
@@ -146,7 +146,7 @@ Cheng decided questions 1 to 3 on September 14, 2026, choosing the recommended o
 
 ### 2. Which comparison should building blocks use, and who chooses it?
 
-**Decided on September 14, 2026: one helper that chooses from declarations.** Building blocks use `emitCompare(circuit, a, relation, b, {endWithBoolean})` from numeric-ui-core.ts, for `>`, `>=`, `<`, `<=` and `===`: integer bits when both operands are declared on a grid, a sign cascade otherwise, and a boolean atom at the end only with `{endWithBoolean: true}`. `emitMinimumExact`, `emitMaximumExact` and `emitClampExact` select exactly one operand with an `emitCompare` bit. Two of the follow-up decisions below are done: the builder records rounding points for boolean atoms, `emitCompare`'s operations and marked operations, and execution-model.md states the guarantee on the CPU and on GPU backends. Converting IndirectOS's hit tests was measured in a scratch copy, and window-manager.ts wasn't changed. execution-model.md defines [the helper](../../../execution-model.md#comparisons), with its costs and that measurement, [grids](../../../execution-model.md#grids) and [rounding points](../../../execution-model.md#rounding-points), [comparison.test.ts](../../../comparison.test.ts) tests the helper, and the [comparisons](sections/comparisons.md#which-form-to-use-by-default) section explains each form.
+**Decided on September 14, 2026: one helper that chooses from declarations.** Building blocks use `emitCompare(circuit, a, relation, b, {endWithBoolean})` from numeric-ui-core.ts, for `>`, `>=`, `<`, `<=` and `===`: integer bits when both operands are declared on a grid, a sign cascade otherwise, and a boolean atom at the end only with `{endWithBoolean: true}`. `emitMinimumExact`, `emitMaximumExact` and `emitClampExact` select exactly one operand with an `emitCompare` bit. Two of the follow-up decisions below are done: the builder records rounding points for boolean atoms, `emitCompare`'s operations and marked operations, and execution-model.md states the guarantee on the CPU and on GPU backends. Converting IndirectOS's hit tests was measured in a scratch copy, and window-manager.ts wasn't changed until September 15, 2026, as the still-open list below says. execution-model.md defines [the helper](../../../execution-model.md#comparisons), with its costs and that measurement, [grids](../../../execution-model.md#grids) and [rounding points](../../../execution-model.md#rounding-points), [comparison.test.ts](../../../comparison.test.ts) tests the helper, and the [comparisons](sections/comparisons.md#which-form-to-use-by-default) section explains each form.
 
 **Settled later on September 14, 2026.**
 
@@ -156,9 +156,9 @@ Cheng decided questions 1 to 3 on September 14, 2026, choosing the recommended o
 
 **Still open.**
 
-- Whether to convert IndirectOS's hit tests, given the measured 17 more layers.
+- Whether to convert IndirectOS's hit tests, given the measured 17 more layers. Decided and done on September 15, 2026: with pointer coordinates and window geometry declared on a 1/64 px grid, its 24 window rectangles use integer bits, and IndirectOS went from 3,782 to 3,654 operations and from 128 to 124 layers, with the same decisions on every press tested. The 4 dock items keep the older form ([execution-model.md](../../../execution-model.md#comparisons)).
 - Whether `emitCompare` should also accept a number as a threshold and pick its FP32 value itself, e.g. the smallest FP32 value at or above 5/24 for `>=`. For now a threshold is a constant wire, e.g. `circuit.affine([], 3)`, and the caller picks the FP32 value.
-- The records cover atoms, `emitCompare` and marked operations, e.g. 64 rounding points in IndirectOS, where exactness-budget's patterns found 256. The ReLUs and drifting minimums that feed today's atoms aren't recorded.
+- The records cover atoms, `emitCompare` and marked operations, e.g. 64 rounding points in IndirectOS on September 14, 2026, where exactness-budget's patterns found 256, and 200 since its hit tests and springs changed on September 15. The ReLUs and drifting minimums that feed today's atoms aren't recorded.
 
 **Options.** One comparison helper in numeric-ui-core.ts that picks the form from declared ranges and a declared grid or resolution per wire; separate helpers that authors pick per call; or one rounding stage as the default, as most prototypes did.
 
@@ -174,7 +174,7 @@ Cheng decided questions 1 to 3 on September 14, 2026, choosing the recommended o
 
 ### 3. How should time enter the program, and which spring should be the default?
 
-**Decided on September 14, 2026: JavaScript writes durations, event times and the spring matrix.** The repo root now has host-timing.ts, the float64 host code, with `quantizeFrameTiming`, `springMatrixPower`, `springMatrixBound` and `advanceFrame`, and numeric-ui-core.ts's `emitApplySpringMatrix` and `emitAnimatedObject`. One of the follow-up decisions below is done: with `writeBack` set to `'events and settle checks'`, `advanceFrame` writes state back only at events, settle checks and snaps, and a frame evaluates a copy of the table. No demo uses these APIs yet. execution-model.md defines [them](../../../execution-model.md#springs-and-time), with the measurements over [spring-matrix.test.ts](../../../spring-matrix.test.ts)'s traces, and the [springs](sections/springs.md#4-javascript-writes-the-frame-matrix) section explains the forms they come from.
+**Decided on September 14, 2026: JavaScript writes durations, event times and the spring matrix.** The repo root now has host-timing.ts, the float64 host code, with `quantizeFrameTiming`, `springMatrixPower`, `springMatrixBound` and `advanceFrame`, and numeric-ui-core.ts's `emitApplySpringMatrix` and `emitAnimatedObject`. One of the follow-up decisions below is done: with `writeBack` set to `'events and settle checks'`, `advanceFrame` writes state back only at events, settle checks and snaps, and a frame evaluates a copy of the table. Since September 15, 2026, IndirectOS uses them. execution-model.md defines [them](../../../execution-model.md#springs-and-time), with the measurements over [spring-matrix.test.ts](../../../spring-matrix.test.ts)'s traces, and the [springs](sections/springs.md#4-javascript-writes-the-frame-matrix) section explains the forms they come from.
 
 **Settled later on September 14, 2026.**
 
@@ -188,9 +188,9 @@ Cheng decided questions 1 to 3 on September 14, 2026, choosing the recommended o
 
 - The first follow-up below: ui.md, Animation.md and index.ts still apply events first and then catch up.
 - event-time's predicted keyframes and the closed-form matrix exp(A × elapsed time) aren't built.
-- Converting IndirectOS's springs, which run 4 substeps of the frame's duration, or any demo, to these APIs.
+- Converting demos to these APIs. Decided and done on September 15, 2026 for IndirectOS: its windows and Photos' thumbnails moved from `emitSpring`'s 4 substeps to `emitAnimatedObject` with `advanceFrame` and `'events and settle checks'` ([lab/status.md](../../status.md#runtime-additions-since-september-14-2026)). Other demos still use older springs.
 
-**Options.** For the clock: absolute requestAnimationFrame timestamps in cells, subtracted inside the program, as window-manager.ts does; or the frame's duration and event times relative to the frame, computed in JavaScript. For springs: `emitSpring`'s 4 substeps of the frame duration; spring-bank's power tables inside the program; JavaScript writing the step count's 9 binary digits; or JavaScript writing the frame matrix.
+**Options.** For the clock: absolute requestAnimationFrame timestamps in cells, subtracted inside the program, as window-manager.ts did until September 15, 2026; or the frame's duration and event times relative to the frame, computed in JavaScript. For springs: `emitSpring`'s 4 substeps of the frame duration; spring-bank's power tables inside the program; JavaScript writing the step count's 9 binary digits; or JavaScript writing the frame matrix.
 
 **Recommendation.** JavaScript writes the frame's duration and event times relative to the frame on a 1/64 ms grid, and a duration of 0 for the first frame after idle. The default spring is a frame matrix that JavaScript writes, 4 cells per stiffness and damping pair, with one settle bit per animated object.
 

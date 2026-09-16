@@ -3,8 +3,8 @@
 // Prints markdown tables and writes results.json next to this file. Counts are
 // exact; timings are rough because other processes share the machine.
 import {Circuit, type Wire, emitSpring} from '../../../numeric-ui-core.ts'
-import {createPhotoGalleryMachine as createOriginalPhotosMachine} from '../../../photo-gallery.ts'
-import {createWindowManagerMachine as createOriginalMachine} from '../../../window-manager.ts'
+import {createPhotoGalleryMachine as createOriginalPhotosMachine} from '../codegen/photo-gallery-copy.ts'
+import {createWindowManagerMachine as createOriginalMachine} from '../codegen/window-manager-copy.ts'
 import {checkSpec, compareBankWithReference} from './bank-check.ts'
 import {createBankMachine, laneField} from './bank-machine.ts'
 import {createPhotoGalleryMachine} from './photo-gallery.ts'

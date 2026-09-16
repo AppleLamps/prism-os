@@ -24,7 +24,7 @@ export function configurations(paragraph: FastParagraph, epsilon: number) {
       {label: '2a. spring bank', options: bank},
       {label: '2b. Photos reads stepped springs', options: bankStepped},
       {label: '3. event queue, 8 slots, 2 downs, key routing', options: queue},
-      {label: '4. Notes flow around the windows\' destinations, word springs', options: notes},
+      {label: '4. Notes flow around the windows\' destinations', options: notes},
     ] satisfies Configuration[],
     alternatives: [
       {label: 'queue with 1 down per evaluation', options: {...queue, input: {...queueInput, maximumDowns: 1}}},

@@ -17,13 +17,13 @@ The examples for this section are in [examples/executor/](../examples/executor/)
 
 ## The measures
 
-**Operations** count total work. A compiled program keeps only its live operations, i.e. the operations that some requested output depends on, and computes each of them once per evaluation, where an evaluation is one run of the program over a source table, usually once per frame. Each operation is one of three kinds: an affine sum (weights times inputs plus a constant); a ReLU-gated product (`circuit.reglu`, called ReGLU in the code), i.e. an affine value times the ReLU `max(0, x)` of another affine value; or a boolean atom, which rounds a score in 0..1 to exactly 0 or 1 by adding and subtracting 8,388,609 in FP32. numeric-ui-core.ts also has one more instruction, the index read, which copies the value at a computed position without building one bit per entry (see [sparsification](#sparsification-direct-reads-instead-of-masked-sums)). IndirectOS has 5,253 live operations.
+**Operations** count total work. A compiled program keeps only its live operations, i.e. the operations that some requested output depends on, and computes each of them once per evaluation, where an evaluation is one run of the program over a source table, usually once per frame. Each operation is one of three kinds: an affine sum (weights times inputs plus a constant); a ReLU-gated product (`circuit.reglu`, called ReGLU in the code), i.e. an affine value times the ReLU `max(0, x)` of another affine value; or a boolean atom, which rounds a score in 0..1 to exactly 0 or 1 by adding and subtracting 8,388,609 in FP32. numeric-ui-core.ts also has one more instruction, the index read, which copies the value at a computed position without building one bit per entry (see [sparsification](#sparsification-direct-reads-instead-of-masked-sums)). IndirectOS has 3,654 live operations.
 
 **Stored weights** count memory, and the work inside sums. The compiler stores each layer as a sparse matrix, i.e. a matrix that keeps only its nonzero entries, and each term of a sum is one stored weight. A sum over 1,000 values is 1 operation and 1,000 stored weights, so quadratic growth often shows only here. For example, running totals of 1,024 row heights written as one wide sum per total are 1,023 operations and 524,799 stored weights ([prefix-sums.ts](../examples/executor/prefix-sums.ts)). To check whether a formulation is O(n) or O(n²), count stored weights, not only operations.
 
-**Layers** count depth: the longest chain of operations in which each operation reads the result of the one before. The compiler puts each operation in the first layer after everything the operation reads, so the number of layers equals the length of the longest dependency chain. IndirectOS is 192 layers deep.
+**Layers** count depth: the longest chain of operations in which each operation reads the result of the one before. The compiler puts each operation in the first layer after everything the operation reads, so the number of layers equals the length of the longest dependency chain. IndirectOS is 124 layers deep.
 
-**Layer width** is the number of operations in one layer, i.e. how much work could run at the same time on hardware that runs a whole layer at once. IndirectOS has a median of 24 operations per layer and at most 123, so it's narrow and deep: a long chain of dependencies, not a stack of wide matrices ([notes/runtime.md](../../notes/runtime.md)).
+**Layer width** is the number of operations in one layer, i.e. how much work could run at the same time on hardware that runs a whole layer at once. IndirectOS has a median of 23 operations per layer and at most 426, so it's narrow and deep: a long chain of dependencies, not a stack of wide matrices. Before September 15, 2026, it had a median of 24 and at most 123 ([notes/runtime.md](../../notes/runtime.md)).
 
 Two more counts matter once the others are small. **Table entries** are the integer positions that direct reads store, described under sparsification below. **Source cells** are checked against their declared ranges on every evaluation, which is O(source cells) work. For example, index-read's list of 10,000 rows shown through 24 DOM nodes compiles to 153 operations, and most of its evaluation time went to checking 30,001 source cells.
 
@@ -194,14 +194,14 @@ Pitfall: `roundAffine` keeps the caller's term order in its key, so the same ter
 
 `multiply(a, b)` puts an operand known to be nonnegative into the ReLU's gate, which costs 1 operation. When neither operand is known to be nonnegative, `multiply` builds two ReLU-gated products of opposite signs and subtracts them: 3 operations and 2 layers. In builder-steps.ts, `velocity × timestep` is 1 operation, 1 layer and 2 stored weights when the timestep's range is declared before the product, and 3 operations, 2 layers and 6 stored weights when the range is declared after.
 
-A range declared after an operation was built doesn't change that operation. IndirectOS declares its spring timestep's range after the window springs exist. Declaring the range where the timestep is computed saves 320 operations, 8 layers and 640 stored weights, with bit-identical outputs ([notation](../../notation/README.md), [indirect-os-2](../../indirect-os-2/README.md)).
+A range declared after an operation was built doesn't change that operation. Until September 15, 2026, IndirectOS declared its spring timestep's range after the window springs existed, and declaring the range where the timestep was computed saved 320 operations, 8 layers and 640 stored weights, with bit-identical outputs ([notation](../../notation/README.md), [indirect-os-2](../../indirect-os-2/README.md)).
 
 ## What `compileTensorProgram` does
 
 Given the roots, the compiler runs five steps:
 
 1. **Plan gather lowering.** It finds sums that read a table through a declared one-hot, which can become direct reads of the selected entry (see sparsification below).
-2. **Remove dead code.** It walks back from the roots and keeps only the operations that some root depends on. In the close button example, 9 of the 16 built operations stay. IndirectOS builds 6,146 operations and keeps 5,253.
+2. **Remove dead code.** It walks back from the roots and keeps only the operations that some root depends on. In the close button example, 9 of the 16 built operations stay. IndirectOS builds 4,011 operations and keeps 3,654.
 3. **Group operations into layers.** Each operation's layer is the depth that the builder recorded: one more than the deepest value the operation reads. This is called an as-soon-as-possible schedule, because no operation is placed in a later layer than its inputs require. With `compileTensorProgram(roots, lowerGathers, {recomputeDepths: true})`, the compiler instead computes each live operation's depth from the values it reads in the compiled program, which differs from the builder's depth only after gather lowering.
 4. **Build each layer's sparse matrix** in CSR form, as shown above. Index arrays use the smallest unsigned integer type that fits.
 5. **Pack the values.** The executor keeps one array that holds every source cell and every live operation's value. Each layer appends its outputs to that array, and `wireOrder` maps array positions back to wires.
@@ -266,7 +266,7 @@ A masked sum is a form of attention, i.e. a weighted sum of values whose weights
 Two other sparsifications came up:
 
 - A constant per pair of items became a table. IndirectOS's Photos computes each thumbnail's offset from the focused photo as `Σ over focused photos f of focus[f] × constant(thumbnail, f)`, one weight per (thumbnail, focused photo) pair. At 1,024 photos that's 1,063,936 stored weights. Stored instead as a table of 2 × 1,024 cells per field and read once per thumbnail, the offsets take 3,072 stored weights ([index-read](../../index-read/README.md)).
-- Matrix rows stay sparse. IndirectOS averages 1.43 stored weights per matrix row, and a dense matrix per layer would store about 26 times as many numbers ([notes/runtime.md](../../notes/runtime.md)).
+- Matrix rows stay sparse. IndirectOS averages 1.39 stored weights per matrix row, against 1.43 before September 15, 2026, when a dense matrix per layer would have stored about 26 times as many numbers ([notes/runtime.md](../../notes/runtime.md)).
 
 Pitfalls:
 
@@ -392,7 +392,7 @@ As described under instancing: without per-item programs, the program is O(items
 
 ### How a frame's events are handled
 
-IndirectOS keeps one latch per event kind, i.e. a source cell that holds the latest down, move or up until the circuit clears it. Latches are cheap but lose information: several moves in one frame collapse into the last one, and the order within a frame is fixed as down, move, up. [input](../../input/README.md) built a queue of events per evaluation instead, with a fixed number of entries:
+IndirectOS keeps one latch per event kind, i.e. a source cell that holds the latest down, move or up until the circuit clears it. Latches are cheap but lose information: several moves in one evaluation collapse into the last one, and the order within an evaluation is fixed as down, move, up. Until September 15, 2026, IndirectOS ran one evaluation per frame, so a frame's moves collapsed. Since then host-timing.ts's `advanceFrame` runs one evaluation per distinct event timestamp, e.g. about 17 evaluations for a 60 fps drag frame with 16 coalesced moves ([lab/status.md](../../../status.md#known-issues-in-production-code)). [input](../../input/README.md) built a queue of events per evaluation instead, with a fixed number of entries:
 
 - With the event step written out once per queue entry, input's window circuit is 10,196 operations and 281 layers at 32 events: O(events) operations and O(events) layers.
 - A move only affects later events through the press point, a count, or an OR such as "moved past the drag threshold since the press". So every move can be handled at once from prefix counts, i.e. running counts of downs and ups up to each event. With at most 2 presses per evaluation, that's 2,230 operations and 55 layers at 32 events. One more queue entry costs 46 operations and no layers. One more press per evaluation costs 427 operations and 17 layers, because a press hit-tests geometry that an earlier release in the same frame may have changed.
@@ -476,6 +476,7 @@ Operations and layers for one evaluation, from the prototypes' READMEs, this gui
 | flex-wrap, 64 children | scan over children | 1,185 | 276 | O(n) depth | layout-tree |
 | IndirectOS's springs | `emitSpring`, 4 substeps per frame | 5,253 (whole circuit) | 192 | 46 operations per animated number | spring-bank |
 | | shared matrix powers | 3,580 (whole circuit) | 137 | 4 products per animated number | spring-bank |
+| | `emitAnimatedObject` with the matrix written by JavaScript, in window-manager.ts since September 15, 2026 | 3,783 (whole circuit), 3,654 after the hit tests moved to `emitCompare` the same day | 128, then 124 | 128 operations per window of 5 springs, 56 per thumbnail of 2 | window-manager.ts |
 | gallery at 10,000 photos | one duplicated circuit | 2,571,887 | 80 | program O(items) | instanced-items |
 | | one program per photo | 233 per photo | | program O(1) | instanced-items |
 | thumbnail targets, 1,024 photos | one weight per (thumbnail, focused photo) | 3,072 (1,063,936 weights) | 1 | O(n²) weights | index-read |

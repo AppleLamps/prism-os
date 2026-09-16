@@ -8,7 +8,7 @@
         "gatherReads": 12,
         "widestLayer": 123,
         "sourceCells": 201,
-        "buildMilliseconds": 15.428583
+        "buildMilliseconds": 15.374042000000001
       },
       "1. timestep declared nonnegative": {
         "live": 4933,
@@ -17,7 +17,7 @@
         "gatherReads": 12,
         "widestLayer": 123,
         "sourceCells": 201,
-        "buildMilliseconds": 8.884625
+        "buildMilliseconds": 7.891624999999998
       },
       "2a. spring bank": {
         "live": 3580,
@@ -26,7 +26,7 @@
         "gatherReads": 12,
         "widestLayer": 365,
         "sourceCells": 245,
-        "buildMilliseconds": 8.959124999999993
+        "buildMilliseconds": 8.600415999999996
       },
       "2b. Photos reads stepped springs": {
         "live": 3583,
@@ -35,7 +35,7 @@
         "gatherReads": 12,
         "widestLayer": 365,
         "sourceCells": 245,
-        "buildMilliseconds": 7.122624999999999
+        "buildMilliseconds": 5.872416999999999
       },
       "3. event queue, 8 slots, 2 downs, key routing": {
         "live": 8059,
@@ -44,16 +44,16 @@
         "gatherReads": 91,
         "widestLayer": 387,
         "sourceCells": 309,
-        "buildMilliseconds": 18.956958
+        "buildMilliseconds": 15.261958000000007
       },
-      "4. Notes flow around the windows' destinations, word springs": {
-        "live": 19854,
-        "layers": 343,
-        "weights": 49900,
+      "4. Notes flow around the windows' destinations": {
+        "live": 18027,
+        "layers": 337,
+        "weights": 44326,
         "gatherReads": 987,
-        "widestLayer": 1133,
-        "sourceCells": 759,
-        "buildMilliseconds": 146.546542
+        "widestLayer": 532,
+        "sourceCells": 488,
+        "buildMilliseconds": 129.83712500000001
       },
       "queue with 1 down per evaluation": {
         "live": 5816,
@@ -62,7 +62,7 @@
         "gatherReads": 64,
         "widestLayer": 385,
         "sourceCells": 309,
-        "buildMilliseconds": 11.829541000000006
+        "buildMilliseconds": 8.879957999999988
       },
       "queue with 16 slots": {
         "live": 9002,
@@ -71,7 +71,7 @@
         "gatherReads": 91,
         "widestLayer": 442,
         "sourceCells": 373,
-        "buildMilliseconds": 12.254334000000028
+        "buildMilliseconds": 11.122374999999977
       },
       "queue with gathered key gates": {
         "live": 7984,
@@ -80,34 +80,34 @@
         "gatherReads": 99,
         "widestLayer": 369,
         "sourceCells": 309,
-        "buildMilliseconds": 8.898124999999993
+        "buildMilliseconds": 11.395625000000052
       },
       "Notes around current-frame obstacles": {
-        "live": 19861,
-        "layers": 368,
-        "weights": 49919,
+        "live": 18034,
+        "layers": 362,
+        "weights": 44345,
         "gatherReads": 987,
-        "widestLayer": 1133,
-        "sourceCells": 759,
-        "buildMilliseconds": 118.39154200000002
+        "widestLayer": 532,
+        "sourceCells": 488,
+        "buildMilliseconds": 107.658458
       },
       "Notes around stepped-springs obstacles": {
-        "live": 20034,
-        "layers": 264,
-        "weights": 50221,
+        "live": 18207,
+        "layers": 258,
+        "weights": 44647,
         "gatherReads": 987,
-        "widestLayer": 1133,
-        "sourceCells": 759,
-        "buildMilliseconds": 119.61870799999997
+        "widestLayer": 538,
+        "sourceCells": 488,
+        "buildMilliseconds": 112.61604199999994
       },
       "Notes around destinations, 1 down per evaluation": {
-        "live": 17608,
-        "layers": 304,
-        "weights": 43698,
+        "live": 15781,
+        "layers": 298,
+        "weights": 38124,
         "gatherReads": 960,
-        "widestLayer": 1131,
-        "sourceCells": 759,
-        "buildMilliseconds": 107.00012500000003
+        "widestLayer": 532,
+        "sourceCells": 488,
+        "buildMilliseconds": 110.38829099999998
       },
       "queue with original springs (timestep declared)": {
         "live": 9409,
@@ -116,7 +116,7 @@
         "gatherReads": 91,
         "widestLayer": 124,
         "sourceCells": 265,
-        "buildMilliseconds": 13.563041999999996
+        "buildMilliseconds": 11.945541000000048
       },
       "queue, bank, Photos at current frame": {
         "live": 8056,
@@ -125,16 +125,16 @@
         "gatherReads": 91,
         "widestLayer": 387,
         "sourceCells": 309,
-        "buildMilliseconds": 11.660750000000007
+        "buildMilliseconds": 12.087541999999985
       },
       "Notes with original springs (timestep declared)": {
-        "live": 24332,
-        "layers": 367,
-        "weights": 58087,
+        "live": 19377,
+        "layers": 337,
+        "weights": 46829,
         "gatherReads": 987,
-        "widestLayer": 666,
-        "sourceCells": 715,
-        "buildMilliseconds": 135.36008300000003
+        "widestLayer": 576,
+        "sourceCells": 444,
+        "buildMilliseconds": 105.30062499999997
       }
     },
     "breakdowns": {
@@ -315,17 +315,12 @@
         },
         "oneHotOperations": 136
       },
-      "4. Notes flow around the windows' destinations, word springs": {
+      "4. Notes flow around the windows' destinations": {
         "breakdown": [
           {
             "label": "notes line walker",
             "live": 8221,
             "weights": 17786
-          },
-          {
-            "label": "box",
-            "live": 2534,
-            "weights": 7371
           },
           {
             "label": "photos clicks",
@@ -346,6 +341,11 @@
             "label": "notes band blocking",
             "live": 912,
             "weights": 2992
+          },
+          {
+            "label": "box",
+            "live": 824,
+            "weights": 2376
           },
           {
             "label": "notes slots per obstacle subset",
@@ -395,30 +395,25 @@
           {
             "label": "other",
             "live": 134,
-            "weights": 313
-          },
-          {
-            "label": "notes word springs",
-            "live": 95,
-            "weights": 411
-          },
-          {
-            "label": "group",
-            "live": 46,
-            "weights": 338
+            "weights": 311
           },
           {
             "label": "notes obstacles",
             "live": 28,
             "weights": 77
+          },
+          {
+            "label": "group",
+            "live": 24,
+            "weights": 172
           }
         ],
         "path": {
-          "depth": 343,
+          "depth": 337,
           "sections": [
             [
               "notes line walker",
-              173
+              174
             ],
             [
               "down update",
@@ -434,23 +429,15 @@
             ],
             [
               "other",
-              13
+              10
             ],
             [
               "end of evaluation",
               8
             ],
             [
-              "notes word springs",
-              3
-            ],
-            [
               "notes band blocking",
               2
-            ],
-            [
-              "box",
-              1
             ]
           ]
         },
@@ -462,11 +449,6 @@
             "label": "notes line walker",
             "live": 8221,
             "weights": 17786
-          },
-          {
-            "label": "box",
-            "live": 2534,
-            "weights": 7371
           },
           {
             "label": "photos clicks",
@@ -487,6 +469,11 @@
             "label": "notes band blocking",
             "live": 912,
             "weights": 2992
+          },
+          {
+            "label": "box",
+            "live": 824,
+            "weights": 2376
           },
           {
             "label": "notes slots per obstacle subset",
@@ -536,30 +523,25 @@
           {
             "label": "other",
             "live": 134,
-            "weights": 313
-          },
-          {
-            "label": "notes word springs",
-            "live": 95,
-            "weights": 411
-          },
-          {
-            "label": "group",
-            "live": 46,
-            "weights": 338
+            "weights": 311
           },
           {
             "label": "notes obstacles",
             "live": 35,
             "weights": 102
+          },
+          {
+            "label": "group",
+            "live": 24,
+            "weights": 172
           }
         ],
         "path": {
-          "depth": 369,
+          "depth": 363,
           "sections": [
             [
               "notes line walker",
-              173
+              174
             ],
             [
               "down update",
@@ -579,19 +561,15 @@
             ],
             [
               "other",
-              13
-            ],
-            [
-              "box",
-              8
+              10
             ],
             [
               "end of evaluation",
               8
             ],
             [
-              "notes word springs",
-              3
+              "box",
+              7
             ],
             [
               "notes band blocking",
@@ -738,9 +716,9 @@
     },
     "float64 boxes": {
       "evaluations": 3000,
-      "evaluationsWithSteps": 1093,
-      "boxesChecked": 183000,
-      "maxPositionError": 0.00011580240334296832,
+      "evaluationsWithSteps": 835,
+      "boxesChecked": 48000,
+      "maxPositionError": 0.00009748999991643359,
       "maxVelocityError": 0.0008690448175912024,
       "settleMismatches": 0,
       "clockMismatches": 0,
@@ -757,7 +735,7 @@
     },
     "generated wires": {
       "evaluations": 800,
-      "checked": 16490400,
+      "checked": 14812000,
       "mismatches": 0
     }
   },
@@ -769,7 +747,8 @@
       "words": 0,
       "worstWordTime": -1,
       "discreteMismatches": 0,
-      "animationMismatches": 1
+      "animationMismatches": 1,
+      "wordMovesWithoutEvents": 0
     },
     "3. event queue, 8 slots, 2 downs, key routing": {
       "sharedFrames": 400,
@@ -778,224 +757,228 @@
       "words": 0,
       "worstWordTime": -1,
       "discreteMismatches": 0,
-      "animationMismatches": 1
+      "animationMismatches": 1,
+      "wordMovesWithoutEvents": 0
     },
     "Notes around current-frame obstacles": {
       "sharedFrames": 400,
       "windows": 0.000244140625,
       "thumbnails": 0.00018310546875,
-      "words": 25.378814697265625,
-      "worstWordTime": 5322.0625,
+      "words": 0,
+      "worstWordTime": -1,
       "discreteMismatches": 0,
-      "animationMismatches": 0
+      "animationMismatches": 1,
+      "wordMovesWithoutEvents": 8
     },
     "Notes around stepped-springs obstacles": {
       "sharedFrames": 400,
-      "windows": 28.8172607421875,
-      "thumbnails": 14.40863037109375,
-      "words": 69.7467041015625,
-      "worstWordTime": 2068,
+      "windows": 0.000244140625,
+      "thumbnails": 0.00018310546875,
+      "words": 0,
+      "worstWordTime": -1,
       "discreteMismatches": 0,
-      "animationMismatches": 1
+      "animationMismatches": 1,
+      "wordMovesWithoutEvents": 9
     },
     "Notes around destination obstacles": {
       "sharedFrames": 400,
       "windows": 0.000244140625,
       "thumbnails": 0.00018310546875,
-      "words": 0.000152587890625,
-      "worstWordTime": 2068,
+      "words": 0,
+      "worstWordTime": -1,
       "discreteMismatches": 0,
-      "animationMismatches": 0
+      "animationMismatches": 1,
+      "wordMovesWithoutEvents": 0
     }
   },
   "timings": {
     "original window-manager.ts (notation rewrite)": {
-      "executor": 42.5,
-      "generated32": 3.1,
-      "generated128": 3.3,
+      "executor": 32.5,
+      "generated32": 3.3,
+      "generated128": 3.4,
       "evaluations": 400
     },
     "1. timestep declared nonnegative": {
-      "executor": 39.3,
-      "generated32": 3.1,
-      "generated128": 2.8,
+      "executor": 30.8,
+      "generated32": 2.8,
+      "generated128": 3.2,
       "evaluations": 400
     },
     "2a. spring bank": {
-      "executor": 29.6,
+      "executor": 28.3,
       "generated32": 2,
       "generated128": 1.9,
       "evaluations": 400
     },
     "2b. Photos reads stepped springs": {
-      "executor": 28.2,
-      "generated32": 1.7,
-      "generated128": 1.9,
+      "executor": 26.2,
+      "generated32": 1.8,
+      "generated128": 1.8,
       "evaluations": 400
     },
     "3. event queue, 8 slots, 2 downs, key routing": {
-      "executor": 65.9,
-      "generated32": 6.7,
-      "generated128": 7.8,
+      "executor": 62.1,
+      "generated32": 6.4,
+      "generated128": 8,
       "evaluations": 400
     },
-    "4. Notes flow around the windows' destinations, word springs": {
-      "executor": 159.1,
-      "generated32": 29.3,
-      "generated128": 33.2,
+    "4. Notes flow around the windows' destinations": {
+      "executor": 132.2,
+      "generated32": 21.4,
+      "generated128": 23.9,
       "evaluations": 400
     },
     "Notes around current-frame obstacles": {
-      "executor": 159.7,
-      "generated32": 30.1,
-      "generated128": 48.7,
+      "executor": 126.2,
+      "generated32": 21.5,
+      "generated128": 25.4,
       "evaluations": 400
     },
     "Notes around stepped-springs obstacles": {
-      "executor": 153,
-      "generated32": 29.1,
-      "generated128": 80.8,
+      "executor": 124.2,
+      "generated32": 22.9,
+      "generated128": 37.6,
       "evaluations": 400
     },
-    "wholeStepMicroseconds": 40.8750000060536,
-    "validatorMicroseconds": 0.750000006519258
+    "wholeStepMicroseconds": 35.99999999278225,
+    "validatorMicroseconds": 0.5830000154674053
   },
   "tierup": [
     {
       "backend": "executor",
-      "setupMilliseconds": 46.186083999999994,
-      "totalMilliseconds": 13848.147791,
+      "setupMilliseconds": 44.28883300000001,
+      "totalMilliseconds": 12740.710792,
       "buckets": [
         {
           "low": 1,
           "high": 1,
-          "microseconds": 258.9580000000069
+          "microseconds": 234.87499999998818
         },
         {
           "low": 2,
           "high": 10,
-          "microseconds": 134.47200000000396
+          "microseconds": 132.71766666667241
         },
         {
           "low": 11,
           "high": 100,
-          "microseconds": 126.0527444444411
+          "microseconds": 133.06806666666884
         },
         {
           "low": 101,
           "high": 1000,
-          "microseconds": 130.2654133333343
+          "microseconds": 135.1376888888896
         },
         {
           "low": 1001,
           "high": 10000,
-          "microseconds": 133.3251542222214
+          "microseconds": 129.92506311111234
         },
         {
           "low": 10001,
           "high": 30000,
-          "microseconds": 132.39520589999975
+          "microseconds": 128.75391234999904
         },
         {
           "low": 30001,
           "high": 100000,
-          "microseconds": 140.83979564285713
+          "microseconds": 126.450930328573
         }
       ],
       "promotion": null
     },
     {
       "backend": "generated",
-      "setupMilliseconds": 23.472082999999998,
-      "totalMilliseconds": 7116.9385839999995,
+      "setupMilliseconds": 19.547708999999998,
+      "totalMilliseconds": 5812.105417,
       "buckets": [
         {
           "low": 1,
           "high": 1,
-          "microseconds": 31152.625
+          "microseconds": 26670.70799999999
         },
         {
           "low": 2,
           "high": 10,
-          "microseconds": 1469.4445555555574
+          "microseconds": 1187.5508888888867
         },
         {
           "low": 11,
           "high": 100,
-          "microseconds": 3766.0796555555626
+          "microseconds": 2992.8324000000034
         },
         {
           "low": 101,
           "high": 1000,
-          "microseconds": 1445.542222222232
+          "microseconds": 1187.1328744444393
         },
         {
           "low": 1001,
           "high": 10000,
-          "microseconds": 100.48791733333339
+          "microseconds": 81.09182622222305
         },
         {
           "low": 10001,
           "high": 30000,
-          "microseconds": 83.09352789999639
+          "microseconds": 66.37402809999826
         },
         {
           "low": 30001,
           "high": 100000,
-          "microseconds": 40.75214444285867
+          "microseconds": 33.821489771428425
         }
       ],
       "promotion": null
     },
     {
       "backend": "tiered",
-      "setupMilliseconds": 53.79370800000004,
-      "totalMilliseconds": 8041.8451669999995,
+      "setupMilliseconds": 46.617166999999995,
+      "totalMilliseconds": 5669.034334,
       "buckets": [
         {
           "low": 1,
           "high": 1,
-          "microseconds": 320.7919999999831
+          "microseconds": 250.91700000001538
         },
         {
           "low": 2,
           "high": 10,
-          "microseconds": 165.4998888888915
+          "microseconds": 119.19433333332563
         },
         {
           "low": 11,
           "high": 100,
-          "microseconds": 152.6412000000012
+          "microseconds": 114.15368888889049
         },
         {
           "low": 101,
           "high": 1000,
-          "microseconds": 144.30287555555216
+          "microseconds": 112.41898333333137
         },
         {
           "low": 1001,
           "high": 10000,
-          "microseconds": 182.24047799999758
+          "microseconds": 117.44148944444558
         },
         {
           "low": 10001,
           "high": 30000,
-          "microseconds": 100.87615270000018
+          "microseconds": 65.74048905000372
         },
         {
           "low": 30001,
           "high": 100000,
-          "microseconds": 45.64765541428423
+          "microseconds": 30.7097641857148
         }
       ],
       "promotion": {
-        "generateMilliseconds": 14.25041699999997,
-        "compileMilliseconds": 7.770792000000029,
-        "warmupMilliseconds": 1001.521,
-        "warmupRuns": 223,
-        "verifiedWires": 20613,
-        "functionCount": 621,
-        "sourceBytes": 1278154
+        "generateMilliseconds": 12.410457999999949,
+        "compileMilliseconds": 6.164458999999965,
+        "warmupMilliseconds": 1001.1584169999999,
+        "warmupRuns": 278,
+        "verifiedWires": 18515,
+        "functionCount": 564,
+        "sourceBytes": 1151637
       }
     }
   ]

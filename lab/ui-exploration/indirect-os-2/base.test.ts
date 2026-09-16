@@ -1,6 +1,6 @@
 // Stages 1 and 2: the notation base, and the spring bank inside it.
 import {expect, test} from 'bun:test'
-import {createWindowManagerMachine} from '../../../window-manager.ts'
+import {createWindowManagerMachine} from '../codegen/window-manager-copy.ts'
 import {createBoxCheck, windowAndPhotoBoxes} from './box-check.ts'
 import {compareCircuits, programStats} from '../notation/compare.ts'
 import {buildIndirectOS, createIndirectOSMachine, originalOptions} from './indirect-os.ts'

@@ -1,33 +1,55 @@
 import {
   Circuit,
+  type SpringMatrixWires,
   type Wire,
   assertFiniteValues,
   assertNonNegativeFinite,
   assertUnitInterval,
   assertWire,
+  emitAnimatedObject,
   emitFirstActive,
   emitMaximum,
   emitMinimum,
   emitMultiply,
   emitRelu,
-  emitSelect,
-  emitSpring,
   invariant,
   validateCircuit,
   validateTensorProgram,
   validateWireView,
 } from './numeric-ui-core.ts'
+import {
+  type EvaluationKind,
+  type PlannedEvaluation,
+  type SpringClock,
+  type SpringConstants,
+  type WriteBack,
+  advanceFrame,
+  defaultSpringClockConfig,
+  springMatrixBound,
+  springMatrixPower,
+  springStepMatrix,
+  stoppedSpringClock,
+} from './host-timing.ts'
 
 export const itemCount = 12
 export const columnCount = 4
 export const rowCount = 3
 
+// Thumbnails and IndirectOS's windows share these constants, so one spring matrix
+// serves both.
+export const springConstants: SpringConstants = {stiffness: 650, damping: 45}
+
+// Per thumbnail: each spring's displacement from the destination in effect, its
+// velocity, and that destination. The drawn value is destination + displacement,
+// which the program computes and doesn't store.
 export const thumbnailSpringField = {
-  centerX: 0,
+  centerXDisplacement: 0,
   centerXVelocity: 1,
-  scale: 2,
-  scaleVelocity: 3,
-  size: 4,
+  centerXDestination: 2,
+  scaleDisplacement: 3,
+  scaleVelocity: 4,
+  scaleDestination: 5,
+  size: 6,
 } as const
 
 export const sourceField = {
@@ -47,15 +69,13 @@ export const sourceField = {
   present: 24,
   interactive: 25,
   unit: 26,
-  springTimestep: 27,
-  springStiffness: 28,
-  springDamping: 29,
-  springSettleDistance: 30,
-  springSettleSpeed: 31,
-  springSettleDistanceScale: 32,
-  springSettleSpeedScale: 33,
-  thumbnailSpringStart: 34,
-  size: 34 + itemCount * thumbnailSpringField.size,
+  // The spring matrix, settle check bit and snap bit that the host writes before
+  // each evaluation, see advanceFrame in host-timing.ts.
+  springMatrixStart: 27,
+  settleCheck: 31,
+  snap: 32,
+  thumbnailSpringStart: 33,
+  size: 33 + itemCount * thumbnailSpringField.size,
 }
 
 export const photoField = {
@@ -163,28 +183,27 @@ export function createPhotoGalleryCircuit() {
   circuit.assumeRange(sourceField.present, 0, 1)
   circuit.assumeRange(sourceField.interactive, 0, 1)
   circuit.assumeRange(sourceField.unit, 1, 1)
-  for (const field of [
-    sourceField.springTimestep,
-    sourceField.springStiffness,
-    sourceField.springDamping,
-    sourceField.springSettleDistance,
-    sourceField.springSettleSpeed,
-    sourceField.springSettleDistanceScale,
-    sourceField.springSettleSpeedScale,
-  ]) {
-    circuit.assumeRange(field, 0, Number.POSITIVE_INFINITY)
+  // Every FP32 matrix entry the host writes for up to 300 steps stays within this
+  // bound.
+  const matrixBound = springMatrixBound(springConstants)
+  for (let entry = 0; entry < 4; entry++) {
+    circuit.assumeRange(sourceField.springMatrixStart + entry, -matrixBound, matrixBound)
   }
+  circuit.assumeRange(sourceField.settleCheck, 0, 1)
+  circuit.assumeRange(sourceField.snap, 0, 1)
   for (let item = 0; item < itemCount; item++) circuit.assumeRange(focusField(item), 0, 1)
   for (let item = 0; item < itemCount; item++) {
-    // A thumbnail's spring center is clamped to the viewport before it is
-    // written back, so the viewport ceiling is honest here too.
+    // The destinations written back are this evaluation's thumbnail targets. A
+    // target center is the viewport's middle plus at most about 232 px either
+    // way, so -16,384..32,768 holds it for any viewport within 0..16,384.
+    // Displacements and velocities need no declared range.
     circuit.assumeRange(
-      thumbnailSpringSourceField(item, thumbnailSpringField.centerX),
-      0,
-      16_384,
+      thumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination),
+      -16_384,
+      32_768,
     )
     circuit.assumeRange(
-      thumbnailSpringSourceField(item, thumbnailSpringField.scale),
+      thumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination),
       0,
       1,
     )
@@ -437,87 +456,73 @@ export function createPhotoGalleryCircuit() {
   const projectedGridHeight = emitMultiply(circuit, nextGridMass, gridHeight)
   const photos: PhotoProjection[] = []
   const thumbnailTargets = projectThumbnailTargets(nextFocus, nextFocusMass)
+  // Thumbnails animate while a photo stays open, and snap onto their targets when
+  // the carousel opens or closes, or when the host plans a snap.
   const animateThumbnails = emitMultiply(circuit, previousFocusMass, nextFocusMass)
-  const snapThumbnails = circuit.affine([[animateThumbnails, -1]], 1)
+  const snapThumbnails = emitClampZeroOne(
+    circuit,
+    circuit.affine([[animateThumbnails, -1], [sourceField.snap, 1]], 1),
+  )
+  const springMatrix: SpringMatrixWires = [
+    sourceField.springMatrixStart,
+    sourceField.springMatrixStart + 1,
+    sourceField.springMatrixStart + 2,
+    sourceField.springMatrixStart + 3,
+  ]
   const thumbnailProjections: PhotoProjection[] = []
-  const thumbnailAnimationTerms: [Wire, number][] = []
+  const thumbnailActivityTerms: [Wire, number][] = []
   const nextThumbnailSprings: Wire[][] = []
   for (let item = 0; item < itemCount; item++) {
     const target = thumbnailTargets[item]!
-    const centerSpring = emitSpring(
+    // centerX and scale settle together. The steps simulate time before this
+    // evaluation's events, so they pull toward the destinations that the previous
+    // evaluation wrote back.
+    const thumbnail = emitAnimatedObject(circuit, [
+      {
+        matrix: springMatrix,
+        displacement: thumbnailSpringSourceField(item, thumbnailSpringField.centerXDisplacement),
+        velocity: thumbnailSpringSourceField(item, thumbnailSpringField.centerXVelocity),
+        destination: target.centerX,
+        destinationDuringSteps: thumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination),
+      },
+      {
+        matrix: springMatrix,
+        displacement: thumbnailSpringSourceField(item, thumbnailSpringField.scaleDisplacement),
+        velocity: thumbnailSpringSourceField(item, thumbnailSpringField.scaleVelocity),
+        destination: target.scale,
+        destinationDuringSteps: thumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination),
+      },
+    ], {settleCheck: sourceField.settleCheck, snap: snapThumbnails})
+    // Clamped only where drawn, e.g. a scale that undershoots 0 while springing
+    // keeps its stored displacement.
+    const centerX = emitMinimum(
       circuit,
-      thumbnailSpringSourceField(item, thumbnailSpringField.centerX),
-      target.centerX,
-      thumbnailSpringSourceField(item, thumbnailSpringField.centerXVelocity),
-      sourceField.springStiffness,
-      sourceField.springDamping,
-      sourceField.springTimestep,
-      sourceField.springSettleDistance,
-      sourceField.springSettleSpeed,
-      sourceField.springSettleDistanceScale,
-      sourceField.springSettleSpeedScale,
+      emitMaximum(circuit, zero, thumbnail.positions[0]!),
+      sourceField.viewportWidth,
+    )
+    const scale = emitMinimum(
+      circuit,
+      emitMaximum(circuit, zero, thumbnail.positions[1]!),
       sourceField.unit,
     )
-    const scaleSpring = emitSpring(
-      circuit,
-      thumbnailSpringSourceField(item, thumbnailSpringField.scale),
-      target.scale,
-      thumbnailSpringSourceField(item, thumbnailSpringField.scaleVelocity),
-      sourceField.springStiffness,
-      sourceField.springDamping,
-      sourceField.springTimestep,
-      sourceField.springSettleDistance,
-      sourceField.springSettleSpeed,
-      sourceField.springSettleDistanceScale,
-      sourceField.springSettleSpeedScale,
-      sourceField.unit,
-    )
-    const centerX = emitSelect(
-      circuit,
-      snapThumbnails,
-      emitMinimum(
-        circuit,
-        emitMaximum(circuit, zero, centerSpring.position),
-        sourceField.viewportWidth,
-      ),
+    nextThumbnailSprings.push([
+      thumbnail.displacements[0]!,
+      thumbnail.velocities[0]!,
       target.centerX,
-    )
-    const scale = emitSelect(
-      circuit,
-      snapThumbnails,
-      emitMinimum(
-        circuit,
-        emitMaximum(circuit, zero, scaleSpring.position),
-        sourceField.unit,
-      ),
+      thumbnail.displacements[1]!,
+      thumbnail.velocities[1]!,
       target.scale,
-    )
-    const centerVelocity = emitSelect(
-      circuit,
-      snapThumbnails,
-      centerSpring.velocity,
-      zero,
-    )
-    const scaleVelocity = emitSelect(
-      circuit,
-      snapThumbnails,
-      scaleSpring.velocity,
-      zero,
-    )
-    nextThumbnailSprings.push([centerX, centerVelocity, scale, scaleVelocity])
+    ])
     thumbnailProjections.push(projectThumbnail({
       centerX,
       scale,
       focused: target.focused,
     }))
-    thumbnailAnimationTerms.push(
-      [emitMultiply(circuit, animateThumbnails, centerSpring.active), 1],
-      [emitMultiply(circuit, animateThumbnails, scaleSpring.active), 1],
-    )
+    thumbnailActivityTerms.push([thumbnail.active, 1])
   }
   const animationActive = emitClampZeroOne(
     circuit,
-    circuit.affine(thumbnailAnimationTerms),
+    circuit.affine(thumbnailActivityTerms),
   )
   for (let item = 0; item < itemCount; item++) {
     const column = item % columnCount
@@ -543,6 +548,14 @@ export function createPhotoGalleryCircuit() {
 
   const nextSource = Array.from({length: sourceField.size}, (_, field) => field)
   for (const eventField of eventFields) nextSource[eventField] = zero
+  // The stored table holds the identity matrix and no settle check or snap, so
+  // evaluating it directly runs 0 steps.
+  nextSource[sourceField.springMatrixStart] = sourceField.unit
+  nextSource[sourceField.springMatrixStart + 1] = zero
+  nextSource[sourceField.springMatrixStart + 2] = zero
+  nextSource[sourceField.springMatrixStart + 3] = sourceField.unit
+  nextSource[sourceField.settleCheck] = zero
+  nextSource[sourceField.snap] = zero
   for (let item = 0; item < itemCount; item++) {
     nextSource[focusField(item)] = nextFocus[item]!
     const spring = nextThumbnailSprings[item]!
@@ -579,7 +592,41 @@ export function createPhotoGalleryCircuit() {
   }
 }
 
-export function createPhotoGalleryMachine() {
+// What the host writes into the 4 matrix cells for each step count, see
+// advanceFrame in host-timing.ts.
+const springStep = springStepMatrix(springConstants)
+const springMatrixPowers = Array.from(
+  {length: defaultSpringClockConfig.maxStepsPerFrame + 1},
+  (_, steps) => springMatrixPower(springStep, steps),
+)
+
+type PhotoGalleryEvent = {
+  kind: 'mount' | 'resize' | 'click' | 'previous' | 'next' | 'close'
+  // Shares the time origin of requestAnimationFrame timestamps, e.g. event.timeStamp.
+  timeStamp: number
+  // Writes the event into the table: a latch, or the viewport for a mount or resize.
+  apply: (table: Float32Array) => void
+}
+
+type PhotoGalleryEvaluation = {
+  kind: EvaluationKind
+  timeMs: number
+  steps: number
+  writesBack: boolean
+  events: PhotoGalleryEvent['kind'][]
+}
+
+type PhotoGalleryObserver = {
+  // The table just before an evaluation, after the host wrote the matrix, the
+  // bits, present, interactive and the events.
+  beforeEvaluate?: (table: Float32Array, evaluation: PlannedEvaluation<PhotoGalleryEvent>) => void
+  // The evaluated values, and the table: the stored table after write-back, or
+  // the copy that a 'frame' evaluation ran on.
+  afterEvaluate?: (values: Float32Array, table: Float32Array, evaluation: PlannedEvaluation<PhotoGalleryEvent>) => void
+}
+
+export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {}) {
+  const writeBack = options.writeBack ?? 'events and settle checks'
   const source = new Float32Array(sourceField.size)
   source[sourceField.gap] = 18
   source[sourceField.mainInset] = 92
@@ -588,17 +635,11 @@ export function createPhotoGalleryMachine() {
   source[sourceField.present] = 1
   source[sourceField.interactive] = 1
   source[sourceField.unit] = 1
-  source[sourceField.springTimestep] = 0.004
-  source[sourceField.springStiffness] = 650
-  source[sourceField.springDamping] = 45
-  source[sourceField.springSettleDistance] = 0.01
-  source[sourceField.springSettleSpeed] = 0.01
-  source[sourceField.springSettleDistanceScale] = 100
-  source[sourceField.springSettleSpeedScale] = 100
+  source.set(springMatrixPowers[0]!, sourceField.springMatrixStart)
   const {circuit, output} = createPhotoGalleryCircuit()
   const wireCount = validateCircuit(circuit)
   validatePhotoGalleryOutputWires(output, wireCount)
-  const tensorProgram = circuit.tensorProgram = circuit.compileTensorProgram([
+  const roots = [
     ...output.nextSource,
     output.backdropOpacity,
     output.animationActive,
@@ -606,15 +647,94 @@ export function createPhotoGalleryMachine() {
     ...output.thumbnails,
     ...output.previousControl,
     ...output.nextControl,
-  ])
+  ]
+  const tensorProgram = circuit.tensorProgram = circuit.compileTensorProgram(roots)
   validateTensorProgram(circuit, tensorProgram)
+  // Reuses its buffers across evaluations. Each evaluation copies the roots into
+  // `values`, which the validators and callers index by wire.
+  const evaluateRoots = circuit.createTensorEvaluator(roots)
+  const values = new Float32Array(wireCount)
+  const scratch = new Float32Array(sourceField.size)
   const numericTolerance = 1e-5
+  let clock: SpringClock = stoppedSpringClock
+  let queued: (Omit<PhotoGalleryEvent, 'timeStamp'> & {timeStamp: number | undefined})[] = []
+  let mounted = false
+  let queuedViewport: readonly [width: number, height: number] = [0, 0]
+  let previousFrameTime = 0
+  let present = 1
+  let interactive = 1
+  const observers: PhotoGalleryObserver[] = []
+  const evaluations: PhotoGalleryEvaluation[] = []
+  // The stored table as the last step left it. Only step() writes the stored table,
+  // so a difference at the next step is a write from outside the machine.
+  const storedAfterLastStep = Float32Array.from(source)
 
-  function receiveEvent(field: number, x = source[sourceField.clickX]!, y = source[sourceField.clickY]!) {
-    for (const eventField of eventFields) source[eventField] = 0
-    source[field] = 1
-    source[sourceField.clickX] = x
-    source[sourceField.clickY] = y
+  function queue(kind: PhotoGalleryEvent['kind'], timeStamp: number | undefined, apply: (table: Float32Array) => void) {
+    invariant(timeStamp === undefined || Number.isFinite(timeStamp), 'an event timestamp must be finite')
+    const event = {kind, timeStamp, apply}
+    // A mount applies before the events queued before the first step.
+    if (kind === 'mount') queued.unshift(event)
+    else queued.push(event)
+  }
+
+  function queueViewport(kind: 'mount' | 'resize', width: number, height: number, timeStamp: number | undefined) {
+    queuedViewport = [width, height]
+    queue(kind, timeStamp, table => {
+      table[sourceField.viewportWidth] = width
+      table[sourceField.viewportHeight] = height
+    })
+  }
+
+  function receiveEvent(
+    kind: 'click' | 'previous' | 'next' | 'close',
+    field: number,
+    timeStamp: number | undefined,
+    x?: number,
+    y?: number,
+  ) {
+    queue(kind, timeStamp, table => {
+      for (const eventField of eventFields) table[eventField] = 0
+      table[field] = 1
+      if (x !== undefined && y !== undefined) {
+        table[sourceField.clickX] = x
+        table[sourceField.clickY] = y
+      }
+    })
+  }
+
+  // One evaluation that advanceFrame planned: write the matrix, the settle check
+  // and snap bits, present, interactive and the events, evaluate, and write next
+  // state back when the evaluation writes back.
+  function evaluate(evaluation: PlannedEvaluation<PhotoGalleryEvent>) {
+    const table = evaluation.writesBack ? source : scratch
+    if (!evaluation.writesBack) scratch.set(source)
+    table.set(springMatrixPowers[evaluation.steps]!, sourceField.springMatrixStart)
+    table[sourceField.settleCheck] = evaluation.settleCheck ? 1 : 0
+    table[sourceField.snap] = evaluation.snap ? 1 : 0
+    // present and interactive set no destination, so every evaluation of a step
+    // reads the ones passed to that step, e.g. a click's evaluation.
+    table[sourceField.present] = present
+    table[sourceField.interactive] = interactive
+    for (const event of evaluation.events) event.apply(table)
+    validateGallerySource(table, numericTolerance)
+    for (const observer of observers) observer.beforeEvaluate?.(table, evaluation)
+    const rootValues = evaluateRoots(table)
+    for (let index = 0; index < roots.length; index++) values[roots[index]!] = rootValues[index]!
+    validatePhotoGalleryOutput(values, output, numericTolerance)
+    if (evaluation.writesBack) {
+      for (let field = 0; field < source.length; field++) {
+        source[field] = values[output.nextSource[field]!]!
+      }
+    }
+    evaluations.push({
+      kind: evaluation.kind,
+      timeMs: evaluation.timeMs,
+      steps: evaluation.steps,
+      writesBack: evaluation.writesBack,
+      events: evaluation.events.map(event => event.kind),
+    })
+    for (const observer of observers) observer.afterEvaluate?.(values, table, evaluation)
+    return values[output.animationActive]! > 0
   }
 
   return {
@@ -622,30 +742,71 @@ export function createPhotoGalleryMachine() {
     output,
     source,
     tensorProgram,
-    step(viewportWidth: number, viewportHeight: number, present = 1, interactive = 1) {
-      source[sourceField.viewportWidth] = viewportWidth
-      source[sourceField.viewportHeight] = viewportHeight
-      source[sourceField.present] = present
-      source[sourceField.interactive] = interactive
-      validateGallerySource(source, numericTolerance)
-      const values = circuit.evaluateTensor(source)
-      validatePhotoGalleryOutput(values, output, numericTolerance)
-      for (let field = 0; field < source.length; field++) {
-        source[field] = values[output.nextSource[field]!]!
+    // A host requests frames while clock.animatedUntilMs isn't null.
+    get clock() {
+      return clock
+    },
+    // The evaluations of the last step, in order.
+    evaluations: evaluations as readonly PhotoGalleryEvaluation[],
+    observe(observer: PhotoGalleryObserver) {
+      observers.push(observer)
+    },
+    // Runs the frame at frameTime, by default 16 ms after the previous frame, and
+    // returns the values of its 'frame' evaluation. An event without a timestamp
+    // applies at this frame's time.
+    step(
+      viewportWidth: number,
+      viewportHeight: number,
+      nextPresent = 1,
+      nextInteractive = 1,
+      frameTime = previousFrameTime + 16,
+    ) {
+      invariant(Number.isFinite(frameTime), 'frame time must be finite')
+      // A value written straight into `source` between steps, e.g. a latch, would
+      // apply only in 'frame' evaluations, which run on a copy, so it would never
+      // commit, and a latch would apply again in every later frame. Values written
+      // before the first step commit with the mount, e.g. a changed constant.
+      if (mounted) {
+        for (let field = 0; field < source.length; field++) {
+          if (source[field] !== storedAfterLastStep[field]) {
+            invariant(false, `source cell ${field} was written between steps. Queue input with the event methods instead, e.g. click(x, y, timeStamp) or resize(width, height, timeStamp)`)
+          }
+        }
       }
-      return values
+      present = nextPresent
+      interactive = nextInteractive
+      if (!mounted) {
+        mounted = true
+        const earliest = queued.reduce((time, event) => Math.min(time, event.timeStamp ?? frameTime), frameTime)
+        queueViewport('mount', viewportWidth, viewportHeight, earliest)
+      } else if (viewportWidth !== queuedViewport[0] || viewportHeight !== queuedViewport[1]) {
+        // The viewport sets thumbnail destinations, so a change reaches the program
+        // as an event. Written without one, it would change destinations only in
+        // frame evaluations, which never start the clock.
+        queueViewport('resize', viewportWidth, viewportHeight, frameTime)
+      }
+      const events = queued.map(event => ({...event, timeStamp: event.timeStamp ?? frameTime}))
+      queued = []
+      evaluations.length = 0
+      clock = advanceFrame(clock, frameTime, events, evaluate, writeBack)
+      previousFrameTime = frameTime
+      storedAfterLastStep.set(source)
+      return Float32Array.from(values)
     },
-    click(x: number, y: number) {
-      receiveEvent(sourceField.clickActive, x, y)
+    resize(width: number, height: number, timeStamp?: number) {
+      queueViewport('resize', width, height, timeStamp)
     },
-    previous() {
-      receiveEvent(sourceField.previousActive)
+    click(x: number, y: number, timeStamp?: number) {
+      receiveEvent('click', sourceField.clickActive, timeStamp, x, y)
     },
-    next() {
-      receiveEvent(sourceField.nextActive)
+    previous(timeStamp?: number) {
+      receiveEvent('previous', sourceField.previousActive, timeStamp)
     },
-    close() {
-      receiveEvent(sourceField.closeActive)
+    next(timeStamp?: number) {
+      receiveEvent('next', sourceField.nextActive, timeStamp)
+    },
+    close(timeStamp?: number) {
+      receiveEvent('close', sourceField.closeActive, timeStamp)
     },
   }
 }
@@ -835,17 +996,14 @@ function validateGallerySource(values: unknown, tolerance = 1e-9) {
   assertUnitInterval(values[sourceField.present], 'present', tolerance)
   assertBit(values[sourceField.interactive], 'interactive')
   invariant(values[sourceField.unit] === 1, 'unit must equal one')
-  for (const field of [
-    sourceField.springTimestep,
-    sourceField.springStiffness,
-    sourceField.springDamping,
-    sourceField.springSettleDistance,
-    sourceField.springSettleSpeed,
-    sourceField.springSettleDistanceScale,
-    sourceField.springSettleSpeedScale,
-  ]) {
-    assertNonNegativeFinite(values[field], 'spring constant')
+  for (let entry = 0; entry < 4; entry++) {
+    invariant(
+      Number.isFinite(values[sourceField.springMatrixStart + entry]),
+      'spring matrix entries must be finite',
+    )
   }
+  assertBit(values[sourceField.settleCheck], 'settle check')
+  assertBit(values[sourceField.snap], 'snap')
   invariant(Number.isFinite(values[sourceField.clickX]), 'click x must be finite')
   invariant(Number.isFinite(values[sourceField.clickY]), 'click y must be finite')
   let eventMass = 0
@@ -859,27 +1017,27 @@ function validateGallerySource(values: unknown, tolerance = 1e-9) {
     const focus = values[focusField(item)]
     assertUnitInterval(focus, `focus ${item}`, tolerance)
     focusMass += focus
-    assertNonNegativeFinite(
-      values[thumbnailSpringSourceField(item, thumbnailSpringField.centerX)],
-      `thumbnail ${item} center`,
-      tolerance,
-    )
+    for (const field of [
+      thumbnailSpringField.centerXDisplacement,
+      thumbnailSpringField.centerXVelocity,
+      thumbnailSpringField.scaleDisplacement,
+      thumbnailSpringField.scaleVelocity,
+    ]) {
+      invariant(
+        Number.isFinite(values[thumbnailSpringSourceField(item, field)]),
+        `thumbnail ${item} spring state must be finite`,
+      )
+    }
+    const centerDestination =
+      values[thumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination)]!
     invariant(
-      Number.isFinite(
-        values[thumbnailSpringSourceField(item, thumbnailSpringField.centerXVelocity)],
-      ),
-      `thumbnail ${item} center velocity must be finite`,
+      centerDestination >= -16_384 && centerDestination <= 32_768,
+      `thumbnail ${item} center destination must be within -16384..32768, got ${centerDestination}`,
     )
     assertUnitInterval(
-      values[thumbnailSpringSourceField(item, thumbnailSpringField.scale)],
-      `thumbnail ${item} scale`,
+      values[thumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination)],
+      `thumbnail ${item} scale destination`,
       tolerance,
-    )
-    invariant(
-      Number.isFinite(
-        values[thumbnailSpringSourceField(item, thumbnailSpringField.scaleVelocity)],
-      ),
-      `thumbnail ${item} scale velocity must be finite`,
     )
   }
   invariant(focusMass <= 1 + tolerance, 'focus mass must not exceed 1')

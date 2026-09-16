@@ -9,8 +9,8 @@ import {
   stackSourceField,
   windowSourceField,
   windowStateField,
-} from '../../../window-manager.ts'
-import {thumbnailSpringField} from '../../../photo-gallery.ts'
+} from '../codegen/window-manager-copy.ts'
+import {thumbnailSpringField} from '../codegen/photo-gallery-copy.ts'
 import {compareCircuits} from './compare.ts'
 import {windowCount} from './indirect-os.ts'
 import {photoCount} from './photos.ts'

@@ -1,6 +1,6 @@
 import {expect, test} from 'bun:test'
 import {Circuit} from '../../../numeric-ui-core.ts'
-import {createWindowManagerMachine} from '../../../window-manager.ts'
+import {createWindowManagerMachine} from '../codegen/window-manager-copy.ts'
 import {compileInstanceProgram} from './copies/codegen/instance.ts'
 import {applyInteraction, interactionFrameTime} from './copies/codegen/indirect-os-machine.ts'
 import {createWgslInterpreter} from './copies/codegen/wgsl-interpreter.ts'

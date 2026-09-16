@@ -18,6 +18,8 @@ Nothing outside this folder changed. The folder imports `numeric-ui-core.ts` unc
 
 Update, September 14, 2026: the repo root runtime adopted this prototype's springs in a different form ([execution-model.md](../../../execution-model.md#springs-and-time)). JavaScript counts the 4 ms steps and writes the matrix power into cells, a frame that would run more than 300 steps snaps every object onto its destination instead of carrying the rest of the time into later frames, and settling is checked every 64 ms of simulated time (`emitAnimatedObject`, and `advanceFrame` in host-timing.ts). The repo root's window-manager.ts still uses `emitSpring`.
 
+Update, September 15, 2026: window-manager.ts and photo-gallery.ts moved to `emitAnimatedObject` and `advanceFrame`, so `indirect-os.test.ts` and `report.ts` import the pre-change IndirectOS from codegen's `window-manager-copy.ts` and `photo-gallery-copy.ts`.
+
 ## What was built
 
 Vocabulary used below: a lane is one animated number with its position and velocity, e.g. a window's center x. A box is one animated object whose lanes settle together, e.g. a window with 5 lanes or a Photos thumbnail with 2. A group is the set of lanes that share stiffness and damping. Retargeting means changing a lane's destination while it's still moving.

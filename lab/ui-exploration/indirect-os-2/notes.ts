@@ -1,13 +1,14 @@
 // The Notes window's paragraph, flowing around the windows stacked above Notes,
-// with one spring per word, in the same circuit as the window manager.
+// in the same circuit as the window manager. Words move straight to where the
+// walker lays them out, in the same evaluation, with no springs.
 //
-// Coordinates are local to the Notes content box. Each other window's projected
-// rectangle (this frame's animated geometry, or its stepped springs) becomes an
-// obstacle while the window is drawn and stacked above Notes. Every band (one
-// line tall) carves the column around the obstacles that overlap it vertically,
-// keeps the widest remaining slot at least `minimumSlotWidth` wide (ties go to the
-// slot further right, as dynamic-layout's layoutColumn), and a band with no slot
-// lays out nothing.
+// Coordinates are local to the Notes content box. Each other window's rectangle
+// (where the window is going, as drawn this frame, or its stepped springs, see
+// `obstacles`) becomes an obstacle while the window is shown and stacked above
+// Notes. Every band (one line tall) carves the column around the obstacles that
+// overlap it vertically, keeps the widest remaining slot at least
+// `minimumSlotWidth` wide (ties go to the slot further right, as dynamic-layout's
+// layoutColumn), and a band with no slot lays out nothing.
 //
 // The carving depends on the band only through which obstacles block it, so the
 // slot is computed once for each of the 8 subsets of the 3 obstacles, and each
@@ -19,9 +20,9 @@ import {type Wire, invariant} from '../../../numeric-ui-core.ts'
 import type {LayoutWires} from './desktop-latches.ts'
 import {type FastParagraph, attachFastCircuit, longestBreakAfterRun, maximumSegmentWidth, segmentGeometry, walkGatheredLines} from './fast-walker.ts'
 import {type Term, createKit} from '../input/kit.ts'
-import {type SpringClock, type SpringGroup, createConstantPowerGroup, emitSpringBox, withSection} from '../spring-bank/spring-bank.ts'
-import {type Allocated, type SourceTable, anyNumber, bit, constant, input, inputBit, list, state} from './table.ts'
-import type {Notation, SpringParams} from '../notation/wires.ts'
+import {withSection} from '../spring-bank/spring-bank.ts'
+import {type Allocated, constant, input, inputBit, list} from './table.ts'
+import type {Notation} from '../notation/wires.ts'
 
 export type NotesOptions = {
   paragraph: FastParagraph
@@ -36,13 +37,13 @@ export type NotesOptions = {
   horizontalPadding: number
   verticalPadding: number
   minimumSlotWidth: number
-  springConstants: {stiffness: number, damping: number}
   // Where obstacles come from:
   // - 'current-frame': this frame's projected windows, as drawn
   // - 'stepped-springs': their stepped springs before the settle snap, with last
   //   frame's stacking and presence (early in the circuit, one frame behind during a drag)
   // - 'destinations': where the windows are going (their destination rectangles and
-  //   visibility), so the text reflows to the final layout while windows animate
+  //   visibility), so the text reflows once, when an event changes a destination,
+  //   instead of at every frame of a window animation
   obstacles: 'current-frame' | 'stepped-springs' | 'destinations'
 }
 
@@ -57,15 +58,10 @@ export function textSegments(paragraph: FastParagraph) {
 // category: declarations
 export function notesCells(options: NotesOptions) {
   const {paragraph} = options
-  const words = textSegments(paragraph)
   return {
     widths: paragraph.widths.map(width => input([0, maximumSegmentWidth], width)),
     breakAfter: paragraph.breakAfter.map(breakAfter => inputBit(breakAfter)),
     startCursor: constant(0, [0, paragraph.widths.length]),
-    initialized: bit(),
-    words: words.map(() => ({position: {x: state(localRange), y: state(localRange)}, velocity: {x: state(anyNumber), y: state(anyNumber)}})),
-    // The destination each word stepped toward last frame (spring bank, deferred retargeting).
-    destinations: words.map(() => ({x: state(localRange), y: state(localRange)})),
   }
 }
 export type NotesCells = Allocated<ReturnType<typeof notesCells>>
@@ -87,14 +83,12 @@ export type NotesContext = {
   windows: readonly NotesWindow[]
   nextStack: readonly (readonly Wire[])[]
   stack: readonly (readonly Wire[])[]
-  notesVisible: Wire
-  group: {kind: 'original', params: SpringParams} | {kind: 'bank', clock: SpringClock, settleDistance: Wire, settleSpeed: Wire}
 }
 
 export type NotesBuild = ReturnType<typeof buildNotes>
 
 // category: behavior
-export function buildNotes($: Notation, table: SourceTable, cells: NotesCells, options: NotesOptions, context: NotesContext) {
+export function buildNotes($: Notation, cells: NotesCells, options: NotesOptions, context: NotesContext) {
   const {sum, sub, half, relu, mul, min, max, clamp, select, zero, unit, assume, circuit} = $
   const kit = createKit(circuit)
   const {layout} = context
@@ -208,58 +202,16 @@ export function buildNotes($: Notation, table: SourceTable, cells: NotesCells, o
     return {walk, geometry, fc}
   })
 
-  const words = textSegments(options.paragraph)
-  const debug = {snap: [] as Wire[], active: [] as Wire[]}
-  const {wordOutputs, animationActive} = withSection(circuit, 'notes word springs', () => {
-    // Words snap before the first evaluation, while Notes is hidden, and while a word isn't laid out.
-    const snapAll = kit.atLeast([[kit.one, 2], [cells.initialized, -1], [context.notesVisible, -1]], 1)
-    const group: SpringGroup | null = context.group.kind === 'bank' ? createConstantPowerGroup(circuit, context.group.clock, options.springConstants, 'split-table') : null
-    const activeTerms: Wire[] = []
-    const wordOutputs = words.map((segment, index) => {
-      const visible = geometry.visible[segment]!
-      const snap = kit.atLeast([[snapAll, 1], [kit.one, 1], [visible, -1]], 1)
-      const stored = cells.words[index]!
-      const target = {x: geometry.x[segment]!, y: geometry.y[segment]!}
-      let position: {x: Wire, y: Wire}
-      if (context.group.kind === 'bank') {
-        const destinations = cells.destinations[index]!
-        const box = emitSpringBox(circuit, [
-          {group: group!, position: stored.position.x, velocity: stored.velocity.x, destination: target.x, previousDestination: destinations.x},
-          {group: group!, position: stored.position.y, velocity: stored.velocity.y, destination: target.y, previousDestination: destinations.y},
-        ], {unit, settleDistance: context.group.settleDistance, settleSpeed: context.group.settleSpeed, retarget: 'deferred', snap})
-        position = {x: box.positions[0]!, y: box.positions[1]!}
-        table.next(stored, {position, velocity: {x: box.velocities[0]!, y: box.velocities[1]!}})
-        table.next(destinations, {x: box.nextPreviousDestinations[0]!, y: box.nextPreviousDestinations[1]!})
-        activeTerms.push(box.active)
-        debug.snap.push(snap)
-        debug.active.push(box.active)
-      } else {
-        const params = context.group.params
-        const laneX = $.spring(stored.position.x, stored.velocity.x, target.x, params)
-        const laneY = $.spring(stored.position.y, stored.velocity.y, target.y, params)
-        position = {x: select(snap, laneX.position, target.x), y: select(snap, laneY.position, target.y)}
-        table.next(stored, {position, velocity: {x: select(snap, laneX.velocity, zero), y: select(snap, laneY.velocity, zero)}})
-        table.next(cells.destinations[index]!, cells.destinations[index]!)
-        activeTerms.push(mul(not(snap), laneX.active), mul(not(snap), laneY.active))
-      }
-      return {...position, visible}
-    })
-    return {wordOutputs, animationActive: $.clamp01(sum(...activeTerms), 1)}
-  })
-  table.next(cells.initialized, unit)
-  function not(wire: Wire) {
-    return sub(unit, wire)
-  }
+  // Every word sits where this evaluation's walk lays it out.
+  const words = textSegments(options.paragraph).map(segment => ({x: geometry.x[segment]!, y: geometry.y[segment]!, visible: geometry.visible[segment]!}))
   return {
-    output: {words: wordOutputs, lineCount: walk.lineCount, windowOverflow: walk.windowOverflow, runOverflow: fc.runOverflow},
+    output: {words, lineCount: walk.lineCount, windowOverflow: walk.windowOverflow, runOverflow: fc.runOverflow},
     debug: {
-      ...debug,
       column,
       obstacles,
       bands: bands.map((band, index) => ({...band, start: walk.starts[index]!, lineWidth: walk.widths[index]!})),
       starts,
     },
-    animationActive,
   }
 }
 

@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {itemCount as photoCount} from '../../../photo-gallery.ts'
+import {itemCount as photoCount} from './photo-gallery-copy.ts'
 import {createWindowManagerMachine, photoFocusSourceField, sourceField, windowSourceField, windowStateField} from './window-manager-copy.ts'
 import {sameFloat} from './codegen.ts'
 import {applyInteraction, createIndirectOSMachine, interactionFrameTime} from './indirect-os-machine.ts'

@@ -2,6 +2,8 @@
 
 This folder hand-authors the render path of chenglou.github.io's photo gallery, 221 photos, as one Indirect circuit. It checks the circuit against the original `index.ts` running natively, and compares its size with the trace compiler's slices of the same file and with IndirectOS.
 
+Update, September 15, 2026: window-manager.ts moved to host-timed springs, so the row for scale in `report.ts` measures the pre-change IndirectOS from codegen's `window-manager-copy.ts`.
+
 ## What it is and how to run it
 
 The source is the frozen fixture `lab/trace-compiler/fixtures/index.ts.txt` (gallery commit f315d586). One circuit evaluation is one call of index.ts's `render(now)`. It reads the viewport, the scroll position, the photo focused in the URL, event latches and the committed state. From those it computes the new focus, the 2D grid or 1D strip destinations, hover, the scroll anchor, every spring, occlusion bits, and the next committed state. JS keeps the DOM reads, the id lookup in the URL hash, DOM nodes and style strings, `scrollTo`, `pushState`, and the DOM Range for prompt selection.

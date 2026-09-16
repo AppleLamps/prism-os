@@ -455,6 +455,8 @@ IndirectOS has 4 windows, 4 dock items and 12 photos. instanced-items/indirect-o
 | window-manager.ts | 5,253 | 192 | 11,598 |
 | staged program, duplicated | 6,282 | 215 | 13,346 |
 
+On September 15, 2026, window-manager.ts moved to host-timed springs and `emitCompare` hit tests, at 3,654 live operations, 124 layers and 7,890 stored weights, so instanced-items now compares with codegen's copy of the pre-change IndirectOS.
+
 With so few items, writing each item out costs little, and photo-gallery.ts keeps per-item lookup tables in weights. Each thumbnail's offset from the focused photo is a weighted sum over all 12 focus bits, with the table entry as the weight, so reading the table costs no operation:
 
 ```ts

@@ -4,7 +4,7 @@ import type {NotesOptions} from './notes.ts'
 
 export const notesText =
   'This paragraph is laid out by the same circuit that runs the windows. Drag Files or Photos over this note, ' +
-  'and every line narrows around them. Each word follows its own spring to its new place, and the lines break ' +
+  'and every line narrows around them. Words move straight to their new places in one frame, and the lines break ' +
   'where pretext would break them.'
 
 export const notesFont = '14px Georgia, "Times New Roman", serif'
@@ -24,9 +24,8 @@ export function notesOptionsFor(paragraph: FastParagraph, epsilon: number, overr
     verticalPadding: 4,
     // Every slot fits the widest word, so the fast path never needs an emergency break.
     minimumSlotWidth: Math.max(80, Math.ceil(Math.max(...paragraph.widths)) + 1),
-    springConstants: {stiffness: 290, damping: 30},
-    // Words flow around where the windows are going, so they only retarget when a
-    // destination changes, and the bank's frame-rate independence holds for words.
+    // Words flow around where the windows are going, so the text reflows once, when
+    // an event changes a destination, instead of at every frame of a window animation.
     obstacles: 'destinations',
     ...overrides,
   }

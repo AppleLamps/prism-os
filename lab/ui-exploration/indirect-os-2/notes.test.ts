@@ -1,7 +1,7 @@
 // Stage 4: the Notes paragraph flowing around the other windows, checked against
 // pretext's layoutNextLineRange with the deterministic fake canvas.
 import {expect, test} from 'bun:test'
-import {createBoxCheck, windowAndPhotoBoxes, wordBoxes} from './box-check.ts'
+import {createBoxCheck, windowAndPhotoBoxes} from './box-check.ts'
 import {lineFitEpsilon, loadPretext} from '../text-walker/fake-canvas.ts'
 import {generateQueueTrace} from './queue-traces.ts'
 import {fastParagraph} from './fast-walker.ts'
@@ -126,17 +126,33 @@ test('settled flows around random window arrangements match pretext line for lin
   expect(bandsWithTwoSlots).toBeGreaterThan(0)
 })
 
-test('every window, thumbnail and word box of the whole program matches float64 doctrine springs along a queue trace', () => {
+test('every window and thumbnail box of the whole program matches float64 doctrine springs along a queue trace', () => {
   const machine = createIndirectOSMachine(notesMachineOptions, {debugOutputs: true})
-  const check = createBoxCheck(machine, [...windowAndPhotoBoxes(machine), ...wordBoxes(machine)])
+  const check = createBoxCheck(machine, windowAndPhotoBoxes(machine))
   const {frames} = generateQueueTrace({seed: 9, frames: 300, capacity: 8, maximumDowns: 2})
   let time = 0
   for (const frame of frames) machine.stepFrame(frame.viewport.width, frame.viewport.height, time += frame.elapsed, frame.events)
-  expect(check.evaluationsWithSteps).toBeGreaterThan(150)
-  expect(check.boxesChecked).toBe(check.evaluations * (16 + paragraph.breakAfter.filter(bit => bit === 0).length))
+  expect(check.evaluationsWithSteps).toBeGreaterThan(100)
+  expect(check.boxesChecked).toBe(check.evaluations * 16)
   expect(check.clockMismatches).toBe(0)
   expect(check.firstSettleMismatch).toBeNull()
   expect(check.maxPositionError).toBeLessThan(1e-3)
+})
+
+test('words move straight to the new layout in the frame of the event, while the windows still animate', () => {
+  const machine = createIndirectOSMachine(notesMachineOptions, {debugOutputs: true})
+  const viewport = {width: 1280, height: 800}
+  const clock = {time: 0}
+  const before = read(settle(machine, viewport, clock), machine.output.notes!).words
+  // At 1280×800, Photos (650,190 560×430) is stacked above Notes, and its minimize button is centered at 1135,212.
+  const {values} = machine.stepFrame(1280, 800, clock.time += 16, [{kind: 'down', x: 1135, y: 212}, {kind: 'up', x: 1135, y: 212}])
+  expect(machine.source[machine.cells.windows[3]!.minimized]).toBe(1)
+  expect(values[machine.output.animationActive]).toBe(1)
+  const during = read(values, machine.output.notes!).words
+  expect(during).not.toEqual(before)
+  const settled = settle(machine, viewport, clock)
+  expect(read(settled, machine.output.notes!).words).toEqual(during)
+  expect(compareWithPretext(machine, settled).problems).toEqual([])
 })
 
 test('dragging Files over Notes reflows the paragraph, and the settled words match pretext', () => {

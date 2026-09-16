@@ -4,10 +4,7 @@ import {
   validateTensorEvaluation,
 } from '../../numeric-ui-core.ts'
 import {createCandidateGalleryMachine} from '../../candidate-gallery.ts'
-import {
-  createWindowManagerMachine,
-  sourceField as windowSourceField,
-} from '../../window-manager.ts'
+import {createWindowManagerMachine} from '../../window-manager.ts'
 import {createRandom, gatherStatistics, randomInteger} from './measure.ts'
 
 // Production impact: the builders now declare finite pixel-space ranges and
@@ -85,18 +82,23 @@ test('window-manager lowers its 12 stacking reads and stays exact in use', () =>
 
   // A full interaction trace on the gathered program: window drags, title-bar
   // clicks that restack, dock clicks that minimize and restore, and photo
-  // events, all compared wire-for-wire against the reference every frame.
+  // events, all compared wire-for-wire against the reference. A step runs one
+  // evaluation per event timestamp, settle checks and the frame, so the observer
+  // checks the table of every evaluation.
   const random = createRandom(0x57ac)
   let frameTime = 0
+  let evaluations = 0
+  machine.observe({
+    beforeEvaluate(table) {
+      const reference = circuit.evaluateReference(table)
+      validateOneHotGroups(circuit, reference)
+      const values = circuit.evaluateTensor(table)
+      validateTensorEvaluation(table, circuit, values)
+      evaluations++
+    },
+  })
   const compareStep = (width: number, height: number) => {
     frameTime += 16
-    machine.source[windowSourceField.viewportWidth] = width
-    machine.source[windowSourceField.viewportHeight] = height
-    machine.source[windowSourceField.frameTime] = frameTime
-    const reference = circuit.evaluateReference(machine.source)
-    validateOneHotGroups(circuit, reference)
-    const values = circuit.evaluateTensor(machine.source)
-    validateTensorEvaluation(machine.source, circuit, values)
     machine.step(width, height, frameTime)
   }
 
@@ -128,7 +130,8 @@ test('window-manager lowers its 12 stacking reads and stays exact in use', () =>
     compareStep(1280, 800)
   }
   // Photo gallery interactions and viewport churn while springs animate.
-  machine.photoClick(200, 150)
+  // Viewport coordinates, inside Photos' initial content box at (651, 235).
+  machine.photoClick(851, 385)
   compareStep(1280, 800)
   machine.photoNext()
   compareStep(1280, 800)
@@ -139,4 +142,6 @@ test('window-manager lowers its 12 stacking reads and stays exact in use', () =>
   }
   machine.photoClose()
   for (let settle = 0; settle < 10; settle++) compareStep(1280, 800)
+  // 84 steps, plus event and settle check evaluations between frames.
+  expect(evaluations).toBeGreaterThan(84)
 })

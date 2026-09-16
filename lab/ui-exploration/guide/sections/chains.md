@@ -17,15 +17,17 @@ The same theorem says how much such an executor could gain at most. With unlimit
 | a button over 64 queued events, as a loop (this section) | 516 | 65 | 7.9 |
 | the same button as a Sklansky prefix scan (this section) | 2,872 | 9 | 319 |
 | layout-tree's app shell | 2,806 | 115 | 24 |
-| IndirectOS | 5,253 | 192 | 27 |
+| IndirectOS before September 15, 2026 | 5,253 | 192 | 27 |
+| IndirectOS since September 15, 2026 | 3,654 | 124 | 29 |
 | input's window circuit, 16 queued events with at most 2 presses | 1,494 | 55 | 27 |
 | IndirectOS with spring-bank's springs, Photos reading its window's springs right after this frame's steps | 3,583 | 91 | 39 |
-| indirect-os-2, the whole program with Notes | 19,854 | 343 | 58 |
+| indirect-os-2, the whole program with Notes and word springs, before September 15, 2026 | 19,854 | 343 | 58 |
+| indirect-os-2, the whole program with Notes, since September 15, 2026 | 18,027 | 337 | 53 |
 | text-editing, one key at 256 characters | 54,431 | 239 | 228 |
 | hn-thread, 251 comments | 53,703 | 69 | 778 |
 | gallery, 221 photos | 48,411 | 61 | 794 |
 
-Window management, input handling and app layout are mostly chains: even with unlimited processors, a layer-parallel executor could make IndirectOS at most about 27 times faster than running its operations one at a time. Collections are mostly wide rather than deep, because the gallery's 221 photos and hn-thread's 251 comments are computed side by side in the same layers, so their ceiling is near 800. Removing layers raises the ceiling: the button's prefix scan does 5.6 times the loop's work, and its ceiling goes from 8 to 319.
+Window management, input handling and app layout are mostly chains: even with unlimited processors, a layer-parallel executor could make IndirectOS at most about 29 times faster than running its operations one at a time. Collections are mostly wide rather than deep, because the gallery's 221 photos and hn-thread's 251 comments are computed side by side in the same layers, so their ceiling is near 800. Removing layers raises the ceiling: the button's prefix scan does 5.6 times the loop's work, and its ceiling goes from 8 to 319.
 
 Today's executor isn't a layer-parallel executor. The executor runs layers one after another on one CPU thread, so its time grows with the number of operations: in indirect-os-2 the executor cost about 8 µs per 1,000 live operations, and removing 104 layers moved the time by less than the measurement noise. codegen's GPU runs are different again. They run one per-item program over many items (instancing, see [instancing.md](instancing.md)), so the statements inside one item's program run in order, and the parallelism comes from the number of items.
 
@@ -153,7 +155,7 @@ Some values sit deep in the chain but change slowly, e.g. a window's content siz
 
 Some chains are long because of the behavior the app computes, and a change in behavior removes the dependency instead of shortening the chain. [behavior-choices.md](../../../../behavior-choices.md) lists these choices, each with what the user sees differently. Two have pattern docs with runnable examples: [hit-test destinations instead of drawn positions](../patterns/hit-test-destinations.md), where destinations are computed before springs, so a decision that reads destinations doesn't depend on the springs, and [commit state at events](../patterns/commit-at-events.md), where state is written back only at events and settle checks, so stored state doesn't depend on which frames ran. The prototypes measured more changes of this kind:
 
-**Lay text out around the windows' destinations.** indirect-os-2 flows a Notes paragraph around the other windows. With the windows' destinations as obstacles, the whole program was 19,854 operations and 343 layers; with their animated geometry, 19,861 and 368. Destinations also kept every animated value within 2.4e-4 px between 60 fps and 120 fps, where animated obstacles made words differ by 25.4 px, since each frame rate moved the words' destinations through a different sequence of values.
+**Lay text out around the windows' destinations.** indirect-os-2 flows a Notes paragraph around the other windows. With the windows' destinations as obstacles, the whole program was 19,854 operations and 343 layers; with their animated geometry, 19,861 and 368. Destinations also kept every animated value within 2.4e-4 px between 60 fps and 120 fps, where animated obstacles made words differ by 25.4 px, since each frame rate moved the words' destinations through a different sequence of values. Those numbers were measured with a spring per word. Since the word springs were removed on September 15, 2026, the whole program is 18,027 operations and 337 layers around destinations and 18,034 and 362 around the animated geometry, words at shared timestamps are identical with either obstacle source, and animated obstacles instead make the text reflow in 8 frames with no event.
 
 **Step springs toward last frame's destination.** Retargeting means changing a spring's destination while the spring is still moving. spring-bank's deferred retargeting makes this frame's spring steps move toward last frame's destination, stored in one cell per animated value, and the new destination takes effect from this frame's time. Deferred retargeting is a delay chosen for its semantics: with deferred retargeting, runs at 10 fps to 120 fps and through 500 ms and 2 s stalls differed by at most 0.003 px when presses landed on 30 fps frame times, where the two presses that fall between 10 fps frames start no animation. Deferred retargeting also puts the stepped positions early in the circuit, which is what let Photos read the window springs' positions right after this frame's steps ([read last frame's value](../patterns/read-last-frame.md#when-not-to-use-it)).
 

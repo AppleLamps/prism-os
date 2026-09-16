@@ -59,24 +59,6 @@ export function windowAndPhotoBoxes(machine: IndirectOSMachine): BoxDescription[
   return [...windows, ...thumbnails]
 }
 
-// One box of two lanes per Notes word, in the words' own spring group.
-export function wordBoxes(machine: IndirectOSMachine): BoxDescription[] {
-  const {cells, debug, options} = machine
-  if (cells.notes === null || options.notes === null || debug.notes === undefined) throw new Error('the word check needs the Notes flow')
-  const notesCells = cells.notes
-  const notesDebug = debug.notes
-  return notesCells.words.map((word, index) => ({
-    label: `word ${index}`,
-    lanes: [
-      {position: word.position.x, velocity: word.velocity.x, previousDestination: notesCells.destinations[index]!.x},
-      {position: word.position.y, velocity: word.velocity.y, previousDestination: notesCells.destinations[index]!.y},
-    ],
-    constants: options.notes!.springConstants,
-    snap: notesDebug.snap[index]!,
-    active: notesDebug.active[index]!,
-  }))
-}
-
 export function createBoxCheck(machine: IndirectOSMachine, boxes: readonly BoxDescription[]) {
   const bank = machine.cells.bank
   if (bank === null) throw new Error('the box check needs the spring bank')

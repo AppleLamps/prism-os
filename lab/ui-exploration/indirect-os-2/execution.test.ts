@@ -33,8 +33,8 @@ test('generated JavaScript equals the executor on every live wire of the whole p
     if (frame.events.length > 0) evaluationsWithEvents++
     machine.stepFrame(frame.viewport.width, frame.viewport.height, time += frame.elapsed, frame.events)
   }
-  expect(machine.tensorProgram.valueCount - machine.tensorProgram.sourceSize).toBeGreaterThan(19_000)
-  expect(checked).toBeGreaterThan(60 * 19_000)
+  expect(machine.tensorProgram.valueCount - machine.tensorProgram.sourceSize).toBeGreaterThan(18_000)
+  expect(checked).toBeGreaterThan(60 * 18_000)
   expect(evaluationsWithEvents).toBeGreaterThan(25)
 })
 

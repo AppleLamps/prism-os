@@ -3,8 +3,8 @@
 // reference, so a perturbed mode is judged both against the stored interpreter
 // and against the original UI's logic.
 import type {Wire} from '../../../numeric-ui-core.ts'
-import {itemCount as photoCount} from '../../../photo-gallery.ts'
-import {createWindowManagerMachine, photoFocusSourceField, sourceField, windowOutputField, windowSourceField, windowStateField} from '../../../window-manager.ts'
+import {itemCount as photoCount} from '../codegen/photo-gallery-copy.ts'
+import {createWindowManagerMachine, photoFocusSourceField, sourceField, windowOutputField, windowSourceField, windowStateField} from '../codegen/window-manager-copy.ts'
 import {applyInteraction, createIndirectOSMachine, interactionFrameTime} from './copies/codegen/indirect-os-machine.ts'
 import {ownerCode, referenceOwnership, regionCode} from './copies/codegen/window-ownership.ts'
 import {runScenario} from './copies/gallery/differential.ts'

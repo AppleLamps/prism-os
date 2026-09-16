@@ -32,7 +32,7 @@ import {
   thumbnailSpringSourceField as localThumbnailSpringSourceField,
   validatePhotoGalleryOutput,
   validatePhotoGalleryOutputWires,
-} from '../../../photo-gallery.ts'
+} from './photo-gallery-copy.ts'
 
 export const windowCount = 4
 

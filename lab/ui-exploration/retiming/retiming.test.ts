@@ -1,6 +1,6 @@
 import {describe as suite, expect, test} from 'bun:test'
 import {Circuit} from '../../../numeric-ui-core.ts'
-import {createWindowManagerMachine as createProductionMachine} from '../../../window-manager.ts'
+import {createWindowManagerMachine as createProductionMachine} from '../codegen/window-manager-copy.ts'
 import {analyzeDepth, buildGraph, createRetimedEvaluator, criticalLevels, flattenProgram, layersWithCuts, maskOf, minimumCut} from './flat.ts'
 import {type Model, type Trace, greedySearch, levelCandidates, recordTrace, replay} from './retime.ts'
 import {type IndirectOSModel, bankOptions, codegenSession, createIndirectOSModel, liveResizeTrace, originalOptions, photosPreviousFrameCuts, randomInteractionTrace} from './indirect-os.ts'

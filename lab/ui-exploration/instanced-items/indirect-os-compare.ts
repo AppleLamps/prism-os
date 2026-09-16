@@ -2,7 +2,7 @@
 // compares every output and every next source cell, frame by frame. With resync, the staged cells
 // are copied from the original before each frame, so every frame compares one evaluation from
 // identical state.
-import {controlField, photoField, thumbnailSpringField} from '../../../photo-gallery.ts'
+import {controlField, photoField, thumbnailSpringField} from '../codegen/photo-gallery-copy.ts'
 import {
   createWindowManagerMachine,
   dockOutputField,
@@ -17,7 +17,7 @@ import {
   windowOutputField,
   windowSourceField,
   windowStateField,
-} from '../../../window-manager.ts'
+} from '../codegen/window-manager-copy.ts'
 import {animationFields, createStagedIndirectOSMachine, photoCount, type StagedIndirectOSMachine} from './indirect-os-staged.ts'
 import type {Value} from './staged.ts'
 

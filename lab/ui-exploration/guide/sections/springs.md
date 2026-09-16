@@ -10,7 +10,7 @@ The runnable examples are in [examples/springs](../examples/springs/). From the 
 
 ## Short answers
 
-IndirectOS's frame-rate dependence is a choice in how IndirectOS was written, not a limit of the approach. window-manager.ts runs exactly 4 substeps per frame and makes each substep a quarter of the frame's duration, with the duration capped at 32 ms. The spring-bank prototype kept vibescript's timing instead: fixed 4 ms steps, a runtime number of steps per frame, leftover time carried into the next frame, and a 300-step cap. Its copy of IndirectOS got smaller, 3,580 operations instead of 5,253.
+IndirectOS's frame-rate dependence is a choice in how IndirectOS was written, not a limit of the approach. window-manager.ts runs exactly 4 substeps per frame and makes each substep a quarter of the frame's duration, with the duration capped at 32 ms. The spring-bank prototype kept vibescript's timing instead: fixed 4 ms steps, a runtime number of steps per frame, leftover time carried into the next frame, and a 300-step cap. Its copy of IndirectOS got smaller, 3,580 operations instead of 5,253. On September 15, 2026, window-manager.ts moved to `emitAnimatedObject` and host-timing.ts's `advanceFrame`, at 3,783 operations, 3,654 after its hit tests moved to `emitCompare` the same day, and its committed tables and drawn outputs became identical at shared times at 10, 30, 60 and 120 fps.
 
 What the approach does force is a maximum step count known while building, and costs that grow differently from a JavaScript loop. A compiled program runs each of its layers exactly once per evaluation, so `for (let i = 0; i < steps; i++)` has to become one of: a masked copy of the step for every possible iteration (902 layers for up to 300 steps), powers of the spring's step matrix chosen by the binary digits of `steps` (27 to 40 layers), or a matrix that JavaScript computes and writes into 4 cells (3 layers). A fifth option changes when JavaScript copies next-state values back instead: event-time commits state only at event timestamps.
 
@@ -76,7 +76,9 @@ A 30 fps run and a 120 fps run execute different numbers of steps per frame, but
 
 ## How IndirectOS steps a spring
 
-window-manager.ts computes one timestep per frame (window-manager.ts:403-416):
+On September 15, 2026, window-manager.ts and photo-gallery.ts moved to `emitAnimatedObject` and `advanceFrame`, so this section describes the code before that change. lab/ui-exploration/codegen's `window-manager-copy.ts` and `photo-gallery-copy.ts` keep that code, and the line numbers below point into them.
+
+window-manager.ts computed one timestep per frame (window-manager-copy.ts:408-421):
 
 ```ts
 const frameDuration = emitMultiply(
@@ -92,15 +94,15 @@ const frameDuration = emitMultiply(
 const springTimestep = circuit.affine([[frameDuration, 0.001 / 4]])
 ```
 
-`springMaxFrameDuration` is 32 ms (window-manager.ts:1206). The host writes each frame's requestAnimationFrame timestamp into the `frameTime` cell (window-manager.ts:1287), and the program copies `frameTime` into `previousFrameTime` for the next frame (window-manager.ts:1023). `emitSpring` in numeric-ui-core.ts loops 4 times while building, and each copy of the step uses `springTimestep` as its length. photo-gallery.ts on its own writes a constant timestep of 0.004 s (photo-gallery.ts:591), so every evaluation of the standalone gallery simulates 16 ms, however long the frame was.
+`springMaxFrameDuration` is 32 ms (window-manager-copy.ts:1211). The host writes each frame's requestAnimationFrame timestamp into the `frameTime` cell (window-manager-copy.ts:1292), and the program copies `frameTime` into `previousFrameTime` for the next frame (window-manager-copy.ts:1028). `emitSpring` in numeric-ui-core.ts loops 4 times while building, and each copy of the step uses `springTimestep` as its length. photo-gallery.ts on its own writes a constant timestep of 0.004 s (photo-gallery-copy.ts:595), so every evaluation of the standalone gallery simulates 16 ms, however long the frame was.
 
 Three things make IndirectOS's timing frame-rate dependent:
 
 - The step length follows the frame rate, about 2.1 ms per substep at 120 fps and 8.3 ms at 30 fps, and semi-implicit Euler gives a slightly different trajectory for a different step length.
 - Frames longer than 32 ms lose time. At 10 fps each 100 ms frame simulates 32 ms, so motion runs at about a third of its speed, and a 500 ms stall moves the springs forward by 32 ms.
-- The page requests another frame only while the `animationActive` output is above 0 (window-manager.ts:1472-1473), or after an input event. So after a period with no frames, the first frame computes its duration from the last rendered frame, which can be seconds earlier, and the 32 ms clamp makes that frame simulate 32 ms toward the new destinations at any frame rate. At 120 fps, the first frame after a press moves the springs as far as about 4 frames' worth of time.
+- The page requests another frame only while the `animationActive` output is above 0 (window-manager.ts:1472-1473 at commit 4a91fec), or after an input event. So after a period with no frames, the first frame computes its duration from the last rendered frame, which can be seconds earlier, and the 32 ms clamp makes that frame simulate 32 ms toward the new destinations at any frame rate. At 120 fps, the first frame after a press moves the springs as far as about 4 frames' worth of time.
 
-`emitSpring`'s settle rule also differs from index.ts's snap. `active` is `100 × relu(distance − 0.01) + 100 × relu(speed − 0.01)`, clamped to 0..1 (at the end of `emitSpring`, with the thresholds and scales from window-manager.ts:1207-1210), and the drawn position is `active × steppedPosition + (1 − active) × destination`. So a spring 0.015 px from its destination and nearly at rest is drawn halfway between its stepped position and its destination, and its velocity is halved.
+`emitSpring`'s settle rule also differs from index.ts's snap. `active` is `100 × relu(distance − 0.01) + 100 × relu(speed − 0.01)`, clamped to 0..1 (at the end of `emitSpring`, with the thresholds and scales from window-manager-copy.ts:1212-1215), and the drawn position is `active × steppedPosition + (1 − active) × destination`. So a spring 0.015 px from its destination and nearly at rest is drawn halfway between its stepped position and its destination, and its velocity is halved.
 
 spring-bank measured IndirectOS's timing on a scripted IndirectOS session, comparing each rate with 120 fps at the timestamps both runs rendered: 318 px apart at 10 fps, 183 px at 30 fps, 72 px at 60 fps, and 401 px at 60 fps with a 500 ms stall. At 10 fps, every animation ended about 1 s late ([spring-bank](../../spring-bank/README.md)).
 
@@ -116,7 +118,7 @@ JavaScript can evaluate the whole program several times within one frame, e.g. o
 
 Two constraints follow. A loop needs a maximum count known while building, e.g. index.ts's uncapped loop becomes ui.md's 300-step cap, and the cap becomes a capacity of the program instead of a tuning value. And the runtime count has to reach the operations as values they can compute with: bits, masks, or a matrix in cells.
 
-Neither constraint rules out fixed steps. IndirectOS uses a fixed count of variable-length substeps, which needs no clock state and no step count. spring-bank rebuilt vibescript's timing with operations: the pending time, the step count, the leftover carried into the next frame, the 300-step cap, and the restart after idle. With presses on 30 fps frame times, where the two presses that 10 fps applies late start no animation, the runs at 10 to 120 fps and through 500 ms and 2 s stalls stayed within 0.003 px of each other, and the IndirectOS copy went from 5,253 operations and 192 layers to 3,580 operations and 137 layers ([spring-bank](../../spring-bank/README.md)).
+Neither constraint rules out fixed steps. Until September 15, 2026, IndirectOS used a fixed count of variable-length substeps, which needs no clock state and no step count. spring-bank rebuilt vibescript's timing with operations: the pending time, the step count, the leftover carried into the next frame, the 300-step cap, and the restart after idle. With presses on 30 fps frame times, where the two presses that 10 fps applies late start no animation, the runs at 10 to 120 fps and through 500 ms and 2 s stalls stayed within 0.003 px of each other, and the IndirectOS copy went from 5,253 operations and 192 layers to 3,580 operations and 137 layers ([spring-bank](../../spring-bank/README.md)).
 
 ## Five ways to run a runtime number of steps
 
@@ -133,7 +135,7 @@ e' = e + v'·dt            = (1 − k·dt²)·e + dt·(1 − b·dt)·v
 
 So running `n` steps multiplies the pair `(e, v)` by `M^n`, where `M` is the 2×2 matrix of those four coefficients and `M^n` is `M` multiplied by itself `n` times. `springStepMatrix` and `matrixPower` in [spring-step.ts](../examples/springs/spring-step.ts) compute both in float64. This section calls `M^n` for this frame's step count the frame matrix, since it moves the spring through all of one frame's steps at once. The ways below differ in how a runtime step count turns into the effect of `M^n`.
 
-The table shows sizes measured with [costs.ts](../examples/springs/costs.ts), for springs that share stiffness 290 and damping 30, with up to 300 steps and no settle check. For scale, IndirectOS's `emitSpring` is 46 live operations, 33 layers and 104 stored weights for one spring, including its settle check.
+The table shows sizes measured with [costs.ts](../examples/springs/costs.ts), for springs that share stiffness 290 and damping 30, with up to 300 steps and no settle check. For scale, `emitSpring`, which IndirectOS used until September 15, 2026, is 46 live operations, 33 layers and 104 stored weights for one spring, including its settle check.
 
 | Form | 1 spring: live operations / layers / stored weights | 20 springs: live operations / layers / stored weights | Operations | Depth |
 | --- | --- | --- | --- | --- |
@@ -499,7 +501,7 @@ Recursion over structure known while building works too, e.g. `emitArgmax` build
 
 Whole circuits compose. window-manager.ts copies the Photos circuit into its own circuit with `inlineCircuit` in numeric-ui-core.ts, which maps Photos' source cells to window-manager wires. notation replaced that with components, i.e. a list of cells plus a build function that reads the parent's wires, and the result compiled to the same circuit ([notation](../../notation/README.md)).
 
-Savings add up across compositions. In indirect-os-2, replacing `emitSpring` with the spring bank saved 1,353 operations in IndirectOS with event latches, and 4,478 operations once the Notes paragraph was added ([indirect-os-2](../../indirect-os-2/README.md)).
+Savings add up across compositions. In indirect-os-2, replacing `emitSpring` with the spring bank saved 1,353 operations in IndirectOS with event latches, and 4,478 operations once the Notes paragraph was added, with a spring per word ([indirect-os-2](../../indirect-os-2/README.md)). Since the word springs were removed on September 15, 2026, the bank saves 1,350 operations with Notes, the same as with the event queue alone.
 
 ## What doesn't compose at runtime
 
@@ -527,7 +529,7 @@ Savings add up across compositions. In indirect-os-2, replacing `emitSpring` wit
 
 **Idle time must not reach the springs.** streaming-words' page first stepped the springs through the whole idle period on the first frame after an input, up to 1,020 ms, so words jumped to their places in one frame ([browser check](../../notes/browser-check.md)). IndirectOS clamps the same jump to 32 ms, as described above. In app-frame.ts, the program clears the `running` cell when everything settles, so the next frame counts no idle time however large a delta JavaScript writes. host-timing.ts's `quantizeFrameTiming` returns a duration of 0 for the first frame after idle, and `advanceFrame` stops the clock as soon as its `evaluate` callback returns that nothing animates.
 
-**Time values in FP32 cells.** A Float32Array rounds what JavaScript writes into it. layout-tree's machine wrote a timestep of 0.008, which the cell stores as 0.0080000004, above the cell's declared maximum of 0.008, so every frame of 32 ms or more threw ([browser check](../../notes/browser-check.md)). window-manager.ts writes absolute requestAnimationFrame times into an FP32 cell (window-manager.ts:1287), and FP32 values near 2^22 ms, about 70 minutes into a session, are 0.5 ms apart, so frame durations computed inside the program get coarser as a session goes on. spring-bank, app-frame.ts and host-timing.ts keep absolute times in float64 JavaScript and write only the frame's delta.
+**Time values in FP32 cells.** A Float32Array rounds what JavaScript writes into it. layout-tree's machine wrote a timestep of 0.008, which the cell stores as 0.0080000004, above the cell's declared maximum of 0.008, so every frame of 32 ms or more threw ([browser check](../../notes/browser-check.md)). Until September 15, 2026, window-manager.ts wrote absolute requestAnimationFrame times into an FP32 cell (window-manager-copy.ts:1292), and FP32 values near 2^22 ms, about 70 minutes into a session, are 0.5 ms apart, so frame durations computed inside the program got coarser as a session went on. window-manager.ts now keeps absolute times in JavaScript and writes each evaluation's spring matrix. spring-bank, app-frame.ts and host-timing.ts keep absolute times in float64 JavaScript and write only the frame's delta.
 
 **Builders create operations that the compiled program drops.** The chains of steps in app-frame.ts created 3,275 operations, of which 234 are live. `circuit.createTensorEvaluator(roots)` and `circuit.compileTensorProgram(roots)` drop the rest, while `circuit.evaluateReference(source)` and `circuit.evaluateTensor(source)` compute every created operation.
 
@@ -540,5 +542,5 @@ Savings add up across compositions. In indirect-os-2, replacing `emitSpring` wit
 - The binary-digit forms and the JavaScript-written matrix only cover linear springs with constant stiffness and damping, whose springs don't affect each other. Repulsion, collisions, and stiffness that depends on state need unrolled steps with a small maximum count, or JavaScript.
 - Every stiffness and damping pair needs its own frame matrix, or its own chains of steps.
 - These forms reproduce index.ts's Euler stepping, not the closed-form spring Animation.md describes. A JavaScript-written matrix could sample the closed form, but none of the prototypes built that.
-- The float64 reproduction uses one spring and random presses, and renders every frame. It doesn't model IndirectOS's 32 ms jump after idle, or several springs whose settle decisions share one clock.
-- Deferred retargeting with extra evaluations at event timestamps, and event-time's commits, were measured on replayed traces. spring-bank's browser page applies events in the next rendered frame without the extra evaluations, and event-time's browser check couldn't confirm whether composited animations keep playing during a stall. host-timing.ts's `advanceFrame` was also measured only on replayed traces, and no demo uses it yet.
+- The float64 reproduction uses one spring and random presses, and renders every frame. It doesn't model IndirectOS's former 32 ms jump after idle, or several springs whose settle decisions share one clock.
+- Deferred retargeting with extra evaluations at event timestamps, and event-time's commits, were measured on replayed traces. spring-bank's browser page applies events in the next rendered frame without the extra evaluations, and event-time's browser check couldn't confirm whether composited animations keep playing during a stall. host-timing.ts's `advanceFrame` was also measured only on replayed traces, e.g. window-manager.test.ts's session, although window-manager.ts has used it in the browser since September 15, 2026.

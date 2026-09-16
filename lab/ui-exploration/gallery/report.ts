@@ -4,7 +4,7 @@
 // Run: bun lab/ui-exploration/gallery/report.ts   (about a minute; writes report-output.json)
 import {writeFileSync} from 'node:fs'
 import {Circuit, type Wire} from '../../../numeric-ui-core.ts'
-import {createWindowManagerMachine} from '../../../window-manager.ts'
+import {createWindowManagerMachine} from '../codegen/window-manager-copy.ts'
 import {createPortLayout, loadCaptionBreakpoints} from './captions-reference.ts'
 import {runScenario, scriptedTrace, type DifferentialReport} from './differential.ts'
 import {probeEdges} from './edge-probe.ts'

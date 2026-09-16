@@ -187,7 +187,7 @@ For scale, phase 1's `event-unroll.ts` inlined the event-window step 8 times int
 - **State-dependent enabled items.** "Maximize focused window" should be disabled while nothing is focused. The menu computes item tables once per evaluation from source cells, so a state-dependent enabled bit needs those tables per event, like the keyboard's per-event form.
 - **Folding as a compiler pass.** The folded window circuit was written by hand. A pass that recognizes latch, count, and OR updates inside an unrolled step and rewrites them as prefix computations would produce the folded form from the step.
 - **Browser focus events in the queue**, so assistive technology and native inputs can move focus and the circuit follows.
-- **IndirectOS.** Its one-slot-per-kind select chain (window-manager.ts:682-700) still collapses a frame's moves into one and fixes the order down, move, up. The queue plus the folded form would replace that chain, and its Photos keys would become key bits routed by focus.
+- **IndirectOS.** Its one-slot-per-kind select chain (window-manager.ts:682-700) still collapses a frame's moves into one and fixes the order down, move, up. The queue plus the folded form would replace that chain, and its Photos keys would become key bits routed by focus. Update, September 15, 2026: window-manager.ts now runs one evaluation per distinct event timestamp, so only events that share a timestamp collapse in this chain.
 - **Speed.** The combined app costs about 129 µs per frame in the executor at capacity 8. Phase 1's generated plain JS ran IndirectOS about 11 times faster than the executor, so code generation is the obvious next measurement before judging frame budgets.
 
 ## Browser check

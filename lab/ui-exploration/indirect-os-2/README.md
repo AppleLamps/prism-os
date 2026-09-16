@@ -6,12 +6,16 @@ It builds IndirectOS as one program where each phase 2 change is an option: the 
 
 The short answer: richer, yes, and exact everywhere it was checked. Cheaper, no. The whole program is 19,854 live operations, 343 layers and 49,900 stored weights, against the original's 5,253, 192 and 11,598. The springs got cheaper and their savings add up across every other change, but exact multi-event input costs more than the latches it replaces, and the Notes flow alone costs more than the whole original desktop. Some gains interfered: the event queue erased Photos' depth gain, text that flows around the windows' animated geometry loses the spring bank's frame-rate independence, and generated JavaScript needs tens of thousands of evaluations before the wider program runs fast.
 
+Update, 2026-09-15: the word springs were removed, so words move straight to the new layout in the frame of the event, and the whole program is now 18,027 live operations, 337 layers and 44,326 stored weights. The rest of this README was measured with word springs; [Words without springs](#words-without-springs-2026-09-15) has the new numbers.
+
+Update, September 15, 2026: window-manager.ts moved to host-timed springs, so `base.test.ts` and `pair-traces.ts` import the pre-change IndirectOS from codegen's `window-manager-copy.ts`.
+
 ## What it is and how to run it
 
 From ~/github/indirect:
 
 ```sh
-bun test lab/ui-exploration/indirect-os-2              # 24 tests, 4 to 9 seconds on this shared machine
+bun test lab/ui-exploration/indirect-os-2              # 25 tests, 4 to 9 seconds on this shared machine
 bunx tsgo -p lab/ui-exploration/indirect-os-2
 bun lab/ui-exploration/indirect-os-2/report.ts          # every table below, about 10 minutes; writes results.json
 bun lab/ui-exploration/indirect-os-2/report.ts structure framerate   # parts: structure, traces, timings, tierup, framerate
@@ -80,7 +84,7 @@ JS keeps the stream legal (an up without a press is dropped, and a down while pr
 - The obstacles are the three other windows while they're visible and stacked above Notes. `obstacles: 'destinations'` (the final configuration) reads where the windows are going: this frame's destination rectangles and visibility. `'current-frame'` reads the windows' projected geometry as drawn this frame, scaled about the center. `'stepped-springs'` reads their springs after stepping and before the snap, with last frame's stacking and presence.
 - Each band, one line tall, carves the column around the obstacles that overlap it vertically, keeps the widest remaining slot at least as wide as the widest word, and prefers the slot further right on a tie, as dynamic-layout's layoutColumn does. The slot depends on the band only through which obstacles block it, so it's computed once for each of the 8 subsets of the 3 obstacles, and each band reads its subset's slot through a one-hot of its 3 blocking bits. Obstacle geometry is fractional while windows animate, so these comparisons are rounding comparisons: exact bits when a difference sits on a 1/64 px grid, and either answer within 1/128 px of a tie.
 - text-walker's gathered-lines walker lays out the paragraph band by band over runtime segment widths and break-after bits, with each band's slot width and a gate for bands with no slot. Segment geometry gives every word an x, a y, and a visible bit.
-- Every word is a spring bank box of 2 lanes in its own group (stiffness 290, damping 30). A word snaps while it isn't laid out, while Notes is hidden, and on the first evaluation.
+- Every word is a spring bank box of 2 lanes in its own group (stiffness 290, damping 30). A word snaps while it isn't laid out, while Notes is hidden, and on the first evaluation. Removed on 2026-09-15: each word is now at the walker's x and y from the same evaluation, see [Words without springs](#words-without-springs-2026-09-15).
 
 The paragraph is 45 words and 89 segments, laid out in 16 bands of 22 px in a column of at most 440 px, with a walker window of 26 segments.
 
@@ -206,7 +210,7 @@ The named cases in `queue.test.ts` run the same way: a click on a close button c
 
 Two findings came out of these checks:
 
-- Photos' clicks in window-manager.ts depend on spring timing. Photos hit-tests a click against its layout at the animated window size, so with the bank's trajectories a click during a Photos window animation landed on a different photo in 2 of 8 random 400-frame traces, while every window decision matched. The comparison sends Photos clicks only while both machines have settled the Photos window. The queue build hit-tests at the destination size, which removes that dependence.
+- Photos' clicks in window-manager.ts depend on spring timing. Photos hit-tests a click against its layout at the animated window size, so with the bank's trajectories a click during a Photos window animation landed on a different photo in 2 of 8 random 400-frame traces, while every window decision matched. The comparison sends Photos clicks only while both machines have settled the Photos window. The queue build hit-tests at the destination size, which removes that dependence. Update, September 15, 2026: window-manager.ts now hit-tests Photos clicks at the window's destination size too.
 - A range copied from spring-bank was false. Window destination centers were declared within 0..16,384, and in a 2 px wide viewport a dock item is centered at -4.8e-7 px, because FP32 rounds a third when the dock gap shrinks with the viewport. The derived validator rejected the frame, and the recovery path then wrote the value back into a table the executor refused. The centers are now declared within -16,384..32,768.
 
 ### Frame-rate independence
@@ -226,6 +230,8 @@ With current-frame obstacles, the words' destinations follow windows that are st
 With stepped-springs obstacles the windows diverge too, and the cause took a closer look. Those obstacles read last frame's stacking, so after the click that raised Notes at frame 60, the words started moving in the next rendered frame: frame 61 at 60 fps and frame 60.5 at 120 fps. Nothing was animating before, so the one clock all boxes share restarted in those two different frames, and the carried leftover time had a different phase in the two runs from then on (it differed at 115 of the 400 shared frames, against 1 with destination obstacles). At frame 140 Photos is maximized, and from frame 142 the two runs had stepped a different amount of simulated time at the same timestamps, 28.8 px apart during the maximize.
 
 ### µs per evaluation
+
+Update, 2026-09-15: results.json's `timings` and `tierup` entries now hold a rerun without word springs, see [Words without springs](#words-without-springs-2026-09-15). The two tables below are the run with word springs.
 
 Warm µs per evaluation over the scripted session's source tables, with the executor's reusable evaluator and with generated JavaScript after 8 seconds of continuous running, in one process (`report.ts timings`):
 
@@ -333,3 +339,51 @@ So in Chrome, the promotion does stall the animation. In both runs, one warmup s
 ### Fixes
 
 None.
+
+## Words without springs, 2026-09-15
+
+Each Notes word is now at the walker's x and y from the same evaluation, with no spring, so the text reflows once, in the frame of the event, while the windows animate. This removed the 45 word boxes, their snap bits and spring group, and 271 source cells: 6 per word, and the cell that marked the first evaluation. The Notes flow has no state of its own anymore. The paragraph's sentence "Each word follows its own spring to its new place" now reads "Words move straight to their new places in one frame"; with the test font, both texts give the same 89 segments, walker window, minimum slot width and compiled sizes. The sections above stay as they were measured with word springs. The numbers below come from `report.ts` on the new code; the browser check wasn't redone.
+
+| Configuration | Source cells | Live operations | Layers | Stored weights | Gather reads | Widest layer |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 3. event queue (unchanged) | 309 | 8,059 | 169 | 21,611 | 91 | 387 |
+| 4. Notes flowing around the windows' destinations | 488 | 18,027 | 337 | 44,326 | 987 | 532 |
+| Notes around current-frame obstacles | 488 | 18,034 | 362 | 44,345 | 987 | 532 |
+| Notes around stepped-springs obstacles | 488 | 18,207 | 258 | 44,647 | 987 | 538 |
+| Notes around destinations, 1 down per evaluation | 488 | 15,781 | 298 | 38,124 | 960 | 532 |
+| Notes with the original springs (timestep declared) | 444 | 19,377 | 337 | 46,829 | 987 | 576 |
+
+- The Notes flow now adds 9,968 operations, 168 layers and 22,715 stored weights to step 3, against 11,795, 174 and 28,289 with word springs. The whole program is 12,774 operations, 145 layers and 32,728 stored weights more than window-manager.ts.
+- The bank saves 1,350 operations with Notes, the same as with the queue alone, since the Notes flow has no springs left to replace (4,478 with word springs).
+- In the whole program's breakdown, the spring boxes are 824 operations (4 windows and 12 thumbnails) and the clock and group 167, and every other section has the same operations as before. The deepest path is the line walker 174, down updates 52, slots per obstacle subset 50, up updates 41, other 10, end of evaluation 8, band blocking 2.
+
+| Check | Frames or cases | Compared | Mismatches |
+| --- | ---: | ---: | --- |
+| whole program vs the one-event-at-a-time oracle, seeds 1 to 4 | 4 × 3,000 | 33,129 events, 5,046 of them keys | 0 frames |
+| window and thumbnail boxes vs float64 doctrine springs | 3,000 evaluations | 48,000 boxes | 0 settle bits, 0 step counts; max 9.8e-5 px and 8.7e-4 px/s |
+| settled Notes flows vs pretext's layoutNextLineRange | 150 | 6,750 words, 2,400 bands | 0 |
+| generated JavaScript vs the executor, every live wire | 800 evaluations | 14,812,000 values | 0 |
+
+The scripted session at 60 and 120 fps, 400 shared frames:
+
+| Configuration | Windows, max px | Thumbnails, max px | Words, max px | Frames with different stacking, flags, photo focus, word visibility | Frames with different animationActive | Frames at 60 fps where words moved with no event |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 4. Notes around destinations | 2.4e-4 | 1.8e-4 | 0 | 0 | 1 | 0 |
+| Notes around current-frame obstacles | 2.4e-4 | 1.8e-4 | 0 | 0 | 1 | 8 |
+| Notes around stepped-springs obstacles | 2.4e-4 | 1.8e-4 | 0 | 0 | 1 | 9 |
+
+- Words carry no state, so at a timestamp both rates render, they're laid out from window geometry that agrees within 2.4e-4 px, and with every obstacle source they came out identical. The word differences of 25.4 px and 69.7 px, and the 28.8 px window difference, in [Frame-rate independence](#frame-rate-independence) came from the word springs: retargeting toward a different sequence of destinations at each rate, and restarting the shared clock at a different frame.
+- The one frame with a different animationActive is frame 175, the same frame as in steps 2b and 3: the 60 fps run has stopped animating and the 120 fps run hasn't yet. With word springs, the words were still animating at that frame, so both runs reported animationActive.
+- What separates the obstacle sources now is when the text reflows. With destinations, words move only in frames with an event. With current-frame obstacles, the text reflows in 8 frames with no event while Photos maximizes and restores (frames 141 to 143 and 255 to 262). With stepped-springs obstacles, it reflows in the same 8 frames and in frame 61, the frame after the click that raised Notes, since those obstacles read last frame's stacking.
+
+`report.ts timings` and `report.ts tierup` were rerun on the new code as well, so all 5 entries of results.json come from it. Warm µs per evaluation, measured the same way as in [µs per evaluation](#µs-per-evaluation):
+
+| Configuration | Live operations | Layers | Executor µs | Generated µs, 32 rows per function | Generated µs, 128 rows per function | Executor µs / generated µs |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 4. Notes around destinations | 18,027 | 337 | 132.2 | 21.4 | 23.9 | 6.2 |
+| Notes around current-frame obstacles | 18,034 | 362 | 126.2 | 21.5 | 25.4 | 5.9 |
+| Notes around stepped-springs obstacles | 18,207 | 258 | 124.2 | 22.9 | 37.6 | 5.4 |
+
+- With word springs, step 4 was 159.1 µs on the executor and 29.3 and 33.2 µs generated. Configurations 1 to 3 didn't change, and their rows moved by up to 10 µs on the executor between the two runs, e.g. window-manager.ts as the notation rewrite went from 42.5 to 32.5 µs, so differences of that size are noise between runs.
+- The whole machine step on generated code took a median 36.0 µs per frame, against 40.9 µs with word springs, of which the derived validator was 0.58 µs.
+- In fresh processes, generated code took 26.7 ms for its first evaluation, 81 µs per evaluation from the 1,001st to the 10,000th, and 34 µs after 30,000, while the executor stayed between 126 and 135 µs after its first evaluation.

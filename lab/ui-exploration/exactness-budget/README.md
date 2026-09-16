@@ -12,6 +12,8 @@ Short answer:
 
 Update, September 14, 2026: the repo root builder now records rounding points. It records boolean atoms and `emitCompare`'s operations automatically, and the steps of a round chain only when the caller marks them with `circuit.markRoundingPoint` ([execution-model.md](../../../execution-model.md#rounding-points)). Existing circuits record only their boolean atoms, e.g. IndirectOS's 64.
 
+Update, September 15, 2026: window-manager.ts and photo-gallery.ts moved to host-timed springs, so this folder imports the pre-change IndirectOS from codegen's `window-manager-copy.ts` and `photo-gallery-copy.ts`. That includes the import lines of `copies/codegen/indirect-os-machine.ts` and `copies/codegen/window-ownership.ts`, whose code is otherwise unchanged.
+
 ## What it is and how to run it
 
 From the repository root:
@@ -264,4 +266,4 @@ On homogeneity: most of a program can be one uniform instruction, "add these ter
 - Check guard placement on Vulkan, D3D12 and Safari's WebGPU, and add a CPU model of fusion across rows.
 - Run the modes on spring-bank's IndirectOS copy, indirect-os-2 and instanced-items once those land.
 - Derive strictness from an error budget per output, e.g. positions within 0.05 px and z-index exact, instead of from construction patterns.
-- IndirectOS's projection writes a fractional z-index while settling; keeping the animation term out of `stack`, or rounding it, would make that output an integer.
+- IndirectOS's projection writes a fractional z-index while settling; keeping the animation term out of `stack`, or rounding it, would make that output an integer. Update, September 15, 2026: done in window-manager.ts, where each window's activity is now an exact bit.

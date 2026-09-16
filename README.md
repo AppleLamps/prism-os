@@ -16,7 +16,7 @@ bun run check
 IndirectOS has four fixed window slots. The source table holds viewport facts, input latches, window state, stacking, spring state, Photos state, and app constants. One compiled circuit handles:
 
 - focus, stacking, dragging, resizing, and window controls
-- dock transitions and fixed-step springs
+- dock transitions, and springs that run fixed 4 ms steps up to each event's timestamp, from a step matrix that JavaScript writes into cells
 - the Photos grid, lightbox, navigation, and spring-animated thumbnail strip
 - numeric visibility used to attach and remove photo nodes
 

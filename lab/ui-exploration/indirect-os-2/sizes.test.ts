@@ -29,16 +29,17 @@ test('live operations, layers and stored weights of each step, from window-manag
     [3580, 137, 8447],
     [3583, 91, 8455],
     [8059, 169, 21611],
-    [19854, 343, 49900],
+    [18027, 337, 44326],
   ])
 })
 
-test('changes applied in other orders: the bank saves as much with the queue as with latches, and more with Notes', () => {
+test('changes applied in other orders: the bank saves as much with the queue and with Notes as with latches', () => {
   const [queueOriginal, queueBank, notesOriginal] = sets.interference.map(configuration => sizeOf(configuration.options))
   const queueWithBank = sizeOf(sets.steps[4]!.options)
   const notesWithBank = sizeOf(sets.steps[5]!.options)
   expect(queueOriginal![0]! - queueWithBank[0]!).toBe(1350)
-  expect(notesOriginal![0]! - notesWithBank[0]!).toBe(4478)
+  // Notes has no springs of its own, so the bank saves the same operations there as with the queue.
+  expect(notesOriginal![0]! - notesWithBank[0]!).toBe(1350)
   // With the queue, Photos reading stepped springs no longer removes layers.
   expect(queueBank![1]).toBe(queueWithBank[1])
 })

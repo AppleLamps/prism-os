@@ -1,6 +1,6 @@
 # Cheng's UI doctrine and personal sites, read against the circuit approach
 
-Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS still describes window-manager.ts, which hasn't changed since commit a915dcb.
+Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS describes window-manager.ts before September 15, 2026, when its springs, hit tests, Photos clicks and window content sizes changed ([lab/status.md](../../status.md#runtime-additions-since-september-14-2026)).
 
 These are phase 1 notes for the question "how far does the IndirectOS matmul approach take us for writing UI?" This area covers Cheng's written doctrine and Cheng's two personal sites:
 

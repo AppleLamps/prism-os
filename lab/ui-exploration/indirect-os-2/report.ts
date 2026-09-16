@@ -5,7 +5,7 @@
 // merges results into results.json next to this file. Counts are exact; µs are
 // rough, because other agents share the machine.
 import {compileScalarProgram, comparePacked} from './codegen.ts'
-import {createBoxCheck, windowAndPhotoBoxes, wordBoxes} from './box-check.ts'
+import {createBoxCheck, windowAndPhotoBoxes} from './box-check.ts'
 import {configurations} from './configurations.ts'
 import {lineFitEpsilon, loadPretext} from '../text-walker/fake-canvas.ts'
 import {fastParagraph} from './fast-walker.ts'
@@ -168,12 +168,12 @@ async function traces() {
   // 4. Every spring box against float64 doctrine springs.
   {
     const machine = createIndirectOSMachine(sets.final, {debugOutputs: true})
-    const check = createBoxCheck(machine, [...windowAndPhotoBoxes(machine), ...wordBoxes(machine)])
+    const check = createBoxCheck(machine, windowAndPhotoBoxes(machine))
     const {frames} = generateQueueTrace({seed: 21, frames: 3000, capacity: 8, maximumDowns: 2})
     let time = 0
     for (const frame of frames) machine.stepFrame(frame.viewport.width, frame.viewport.height, time += frame.elapsed, frame.events)
     record['float64 boxes'] = check
-    rows.push(['window, thumbnail and word boxes vs float64 springs, restarted each evaluation', check.evaluations, `${count(check.boxesChecked)} boxes`, check.settleMismatches + check.clockMismatches, `max position error ${check.maxPositionError.toExponential(2)} px, max velocity error ${check.maxVelocityError.toExponential(2)} px/s`])
+    rows.push(['window and thumbnail boxes vs float64 springs, restarted each evaluation', check.evaluations, `${count(check.boxesChecked)} boxes`, check.settleMismatches + check.clockMismatches, `max position error ${check.maxPositionError.toExponential(2)} px, max velocity error ${check.maxVelocityError.toExponential(2)} px/s`])
   }
   // 5. Settled Notes flows against pretext.
   {
@@ -364,7 +364,7 @@ async function tierup() {
 async function framerate() {
   console.log('## Frame-rate independence, 60 fps vs 120 fps at shared timestamps\n')
   const queue = sets.steps[4]!.options
-  const rows: (string | number)[][] = [['configuration', 'shared frames', 'windows, max px', 'thumbnails, max px', 'words, max px', 'frames with different stacking, flags, photo focus, word visibility', 'frames with different animationActive']]
+  const rows: (string | number)[][] = [['configuration', 'shared frames', 'windows, max px', 'thumbnails, max px', 'words, max px', 'frames with different stacking, flags, photo focus, word visibility', 'frames with different animationActive', 'frames at 60 fps where words moved with no event']]
   const record: Record<string, unknown> = {}
   for (const [label, options] of [
     [sets.steps[3]!.label, sets.steps[3]!.options],
@@ -375,7 +375,7 @@ async function framerate() {
   ] as [string, IndirectOSOptions][]) {
     const result = compareFrameRates(options)
     record[label] = result
-    rows.push([label, result.sharedFrames, result.windows.toExponential(2), result.thumbnails.toExponential(2), options.notes === null ? '-' : result.words.toExponential(2), result.discreteMismatches, result.animationMismatches])
+    rows.push([label, result.sharedFrames, result.windows.toExponential(2), result.thumbnails.toExponential(2), options.notes === null ? '-' : result.words.toExponential(2), result.discreteMismatches, result.animationMismatches, options.notes === null ? '-' : result.wordMovesWithoutEvents])
   }
   table(rows)
   results['framerate'] = record

@@ -337,18 +337,24 @@ test('edge and overlapping clicks commit exactly one complete focused item', () 
 
 test('thumbnail movement and scale spring between focused photos', () => {
   const machine = createPhotoGalleryMachine()
-  let values = machine.step(viewportWidth, viewportHeight)
+  let frameTime = 16
+  let values = machine.step(viewportWidth, viewportHeight, 1, 1, frameTime)
   const firstPhoto = projectPhotos(machine, values)[0]!
   machine.click(
     firstPhoto.left + firstPhoto.width / 2,
     firstPhoto.top + firstPhoto.height / 2,
   )
-  values = machine.step(viewportWidth, viewportHeight)
+  frameTime += 16
+  values = machine.step(viewportWidth, viewportHeight, 1, 1, frameTime)
   const openThumbnails = projectThumbnails(machine, values)
   assert.equal(values[machine.output.animationActive], 0)
 
-  machine.next()
-  values = machine.step(viewportWidth, viewportHeight)
+  // 8 ms before the next frame, so that frame steps the springs for 8 ms after
+  // the event. An event at the frame's own time would show the thumbnails where
+  // they started.
+  machine.next(frameTime + 8)
+  frameTime += 16
+  values = machine.step(viewportWidth, viewportHeight, 1, 1, frameTime)
   const movingThumbnails = projectThumbnails(machine, values)
   assert.equal(values[machine.output.animationActive], 1)
   assert.ok(movingThumbnails[1]!.width > openThumbnails[1]!.width)
@@ -364,11 +370,23 @@ test('thumbnail movement and scale spring between focused photos', () => {
 
 test('next state and render projections are direct wire views', () => {
   const machine = createPhotoGalleryMachine()
+  let commits = 0
+  machine.observe({
+    afterEvaluate(values, table, evaluation) {
+      if (!evaluation.writesBack) return
+      commits++
+      // An evaluation that writes state back copies exactly these wires into the table.
+      assert.deepEqual(machine.output.nextSource.map(wire => values[wire]!), [...table])
+    },
+  })
   const values = machine.step(viewportWidth, viewportHeight)
   const nextSource = machine.output.nextSource.map(wire => values[wire]!)
 
+  assert.equal(commits, 1)
   assert.equal(nextSource.length, sourceField.size)
-  assert.deepEqual(nextSource, [...machine.source])
+  // The frame evaluates a copy of the table at rest, so its next state equals the
+  // stored table, up to the sign of zero.
+  nextSource.forEach((value, field) => assert.ok(value === machine.source[field], `field ${field}`))
   assert.equal(machine.output.photos.length, itemCount * photoField.size)
   assert.equal(machine.output.thumbnails.length, itemCount * thumbnailField.size)
   assert.equal(machine.output.previousControl.length, controlField.size)

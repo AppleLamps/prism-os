@@ -303,12 +303,11 @@ export function buildIndirectOS(options: IndirectOSOptions = originalOptions) {
   const {animationActive: photosAnimationActive, ...photoOutputs} = photos.output
   let notes: NotesBuild | null = null
   if (options.notes !== null) {
-    notes = buildNotes($, table, notesCellWires!, options.notes, {
-      layout, windows: animations.map((animation, index) => ({...animation, opacity: nextPresent[index]!, present: windows[index]!.present, destination: next[index]!.box, visible: next[index]!.visible})), nextStack, stack, notesVisible: next[notesWindowIndex]!.visible,
-      group: bank === null ? {kind: 'original', params: springParams!} : {kind: 'bank', clock: clock!, settleDistance: springConstants.settleDistance, settleSpeed: springConstants.settleSpeed},
+    notes = buildNotes($, notesCellWires!, options.notes, {
+      layout, windows: animations.map((animation, index) => ({...animation, opacity: nextPresent[index]!, present: windows[index]!.present, destination: next[index]!.box, visible: next[index]!.visible})), nextStack, stack,
     })
   }
-  const animationActive = clamp01(sum(windowAnimationActive, photosAnimationActive, ...(notes === null ? [] : [notes.animationActive])))
+  const animationActive = clamp01(sum(windowAnimationActive, photosAnimationActive))
   const output = {
     windows: windowOutputs.map(({dock: _, ...window}) => window),
     dockItems: windowOutputs.map(window => window.dock),

@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {createWindowManagerMachine as createOriginalMachine} from '../../../window-manager.ts'
+import {createWindowManagerMachine as createOriginalMachine} from '../codegen/window-manager-copy.ts'
 import {type WindowManagerOptions, bankOptions, createWindowManagerMachine, originalOptions} from './window-manager.ts'
 import {
   type FrameRecord,
