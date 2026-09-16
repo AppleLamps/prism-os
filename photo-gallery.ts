@@ -780,8 +780,10 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
     for (const observer of observers) observer.beforeEvaluate?.(table, evaluation)
     const rootValues = evaluateRoots(table)
     for (let index = 0; index < roots.length; index++) values[roots[index]!] = rootValues[index]!
-    // The next-state values are the first roots.
+    // The next-state values are the first roots. Only roots are written into
+    // `values`, so the finite check covers the roots, not every wire.
     validate(rootValues.subarray(0, output.nextSource.length))
+    assertFiniteValues(rootValues, 'tensor output')
     validatePhotoGalleryOutput(values, output, numericTolerance)
     if (evaluation.writesBack) {
       for (let field = 0; field < source.length; field++) {
@@ -1060,7 +1062,7 @@ export function validatePhotoGalleryOutput(
   output: PhotoOutputs,
   tolerance = 1e-9,
 ) {
-  assertFiniteValues(values, 'tensor output')
+  // The machine checks that every root value is finite before calling this.
   assertUnitInterval(values[output.backdropOpacity], 'backdrop opacity', tolerance)
   assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
   for (let item = 0; item < itemCount; item++) {

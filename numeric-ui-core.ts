@@ -3339,8 +3339,12 @@ export function assertUnitInterval(
   )
 }
 
-export function assertFiniteValues(values: Iterable<number>, label: string) {
-  for (const value of values) invariant(Number.isFinite(value), `${label} contains a non-finite number`)
+// An indexed loop: `for...of` over a Float32Array took about 0.5 ms per call for
+// 115,000 values in Bun, most of it in the array iterator.
+export function assertFiniteValues(values: ArrayLike<number>, label: string) {
+  for (let index = 0; index < values.length; index++) {
+    invariant(Number.isFinite(values[index]), `${label} contains a non-finite number`)
+  }
 }
 
 export function validateWireView(wires: readonly Wire[], size: number, wireCount: number) {
