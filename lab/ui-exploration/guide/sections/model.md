@@ -45,7 +45,7 @@ Indirect keeps that loop and moves its middle into one fixed numeric program. Th
 - Some outputs are the next values of state cells. After the frame, JavaScript copies all of them back into the source table at once. This is ui.md's commit step.
 - The other outputs are numbers for the DOM, e.g. a translate x, an opacity, a focused bit, and one number that is above 0 while another frame should be scheduled. JavaScript turns them into style strings.
 
-Here is how ui.md's phases split between the two, in IndirectOS (`window-manager.ts`) and in this section's toggle switch:
+Here is how ui.md's phases split between the two, in IndirectOS (`window-manager.ts`, with line numbers at commit 82f2dda, before cells.ts, the Notes flow and presses that act on release) and in this section's toggle switch:
 
 | ui.md phase | Done by | IndirectOS | Toggle switch |
 | --- | --- | --- | --- |
@@ -63,7 +63,7 @@ Here is how ui.md's phases split between the two, in IndirectOS (`window-manager
 
 Inside the program, the phases don't have to come in ui.md's literal order. An operation only has to come after the values it reads, e.g. the toggle switch computes the track rectangle before the hit tests that read it.
 
-IndirectOS's `step` has host-timing.ts's `advanceFrame` plan the frame's evaluations: one per distinct event timestamp, settle checks at fixed simulated times, and one for the frame. Each evaluation is the whole middle of the loop (window-manager.ts:1429-1456, trimmed):
+IndirectOS's `step` has host-timing.ts's `advanceFrame` plan the frame's evaluations: one per distinct event timestamp, settle checks at fixed simulated times, and one for the frame. Each evaluation is the whole middle of the loop (window-manager.ts:1429-1456 at commit 82f2dda, trimmed):
 
 ```ts
 function evaluate(evaluation: PlannedEvaluation<WindowManagerEvent>) {
@@ -172,7 +172,7 @@ table.next(cells.pointer, pointer)
 
 `table.next(stored, next)` pairs state cells with their next values by field name, and throws while building when a state cell gets no next value or two. The rewrite of IndirectOS in this style compiles to exactly the same program as window-manager.ts before September 15, 2026 (5,253 live operations, 192 layers, 11,598 stored weights) and matched the original on 6,609,174 values bit for bit. Hand-kept bookkeeping went from 641 lines to 110, and validation from 357 lines to 11, with somewhat different, mostly stricter rules.
 
-Behavior code in notation's style reads like shader code over structs: every helper closes over one circuit, and `select` works on whole objects. notation's settings panel keeps the latest pointer position and tests presses like this (notation/settings-panel.ts:84-89):
+Behavior code in notation's style reads like shader code over structs: every helper closes over one circuit, and `select` works on whole objects. notation's settings panel keeps the latest pointer position and tests presses like this ([notation/settings-panel.ts:84-89](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notation/settings-panel.ts#L84-L89)):
 
 ```ts
 const down = {x: cells.down.x, y: cells.down.y}

@@ -2,7 +2,8 @@
 // dock items and photos are instance arrays, each per-item section is a map stage written once,
 // and the loops across items are reductions.
 //
-// Section by section against window-manager.ts and photo-gallery.ts:
+// Section by section against window-manager.ts and photo-gallery.ts, where the window-manager.ts
+// line ranges in the section comments below are at commit c3d8e54:
 // - window hits, presses, geometry, the stack update, springs and projection are map stages over
 //   the 4 windows; dock geometry and hits a map stage over the 4 dock items;
 // - the frontmost window under a press, and the frontmost visible window, are a max over each

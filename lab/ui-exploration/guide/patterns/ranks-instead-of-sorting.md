@@ -81,7 +81,7 @@ const nextRank = circuit.roundAffine([[rank, 1], [passedUpward, 1], [passedDownw
 
 ## When not to use it
 
-- For well past a hundred items: pairwise ranks grow as n². A sorting network is O(n log² n) operations at O(log² n) depth, e.g. 10,624 operations and 105 layers against 16,512 operations and 5 layers for 64 items with a payload ([loops](../sections/loops.md#a-sorting-network-instead)).
+- For well past a hundred items: pairwise ranks grow as n². A sorting network is O(n log² n) operations at O(log² n) depth, e.g. 10,624 operations and 105 layers against 16,512 operations and 5 layers for 64 items with a payload ([loops](../sections/loops.md#a-sorting-network-instead)). A network whose compare-exchanges are `emitMinimum` and `emitMaximum` is exact only on integer keys, since those drift on fractional operands.
 - When the order is known while building, e.g. a fixed menu: sort in JavaScript while building, and the order becomes wiring.
 - When many items move in one frame, e.g. switching the sort from date to name: the update doesn't apply, so recompute the ranks.
 
