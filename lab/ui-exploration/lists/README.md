@@ -42,7 +42,7 @@ Each item gets a cheap visibility bit (`lower <= value < upper`, two integer com
 
 ### Draggable cards (`cards.ts`)
 
-This is a port of `~/github/vibescript/demos/draggable-cards/index.ts`. Everything `render()` does between reading inputs and writing the DOM (handling inputs, layout, the animation tick, committing state) happens in one evaluation:
+This is a port of vibescript's `demos/draggable-cards/index.ts`. Everything `render()` does between reading inputs and writing the DOM (handling inputs, layout, the animation tick, committing state) happens in one evaluation:
 
 - State: a rank per card; x, y, and scale spring positions and velocities; `y.dest`, since the demo's swap loop reads the neighbors' previous destinations; the dragged card as a one-hot plus the grab offset; the last dragged card as a one-hot; a 24-sample pointer buffer by age, with a count and a flag marking the demo's `{x: 0, y: 0, time: 0}` reset sample; an animating bit; and the step backlog in ms.
 - Pointer state (`up`, `down`, `firstDown`) is integer bits. Buffer pushes (up, move, down, in the demo's order) are one gather per buffer cell over the 8 combinations of event latches, including the demo's rule of shifting once per frame when the buffer holds more than 20 samples.

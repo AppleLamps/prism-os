@@ -101,9 +101,10 @@ const pixelGrid = 1 / 64
 const pointerCoordinateBound = 32_768
 // Pixel-space cells carry an honest finite ceiling: 16384 covers the
 // largest real displays (8K is 7680 wide) with headroom while staying far
-// inside FP32's exact-integer band (macro-ranges.md keeps operands well
-// under 2^23). Finite bounds make geometry eligible for gather lowering
-// (see lab/gather-lowering); a range that admits Infinity cannot lower.
+// inside FP32's exact-integer band (execution-model.md's macro contracts
+// keep min, max and clamp operands under 2^23). Finite bounds make
+// geometry eligible for gather lowering (see lab/gather-lowering); a range
+// that admits Infinity cannot lower.
 const pixel: Range = [0, 16_384]
 // The machine writes the viewport and pointer coordinates on the 1/64 px grid.
 // With the pixel constants, window geometry and bit cells below also declared on

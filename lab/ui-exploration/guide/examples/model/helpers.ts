@@ -25,7 +25,7 @@ export function emitNot(circuit: Circuit, bit: Wire): Wire {
 // JS: Math.min(1, Math.max(0, value)), as relu(value) - relu(value - 1). When value is its own operation, the result is
 // exactly 1 for every value above 1 while value is at most 2^24. When value is a small affine that the builder copies
 // into both ReLUs, both copies must add without rounding, e.g. up to 2^23 for multiples of 1/2, while value = x + 0.25
-// at x = Math.fround(0.8) gives 0.99999994 (macro-ranges.md, "Clamping and springs").
+// at x = Math.fround(0.8) gives 0.99999994 (execution-model.md, "Clamping").
 export function emitClampZeroOne(circuit: Circuit, value: Wire): Wire {
   const aboveZero = emitRelu(circuit, value)
   const aboveOne = emitRelu(circuit, circuit.affine([[value, 1]], -1))

@@ -1,6 +1,6 @@
 # Tutorial
 
-This tutorial walks through [template/](template/), a toggle switch written as one numeric program. Like a native switch, it acts on release: a press on the track arms it, and a release on the track while it's armed flips it. The thumb springs to its new side. Run it with `bun run start:template`, run its test with `bun test template`, and type-check it with `bun run check`, since `bun` strips types without checking them.
+This tutorial walks through [template/](template/), a toggle switch written as one numeric program. Like a native switch, it acts on release: a press on the track arms it, and a release on the track while it's armed flips it. The thumb springs to its new side. Run it with `bun run start:template`, run its test with `bun test template`, and type-check it with `bunx tsgo -p .`, since `bun` strips types without checking them; tsgo prints nothing when the check passes. `bun run check` runs the same type-check on every lab folder and then lints, so it takes longer.
 
 JavaScript writes browser inputs into a `Float32Array`, the source table, and runs the program on it. The program's next-state values are written back into the table, and its other outputs go to the DOM. Builder code is ordinary JavaScript that runs once and appends operations to a `Circuit`, so nothing in the program branches or loops at runtime. `toggle.ts` holds the cells, the builder code, the host loop and the DOM writes, `toggle-reference.ts` is the same switch in plain JavaScript, `toggle.test.ts` compares the two, and `index.html` with `main.ts` is the page.
 
@@ -34,13 +34,15 @@ export const toggleCells = {
 | `constant(value, range)` | set once in the initial table, and kept | a margin of 12 px |
 | `input(range, {initial, grid})` | written by JavaScript before the evaluation, and kept | the viewport width |
 | `inputBit(initial)` | an input that is exactly 0 or 1 | the settle check bit |
-| `event()` | an exact bit that JavaScript sets to 1 when an event arrives, and the program resets to 0 | a pointer press, next to input cells for its coordinates |
+| `event()` | an exact bit that JavaScript sets to 1 when an event arrives, and the program resets to 0 | a pointer press, next to input cells for its coordinates, or a keyboard shortcut, e.g. `reset: event()`, which has no coordinate cells |
 | `state(range, {initial, grid})` | computed by the program | the thumb's velocity |
 | `stateBit(initial)` | a state cell that is exactly 0 or 1 | whether the switch is on |
 
 Cells nest into objects and lists, e.g. `list(4, index => ({open: stateBit(Number(index === 0))}))`. `oneHot(members)` declares that exactly one member is 1, e.g. the selected tab, `permutation(order)` stores a stacking order as a matrix whose rows and columns are one-hot, and `table.atMostOne(name, members)` adds a rule that only the validator checks. A number that builder code knows, e.g. the track width, becomes a coefficient or a bias of an operation rather than a cell. Declare it as a `constant` cell instead when it should change without rebuilding the program, e.g. a margin tuned by hand or by gradients.
 
 A range is a promise that the builder relies on and the validator checks. E.g. `emitCompare` refuses operands with open ranges, and when both operands lie on declared grids, like pointer coordinates on a 1/64 px grid and a track edge on a 1/2 px grid, it builds an exact comparison in 2 operations, while operands within 0..16,384 with no grid need a sign cascade of 15 operations ([execution-model.md](execution-model.md#comparisons)).
+
+The thumb's ranges come from stepping the spring in JavaScript with `springStepMatrix`: released from rest 20 px from its destination, this spring, with stiffness 650 and damping 45, peaks at 207 px/s, about 10 × the travel, and overshoots by 0.009 px, and flipping the destination while the thumb still moves adds less than 0.1% to either, so ±2 × travel for the displacement and ±64 × travel for the velocity leave room. Measure a spring with other constants the same way, over the worst sequence of retargets it can get, since `evaluate` throws when a value leaves its declared range.
 
 Building has two phases, since a `Circuit` needs the number of cells before the first operation exists:
 
@@ -66,6 +68,8 @@ Each line of builder code appends the operations of one familiar expression, and
 const trackLeft = circuit.affine([[cells.viewportWidth, 0.5]], -layout.trackWidth / 2)
 // JS: bits.every(bit => bit === 1), as relu(sum of bits - (count - 1)).
 const all = (...bits: Wire[]) => circuit.reglu([], 1, bits.map(bit => [bit, 1] as const), 1 - bits.length)
+// JS: !bit
+const not = (bit: Wire) => circuit.affine([[bit, -1]], 1)
 // JS: x >= trackLeft && x < trackLeft + trackWidth && y >= trackTop && y < trackTop + trackHeight
 const insideTrack = (point: {x: Wire, y: Wire}) => all(emitCompare(circuit, point.x, '>=', trackLeft), /* ...3 more */)
 // JS: if (down) armed = insideTrack(down)
@@ -89,7 +93,7 @@ table.next(cells.thumb, {displacement: thumb.displacements[0]!, velocity: thumb.
 const output = {trackLeft, trackTop, thumbOffset: thumb.positions[0]!, on, armed, active: thumb.active}
 ```
 
-A program can't loop a runtime number of times, so JavaScript counts the spring's fixed 4 ms steps and writes the matrix of all of them into `springMatrix`. The spring stores its displacement from its destination and its velocity, and `positions` is what to draw. `destinationDuringSteps` is the previous evaluation's destination, since the steps simulate time before this evaluation's events. `active` is 1 while the thumb still moves. execution-model.md's [Springs and time](execution-model.md#springs-and-time) has the contract. [expressions.md](expressions.md) has more constructions for one expression, e.g. `Math.min(a, b)`, `x / y` and `table[index]`, and [patterns.md](patterns.md) has constructions for loops, e.g. `findIndex` over overlapping click targets or `items.sort(compare)`.
+A program can't loop a runtime number of times, so JavaScript counts the spring's fixed 4 ms steps and writes the matrix of all of them into `springMatrix`. `emitAnimatedObject` returns `displacements`, `velocities` and `positions`, one wire per spring, and the bits `settled` and `active`. The spring stores its displacement from its destination and its velocity, and `positions` is what to draw. `destinationDuringSteps` is the previous evaluation's destination, since the steps simulate time before this evaluation's events. `active` is 1 while the thumb still moves. execution-model.md's [Springs and time](execution-model.md#springs-and-time) has the contract. [expressions.md](expressions.md) has more constructions for one expression, e.g. `Math.min(a, b)`, `x / y` and `table[index]`, and [patterns.md](patterns.md) has constructions for loops, e.g. `findIndex` over overlapping click targets or `items.sort(compare)`.
 
 ## The host loop
 
@@ -97,16 +101,34 @@ A program can't loop a runtime number of times, so JavaScript counts the spring'
 
 ```ts
 const evaluate = createEvaluator(built) // compiles the program for nextSource and the output
+// The spring matrix of every step count a frame can plan.
+const matrices = Array.from({length: defaultSpringClockConfig.maxStepsPerFrame + 1}, (_, steps) => springMatrixPower(springStepMatrix(springConstants), steps))
 machine.clock = advanceFrame(machine.clock, frameTime, queued, evaluation => {
   const values = evaluation.writesBack ? source : copy
   if (!evaluation.writesBack) copy.set(source)
-  // ...write the matrix, the bits, the viewport, and each event, e.g. values[cells.down.active] = 1
+  const matrix = matrices[evaluation.steps]!
+  cells.springMatrix.forEach((wire, index) => { values[wire] = matrix[index]! })
+  values[cells.settleCheck] = evaluation.settleCheck ? 1 : 0
+  values[cells.snap] = evaluation.snap ? 1 : 0
+  values[cells.viewportWidth] = viewportWidth
+  values[cells.viewportHeight] = viewportHeight
+  for (const {kind, x, y} of evaluation.events) {
+    if (kind === 'cancel') {
+      values[cells.cancel] = 1
+    } else {
+      values[cells[kind].active] = 1
+      values[cells[kind].x] = x
+      values[cells[kind].y] = y
+    }
+  }
   const result = evaluate(values)
   if (evaluation.writesBack) source.set(result.nextValues)
   frameOutput = result.output
   return result.output.active > 0
 }, writeBack)
 ```
+
+The callback reads five fields of `evaluation`, a `PlannedEvaluation` from host-timing.ts: `steps`, the spring step count, whose matrix goes into the matrix cells; `settleCheck` and `snap`, which go into the two bit cells; `events`, the queued events at this evaluation's timestamp; and `writesBack`, which says whether to evaluate the table itself or a copy.
 
 `evaluate(values)` checks the table against every declaration before running the program, and checks the next-state values and the outputs before returning them, e.g. a pointer coordinate off the 1/64 px grid throws `down.x must be a multiple of 0.015625`, and a NaN output throws with the operation that produced the NaN. With `'events and settle checks'`, only evaluations that apply events, check settling or snap write state back, and a frame's own evaluation runs on a copy, so stored state depends on the events and not on the frame rate. [behavior-choices.md](behavior-choices.md#apply-events-at-their-timestamps-and-write-state-back-only-at-events-and-settle-checks) explains that choice. Within one evaluation, an event cell and its coordinates keep the last event of its kind, and events with different timestamps get evaluations of their own.
 
@@ -124,11 +146,11 @@ thumb.style.transform = `translate3d(${layout.thumbInset + output.thumbOffset}px
 if (machine.clock.animatedUntilMs !== null) scheduleRender()
 ```
 
-The page requests another frame only while the clock runs, i.e. until an evaluation that writes state back finds nothing animating. Pointer handlers round coordinates onto the declared 1/64 px grid and pass `event.timeStamp`, which shares `requestAnimationFrame`'s time origin. Drawing stays in CSS, e.g. the track's color mixes gray and green by `--fill`.
+The page requests another frame only while the clock runs, i.e. until an evaluation that writes state back finds nothing animating. Pointer handlers round coordinates onto the declared 1/64 px grid and pass `event.timeStamp`, which shares `requestAnimationFrame`'s time origin. A keyboard shortcut goes through the same queue: a `keydown` handler queues an event with no coordinates and the key event's `timeStamp`, which has the same time origin. Drawing stays in CSS, e.g. the track's color mixes gray and green by `--fill`.
 
 ## Testing against JavaScript
 
-`toggle-reference.ts` is the same switch in plain JavaScript, in float64, e.g. `if (down !== undefined) switchState.armed = insideTrack(down) ? 1 : 0`, with the timing that `advanceFrame` plans: 4 ms spring steps up to each event's timestamp, and a settle check every 64 ms of simulated time. Events that share a timestamp apply together, in the order that the program handles them within one evaluation, e.g. a release and a press at one timestamp apply as the press, then the release, whichever arrived first. The reference never snaps, so the trace's stalls stay below about 1,140 ms, the shortest stall that can snap. `toggle.test.ts` runs both over a scripted trace of 138 frames and compares them every frame: the `on` and `armed` bits and the track position exactly, the thumb within 1e-5 px (the largest difference is 1.3e-6 px), and whether the clock still runs. Each scripted step also states what it must do, e.g. a press 1/64 px left of the track doesn't arm the switch, and a release exactly on the right edge only disarms it, and whether the thumb must still be moving when the step lands, so a step that silently does nothing fails the test. Another test puts events at one timestamp in other orders, e.g. a cancel and then a press, and compares both versions.
+`toggle-reference.ts` is the same switch in plain JavaScript, in float64, e.g. `if (down !== undefined) switchState.armed = insideTrack(down) ? 1 : 0`, with the timing that `advanceFrame` plans: 4 ms spring steps up to each event's timestamp, and a settle check every 64 ms of simulated time. Events that share a timestamp apply together, in the order that the program handles them within one evaluation, e.g. a release and a press at one timestamp apply as the press, then the release, whichever arrived first. The reference never snaps, so the trace's stalls stay below about 1,140 ms, the shortest stall that can snap. `toggle.test.ts` runs both over a scripted trace of 138 frames and compares them every frame: the `on` and `armed` bits and the track position exactly, the thumb within 1e-5 px (the largest difference is 1.3e-6 px), and whether the clock still runs. That tolerance is for a 20 px travel: FP32 rounds the stored displacement and velocity at their own size, so the difference from float64 grows with the distance a spring travels, e.g. spring-matrix.test.ts's traces, whose destinations move by hundreds of pixels, stay within 1.4e-4 px ([execution-model.md](execution-model.md#which-evaluations-write-state-back)), so scale the tolerance with the travel. Each scripted step also states what it must do, e.g. a press 1/64 px left of the track doesn't arm the switch, and a release exactly on the right edge only disarms it, and whether the thumb must still be moving when the step lands, so a step that silently does nothing fails the test. Two assertions are specific to this trace, the number of frames during which the clock runs, 38, and the thumb's rest position at the end, 20 px; the others, equal bits and track position, the thumb within the tolerance and the same clock state, hold for any trace, so a copied test with another trace only changes those two. Another test puts events at one timestamp in other orders, e.g. a cancel and then a press, and compares both versions.
 
 Decisions match exactly, since `emitCompare`'s bits equal JavaScript's comparisons for every declared value, while positions come out of FP32 spring arithmetic and match within a tolerance. Test presses exactly on edges, e.g. `x === trackLeft`, since an inexact decision shows there first.
 
@@ -165,6 +187,8 @@ To start another app, copy template/ to a new folder, e.g. counter/, and add the
 - tsconfig.json's `include` list, e.g. `"counter/*.ts"`, so tsgo type-checks the folder. `bun` strips types without checking them, so without this entry, e.g. a plain number where a wire is expected runs without an error.
 - scripts/check.ts's oxlint command, e.g. `'counter'` next to `'template'`.
 - package.json's `test` script, e.g. `bun test ./*.test.ts template counter lab`. A script that serves the page goes next to `start:template`, e.g. `"start:counter": "bun ./counter/index.html"`.
+
+After the tsconfig.json entry, `bunx tsgo -p .` type-checks the root project with the new folder in seconds, while `bun run check` also type-checks every lab folder and lints. `bun run knip`, which reports unused exports, only looks at the root modules, scripts/ and template/, per knip.config.ts's `entry` and `project` lists, so it isn't a check a new folder needs; to have it cover the folder, add the page script, e.g. `counter/main.ts`, to `entry` and `counter/*.ts` to `project`.
 
 ## More
 

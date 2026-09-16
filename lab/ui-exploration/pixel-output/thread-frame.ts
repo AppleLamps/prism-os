@@ -1,6 +1,6 @@
-// The frame function in plain JS, derived from ~/github/nicer-hacker-news/hn.js
+// The frame function in plain JS, derived from nicer-hacker-news's hn.js
 // (render, lines 233-660) with the heights of the vibescript port
-// (~/github/vibescript/demos/nicer-hacker-news/index.ts). It is the independent
+// (vibescript's demos/nicer-hacker-news/index.ts). It is the independent
 // reference the circuit is checked against, so it keeps hn.js's control flow: the
 // row search loop with `break`, the ancestor `while` loop, the gutter bottom loop
 // over following rows, float64 arithmetic, and text heights from pretext itself

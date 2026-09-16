@@ -1,5 +1,5 @@
 // JS reference for draggable-cards: a transcription of
-// ~/github/vibescript/demos/draggable-cards/index.ts render(), kept as close to
+// vibescript's demos/draggable-cards/index.ts render(), kept as close to
 // the original as possible. Changes:
 // - the card count and heights are parameters (the demo uses 5 cards with
 //   30 + hash(i * 2) * 150 heights; the port quantizes heights to 1/64 px)

@@ -2,7 +2,7 @@
 
 Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS describes window-manager.ts before September 15, 2026, when its springs, hit tests, Photos clicks and window content sizes changed ([lab/status.md](../../status.md#runtime-additions-since-september-14-2026)).
 
-These notes describe what pretext computes at prepare time and at layout time, the exact control flow of its line walkers, and several ways to express that layout work in Indirect's affine, ReGLU and boolean atoms. Every formulation below was built with `numeric-ui-core.ts` and checked against pretext's own output under bun, with zero mismatches. All file:line references point into the pretext clone at `scratchpad/pretext-copy`. The scripts live in `scratchpad/phase1/pretext/`. Both are backed up under `~/github/indirect-scratch-backup/2026-09-15/scratchpad/` at the same relative paths.
+These notes describe what pretext computes at prepare time and at layout time, the exact control flow of its line walkers, and several ways to express that layout work in Indirect's affine, ReGLU and boolean atoms. Every formulation below was built with `numeric-ui-core.ts` and checked against pretext's own output under bun, with zero mismatches. All file:line references point into a clone of pretext (https://github.com/chenglou/pretext) at commit 477510e4 (session scratch folder `pretext-copy`, not in the repo). The scripts are session scratch files too (scratch folder `phase1/pretext/`, not in the repo).
 
 The short version:
 
@@ -341,13 +341,13 @@ Per-word positions for animating reflow word by word: `x(i) = prefix[i] - prefix
 
 ### Recipe: prepared widths and kinds under bun
 
-Scripts: `scratchpad/phase1/pretext/`. `pretext-src/` is a copy of the clone's `src/`, so experiments never touch the clone. The scripts are backed up at `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/pretext/`.
+Scripts: the session scratch folder `phase1/pretext/`, not in the repo. `pretext-src/` there is a copy of the clone's `src/`, so experiments never touch the clone. They ran from that folder:
 
 ```sh
-bun scratchpad/phase1/pretext/print-prepared.ts
-bun scratchpad/phase1/pretext/breakpoints.ts
-bun scratchpad/phase1/pretext/circuits.ts tabulated rows units jumping scan
-bun scratchpad/phase1/pretext/window-manager-size.ts
+bun print-prepared.ts
+bun breakpoints.ts
+bun circuits.ts tabulated rows units jumping scan
+bun window-manager-size.ts
 ```
 
 The steps, as done in `fake-canvas.ts` and `print-prepared.ts`:

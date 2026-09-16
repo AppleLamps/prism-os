@@ -2,7 +2,7 @@
 
 Status, September 15, 2026: written in phase 1, before the round 2 prototypes. Later measurements are in the [exploration README's capability map](../README.md#capability-map), and the current runtime's contracts and costs in the repo root's [execution-model.md](../../../execution-model.md). What this note says about IndirectOS describes window-manager.ts before September 15, 2026, when its springs, hit tests, Photos clicks and window content sizes changed ([lab/status.md](../../status.md#runtime-additions-since-september-14-2026)).
 
-This note covers `window-manager.ts` (1,839 lines), `photo-gallery.ts` (967 lines), `index.html`, and `window-manager.css`. I skimmed both test files and also read `candidate-gallery.ts` and `hard-attend.ts` for more UI patterns. Every number was measured on commit `c3d8e54` with Bun. The scripts are listed at the end and live in `scratchpad/phase1/indirect-os/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/indirect-os/`). The only repo file changed is this note.
+This note covers `window-manager.ts` (1,839 lines), `photo-gallery.ts` (967 lines), `index.html`, and `window-manager.css`. I skimmed both test files and also read `candidate-gallery.ts` and `hard-attend.ts` for more UI patterns. Every number was measured on commit `c3d8e54` with Bun. The scripts are listed at the end; they are session scratch files (scratch folder `phase1/indirect-os/`, not in the repo). The only repo file changed is this note.
 
 ## Numbers at a glance
 
@@ -26,7 +26,7 @@ Two sections account for most of the cost. The 20 window spring lanes and their 
 
 ## How the code maps onto Cheng's render loop
 
-`~/github/vibescript/docs/ui.md` describes a render loop with these phases: DOM reads, handle inputs, new layout, animation tick, commit state, DOM writes, then schedule the next render if something is still animating. IndirectOS keeps that order and turns the middle phases (handling inputs, layout, animation, and committing state) into one circuit evaluation. `renderWindowManager` (window-manager.ts:1418) reads the viewport and calls `machine.step`. That call writes viewport and time into the source table, evaluates the circuit, and copies the `nextSource` outputs back into the same `Float32Array`. The function then projects outputs onto the DOM and schedules another `requestAnimationFrame` while the `animationActive` output is positive. Event handlers only write latch cells and call `scheduleRender` (window-manager.ts:1479-1516), which is what ui.md asks for. The circuit resets event latches itself by writing zero into their `nextSource` slots (window-manager.ts:1020). That is the circuit version of ui.md's "don't forget to reset ephemeral events". Hit tests use target rectangles rather than animated rectangles, which matches ui.md's advice to hit test against `dest`.
+vibescript's `ui.md` describes a render loop with these phases: DOM reads, handle inputs, new layout, animation tick, commit state, DOM writes, then schedule the next render if something is still animating. IndirectOS keeps that order and turns the middle phases (handling inputs, layout, animation, and committing state) into one circuit evaluation. `renderWindowManager` (window-manager.ts:1418) reads the viewport and calls `machine.step`. That call writes viewport and time into the source table, evaluates the circuit, and copies the `nextSource` outputs back into the same `Float32Array`. The function then projects outputs onto the DOM and schedules another `requestAnimationFrame` while the `animationActive` output is positive. Event handlers only write latch cells and call `scheduleRender` (window-manager.ts:1479-1516), which is what ui.md asks for. The circuit resets event latches itself by writing zero into their `nextSource` slots (window-manager.ts:1020). That is the circuit version of ui.md's "don't forget to reset ephemeral events". Hit tests use target rectangles rather than animated rectangles, which matches ui.md's advice to hit test against `dest`.
 
 ## 1. Catalogue of behaviors
 
@@ -329,7 +329,7 @@ In rough order of line savings:
 
 ## Scripts
 
-All scripts are in `scratchpad/phase1/indirect-os/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/indirect-os/`). Run them from the repo root with `bun <script>`.
+All scripts are session scratch files (scratch folder `phase1/indirect-os/`, not in the repo). They ran from the repo root with `bun <script>`.
 
 - `attribute-ops.ts`: per-behavior operation counts, stored weights, gathers, depth ranges, the deepest path, and step timing.
 - `timing.ts`: build time and per-frame breakdown without instrumentation.

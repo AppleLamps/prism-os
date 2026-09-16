@@ -1,6 +1,6 @@
 // Parser for @fit comments: range and integrality annotations on function parameters and
 // return values. The grammar covers the forms found in the real target file
-// (~/github/chenglou.github.io/index.ts) plus the synthetic gauntlet:
+// (chenglou.github.io's index.ts) plus the synthetic gauntlet:
 //
 //   // @fit > 0                      trailing comment on a parameter
 //   // @fit int 0..Infinity          integer range, inclusive ends

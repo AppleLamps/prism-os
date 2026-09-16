@@ -12,7 +12,7 @@ Update, September 15, 2026: window-manager.ts moved to host-timed springs, so `b
 
 ## What it is and how to run it
 
-From ~/github/indirect:
+From the repo root:
 
 ```sh
 bun test lab/ui-exploration/indirect-os-2              # 25 tests, 4 to 9 seconds on this shared machine

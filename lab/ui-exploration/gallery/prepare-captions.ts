@@ -6,16 +6,21 @@
 // Blink user agent. So the widths are fake per-character advances, not DM Sans: real fonts move the
 // breakpoints, and a browser page would compute its own table at load.
 //
-// Run: bun lab/ui-exploration/gallery/prepare-captions.ts
-// PRETEXT_SRC overrides the pretext src folder (default: this session's scratch copy).
-import {mkdirSync, readFileSync, writeFileSync} from 'node:fs'
+// Run: PRETEXT_SRC=<folder holding pretext's src/ files> bun lab/ui-exploration/gallery/prepare-captions.ts
+// The copy of pretext's src/ this script ran with was a session scratch copy (pretext commit 477510e4,
+// https://github.com/chenglou/pretext), not in the repo; lab/ui-exploration/text-tabulated/pretext/
+// holds the same files.
+import {mkdtempSync, readFileSync, writeFileSync} from 'node:fs'
+import {tmpdir} from 'node:os'
+import {join, resolve} from 'node:path'
 import {photoGalleryData} from './photo-data.ts'
 
-const scratch = 'scratchpad/phase2/gallery'
-const pretextSource = process.env['PRETEXT_SRC'] ?? `${scratch}/pretext-src`
+const pretextSourceSetting = process.env['PRETEXT_SRC']
+if (pretextSourceSetting === undefined) throw new Error("set PRETEXT_SRC to a folder holding pretext's src/ files (rich-inline.ts and the modules it imports), e.g. PRETEXT_SRC=lab/ui-exploration/text-tabulated/pretext")
+const pretextSource = resolve(pretextSourceSetting)
 
-// Fake canvas from phase 1 (scratchpad/phase1/pretext/fake-canvas.ts): every advance is a whole number of
-// 64ths of the font size, so widths and their sums are exact in float64 and FP32.
+// Fake canvas from phase 1 (the same rules as text-editing's fake-canvas.ts): every advance is a whole
+// number of 64ths of the font size, so widths and their sums are exact in float64 and FP32.
 function fakeTextWidth(text: string, font: string): number {
   const fontSize = Number.parseFloat(font.match(/(\d+(?:\.\d+)?)\s*px/)?.[1] ?? '16')
   let sixtyFourths = 0
@@ -52,8 +57,8 @@ async function loadPortPromptLayout(): Promise<PromptLayoutModule> {
   const original = readFileSync(new URL('port-prompt-layout.ts.txt', import.meta.url), 'utf8')
   const specifier = `'@chenglou/pretext/rich-inline'`
   if (!original.includes(specifier)) throw new Error('unexpected port prompt-layout import')
-  mkdirSync(scratch, {recursive: true})
-  const rewrittenPath = `${scratch}/port-prompt-layout.ts`
+  // The rewritten module imports pretext by absolute path, so it can live in a temporary folder.
+  const rewrittenPath = join(mkdtempSync(join(tmpdir(), 'prepare-captions-')), 'port-prompt-layout.ts')
   writeFileSync(rewrittenPath, original.replace(specifier, `'${pretextSource}/rich-inline.ts'`))
   return await import(rewrittenPath) as PromptLayoutModule
 }

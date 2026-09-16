@@ -2,7 +2,7 @@
 
 This folder asks which UI decision rules can be learned at the level of bits and then hardened into an exact circuit, and whether a learning unit that has the same form as the runtime's own exact decision, a count of bits followed by a threshold, does better than the 2-input logic gates of Petersen et al., "Deep Differentiable Logic Gate Networks" (2022). It applies the talk's "what if logic gates have learned backprops?" to UI behavior. Every task is enumerated over every input case, so "exact" always means every case, not a sample.
 
-`numeric-ui-core.ts` is unchanged; `compile.ts` imports it with a relative path. The oracles are copied from `lab/ui-exploration/input` into `oracles.ts`. A scratch script (`scratchpad/phase3/learned-bits/oracle-copies-check.ts`, outside the repo, backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase3/learned-bits/oracle-copies-check.ts`) ran the copies next to input's originals: 0 differences over 112,160 Tab calls, 3,476 menu events, and 4,096 rectangle points.
+`numeric-ui-core.ts` is unchanged; `compile.ts` imports it with a relative path. The oracles are copied from `lab/ui-exploration/input` into `oracles.ts`. A session scratch script (`oracle-copies-check.ts` in scratch folder `phase3/learned-bits/`, not in the repo) ran the copies next to input's originals: 0 differences over 112,160 Tab calls, 3,476 menu events, and 4,096 rectangle points.
 
 ## How to run it
 

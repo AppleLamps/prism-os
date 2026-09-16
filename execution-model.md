@@ -2,7 +2,7 @@
 
 An Indirect program has one fixed source width and an ordered instruction list. State, constants, and browser inputs enter through a `Float32Array`. Each instruction appends one number; a wire is its numeric position.
 
-Wires have a type of their own, `Wire`, so a plain number doesn't type-check where a wire is expected, e.g. `emitMinimum(circuit, availableWidth, 1)` is refused instead of reading wire 1. `circuit.source(index)` returns a source cell's wire, `circuit.constant(value)` a constant, and `asWire(position)` turns a position counted by hand into a wire.
+Wires have a type of their own, `Wire`, so a plain number doesn't type-check where a wire is expected, e.g. `emitMinimum(circuit, availableWidth, 1)` is refused instead of reading wire 1. `circuit.source(index)` returns a source cell's wire, `circuit.constant(value)` a constant, which is the same wire as `circuit.affine([], value)`, and `asWire(position)` turns a position counted by hand into a wire.
 
 ## FP32
 
@@ -27,9 +27,11 @@ index(form, candidates, below, above) = values[candidates[floor(form)]], with a 
 
 `left`, `gate` and `form` are affine forms. `boolean` accepts `0..1`; values below `0.5` become zero, and the rest become one. `index` is described under [index reads](#index-reads). Instructions read sources and earlier instructions, never later ones.
 
+Builder functions, also called macros, e.g. `emitMultiply` or `emitCompare`, expand into these instructions while the program is built. Each macro's exactness contract is in [Macro contracts](#macro-contracts).
+
 `Circuit.affine` is a builder expression: small affine producers can be combined before execution. `Circuit.roundAffine` retains a specific evaluation, term order, and operand wires, so the builder never copies that operation's terms into the operations that read it, which would remove a required FP32 rounding point. It does not combine duplicate terms or move constant terms into the bias.
 
-Multiplication and selection retain semantic metadata on their expanded outputs. The forward program still contains only the three atoms and index reads. The metadata supplies the intended whole-operation derivatives, prevents accidental removal of rounding, and helps recognize masked products. Inlining a circuit preserves the metadata.
+Multiplication and selection retain semantic metadata on their expanded outputs. The forward program still contains only the three atoms and index reads. The metadata supplies the intended whole-operation derivatives, e.g. `emitMultiply`'s derivative at 0 in either operand order, which differentiating its two ReLUs separately, with zero slope at their shared corner, got wrong in one order. It also prevents accidental removal of rounding, and helps recognize masked products. Inlining a circuit preserves the metadata.
 
 Backpropagation differentiates the intended real arithmetic, not literal floating-point rounding. A hard boolean gradient is rejected unless the caller explicitly requests `{booleanGradient: 'straight-through'}`. A soft comparison or a custom derivative is a training choice, not an exact derivative of a hard decision. Index reads have their own gradient options, described below.
 
@@ -44,6 +46,18 @@ Compilation removes operations that cannot reach a requested output and may reor
 The literal instruction evaluator defines the compiled numeric semantics. The tensor backend must reproduce every live value. The usual validator compares with `===`, ignoring zero's sign; NaN results do not pass that validator. Nonfinite edge-case tests explicitly check matching NaN or infinity where relevant.
 
 The tensor backend returning the literal instruction evaluator's values does not prove that a source compiler preserved JavaScript behavior. The trace compiler separately checks its float64 source interpreter against native JavaScript, then reports intended FP32 drift.
+
+## Declarations
+
+The builder chooses constructions from what the caller declares about wires: `circuit.assumeRange(wire, minimum, maximum)` declares the range of a wire's values, `circuit.assumeGrid(wire, step)` declares that every value is a multiple of `step`, a power of two, e.g. 1/64 for pointer coordinates, see [Grids](#grids), and `circuit.assumeOneHot(members)` declares that the members are exact bits of which exactly one is 1, see [One-hot groups and gathers](#one-hot-groups-and-gathers). E.g. `emitCompare` builds 2 operations instead of 15 when both operands are declared on a grid, and a masked sum over a declared one-hot compiles to one gather.
+
+The usual way to declare the cells of the source table is cells.ts. A program declares each cell once, with what happens to it around an evaluation, its range, and optionally a grid, using `createSourceTable`, `declare`, `input`, `state`, `event`, `stateBit`, `inputBit`, `constant`, `list`, `oneHot`, `atMostOne` and `permutation`, e.g. `viewportWidth: input([0, 16_384], {grid: 1})`, `on: stateBit()` or `down: {active: event(), x: coordinate(), y: coordinate()}`, where `coordinate` is a one-line helper the app defines, `const coordinate = () => input([-16_384, 16_384], {grid: 1 / 64})`. `table.createCircuit()` then makes the `assumeRange`, `assumeGrid` and `assumeOneHot` calls for every cell before any operation exists. The table also gives each cell its position, the initial table, a validator that checks a source table against every declaration, and, once `table.next` has paired each state cell with its next value and `finish` has run, the wires to write back. `createEvaluator` compiles that program and checks each source table before evaluating it. A computed wire, e.g. an index built from two cells, is declared with the same calls on the circuit.
+
+Declarations are promises from the caller, not proofs. That goes for `assumeRange`, `assumeGrid` and `assumeOneHot`, for the integer index of an index read, and for the exact 0 or 1 in an animated object's `settleCheck` and `snap` cells. A false declaration can still lead to an invalid optimization, e.g. a false grid turns an integer bit into a fraction. Tests check declarations against evaluated values with `validateGrids(circuit, values)`, `validateIndexReads(circuit, values)` and `validateOneHotGroups(circuit, values)`, and the validator from cells.ts checks a source table's ranges, exact bits, grids, one-hot and at-most-one rules.
+
+A declaration doesn't change operations built before it, e.g. `multiply(velocity, timestep)` stays 3 operations when the timestep is declared nonnegative afterwards, so `assumeRange`, and `assumeOneHot` through it, throws when it narrows the range of a wire that an operation already reads, and `assumeGrid` throws when it changes the grid of such a wire, unless the caller passes `{allowExistingReaders: true}`. `inlineCircuit` takes the same option for the source circuit's declared ranges and grids. A one-hot group whose members already have 0..1 ranges doesn't throw, although builder code that ran before the group doesn't change either, e.g. `emitFirstActive` declares a group on its selection only when its candidates are proven exact bits, e.g. members of a declared group, so a call that ran before the group was declared left its selection without a group. Declaring every cell before the first operation, as cells.ts does, avoids both cases.
+
+Inferred ranges follow the rounded coefficient, product and accumulated sum at each FP32 step, and a product that may not be finite isn't treated as a finite 0.
 
 ## One-hot groups and gathers
 
@@ -71,10 +85,12 @@ The selected value is copied without any rounding step, so `-0`, `Infinity` and 
 The contract:
 
 - The index needs a declared range strictly inside ±2^24, where every integer is an FP32 value. Ranges follow FP32 rounding, so an endpoint that lands on ±2^24 can stand for a larger real value, and the builder refuses it: `indexReadAffine([[cell, 1]], 1, candidates, 'clamp', 'clamp')` with the cell declared within 0..2^24 has the range endpoint f(2^24 + 1) = 2^24, and at cell value 2^24 the read would land one position early. The builder also refuses an open range, e.g. an index built from a source cell without `assumeRange`. It infers the index form's range from the declared ranges of the form's operands, then narrows it with the range declared on the index wire of `indexRead`, or with `{indexRange: {minimum, maximum}}` for `indexReadAffine`.
+- An integer index is computed exactly when every product and partial sum of its form is an integer within that span, e.g. `firstRow + 3` with `firstRow` declared in 0..9999.
 - The range declared on the index wire is used even when the builder copies a small affine index into the read. E.g. `row = circuit.affine([[firstRow, 1], [offset, 1]])` followed by `circuit.assumeRange(row, 0, 999)` builds while `firstRow` and `offset` have no declared ranges, since the copied form adds the same terms in the same order and holds the exact value of `row`.
 - The index must hold an integer. The builder can't check that, so `validateIndexReads(circuit, values)` checks in tests that every index form holds an integer within the range the builder accepted. E.g. an index built as `scrollTop / 28` fails at `scrollTop` 14.
 - A NaN index only happens when a declared range on a computed wire is false, e.g. `assumeRange(difference, 0, 9)` on `a - b` while both cells hold `Infinity`. Both evaluators then read NaN.
 - Candidates can be any earlier wires, can repeat, e.g. `[a, a, b]`, and need no declared range. With a constant index, the builder selects the candidate while building, and identical reads return one wire.
+- The read's inferred range is the union of the ranges of the candidates its index range can reach, plus 0 when a side with the `'zero'` rule is reachable. E.g. an index declared in 2..9 over 4 candidates, with `'zero'` above, covers candidates 2 and 3, plus 0. A candidate with no declared range makes the read's range open.
 - The builder freezes the candidates array and records it in a map keyed by the array's identity, so a table read many times is checked once. Changing the array after a read throws. Arrays with the same content share one table.
 
 For an integer index, the read equals a one-hot masked sum over the same table, e.g. bits `[index >= j] = relu(index - j + 1) - relu(index - j)`, subtracted pairwise and multiplied into the candidates. The two differ in three cases, which `index-read.test.ts` checks:
@@ -91,7 +107,7 @@ Gather lowering is kept for selections that already exist as declared one-hots, 
 
 ## Comparisons
 
-`emitCompare(circuit, a, relation, b)` returns an exact bit of `a > b`, `a >= b`, `a < b`, `a <= b` or `a === b`, e.g. `emitCompare(circuit, pointerX, '>=', windowLeft)`. For every pair of values within the declared ranges, the bit equals JavaScript's comparison of the two wires' FP32 values. A threshold is a constant wire, e.g. `circuit.affine([], 3)`, which folds into the bias. JavaScript compares an FP32 value with a threshold that isn't an FP32 value, e.g. 5/24, the way it compares with the smallest FP32 value at or above that threshold, while `f(5 / 24)` is below 5/24, so pick the FP32 threshold before building.
+`emitCompare(circuit, a, relation, b)` returns an exact bit of `a > b`, `a >= b`, `a < b`, `a <= b` or `a === b`, e.g. `emitCompare(circuit, pointerX, '>=', windowLeft)`. For every pair of values within the declared ranges, the bit equals JavaScript's comparison of the two wires' FP32 values. A threshold is a constant wire, e.g. `circuit.constant(3)`, which folds into the bias. JavaScript compares an FP32 value with a threshold that isn't an FP32 value, e.g. 5/24, the way it compares with the smallest FP32 value at or above that threshold, while `f(5 / 24)` is below 5/24, so pick the FP32 threshold before building.
 
 The construction depends on the declarations, not on the call site:
 
@@ -100,6 +116,8 @@ The construction depends on the declarations, not on the call site:
 - Otherwise the difference `d = f(a - b)` stays its own operation, and a sign cascade turns it into a bit. For finite FP32 operands, `d` is 0 exactly when `a === b`, and otherwise has the sign of `a - b`, since subnormal values fill the gap next to 0. Each stage computes `min(limit, scale × input)` as `x - relu(x - limit)` with a power-of-two scale, which is exact while `x` is at most `2^24 × limit`. The stages are planned from the declared ranges until every nonzero `d`, down to 2^-149, reaches at least 1. E.g. operands within 0..16,384 get the scales 2^10, 2^24, 2^24, 2^24, 2^24, 2^24 and 2^19, and any finite bound needs at most 12 stages.
 
 `{endWithBoolean: true}` ends with a boolean atom instead. The cascade then stops once every nonzero difference reaches 2^-45 and rounds a score next to 0.5, and grid operands use one atom on the score `0.5 + D × 2^-24`, which needs every partial sum within 2^22 grid steps. The atom needs an executor that keeps FP32 rounding at the atom, and `backpropagateReference` rejects it unless `booleanGradient` is `'straight-through'`.
+
+The limits above come from the declared ranges. Integer bits count every partial sum of `sign × D + offset`, with the bias added first, against the 2^24 grid steps that FP32 holds exactly. The atom needs 2^22 grid steps because every partial score `0.5 + k × 2^-24` then stays within 0.25..0.75, where FP32 represents every multiple of 2^-24. In the sign cascade, a declared difference bound above 2^24 first comes down by up to 2^24 per stage without multiplying, since multiplying by less than 1 would round the smallest differences to 0, e.g. lab/ui-exploration/numeric-library's first `emitCompare` multiplied by 2^-7 for a bound of 2^30, and returned 0 for `2^-149 > 0`. Coefficients stay at most 2^127.
 
 Costs, for operands within 0..16,384, or within ±8,192 on a 1/64 grid:
 
@@ -122,7 +140,7 @@ IndirectOS's window hit tests use `emitCompare`. A press hits a rectangle when i
 
 ## Grids
 
-`circuit.assumeGrid(wire, step)` declares that every value of a wire is a multiple of a power of two, e.g. `assumeGrid(pointerX, 1 / 64)` when the host writes pointer coordinates in 1/64 px. Like `assumeRange`, it's a caller promise. `validateGrids(circuit, values)` checks in tests that every wire with a grid holds a finite multiple of it.
+`circuit.assumeGrid(wire, step)` declares that every value of a wire is a multiple of `step`, which must be a power of two, e.g. `assumeGrid(pointerX, 1 / 64)` when the host writes pointer coordinates in 1/64 px. Like `assumeRange`, it's a caller promise. `validateGrids(circuit, values)` checks in tests that every wire with a grid holds a finite multiple of it.
 
 The builder also infers grids it can prove. In a sum or a ReGLU product of wires with grids, each term contributes its wire's grid times the largest power of two dividing its coefficient, e.g. `0.5 × pointerX` lies on a 1/128 grid, and the result lies on the smallest of those grids, as long as every product and partial sum stays within 2^24 grid steps according to the declared ranges. E.g. `pointerX - dragStartX` on a 1/64 grid lies on the 1/64 grid, while `pointerX / 3` has no grid. Boolean atoms and comparison bits have grid 1. Index reads get no inferred grid.
 
@@ -164,6 +182,8 @@ next displacement = f(displacement'' × active)
 next velocity = f(velocity' × active)
 position = f(destination + next displacement), drawn but not stored
 ```
+
+It returns `{displacements, velocities, positions, settled, active}`: one wire per spring in the first three, i.e. the next displacement and velocity to write back and the position to draw, and two bits for the object, `settled` and `active`, where `active` is 1 while the object still moves.
 
 The second line rebases the displacement onto this evaluation's destination. It adds the destination difference first, so when the destination is unchanged, the line adds exactly 0 and returns the stepped displacement unchanged, and rounding happens once per retarget instead of once per evaluation. FP32 then rounds the stored state at the size of the displacement and velocity rather than of the position, e.g. finely near rest at 100,000 px, where positions are 1/128 px apart. The drawn position rounds once at the destination's magnitude, and since it isn't stored, that rounding never builds up. lab/ui-exploration/gallery's kit stores displacements for the same reason, after springs near 100,000 px never settled there.
 
@@ -208,11 +228,60 @@ In spring-matrix.test.ts, the same traces moved to 65,536, 131,072 and 1,048,576
 - An event with a timestamp before the last evaluation that wrote state back applies at that evaluation's time, and an event after the frame's timestamp at the frame's.
 - Inputs that change destinations, e.g. a viewport resize, should reach `advanceFrame` as timestamped events when stored state must be frame-rate independent. A destination computed from a cell that JavaScript overwrites every frame, e.g. a viewport width written without a resize event, changes at frame times, so springs pull toward it from frame times again.
 
+### Magnitude limits
+
+The exact settling and rebasing above hold while what the host writes stays within these limits:
+
+- Matrix cells: declare them within `±springMatrixBound(constants)`, the largest `|entry|` of `M^n` for `n = 0..maxStepsPerFrame`, with headroom so every FP32 entry the host writes stays within it, e.g. 10.36 for stiffness 650 and damping 45. `springMatrixBound` throws for a spring whose powers overflow, e.g. stiffness 1e7 with 4 ms steps.
+- Settle thresholds: at least 2^-22. A nonzero `relu(offset - threshold)` is at least the FP32 spacing just above the threshold, which is 2^-45 or more, and `2^20 × 2^-45 = 2^-25` is the spacing just below 0.5, so the boolean atom rounds the settle score to 0. E.g. chenglou.github.io's index.ts's 0.01 gives at least 2^-30.
+- Retargets: the rebase is `f(f(oldDestination - newDestination) + displacement)`. The destination difference is exact for destinations on a power-of-two grid within 2^23 grid steps, or of the same sign within 2^24 grid steps, e.g. whole-pixel destinations near 2^20, so only its sum with the displacement rounds, once per retarget. Destinations of opposite signs farther out can round the difference too, e.g. `(2^23 + 1) / 64` and `-(2^23 + 2) / 64` on the 1/64 grid differ by `(2^24 + 3) / 64`, which FP32 rounds to `(2^24 + 4) / 64`, so the drawn position moves by 1/64 px at the retarget. A destination that isn't an FP32 value rounds before it reaches the program, e.g. FP32 values near 2^20 px are 1/8 px apart.
+- Rest bit: a backend that turns subnormal values into 0 also turns a displacement below 2^-126 into 0, so that displacement counts as rest.
+- Times: `quantizeFrameTiming` returns durations and event times that are multiples of 1/64 ms within `maxStepsPerFrame × stepMs`, 1,200 ms by default, i.e. within 76,800 grid steps, which FP32 holds exactly in a cell. It clamps there, since springs snap past it, and `validateSpringClockConfig` refuses a configuration past 2^24 grid steps. `advanceFrame`'s `PlannedEvaluation.durationMs`, the time since the last evaluation that wrote state back, isn't clamped, e.g. 2,000 ms for the snap after a 2 s stall. A cell that holds it needs a declared range of its own, and FP32 holds it exactly only within 2^24 grid steps, 262,144 ms.
+
 ### Gradients
 
-The backward pass reaches the 4 matrix cells: `circuit.multiply` gives each cell `displacement × outputGradient` or `velocity × outputGradient`, including at an entry of exactly 0, like the identity matrix at 0 steps. Stiffness and damping never reach the program, so the backward pass gives them nothing. JavaScript can finish the chain rule by summing `d output / d entry × d entry / d stiffness` over the 4 entries, with `d entry / d stiffness` from the float64 matrix power; a measurement in lab/ui-exploration/guide/sections/differentiability.md shows that this sum equals central differences of the whole spring. The settle bit is a boolean atom, so `backpropagateReference` throws unless `booleanGradient` is `'straight-through'`, and the gradient of a settled object reaches only its destinations. For the rest bit, the ReLUs of every displacement and velocity are multiplied by 2^127 and summed inside a ReLU, so at exact rest the backward pass stops at that ReLU's corner instead of scaling gradients by 2^149.
+The backward pass reaches the 4 matrix cells: `circuit.multiply` gives each cell `displacement × outputGradient` or `velocity × outputGradient`, including at an entry of exactly 0, like the identity matrix at 0 steps. Stiffness and damping never reach the program, so the backward pass gives them nothing. JavaScript can finish the chain rule by summing `d output / d entry × d entry / d stiffness` over the 4 entries, with `d entry / d stiffness` from the float64 matrix power; a measurement in lab/ui-exploration/guide/sections/differentiability.md shows that this sum equals central differences of the whole spring. The settle bit is a boolean atom, so `backpropagateReference` throws unless `booleanGradient` is `'straight-through'`, and the gradient of a settled object reaches only its destinations. For the rest bit, the ReLUs of every displacement and velocity are multiplied by 2^127 and summed inside a ReLU, so at exact rest the backward pass stops at that ReLU's corner instead of scaling gradients by 2^149. Exact settling says nothing about whether gradients through many steps stay usable.
 
 A closed-form matrix, `exp(A × elapsed)` with `A = [[0, 1], [-stiffness, -damping]]`, could replace the Euler power later without changing the program.
+
+## Macro contracts
+
+Exactness means equality to the stated FP32 calculation, ignoring the sign of zero, not equality to arbitrary JavaScript float64 arithmetic.
+
+| Macro | Forward calculation | Exactness contract |
+| --- | --- | --- |
+| `emitMultiply(a, b)` | One ReGLU product, or for signed operands the difference of positive and negative products, `a × relu(b) - a × relu(-b)` | Equals `f(f(a) × f(b))` for finite operands, including a product overflowing to infinity. For signed operands, only one of the two products is nonzero, so the subtraction adds no error |
+| `emitMaximum(a, b)` | `b + relu(a - b)` | Integer operands with magnitudes below 2^23; fractional operands can drift, see [Minimum and maximum](#minimum-and-maximum) |
+| `emitMinimum(a, b)` | `a - relu(a - b)` | Same restriction as maximum |
+| `emitSelect(gate, off, on)` | `gate × on + (1 - gate) × off`, with preserved rounding | At a gate of exactly 0 or 1, returns the corresponding finite operand exactly, including extreme magnitude differences, see [Selection](#selection) |
+| The clamp to 0..1, `relu(v) - relu(v - 1)` | Two ReLUs and a subtraction | The upper plateau requires `v <= 2^24` when `v` is its own operation. When `v` is a small affine sum that the builder copies into both ReLUs, both copies must add without rounding, e.g. `v <= 2^23` for multiples of 1/2, see [Clamping](#clamping). Negative finite values produce 0 |
+| Settled `emitSpring` | Select destination and multiply velocity by zero | Once its active bit reaches zero and the operands are finite, destination and zero velocity are exact. That depends on reaching an exact inactive bit, and doesn't imply that every integration step before settling equals a float64 spring's |
+| `emitCompare(a, relation, b)` | Integer bits on `D = (a - b) / grid` when both operands lie on grids within 2^24 grid steps, otherwise the kept difference `f(a - b)` and stages of `min(limit, scale × input)` | An exact bit for every pair of FP32 values within finite declared ranges whose difference can't overflow, subnormal differences included, see [Comparisons](#comparisons) |
+| `emitMinimumExact`, `emitMaximumExact`, `emitClampExact` | A comparison bit, then `on × relu(bit) + off × relu(1 - bit)` | Returns exactly one operand, up to the sign of zero; ties return the first operand, see [Comparisons](#comparisons) |
+| `emitApplySpringMatrix(matrix, e, v)` | Four multiply products, summed per row | Equals `f(f(m0 × e) + f(m1 × v))` and `f(f(m2 × e) + f(m3 × v))` for finite operands, see [In the program](#in-the-program) |
+| `emitAnimatedObject(springs, options)` | Matrix steps on each spring's stored displacement and velocity, a rebase onto the new destination, and one exceedance sum, one rest bit and one boolean atom per object | A settled, snapped or exactly resting object lands exactly on its destinations with zero velocity, up to the sign of zero; thresholds of at least 2^-22, see [In the program](#in-the-program) and [Magnitude limits](#magnitude-limits) |
+| `emitFirstActive(gate, candidates)` | Up a balanced tree, `emitMaximum` of each pair; down, a node's route `r` gives `r × leftMaximum` to its left child and `r - r × leftMaximum` to its right child, starting from `gate × rootMaximum` | An exact one-hot, or all zeros, when the gate and every candidate are exact bits, since every value in the tree is then 0 or 1; fractional candidates split the route, e.g. candidates `[0.5, 0]` send 0.25 to each output. Declares the one-hot group only when the gate and every candidate are proven bits, as listed in [One-hot groups and gathers](#one-hot-groups-and-gathers), and not a `0..1` cell or an AND of bits built with a ReLU |
+| `emitArgmax(scores, unit)` | Up a balanced tree, each pair computes `leftWins = boolean(c + s × left - s × right)`, where `c` is the FP32 value just above 0.5 and `s = 1 - c`, and keeps `emitSelect(leftWins, right, left)`; down, `route × leftWins` goes left and the rest goes right | Needs scores declared within `0..1`, `unit` declared exactly 1, and an executor that keeps FP32 rounding at the atoms; always declares the one-hot group. Keeps the left candidate on an exact tie, and in the sweep of adjacent FP32 scores in lab/ui-exploration/guide/examples/patterns/selection/highest-score-tree.test.ts, when the right score is less than `1.04e-7` larger, and for some left scores up to `2.09e-7` larger. That band isn't transitive, so the tree can pick a different candidate from a loop, e.g. index 1 of `[0, 0.5, 0.5 + 2^-24, 0.5 + 2^-23]`, where the loop picks index 3. `emitHighestScoreExact` in the same folder's highest-score-tree.ts combines pairs with `emitCompare` and matches the loop |
+
+### Selection
+
+The older `off + gate × (on - off)` expansion could lose a small selected value, or overflow `on - off` even when both candidates were finite. Both failures are covered by regression tests. The current two-product expansion avoids subtracting the candidates during forward execution.
+
+With a fractional gate, the selection interpolates between the operands with FP32 rounding; the interpolation is not an exact real-number calculation. Infinite or NaN candidates are outside the finite-operand contract because an unselected product can still compute `0 × Infinity`. Range propagation doesn't track NaN, and many operands have open declared ranges, e.g. every spring displacement in IndirectOS, so the builder doesn't refuse them. In tests, `validateNoNaN(circuit, values)` names the operation that produced the first NaN, e.g. the product of a select's unpicked side, with the select's gate and operand values.
+
+### Minimum and maximum
+
+These constructions have narrower guarantees than native `Math.min` and `Math.max`. For example, `emitMaximum(2^24, -1)` produces 16,777,215, and the corresponding minimum produces 0 instead of -1. Fractional values can drift even at small magnitudes. `emitMinimumExact` and `emitMaximumExact` select an operand with a comparison bit instead, and need finite declared ranges on both operands, see [Comparisons](#comparisons).
+
+The subtraction and reconstruction preserve their rounding order and operand values. Bounds describe that arithmetic, not an ideal mathematical min/max. For finite nonnegative inputs, minimum is bounded by `0..a.maximum`, which allows a rounded result below the smaller input. Maximum retains `0..1` only when both inputs are in that interval. Other cases use the conservative arithmetic bounds, including possible overflow.
+
+### Clamping
+
+The subtraction in the clamp to 0..1 stops producing the intended plateau at large magnitudes: `2^24 + 2` can produce 2, and `2^25` produces 0.
+
+Those limits hold when `v` is its own operation, e.g. a source cell or a `roundAffine` result. When `v` is an ordinary affine sum of fewer than 4 terms, the builder copies its terms into both ReLUs, and each ReLU rounds its own sum, so the plateau holds only while both sums add without rounding: whole numbers up to 2^24, multiples of 1/2 up to 2^23, and multiples of 1/4 up to 2^22. E.g. for `v = x - 0.5` at `x = 2^23 + 1`, `relu(v)` computes `f(x - 0.5) = 2^23`, `relu(v - 1)` computes `f(x - 1.5) = 2^23 - 0.5`, and the clamp returns 0.5. Other fractions can round at any size, e.g. `v = x + 0.25` at `x = f(0.8)` returns 0.99999994. Keeping `v` as its own operation with `roundAffine` restores the limits above. lab/ui-exploration/notes/runtime.md section 7 records a square root whose score hit this case.
+
+The contracts in this section are pinned by numeric-semantics.test.ts, macro-ranges.test.ts, index-read.test.ts, comparison.test.ts, spring-matrix.test.ts, and the gather differential tests in lab/gather-lowering.
 
 ## Buffer lifetime
 

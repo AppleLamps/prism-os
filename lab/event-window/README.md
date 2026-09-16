@@ -37,7 +37,7 @@ The circuit (`circuit.ts`, 502 ops, depth 38, 6 boolean atoms) computes each fra
 Two design points that made exactness easy:
 
 - **The previous frame's geometry is reconstructible from state.** The oracle literally hit-tests against what was displayed last frame, but a down event can only arrive while released, and while released the display equals stored geometry plus the maximized override. The circuit therefore needs no stored copy of the displayed frame. The closed-loop tests confirm the equivalence over every generated press.
-- **Integer coordinates make even the continuous outputs bit-exact.** All positions and deltas stay integers well inside FP32's exact-integer range (see `macro-ranges.md`), so `select`/`min`/`max` reconstruct exactly and the geometry comparison in every test is `===`, not a tolerance.
+- **Integer coordinates make even the continuous outputs bit-exact.** All positions and deltas stay integers well inside FP32's exact-integer range (see the macro contracts in `execution-model.md`), so `select`/`min`/`max` reconstruct exactly and the geometry comparison in every test is `===`, not a tolerance.
 
 Thresholds use one shared form: `bit(clamp01((boundary − measure) × sharpness + 0.5))`, where `bit` is the boolean atom in exact mode and the identity in soft mode. The decision is `measure` versus `boundary` regardless of sharpness, so training can anneal the ramp width while the hardened semantics stay fixed. The oracle's integer rules map to boundary cells at band centers: slop 4 (distance 5 cancels the click) puts the boundary anywhere in (4, 5], authored 4.5; title height 30 (relative y 29 is still title) puts it in [29, 30), authored 29.5.
 

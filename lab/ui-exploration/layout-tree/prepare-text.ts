@@ -1,24 +1,27 @@
 // Prepare step for the app shell's texts, run once whenever the texts change:
-//   bun lab/ui-exploration/layout-tree/prepare-text.ts
-// It runs pretext (a copy in the scratch folder, with a deterministic fake canvas whose
-// glyph widths are whole 64ths of the font size) and writes app-text-tables.ts with each
+//   PRETEXT_SRC=<folder holding pretext's src/ files> bun lab/ui-exploration/layout-tree/prepare-text.ts
+// It runs pretext (https://github.com/chenglou/pretext) with a deterministic fake canvas whose
+// glyph widths are whole 64ths of the font size, and writes app-text-tables.ts with each
 // text's natural width, widest word, and line-count thresholds. It also checks the
 // tabulated staircases against pretext's own line counts at random widths. Widths below
 // a text's widest word are outside the table: there pretext breaks inside words, while
 // the staircase stops counting.
+// The pretext copy this script ran with was a session scratch copy of pretext at commit 477510e4,
+// not in the repo; lab/ui-exploration/text-tabulated/pretext/ holds the same files. The fake
+// canvas is text-editing's (the scratch copy this script used was the same file).
+import {resolve} from 'node:path'
+import {installFakeCanvas} from '../text-editing/fake-canvas.ts'
 import {createRandom} from './circuit-tools.ts'
 import {createAppShellTree, textStyles} from './app-shell.ts'
 import {lineCount} from './reference.ts'
 import {tabulateLineCounts} from './text-table.ts'
 import type {TextTable} from './tree.ts'
 
-const scratch = 'scratchpad/phase2/layout-tree'
-const fakeCanvasPath = `${scratch}/fake-canvas.ts`
-const pretextPath = `${scratch}/pretext-src/layout.ts`
-const fakeCanvas = await import(fakeCanvasPath) as {installFakeCanvas: (engine: string) => void}
-fakeCanvas.installFakeCanvas('blink')
+const pretextSource = process.env['PRETEXT_SRC']
+if (pretextSource === undefined) throw new Error("set PRETEXT_SRC to a folder holding pretext's src/ files (layout.ts and the modules it imports), e.g. PRETEXT_SRC=lab/ui-exploration/text-tabulated/pretext")
+installFakeCanvas('blink')
 type Prepared = {widths: number[], kinds: string[]}
-const pretext = await import(pretextPath) as {
+const pretext = await import(`${resolve(pretextSource)}/layout.ts`) as {
   prepareWithSegments: (text: string, font: string) => Prepared
   measureLineStats: (prepared: Prepared, maxWidth: number) => {lineCount: number, maxLineWidth: number}
 }

@@ -1,4 +1,4 @@
-// Layout constants from ~/github/nicer-hacker-news/hn.js, plus the static tables the
+// Layout constants from nicer-hacker-news's hn.js, plus the static tables the
 // circuit uses in place of tree walks. The comment tree never changes at runtime,
 // so every loop over indents becomes a table computed once here.
 

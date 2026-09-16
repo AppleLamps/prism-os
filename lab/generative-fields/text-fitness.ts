@@ -1,4 +1,4 @@
-// Optional text-aware fitness term backed by pretext (~/github/pretext):
+// Optional text-aware fitness term backed by pretext (https://github.com/chenglou/pretext):
 // prepare() measures label segments once, layout() is pure arithmetic over the
 // cached widths, so line breaking runs inside the scoring loop with no DOM.
 //
@@ -7,11 +7,11 @@
 // arithmetic is real pretext; only the advance numbers are synthetic. In a
 // browser the same code runs against real canvas measurement.
 //
-// The import path is machine-local (the pretext checkout next to this repo's
-// checkout); callers must handle loadPretext() returning null elsewhere.
+// pretext isn't in the repo: PRETEXT_SRC names a folder holding its src/ files
+// (layout.ts and the modules it imports), e.g. lab/ui-exploration/text-tabulated/pretext.
+// When the variable is unset, loadPretext() returns null and callers skip the term.
 
-const pretextModulePath = '~/github/pretext/dist/layout.js'
-
+import {resolve} from 'node:path'
 import type {LayoutSnapshot} from './fitness.ts'
 import {slotCount} from './fields.ts'
 
@@ -59,11 +59,13 @@ export function installDeterministicMeasurer() {
 }
 
 export async function loadPretext(): Promise<PretextModule | null> {
+  const pretextSource = process.env['PRETEXT_SRC']
+  if (pretextSource === undefined) return null
   installDeterministicMeasurer()
   try {
-    return await import(pretextModulePath) as PretextModule
-  } catch {
-    return null
+    return await import(`${resolve(pretextSource)}/layout.ts`) as PretextModule
+  } catch (error) {
+    throw new Error(`PRETEXT_SRC=${pretextSource} should name a folder holding pretext's src/ files (layout.ts and the modules it imports); importing layout.ts failed: ${String(error)}`)
   }
 }
 

@@ -8,7 +8,7 @@ A per-segment table then went into the circuit, selected by a tremor estimate th
 
 ## What it is and how to run it
 
-From ~/github/indirect:
+From the repo root:
 
 ```sh
 bun test lab/ui-exploration/user-population            # 12 tests, about 2 seconds

@@ -259,9 +259,10 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   // The ranges that Photos assumes of the host's wires. Pixel-space sizes carry an
   // honest finite ceiling: 16384 covers the largest real displays (8K is 7680 wide)
   // with headroom while staying far inside FP32's exact-integer band
-  // (macro-ranges.md keeps operands well under 2^23). Finite bounds also make the
-  // geometry eligible for gather lowering. In IndirectOS, the bounds are contracts on
-  // the window's content size, which is clamped to the viewport and so honors them.
+  // (execution-model.md's macro contracts keep min, max and clamp operands under
+  // 2^23). Finite bounds also make the geometry eligible for gather lowering. In
+  // IndirectOS, the bounds are contracts on the window's content size, which is
+  // clamped to the viewport and so honors them.
   circuit.assumeRange(host.viewportWidth, 0, 16_384)
   circuit.assumeRange(host.viewportHeight, 0, 16_384)
   circuit.assumeRange(host.present, 0, 1)

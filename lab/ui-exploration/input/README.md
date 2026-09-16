@@ -10,7 +10,7 @@ Every circuit is checked frame by frame against a plain TypeScript oracle that p
 
 ## How to run
 
-From ~/github/indirect:
+From the repo root:
 
 ```sh
 bun test lab/ui-exploration/input               # 71 tests, about a second

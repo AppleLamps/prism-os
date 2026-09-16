@@ -2,7 +2,7 @@
 
 ## What it is and how to run it
 
-This prototype rebuilds the render path of Cheng's nicer-hacker-news thread (`~/github/nicer-hacker-news/hn.js`, with the pretext-based comment heights of the vibescript port in `~/github/vibescript/demos/nicer-hacker-news`) as one Indirect circuit. JS writes the window size, the scroller's `scrollTop`, the pointer position, the pointer-down bit and a click latch into a Float32Array source table, runs the circuit once per frame, copies the next-state outputs back into the table, and turns the other outputs into styles. The question it answers: how much of a text-heavy UI with a comment tree fits in one circuit, when comment heights come from prepared width breakpoints and the tree never changes at runtime.
+This prototype rebuilds the render path of Cheng's nicer-hacker-news thread (nicer-hacker-news's `hn.js`, with the pretext-based comment heights of the vibescript port in vibescript's `demos/nicer-hacker-news`) as one Indirect circuit. JS writes the window size, the scroller's `scrollTop`, the pointer position, the pointer-down bit and a click latch into a Float32Array source table, runs the circuit once per frame, copies the next-state outputs back into the table, and turns the other outputs into styles. The question it answers: how much of a text-heavy UI with a comment tree fits in one circuit, when comment heights come from prepared width breakpoints and the tree never changes at runtime.
 
 Commands, from the repo root:
 
