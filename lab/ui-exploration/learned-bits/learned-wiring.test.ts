@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {
   checkHardenedWiring,
+  createRandom,
   createWiringCircuit,
   describeWiring,
   gateSlots,
@@ -14,8 +15,7 @@ import {
   sourceFromWiring,
   trainWiring,
   type HardenedWiring,
-} from './exp-learned-wiring.ts'
-import {createRandom} from './exp-learned-wiring.ts'
+} from './learned-wiring.ts'
 
 // A hand-built wiring of the hidden circuit, expressed in the experiment's own
 // hardened format: g0 = AND(in0, in1), out0 = OR(g0, in2), out1 = XOR(in1,
@@ -127,8 +127,7 @@ test('trained wiring hardens exactly when trained on the full truth table', () =
   assert.ok(passed >= 2, `expected at least 2/${seeds.length} seeds, got ${passed}`)
 })
 
-// Sanity for the row encoding and the hidden law itself, mirroring the style
-// of exp-integer-boolean's specification test.
+// Sanity for the row encoding and the hidden law itself.
 test('ground-truth law matches its specification on hand-checked rows', () => {
   // Row 0: all inputs 0 -> hidden 0, out0 0, out1 0.
   assert.deepEqual(groundTruthOutputs(inputBitsOfRow(0)), [0, 0])

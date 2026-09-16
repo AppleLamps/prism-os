@@ -10,7 +10,7 @@ This experiment learns six shared behavior parameters from examples that supply 
 
 This experiment tests the claim in the shared context (conclusion 6): discrete multi-frame interaction behavior — dragging with pointer ownership, focus, click-versus-drag disambiguation, a maximize toggle — can be expressed and trained as a pure feedforward function of (current input, a small bank of latched events), with no backpropagation through time, and hardened to bit-exact agreement with a plain TypeScript reference over long randomized traces.
 
-Everything below is verified by `bun test lab/event-window` (34 tests, ~11s) or by one of the two measurement scripts (`training-sweep.ts`, `measure-cost.ts`) whose printed tables are reproduced here; where a number comes from a specific test or script, the text names it.
+Everything below is verified by `bun test lab/event-window` (34 tests, ~11s, plus 4 since the [merge from exp/](#merged-from-exp-september-16-2026) on September 16, 2026) or by one of the two measurement scripts (`training-sweep.ts`, `measure-cost.ts`) whose printed tables are reproduced here; where a number comes from a specific test or script, the text names it.
 
 ## The behavior
 
@@ -148,6 +148,7 @@ Update, September 16, 2026: bit provenance in [index-read](https://github.com/ch
 - `train.ts` — pair harvesting, annealed feedforward training (plus the constant-sharpness option that retains the fixed-ramp failure), hardening, held-out verification, full-dataset loss measurement
 - `stats.ts` — circuit cost measurement
 - `*.test.ts` — oracle properties and pinned trace statistics, closed-loop exactness and differential checks, window depth and cost linearity, boundary probe, training recovery and the fixed-ramp failure
+- `integer-bits.ts`, `integer-bits.test.ts` — moved from exp/ on September 16, 2026: a reveal relation trained through integer bits, and the bfloat16 simulation ([Merged from exp/](#merged-from-exp-september-16-2026))
 - `training-sweep.ts`, `measure-cost.ts` — the table-producing scripts
 - `demo.html`, `demo.ts`, `demo.css` — the visual demo: the four windows driven by the circuit stepping closed-loop, the behavior cells as live toggles and sliders, the latch bank shown as lamps, the oracle running in parallel as an on-screen agreement counter, and an autopilot that replays scripted press sessions
 
@@ -159,3 +160,37 @@ bun lab/event-window/training-sweep.ts
 bun lab/event-window/measure-cost.ts
 bun lab/event-window/demo.html
 ```
+
+## Merged from exp/, September 16, 2026
+
+Two July 2026 experiments from [exp/](https://github.com/chenglou/indirect/tree/exploration-2026-09/exp) came here, since both put behavior into source cells, like this folder's relation table.
+
+### Integer bits
+
+`integer-bits.ts` and `integer-bits.test.ts` moved here from exp/exp-integer-boolean.ts and its test. They're the evidence behind [integer bits](../../expressions.md#decision-bits): when a score is an integer count, `relu(score) - relu(score - 1)` is the exact bit of `score >= 1`, and while the score is a fraction within 0..1, the same expression is the identity ramp, so one expression trains and then runs exactly.
+
+- The behavior is a 6×6 reveal relation, `visible[j] = relu(score) - relu(score - 1)` with `score = baseVisible[j] + Σ relation[i][j] × selected[i]`. In the hidden relation, selecting slot 2 reveals slot 3 and selecting slot 0 reveals slots 4 and 5. The 7 training cases select each slot, or none. The circuit has no boolean atom, so the 36 relation cells train with plain `backpropagateReference` and Adam, then round to bits. The test requires at least 3 of 4 seeds to harden exactly, and at least 1 to recover the hidden matrix cell for cell. Measured on September 16, 2026, all 4 seeds did both, and every seed's rounded outputs matched the training cases after one Adam step.
+- On a probe outside the training cases, which selects slots 0 and 2 at once with a relation where selecting slot 2 also reveals slot 4, slot 4's score is 2 and its output is still exactly 1, in both evaluators.
+- In simulated bfloat16, which rounds after every arithmetic step, the relu difference gives the exact bit for every integer score within -256..256, and counts up to 7 add exactly. The boolean atom's rounding doesn't survive: 8,388,609 rounds to 8,388,608, and the atom returns 0 for both 1 and 0.75.
+- The construction doesn't replace a threshold at 0.5 on a continuous value, e.g. a hit test on spring-animated geometry, where the ramp would output fractions near the edge. The reveal scaffolding came from exp-ste-reveal.ts, which trained the same relation through replacement slopes and was removed in July 2026 ([research-sweep.md](../../research-sweep.md#superseded)).
+
+### Behavior cells and their growth cost
+
+[exp/exp-behavior-cells-relations.ts](https://github.com/chenglou/indirect/blob/exploration-2026-09/exp/exp-behavior-cells-relations.ts) wasn't ported. It built one circuit over 8 slots whose behavior lived in source cells next to the click state: 3 layout mode bits (row, column, grid), the gap, 8 visibility bits and an 8×8 reveal relation, with validity outputs V1 to V6 (sizes nonnegative, inside the viewport, at most one selected, no visible overlap, one layout mode, a selected slot is visible). Its tests edited cells, e.g. "put the rectangles in a row" or "selecting rectangle 2 reveals rectangle 3", without recompiling, as this folder's demo does.
+
+Its test measured the cost of adding one behavior dimension at a time. Rerun on September 16, 2026 with the file at the tag, "Operations built" is what the test printed, and live operations come from the compiled program.
+
+| Dimension added | Operations built (change) | Live operations | Stored weights (change) | Layers | Maximum layer width |
+| --- | --- | ---: | --- | ---: | ---: |
+| none: grid, gap 8, every slot visible, no selection | 202 | 147 | 310 | 10 | 28 |
+| gap | 202 (+0) | 146 | 309 (-1) | 10 | 27 |
+| visibility | 225 (+23) | 169 | 375 (+66) | 12 | 32 |
+| layout mode | 229 (+4) | 173 | 380 (+5) | 12 | 32 |
+| selection | 678 (+449) | 451 | 949 (+569) | 35 | 64 |
+| reveal | 1,029 (+351) | 717 | 1,484 (+535) | 50 | 79 |
+| validity | 1,744 (+715) | 1,230 | 2,841 (+1,357) | 71 | 162 |
+
+The mean change is 257 operations built per dimension, 9 for the first three and 505 for the last three. These are July-style circuits: mode and visibility bits go through boolean atoms, point-in-rectangle tests clamp the difference scaled by 64, which resolves gaps down to about 0.016 px, and the overlap check compares all 28 pairs of slots.
+
+- The layout is `m_row × row + m_column × column + m_grid × grid`, with each mode bit rounded by a boolean atom. At mode bits (0.5, 0.5, 0), both atoms round up to 1, two layouts add up, and V5 (one layout mode) and V4 (no visible overlap) fail. A 32-step sweep from a row layout to a column layout found no invalid step, since no step lands on t = 0.5, and only the midpoint computed directly fails. research-sweep.md's July notes say that [generative-fields](../generative-fields/README.md#experiment-4--the-headline-interpolation-with-validity-projection) refined this finding: fields avoid categorical holes, projection repairs the rest, and wrap decisions still step between samples.
+- A JavaScript reference that repeats each FP32 step matched the circuit's rectangles with `===` on 64 random configurations of mode, viewport, padding, gap and visibility.

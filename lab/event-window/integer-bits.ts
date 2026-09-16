@@ -8,7 +8,8 @@
 // must be odd so 0.5 rounds up under ties-to-even; 8_388_609 = 2^23 + 1 is the
 // smallest such odd integer, and bfloat16 cannot represent it at all. Rounding
 // also has no honest derivative, which is why backpropagateReference throws at
-// boolean atoms and the removed surrogate experiments had to invent slopes.
+// boolean atoms unless the caller passes {booleanGradient: 'straight-through'},
+// and the removed surrogate experiments had to invent slopes.
 //
 // This experiment removes the boolean atom for decisions whose hardened score
 // is an INTEGER. The identity is one the repo already owns as clamp01:
@@ -55,7 +56,7 @@ import {
   emitRelu,
   invariant,
   validateCircuit,
-} from '../numeric-ui-core.ts'
+} from '../../numeric-ui-core.ts'
 // --- The reveal-law scaffolding ----------------------------------------------
 // This layout, ground truth, and case machinery originally lived in the
 // surrogate-gradient experiment (exp-ste-reveal.ts), which this experiment

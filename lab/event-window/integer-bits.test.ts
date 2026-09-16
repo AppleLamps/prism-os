@@ -17,7 +17,7 @@ import {
   slotCount,
   sourceFromBits,
   writeInputs,
-} from './exp-integer-boolean.ts'
+} from './integer-bits.ts'
 
 const seeds = [1, 2, 3, 4]
 

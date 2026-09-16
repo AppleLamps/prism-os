@@ -1,10 +1,13 @@
 // Learned wiring: recover a circuit's CONNECTIONS from behavior, one level
 // below learned cells.
 //
-// exp-integer-boolean.ts learns the VALUES in a relation table whose wiring is
-// fixed: every (source, target) pair exists as a cell, and training decides
-// each cell's bit. exp-dlgn-plan.md stage 3 goes further -- learn which
-// OPERATION each node computes -- but explicitly parks connection learning:
+// lab/event-window/integer-bits.ts learns the VALUES in a relation table whose
+// wiring is fixed: every (source, target) pair exists as a cell, and training
+// decides each cell's bit. The July 2026 plan for differentiable logic gates,
+// exp/exp-dlgn-plan.md (removed; README.md's "Related work" keeps its sources,
+// https://github.com/chenglou/indirect/blob/exploration-2026-09/exp/exp-dlgn-plan.md),
+// goes further in its stage 3 -- learn which OPERATION each node computes --
+// but explicitly parks connection learning:
 // "Connections (fan-in wiring) stay random and fixed per Petersen -- learning
 // wiring too is not attempted here (it is the expensive open problem)." This
 // experiment probes that open problem at the smallest interesting scale: a
@@ -18,7 +21,7 @@
 //   (f00, f10, f01, f11), each in [0,1]. The soft output is the multilinear
 //   interpolation
 //     f00*(1-a)*(1-b) + f10*a*(1-b) + f01*(1-a)*b + f11*a*b
-//   This is Petersen's 16-gate softmax mixture (exp-dlgn-plan.md section 1a)
+//   This is Petersen et al.'s 16-gate softmax mixture (README.md's "Related work")
 //   collapsed to its four independent dimensions: every convex mixture of the
 //   16 relaxed gates evaluates to the interpolation of some truth table in
 //   [0,1]^4, and mixtures sharing a truth table compute identical functions,
@@ -32,12 +35,12 @@
 //   the anneal, selections plateau at blurred mixtures whose truth cells
 //   compensate, and the hardened circuit is wrong. The softmax and its
 //   backward pass live in the trainer; the circuit sees only multiplies and
-//   adds (exp-dlgn-plan.md stage 2, "bake the softmax on the parameter
+//   adds (the July plan's stage 2, "bake the softmax on the parameter
 //   side"). Hardening keeps the argmax candidate.
 // - No boolean atom appears anywhere, so Circuit.backpropagateReference
-//   differentiates everything natively (exp-integer-boolean.ts makes the same
-//   move on the decision side), and a hardened gate fed exact bits produces
-//   exact bits by integer arithmetic.
+//   differentiates everything natively (lab/event-window/integer-bits.ts makes
+//   the same move on the decision side), and a hardened gate fed exact bits
+//   produces exact bits by integer arithmetic.
 //
 // Hidden ground truth, never shown to the trainer as structure:
 //   hidden = AND(in0, in1)
@@ -56,7 +59,7 @@ import {
   emitMultiply,
   invariant,
   validateCircuit,
-} from '../numeric-ui-core.ts'
+} from '../../../numeric-ui-core.ts'
 // Deterministic LCG, matching trainable-geometry.ts.
 export function createRandom(seed: number) {
   let state = seed >>> 0
@@ -497,8 +500,8 @@ export function checkHardenedWiring(
   return {exact, correctBits, totalBits}
 }
 
-// Gate names indexed by f00 + 2*f10 + 4*f01 + 8*f11, matching the 16-gate
-// table in exp-dlgn-plan.md section 1a.
+// Gate names indexed by f00 + 2*f10 + 4*f01 + 8*f11, the 16 two-input gates
+// of Petersen et al. 2022.
 const gateNames: readonly string[] = [
   'FALSE',
   'NOR',
