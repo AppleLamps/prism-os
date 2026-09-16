@@ -24,9 +24,16 @@
 // on a 1/64 px grid, and either answer within 1/128 px of a tie. Destinations come
 // from stored geometry on that grid, so the bits are exact in practice.
 //
-// Two behavior choices with named fallbacks, see behavior-choices.md:
-// - The flow has a fixed number of bands. Lines past the last usable band aren't
-//   laid out: their words get visible = 0 and `truncated` reports it.
+// Behavior choices, see behavior-choices.md's "Flow text around destinations, in a
+// fixed number of lines":
+// - The obstacles are the windows that are visible after this evaluation's events,
+//   at their destinations. So at a minimize or close press, the text reflows into
+//   that window's area in the frame of the press, while the window is still drawn
+//   on its way to the dock.
+// - The flow has a fixed number of bands, 16 by default. Lines past the last usable
+//   band aren't laid out: their words get visible = 0, and `truncated` is 1. E.g.
+//   when Files covers all but an 85 px slot of the column, each band holds one or
+//   two words, and the paragraph's last words aren't laid out.
 // - A band whose bottom lies below the content box is unusable, so no word is
 //   placed where the window would clip it. The content height is the destination
 //   height, so this gate changes only at events, like the obstacles.

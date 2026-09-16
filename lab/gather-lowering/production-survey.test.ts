@@ -56,7 +56,7 @@ test('candidate-gallery lowers its 26 layout selection reads', () => {
   }
 })
 
-test('window-manager lowers its 12 stacking reads and stays exact in use', () => {
+test('window-manager lowers its 12 stacking reads and its Notes flow reads, and stays exact in use', () => {
   const machine = createWindowManagerMachine()
   const {circuit} = machine
   const statistics = gatherStatistics(machine.tensorProgram)
@@ -68,10 +68,15 @@ test('window-manager lowers its 12 stacking reads and stays exact in use', () =>
   // frame), which lowers the frontmost-window selection sums: 4 rank-hit
   // reads over rows, 4 selected-window reads over columns, 4 selected-rank
   // reads over rows. The photo gallery's click selection still gates on a
-  // product that is not a provably exact bit, so it declares nothing.
-  expect(circuit.oneHotGroups.length).toBe(8)
-  expect(statistics.readCount).toBe(12)
-  expect(statistics.slotCount).toBe(8)
+  // product that is not a provably exact bit, so it declares nothing. Since
+  // September 15, 2026, the Notes flow (notes.ts and notes-walker.ts) declares
+  // 32 more groups, two per line band: the set of other windows that block the
+  // band, one of the 8 subsets of the 3 other windows, and the segment that the
+  // band's line starts at, one of 89. Reads over those groups bring the total
+  // from 12 to 908.
+  expect(circuit.oneHotGroups.length).toBe(40)
+  expect(statistics.readCount).toBe(908)
+  expect(statistics.slotCount).toBe(40)
   expect(statistics.storedWeightCount).toBeLessThan(baseline.storedWeightCount)
   console.log(
     `[survey] window-manager: groups=${circuit.oneHotGroups.length}`
@@ -130,8 +135,10 @@ test('window-manager lowers its 12 stacking reads and stays exact in use', () =>
     compareStep(1280, 800)
   }
   // Photo gallery interactions and viewport churn while springs animate.
-  // Viewport coordinates, inside Photos' initial content box at (651, 235).
-  machine.photoClick(851, 385)
+  // A press and a release at viewport coordinates inside Photos' initial content box
+  // at (651, 235), which Photos takes as a click where Photos is frontmost.
+  machine.pointerDown(851, 385)
+  machine.pointerUp(851, 385)
   compareStep(1280, 800)
   machine.photoNext()
   compareStep(1280, 800)

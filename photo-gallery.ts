@@ -1084,10 +1084,12 @@ export function validatePhotoGalleryOutput(
   for (let item = 0; item < itemCount; item++) {
     const outputStart = item * thumbnailField.size
     for (const field of geometryFields) {
-      assertNonNegativeFinite(
-        values[output.thumbnails[outputStart + thumbnailField[field]]!],
-        `thumbnail ${field}`,
-      )
+      const value = values[output.thumbnails[outputStart + thumbnailField[field]]!]
+      // A thumbnail's left is its springing center minus half its size, so it can
+      // overshoot past 0, e.g. to -0.74 px when a photo is open and the viewport grows
+      // from 33×339 to 1435×668.
+      if (field === 'left') invariant(Number.isFinite(value), `thumbnail left must be finite, got ${value}`)
+      else assertNonNegativeFinite(value, `thumbnail ${field}`)
     }
     assertUnitInterval(
       values[output.thumbnails[outputStart + thumbnailField.opacity]!],

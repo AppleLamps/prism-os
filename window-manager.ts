@@ -23,6 +23,7 @@ import {
   type WriteBack,
   advanceFrame,
   defaultSpringClockConfig,
+  quantizeTimeMs,
   springMatrixBound,
   springMatrixPower,
   springStepMatrix,
@@ -166,6 +167,9 @@ const windowManagerCellsFor = (paragraph: FastParagraph) => ({
   down: {active: event({grid: 1}), x: coordinate(), y: coordinate()},
   move: {active: event({grid: 1}), x: coordinate(), y: coordinate()},
   up: {active: event({grid: 1}), x: coordinate(), y: coordinate()},
+  // A pointercancel. The machine writes it together with the up latch at the cancel's
+  // point, so a drag or a resize ends there as at a release, and no control acts.
+  cancel: event({grid: 1}),
   // Where the pointer was at the last event, which a drag or a resize measures from.
   pointer: {
     x: state([-pointerCoordinateBound, pointerCoordinateBound], {grid: pixelGrid}),
@@ -203,6 +207,16 @@ const windowManagerCellsFor = (paragraph: FastParagraph) => ({
   // resizes, if any.
   drag: oneHot(list(windowCount, () => stateBit(0, {grid: 1})), {allowAllZero: true, declareToCircuit: false}),
   resize: oneHot(list(windowCount, () => stateBit(0, {grid: 1})), {allowAllZero: true, declareToCircuit: false}),
+  // The control that the press being held armed, if any: a window's close, minimize
+  // or maximize button, a window's dock item, or Photos' content. At most one is 1,
+  // see buildWindowManager.
+  armed: {
+    close: list(windowCount, () => stateBit(0, {grid: 1})),
+    minimize: list(windowCount, () => stateBit(0, {grid: 1})),
+    maximize: list(windowCount, () => stateBit(0, {grid: 1})),
+    dockItem: list(windowCount, () => stateBit(0, {grid: 1})),
+    photosContent: stateBit(0, {grid: 1}),
+  },
   // The stacking state is a permutation matrix: exactly one window per rank
   // and exactly one rank per window. Declared as one-hot groups, the
   // frontmost-window selection sums lower to gather reads (see lab/gather-lowering).
@@ -309,6 +323,17 @@ export function resizeSourceField(windowIndex: number) {
   return cellAt(positions.resize, windowIndex, 'resize window index')
 }
 
+// The position of an armed control's bit, e.g. armedSourceField('close', 0) holds 1
+// while a press on Files' close button is held, and armedSourceField('photosContent')
+// holds 1 while a press on Photos' content is held.
+export function armedSourceField(control: 'close' | 'minimize' | 'maximize' | 'dockItem' | 'photosContent', windowIndex = photosWindowIndex) {
+  if (control === 'photosContent') {
+    invariant(windowIndex === photosWindowIndex, 'only Photos has an armed content bit')
+    return positions.armed.photosContent
+  }
+  return cellAt(positions.armed[control], windowIndex, `${control} window index`)
+}
+
 export function stackSourceField(rank: number, windowIndex: number) {
   return cellAt(cellAt(positions.stack, rank, 'stack rank'), windowIndex, 'stack window index')
 }
@@ -350,6 +375,13 @@ function buildWindowManager(notesOptions: NotesOptions) {
   const table = createSourceTable()
   const cells = table.declare(windowManagerCellsFor(notesOptions.paragraph))
   table.atMostOne('photos events', photoEvents(cells.photos))
+  table.atMostOne('armed control', [
+    ...cells.armed.close,
+    ...cells.armed.minimize,
+    ...cells.armed.maximize,
+    ...cells.armed.dockItem,
+    cells.armed.photosContent,
+  ])
   const circuit = table.createCircuit()
 
   const unit = cells.unit
@@ -399,6 +431,14 @@ function buildWindowManager(notesOptions: NotesOptions) {
   const maximizeHit: Wire[] = []
   const dragHit: Wire[] = []
   const resizeHit: Wire[] = []
+  // The same buttons at the up latch's point, for the release that acts.
+  const closeHitAtUp: Wire[] = []
+  const minimizeHitAtUp: Wire[] = []
+  const maximizeHitAtUp: Wire[] = []
+  // Photos' content box and grip, at the down and at the up.
+  let photosContentHit = zero
+  let photosContentHitAtUp = zero
+  let photosGripHitAtUp = zero
 
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const normalGeometry = {
@@ -462,24 +502,15 @@ function buildWindowManager(notesOptions: NotesOptions) {
       width: buttonHitSize,
       height: buttonHitSize,
     })
-    closeHit.push(emitRectangleHit(
-      circuit,
-      cells.down.x,
-      cells.down.y,
-      buttonHitGeometry(closeLeft),
-    ))
-    maximizeHit.push(emitRectangleHit(
-      circuit,
-      cells.down.x,
-      cells.down.y,
-      buttonHitGeometry(maximizeLeft),
-    ))
-    minimizeHit.push(emitRectangleHit(
-      circuit,
-      cells.down.x,
-      cells.down.y,
-      buttonHitGeometry(minimizeLeft),
-    ))
+    const closeRectangle = buttonHitGeometry(closeLeft)
+    const maximizeRectangle = buttonHitGeometry(maximizeLeft)
+    const minimizeRectangle = buttonHitGeometry(minimizeLeft)
+    closeHit.push(emitRectangleHit(circuit, cells.down.x, cells.down.y, closeRectangle))
+    maximizeHit.push(emitRectangleHit(circuit, cells.down.x, cells.down.y, maximizeRectangle))
+    minimizeHit.push(emitRectangleHit(circuit, cells.down.x, cells.down.y, minimizeRectangle))
+    closeHitAtUp.push(emitRectangleHit(circuit, cells.up.x, cells.up.y, closeRectangle))
+    maximizeHitAtUp.push(emitRectangleHit(circuit, cells.up.x, cells.up.y, maximizeRectangle))
+    minimizeHitAtUp.push(emitRectangleHit(circuit, cells.up.x, cells.up.y, minimizeRectangle))
     dragHit.push(emitRectangleHit(
       circuit,
       cells.down.x,
@@ -495,25 +526,34 @@ function buildWindowManager(notesOptions: NotesOptions) {
         height: cells.titleHeight,
       },
     ))
-    resizeHit.push(emitRectangleHit(
-      circuit,
-      cells.down.x,
-      cells.down.y,
-      {
-        left: circuit.affine([
-          [geometry.left, 1],
-          [geometry.width, 1],
-          [cells.resizeGrip, -1],
-        ]),
-        top: circuit.affine([
-          [geometry.top, 1],
-          [geometry.height, 1],
-          [cells.resizeGrip, -1],
-        ]),
-        width: cells.resizeGrip,
-        height: cells.resizeGrip,
-      },
-    ))
+    const gripRectangle: Geometry = {
+      left: circuit.affine([
+        [geometry.left, 1],
+        [geometry.width, 1],
+        [cells.resizeGrip, -1],
+      ]),
+      top: circuit.affine([
+        [geometry.top, 1],
+        [geometry.height, 1],
+        [cells.resizeGrip, -1],
+      ]),
+      width: cells.resizeGrip,
+      height: cells.resizeGrip,
+    }
+    resizeHit.push(emitRectangleHit(circuit, cells.down.x, cells.down.y, gripRectangle))
+    if (windowIndex === photosWindowIndex) {
+      // The content box inside the 1 px border and below the title bar, where Photos
+      // reads clicks.
+      const contentRectangle: Geometry = {
+        left: circuit.affine([[geometry.left, 1], [unit, 1]]),
+        top: circuit.affine([[geometry.top, 1], [cells.titleHeight, 1], [unit, 1]]),
+        width: circuit.affine([[geometry.width, 1], [unit, -2]]),
+        height: circuit.affine([[geometry.height, 1], [cells.titleHeight, -1], [unit, -2]]),
+      }
+      photosContentHit = emitRectangleHit(circuit, cells.down.x, cells.down.y, contentRectangle)
+      photosContentHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, contentRectangle)
+      photosGripHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, gripRectangle)
+    }
   }
 
   const currentStack = Array.from({length: windowCount}, (_, rank) =>
@@ -562,6 +602,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
   ])
   const dockGeometry: Geometry[] = []
   const dockHit: Wire[] = []
+  const dockHitAtUp: Wire[] = []
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const geometry = {
       left: circuit.affine([
@@ -574,33 +615,45 @@ function buildWindowManager(notesOptions: NotesOptions) {
       height: dockItemSize,
     }
     dockGeometry.push(geometry)
-    dockHit.push(emitDockItemHit(
-      circuit,
-      cells.down.x,
-      cells.down.y,
-      geometry,
-      unit,
-    ))
+    dockHit.push(emitDockItemHit(circuit, cells.down.x, cells.down.y, geometry, unit))
+    dockHitAtUp.push(emitDockItemHit(circuit, cells.up.x, cells.up.y, geometry, unit))
   }
 
+  // Presses and releases. Within one evaluation, the latches apply in a fixed order:
+  // the last down, then the last move, then the last up, where a pointercancel is an
+  // up with the cancel bit.
+  //
+  // A press raises and focuses the frontmost window under it, and dragging and
+  // resizing start at the press. The window buttons, the dock items and Photos'
+  // content act on release, like native buttons: a press over a control arms it, a
+  // release over the armed control acts, and a release anywhere else, or a
+  // pointercancel, acts on nothing. The path between the press and the release
+  // doesn't matter, e.g. a press on Files' close button that moves off the button and
+  // back, then releases over the button, closes Files. This differs from
+  // lab/ui-exploration/indirect-os-2, where a press that moves more than 4 px away
+  // from where it started acts on nothing, even when the pointer comes back.
+  //
+  // A release is tested against the stored geometry, like a press, e.g. the window's
+  // destination during an animation. The armed button's window is frontmost from the
+  // press on, so a release over that window's button is over no other window.
+  const windowPressed = circuit.affine(selectedCanvas.map(wire => [wire, 1]))
+  circuit.assumeRange(windowPressed, 0, 1)
+  const release = emitRelu(circuit, circuit.affine([[cells.up.active, 1], [cells.cancel, -1]]))
+  const pointerStillDown = emitComplement(circuit, cells.up.active, unit)
+  // After an up, nothing is armed.
+  const nextArmedFor = (armed: Wire) => emitAll(circuit, [armed, pointerStillDown])
+  const nextArmed = {close: [] as Wire[], minimize: [] as Wire[], maximize: [] as Wire[], dockItem: [] as Wire[]}
   const canvasPress: Wire[] = []
-  const dockPress: Wire[] = []
   const selectedWindow: Wire[] = []
-  const closePress: Wire[] = []
-  const minimizePress: Wire[] = []
-  const maximizePress: Wire[] = []
+  const closeClick: Wire[] = []
+  const minimizeClick: Wire[] = []
+  const maximizeClick: Wire[] = []
+  const dockClick: Wire[] = []
   const dragPress: Wire[] = []
   const resizePress: Wire[] = []
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const canvas = emitMultiply(circuit, cells.down.active, selectedCanvas[windowIndex]!)
-    const dock = emitMultiply(circuit, cells.down.active, dockHit[windowIndex]!)
     canvasPress.push(canvas)
-    dockPress.push(dock)
-    const selected = emitClampZeroOne(circuit, circuit.affine([[canvas, 1], [dock, 1]]), unit)
-    selectedWindow.push(selected)
-    closePress.push(emitMultiply(circuit, canvas, closeHit[windowIndex]!))
-    minimizePress.push(emitMultiply(circuit, canvas, minimizeHit[windowIndex]!))
-    maximizePress.push(emitMultiply(circuit, canvas, maximizeHit[windowIndex]!))
     const normalWindow = emitComplement(circuit, currentMaximized[windowIndex]!, unit)
     dragPress.push(emitMultiply(
       circuit,
@@ -612,7 +665,51 @@ function buildWindowManager(notesOptions: NotesOptions) {
       emitMultiply(circuit, canvas, resizeHit[windowIndex]!),
       normalWindow,
     ))
+
+    // The armed controls after this evaluation's down: a down replaces the armed
+    // control with the control that it presses, if any. A dock item is pressed only
+    // when no window is under the point.
+    const armedAfterDown = (stored: Wire, pressed: Wire) => emitSelect(circuit, cells.down.active, stored, pressed)
+    const armedClose = armedAfterDown(cells.armed.close[windowIndex]!, emitMultiply(circuit, canvas, closeHit[windowIndex]!))
+    const armedMinimize = armedAfterDown(cells.armed.minimize[windowIndex]!, emitMultiply(circuit, canvas, minimizeHit[windowIndex]!))
+    const armedMaximize = armedAfterDown(cells.armed.maximize[windowIndex]!, emitMultiply(circuit, canvas, maximizeHit[windowIndex]!))
+    const armedDockItem = armedAfterDown(
+      cells.armed.dockItem[windowIndex]!,
+      emitAll(circuit, [cells.down.active, dockHit[windowIndex]!, emitComplement(circuit, windowPressed, unit)]),
+    )
+    // A click is a release without a cancel over the armed control.
+    closeClick.push(emitAll(circuit, [release, armedClose, closeHitAtUp[windowIndex]!]))
+    minimizeClick.push(emitAll(circuit, [release, armedMinimize, minimizeHitAtUp[windowIndex]!]))
+    maximizeClick.push(emitAll(circuit, [release, armedMaximize, maximizeHitAtUp[windowIndex]!]))
+    dockClick.push(emitAll(circuit, [release, armedDockItem, dockHitAtUp[windowIndex]!]))
+    nextArmed.close.push(nextArmedFor(armedClose))
+    nextArmed.minimize.push(nextArmedFor(armedMinimize))
+    nextArmed.maximize.push(nextArmedFor(armedMaximize))
+    nextArmed.dockItem.push(nextArmedFor(armedDockItem))
+    // A dock item raises and focuses its window at the click. A down that raises a
+    // window arms no dock item, so at most one window is selected.
+    selectedWindow.push(emitClampZeroOne(circuit, circuit.affine([[canvas, 1], [dockClick[windowIndex]!, 1]]), unit))
   }
+  // Photos' content is pressed where no grip press starts a resize, and a release
+  // over the grip of a Photos window that isn't maximized isn't over the content. So
+  // a resize by the grip that ends over a photo opens no photo.
+  const armedPhotosContent = emitSelect(
+    circuit,
+    cells.down.active,
+    cells.armed.photosContent,
+    emitAll(circuit, [
+      canvasPress[photosWindowIndex]!,
+      photosContentHit,
+      emitComplement(circuit, resizePress[photosWindowIndex]!, unit),
+    ]),
+  )
+  const photosGripAtUp = emitAll(circuit, [photosGripHitAtUp, emitComplement(circuit, currentMaximized[photosWindowIndex]!, unit)])
+  const photosContentClick = emitAll(circuit, [
+    release,
+    armedPhotosContent,
+    photosContentHitAtUp,
+    emitComplement(circuit, photosGripAtUp, unit),
+  ])
 
   const baselineX = emitSelect(
     circuit,
@@ -632,7 +729,6 @@ function buildWindowManager(notesOptions: NotesOptions) {
   const pointerY = emitSelect(circuit, cells.up.active, movedY, cells.up.y)
   const deltaX = circuit.affine([[pointerX, 1], [baselineX, -1]])
   const deltaY = circuit.affine([[pointerY, 1], [baselineY, -1]])
-  const pointerStillDown = emitComplement(circuit, cells.up.active, unit)
 
   const nextNormalGeometry: Geometry[] = []
   const nextOpen: Wire[] = []
@@ -713,30 +809,30 @@ function buildWindowManager(notesOptions: NotesOptions) {
 
     const afterClose = emitSelect(
       circuit,
-      closePress[windowIndex]!,
+      closeClick[windowIndex]!,
       currentOpen[windowIndex]!,
       zero,
     )
-    nextOpen.push(emitSelect(circuit, dockPress[windowIndex]!, afterClose, unit))
+    nextOpen.push(emitSelect(circuit, dockClick[windowIndex]!, afterClose, unit))
     const afterMinimize = emitSelect(
       circuit,
-      minimizePress[windowIndex]!,
+      minimizeClick[windowIndex]!,
       currentMinimized[windowIndex]!,
       unit,
     )
-    const afterDock = emitSelect(circuit, dockPress[windowIndex]!, afterMinimize, zero)
-    nextMinimized.push(emitSelect(circuit, closePress[windowIndex]!, afterDock, zero))
+    const afterDock = emitSelect(circuit, dockClick[windowIndex]!, afterMinimize, zero)
+    nextMinimized.push(emitSelect(circuit, closeClick[windowIndex]!, afterDock, zero))
     const toggledMaximized = circuit.affine([
       [currentMaximized[windowIndex]!, 1],
       [emitMultiply(
         circuit,
-        maximizePress[windowIndex]!,
+        maximizeClick[windowIndex]!,
         circuit.affine([[unit, 1], [currentMaximized[windowIndex]!, -2]]),
       ), 1],
     ])
     nextMaximized.push(emitSelect(
       circuit,
-      closePress[windowIndex]!,
+      closeClick[windowIndex]!,
       toggledMaximized,
       zero,
     ))
@@ -978,6 +1074,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
   }
   table.next(cells.drag, nextDrag)
   table.next(cells.resize, nextResize)
+  table.next(cells.armed, {...nextArmed, photosContent: nextArmedFor(armedPhotosContent)})
   table.next(cells.stack, nextStack)
 
   const windows: Wire[] = []
@@ -1018,6 +1115,13 @@ function buildWindowManager(notesOptions: NotesOptions) {
 
   const photosWindowOutputStart = photosWindowIndex * windowOutputField.size
   const photosDestination = effectiveGeometry[photosWindowIndex]!
+  // Photos takes a key only while focused, and a click only at a release over its
+  // content after a press there. The machine writes Photos' click event at every up,
+  // see pointerUp, so a click event without a content click is blocked. Photos events
+  // that share an evaluation are mutually exclusive, so a key sees only the focus bit.
+  const photosFocused = windows[photosWindowOutputStart + windowOutputField.focused]!
+  const photosClickBlocked = emitRelu(circuit, circuit.affine([[cells.photos.click.active, 1], [photosContentClick, -1]]))
+  const photosInteractive = emitRelu(circuit, circuit.affine([[photosFocused, 1], [photosClickBlocked, -1]]))
   // Photos lays out, hit-tests and draws at the window's destination content size,
   // e.g. the maximized size from the press on, and not at the animated size. So
   // which photo a click lands on doesn't depend on spring timing, and the
@@ -1026,25 +1130,25 @@ function buildWindowManager(notesOptions: NotesOptions) {
   const photos = buildPhotos(circuit, table, cells.photos, {
     viewportWidth: destinationContentWidth[photosWindowIndex]!,
     viewportHeight: destinationContentHeight[photosWindowIndex]!,
-    // A click arrives in viewport coordinates, and Photos reads it relative to the
-    // content box at the window's destination, like presses hit-test window
-    // destinations. E.g. a click during a maximize lands on the photo that ends up
-    // under the pointer.
+    // A click is at the up latch's point, in viewport coordinates, and Photos reads it
+    // relative to the content box at the window's destination, like presses hit-test
+    // window destinations. E.g. a click during a maximize lands on the photo that ends
+    // up under the pointer. IndirectOS leaves Photos' own click coordinate cells at 0.
     click: {
       x: circuit.affine([
-        [cells.photos.click.x, 1],
+        [cells.up.x, 1],
         [photosDestination.left, -1],
         [unit, -1],
       ]),
       y: circuit.affine([
-        [cells.photos.click.y, 1],
+        [cells.up.y, 1],
         [photosDestination.top, -1],
         [cells.titleHeight, -1],
         [unit, -1],
       ]),
     },
     present: windows[photosWindowOutputStart + windowOutputField.opacity]!,
-    interactive: windows[photosWindowOutputStart + windowOutputField.focused]!,
+    interactive: photosInteractive,
     unit,
     // Thumbnails and windows share stiffness and damping, so one matrix serves both.
     springMatrix: cells.springMatrix,
@@ -1091,7 +1195,7 @@ type WindowManagerEvent = {
     | 'pointer down'
     | 'pointer move'
     | 'pointer up'
-    | 'photo click'
+    | 'pointer cancel'
     | 'photo previous'
     | 'photo next'
     | 'photo close'
@@ -1203,7 +1307,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
   // Rounds coordinates to 1/64 px and clamps them within ±32,768 px, as the program
   // declares, e.g. 100.001 becomes 100 and -50,000 becomes -32,768.
   function receivePointer(
-    kind: 'pointer down' | 'pointer move' | 'pointer up',
+    kind: 'pointer down' | 'pointer move' | 'pointer up' | 'pointer cancel',
     latch: {active: Wire, x: Wire, y: Wire},
     x: number,
     y: number,
@@ -1216,25 +1320,60 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
       table[latch.active] = 1
       table[latch.x] = clampedX
       table[latch.y] = clampedY
+      // A cancel writes the up latch and the cancel bit, see cells.cancel.
+      if (kind === 'pointer cancel') table[cells.cancel] = 1
+      // Every up is also a Photos click at the up's point, which Photos takes only
+      // when the press armed Photos' content, see buildWindowManager. A key written
+      // earlier in the same evaluation keeps its place, see writePhotoEvent.
+      if (kind === 'pointer up' && photoEvents(cells.photos).every(field => table[field] === 0)) {
+        table[cells.photos.click.active] = 1
+      }
     })
   }
 
-  // Photos events that share an evaluation are mutually exclusive; the last one wins.
+  // Photos events that share an evaluation are mutually exclusive, and a key takes
+  // the place of a click. E.g. a key and an up at the same 1/64 ms timestamp, in either
+  // order, deliver only the key: the up still ends a drag or acts on a window control,
+  // but opens no photo. Among keys at one timestamp, the last one wins.
+  function writePhotoEvent(table: Float32Array, field: Wire) {
+    for (const eventField of photoEvents(cells.photos)) table[eventField] = 0
+    table[field] = 1
+  }
+
   function receivePhotoEvent(
-    kind: 'photo click' | 'photo previous' | 'photo next' | 'photo close',
+    kind: 'photo previous' | 'photo next' | 'photo close',
     field: Wire,
     timeStamp: number | undefined,
-    x?: number,
-    y?: number,
   ) {
-    queue(kind, timeStamp, table => {
-      for (const eventField of photoEvents(cells.photos)) table[eventField] = 0
-      table[field] = 1
-      if (x !== undefined && y !== undefined) {
-        table[cells.photos.click.x] = x
-        table[cells.photos.click.y] = y
-      }
-    })
+    queue(kind, timeStamp, table => writePhotoEvent(table, field))
+  }
+
+  // The cells that say a press is held: a drag, a resize, or an armed control.
+  const heldPressCells = [
+    ...cells.drag,
+    ...cells.resize,
+    ...cells.armed.close,
+    ...cells.armed.minimize,
+    ...cells.armed.maximize,
+    ...cells.armed.dockItem,
+    cells.armed.photosContent,
+  ]
+
+  // While nothing animates and no press is held, a pointer move changes only the
+  // stored pointer. So when every event of a frame is a pointer move, only the move
+  // that advanceFrame would apply last runs, e.g. 4 hover samples take 1 evaluation
+  // instead of 4, and the stored table after the frame is the same in every bit.
+  // While something animates, each evaluation that writes back commits stepped
+  // springs, and which evaluations run would change the springs' FP32 values, so every
+  // move runs. While a press is held, a drag or a resize reads every move.
+  function coalesceHoverMoves<Event extends {kind: WindowManagerEvent['kind'], timeStamp: number}>(events: Event[], frameTime: number) {
+    if (clock.animatedUntilMs !== null || events.length < 2 || events.some(event => event.kind !== 'pointer move')) return events
+    if (heldPressCells.some(cell => source[cell] !== 0)) return events
+    // advanceFrame applies events in the order of their times on the time grid, clamped
+    // to the frame's time, and in delivery order among equal times.
+    const frameTimeMs = quantizeTimeMs(frameTime)
+    const applyTime = (event: Event) => Math.min(frameTimeMs, quantizeTimeMs(event.timeStamp))
+    return [events.reduce((latest, event) => applyTime(event) >= applyTime(latest) ? event : latest)]
   }
 
   // One evaluation that advanceFrame planned: write the matrix, the settle check
@@ -1324,7 +1463,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
         // evaluations, which never start the clock.
         queueViewport('resize', width, height, frameTime)
       }
-      const events = queued.map(event => ({...event, timeStamp: event.timeStamp ?? frameTime}))
+      const events = coalesceHoverMoves(queued.map(event => ({...event, timeStamp: event.timeStamp ?? frameTime})), frameTime)
       queued = []
       evaluations.length = 0
       clock = advanceFrame(clock, frameTime, events, evaluate, writeBack)
@@ -1343,14 +1482,14 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     pointerMove(x: number, y: number, timeStamp?: number) {
       receivePointer('pointer move', cells.move, x, y, timeStamp)
     },
+    // Also delivers the release to Photos as a click, see buildWindowManager.
     pointerUp(x: number, y: number, timeStamp?: number) {
       receivePointer('pointer up', cells.up, x, y, timeStamp)
     },
-    // x and y are viewport coordinates, e.g. event.clientX and event.clientY, like
-    // the pointer methods. The program reads them relative to Photos' content box at
-    // the window's destination.
-    photoClick(x: number, y: number, timeStamp?: number) {
-      receivePhotoEvent('photo click', cells.photos.click.active, timeStamp, x, y)
+    // A pointercancel, e.g. when the browser takes over a touch. Like pointerUp, it
+    // ends a drag or a resize at its point, and it acts on no control.
+    pointerCancel(x: number, y: number, timeStamp?: number) {
+      receivePointer('pointer cancel', cells.up, x, y, timeStamp)
     },
     photoPrevious(timeStamp?: number) {
       receivePhotoEvent('photo previous', cells.photos.previous, timeStamp)
@@ -1530,19 +1669,19 @@ function mountWindowManager(document: Document, window: Window) {
     }
     scheduleRender()
   })
+  // pointerUp also delivers the release to Photos as a click, in the up's evaluation,
+  // and the program decides whether the release is a Photos click, see
+  // buildWindowManager. The page listens for no DOM click: Chrome fires click at the
+  // nearest element that contains both the pointerdown's and the pointerup's targets,
+  // so a listener on the drawn .photos-content misses a release at a photo's
+  // destination that the growing frame doesn't cover yet, and a listener on window
+  // also gets the click after a drag or a resize.
   window.addEventListener('pointerup', (event: PointerEvent) => {
     machine.pointerUp(event.clientX, event.clientY, event.timeStamp)
     scheduleRender()
   })
   window.addEventListener('pointercancel', (event: PointerEvent) => {
-    machine.pointerUp(event.clientX, event.clientY, event.timeStamp)
-    scheduleRender()
-  })
-  domCache.photosViewport.addEventListener('click', (event: MouseEvent) => {
-    // A click fires after pointerup, so the press that focuses Photos applies first.
-    // The program reads the viewport coordinates relative to Photos' content box at
-    // the window's destination, not at where the frame is drawn.
-    machine.photoClick(event.clientX, event.clientY, event.timeStamp)
+    machine.pointerCancel(event.clientX, event.clientY, event.timeStamp)
     scheduleRender()
   })
   window.addEventListener('keydown', (event: KeyboardEvent) => {
@@ -1737,6 +1876,14 @@ function emitIntervalDistance(circuit: Circuit, position: Wire, start: Wire, siz
     circuit.affine([[position, 1], [start, -1]]),
     circuit.affine([[end, 1], [position, -1]]),
   )
+}
+
+// 1 when every bit is 1, otherwise 0, as relu(sum of bits - (count - 1)), e.g. a
+// release, while armed, over the armed control.
+function emitAll(circuit: Circuit, bits: readonly Wire[]) {
+  const all = circuit.reglu([], 1, bits.map(bit => [bit, 1] as [Wire, number]), 1 - bits.length)
+  circuit.assumeRange(all, 0, 1)
+  return all
 }
 
 function emitClampZeroOne(circuit: Circuit, value: Wire, unit: Wire) {

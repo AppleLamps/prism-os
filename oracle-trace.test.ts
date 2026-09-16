@@ -213,16 +213,20 @@ describe('production circuits match the reference interpreter across scripted tr
         height: values[photos[start + photoField.height]!]!,
       }
     }
-    // Select a grid photo. photoClick takes viewport coordinates, and the program
-    // reads them relative to Photos' content box at the window's destination, which
-    // for a window that isn't maximized is its stored left and top.
+    // Select a grid photo with a press and a release on it. Pointer coordinates are
+    // viewport coordinates, and Photos reads a release relative to its content box at
+    // the window's destination, which for a window that isn't maximized is its stored
+    // left and top.
     {
       const photo = photoLocal(values, 5)
       expect(machine.source[windowSourceField(photosWindowIndex, windowStateField.maximized)]).toBe(0)
       const contentLeft = machine.source[windowSourceField(photosWindowIndex, windowStateField.left)]! + 1
       const contentTop = machine.source[windowSourceField(photosWindowIndex, windowStateField.top)]!
         + machine.source[windowSourceFieldTable.titleHeight]! + 1
-      machine.photoClick(contentLeft + photo.left + photo.width / 2, contentTop + photo.top + photo.height / 2)
+      const photoX = contentLeft + photo.left + photo.width / 2
+      const photoY = contentTop + photo.top + photo.height / 2
+      machine.pointerDown(photoX, photoY)
+      machine.pointerUp(photoX, photoY)
       values = advance(irregularFrameTime(random))
       for (let settle = 0; settle < 3; settle++) values = advance(irregularFrameTime(random))
     }

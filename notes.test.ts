@@ -73,6 +73,8 @@ const frameDuration = 16
 const epsilon = defaultLineFitEpsilon
 const measured = measureNotesParagraph(testFont)
 const notesOptions = notesOptionsFor(defaultNotesParagraph, epsilon)
+// The segment index of each word, e.g. word 1 is segment 2, after the first space.
+const wordSegments = defaultNotesParagraph.breakAfter.flatMap((breakAfter, segment) => breakAfter === 0 ? [segment] : [])
 
 type Machine = ReturnType<typeof createWindowManagerMachine>
 const frameTimeByMachine = new WeakMap<Machine, number>()
@@ -112,6 +114,17 @@ function readBands(machine: Machine, values: Float32Array) {
     const read = (field: number) => values[machine.output.notes.bands[start + field]!]!
     return {usable: read(bandOutputField.usable), left: read(bandOutputField.left), width: read(bandOutputField.width), start: read(bandOutputField.start)}
   })
+}
+
+type Rectangle = {left: number, top: number, width: number, height: number}
+
+// Whether a laid-out word's box, as wide as the word and one line tall, overlaps a
+// rectangle. Both are in the content box's coordinates.
+function wordOverlaps(word: Word, wordIndex: number, rectangle: Rectangle) {
+  const wordWidth = measured.paragraph.widths[wordSegments[wordIndex]!]!
+  return word.visible === 1
+    && word.x < rectangle.left + rectangle.width && word.x + wordWidth > rectangle.left
+    && word.y < rectangle.top + rectangle.height && word.y + notesOptions.lineHeight > rectangle.top
 }
 
 // The obstacles as the reference sees them, from a stored table: every window's
@@ -243,18 +256,24 @@ function compareWithReference(machine: Machine, table: Float32Array) {
     }
   })
   const words = readWords(machine, values)
-  let wordIndex = 0
-  measured.paragraph.breakAfter.forEach((breakAfter, segment) => {
-    if (breakAfter === 1) return
+  const windowsAbove = arrangement.obstacles.filter(obstacle => obstacle.active)
+  // Laid-out words on a line that is level with part of a window stacked above
+  // Notes, i.e. the words that the overlap check could catch.
+  let wordsBesideWindowsAbove = 0
+  words.forEach((word, wordIndex) => {
+    const segment = wordSegments[wordIndex]!
     const expected = reference.segments[segment]!
-    const word = words[wordIndex++]!
     if (word.visible !== (expected.visible ? 1 : 0)) problems.push(`segment ${segment} visible ${word.visible}, expected ${Number(expected.visible)}`)
     else if (expected.visible && (word.x !== Math.fround(expected.x) || word.y !== expected.y)) problems.push(`segment ${segment} at ${word.x},${word.y}, expected ${expected.x},${expected.y}`)
+    if (word.visible === 1 && windowsAbove.some(window => word.y < window.top + window.height && word.y + notesOptions.lineHeight > window.top)) wordsBesideWindowsAbove++
+    for (const window of windowsAbove) {
+      if (wordOverlaps(word, wordIndex, window)) problems.push(`segment ${segment} at ${word.x},${word.y} overlaps the window above Notes at ${window.left},${window.top}`)
+    }
   })
   const truncated = values[machine.output.notes.truncated]!
   const expectedTruncated = Number(!reference.segments.at(-1)!.visible)
   if (truncated !== expectedTruncated) problems.push(`truncated ${truncated}, expected ${expectedTruncated}`)
-  return {problems, reference, arrangement, values, words}
+  return {problems, reference, arrangement, values, words, wordsBesideWindowsAbove}
 }
 
 function createRandom(seed: number) {
@@ -322,12 +341,14 @@ test('flows around random window arrangements match pretext line for line and wo
   let bandsWithTwoSlots = 0
   let bandsCutByHeight = 0
   let truncatedArrangements = 0
+  let wordsBesideWindows = 0
   const failures: unknown[] = []
   for (let trial = 0; trial < 40; trial++) {
     const table = Float32Array.from(machine.source)
     writeArrangement(table, random)
-    const {problems, reference, arrangement} = compareWithReference(machine, table)
+    const {problems, reference, arrangement, wordsBesideWindowsAbove} = compareWithReference(machine, table)
     checkedWords += reference.segments.filter(segment => segment.visible).length
+    wordsBesideWindows += wordsBesideWindowsAbove
     blockedBands += reference.bands.filter(band => !band.usable || band.slotWidth < arrangement.columnWidth).length
     bandsCutByHeight += reference.bands.filter(band => band.cutByHeight).length
     if (!reference.segments.at(-1)!.visible) truncatedArrangements++
@@ -342,6 +363,9 @@ test('flows around random window arrangements match pretext line for line and wo
   assert.ok(checkedWords > 600, `${checkedWords} words checked`)
   assert.ok(blockedBands > 60, `${blockedBands} blocked bands`)
   assert.ok(bandsWithTwoSlots > 0)
+  // compareWithReference also checks that no laid-out word overlaps a window stacked
+  // above Notes; this many words were on a line level with such a window.
+  assert.ok(wordsBesideWindows > 500, `${wordsBesideWindows} words beside a window above Notes`)
   assert.ok(bandsCutByHeight > 0, 'some band was cut by the content height')
   assert.ok(truncatedArrangements > 0 && truncatedArrangements < 40, `${truncatedArrangements} arrangements truncated`)
 })
@@ -359,11 +383,24 @@ test('words move straight to the new layout in the frame of the event, while the
   assert.equal(values[machine.output.animationActive], 1)
   const during = readWords(machine, values)
   assert.notDeepEqual(during, before)
-  // The press evaluation and the frame after it show the same words.
+  // In the frame of the press, the text already fills Photos' area, while Photos is
+  // still drawn there at nearly full size on its way to the dock: the flow reads
+  // which windows are visible after the event, not the drawn frames.
+  const photosOutput = (field: number) => values[machine.output.windows[3 * windowOutputField.size + field]!]!
+  assert.equal(photosOutput(windowOutputField.opacity), 1)
+  assert.ok(photosOutput(windowOutputField.scale) > 0.9, `Photos drawn at scale ${photosOutput(windowOutputField.scale)}`)
+  // The obstacles are Files, System Monitor and Photos, in window order.
+  const photosArea = arrangementOf(machine.source).obstacles[2]!
+  assert.equal(photosArea.active, false)
+  assert.ok(during.some((word, wordIndex) => wordOverlaps(word, wordIndex, photosArea)), 'some word is laid out in Photos\' area')
+  // The words don't move again while Photos flies to the dock.
   const settled = settle(machine)
   assert.deepEqual(readWords(machine, settled), during)
   assert.deepEqual(compareWithReference(machine, machine.source).problems, [])
-  assert.ok(during.every(word => word.visible === 1), 'no window is above Notes anymore, so every word is laid out')
+  // System Monitor is still above Notes, but it starts below the fifth line, and
+  // with Photos gone the paragraph fits in 5 lines.
+  assert.equal(values[machine.output.notes.lineCount], 5)
+  assert.ok(during.every(word => word.visible === 1))
 })
 
 test('dragging Files over Notes reflows the paragraph, and the settled words match pretext', () => {
@@ -405,7 +442,7 @@ test('a band below the content box is unusable, so no word is placed where the w
   assert.equal(machine.source[windowSourceField(0, windowStateField.left)], 380)
   const contentHeight = settled[machine.output.windows[notesWindowIndex * windowOutputField.size + windowOutputField.contentHeight]!]!
   assert.equal(contentHeight, 320)
-  const {problems, reference, values, words} = compareWithReference(machine, machine.source)
+  const {problems, reference, values, words, arrangement} = compareWithReference(machine, machine.source)
   assert.deepEqual(problems, [])
   assert.deepEqual(reference.bands.map(band => band.cutByHeight), Array.from({length: 16}, (_, band) => band >= 13))
   assert.deepEqual(readBands(machine, values).map(band => band.usable), Array.from({length: 16}, (_, band) => Number(band === 11 || band === 12)))
@@ -415,6 +452,12 @@ test('a band below the content box is unusable, so no word is placed where the w
   assert.ok(visibleWords.every(word => word.y >= notesOptions.padding + 11 * notesOptions.lineHeight))
   assert.equal(values[machine.output.notes.truncated], 1)
   assert.equal(values[machine.output.notes.lineCount], 2)
+  // The gate hides words: without it, the reference lays out more of the paragraph
+  // in bands below the content box.
+  const ungated = referenceNotesFlow(measured.prepared, measured.paragraph, {...arrangement, contentHeight: Infinity}, notesOptions)
+  const hiddenByGate = wordSegments.filter(segment => ungated.segments[segment]!.visible && !reference.segments[segment]!.visible)
+  assert.ok(hiddenByGate.length > 0, 'some word is hidden only by the content height')
+  assert.ok(hiddenByGate.every(segment => ungated.segments[segment]!.y + notesOptions.lineHeight > contentHeight))
 })
 
 test('a paragraph that needs more lines than the flow has bands stays finite, with the trailing words invisible', () => {
@@ -442,6 +485,16 @@ test('a paragraph that needs more lines than the flow has bands stays finite, wi
   }
   const {problems, values, words, reference} = compareWithReference(machine, table)
   assert.deepEqual(problems, [])
+  const notesWires = [
+    ...machine.output.notes.words,
+    ...machine.output.notes.bands,
+    machine.output.notes.lineCount,
+    machine.output.notes.truncated,
+    machine.output.notes.windowOverflow,
+    machine.output.notes.runOverflow,
+  ]
+  assert.ok(notesWires.every(wire => Number.isFinite(values[wire])), 'every Notes output is finite')
+  assert.deepEqual([values[machine.output.notes.windowOverflow], values[machine.output.notes.runOverflow]], [0, 0])
   assert.ok(reference.bands.every(band => band.usable && band.slotWidth === 85))
   assert.equal(values[machine.output.notes.lineCount], 16)
   assert.equal(values[machine.output.notes.truncated], 1)
