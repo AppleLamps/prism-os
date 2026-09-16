@@ -2,8 +2,8 @@
 // takes up to keysPerFrame events per evaluation. Key names follow KeyboardEvent.key with macOS
 // modifiers: Option moves by word, Command by line or document.
 
-import {type EditorEvent, type KeyKind, layoutKinds} from './reference.ts'
-import {encodeText, type WidthTable} from './width-table.ts'
+import {type EditorEvent, type KeyKind, layoutKinds} from './grapheme-reference.ts'
+import {encodeText, type WidthTable} from './grapheme-width-table.ts'
 
 export type KeyInput = {
   key: string

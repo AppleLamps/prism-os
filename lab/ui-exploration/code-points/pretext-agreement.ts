@@ -14,9 +14,9 @@
 // reproduces them.
 
 import {resolve} from 'node:path'
-import {referenceLayout as baselineLayout, type EditorState as BaselineState} from '../text-editing/reference.ts'
-import {createWidthTable, encodeText} from '../text-editing/width-table.ts'
-import {fakeTextWidth, installFakeCanvas} from '../text-editing/fake-canvas.ts'
+import {referenceLayout as baselineLayout, type EditorState as BaselineState} from './grapheme-reference.ts'
+import {createWidthTable, encodeText} from './grapheme-width-table.ts'
+import {fakeTextWidth, installFakeCanvas} from './fake-canvas.ts'
 import {breaksBetween, classNames, classOfCodePoint, codePointsOf, LB, pairRuleFor} from './line-break-classes.ts'
 import {type CharacterModel, type EditorState, type PretextExperiment, referenceLayout} from './reference.ts'
 import {createRandom} from './test-support.ts'

@@ -1,8 +1,8 @@
 import {expect, test} from 'bun:test'
 import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
-import {createEditorMachine, writeEvent} from './editor-circuit.ts'
-import {measureCircuit} from './integer-circuits.ts'
-import {takeFrameEvents} from './keyboard.ts'
+import {createEditorMachine, writeEvent} from './grapheme-editor-circuit.ts'
+import {measureCircuit} from './grapheme-integer-circuits.ts'
+import {takeFrameEvents} from './grapheme-keyboard.ts'
 import {
   classCodes,
   type EditorConfig,
@@ -15,8 +15,8 @@ import {
   packCell,
   referenceFrame,
   referenceLayout,
-} from './reference.ts'
-import {createRandom, randomEvent, testTable} from './test-support.ts'
+} from './grapheme-reference.ts'
+import {createRandom, randomEvent, testTable} from './grapheme-test-support.ts'
 
 function runDifferential(config: EditorConfig, frames: number, seed: number) {
   const machine = createEditorMachine(config)

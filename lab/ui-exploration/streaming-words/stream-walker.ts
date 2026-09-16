@@ -12,7 +12,7 @@
 //   past the last arrived segment only glues zero-width segments, so its overflow isn't real.
 //   Likewise, lines that start at or after arrivedCount don't need a slot.
 // - Turns. turnStart[j] is 1 at the first segment of a new speaker's turn. A forced break adds
-//   turnOffset into the prefix sums at every turn start, the way text-editing adds a newline offset
+//   turnOffset into the prefix sums at every turn start, the way code-points' grapheme-editor-circuit.ts adds a newline offset
 //   into its position keys. For a line starting at s, the fit span of segment s + o then includes
 //   turnOffset times the number of turn starts in s+1..s+o, so no line reaches past a turn start.
 //   The prefix read at a line start, P(s), includes the start's own offset, so a line that begins

@@ -19,7 +19,7 @@ const pretextSourceSetting = process.env['PRETEXT_SRC']
 if (pretextSourceSetting === undefined) throw new Error("set PRETEXT_SRC to a folder holding pretext's src/ files (rich-inline.ts and the modules it imports), e.g. PRETEXT_SRC=lab/ui-exploration/text-tabulated/pretext")
 const pretextSource = resolve(pretextSourceSetting)
 
-// Fake canvas from phase 1 (the same rules as text-editing's fake-canvas.ts): every advance is a whole
+// Fake canvas from phase 1 (the same rules as text-editing's fake-canvas.ts, now in code-points): every advance is a whole
 // number of 64ths of the font size, so widths and their sums are exact in float64 and FP32.
 function fakeTextWidth(text: string, font: string): number {
   const fontSize = Number.parseFloat(font.match(/(\d+(?:\.\d+)?)\s*px/)?.[1] ?? '16')

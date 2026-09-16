@@ -12,7 +12,7 @@ import {StreamSession, timedChunks} from './session.ts'
 import {referenceWordsFromTable, referenceWordsStep, wordDrift, type ReferenceWords} from './spring-reference.ts'
 import {defaultFlowLayout, liveOperationsByPhase, type LineCountMode, type SpawnMode, type StreamBuild} from './stream-circuit.ts'
 import {chunkEvents, layoutFlow, layoutMismatches, lineHops, referenceLayout, writeFlowState, type ChunkMode, type Turn} from './stream-model.ts'
-import {defaultSpringConfig} from './word-springs.ts'
+import {defaultSpringConfig} from '../text-walker/word-springs.ts'
 
 const pretext = await loadPretext()
 const requested = new Set(process.argv.slice(2))

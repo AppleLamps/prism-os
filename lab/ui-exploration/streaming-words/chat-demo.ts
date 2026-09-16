@@ -5,7 +5,7 @@
 import {buildStreamCircuit, type FlowLayout, type SpawnMode, type StreamBuild, type StreamOutputs} from './stream-circuit.ts'
 import {StreamSession, timedChunks} from './session.ts'
 import {layoutMismatches, lineCountOf, lineHops, referenceLayout, segmentCountOf, windowForTurns, type ChunkMode, type ReferenceLayout, type Turn} from './stream-model.ts'
-import {defaultSpringConfig} from './word-springs.ts'
+import {defaultSpringConfig} from '../text-walker/word-springs.ts'
 
 type Pretext = typeof import('../text-walker/pretext-src/layout.ts')
 

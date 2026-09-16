@@ -5,7 +5,7 @@
 // Targets come from the circuit's outputs, which the layout checks already compare with pretext, so
 // this reference checks only the spring dynamics and gates.
 import {opacitySettleThreshold, visibleOpacity, type SpawnMode, type StreamBuild, type StreamOutputs} from './stream-circuit.ts'
-import {iterateSpring, type SpringConfig} from './word-springs.ts'
+import {iterateSpring, type SpringConfig} from '../text-walker/word-springs.ts'
 
 export type SpringStep = {position: number, velocity: number, active: number}
 

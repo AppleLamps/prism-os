@@ -3,12 +3,12 @@
 //   bun lab/ui-exploration/code-points/report.ts decode tables    (chosen sections; see `sections`)
 // Counts are exact. CPU timings are rough: other processes share the machine.
 
-import {buildEditorCircuit as buildBaselineCircuit, type EditorBuild as BaselineBuild, writeEvent as writeBaselineEvent, writeState as writeBaselineState} from '../text-editing/editor-circuit.ts'
-import {measureCircuit as measureBaselineCircuit} from '../text-editing/integer-circuits.ts'
-import {classCodes, type EditorConfig as BaselineConfig, emptyState as emptyBaselineState, event as baselineEvent, packCell} from '../text-editing/reference.ts'
-import {createWidthTable, encodeText} from '../text-editing/width-table.ts'
+import {buildEditorCircuit as buildBaselineCircuit, type EditorBuild as BaselineBuild, writeEvent as writeBaselineEvent, writeState as writeBaselineState} from './grapheme-editor-circuit.ts'
+import {measureCircuit as measureBaselineCircuit} from './grapheme-integer-circuits.ts'
+import {classCodes, type EditorConfig as BaselineConfig, emptyState as emptyBaselineState, event as baselineEvent, packCell} from './grapheme-reference.ts'
+import {createWidthTable, encodeText} from './grapheme-width-table.ts'
 import {buildDecodeCircuit, buildEditorCircuit, createEditorMachine, type EditorBuild, tableSourceCells, writeAdvanceTable, writeStaticTables} from './editor-circuit.ts'
-import {fakeTextWidth} from '../text-editing/fake-canvas.ts'
+import {fakeTextWidth} from './fake-canvas.ts'
 import {type CircuitSize, measureCircuit} from './integer-circuits.ts'
 import {takeFrameEvents} from './keyboard.ts'
 import {breaksBetween, classCount, classOfCodePoint, codePointsOf, LB, pairRuleFor, pairRules} from './line-break-classes.ts'
@@ -122,7 +122,7 @@ function codePointRow(label: string, config: EditorConfig, withTiming: boolean, 
 
 function sectionSizes() {
   console.log('## Size by capacity (one key per evaluation, 12 line slots, paste limit 8, glyph outputs on)\n')
-  console.log('The baseline is text-editing\'s circuit, imported from ../text-editing/, on the shared runtime with 96 grapheme codes. The code point rows use this folder\'s runtime copy with 64 advance pages. "Tables" counts table source cells: the grapheme table for the baseline; class, property, pair and advance tables for code points.\n')
+  console.log('The baseline is text-editing\'s circuit, in grapheme-editor-circuit.ts, on the shared runtime with 96 grapheme codes. The code point rows use this folder\'s runtime copy with 64 advance pages. "Tables" counts table source cells: the grapheme table for the baseline; class, property, pair and advance tables for code points.\n')
   console.log(sizeHeader)
   for (const capacity of [32, 64, 128, 256]) {
     const withTiming = capacity === 256

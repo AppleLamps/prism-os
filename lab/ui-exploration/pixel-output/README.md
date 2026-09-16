@@ -23,7 +23,7 @@ The runtime is `numeric-ui-core.ts`, index-read's modified copy of the root runt
 
 | File | What it holds |
 | --- | --- |
-| hn-thread's `hn-data.ts`, `comment-doc.ts`, `fake-canvas.ts`, `pretext/`, `text-heights.ts`, `thread-model.ts` | Imported from hn-thread (until September 15, 2026 this folder held unchanged copies): data, parsing, pretext, breakpoints |
+| hn-thread's `hn-data.ts`, `comment-doc.ts`, `fake-canvas.ts`, `text-heights.ts`, `thread-model.ts`, and text-tabulated's `pretext/` | Imported from those folders (until September 15, 2026 this folder held unchanged copies, and until September 16, 2026 pretext came from hn-thread's byte-identical copy): data, parsing, pretext, breakpoints |
 | `numeric-ui-core.ts` | index-read's runtime copy, moved here on September 16, 2026. streaming-words' `kit.ts` and the guide's `examples/indexing/index-read-instruction.ts` import it too |
 | `thread-prepare.ts`, `differential.ts` | Copied from hn-thread unchanged except for import paths: preparation, random states and the scripted session |
 | `thread-frame.ts`, `thread-circuit.ts` | Copied from hn-thread, with slot mode `'none'`, extra source cells, and the exported wires a per-pixel program reads |

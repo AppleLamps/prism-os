@@ -16,7 +16,7 @@ Commands, from the repo root:
 | --- | --- |
 | `hn-data.ts` | Thread 0 of the vibescript demo data: 251 comments, indents 0..10 |
 | `comment-doc.ts` | HN comment HTML to paragraphs of text, italic and link runs, and code blocks, without a DOM |
-| `pretext/` | An unmodified snapshot of pretext's `src/` (commit 477510e of the read-only clone) |
+| text-tabulated's `pretext/` | An unmodified snapshot of pretext's `src/` (commit 477510e of the read-only clone), imported from text-tabulated. Until September 16, 2026 this folder held a byte-identical copy |
 | `fake-canvas.ts` | Deterministic glyph widths for running pretext under bun |
 | `text-heights.ts` | A comment's height from pretext, and its tabulation into width breakpoints |
 | `thread-model.ts` | hn.js layout constants and the static tree tables |

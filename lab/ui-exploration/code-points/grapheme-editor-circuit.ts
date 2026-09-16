@@ -24,7 +24,7 @@ import {
   pick,
   prefixScan,
   tournament,
-} from './integer-circuits.ts'
+} from './grapheme-integer-circuits.ts'
 import {
   cellPacking,
   type EditorConfig,
@@ -36,7 +36,7 @@ import {
   layoutKinds,
   layoutSlotCount,
   movementKinds,
-} from './reference.ts'
+} from './grapheme-reference.ts'
 
 export type SlotLayout = {
   kind: number

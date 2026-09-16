@@ -107,11 +107,11 @@ st.events.keydowns.push(event) // every key event before the next render
 const visibleRows = rows.filter(isVisible) // one DOM node per visible row
 ```
 
-**What the user sees differently.** Only at the maximum, where the named fallback runs. E.g. past 300 steps, every animated object snaps onto its destination, which shows after a stall of about 1.2 s while something still moves. A text field's lines past 12 aren't laid out, and text-editing's demo hides the caret and says why. Extra events in a frame go to another evaluation, which the user never sees.
+**What the user sees differently.** Only at the maximum, where the named fallback runs. E.g. past 300 steps, every animated object snaps onto its destination, which shows after a stall of about 1.2 s while something still moves. A text field's lines past 12 aren't laid out, and the demo in [code-points](lab/ui-exploration/code-points/README.md) says why. Extra events in a frame go to another evaluation, which the user never sees.
 
 **Circuit version.** Give each quantity a maximum and one of these fallbacks: snap, e.g. `advanceFrame` runs a snap evaluation when a frame would need more than `maxStepsPerFrame` steps; carry, e.g. ui.md's backlog of steps; split, e.g. input's JavaScript splits a frame's events into several evaluations; report, e.g. hn-thread's `slotOverflow` output; drop, e.g. rows past the last DOM slot get no node; clamp, e.g. lists' release velocity at ±2^16 px/s; or throw, e.g. the range check on every source cell.
 
-**Cost.** Every capacity is paid on every evaluation, whether or not it's used, e.g. about 210 operations per text cell in text-editing, and about 2,200 operations and 40 layers per press session per evaluation in indirect-os-2's event queue over the whole IndirectOS ([input](lab/ui-exploration/input/README.md#merged-from-indirect-os-2-september-16-2026)).
+**Cost.** Every capacity is paid on every evaluation, whether or not it's used, e.g. about 210 operations per text cell in text-editing's text field ([code-points](lab/ui-exploration/code-points/README.md#merged-from-text-editing-september-16-2026)), and about 2,200 operations and 40 layers per press session per evaluation in indirect-os-2's event queue over the whole IndirectOS ([input](lab/ui-exploration/input/README.md#merged-from-indirect-os-2-september-16-2026)).
 
 **Why choose it.** The program keeps a fixed size, and so does its backward pass, e.g. 562 operations per frame for differentiability.md's spring built on a matrix power, whether the frame runs 2 steps or 300. A fallback turns a limit into defined behavior that a JavaScript reference can reproduce, e.g. lists' JavaScript reference clamps the release velocity the way the circuit does.
 

@@ -385,7 +385,7 @@ Obstacles should be the windows' destinations, not their drawn positions. With w
 
 ### The problem
 
-text-editing put a text field's editing model into one circuit, but what counts as a character was computed in JavaScript: JavaScript segmented graphemes, classified each new grapheme with a regex, and gave each one a code from a 96-entry table. Lines could only break at spaces and newlines, so CJK text next to Latin words wrapped differently from pretext in 2,023 of 2,460 layouts.
+[text-editing](../../code-points/README.md#merged-from-text-editing-september-16-2026) put a text field's editing model into one circuit, but what counts as a character was computed in JavaScript: JavaScript segmented graphemes, classified each new grapheme with a regex, and gave each one a code from a 96-entry table. Lines could only break at spaces and newlines, so CJK text next to Latin words wrapped differently from pretext in 2,023 of 2,460 layouts.
 
 ### What moved into the circuit
 

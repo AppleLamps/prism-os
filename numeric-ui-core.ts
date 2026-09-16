@@ -2065,7 +2065,7 @@ function emitGridCompare(
   const emitted: Wire[] = []
   let bit: Wire
   if (endWithBoolean) {
-    // text-editing's one-atom integer comparison: the score
+    // text-editing's one-atom integer comparison, now in code-points' grapheme-integer-circuits.ts: the score
     // 0.5 + (D - offset) × 2^-24, added bias first, is a multiple of 2^-24 within
     // 0.25..0.75 while every partial sum stays within 2^22 grid steps, which FP32
     // represents exactly. So D = 0 scores exactly 0.5 and rounds to 1, and

@@ -8,9 +8,9 @@
 // the staircase stops counting.
 // The pretext copy this script ran with was a session scratch copy of pretext at commit 477510e4,
 // not in the repo; lab/ui-exploration/text-tabulated/pretext/ holds the same files. The fake
-// canvas is text-editing's (the scratch copy this script used was the same file).
+// canvas is text-editing's, in code-points since September 16, 2026 (the scratch copy this script used was the same file).
 import {resolve} from 'node:path'
-import {installFakeCanvas} from '../text-editing/fake-canvas.ts'
+import {installFakeCanvas} from '../code-points/fake-canvas.ts'
 import {createRandom} from './circuit-tools.ts'
 import {createAppShellTree, textStyles} from './app-shell.ts'
 import {lineCount} from './reference.ts'

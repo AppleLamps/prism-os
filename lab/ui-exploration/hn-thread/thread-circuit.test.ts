@@ -1,7 +1,7 @@
 import {describe, expect, test} from 'bun:test'
 import {installFakeCanvas} from './fake-canvas.ts'
 import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
-import {getEngineProfile} from './pretext/measurement.ts'
+import {getEngineProfile} from '../text-tabulated/pretext/measurement.ts'
 import {thread} from './hn-data.ts'
 import {prepareThread} from './thread-prepare.ts'
 import {commentTextHeight, commentWidthAt, staircaseHeight} from './text-heights.ts'

@@ -7,8 +7,8 @@
 // circuit never runs pretext: the prepare step below finds every container width
 // where a comment's height changes, and the circuit adds one comparison per change.
 
-import {measureLineStats, prepareWithSegments, type PreparedTextWithSegments} from './pretext/layout.ts'
-import {measureRichInlineStats, prepareRichInline, type PreparedRichInline} from './pretext/rich-inline.ts'
+import {measureLineStats, prepareWithSegments, type PreparedTextWithSegments} from '../text-tabulated/pretext/layout.ts'
+import {measureRichInlineStats, prepareRichInline, type PreparedRichInline} from '../text-tabulated/pretext/rich-inline.ts'
 import type {HNCommentDoc} from './comment-doc.ts'
 import {threadLayout} from './thread-model.ts'
 

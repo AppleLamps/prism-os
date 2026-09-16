@@ -83,7 +83,7 @@ This section's [first-visible-row.ts](../examples/loops/first-visible-row.ts) bu
 - hn-thread's row under the pointer is the count of row bottoms at or above the pointer: 252 comparisons at 251 comments.
 - The gallery's scroll anchor: index.ts steps through the first photo of each row until that photo's bottom is more than a fifth of the window height below the scroll position. Those bottoms increase row by row, so the circuit counts them instead.
 - text-walker's line end: for a line that starts at segment s, the bits "segments s through j fit on the line" read `1...1 0...0` as j grows, because segment widths are never negative.
-- text-editing's click to place the caret: the count of glyphs whose center is left of the pointer, since glyph centers never decrease along a line.
+- [text-editing](../../code-points/README.md#merged-from-text-editing-september-16-2026)'s click to place the caret: the count of glyphs whose center is left of the pointer, since glyph centers never decrease along a line.
 - lists' release velocity: the demo's loop walks back through pointer samples while they're within 100 ms of the newest one. "Sample `age` is within 100 ms" isn't monotone when timestamps arrive out of order, but "every sample from the newest through `age` is within 100 ms", `[inWindow[0] + ... + inWindow[age] >= age + 1]`, is monotone, and its neighbor differences mark the oldest sample to use.
 
 ## 2. When the test isn't monotone: the first hit

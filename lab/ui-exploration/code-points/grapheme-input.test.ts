@@ -1,9 +1,9 @@
 import {expect, test} from 'bun:test'
-import {createEditorMachine} from './editor-circuit.ts'
-import {eventForPointer, eventsForKey, eventsForText, takeFrameEvents} from './keyboard.ts'
-import {projectFrame, selectedText} from './projection.ts'
-import {classCodes, type EditorConfig, type EditorState, referenceLayout, unpackCell} from './reference.ts'
-import {classifyGrapheme, createWidthTable, encodeText, segmentGraphemes} from './width-table.ts'
+import {createEditorMachine} from './grapheme-editor-circuit.ts'
+import {eventForPointer, eventsForKey, eventsForText, takeFrameEvents} from './grapheme-keyboard.ts'
+import {projectFrame, selectedText} from './grapheme-projection.ts'
+import {classCodes, type EditorConfig, type EditorState, referenceLayout, unpackCell} from './grapheme-reference.ts'
+import {classifyGrapheme, createWidthTable, encodeText, segmentGraphemes} from './grapheme-width-table.ts'
 
 const measure = (text: string) => text === 'W' ? 12.3 : 7.5
 

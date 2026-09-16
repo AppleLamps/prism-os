@@ -31,8 +31,8 @@ Every circuit imports the shared runtime, `numeric-ui-core.ts`, with a relative 
 | `session.ts` | Chunks at timestamps, frames with fixed 4 ms spring steps, and Stop at the press's timestamp |
 | `spring-reference.ts` | Float64 spring iteration with the circuit's settle rule and gates |
 | `generated.ts`, `codegen.ts` | Generated JS through codegen's generator, copied with one change: gather computes are loops over position tables |
-| `kit.ts`, `word-springs.ts` | Copied from text-walker. kit.ts lists its changes at the top; word-springs.ts is unchanged |
-| text-walker's `fake-canvas.ts` and `pretext-src/`, index-read's `numeric-ui-core.ts` (in pixel-output since September 16, 2026) | Imported from those folders (until September 15, 2026 this folder held unchanged copies, with index-read's runtime as `numeric-ui-core-index-read.ts`) |
+| `kit.ts` | Copied from text-walker, with its changes listed at the top |
+| text-walker's `fake-canvas.ts`, `word-springs.ts` and `pretext-src/`, index-read's `numeric-ui-core.ts` (in pixel-output since September 16, 2026) | Imported from those folders (until September 15, 2026 this folder held unchanged copies, with index-read's runtime as `numeric-ui-core-index-read.ts`, and until September 16, 2026 an unchanged copy of `word-springs.ts`) |
 | `samples.ts` | The replies, the conversation shapes, and a build helper that sizes the bounds from the texts |
 | `chat-demo.ts`, `demo.html`, `demo.ts`, `demo.css` | The demo |
 | `stream-layout.test.ts`, `stream-springs.test.ts`, `chat-demo.test.ts` | The tests |
@@ -69,7 +69,7 @@ An arriving word could start at its own place and fade in ('in-place'), or start
 
 ### 3. A conversation
 
-JS writes turnStart = 1 at the first segment of every new turn. The walker adds `turnOffset = 4096` into the prefix sums at every turn start, the way text-editing adds a newline offset into its position keys. For a line starting at segment s, the fit span of any later segment then includes 4096 for every turn start in between, so no line reaches past a turn start. The prefix read at a line start includes that start's own offset, so a line that begins at a turn start still fits its own words, and x within a turn doesn't change.
+JS writes turnStart = 1 at the first segment of every new turn. The walker adds `turnOffset = 4096` into the prefix sums at every turn start, the way [text-editing](../code-points/README.md#merged-from-text-editing-september-16-2026) adds a newline offset into its position keys. For a line starting at segment s, the fit span of any later segment then includes 4096 for every turn start in between, so no line reaches past a turn start. The prefix read at a line start includes that start's own offset, so a line that begins at a turn start still fits its own words, and x within a turn doesn't change.
 
 Each segment's turn index is a Brent-Kung prefix count of turn starts, turned into an integer one-hot over the turns. For turn r:
 

@@ -14,7 +14,7 @@ import {
 // pretext (https://github.com/chenglou/pretext) isn't in the repo: loadPretext() reads
 // PRETEXT_SRC, and the tests skip when the variable is unset. Loading it by default would
 // install the stub OffscreenCanvas for the whole `bun test lab` process, where the
-// text-tabulated, text-editing and hn-thread tests install fake canvases of their own.
+// text-tabulated and hn-thread tests install fake canvases of their own.
 const pretext = await loadPretext()
 
 test.skipIf(pretext === null)('pretext line breaking scores label fit inside the scoring loop', () => {

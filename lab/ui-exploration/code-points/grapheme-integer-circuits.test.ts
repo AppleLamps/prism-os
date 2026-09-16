@@ -13,7 +13,7 @@ import {
   prefixScan,
   suffixScan,
   integerMinimum,
-} from './integer-circuits.ts'
+} from './grapheme-integer-circuits.ts'
 
 function createRandom(seed: number) {
   let state = seed >>> 0

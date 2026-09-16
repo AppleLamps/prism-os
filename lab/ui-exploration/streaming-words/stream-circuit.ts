@@ -31,7 +31,7 @@ import {
   type Runtime,
 } from './kit.ts'
 import {buildWalker, maximumLineWidth, maximumSegmentWidth, type Walker} from './stream-walker.ts'
-import {emitStepMatrix, emitWordSpring, type SpringConfig} from './word-springs.ts'
+import {emitStepMatrix, emitWordSpring, type SpringConfig} from '../text-walker/word-springs.ts'
 
 // How lineCount reads the arrived count:
 //   'one-hot'     an integer one-hot of arrivedCount and a masked read of lineIndex at arrivedCount - 1

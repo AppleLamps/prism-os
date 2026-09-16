@@ -7,7 +7,7 @@
 // the display outputs. Strings never enter; JS iterates code points, measures new ones, and fills
 // tables.
 //
-// Copied from lab/ui-exploration/text-editing/editor-circuit.ts. What changed: cells hold code points
+// Copied from text-editing's editor circuit, grapheme-editor-circuit.ts here. What changed: cells hold code points
 // instead of packed grapheme codes; decoding reads tables instead of floors and comparisons; break
 // opportunities come from the pair table instead of the space class; pasted code points go into cells
 // directly instead of through a one-hot lookup; and positionReads: 'index' reads tables at counts the

@@ -65,7 +65,8 @@ export function emitAtLeastByRounding(circuit: Circuit, a: Wire, b: Wire, option
   return bit
 }
 
-// text-editing's one-operation integer comparison: [sum >= 0] as one boolean atom on the score
+// text-editing's one-operation integer comparison, now in code-points' grapheme-integer-circuits.ts:
+// [sum >= 0] as one boolean atom on the score
 // 0.5 + sum * 2^-24 / gridStep. The builder adds the bias first and then the terms in wire order.
 // When every value is a multiple of gridStep and every partial sum stays within 2^22 grid steps,
 // every partial score is a multiple of 2^-24 between 0.25 and 0.75, which FP32 represents exactly.

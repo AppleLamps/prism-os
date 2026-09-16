@@ -6,7 +6,7 @@ import {buildForTurns, conversationTurns, replyTurns, rightAlignedTurns, testFon
 import {StreamSession, timedChunks} from './session.ts'
 import {referenceWordsFromTable, referenceWordsStep, wordDrift} from './spring-reference.ts'
 import {layoutFlow, layoutMismatches, referenceLayout, type ChunkMode, type Turn} from './stream-model.ts'
-import {defaultSpringConfig} from './word-springs.ts'
+import {defaultSpringConfig} from '../text-walker/word-springs.ts'
 
 const pretext = await loadPretext()
 const maxWidth = 240

@@ -1,6 +1,6 @@
 // Shared random inputs for the differential tests and the report.
 
-import {classCodes, type EditorConfig, type EditorEvent, type FieldGeometry, type KeyKind, packCell} from './reference.ts'
+import {classCodes, type EditorConfig, type EditorEvent, type FieldGeometry, type KeyKind, packCell} from './grapheme-reference.ts'
 
 export function createRandom(seed: number) {
   let state = seed >>> 0

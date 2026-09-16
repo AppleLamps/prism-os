@@ -18,7 +18,7 @@ bun lab/ui-exploration/text-walker/demo.html
 
 The tests (18 tests, about 1.7 seconds) check every circuit against pretext. report.ts prints the tables below; its `fast` part builds 1023-segment circuits and takes about a minute. The demo page is a paragraph flowing around a draggable window with a spring per word.
 
-`pretext-src/` is a copy of pretext's `src/` (analysis, bidi, entry-geometry, layout, line-break, line-text, measurement and the generated tables) from commit 477510e of the clone in the phase 2 scratchpad, so the tests don't depend on a temporary folder. The runtime is the shared `numeric-ui-core.ts`, unchanged.
+`pretext-src/` is a copy of pretext's `src/` (analysis, bidi, entry-geometry, layout, line-break, line-text, measurement and the generated tables) from commit 477510e of the clone in the phase 2 scratchpad, so the tests don't depend on a temporary folder. It has the same files as text-tabulated's `pretext/`, but stays a separate copy: `bun test` shares modules between test files, and pretext keeps the engine profile and measuring canvas it creates first, so the Gecko profile that this folder's and streaming-words' tests install needs its own module. The runtime is the shared `numeric-ui-core.ts`, unchanged.
 
 Headless checks run pretext with a deterministic fake canvas (`fake-canvas.ts`, adapted from phase 1). Its widths are multiples of 1/4 px, so float64 and FP32 prefix sums agree exactly. They also use the Gecko engine profile: `lineFitEpsilon` 0.005, no return from an unfit soft hyphen, and no skipping of narrow tab stops.
 

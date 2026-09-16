@@ -2,7 +2,7 @@
 // appears, with its class and its advance measured once and rounded to layout units. The circuit
 // only ever sees codes and packed table entries; adding a grapheme writes one more table cell.
 
-import {classCodes, packCell} from './reference.ts'
+import {classCodes, packCell} from './grapheme-reference.ts'
 
 export type MeasureText = (text: string) => number
 

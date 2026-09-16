@@ -2,9 +2,9 @@
 // per glyph, a caret rectangle, and one selection rectangle per line. The only arithmetic here is
 // converting layout units to pixels and multiplying line indices by the line height.
 
-import type {EditorFrame} from './editor-circuit.ts'
-import {unpackCell} from './reference.ts'
-import {decodeCells, type WidthTable} from './width-table.ts'
+import type {EditorFrame} from './grapheme-editor-circuit.ts'
+import {unpackCell} from './grapheme-reference.ts'
+import {decodeCells, type WidthTable} from './grapheme-width-table.ts'
 
 export type GlyphView = {cell: number, text: string, left: number, top: number, width: number}
 export type RectangleView = {left: number, top: number, width: number, height: number}
