@@ -17,6 +17,7 @@ import {
   windowOutputField,
   windowSourceField,
   windowStateField,
+  wordOutputField,
 } from './window-manager.ts'
 import {itemCount as photoCount, photoField, thumbnailSpringField} from './photo-gallery.ts'
 
@@ -323,12 +324,15 @@ function createRandomAction(
 
 // Checks every declared and inferred grid on every evaluation's table, e.g. that
 // stored window geometry stays on the 1/64 px grid, which the hit tests' integer
-// bits rely on.
+// bits rely on. The values come from the compiled program, which leaves the wires
+// it removed at 0: the reference evaluator would also run the masked products
+// that gather lowering replaces, about 100,000 operations for the Notes flow's
+// line walker, on every evaluation.
 function checkGridsOnEveryEvaluation(machine: Machine) {
   const counts = {evaluations: 0}
   machine.observe({
     beforeEvaluate(table) {
-      validateGrids(machine.circuit, machine.circuit.evaluateReference(table))
+      validateGrids(machine.circuit, machine.circuit.evaluateTensor(table))
       counts.evaluations++
     },
   })
@@ -1069,6 +1073,16 @@ function createSessionEvents() {
   press(499, 76, 7103.3, 7151.7)
   events.push({kind: 'resize', width: 1000, height: 700, timeStamp: 7803.6})
   events.push({kind: 'resize', width: 1280, height: 800, timeStamp: 8203.1})
+  // Drag Photos, which the 1000 px viewport moved to left 440 and which is stacked
+  // above Notes, right by its title bar until the viewport clamps it at left 720.
+  // The Notes paragraph reflows at each move, around where Photos is going.
+  time = 8503.3
+  pointerX = 700
+  events.push({kind: 'down', x: pointerX, y: 212, timeStamp: time})
+  for (let index = 0; index < 10; index++) {
+    events.push({kind: 'move', x: pointerX += 30, y: 212, timeStamp: time += 4})
+  }
+  events.push({kind: 'up', x: pointerX, y: 212, timeStamp: time + 4})
   return events
 }
 
@@ -1087,9 +1101,10 @@ function sessionFrameTimes(hz: number, stall?: {startMs: number, lengthMs: numbe
 }
 
 type SessionRun = {
-  // Every evaluation that wrote state back, with the table after it.
-  commits: {kind: string, timeMs: number, events: string[], table: Float32Array}[]
-  // Each frame's window, dock, Photos and animationActive outputs.
+  // Every evaluation that wrote state back, with the table after it and the Notes
+  // words it laid out.
+  commits: {kind: string, timeMs: number, events: string[], table: Float32Array, words: Float32Array}[]
+  // Each frame's window, dock, Photos, Notes and animationActive outputs.
   frames: Map<number, Float32Array>
   mostStepsInOneFrame: number
   // Times of the evaluations after which nothing animated anymore.
@@ -1099,6 +1114,11 @@ type SessionRun = {
   destinationMismatches: number
   // The kind of each evaluation that applied a resize.
   resizeEvaluationKinds: string[]
+  // Evaluations without an event whose Notes words differed from the evaluation
+  // before. Words are laid out around destinations, so they change only at events.
+  wordMovesWithoutEvent: number
+  // Distinct word layouts over the session.
+  wordLayouts: Set<string>
 }
 
 function runSession(frameTimes: readonly number[], writeBack: WriteBack): SessionRun {
@@ -1112,6 +1132,7 @@ function runSession(frameTimes: readonly number[], writeBack: WriteBack): Sessio
     ...machine.output.photos.thumbnails,
     ...machine.output.photos.previousControl,
     ...machine.output.photos.nextControl,
+    ...machine.output.notes.words,
   ]
   // Each window stores 5 springs as displacement, velocity and destination, and
   // each thumbnail stores 2 destinations.
@@ -1129,20 +1150,27 @@ function runSession(frameTimes: readonly number[], writeBack: WriteBack): Sessio
     clockStops: [],
     destinationMismatches: 0,
     resizeEvaluationKinds: [],
+    wordMovesWithoutEvent: 0,
+    wordLayouts: new Set(),
   }
   let animating = false
+  let lastWords: Float32Array | null = null
   checkGridsOnEveryEvaluation(machine)
   machine.observe({
     afterEvaluate(values, table, evaluation) {
       const eventKinds = evaluation.events.map(event => event.kind)
       if (eventKinds.includes('resize')) run.resizeEvaluationKinds.push(evaluation.kind)
+      const words = Float32Array.from(machine.output.notes.words, wire => values[wire]!)
+      if (eventKinds.length === 0 && lastWords !== null && differingBits(words, lastWords) > 0) run.wordMovesWithoutEvent++
+      lastWords = words
+      run.wordLayouts.add(words.join(','))
       if (!evaluation.writesBack) {
         for (const cell of destinationCells) {
           if (values[machine.output.nextSource[cell]!] !== table[cell]) run.destinationMismatches++
         }
         return
       }
-      run.commits.push({kind: evaluation.kind, timeMs: evaluation.timeMs, events: eventKinds, table: Float32Array.from(table)})
+      run.commits.push({kind: evaluation.kind, timeMs: evaluation.timeMs, events: eventKinds, table: Float32Array.from(table), words})
       const nowAnimating = values[machine.output.animationActive]! > 0
       if (animating && !nowAnimating) run.clockStops.push(evaluation.timeMs)
       animating = nowAnimating
@@ -1210,7 +1238,21 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   )
   const photoClick = baseline.commits.find(commit => commit.events.includes('photo click') && commit.timeMs > 4800)!
   assert.equal(photoClick.table[photoFocusSourceField(5)], 1)
+  assert.equal(final[windowSourceField(3, windowStateField.left)], 720)
   assert.equal(baseline.clockStops.length > 5, true)
+  // The Notes paragraph reflowed at events only: at the press that maximizes Photos
+  // over it, no word is laid out; after the restore press, words are laid out
+  // again; and the drag of Photos gave a new layout at each move.
+  const wordVisible = (commit: SessionRun['commits'][number]) => Array.from({length: commit.words.length / wordOutputField.size}, (_, word) => commit.words[word * wordOutputField.size + wordOutputField.visible]!)
+  const commitAt = (timeStamp: number, kind: string) => baseline.commits.find(commit => commit.timeMs === quantizeTimeMs(timeStamp) && commit.events.includes(kind))!
+  assert.ok(wordVisible(commitAt(2803.7, 'pointer down')).every(visible => visible === 0))
+  assert.ok(wordVisible(commitAt(4003.2, 'pointer down')).some(visible => visible === 1))
+  assert.equal(baseline.wordMovesWithoutEvent, 0)
+  assert.ok(baseline.wordLayouts.size >= 12, `${baseline.wordLayouts.size} word layouts`)
+  const photosDragCommits = baseline.commits.filter(commit => commit.timeMs > 8500 && commit.events.includes('pointer move'))
+  assert.equal(photosDragCommits.length, 10)
+  const dragLayouts = new Set(photosDragCommits.map(commit => commit.words.join(','))).size
+  assert.ok(dragLayouts >= 5, `${dragLayouts} word layouts during the Photos drag`)
 
   const stall = {startMs: 2900, lengthMs: 500}
   const runs = [
@@ -1232,6 +1274,7 @@ test("with 'events and settle checks', the session commits bit-identical tables 
     assert.ok(run.mostStepsInOneFrame <= 300)
     assert.equal(run.commits.some(commit => commit.kind === 'snap'), false)
     assert.equal(run.destinationMismatches, 0)
+    assert.equal(run.wordMovesWithoutEvent, 0)
     // One 'events' evaluation per resize event: step() adds no resize of its own.
     assert.deepEqual(run.resizeEvaluationKinds, ['events', 'events', 'events', 'events'])
     // The page can deliver the Photos click at this rate: the content box of the

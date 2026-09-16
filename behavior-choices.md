@@ -74,6 +74,29 @@ previousContainerWidth = containerWidth.pos // stored with the rest of the state
 
 **Contract, long form, tests.** execution-model.md's [In the program](execution-model.md#in-the-program), for the position right after the steps, and [Which evaluations write state back](execution-model.md#which-evaluations-write-state-back); [read-last-frame.md](lab/ui-exploration/guide/patterns/read-last-frame.md), and chains.md's [way 4](lab/ui-exploration/guide/sections/chains.md#way-4-read-last-frames-value), which covers retiming's measurements in IndirectOS; tested by [read-last-frame.test.ts](lab/ui-exploration/guide/examples/patterns/fewer-dependencies/read-last-frame.test.ts).
 
+## Flow text around destinations, in a fixed number of lines
+
+In IndirectOS, the Notes paragraph flows around the windows stacked above it. The text is laid out around each window's destination rectangle, where its springs are heading, and around the windows that are visible after this evaluation's events, so the paragraph reflows once per event instead of once per animated frame. The flow has a fixed number of line slots, 16, and lines past the last usable slot aren't laid out. ui.md doesn't document text flowing around moving elements; the lab's [indirect-os-2](lab/ui-exploration/indirect-os-2/README.md) compared this choice with obstacles read from the drawn frames and from the stepped springs.
+
+```js
+// familiar: reflow every frame around the windows as they're drawn
+obstacles = windows.filter(window => window.drawnOpacity > 0 && window.stack > notes.stack).map(window => window.drawnRect)
+// the choice: reflow at events, around where each window is going, e.g. the maximized rectangle from the press on
+obstacles = windows.filter(window => window.visibleAfterEvents && window.stack > notes.stack).map(window => window.destinationRect)
+```
+
+**What the user sees differently.** The words jump to their final places in the frame of the event, while the windows still animate: at a maximize press the paragraph clears the window's final rectangle before the frame covers it, and at a minimize or close press the text fills the area of a window that is still flying to the dock. Dragging a window over the paragraph reflows it at every move, since each move changes the destination. Lines that don't fit are not drawn: with the paragraph's 45 words and 16 slots, three overlapping windows can leave slots too narrow for the whole paragraph, and a slot that ends below the content box is skipped instead of clipped. At the default arrangement, Photos and System Monitor leave 7 lines of 205 px, and the last 10 words aren't laid out; the `truncated` output says so.
+
+**Circuit version.** notes.ts reads each window's next destination rectangle, next visibility and next stacking, the same wires that Photos lays out against. Each band's blocking bits form a one-hot over the 8 subsets of the 3 obstacles, whose slot is carved once per subset, and a band is also unusable when its bottom lies below the destination content height. notes-walker.ts then walks the paragraph band by band over the measured widths, with an integer one-hot per band start and gather-lowered reads of the prefix tables, and gives every word an x, a y and a visible bit. Words carry no state, so nothing about them is written back.
+
+**Cost.** In IndirectOS, 10,078 live operations, 152 more layers and 22,826 stored weights on top of the windows and Photos, plus 179 source cells for the measured widths and break bits. Most of it is the walker, about 550 operations per band, paid on every evaluation whether or not the band is used.
+
+**Why choose it.** Word positions are a pure function of stored destinations and the paragraph's measurement, so they change only in evaluations that apply events, and the session test finds them bit-identical at 10, 30, 60 and 120 fps. Read from the drawn frames instead, the lab measured the text reflowing in 8 frames with no event during a maximize, and frame-rate dependent word positions.
+
+**Don't use it when.** The text should visibly flow with a moving frame, e.g. a caption inside a dragged card. The paragraph must always be complete: raise the band count, at about 550 operations per band, or lay it out in JavaScript.
+
+**Contract, long form, tests.** execution-model.md's [Static bounds](execution-model.md#static-bounds); indirect-os-2's README, [section 4](lab/ui-exploration/indirect-os-2/README.md#4-the-notes-flow) and [Words without springs](lab/ui-exploration/indirect-os-2/README.md#words-without-springs-2026-09-15); tested by [notes.test.ts](notes.test.ts), which checks settled flows against pretext's `layoutNextLineRange` line for line and word for word, the height gate and the truncation, and by window-manager.test.ts's session, where the words change only at events.
+
 ## A fixed maximum with a named fallback
 
 A program's size is fixed while building, so every count that JavaScript keeps in a growing array or a loop variable becomes a maximum, and what the program does past the maximum is part of the behavior. ui.md caps a frame's spring steps at 300 in "Render Loop", following Animation.md's "Spiral of Death Prevention", and carries the rest of the backlog into later frames, while host-timing.ts snaps instead. When every occurrence counts, ui.md's "Event Handling" pushes events onto an array with no maximum.

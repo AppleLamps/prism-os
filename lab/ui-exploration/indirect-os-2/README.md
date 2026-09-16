@@ -10,6 +10,8 @@ Update, 2026-09-15: the word springs were removed, so words move straight to the
 
 Update, September 15, 2026: window-manager.ts moved to host-timed springs, so `base.test.ts` and `pair-traces.ts` import the pre-change IndirectOS from codegen's `window-manager-copy.ts`.
 
+Update, September 15, 2026: the Notes flow of configuration 4 (obstacles from destinations, words without springs) now lives in root IndirectOS, as `notes.ts`, `notes-walker.ts` and `notes-paragraph.ts` next to `window-manager.ts`, measured with the npm package `@chenglou/pretext` and checked against its `layoutNextLineRange` in the root `notes.test.ts`. Root adds one rule: a band whose bottom lies below the Notes content box is unusable, see the root behavior-choices.md. Root IndirectOS is the one IndirectOS from here on; this folder stays as the record of the exploration, with its code unchanged.
+
 ## What it is and how to run it
 
 From ~/github/indirect:

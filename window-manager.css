@@ -351,6 +351,24 @@ body {
   font-size: 12px;
 }
 
+/* The Notes paragraph as one span per word, positioned by the circuit in the
+   content box's coordinates. */
+.notes-flow {
+  padding: 0;
+}
+
+.notes-word {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: rgb(255 248 224 / 72%);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  line-height: 22px;
+  white-space: pre;
+  pointer-events: none;
+}
+
 .monitor-content {
   padding: 18px;
   background:

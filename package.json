@@ -20,5 +20,8 @@
     "oxlint": "latest",
     "oxlint-tsgolint": "latest",
     "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "@chenglou/pretext": "0.0.9"
   }
 }
