@@ -141,7 +141,7 @@ Then try three instructions or several task families. If trying conditional inst
 
 This would be my main UI experiment. It connects the original smaller-unit idea to something the current experiments have not established: learning that transfers between content and contexts.
 
-There is already a shared neural function in [trainable-geometry.ts](../trainable-geometry.ts). Its inputs are baked-in slot-position features. Build on that work by supplying changing viewport and item features, instead of presenting a new network as though the project had never learned shared weights.
+There is already a shared neural function in [trainable-geometry.ts](learned-gallery/trainable-geometry.ts). Its inputs are baked-in slot-position features. Build on that work by supplying changing viewport and item features, instead of presenting a new network as though the project had never learned shared weights.
 
 Start with required photos and real captions. Supply each item's aspect ratio, measured text requirements, importance, and stable identity, plus viewport size. Keep the required items and their importance outside the optimizer's control. Fix reading order initially; use scrolling when everything cannot fit on one screen, rather than quietly deleting content.
 

@@ -61,11 +61,11 @@ import {
 // This layout, ground truth, and case machinery originally lived in the
 // surrogate-gradient experiment (exp-ste-reveal.ts), which this experiment
 // superseded; the scaffolding moved here when that file was removed. See
-// research-sweep.md for the supersession record.
+// lab/research-sweep.md for the supersession record.
 
 export const slotCount = 6
 
-// Deterministic LCG, matching trainable-geometry.ts.
+// Deterministic LCG, matching lab/learned-gallery/trainable-geometry.ts.
 export function createRandom(seed: number) {
   let state = seed >>> 0
   return () => {

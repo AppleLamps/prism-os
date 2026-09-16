@@ -14,6 +14,8 @@ During the exploration, nothing outside this folder changed: `numeric-ui-core.ts
 
 Update, September 14, 2026: the repo root `numeric-ui-core.ts` has since gained an index read instruction (`indexRead`, `indexReadAffine`), the comparison helper `emitCompare` with declared grids and rounding point records (`assumeGrid`, `markRoundingPoint`, `roundingPoints`), and springs whose step matrix JavaScript writes into source cells (`emitApplySpringMatrix`, `emitAnimatedObject`). A new repo root file, `host-timing.ts`, computes what JavaScript writes before each evaluation, e.g. frame durations, event times and the spring matrix. See decisions 1 to 3 in [the guide's decision record](guide/review-and-decisions.md#decisions-for-you). The prototypes below were built on the root runtime as it was at commit a915dcb, or on copies inside their folders.
 
+Update, September 16, 2026: 8 of the 24 prototype folders and the notes were removed, or merged into the folders that remain, since root IndirectOS or a remaining folder has what they built. [Folders](#folders) says where each one went. Links to removed folders point at the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration).
+
 ## Short answer
 
 Most of the UI logic the prototypes ported became a circuit: window management, fixed-step springs with catch-up, a virtualized list, drag-to-reorder cards, flick to a snap target, several pointer events per frame, keyboard focus and menus, Clay-style app layout, chenglou.github.io's 221-photo gallery, the nicer-hacker-news comment thread, a text field's editing model (insert and delete, caret and word movement, shift-selection, paste, wrapping at spaces and newlines, click to place the caret), and pretext's line walker itself, flowing text around a draggable window with a spring per word. Not ported: vibescript's scroll-anchor demo (keeping item identity when items are inserted), mobile-test-standalone, spring-comparison, the two global illumination demos, and hn.js's search, highlights, and selection.
@@ -65,21 +67,21 @@ Operations are live operations after compilation. For scale, IndirectOS was 5,25
 
 | UI area | Prototype | Size (operations / layers) | Checked against | What stayed outside |
 | --- | --- | --- | --- | --- |
-| Window manager, rewritten in a notation | [notation](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notation) | identical to IndirectOS | the original machine, 6.6M values bit for bit | text, CSS styling, node lifetime |
-| Springs with fixed steps and catch-up | [spring-bank](event-time/README.md#merged-from-spring-bank-september-16-2026) | IndirectOS copy 3,580 / 137 | float64 loops per frame from the circuit's destinations, within 7.8e-5 px (free-running standalone: 3.4e-3 px) | absolute timestamps |
+| Window manager, rewritten in a notation | [notation](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notation), removed on September 16, 2026 | identical to IndirectOS | the original machine, 6.6M values bit for bit | text, CSS styling, node lifetime |
+| Springs with fixed steps and catch-up | [spring-bank](event-time/README.md#merged-from-spring-bank-september-16-2026), now in event-time | IndirectOS copy 3,580 / 137 | float64 loops per frame from the circuit's destinations, within 7.8e-5 px (free-running standalone: 3.4e-3 px) | absolute timestamps |
 | Virtualized list, 10,000 rows | [lists](lists/) | 280 / 19 at any row count, row data kept in JS (20,305 operations with row data in source cells) | every quarter-pixel scrollTop | row labels, scroll events |
 | Drag-to-reorder cards | [lists](lists/) | 36,207 at 100 cards (incremental layout) | the demo's render() transcribed, with a velocity clamp and a 24-sample buffer added; 284,000 frames at 5 to 100 cards | coalesced events |
 | Several pointer events per frame | [input](input/) | 1,494 / 55 for 16 events with at most 2 presses | a one-event-at-a-time oracle | key strings, `preventDefault` |
 | Keyboard focus and menus | [input](input/) | menu bar: 536 operations and 11 layers per event slot | an oracle, 24,000 frames | the `focus()` call |
 | App layout (Clay passes) | [layout-tree](layout-tree/) | app shell 2,806 / 115 | a float64 reference over random trees | text measurement |
-| 221-photo gallery | [gallery](instanced-items/README.md#merged-from-gallery-september-16-2026) | 48,411 / 61 | native index.ts, 2 million decisions, plus an edge probe | URL hash, scrollTo, images |
+| 221-photo gallery | [gallery](instanced-items/README.md#merged-from-gallery-september-16-2026), now in instanced-items | 48,411 / 61 | native index.ts, 2 million decisions, plus an edge probe | URL hash, scrollTo, images |
 | Comment thread | [hn-thread](hn-thread/) | 53,703 / 69 at 251 comments | a reference from hn.js, 13 million decisions | innerHTML, links, selection |
 | Text heights and painted lines | [text-tabulated](text-tabulated/) | Notes window 2,030 / 48 | pretext at every frame of resize traces | prepare and tabulation |
 | Text flowing around a window | [text-walker](text-walker/) | 14,760 / 215 (95 segments, 96 word springs) | pretext's layoutNextLineRange | prepare |
-| Text field editing | [text-editing](code-points/README.md#merged-from-text-editing-september-16-2026) | 54,431 / 239 for one key at 256 characters | a plain JS editor, 35,000 frames | graphemes, clipboard, IME |
+| Text field editing | [text-editing](code-points/README.md#merged-from-text-editing-september-16-2026), now in code-points | 54,431 / 239 for one key at 256 characters | a plain JS editor, 35,000 frames | graphemes, clipboard, IME |
 | Per-pixel maps and shapes | [codegen](codegen/) | 458 operations / 23 layers per pixel, for which IndirectOS window receives a press at each pixel | a float64 stack walk over 1M pixels | painting the canvas |
 | Numeric functions | [numeric-library](numeric-library/) | comparison 4 (one rounding stage, see [Decision bits](../../expressions.md#decision-bits)), reciprocal 50, sin/cos 34 | dense sampling against native JS | division across zero, operands without finite ranges (log, pow, atan2 not built) |
-| Reading at an integer index | [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read) | 1 per read | the dense relu one-hot | writes to a computed index |
+| Reading at an integer index | [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read), removed on September 16, 2026 | 1 per read | the dense relu one-hot | writes to a computed index |
 
 ## Where it got awkward
 
@@ -178,36 +180,39 @@ Agents opened every demo page in Chrome on September 13 and 14, 2026, and fixed 
 
 ## Folders
 
-Each folder's README has how to run its tests, report, and demo. Run commands from the repo root. `bun test lab/ui-exploration` runs every prototype's tests: 429 tests across 76 files passed in about 35 s on the morning of September 13. The same command now also runs the guide's example tests.
+Each folder's README has how to run its tests, report, and demo. Run commands from the repo root. `bun test lab/ui-exploration` runs every prototype's tests: 429 tests across 76 files passed in about 35 s on the morning of September 13. The same command now also runs the guide's example tests. On September 16, 2026, after the removals, it ran 536 tests across 91 files, all passing, in about 35 s.
 
 | Folder | What it is |
 | --- | --- |
-| [notes](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notes) | phase 1 maps (runtime, IndirectOS, lab, doctrine, demos, pretext, outside techniques), talk lens notes, browser check; removed on September 16, 2026 |
 | [guide](guide/) | plain explanations of the concepts, with runnable examples checked against plain JavaScript |
 | [text-walker](text-walker/) | pretext's line walker as circuit arithmetic, flow around a window, word springs |
 | [text-tabulated](text-tabulated/) | pretext results as step functions of width, a Notes window |
-| [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read) | a read-at-integer-index instruction in a runtime copy; removed on September 16, 2026, since the root runtime has the instruction: its runtime copy moved into pixel-output, `emitFloorDivide` into numeric-library, and its list and line recovery measurements into [lists](lists/README.md#merged-from-index-read-september-16-2026) and [text-walker](text-walker/README.md#merged-from-index-read-september-16-2026) |
-| [spring-bank](event-time/README.md#merged-from-spring-bank-september-16-2026) | fixed-step springs as shared matrix powers, in an IndirectOS copy; merged into event-time on September 16, 2026 |
-| [notation](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notation) | source table allocator, component scopes, struct helpers; IndirectOS rewritten; removed on September 16, 2026, since cells.ts took its declarations |
 | [lists](lists/) | virtualized list, drag-to-reorder cards, capacity routing, flick |
 | [input](input/) | event queues in one evaluation, keyboard focus, menus |
-| [text-editing](code-points/README.md#merged-from-text-editing-september-16-2026) | a text field's editing model inside the circuit; merged into code-points on September 16, 2026 |
 | [layout-tree](layout-tree/) | Clay-style layout passes over a static tree, an app shell |
-| [gallery](instanced-items/README.md#merged-from-gallery-september-16-2026) | chenglou.github.io's photo gallery as one circuit; merged into instanced-items on September 16, 2026 |
 | [hn-thread](hn-thread/) | the nicer-hacker-news thread as one circuit |
 | [codegen](codegen/) | generated JS, the instance axis, WGSL on the GPU |
 | [numeric-library](numeric-library/) | exact comparison, floor, division, sqrt, trig, with contracts |
-| [indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2) | IndirectOS with the notation, spring bank, event queue, generated JS, and text flowing around windows; removed on September 16, 2026, after root IndirectOS took its Notes flow; its queue is in [input](input/README.md#merged-from-indirect-os-2-september-16-2026) and its tiered execution in [codegen](codegen/README.md#merged-from-indirect-os-2-september-16-2026) |
 | [instanced-items](instanced-items/) | per-item programs plus reductions; the gallery at 221 to 10,000 photos, on CPU and GPU |
 | [streaming-words](streaming-words/) | a streamed chat reply where every word springs and a bubble is a reduction over words |
 | [user-population](user-population/) | simulated users running input's window circuit as instances, to choose behavior constants |
 | [drag-knobs](drag-knobs/) | dragging output edges moves design constants through a backward pass, with search and flip queries |
-| [exactness-budget](codegen/README.md#merged-from-exactness-budget-september-16-2026) | perturbed executors over seven UIs; GPU guards only at rounding points; merged into codegen on September 16, 2026 |
 | [event-time](event-time/) | state committed per event, display frames that don't write back, predicted keyframes |
 | [pixel-output](pixel-output/) | the HN thread drawn per pixel, with real glyphs, on CPU and GPU |
 | [learned-bits](learned-bits/) | learning UI decision rules as 2-input gates versus counting units |
 | [code-points](code-points/) | code points in cells, advances and line break rules read from tables |
-| [retiming](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/retiming) | one-frame delays chosen by search against a visible-error budget; removed on September 16, 2026 |
+
+Removed or merged on September 16, 2026, since root IndirectOS or a remaining folder has what they built. Each stays at the exploration-2026-09 tag:
+
+- [notes](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notes): phase 1 maps (runtime, IndirectOS, lab, doctrine, demos, pretext, outside techniques), talk lens notes, and the browser check. [lab/status.md's parked list](../status.md#parked-and-deferred) records their unbuilt proposals.
+- [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read): a read-at-integer-index instruction in a runtime copy. The root runtime has the instruction. The runtime copy moved into pixel-output, `emitFloorDivide` into numeric-library, and the list and line recovery measurements into [lists](lists/README.md#merged-from-index-read-september-16-2026) and [text-walker](text-walker/README.md#merged-from-index-read-september-16-2026).
+- [spring-bank](event-time/README.md#merged-from-spring-bank-september-16-2026): fixed-step springs as shared matrix powers, in an IndirectOS copy. Merged into event-time.
+- [notation](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notation): source table allocator, component scopes, struct helpers, and IndirectOS rewritten with them. cells.ts took its declarations.
+- [text-editing](code-points/README.md#merged-from-text-editing-september-16-2026): a text field's editing model inside the circuit. Merged into code-points.
+- [gallery](instanced-items/README.md#merged-from-gallery-september-16-2026): chenglou.github.io's photo gallery as one circuit. Merged into instanced-items.
+- [indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2): IndirectOS with the notation, spring bank, event queue, generated JS, and text flowing around windows. Root IndirectOS took its Notes flow, its queue is in [input](input/README.md#merged-from-indirect-os-2-september-16-2026), and its tiered execution in [codegen](codegen/README.md#merged-from-indirect-os-2-september-16-2026).
+- [exactness-budget](codegen/README.md#merged-from-exactness-budget-september-16-2026): perturbed executors over seven UIs, and GPU guards only at rounding points. Merged into codegen.
+- [retiming](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/retiming): one-frame delays chosen by search against a visible-error budget.
 
 ## Caveats
 

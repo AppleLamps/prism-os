@@ -84,26 +84,27 @@
       </article>
 
       <article class="card">
-        <h3><a href="/learned-gallery.html">Learned gallery</a></h3>
-        <p class="path">learned-gallery.html</p>
+        <h3><a href="/lab/learned-gallery/learned-gallery.html">Learned gallery</a></h3>
+        <p class="path">lab/learned-gallery/learned-gallery.html</p>
         <p>Backpropagation trains a small geometry network so that its photo layout matches rectangles you sketch.</p>
         <p class="try-label">Try</p>
         <ul>
           <li>In Target, drag a rectangle to move it, drag its corner to scale it, click empty space to add one, or press Delete to remove one; Learned follows.</li>
           <li>Watch the loss in the footer go down while it trains.</li>
         </ul>
-        <p class="links"><a href="/README.md">README</a></p>
+        <p class="links"><a href="/lab/learned-gallery/README.md">README</a></p>
       </article>
 
       <article class="card">
-        <h3><a href="/hard-attend.html">Hard attend walkthrough</a></h3>
-        <p class="path">hard-attend.html</p>
+        <h3><a href="/lab/hard-attend/hard-attend.html">Hard attend walkthrough</a></h3>
+        <p class="path">lab/hard-attend/hard-attend.html</p>
         <p>Reading one of three items with a query: the highest score picks the item, and three ways of reading it are shown side by side.</p>
         <p class="try-label">Try</p>
         <ul>
           <li>Move the query slider or pick a preset, and compare the one-hot gather, the direct gather and the softmax gather.</li>
           <li>Drag the sharpness slider to see the softmax result approach the exact one.</li>
         </ul>
+        <p class="links"><a href="/lab/hard-attend/README.md">README</a></p>
       </article>
 
       <article class="card">
@@ -146,7 +147,7 @@
 
   <section>
     <h2>Overnight prototypes, round 2</h2>
-    <p class="section-note">Each folder's README has measurements and a "Browser check" section. Overview: <a href="/lab/ui-exploration/README.md">lab/ui-exploration/README.md</a>.</p>
+    <p class="section-note">Each folder's README has measurements and a "Browser check" section. Overview: <a href="/lab/ui-exploration/README.md">lab/ui-exploration/README.md</a>. The demos of index-read, spring-bank, notation, text-editing, gallery and indirect-os-2, removed on September 16, 2026, run from a checkout of the <a href="https://github.com/chenglou/indirect/tree/exploration-2026-09">exploration-2026-09 tag</a>.</p>
     <div class="cards">
       <article class="card">
         <h3><a href="/lab/ui-exploration/text-walker/demo.html">text-walker</a></h3>
@@ -171,70 +172,6 @@
           <li>Press the autopilot button; the check panel should keep reporting 0 frames with a wrong line break against pretext.</li>
         </ul>
         <p class="links"><a href="/lab/ui-exploration/text-tabulated/README.md">README</a></p>
-      </article>
-
-      <article class="card">
-        <h3><a href="/lab/ui-exploration/index-read/demo.html">index-read</a></h3>
-        <p class="path">lab/ui-exploration/index-read/demo.html</p>
-        <p>A runtime copy with an instruction that reads a table at an integer index: a 10,000-row list filled through 24 DOM slots, and a 221-photo strip centered on the focused photo.</p>
-        <p class="try-label">Try</p>
-        <ul>
-          <li>Scroll the list, then switch the circuit menu to compare operation counts. The two relu one-hot choices freeze the page for a few seconds while they build.</li>
-          <li>In the photo strip, use the left and right arrow keys or click a photo.</li>
-        </ul>
-        <p class="links"><a href="/lab/ui-exploration/index-read/README.md">README</a></p>
-      </article>
-
-      <article class="card">
-        <h3><a href="/lab/ui-exploration/spring-bank/demo.html">spring-bank: predicted keyframes</a></h3>
-        <p class="path">lab/ui-exploration/spring-bank/demo.html</p>
-        <p>Fixed 4 ms springs computed as shared matrix powers. Each click predicts 1.2 seconds of motion and hands it to Web Animations, while the page itself renders only every 300 ms.</p>
-        <p class="try-label">Try</p>
-        <ul>
-          <li>Click anywhere to fling the five shapes.</li>
-          <li>Switch Prediction between 301 separate evaluations and one batched evaluation, and read the timing in the header.</li>
-        </ul>
-        <p class="links"><a href="/lab/ui-exploration/spring-bank/README.md">README</a></p>
-      </article>
-
-      <article class="card">
-        <h3><a href="/lab/ui-exploration/spring-bank/indirect-os.html">spring-bank: IndirectOS</a></h3>
-        <p class="path">lab/ui-exploration/spring-bank/indirect-os.html</p>
-        <p>IndirectOS with the spring bank, plus controls for the spring variant, when a new destination takes effect, the frame rate, and a 500 ms main-thread stall.</p>
-        <p class="try-label">Try</p>
-        <ul>
-          <li>Maximize Photos, then press "stall 500 ms" or switch to 10 fps: animations still end on time. With the original springs at 10 fps they end about a second late.</li>
-          <li>Compare the System Monitor with the original springs: 3,580 against 5,253 operations.</li>
-        </ul>
-        <p class="links">
-          <a href="/lab/ui-exploration/spring-bank/indirect-os.html?springs=original"><code>?springs=original</code></a>
-          <a href="/lab/ui-exploration/spring-bank/indirect-os.html?fps=10"><code>?fps=10</code></a>
-          <a href="/lab/ui-exploration/spring-bank/indirect-os.html?springs=original&amp;fps=10"><code>?springs=original&amp;fps=10</code></a>
-          <a href="/lab/ui-exploration/spring-bank/README.md">README</a>
-        </p>
-      </article>
-
-      <article class="card">
-        <h3><a href="/lab/ui-exploration/notation/indirect-os.html">notation: IndirectOS</a></h3>
-        <p class="path">lab/ui-exploration/notation/indirect-os.html</p>
-        <p>IndirectOS rewritten with a table allocator and helper functions over wires. It compiles to exactly the same program as the original.</p>
-        <p class="try-label">Try</p>
-        <ul>
-          <li>Drag and resize windows, maximize Photos and open a photo, as in the original.</li>
-          <li>Check the System Monitor against the original's counts: 5,253 operations, 192 layers and 11,598 weights.</li>
-        </ul>
-        <p class="links"><a href="/lab/ui-exploration/notation/README.md">README</a></p>
-      </article>
-
-      <article class="card">
-        <h3><a href="/lab/ui-exploration/notation/demo.html">notation: settings panel</a></h3>
-        <p class="path">lab/ui-exploration/notation/demo.html</p>
-        <p>A new settings panel written with the same notation: three toggles, a segmented control, a slider and a reset button, all animated by springs.</p>
-        <p class="try-label">Try</p>
-        <ul>
-          <li>Toggle Bluetooth, choose Dark, drag the volume slider, then press Reset.</li>
-        </ul>
-        <p class="links"><a href="/lab/ui-exploration/notation/README.md">README</a></p>
       </article>
 
       <article class="card">
@@ -274,18 +211,6 @@
       </article>
 
       <article class="card">
-        <h3><a href="/lab/ui-exploration/text-editing/demo.html">text-editing</a></h3>
-        <p class="path">lab/ui-exploration/text-editing/demo.html</p>
-        <p>A text field whose editing model runs inside the program: insert and delete, caret and word movement, selection, paste, wrapping, and click to place the caret.</p>
-        <p class="try-label">Try</p>
-        <ul>
-          <li>Click to place the caret and type; Option+Left jumps by word, and Shift+Right extends the selection.</li>
-          <li>Drag across two lines to select, or press ArrowDown twice, then ArrowUp, to see the caret keep its x.</li>
-        </ul>
-        <p class="links"><a href="/lab/ui-exploration/text-editing/README.md">README</a></p>
-      </article>
-
-      <article class="card">
         <h3><a href="/lab/ui-exploration/layout-tree/demo.html">layout-tree</a></h3>
         <p class="path">lab/ui-exploration/layout-tree/demo.html</p>
         <p>Clay-style layout passes as program layers: an app shell with a springing sidebar, sticky section headers, a wrapping tag row and grids of cards.</p>
@@ -295,21 +220,6 @@
           <li>Resize the window to see the grid change its column count.</li>
         </ul>
         <p class="links"><a href="/lab/ui-exploration/layout-tree/README.md">README</a></p>
-      </article>
-
-      <article class="card">
-        <h3><a href="/lab/ui-exploration/gallery/demo.html">gallery</a></h3>
-        <p class="path">lab/ui-exploration/gallery/demo.html</p>
-        <p>The render path of chenglou.github.io's 221-photo gallery as one program. Photos show as colored rectangles with each photo's aspect ratio.</p>
-        <p class="try-label">Try</p>
-        <ul>
-          <li>Hover a photo and click it to open the strip, use the arrow keys, then press Escape.</li>
-          <li>Scroll down the grid; photos far outside the viewport have no DOM nodes.</li>
-        </ul>
-        <p class="links">
-          <a href="/lab/ui-exploration/gallery/demo.html?photos=cdn"><code>?photos=cdn</code></a> real photos from Midjourney's CDN
-          <a href="/lab/ui-exploration/gallery/README.md">README</a>
-        </p>
       </article>
 
       <article class="card">
@@ -355,19 +265,6 @@
   <section>
     <h2>Round 3: consolidation</h2>
     <div class="cards">
-      <article class="card">
-        <h3><a href="/lab/ui-exploration/indirect-os-2/indirect-os.html">indirect-os-2</a></h3>
-        <p class="path">lab/ui-exploration/indirect-os-2/indirect-os.html</p>
-        <p>IndirectOS rebuilt with the notation, the spring bank and an exact event queue, plus a Notes paragraph that flows around the other windows with a spring per word.</p>
-        <p class="try-label">Try</p>
-        <ul>
-          <li>Drag Photos over Notes and watch the paragraph reflow around it.</li>
-          <li>Press Files' close button, move away and back, then release: Files stays open, while a quick click closes it.</li>
-        </ul>
-        <p class="note">Switches to generated JavaScript during idle time, which can stall one frame for about half a second.</p>
-        <p class="links"><a href="/lab/ui-exploration/indirect-os-2/README.md">README</a></p>
-      </article>
-
       <article class="card">
         <h3><a href="/lab/ui-exploration/instanced-items/demo.html">instanced-items</a></h3>
         <p class="path">lab/ui-exploration/instanced-items/demo.html</p>
@@ -462,27 +359,11 @@
       </article>
 
       <article class="card">
-        <h3>exactness-budget</h3>
-        <p class="path">lab/ui-exploration/exactness-budget/README.md</p>
-        <p>Seven UIs run through executors that add terms in different orders or in float64, to find which exactness each UI actually depends on.</p>
-        <p class="note">No demo page; see the folder's README.</p>
-        <p class="links"><a href="/lab/ui-exploration/exactness-budget/README.md">README</a></p>
-      </article>
-
-      <article class="card">
         <h3>learned-bits</h3>
         <p class="path">lab/ui-exploration/learned-bits/README.md</p>
         <p>UI decision rules such as Tab with disabled controls, learned as networks of 2-input gates or of counting units, and checked on every input case.</p>
         <p class="note">No demo page; see the folder's README.</p>
         <p class="links"><a href="/lab/ui-exploration/learned-bits/README.md">README</a></p>
-      </article>
-
-      <article class="card">
-        <h3>retiming</h3>
-        <p class="path">lab/ui-exploration/retiming/README.md</p>
-        <p>A search for values that may read last frame's copy instead of this frame's, trading program depth against visible error.</p>
-        <p class="note">No demo page; see the folder's README.</p>
-        <p class="links"><a href="/lab/ui-exploration/retiming/README.md">README</a></p>
       </article>
     </div>
   </section>

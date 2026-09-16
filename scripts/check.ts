@@ -16,5 +16,4 @@ function run(command: string[]) {
 run(['bunx', 'tsgo', '-p', '.'])
 for (const lab of labs) run(['bunx', 'tsgo', '-p', lab])
 const rootSources = readdirSync(root).filter(name => name.endsWith('.ts'))
-const labSources = readdirSync(resolve(root, 'lab')).filter(name => name.endsWith('.ts')).map(name => `lab/${name}`)
-run(['bunx', 'oxlint', '--type-aware', ...rootSources, ...labSources, 'scripts', 'template', ...labs])
+run(['bunx', 'oxlint', '--type-aware', ...rootSources, 'scripts', 'template', ...labs])

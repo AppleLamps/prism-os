@@ -9,8 +9,8 @@
 // with url() (e.g. the photo-gallery-*.webp files at the repo root) and the JSON files its modules
 // import all resolve relative to the page's own file, whatever URL the page is served at.
 //
-// A page's URL path is its path in the repo, e.g. /lab/ui-exploration/gallery/demo.html, so query
-// parameters from the READMEs work as written, e.g. /lab/ui-exploration/gallery/demo.html?photos=cdn.
+// A page's URL path is its path in the repo, e.g. /lab/ui-exploration/instanced-items/demo.html, so query
+// parameters from the READMEs work as written, e.g. /lab/ui-exploration/instanced-items/demo.html?count=221.
 // The READMEs the index page links to are served as plain text at their repo paths too.
 
 import {readFileSync} from 'node:fs'
@@ -20,30 +20,22 @@ import indexPage from './demos.html'
 
 import indirectOS from '../../index.html'
 import candidateGallery from '../../candidate-gallery.html'
-import learnedGallery from '../../learned-gallery.html'
-import hardAttend from '../../hard-attend.html'
+import learnedGallery from '../learned-gallery/learned-gallery.html'
+import hardAttend from '../hard-attend/hard-attend.html'
 import generativeFields from '../generative-fields/demo.html'
 import eventWindow from '../event-window/demo.html'
 import reusableLayout from '../reusable-layout/demo.html'
 
 import textWalker from './text-walker/demo.html'
 import textTabulated from './text-tabulated/demo.html'
-import indexRead from './index-read/demo.html'
-import springBankKeyframes from './spring-bank/demo.html'
-import springBankIndirectOS from './spring-bank/indirect-os.html'
-import notationIndirectOS from './notation/indirect-os.html'
-import notationSettingsPanel from './notation/demo.html'
 import virtualizedList from './lists/list.html'
 import draggableCards from './lists/cards.html'
 import inputQueue from './input/demo.html'
-import textEditing from './text-editing/demo.html'
 import layoutTree from './layout-tree/demo.html'
-import photoGallery from './gallery/demo.html'
 import hnThread from './hn-thread/demo.html'
 import codegen from './codegen/demo.html'
 import numericLibrary from './numeric-library/demo.html'
 
-import indirectOS2 from './indirect-os-2/indirect-os.html'
 import instancedItems from './instanced-items/demo.html'
 
 import streamingWords from './streaming-words/demo.html'
@@ -57,28 +49,20 @@ const repoRoot = resolve(import.meta.dir, '../..')
 const pages = {
   '/index.html': indirectOS,
   '/candidate-gallery.html': candidateGallery,
-  '/learned-gallery.html': learnedGallery,
-  '/hard-attend.html': hardAttend,
+  '/lab/learned-gallery/learned-gallery.html': learnedGallery,
+  '/lab/hard-attend/hard-attend.html': hardAttend,
   '/lab/generative-fields/demo.html': generativeFields,
   '/lab/event-window/demo.html': eventWindow,
   '/lab/reusable-layout/demo.html': reusableLayout,
   '/lab/ui-exploration/text-walker/demo.html': textWalker,
   '/lab/ui-exploration/text-tabulated/demo.html': textTabulated,
-  '/lab/ui-exploration/index-read/demo.html': indexRead,
-  '/lab/ui-exploration/spring-bank/demo.html': springBankKeyframes,
-  '/lab/ui-exploration/spring-bank/indirect-os.html': springBankIndirectOS,
-  '/lab/ui-exploration/notation/indirect-os.html': notationIndirectOS,
-  '/lab/ui-exploration/notation/demo.html': notationSettingsPanel,
   '/lab/ui-exploration/lists/list.html': virtualizedList,
   '/lab/ui-exploration/lists/cards.html': draggableCards,
   '/lab/ui-exploration/input/demo.html': inputQueue,
-  '/lab/ui-exploration/text-editing/demo.html': textEditing,
   '/lab/ui-exploration/layout-tree/demo.html': layoutTree,
-  '/lab/ui-exploration/gallery/demo.html': photoGallery,
   '/lab/ui-exploration/hn-thread/demo.html': hnThread,
   '/lab/ui-exploration/codegen/demo.html': codegen,
   '/lab/ui-exploration/numeric-library/demo.html': numericLibrary,
-  '/lab/ui-exploration/indirect-os-2/indirect-os.html': indirectOS2,
   '/lab/ui-exploration/instanced-items/demo.html': instancedItems,
   '/lab/ui-exploration/streaming-words/demo.html': streamingWords,
   '/lab/ui-exploration/drag-knobs/demo.html': dragKnobs,
@@ -88,17 +72,18 @@ const pages = {
 }
 
 const prototypeFolders = [
-  'text-walker', 'text-tabulated', 'index-read', 'spring-bank', 'notation', 'lists', 'input', 'text-editing',
-  'layout-tree', 'gallery', 'hn-thread', 'codegen', 'numeric-library', 'indirect-os-2', 'instanced-items',
-  'streaming-words', 'drag-knobs', 'event-time', 'pixel-output', 'code-points',
+  'text-walker', 'text-tabulated', 'lists', 'input', 'layout-tree', 'hn-thread', 'codegen', 'numeric-library',
+  'instanced-items', 'streaming-words', 'drag-knobs', 'event-time', 'pixel-output', 'code-points',
   // Folders without a demo page. The index page points at their READMEs.
-  'user-population', 'exactness-budget', 'learned-bits', 'retiming',
+  'user-population', 'learned-bits',
 ]
 const readmePaths = [
   'README.md',
   'lab/generative-fields/README.md',
   'lab/event-window/README.md',
   'lab/reusable-layout/README.md',
+  'lab/learned-gallery/README.md',
+  'lab/hard-attend/README.md',
   'lab/ui-exploration/README.md',
   ...prototypeFolders.map(folder => `lab/ui-exploration/${folder}/README.md`),
 ]

@@ -281,7 +281,7 @@ The premature compression was assuming that one timestamp serves both jobs. Meas
 - Fewer keyframes during direct manipulation: keyframe only parts that change over more than a few samples, or feed the samples to a canvas or WebGPU renderer instead of Web Animations.
 - Size changes that survive stalls: animate `scale` on the compositor toward the predicted size and correct the layout size when the main thread is free, and measure the visual difference with the same screen model.
 - Predictions on the GPU in the page: the Dawn readback of all 301 samples took 0.36 to 0.65 ms, so a page could dispatch predictions with WebGPU and build keyframes from the readback.
-- Candidate futures as instances: e.g. predict what a release at each of several pointer positions would do, as ideas.md suggests, with one program over a grid of (sample, candidate) instances.
+- Candidate futures as instances: e.g. predict what a release at each of several pointer positions would do, as ideas.md suggested (now in [lab/status.md's parked list](../../status.md#parked-and-deferred)), with one program over a grid of (sample, candidate) instances.
 - Scrubbing and replay as a UI feature: the commit log is the session, and a display at any time is a lookup, so a timeline slider over a recorded session needs no new circuit.
 
 ## Merged from spring-bank, September 16, 2026

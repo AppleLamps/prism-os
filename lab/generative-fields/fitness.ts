@@ -8,7 +8,7 @@
 // following the repo rule that the scorer/parameter side owns division. Each
 // term also has a hand-derived gradient with respect to the slot geometry and
 // the two numerator wires, so gradient ascent can seed the circuit's backward
-// pass exactly the way trainable-geometry.ts seeds its coordinate losses.
+// pass exactly the way lab/learned-gallery/trainable-geometry.ts seeds its coordinate losses.
 
 import {invariant} from '../../numeric-ui-core.ts'
 import {
