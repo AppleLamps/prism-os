@@ -1,9 +1,12 @@
 // Heavy measurements behind README.md. Prints markdown tables.
 //   bun lab/ui-exploration/text-tabulated/report.ts [corpora] [hn] [oracle] [long] [rich] [prewrap] [notes] [edit] [scale] [nondyadic]
-// No arguments runs every section, with nondyadic in a second process. Corpora and pretext's test data
-// are read from the pretext clone in the session scratchpad; the HN thread from
-// ~/github/vibescript/demos/nicer-hacker-news/data.ts.
+// No arguments runs every section, with nondyadic in a second process. Two inputs aren't in the repo
+// and are read only by the sections that need them: PRETEXT_CLONE names a clone of pretext
+// (https://github.com/chenglou/pretext; the README numbers used commit 477510e4), whose corpora/ and
+// src/test-data.ts feed the corpora, oracle, long and nondyadic sections, and HN_DATA names vibescript's
+// demos/nicer-hacker-news/data.ts, which feeds the hn section.
 
+import {resolve} from 'node:path'
 import type {Wire} from '../../../numeric-ui-core.ts'
 import {installFakeCanvas} from './fake-canvas.ts'
 import {createRandom, nextFloat32Down, nextFloat32Up} from './float32.ts'
@@ -17,8 +20,13 @@ import {emitMatrixSpring, emitStepMatrix, stepBitCount} from './springs.ts'
 import {referenceBlock} from './reference.ts'
 import {notesContent} from './notes-content.ts'
 
-const pretextCopy = 'scratchpad/pretext-copy'
-const hnDataPath = '~/github/vibescript/demos/nicer-hacker-news/data.ts'
+function inputPath(variable: 'PRETEXT_CLONE' | 'HN_DATA', expected: string): string {
+  const value = process.env[variable]
+  if (value === undefined) throw new Error(`set ${variable} to ${expected}`)
+  return resolve(value)
+}
+const pretextClone = () => inputPath('PRETEXT_CLONE', "a clone of pretext (https://github.com/chenglou/pretext), for its corpora/ folder and src/test-data.ts")
+const hnDataPath = () => inputPath('HN_DATA', "vibescript's demos/nicer-hacker-news/data.ts")
 const requested = new Set(process.argv.slice(2))
 // The nondyadic section measures with a different fake canvas, and pretext keeps the canvas it first
 // measures with, so that section runs on its own.
@@ -102,11 +110,12 @@ function decodeHnHtml(html: string) {
 
 async function corporaSection() {
   console.log('## pretext corpora, one table per paragraph, widths 300..900\n')
-  const sources = JSON.parse(await Bun.file(`${pretextCopy}/corpora/sources.json`).text()) as {id: string, font_size_px: number, min_width: number, max_width: number, output: string}[]
+  const clone = pretextClone()
+  const sources = JSON.parse(await Bun.file(`${clone}/corpora/sources.json`).text()) as {id: string, font_size_px: number, min_width: number, max_width: number, output: string}[]
   const rows: (string | number)[][] = []
   const totals = {paragraphs: 0, lineCountThresholds: 0, distinctLineCountThresholds: 0, thresholds: 0, heightsLiveOperations: 0, heightsPerTableLiveOperations: 0}
   for (const source of sources) {
-    const text = await Bun.file(`${pretextCopy}/${source.output}`).text()
+    const text = await Bun.file(`${clone}/${source.output}`).text()
     const paragraphs = text.split(/\n+/).map(paragraph => paragraph.trim()).filter(paragraph => paragraph.length > 0)
     const font = `${source.font_size_px}px Test Sans`
     const started = performance.now()
@@ -140,7 +149,7 @@ async function corporaSection() {
 
 async function hnSection() {
   console.log('## nicer-hacker-news threads: one table per comment paragraph, window widths 375..1200\n')
-  const {dataRaw} = await import(hnDataPath) as {dataRaw: {title: string, comments: {indent: number, comment: string}[]}[]}
+  const {dataRaw} = await import(hnDataPath()) as {dataRaw: {title: string, comments: {indent: number, comment: string}[]}[]}
   const rows: (string | number)[][] = []
   for (const thread of dataRaw) {
     const tables: BlockTable[] = []
@@ -180,7 +189,7 @@ type OracleCase = {group: string, text: string, font: string, options: PrepareOp
 // pretext's own edge-case data: TEXTS plus the oracle cases (soft hyphens, letter spacing, pre-wrap,
 // symbols, keep-all).
 async function loadOracleCases(): Promise<OracleCase[]> {
-  const data = await import(`${pretextCopy}/src/test-data.ts`) as Record<string, unknown>
+  const data = await import(`${pretextClone()}/src/test-data.ts`) as Record<string, unknown>
   const cases: OracleCase[] = []
   for (const entry of data['TEXTS'] as {text: string}[]) cases.push({group: 'TEXTS', text: entry.text, font: '16px Test Sans', options: {}})
   for (const name of ['DISCRETIONARY_ORACLE_CASES', 'LETTER_SPACING_ORACLE_CASES', 'PRE_WRAP_ORACLE_CASES', 'SYMBOL_ORACLE_CASES', 'KEEP_ALL_ORACLE_CASES']) {
@@ -279,7 +288,7 @@ async function oracleSection() {
 
 async function longSection() {
   console.log('## one long paragraph (The Great Gatsby, first N words), widths 300..900, 16px\n')
-  const gatsby = await Bun.file(`${pretextCopy}/corpora/en-gatsby-opening.txt`).text()
+  const gatsby = await Bun.file(`${pretextClone()}/corpora/en-gatsby-opening.txt`).text()
   const words = gatsby.split(/\s+/).filter(word => word.length > 0)
   const rows: (string | number)[][] = []
   for (const wordCount of [64, 256, 1024, 4096]) {
@@ -614,11 +623,12 @@ async function nonDyadicSection() {
   const trace = checkNotesTraces(prepareNotesBlocks(), [1, 2])
   console.log(JSON.stringify({...trace, decisionProblems: trace.decisionProblems.slice(0, 5)}, null, 2), '\n')
   console.log('### heights circuits with and without shared comparisons\n')
-  const sources = JSON.parse(await Bun.file(`${pretextCopy}/corpora/sources.json`).text()) as {id: string, font_size_px: number, min_width: number, max_width: number, output: string}[]
+  const clone = pretextClone()
+  const sources = JSON.parse(await Bun.file(`${clone}/corpora/sources.json`).text()) as {id: string, font_size_px: number, min_width: number, max_width: number, output: string}[]
   const rows: (string | number)[][] = []
   for (const id of ['en-gatsby-opening', 'ar-al-bukhala']) {
     const source = sources.find(entry => entry.id === id)!
-    const text = await Bun.file(`${pretextCopy}/${source.output}`).text()
+    const text = await Bun.file(`${clone}/${source.output}`).text()
     const paragraphs = text.split(/\n+/).map(paragraph => paragraph.trim()).filter(paragraph => paragraph.length > 0)
     const font = `${source.font_size_px}px Test Sans`
     const tables = paragraphs.map(paragraph => tabulateBlock(plainSpec(paragraph, font), source.min_width, source.max_width, 1))

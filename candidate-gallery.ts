@@ -103,11 +103,12 @@ export function createCandidateGalleryCircuit() {
   const circuit = new Circuit(sourceField.size)
   // Pixel-space sources carry an honest finite ceiling: 16384 covers the
   // largest real displays (8K is 7680 wide) with headroom while staying far
-  // inside FP32's exact-integer band (macro-ranges.md keeps operands well
-  // under 2^23). Finite bounds are also what lets the compiler lower the
-  // layout selection reads to gather operations: a range that admits Infinity
-  // would let a non-selected candidate poison the masked sum to NaN, so such
-  // reads must stay dense (see lab/gather-lowering).
+  // inside FP32's exact-integer band (execution-model.md's macro contracts
+  // keep min, max and clamp operands under 2^23). Finite bounds are also what
+  // lets the compiler lower the layout selection reads to gather operations:
+  // a range that admits Infinity would let a non-selected candidate poison
+  // the masked sum to NaN, so such reads must stay dense (see
+  // lab/gather-lowering).
   for (const field of [
     sourceField.viewportWidth,
     sourceField.viewportHeight,

@@ -1,6 +1,6 @@
 # Current results, September 2026
 
-This is the repo-wide page for current results, known issues in production code, open decisions, and parked work. It started as the summary after implementing the [reassessment](reassessment-2026-09-03.md). The July briefs and old measurements remain historical; they are not requirements for new experiments. The protected author notes in `ideas.md` and the README TODO were left intact, so consult this page and the current numeric-contract documents for implementation status. `tricks.md` was renamed to `expressions.md` and rewritten on September 15, 2026, with Cheng's approval, and is no longer protected.
+This is the repo-wide page for current results, known issues in production code, open decisions, and parked work. It started as the summary after implementing the [reassessment](reassessment-2026-09-03.md). The July briefs and old measurements remain historical; they are not requirements for new experiments. The protected author notes in `ideas.md` and the README TODO were left intact, so consult this page and the current numeric-contract documents for implementation status. `tricks.md` was renamed to `expressions.md` and rewritten on September 15, 2026, with Cheng's approval, and is no longer protected. On the same day, also with Cheng's approval, the README TODO's finished item on finite ranges and gathers was removed, its layer scheduling item moved to the parked list below, and `todo.md` was removed, with its one experiment recorded in the parked list.
 
 ## Runtime additions since September 14, 2026
 
@@ -63,7 +63,7 @@ Under the authored preference objective, the shared rule transfers well to new c
 - Real-source compiler tests use a verified historical source fixture. Compatibility with the latest external file is an optional `--live` check, not an assumption that another repository remains unchanged.
 - Layout fitness includes direct parameter derivatives. The event demo retains queued and browser-coalesced pointer moves, including outward-and-back movement that cancels a click.
 
-See [execution semantics](../execution-model.md), [macro contracts](../macro-ranges.md), and the regression tests for exact domains. This is not a proof of all possible circuits or all JavaScript programs.
+See [execution semantics](../execution-model.md), [macro contracts](../execution-model.md#macro-contracts), and the regression tests for exact domains. This is not a proof of all possible circuits or all JavaScript programs.
 
 ## Retrieval and execution
 
@@ -85,7 +85,8 @@ Moved from research-sweep.md on September 15, 2026, with updates. Parked work wa
 - **Executor split:** a separate dependency-free executor added a module without shrinking the product.
 - **Precompiled demos:** faster startup, but a generator and 124 KB of generated source made browser bundles much larger.
 - **Portable tensor format:** exact JSON round-tripping added versioning and a second representation with no consumer.
-- **Layer scheduling:** latest-legal scheduling increased gathered inputs. Retry after circuit shapes change; the README's TODO names Percepta's mixed-integer formulation as the reference approach.
+- **Layer scheduling:** latest-legal scheduling increased gathered inputs. Retry after the circuit shape changes; Percepta's mixed-integer formulation (scheduling plus residual-slot reuse) is the reference approach. Moved here from the README's TODO on September 15, 2026.
+- **Revisit hardAttend:** moved here from `todo.md`, since removed, on September 15, 2026, as history. The June 2026 plan considered a hard-attention operation that scores candidates against a query, picks a winner with an explicit tie rule and retrieves the winner's values. Its indexed retrieval half, reading one candidate at an already chosen index, predates `circuit.indexRead` and gather lowering, which now cover it ([index reads](../execution-model.md#index-reads)). Its scored selection half, learning a shared scoring rule from changing data, e.g. retrieving the rectangle of a selected item id while storage positions, active counts and distractors vary, with absent ids and ties defined in advance, is the experiment that [decision 8](ui-exploration/guide/review-and-decisions.md#8-what-should-the-next-learning-experiment-be) recommends, so the entry adds nothing to that decision. Its cautions stand: exact selection has no useful gradient with respect to the winner, so training goes through soft mixtures or clipped comparison ramps and hardening is checked separately, and, in the entry's words, "Compare alternatives without presuming that attention must emerge."
 - **Relation layout:** the older demo added about 400 lines and proved less than the current window and Photos behaviors.
 - **GPU megakernel:** feasible in one 256-thread workgroup, but interesting only when many source tables run together. Since then, outside the root runtime, codegen and instanced-items built WGSL executors, and user-population ran 16,384 users for 600 frames on an Apple GPU, matching generated JS on every output. instanced-items' GPU pipeline, with one readback per stage, was slower than its CPU executor at every size. Decision 6 recommends measuring one per-layer GPU pass first.
 - **Slot reuse:** saved about 4.5 KB for windows and 1 KB for Photos. Larger gains need a narrower output contract and more runtime machinery.

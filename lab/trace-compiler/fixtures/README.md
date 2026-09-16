@@ -6,4 +6,4 @@ The `.txt` suffix keeps the browser application out of this lab's type checking.
 
 The copies have the same Git blob hashes as that revision: `index.ts` is `d7a859358d0a6a406b5d068c87803fdc57e1bc24`, and `data.ts` is `d26a64ccb3e077e48292579d0501652a905acf94`.
 
-Default tests and reports use these fixtures. `bun lab/trace-compiler/report.ts --live` separately checks the current files in `~/github/chenglou.github.io`; source changes may make that optional check reject. Update a fixture only when deliberately measuring a new source revision, and preserve its provenance here.
+Default tests and reports use these fixtures. `bun lab/trace-compiler/report.ts --live` separately checks the current files of a chenglou.github.io checkout, named by `CHENGLOU_GITHUB_IO`; source changes may make that optional check reject. Update a fixture only when deliberately measuring a new source revision, and preserve its provenance here.

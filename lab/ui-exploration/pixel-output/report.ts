@@ -5,6 +5,7 @@
 //   bun lab/ui-exploration/pixel-output/report.ts gpu-compare <directory>
 // A run replaces only its sections' entries in results.json. CPU and GPU timings are rough: other agents share the machine.
 import {existsSync, readFileSync, writeFileSync} from 'node:fs'
+import {relative, resolve} from 'node:path'
 import {installFakeCanvas, fakeTextWidth} from '../hn-thread/fake-canvas.ts'
 import {thread} from '../hn-thread/hn-data.ts'
 import {initialThreadState, type PreparedThread, prepareThread} from './thread-prepare.ts'
@@ -352,7 +353,9 @@ if (run('gpu-compare')) {
   printTable('GPU against the CPU instance loop and the float64 rasterizer, 1280×800', rows)
   const compileRows = gpuCompileTimes(argument)
   printTable('Shader compile times (compileMilliseconds with a token unique to the run, warmCompileMilliseconds for the same text again)', compileRows)
-  const png = writeGpuFramePng(argument, prepared, new URL('./gpu-frame-glyphs.png', import.meta.url).pathname)
+  const written = writeGpuFramePng(argument, prepared, new URL('./gpu-frame-glyphs.png', import.meta.url).pathname)
+  // results.json records the PNG's path relative to the repo root, not this machine's absolute path.
+  const png = written === null ? null : {...written, file: relative(resolve(import.meta.dir, '../../..'), written.file)}
   console.log(png === null ? '\nno GPU glyph output for the animated state, gpu-frame-glyphs.png not written' : `\nwrote ${png.file} from ${png.state}: ${png.emphasis.banner} emphasized banner samples, ${png.emphasis.gutter} emphasized gutter samples`)
   results['gpu-compare'] = {rows, compileRows, png}
 }

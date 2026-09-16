@@ -520,7 +520,7 @@ Tabulation still found every change on text-tabulated's two realistic rich inlin
 
 ## Runnable examples
 
-From ~/github/indirect:
+From the repo root:
 
 ```sh
 bun test lab/ui-exploration/guide/examples/text      # 11 tests in 2 files, about 0.2 s

@@ -121,7 +121,7 @@ Before emitting real workloads, I probed what the GPU shader compilers do to f32
 | sums with a different written order | `(c + a) + b` | strict in the probe shader, regrouped to `(a + b) + c` in a second shader | same |
 | | `max(c + a, lowest) + b` | strict | strict |
 
-The second shader is the scratch script `scratchpad/phase2/codegen/probe-barriers.ts` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase2/codegen/probe-barriers.ts`), which also tried `select` and a multiplication by a runtime one as guards; both worked there too. The probe shader lives in `wgsl.ts` and runs in `gpu-headless.ts`.
+The second shader is the session scratch script `probe-barriers.ts` (scratch folder `phase2/codegen/`, not in the repo), which also tried `select` and a multiplication by a runtime one as guards; both worked there too. The probe shader lives in `wgsl.ts` and runs in `gpu-headless.ts`.
 
 So the compiler behind both stacks fuses multiply-adds across statements, regroups sums depending on the surrounding code, and folds the `(x + K) - K` shape that the boolean atom and `round` are built from. A `let`, a `var`, or a runtime zero doesn't stop any of this. Wrapping a result in `max(x, lowest)`, with `lowest = -3.4028235e38` loaded from a buffer, does, because the compiler can't prove the max is the identity, and for every finite x it returns x. With `guard: 'max'`, `wgsl.ts` wraps every inexact product and every partial sum, which comes to roughly one extra `max` per row.
 

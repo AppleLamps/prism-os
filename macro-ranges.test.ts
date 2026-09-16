@@ -12,7 +12,8 @@ import {
 // Characterization tests for the magnitude preconditions of the macro library.
 // These pin the FP32 re-rounding boundaries where each macro stops matching its
 // real-valued definition. Nothing here is fixed; the tests document the bounds
-// the compiled UI silently relies on. See macro-ranges.md for the table.
+// the compiled UI silently relies on. See the Macro contracts section of
+// execution-model.md for the table.
 
 const f = Math.fround
 // Widest finite range the circuit will accept as a source bound.
@@ -43,7 +44,7 @@ function evaluateMinimum(a: number, b: number): number {
   return reference[result]!
 }
 
-// select(gate, off, on) expanded as off + gate * (on - off).
+// select(gate, off, on) expanded as gate * on + (1 - gate) * off, two masked products.
 function evaluateSelect(gate: number, off: number, on: number): number {
   const circuit = new Circuit(3)
   circuit.assumeRange(circuit.source(0), 0, 1)
@@ -185,7 +186,8 @@ describe('emitSelect exactness at the gate rails', () => {
   ]
 
   test('gate exactly 0 returns off bit-exactly for every magnitude pair', () => {
-    // off + 0 * (on - off) = off, no re-rounding path, so this rail is unconditional.
+    // 0 * on + 1 * off = off: the unpicked product is 0 and adding it to off doesn't
+    // round, so this rail is unconditional.
     for (const off of magnitudes) {
       for (const on of magnitudes) {
         expect(evaluateSelect(0, off, on)).toBe(f(off))

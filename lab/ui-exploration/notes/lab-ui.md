@@ -6,7 +6,7 @@ This note covers `lab/trace-compiler`, `lab/event-window`, `lab/generative-field
 
 Line numbers in `numeric-ui-core.ts` refer to commit c3d8e54 (September 5, 2026); on September 14, 2026 the file grew from 1,653 to 3,158 lines.
 
-I also ran the repo's report scripts and three scratch scripts. The scratch scripts live in `scratchpad/phase1/lab-ui/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/lab-ui/`):
+I also ran the repo's report scripts and three scratch scripts. The scratch scripts are session scratch files (scratch folder `phase1/lab-ui/`, not in the repo):
 
 - `lab-circuit-sizes.ts` prints the current size of each lab circuit next to IndirectOS.
 - `text-wrap-circuit.ts` builds greedy word wrapping over prepared word widths three ways and checks every variant against a JS reference.

@@ -6,8 +6,14 @@
 //   bun lab/ui-exploration/code-points/pretext-agreement.ts          (line starts per text family)
 //   bun lab/ui-exploration/code-points/pretext-agreement.ts census   (also where the pair table and
 //                                                                     pretext's segments disagree)
-// It imports the phase 1 copy of pretext's source (never ~/github/pretext).
+// The pretext source it measures against isn't in the repo: set PRETEXT_SRC to a folder holding
+// pretext's src/ files (https://github.com/chenglou/pretext). The numbers in README.md came from the
+// phase 1 scratch copy of pretext at commit 477510e4, never a live checkout;
+// lab/ui-exploration/text-tabulated/pretext/ holds the same files, so
+//   PRETEXT_SRC=lab/ui-exploration/text-tabulated/pretext bun lab/ui-exploration/code-points/pretext-agreement.ts
+// reproduces them.
 
+import {resolve} from 'node:path'
 import {referenceLayout as baselineLayout, type EditorState as BaselineState} from '../text-editing/reference.ts'
 import {createWidthTable, encodeText} from '../text-editing/width-table.ts'
 import {fakeTextWidth, installFakeCanvas} from '../text-editing/fake-canvas.ts'
@@ -16,8 +22,9 @@ import {type CharacterModel, type EditorState, type PretextExperiment, reference
 import {createRandom} from './test-support.ts'
 
 installFakeCanvas('blink')
-const pretextPath = 'scratchpad/phase1/pretext/pretext-src/layout.ts'
-const pretext = await import(pretextPath)
+const pretextSource = process.env['PRETEXT_SRC']
+if (pretextSource === undefined) throw new Error("set PRETEXT_SRC to a folder holding pretext's src/ files (layout.ts and the modules it imports), e.g. PRETEXT_SRC=lab/ui-exploration/text-tabulated/pretext")
+const pretext = await import(`${resolve(pretextSource)}/layout.ts`)
 
 type Cursor = {segmentIndex: number, graphemeIndex: number}
 type Line = {start: Cursor}

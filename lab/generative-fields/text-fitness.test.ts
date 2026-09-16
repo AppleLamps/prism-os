@@ -11,8 +11,10 @@ import {
   slotLabels,
 } from './text-fitness.ts'
 
-// pretext lives in a sibling checkout (~/github/pretext); the term is optional
-// and machine-local, so the tests skip when the module is absent.
+// pretext (https://github.com/chenglou/pretext) isn't in the repo: loadPretext() reads
+// PRETEXT_SRC, and the tests skip when the variable is unset. Loading it by default would
+// install the stub OffscreenCanvas for the whole `bun test lab` process, where the
+// text-tabulated, text-editing and hn-thread tests install fake canvases of their own.
 const pretext = await loadPretext()
 
 test.skipIf(pretext === null)('pretext line breaking scores label fit inside the scoring loop', () => {

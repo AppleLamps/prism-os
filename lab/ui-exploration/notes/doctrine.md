@@ -4,13 +4,13 @@ Status, September 15, 2026: written in phase 1, before the round 2 prototypes. L
 
 These are phase 1 notes for the question "how far does the IndirectOS matmul approach take us for writing UI?" This area covers Cheng's written doctrine and Cheng's two personal sites:
 
-- Doctrine, read fully: `~/github/vibescript/docs/ui.md`, `Animation.md`, `Input.md`, `Scrolling.md`, `FrameScheduling.md`, `engineering.md`, `router.md`, `z-index-depth-management.md`. Skimmed: `media.md`, `drafts/layout-geometry.md`, `drafts/verification.md`, `drafts/automating-browsers.md`.
-- Sites: `~/github/chenglou.github.io/index.ts` (the Midjourney gallery, 222 photos in `data.ts`) and `~/github/nicer-hacker-news/hn.js` (with `hn.html` and `data.js`: 32 threads, which are copies of two distinct threads, one with 30 comments nested up to indent 7 and one with 4 comments).
-- For comparison, from the indirect repo: `README.md`, `execution-model.md`, `tricks.md` (now `expressions.md`), `parallel-winner.md` (now part of `patterns.md`), `macro-ranges.md`, `lab/status.md`, the macros in `numeric-ui-core.ts` (lines 1129-1405), the IndirectOS machine and render loop in `window-manager.ts` (lines 1190-1520), the Photos circuit and renderer in `photo-gallery.ts`, and the READMEs of `lab/trace-compiler` and `lab/event-window`, skipping their training parts. I also ran `bun lab/runtime-cost/report.ts`.
+- Doctrine, read fully, from vibescript's `docs/` folder: `ui.md`, `Animation.md`, `Input.md`, `Scrolling.md`, `FrameScheduling.md`, `engineering.md`, `router.md`, `z-index-depth-management.md`. Skimmed: `media.md`, `drafts/layout-geometry.md`, `drafts/verification.md`, `drafts/automating-browsers.md`.
+- Sites: chenglou.github.io's `index.ts` (the Midjourney gallery, 222 photos in `data.ts`) and nicer-hacker-news's `hn.js` (with `hn.html` and `data.js`: 32 threads, which are copies of two distinct threads, one with 30 comments nested up to indent 7 and one with 4 comments).
+- For comparison, from the indirect repo: `README.md`, `execution-model.md`, `tricks.md` (now `expressions.md`), `parallel-winner.md` (now part of `patterns.md`), `macro-ranges.md` (now part of `execution-model.md`), `lab/status.md`, the macros in `numeric-ui-core.ts` (lines 1129-1405), the IndirectOS machine and render loop in `window-manager.ts` (lines 1190-1520), the Photos circuit and renderer in `photo-gallery.ts`, and the READMEs of `lab/trace-compiler` and `lab/event-window`, skipping their training parts. I also ran `bun lab/runtime-cost/report.ts`.
 
 Line numbers in `numeric-ui-core.ts` refer to commit c3d8e54 (September 5, 2026); on September 14, 2026 the file grew from 1,653 to 3,158 lines.
 
-Measurement scripts are in `scratchpad/phase1/doctrine/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/doctrine/`):
+Measurement scripts are session scratch files (scratch folder `phase1/doctrine/`, not in the repo):
 
 - `measure.ts`: accumulating row positions with five constructions, and a spring with the doctrine's fixed 4ms steps built from matrix powers.
 - `hn-hit.ts`: hn.js hit testing (row under the pointer, gutter or comment, ancestor search, shrink bits) as a circuit, checked against the hn.js logic.
@@ -430,7 +430,7 @@ hn.js relies on the DOM for all text geometry:
 - `caretRangeFromPoint`, or `caretPositionFromPoint` on Firefox (hn.js:84-89, 515), for selection endpoints.
 - `elementFromPoint` for links under the pointer (hn.js:543).
 
-The vibescript port (`~/github/vibescript/demos/nicer-hacker-news/`) replaces the height measurement with pretext rich-inline layout. It lays out each comment again whenever its width changes (index.ts:316-323, hn-comment-layout.ts) and separates row hit geometry from visual geometry (hn-thread-layout.ts: `layoutHNRowHitGeometry` and `layoutHNThreadVisualGeometry`).
+The vibescript port (vibescript's `demos/nicer-hacker-news/`) replaces the height measurement with pretext rich-inline layout. It lays out each comment again whenever its width changes (index.ts:316-323, hn-comment-layout.ts) and separates row hit geometry from visual geometry (hn-thread-layout.ts: `layoutHNRowHitGeometry` and `layoutHNThreadVisualGeometry`).
 
 ### What a circuit version contains
 

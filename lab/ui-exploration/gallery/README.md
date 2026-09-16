@@ -14,7 +14,7 @@ From the repo root:
 - `bunx tsgo -p lab/ui-exploration/gallery` typechecks the folder.
 - `bun lab/ui-exploration/gallery/report.ts` prints every measurement below and writes `report-output.json`. It takes about 70 seconds.
 - `bun lab/ui-exploration/gallery/demo.html` serves the browser demo. The photos aren't stored locally (the site loads them from Midjourney's CDN), so boxes are colored rectangles with each photo's aspect ratio. Add `?photos=cdn` to load the originals. I checked that the demo bundles with `bun build`, but I haven't opened it in a browser. A later Chrome check opened the demo, see [Browser check](#browser-check).
-- `bun lab/ui-exploration/gallery/prepare-captions.ts` regenerates `caption-breakpoints.json`. It needs a copy of pretext's `src/`. By default that's this session's scratch copy; set `PRETEXT_SRC` to use another one.
+- `bun lab/ui-exploration/gallery/prepare-captions.ts` regenerates `caption-breakpoints.json`. It needs a copy of pretext's `src/`, named by `PRETEXT_SRC`; the session scratch copy it ran with isn't in the repo, and `lab/ui-exploration/text-tabulated/pretext/` holds the same files.
 
 Files:
 

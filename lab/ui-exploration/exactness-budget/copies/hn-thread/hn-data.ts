@@ -1,4 +1,4 @@
-// Thread 0 of ~/github/vibescript/demos/nicer-hacker-news/data.ts (the Steve Jobs thread, 251 comments), copied verbatim.
+// Thread 0 of vibescript's demos/nicer-hacker-news/data.ts (the Steve Jobs thread, 251 comments), copied verbatim.
 // Comments were crawled from the HN comments page: indent, user, age, and the comment innerHTML.
 
 export type HNComment = {indent: number, user: string, age: string, comment: string}

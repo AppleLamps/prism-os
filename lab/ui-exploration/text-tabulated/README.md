@@ -4,7 +4,7 @@ This prototype asks how far prepare-time tabulation carries text inside one circ
 
 The demo is a Notes window whose width springs while you drag its right edge. A balanced heading, four paragraphs, and five chat bubbles reflow every frame. One compiled circuit handles the drag, the springs, and all text decisions. JS decodes the frame clock into step bits, records pointer events, and slices line text when a line's cursors change.
 
-How to run it, from `~/github/indirect`:
+How to run it, from the repo root:
 
 - Demo: `bun lab/ui-exploration/text-tabulated/demo.html`. The panel shows a live check of every frame against pretext's own `layoutWithLines`, `measureLineStats`, and the bubbles demo's tight-width search, using the browser's real fonts. It counts frames with a wrong decision (line count, tight width, cursor, or line text) separately from the widest width drift, because delta rows add up width deltas in FP32 and real advances don't add up exactly. I haven't run the demo myself. A later Chrome check ran the demo, see [Browser check](#browser-check). A verification run in Chrome, made before the check was split, showed `maxLineWidth 589.6193237304688 != 589.6194152832031` on the first frame, a drift of 9.2e-5px. That old check required bit-equal widths, so it counted all 7 frames as divergent and couldn't show whether any decision was wrong. Every headless check below uses a fake canvas.
 - Tests (about 0.4 seconds): `bun test lab/ui-exploration/text-tabulated`
@@ -12,7 +12,7 @@ How to run it, from `~/github/indirect`:
 - Measurements: `bun lab/ui-exploration/text-tabulated/report.ts [corpora] [hn] [oracle] [long] [rich] [prewrap] [notes] [edit] [scale] [nondyadic]`. With no arguments it runs everything, which takes a few minutes. `nondyadic` uses a different fake canvas, so it runs on its own or in a second process.
 - Monotonicity search, one engine profile per process: `bun lab/ui-exploration/text-tabulated/monotone-search.ts blink|webkit|gecko [--kerning] [--only text|rich] [--texts 400] [--seed 11] [--out file.json] [--no-shrink]`
 
-`pretext/` is an unmodified copy of pretext's `src/` (clone revision 477510e4, without `layout.test.ts` and `test-data.ts`), so the folder runs on its own. `report.ts` reads pretext's corpora and `src/test-data.ts` from the clone in the session scratchpad (`scratchpad/pretext-copy`, backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/pretext-copy`), and the HN thread from `~/github/vibescript/demos/nicer-hacker-news/data.ts`. No runtime files were changed; the prototype imports `numeric-ui-core.ts` as is.
+`pretext/` is an unmodified copy of pretext's `src/` (clone revision 477510e4, without `layout.test.ts` and `test-data.ts`), so the folder runs on its own. `report.ts` reads pretext's corpora and `src/test-data.ts` from a clone of pretext (https://github.com/chenglou/pretext) named by `PRETEXT_CLONE`, and the HN thread from vibescript's `demos/nicer-hacker-news/data.ts`, named by `HN_DATA`; the numbers below used a session scratch clone at commit 477510e4, which isn't in the repo. No runtime files were changed; the prototype imports `numeric-ui-core.ts` as is.
 
 ## What was built
 

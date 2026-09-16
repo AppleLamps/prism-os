@@ -777,7 +777,7 @@
       }
     ],
     "png": {
-      "file": "~/github/indirect/lab/ui-exploration/pixel-output/gpu-frame-glyphs.png",
+      "file": "lab/ui-exploration/pixel-output/gpu-frame-glyphs.png",
       "state": "animated-peek-seed-6",
       "emphasis": {
         "banner": 27648,

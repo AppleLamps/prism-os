@@ -11,7 +11,7 @@ Update, September 15, 2026: since September 14, `circuit.indexRead` reads at a c
 ## Historical July notes
 
 
-Dynamic lookup — reading one item out of N at a runtime index — previously cost O(N) stored weights and O(N) work per read: a one-hot mask multiplied against every candidate, then summed. This experiment implements the alternative chosen in `todo.md` ("Revisit hardAttend"): no fourth atom. The circuit algebra stays affine/reglu/boolean, the literal reference evaluator stays the definition of correctness, and the tensor **executor** gains a gather operation that `compileTensorProgram` emits when it recognizes the masked-sum idiom over a declared one-hot group. The lowering is bit-identical to the reference on every wire (with one precisely-characterized signed-zero caveat), proven by randomized differential tests over thousands of seeded circuits and by the production circuits running their full test suites through lowered programs.
+Dynamic lookup — reading one item out of N at a runtime index — previously cost O(N) stored weights and O(N) work per read: a one-hot mask multiplied against every candidate, then summed. This experiment implements the alternative chosen in `todo.md` ("Revisit hardAttend"; todo.md has since been removed, see [lab/status.md](../status.md#parked-and-deferred)): no fourth atom. The circuit algebra stays affine/reglu/boolean, the literal reference evaluator stays the definition of correctness, and the tensor **executor** gains a gather operation that `compileTensorProgram` emits when it recognizes the masked-sum idiom over a declared one-hot group. The lowering is bit-identical to the reference on every wire (with one precisely-characterized signed-zero caveat), proven by randomized differential tests over thousands of seeded circuits and by the production circuits running their full test suites through lowered programs.
 
 ## What was built (all in `numeric-ui-core.ts`, additive; reference evaluator untouched)
 
@@ -108,7 +108,7 @@ Every range change in the builders, with its justification:
 
 | file | field(s) | old range | new range | justification |
 | --- | --- | --- | --- | --- |
-| candidate-gallery.ts | viewportWidth, viewportHeight, clickX, clickY, cinemaRailMaximum | 0..Infinity | 0..16384 | pixel-space; 16384 covers 8K displays (7680 wide) with headroom, far inside FP32's exact-integer band per macro-ranges.md |
+| candidate-gallery.ts | viewportWidth, viewportHeight, clickX, clickY, cinemaRailMaximum | 0..Infinity | 0..16384 | pixel-space; 16384 covers 8K displays (7680 wide) with headroom, far inside FP32's exact-integer band per the macro contracts in execution-model.md |
 | candidate-gallery.ts | gap | 0..Infinity | 0..1024 | a spacing constant in the tens of pixels (the machine uses 14) |
 | candidate-gallery.ts | the seven quality scales | 0..Infinity | unchanged | behavior parameters (reciprocals of target sizes), not pixel geometry; their products are clamped to 0..1 downstream |
 | photo-gallery.ts | viewportWidth, viewportHeight | 0..Infinity | 0..16384 | pixel-space; once inlined into the window manager the bound becomes a contract on the window content dimensions, which are clamped to the viewport |

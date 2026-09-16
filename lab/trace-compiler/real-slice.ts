@@ -1,5 +1,6 @@
 // Slices of Cheng's photo gallery, loaded from a frozen source fixture by default. An optional
-// live-source run reads ~/github/chenglou.github.io. Both check the circuit against the FP32
+// live-source run reads a checkout of chenglou.github.io, which isn't in the repo: set
+// CHENGLOU_GITHUB_IO to its folder. Both check the circuit against the FP32
 // interpreter and independently validate the float64 interpreter against native JS.
 // The slices are:
 //
@@ -24,7 +25,7 @@
 // compiled as rejection probes; their diagnostics feed the residue taxonomy.
 
 import {readFileSync} from 'node:fs'
-import {homedir} from 'node:os'
+import {resolve} from 'node:path'
 import ts from 'typescript'
 import {invariant} from '../../numeric-ui-core.ts'
 import {emptyFitAnnotations} from './annotations.ts'
@@ -52,8 +53,12 @@ import {
 } from './harness.ts'
 import {type RuntimeArrayValue, type RuntimeValue, runtimeArray, runtimeObject} from './twin.ts'
 
-export const realIndexPath = `${homedir()}/github/chenglou.github.io/index.ts`
-export const realDataPath = `${homedir()}/github/chenglou.github.io/data.ts`
+// The live source is a checkout of chenglou.github.io (its index.ts and data.ts), not in the repo.
+function liveSourceFolder(): string {
+  const folder = process.env['CHENGLOU_GITHUB_IO']
+  if (folder === undefined) throw new Error('set CHENGLOU_GITHUB_IO to a checkout of chenglou.github.io (the folder holding its index.ts and data.ts) for a live-source run')
+  return resolve(folder)
+}
 
 export type RealTarget = {
   sourceFile: ts.SourceFile
@@ -61,8 +66,8 @@ export type RealTarget = {
 }
 
 export function loadRealTarget(source: 'fixture' | 'live' = 'fixture'): RealTarget {
-  const indexPath = source === 'live' ? realIndexPath : new URL('./fixtures/index.ts.txt', import.meta.url)
-  const dataPath = source === 'live' ? realDataPath : new URL('./fixtures/data.ts.txt', import.meta.url)
+  const indexPath = source === 'live' ? `${liveSourceFolder()}/index.ts` : new URL('./fixtures/index.ts.txt', import.meta.url)
+  const dataPath = source === 'live' ? `${liveSourceFolder()}/data.ts` : new URL('./fixtures/data.ts.txt', import.meta.url)
   const sourceFile = parseSource(readFileSync(indexPath, 'utf8'), 'index.ts')
   const dataFile = parseSource(readFileSync(dataPath, 'utf8'), 'data.ts')
   const photos: {naturalSizeX: number, aspectRatio: number}[] = []

@@ -249,7 +249,7 @@ Cheng decided questions 1 to 3 on September 14, 2026, choosing the recommended o
 
 ### 8. What should the next learning experiment be?
 
-**Options.** todo.md's retrieval of an item's rectangle by id, while storage positions, active counts and distractors vary; extending indexing's carousel toy to uneven snap targets with runtime keys; or pausing learning experiments until the index read instruction lands. numeric-ui-core.ts has had the instruction since September 14, 2026 ([decision 1](#1-should-the-shared-runtime-get-an-index-read-instruction)), so the condition in the third option is already met.
+**Options.** todo.md's retrieval of an item's rectangle by id, while storage positions, active counts and distractors vary (todo.md, since removed; see [lab/status.md](../../status.md#parked-and-deferred)); extending indexing's carousel toy to uneven snap targets with runtime keys; or pausing learning experiments until the index read instruction lands. numeric-ui-core.ts has had the instruction since September 14, 2026 ([decision 1](#1-should-the-shared-runtime-get-an-index-read-instruction)), so the condition in the third option is already met.
 
 **Recommendation.** The retrieval task, trained with soft attention over runtime keys, run with argmax, and compared with lab/data-adapter's authored lookup and program search.
 

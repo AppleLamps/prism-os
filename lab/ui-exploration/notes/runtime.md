@@ -6,7 +6,7 @@ These are phase-one reader notes on Indirect's numeric runtime. They cover the a
 
 Line numbers in `numeric-ui-core.ts` refer to commit c3d8e54 (September 5, 2026); on September 14, 2026 the file grew from 1,653 to 3,158 lines.
 
-All scripts live in `scratchpad/phase1/runtime/` (backup: `~/github/indirect-scratch-backup/2026-09-15/scratchpad/phase1/runtime/`), with their raw JSON outputs beside them: `measure-circuits.ts` (production circuits), `macro-costs.ts` (each macro alone), `constructions.ts` and `probe.ts` (missing operations), and `codegen-study.ts` (generated code and instance batching). Measurements used Bun 1.4.0 on an Apple-silicon laptop. Structural counts are exact. Timings move by tens of percent from run to run.
+All scripts are session scratch files (scratch folder `phase1/runtime/`, not in the repo), with their raw JSON outputs beside them: `measure-circuits.ts` (production circuits), `macro-costs.ts` (each macro alone), `constructions.ts` and `probe.ts` (missing operations), and `codegen-study.ts` (generated code and instance batching). Measurements used Bun 1.4.0 on an Apple-silicon laptop. Structural counts are exact. Timings move by tens of percent from run to run.
 
 ## 1. How one frame runs
 
@@ -304,7 +304,7 @@ Scheduling matters differently per backend:
 
 ## 7. Surprises and hazards found while measuring
 
-- **Composed clamp plateau:** clamp to 0..1 loses its plateau above 2^23, not 2^24, when its input is a small affine composed separately into both relus. The four-thresholds-per-octave square root first failed with a relative error of 1. The score `x / threshold - 0.5` for `x ≈ 1.4e7` was composed into `relu(score)` and `relu(score - 1)`, each rounding `cx - 0.5` and `cx - 1.5` to even, which produced a clamp result of 2 that the boolean atom passed through. Materializing the score with `roundAffine` fixed it (0 failures, maximum relative error 1.7e-7). macro-ranges.md states the 2^24 limit for a materialized value. The composed form has a lower limit, and nothing in the builder warns about it.
+- **Composed clamp plateau:** clamp to 0..1 loses its plateau above 2^23, not 2^24, when its input is a small affine composed separately into both relus. The four-thresholds-per-octave square root first failed with a relative error of 1. The score `x / threshold - 0.5` for `x ≈ 1.4e7` was composed into `relu(score)` and `relu(score - 1)`, each rounding `cx - 0.5` and `cx - 1.5` to even, which produced a clamp result of 2 that the boolean atom passed through. Materializing the score with `roundAffine` fixed it (0 failures, maximum relative error 1.7e-7). macro-ranges.md (now part of execution-model.md) states the 2^24 limit for a materialized value. The composed form has a lower limit, and nothing in the builder warns about it.
 - **Spring depth:** springs are the deepest macro. One scalar lane is 46 ops and 33 layers. IndirectOS has 44 lanes (5 per window, 2 per thumbnail), roughly 2,000 of its 5,253 live operations. Preserved rounding around `multiply` makes each substep materialize its affine operands.
 - **Inlining cost:** Photos inside IndirectOS is about 100 layers deeper than Photos alone, because it reads window outputs.
 - **Cheap comparisons:** the boolean atom on a preserved difference with a power-of-two scale is an exact comparison over a wide, declarable magnitude window, in 3 layers instead of the cascade's 26.

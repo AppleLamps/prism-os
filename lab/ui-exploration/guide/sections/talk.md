@@ -47,7 +47,7 @@ These terms come up in several prototypes. The [glossary](../README.md#glossary)
 
 ## Running the demos
 
-Run every command below from the repo root, ~/github/indirect. `bun lab/ui-exploration/serve-demos.ts` serves every demo from one server, with an index page at http://127.0.0.1:4321/, and each page sits at its path in the repo, e.g. http://127.0.0.1:4321/lab/ui-exploration/streaming-words/demo.html. `bun lab/ui-exploration/streaming-words/demo.html` serves one page on its own.
+Run every command below from the repo root. `bun lab/ui-exploration/serve-demos.ts` serves every demo from one server, with an index page at http://127.0.0.1:4321/, and each page sits at its path in the repo, e.g. http://127.0.0.1:4321/lab/ui-exploration/streaming-words/demo.html. `bun lab/ui-exploration/streaming-words/demo.html` serves one page on its own.
 
 The browser checks quoted below ran in a hidden Chrome tab with `requestAnimationFrame` replaced by a timer, so those checks give no information about real frame pacing, window resizes or how motion looks. [notes/browser-check.md](../../notes/browser-check.md) records what each check found.
 
