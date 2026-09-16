@@ -14,9 +14,9 @@
 // - slotMode 'none' builds no slot section,
 // - extraSourceCells appends cells after the thread's own (pixel position, static tables),
 // - the built result exposes globalWires, rowWires, tops and stateWires for a per-pixel program,
-// - it imports index-read's runtime (lab/ui-exploration/index-read/numeric-ui-core.ts).
+// - it imports index-read's runtime copy, in this folder since September 16, 2026 (numeric-ui-core.ts).
 
-import {Circuit, type Terms, type Wire} from '../index-read/numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from './numeric-ui-core.ts'
 import type {Staircase} from '../hn-thread/text-heights.ts'
 import {
   globalFrameFields, rowFrameFields, slotFrameFields,

@@ -14,7 +14,7 @@
 //   turns -0 into +0.
 // - Writing into a Float32Array rounds, so the outermost fround of a statement
 //   can be dropped when the result is stored directly.
-import type {Circuit} from '../index-read/numeric-ui-core.ts'
+import type {Circuit} from './numeric-ui-core.ts'
 
 export type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 
@@ -43,7 +43,7 @@ export type GatherCompute = {slot: number, bits: number[]}
 
 type CandidateTable = {candidateCount: number, candidateBase: number, candidateStride: number, candidatePositions: ArrayLike<number>}
 
-// index-read's runtime stores evenly spaced candidates as a base and a stride.
+// This folder's runtime copy, from index-read, stores evenly spaced candidates as a base and a stride.
 function candidateList(table: CandidateTable): number[] {
   return table.candidatePositions.length > 0
     ? Array.from(table.candidatePositions)

@@ -12,7 +12,7 @@
 // run picks the highest score with emitArgmax (hard attention). The authored weights are
 // weightRelease 1, weightVelocity 1 / 4.5 and bias 3.5.
 import {Circuit, emitArgmax, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
-import {createRandom} from '../../../index-read/measure.ts'
+import {createRandom} from './measure.ts'
 import {sharpnessSchedule} from './query-descent.ts'
 import {emitSoftAttentionRead, maximumSharpness, minimumSharpness} from './soft-attention.ts'
 

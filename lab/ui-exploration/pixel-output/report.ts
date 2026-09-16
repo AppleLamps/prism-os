@@ -20,7 +20,7 @@ import {atlasFromJson, layoutTextTables, textCapacity, type GlyphAtlasJson} from
 import {emitInstanceWgsl, packSharedBuffer} from './wgsl.ts'
 import {createWgslInterpreter} from './wgsl-interpreter.ts'
 import {compareGpuCases, exportGpuCases, gpuCompileTimes, writeGpuFramePng} from './gpu-cases.ts'
-import type {Wire} from '../index-read/numeric-ui-core.ts'
+import type {Wire} from './numeric-ui-core.ts'
 
 installFakeCanvas()
 

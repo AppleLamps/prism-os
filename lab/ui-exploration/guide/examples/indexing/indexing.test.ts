@@ -1,7 +1,6 @@
 // Checks every example in this folder against a plain JS reference.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/indexing
 import {expect, test} from 'bun:test'
-import {createRandom, programStatistics} from '../../../index-read/measure.ts'
 import {buildHardAttentionRead, buildRuntimeKeyHardAttention, nearestPositionRead, nearestTargetReference} from './hard-attention.ts'
 import {buildIndexRead, buildLinearReadFromIndexReads} from './index-read-instruction.ts'
 import {
@@ -14,7 +13,7 @@ import {
   releaseGrid,
 } from './learned-query.ts'
 import {buildLinearRead, linearRead, linearReadGradient} from './linear-read.ts'
-import {centralDifference, countMismatches, countProgram} from './measure.ts'
+import {centralDifference, countMismatches, countProgram, createRandom, programStatistics} from './measure.ts'
 import {buildOneHotRead, clampedRead} from './one-hot-read.ts'
 import {descendLinearRead, descendSoftAttention, matchLoss, sharpnessSchedule} from './query-descent.ts'
 import {

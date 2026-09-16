@@ -58,7 +58,7 @@ const rows = items.map((_, item) => circuit.affine(hasColumns.map((bit, index) =
 
 ## When not to use it
 
-- When the result has many possible values, e.g. a row index among 10,000 rows: a threshold count needs one comparison per possible value. Use a floor on a known grid, index-read's `emitFloorDivide` (8 operations and 7 layers), or a binary search with `circuit.indexRead`.
+- When the result has many possible values, e.g. a row index among 10,000 rows: a threshold count needs one comparison per possible value. Use a floor on a known grid, numeric-library's [`emitFloorDivide`](../../numeric-library/README.md#merged-from-index-read-september-16-2026) (8 operations and 7 layers), or a binary search with `circuit.indexRead`.
 - When the input isn't on a grid and JavaScript can't round it onto one: `emitCompare` then builds a sign cascade per threshold, e.g. 15 operations and 14 layers for `>=` within 0..16,384.
 
 ## Where it's used

@@ -9,7 +9,7 @@ import {
 import type {PaintTables} from './pixel-model.ts'
 import {compileInstanceProgram, planInstances, type InstancePlan, type InstanceRunner} from './instance.ts'
 import type {TensorProgram} from './codegen.ts'
-import type {Wire} from '../index-read/numeric-ui-core.ts'
+import type {Wire} from './numeric-ui-core.ts'
 import type {Staircase} from '../hn-thread/text-heights.ts'
 import type {GlyphAtlas, TextCapacity, TextTables} from './text-table.ts'
 import {buildThreadCircuit, writeInputs, writeState, type BuiltThreadCircuit} from './thread-circuit.ts'

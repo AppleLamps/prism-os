@@ -7,12 +7,12 @@
 // - 'count': [top_r <= y] for every row, the row index as their count, and a
 //   one-hot as differences of neighboring bits, read through gathers. This is
 //   what the shared runtime can do, and it costs about 5 operations per row per pixel.
-// - 'binary-search': 8 index reads over the row tops (index-read's instruction),
+// - 'binary-search': 8 index reads over the row tops (the index read instruction),
 //   then direct reads of the row's fields. Static per-row numbers live in source cells.
 //
 // Both produce the same outputs bit for bit on sorted row tops, since every field
 // they read holds the same FP32 value and the arithmetic after the reads is identical.
-import {Circuit, type Terms, type Wire} from '../index-read/numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from './numeric-ui-core.ts'
 import {paintColors, paintGeometry, pixelOutputField, type PaintTables, type TextMode} from './pixel-model.ts'
 import type {GlyphAtlas, TextCapacity, TextTables} from './text-table.ts'
 import type {BuiltThreadCircuit} from './thread-circuit.ts'

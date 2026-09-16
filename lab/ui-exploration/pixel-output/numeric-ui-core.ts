@@ -2,7 +2,10 @@
 // expansions that lower into those.
 //
 // This file is a copy of the repo root numeric-ui-core.ts (commit a915dcb) with
-// these additions, described in lab/ui-exploration/index-read/README.md:
+// these additions, described in index-read's README, which stays at
+// https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/index-read/README.md.
+// This copy moved from index-read into lab/ui-exploration/pixel-output on
+// September 16, 2026, when index-read was removed. The additions:
 // - Circuit.indexRead / emitIndexRead: an instruction that reads
 //   candidates[floor(index)] directly, in the reference evaluator and in the
 //   tensor executor.

@@ -9,6 +9,7 @@ import {
   emitDivide,
   emitExp,
   emitFloor,
+  emitFloorDivide,
   emitFloorOnGrid,
   emitFract,
   emitHash,
@@ -195,6 +196,28 @@ test('floor, ceil, and fract match native results for any FP32 value', () => {
       if (floorValue !== Math.floor(value) || ceilValue !== Math.ceil(value) || fractionValue !== f(value - Math.floor(value))) {
         throw new Error(`floor/ceil/fract of ${value}: ${floorValue}, ${ceilValue}, ${fractionValue}`)
       }
+    }
+  }
+})
+
+// Ported from index-read's workloads.test.ts on September 16, 2026.
+test('floor division of integer scroll offsets is exact, where a rounded reciprocal misses rows', () => {
+  // Math.floor(f(f(1 / 41) * 41)) is 0, not 1.
+  expect(Math.floor(f(f(1 / 41) * 41))).toBe(0)
+  const random = createRandom(11)
+  for (const divisor of [1, 3, 28, 30, 41, 97, 1000]) {
+    const circuit = new Circuit(1)
+    circuit.assumeRange(0, 0, 2 ** 21)
+    const quotient = emitFloorDivide(circuit, 0, divisor)
+    expect(measureProgram(circuit, [quotient])).toMatchObject({liveOperations: 8, layers: 7})
+    const run = circuit.createTensorEvaluator([quotient])
+    const samples = [0, 1, divisor - 1, divisor, divisor + 1, 2 ** 21, 2 ** 21 - 1]
+    for (let trial = 0; trial < 2000; trial++) {
+      const multiple = Math.floor(random() * Math.floor(2 ** 21 / divisor)) * divisor
+      samples.push(multiple, Math.max(0, multiple - 1), Math.min(2 ** 21, multiple + 1), Math.floor(random() * 2 ** 21))
+    }
+    for (const value of samples) {
+      expect(run(Float32Array.of(value))[0]).toBe(Math.floor(value / divisor))
     }
   }
 })

@@ -2,7 +2,7 @@
 // navigator.gpu, Deno's (wgpu), or Dawn's Node bindings. The shared values and
 // the per-instance sources are storage buffers; outputs come back through a
 // mapped readback buffer.
-import {invariant} from '../index-read/numeric-ui-core.ts'
+import {invariant} from './numeric-ui-core.ts'
 import {type ProbeCase, type WgslModule, probeCases, probeInputs, probeKindCode, probeShader} from './wgsl.ts'
 
 // The spec's flag values; not every runtime defines the global namespaces.

@@ -121,6 +121,8 @@ From `bun lab/event-window/measure-cost.ts`:
 
 The soft training circuit at K = 1 is 496 ops with zero boolean atoms (both numbers asserted in `training.test.ts`). Closed-loop stepping through the tensor evaluator runs at 6.3µs per frame (10,000 frames in 63ms, oracle comparison included).
 
+Update, September 16, 2026: bit provenance in [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read)'s copy of the runtime, which tracks exact bits through products, complements, selects and sums of bits of which at most one can be 1, lowered this folder's products of bits, e.g. `hit * maximized`, into 11 gathers without declared groups, after declaring 13 source cells as bits and 2 one-hot groups: 414 live operations against 446 for its copy of `circuit.ts` in exact mode, with 0 mismatches over 20,000 frames. The repo root didn't take it ([lab/status.md](../status.md#open-decisions)).
+
 ## Failures and limits
 
 - **The fixed-ramp training failure described above** is the one outright failure encountered; the `constantSharpness` option in `train.ts` retains it as runnable code and the fixed-ramp test in `training.test.ts` pins both halves (the stall from far away, the out-of-band settling up close). The density-imbalance analysis predicted the direction and the band exit but overestimated the displacement: uniform-density estimate ≈30.33, measured optimum ≈30.0.

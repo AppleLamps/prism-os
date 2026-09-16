@@ -14,7 +14,7 @@ Update, September 16, 2026: those copies, with their minimum and maximum modes a
 
 From the repo root:
 
-- `bun test lab/ui-exploration/numeric-library` runs 19 tests in about 1 to 3 seconds. That covers library sweeps with asserted bounds and the workload against float64.
+- `bun test lab/ui-exploration/numeric-library` runs 20 tests in about 1 to 3 seconds. That covers library sweeps with asserted bounds and the workload against float64.
 - `bunx tsgo -p lab/ui-exploration/numeric-library` typechecks.
 - `bun lab/ui-exploration/numeric-library/report.ts [section...]` runs the heavy measurements and merges them into `report-output.json`. The sections are `macros` (about 27 s), `plans`, `minimum`, `rectangle-hit`, and `workload`. All numbers in this README come from that file, except the IndirectOS modes, which come from the file's `indirect-os` section at the exploration-2026-09 tag. Timings are rough, because other agents share the machine.
 - `bun lab/ui-exploration/numeric-library/demo.html` serves the workload as a page: the dock magnifies around the pointer, and the ring spins and fills.
@@ -24,7 +24,7 @@ From the repo root:
 | File | What it holds |
 | --- | --- |
 | `comparison.ts` | `planCompare`, `emitCompare`, `emitSignBit`, `emitSelectBit`, `emitMinimumExact`, `emitMaximumExact`, `emitClampExact`, `emitMinimumOf` (the minimum of k values by counting) |
-| `rounding.ts` | `emitRound`, `emitFloorOnGrid`, `emitFloor`, `emitCeil`, `emitFract`, `emitIntegerOneHot` |
+| `rounding.ts` | `emitRound`, `emitFloorOnGrid`, `emitFloor`, `emitCeil`, `emitFract`, `emitFloorDivide`, `emitIntegerOneHot` |
 | `arithmetic.ts` | `emitReciprocal`, `emitDivide`, `emitSqrt`, and their step planners |
 | `trigonometry.ts` | `emitSinCos`, `emitSin`, `emitCos` |
 | `shaping.ts` | `emitMix`, `emitRemap`, `emitRemapRuntime`, `emitSmoothstep`, `emitSmoothstepRuntime`, `emitExp`, `emitHash`, `hashReference` |
@@ -47,7 +47,7 @@ Exact minimum and maximum select an operand with the bit: `on * relu(bit) + off 
 
 ## Contracts
 
-`f(x)` means `Math.fround(x)`. Operation, layer, and weight counts are for the macro built alone with the stated ranges (`report.ts macros`). "Measured" is the worst case over that section's samples. That is 1M samples per row, except the maximum (500k), the counting minimum (200k), the hash (every key in [0, 2^20]), and two sine and cosine rows that try every FP32 angle in [3.5, 4] and in [128, 190] (6.2M angles). Most rows mix random values with values a few FP32 steps from where the result switches: equal or adjacent operands, half-integers, octave thresholds, odd multiples of pi/4 plus the domain endpoints, and smoothstep edges. The floor-on-a-grid, mix, and runtime remap rows are random, and the exp rows are random plus both endpoints. `library.test.ts` asserts the bounds with smaller samples for comparisons, exact minimum and maximum, clamp, counting minimum, rounding, one-hot, reciprocal, division, square root, sine and cosine, exp, smoothstep, runtime remap, mix endpoints, and the hash. The mix interior error is measured, not asserted.
+`f(x)` means `Math.fround(x)`. Operation, layer, and weight counts are for the macro built alone with the stated ranges (`report.ts macros`). "Measured" is the worst case over that section's samples. That is 1M samples per row, except the maximum (500k), the counting minimum (200k), the hash (every key in [0, 2^20]), and two sine and cosine rows that try every FP32 angle in [3.5, 4] and in [128, 190] (6.2M angles). Most rows mix random values with values a few FP32 steps from where the result switches: equal or adjacent operands, half-integers, octave thresholds, odd multiples of pi/4 plus the domain endpoints, and smoothstep edges. The floor-on-a-grid, mix, and runtime remap rows are random, and the exp rows are random plus both endpoints. `library.test.ts` asserts the bounds with smaller samples for comparisons, exact minimum and maximum, clamp, counting minimum, rounding, floor division, one-hot, reciprocal, division, square root, sine and cosine, exp, smoothstep, runtime remap, mix endpoints, and the hash. The mix interior error is measured, not asserted.
 
 | Macro | Forward calculation | Domain | Exactness or error bound | Cost: operations / layers / weights |
 | --- | --- | --- | --- | --- |
@@ -59,6 +59,7 @@ Exact minimum and maximum select an operand with the bit: `on * relu(bit) + off 
 | `emitFloorOnGrid(x, gridBits)` | round of `x - 0.5 + 2^-(gridBits + 1)` | `x` a multiple of 2^-gridBits, `|x| < 2^(22 - gridBits)` | exact | 3 / 3 / 3 |
 | `emitFloor(x)` | `r = round(x)`, `d = r - x` (exact), `r - [d > 0]` | `|x| < 2^22` | exact for any FP32 value. When the range starts at 0 or above, any positive `d` is at least 2^-24, so one stage suffices. A signed range defaults to resolving every value; with `resolution`, only x in (-resolution, 0) can return 0 instead of -1 | x >= 0: 7 / 6 / 10; signed: 22 / 16 / 30 |
 | `emitCeil`, `emitFract` | `-floor(-x)`; `f(x - floor(x))` | as floor | ceil exact; fract in 0..1, exact for x >= 0; a tiny negative x returns `f(1 - |x|)`, which can be 1 | floor plus 1 |
+| `emitFloorDivide(n, divisor)` | `q = round(f(f(1 / divisor) * n))`, then `q - [n - divisor * q < 0]`, where the remainder is an exact integer | integer `n` with a declared range within [0, 2^21]; a positive integer divisor fixed while building, at most 2^21 | exact. Unlike `emitDivide`, whose divisor is a wire that gets a Newton reciprocal, the divisor is a constant. Measured: 0 wrong over 1M integers for divisor 41, where the plain `Math.floor(f(f(1 / 41) * n))` is 0 at n = 41 ([Merged from index-read](#merged-from-index-read-september-16-2026)) | 8 / 7 / 11 |
 | `emitIntegerOneHot(n, low, high)` | `R_t = relu(n - t)`, members are neighbor differences, declared group | integer `n` in [low, high], below 2^23 | exact one-hot | 2K - 1 / 2 for K members |
 | `emitReciprocal(x)` | threshold bits `boolean(clamp01(x / t - 0.5))` with the score composed into both relus, a constant seed per bucket as first differences, Newton steps `e * relu(2 - x * e)` with the gate computed inside the ReGLU row | declared `[low, high]` with `low > 0` (or `high < 0`), `high / low <= 2^22` | `|x * r - 1| <= 2.5e-7`. Measured 1.2e-7 on [1, 16384]; 58-66% of results equal `f(1 / x)` | on [1, 16384]: 1 bucket per octave (default, 5 steps) 50 / 13 / 85; 2 per octave 90 / 11 / 151; 4 per octave 172 / 9 / 287 |
 | `emitDivide(a, b)` | `a * reciprocal(b)` | as reciprocal for `b` | `|q * b / a - 1| <= 3e-7`, measured 1.5e-7 | 51 / 14 / 87 |
@@ -216,6 +217,10 @@ The spin clock hit a real FP32 limit. Near 16,384 seconds, `f(f(1 / 2.4) * secon
 - Cheaper seeds. A linear seed per bucket would cut two Newton steps from the reciprocal and square root. Comparing squared distances instead of distances would remove the dock's 9 square roots, e.g. a falloff that is smoothstep in `d^2`.
 - Not built: `log`, `pow`, and `atan2`. `atan2` would follow the sine construction (octant reduction by exact comparisons, then a short series), and `log` could use octave bits plus a series.
 - Generated JavaScript from phase one could make the extra booleans nearly free on the CPU. The executor timings above are too noisy to show what the booleans cost today.
+
+## Merged from index-read, September 16, 2026
+
+`emitFloorDivide` and its test came from [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read), where it computed a virtualized list's first row, `floor(scrollTop / rowHeight)`, before reading rows at that index ([lists](../lists/README.md#merged-from-index-read-september-16-2026)). The plain `Math.floor(f(f(1 / rowHeight) * scrollTop))` misses at least one row for 74 of the 512 integer row heights from 1 to 512, checked at every multiple of the height up to 2^21 and one below each, e.g. height 41 at scrollTop 41 gives row 0. The first failing heights are 41, 47, 55, 61, 82, 83, 94, 97, 107 and 109. index-read measured this on September 13, 2026, and a scratch script got the same counts on September 16. index-read's version declared no ranges. This one reuses `emitRound`, which needs a declared range, so the approximate quotient declares one, and the cost stays 8 operations in 7 layers.
 
 ## Browser check
 

@@ -1,5 +1,5 @@
 // Rounding to integers from FP32 rounding itself.
-import {type Circuit, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {type Circuit, type Terms, type Wire, invariant} from '../../../numeric-ui-core.ts'
 import {type CompareOptions, emitSignBit, planCompare, smallestFloat32} from './comparison.ts'
 
 // FP32 steps are exactly 1 in [2^23, 2^24). Adding this base and subtracting it
@@ -70,6 +70,36 @@ export function emitFract(circuit: Circuit, value: Wire, options: CompareOptions
   const fraction = circuit.roundAffine([[value, 1], [emitFloor(circuit, value, options), -1]])
   circuit.assumeRange(fraction, 0, 1)
   return fraction
+}
+
+// [x >= threshold] for an integer x = terms + bias, as relu(x - threshold + 1) - relu(x - threshold),
+// kept as its own rounding point. Exact for integers below 2^23 in magnitude. 3 operations, 2 layers.
+function emitIntegerAtLeast(circuit: Circuit, terms: Terms, bias: number, threshold: number): Wire {
+  const upper = circuit.reglu([], 1, terms, bias - threshold + 1)
+  const lower = circuit.reglu([], 1, terms, bias - threshold)
+  const bit = circuit.roundAffine([[upper, 1], [lower, -1]])
+  circuit.assumeRange(bit, 0, 1)
+  return bit
+}
+
+// Math.floor(numerator / divisor) for an integer numerator within 0..2^21 and a
+// positive integer divisor fixed while building, e.g. the first visible row of a
+// list whose rows are 41 px tall. f(f(1 / divisor) * numerator) is within 1/4 of
+// the true quotient, so rounding it gives the floor or the floor plus one, and the
+// sign of the exact integer remainder removes the extra one. The plain
+// Math.floor(f(f(1 / 41) * 41)) is 0, not 1. 8 operations, 7 layers.
+export function emitFloorDivide(circuit: Circuit, numerator: Wire, divisor: number): Wire {
+  invariant(Number.isInteger(divisor) && divisor >= 1 && divisor <= 2 ** 21, 'floor division needs an integer divisor in 1..2^21')
+  const range = requireRange(circuit, numerator, 2 ** 21 + 1, 'floor division')
+  invariant(range.minimum >= 0, 'floor division needs a numerator range within 0..2^21')
+  const approximate = circuit.roundAffine([[numerator, 1 / divisor]])
+  circuit.assumeRange(approximate, -1, Math.ceil(range.maximum / divisor) + 1)
+  const rounded = emitRound(circuit, approximate)
+  const remainder = circuit.roundAffine([[numerator, 1], [rounded, -divisor]])
+  const negative = emitIntegerAtLeast(circuit, [[remainder, -1]], 0, 1)
+  const floor = circuit.roundAffine([[rounded, 1], [negative, -1]])
+  circuit.assumeRange(floor, Math.floor(range.minimum / divisor), Math.floor(range.maximum / divisor))
+  return floor
 }
 
 // The one-hot of an integer wire n in minimum..maximum, declared as a group.

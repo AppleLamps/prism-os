@@ -68,7 +68,7 @@ O(n) operations in O(1) layers after the row bottoms: 2 operations per row for t
 
 - When the test isn't monotone, e.g. hit bits of overlapping windows in stacking order: use [the first active candidate, in a tree](first-active-tree.md).
 - When every row has the same height: `Math.floor(pointerY / rowHeight)` doesn't grow with the row count, e.g. lists' uniform list is 280 operations in 19 layers at any row count, with 24 DOM slots ([loops](../sections/loops.md#1-count-instead-of-search)).
-- When depth doesn't matter and rows are many: a binary search with the index read instruction reads log2 n bottoms, e.g. 215 operations in 57 layers among 10,000 rows in index-read's copy of the runtime, against 30,143 operations in 5 layers by counting ([index-read](../../index-read/README.md)).
+- When depth doesn't matter and rows are many: a binary search with the index read instruction reads log2 n bottoms, e.g. 215 operations in 57 layers among 10,000 rows, measured in [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read)'s copy of the runtime, against 30,143 operations in 5 layers by counting ([lists](../../lists/README.md#merged-from-index-read-september-16-2026)).
 
 ## Where it's used
 

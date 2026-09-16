@@ -69,7 +69,7 @@ For n segments and L line slots:
 | walk | O(L) | O(L) | 94 operations, 32 layers | 469 operations, 157 layers |
 | pointer jumping | O(n log L) | O(log L) | 342 operations, 7 layers | 7,623 operations, 10 layers |
 
-The sizes include the line count, 2 ReLUs per line slot, but not the next-start table, which dominates at realistic sizes, e.g. 190,279 operations for 1,023 segments in index-read. Before numeric-ui-core.ts had the index read instruction, each read built a one-hot over n positions, about 3 operations per position, so pointer jumping grew like n² log L: 34,007 operations in 19 layers at 63 segments and 32 line slots ([chains](../sections/chains.md#way-3-pointer-jumping-for-linked-structures)).
+The sizes include the line count, 2 ReLUs per line slot, but not the next-start table, which dominates at realistic sizes, e.g. 190,279 operations for 1,023 segments in index-read ([text-walker](../../text-walker/README.md#merged-from-index-read-september-16-2026)). Before numeric-ui-core.ts had the index read instruction, each read built a one-hot over n positions, about 3 operations per position, so pointer jumping grew like n² log L: 34,007 operations in 19 layers at 63 segments and 32 line slots ([chains](../sections/chains.md#way-3-pointer-jumping-for-linked-structures)).
 
 ## When it's exact
 
@@ -86,6 +86,6 @@ The conditions: every `nextStart[s]` holds an integer within 1..n, and `nextStar
 ## Where it's used
 
 - [chains](../sections/chains.md#way-3-pointer-jumping-for-linked-structures), way 3, with one-hot reads in [examples/chains/pointer-jumping.ts](../examples/chains/pointer-jumping.ts).
-- [index-read](../../index-read/README.md): the line starts of a 1,023-segment paragraph from pretext's next-start table, 490 layers by walking and 66 by pointer jumping, in its copy of the runtime.
+- [text-walker](../../text-walker/README.md#merged-from-index-read-september-16-2026): the line starts of a 1,023-segment paragraph from pretext's next-start table, 490 layers by walking and 66 by pointer jumping, measured in [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read)'s copy of the runtime.
 - [text](../sections/text.md#five-ways-to-recover-lines) lists pointer jumping among five ways to recover lines, and [text-walker](../../text-walker/README.md) built it with one-hots at 255 segments, where one-hots were 83% of 235,633 operations.
 - Example and test: [pointer-jumping.ts](../examples/patterns/combining-steps/pointer-jumping.ts) and [pointer-jumping.test.ts](../examples/patterns/combining-steps/pointer-jumping.test.ts).

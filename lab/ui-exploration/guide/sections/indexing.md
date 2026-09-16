@@ -2,7 +2,7 @@
 
 This section explains how a circuit reads `table[index]` when the index is computed while the UI runs, what each way of reading costs, whether a read is differentiable, and how the reads that are differentiable in the index become soft and hard attention. It ends with two small learning experiments and what they suggest.
 
-Every example lives in [examples/indexing](../examples/indexing/). `bun test lab/ui-exploration/guide/examples/indexing` checks each circuit against plain JavaScript (16 tests, about 0.3 s), and `bun lab/ui-exploration/guide/examples/indexing/report.ts` prints every count and toy result that this section quotes from those examples (about 1 s). Numbers about larger workloads come from the final text of [index-read/README.md](../../index-read/README.md) and [lab/gather-lowering/README.md](../../../gather-lowering/README.md).
+Every example lives in [examples/indexing](../examples/indexing/). `bun test lab/ui-exploration/guide/examples/indexing` checks each circuit against plain JavaScript (16 tests, about 0.3 s), and `bun lab/ui-exploration/guide/examples/indexing/report.ts` prints every count and toy result that this section quotes from those examples (about 1 s). Numbers about larger workloads come from the final text of [index-read's README](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/index-read/README.md), whose list and line recovery numbers are now in [lists](../../lists/README.md#merged-from-index-read-september-16-2026) and [text-walker](../../text-walker/README.md#merged-from-index-read-september-16-2026), and [lab/gather-lowering/README.md](../../../gather-lowering/README.md).
 
 ## Short answers
 
@@ -98,7 +98,7 @@ const rowHeight = candidateValues[selectedPosition]
 
 ## Way 3: the index read instruction
 
-[index-read](../../index-read/README.md) added a fourth instruction to its copy of the runtime, and on September 14, 2026 Cheng decided to add it to the repo root runtime, numeric-ui-core.ts ([decision 1](../review-and-decisions.md#1-should-the-shared-runtime-get-an-index-read-instruction)). `circuit.indexRead(index, candidates, {outOfRange})` returns `candidates[floor(index)]`. Outside the table it returns the nearest end, or +0 with `{outOfRange: 'zero'}`. `circuit.indexReadAffine(indexTerms, indexBias, candidates, below, above, {indexRange})` takes the index as an affine form, with one rule per side. From [shared-runtime-index-read.ts](../examples/indexing/shared-runtime-index-read.ts), shortened:
+[index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read) added a fourth instruction to its copy of the runtime, and on September 14, 2026 Cheng decided to add it to the repo root runtime, numeric-ui-core.ts ([decision 1](../review-and-decisions.md#1-should-the-shared-runtime-get-an-index-read-instruction)). `circuit.indexRead(index, candidates, {outOfRange})` returns `candidates[floor(index)]`. Outside the table it returns the nearest end, or +0 with `{outOfRange: 'zero'}`. `circuit.indexReadAffine(indexTerms, indexBias, candidates, below, above, {indexRange})` takes the index as an affine form, with one rule per side. From [shared-runtime-index-read.ts](../examples/indexing/shared-runtime-index-read.ts), shortened:
 
 ```ts
 import {Circuit} from '../../../../../numeric-ui-core.ts'
@@ -114,19 +114,19 @@ const slotTops = Array.from({length: slotCount}, (_, slot) =>
 
 [execution-model.md](../../../../execution-model.md#index-reads) has the contract: which declared index ranges the builder accepts, why the index must hold an integer, which `validateIndexReads(circuit, values)` checks in tests, how `-0`, infinities and NaN come through, and which reads count as proven bits for `emitFirstActive`.
 
-[index-read-instruction.ts](../examples/indexing/index-read-instruction.ts) builds the first read and the linear interpolation below over index-read's copy of the runtime, and [shared-runtime-index-read.test.ts](../examples/indexing/shared-runtime-index-read.test.ts) checks that both runtimes return the same values with the same counts.
+[index-read-instruction.ts](../examples/indexing/index-read-instruction.ts) builds the first read and the linear interpolation below over index-read's copy of the runtime, which moved into [pixel-output](../../pixel-output/numeric-ui-core.ts) when [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read) was removed on September 16, 2026, and [shared-runtime-index-read.test.ts](../examples/indexing/shared-runtime-index-read.test.ts) checks that both runtimes return the same values with the same counts.
 
 In the compiled program, the layer's sparse matrix multiplication computes the index form like any affine sum. Then the executor floors that value in float64 and copies the chosen candidate's FP32 value. When the candidates sit at evenly spaced positions in the executor's value array, e.g. a run of source table cells, the read stores a base position and a stride instead of a list of positions, e.g. the virtualized list above stores no positions over 10,000 row tops.
 
 **Why it gives the same value as ways 1 and 2.** For an exact whole-number index, floor changes nothing and the one-hot selects the same entry. The copied value isn't rounded, so integers and bits read through a table stay exact.
 
-**Cost.** 1 operation, 1 layer, 1 stored weight (the index form) and O(1) work per read, at any table size. Measured 1, 1 and 1 at 8, 64 and 1,024 entries, in both runtimes, and the virtualized list above is 24 operations in 1 layer for 24 DOM slots over 10,000 rows. index-read's workloads show what that changes: filling 24 row elements from a 10,000-row list takes 153 operations and 9 layers (750,154 operations with dense one-hots), and recovering every line start of a 1,023-segment paragraph from pretext's next-start table takes 1,409 operations beyond the table, against 483,399 with gather lowering. A read that costs O(1) also makes binary search practical, as log2(n) reads, comparisons and additions: the first visible row among 10,000 rows of different heights takes 215 operations and 57 layers, against 30,143 operations for counting rows ([loops](loops.md#1-count-instead-of-search) explains counting).
+**Cost.** 1 operation, 1 layer, 1 stored weight (the index form) and O(1) work per read, at any table size. Measured 1, 1 and 1 at 8, 64 and 1,024 entries, in both runtimes, and the virtualized list above is 24 operations in 1 layer for 24 DOM slots over 10,000 rows. index-read's workloads ([lists](../../lists/README.md#merged-from-index-read-september-16-2026), [text-walker](../../text-walker/README.md#merged-from-index-read-september-16-2026)) show what that changes: filling 24 row elements from a 10,000-row list takes 153 operations and 9 layers (750,154 operations with dense one-hots), and recovering every line start of a 1,023-segment paragraph from pretext's next-start table takes 1,409 operations beyond the table, against 483,399 with gather lowering. A read that costs O(1) also makes binary search practical, as log2(n) reads, comparisons and additions: the first visible row among 10,000 rows of different heights takes 215 operations and 57 layers, against 30,143 operations for counting rows ([loops](loops.md#1-count-instead-of-search) explains counting).
 
 **Pitfalls.**
 
-- The index has to hold an exact whole number for the read to mean what the one-hot means. `validateIndexReads(circuit, values)` checks that in tests. Computing the index needs care: `floor(fround(1 / rowHeight) × scrollTop)` misses at least one row for 74 of the 512 integer row heights from 1 to 512, e.g. height 41 at scrollTop 41 gives row 0. index-read's `emitFloorDivide` corrects the rounded quotient with the sign of the exact remainder, for 8 operations and 7 layers.
+- The index has to hold an exact whole number for the read to mean what the one-hot means. `validateIndexReads(circuit, values)` checks that in tests. Computing the index needs care: `floor(fround(1 / rowHeight) × scrollTop)` misses at least one row for 74 of the 512 integer row heights from 1 to 512, e.g. height 41 at scrollTop 41 gives row 0. numeric-library's [`emitFloorDivide`](../../numeric-library/README.md#merged-from-index-read-september-16-2026), from index-read, corrects the rounded quotient with the sign of the exact remainder, for 8 operations and 7 layers.
 - The instruction and the masked sum differ on purpose in three cases. With a fractional index, the instruction floors and the masked sum interpolates, e.g. 28 and 44 at index 2.5 over rowHeights. With an infinite candidate, the instruction returns the selected value and the masked sum returns NaN. With a selected `-0`, the instruction returns `-0` and the masked sum returns `+0`.
-- A table whose candidates aren't evenly spaced stores n integer positions, which numeric-ui-core.ts shares between every read of the same table. index-read's pointer jumping first stored 1,854,682 table entries at 1,023 segments, because every read whose candidates reached the end of the text also included the past-the-end entry as a constant. Dropping that entry, and clamping the index to the last segment instead, brought the count to 0.
+- A table whose candidates aren't evenly spaced stores n integer positions, which numeric-ui-core.ts shares between every read of the same table. index-read's pointer jumping ([text-walker](../../text-walker/README.md#merged-from-index-read-september-16-2026)) first stored 1,854,682 table entries at 1,023 segments, because every read whose candidates reached the end of the text also included the past-the-end entry as a constant. Dropping that entry, and clamping the index to the last segment instead, brought the count to 0.
 - There's no matching write. Setting `table[i] = value` for the next frame still takes one select per cell.
 - Reading doesn't shorten walks that read one position after another. Line recovery still takes about 3 layers per line: 490 layers for 157 lines.
 
@@ -164,7 +164,7 @@ So a table of values can be learned through any read, e.g. per-row constants rea
 
 A hard read is a step function of the index. Between two whole numbers the output doesn't change, so the derivative is 0. At a whole number the output jumps, so there's no derivative. Over rowHeights [28, 44, 28, 60, ...], reading at 3, 3.4 and 3.9 all return 60, and reading at 2.99 returns 28.
 
-For an index read, `backpropagateReference` in numeric-ui-core.ts, like index-read's copy, makes the caller choose what the index gets with its `indexGradient` option:
+For an index read, `backpropagateReference` in numeric-ui-core.ts, like index-read's copy in pixel-output, makes the caller choose what the index gets with its `indexGradient` option:
 
 - `'reject'`, the default, throws, like the backward pass does for a boolean atom, so a training loop can't silently receive zeros.
 - `'zero'` reports 0, which is the true derivative between whole numbers.
@@ -196,7 +196,7 @@ Gradients: with respect to the index, the slope between the two neighbors, e.g. 
 
 Cost: the same as way 1, O(n) operations in 5 layers (256 operations and 508 stored weights at 64 entries). Gather lowering doesn't apply, because the weights aren't a one-hot.
 
-**Second circuit form: three index reads.** With the instruction, interpolation costs a constant number of operations per read. From [index-read-instruction.ts](../examples/indexing/index-read-instruction.ts), `buildLinearReadFromIndexReads`:
+**Second circuit form: three index reads.** With the instruction, interpolation costs a constant number of operations per read. From `buildLinearReadFromIndexReads` in [index-read-instruction.ts](../examples/indexing/index-read-instruction.ts), over pixel-output's copy of index-read's runtime:
 
 ```ts
 const clampedIndex = circuit.roundAffine([ // min(max(index, 0), last)
@@ -458,9 +458,9 @@ The training circuit reads a table of per-page losses, 0 at the target page and 
 
 - [one-hot-read.ts](../examples/indexing/one-hot-read.ts): ReLU-difference bits, the masked sum, and the plain JS `clampedRead`.
 - [linear-read.ts](../examples/indexing/linear-read.ts): the same bits without the one-hot declaration, with `linearRead` and its derivative.
-- [index-read-instruction.ts](../examples/indexing/index-read-instruction.ts): `indexRead`, and linear interpolation from three index reads, over index-read's copy of the runtime.
+- [index-read-instruction.ts](../examples/indexing/index-read-instruction.ts): `indexRead`, and linear interpolation from three index reads, over index-read's copy of the runtime, in pixel-output since September 16, 2026.
 - [shared-runtime-index-read.ts](../examples/indexing/shared-runtime-index-read.ts): `indexRead` and `indexReadAffine` from numeric-ui-core.ts: the same read and linear interpolation, and a virtualized list's row tops.
-- [shared-runtime-index-read.test.ts](../examples/indexing/shared-runtime-index-read.test.ts): the instruction against plain JS, the one-hot read and index-read's copy, including the reads that the builder throws on, and the three index gradient options.
+- [shared-runtime-index-read.test.ts](../examples/indexing/shared-runtime-index-read.test.ts): the instruction against plain JS, the one-hot read and index-read's copy in pixel-output, including the reads that the builder throws on, and the three index gradient options.
 - [soft-attention.ts](../examples/indexing/soft-attention.ts): parabola keys, softmax with `emitExp`, the Newton reciprocal without boolean atoms, and float64 references.
 - [hard-attention.ts](../examples/indexing/hard-attention.ts): parabola scores into `emitArgmax` with position keys and with runtime keys, `nearestPositionRead` and `nearestTargetReference`.
 - [query-descent.ts](../examples/indexing/query-descent.ts): toy 1.

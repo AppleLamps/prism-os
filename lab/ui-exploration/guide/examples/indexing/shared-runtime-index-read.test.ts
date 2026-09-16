@@ -1,12 +1,12 @@
 // Checks the index read instruction of numeric-ui-core.ts against plain JavaScript,
-// against the one-hot masked sum, and against index-read's copy of the runtime.
+// against the one-hot masked sum, and against index-read's copy of the runtime in
+// lab/ui-exploration/pixel-output.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/indexing
 import {expect, test} from 'bun:test'
 import {Circuit, validateIndexReads} from '../../../../../numeric-ui-core.ts'
-import {createRandom, programStatistics} from '../../../index-read/measure.ts'
 import {buildIndexRead, buildLinearReadFromIndexReads} from './index-read-instruction.ts'
 import {linearRead} from './linear-read.ts'
-import {countMismatches, countProgram} from './measure.ts'
+import {countMismatches, countProgram, createRandom, programStatistics} from './measure.ts'
 import {buildOneHotRead, clampedRead, emitMaskedSum, emitTentWeights} from './one-hot-read.ts'
 import {buildSharedIndexRead, buildSharedLinearRead, buildVisibleRowTops, visibleRowTopsReference} from './shared-runtime-index-read.ts'
 

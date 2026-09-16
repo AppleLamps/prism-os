@@ -92,6 +92,16 @@
         "worst": 0
       },
       {
+        "label": "floor divide by 41, integers in [0, 2^21]",
+        "liveOperations": 8,
+        "layers": 7,
+        "storedWeights": 11,
+        "gatherReads": 0,
+        "booleans": 0,
+        "trials": 1000000,
+        "worst": 0
+      },
+      {
         "label": "reciprocal on [1, 16384], 1 per octave (relative error)",
         "liveOperations": 50,
         "layers": 13,

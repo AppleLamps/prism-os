@@ -1,6 +1,5 @@
 // Prints the operation counts and toy results that sections/indexing.md cites.
 // Run from the repo root: bun lab/ui-exploration/guide/examples/indexing/report.ts
-import {programStatistics} from '../../../index-read/measure.ts'
 import {buildHardAttentionRead, buildRuntimeKeyHardAttention} from './hard-attention.ts'
 import {buildIndexRead, buildLinearReadFromIndexReads} from './index-read-instruction.ts'
 import {
@@ -14,7 +13,7 @@ import {
   type QueryWeights,
 } from './learned-query.ts'
 import {buildLinearRead, linearRead} from './linear-read.ts'
-import {centralDifference, countProgram} from './measure.ts'
+import {centralDifference, countProgram, programStatistics} from './measure.ts'
 import {buildOneHotRead} from './one-hot-read.ts'
 import {descendLinearRead, descendSoftAttention, matchLoss, sharpnessSchedule} from './query-descent.ts'
 import {

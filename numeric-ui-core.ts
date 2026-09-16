@@ -685,9 +685,9 @@ export class Circuit {
           // What this backward pass gives a ReLU one-hot masked sum at an integer
           // index i, with bits built from relu(i - j + 1) - relu(i - j): the ReLU
           // at its corner gets slope 0, so the index receives read(i) - read(i - 1),
-          // with the same rule outside the table. Ported from
-          // lab/ui-exploration/index-read, which compared the two on every source
-          // wire.
+          // with the same rule outside the table. Ported from index-read, kept at
+          // https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read,
+          // which compared the two on every source wire.
           const floorIndex = Math.floor(indexValue)
           const difference = readIndexedValue(values, read, floorIndex)
             - readIndexedValue(values, read, floorIndex - 1)
@@ -1166,7 +1166,7 @@ function findLiveOperations(
 // products, and an index read reads its index form and its candidates.
 // Operations come after everything they read, so one pass in operation order
 // suffices. Without gather plans this reproduces the build-time depths.
-// Ported from lab/ui-exploration/index-read.
+// Ported from index-read, kept at https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read.
 function computeCompiledDepths(
   circuit: Circuit,
   liveOperations: Uint8Array,
@@ -1273,8 +1273,8 @@ function indexReadRange(
 // Store a candidate table as a base position and a stride when the candidates
 // sit at evenly spaced packed positions, e.g. a run of source cells, a reversed
 // run, or one repeated wire; otherwise store one position per candidate. Ported
-// from lab/ui-exploration/index-read, where a 10,000-row list read into 24
-// slots stored no positions.
+// from index-read, where a 10,000-row list read into 24 slots stored no positions
+// (lab/ui-exploration/lists/README.md, "Merged from index-read").
 function packCandidateTable(
   table: CandidateTable,
   packedIndexByWire: Int32Array,

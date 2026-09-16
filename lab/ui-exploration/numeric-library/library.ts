@@ -16,7 +16,7 @@ export {
   planCompare,
   smallestFloat32,
 } from './comparison.ts'
-export {emitCeil, emitFloor, emitFloorOnGrid, emitFract, emitIntegerOneHot, emitRound, roundDomain} from './rounding.ts'
+export {emitCeil, emitFloor, emitFloorDivide, emitFloorOnGrid, emitFract, emitIntegerOneHot, emitRound, roundDomain} from './rounding.ts'
 export {
   type NewtonOptions,
   type SquareRootOptions,

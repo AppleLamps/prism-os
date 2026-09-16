@@ -13,6 +13,7 @@ import {
   emitDivide,
   emitExp,
   emitFloor,
+  emitFloorDivide,
   emitFloorOnGrid,
   emitHash,
   emitMaximumExact,
@@ -91,6 +92,12 @@ function macros() {
   }
   rows.push(sweep('floor, any FP32 x in [0, 2^22)', [[0, 2 ** 22 - 1]], circuit => [emitFloor(circuit, 0)], 1_000_000, floorSample(false), (source, output) => Number(output[0] !== Math.floor(source[0]!))))
   rows.push(sweep('floor, any FP32 x in (-2^22, 2^22)', [[-(2 ** 22) + 1, 2 ** 22 - 1]], circuit => [emitFloor(circuit, 0)], 1_000_000, floorSample(true), (source, output) => Number(output[0] !== Math.floor(source[0]!))))
+  // Multiples of 41, one below each, and random integers. 41 is the smallest divisor where Math.floor(f(f(1 / d) * n)) misses.
+  rows.push(sweep('floor divide by 41, integers in [0, 2^21]', [[0, 2 ** 21]], circuit => [emitFloorDivide(circuit, 0, 41)], 1_000_000,
+    (random, trial) => {
+      const multiple = Math.floor(random() * Math.floor(2 ** 21 / 41)) * 41
+      return Float32Array.of(trial % 3 === 0 ? multiple : trial % 3 === 1 ? Math.max(0, multiple - 1) : Math.floor(random() * (2 ** 21 + 1)))
+    }, (source, output) => Number(output[0] !== Math.floor(source[0]! / 41))))
   const logUniform = (minimum: number, maximum: number): Sampler => (random, trial) =>
     Float32Array.of(trial % 10 === 0 ? Math.min(maximum, Math.max(minimum, stepFloat32(minimum * 2 ** Math.floor(random() * Math.log2(maximum / minimum)), (trial % 5) - 2))) : f(minimum * 2 ** (random() * Math.log2(maximum / minimum))))
   for (const bucketsPerOctave of [1, 2, 4]) {
