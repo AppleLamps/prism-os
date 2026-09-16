@@ -12,6 +12,8 @@ Update, September 15, 2026: window-manager.ts moved to host-timed springs, so `b
 
 Update, September 15, 2026: the Notes flow of configuration 4 (obstacles from destinations, words without springs) now lives in root IndirectOS, as `notes.ts`, `notes-walker.ts` and `notes-paragraph.ts` next to `window-manager.ts`, measured with the npm package `@chenglou/pretext` and checked against its `layoutNextLineRange` in the root `notes.test.ts`. Root adds one rule: a band whose bottom lies below the Notes content box is unusable, see the root behavior-choices.md. Root IndirectOS is the one IndirectOS from here on; this folder stays as the record of the exploration, with its code unchanged.
 
+Update, September 16, 2026: the port of the Notes flow into root IndirectOS finished, and presses that act on release moved there too. Root IndirectOS already sent ArrowLeft, ArrowRight and Escape to Photos only while Photos was the focused window, and its tests now check both cases. Presses that act on release: window buttons, dock items and Photos' content act at the release, and Photos gets its clicks from releases instead of DOM click handlers. The root's press rule differs from this folder's 4 px slop latch. In root IndirectOS, a press arms the control under it, and a release over the armed control acts whatever path the pointer took, so a press on a close button that moves off the button and back, then releases over it, closes the window. Here, moving past slop and back cancels the close, see queue.test.ts's first named case. In root IndirectOS, a release anywhere else, or a pointercancel, acts on nothing. The event queue didn't move: root IndirectOS runs one evaluation per distinct event timestamp.
+
 ## What it is and how to run it
 
 From the repo root:

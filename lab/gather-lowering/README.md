@@ -2,7 +2,7 @@
 
 ## September 2026 update
 
-Current production counts are 26 candidate-gallery reads and 12 window-manager reads. Preserved multiplication metadata retains constant-zero candidates that earlier builder folding erased. The current compiled sparse-weight counts are 940 to 848 for candidate-gallery and 8,034 to 7,890 for window-manager, which was 11,742 to 11,598 before its springs and hit tests changed on September 15, 2026; the tables below record earlier implementations and are historical. The differential study now uses 3,000 circuits, keeping the existing minimum coverage requirements after the graph representation changed.
+Current production counts are 26 candidate-gallery reads and 908 window-manager reads, up from 12 before the Notes flow moved into IndirectOS on September 16, 2026. Preserved multiplication metadata retains constant-zero candidates that earlier builder folding erased. The current compiled sparse-weight counts are 940 to 848 for candidate-gallery and 239,071 to 31,359 for window-manager, which was 8,034 to 7,890 before the Notes flow, and 11,742 to 11,598 before its springs and hit tests changed on September 15, 2026; the tables below record earlier implementations and are historical. The differential study now uses 3,000 circuits, keeping the existing minimum coverage requirements after the graph representation changed.
 
 Finite bounds now follow FP32 rounding at each step. A finite float64 endpoint above the FP32 range no longer authorizes gather lowering. See `numeric-semantics.test.ts` for an unselected overflowing-product regression. Retrieval still follows selection; this pass does not discover query/key scoring. See `lab/runtime-cost` for the separate reusable-buffer measurement.
 

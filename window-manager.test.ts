@@ -1103,6 +1103,10 @@ test('ArrowLeft, ArrowRight and Escape reach Photos only while Photos is the foc
       machine.photoNext()
       machine.pointerUp(20, 700)
     },
+    () => {
+      machine.pointerUp(20, 700)
+      machine.photoNext()
+    },
   ]
   const openAfterKeyAndRelease: number[] = []
   for (const sendKeyAndRelease of keyAndRelease) {
@@ -1112,7 +1116,7 @@ test('ArrowLeft, ArrowRight and Escape reach Photos only while Photos is the foc
     assertFocused(projectWindows(machine, values), 3)
     openAfterKeyAndRelease.push(openPhotoOf(machine.source))
   }
-  assert.deepEqual(openAfterKeyAndRelease, [6, 7, 8])
+  assert.deepEqual(openAfterKeyAndRelease, [6, 7, 8, 9])
 })
 
 test("Photos takes a release over its content after a press there as a click, and not the release of a grip resize, a title bar drag, a press elsewhere, or a pointercancel", () => {
@@ -1465,15 +1469,23 @@ test("while nothing animates and no press is held, a frame's pointer moves run a
 
   // Moves whose timestamps lie after the frame's time all apply at the frame's time,
   // in delivery order. So the move delivered last sets the stored pointer, e.g. 700,600
-  // here, although its timestamp is the earlier one.
-  const machine = createWindowManagerMachine()
-  settle(machine)
-  const nextFrameTime = eventTime(machine, frameDuration)
-  machine.pointerMove(300, 500, nextFrameTime + 3)
-  machine.pointerMove(700, 600, nextFrameTime + 2)
-  step(machine)
-  assert.deepEqual(machine.evaluations.map(evaluation => evaluation.events), [['pointer move'], []])
-  assert.deepEqual([machine.source[machine.cells.pointer.x], machine.source[machine.cells.pointer.y]], [700, 600])
+  // here, although its timestamp is the earlier one. A second machine also gets a resize
+  // to the same viewport before the moves, so its frame isn't all moves and every move
+  // runs, and both machines store the same table in every bit.
+  const coalescing = createWindowManagerMachine()
+  const runningEveryMove = createWindowManagerMachine()
+  for (const machine of [coalescing, runningEveryMove]) {
+    settle(machine)
+    const nextFrameTime = eventTime(machine, frameDuration)
+    if (machine === runningEveryMove) machine.resize(viewportWidth, viewportHeight, nextFrameTime + 1)
+    machine.pointerMove(300, 500, nextFrameTime + 3)
+    machine.pointerMove(700, 600, nextFrameTime + 2)
+    step(machine)
+  }
+  assert.deepEqual(coalescing.evaluations.map(evaluation => evaluation.events), [['pointer move'], []])
+  assert.deepEqual(runningEveryMove.evaluations.map(evaluation => evaluation.events), [['resize', 'pointer move', 'pointer move'], []])
+  assert.deepEqual([coalescing.source[coalescing.cells.pointer.x], coalescing.source[coalescing.cells.pointer.y]], [700, 600])
+  assert.equal(differingBits(coalescing.source, runningEveryMove.source), 0)
 })
 
 // A stand-in for an element: projectWindowElements only writes style properties.
@@ -1863,7 +1875,7 @@ function differingBits(left: Float32Array, right: Float32Array) {
 // overlap a window that is visible and stacked above Notes, and how many are on a
 // line level with part of such a window. A window's destination rectangle comes from
 // its springs' destination cells, which hold its center and size, e.g. the maximized
-// rectangle from a maximize press on.
+// rectangle from the release of a maximize button on.
 function countWordsAgainstWindowsAbove(commits: SessionRun['commits']) {
   const lineHeight = notesOptionsFor(defaultNotesParagraph, defaultLineFitEpsilon).lineHeight
   const wordSegments = defaultNotesParagraph.breakAfter.flatMap((breakAfter, segment) => breakAfter === 0 ? [segment] : [])

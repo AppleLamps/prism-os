@@ -1116,9 +1116,10 @@ function buildWindowManager(notesOptions: NotesOptions) {
   const photosWindowOutputStart = photosWindowIndex * windowOutputField.size
   const photosDestination = effectiveGeometry[photosWindowIndex]!
   // Photos takes a key only while focused, and a click only at a release over its
-  // content after a press there. The machine writes Photos' click event at every up,
-  // see pointerUp, so a click event without a content click is blocked. Photos events
-  // that share an evaluation are mutually exclusive, so a key sees only the focus bit.
+  // content after a press there. The machine writes Photos' click event at every up
+  // that doesn't share an evaluation with a key, see receivePointer, so a click event
+  // without a content click is blocked. Photos events that share an evaluation are
+  // mutually exclusive, so a key sees only the focus bit.
   const photosFocused = windows[photosWindowOutputStart + windowOutputField.focused]!
   const photosClickBlocked = emitRelu(circuit, circuit.affine([[cells.photos.click.active, 1], [photosContentClick, -1]]))
   const photosInteractive = emitRelu(circuit, circuit.affine([[photosFocused, 1], [photosClickBlocked, -1]]))
