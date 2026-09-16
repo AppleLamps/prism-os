@@ -117,7 +117,7 @@ const pointerCoordinateBound = 32_768
 // largest real displays (8K is 7680 wide) with headroom while staying far
 // inside FP32's exact-integer band (execution-model.md's macro contracts
 // keep min, max and clamp operands under 2^23). Finite bounds make
-// geometry eligible for gather lowering (see lab/gather-lowering); a range
+// geometry eligible for gather lowering (see execution-model.md); a range
 // that admits Infinity cannot lower.
 const pixel: Range = [0, 16_384]
 // The machine writes the viewport and pointer coordinates on the 1/64 px grid.
@@ -219,7 +219,7 @@ const windowManagerCellsFor = (paragraph: FastParagraph) => ({
   },
   // The stacking state is a permutation matrix: exactly one window per rank
   // and exactly one rank per window. Declared as one-hot groups, the
-  // frontmost-window selection sums lower to gather reads (see lab/gather-lowering).
+  // frontmost-window selection sums lower to gather reads (gather-lowering.test.ts).
   stack: permutation(list(windowCount, windowIndex => windowIndex), {grid: 1}),
   // The destinations written back are this evaluation's targets. A center can
   // sit a little outside the viewport, e.g. a dock item in a 2 px wide viewport

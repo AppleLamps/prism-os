@@ -108,7 +108,7 @@ export function createCandidateGalleryCircuit() {
   // lets the compiler lower the layout selection reads to gather operations:
   // a range that admits Infinity would let a non-selected candidate poison
   // the masked sum to NaN, so such reads must stay dense (see
-  // lab/gather-lowering).
+  // execution-model.md, "One-hot groups and gathers").
   for (const field of [
     sourceField.viewportWidth,
     sourceField.viewportHeight,

@@ -1366,8 +1366,8 @@ function maskedProductShape(circuit: Circuit, wire: Wire): Omit<MaskedProduct, '
 // declared one-hot group against value wires, covering every group position
 // exactly once. Such a sum accumulates fround(0 * value) = 0 for every
 // non-selected position plus the selected value itself, so an indexed read of
-// the selected candidate reproduces it bit-for-bit (see the gather tests under
-// lab/gather-lowering for the full argument and its adversarial cases).
+// the selected candidate reproduces it bit-for-bit (execution-model.md states the
+// contract, and gather-lowering.test.ts checks its adversarial cases).
 function planGatherLowering(circuit: Circuit): Map<number, GatherPlan> {
   const plans = new Map<number, GatherPlan>()
   if (circuit.oneHotGroups.length === 0) return plans
@@ -1725,8 +1725,8 @@ function executeTensorProgram(
 // Kept out of evaluateTensorProgram on purpose: with these loops inlined, the
 // engine's top JIT tier fails to optimize the whole evaluation function and
 // gather-heavy programs run several times slower on identical work (measured
-// 3.6x-5.3x on Bun 1.3 / JavaScriptCore; the reproducible measurement lives in
-// lab/gather-lowering/executor-study.ts).
+// 3.6x-5.3x on Bun 1.3 / JavaScriptCore in July 2026 by executor-study.ts, at
+// https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/gather-lowering/executor-study.ts).
 function applyGathers(
   layer: TensorLayer,
   packedValues: Float32Array,
