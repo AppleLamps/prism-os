@@ -3,7 +3,7 @@
 // again, and a release while armed is a click. Between two events the button
 // carries one of 3 states, and a queue of events affects later events only through
 // that state. button-forms.ts builds the same queue three ways.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export const idle = 0
 export const armed = 1

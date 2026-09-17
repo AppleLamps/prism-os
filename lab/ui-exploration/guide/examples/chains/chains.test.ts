@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateOneHotGroups, validateTensorEvaluation} from '../../../../../numeric-ui-core.ts'
+import {validateOneHotGroups, validateTensorEvaluation} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {buildButtonQueue, buttonForms} from './button-forms.ts'
 import {type ButtonEvent, buttonEvents, runButtonQueue, stateCount, writeButtonQueue} from './button-machine.ts'
 import {measureProgram} from './measure.ts'

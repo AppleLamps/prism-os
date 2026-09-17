@@ -17,7 +17,7 @@
 // - Photos' click priority (previous, next, a thumbnail, the main image) is a first active over the
 //   thumbnails plus a shared stage for the fixed order around it; the neighbor reads for previous
 //   and next are gathers at per-instance constant indices.
-import {emitMaximum, emitMinimum, emitMultiply, emitRelu, emitSelect, emitSpring, type Circuit, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {emitMaximum, emitMinimum, emitMultiply, emitRelu, emitSelect, emitSpring, type Circuit, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {createExecutor} from './executor.ts'
 import {emitAnd, emitGather} from './kit.ts'
 import {StagedProgram, type Value} from './staged.ts'

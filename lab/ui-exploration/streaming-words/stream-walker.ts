@@ -22,7 +22,7 @@
 //     T'[j] = S'[j] - breakAfter[j] * width[j]           (fit threshold)
 //     P(j)  = S'[j - 1] + turnOffset * turnStart[j]        (prefix at the start of segment j)
 //   Segments in one turn see the same offsets, so their x within a line is unchanged.
-import {Circuit, invariant, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {fitBit, integerAtLeast, integerOneHot, integerSteps, maskedRead, type IntegerSteps, type OneHot} from './kit.ts'
 
 export const maximumSegmentWidth = 2048

@@ -14,7 +14,7 @@
 //   turns -0 into +0.
 // - Writing into a Float32Array rounds, so the outermost fround of a statement
 //   can be dropped when the result is stored directly.
-import type {Circuit} from '../../../numeric-ui-core.ts'
+import type {Circuit} from '../../../src/runtime/numeric-ui-core.ts'
 
 export type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 

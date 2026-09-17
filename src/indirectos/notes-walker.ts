@@ -17,7 +17,7 @@
 //
 // For a line starting at s, fits(o) = [T[s+o] - prefix(s) <= maxWidth + epsilon] is monotone in o
 // (1..1 0..0), so "the first segment that does not fit" is a count.
-import {type Circuit, type Terms, type Wire, invariant} from './numeric-ui-core.ts'
+import {type Circuit, type Terms, type Wire, invariant} from '../runtime/numeric-ui-core.ts'
 
 // A paragraph as the walker sees it: one width per segment, and 1 for each
 // segment that breaks after itself (a space or a zero-width break), which hangs

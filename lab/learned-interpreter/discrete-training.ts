@@ -1,4 +1,4 @@
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {
   type TrainingTask,
   RandomSource,

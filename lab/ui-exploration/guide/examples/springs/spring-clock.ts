@@ -6,7 +6,7 @@
 // JS keeps absolute timestamps in float64, rounds them to 1/64 ms, and writes
 // only this frame's delta into a cell, so every time value below is a multiple
 // of 1/64 ms under 2^17 ms and exact in FP32.
-import {type Circuit, type Wire, emitRelu} from '../../../../../numeric-ui-core.ts'
+import {type Circuit, type Wire, emitRelu} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {stepMs} from './spring-step.ts'
 
 export const maxSteps = 300

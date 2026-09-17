@@ -10,7 +10,7 @@
 // the two numerator wires, so gradient ascent can seed the circuit's backward
 // pass exactly the way lab/learned-gallery/trainable-geometry.ts seeds its coordinate losses.
 
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {
   type FlowLayoutOutput,
   geometryField,

@@ -4,7 +4,7 @@
 // and 1 at or above threshold. An integer can't land strictly between threshold - 1 and threshold,
 // so for integer values the ramp returns exactly 0 or 1. Every value in between is an integer, and
 // FP32 represents every integer up to 2^24, so nothing rounds while the values stay within 2^23.
-import {type Circuit, type Terms, type Wire, invariant} from '../../../../../numeric-ui-core.ts'
+import {type Circuit, type Terms, type Wire, invariant} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export function emitAtLeastInteger(circuit: Circuit, value: Wire, threshold: number): Wire {
   invariant(Number.isInteger(threshold) && Math.abs(threshold) <= 2 ** 23, 'threshold must be an integer within 2^23')

@@ -1,5 +1,5 @@
 // Rounding to integers from FP32 rounding itself.
-import {type Circuit, type Terms, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {type Circuit, type Terms, type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {type CompareOptions, emitSignBit, planCompare, smallestFloat32} from './comparison.ts'
 
 // FP32 steps are exactly 1 in [2^23, 2^24). Adding this base and subtracting it

@@ -1,4 +1,4 @@
-import {Circuit, type Wire} from '../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../src/runtime/numeric-ui-core.ts'
 import {observationInput, type EffortInput, type Observation} from './domain.ts'
 
 export const parameterNames = ['base', 'difficulty / 6', 'clutter', 'motor context', '(difficulty / 6) * motor context'] as const

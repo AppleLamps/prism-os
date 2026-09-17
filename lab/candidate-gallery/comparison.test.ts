@@ -1,8 +1,8 @@
 import {describe, expect, test} from 'bun:test'
-import {asWire} from '../../numeric-ui-core.ts'
+import {asWire} from '../../src/runtime/numeric-ui-core.ts'
 import {createCandidateGalleryMachine} from './candidate-gallery.ts'
 
-// The candidate gallery's part of comparison.test.ts, which moved here with the gallery.
+// The candidate gallery's part of tests/runtime/comparison.test.ts, which moved here with the gallery.
 
 describe('rounding points', () => {
   test('existing circuits record exactly their boolean atoms', () => {

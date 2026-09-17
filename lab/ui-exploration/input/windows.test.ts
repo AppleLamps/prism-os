@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import type {QueuedEvent} from './events.ts'
 import {testWindowsConfig as config} from './fixtures.ts'
 import {generateWindowsTrace, type Frame} from './traces.ts'

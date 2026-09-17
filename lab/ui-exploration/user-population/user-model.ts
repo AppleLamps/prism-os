@@ -39,7 +39,7 @@
 // after the previous task's last title press, so tasks can't form double
 // clicks with each other.
 
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import type {Population} from './population.ts'
 
 export const frameDuration = 16.6875

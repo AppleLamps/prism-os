@@ -15,7 +15,7 @@
 // 4. Box (per animated object). One exact settle bit over all of the box's
 //    lanes; when it fires, every lane lands exactly on its destination with zero
 //    velocity.
-import {Circuit, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   type Matrix2,
   type RetargetTiming,

@@ -4,7 +4,7 @@
 // relative to the frame on a 1/16 ms grid, one bit per key the app
 // understands, and the Shift modifier state at the time of the key event.
 
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import type {SourceLayout, Wire} from './kit.ts'
 
 export const keyNames = ['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Space', 'Escape'] as const

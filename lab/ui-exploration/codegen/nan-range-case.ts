@@ -4,7 +4,7 @@
 // and whose executor result differs from the reference, then walks the NaN
 // back to where it started and shows the declared ranges along the way.
 // Run: bun lab/ui-exploration/codegen/nan-range-case.ts
-import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import {sameFloat} from './codegen.ts'
 import {buildRandomCircuit} from './random-circuit.ts'
 

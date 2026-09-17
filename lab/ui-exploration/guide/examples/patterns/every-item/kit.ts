@@ -1,6 +1,6 @@
 // Helpers shared by the examples of the family "Per-item computations, then counts and sums": program
 // sizes, running one circuit through both evaluators, and a seeded random generator.
-import type {Circuit, Wire} from '../../../../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export type ProgramSize = {
   liveOperations: number

@@ -8,7 +8,7 @@
 // text-walker/rows.ts derives the same lists from pretext's walkers, including hard breaks, long words, soft
 // hyphens, letter spacing and tabs, and text-walker/rows-circuit.ts reads each line's list at that line's
 // start through a one-hot, the way counting.ts reads line ends.
-import {Circuit, invariant, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitFits} from './counting.ts'
 import {lineFitEpsilon, type Line, type Paragraph} from './paragraph.ts'
 

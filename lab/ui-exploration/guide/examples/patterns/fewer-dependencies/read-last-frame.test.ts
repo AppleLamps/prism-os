@@ -5,8 +5,8 @@
 // lags that guide/patterns/read-last-frame.md quotes. Run from the repo root:
 // bun test lab/ui-exploration/guide/examples/patterns/fewer-dependencies
 import {expect, test} from 'bun:test'
-import type {WriteBack} from '../../../../../../host-timing.ts'
-import {springMatrixPower, springStepMatrix} from '../../../../../../host-timing.ts'
+import type {WriteBack} from '../../../../../../src/runtime/host-timing.ts'
+import {springMatrixPower, springStepMatrix} from '../../../../../../src/runtime/host-timing.ts'
 import {evaluateBoth, frameTimesAt, measureProgram, nextFloat32, seededRandom} from './helpers.ts'
 import {
   type DrawerLayout,

@@ -116,7 +116,7 @@ Pass the roots that JavaScript actually reads, i.e. the outputs and the next-sta
 
 ## What the builder does while you write
 
-`Circuit.append` in [numeric-ui-core.ts](../../../../numeric-ui-core.ts) runs a few steps on every new operation, before the compiler runs:
+`Circuit.append` in [numeric-ui-core.ts](../../../../src/runtime/numeric-ui-core.ts) runs a few steps on every new operation, before the compiler runs:
 
 | Step | What it does | What it changes |
 | --- | --- | --- |

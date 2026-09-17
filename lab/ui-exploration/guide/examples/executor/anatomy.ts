@@ -18,7 +18,7 @@
 //
 // `describeProgram` prints each compiled layer: its operations, how many values
 // it reads, its matrix rows, and its stored weights.
-import {Circuit, type Terms, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export const buttonSize = 16
 export const buttonInset = 6

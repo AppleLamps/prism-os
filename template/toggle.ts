@@ -2,9 +2,9 @@
 // on the track arms it, a release on the track while armed flips it, and a release off the track or a pointercancel
 // disarms it. The thumb springs to its new side. tutorial.md walks through this file, toggle-reference.ts is the same
 // app in plain JavaScript, and toggle.test.ts compares the two.
-import {type Wire, emitAnimatedObject, emitCompare, emitSelect} from '../numeric-ui-core.ts'
-import {type WriteBack, advanceFrame, defaultSpringClockConfig, springMatrixBound, springMatrixPower, springStepMatrix, stoppedSpringClock} from '../host-timing.ts'
-import {type WireValues, createEvaluator, createSourceTable, event, input, inputBit, state, stateBit} from '../cells.ts'
+import {type Wire, emitAnimatedObject, emitCompare, emitSelect} from '../src/runtime/numeric-ui-core.ts'
+import {type WriteBack, advanceFrame, defaultSpringClockConfig, springMatrixBound, springMatrixPower, springStepMatrix, stoppedSpringClock} from '../src/runtime/host-timing.ts'
+import {type WireValues, createEvaluator, createSourceTable, event, input, inputBit, state, stateBit} from '../src/runtime/cells.ts'
 
 export const layout = {trackWidth: 52, trackHeight: 32, thumbInset: 4, travel: 20} as const
 export const springConstants = {stiffness: 650, damping: 45}

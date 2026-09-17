@@ -2,7 +2,7 @@
 // gives which of the two comes first, all in the same layers, and each rank counts those bits. When one item
 // moves, e.g. a dragged card, each card gets a bit that is 1 when the dragged card passes it, and the ranks
 // update from those bits and two counts.
-import {Circuit, emitCompare, type Wire, asWire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, type Wire, asWire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 // Host contract for ranks: keys are integers within 0..65,535, e.g. dates as day numbers, and heights are
 // multiples of 1/4 px within 0..1,024, so every top is an exact FP32 sum while the total stays below 2^22 px.

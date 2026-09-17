@@ -5,7 +5,7 @@
 // AST checks); the output table was reviewed line by line against the file.
 
 import ts from 'typescript'
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import type {RealTarget, SliceResult} from './real-slice.ts'
 
 export type CensusCategory =

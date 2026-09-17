@@ -4,7 +4,7 @@
 // a canvas.
 import {type PreparedTextWithSegments, prepareWithSegments} from '@chenglou/pretext'
 import {type FastParagraph, fastWindow, longestBreakAfterRun, maximumSegmentWidth} from './notes-walker.ts'
-import {invariant} from './numeric-ui-core.ts'
+import {invariant} from '../runtime/numeric-ui-core.ts'
 
 export const notesText =
   'This paragraph is laid out by the same circuit that runs the windows. Drag Files or Photos over this note, ' +

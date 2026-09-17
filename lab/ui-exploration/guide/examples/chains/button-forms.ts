@@ -1,6 +1,6 @@
 // The same queue of button events (button-machine.ts) built three ways: one event
 // after another, as a prefix scan of transition matrices, and by speculation.
-import type {Wire} from '../../../../../numeric-ui-core.ts'
+import type {Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {
   type ButtonQueueCircuit,
   type StateBits,

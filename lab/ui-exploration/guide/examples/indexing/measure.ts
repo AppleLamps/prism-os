@@ -1,7 +1,7 @@
-// Counting helpers for the examples in this folder, over the repo root runtime.
+// Counting helpers for the examples in this folder, over the runtime in src/runtime/.
 // programStatistics also counts programs compiled by index-read's copy of the
 // runtime, lab/ui-exploration/pixel-output/numeric-ui-core.ts.
-import type {Circuit, Wire} from '../../../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // Seeded hash, copied from numeric-ui-core.test.ts so every run is deterministic.
 export function createRandom(seed: number) {

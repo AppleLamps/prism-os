@@ -1,6 +1,6 @@
 // Circuit helpers shared by the walkers: a source table builder, the rounding comparison, integer
 // one-hots, masked reads, and compile-time measurement.
-import {Circuit, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 // Source cells with declared ranges. Cell 0 is always the constant 1, used as the last term of
 // comparisons so that the 0.5 offset is added after large terms cancel.

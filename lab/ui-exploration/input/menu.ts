@@ -25,7 +25,7 @@
 //   -1 for none, m for title m, and menuCount + m * itemSlots + k for item k of
 //   menu m.
 
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {allocateEventQueue, coordinateLimit, writeEventQueue, type EventSlot, type QueuedEvent} from './events.ts'
 import {cyclicNextAvailable, cyclicNextEnabled} from './keyboard.ts'
 import {createKit, readOneHot, scaled, SourceLayout, termsOf, type Expression, type Kit, type Term, type Wire} from './kit.ts'

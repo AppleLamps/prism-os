@@ -5,7 +5,7 @@
 //
 // Host contract: scrollTop and row heights are multiples of 1/4 px, heights are in 0..1024 px,
 // scrollTop is in 0..2^20 px, and the content height stays below 2^20 px.
-import {Circuit, invariant, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitIntegerAtLeastZero} from './kit.ts'
 import {emitRowTopsBrentKung} from './row-tops.ts'
 

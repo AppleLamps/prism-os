@@ -1,6 +1,6 @@
 // Shared helpers for tests and the report: compiled size of a circuit, a seeded
 // random generator, and stepping to neighboring FP32 values.
-import {type Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {type Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 export const f = Math.fround
 

@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {Circuit} from '../../../numeric-ui-core.ts'
+import {Circuit} from '../../../src/runtime/numeric-ui-core.ts'
 import {createKit, createRandom, randomInteger} from './kit.ts'
 
 test('integer decisions, picks, and clamps are exact across the coordinate range', () => {

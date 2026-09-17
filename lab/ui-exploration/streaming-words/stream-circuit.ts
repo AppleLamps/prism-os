@@ -16,7 +16,7 @@
 // segments (arrived, then removed by Stop) keep their widths, so they keep their places while they
 // fade out. Outputs that describe the whole text (line count, overflow bits, bubbles) read the arrived
 // count, never the capacity.
-import {emitMaximum, type Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {emitMaximum, type Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   asIndexReadCircuit,
   atLeastBit,

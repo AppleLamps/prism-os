@@ -4,7 +4,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "start": "bun ./index.html",
+    "start": "bun ./assets/index.html",
     "start:candidates": "bun ./lab/candidate-gallery/candidate-gallery.html",
     "start:hard-attend": "bun ./lab/hard-attend/hard-attend.html",
     "start:learning": "bun ./lab/learned-gallery/learned-gallery.html",
@@ -12,7 +12,7 @@
     "start:template": "bun ./template/index.html",
     "check": "bun scripts/check.ts",
     "knip": "knip",
-    "test": "bun test ./*.test.ts template lab"
+    "test": "bun test ./tests ./template ./lab"
   },
   "devDependencies": {
     "@types/bun": "latest",

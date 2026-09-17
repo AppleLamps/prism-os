@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {Circuit, asWire, emitCompare, emitMaximum, emitMinimum, emitMultiply, emitSelect, inlineCircuit, validateNoNaN} from './numeric-ui-core.ts'
+import {Circuit, asWire, emitCompare, emitMaximum, emitMinimum, emitMultiply, emitSelect, inlineCircuit, validateNoNaN} from '../../src/runtime/numeric-ui-core.ts'
 
 test('explicit rounding survives consumers, duplicate terms, and circuit inlining', () => {
   const circuit = new Circuit(2)

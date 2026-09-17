@@ -11,7 +11,7 @@
 // keeps the larger score of each pair, and routes a 1 back down to the highest score. emitHighestScoreExact
 // below builds the same tree with emitCompare's exact comparisons, the variant lab/cascade-argmax built
 // by hand before emitCompare existed.
-import {Circuit, emitArgmax, emitCompare, emitSelect, invariant, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitArgmax, emitCompare, emitSelect, invariant, type Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export function highestScoreReference(scores: ArrayLike<number>): number {
   let bestCandidate = 0

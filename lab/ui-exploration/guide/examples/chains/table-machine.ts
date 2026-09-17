@@ -4,7 +4,7 @@
 // one compiled program, which is what lets different chains of logic run together
 // as instances of that program. The price is interpreter overhead: for every event,
 // the circuit reads the table through a one-hot over all (state, event kind) pairs.
-import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {type ButtonEvent, type EventSlot, and, armed, buttonEvents, nextButtonState} from './button-machine.ts'
 
 export const tableStateCount = 4

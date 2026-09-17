@@ -13,7 +13,7 @@
 //   boolean-atom margin policy. Exact forward decisions do not imply useful training gradients.
 
 import ts from 'typescript'
-import {Circuit, type Wire, invariant, asWire} from '../../numeric-ui-core.ts'
+import {Circuit, type Wire, invariant, asWire} from '../../src/runtime/numeric-ui-core.ts'
 import {
   type FitAnnotations,
   emptyFitAnnotations,

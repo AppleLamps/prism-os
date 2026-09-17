@@ -1,6 +1,6 @@
 // Prints the sizes quoted in sections/executor.md.
 // Run from the repo root: bun lab/ui-exploration/guide/examples/executor/report.ts
-import {type Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {type Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {buildCloseButtonHitTest, describeProgram} from './anatomy.ts'
 import {
   buildFixedTimestepProduct,

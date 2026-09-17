@@ -8,7 +8,7 @@
 // - integerSteps: [x >= j] bits over shared relus without one-hot members, for presence bits.
 // - atLeastBit: an exact bit for [value >= threshold] on a continuous value.
 // - Table entries count stride tables from the index-read runtime too.
-import {Circuit, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {Circuit as IndexReadCircuit, type CompileOptions} from '../pixel-output/numeric-ui-core.ts'
 
 export type TensorProgram = ReturnType<Circuit['compileTensorProgram']>

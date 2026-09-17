@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {Circuit, validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {Circuit, validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   type Relation,
   compareCost,

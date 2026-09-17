@@ -9,7 +9,7 @@
 // One circuit handles the menu button's toggle, the spring, and the whole layout every frame.
 // A design.settled cell (optional) makes the layout read the sidebar spring's destination
 // instead of its position, i.e. the layout at rest, which is what a designer drags.
-import {emitSpring, type Wire} from '../../../numeric-ui-core.ts'
+import {emitSpring, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {allocateLayoutSources, buildLayout, createLayoutReader, writeLayoutSources, type KnobBound, type LayoutSources, type LayoutWires} from './builder.ts'
 import {SourceTable, type TaggedCircuit} from './circuit-tools.ts'
 import {atLeastZero, relu} from './ops.ts'

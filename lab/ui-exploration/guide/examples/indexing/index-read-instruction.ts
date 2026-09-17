@@ -1,7 +1,7 @@
 // The index read instruction as first built in lab/ui-exploration/index-read: read
 // candidates[floor(index)] directly. This file imports that prototype's copy of the
 // runtime, which moved into lab/ui-exploration/pixel-output on September 16, 2026,
-// so shared-runtime-index-read.test.ts can compare the copy with the repo root runtime.
+// so shared-runtime-index-read.test.ts can compare the copy with the runtime in src/runtime/.
 import {Circuit, type Wire} from '../../../pixel-output/numeric-ui-core.ts'
 
 // Source table: [index, table[0], ..., table[count - 1]].

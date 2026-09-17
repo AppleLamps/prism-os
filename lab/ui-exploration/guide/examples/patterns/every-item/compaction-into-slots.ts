@@ -5,7 +5,7 @@
 // operations after the counts.
 //
 // Host contract: prices, minPrice and maxPrice are integers within 0..1,024.
-import {Circuit, emitCompare, type Wire, asWire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, type Wire, asWire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export const priceMaximum = 1024
 

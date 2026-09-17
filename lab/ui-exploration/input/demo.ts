@@ -8,7 +8,7 @@
 // The circuit decides which element should have keyboard focus; this file only
 // calls element.focus() when that output changes.
 
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {appItemSlots, appKeyCount, appKeyLabels, appMenuAnchors, appMenus, appOracleFrame, appWindows, createAppMachine, createAppState, type AppViewport} from './app.ts'
 import {keyNameOf, legalizePointerStream, quantizeFrameDelta, splitIntoEvaluations, toQueuedEvents, type RawInput} from './input.ts'
 import {measureProgram} from './kit.ts'

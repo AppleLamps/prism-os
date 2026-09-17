@@ -3,7 +3,7 @@
 // move geometry. The quality scales only decide which layout wins, so their gradient on any
 // edge is 0 except through the selected layout, and a drag that needs another layout has to
 // come from search. Decisions: the selected layout one-hot and the hero's presence.
-import type {Wire} from '../../../numeric-ui-core.ts'
+import type {Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {createCandidateGalleryMachine, layoutNames, sourceField} from './candidate-gallery.ts'
 import type {DragProblem, EdgeTerms, KnobSpec} from './drag-solver.ts'
 import type {MarginQuery} from './flip-query.ts'

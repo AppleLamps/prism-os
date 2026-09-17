@@ -1,7 +1,7 @@
 // Level 2 of three: index.ts's stepSpringTo(previous, dest, steps). Runs a
 // runtime number of level 1 steps, then snaps to the destination once the spring's
 // distance and speed are both within the settle thresholds.
-import {type Circuit, type Wire, emitRelu, emitSelect} from '../../../../../numeric-ui-core.ts'
+import {type Circuit, type Wire, emitRelu, emitSelect} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {type RelativeSpring, type SpringConstants, emitSpringStep} from './spring-step.ts'
 
 export type DigitOrder = 'most significant first' | 'least significant first'

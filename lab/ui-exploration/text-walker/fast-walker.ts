@@ -32,7 +32,7 @@
 //   buildGatheredLines    no table: per line slot, one one-hot of the start, gathered thresholds for
 //                         the window after it, and comparisons against that line's own width
 //   buildSegmentWalker    walkPreparedLinesSimple unrolled one segment at a time
-import {Circuit, emitMaximum, invariant, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, emitMaximum, invariant, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {viewPrepared} from './fake-canvas.ts'
 import {SourceTable, compile, fitBit, integerAtLeast, integerOneHot, maskedRead, relu, type Compiled, type OneHot} from './kit.ts'
 

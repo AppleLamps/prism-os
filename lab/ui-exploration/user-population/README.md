@@ -18,7 +18,7 @@ DAWN_WEBGPU=/path/to/node_modules/webgpu/index.js node lab/ui-exploration/user-p
 deno run --unstable-webgpu --allow-all lab/ui-exploration/user-population/gpu-population.ts 256 600 none
 ```
 
-`numeric-ui-core.ts` is imported unchanged through `../../../numeric-ui-core.ts`. No file outside this folder changed. Files from other folders:
+`numeric-ui-core.ts` is imported unchanged through `../../../src/runtime/numeric-ui-core.ts`. No file outside this folder changed. Files from other folders:
 
 - input's `kit.ts`, `events.ts` and `windows.ts` are imported from `../input/`. Until September 15, 2026 this folder held unchanged copies of them, named `kit.ts`, `events.ts` and `input-windows.ts` (`cmp` found no difference).
 - codegen's `codegen.ts`, `instance.ts`, `wgsl.ts` and `gpu-runner.ts` are imported from `../codegen/`. Until September 15, 2026 this folder held unchanged copies with the same names.

@@ -2,8 +2,8 @@
 // advanceFrame, against plain float64 springs with no frames, and across frame rates.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/springs
 import {expect, test} from 'bun:test'
-import {Circuit, type Wire, emitApplySpringMatrix, asWire} from '../../../../../numeric-ui-core.ts'
-import {quantizeFrameTiming} from '../../../../../host-timing.ts'
+import {Circuit, type Wire, emitApplySpringMatrix, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
+import {quantizeFrameTiming} from '../../../../../src/runtime/host-timing.ts'
 import {frameTimesAt} from './frame-rate-check.ts'
 import {type SelectRow, buildHighlight, highlightReference, rowHeight, runHighlight, selectEvents} from './shared-runtime-springs.ts'
 

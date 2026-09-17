@@ -1,5 +1,5 @@
 // Small helpers shared by the selection patterns' examples.
-import {Circuit, invariant, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export type ProgramSize = {
   operations: number

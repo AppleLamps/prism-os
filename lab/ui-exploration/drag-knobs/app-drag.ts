@@ -3,7 +3,7 @@
 // sidebar's shown bit) as decisions, and the horizontal overflow count as violations.
 // Plus flip queries for a grid's column count and a text's line count, built from the
 // decision records the builder keeps next to each exact bit.
-import type {Wire} from '../../../numeric-ui-core.ts'
+import type {Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {authoredKnobs, createAppShell, designOptions, knobNames, knobSpecs, type AppShell, type KnobName} from './app-shell.ts'
 import {writeLayoutSources} from './builder.ts'
 import type {DragProblem, EdgeTerms, KnobSpec} from './drag-solver.ts'

@@ -1,5 +1,5 @@
 // Sizes of a compiled program, and a seeded random generator, shared by this folder's examples.
-import type {Circuit, Wire} from '../../../../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export type ProgramSize = {
   // Live operations: the total work of one evaluation.

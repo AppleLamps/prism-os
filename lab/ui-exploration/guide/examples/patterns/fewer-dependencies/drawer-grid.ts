@@ -23,7 +23,7 @@ import {
   emitApplySpringMatrix,
   emitCompare,
   emitMultiply,
-} from '../../../../../../numeric-ui-core.ts'
+} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {
   type EvaluationKind,
   type SpringMatrix,
@@ -34,7 +34,7 @@ import {
   springMatrixPower,
   springStepMatrix,
   stoppedSpringClock,
-} from '../../../../../../host-timing.ts'
+} from '../../../../../../src/runtime/host-timing.ts'
 import {type Evaluator, createEvaluator} from './helpers.ts'
 
 export const drawerLayout = {closedWidth: 320, openWidth: 760, minimumCellWidth: 120, maximumColumns: 5, thumbnailCount: 12} as const

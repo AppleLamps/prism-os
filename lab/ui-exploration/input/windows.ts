@@ -16,7 +16,7 @@
 //   session's up may have changed. Depth grows with the number of downs per
 //   evaluation, which JS bounds by splitting a frame into more evaluations.
 
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {allocateEventQueue, coordinateLimit, eventTimeLimit, isOnTimeGrid, writeEventQueue, type EventSlot, type QueuedEvent} from './events.ts'
 import {createKit, readBit, readOneHot, SourceLayout, sklanskyPrefix, type Kit, type Term, type Wire} from './kit.ts'
 

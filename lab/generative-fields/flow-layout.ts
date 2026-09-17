@@ -29,7 +29,7 @@ import {
   validateCircuit,
   validateTensorProgram,
   validateWireView,
-} from '../../numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 import {
   globalField,
   slotCount,

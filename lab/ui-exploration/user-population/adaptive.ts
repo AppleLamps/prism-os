@@ -23,7 +23,7 @@
 // `adaptiveOracleFrame` is the one-event-at-a-time reference; it never calls
 // circuit code.
 
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {allocateEventQueue, eventTimeLimit, isOnTimeGrid, type QueuedEvent} from '../input/events.ts'
 import {createKit, SourceLayout, type Term, type Wire} from '../input/kit.ts'
 import type {Population, PopulationCircuit, PopulationOracle} from './population.ts'

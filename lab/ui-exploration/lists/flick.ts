@@ -10,7 +10,7 @@
 // Like cards.ts, the release velocity is clamped to ±2^16 px/s per axis, in this
 // circuit and in flick-reference.ts; the demo has no clamp. Spring velocity cells
 // are declared as ±2^20 px/s.
-import {emitMaximum, emitMinimum, type Wire} from '../../../numeric-ui-core.ts'
+import {emitMaximum, emitMinimum, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   SourceLayout,
   andBits,

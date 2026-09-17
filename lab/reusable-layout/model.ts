@@ -1,4 +1,4 @@
-import {Circuit, type Wire} from '../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../src/runtime/numeric-ui-core.ts'
 import {createRandom} from './data.ts'
 import type {PreparedScene} from './layout.ts'
 

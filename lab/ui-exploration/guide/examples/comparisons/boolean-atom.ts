@@ -10,7 +10,7 @@
 // holds it at 1, only at least 0.5, so one rounding stage handles a ratio of up to 2^45 between the
 // largest value and the smallest positive value it must detect (numeric-library's contract), where
 // a clamp stage handles 2^24.
-import {type Circuit, type Terms, type Wire, invariant} from '../../../../../numeric-ui-core.ts'
+import {type Circuit, type Terms, type Wire, invariant} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {powerOfTwoExponentAtLeast, powerOfTwoExponentAtMost, smallestSubnormal} from './fp32.ts'
 import {type CascadePlan, differenceBoundFromRanges, emitPositiveBit, planSignCascade} from './sign-cascade.ts'
 

@@ -19,7 +19,7 @@
 //   keypad, disable every other key, reset key counts, cascade windows,
 //   restore all windows. "About" is a JS side effect, reported as a count.
 
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {allocateEventQueue, isOnTimeGrid, eventTimeLimit, writeEventQueue, type EventSlot, type KeyName, type QueuedEvent} from './events.ts'
 import {cyclicNextAvailable, cyclicNextEnabled, keyboardEventStep, keyboardOracleEvent, type ControlGeometry, type ControlsLayout, type KeyboardCells, type KeyboardState} from './keyboard.ts'
 import {createKit, readBit, readOneHot, SourceLayout, type Kit, type Term, type Wire} from './kit.ts'

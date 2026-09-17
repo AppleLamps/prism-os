@@ -9,7 +9,7 @@
 // - Copied: each item's label top is one sum with a term for every height. That is what
 //   the builder does on its own for sums of fewer than 4 terms, and what it did
 //   for every sum before the threshold existed.
-import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export type ItemCircuit = {circuit: Circuit, labelTops: Wire[]}
 

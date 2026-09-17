@@ -21,7 +21,7 @@
 //      sweep can move it.
 // The only code specific to a UI is the DragProblem: which cells are knobs, which integer
 // outputs are decisions, and which output counts violations.
-import type {Circuit, Wire} from '../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {backpropagate, type BooleanGradient} from './backward.ts'
 import {compileScalarProgram} from '../codegen/codegen.ts'
 import {compileInstanceProgram, planInstances, type InstanceRunner} from '../codegen/instance.ts'

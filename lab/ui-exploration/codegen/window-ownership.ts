@@ -6,7 +6,7 @@
 // per-instance input. The hit tests and the frontmost selection are copies of
 // emitRectangleHit, emitFrontmost and the geometry lines in window-manager.ts,
 // which keeps them private.
-import {Circuit, type Wire, emitMinimum, emitMultiply, emitRelu, emitSelect} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitMinimum, emitMultiply, emitRelu, emitSelect} from '../../../src/runtime/numeric-ui-core.ts'
 import {sourceField, stackSourceField, windowCount, windowSourceField, windowStateField} from './window-manager-copy.ts'
 
 type Geometry = {left: Wire, top: Wire, width: Wire, height: Wire}

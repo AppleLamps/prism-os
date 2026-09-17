@@ -7,7 +7,7 @@
 // So after every stage the value is exactly min(limit, relu(difference) * the product of the scales
 // so far). The last stage's limit is 1, and the planner picks scales whose product lifts the
 // smallest positive difference that must give 1 up to at least 1.
-import {type Circuit, type Wire, invariant} from '../../../../../numeric-ui-core.ts'
+import {type Circuit, type Wire, invariant} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {exactIntegerLimit, powerOfTwoExponentAtLeast, powerOfTwoExponentAtMost, smallestSubnormal} from './fp32.ts'
 
 // One stage: output = min(limit, scale * max(0, input)).

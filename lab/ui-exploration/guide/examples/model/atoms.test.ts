@@ -1,6 +1,6 @@
 // Checks every example in atoms.ts against the plain JavaScript it replaces, and pins the compiled sizes the guide quotes.
 import {expect, test} from 'bun:test'
-import {Circuit, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import * as atoms from './atoms.ts'
 import {emitAtLeast, measure} from './helpers.ts'
 

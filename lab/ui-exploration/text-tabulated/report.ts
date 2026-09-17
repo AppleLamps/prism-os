@@ -7,7 +7,7 @@
 // demos/nicer-hacker-news/data.ts, which feeds the hn section.
 
 import {resolve} from 'node:path'
-import type {Wire} from '../../../numeric-ui-core.ts'
+import type {Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {installFakeCanvas} from './fake-canvas.ts'
 import {createRandom, nextFloat32Down, nextFloat32Up} from './float32.ts'
 import {layout, layoutWithLines, measureLineStats, prepareWithSegments, type PrepareOptions} from './pretext/layout.ts'

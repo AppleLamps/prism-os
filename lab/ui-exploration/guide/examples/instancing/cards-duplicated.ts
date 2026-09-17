@@ -5,7 +5,7 @@
 // natural size is a build-time constant, so it becomes a weight. The loops across cards (the tallest
 // card, the running left edge, the first card under the pointer) become constructions whose operation
 // count and depth grow with the card count.
-import {Circuit, emitFirstActive, emitMaximum, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, emitFirstActive, emitMaximum, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {aboveZero, atLeastZero, emitAllChecks} from './bits.ts'
 import {sharedCells, sharedRanges, type Card, type RowInput, type RowOutputs, type SharedCell} from './cards-types.ts'
 

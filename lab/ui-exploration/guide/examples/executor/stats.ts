@@ -1,5 +1,5 @@
 // Measures a compiled program: the cost model of the executor section.
-import {type Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {type Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export type ProgramStats = {
   // Live operations: values the executor computes on every evaluation.

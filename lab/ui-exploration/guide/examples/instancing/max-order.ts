@@ -5,7 +5,7 @@
 // far apart, a - b rounds, and adding b back can land one FP32 step away from a. So the result isn't
 // always exactly one of the inputs, and combining the same heights in a different order can give different
 // bits. On integer heights every step is exact, and both orders give Math.max.
-import {Circuit, emitMaximum, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, emitMaximum, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 const f = Math.fround
 

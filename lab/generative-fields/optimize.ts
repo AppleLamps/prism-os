@@ -8,7 +8,7 @@
 // so one learning rate serves pixel fields and fraction fields alike; after
 // every step the fields clamp back into their ranges.
 
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {
   buildSource,
   clampFields,

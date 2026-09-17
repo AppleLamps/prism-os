@@ -3,7 +3,7 @@
 // count into one cell. In 'JS writes the digits', JS writes the step count's 9
 // binary digits into 9 cells instead, and in 'JS writes the matrix', JS writes
 // M^steps into 4 cells. There's no settle snap here; spring-catch-up.ts adds one.
-import {Circuit, type Wire, emitSelect, emitSpring, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitSelect, emitSpring, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitSpringSteps} from './spring-catch-up.ts'
 import {emitAtLeastOnGrid, emitBinaryDigits, maxSteps, stepDigitCount} from './spring-clock.ts'
 import {

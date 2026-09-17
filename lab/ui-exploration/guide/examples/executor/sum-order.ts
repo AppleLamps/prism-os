@@ -3,7 +3,7 @@
 // where f is Math.fround. This file shows what changes when a backend adds the
 // same terms in another order, fuses a product into the addition, or skips
 // FP32 rounding altogether, as GPU shader compilers and parallel kernels do.
-import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export type Terms = readonly (readonly [weight: number, input: number])[]
 

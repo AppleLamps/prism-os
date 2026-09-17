@@ -1,6 +1,6 @@
 // Reusable constructions for hand-authoring UI circuits, plus measurement helpers.
 // Every construction lowers into the three runtime atoms through the shared builder.
-import {Circuit, asWire, invariant, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, asWire, invariant, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 export type Program = ReturnType<Circuit['compileTensorProgram']>
 export type Matrix = [number, number, number, number]

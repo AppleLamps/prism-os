@@ -13,7 +13,7 @@
 // The circuit tests every target at once, then picks the first hit, either with a chain that visits
 // one candidate after another, or with emitFirstActive's tree, which takes the maximum of neighboring
 // candidates up a balanced tree and routes the gate back down to the first candidate that holds a 1.
-import {Circuit, emitCompare, emitFirstActive, type Wire, asWire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, emitFirstActive, type Wire, asWire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export type Rectangle = {left: number, top: number, width: number, height: number}
 

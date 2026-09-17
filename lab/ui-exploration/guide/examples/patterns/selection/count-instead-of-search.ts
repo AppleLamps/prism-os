@@ -12,7 +12,7 @@
 // Row bottoms never decrease down the list, so [rowBottom[row] <= pointerY] reads 1...1 0...0 along the
 // rows. The loop steps over the 1s and stops at the first 0, so the pointed row is the count of 1s,
 // and the differences of neighboring bits give the pointed row's one-hot.
-import {Circuit, emitCompare, emitFirstActive, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, emitFirstActive, type Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export function pointedRowReference(rowHeights: ArrayLike<number>, pointerY: number): number {
   let rowTop = 0

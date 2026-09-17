@@ -7,7 +7,7 @@
 // from the last committed table, with the time since that commit, and discards
 // its next-source outputs. So committed state never depends on which frames
 // were rendered.
-import {type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {compileScalarProgram} from '../codegen/codegen.ts'
 import {advanceReferenceClock, defaultClockConfig, quantizeFrameTime} from './spring-math.ts'
 import {

@@ -14,7 +14,7 @@
 //
 // The restatement mirrors line-break.ts for the Gecko profile: no return from an unfit soft hyphen,
 // no WebKit NEL rule, no narrow tab stop skipping, and no entry geometry.
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {type PreparedView} from './fake-canvas.ts'
 
 export type Cursor = {segmentIndex: number, graphemeIndex: number}

@@ -8,7 +8,7 @@
 //
 // Geometry cells are integers (the demo rounds pointer coordinates once), so every geometry
 // comparison is an exact integer comparison.
-import {type Wire} from '../../../numeric-ui-core.ts'
+import {type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {compile, integerAtLeast, relu, type Compiled, type SourceTable} from './kit.ts'
 import {createFastCircuit, segmentGeometry, walkGatheredLines, type FastCircuit, type FastParagraph} from './fast-walker.ts'
 import {defaultSpringConfig, emitStepMatrix, emitWordSpring, type SpringConfig} from './word-springs.ts'

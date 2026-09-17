@@ -14,7 +14,7 @@
 // - a gather reads its x, y, and time
 // - a bounded Newton division computes 1 / dt for dt in 0..128 ms
 // Nothing assumes that sample times are sorted.
-import {emitMaximum, emitMinimum, type Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {emitMaximum, emitMinimum, type Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {constant, emitSymmetricClamp, integerAtLeastOne, integerAtLeastZero} from './common.ts'
 
 export const timeGrid = 64 // event times and frame times are multiples of 1/64 ms

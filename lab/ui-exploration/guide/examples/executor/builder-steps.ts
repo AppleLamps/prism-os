@@ -13,7 +13,7 @@
 //    operation, because `multiply`, `select`, `roundAffine`, `emitMinimum` and
 //    `emitMaximum` keep their operands as wires and the builder doesn't fold
 //    through them.
-import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // [left < right] for integer-valued wires: relu(d) - relu(d - 1) with d = right - left.
 function lessThan(circuit: Circuit, left: Wire, right: Wire): Wire {

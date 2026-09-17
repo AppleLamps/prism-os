@@ -2,7 +2,7 @@
 //   bun lab/ui-exploration/event-time/report.ts
 // Prints markdown tables and writes results.json next to this file. Counts are
 // exact; timings are rough because other processes share the machine.
-import type {Circuit} from '../../../numeric-ui-core.ts'
+import type {Circuit} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   type DisplayRecord,
   type SettlePolicy,

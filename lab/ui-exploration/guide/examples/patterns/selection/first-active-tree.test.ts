@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {Circuit, emitCompare, emitFirstActive, validateOneHotGroups, asWire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, emitFirstActive, validateOneHotGroups, asWire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {
   buildFirstActiveSelection,
   buildFirstTargetUnderPointer,

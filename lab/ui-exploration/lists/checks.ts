@@ -1,5 +1,5 @@
 // Differential checks shared by the tests and report.ts.
-import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import {SourceLayout, createRandom} from './common.ts'
 import {createListRunner, referenceVisibleRows, slotCount, stackLayout, type ListCircuit} from './list.ts'
 import {referenceRouting, writeRoutingSource, type RoutingCircuit, type RoutingItem} from './routing.ts'

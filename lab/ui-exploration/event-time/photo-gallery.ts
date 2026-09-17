@@ -16,7 +16,7 @@ import {
   validateCircuit,
   validateTensorProgram,
   validateWireView,
-} from '../../../numeric-ui-core.ts'
+} from '../../../src/runtime/numeric-ui-core.ts'
 import {type SpringPowers, createSourceMatrixGroup, emitSpringBox} from './spring-bank.ts'
 import {type RetargetTiming, defaultClockConfig, eulerStepMatrix, matrixPower} from './spring-math.ts'
 

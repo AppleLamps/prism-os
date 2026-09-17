@@ -5,7 +5,7 @@
 // (vibescript's ui.md): layout and cursor, handle inputs, animation tick, commit state, DOM writes.
 // toggle-switch-reference.ts is the same app as plain JavaScript, and toggle-switch.test.ts runs both over
 // toggle-switch-trace.ts. Nothing in this file runs at import.
-import {Circuit, type Wire, asWire, emitMinimum, emitSelect, emitSpring, invariant} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire, emitMinimum, emitSelect, emitSpring, invariant} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitAll, emitAtLeast, emitClampZeroOne, emitConstant, emitNot} from './helpers.ts'
 
 export const layout = {trackWidth: 52, trackHeight: 32, thumbInset: 4, maxFrameDuration: 32} as const

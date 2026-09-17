@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   atLeastZero,
   barrelShiftTowardEnd,

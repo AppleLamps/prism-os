@@ -1,6 +1,6 @@
 // Two ways the order of builder statements changes the compiled program, each
 // shown as a pair of builds that differ only in statement order.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {measureProgram} from './costs.ts'
 import {seededRandom} from './frame-rate-check.ts'
 

@@ -1,6 +1,6 @@
 // Small builder helpers for the model section's examples. Each one only calls numeric-ui-core.ts, and each one is
 // ordinary JavaScript that runs once, while building, and appends operations to a circuit.
-import {type Circuit, type Wire, emitRelu, invariant} from '../../../../../numeric-ui-core.ts'
+import {type Circuit, type Wire, emitRelu, invariant} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // Live operations, layers and stored weights of the program compiled for these roots. Live operations are the ones
 // some root depends on; stored weights are the nonzero coefficients of every layer's sparse matrix.

@@ -9,7 +9,7 @@
 // - `mask(bit, value)` goes through `multiply`, the shape gather lowering
 //   recognizes when the bits belong to a declared one-hot group.
 
-import {Circuit, invariant, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 export type {Wire}
 export type Term = readonly [wire: Wire, coefficient: number]

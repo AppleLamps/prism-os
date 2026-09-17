@@ -38,9 +38,9 @@
 // - A band whose bottom lies below the content box is unusable, so no word is
 //   placed where the window would clip it. The content height is the destination
 //   height, so this gate changes only at events, like the obstacles.
-import {type Circuit, type Terms, type Wire, emitMaximum, emitMinimum, emitMultiply, emitRelu, emitSelect, invariant} from './numeric-ui-core.ts'
+import {type Circuit, type Terms, type Wire, emitMaximum, emitMinimum, emitMultiply, emitRelu, emitSelect, invariant} from '../runtime/numeric-ui-core.ts'
 import {type FastCircuit, attachFastCircuit, integerAtLeast, maximumSegmentWidth, segmentGeometry, walkGatheredLines} from './notes-walker.ts'
-import {type CellWires, constant, input, inputBit} from './cells.ts'
+import {type CellWires, constant, input, inputBit} from '../runtime/cells.ts'
 import type {FastParagraph} from './notes-walker.ts'
 import type {NotesOptions} from './notes-paragraph.ts'
 

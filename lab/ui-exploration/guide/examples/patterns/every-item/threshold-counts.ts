@@ -3,7 +3,7 @@
 // floor(item / c) and item % c computed for every possible c while building.
 //
 // Host contract: the container width is a whole number of pixels within 0..16,384.
-import {Circuit, emitCompare, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, type Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export const boxesGapX = 24
 export const boxMinSizeX = 220

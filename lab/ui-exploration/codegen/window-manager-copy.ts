@@ -1,9 +1,9 @@
 // A copy of window-manager.ts from the repo root: the IndirectOS circuit, createWindowManagerMachine and the
-// validators, with the code unchanged except for the import paths. The root module also mounts its own page at import
+// validators, with the code unchanged except for the import paths. The original module also mounts its own page at import
 // time whenever `document` exists, so importing it from demo.html threw "desktop is missing". This copy leaves out
 // mountWindowManager, projectDockGeometry (only the mount calls it), the createPhotoGalleryRenderer import, and the
 // mount call at the end. The demo, the tests and report.ts all import this copy, and root-copies.test.ts checks that
-// it compiles to the same program as the root module.
+// it compiles to the same program as the original module.
 import {
   Circuit,
   type Wire,
@@ -21,7 +21,7 @@ import {
   validateCircuit,
   validateTensorProgram,
   validateWireView,
-} from '../../../numeric-ui-core.ts'
+} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   type PhotoGalleryOutput,
   createPhotoGalleryCircuit,

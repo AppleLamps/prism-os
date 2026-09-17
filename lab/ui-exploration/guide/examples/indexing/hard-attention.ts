@@ -3,7 +3,7 @@
 // one-hot of the highest score instead of a softmax. emitArgmax builds that
 // one-hot with a tournament of pairwise comparisons, declares it as a one-hot,
 // and the masked sum over it lowers to a gather.
-import {Circuit, emitArgmax, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, emitArgmax, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitMaskedSum} from './one-hot-read.ts'
 
 // Plain JS: the entry with the highest score; ties go to the lower position.

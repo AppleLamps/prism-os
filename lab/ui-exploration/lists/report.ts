@@ -10,7 +10,7 @@ import {buildCards, createCardsMachine} from './cards.ts'
 import {buildFlick} from './flick.ts'
 import {demoCardSizes, runCardsDifferential, runFlickDifferential, type CardsDifferential, type FlickDifferential} from './traces.ts'
 import {emitBoundedReciprocal, emitReleaseVelocity, releaseVelocityLimit, type SampleWires} from './velocity.ts'
-import {emitSpring, type Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {emitSpring, type Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 const selected = new Set(process.argv.slice(2))
 const wants = (name: string) => selected.size === 0 || selected.has(name)

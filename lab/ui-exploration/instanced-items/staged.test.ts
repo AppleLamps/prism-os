@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {Circuit, emitMaximum, emitMinimum, emitRelu, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, emitMaximum, emitMinimum, emitRelu, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {createExecutor} from './executor.ts'
 import {createDuplicatedMachine, expandDuplicated, liveOperations} from './expand.ts'
 import {emitGather, emitIndexOneHot} from './kit.ts'

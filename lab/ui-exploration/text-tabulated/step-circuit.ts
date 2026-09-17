@@ -7,7 +7,7 @@
 //   is a masked read of table cells in the source table, which the compiler lowers to one gather
 //   read per output. Changing the text within the table's capacity means rewriting cells.
 
-import {Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import type {BlockTable} from './tabulate.ts'
 
 // ---------------------------------------------------------------- source table allocation

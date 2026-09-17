@@ -11,7 +11,7 @@
 // to 45°. With 16 directions the result is within ±0.015% of the true length,
 // and it only uses affine sums and maxima. No squares appear, so 4K coordinates
 // don't leave FP32's exact range the way squared distances do.
-import {Circuit, type Wire, emitMaximum, emitMultiply, emitRelu, emitSelect} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitMaximum, emitMultiply, emitRelu, emitSelect} from '../../../src/runtime/numeric-ui-core.ts'
 
 export const shapeField = {centerX: 0, centerY: 1, halfWidth: 2, halfHeight: 3, radius: 4, red: 5, green: 6, blue: 7, size: 8} as const
 export const sdfSourceField = {pixelX: 0, pixelY: 1, pointerX: 2, pointerY: 3, unit: 4, shapeStart: 5} as const

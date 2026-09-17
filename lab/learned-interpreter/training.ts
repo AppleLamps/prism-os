@@ -2,7 +2,7 @@ import {
   invariant,
   validateOneHotGroups,
   validateTensorEvaluation,
-} from '../../numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 import {
   type CertificationCase,
   type TrainingTask,

@@ -2,7 +2,7 @@
 // one line at a time, and by pointer jumping. nextStart[s] is the first segment of
 // the next line when a line starts at segment s. Following it from segment 0 gives
 // every line's start.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // Greedy line breaking over segment widths, only to make realistic tables for the tests.
 export function greedyNextStarts(widths: readonly number[], maxLineWidth: number): number[] {

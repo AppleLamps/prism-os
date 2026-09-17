@@ -26,7 +26,7 @@
 // sums that sort their terms by wire number keep the same order too.
 // `new StagedProgram({rebuildSmallAffines: false})` imports the stored value
 // instead, so staged.test.ts and report.ts can measure what the rebuild changes.
-import {Circuit, invariant, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 export type Range = {minimum: number, maximum: number}
 

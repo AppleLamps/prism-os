@@ -1,5 +1,5 @@
-// A selection highlight built with the spring helpers of the repo root runtime,
-// numeric-ui-core.ts, and the host timing in host-timing.ts, which Cheng decided on
+// A selection highlight built with the spring helpers of the runtime,
+// src/runtime/numeric-ui-core.ts, and the host timing in host-timing.ts, which Cheng decided on
 // September 14, 2026 to make the default:
 // - JavaScript writes the spring matrix for each evaluation's fixed 4 ms steps into
 //   4 cells, and times on a 1/64 ms grid,
@@ -12,7 +12,7 @@
 // The other files in this folder build each piece by hand; this file uses the
 // shared helpers, and shared-runtime-springs.test.ts checks it against plain
 // float64 springs with no frames.
-import {Circuit, type SpringMatrixWires, type Wire, asWire, emitAnimatedObject, emitSelect} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type SpringMatrixWires, type Wire, asWire, emitAnimatedObject, emitSelect} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {
   type WriteBack,
   advanceFrame,
@@ -22,7 +22,7 @@ import {
   springMatrixPower,
   springStepMatrix,
   stoppedSpringClock,
-} from '../../../../../host-timing.ts'
+} from '../../../../../src/runtime/host-timing.ts'
 import {seededRandom} from './frame-rate-check.ts'
 
 export const highlightConstants = {stiffness: 290, damping: 30}

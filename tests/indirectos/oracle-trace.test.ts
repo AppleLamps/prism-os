@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateTensorEvaluation} from './numeric-ui-core.ts'
+import {validateTensorEvaluation} from '../../src/runtime/numeric-ui-core.ts'
 import {
   createWindowManagerMachine,
   dockOutputField,
@@ -9,14 +9,14 @@ import {
   windowOutputField,
   windowSourceField,
   windowStateField,
-} from './window-manager.ts'
+} from '../../src/indirectos/window-manager.ts'
 import {
   controlField,
   createPhotoGalleryMachine,
   itemCount as photoItemCount,
   photoField,
   thumbnailField,
-} from './photo-gallery.ts'
+} from '../../src/indirectos/photo-gallery.ts'
 
 // Seeded hash from numeric-ui-core.test.ts; the only source of "randomness".
 function createRandom(seed: number) {

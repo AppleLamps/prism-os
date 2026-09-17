@@ -16,7 +16,7 @@
 //   final stage covers a ratio of 2^45 between the bound and the resolution.
 // One final stage costs 4 operations and 3 layers including d. Every clamp stage
 // adds 3 operations and 2 layers.
-import {type Circuit, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {type Circuit, type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 
 export type Relation = '>=' | '>' | '<=' | '<'
 

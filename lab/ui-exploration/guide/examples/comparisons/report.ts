@@ -1,6 +1,6 @@
 // Prints the measurements quoted in guide/sections/comparisons.md. From the repo root:
 //   bun lab/ui-exploration/guide/examples/comparisons/report.ts
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitCompare, planCompare} from '../../../numeric-library/comparison.ts'
 import {emitAtLeastByRounding, emitAtLeastIntegerByRounding, emitGreaterByRounding, emitRoundingStage, planRoundingCompare} from './boolean-atom.ts'
 import {buildLineFill, chainFormLabels, chainForms, countLineFillMismatches} from './chain.ts'

@@ -1,7 +1,7 @@
 // Helpers shared by this folder's examples: program sizes, AND over exact bits,
 // evaluating one table with both evaluators, frame times, and a seeded random
 // number generator.
-import type {Circuit, Wire} from '../../../../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export type ProgramSize = {
   // Live operations in the compiled program: the total work of one evaluation.

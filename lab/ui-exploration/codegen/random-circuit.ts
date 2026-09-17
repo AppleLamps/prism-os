@@ -7,7 +7,7 @@ import {
   emitMaximum,
   emitMinimum,
   emitRelu,
-} from '../../../numeric-ui-core.ts'
+} from '../../../src/runtime/numeric-ui-core.ts'
 
 export function createRandom(seed: number) {
   let state = seed >>> 0

@@ -1,7 +1,7 @@
 // Circuit cost measurement: operation counts by atom kind, dependency depth,
 // and the compiled tensor program's stored weights and layer shape.
 
-import {validateTensorProgram} from '../../numeric-ui-core.ts'
+import {validateTensorProgram} from '../../src/runtime/numeric-ui-core.ts'
 import type {EventWindowBuild} from './circuit.ts'
 
 export type CircuitCost = {

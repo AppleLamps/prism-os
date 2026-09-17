@@ -1,7 +1,7 @@
 // Checks each comparison example against plain JavaScript, and pins the measurements that
 // guide/sections/comparisons.md quotes. report.ts prints the full tables.
 import {expect, test} from 'bun:test'
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitCompare} from '../../../numeric-library/comparison.ts'
 import {emitAtLeastByRounding, emitAtLeastIntegerByRounding, emitGreaterByRounding, emitPositiveBitByRounding, emitRoundingStage, planRoundingCompare} from './boolean-atom.ts'
 import {buildLineFill, type ChainForm, countLineFillMismatches} from './chain.ts'

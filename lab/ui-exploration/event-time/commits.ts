@@ -17,7 +17,7 @@
 // commit's table. An event with a timestamp before the last event commit can't
 // be undone this way: it's committed with zero elapsed time and counted in
 // `lateEvents`.
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {type EventTimeMachine, type Evaluation, type MachineSnapshot, displayLayout, readWire} from './event-machine.ts'
 import {itemCount as photoCount, photoField} from './photo-gallery.ts'
 import {defaultClockConfig, quantizeFrameTime} from './spring-math.ts'

@@ -12,7 +12,7 @@
 // the weights transfer unchanged into the hard circuit (same source layout), which selects
 // exact winners.
 
-import {Circuit, type Wire, invariant} from '../../numeric-ui-core.ts'
+import {Circuit, type Wire, invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {
   type CascadeOptions,
   emitCascadeArgmax,

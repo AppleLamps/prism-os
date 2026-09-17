@@ -12,7 +12,7 @@
 //
 // Every operation here is an affine sum or a ReLU-gated product, with no boolean
 // atom, so Circuit.backpropagateReference differentiates the whole read.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {planNewtonSteps} from '../../../numeric-library/arithmetic.ts'
 import {emitExp} from '../../../numeric-library/shaping.ts'
 

@@ -14,8 +14,8 @@ import {
   validateOneHotGroups,
   validateTensorEvaluation,
   validateTensorProgram,
-} from './numeric-ui-core.ts'
-import {createWindowManagerMachine} from './window-manager.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
+import {createWindowManagerMachine} from '../../src/indirectos/window-manager.ts'
 
 // Tests of gather lowering, described in execution-model.md "One-hot groups and
 // gathers": a masked sum over a declared one-hot group compiles to a read of the

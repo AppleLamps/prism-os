@@ -6,7 +6,7 @@
 // It compiles the stage once and evaluates the compiled program once per item. The prototype's executor
 // instead generates one JS loop over items per stage, and computes the operations that read no
 // per-item field once per frame.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export type Range = readonly [minimum: number, maximum: number]
 

@@ -1,8 +1,8 @@
 // Running totals of a list, e.g. every row's top from the row heights, built three
-// ways over the repo root runtime: a chain of additions, one wide sum per total, and
+// ways over the runtime in src/runtime/: a chain of additions, one wide sum per total, and
 // a Brent-Kung network. Every form returns totals[row] = heights[0] + ... + heights[row],
 // so rowTops[row + 1] is totals[row], and the last total is the content height.
-import {Circuit, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {brentKungPrefix} from './prefix-networks.ts'
 
 // The loop, with every addition rounded to FP32, as the circuit rounds it.

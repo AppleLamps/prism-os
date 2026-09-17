@@ -1,13 +1,13 @@
 const config = {
   entry: [
-    'window-manager.ts',
+    'src/indirectos/window-manager.ts',
     'lab/candidate-gallery/candidate-gallery.ts',
     'template/main.ts',
     // The template's switch in plain JavaScript, which only template/toggle.test.ts imports.
     'template/toggle-reference.ts',
   ],
-  // lab/ holds standalone experiments that run as scripts or tests, so knip only checks root modules, scripts and the template.
-  project: ['*.ts', 'scripts/*.ts', 'template/*.ts'],
+  // lab/ holds standalone experiments that run as scripts or tests, so knip only checks src/, scripts/ and the template.
+  project: ['*.ts', 'src/**/*.ts', 'scripts/*.ts', 'template/*.ts'],
   // Bun otherwise discovers tests as entries before the ignore is applied.
   bun: false,
   // Test imports should not keep production exports alive.
@@ -17,7 +17,7 @@ const config = {
   ignoreDependencies: ['@typescript/native-preview', 'oxlint', 'oxlint-tsgolint'],
   ignoreIssues: {
     // These names distinguish two wire views that currently share one layout.
-    'photo-gallery.ts': ['duplicates'],
+    'src/indirectos/photo-gallery.ts': ['duplicates'],
   },
 }
 

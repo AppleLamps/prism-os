@@ -3,7 +3,7 @@
 // start and end cursor. JS decodes the frame clock into step bits, records pointer latches, and turns
 // cursors back into strings.
 
-import {emitMaximum, emitMinimum, emitRelu, type Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {emitMaximum, emitMinimum, emitRelu, type Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {materializeLineRange, prepareWithSegments, type PreparedTextWithSegments} from './pretext/layout.ts'
 import {pieceAt, tabulateBlock, type BlockMode, type BlockSpec, type BlockTable} from './tabulate.ts'
 import {SourceLayout, emitAtLeast, emitAtLeastCell, emitBlockDeltaRows, emitDeltaRow, programStats, type BlockOutputs} from './step-circuit.ts'

@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import {createEditorMachine, writeEvent} from './grapheme-editor-circuit.ts'
 import {measureCircuit} from './grapheme-integer-circuits.ts'
 import {takeFrameEvents} from './grapheme-keyboard.ts'

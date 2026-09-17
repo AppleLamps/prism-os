@@ -1,6 +1,6 @@
 import {describe, expect, test} from 'bun:test'
 import {installFakeCanvas} from './fake-canvas.ts'
-import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import {getEngineProfile} from '../text-tabulated/pretext/measurement.ts'
 import {thread} from './hn-data.ts'
 import {prepareThread} from './thread-prepare.ts'

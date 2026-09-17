@@ -1,9 +1,9 @@
 // A copy of candidate-gallery.ts from the repo root: the circuit, the machine and its validators, with the code
-// unchanged except for the import path. The root module also mounts its own page at import time whenever `document`
+// unchanged except for the import path. The original module also mounts its own page at import time whenever `document`
 // exists, so importing it from demo.html threw "candidate gallery stage is missing" before demo.ts ran. This copy
 // leaves out that mount, the DOM renderer it calls, and the photo names that only the renderer reads. The demo, the
 // tests and report.ts all import this copy, and root-copies.test.ts checks that it compiles to the same program as
-// the root module.
+// the original module.
 import {
   Circuit,
   type Wire,
@@ -19,7 +19,7 @@ import {
   validateCircuit,
   validateTensorProgram,
   validateWireView,
-} from '../../../numeric-ui-core.ts'
+} from '../../../src/runtime/numeric-ui-core.ts'
 
 export const photoCount = 12
 

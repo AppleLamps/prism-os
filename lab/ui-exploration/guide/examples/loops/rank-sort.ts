@@ -5,7 +5,7 @@
 //
 // Host contract: keys are integers in 0..65,535, e.g. a date as a day number. Heights are multiples
 // of 1/4 px in 0..1024, and the total height stays below 2^21 px.
-import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitIntegerAtLeastZero} from './kit.ts'
 
 export function rankSortReference(keys: ArrayLike<number>, heights: ArrayLike<number>) {

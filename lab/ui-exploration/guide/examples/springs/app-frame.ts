@@ -4,7 +4,7 @@
 // pointer down shrinks the highlight a little. The highlight's top and scale are
 // two springs with different stiffness and damping. One clock counts this
 // frame's 4 ms steps, and both springs step by its binary digits.
-import {Circuit, type Wire, asWire, emitMaximum, emitMinimum} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire, emitMaximum, emitMinimum} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {type Spring, seededRandom, spring, springStillAnimating, stepSpringTo} from './frame-rate-check.ts'
 import {emitStepSpringTo} from './spring-catch-up.ts'
 import {type ClockCells, declareClockRanges, emitSpringClock, maxCarriedMs, maxSteps, timeGrid} from './spring-clock.ts'

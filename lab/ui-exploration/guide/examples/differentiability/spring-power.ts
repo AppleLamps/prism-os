@@ -11,7 +11,7 @@
 //   [1 - stiffness * dt * dt,  dt * (1 - damping * dt)]
 //   [-stiffness * dt,          1 - damping * dt       ]
 // so n steps are that matrix to the power n.
-import {Circuit, type Wire, emitSelect, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitSelect, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // Step counts 0..511, which covers vibescript's 300-step cap.
 export const stepBitCount = 9

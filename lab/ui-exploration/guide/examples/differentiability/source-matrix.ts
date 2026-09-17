@@ -4,7 +4,7 @@
 // Stiffness and damping stay editable, but no wire in the circuit depends on them,
 // so the backward pass stops at the 4 matrix cells. A training loop can finish the
 // chain rule in JS.
-import {Circuit, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {
   type SpringParameters,
   type WireMatrix,

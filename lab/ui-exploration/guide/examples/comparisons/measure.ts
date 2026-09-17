@@ -1,5 +1,5 @@
 // Circuits and checks shared by comparisons.test.ts and report.ts.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitPositiveBitByRounding, planRoundingCompare} from './boolean-atom.ts'
 import {roundedOperations} from './exact-arithmetic.ts'
 import {createRandom, differenceClasses, f, nextUp, smallestSubnormal} from './fp32.ts'

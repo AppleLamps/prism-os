@@ -11,7 +11,7 @@
 // per-page losses with a softmax over those scores (soft attention). The circuit a UI would
 // run picks the highest score with emitArgmax (hard attention). The authored weights are
 // weightRelease 1, weightVelocity 1 / 4.5 and bias 3.5.
-import {Circuit, emitArgmax, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, emitArgmax, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {createRandom} from './measure.ts'
 import {sharpnessSchedule} from './query-descent.ts'
 import {emitSoftAttentionRead, maximumSharpness, minimumSharpness} from './soft-attention.ts'

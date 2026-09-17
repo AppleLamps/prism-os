@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateGrids} from '../../../../../../numeric-ui-core.ts'
+import {validateGrids} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {createBothEvaluators, createRandom, measureProgram, randomInteger} from './kit.ts'
 import {buildDuplicatedList, buildListStages, listReference, runListStages, unpackDuplicatedOutputs, type ListRow} from './one-program-per-item.ts'
 

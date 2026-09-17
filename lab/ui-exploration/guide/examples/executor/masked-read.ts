@@ -11,7 +11,7 @@
 // Each circuit compiles two ways: dense, where the executor runs every product,
 // and with gather lowering, where the compiler recognizes the masked sum over a
 // declared one-hot group and reads the selected candidate by position instead.
-import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export type ReadCircuit = {circuit: Circuit, selectedTop: Wire}
 

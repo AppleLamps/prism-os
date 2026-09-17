@@ -1,6 +1,6 @@
 // FP32 helpers shared by the comparison examples: neighboring values, powers of two,
 // classes of differences to test, seeded random values, and operation and layer counts.
-import type {Circuit, Wire} from '../../../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export const f = Math.fround
 export const smallestSubnormal = 2 ** -149

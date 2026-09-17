@@ -6,7 +6,7 @@
 //
 // Host contract: the focused index is a whole number within 0..buttonCount - 1, and each queue entry
 // holds at most one key, as exact bits.
-import {Circuit, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export type FocusKey = 'none' | 'ArrowLeft' | 'ArrowRight' | 'Home' | 'End'
 export const focusKeys: readonly FocusKey[] = ['none', 'ArrowLeft', 'ArrowRight', 'Home', 'End']

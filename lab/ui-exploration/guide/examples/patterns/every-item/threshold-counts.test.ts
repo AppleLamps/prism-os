@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateGrids, validateOneHotGroups} from '../../../../../../numeric-ui-core.ts'
+import {validateGrids, validateOneHotGroups} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {createBothEvaluators, createRandom, measureProgram, randomInteger} from './kit.ts'
 import {boxesGapX, boxMinSizeX, buildColumnLayout, columnLayoutReference, columnThresholds, maximumColumns} from './threshold-counts.ts'
 

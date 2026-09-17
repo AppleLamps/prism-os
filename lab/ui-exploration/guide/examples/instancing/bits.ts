@@ -1,7 +1,7 @@
 // Exact bits from comparisons, used by both card row versions. These are the constructions of
 // lab/ui-exploration/instanced-items/kit.ts (emitAll and the integer ramps); the comparisons section of the
 // guide explains why they give exact 0/1 results.
-import {Circuit, type Terms, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // A check on a difference that the circuit keeps as its own value (a roundAffine), e.g. pointerX - cardLeft >= 0.
 export type Check = {difference: Wire, strict: boolean}

@@ -10,7 +10,7 @@
 // unresolved margin. Current sign-cascade comparisons have no margin to check.
 
 import ts from 'typescript'
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import type {FunctionLike} from './compile.ts'
 
 const f32 = Math.fround

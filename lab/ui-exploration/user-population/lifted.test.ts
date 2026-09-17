@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import type {QueuedEvent} from '../input/events.ts'
 import {authoredBehavior, testWindowsConfig as config, withBehavior} from './fixtures.ts'
 import {createWindowsMachine as createInputMachine, type WindowsVariant as InputVariant} from '../input/windows.ts'

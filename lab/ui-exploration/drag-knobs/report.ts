@@ -2,7 +2,7 @@
 //   bun lab/ui-exploration/drag-knobs/report.ts
 // Prints markdown tables and writes report-results.json next to this file. Takes about 25 s.
 // Timings are rough: other processes share the machine.
-import type {Wire} from '../../../numeric-ui-core.ts'
+import type {Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {createAppDrag} from './app-drag.ts'
 import {createAppShell, designOptions, knobNames, readKnobs, type AppShell} from './app-shell.ts'
 import {appTextTables} from './app-text-tables.ts'

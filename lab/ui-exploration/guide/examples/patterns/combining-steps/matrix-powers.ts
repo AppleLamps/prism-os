@@ -1,4 +1,4 @@
-// A spring's fixed 4 ms steps as powers of one 2×2 matrix, over the repo root runtime
+// A spring's fixed 4 ms steps as powers of one 2×2 matrix, over the runtime in src/runtime/
 // and host-timing.ts. One semi-implicit Euler step with constant stiffness and damping
 // is a matrix M on (displacement from the destination, velocity), so n steps are M^n.
 // Three builds that apply the same runtime number of steps, for springs that share
@@ -11,7 +11,7 @@
 // - 'table of powers': JavaScript writes M^0 to M^300 into cells once per stiffness and
 //   damping pair, and index reads pick M^i at a computed step count, e.g. to sample
 //   where a spring will be i steps from now.
-import {Circuit, type SpringMatrixWires, type Wire, emitApplySpringMatrix, emitCompare, asWire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, type SpringMatrixWires, type Wire, emitApplySpringMatrix, emitCompare, asWire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {
   type SpringConstants,
   type SpringMatrix,
@@ -20,7 +20,7 @@ import {
   springMatrixBound,
   springMatrixPower,
   springStepMatrix,
-} from '../../../../../../host-timing.ts'
+} from '../../../../../../src/runtime/host-timing.ts'
 
 // index.ts's default spring.
 export const springConstants: SpringConstants = {stiffness: 290, damping: 30}

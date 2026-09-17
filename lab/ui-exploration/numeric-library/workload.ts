@@ -2,7 +2,7 @@
 // smooth radial falloff around the pointer and push their neighbors apart, the
 // nearest icon as an exact one-hot, and a circular progress ring with a spinning
 // set of ticks, lit ticks, a head dot, per-cycle jitter, and a percent label.
-import {Circuit, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {emitSqrt} from './arithmetic.ts'
 import {emitClampExact, emitMinimumOf, emitSignBit, planCompare} from './comparison.ts'
 import {emitFloor, emitFract} from './rounding.ts'

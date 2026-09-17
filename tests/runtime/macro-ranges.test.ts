@@ -7,7 +7,7 @@ import {
   emitRelu,
   emitSelect,
   emitSpring,
-} from './numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 
 // Characterization tests for the magnitude preconditions of the macro library.
 // These pin the FP32 re-rounding boundaries where each macro stops matching its

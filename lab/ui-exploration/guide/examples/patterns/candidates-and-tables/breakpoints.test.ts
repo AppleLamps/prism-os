@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateGrids, validateTensorEvaluation} from '../../../../../../numeric-ui-core.ts'
+import {validateGrids, validateTensorEvaluation} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {
   buildBreakpointLayout,
   findBreakpoints,

@@ -10,7 +10,7 @@ import {
   rowCount,
   sourceField,
   thumbnailField,
-} from './photo-gallery.ts'
+} from '../../src/indirectos/photo-gallery.ts'
 
 const viewportWidth = 1280
 const viewportHeight = 720

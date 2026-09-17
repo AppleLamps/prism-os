@@ -1,6 +1,6 @@
 import {describe, expect, test} from 'bun:test'
-import {type SpringConstants, springMatrixBound, springMatrixPower, springStepMatrix} from '../../../../../../host-timing.ts'
-import {validateIndexReads, validateTensorEvaluation} from '../../../../../../numeric-ui-core.ts'
+import {type SpringConstants, springMatrixBound, springMatrixPower, springStepMatrix} from '../../../../../../src/runtime/host-timing.ts'
+import {validateIndexReads, validateTensorEvaluation} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {createRandom, formatSize, measureProgram} from './measure.ts'
 import {
   buildAncestorLookup,

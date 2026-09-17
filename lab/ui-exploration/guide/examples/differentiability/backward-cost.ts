@@ -10,7 +10,7 @@
 // the forward value of every wire, so the operations walked and the values stored
 // measure its work and memory. It skips an operation whose gradient is 0 with one
 // comparison, so the operations that receive a gradient measure the work that remains.
-import {Circuit, type Wire, emitSelect} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitSelect} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {type SpringCells, type SpringParameters, declareSpringRanges, springCells} from './spring-power.ts'
 
 const unrolledCells: SpringCells = {...springCells, stepBits: []}

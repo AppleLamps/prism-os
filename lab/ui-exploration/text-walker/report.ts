@@ -1,7 +1,7 @@
 // Measurements for the README: circuit sizes, rough CPU timings, and agreement with pretext.
 // Run: bun lab/ui-exploration/text-walker/report.ts [fast] [ladder] [flow] [springs]
 // With no arguments it runs every part. The 1023-segment builds take tens of seconds.
-import {Circuit} from '../../../numeric-ui-core.ts'
+import {Circuit} from '../../../src/runtime/numeric-ui-core.ts'
 import {lineFitEpsilon, loadPretext, makeParagraph, viewPrepared} from './fake-canvas.ts'
 import {fastMismatches} from './fast-check.ts'
 import {

@@ -6,7 +6,7 @@
 // JavaScript version below picks the same layout at every viewport.
 //
 // Host contract: the viewport width and height are whole pixels within 0..4096.
-import {Circuit, type Wire, emitArgmax, emitMinimum, emitMultiply, emitRelu} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitArgmax, emitMinimum, emitMultiply, emitRelu} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export const photoCount = 8
 export const gap = 16

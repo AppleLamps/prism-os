@@ -28,7 +28,7 @@
 // - Builders can mark named sections of the circuit, which mutation.ts uses to
 //   say where a corrupted operation sits.
 
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {allocateEventQueue, coordinateLimit, eventTimeLimit, isOnTimeGrid, writeEventQueue, type EventSlot, type QueuedEvent} from '../input/events.ts'
 import {createKit, readBit, readOneHot, SourceLayout, sklanskyPrefix, type Kit, type Term, type Wire} from '../input/kit.ts'
 

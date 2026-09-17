@@ -1,6 +1,6 @@
-import {Circuit} from '../../numeric-ui-core.ts'
+import {Circuit} from '../../src/runtime/numeric-ui-core.ts'
 import {createCandidateGalleryMachine} from '../candidate-gallery/candidate-gallery.ts'
-import {createWindowManagerMachine} from '../../window-manager.ts'
+import {createWindowManagerMachine} from '../../src/indirectos/window-manager.ts'
 
 type Runner = (source: Float32Array) => Float32Array
 

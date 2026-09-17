@@ -10,7 +10,7 @@ import {
   assertNonNegativeFinite,
   assertUnitInterval,
   invariant,
-} from '../../../numeric-ui-core.ts'
+} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   createWindowManagerMachine,
   dockOutputField,

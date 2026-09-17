@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateIndexReads, validateTensorEvaluation} from '../../../../../../numeric-ui-core.ts'
+import {validateIndexReads, validateTensorEvaluation} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {createRandom, formatSize, measureProgram} from './measure.ts'
 import {type FocusForm, type FocusKey, buildFocusQueue, focusKeys, runFocusQueue, writeFocusQueue} from './speculation.ts'
 

@@ -14,7 +14,7 @@
 // frame the host copies each user's next-state outputs back into that user's
 // state columns, which sit first in the per-user table in output order.
 
-import {invariant, type Circuit} from '../../../numeric-ui-core.ts'
+import {invariant, type Circuit} from '../../../src/runtime/numeric-ui-core.ts'
 import type {EventSlot, QueuedEvent} from '../input/events.ts'
 import {compileInstanceProgram, planInstances, type InstancePlan, type InstanceRunner} from '../codegen/instance.ts'
 import {createRandom, type SourceLayout, type Wire} from '../input/kit.ts'

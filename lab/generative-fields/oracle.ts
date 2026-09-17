@@ -5,7 +5,7 @@
 // band. The oracle reports the smallest margin it saw per decision category so
 // tests can skip knife-edge samples instead of asserting on them.
 
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {globalField, slotCount, slotField, slotFieldIndex, sourceSize} from './fields.ts'
 import {violationSlackPixels} from './flow-layout.ts'
 

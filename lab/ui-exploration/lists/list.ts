@@ -5,7 +5,7 @@
 // Slot assignment is stable: row r always lands in slot r mod slotCount while it
 // stays visible, so a DOM node keeps its row (and any row-local DOM state) as the
 // list scrolls, like vibescript's domCache keyed by id.
-import {Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   SourceLayout,
   andBits,

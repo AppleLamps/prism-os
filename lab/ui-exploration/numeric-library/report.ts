@@ -6,7 +6,7 @@
 // Run: bun lab/ui-exploration/numeric-library/report.ts [section...]
 // Sections: macros, plans, minimum, rectangle-hit, workload.
 // Merges results into report-output.json.
-import {Circuit, emitMinimum, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, emitMinimum, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   compareCost,
   emitCompare,

@@ -3,7 +3,7 @@
 // the invalid intermediates by projecting back to validity with the circuit's
 // own violation outputs.
 
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {buildSource, interpolateFields, type LayoutContext} from './fields.ts'
 import type {FlowLayoutMachine} from './flow-layout.ts'
 import {projectToValidity, type ProjectionOptions} from './optimize.ts'

@@ -1,12 +1,12 @@
-// The Notes flow in root IndirectOS, checked against pretext's layoutNextLineRange
+// The Notes flow in IndirectOS, checked against pretext's layoutNextLineRange
 // (npm @chenglou/pretext) with a deterministic fake canvas: the circuit and the
 // reference read widths from the same prepared text, so the reference's lines and
 // word positions are what the circuit must reproduce.
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {type LayoutLineRange, type PreparedTextWithSegments, layoutNextLineRange, prepareWithSegments} from '@chenglou/pretext'
-import {Circuit} from './numeric-ui-core.ts'
-import {type FastParagraph, attachFastCircuit, fastWindow, segmentGeometry, walkGatheredLines} from './notes-walker.ts'
+import {Circuit} from '../../src/runtime/numeric-ui-core.ts'
+import {type FastParagraph, attachFastCircuit, fastWindow, segmentGeometry, walkGatheredLines} from '../../src/indirectos/notes-walker.ts'
 import {
   type NotesOptions,
   defaultLineFitEpsilon,
@@ -15,7 +15,7 @@ import {
   measureNotesParagraph,
   notesOptionsFor,
   notesWords,
-} from './notes-paragraph.ts'
+} from '../../src/indirectos/notes-paragraph.ts'
 import {
   bandOutputField,
   createWindowManagerMachine,
@@ -29,7 +29,7 @@ import {
   windowSourceField,
   windowStateField,
   wordOutputField,
-} from './window-manager.ts'
+} from '../../src/indirectos/window-manager.ts'
 
 // A deterministic canvas: letters vary between 28/64 and 40/64 of the font size,
 // spaces are 20/64 and punctuation 22/64, so every width lies on the 1/64 px grid

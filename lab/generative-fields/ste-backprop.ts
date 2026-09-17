@@ -1,4 +1,4 @@
-import type {Circuit} from '../../numeric-ui-core.ts'
+import type {Circuit} from '../../src/runtime/numeric-ui-core.ts'
 
 export function backpropagateStraightThrough(
   circuit: Circuit,

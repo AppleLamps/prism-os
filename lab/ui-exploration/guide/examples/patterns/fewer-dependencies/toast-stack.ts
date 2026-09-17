@@ -19,7 +19,7 @@ import {
   emitCompare,
   emitFirstActive,
   emitMultiply,
-} from '../../../../../../numeric-ui-core.ts'
+} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {
   type EvaluationKind,
   type SpringMatrix,
@@ -31,7 +31,7 @@ import {
   springMatrixPower,
   springStepMatrix,
   stoppedSpringClock,
-} from '../../../../../../host-timing.ts'
+} from '../../../../../../src/runtime/host-timing.ts'
 import {type Evaluator, createEvaluator, emitAll} from './helpers.ts'
 
 // 4 toasts of 320 × 40 px, 48 px apart, in a column whose left edge is at 16 px.

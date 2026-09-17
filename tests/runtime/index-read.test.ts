@@ -12,7 +12,7 @@ import {
   validateOneHotGroups,
   validateTensorProgram,
   asWire,
-} from './numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 
 // Tests for the index read instruction, ported from index-read's index-read.test.ts
 // (https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/index-read/index-read.test.ts)

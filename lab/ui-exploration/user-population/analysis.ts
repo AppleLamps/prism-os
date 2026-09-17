@@ -1,7 +1,7 @@
 // Small analysis helpers for report.ts: Pareto fronts, level thresholds for the
 // tremor estimate, and markdown tables.
 
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 
 // Items that no other item beats or ties on every objective while beating on
 // at least one. Lower is better for every objective.

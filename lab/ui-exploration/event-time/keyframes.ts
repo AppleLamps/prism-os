@@ -10,7 +10,7 @@
 // and opacity can and width, height and z-index can't. Keeping them apart lets
 // motion and fades keep playing while the main thread is blocked; size and
 // stacking changes wait for the main thread.
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {type EventTimeMachine, displayLayout} from './event-machine.ts'
 import {controlField, itemCount as photoCount, photoField} from './photo-gallery.ts'
 import {type Prediction, lastPlayedSample} from './prediction.ts'

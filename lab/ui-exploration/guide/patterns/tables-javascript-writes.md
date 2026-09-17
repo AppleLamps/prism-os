@@ -72,7 +72,7 @@ Measured by the example's test: the ancestor and its top are 2 operations, 2 lay
 
 ## Where it's used
 
-- [host-timing.ts](../../../../host-timing.ts) with `emitApplySpringMatrix` in [numeric-ui-core.ts](../../../../numeric-ui-core.ts): the default spring, 4 cells per stiffness and damping pair ([springs](../sections/springs.md#4-javascript-writes-the-frame-matrix)).
+- [host-timing.ts](../../../../src/runtime/host-timing.ts) with `emitApplySpringMatrix` in [numeric-ui-core.ts](../../../../src/runtime/numeric-ui-core.ts): the default spring, 4 cells per stiffness and damping pair ([springs](../sections/springs.md#4-javascript-writes-the-frame-matrix)).
 - [hn-thread](../../hn-thread/README.md): `ancestorAtLevel`, 2,761 entries built into the program as constants and read through a row one-hot and a level one-hot. Its README notes that a thread that changes at runtime needs runtime ancestor data instead of constant tables.
 - [code-points](../../code-points/README.md): line break classes and a 41 × 41 pair table, `breakAfter[c] = pairs[class[c] × 41 + class[c + 1]]`, which took line start mismatches against pretext from 8,806 to 418 of 41,820 layouts ([text, idea 3](../sections/text.md#idea-3-code-points-and-break-rules-inside-the-circuit)).
 - [Chains](../sections/chains.md#batching-different-chains-together): one circuit for any 4-state machine with its transition table in cells, which runs both a button and a toggle switch.

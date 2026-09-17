@@ -1,7 +1,7 @@
 // Executors that evaluate the same circuit with different arithmetic, standing in for what an
 // optimizing compiler or another backend may do. They show which comparison forms need FP32 rounding
 // to happen exactly as written, and which need no rounding at all.
-import type {Circuit, Terms} from '../../../../../numeric-ui-core.ts'
+import type {Circuit, Terms} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {smallestNormal} from './fp32.ts'
 
 export type ExecutorMode =

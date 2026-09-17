@@ -1,5 +1,5 @@
-// A queue of pointer events through a button's state machine, over the repo root
-// runtime. The machine's transition table and click table live in source cells as
+// A queue of pointer events through a button's state machine, over the runtime in
+// src/runtime/. The machine's transition table and click table live in source cells as
 // integers that JavaScript writes, so one compiled program runs any machine with the
 // same number of states, e.g. the button and a toggle switch. Three builds compute the
 // state before every queued event, the final state and the click count:
@@ -7,7 +7,7 @@
 // - 'sklansky' and 'brent-kung': turn each event into a table from state to next state,
 //   combine tables with a prefix network, where combining two tables is one index read
 //   per state, and read each prefix at the initial state.
-import {Circuit, type Wire, asWire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {brentKungPrefix, sklanskyPrefix} from './prefix-networks.ts'
 
 export const buttonEvents = ['none', 'downOnButton', 'moveInside', 'moveOutside', 'up'] as const

@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import {runScenario, scriptedTrace} from './differential.ts'
 import {probeEdges} from './edge-probe.ts'
 import {createGalleryMachine, initializeSource} from './gallery-app.ts'

@@ -1,4 +1,4 @@
-import type {Circuit, Wire} from '../../../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export type ProgramSize = {
   // Live operations in the compiled program: the total work of one evaluation.

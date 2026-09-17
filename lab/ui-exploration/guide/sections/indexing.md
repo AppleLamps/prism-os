@@ -70,7 +70,7 @@ const rowHeight = circuit.roundAffine(bits.map((bit, j) =>
 
 ## Way 2: gather lowering in the compiler
 
-A **gather** reads entries at given positions, e.g. `table[indices]` in NumPy or `torch.gather` in PyTorch. The repo root runtime turns a masked sum into a gather when the circuit declares its bits as a one-hot:
+A **gather** reads entries at given positions, e.g. `table[indices]` in NumPy or `torch.gather` in PyTorch. The runtime in src/runtime/ turns a masked sum into a gather when the circuit declares its bits as a one-hot:
 
 ```ts
 circuit.assumeOneHot(bits) // declares that every bit is exactly 0 or 1, and exactly one is 1
@@ -101,7 +101,7 @@ const rowHeight = candidateValues[selectedPosition]
 [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read) added a fourth instruction to its copy of the runtime, and on September 14, 2026 Cheng decided to add it to the repo root runtime, numeric-ui-core.ts ([decision 1](../review-and-decisions.md#1-should-the-shared-runtime-get-an-index-read-instruction)). `circuit.indexRead(index, candidates, {outOfRange})` returns `candidates[floor(index)]`. Outside the table it returns the nearest end, or +0 with `{outOfRange: 'zero'}`. `circuit.indexReadAffine(indexTerms, indexBias, candidates, below, above, {indexRange})` takes the index as an affine form, with one rule per side. From [shared-runtime-index-read.ts](../examples/indexing/shared-runtime-index-read.ts), shortened:
 
 ```ts
-import {Circuit} from '../../../../../numeric-ui-core.ts'
+import {Circuit} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 circuit.assumeRange(rowIndex, -4, count + 4) // without a declared range, the builder throws
 const rowHeight = circuit.indexRead(rowIndex, rowHeights)
@@ -170,7 +170,7 @@ For an index read, `backpropagateReference` in numeric-ui-core.ts, like index-re
 - `'zero'` reports 0, which is the true derivative between whole numbers.
 - `'backward-difference'` reports `read(i) - read(i - 1)` at `i = floor(index)`, e.g. 60 - 28 = 32 at rowIndex 3.
 
-`'backward-difference'` exists because it's exactly what the backward pass gives the ReLU one-hot of way 1 at a whole-number index. At rowIndex 3, the step `[rowIndex >= 3]` has an upper ReLU `relu(rowIndex - 2)` with slope 1 and a lower ReLU `relu(rowIndex - 3)` at its corner, where the backward pass uses slope 0, so that step gets gradient 1. Every other step's two ReLUs have the same slope, so their gradients cancel. Bit 3 then gets +1 and bit 2 gets -1, and the read's gradient is entry 3 minus entry 2. index-read's tests, and index-read.test.ts in the repo root, compare the instruction with both one-hot styles on every source wire at every whole-number index from -3 to count + 2. This folder's tests check the one-hot read against `clampedRead(rowIndex) - clampedRead(rowIndex - 1)` at every index of the 8-entry table, and numeric-ui-core.ts's `'backward-difference'` against the one-hot read's gradient at every index from -3 to 10. It's a finite difference between two neighboring whole numbers, not a derivative of anything the forward pass computes.
+`'backward-difference'` exists because it's exactly what the backward pass gives the ReLU one-hot of way 1 at a whole-number index. At rowIndex 3, the step `[rowIndex >= 3]` has an upper ReLU `relu(rowIndex - 2)` with slope 1 and a lower ReLU `relu(rowIndex - 3)` at its corner, where the backward pass uses slope 0, so that step gets gradient 1. Every other step's two ReLUs have the same slope, so their gradients cancel. Bit 3 then gets +1 and bit 2 gets -1, and the read's gradient is entry 3 minus entry 2. index-read's tests, and tests/runtime/index-read.test.ts, compare the instruction with both one-hot styles on every source wire at every whole-number index from -3 to count + 2. This folder's tests check the one-hot read against `clampedRead(rowIndex) - clampedRead(rowIndex - 1)` at every index of the 8-entry table, and numeric-ui-core.ts's `'backward-difference'` against the one-hot read's gradient at every index from -3 to 10. It's a finite difference between two neighboring whole numbers, not a derivative of anything the forward pass computes.
 
 ## Reads that are differentiable in the index
 
@@ -281,7 +281,7 @@ const read = circuit.roundAffine(exponentials.map((exponential, j) =>
 
 As the sharpness grows, the softmax weights approach the one-hot of the highest score. At query 2.25 over 8 positions, the weight on position 2 is 0.53001 at sharpness 1, 0.98201 at sharpness 8, and 0.99996 at sharpness 64 (float64). **Hard attention** skips the softmax and computes that one-hot directly with **argmax**, the position of the highest score.
 
-[hard-attention.ts](../examples/indexing/hard-attention.ts) uses the same parabola scores, shifted into 0..1 and scaled by a power of two so the scaling is exact, and the repo root runtime's `emitArgmax`:
+[hard-attention.ts](../examples/indexing/hard-attention.ts) uses the same parabola scores, shifted into 0..1 and scaled by a power of two so the scaling is exact, and `emitArgmax` from the runtime in src/runtime/:
 
 ```ts
 const scoreOffset = (count - 1) ** 2

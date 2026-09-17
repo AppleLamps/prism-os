@@ -10,7 +10,7 @@
 // read no per-instance wire come out identical for every instance and are
 // shared through the builder's expression table, the way a flat build would
 // deduplicate them.
-import {Circuit, invariant, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {emitAnd, emitFirstSetBit, emitGather, emitIndexOneHot} from './kit.ts'
 import {type Range, type Reduction, type StageInfo, type StagedProgram} from './staged.ts'
 

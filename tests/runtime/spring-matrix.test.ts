@@ -8,7 +8,7 @@ import {
   validateCircuit,
   validateTensorProgram,
   asWire,
-} from './numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 import {
   type PlannedEvaluation,
   type SpringClock,
@@ -26,7 +26,7 @@ import {
   springStepMatrix,
   stoppedSpringClock,
   validateSpringClockConfig,
-} from './host-timing.ts'
+} from '../../src/runtime/host-timing.ts'
 
 // Tests for springs whose step matrix the host writes, and for the host timing
 // utilities, ported from spring-bank's tests (https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/spring-bank),

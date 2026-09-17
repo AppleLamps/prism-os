@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateGrids, validateIndexReads, validateOneHotGroups} from '../../../../../../numeric-ui-core.ts'
+import {validateGrids, validateIndexReads, validateOneHotGroups} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {buildCompaction, compactionReference, priceMaximum, type CompactionForm, type Slot} from './compaction-into-slots.ts'
 import {createBothEvaluators, createRandom, measureProgram, randomInteger} from './kit.ts'
 

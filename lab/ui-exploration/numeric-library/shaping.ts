@@ -1,6 +1,6 @@
 // Shader-style shaping functions (mix, remap, smoothstep), exp over small ranges,
 // and a float hash for per-item pseudo-random values.
-import {type Circuit, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {type Circuit, type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {type NewtonOptions, emitReciprocal} from './arithmetic.ts'
 import {emitFract} from './rounding.ts'
 

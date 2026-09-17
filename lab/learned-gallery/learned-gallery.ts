@@ -4,7 +4,7 @@ import {
   type TrainableGeometry,
   type TrainableGeometryTarget,
 } from './trainable-geometry.ts'
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 
 export const learnedPhotoCount = 12
 export const learnedSlotCount = 20

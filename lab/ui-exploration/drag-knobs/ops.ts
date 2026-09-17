@@ -1,7 +1,7 @@
 // Small circuit helpers for layout, copied from lab/ui-exploration/layout-tree. The one
 // change: atLeastZero and waterFill can record each decision's difference wire (its unclamped
 // margin) on a TaggedCircuit, so flip queries and search can read margins next to exact bits.
-import {Circuit, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {TaggedCircuit, type DecisionKind} from './circuit-tools.ts'
 
 export function constantWire(circuit: Circuit, value: number): Wire {

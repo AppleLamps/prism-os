@@ -1,7 +1,7 @@
 // The staged executor: shared stages as generated JS, map stages as generated
 // JS with an instance loop over struct-of-arrays columns, and reductions as
 // plain loops that take the FP32 steps staged.ts states for each fold order.
-import {invariant, type Wire} from '../../../numeric-ui-core.ts'
+import {invariant, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {type GeneratedFunction, flattenProgram, generateScalarModule} from '../codegen/codegen.ts'
 import {type ColumnInstanceRunner, compileColumnInstanceProgram} from './columns.ts'
 import {type InstancePlan, planInstances} from '../codegen/instance.ts'

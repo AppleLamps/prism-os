@@ -16,7 +16,7 @@
 // requestAnimationFrame render that reads DOM, interprets inputs, evaluates
 // the circuit, and batches DOM writes.
 
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {
   authoredFamilies,
   buildSource,

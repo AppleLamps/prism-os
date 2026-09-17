@@ -2,7 +2,7 @@
 // declarations are included, so checking a gallery helper does not start its browser app.
 import ts from 'typescript'
 import {compileFunction} from 'node:vm'
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {Scope, type RuntimeValue} from './twin.ts'
 
 type NativeValue = number | boolean | string | null | undefined | NativeValue[] | {[name: string]: NativeValue}

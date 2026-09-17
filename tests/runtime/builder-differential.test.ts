@@ -6,7 +6,7 @@ import {
   invariant,
   validateCircuit,
   asWire,
-} from './numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 
 // Differential oracle for the builder's emit-time rewrites.
 //

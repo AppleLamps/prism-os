@@ -1,6 +1,6 @@
 // Row tops, rowTops[r] = heights[0] + ... + heights[r - 1], written three ways. Every form returns
 // rowCount + 1 wires: rowTops[0] is 0 and rowTops[rowCount] is the content height.
-import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // The plain JS loop, in FP32 like the circuit. Its accumulation order,
 // ((heights[0] + heights[1]) + heights[2]) + ..., is the order the chain and the wide sums keep.

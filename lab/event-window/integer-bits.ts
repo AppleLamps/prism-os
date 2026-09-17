@@ -56,7 +56,7 @@ import {
   emitRelu,
   invariant,
   validateCircuit,
-} from '../../numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 // --- The reveal-law scaffolding ----------------------------------------------
 // This layout, ground truth, and case machinery originally lived in the
 // surrogate-gradient experiment (exp-ste-reveal.ts), which this experiment

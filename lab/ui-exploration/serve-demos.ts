@@ -6,7 +6,7 @@
 //
 // Each page is a Bun HTML import. Bun bundles a page the first time it's requested, the same way
 // `bun demo.html` does, so a page's scripts, its stylesheets, the files those stylesheets reference
-// with url() (e.g. the photo-gallery-*.webp files at the repo root) and the JSON files its modules
+// with url() (e.g. the photo-gallery-*.webp files in assets/) and the JSON files its modules
 // import all resolve relative to the page's own file, whatever URL the page is served at.
 //
 // A page's URL path is its path in the repo, e.g. /lab/ui-exploration/instanced-items/demo.html, so query
@@ -18,7 +18,7 @@ import {resolve} from 'node:path'
 
 import indexPage from './demos.html'
 
-import indirectOS from '../../index.html'
+import indirectOS from '../../assets/index.html'
 import candidateGallery from '../candidate-gallery/candidate-gallery.html'
 import learnedGallery from '../learned-gallery/learned-gallery.html'
 import hardAttend from '../hard-attend/hard-attend.html'
@@ -47,7 +47,7 @@ import codePoints from './code-points/demo.html'
 const repoRoot = resolve(import.meta.dir, '../..')
 
 const pages = {
-  '/index.html': indirectOS,
+  '/assets/index.html': indirectOS,
   '/lab/candidate-gallery/candidate-gallery.html': candidateGallery,
   '/lab/learned-gallery/learned-gallery.html': learnedGallery,
   '/lab/hard-attend/hard-attend.html': hardAttend,

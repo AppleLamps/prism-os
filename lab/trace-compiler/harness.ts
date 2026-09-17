@@ -8,7 +8,7 @@
 // same equality the repo's differential tests use). 4 must agree with 5 independently of the
 // circuit. Precision drift is measured between 3 and 5, not treated as a compiler failure.
 
-import {invariant, validateTensorEvaluation} from '../../numeric-ui-core.ts'
+import {invariant, validateTensorEvaluation} from '../../src/runtime/numeric-ui-core.ts'
 import ts from 'typescript'
 import type {FitRelation} from './annotations.ts'
 import type {CompiledProgram, FunctionLike} from './compile.ts'

@@ -13,7 +13,7 @@
 // - per-slot fields: importance, order key, visibility, height preference.
 //   Part of the generative field vector.
 
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 
 export const slotCount = 16
 

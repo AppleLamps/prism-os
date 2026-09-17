@@ -6,7 +6,7 @@
 // Host contract: the container width is a whole number of pixels in 0..16,384, every low and high is
 // a whole number of pixels in 0..4,096, every child's low is at most its high, and there are at most
 // 64 children, so every sum below is an integer smaller than 2^23.
-import {Circuit, invariant, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitIntegerAtLeastZero} from './kit.ts'
 
 // JS reference, a plain loop that stops early. total(level) = Σ clamp(level, low, high) never

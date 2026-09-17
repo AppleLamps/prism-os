@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {type Circuit, type Wire, validateOneHotGroups} from '../../../../../numeric-ui-core.ts'
+import {type Circuit, type Wire, validateOneHotGroups} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {
   buildCloseButtonHitTest,
   buttonInset,

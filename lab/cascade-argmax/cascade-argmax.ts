@@ -18,7 +18,7 @@
 // sides of a wrong decision receive gradient; the hard form sets the offset back to zero, which
 // restores the exact tie rule.
 
-import {Circuit, type Wire, emitArgmax, emitMultiply, invariant} from '../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitArgmax, emitMultiply, invariant} from '../../src/runtime/numeric-ui-core.ts'
 
 const f32 = Math.fround
 

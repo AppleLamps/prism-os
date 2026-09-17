@@ -5,7 +5,7 @@
 // The hit bits aren't sorted (e.g. 0 1 0 1 1), so counting them doesn't give the first hit. Two
 // ways around that: a tournament that routes a single 1 down to the first hit, or counting the
 // earlier hits, which is a prefix sum over the bits.
-import {Circuit, emitFirstActive, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, emitFirstActive, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitRowTops} from './row-tops.ts'
 
 export function firstHitReference(hits: ArrayLike<number>): number[] {

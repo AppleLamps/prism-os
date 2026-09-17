@@ -1,6 +1,6 @@
 // Checks shared by springs.test.ts and report.ts: each circuit example against
 // plain float64 JavaScript.
-import {Circuit, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {
   type ReferenceState,
   cell,

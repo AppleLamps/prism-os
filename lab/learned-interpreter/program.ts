@@ -7,7 +7,7 @@ import {
   validateTensorProgram,
   validateWireView,
   asWire,
-} from '../../numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 
 export const inputNames = ['pointerX', 'panelLeft', 'scale', 'distractor'] as const
 export type InputName = (typeof inputNames)[number]

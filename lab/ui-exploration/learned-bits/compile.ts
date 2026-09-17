@@ -1,7 +1,7 @@
 // Compiles hardened networks and authored constructions into numeric-ui-core
 // circuits, measures them, and checks every case with the tensor evaluator.
 
-import {Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {evaluateHard, gateCoefficients, SourceMode, type HardNetwork} from './network.ts'
 import {dragSlop, hitRectangle, type Task} from './tasks.ts'
 

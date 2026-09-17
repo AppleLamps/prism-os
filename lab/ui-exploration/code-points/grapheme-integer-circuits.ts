@@ -2,7 +2,7 @@
 // holds an integer below 2^23 in magnitude, so every step is exact in FP32. The helpers check the
 // declared ranges of their operands at build time and refuse wires that are too wide.
 
-import {Circuit, type Terms, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 
 const comparisonScale = 2 ** -24
 

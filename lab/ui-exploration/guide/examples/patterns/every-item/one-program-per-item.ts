@@ -6,7 +6,7 @@
 // Host contract: headerHeight, lineHeight, scrollTop, viewportHeight and pointerY are multiples of 1/4 px,
 // lineCount is an integer, expanded is 0 or 1, and the list stays below 2^21 px tall. Every sum is then an exact
 // FP32 value, so plain float64 JavaScript computes the same numbers as the circuits.
-import {Circuit, emitCompare, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, emitCompare, type Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export type ListShared = {headerHeight: number, lineHeight: number, scrollTop: number, viewportHeight: number, pointerY: number}
 export type ListRow = {lineCount: number, expanded: number}

@@ -4,7 +4,7 @@
 // the order that the program handles them within one evaluation: the last down, then the last up, then any cancel.
 // Unlike advanceFrame, it never snaps the thumb onto its destination when a frame would need more than 300 steps, so a
 // trace with a stall of more than about 1,140 ms while the thumb moves would differ from the program.
-import {quantizeTimeMs} from '../host-timing.ts'
+import {quantizeTimeMs} from '../src/runtime/host-timing.ts'
 import {type ToggleEvent, layout, springConstants} from './toggle.ts'
 
 export function createToggleReference() {

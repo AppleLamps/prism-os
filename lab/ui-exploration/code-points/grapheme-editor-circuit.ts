@@ -4,7 +4,7 @@
 // layout slots), decide the caret, anchor and edit range, then rewrite every cell. A final layout
 // produces the display outputs. Strings never enter; JS maps codes back to graphemes.
 
-import {Circuit, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   andBits,
   atLeastZero,

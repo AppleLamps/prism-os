@@ -1,6 +1,6 @@
 // The instance-parallel workloads, built once for tests, report.ts,
 // gpu-headless.ts and the demo page.
-import type {Circuit} from '../../../numeric-ui-core.ts'
+import type {Circuit} from '../../../src/runtime/numeric-ui-core.ts'
 import {createCandidateGalleryMachine, sourceField as candidateSourceField} from './candidate-gallery-copy.ts'
 import type {TensorProgram} from './codegen.ts'
 import {instanceSourceTable, planInstances, type InstancePlan} from './instance.ts'

@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateOneHotGroups} from '../../../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {boxesGapX, boxMinSizeX, buildColumnLayout, columnLayoutReference, maximumColumns} from './column-count.ts'
 import {buildFirstHit, firstHitReference, type FirstHitForm} from './first-hit.ts'
 import {buildFirstVisibleRow, firstVisibleRowReference} from './first-visible-row.ts'

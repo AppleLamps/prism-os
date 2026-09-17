@@ -1,10 +1,10 @@
-// The index read instruction in the repo root runtime, numeric-ui-core.ts, which
+// The index read instruction in the runtime, src/runtime/numeric-ui-core.ts, which
 // Cheng decided on September 14, 2026 to add. index-read-instruction.ts builds the
 // first two circuits below over index-read's copy of the runtime, where the
 // instruction was first built, which is lab/ui-exploration/pixel-output/numeric-ui-core.ts
 // since September 16, 2026. shared-runtime-index-read.test.ts checks that both
 // runtimes give the same values and counts.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // Source table: [index, table[0], ..., table[count - 1]]. The index needs a
 // declared range strictly inside ±2^24, or the builder throws.

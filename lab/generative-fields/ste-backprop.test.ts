@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {Circuit, emitMultiply, emitRelu} from '../../numeric-ui-core.ts'
+import {Circuit, emitMultiply, emitRelu} from '../../src/runtime/numeric-ui-core.ts'
 import {backpropagateStraightThrough} from './ste-backprop.ts'
 import {authoredFamilies, buildSource, defaultContext, fieldDimension, generativeFields} from './fields.ts'
 import {createFlowLayoutMachine} from './flow-layout.ts'

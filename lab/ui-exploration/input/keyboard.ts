@@ -16,7 +16,7 @@
 //   then reads its row through the focus one-hot, which gather lowering turns
 //   into indexed reads.
 
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {allocateEventQueue, coordinateLimit, writeEventQueue, type EventSlot, type KeyName, type QueuedEvent} from './events.ts'
 import {createKit, readOneHot, scaled, SourceLayout, termsOf, type Expression, type Kit, type Term, type Wire} from './kit.ts'
 import {strictlyInside, type Rectangle} from './windows.ts'

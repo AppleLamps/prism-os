@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import type {Circuit, Wire} from '../../../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {basicGradientRows} from './basics.ts'
 import {buildMaskedUnrolledSpring, buildUnrolledSpring, measureBackwardCost, referenceUnrolledSpring, writeUnrolledSource} from './backward-cost.ts'
 import {fitSpringToRecording, framesGradientRows, recordedParameters} from './frames.ts'

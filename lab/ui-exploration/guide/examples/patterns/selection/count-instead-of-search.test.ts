@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateOneHotGroups} from '../../../../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {buildPointedRow, pointedRowReference, type PointedRowForm} from './count-instead-of-search.ts'
 import {createBothEvaluators, createRandom, measureProgram} from './kit.ts'
 

@@ -10,7 +10,7 @@
 // - An optional overflow count: how many rows, columns and wraps overflow horizontally.
 // Every operation is tagged "pass:level" (the level of the node whose children the
 // operation sizes or places).
-import type {Terms, Wire} from '../../../numeric-ui-core.ts'
+import type {Terms, Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import type {SourceTable, TaggedCircuit} from './circuit-tools.ts'
 import {
   atLeastZero,

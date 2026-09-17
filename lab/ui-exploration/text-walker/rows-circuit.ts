@@ -5,7 +5,7 @@
 // Every width the walker compares is prepared data, so the same circuit covers chunks, emergency
 // breaks, soft hyphens, letter spacing and tabs; what changes per feature is how rows.ts derives
 // the candidates and how many cursor units the text needs.
-import {type Wire} from '../../../numeric-ui-core.ts'
+import {type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {type PreparedView} from './fake-canvas.ts'
 import {SourceTable, compile, fitBit, integerAtLeast, integerOneHot, maskedRead, type Compiled} from './kit.ts'
 import {buildUnits, unitRow, type RowOptions, type UnitRow, type Units} from './rows.ts'

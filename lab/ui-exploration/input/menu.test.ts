@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import {writeEventQueue, type KeyName, type QueuedEvent} from './events.ts'
 import {createMenuMachine, menuOracleEvent, menuOracleFocusTarget, menuPlacement, menuPlacementFlips, type MenuLayout, type MenuState} from './menu.ts'
 import {generateMenuTrace} from './traces.ts'

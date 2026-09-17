@@ -1,7 +1,7 @@
 // Reciprocal, division, and square root over declared ranges: a constant seed per
 // bucket of the input, chosen by threshold bits, then Newton steps built from
 // products and additions.
-import {type Circuit, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {type Circuit, type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 
 export type NewtonOptions = {
   // Buckets per octave of the input. More buckets make a better seed and fewer

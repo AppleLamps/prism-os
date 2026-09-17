@@ -16,7 +16,7 @@ import {
   invariant,
   validateCircuit,
   validateTensorProgram,
-} from '../../../numeric-ui-core.ts'
+} from '../../../src/runtime/numeric-ui-core.ts'
 
 export const photoCount = 12
 

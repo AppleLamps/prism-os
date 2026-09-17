@@ -5,7 +5,7 @@
 // one run of one program. Everything that doesn't read the 4 cells (hit tests,
 // stacking, destinations, and the Photos layout when it reads early inputs) is
 // computed once per prediction, like uniforms in a shader.
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {lastSettleCheckSteps, settleCheckStepMultiple} from './commits.ts'
 import {type EventTimeMachine, displayLayout} from './event-machine.ts'
 import {compileInstanceProgram, planInstances} from '../codegen/instance.ts'

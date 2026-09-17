@@ -3,7 +3,7 @@
 // recipe (thousands of candidates, weighted heuristics, pick the winner) with
 // the layout and the validity checks living inside one circuit.
 
-import {invariant} from '../../numeric-ui-core.ts'
+import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {
   buildSource,
   fieldDimension,

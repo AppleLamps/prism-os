@@ -18,7 +18,7 @@
 // - column, position, filled, today, the pill kinds, and hover. Hover is a
 //   per-cell hit test against the shared pointer, the way a shader tests every
 //   fragment, so no floor division of the pointer is needed.
-import {Circuit, type Wire, emitMultiply, emitRelu} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitMultiply, emitRelu} from '../../../src/runtime/numeric-ui-core.ts'
 
 export const life = Math.floor(75 * 365.25)
 const candidateCount = 140

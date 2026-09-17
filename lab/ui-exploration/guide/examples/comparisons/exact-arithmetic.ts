@@ -4,7 +4,7 @@
 // computed exactly with BigInt. An operation didn't round when its FP32 result equals the exact
 // result of the same arithmetic on the same FP32 inputs. For a ReLU-gated product, only the result
 // counts: a gate sum like -1 + 2^-100 rounds to -1, but the ReLU returns 0 either way.
-import type {Circuit, Terms} from '../../../../../numeric-ui-core.ts'
+import type {Circuit, Terms} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // mantissa * 2^exponent
 type Dyadic = {mantissa: bigint, exponent: number}

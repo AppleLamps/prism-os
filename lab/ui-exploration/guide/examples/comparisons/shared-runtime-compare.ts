@@ -1,11 +1,11 @@
-// emitCompare in the repo root runtime, numeric-ui-core.ts: the one comparison
+// emitCompare in the runtime, src/runtime/numeric-ui-core.ts: the one comparison
 // helper that Cheng decided on September 14, 2026 building blocks should use. It
 // builds integer bits when both operands are declared on a grid, a sign cascade
 // planned for every FP32 value otherwise, and ends with a boolean atom only with
 // {endWithBoolean: true}. The other files in this folder build each form by hand, to show how and
 // why each form works; shared-runtime-compare.test.ts checks that the helper gives
 // the same bits as native comparisons and as the hand-built sign cascade.
-import {Circuit, type Relation, emitCompare, emitMinimum, emitMinimumExact} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Relation, emitCompare, emitMinimum, emitMinimumExact} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export const relations: readonly Relation[] = ['>', '>=', '<', '<=', '===']
 

@@ -1,6 +1,6 @@
 // Level 1 of three: one fixed 4 ms spring step, the body of the loop inside
 // index.ts's stepSpringTo.
-import type {Circuit, Wire} from '../../../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export const stepMs = 4
 

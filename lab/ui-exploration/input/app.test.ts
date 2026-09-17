@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import {appItemSlots, appMenus, appOracleFrame, createAppMachine, createAppState, type AppState, type AppViewport} from './app.ts'
 import type {KeyName, QueuedEvent} from './events.ts'
 import {generateAppTrace, type AppFrame} from './traces.ts'

@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {validateGrids, validateOneHotGroups} from '../../../../../../numeric-ui-core.ts'
+import {validateGrids, validateOneHotGroups} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {buildBestLayout, highestScoreReference, type HighestScoreForm} from './highest-score-tree.ts'
 import {createBothEvaluators, createRandom, measureProgram, nextFloat32Up} from './kit.ts'
 

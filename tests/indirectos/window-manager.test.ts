@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {type WriteBack, quantizeTimeMs} from './host-timing.ts'
-import {validateGrids} from './numeric-ui-core.ts'
-import {defaultLineFitEpsilon, defaultNotesParagraph, notesOptionsFor} from './notes-paragraph.ts'
+import {type WriteBack, quantizeTimeMs} from '../../src/runtime/host-timing.ts'
+import {validateGrids} from '../../src/runtime/numeric-ui-core.ts'
+import {defaultLineFitEpsilon, defaultNotesParagraph, notesOptionsFor} from '../../src/indirectos/notes-paragraph.ts'
 import {
   armedSourceField,
   createWindowManagerMachine,
@@ -21,8 +21,8 @@ import {
   windowSourceField,
   windowStateField,
   wordOutputField,
-} from './window-manager.ts'
-import {itemCount as photoCount, photoField, thumbnailSpringField} from './photo-gallery.ts'
+} from '../../src/indirectos/window-manager.ts'
+import {itemCount as photoCount, photoField, thumbnailSpringField} from '../../src/indirectos/photo-gallery.ts'
 
 const viewportWidth = 1280
 const viewportHeight = 800

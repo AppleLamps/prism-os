@@ -1,7 +1,7 @@
 // Differential drivers: generate pointer input on the fly from the reference's
 // own projection (presses land on cards or the box most of the time), feed the
 // same frames to the JS reference and to the circuit machine, and compare.
-import {validateOneHotGroups} from '../../../numeric-ui-core.ts'
+import {validateOneHotGroups} from '../../../src/runtime/numeric-ui-core.ts'
 import {createRandom, hash} from './common.ts'
 import {buildCards, createCardsMachine, type CardsCircuit, type CardsFrameInput} from './cards.ts'
 import {createCardsState, renderCards, type CardsEvents} from './cards-reference.ts'

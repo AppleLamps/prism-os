@@ -1,6 +1,6 @@
 // Source table allocation, operation tagging, decision records, and compiled-program
 // measurement. Copied from lab/ui-exploration/layout-tree, plus DecisionRecord.
-import {Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 export type DecisionKind = 'grid' | 'lines' | 'wrap' | 'fill' | 'app' | 'overflow'
 

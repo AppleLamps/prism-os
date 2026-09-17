@@ -1,6 +1,6 @@
 import {describe, expect, test} from 'bun:test'
 import {createCandidateGalleryCircuit, createCandidateGalleryMachine} from '../../../../../candidate-gallery/candidate-gallery.ts'
-import {validateOneHotGroups, validateTensorEvaluation, asWire} from '../../../../../../numeric-ui-core.ts'
+import {validateOneHotGroups, validateTensorEvaluation, asWire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {createRandom, formatSize, measureProgram} from './measure.ts'
 import {buildCandidateGallery, candidateSource, chooseLayout, flattenChoice, layoutNames, viewportLimit} from './run-every-candidate.ts'
 
@@ -64,7 +64,7 @@ describe('run every candidate, then pick one', () => {
     expect(formatSize(measureProgram(built.circuit, built.roots))).toBe('114 operations, 25 layers, 132 weights, 18 gather reads, 0 index reads')
     expect(formatSize(measureProgram(built.circuit, built.scores))).toBe('60 operations, 16 layers, 89 weights, 0 gather reads, 0 index reads')
     expect(formatSize(measureProgram(built.circuit, built.selected))).toBe('71 operations, 24 layers, 107 weights, 0 gather reads, 0 index reads')
-    // The Dynamic UI demo at the repo root.
+    // The Dynamic UI demo in lab/candidate-gallery.
     const machine = createCandidateGalleryMachine()
     expect(formatSize(measureProgram(machine.circuit, ([...machine.tensorProgram.roots]).map(asWire)))).toBe('417 operations, 60 layers, 848 weights, 26 gather reads, 0 index reads')
     const demo = createCandidateGalleryCircuit()

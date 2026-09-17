@@ -26,7 +26,7 @@ import {
   validateCircuit,
   validateTensorProgram,
   validateWireView,
-} from '../../numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 import {
   type BehaviorConfig,
   type FrameInput,

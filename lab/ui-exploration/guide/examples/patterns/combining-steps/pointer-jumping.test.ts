@@ -2,7 +2,7 @@
 // in both evaluators, and pins the sizes and the table that patterns/pointer-jumping.md quotes.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/patterns/combining-steps
 import {describe, expect, test} from 'bun:test'
-import {validateIndexReads} from '../../../../../../numeric-ui-core.ts'
+import {validateIndexReads} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {createRandom, evaluateBoth, measureProgram} from './measure.ts'
 import {type LineStartsForm, buildLineStarts, greedyNextStarts, jumpLineStarts, walkLineStarts} from './pointer-jumping.ts'
 

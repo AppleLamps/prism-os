@@ -11,7 +11,7 @@
 // Every form adds exact quarter-pixel heights exactly. With fractional
 // heights, the chain and the triangle take the same FP32 steps as a plain
 // sequential loop, and the networks take their own steps.
-import {Circuit, type Wire, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 export type PrefixCircuit = {circuit: Circuit, rowBottoms: Wire[]}
 

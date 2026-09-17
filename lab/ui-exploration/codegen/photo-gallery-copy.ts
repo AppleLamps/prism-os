@@ -20,7 +20,7 @@ import {
   validateCircuit,
   validateTensorProgram,
   validateWireView,
-} from '../../../numeric-ui-core.ts'
+} from '../../../src/runtime/numeric-ui-core.ts'
 
 export const itemCount = 12
 export const columnCount = 4

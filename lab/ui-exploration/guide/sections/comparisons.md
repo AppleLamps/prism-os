@@ -232,7 +232,7 @@ At a resolution of 1/64 or coarser, the cascade is one clamp on the kept differe
 
 ## What backpropagation does through each form
 
-`backpropagateReference` in [numeric-ui-core.ts](../../../../numeric-ui-core.ts) differentiates each operation as real arithmetic. A ReLU-gated product passes gradient to its gate only when the gate is strictly positive, so a ReLU exactly at its corner passes nothing. A boolean atom throws "cannot backpropagate through a boolean atom" unless the caller passes `{booleanGradient: 'straight-through'}`, which passes the atom's gradient to its score unchanged, as if rounding had slope 1. That trick is known in machine learning as the straight-through estimator.
+`backpropagateReference` in [numeric-ui-core.ts](../../../../src/runtime/numeric-ui-core.ts) differentiates each operation as real arithmetic. A ReLU-gated product passes gradient to its gate only when the gate is strictly positive, so a ReLU exactly at its corner passes nothing. A boolean atom throws "cannot backpropagate through a boolean atom" unless the caller passes `{booleanGradient: 'straight-through'}`, which passes the atom's gradient to its score unchanged, as if rounding had slope 1. That trick is known in machine learning as the straight-through estimator.
 
 Measured with gradient 1 on the bit, for a and b within 0..16,384 ([report.ts](../examples/comparisons/report.ts); the gradient on b is always the negation of the gradient on a):
 

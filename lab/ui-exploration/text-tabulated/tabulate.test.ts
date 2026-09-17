@@ -4,7 +4,7 @@ import {createRandom, nextFloat32Down, nextFloat32Up} from './float32.ts'
 import {measureLineStats, prepareWithSegments, type PrepareOptions} from './pretext/layout.ts'
 import {measureBlock, tabulateBlock, type BlockSpec, type BlockTable} from './tabulate.ts'
 import {SourceLayout, allocateBlockGatherCells, emitBlockDeltaRows, type BlockOutputs} from './step-circuit.ts'
-import type {Circuit, Wire} from '../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 installFakeCanvas('blink')
 

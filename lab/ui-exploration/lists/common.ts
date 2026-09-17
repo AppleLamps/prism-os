@@ -1,7 +1,7 @@
 // Shared constructions for the collection prototypes: exact integer bits, exact
 // comparisons on bounded continuous values, rounding and floors, spring matrix
 // powers, and compiled-size measurement.
-import {Circuit, emitMinimum, emitRelu, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, emitMinimum, emitRelu, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 export type ProgramSize = {
   liveOperations: number

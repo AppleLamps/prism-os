@@ -1,6 +1,6 @@
 // Idea 1, tabulation. JavaScript calls the walker at many widths and finds every width where the
 // layout changes. The circuit holds no text at all: it compares the runtime width with those thresholds.
-import {Circuit, invariant, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, invariant, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {layoutLines, type Paragraph} from './paragraph.ts'
 
 export type LayoutSummary = {

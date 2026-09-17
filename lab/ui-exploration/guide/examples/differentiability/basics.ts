@@ -1,7 +1,7 @@
 // What the reference backward pass reports for each kind of operation, next to float64
 // finite differences of the same arithmetic. Every row is one small circuit, one input wire
 // and one output wire.
-import {Circuit, type Wire, emitRelu, emitSelect, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitRelu, emitSelect, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // smooth: the arithmetic is smooth at this input, and the backward pass should give its slope.
 // corner: the arithmetic has a corner at this input, and the backward pass gives one side's slope.

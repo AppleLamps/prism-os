@@ -5,7 +5,7 @@
 //
 // Host contract: the container width is a multiple of 1/64 px within 160..1280 px, e.g. a sidebar width
 // that springs, which the host rounds onto the grid before writing it.
-import {Circuit, type Wire, emitCompare, invariant} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitCompare, invariant} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export const widthGridSteps = 64
 export const minimumContainerWidth = 160

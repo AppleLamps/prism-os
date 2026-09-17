@@ -2,8 +2,8 @@
 // springs, in both evaluators, and pins the sizes that patterns/matrix-powers.md quotes.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/patterns/combining-steps
 import {describe, expect, test} from 'bun:test'
-import {validateGrids, validateIndexReads, asWire} from '../../../../../../numeric-ui-core.ts'
-import {springMatrixPower, springStepMatrix} from '../../../../../../host-timing.ts'
+import {validateGrids, validateIndexReads, asWire} from '../../../../../../src/runtime/numeric-ui-core.ts'
+import {springMatrixPower, springStepMatrix} from '../../../../../../src/runtime/host-timing.ts'
 import {
   buildDigitPowers,
   buildHostMatrix,

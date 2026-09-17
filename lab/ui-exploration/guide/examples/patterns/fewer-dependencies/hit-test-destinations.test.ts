@@ -5,8 +5,8 @@
 // differently. Run from the repo root:
 // bun test lab/ui-exploration/guide/examples/patterns/fewer-dependencies
 import {expect, test} from 'bun:test'
-import {type Circuit, validateGrids} from '../../../../../../numeric-ui-core.ts'
-import {springMatrixPower, springStepMatrix} from '../../../../../../host-timing.ts'
+import {type Circuit, validateGrids} from '../../../../../../src/runtime/numeric-ui-core.ts'
+import {springMatrixPower, springStepMatrix} from '../../../../../../src/runtime/host-timing.ts'
 import {evaluateBoth, frameTimesAt, measureProgram, nextFloat32, seededRandom} from './helpers.ts'
 import {
   type HitTestSource,

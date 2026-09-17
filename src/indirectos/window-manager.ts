@@ -15,7 +15,7 @@ import {
   validateCircuit,
   validateTensorProgram,
   validateWireView,
-} from './numeric-ui-core.ts'
+} from '../runtime/numeric-ui-core.ts'
 import {
   type EvaluationKind,
   type PlannedEvaluation,
@@ -28,7 +28,7 @@ import {
   springMatrixPower,
   springStepMatrix,
   stoppedSpringClock,
-} from './host-timing.ts'
+} from '../runtime/host-timing.ts'
 import {
   type PhotoOutputs,
   buildPhotos,
@@ -53,7 +53,7 @@ import {
   state,
   stateBit,
   unitInterval,
-} from './cells.ts'
+} from '../runtime/cells.ts'
 import {type NotesOutputs, bandOutputField, buildNotes, notesCells, notesWindowIndex, wordOutputField} from './notes.ts'
 import type {FastParagraph} from './notes-walker.ts'
 import {

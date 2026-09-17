@@ -23,4 +23,4 @@ function run(command: string[]) {
 run(['bunx', 'tsgo', '-p', '.'])
 for (const lab of [...labs, ...prototypes]) run(['bunx', 'tsgo', '-p', lab])
 const rootSources = readdirSync(root).filter(name => name.endsWith('.ts'))
-run(['bunx', 'oxlint', '--type-aware', ...rootSources, 'scripts', 'template', ...labs])
+run(['bunx', 'oxlint', '--type-aware', ...rootSources, 'src', 'tests', 'scripts', 'template', ...labs])

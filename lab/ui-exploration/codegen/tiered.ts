@@ -8,7 +8,7 @@
 // optimizes them, so codegen measured about 5 ms for the first frame and about
 // 250 µs per frame for the first hundred frames, against the executor's 30 µs.
 // The host decides when to promote, e.g. during idle time.
-import {type Circuit, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {type Circuit, type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {type ScalarProgram, compileScalarProgram, sameFloat} from './codegen.ts'
 
 export type TieredEvaluator = ReturnType<typeof createTieredEvaluator>

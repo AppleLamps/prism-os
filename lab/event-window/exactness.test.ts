@@ -1,5 +1,5 @@
 import {expect, test} from 'bun:test'
-import {validateTensorEvaluation} from '../../numeric-ui-core.ts'
+import {validateTensorEvaluation} from '../../src/runtime/numeric-ui-core.ts'
 import {
   authoredParameterValues,
   createEventWindowMachine,

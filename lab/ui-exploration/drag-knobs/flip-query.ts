@@ -8,7 +8,7 @@
 // Each prediction is checked independently of the gradient: the knob is scanned over its range
 // as 256 instances in the predicted direction (both directions when there is no prediction), the
 // first change of the results is located, and bisection with the evaluator narrows it down.
-import type {Wire} from '../../../numeric-ui-core.ts'
+import type {Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {edgeValue, type DragSolver, type EdgeTerms} from './drag-solver.ts'
 
 export type MarginQuery = {

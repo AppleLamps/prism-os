@@ -3,7 +3,7 @@
 // with a different load and store: per-instance sources come from one
 // Float32Array per field, and outputs go to one Float32Array per field, so
 // stages hand fields to each other without packing tables.
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {type GeneratedFunction, type RowReaders, type ValueRow, gatherIndexExpression, gatherMassExpression, generateScalarModule, rowValueExpression} from '../codegen/codegen.ts'
 import type {InstancePlan} from '../codegen/instance.ts'
 

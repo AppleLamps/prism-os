@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {validateTensorEvaluation} from '../../numeric-ui-core.ts'
+import {validateTensorEvaluation} from '../../src/runtime/numeric-ui-core.ts'
 import {
   buildArgmaxTree,
   circuitOpCounts,

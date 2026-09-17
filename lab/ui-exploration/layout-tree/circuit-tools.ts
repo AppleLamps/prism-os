@@ -1,5 +1,5 @@
 // Source table allocation, operation tagging, and compiled-program measurement.
-import {Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 // A Circuit that remembers which tag was active when each operation was created, so a
 // compiled program's live operations and stored weights can be split by pass and level.

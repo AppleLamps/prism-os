@@ -2,7 +2,7 @@
 // Every example is a whole circuit whose source cells are the inputs, e.g. in trackCenter wire 0 is trackLeft and
 // wire 1 is trackWidth. atoms.test.ts evaluates each circuit and its JavaScript on the same inputs, and pins the
 // compiled sizes that the guide quotes.
-import {Circuit, type Wire, emitMaximum, emitMinimum, emitMultiply, emitRelu, emitSelect} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire, emitMaximum, emitMinimum, emitMultiply, emitRelu, emitSelect} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitAtLeast, emitClampZeroOne, emitConstant, emitIntegerAtLeast} from './helpers.ts'
 
 export type Example<Inputs extends readonly number[]> = {

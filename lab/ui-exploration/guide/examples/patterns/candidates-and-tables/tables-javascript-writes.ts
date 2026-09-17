@@ -5,8 +5,8 @@
 //    preparing, and the circuit reads the loop's result with one index read.
 // 2. The spring matrix. host-timing.ts computes the matrix of all of this evaluation's 4 ms steps for one
 //    stiffness and damping pair, and every spring with those constants applies the same 4 cells.
-import {Circuit, type SpringMatrixWires, emitApplySpringMatrix, invariant, asWire} from '../../../../../../numeric-ui-core.ts'
-import {type SpringConstants, type SpringMatrix, defaultSpringClockConfig} from '../../../../../../host-timing.ts'
+import {Circuit, type SpringMatrixWires, emitApplySpringMatrix, invariant, asWire} from '../../../../../../src/runtime/numeric-ui-core.ts'
+import {type SpringConstants, type SpringMatrix, defaultSpringClockConfig} from '../../../../../../src/runtime/host-timing.ts'
 
 // hn.js line 333, the loop the ancestor table replaces.
 export function findAncestor(indents: readonly number[], pointedRow: number, pointedLevel: number): number {

@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {Circuit, validateOneHotGroups, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, validateOneHotGroups, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   aboveZero,
   atLeastZero,

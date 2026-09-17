@@ -7,7 +7,7 @@ import {
   emitFirstActive,
   inlineCircuit,
   asWire,
-} from './numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 
 test('inlined circuits become one graph and share matching expressions', () => {
   const child = new Circuit(2)

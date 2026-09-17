@@ -4,7 +4,7 @@
 // Timings share the machine with other work, so read them as rough; the counts
 // are exact.
 
-import {Circuit} from '../../../numeric-ui-core.ts'
+import {Circuit} from '../../../src/runtime/numeric-ui-core.ts'
 import {appOracleFrame, createAppMachine, createAppState} from './app.ts'
 import {allocateEventQueue, writeEventQueue, type QueuedEvent} from './events.ts'
 import {testControlRectangles, testWindowsConfig} from './fixtures.ts'

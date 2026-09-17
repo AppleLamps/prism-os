@@ -2,7 +2,7 @@
 // against native JavaScript comparisons and against this folder's hand-built sign cascade.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/comparisons
 import {expect, test} from 'bun:test'
-import {Circuit, type Relation, emitCompare, emitMinimumExact, validateGrids, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Relation, emitCompare, emitMinimumExact, validateGrids, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {createRandom, differenceClasses, f, measureCost} from './fp32.ts'
 import {pairWithDifference, randomPixelPairs} from './measure.ts'
 import {buildMinimums, buildSharedCompare, relations} from './shared-runtime-compare.ts'

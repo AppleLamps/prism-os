@@ -14,8 +14,8 @@ import {
   permutation,
   state,
   stateBit,
-} from './cells.ts'
-import {type Circuit, type Wire, asWire, emitSelect} from './numeric-ui-core.ts'
+} from '../../src/runtime/cells.ts'
+import {type Circuit, type Wire, asWire, emitSelect} from '../../src/runtime/numeric-ui-core.ts'
 
 // One cell of every kind, a one-hot group, a permutation, and a cell declared in a second call under a name.
 function smallTable() {

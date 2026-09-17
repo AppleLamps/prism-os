@@ -5,7 +5,7 @@
 // so n steps are M^n. With the bits of n, M^n = product over j of (bit_j ? M^(2^j) : I), and every
 // M^(2^j) is a constant matrix. The product is computed once per frame; each spring then costs four
 // products, plus a settle check that snaps it to its target once distance and speed are tiny.
-import {Circuit, emitMultiply, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, emitMultiply, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {integerAtLeast, relu} from './kit.ts'
 
 export type SpringConfig = {

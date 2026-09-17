@@ -75,7 +75,7 @@ The same program, at the same size and depth. The evaluations are the same as wh
 
 - Every input that changes state reaches `advanceFrame` as a timestamped event, e.g. a viewport resize too, since a frame's copy stores nothing.
 - The program reads time only through the spring matrix and the settle check and snap bits, e.g. not through a frame duration cell, and the host quantizes timestamps to 1/64 ms.
-- No snap runs. A frame's steps count from the last commit, so a frame gap from just above 1,140 ms can snap every object onto its destination at one frame rate and not at another ([host-timing.ts](../../../../host-timing.ts)).
+- No snap runs. A frame's steps count from the last commit, so a frame gap from just above 1,140 ms can snap every object onto its destination at one frame rate and not at another ([host-timing.ts](../../../../src/runtime/host-timing.ts)).
 - Events arrive in timestamp order. An event with a timestamp before the last commit applies at that commit's time.
 
 ## When not to use it
@@ -85,7 +85,7 @@ The same program, at the same size and depth. The evaluations are the same as wh
 
 ## Where it's used
 
-- `advanceFrame` in [host-timing.ts](../../../../host-timing.ts), whose `'events and settle checks'` policy [spring-matrix.test.ts](../../../../spring-matrix.test.ts) checks: every stored table identical in every bit at 10, 30, 60 and 120 fps and through 500 ms stalls.
+- `advanceFrame` in [host-timing.ts](../../../../src/runtime/host-timing.ts), whose `'events and settle checks'` policy [spring-matrix.test.ts](../../../../tests/runtime/spring-matrix.test.ts) checks: every stored table identical in every bit at 10, 30, 60 and 120 fps and through 500 ms stalls.
 - [event-time](../../event-time/README.md) committed IndirectOS at events: committed tables identical in every bit at 10 to 240 fps and through 500 ms and 2 s stalls over 6 traces, where frames that wrote back held different bits in 15% to 18% of shared frames.
 - [Springs](../sections/springs.md#5-commit-state-only-at-event-timestamps), form 5, and [decision 3](../review-and-decisions.md#3-how-should-time-enter-the-program-and-which-spring-should-be-the-default) in the guide's decision record. The springs section's [selection highlight](../examples/springs/shared-runtime-springs.ts) runs the same host loop.
 - [Hit-test destinations instead of drawn positions](hit-test-destinations.md) builds the toast stack this example runs.

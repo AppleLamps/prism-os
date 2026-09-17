@@ -10,7 +10,7 @@
 //   }
 //
 // Whether item k fits depends on lineWidth after item k - 1, so the decisions can't run side by side.
-import {Circuit, type Terms, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitPositiveBitByRounding, emitSumAtLeastZeroByRounding, planRoundingCompare} from './boolean-atom.ts'
 import {createRandom, f, nextDown, nextUp} from './fp32.ts'
 import {emitSumAtLeastZeroOnGrid} from './integer-bit.ts'

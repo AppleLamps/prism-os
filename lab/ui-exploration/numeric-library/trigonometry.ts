@@ -1,5 +1,5 @@
 // Sine and cosine by quadrant reduction and short Horner polynomials.
-import {type Circuit, type Wire, invariant} from '../../../numeric-ui-core.ts'
+import {type Circuit, type Wire, invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {emitFloorOnGrid, emitIntegerOneHot} from './rounding.ts'
 
 // pi / 2 split into a 17-bit constant and a small correction (the fdlibm trick):

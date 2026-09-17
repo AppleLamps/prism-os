@@ -13,7 +13,7 @@ import {
   validateTensorEvaluation,
   validateTensorProgram,
   asWire,
-} from './numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 
 // Seeded hash, copied from numeric-ui-core.test.ts so the suite stays deterministic.
 function createRandom(seed: number) {

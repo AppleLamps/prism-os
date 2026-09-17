@@ -3,7 +3,7 @@
 // lab/ui-exploration/pixel-output.
 // Run from the repo root: bun test lab/ui-exploration/guide/examples/indexing
 import {expect, test} from 'bun:test'
-import {Circuit, validateIndexReads} from '../../../../../numeric-ui-core.ts'
+import {Circuit, validateIndexReads} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {buildIndexRead, buildLinearReadFromIndexReads} from './index-read-instruction.ts'
 import {linearRead} from './linear-read.ts'
 import {countMismatches, countProgram, createRandom, programStatistics} from './measure.ts'

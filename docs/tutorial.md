@@ -6,7 +6,7 @@ JavaScript writes browser inputs into a `Float32Array`, the source table, and ru
 
 ## Cells
 
-Every number the program reads, or keeps from one evaluation to the next, is a cell of the source table. [cells.ts](../cells.ts) declares each cell once, with what happens to it around an evaluation, a range and an initial value:
+Every number the program reads, or keeps from one evaluation to the next, is a cell of the source table. [cells.ts](../src/runtime/cells.ts) declares each cell once, with what happens to it around an evaluation, a range and an initial value:
 
 ```ts
 const coordinate = () => input([-16_384, 16_384], {grid: 1 / 64})
@@ -97,7 +97,7 @@ A program can't loop a runtime number of times, so JavaScript counts the spring'
 
 ## The host loop
 
-`createToggleMachine` is the JavaScript around the program. Event handlers only queue events with their timestamps. Each frame calls `advanceFrame` from [host-timing.ts](../host-timing.ts), which plans the frame's evaluations: one per distinct event timestamp, which steps the spring to that timestamp before applying the events, a settle check every 64 ms of simulated time, and one at the frame's timestamp. For each evaluation, the callback writes the spring matrix of `evaluation.steps` steps, the settle check bit, the snap bit, the viewport and the events into the table, runs the program, and writes next state back. The snap bit pins the thumb onto its destination when a frame would need more than 300 steps, e.g. after a long stall.
+`createToggleMachine` is the JavaScript around the program. Event handlers only queue events with their timestamps. Each frame calls `advanceFrame` from [host-timing.ts](../src/runtime/host-timing.ts), which plans the frame's evaluations: one per distinct event timestamp, which steps the spring to that timestamp before applying the events, a settle check every 64 ms of simulated time, and one at the frame's timestamp. For each evaluation, the callback writes the spring matrix of `evaluation.steps` steps, the settle check bit, the snap bit, the viewport and the events into the table, runs the program, and writes next state back. The snap bit pins the thumb onto its destination when a frame would need more than 300 steps, e.g. after a long stall.
 
 ```ts
 const evaluate = createEvaluator(built) // compiles the program for nextSource and the output
@@ -156,7 +156,7 @@ Decisions match exactly, since `emitCompare`'s bits equal JavaScript's compariso
 
 ## Adding a second switch
 
-toggle.ts builds one switch. To show two, turn the switch into a component: a plain object of its cells, and a build function that takes the circuit, the table, the component's wires and the parent's wires. Photos in [photo-gallery.ts](../photo-gallery.ts) is a real one: `photoCells` holds its cells, and `buildPhotos(circuit, table, cells, host)` builds it from wires that the host passes, e.g. the size of the content box and whether Photos takes events. IndirectOS in [window-manager.ts](../window-manager.ts) declares `photos: photoCells` among its own cells and passes the Photos window's content size and focus bit, while the standalone Photos machine declares the same cells next to viewport cells of its own. The parent declares the component's cells once per switch, before `createCircuit`:
+toggle.ts builds one switch. To show two, turn the switch into a component: a plain object of its cells, and a build function that takes the circuit, the table, the component's wires and the parent's wires. Photos in [photo-gallery.ts](../src/indirectos/photo-gallery.ts) is a real one: `photoCells` holds its cells, and `buildPhotos(circuit, table, cells, host)` builds it from wires that the host passes, e.g. the size of the content box and whether Photos takes events. IndirectOS in [window-manager.ts](../src/indirectos/window-manager.ts) declares `photos: photoCells` among its own cells and passes the Photos window's content size and focus bit, while the standalone Photos machine declares the same cells next to viewport cells of its own. The parent declares the component's cells once per switch, before `createCircuit`:
 
 ```ts
 // One switch: whether it's on, whether a press armed it, and its thumb's spring.
@@ -182,13 +182,13 @@ Both thumbs read the same `springMatrix`, since they have the same stiffness and
 
 ## A new app folder
 
-To start another app, copy template/ to a new folder, e.g. counter/, and add the folder in three places, since `bun run check` and `bun run test` only see the folders they list:
+To start another app, copy template/ to a new folder next to it at the repo root, e.g. counter/, so that its imports from `../src/runtime/` still resolve, and add the folder in three places, since `bun run check` and `bun run test` only see the folders they list:
 
 - tsconfig.json's `include` list, e.g. `"counter/*.ts"`, so tsgo type-checks the folder. `bun` strips types without checking them, so without this entry, e.g. a plain number where a wire is expected runs without an error.
 - scripts/check.ts's oxlint command, e.g. `'counter'` next to `'template'`.
-- package.json's `test` script, e.g. `bun test ./*.test.ts template counter lab`. A script that serves the page goes next to `start:template`, e.g. `"start:counter": "bun ./counter/index.html"`.
+- package.json's `test` script, e.g. `bun test ./tests ./template ./counter ./lab`. A script that serves the page goes next to `start:template`, e.g. `"start:counter": "bun ./counter/index.html"`.
 
-After the tsconfig.json entry, `bunx tsgo -p .` type-checks the root project with the new folder in seconds, while `bun run check` also type-checks every lab folder and lints. `bun run knip`, which reports unused exports, only looks at the root modules, scripts/ and template/, per knip.config.ts's `entry` and `project` lists, so it isn't a check a new folder needs; to have it cover the folder, add the page script, e.g. `counter/main.ts`, to `entry` and `counter/*.ts` to `project`.
+After the tsconfig.json entry, `bunx tsgo -p .` type-checks the root project with the new folder in seconds, while `bun run check` also type-checks every lab folder and lints. `bun run knip`, which reports unused exports, only looks at src/, scripts/ and template/, per knip.config.ts's `entry` and `project` lists, so it isn't a check a new folder needs; to have it cover the folder, add the page script, e.g. `counter/main.ts`, to `entry` and `counter/*.ts` to `project`.
 
 ## More
 

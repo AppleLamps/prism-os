@@ -1,9 +1,9 @@
-// Every line's start in a paragraph, from a next-start table, over the repo root
-// runtime. nextStart[s] is the first segment of the next line when a line starts at
+// Every line's start in a paragraph, from a next-start table, over the runtime in
+// src/runtime/. nextStart[s] is the first segment of the next line when a line starts at
 // segment s, and segmentCount means past the end. The walk follows the table one line
 // at a time. Pointer jumping builds "where the line 2, 4, 8, ... lines later starts" by
 // reading each table at the positions it holds, then reaches line L in about log2(L) reads.
-import {Circuit, type Wire} from '../../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 // Greedy line breaking over segment widths, to make realistic tables for the tests.
 export function greedyNextStarts(widths: readonly number[], maxLineWidth: number): number[] {

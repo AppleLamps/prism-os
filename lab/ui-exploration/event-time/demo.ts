@@ -3,7 +3,7 @@
 // runs the settle commit. With ?presenter=frames, requestAnimationFrame runs a
 // display evaluation per frame while something animates. The logic lives in
 // demo-model.ts, keyframes.ts and prediction.ts; this file wires the DOM.
-import {invariant} from '../../../numeric-ui-core.ts'
+import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {type Presenter, createEventTimeScene, discreteStyles, displayRow, predictionRow} from './demo-model.ts'
 import {type KeyframePlan, type Track, type TrackPart, animationTiming, keyframeStyle, trackKeyframes, trackValues} from './keyframes.ts'
 import {itemCount as photoCount, photoNames} from './photo-gallery.ts'

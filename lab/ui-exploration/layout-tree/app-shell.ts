@@ -2,7 +2,7 @@
 // collapsible sidebar whose width springs, a scroll container with sticky section headers
 // over wrapping card grids with text, a wrapping row of tags, and a footer. One circuit
 // handles the menu button's toggle, the spring, and the whole layout every frame.
-import {emitSpring, type Wire} from '../../../numeric-ui-core.ts'
+import {emitSpring, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {allocateLayoutSources, buildLayout, createLayoutReader, writeLayoutSources, type LayoutSources, type LayoutWires} from './builder.ts'
 import {SourceTable, type TaggedCircuit} from './circuit-tools.ts'
 import {atLeastZero, relu} from './ops.ts'

@@ -16,7 +16,7 @@
 //   per block and loops over the block's instances inside, so the cost of
 //   interpreting a row is paid once per block instead of once per instance.
 // Both keep the executor's FP32 accumulation order for every instance.
-import {invariant, type Wire} from '../../../numeric-ui-core.ts'
+import {invariant, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   type FlatProgram,
   type GatherCompute,

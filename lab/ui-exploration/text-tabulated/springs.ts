@@ -4,7 +4,7 @@
 // into source cells; the circuit multiplies the selected constant powers M^(2^j) once per frame,
 // and every spring with the same stiffness and damping reads that one runtime matrix.
 
-import {emitRelu, type Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {emitRelu, type Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 export const springStepSeconds = 0.004
 export const stepBitCount = 9 // 0..511 steps; JS caps the count at 300

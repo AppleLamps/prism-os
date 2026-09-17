@@ -2,7 +2,7 @@
 // next-source write-back, the DOM projection (style strings), and side effects. Shared by the
 // browser demo and the headless differential tests, which plug in a real or a fake platform.
 import {buildGalleryCircuit, galleryConstants, springNames, type GalleryCircuit, type GalleryCircuitOptions} from './gallery-circuit.ts'
-import type {Wire} from '../../../numeric-ui-core.ts'
+import type {Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import type {PhotoData} from './photo-data.ts'
 
 export type GalleryMachine = ReturnType<typeof createGalleryMachine>

@@ -2,7 +2,7 @@
 // Functions are split by statement count, not by rows: a single row can be a 251-term prefix sum, and one gather
 // index computation reads every member of its group.
 
-import type {Circuit} from '../../../numeric-ui-core.ts'
+import type {Circuit} from '../../../src/runtime/numeric-ui-core.ts'
 
 type Program = ReturnType<Circuit['compileTensorProgram']>
 type Generated = (v: Float32Array, f: (x: number) => number, gi: Int32Array, gm: Float32Array, tables: Int32Array[]) => void

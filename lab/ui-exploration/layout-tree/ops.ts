@@ -1,7 +1,7 @@
 // Small circuit helpers for layout. Everything here lowers to affine, reglu and
 // boolean atoms through the shared builder. Ordinary affines are used on purpose:
 // constants fold into biases and small sums compose into their consumers.
-import {Circuit, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 export function constantWire(circuit: Circuit, value: number): Wire {
   return circuit.affine([], value)

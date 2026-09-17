@@ -1,6 +1,6 @@
 // Prints the sizes the selection patterns quote. Run from the repo root:
 //   bun lab/ui-exploration/guide/examples/patterns/selection/report.ts
-import {emitArgmax, Circuit} from '../../../../../../numeric-ui-core.ts'
+import {emitArgmax, Circuit} from '../../../../../../src/runtime/numeric-ui-core.ts'
 import {buildPointedRow} from './count-instead-of-search.ts'
 import {buildFirstActiveSelection, buildFirstTargetUnderPointer} from './first-active-tree.ts'
 import {buildBestLayout} from './highest-score-tree.ts'

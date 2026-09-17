@@ -9,7 +9,7 @@
 // They differ on emitArgmax's comparison boolean(0.5 + 0.5 × (left - right)), whose score has
 // slope 0.5 everywhere, so straight-through passes half of every score difference into the
 // selection, and from there into every layout's geometry and quality scales.
-import type {Circuit, Terms, Wire} from '../../../numeric-ui-core.ts'
+import type {Circuit, Terms, Wire} from '../../../src/runtime/numeric-ui-core.ts'
 
 export type BooleanGradient = 'straight-through' | 'frozen'
 

@@ -10,7 +10,7 @@
 //   item where the running count first passes c, i.e. the (c + 1)-th visible item
 // - atMost[i][c] = relu(c + 1 - count[i]) - relu(c - count[i]), and consecutive c
 //   share relus, so each item costs slotCount relus
-import type {Circuit, Wire} from '../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {SourceLayout, andBits, emitPrefixSums, integerAtLeastOne, integerAtLeastZero, type PrefixMode} from './common.ts'
 
 export type RoutingOptions = {itemCount: number, slotCount: number, prefix: PrefixMode}

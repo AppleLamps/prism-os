@@ -24,7 +24,7 @@
 //   gallery-circuit.ts adds 52 × k as the bias of each row. Both are exact
 //   integers only when the widths are, so positions drift apart by FP32
 //   rounding.
-import {Circuit, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {galleryConstants, springNames, type SpringName} from './gallery-circuit.ts'
 import {
   aboveZero,

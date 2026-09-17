@@ -4,10 +4,10 @@ import {
   asWire,
   validateOneHotGroups,
   validateTensorEvaluation,
-} from '../../numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 import {createCandidateGalleryMachine} from './candidate-gallery.ts'
 
-// The candidate gallery's part of gather-lowering.test.ts, which moved here with the gallery.
+// The candidate gallery's part of tests/runtime/gather-lowering.test.ts, which moved here with the gallery.
 // The candidate gallery declares finite pixel ranges and one-hot groups, so recognition engages on it. This
 // test pins the gather read counts that lab/status.md reports, and checks the lowered program against the
 // reference evaluator on every wire across an interaction trace.

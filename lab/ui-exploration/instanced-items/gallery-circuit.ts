@@ -4,7 +4,7 @@
 // event latches and the committed state, and computes the new focus, the 2D grid or 1D strip
 // destinations, hover, the scroll anchor, every spring, occlusion bits, and the next committed state.
 // Strings, DOM nodes, `scrollTo` and `pushState` stay in JS (gallery-app.ts).
-import {Circuit, emitFirstActive, invariant, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, emitFirstActive, invariant, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   aboveZero,
   atLeastZero,

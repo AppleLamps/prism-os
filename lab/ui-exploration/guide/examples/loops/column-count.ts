@@ -5,7 +5,7 @@
 // and then, per photo, Math.floor(item / cols) and item % cols.
 //
 // Host contract: the container width is a whole number of pixels in 0..16,384.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {emitIntegerAtLeastZero} from './kit.ts'
 
 export const boxesGapX = 24

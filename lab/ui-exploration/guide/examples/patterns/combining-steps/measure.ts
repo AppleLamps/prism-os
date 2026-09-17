@@ -1,6 +1,6 @@
 // Shared by this folder's tests: the sizes of a compiled program, a seeded random
 // generator, and a check that both evaluators return the same values.
-import type {Circuit, Wire} from '../../../../../../numeric-ui-core.ts'
+import type {Circuit, Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
 
 export type ProgramSize = {
   // Live operations: the operations some root depends on. All of them run on every evaluation.

@@ -2,7 +2,7 @@
 // another over the whole tree: fit widths, widths, text lines, fit heights, heights,
 // positions. Every operation is tagged "pass:level" (the level of the node whose
 // children the operation sizes or places) so report.ts can split cost by pass and level.
-import type {Terms, Wire} from '../../../numeric-ui-core.ts'
+import type {Terms, Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import type {SourceTable, TaggedCircuit} from './circuit-tools.ts'
 import {
   atLeastZero,

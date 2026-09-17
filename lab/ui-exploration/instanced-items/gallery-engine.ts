@@ -2,7 +2,7 @@
 // original duplicated circuit (gallery-circuit.ts), the staged program through
 // the staged executor, the staged program's own duplicated circuit, and a tee
 // that steps two engines from the same cells and compares every output.
-import type {Wire} from '../../../numeric-ui-core.ts'
+import type {Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import type {DuplicatedMachine} from './expand.ts'
 import type {StagedExecutor} from './executor.ts'
 import {springNames, type GalleryCircuit, type SpringName} from './gallery-circuit.ts'

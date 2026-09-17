@@ -10,7 +10,7 @@
 // - DOM slots: rows ranked by a prefix count of occupancy bits, routed into slotCount outputs
 // Decisions (pointed row, gutter, ancestor, collapse, shrink, visibility, slots) are exact bits.
 
-import {Circuit, type Terms, type Wire} from '../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import type {Staircase} from './text-heights.ts'
 import {
   globalFrameFields, rowFrameFields, slotFrameFields,

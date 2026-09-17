@@ -19,7 +19,7 @@
 //   down (3 pushes, 1 shift) grows it by 2, without limit.
 // Spring velocity cells are declared as ±2^20 px/s, which leaves room for a
 // clamped release added to a card that is still moving.
-import {emitFirstActive, emitMaximum, emitMinimum, type Wire} from '../../../numeric-ui-core.ts'
+import {emitFirstActive, emitMaximum, emitMinimum, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   SourceLayout,
   atLeastContinuous,

@@ -1,5 +1,5 @@
 // Small helpers shared by the loops section's examples.
-import {Circuit, type Terms, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Terms, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // The exact bit [terms + bias >= 0], for a sum that always holds an integer below 2^23 in
 // magnitude. relu(v + 1) - relu(v) is 0 for v <= -1 and 1 for v >= 0, and an integer can't land

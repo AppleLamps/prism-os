@@ -14,7 +14,7 @@ import {
   validateGrids,
   validateTensorProgram,
   asWire,
-} from './numeric-ui-core.ts'
+} from '../../src/runtime/numeric-ui-core.ts'
 
 // Tests for emitCompare, grids and rounding points, ported from
 // lab/ui-exploration/guide/examples/comparisons and

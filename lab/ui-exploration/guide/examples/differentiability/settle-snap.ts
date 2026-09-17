@@ -5,7 +5,7 @@
 // output that makes the same selection on a copy of the settle bit held in a
 // cell, so the backward pass treats the decision as data, i.e. gradient 0 through
 // the decision.
-import {Circuit, emitSelect, asWire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, emitSelect, asWire} from '../../../../../src/runtime/numeric-ui-core.ts'
 import {
   type ParameterName,
   type SpringParameters,

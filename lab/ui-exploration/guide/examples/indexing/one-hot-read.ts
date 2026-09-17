@@ -1,6 +1,6 @@
 // Reading table[index] as a one-hot masked sum: a vector of bits that is 1 only
 // at the selected position, each table entry multiplied by its bit, then one sum.
-import {Circuit, type Wire} from '../../../../../numeric-ui-core.ts'
+import {Circuit, type Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
 
 // Plain JS: the entry at floor(index), clamped to the table's ends.
 export function clampedRead(table: readonly number[], index: number): number {

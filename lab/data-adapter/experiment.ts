@@ -1,4 +1,4 @@
-import {Circuit, emitRelu, type Wire, validateOneHotGroups} from '../../numeric-ui-core.ts'
+import {Circuit, emitRelu, type Wire, validateOneHotGroups} from '../../src/runtime/numeric-ui-core.ts'
 
 export const CAPACITY = 12
 const COORDINATE_LIMIT = 2 ** 20
