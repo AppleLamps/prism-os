@@ -4,21 +4,25 @@
 
 Cheng asked: "technically our pretext layout, if there's lots of them, is faster than the regular cpu's, then?" The answer so far is a prediction: one paragraph on the GPU loses, since pretext's `layout()` is cheap float64 arithmetic that stops at the end of the text while a program pays for every line slot, and a GPU round trip has a fixed cost, while many paragraphs in one dispatch should win past some count. [text-walker's many paragraphs on the GPU](../ui-exploration/text-walker/README.md#many-paragraphs-on-the-gpu-september-17-2026) measures that for greedy line breaking. Cheng also pointed at pretext's Knuth-Plass demo, node_modules/@chenglou/pretext/pages/demos/justification-comparison.*: optimal line breaking is a shortest path over break points, so it fits min-plus matrix products combined in a tree, with one batched kernel per level of the tree, like [regex-search's matrix product tree on the GPU](../regex-search/README.md#matrix-product-tree-on-the-gpu-september-17-2026). Cheng approved both experiments: "yes to both".
 
-This folder is the CPU half of the Knuth-Plass experiment: a plain JavaScript reference, two program forms that give the reference's costs and breaks, their CPU numbers, a page, and an export of leaf matrices for the GPU step. Nothing here runs on the GPU yet.
+This folder holds the Knuth-Plass experiment: a plain JavaScript reference, two program forms that give the reference's costs and breaks, their CPU numbers, a page, an export of leaf matrices, and in `gpu/`, the tree on WebGPU, see [The min-plus tree on the GPU](#the-min-plus-tree-on-the-gpu-september-17-2026).
 
 ## How to run it
 
 From the repo root:
 
 ```sh
-bun test lab/knuth-plass                                  # 10 tests in 1 file, about 1 second
+bun test lab/knuth-plass                                  # 16 tests in 2 files, about 1 second
 bunx tsgo -p lab/knuth-plass                              # type-check
 bunx oxlint --type-aware lab/knuth-plass                  # lint
 bun lab/knuth-plass/demo.html                             # the page, e.g. ?form=tree&window=16, and ?check=1 compares every evaluation with the reference
 bun lab/knuth-plass/report.ts one sizes tree 256 16       # one variant's sizes, see the comment at the top of report.ts
 bun lab/knuth-plass/report.ts all --out <file.jsonl>      # every variant in its own process
 bun lab/knuth-plass/report.ts tables lab/knuth-plass/results/cpu-1.jsonl lab/knuth-plass/results/cpu-2.jsonl   # the tables below
-bun lab/knuth-plass/export.ts <folder> --breaks 1024 --window 16 --count 16   # leaf matrices and expected results for the GPU step
+bun lab/knuth-plass/export.ts <folder> --breaks 1024 --window 16 --count 16   # leaf matrices and expected results
+bun lab/knuth-plass/gpu/run.ts --mode check --profile <new folder> --out <file.json>   # the GPU check in its own headless Chrome, see the comment at the top of run.ts
+bun lab/knuth-plass/gpu/run.ts --mode main --profile <new folder> --out <file.json>    # GPU timings
+bun lab/knuth-plass/gpu/cpu-time.ts all --out <file.jsonl>                             # the CPU timings of the GPU comparison, one process per variant
+bun lab/knuth-plass/gpu/summarize.ts --gpu <files> --checks <file> --cpu <files>       # the GPU section's tables
 ```
 
 | File | What it holds |
@@ -29,8 +33,9 @@ bun lab/knuth-plass/export.ts <folder> --breaks 1024 --window 16 --count 16   # 
 | `hyphenation.ts` | Soft hyphens inserted like pretext's demo, from the demo's tables |
 | `knuth-plass.test.ts` | Differential tests |
 | `report.ts`, `results/` | Sizes and µs, one process per variant, and the raw results |
-| `export.ts` | Leaf matrices, cells and expected results for the GPU step |
+| `export.ts` | Leaf matrices, cells and expected results |
 | `demo.html`, `demo.ts` | The page |
+| `gpu/` | The tree on WebGPU, see [What was built](#what-was-built) |
 
 ## The paragraph and the line cost
 
@@ -216,6 +221,208 @@ The evaluation times include writing each paragraph's cells and `createEvaluator
 
 ## Not done
 
-- The GPU step: a min-plus kernel per level in headless Chrome, timed against the reference and the programs.
 - Sklansky's network, and the argmin pointers carried inside the matrix products instead of one more tournament per break point.
 - The demo's justified cost, river penalties and hyphen penalty.
+
+## The min-plus tree on the GPU, September 17, 2026
+
+### Why
+
+On the CPU executor, the tree only costs more than the chain, since that executor's time follows live operations whatever the depth. The tree is meant for a GPU: Brent-Kung's network turns n steps into 2 log2 n − 2 levels, and the combines of one level don't read each other's results, so one dispatch can run all of them, for every paragraph of a batch at once. This section runs that network with WebGPU kernels in headless Chrome, compares every readback with `knuthPlass`, and times it against `knuthPlass`, a faster JavaScript loop and the chain program, for one paragraph of up to 4,096 break points and for up to 10,000 paragraphs of 256 break points, to find where the GPU starts taking less time.
+
+### What was built
+
+| File | What it holds |
+| --- | --- |
+| `gpu/plan.ts` | The network as slots and one list of combines per level, what JavaScript uploads, the kernels' arithmetic in JavaScript, and `knuthPlassTyped`, a JavaScript loop over typed arrays |
+| `gpu/kernels.ts` | The WGSL kernels and the host loop |
+| `gpu/page.html`, `gpu/page.ts` | The measurement page, with a timing mode and a check mode |
+| `gpu/run.ts` | Serves the page, drives its own headless Chrome over the DevTools Protocol, and writes what the page posts |
+| `gpu/cpu-time.ts` | CPU timings in Bun, one process per variant |
+| `gpu/summarize.ts` | The tables below, from the raw results |
+| `gpu/gpu.test.ts` | The plan, and the kernels' arithmetic in JavaScript, against the reference |
+| `gpu/results/` | The raw results |
+
+**The numbers on the GPU.** Every entry is a u32, and every product clamps at `noPath` = 2^30, the entry that stands for no path, e.g. a line that would start before break point 0. reference.ts's product tree clamps at `infeasible` = 2^22 in float64 instead. Every sum of two entries is at most 2^31, so u32 arithmetic is exact in any grouping, and there's no question of how the compiler groups float sums. Between any two break points there's a path of one-box lines, at most 3,969 per line, so every entry that has a path stays below 2^30 in paragraphs of up to 270,532 break points, and the GPU gives `knuthPlass`'s costs and pointers exactly, including totals past 2^22, where the programs stop at 1,056 break points. For example, 4,096 boxes that are each wider than the column total 16,257,024, and the GPU gives that total and every pointer. A state's entries for positions before break point 0 hold `noPath`, where `statesByProductTree` holds `infeasible`.
+
+**Slots and levels.** For a paragraph of n break points, matrix slot i holds the leaf M[i + 1], and each matrix product writes a new slot, 247 at n = 256 and 4,083 at n = 4,096. Vector slot i holds the state s[i + 1]. `gpuPlan` runs src/runtime's `brentKungPrefix` with a combine that records which slots it reads and writes, and puts each combine at the level after its inputs' levels. That gives 14 levels at n = 256 and 22 at n = 4,096, of which 7 and 11 have matrix products and the others only products of a matrix with a vector. A combine reads only slots that earlier levels wrote, which a test checks up to 4,096 break points. The paragraphs of a batch share one plan: the matrix buffer holds every paragraph's leaves, then every paragraph's products, and a kernel computes a slot's offset from the paragraph's index.
+
+**One evaluation** is one command buffer with one compute pass:
+
+1. The leaves: row 0 of every M[to], from uploaded line costs or computed from the positions, see the inputs below. Then s[1] = [lineCost(0, 1), 0, noPath, …] for every paragraph.
+2. Each level: one dispatch of its matrix products and one of its matrix-vector products, across every paragraph, with one invocation per paragraph × combine × row of the result, in workgroups of 256 invocations, e.g. 8 × 32 at W = 32.
+3. The pointers, one invocation per paragraph × break point: for break point `to`, `to - boxes` for the smallest boxes of the smallest `s[to - 1][boxes - 1] + M[to][0][boxes - 1]`, which is `knuthPlass`'s tie rule, and s[n][0], the total cost.
+
+Then JavaScript copies the pointers and totals, (n + 1) u32 values per paragraph, into a readback buffer, maps it, copies them out, and follows the pointers from break point n to get every paragraph's breaks. The matrices and states stay on the GPU.
+
+**Two kernels.**
+
+- `full` computes `min(noPath, min over m of later[r][m] + earlier[m][c])` for every entry, W³ sums per product, like `minPlusProduct` in reference.ts.
+- `dense-rows` uses the leaves' structure, like the tree program's absent entries. A block of B break points, with B < W, has B rows that hold costs, and each row r ≥ B holds 0 at column r − B and `noPath` elsewhere, which moves every cost B places down. So the kernel stores and reads only the first min(B, W) rows of a block. In a product, a row r below B_later is `min(later[r][c + B_earlier], min over m < min(B_earlier, W) of later[r][m] + earlier[m][c])`, where the first term only exists while c + B_earlier < W, a row from B_later to B_later + B_earlier − 1 copies the earlier block's row r − B_later, and the other rows aren't written. In a matrix-vector product, a row r ≥ B_later copies the vector's entry r − B_later. A leaf stores only its row 0.
+
+Sums per paragraph, counted from the plan, for the leaves' products, the matrix-vector products and the pointers. `knuthPlass` computes n × W candidates:
+
+| n | W | Full kernel | Dense-rows kernel | Full ÷ dense-rows | `knuthPlass`'s candidates |
+| --- | --- | --- | --- | --- | --- |
+| 256 | 8 | 144,832 | 32,096 | 4.5 | 2,048 |
+| 256 | 16 | 1,081,088 | 101,312 | 10.7 | 4,096 |
+| 256 | 32 | 8,363,008 | 306,560 | 27.3 | 8,192 |
+| 4,096 | 8 | 2,385,344 | 567,392 | 4.2 | 32,768 |
+| 4,096 | 16 | 17,837,824 | 1,957,824 | 9.1 | 65,536 |
+| 4,096 | 32 | 138,116,096 | 6,991,232 | 19.8 | 131,072 |
+
+**Inputs.** An evaluation gets its input in one of three ways:
+
+- **Line costs**: JavaScript computes every line cost, P × n × W u32 values, and uploads them. That's `knuthPlass`'s own work without the minimums.
+- **Positions**: JavaScript copies every paragraph's `lineStarts` and `lineEnds` into one Int32Array, P × 2n values, and uploads them with P widths, and a kernel computes the line costs on the GPU.
+- **Widths**: the positions stay on the GPU from an earlier evaluation, and JavaScript uploads only P widths, e.g. for a width slider.
+
+**CPU variants.**
+
+- `knuthPlass` from reference.ts, the reference in the CPU numbers above, once per paragraph.
+- `knuthPlassTyped` in plan.ts: the same W candidates per break point and the same tie rule, over one Int32Array of positions, with the line cost inlined, preallocated arrays, and no `windowOverflowCount`.
+- The chain program through `createTensorEvaluator`, writing each paragraph's cells and evaluating once per paragraph.
+
+Every variant gives each paragraph's breaks and total cost, and every timing alternates between 300 and 340 px from one evaluation to the next, so each evaluation has a new input.
+
+### GPU correctness checks
+
+- `bun test lab/knuth-plass` now runs 16 tests in 2 files, about 1.2 s. The 6 in `gpu/gpu.test.ts`:
+  - `gpuPlan` for 1 to 70, 255, 256, 1,000, 1,024 and 4,096 break points: every combine reads only leaves and slots that earlier levels wrote, every slot is written once, every state s[1..n] is written, and a power of two n ≥ 4 has 2 log2 n − 2 levels.
+  - `runPlanInJavaScript`, the kernels' arithmetic with the GPU's buffer layout, for both kernels against `knuthPlass`: 400 random paragraphs of 1 to 263 break points and windows of 2 to 32, more than 60 of them with ties, and 40 batches of 1 to 9 paragraphs, each at its own width. The total, every pointer, the breaks and every state are equal. Entries that no dispatch writes hold 7, which would change a minimum if the dense-rows kernel read one.
+  - 4,096 boxes, each wider than the column, total 16,257,024, past 2^22, and both kernels give that total and every pointer. The timing paragraph at 4,096 break points and W = 32 too, with the dense-rows kernel.
+  - The line costs equal row 0 of `export.ts`'s leaves, apart from entries before break point 0, which are `infeasible` there and `noPath` here, and the kernels in JavaScript give `export.ts`'s expected costs and predecessors.
+  - `knuthPlassTyped` gives `knuthPlass`'s costs, predecessors and total on 300 random paragraphs, including ties.
+- The page's check mode, `run.ts --mode check`, in its own headless Chrome, at W = 2, 5, 8, 16 and 32, both kernels, and 1, 2, 3, 5, 17, 37, 64, 256, 1,024 and 4,096 break points. Each size has 5 batches of 5 paragraphs, 2 from 1,024 break points: small boxes at narrow widths, which give equal totals, random boxes at random widths, the timing boxes at 260 to 359 px, boxes wider than every width, and one batch that mixes all four. Each batch is evaluated with every input, the line costs and the positions at each paragraph's first width, then the widths input at its second width, and the host reads back the pointers and every state. Over 2,200 paragraphs and 1,500 evaluations, 24,823,200 values were compared with `knuthPlass`, with 0 mismatched values and 0 mismatched breaks. 1,178 of the 4,400 pairs of a paragraph and a width have a step with two starts of the smallest total, and 82 have totals past 2^22. Raw results: `gpu/results/gpu-check-1.json`.
+- The timing runs compared every readback's total and pointers with `knuthPlass` at its width: 502,812 readbacks over the 3 runs, 21,663,053,481 values, 0 mismatched. They also compared the breaks of the first and last paragraph of each size in its first 4 evaluations, 864 times, with 0 mismatched.
+
+### GPU timings
+
+Measured on September 17, 2026, on an Apple M5 Max with 18 cores, a 32-core GPU and 36 GiB, macOS 27.0, Bun 1.4.0, and headless Chrome through Metal, with timestamp queries. The page is cross-origin isolated, so `performance.now()` reads in steps of 5 µs. The 3 GPU runs ran from 14:00 to 14:27 local time, and the CPU processes between runs 1 and 2. Other processes ran throughout: a `git` process at about 100% of a core during every run, another Chrome's renderer at 30% to 102%, and before run 2, a Google updater at 99% and a `bun` process at 97%, which may have been run 2's own driver starting. Chrome was updated from 153.0.8010.48 to 153.0.8010.50 between runs 2 and 3, so run 3 ran the new version. The 1-minute load average was 3.7 to 5.9 before and after each GPU run, and 4.4 to 6.2 before and after each CPU process. Of my own work, only scripts that took less than a second ran during run 1 and during the CPU processes, and nothing during runs 2 and 3.
+
+Method:
+
+- GPU: `run.ts --mode main`, 3 runs, each in a new Chrome process with a new shader salt, so every shader compiles cold. For each size, kernel and input: at least 500 ms and 3 evaluations of warmup, then at least 15 samples and 2 s, at most 300 samples, keeping the median. The compute pass from timestamp queries comes from separate samples, at least 7 and 600 ms. The tables show the median of the 3 runs' medians, and their range. Raw results: `gpu/results/gpu-main-1.json` to `gpu-main-3.json`.
+- Every GPU figure includes JavaScript's work before the upload (writing the line costs, or copying the positions), the upload, the compute pass, `mapAsync`, copying the readback out, and following every paragraph's pointers.
+- CPU in Bun: `cpu-time.ts all`, 3 processes per variant and size, each with 1 s and at least 5 runs of warmup, then 7 samples of at least 300 ms each, keeping their median. Every process checks its breaks and totals against `knuthPlass` before timing, and every run checks each paragraph's total, and the chain's processes check every chosen bit and cost again after timing. Raw results: `gpu/results/cpu-1.jsonl`.
+- CPU in the page: `knuthPlass` and `knuthPlassTyped` over the same paragraphs, once per size in each run, 300 ms of warmup and 7 samples of at least 100 ms each.
+- The chain was timed up to 1,024 break points and 1,000 paragraphs. At 4,096 break points it doesn't build: `breakCapacity must be within 2..1056`, the capacity that keeps the program's FP32 sums exact. The crossover tables extrapolate the chain linearly past 1,024 break points and 1,000 paragraphs.
+- Batches stop where the matrices would need more than 2.2 GB: at 10,000 paragraphs they need 1,288 MB at W = 8, 5,151 MB at W = 16 and 20,603 MB at W = 32, and at 3,000 paragraphs and W = 32, 6,181 MB.
+
+`bun lab/knuth-plass/gpu/summarize.ts --gpu lab/knuth-plass/gpu/results/gpu-main-1.json,lab/knuth-plass/gpu/results/gpu-main-2.json,lab/knuth-plass/gpu/results/gpu-main-3.json --checks lab/knuth-plass/gpu/results/gpu-check-1.json --cpu lab/knuth-plass/gpu/results/cpu-1.jsonl` prints these tables and more, e.g. every input of both kernels.
+
+One paragraph, the GPU in ms and the CPU in µs:
+
+| n | W | GPU, full kernel, positions, ms | GPU, dense-rows, line costs, ms | GPU, dense-rows, positions, ms | GPU, dense-rows, widths, ms | `knuthPlass` in Bun, µs | `knuthPlassTyped` in Bun, µs | Chain in Bun, µs | `knuthPlass` in the page, µs | `knuthPlassTyped` in the page, µs |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 64 | 8 | 0.38 (0.28 to 0.41) | 0.37 (0.36 to 0.39) | 0.36 (0.27 to 0.40) | 0.31 (0.25 to 0.36) | 1.02 (0.99 to 1.12) | 0.49 (0.49 to 0.55) | 60.4 (58.5 to 62.5) | 0.85 (0.83 to 1.03) | 0.67 (0.62 to 0.70) |
+| 256 | 8 | 0.46 (0.33 to 0.47) | 0.43 (0.31 to 0.44) | 0.43 (0.43 to 0.45) | 0.43 (0.30 to 0.43) | 4.11 (3.83 to 4.47) | 2.10 (2.02 to 2.25) | 261 (260 to 266) | 3.58 (3.56 to 5.28) | 2.90 (2.73 to 4.00) |
+| 1,024 | 8 | 0.37 (0.36 to 0.38) | 0.54 (0.38 to 0.55) | 0.36 (0.35 to 0.53) | 0.36 (0.28 to 0.52) | 20.4 (20.0 to 22.2) | 8.59 (8.46 to 8.88) | 1,357 (1,350 to 1,406) | 15.1 (15.0 to 16.8) | 12.1 (11.4 to 14.3) |
+| 4,096 | 8 | 0.55 (0.44 to 0.66) | 0.51 (0.48 to 0.69) | 0.62 (0.41 to 0.62) | 0.55 (0.50 to 0.61) | 82.3 (82.1 to 83.6) | 38.4 (37.5 to 39.2) | doesn't build | 66.4 (63.0 to 75.1) | 53.9 (53.7 to 61.0) |
+| 64 | 16 | 0.46 (0.32 to 0.49) | 0.40 (0.39 to 0.41) | 0.40 (0.30 to 0.40) | 0.39 (0.30 to 0.40) | 1.54 (1.47 to 1.56) | 0.84 (0.84 to 0.90) | 88.9 (86.6 to 89.4) | 1.43 (1.37 to 1.45) | 1.21 (1.15 to 1.24) |
+| 256 | 16 | 0.62 (0.60 to 0.63) | 0.50 (0.50 to 0.51) | 0.41 (0.29 to 0.49) | 0.49 (0.34 to 0.49) | 6.83 (6.36 to 9.61) | 4.59 (4.34 to 4.63) | 383 (377 to 386) | 6.60 (6.39 to 6.78) | 5.45 (5.26 to 5.77) |
+| 1,024 | 16 | 0.45 (0.45 to 0.64) | 0.50 (0.42 to 0.65) | 0.52 (0.39 to 0.63) | 0.50 (0.39 to 0.60) | 40.6 (39.0 to 42.4) | 19.2 (19.1 to 19.4) | 2,138 (2,102 to 2,148) | 27.5 (27.3 to 30.6) | 22.9 (22.8 to 25.3) |
+| 4,096 | 16 | 0.76 (0.56 to 0.80) | 0.92 (0.61 to 0.93) | 0.63 (0.46 to 0.74) | 0.53 (0.45 to 0.58) | 162 (161 to 169) | 81.1 (75.8 to 81.2) | doesn't build | 115 (115 to 134) | 95.5 (95.1 to 108.8) |
+| 64 | 32 | 0.63 (0.42 to 0.65) | 0.44 (0.43 to 0.44) | 0.44 (0.30 to 0.45) | 0.44 (0.30 to 0.44) | 2.50 (2.46 to 2.51) | 1.56 (1.55 to 1.72) | 130 (129 to 132) | 2.13 (2.11 to 2.16) | 1.89 (1.89 to 1.95) |
+| 256 | 32 | 0.57 (0.54 to 0.71) | 0.42 (0.42 to 0.64) | 0.39 (0.38 to 0.50) | 0.39 (0.38 to 0.64) | 15.6 (12.6 to 15.9) | 8.24 (8.22 to 8.27) | 610 (602 to 624) | 11.1 (11.0 to 16.2) | 10.2 (10.0 to 12.4) |
+| 1,024 | 32 | 0.68 (0.66 to 0.77) | 0.87 (0.58 to 0.88) | 0.47 (0.46 to 0.81) | 0.62 (0.54 to 0.80) | 69.9 (67.1 to 70.4) | 37.7 (36.7 to 41.0) | 3,441 (3,389 to 3,620) | 49.1 (49.0 to 54.0) | 44.1 (43.1 to 45.7) |
+| 4,096 | 32 | 0.69 (0.67 to 0.71) | 1.33 (1.08 to 1.58) | 0.51 (0.42 to 0.66) | 0.64 (0.62 to 0.78) | 303 (273 to 321) | 157 (148 to 174) | doesn't build | 196 (193 to 211) | 174 (171 to 186) |
+
+Many paragraphs of 256 break points, ms per evaluation of every paragraph:
+
+| W | P | GPU, full kernel, positions | GPU, dense-rows, line costs | GPU, dense-rows, positions | GPU, dense-rows, widths | `knuthPlass` in Bun | `knuthPlassTyped` in Bun | Chain in Bun | `knuthPlass` in the page | `knuthPlassTyped` in the page |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 8 | 1 | 0.46 (0.33 to 0.47) | 0.43 (0.31 to 0.44) | 0.43 (0.43 to 0.45) | 0.43 (0.30 to 0.43) | 0.004 (0.004 to 0.004) | 0.002 (0.002 to 0.002) | 0.26 (0.26 to 0.27) | 0.004 (0.004 to 0.005) | 0.003 (0.003 to 0.004) |
+| 8 | 10 | 0.54 (0.38 to 0.56) | 0.54 (0.54 to 0.60) | 0.49 (0.37 to 0.53) | 0.48 (0.33 to 0.49) | 0.049 (0.049 to 0.051) | 0.025 (0.023 to 0.026) | 2.67 (2.64 to 2.73) | 0.038 (0.038 to 0.044) | 0.033 (0.031 to 0.035) |
+| 8 | 100 | 0.93 (0.60 to 0.96) | 1.17 (1.08 to 1.23) | 0.50 (0.48 to 0.73) | 0.40 (0.36 to 0.63) | 0.60 (0.59 to 0.62) | 0.34 (0.33 to 0.37) | 26.9 (26.4 to 27.5) | 0.48 (0.46 to 0.52) | 0.40 (0.39 to 0.42) |
+| 8 | 1,000 | 2.95 (2.77 to 3.43) | 9.81 (7.31 to 11.27) | 2.28 (2.15 to 2.55) | 1.36 (1.24 to 1.49) | 6.06 (5.75 to 6.10) | 3.73 (3.55 to 3.79) | 260 (257 to 267) | 5.46 (4.97 to 5.98) | 4.30 (4.08 to 4.70) |
+| 8 | 3,000 | 8.97 (7.66 to 9.37) | 27.1 (19.8 to 28.0) | 6.68 (5.46 to 7.00) | 3.46 (3.32 to 3.49) | 16.8 (16.6 to 17.1) | 10.6 (10.4 to 11.1) | not timed | 25.4 (25.0 to 28.2) | 20.0 (15.8 to 20.0) |
+| 8 | 10,000 | 26.7 (25.7 to 27.8) | 85.4 (60.0 to 88.4) | 15.4 (14.4 to 16.5) | 10.6 (10.1 to 10.6) | 51.4 (50.9 to 51.7) | 36.9 (36.5 to 37.3) | not timed | 86.2 (76.6 to 108.7) | 55.1 (45.8 to 59.7) |
+| 16 | 1 | 0.62 (0.60 to 0.63) | 0.50 (0.50 to 0.51) | 0.41 (0.29 to 0.49) | 0.49 (0.34 to 0.49) | 0.007 (0.006 to 0.010) | 0.005 (0.004 to 0.005) | 0.38 (0.38 to 0.39) | 0.007 (0.006 to 0.007) | 0.005 (0.005 to 0.006) |
+| 16 | 10 | 0.58 (0.47 to 0.61) | 0.66 (0.66 to 0.67) | 0.56 (0.37 to 0.56) | 0.55 (0.55 to 0.57) | 0.11 (0.08 to 0.12) | 0.054 (0.053 to 0.054) | 3.89 (3.87 to 3.89) | 0.073 (0.071 to 0.073) | 0.058 (0.058 to 0.064) |
+| 16 | 100 | 1.20 (0.78 to 1.26) | 1.80 (1.53 to 1.87) | 0.87 (0.87 to 0.90) | 0.69 (0.48 to 0.77) | 0.83 (0.80 to 1.14) | 0.58 (0.56 to 0.61) | 38.9 (38.6 to 39.2) | 0.72 (0.71 to 0.77) | 0.61 (0.60 to 0.62) |
+| 16 | 1,000 | 6.40 (6.33 to 9.50) | 15.5 (11.9 to 16.1) | 2.83 (2.39 to 3.02) | 1.76 (1.69 to 1.97) | 11.1 (8.5 to 11.3) | 5.57 (5.38 to 5.57) | 394 (353 to 412) | 8.71 (7.48 to 9.62) | 6.61 (6.45 to 7.13) |
+| 16 | 3,000 | 33.4 (32.5 to 33.8) | 38.1 (33.2 to 43.4) | 6.25 (6.24 to 6.59) | 5.61 (5.31 to 5.92) | 32.8 (32.3 to 33.0) | 17.3 (17.3 to 18.9) | not timed | 32.8 (32.5 to 35.5) | 20.3 (18.8 to 22.1) |
+| 32 | 1 | 0.57 (0.54 to 0.71) | 0.42 (0.42 to 0.64) | 0.39 (0.38 to 0.50) | 0.39 (0.38 to 0.64) | 0.016 (0.013 to 0.016) | 0.008 (0.008 to 0.008) | 0.61 (0.60 to 0.62) | 0.011 (0.011 to 0.016) | 0.010 (0.010 to 0.012) |
+| 32 | 10 | 0.75 (0.64 to 0.77) | 0.88 (0.62 to 0.88) | 0.68 (0.43 to 0.76) | 0.65 (0.32 to 0.69) | 0.18 (0.18 to 0.22) | 0.10 (0.10 to 0.10) | 6.24 (6.20 to 6.79) | 0.13 (0.12 to 0.13) | 0.11 (0.10 to 0.11) |
+| 32 | 100 | 3.43 (2.70 to 3.80) | 4.61 (3.70 to 4.62) | 0.90 (0.59 to 0.92) | 0.61 (0.59 to 0.82) | 1.90 (1.89 to 1.98) | 1.01 (1.00 to 1.01) | 61.9 (61.4 to 62.4) | 1.18 (1.17 to 1.38) | 1.08 (1.06 to 1.11) |
+| 32 | 1,000 | 42.3 (40.5 to 42.9) | 23.4 (18.5 to 30.3) | 4.50 (3.97 to 4.72) | 4.81 (4.37 to 5.75) | 18.2 (18.0 to 18.6) | 10.4 (10.2 to 10.7) | 594 (577 to 820) | 22.5 (17.6 to 25.4) | 15.5 (11.4 to 17.8) |
+
+Where the time goes, ms. The total leaves out JavaScript's work before the upload, and the compute pass comes from separate samples with timestamp queries:
+
+| n | W | P | Kernel | Input | JavaScript before the upload | `writeBuffer` | From submit to `mapAsync` resolving | Copying the readback out | Following the pointers | Total | Compute pass |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 4,096 | 32 | 1 | dense-rows | positions | 0.005 | 0.010 | 0.48 (0.40 to 0.64) | 0.005 | 0.005 (0.000 to 0.005) | 0.51 (0.41 to 0.66) | 0.20 (0.17 to 0.75) |
+| 256 | 8 | 1,000 | dense-rows | positions | 0.39 (0.39 to 0.41) | 0.50 (0.49 to 0.51) | 1.12 (1.00 to 1.35) | 0.095 | 0.16 | 1.89 (1.76 to 2.14) | 1.38 (0.93 to 1.39) |
+| 256 | 8 | 1,000 | dense-rows | widths | 0.000 | 0.005 | 1.08 (0.96 to 1.22) | 0.090 | 0.17 | 1.36 (1.24 to 1.49) | 0.95 (0.67 to 1.38) |
+| 256 | 8 | 10,000 | dense-rows | line costs | 59.6 (39.2 to 62.4) | 1.70 (1.25 to 1.80) | 20.1 (16.1 to 20.7) | 1.07 (0.76 to 1.11) | 1.84 (1.28 to 1.86) | 24.8 (19.5 to 25.1) | 8.29 (7.52 to 8.38) |
+| 256 | 8 | 10,000 | dense-rows | positions | 4.02 (2.60 to 4.66) | 0.35 (0.32 to 0.36) | 9.10 (9.09 to 9.15) | 0.86 (0.74 to 0.88) | 1.40 (1.21 to 1.44) | 11.8 (11.4 to 11.9) | 6.46 (6.30 to 6.59) |
+| 256 | 8 | 10,000 | dense-rows | widths | 0.000 | 0.020 | 7.39 (7.39 to 7.52) | 1.09 (0.98 to 1.16) | 1.86 (1.52 to 1.99) | 10.6 (10.1 to 10.6) | 7.63 (6.87 to 8.18) |
+| 256 | 16 | 3,000 | dense-rows | positions | 0.67 (0.66 to 0.68) | 0.095 | 4.86 (4.82 to 5.17) | 0.25 | 0.36 | 5.60 (5.56 to 5.86) | 4.39 (3.87 to 4.63) |
+| 256 | 32 | 1,000 | dense-rows | positions | 0.28 (0.24 to 0.31) | 0.67 (0.56 to 0.69) | 3.22 (2.89 to 3.40) | 0.13 (0.11 to 0.13) | 0.16 (0.13 to 0.17) | 4.22 (3.73 to 4.41) | 2.66 (2.43 to 3.56) |
+| 256 | 32 | 1,000 | full | positions | 0.38 | 0.84 | 40.7 (38.6 to 41.3) | 0.16 | 0.21 | 42.0 (40.1 to 42.5) | 34.3 (34.2 to 40.2) |
+
+One compute pass per stage at 1,000 paragraphs of 256 break points, with the positions input, ms, 5 samples per run. The 7 levels with matrix products are the upward pass, and the other 7 have only matrix-vector products:
+
+| W | Kernel | Leaves and s[1] | 7 levels with matrix products | 7 levels with only matrix-vector products | Pointers | Sum of the passes | One pass for everything |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 8 | full | 0.21 (0.20 to 0.23) | 1.15 (1.14 to 1.32) | 0.25 (0.25 to 0.26) | 0.070 (0.068 to 0.073) | 1.70 (1.66 to 1.97) | 1.53 (1.23 to 2.76) |
+| 8 | dense-rows | 0.075 (0.048 to 0.099) | 0.65 (0.44 to 0.89) | 0.22 (0.15 to 0.31) | 0.079 (0.069 to 0.138) | 1.03 (0.71 to 1.45) | 1.38 (0.93 to 1.39) |
+| 16 | full | 1.25 (1.03 to 1.31) | 12.1 (5.5 to 20.9) | 1.27 (0.65 to 1.35) | 0.14 (0.09 to 0.18) | 16.4 (7.7 to 29.4) | 5.00 (4.96 to 9.78) |
+| 16 | dense-rows | 0.082 (0.071 to 0.086) | 1.08 (1.04 to 1.21) | 0.26 (0.25 to 0.32) | 0.10 (0.10 to 0.11) | 1.59 (1.47 to 1.69) | 1.14 (1.01 to 1.26) |
+| 32 | full | 4.21 (4.16 to 4.69) | 29.9 (28.6 to 43.3) | 2.73 (2.72 to 3.54) | 0.21 (0.21 to 0.25) | 36.8 (36.8 to 51.4) | 34.3 (34.2 to 40.2) |
+| 32 | dense-rows | 0.24 (0.18 to 0.34) | 2.59 (2.19 to 3.48) | 0.55 (0.47 to 0.59) | 0.21 (0.21 to 0.22) | 3.63 (3.07 to 4.60) | 2.66 (2.43 to 3.56) |
+
+- One paragraph costs a fixed round trip: from 64 to 4,096 break points, the dense-rows kernel with positions takes 0.36 to 0.63 ms, almost all of it from submit to `mapAsync` resolving, while its compute pass takes 0.2 ms at 4,096 break points and W = 32.
+- The full kernel's products are most of its time from W = 16, and the dense-rows kernel makes them 11.5 times shorter at W = 32 and 1,000 paragraphs, 2.59 against 29.9 ms, where the plan counts 27.3 times fewer sums.
+- With line costs uploaded, JavaScript's work is the largest part: 59.6 ms of 85.4 ms at 10,000 paragraphs and W = 8, where `knuthPlass` itself takes 51.4 ms in Bun.
+- Copying the readback out and following the pointers take 0.3 ms at 1,000 paragraphs, and 2.3 to 3.0 ms at 10,000 paragraphs, whose readback is 10 MB and whose compute pass takes 6.5 to 8.3 ms.
+- Compile ms, from `createShaderModule` to `createComputePipelineAsync` resolving, medians of the 3 runs: the matrix product kernel 27 to 68 ms for the full kernel and 10 to 17 ms for dense-rows, where the first compile in a Chrome process, the full kernel at W = 8, includes one-time setup, and 5 to 10 ms for each other kernel.
+- The first evaluation after preparing the buffers takes 0.4 to 3.7 ms for one paragraph, and 27 to 104 ms at 1,000 paragraphs and W = 16 and 32, whose matrices are 515 and 2,060 MB.
+
+### The GPU crossover
+
+The first measured count from which the GPU takes less time than a CPU variant, at that count and every larger measured count, from the medians of the 3 runs. "About" interpolates linearly between that count and the measured count below it. The paragraph counts measured are 1, 10, 100, 1,000, 3,000 and 10,000, so the "about" figures are rough.
+
+Paragraphs of 256 break points:
+
+| W | GPU | `knuthPlass` in Bun | `knuthPlassTyped` in Bun | Chain in Bun | `knuthPlass` in the page | `knuthPlassTyped` in the page |
+| --- | --- | --- | --- | --- | --- | --- |
+| 8 | full kernel, positions | from 1,000, about 187 | from 1,000, about 488 | from 10, about 1.8 | from 1,000, about 236 | from 1,000, about 353 |
+| 8 | dense-rows, line costs | slower up to 10,000 | slower up to 10,000 | from 10, about 1.7 | from 10,000, about 7,897 | slower up to 10,000 |
+| 8 | dense-rows, positions | from 100, about 83 | from 1,000, about 188 | from 10, about 1.6 | from 1,000, about 104 | from 1,000, about 140 |
+| 8 | dense-rows, widths | from 100, about 72 | from 1,000, about 123 | from 10, about 1.6 | from 100, about 86 | from 1,000, about 100 |
+| 16 | full kernel, positions | slower up to 3,000 | slower up to 3,000 | from 10, about 1.6 | slower up to 3,000 | slower up to 3,000 |
+| 16 | dense-rows, line costs | slower up to 3,000 | slower up to 3,000 | from 10, about 1.3 | slower up to 3,000 | slower up to 3,000 |
+| 16 | dense-rows, positions | from 1,000, about 105 | from 1,000, about 185 | from 10, about 1.1 | from 1,000, about 122 | from 1,000, about 157 |
+| 16 | dense-rows, widths | from 100, about 79 | from 1,000, about 124 | from 10, about 1.3 | from 100, about 95 | from 1,000, about 114 |
+| 32 | full kernel, positions | slower up to 1,000 | slower up to 1,000 | faster from 1 | slower up to 1,000 | slower up to 1,000 |
+| 32 | dense-rows, line costs | slower up to 1,000 | slower up to 1,000 | faster from 1 | slower up to 1,000 | slower up to 1,000 |
+| 32 | dense-rows, positions | from 100, about 40 | from 100, about 86 | faster from 1 | from 100, about 70 | from 100, about 78 |
+| 32 | dense-rows, widths | from 100, about 34 | from 100, about 62 | faster from 1 | from 100, about 53 | from 100, about 58 |
+
+- Each run on its own gives the same measured count for the dense-rows kernel with positions against `knuthPlassTyped` in Bun at every W. Against `knuthPlass` in Bun, one run crosses from 1,000 instead of 100 at W = 8. With the widths input, single runs move by one measured count, e.g. at W = 8 against `knuthPlass` in Bun, from 1,000 in run 1 and from 100 in runs 2 and 3. `summarize.ts` prints every run's crossover.
+- At the largest batches, the dense-rows kernel with positions takes 2.4 times less time than `knuthPlassTyped` in Bun at 10,000 paragraphs and W = 8, 15.4 against 36.9 ms, 2.8 times at 3,000 paragraphs and W = 16, 6.25 against 17.3 ms, and 2.3 times at 1,000 paragraphs and W = 32, 4.50 against 10.4 ms. Against `knuthPlass` in Bun, 3.3, 5.2 and 4.0 times. With only the widths uploaded, 3.5 times less than `knuthPlassTyped` at 10,000 paragraphs and W = 8, 10.6 against 36.9 ms.
+- The chain program takes 132 times as long as the dense-rows kernel with positions at 1,000 paragraphs and W = 32, 594 against 4.50 ms.
+
+One paragraph: the GPU takes longer than `knuthPlass` and `knuthPlassTyped`, in Bun and in the page, at every measured size up to 4,096 break points, with both kernels and every input. The closest is 0.51 ms against 303 µs for `knuthPlass` in Bun, at 4,096 break points and W = 32. The GPU takes less time than the chain from 256 break points at W = 32, about 174 to 242 depending on the kernel and input, and from 1,024 at W = 8 and 16, about 266 to 387, e.g. 0.47 against 3,441 µs at 1,024 break points and W = 32. As arithmetic rather than a measurement: at W = 32, `knuthPlass` in Bun takes about 74 µs per 1,000 break points and `knuthPlassTyped` about 38 µs, so if one GPU evaluation stayed near 0.5 ms, they would take as long from about 7,000 and 13,000 break points.
+
+### What this says about Cheng's question
+
+- For many paragraphs, yes. With the dense-rows kernel and the paragraphs' positions on the GPU, the tree takes less time than plain JavaScript from about 40 to 190 paragraphs of 256 break points, depending on W and on which loop, and 2.3 to 5.2 times less at the largest measured batches. When only the widths change, it crosses a little earlier, from about 34 to 124 paragraphs.
+- For one paragraph, no. With the dense-rows kernel and positions or widths, one evaluation takes 0.3 to 0.6 ms, most of it the round trip, while `knuthPlass` lays out a paragraph of 4,096 break points in 0.3 ms at W = 32. What one paragraph gains is depth, e.g. 18 levels at 1,024 break points, where the chain program has 6,184 to 10,232 layers, and there the GPU takes less time than the chain program.
+- The tree does fit one batched kernel per level, but a kernel over every entry isn't enough. The full kernel pays W³ sums per product, and doesn't cross over at W = 16 and 32, e.g. 33.4 ms against 17.3 to 32.8 ms for the JavaScript loops at 3,000 paragraphs and W = 16, and 42.3 against 10.4 to 22.5 ms at 1,000 paragraphs and W = 32. Skipping the rows that only move costs, like the tree program's absent entries, makes the products 11.5 times shorter at W = 32, and from about 40 to 86 paragraphs there, the GPU takes less time than the JavaScript loops in Bun.
+- What JavaScript sends matters, as in regex-search and text-walker. Computing the line costs in JavaScript and uploading them never beats `knuthPlassTyped`, since that's most of the loop's own work. The positions, 2n integers per paragraph, with the line costs computed on the GPU, do.
+- The GPU's arithmetic is exact in u32, so the GPU gives the reference's totals and pointers for paragraphs of up to 270,532 break points, where the program's FP32 sums stop at 1,056.
+
+### GPU not done
+
+- The page: `demo.html` runs the programs on the CPU, and has no GPU mode.
+- Batches of paragraphs with different break counts. A batch shares one plan, so every paragraph has the same n. Padding like the programs' cells, where every line past the paragraph doesn't fit, would allow shorter paragraphs, and wasn't tried.
+- Memory. Every matrix product keeps its own slot of W² entries, so the matrices take P × (n + products) × W² × 4 bytes, e.g. 2,060 MB for 1,000 paragraphs of 256 break points at W = 32. Storing only min(B, W) rows per slot, or reusing slots once they're read, wasn't tried, and batches above 2.2 GB weren't measured.
+- Only one workgroup shape per W, 256 invocations with y = W, and no sweep. Only Brent-Kung's network.
+- The readback holds every pointer, n + 1 u32 values per paragraph. Following the pointers by doubling on the GPU, and reading back only the breaks, wasn't tried.
+- `windowOverflowCount` isn't computed on the GPU.
+- No timing relative to `requestAnimationFrame`, and only one paragraph count of 256 break points for batches.
+- Single paragraphs past 4,096 break points, where the arithmetic above predicts a crossover against plain JavaScript.
+- Only Apple's GPU through Metal in headless Chrome 153, with another Chrome and other processes running.
