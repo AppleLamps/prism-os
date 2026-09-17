@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Knuth-Plass line breaking</title>
+  <style>
+    :root {--background: #f6f6f3; --panel: #ffffff; --text: #1d1d1f; --muted: #6b6b70; --border: #d8d8dc; --error: #b3261e}
+    @media (prefers-color-scheme: dark) {
+      :root {--background: #151517; --panel: #1f1f22; --text: #ececf0; --muted: #9b9ba3; --border: #3a3a40; --error: #ff8a80}
+    }
+    body {margin: 0; background: var(--background); color: var(--text); font: 14px/1.5 system-ui, sans-serif}
+    main {max-width: 1320px; margin: 0 auto; padding: 24px 16px 48px}
+    h1 {font-size: 20px; margin: 0 0 4px}
+    p {margin: 0 0 12px; color: var(--muted); max-width: 900px}
+    .controls {display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 12px 0}
+    label {font-size: 13px; color: var(--muted)}
+    select {font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px}
+    #width-value {font-variant-numeric: tabular-nums; min-width: 48px}
+    #status {min-height: 20px; font-size: 13px; color: var(--muted)}
+    #warning {min-height: 20px; font-size: 13px; color: var(--error)}
+    .columns {display: flex; gap: 32px; overflow-x: auto; padding-bottom: 16px}
+    .column {flex: 0 0 auto}
+    h2 {margin: 0 0 2px; font-size: 13px; font-weight: 600}
+    .metrics {margin-bottom: 8px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums}
+    .text {padding: 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px}
+    .paragraph + .paragraph {margin-top: 14px}
+    .line {white-space: nowrap; text-align: justify; text-align-last: justify; font: 15px/24px Georgia, "Times New Roman", serif}
+    .line.last {text-align-last: left}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Knuth-Plass line breaking as a program</h1>
+    <p>The paragraphs of pretext's justification demo, with its soft hyphens. Left: pretext's greedy breaks, which fill each line as far as it goes. Right: the breaks with the smallest total cost, where a line costs min(slack, 63)² in whole pixels and the last line costs nothing, from a program that runs every operation on every evaluation. Both columns justify every line but the last.</p>
+    <div class="controls">
+      <label for="width">Column width</label>
+      <input id="width" type="range" min="200" max="600" value="364">
+      <span id="width-value"></span>
+      <label>Form <select id="form"><option value="chain">chain</option><option value="tree">tree</option></select></label>
+    </div>
+    <div id="status">Building the program…</div>
+    <div id="warning" role="alert"></div>
+    <div class="columns">
+      <section class="column">
+        <h2>Greedy, pretext's layoutNextLineRange</h2>
+        <div class="metrics" id="greedy-metrics"></div>
+        <div class="text" id="greedy"></div>
+      </section>
+      <section class="column">
+        <h2>Knuth-Plass, the program</h2>
+        <div class="metrics" id="optimal-metrics"></div>
+        <div class="text" id="optimal"></div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="./demo.ts"></script>
+</body>
+</html>
