@@ -17,7 +17,7 @@ import {type Bit, and, bitWire, noneOf, not} from './bits.ts'
 import {type DataCapacity, createStepAnd, dataSearchCells, emitClasses, writePattern} from './data-program.ts'
 import {writeText} from './host.ts'
 import type {CompiledPattern} from './pattern.ts'
-import {brentKungPrefix, sklanskyPrefix} from './prefix-networks.ts'
+import {brentKungPrefix, sklanskyPrefix} from '../../src/runtime/prefix-networks.ts'
 
 export type PrefixNetwork = 'brent-kung' | 'sklansky'
 

@@ -8,7 +8,7 @@
 // - augmentedLeaves: (S + 1) × (S + 1) 0/1 matrices whose clamped products give the reach bits without integers.
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {type CompiledPattern, setContains} from './pattern.ts'
-import {brentKungPrefix, sklanskyPrefix} from './prefix-networks.ts'
+import {brentKungPrefix, sklanskyPrefix} from '../../src/runtime/prefix-networks.ts'
 import type {PrefixNetwork} from './tree-program.ts'
 
 export type ProductTreeInputs = {
