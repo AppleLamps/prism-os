@@ -1,0 +1,290 @@
+[
+  {
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "maxWidthOffset": -1,
+    "instanceSourceCount": 138,
+    "outputCount": 1,
+    "statementCount": 1202,
+    "shaderBytes": 66837,
+    "exposure": {
+      "inexactProducts": 334,
+      "additions": 930,
+      "guards": 1264,
+      "booleanRows": 67,
+      "gatherReads": 0
+    },
+    "instancePlan": {
+      "sharedRows": 1,
+      "instanceRows": 1063,
+      "sharedWeights": 1,
+      "instanceWeights": 2125,
+      "instanceLayers": 605
+    },
+    "programSizes": {
+      "sourceCells": 139,
+      "liveOperations": 1064,
+      "layers": 605,
+      "storedWeights": 2126,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 102
+    },
+    "sharedValueCount": 1204
+  },
+  {
+    "size": "short",
+    "plan": "own-width",
+    "guard": "none",
+    "workgroupSize": 64,
+    "maxWidthOffset": -1,
+    "instanceSourceCount": 138,
+    "outputCount": 1,
+    "statementCount": 1202,
+    "shaderBytes": 52933,
+    "exposure": {
+      "inexactProducts": 334,
+      "additions": 930,
+      "guards": 0,
+      "booleanRows": 67,
+      "gatherReads": 0
+    },
+    "instancePlan": {
+      "sharedRows": 1,
+      "instanceRows": 1063,
+      "sharedWeights": 1,
+      "instanceWeights": 2125,
+      "instanceLayers": 605
+    },
+    "programSizes": {
+      "sourceCells": 139,
+      "liveOperations": 1064,
+      "layers": 605,
+      "storedWeights": 2126,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 102
+    },
+    "sharedValueCount": 1204
+  },
+  {
+    "size": "short",
+    "plan": "shared-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "maxWidthOffset": 1,
+    "instanceSourceCount": 137,
+    "outputCount": 1,
+    "statementCount": 1201,
+    "shaderBytes": 66809,
+    "exposure": {
+      "inexactProducts": 334,
+      "additions": 930,
+      "guards": 1264,
+      "booleanRows": 67,
+      "gatherReads": 0
+    },
+    "instancePlan": {
+      "sharedRows": 1,
+      "instanceRows": 1063,
+      "sharedWeights": 1,
+      "instanceWeights": 2125,
+      "instanceLayers": 605
+    },
+    "programSizes": {
+      "sourceCells": 139,
+      "liveOperations": 1064,
+      "layers": 605,
+      "storedWeights": 2126,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 102
+    },
+    "sharedValueCount": 1204
+  },
+  {
+    "size": "short",
+    "plan": "shared-width",
+    "guard": "none",
+    "workgroupSize": 64,
+    "maxWidthOffset": 1,
+    "instanceSourceCount": 137,
+    "outputCount": 1,
+    "statementCount": 1201,
+    "shaderBytes": 52905,
+    "exposure": {
+      "inexactProducts": 334,
+      "additions": 930,
+      "guards": 0,
+      "booleanRows": 67,
+      "gatherReads": 0
+    },
+    "instancePlan": {
+      "sharedRows": 1,
+      "instanceRows": 1063,
+      "sharedWeights": 1,
+      "instanceWeights": 2125,
+      "instanceLayers": 605
+    },
+    "programSizes": {
+      "sourceCells": 139,
+      "liveOperations": 1064,
+      "layers": 605,
+      "storedWeights": 2126,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 102
+    },
+    "sharedValueCount": 1204
+  },
+  {
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "maxWidthOffset": -1,
+    "instanceSourceCount": 1036,
+    "outputCount": 1,
+    "statementCount": 9280,
+    "shaderBytes": 531271,
+    "exposure": {
+      "inexactProducts": 2579,
+      "additions": 7212,
+      "guards": 9791,
+      "booleanRows": 516,
+      "gatherReads": 0
+    },
+    "instancePlan": {
+      "sharedRows": 1,
+      "instanceRows": 8243,
+      "sharedWeights": 1,
+      "instanceWeights": 16485,
+      "instanceLayers": 4646
+    },
+    "programSizes": {
+      "sourceCells": 1037,
+      "liveOperations": 8244,
+      "layers": 4646,
+      "storedWeights": 16486,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 775
+    },
+    "sharedValueCount": 9282
+  },
+  {
+    "size": "long",
+    "plan": "own-width",
+    "guard": "none",
+    "workgroupSize": 64,
+    "maxWidthOffset": -1,
+    "instanceSourceCount": 1036,
+    "outputCount": 1,
+    "statementCount": 9280,
+    "shaderBytes": 423570,
+    "exposure": {
+      "inexactProducts": 2579,
+      "additions": 7212,
+      "guards": 0,
+      "booleanRows": 516,
+      "gatherReads": 0
+    },
+    "instancePlan": {
+      "sharedRows": 1,
+      "instanceRows": 8243,
+      "sharedWeights": 1,
+      "instanceWeights": 16485,
+      "instanceLayers": 4646
+    },
+    "programSizes": {
+      "sourceCells": 1037,
+      "liveOperations": 8244,
+      "layers": 4646,
+      "storedWeights": 16486,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 775
+    },
+    "sharedValueCount": 9282
+  },
+  {
+    "size": "long",
+    "plan": "shared-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "maxWidthOffset": 1,
+    "instanceSourceCount": 1035,
+    "outputCount": 1,
+    "statementCount": 9279,
+    "shaderBytes": 531240,
+    "exposure": {
+      "inexactProducts": 2579,
+      "additions": 7212,
+      "guards": 9791,
+      "booleanRows": 516,
+      "gatherReads": 0
+    },
+    "instancePlan": {
+      "sharedRows": 1,
+      "instanceRows": 8243,
+      "sharedWeights": 1,
+      "instanceWeights": 16485,
+      "instanceLayers": 4646
+    },
+    "programSizes": {
+      "sourceCells": 1037,
+      "liveOperations": 8244,
+      "layers": 4646,
+      "storedWeights": 16486,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 775
+    },
+    "sharedValueCount": 9282
+  },
+  {
+    "size": "long",
+    "plan": "shared-width",
+    "guard": "none",
+    "workgroupSize": 64,
+    "maxWidthOffset": 1,
+    "instanceSourceCount": 1035,
+    "outputCount": 1,
+    "statementCount": 9279,
+    "shaderBytes": 423539,
+    "exposure": {
+      "inexactProducts": 2579,
+      "additions": 7212,
+      "guards": 0,
+      "booleanRows": 516,
+      "gatherReads": 0
+    },
+    "instancePlan": {
+      "sharedRows": 1,
+      "instanceRows": 8243,
+      "sharedWeights": 1,
+      "instanceWeights": 16485,
+      "instanceLayers": 4646
+    },
+    "programSizes": {
+      "sourceCells": 1037,
+      "liveOperations": 8244,
+      "layers": 4646,
+      "storedWeights": 16486,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 775
+    },
+    "sharedValueCount": 9282
+  }
+]

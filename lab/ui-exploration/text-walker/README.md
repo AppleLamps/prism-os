@@ -16,7 +16,7 @@ bun lab/ui-exploration/text-walker/report.ts fast
 bun lab/ui-exploration/text-walker/demo.html
 ```
 
-The tests (25 tests in 5 files, about 3.3 seconds, 7 of them in `batch/`) check every circuit against pretext. report.ts prints the tables below; its `fast` part builds 1023-segment circuits and takes about a minute. The demo page is a paragraph flowing around a draggable window with a spring per word.
+The tests (27 tests in 6 files, about 3.7 seconds, 9 of them in `batch/`, 2 of those in `batch/gpu/`) check every circuit against pretext. report.ts prints the tables below; its `fast` part builds 1023-segment circuits and takes about a minute. The demo page is a paragraph flowing around a draggable window with a spring per word.
 
 `pretext-src/` is a copy of pretext's `src/` (analysis, bidi, entry-geometry, layout, line-break, line-text, measurement and the generated tables) from commit 477510e of the clone in the phase 2 scratchpad, so the tests don't depend on a temporary folder. It has the same files as text-tabulated's `pretext/`, but stays a separate copy: `bun test` shares modules between test files, and pretext keeps the engine profile and measuring canvas it creates first, so the Gecko profile that this folder's and streaming-words' tests install needs its own module. The runtime is the shared `numeric-ui-core.ts`, unchanged.
 
@@ -205,7 +205,7 @@ Springs: the shared step matrix for 8 step bits (0..255 steps) is 208 live opera
 - **Blink's unfit-hyphen return and kerned admission.** Both need a second first-failure list per candidate, and a select between the lists.
 - **Real browser widths.** How often does the demo's mismatch counter move with real Georgia widths, and would quantizing widths to 1/64 px at the table boundary remove those mismatches without visible change?
 - **Generated JavaScript.** Phase 1 ran IndirectOS about 12 times faster as generated JS. The demo circuit would likely drop from about 230 µs to tens of µs.
-- **Many paragraphs as instances.** Masonry cards or chat bubbles share one compiled circuit, with different widths in the table. That is the case a batched or GPU executor would parallelize. Update, September 17, 2026: [Many paragraphs on the GPU](#many-paragraphs-on-the-gpu-september-17-2026) builds one program per paragraph size for line counts, in three formulations, checks it against pretext's `layout()`, and measures it on the CPU, with an export for a GPU executor.
+- **Many paragraphs as instances.** Masonry cards or chat bubbles share one compiled circuit, with different widths in the table. That is the case a batched or GPU executor would parallelize. Update, September 17, 2026: [Many paragraphs on the GPU](#many-paragraphs-on-the-gpu-september-17-2026) builds one program per paragraph size for line counts, in three formulations, checks it against pretext's `layout()`, and measures it on the CPU, with an export for a GPU executor. Later the same day, [The GPU step](#the-gpu-step) ran the segment walker program on WebGPU in headless Chrome: it takes less time than pretext's `layout()` from about 160 long or 800 short paragraphs when only the width changes, and from about 1,100 long or 8,200 short paragraphs when the texts change, see [The crossover](#the-crossover).
 - **Joining IndirectOS.** A Notes window whose text flows around the other windows, with word springs, in the same circuit as window focus and dragging.
 
 ## Merged from index-read, September 16, 2026
@@ -235,7 +235,7 @@ Springs: the shared step matrix for 8 step bits (0..255 steps) is 208 live opera
 
 Cheng asked: "technically our pretext layout, if there's lots of them, is faster than the regular cpu's, then?" So far the answer is a prediction. For one paragraph the GPU should lose: pretext's `layout()` is a few float64 additions and comparisons per segment, and stops at the end of the text, while a program pays for every line slot and every window position, and a WebGPU round trip took about 0.3 to 0.7 ms through Dawn in earlier runs on this machine. Many paragraphs in one dispatch should win past some count, predicted somewhere in the hundreds to thousands. Cheng approved measuring it: "yes to both", together with a Knuth-Plass experiment that isn't part of this section.
 
-This section is the CPU half: one per-paragraph program for pretext's greedy line breaking, checked against `layout()`, its CPU numbers, and an export for the GPU step. There are no GPU numbers yet.
+The first half of this section is the CPU half: one per-paragraph program for pretext's greedy line breaking, checked against `layout()`, its CPU numbers, and an export for the GPU step. The second half, from [The GPU step](#the-gpu-step), runs that program over up to 100,000 paragraphs in one WebGPU compute pass in headless Chrome, and finds the paragraph count from which the GPU takes less time than pretext.
 
 ### What was built
 
@@ -248,7 +248,8 @@ This section is the CPU half: one per-paragraph program for pretext's greedy lin
 | `batch/report.ts` | Program sizes, the sweep against pretext over every paragraph and width, and the summary of the timing processes |
 | `batch/cpu-time.ts` | CPU timings, one process per variant |
 | `batch/export.ts` | Writes the compiled program, the cells of N paragraphs, and pretext's line counts, for the GPU step |
-| `batch/results/` | `sizes.json`, `sweep.json`, and one JSON line per timing process |
+| `batch/results/` | `sizes.json`, `sweep.json`, one JSON line per timing process, and the GPU step's raw results |
+| `batch/gpu/` | The GPU step, see [The GPU step](#the-gpu-step) |
 
 **The paragraphs.** Word soup from the same word list as `makeParagraph`, with some hyphenated words, e.g. "state-of-the-art", which pretext splits into text segments that a line can break between, and some zero-width spaces, e.g. `" ​​"`, a space and two zero-width spaces, is a run of 3 break-after segments. Short paragraphs have 14 to 26 words, and long ones 170 to 230. Every paragraph is on pretext's fast path, and at 16 px the fake canvas measures every segment in multiples of 1/4 px, so prefix sums are exact in FP32. The reference is npm `@chenglou/pretext` 0.0.9, the package Notes uses, and not this folder's `pretext-src/` copy: `layout(prepared, maxWidth, lineHeight).lineCount`, with pretext's non-Safari line fit epsilon of 0.005 px.
 
@@ -273,7 +274,7 @@ The largest needs are rare: among the 65,536 long paragraphs, 1 needs a window o
 
 ### Correctness checks
 
-`bun test lab/ui-exploration/text-walker/batch` runs 7 tests in about 1.7 s:
+`bun test lab/ui-exploration/text-walker/batch` runs 9 tests in about 2 s, 2 of them in `gpu/` (see [GPU correctness checks](#gpu-correctness-checks)), and these 7:
 
 - All three formulations give pretext's line count, with every overflow output at 0, for 32 short paragraphs at 61 widths: 160 to 480 px in 16 px steps, each also 1/8 and 1/4 px wider, so some spans equal the width exactly. The index-read program and the segment walker do the same for 4 long paragraphs.
 - codegen's generated JavaScript and batched executor run the one-hot program and the segment walker over 96 short paragraphs, each at its own width, and give pretext's line counts. `createBatchInstanceRunner` refuses the index-read program.
@@ -348,7 +349,7 @@ Method:
 - Generated JavaScript needed the long warmup. JavaScriptCore optimizes a generated function after enough calls, and a run calls each function once per block. With 1 s of warmup, the long one-hot program took 2,762 µs per paragraph, against 186 µs after 120 s and 228 to 240 runs, the long segment walker 21.1 against 10.5 µs, and the short one-hot program 8.83 against 3.67 µs, while the short segment walker didn't change, 1.30 against 1.33 µs. `cpu-time-1.jsonl` and `cpu-time-2.jsonl` hold the runs with 1 s of warmup, and `cpu-time-3.jsonl` and `cpu-time-4.jsonl` the reruns with 120 s.
 - The long one-hot program's generated JavaScript processes reached 11.4 to 12.9 GB of RSS, for 9.97 MB of generated source.
 
-What these numbers say about the GPU step, as arithmetic rather than measurements:
+What these numbers say about the GPU step, as arithmetic rather than measurements, before [GPU timings](#gpu-timings) measured it:
 
 - To win, one GPU evaluation of N paragraphs, from the upload to the readback, must take less than pretext's N × µs per paragraph: 2.6 ms for 1,024 long paragraphs and 43 ms for 16,384, or 0.27 ms for 1,024 short paragraphs and 5.9 ms for 16,384.
 - A WebGPU round trip took about 0.3 to 0.7 ms through Dawn in earlier runs on this machine, and pretext lays out about 120 to 280 long paragraphs, or about 1,100 to 2,700 short ones, in that time. So on this machine the crossover should lie above those counts, since the program's own work on the GPU comes on top of the round trip.
@@ -367,10 +368,166 @@ What these numbers say about the GPU step, as arithmetic rather than measurement
 
 Before writing, the export checks that the program gives pretext's line counts for the first 16 paragraphs at every width. In code, `exportBatch` returns the same things. For 256 long paragraphs with the index-read program, `program.json` is 2.4 MB and `instance-cells.f32` 1.06 MB.
 
-### Not done
+### The GPU step
 
-- No GPU numbers.
-- codegen's instance path doesn't take index reads, since its `flattenProgram` reads only a layer's affine, ReGLU, boolean and gather rows. So the index-read program, the smallest with line slots, has executor numbers only, and `createBatchInstanceRunner` refuses it. codegen's WGSL emitter writes each gather as a `switch` statement over its candidates, which for the long one-hot program would be 6,557 statements of 517 cases.
+`batch/gpu/` runs the segment walker program over N paragraphs in one compute pass, with codegen's WGSL executor, `emitInstanceWgsl` in [codegen/wgsl.ts](../codegen/wgsl.ts): one invocation per paragraph runs every operation of that paragraph, one statement per operation, and writes the paragraph's line count into an output buffer, which the host reads back.
+
+| File | What it holds |
+| --- | --- |
+| `batch/gpu/shaders.ts` | The shaders: codegen's instance plan and WGSL for the segment walker in two plans, and the files of Bun's line counts and cell hashes that the page compares with its own |
+| `batch/gpu/cells.ts` | The cells of the shared-width plan, and the hash of cells |
+| `batch/gpu/host.ts` | The host loop: buffers, one dispatch, readback, timestamp queries, and an evaluation's time split into parts |
+| `batch/gpu/page.html`, `batch/gpu/page.ts` | The page: paragraphs prepared with pretext in Chrome, pretext's `layout()` in Chrome, the GPU timings and the checks |
+| `batch/gpu/run.ts` | Serves the page, runs a fresh headless Chrome through the DevTools Protocol with a hard timeout, and writes what the page posts |
+| `batch/gpu/summarize.ts` | The tables below, from the raw results |
+| `batch/gpu/gpu.test.ts` | Both plans with both guards through codegen's strict WGSL interpreter, against pretext |
+
+```sh
+bun test lab/ui-exploration/text-walker/batch/gpu
+bun lab/ui-exploration/text-walker/batch/gpu/shaders.ts expected <folder> --counts 1,10,100,300,1000,3000,10000,30000,100000
+bun lab/ui-exploration/text-walker/batch/gpu/run.ts --mode main --profile <new folder> --expected <folder> --out <file.json> --counts 1,10,100,300,1000,3000,10000,30000,100000
+bun lab/ui-exploration/text-walker/batch/gpu/run.ts --mode check --profile <new folder> --out <file.json>
+bun lab/ui-exploration/text-walker/batch/gpu/run.ts --mode sweep --profile <new folder> --expected <folder> --out <file.json> --counts 1000,10000,100000
+```
+
+**Why the segment walker.** codegen's instance path doesn't take index reads, and its WGSL emitter writes each gather as a `switch` statement over its candidates, so the short one-hot program becomes 70,361 statements and 4.6 MB of WGSL, and the long one would have 6,557 switch statements of 517 cases. The segment walker has neither, so its shader is one `let` per operation: 1,202 statements and 67 KB for short paragraphs, 9,280 statements and 531 KB for long ones (`shaders.ts sizes`, results/gpu-shader-sizes.json). Its 4,646 layers don't cost a dispatch each, since one invocation runs the operations one after another.
+
+**Two plans of the same program.** codegen's `planInstances` takes the cells that differ per paragraph:
+
+- **Own width**: every cell of the export, i.e. maxWidth, startCursor, K widths and K break-after bits: 138 float32 values per short paragraph and 1,036, 4.1 KB, per long one. A new text or a new width means JavaScript writes every paragraph's cells and uploads them all.
+- **Shared width**: maxWidth is one shared value, and a paragraph's cells are the other 137 or 1,035. The cells are uploaded once, and a new width for every paragraph, e.g. on a resize, writes one float32 value into the shared buffer. No shared value other than maxWidth depends on the width, which `buildBatchShader` checks.
+
+**Guards.** codegen's `max` guard wraps every inexact product and every partial sum in `max(x, lowest)`, so Metal's compiler can't fuse or regroup across it: 1,264 guards in the short shader and 9,791 in the long one. The `none` guard writes the same statements without them. Both were checked and timed.
+
+**The page's paragraphs.** The page prepares its paragraphs with pretext in Chrome, as a page would, and replaces Chrome's `OffscreenCanvas` with the fake canvas before the first prepare call. Before timing, it checks that its line counts at 320 and 400 px equal Bun's for all 100,000 paragraphs of each size, and that a hash of its cells equals Bun's at every count, from `shaders.ts expected`. Paragraph i has seed i mod 65,536 (`timingParagraphs`), the seeds the capacities cover, so 100,000 paragraphs repeat seeds 0 to 34,463. Among seeds 65,536 to 99,999, one long paragraph needs 85 line slots, more than the index-read program has.
+
+### GPU correctness checks
+
+`run.ts --mode check` compared the GPU's line counts with pretext's `layout()` in the page, for the first 65,536 paragraphs of each size and the sweep's 385 widths, with both shaders and both guards:
+
+| Size | Guard | Own width, each paragraph at its own width | Own width, the first 1,024 paragraphs at every width | Shared width, every paragraph at every width | Mismatches |
+| --- | --- | --- | --- | --- | --- |
+| short | max | 65,536 | 394,240 | 25,231,360 | 0 |
+| short | none | 65,536 | 394,240 | 25,231,360 | 0 |
+| long | max | 65,536 | 394,240 | 25,231,360 | 0 |
+| long | none | 65,536 | 394,240 | 25,231,360 | 0 |
+
+That's 102,764,544 line counts with 0 mismatches, including the shaders without the guard, so on this machine Metal's fusing and regrouping didn't change a line count of these paragraphs. The GPU timings below compared every readback with pretext too, and `gpu.test.ts` runs both plans with both guards through codegen's WGSL interpreter, for 12 short and 2 long paragraphs at 5 widths.
+
+### GPU timings
+
+Measured on September 17, 2026, on the same machine as the CPU timings above, with Bun 1.4.0 and headless Chrome 153.0.8010.48 through Metal, with timestamp queries. The page is cross-origin isolated, so `performance.now()` reads in steps of 5 µs. Other processes ran throughout: another Chrome with a busy tab, whose renderer used 50% to 99% of a core and whose GPU process about 48%, a WebKit content process using a whole core during part of the CPU timings, and other agents. The 1-minute load average before and after each GPU run was 3.2 to 3.7, and before and after each CPU timing process 2.6 to 8.4.
+
+Method:
+
+- GPU: `run.ts --mode main`, 3 runs, each in a new Chrome process with a new shader salt, so every shader compiles cold. For each count, at least 1 s and 3 evaluations of warmup, then at least 15 samples and 3 s, at most 300 samples, keeping the median. The tables show the median of the 3 runs' medians, and `summarize.ts` also prints their ranges. Raw results: results/gpu-main-1.json to gpu-main-3.json.
+- Consecutive evaluations alternate between 320 and 400 px, so every evaluation has new input, and every readback was compared with pretext's line counts at its width: 10,688,998,499 line counts in the 3 runs, 0 mismatches.
+- **New cells**, with the own-width shader: JavaScript writes every paragraph's cells at the new width, then the upload, one dispatch, a copy into the readback buffer, `mapAsync`, and copying the line counts out. The "GPU part" leaves out writing the cells. **New width**, with the shared-width shader: the cells were uploaded before timing, and an evaluation writes one float32 value, dispatches and reads back. The compute pass comes from timestamp queries, in their own samples.
+- CPU in Bun: `cpu-time.ts all --counts ...`, 3 processes per variant and count, with the method of the CPU timings above, and 60 s of warmup for short and 120 s for long generated JavaScript. Records: results/cpu-time-5.jsonl to cpu-time-7.jsonl. CPU in Chrome: the same loop in the page, once per run, with 1 s of warmup and 7 samples of at least 300 ms each.
+- Paragraphs past 65,535 repeat earlier seeds, see [The GPU step](#the-gpu-step).
+
+ms for one evaluation of every paragraph, with the max guard. The CPU columns are µs per paragraph × paragraphs. Generated JavaScript and the executor were timed only at 1, 100, 1,000, 10,000 and 100,000 paragraphs.
+
+Short paragraphs, 1,202 shader statements:
+
+| Paragraphs | pretext in Bun | pretext in Chrome | Generated JavaScript, segment walker, Bun | Executor, index read, Bun | GPU, new cells | GPU part of new cells | GPU, new width |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 0.0002 | 0.0002 | 0.0025 | 0.024 | 0.24 | 0.24 | 0.26 |
+| 10 | 0.0022 | 0.0018 | | | 0.20 | 0.20 | 0.22 |
+| 100 | 0.024 | 0.022 | 0.11 | 2.41 | 0.31 | 0.30 | 0.21 |
+| 300 | 0.075 | 0.073 | | | 0.30 | 0.27 | 0.21 |
+| 1,000 | 0.26 | 0.26 | 1.29 | 24.1 | 0.53 | 0.40 | 0.21 |
+| 3,000 | 0.80 | 0.82 | | | 1.07 | 0.73 | 0.21 |
+| 10,000 | 2.89 | 2.92 | 13.3 | 241 | 2.84 | 1.21 | 0.23 |
+| 30,000 | 11.9 | 10.6 | | | 9.66 | 2.45 | 0.24 |
+| 100,000 | 54.2 | 40.1 | 130 | 2,426 | 31.5 | 6.44 | 0.39 |
+
+Long paragraphs, 9,280 shader statements:
+
+| Paragraphs | pretext in Bun | pretext in Chrome | Generated JavaScript, segment walker, Bun | Executor, index read, Bun | GPU, new cells | GPU part of new cells | GPU, new width |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 0.0020 | 0.0020 | 0.021 | 0.19 | 0.40 | 0.40 | 0.39 |
+| 10 | 0.022 | 0.022 | | | 0.42 | 0.41 | 0.45 |
+| 100 | 0.23 | 0.26 | 0.93 | 19.4 | 0.57 | 0.50 | 0.41 |
+| 300 | 0.72 | 0.80 | | | 1.05 | 0.79 | 0.42 |
+| 1,000 | 2.44 | 2.78 | 11.7 | 197 | 3.02 | 2.21 | 0.42 |
+| 3,000 | 7.51 | 8.54 | | | 5.07 | 2.28 | 0.44 |
+| 10,000 | 26.1 | 29.8 | 109 | 1,953 | 17.0 | 6.05 | 0.70 |
+| 30,000 | 81.8 | 92.3 | | | 48.8 | 16.1 | 1.44 |
+| 100,000 | 287 | 327 | 1,086 | 20,218 | 158 | 47.8 | 3.88 |
+
+- pretext takes longer per paragraph as the count grows, e.g. in Bun 0.20 µs per short paragraph at 1 paragraph and 0.54 µs at 100,000, and 1.96 against 2.87 µs per long paragraph. Chrome ran pretext at about the same speed as Bun for short paragraphs up to 10,000, and faster from 30,000, e.g. 40.1 against 54.2 ms at 100,000. For long paragraphs Chrome took 10% to 14% longer from 100 paragraphs.
+- The executor takes 24 µs per short paragraph and 194 to 213 µs per long one at every count, for both formulations. Generated JavaScript takes 1.1 to 1.3 µs per short and 9.3 to 11.7 µs per long paragraph from 100 paragraphs, and about twice that at 1 paragraph, since a run over one paragraph still calls every generated function once. Its processes for 100,000 long paragraphs reached 10.1 to 11.3 GB of RSS.
+- The page's 100,000 long prepared paragraphs took 16.0 s to prepare and 4,046 MB of JavaScript heap.
+
+### The crossover
+
+The first measured count from which the GPU takes less time than the CPU variant, at that count and every larger measured count, from the medians of the 3 runs, with the max guard. "About" interpolates linearly between that count and the measured count below it.
+
+| Size | GPU evaluation | Against pretext in Bun | Against pretext in Chrome | Against generated JavaScript in Bun |
+| --- | --- | --- | --- | --- |
+| short | new width, cells on the GPU | from 1,000, about 800 | from 1,000, about 810 | from 1,000, about 170 |
+| short | new cells, including writing them | from 10,000, about 8,700 | from 10,000, about 8,200 | from 1,000, about 280 |
+| short | GPU part of new cells | from 3,000, about 2,300 | from 3,000, about 2,200 | from 1,000, about 250 |
+| long | new width, cells on the GPU | from 300, about 170 | from 300, about 160 | from 100, about 42 |
+| long | new cells, including writing them | from 3,000, about 1,400 | from 3,000, about 1,100 | from 100, about 51 |
+| long | GPU part of new cells | from 1,000, about 460 | from 300, about 290 | from 100, about 47 |
+
+- Each run on its own gives the same measured count, with these exceptions. Run 1: short new cells from 30,000, about 10,100 against Bun and 10,300 against Chrome, since at 10,000 paragraphs it took 2.91 ms against 2.89 and 2.88 ms. Run 2: short new width from 3,000, about 1,000; long new cells no crossover up to 100,000, see below; the long GPU part from 3,000 against Bun and from 1,000 against Chrome.
+- Without the guard, the new width crosses a little earlier: about 680 short and 140 long paragraphs against Bun. The other crossovers without the guard stay at the same measured counts, except the long GPU part against Chrome, from 1,000, about 480, where one run's 300-paragraph median was 1.09 ms.
+- The executor was measured at 1, 100, 1,000, 10,000 and 100,000 paragraphs, and every GPU evaluation takes less time from 100 paragraphs, e.g. 0.41 against 19.4 ms for 100 long paragraphs with a new width.
+- At 100,000 paragraphs, a new width takes 74 times less time than pretext in Bun for long paragraphs, 3.88 against 287 ms, and 139 times for short ones, 0.39 against 54.2 ms. New cells take 1.8 times less for long paragraphs, 158 against 287 ms, and 1.7 times for short ones, 31.5 against 54.2 ms.
+
+### Where the GPU's time goes
+
+ms, medians of the 3 runs, max guard:
+
+| Size | Paragraphs | MB uploaded with new cells | Writing the cells in JavaScript | writeBuffer calls | From submit to `mapAsync` resolving | Compute pass | New width: whole evaluation | New width: compute pass |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| short | 1 | 0.0006 | 0 | 0 | 0.24 | 0.058 | 0.26 | 0.020 |
+| short | 1,000 | 0.55 | 0.12 | 0.13 | 0.26 | 0.019 | 0.21 | 0.055 |
+| short | 10,000 | 5.52 | 1.62 | 0.075 | 1.12 | 0.037 | 0.23 | 0.023 |
+| short | 100,000 | 55.2 | 25.1 | 0.80 | 5.60 | 0.42 | 0.39 | 0.16 |
+| long | 1 | 0.0041 | 0 | 0 | 0.39 | 0.18 | 0.39 | 0.18 |
+| long | 1,000 | 4.14 | 0.81 | 0.97 | 1.21 | 0.25 | 0.42 | 0.20 |
+| long | 10,000 | 41.4 | 10.9 | 0.62 | 5.41 | 1.00 | 0.70 | 0.43 |
+| long | 100,000 | 414 | 109 | 6.09 | 41.8 | 6.26 | 3.88 | 3.59 |
+
+- Up to about 100 paragraphs, an evaluation is a fixed round trip: 0.20 to 0.30 ms with the short shader and 0.39 to 0.50 ms with the long one, as medians of the GPU part and of a new width, almost all of it from submit to `mapAsync` resolving. In 0.4 ms pretext lays out about 1,500 short or 170 long paragraphs in Bun. The long shader's compute pass takes 0.18 ms even for 1 paragraph, i.e. 64 invocations, 63 of which return at once, and 0.11 ms without the guard, while the short shader's takes 0.01 to 0.06 ms. I didn't find out why a larger shader's pass costs more for the same work.
+- With new cells, JavaScript and the upload take most of the time. At 100,000 long paragraphs, writing the cells takes 109 ms, about 1.1 µs per paragraph, more than a third of pretext's whole layout, and moving 414 MB to the GPU about 42 to 45 ms: the GPU part minus the compute pass is 41.5 ms, and an upload alone, `writeBuffer` and then `onSubmittedWorkDone` on an empty command buffer, 45.0 ms. The compute pass takes 6.26 ms.
+- With a new width and the cells on the GPU, the compute pass is most of the evaluation: 3.59 of 3.88 ms for 100,000 long paragraphs, i.e. 928 million shader statements, and 0.16 of 0.39 ms for 100,000 short paragraphs. That's about 36 µs per 1,000 long paragraphs, against 2,870 µs for pretext in Bun and 10,900 µs for the same program as generated JavaScript.
+- Reading back one float32 line count per paragraph costs little: copying 400 KB out of the mapped buffer takes 0.02 ms at 100,000 paragraphs, and evaluations with and without readback differ by less than the spread between runs.
+- The max guard slows the compute pass but barely changes the totals with new cells: at 100,000 long paragraphs the pass takes 6.26 ms with the guard and 5.25 ms without, and with a new width 3.59 against 2.34 ms, where the whole evaluation takes 3.88 against 2.65 ms. The guard also doubles the long shader's compile time, 837 against 385 ms (medians; the first compile in a Chrome process took up to 2.0 s). The short shaders compiled in 47 to 109 ms.
+- In run 2, writing the long paragraphs' cells inside the GPU loop took 4.4 to 4.7 µs per paragraph, e.g. 465 ms at 100,000 paragraphs, against 0.8 to 1.1 µs in runs 1 and 3. The same function timed on its own earlier in that page took 0.47 to 0.64 µs, as in the other runs, and run 2's GPU part didn't change. So run 2 is the top of the new-cells ranges for long paragraphs, e.g. 512 ms at 100,000. I didn't find the cause, e.g. whether V8 had deoptimized that loop.
+
+### Workgroup sizes
+
+One sweep run (results/gpu-sweep-1.json), with the own-width shader, new cells and readback, before the main runs:
+
+| Size | Paragraphs | GPU part, workgroup of 16 | 64 | 256 | Compute pass, workgroup of 16 | 64 | 256 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| short | 1,000 | 0.42 | 0.44 | 0.44 | 0.056 | 0.059 | 0.063 |
+| short | 10,000 | 1.23 | 1.24 | 1.29 | 0.061 | 0.061 | 0.059 |
+| short | 100,000 | 6.98 | 6.88 | 6.78 | 0.46 | 0.32 | 0.34 |
+| long | 1,000 | 2.52 | 2.53 | 2.62 | 0.61 | 0.62 | 0.71 |
+| long | 10,000 | 7.45 | 5.96 | 5.43 | 1.70 | 0.87 | 0.94 |
+| long | 100,000 | 53.8 | 76.1 | 51.1 | 9.66 | 6.21 | 6.31 |
+
+A workgroup of 16 made the long compute pass about 1.5 times slower at 100,000 paragraphs, and 64 and 256 were about even. The GPU parts differ mostly in the upload. The main runs use codegen's default of 64.
+
+### What this says about Cheng's question
+
+- Yes, past a crossover, as predicted. On this machine the per-paragraph program on the GPU takes less time than pretext's `layout()` from about 160 to 170 long or 800 short paragraphs when only the width changes and the cells stay on the GPU, e.g. on a resize, and at 100,000 paragraphs it takes 74 to 139 times less time.
+- When the texts change, the GPU wins later and by less: from about 1,100 to 1,400 long or 8,200 to 8,700 short paragraphs, and 1.7 to 1.8 times at 100,000 paragraphs. There the cost is JavaScript writing every paragraph's cells and the upload, not the program: the compute pass is 4% of the evaluation for 100,000 long paragraphs.
+- One paragraph loses, as predicted: 0.39 ms against pretext's 2 µs for a long paragraph, about 200 times as long, since a round trip has a fixed cost.
+- Against the same program on the CPU, the GPU wins from about 40 to 50 long or 170 to 280 short paragraphs against generated JavaScript, and from 100 paragraphs or fewer against the executor.
+- The programs output only line counts. Per-line widths or word positions would multiply what the host reads back by the number of lines or segments, and the host would still have to turn them into DOM writes.
+
+### Not done
+- codegen's instance path doesn't take index reads, since its `flattenProgram` reads only a layer's affine, ReGLU, boolean and gather rows. So the index-read program, the smallest with line slots, has executor numbers only, and `createBatchInstanceRunner` refuses it. codegen's WGSL emitter writes each gather as a `switch` statement over its candidates, which for the long one-hot program would be 6,557 statements of 517 cases. So the GPU step ran only the segment walker.
 - Only line counts: no per-line widths, and no word positions.
 - Fake canvas widths on a 1/4 px grid. Real canvas widths aren't, and the programs would need widths rounded to the 1/64 px grid, like Notes does, which can move a break whose span lies within 1/128 px of the width.
 - Only pretext's fast path, and only widths at least as wide as the widest segment.
+- Only Apple's GPU through Metal, in headless Chrome 153. No other GPU, browser or WebGPU backend, and no timing relative to `requestAnimationFrame`, unlike regex-search's frames run.
+- A new width with the own-width plan uploads every cell again. Uploading only the width cells, e.g. from their own buffer, wasn't tried. The shared-width plan covers the case where every paragraph gets the same width.
+- Every cell is a float32 value, including the break-after bits and startCursor. Packing them into fewer bytes, to shrink the upload, wasn't tried.

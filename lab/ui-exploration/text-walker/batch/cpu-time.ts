@@ -8,15 +8,16 @@
 //   batched-<formulation>     codegen's batched executor over all paragraphs in blocks (one-hot and segment-walker only)
 // One variant in this process, which prints one JSON line:
 //   bun lab/ui-exploration/text-walker/batch/cpu-time.ts one executor-index-read long 1024 [--width 320] [--warmup-seconds 1]
-// Every listed variant and size, each in its own process with a memory limit and a time limit, appending one JSON line
-// per process to a file:
+// Every listed variant, size and count, each in its own process with a memory limit and a time limit, appending one JSON
+// line per process to a file:
 //   bun lab/ui-exploration/text-walker/batch/cpu-time.ts all --out <file.jsonl> [--variants pretext,executor-index-read]
-//     [--sizes short,long] [--count 1024] [--width 320] [--warmup-seconds 1] [--processes 3] [--memory-limit-mb 16000]
+//     [--sizes short,long] [--counts 1024,16384] [--width 320] [--warmup-seconds 1] [--processes 3] [--memory-limit-mb 16000]
 //     [--time-limit-seconds 600]
+// The paragraphs are paragraphs.ts's timingParagraphs, whose seeds wrap after 65,535, e.g. at 100,000 paragraphs.
 import {appendFileSync} from 'node:fs'
 import {layout} from '@chenglou/pretext'
 import {type InstanceBackend, createBatchInstanceRunner} from './instances.ts'
-import {type BatchParagraph, type ParagraphSize, assertFits, batchCapacities, batchParagraphs, expectedLineCount, lineHeight} from './paragraphs.ts'
+import {type BatchParagraph, type ParagraphSize, assertFits, batchCapacities, expectedLineCount, lineHeight, timingParagraphs} from './paragraphs.ts'
 import {type BatchProgram, type Formulation, allFormulations, buildBatchProgram, instanceCellCount, paragraphSourceTable, writeInstanceCells} from './programs.ts'
 
 export const allVariants = [
@@ -136,7 +137,7 @@ function verify(variant: string, prepared: Prepared, expected: Int32Array) {
 function timeOne(variant: string, size: ParagraphSize, count: number, width: number, warmupSeconds: number) {
   const loadBefore = loadAverage()
   const prepareStarted = performance.now()
-  const paragraphs = batchParagraphs(size, count)
+  const paragraphs = timingParagraphs(size, count)
   const prepareMilliseconds = performance.now() - prepareStarted
   for (const paragraph of paragraphs) assertFits(batchCapacities[size], paragraph)
   const expected = Int32Array.from(paragraphs, paragraph => expectedLineCount(paragraph, width))
@@ -210,14 +211,17 @@ if (import.meta.main) {
     if (out === undefined) throw new Error('all needs --out <file.jsonl>')
     const variants = argument('--variants')?.split(',') ?? allVariants
     const sizes = (argument('--sizes')?.split(',') ?? ['short', 'long']) as ParagraphSize[]
-    const count = Number(argument('--count') ?? 1024)
+    // --count is the earlier spelling of a single count.
+    const counts = (argument('--counts') ?? argument('--count') ?? '1024').split(',').map(Number)
     const processes = Number(argument('--processes') ?? 3)
     const memoryLimitMegabytes = Number(argument('--memory-limit-mb') ?? 16_000)
     const timeLimitMs = Number(argument('--time-limit-seconds') ?? 600) * 1000
     for (const size of sizes) {
       for (const variant of variants) {
-        for (let index = 0; index < processes; index++) {
-          await runInOwnProcess(['one', variant, size, String(count), '--width', String(width), '--warmup-seconds', String(warmupSeconds)], out, memoryLimitMegabytes, timeLimitMs)
+        for (const count of counts) {
+          for (let index = 0; index < processes; index++) {
+            await runInOwnProcess(['one', variant, size, String(count), '--width', String(width), '--warmup-seconds', String(warmupSeconds)], out, memoryLimitMegabytes, timeLimitMs)
+          }
         }
       }
     }

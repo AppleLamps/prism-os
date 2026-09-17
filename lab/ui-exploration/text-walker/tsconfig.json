@@ -1,1 +1,1 @@
-{"extends": "../../../tsconfig.json", "include": ["*.ts", "batch/*.ts", "../../types/loose-wires.d.ts"]}
+{"extends": "../../../tsconfig.json", "include": ["*.ts", "batch/*.ts", "batch/gpu/*.ts", "../../types/loose-wires.d.ts"]}

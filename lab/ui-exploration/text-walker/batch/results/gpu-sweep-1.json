@@ -1,0 +1,3036 @@
+{
+ "driver": {
+  "startedAt": "2026-09-17T17:03:09.958Z",
+  "loadBefore": "{ 3.49 4.11 3.87 }",
+  "memoryBefore": "System-wide memory free percentage: 67%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "sweep",
+   "--profile",
+   "scratchpad/experiments/gpu-paragraphs/profiles/sweep-1",
+   "--expected",
+   "scratchpad/experiments/gpu-paragraphs/expected",
+   "--out",
+   "scratchpad/experiments/gpu-paragraphs/runs/sweep-1.json",
+   "--counts",
+   "1000,10000,100000",
+   "--timeout-seconds",
+   "1800"
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=64809",
+   "--user-data-dir=scratchpad/experiments/gpu-paragraphs/profiles/sweep-1",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900",
+   "--js-flags=--max-old-space-size=16384"
+  ],
+  "browser": "Chrome/153.0.8010.48",
+  "finishedAt": "2026-09-17T17:05:00.503Z",
+  "loadAfter": "{ 3.98 4.19 3.94 }",
+  "memoryAfter": "System-wide memory free percentage: 61%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-09-17T17:03:10.403Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "sweep",
+   "sizes": [
+    "short",
+    "long"
+   ],
+   "counts": [
+    1000,
+    10000,
+    100000
+   ],
+   "guards": [
+    "max"
+   ],
+   "workgroupSizes": [
+    16,
+    64,
+    256
+   ],
+   "checkWidths": [
+    160,
+    161,
+    162,
+    163,
+    164,
+    165,
+    166,
+    167,
+    168,
+    169,
+    170,
+    171,
+    172,
+    173,
+    174,
+    175,
+    176,
+    177,
+    178,
+    179,
+    180,
+    181,
+    182,
+    183,
+    184,
+    185,
+    186,
+    187,
+    188,
+    189,
+    190,
+    191,
+    192,
+    193,
+    194,
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234,
+    235,
+    236,
+    237,
+    238,
+    239,
+    240,
+    241,
+    242,
+    243,
+    244,
+    245,
+    246,
+    247,
+    248,
+    249,
+    250,
+    251,
+    252,
+    253,
+    254,
+    255,
+    256,
+    257,
+    258,
+    259,
+    260,
+    261,
+    262,
+    263,
+    264,
+    265,
+    266,
+    267,
+    268,
+    269,
+    270,
+    271,
+    272,
+    273,
+    274,
+    275,
+    276,
+    277,
+    278,
+    279,
+    280,
+    281,
+    282,
+    283,
+    284,
+    285,
+    286,
+    287,
+    288,
+    289,
+    290,
+    291,
+    292,
+    293,
+    294,
+    295,
+    296,
+    297,
+    298,
+    299,
+    300,
+    301,
+    302,
+    303,
+    304,
+    305,
+    306,
+    307,
+    308,
+    309,
+    310,
+    311,
+    312,
+    313,
+    314,
+    315,
+    316,
+    317,
+    318,
+    319,
+    320,
+    321,
+    322,
+    323,
+    324,
+    325,
+    326,
+    327,
+    328,
+    329,
+    330,
+    331,
+    332,
+    333,
+    334,
+    335,
+    336,
+    337,
+    338,
+    339,
+    340,
+    341,
+    342,
+    343,
+    344,
+    345,
+    346,
+    347,
+    348,
+    349,
+    350,
+    351,
+    352,
+    353,
+    354,
+    355,
+    356,
+    357,
+    358,
+    359,
+    360,
+    361,
+    362,
+    363,
+    364,
+    365,
+    366,
+    367,
+    368,
+    369,
+    370,
+    371,
+    372,
+    373,
+    374,
+    375,
+    376,
+    377,
+    378,
+    379,
+    380,
+    381,
+    382,
+    383,
+    384,
+    385,
+    386,
+    387,
+    388,
+    389,
+    390,
+    391,
+    392,
+    393,
+    394,
+    395,
+    396,
+    397,
+    398,
+    399,
+    400,
+    401,
+    402,
+    403,
+    404,
+    405,
+    406,
+    407,
+    408,
+    409,
+    410,
+    411,
+    412,
+    413,
+    414,
+    415,
+    416,
+    417,
+    418,
+    419,
+    420,
+    421,
+    422,
+    423,
+    424,
+    425,
+    426,
+    427,
+    428,
+    429,
+    430,
+    431,
+    432,
+    433,
+    434,
+    435,
+    436,
+    437,
+    438,
+    439,
+    440,
+    441,
+    442,
+    443,
+    444,
+    445,
+    446,
+    447,
+    448,
+    449,
+    450,
+    451,
+    452,
+    453,
+    454,
+    455,
+    456,
+    457,
+    458,
+    459,
+    460,
+    461,
+    462,
+    463,
+    464,
+    465,
+    466,
+    467,
+    468,
+    469,
+    470,
+    471,
+    472,
+    473,
+    474,
+    475,
+    476,
+    477,
+    478,
+    479,
+    480,
+    166.5,
+    165.25,
+    333.75,
+    363.125,
+    451.125,
+    195.875,
+    318.625,
+    335.375,
+    350.75,
+    410.625,
+    172.75,
+    398,
+    469,
+    183.5,
+    383.75,
+    307.25,
+    286.75,
+    467,
+    289.875,
+    464.875,
+    477.875,
+    372.375,
+    295.25,
+    319.875,
+    251.875,
+    295.375,
+    376,
+    209.625,
+    188.375,
+    432.75,
+    259.625,
+    162.25,
+    308,
+    253.25,
+    343.25,
+    467.875,
+    164.875,
+    409.5,
+    256.625,
+    262.75,
+    465.5,
+    334.875,
+    373.5,
+    370.125,
+    359.375,
+    211.5,
+    457.25,
+    405.5,
+    306.25,
+    392.125,
+    266.125,
+    388,
+    344.25,
+    403.625,
+    301.625,
+    225.875,
+    306.125,
+    374.875,
+    326.625,
+    439.25,
+    285.25,
+    456.125,
+    397.5,
+    205.625
+   ],
+   "checkCount": 65536,
+   "checkGridCount": 1024,
+   "shaderSalt": 23835383,
+   "warmupMs": 1000,
+   "sampleMs": 2000,
+   "minimumSamples": 10,
+   "maximumSamples": 200,
+   "cpuWarmupMs": 1000,
+   "cpuSampleMs": 300,
+   "cpuSamples": 7
+  },
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "hasTimestamps": true,
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeWorkgroupsPerDimension": 65535
+   }
+  },
+  "compileTimes": [
+   {
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 16,
+    "shaderSalt": 23835383,
+    "statements": 1202,
+    "shaderBytes": 66837,
+    "compileMs": 168.8
+   },
+   {
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "shaderSalt": 23835383,
+    "statements": 1202,
+    "shaderBytes": 66837,
+    "compileMs": 119.545
+   },
+   {
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 256,
+    "shaderSalt": 23835383,
+    "statements": 1202,
+    "shaderBytes": 66838,
+    "compileMs": 118.09
+   },
+   {
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 16,
+    "shaderSalt": 23835383,
+    "statements": 9280,
+    "shaderBytes": 531271,
+    "compileMs": 2101.415
+   },
+   {
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "shaderSalt": 23835383,
+    "statements": 9280,
+    "shaderBytes": 531271,
+    "compileMs": 2044.65
+   },
+   {
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 256,
+    "shaderSalt": 23835383,
+    "statements": 9280,
+    "shaderBytes": 531272,
+    "compileMs": 2156.695
+   }
+  ],
+  "results": [
+   {
+    "kind": "sweep",
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 16,
+    "count": 1000,
+    "readback": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.095,
+      "p10": 0.09,
+      "p90": 0.105,
+      "min": 0.085,
+      "max": 0.12
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.135,
+      "p10": 0.13,
+      "p90": 0.14,
+      "min": 0.125,
+      "max": 0.15
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.02
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.285,
+      "p10": 0.26,
+      "p90": 0.315,
+      "min": 0.23,
+      "max": 0.425
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 0.42,
+      "p10": 0.4,
+      "p90": 0.455,
+      "min": 0.37,
+      "max": 0.555
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 0.52,
+      "p10": 0.495,
+      "p90": 0.55,
+      "min": 0.465,
+      "max": 0.65
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.095,
+      "p10": 0.09,
+      "p90": 0.105,
+      "min": 0.085,
+      "max": 0.15
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.135,
+      "p10": 0.13,
+      "p90": 0.14,
+      "min": 0.125,
+      "max": 0.18
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.01
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.45,
+      "p10": 0.415,
+      "p90": 0.51,
+      "min": 0.35,
+      "max": 1.605
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.005
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 0.59,
+      "p10": 0.555,
+      "p90": 0.645,
+      "min": 0.485,
+      "max": 1.755
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 0.685,
+      "p10": 0.645,
+      "p90": 0.745,
+      "min": 0.58,
+      "max": 1.86
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.056,
+      "p10": 0.056,
+      "p90": 0.057,
+      "min": 0.054,
+      "max": 1.021
+     }
+    },
+    "checks": {
+     "readbacks": 3613,
+     "lineCounts": 3613000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 16,
+    "count": 10000,
+    "readback": {
+     "cellsMs": {
+      "count": 200,
+      "median": 1.965,
+      "p10": 1.73,
+      "p90": 2.5,
+      "min": 1.57,
+      "max": 2.87
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.08,
+      "p10": 0.075,
+      "p90": 0.085,
+      "min": 0.07,
+      "max": 0.11
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.015,
+      "min": 0.005,
+      "max": 0.03
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.135,
+      "p10": 0.795,
+      "p90": 1.225,
+      "min": 0.71,
+      "max": 1.42
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.225,
+      "p10": 0.885,
+      "p90": 1.325,
+      "min": 0.805,
+      "max": 1.525
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.11,
+      "p10": 2.72,
+      "p90": 3.71,
+      "min": 2.51,
+      "max": 4.205
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 1.83,
+      "p10": 1.62,
+      "p90": 2.575,
+      "min": 1.545,
+      "max": 3.245
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.08,
+      "p10": 0.075,
+      "p90": 0.09,
+      "min": 0.07,
+      "max": 0.12
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.015,
+      "min": 0,
+      "max": 0.025
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.305,
+      "p10": 0.955,
+      "p90": 1.42,
+      "min": 0.87,
+      "max": 2.76
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.395,
+      "p10": 1.045,
+      "p90": 1.52,
+      "min": 0.955,
+      "max": 2.87
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.15,
+      "p10": 2.775,
+      "p90": 3.98,
+      "min": 2.555,
+      "max": 5.435
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.061,
+      "p10": 0.059,
+      "p90": 0.064,
+      "min": 0.056,
+      "max": 0.285
+     }
+    },
+    "checks": {
+     "readbacks": 4626,
+     "lineCounts": 13743000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 16,
+    "count": 100000,
+    "readback": {
+     "cellsMs": {
+      "count": 61,
+      "median": 25.685,
+      "p10": 25.135,
+      "p90": 26.655,
+      "min": 24.635,
+      "max": 28.825
+     },
+     "uploadMs": {
+      "count": 61,
+      "median": 0.805,
+      "p10": 0.79,
+      "p90": 0.83,
+      "min": 0.78,
+      "max": 0.865
+     },
+     "encodeAndSubmitMs": {
+      "count": 61,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.025,
+      "min": 0.015,
+      "max": 0.03
+     },
+     "waitMs": {
+      "count": 61,
+      "median": 6.135,
+      "p10": 5.665,
+      "p90": 6.51,
+      "min": 5.115,
+      "max": 7.92
+     },
+     "copyMs": {
+      "count": 61,
+      "median": 0.015,
+      "p10": 0.01,
+      "p90": 0.015,
+      "min": 0.01,
+      "max": 0.02
+     },
+     "totalMs": {
+      "count": 61,
+      "median": 6.98,
+      "p10": 6.49,
+      "p90": 7.38,
+      "min": 5.98,
+      "max": 8.79
+     },
+     "totalWithCellsMs": {
+      "count": 61,
+      "median": 32.61,
+      "p10": 31.865,
+      "p90": 33.965,
+      "min": 31.055,
+      "max": 35.85
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 57,
+      "median": 26.405,
+      "p10": 25.235,
+      "p90": 29.315,
+      "min": 24.8,
+      "max": 30.765
+     },
+     "uploadMs": {
+      "count": 57,
+      "median": 0.815,
+      "p10": 0.79,
+      "p90": 1.03,
+      "min": 0.775,
+      "max": 1.2
+     },
+     "encodeAndSubmitMs": {
+      "count": 57,
+      "median": 0.025,
+      "p10": 0.02,
+      "p90": 0.03,
+      "min": 0.015,
+      "max": 0.04
+     },
+     "waitMs": {
+      "count": 57,
+      "median": 6.415,
+      "p10": 5.865,
+      "p90": 9.885,
+      "min": 5.48,
+      "max": 15.695
+     },
+     "copyMs": {
+      "count": 57,
+      "median": 0.015,
+      "p10": 0.01,
+      "p90": 0.02,
+      "min": 0.01,
+      "max": 0.03
+     },
+     "totalMs": {
+      "count": 57,
+      "median": 7.255,
+      "p10": 6.715,
+      "p90": 11.045,
+      "min": 6.345,
+      "max": 16.675
+     },
+     "totalWithCellsMs": {
+      "count": 57,
+      "median": 33.72,
+      "p10": 32.28,
+      "p90": 40.72,
+      "min": 31.595,
+      "max": 44.045
+     },
+     "passMs": {
+      "count": 57,
+      "median": 0.459,
+      "p10": 0.446,
+      "p90": 0.48,
+      "min": 0.411,
+      "max": 0.501
+     }
+    },
+    "checks": {
+     "readbacks": 4804,
+     "lineCounts": 31543000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "count": 1000,
+    "readback": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.115,
+      "p10": 0.11,
+      "p90": 0.125,
+      "min": 0.105,
+      "max": 0.145
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.13,
+      "p10": 0.13,
+      "p90": 0.145,
+      "min": 0.125,
+      "max": 0.17
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.015
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.3,
+      "p10": 0.275,
+      "p90": 0.32,
+      "min": 0.25,
+      "max": 0.42
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.005
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 0.44,
+      "p10": 0.41,
+      "p90": 0.465,
+      "min": 0.385,
+      "max": 0.555
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 0.555,
+      "p10": 0.525,
+      "p90": 0.585,
+      "min": 0.5,
+      "max": 0.67
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.12,
+      "p10": 0.115,
+      "p90": 0.13,
+      "min": 0.11,
+      "max": 0.175
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.135,
+      "p10": 0.13,
+      "p90": 0.155,
+      "min": 0.125,
+      "max": 0.17
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.065
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.46,
+      "p10": 0.41,
+      "p90": 0.49,
+      "min": 0.355,
+      "max": 1.485
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 0.605,
+      "p10": 0.55,
+      "p90": 0.64,
+      "min": 0.5,
+      "max": 1.635
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 0.725,
+      "p10": 0.665,
+      "p90": 0.765,
+      "min": 0.615,
+      "max": 1.755
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.059,
+      "p10": 0.057,
+      "p90": 0.06,
+      "min": 0.055,
+      "max": 1.028
+     }
+    },
+    "checks": {
+     "readbacks": 3505,
+     "lineCounts": 3505000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "count": 10000,
+    "readback": {
+     "cellsMs": {
+      "count": 200,
+      "median": 1.635,
+      "p10": 1.565,
+      "p90": 2.21,
+      "min": 1.51,
+      "max": 2.88
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.075,
+      "p10": 0.075,
+      "p90": 0.085,
+      "min": 0.07,
+      "max": 0.11
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.015,
+      "min": 0,
+      "max": 0.025
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.15,
+      "p10": 0.805,
+      "p90": 1.22,
+      "min": 0.745,
+      "max": 1.915
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.24,
+      "p10": 0.89,
+      "p90": 1.315,
+      "min": 0.825,
+      "max": 2.01
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 2.875,
+      "p10": 2.515,
+      "p90": 3.345,
+      "min": 2.385,
+      "max": 4.365
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 2.12,
+      "p10": 1.655,
+      "p90": 2.77,
+      "min": 1.545,
+      "max": 3.38
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.08,
+      "p10": 0.075,
+      "p90": 0.1,
+      "min": 0.07,
+      "max": 0.14
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.02,
+      "min": 0,
+      "max": 0.04
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.32,
+      "p10": 0.99,
+      "p90": 1.48,
+      "min": 0.88,
+      "max": 2.32
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.42,
+      "p10": 1.08,
+      "p90": 1.58,
+      "min": 0.975,
+      "max": 2.415
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.435,
+      "p10": 2.93,
+      "p90": 4.33,
+      "min": 2.585,
+      "max": 5.295
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.061,
+      "p10": 0.059,
+      "p90": 0.065,
+      "min": 0.057,
+      "max": 0.255
+     }
+    },
+    "checks": {
+     "readbacks": 4535,
+     "lineCounts": 13805000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "count": 100000,
+    "readback": {
+     "cellsMs": {
+      "count": 59,
+      "median": 26.78,
+      "p10": 26.21,
+      "p90": 28.565,
+      "min": 25.32,
+      "max": 30.735
+     },
+     "uploadMs": {
+      "count": 59,
+      "median": 0.82,
+      "p10": 0.8,
+      "p90": 0.885,
+      "min": 0.785,
+      "max": 1.005
+     },
+     "encodeAndSubmitMs": {
+      "count": 59,
+      "median": 0.025,
+      "p10": 0.02,
+      "p90": 0.03,
+      "min": 0.015,
+      "max": 0.035
+     },
+     "waitMs": {
+      "count": 59,
+      "median": 5.97,
+      "p10": 5.04,
+      "p90": 7.605,
+      "min": 4.665,
+      "max": 9.74
+     },
+     "copyMs": {
+      "count": 59,
+      "median": 0.015,
+      "p10": 0.01,
+      "p90": 0.02,
+      "min": 0.01,
+      "max": 0.02
+     },
+     "totalMs": {
+      "count": 59,
+      "median": 6.875,
+      "p10": 5.955,
+      "p90": 8.45,
+      "min": 5.515,
+      "max": 10.59
+     },
+     "totalWithCellsMs": {
+      "count": 59,
+      "median": 33.61,
+      "p10": 32.35,
+      "p90": 35.585,
+      "min": 31.32,
+      "max": 39.675
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 62,
+      "median": 25.85,
+      "p10": 25.23,
+      "p90": 27.305,
+      "min": 24.675,
+      "max": 29.08
+     },
+     "uploadMs": {
+      "count": 62,
+      "median": 0.805,
+      "p10": 0.785,
+      "p90": 0.825,
+      "min": 0.78,
+      "max": 0.975
+     },
+     "encodeAndSubmitMs": {
+      "count": 62,
+      "median": 0.025,
+      "p10": 0.015,
+      "p90": 0.03,
+      "min": 0.01,
+      "max": 0.035
+     },
+     "waitMs": {
+      "count": 62,
+      "median": 5.27,
+      "p10": 4.815,
+      "p90": 5.54,
+      "min": 4.515,
+      "max": 5.775
+     },
+     "copyMs": {
+      "count": 62,
+      "median": 0.015,
+      "p10": 0.01,
+      "p90": 0.015,
+      "min": 0.005,
+      "max": 0.02
+     },
+     "totalMs": {
+      "count": 62,
+      "median": 6.12,
+      "p10": 5.655,
+      "p90": 6.37,
+      "min": 5.35,
+      "max": 6.78
+     },
+     "totalWithCellsMs": {
+      "count": 62,
+      "median": 31.93,
+      "p10": 31.295,
+      "p90": 33.175,
+      "min": 30.28,
+      "max": 35.36
+     },
+     "passMs": {
+      "count": 62,
+      "median": 0.317,
+      "p10": 0.3,
+      "p90": 0.344,
+      "min": 0.217,
+      "max": 0.446
+     }
+    },
+    "checks": {
+     "readbacks": 4716,
+     "lineCounts": 31905000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 256,
+    "count": 1000,
+    "readback": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.115,
+      "p10": 0.11,
+      "p90": 0.12,
+      "min": 0.105,
+      "max": 0.145
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.135,
+      "p10": 0.13,
+      "p90": 0.14,
+      "min": 0.12,
+      "max": 0.155
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.3,
+      "p10": 0.275,
+      "p90": 0.32,
+      "min": 0.245,
+      "max": 0.6
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.005
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 0.44,
+      "p10": 0.41,
+      "p90": 0.46,
+      "min": 0.38,
+      "max": 0.735
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 0.555,
+      "p10": 0.52,
+      "p90": 0.575,
+      "min": 0.49,
+      "max": 0.85
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.115,
+      "p10": 0.11,
+      "p90": 0.125,
+      "min": 0.105,
+      "max": 0.36
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.13,
+      "p10": 0.125,
+      "p90": 0.14,
+      "min": 0.125,
+      "max": 0.17
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.47,
+      "p10": 0.42,
+      "p90": 0.51,
+      "min": 0.355,
+      "max": 63.46
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.12
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 0.605,
+      "p10": 0.555,
+      "p90": 0.65,
+      "min": 0.485,
+      "max": 63.735
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 0.72,
+      "p10": 0.665,
+      "p90": 0.765,
+      "min": 0.595,
+      "max": 63.935
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.063,
+      "p10": 0.061,
+      "p90": 0.066,
+      "min": 0.059,
+      "max": 0.26
+     }
+    },
+    "checks": {
+     "readbacks": 3499,
+     "lineCounts": 3499000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 256,
+    "count": 10000,
+    "readback": {
+     "cellsMs": {
+      "count": 200,
+      "median": 2.39,
+      "p10": 2.06,
+      "p90": 2.915,
+      "min": 1.825,
+      "max": 3.645
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.085,
+      "p10": 0.08,
+      "p90": 0.105,
+      "min": 0.075,
+      "max": 0.13
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.01,
+      "p10": 0.01,
+      "p90": 0.02,
+      "min": 0.005,
+      "max": 0.02
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.18,
+      "p10": 0.835,
+      "p90": 1.36,
+      "min": 0.725,
+      "max": 1.765
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.04
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.285,
+      "p10": 0.935,
+      "p90": 1.465,
+      "min": 0.82,
+      "max": 1.865
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.635,
+      "p10": 3.185,
+      "p90": 4.245,
+      "min": 2.705,
+      "max": 5.45
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 1.66,
+      "p10": 1.59,
+      "p90": 2.27,
+      "min": 1.55,
+      "max": 2.9
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.075,
+      "p10": 0.075,
+      "p90": 0.085,
+      "min": 0.07,
+      "max": 0.115
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.015,
+      "min": 0,
+      "max": 0.025
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.29,
+      "p10": 0.94,
+      "p90": 1.39,
+      "min": 0.83,
+      "max": 1.73
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.385,
+      "p10": 1.025,
+      "p90": 1.485,
+      "min": 0.92,
+      "max": 1.83
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.06,
+      "p10": 2.675,
+      "p90": 3.61,
+      "min": 2.53,
+      "max": 4.4
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.059,
+      "p10": 0.058,
+      "p90": 0.062,
+      "min": 0.054,
+      "max": 0.065
+     }
+    },
+    "checks": {
+     "readbacks": 4529,
+     "lineCounts": 13799000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "short",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 256,
+    "count": 100000,
+    "readback": {
+     "cellsMs": {
+      "count": 59,
+      "median": 26.43,
+      "p10": 25.38,
+      "p90": 28.45,
+      "min": 24.69,
+      "max": 29.73
+     },
+     "uploadMs": {
+      "count": 59,
+      "median": 0.81,
+      "p10": 0.795,
+      "p90": 1.005,
+      "min": 0.78,
+      "max": 1.155
+     },
+     "encodeAndSubmitMs": {
+      "count": 59,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.03,
+      "min": 0.015,
+      "max": 0.035
+     },
+     "waitMs": {
+      "count": 59,
+      "median": 5.945,
+      "p10": 5.455,
+      "p90": 7.57,
+      "min": 5.32,
+      "max": 9.37
+     },
+     "copyMs": {
+      "count": 59,
+      "median": 0.015,
+      "p10": 0.01,
+      "p90": 0.02,
+      "min": 0.01,
+      "max": 0.025
+     },
+     "totalMs": {
+      "count": 59,
+      "median": 6.78,
+      "p10": 6.345,
+      "p90": 8.595,
+      "min": 6.17,
+      "max": 10.33
+     },
+     "totalWithCellsMs": {
+      "count": 59,
+      "median": 33.175,
+      "p10": 31.935,
+      "p90": 36.845,
+      "min": 31.405,
+      "max": 38.15
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 61,
+      "median": 25.855,
+      "p10": 25.27,
+      "p90": 27.095,
+      "min": 24.855,
+      "max": 28.865
+     },
+     "uploadMs": {
+      "count": 61,
+      "median": 0.805,
+      "p10": 0.795,
+      "p90": 0.84,
+      "min": 0.785,
+      "max": 1.135
+     },
+     "encodeAndSubmitMs": {
+      "count": 61,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.03,
+      "min": 0.015,
+      "max": 0.04
+     },
+     "waitMs": {
+      "count": 61,
+      "median": 5.74,
+      "p10": 5.205,
+      "p90": 6.33,
+      "min": 4.86,
+      "max": 6.95
+     },
+     "copyMs": {
+      "count": 61,
+      "median": 0.015,
+      "p10": 0.01,
+      "p90": 0.02,
+      "min": 0.005,
+      "max": 0.045
+     },
+     "totalMs": {
+      "count": 61,
+      "median": 6.585,
+      "p10": 6.06,
+      "p90": 7.255,
+      "min": 5.69,
+      "max": 7.775
+     },
+     "totalWithCellsMs": {
+      "count": 61,
+      "median": 32.525,
+      "p10": 31.45,
+      "p90": 33.755,
+      "min": 31,
+      "max": 36.23
+     },
+     "passMs": {
+      "count": 61,
+      "median": 0.336,
+      "p10": 0.323,
+      "p90": 0.351,
+      "min": 0.32,
+      "max": 0.405
+     }
+    },
+    "checks": {
+     "readbacks": 4708,
+     "lineCounts": 31699000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 16,
+    "count": 1000,
+    "readback": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.84,
+      "p10": 0.81,
+      "p90": 0.905,
+      "min": 0.79,
+      "max": 1.195
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.99,
+      "p10": 0.97,
+      "p90": 1.01,
+      "min": 0.96,
+      "max": 1.05
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.045
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.525,
+      "p10": 1.185,
+      "p90": 1.655,
+      "min": 1.125,
+      "max": 2.53
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 2.515,
+      "p10": 2.165,
+      "p90": 2.67,
+      "min": 2.125,
+      "max": 3.51
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.345,
+      "p10": 2.99,
+      "p90": 3.56,
+      "min": 2.935,
+      "max": 4.33
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.965,
+      "p10": 0.88,
+      "p90": 1.07,
+      "min": 0.835,
+      "max": 1.245
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 1.015,
+      "p10": 0.975,
+      "p90": 1.115,
+      "min": 0.965,
+      "max": 1.195
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.015,
+      "min": 0,
+      "max": 0.03
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.795,
+      "p10": 1.44,
+      "p90": 2.12,
+      "min": 1.335,
+      "max": 6.225
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 2.84,
+      "p10": 2.455,
+      "p90": 3.23,
+      "min": 2.325,
+      "max": 7.29
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.79,
+      "p10": 3.385,
+      "p90": 4.235,
+      "min": 3.19,
+      "max": 8.345
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.605,
+      "p10": 0.591,
+      "p90": 0.629,
+      "min": 0.56,
+      "max": 1.399
+     }
+    },
+    "checks": {
+     "readbacks": 945,
+     "lineCounts": 945000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 16,
+    "count": 10000,
+    "readback": {
+     "cellsMs": {
+      "count": 107,
+      "median": 11.19,
+      "p10": 10.66,
+      "p90": 11.44,
+      "min": 10.33,
+      "max": 11.835
+     },
+     "uploadMs": {
+      "count": 107,
+      "median": 0.685,
+      "p10": 0.595,
+      "p90": 0.79,
+      "min": 0.59,
+      "max": 0.95
+     },
+     "encodeAndSubmitMs": {
+      "count": 107,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.03,
+      "min": 0.01,
+      "max": 0.035
+     },
+     "waitMs": {
+      "count": 107,
+      "median": 6.675,
+      "p10": 5.98,
+      "p90": 8.62,
+      "min": 5.565,
+      "max": 10.335
+     },
+     "copyMs": {
+      "count": 107,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.015,
+      "min": 0.005,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 107,
+      "median": 7.45,
+      "p10": 6.68,
+      "p90": 9.295,
+      "min": 6.215,
+      "max": 11.03
+     },
+     "totalWithCellsMs": {
+      "count": 107,
+      "median": 18.55,
+      "p10": 17.505,
+      "p90": 20.515,
+      "min": 16.845,
+      "max": 21.905
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 112,
+      "median": 10.685,
+      "p10": 10.46,
+      "p90": 11.07,
+      "min": 10.3,
+      "max": 11.33
+     },
+     "uploadMs": {
+      "count": 112,
+      "median": 0.605,
+      "p10": 0.59,
+      "p90": 0.62,
+      "min": 0.585,
+      "max": 0.775
+     },
+     "encodeAndSubmitMs": {
+      "count": 112,
+      "median": 0.015,
+      "p10": 0.015,
+      "p90": 0.02,
+      "min": 0.01,
+      "max": 0.025
+     },
+     "waitMs": {
+      "count": 112,
+      "median": 6.46,
+      "p10": 6.065,
+      "p90": 6.795,
+      "min": 5.68,
+      "max": 7.45
+     },
+     "copyMs": {
+      "count": 112,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 112,
+      "median": 7.095,
+      "p10": 6.695,
+      "p90": 7.44,
+      "min": 6.315,
+      "max": 8.11
+     },
+     "totalWithCellsMs": {
+      "count": 112,
+      "median": 17.825,
+      "p10": 17.345,
+      "p90": 18.36,
+      "min": 16.835,
+      "max": 19.335
+     },
+     "passMs": {
+      "count": 112,
+      "median": 1.697,
+      "p10": 1.625,
+      "p90": 1.792,
+      "min": 1.556,
+      "max": 1.974
+     }
+    },
+    "checks": {
+     "readbacks": 1274,
+     "lineCounts": 4235000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 16,
+    "count": 100000,
+    "readback": {
+     "cellsMs": {
+      "count": 12,
+      "median": 109.025,
+      "p10": 107.915,
+      "p90": 119.365,
+      "min": 107.32,
+      "max": 133.75
+     },
+     "uploadMs": {
+      "count": 12,
+      "median": 6.02,
+      "p10": 5.93,
+      "p90": 6.285,
+      "min": 5.925,
+      "max": 13.115
+     },
+     "encodeAndSubmitMs": {
+      "count": 12,
+      "median": 0.03,
+      "p10": 0.02,
+      "p90": 0.035,
+      "min": 0.02,
+      "max": 0.035
+     },
+     "waitMs": {
+      "count": 12,
+      "median": 47.415,
+      "p10": 46.31,
+      "p90": 78.75,
+      "min": 43.805,
+      "max": 104.88
+     },
+     "copyMs": {
+      "count": 12,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.02,
+      "min": 0.015,
+      "max": 0.025
+     },
+     "totalMs": {
+      "count": 12,
+      "median": 53.755,
+      "p10": 52.35,
+      "p90": 84.71,
+      "min": 49.885,
+      "max": 118.045
+     },
+     "totalWithCellsMs": {
+      "count": 12,
+      "median": 163.745,
+      "p10": 160.42,
+      "p90": 193.525,
+      "min": 157.205,
+      "max": 251.795
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 10,
+      "median": 108.135,
+      "p10": 107.265,
+      "p90": 113.41,
+      "min": 106.63,
+      "max": 113.41
+     },
+     "uploadMs": {
+      "count": 10,
+      "median": 6.105,
+      "p10": 5.95,
+      "p90": 6.405,
+      "min": 5.905,
+      "max": 6.405
+     },
+     "encodeAndSubmitMs": {
+      "count": 10,
+      "median": 0.03,
+      "p10": 0.025,
+      "p90": 0.035,
+      "min": 0.025,
+      "max": 0.035
+     },
+     "waitMs": {
+      "count": 10,
+      "median": 71.645,
+      "p10": 39.81,
+      "p90": 272.135,
+      "min": 37.35,
+      "max": 272.135
+     },
+     "copyMs": {
+      "count": 10,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 66.73,
+      "min": 0.015,
+      "max": 66.73
+     },
+     "totalMs": {
+      "count": 10,
+      "median": 77.595,
+      "p10": 45.965,
+      "p90": 345.285,
+      "min": 43.415,
+      "max": 345.285
+     },
+     "totalWithCellsMs": {
+      "count": 10,
+      "median": 185.73,
+      "p10": 152.595,
+      "p90": 452.55,
+      "min": 151.88,
+      "max": 452.55
+     },
+     "passMs": {
+      "count": 10,
+      "median": 9.656,
+      "p10": 7.863,
+      "p90": 11.557,
+      "min": 7.364,
+      "max": 11.557
+     }
+    },
+    "checks": {
+     "readbacks": 1306,
+     "lineCounts": 7435000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "count": 1000,
+    "readback": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.845,
+      "p10": 0.815,
+      "p90": 0.925,
+      "min": 0.795,
+      "max": 1.135
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.99,
+      "p10": 0.97,
+      "p90": 1.01,
+      "min": 0.965,
+      "max": 1.075
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.02
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.54,
+      "p10": 1.21,
+      "p90": 1.635,
+      "min": 1.15,
+      "max": 2.13
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 2.525,
+      "p10": 2.195,
+      "p90": 2.645,
+      "min": 2.125,
+      "max": 3.12
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.37,
+      "p10": 3.03,
+      "p90": 3.525,
+      "min": 2.965,
+      "max": 3.96
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.89,
+      "p10": 0.84,
+      "p90": 1.01,
+      "min": 0.81,
+      "max": 1.21
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.99,
+      "p10": 0.97,
+      "p90": 1.03,
+      "min": 0.96,
+      "max": 1.17
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.025
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.725,
+      "p10": 1.355,
+      "p90": 1.85,
+      "min": 1.25,
+      "max": 2.82
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 2.72,
+      "p10": 2.34,
+      "p90": 2.885,
+      "min": 2.25,
+      "max": 3.88
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.59,
+      "p10": 3.195,
+      "p90": 3.88,
+      "min": 3.09,
+      "max": 4.725
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.622,
+      "p10": 0.612,
+      "p90": 0.645,
+      "min": 0.606,
+      "max": 0.733
+     }
+    },
+    "checks": {
+     "readbacks": 982,
+     "lineCounts": 982000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "count": 10000,
+    "readback": {
+     "cellsMs": {
+      "count": 116,
+      "median": 11.13,
+      "p10": 10.65,
+      "p90": 11.655,
+      "min": 10.4,
+      "max": 11.975
+     },
+     "uploadMs": {
+      "count": 116,
+      "median": 0.645,
+      "p10": 0.595,
+      "p90": 0.795,
+      "min": 0.585,
+      "max": 0.855
+     },
+     "encodeAndSubmitMs": {
+      "count": 116,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.03,
+      "min": 0.01,
+      "max": 0.035
+     },
+     "waitMs": {
+      "count": 116,
+      "median": 5.28,
+      "p10": 4.705,
+      "p90": 5.77,
+      "min": 4.375,
+      "max": 13.365
+     },
+     "copyMs": {
+      "count": 116,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.02
+     },
+     "totalMs": {
+      "count": 116,
+      "median": 5.96,
+      "p10": 5.33,
+      "p90": 6.545,
+      "min": 5.055,
+      "max": 14.125
+     },
+     "totalWithCellsMs": {
+      "count": 116,
+      "median": 17.015,
+      "p10": 16.295,
+      "p90": 17.995,
+      "min": 15.89,
+      "max": 25.575
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 110,
+      "median": 11.02,
+      "p10": 10.5,
+      "p90": 11.495,
+      "min": 10.225,
+      "max": 11.8
+     },
+     "uploadMs": {
+      "count": 110,
+      "median": 0.62,
+      "p10": 0.595,
+      "p90": 0.79,
+      "min": 0.58,
+      "max": 1.095
+     },
+     "encodeAndSubmitMs": {
+      "count": 110,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.03,
+      "min": 0.01,
+      "max": 0.055
+     },
+     "waitMs": {
+      "count": 110,
+      "median": 5.765,
+      "p10": 5.185,
+      "p90": 7.67,
+      "min": 4.245,
+      "max": 29.29
+     },
+     "copyMs": {
+      "count": 110,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 110,
+      "median": 6.47,
+      "p10": 5.83,
+      "p90": 8.535,
+      "min": 4.88,
+      "max": 30.18
+     },
+     "totalWithCellsMs": {
+      "count": 110,
+      "median": 17.45,
+      "p10": 16.38,
+      "p90": 19.825,
+      "min": 15.56,
+      "max": 41.825
+     },
+     "passMs": {
+      "count": 110,
+      "median": 0.871,
+      "p10": 0.521,
+      "p90": 0.936,
+      "min": 0.406,
+      "max": 1.948
+     }
+    },
+    "checks": {
+     "readbacks": 1329,
+     "lineCounts": 4452000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 64,
+    "count": 100000,
+    "readback": {
+     "cellsMs": {
+      "count": 11,
+      "median": 111.08,
+      "p10": 108.065,
+      "p90": 121.44,
+      "min": 107.305,
+      "max": 123.435
+     },
+     "uploadMs": {
+      "count": 11,
+      "median": 7.26,
+      "p10": 5.975,
+      "p90": 8.255,
+      "min": 5.965,
+      "max": 10.085
+     },
+     "encodeAndSubmitMs": {
+      "count": 11,
+      "median": 0.03,
+      "p10": 0.025,
+      "p90": 0.045,
+      "min": 0.02,
+      "max": 0.055
+     },
+     "waitMs": {
+      "count": 11,
+      "median": 69.085,
+      "p10": 48.635,
+      "p90": 96.19,
+      "min": 43.43,
+      "max": 98.65
+     },
+     "copyMs": {
+      "count": 11,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.025,
+      "min": 0.015,
+      "max": 0.03
+     },
+     "totalMs": {
+      "count": 11,
+      "median": 76.055,
+      "p10": 55.44,
+      "p90": 104.005,
+      "min": 49.43,
+      "max": 106.95
+     },
+     "totalWithCellsMs": {
+      "count": 11,
+      "median": 192.155,
+      "p10": 162.87,
+      "p90": 218.03,
+      "min": 157.495,
+      "max": 227.44
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 11,
+      "median": 110.98,
+      "p10": 107.045,
+      "p90": 127.115,
+      "min": 106.39,
+      "max": 149.33
+     },
+     "uploadMs": {
+      "count": 11,
+      "median": 6.29,
+      "p10": 6.005,
+      "p90": 15.385,
+      "min": 5.95,
+      "max": 15.925
+     },
+     "encodeAndSubmitMs": {
+      "count": 11,
+      "median": 0.03,
+      "p10": 0.025,
+      "p90": 0.035,
+      "min": 0.02,
+      "max": 0.04
+     },
+     "waitMs": {
+      "count": 11,
+      "median": 51.235,
+      "p10": 45.895,
+      "p90": 84.19,
+      "min": 44.735,
+      "max": 114.12
+     },
+     "copyMs": {
+      "count": 11,
+      "median": 0.015,
+      "p10": 0.015,
+      "p90": 0.02,
+      "min": 0.01,
+      "max": 0.02
+     },
+     "totalMs": {
+      "count": 11,
+      "median": 57.57,
+      "p10": 52.045,
+      "p90": 100.17,
+      "min": 50.795,
+      "max": 121.745
+     },
+     "totalWithCellsMs": {
+      "count": 11,
+      "median": 179.095,
+      "p10": 159.88,
+      "p90": 237.135,
+      "min": 157.84,
+      "max": 249.5
+     },
+     "passMs": {
+      "count": 11,
+      "median": 6.214,
+      "p10": 4.016,
+      "p90": 6.366,
+      "min": 3.891,
+      "max": 7.029
+     }
+    },
+    "checks": {
+     "readbacks": 1364,
+     "lineCounts": 7952000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 256,
+    "count": 1000,
+    "readback": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.845,
+      "p10": 0.815,
+      "p90": 0.935,
+      "min": 0.805,
+      "max": 1.235
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.995,
+      "p10": 0.97,
+      "p90": 1.01,
+      "min": 0.965,
+      "max": 1.045
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.02
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.62,
+      "p10": 1.27,
+      "p90": 1.7,
+      "min": 1.215,
+      "max": 9.635
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 2.615,
+      "p10": 2.255,
+      "p90": 2.71,
+      "min": 2.185,
+      "max": 10.65
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.46,
+      "p10": 3.085,
+      "p90": 3.62,
+      "min": 3.01,
+      "max": 11.485
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.84,
+      "p10": 0.81,
+      "p90": 0.9,
+      "min": 0.8,
+      "max": 1.095
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.99,
+      "p10": 0.965,
+      "p90": 1.01,
+      "min": 0.96,
+      "max": 1.06
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.78,
+      "p10": 1.425,
+      "p90": 1.875,
+      "min": 1.33,
+      "max": 2.18
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 2.765,
+      "p10": 2.405,
+      "p90": 2.88,
+      "min": 2.31,
+      "max": 3.2
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 3.605,
+      "p10": 3.225,
+      "p90": 3.755,
+      "min": 3.12,
+      "max": 4.19
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.711,
+      "p10": 0.705,
+      "p90": 0.725,
+      "min": 0.699,
+      "max": 0.786
+     }
+    },
+    "checks": {
+     "readbacks": 956,
+     "lineCounts": 956000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 256,
+    "count": 10000,
+    "readback": {
+     "cellsMs": {
+      "count": 123,
+      "median": 10.875,
+      "p10": 10.52,
+      "p90": 11.22,
+      "min": 10.065,
+      "max": 11.415
+     },
+     "uploadMs": {
+      "count": 123,
+      "median": 0.61,
+      "p10": 0.595,
+      "p90": 0.655,
+      "min": 0.58,
+      "max": 0.74
+     },
+     "encodeAndSubmitMs": {
+      "count": 123,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.025,
+      "min": 0.01,
+      "max": 0.035
+     },
+     "waitMs": {
+      "count": 123,
+      "median": 4.785,
+      "p10": 4.415,
+      "p90": 5.015,
+      "min": 4.185,
+      "max": 6.275
+     },
+     "copyMs": {
+      "count": 123,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.015,
+      "min": 0.005,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 123,
+      "median": 5.43,
+      "p10": 5.05,
+      "p90": 5.665,
+      "min": 4.82,
+      "max": 6.915
+     },
+     "totalWithCellsMs": {
+      "count": 123,
+      "median": 16.31,
+      "p10": 15.715,
+      "p90": 16.73,
+      "min": 15,
+      "max": 17.695
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 116,
+      "median": 11.135,
+      "p10": 10.59,
+      "p90": 11.57,
+      "min": 10.26,
+      "max": 11.8
+     },
+     "uploadMs": {
+      "count": 116,
+      "median": 0.645,
+      "p10": 0.595,
+      "p90": 0.775,
+      "min": 0.59,
+      "max": 0.91
+     },
+     "encodeAndSubmitMs": {
+      "count": 116,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.025,
+      "min": 0.01,
+      "max": 0.04
+     },
+     "waitMs": {
+      "count": 116,
+      "median": 5.38,
+      "p10": 4.93,
+      "p90": 5.975,
+      "min": 4.29,
+      "max": 7.855
+     },
+     "copyMs": {
+      "count": 116,
+      "median": 0.01,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.02
+     },
+     "totalMs": {
+      "count": 116,
+      "median": 6.07,
+      "p10": 5.595,
+      "p90": 6.76,
+      "min": 4.91,
+      "max": 8.475
+     },
+     "totalWithCellsMs": {
+      "count": 116,
+      "median": 17.215,
+      "p10": 16.33,
+      "p90": 18.17,
+      "min": 15.775,
+      "max": 19.01
+     },
+     "passMs": {
+      "count": 116,
+      "median": 0.938,
+      "p10": 0.897,
+      "p90": 0.982,
+      "min": 0.879,
+      "max": 1.11
+     }
+    },
+    "checks": {
+     "readbacks": 1317,
+     "lineCounts": 4566000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "sweep",
+    "size": "long",
+    "plan": "own-width",
+    "guard": "max",
+    "workgroupSize": 256,
+    "count": 100000,
+    "readback": {
+     "cellsMs": {
+      "count": 12,
+      "median": 109.315,
+      "p10": 107.635,
+      "p90": 112.695,
+      "min": 107.445,
+      "max": 140.055
+     },
+     "uploadMs": {
+      "count": 12,
+      "median": 6.15,
+      "p10": 5.975,
+      "p90": 7.865,
+      "min": 5.955,
+      "max": 8.93
+     },
+     "encodeAndSubmitMs": {
+      "count": 12,
+      "median": 0.03,
+      "p10": 0.025,
+      "p90": 0.035,
+      "min": 0.02,
+      "max": 0.07
+     },
+     "waitMs": {
+      "count": 12,
+      "median": 44.61,
+      "p10": 40.405,
+      "p90": 78.385,
+      "min": 39.565,
+      "max": 79.795
+     },
+     "copyMs": {
+      "count": 12,
+      "median": 0.015,
+      "p10": 0.015,
+      "p90": 0.02,
+      "min": 0.01,
+      "max": 0.02
+     },
+     "totalMs": {
+      "count": 12,
+      "median": 51.115,
+      "p10": 46.56,
+      "p90": 85.895,
+      "min": 45.56,
+      "max": 87.115
+     },
+     "totalWithCellsMs": {
+      "count": 12,
+      "median": 164.01,
+      "p10": 154.53,
+      "p90": 196.14,
+      "min": 154.215,
+      "max": 197.535
+     }
+    },
+    "passTimestamps": {
+     "cellsMs": {
+      "count": 13,
+      "median": 109.26,
+      "p10": 107.23,
+      "p90": 112.875,
+      "min": 107.075,
+      "max": 113.965
+     },
+     "uploadMs": {
+      "count": 13,
+      "median": 6.075,
+      "p10": 5.96,
+      "p90": 7.705,
+      "min": 5.85,
+      "max": 7.73
+     },
+     "encodeAndSubmitMs": {
+      "count": 13,
+      "median": 0.03,
+      "p10": 0.025,
+      "p90": 0.035,
+      "min": 0.025,
+      "max": 0.045
+     },
+     "waitMs": {
+      "count": 13,
+      "median": 51.01,
+      "p10": 41.895,
+      "p90": 59.17,
+      "min": 39.33,
+      "max": 60.415
+     },
+     "copyMs": {
+      "count": 13,
+      "median": 0.02,
+      "p10": 0.015,
+      "p90": 0.025,
+      "min": 0.01,
+      "max": 0.035
+     },
+     "totalMs": {
+      "count": 13,
+      "median": 57.81,
+      "p10": 47.925,
+      "p90": 65.525,
+      "min": 45.395,
+      "max": 67.975
+     },
+     "totalWithCellsMs": {
+      "count": 13,
+      "median": 167.07,
+      "p10": 155.44,
+      "p90": 179.49,
+      "min": 152.47,
+      "max": 180.85
+     },
+     "passMs": {
+      "count": 13,
+      "median": 6.312,
+      "p10": 4.172,
+      "p90": 6.53,
+      "min": 4.028,
+      "max": 6.561
+     }
+    },
+    "checks": {
+     "readbacks": 1355,
+     "lineCounts": 8366000,
+     "mismatches": 0
+    }
+   }
+  ],
+  "finishedAt": "2026-09-17T17:05:00.357Z",
+  "logLines": [
+   "2111.475 ms: short: prepared 100000 paragraphs in 1739.465 ms, heap 491 MB, pretext mismatches against Bun 0, cell hashes equal Bun true",
+   "2304.235 ms: short, own-width, max guard, workgroup 16: compiled 1202 statements in 168.8 ms",
+   "4558.695 ms: sweep short, workgroup 16, 1000 paragraphs: GPU 0.42 ms, pass 0.056 ms, checks {\"readbacks\":3613,\"lineCounts\":3613000,\"mismatches\":0}",
+   "7867.975 ms: sweep short, workgroup 16, 10000 paragraphs: GPU 1.225 ms, pass 0.061 ms, checks {\"readbacks\":4626,\"lineCounts\":13743000,\"mismatches\":0}",
+   "13940.635 ms: sweep short, workgroup 16, 100000 paragraphs: GPU 6.98 ms, pass 0.459 ms, checks {\"readbacks\":4804,\"lineCounts\":31543000,\"mismatches\":0}",
+   "14074.32 ms: short, own-width, max guard, workgroup 64: compiled 1202 statements in 119.545 ms",
+   "16342.33 ms: sweep short, workgroup 64, 1000 paragraphs: GPU 0.44 ms, pass 0.059 ms, checks {\"readbacks\":3505,\"lineCounts\":3505000,\"mismatches\":0}",
+   "19642.215 ms: sweep short, workgroup 64, 10000 paragraphs: GPU 1.24 ms, pass 0.061 ms, checks {\"readbacks\":4535,\"lineCounts\":13805000,\"mismatches\":0}",
+   "25707.73 ms: sweep short, workgroup 64, 100000 paragraphs: GPU 6.875 ms, pass 0.317 ms, checks {\"readbacks\":4716,\"lineCounts\":31905000,\"mismatches\":0}",
+   "25839.16 ms: short, own-width, max guard, workgroup 256: compiled 1202 statements in 118.09 ms",
+   "28262.88 ms: sweep short, workgroup 256, 1000 paragraphs: GPU 0.44 ms, pass 0.063 ms, checks {\"readbacks\":3499,\"lineCounts\":3499000,\"mismatches\":0}",
+   "31639.61 ms: sweep short, workgroup 256, 10000 paragraphs: GPU 1.285 ms, pass 0.059 ms, checks {\"readbacks\":4529,\"lineCounts\":13799000,\"mismatches\":0}",
+   "37714.395 ms: sweep short, workgroup 256, 100000 paragraphs: GPU 6.78 ms, pass 0.336 ms, checks {\"readbacks\":4708,\"lineCounts\":31699000,\"mismatches\":0}",
+   "55929.835 ms: long: prepared 100000 paragraphs in 16299.98 ms, heap 3991 MB, pretext mismatches against Bun 0, cell hashes equal Bun true",
+   "58178.555 ms: long, own-width, max guard, workgroup 16: compiled 9280 statements in 2101.415 ms",
+   "61626.16 ms: sweep long, workgroup 16, 1000 paragraphs: GPU 2.515 ms, pass 0.605 ms, checks {\"readbacks\":945,\"lineCounts\":945000,\"mismatches\":0}",
+   "67650.94 ms: sweep long, workgroup 16, 10000 paragraphs: GPU 7.45 ms, pass 1.697 ms, checks {\"readbacks\":1274,\"lineCounts\":4235000,\"mismatches\":0}",
+   "74048.06 ms: sweep long, workgroup 16, 100000 paragraphs: GPU 53.755 ms, pass 9.656 ms, checks {\"readbacks\":1306,\"lineCounts\":7435000,\"mismatches\":0}",
+   "76178.445 ms: long, own-width, max guard, workgroup 64: compiled 9280 statements in 2044.65 ms",
+   "79567.515 ms: sweep long, workgroup 64, 1000 paragraphs: GPU 2.525 ms, pass 0.622 ms, checks {\"readbacks\":982,\"lineCounts\":982000,\"mismatches\":0}",
+   "85604.515 ms: sweep long, workgroup 64, 10000 paragraphs: GPU 5.96 ms, pass 0.871 ms, checks {\"readbacks\":1329,\"lineCounts\":4452000,\"mismatches\":0}",
+   "91957.185 ms: sweep long, workgroup 64, 100000 paragraphs: GPU 76.055 ms, pass 6.214 ms, checks {\"readbacks\":1364,\"lineCounts\":7952000,\"mismatches\":0}",
+   "94236.875 ms: long, own-width, max guard, workgroup 256: compiled 9280 statements in 2156.695 ms",
+   "97641.595 ms: sweep long, workgroup 256, 1000 paragraphs: GPU 2.615 ms, pass 0.711 ms, checks {\"readbacks\":956,\"lineCounts\":956000,\"mismatches\":0}",
+   "103663.17 ms: sweep long, workgroup 256, 10000 paragraphs: GPU 5.43 ms, pass 0.938 ms, checks {\"readbacks\":1317,\"lineCounts\":4566000,\"mismatches\":0}",
+   "110009.235 ms: sweep long, workgroup 256, 100000 paragraphs: GPU 51.115 ms, pass 6.312 ms, checks {\"readbacks\":1355,\"lineCounts\":8366000,\"mismatches\":0}"
+  ],
+  "done": true
+ }
+}

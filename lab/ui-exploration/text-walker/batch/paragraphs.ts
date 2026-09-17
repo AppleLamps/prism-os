@@ -95,6 +95,17 @@ export function batchParagraphs(size: ParagraphSize, count: number, firstSeed = 
   return Array.from({length: count}, (_, index) => prepareBatchParagraph(batchText(size, firstSeed + index)))
 }
 
+// The seeds that batchCapacities covers, 0 to 65,535.
+export const capacitySeedCount = 65_536
+
+// The paragraphs of the timings and of the GPU page: paragraph i has seed i mod 65,536, so every paragraph fits
+// batchCapacities at any count. E.g. 100,000 paragraphs are seeds 0 to 65,535, then seeds 0 to 34,463 again. Up to 65,536
+// paragraphs, this is batchParagraphs. Seeds past 65,535 aren't covered: 1 of the long paragraphs with seeds 65,536 to
+// 99,999 needs 85 line slots.
+export function timingParagraphs(size: ParagraphSize, count: number, firstIndex = 0): BatchParagraph[] {
+  return Array.from({length: count}, (_, index) => prepareBatchParagraph(batchText(size, (firstIndex + index) % capacitySeedCount)))
+}
+
 // pretext's layout(): the line count the programs must reproduce.
 export function expectedLineCount(paragraph: BatchParagraph, maxWidth: number): number {
   return layout(paragraph.prepared, maxWidth, lineHeight).lineCount
