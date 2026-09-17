@@ -9,6 +9,11 @@
 // and startCursor = segments - n. The walkers with line slots start the first line at startCursor, so they never read
 // the padding. The segment walker starts at segment 0, and the padding adds 0 px to its first line.
 //
+// maxWidth is a float32 cell, while pretext compares in float64. Widths on the 1/64 px grid are exact in float32 and give
+// pretext's line counts. A width off that grid, within float32 rounding of pretext's fit limit (span <= maxWidth +
+// epsilon), can give one more line: e.g. float32 stores 272.99501 px as 272.9949951, so a 273 px span fits for pretext
+// but not for the program.
+//
 // Formulations:
 //   one-hot         walkGatheredLines without obstacles, the walker IndirectOS's Notes flow uses: per line slot, an
 //                   integer one-hot of the line's start, masked reads that the compiler lowers to gathers, and one

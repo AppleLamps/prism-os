@@ -47,6 +47,23 @@ test('the index-read and segment-walker formulations give pretext\'s line count 
   }
 }, 30_000)
 
+test('widths on the 1/64 px grid give pretext\'s line count, and a width off that grid near the fit limit can give one more line', () => {
+  const capacity = batchCapacities.short
+  const paragraphs = batchParagraphs('short', 4, 7000)
+  const gridWidths: number[] = []
+  for (let sixtyFourths = 256 * 64; sixtyFourths <= 290 * 64; sixtyFourths++) gridWidths.push(sixtyFourths / 64)
+  const offGridWidth = 272.99501
+  // pretext's limit at this width is 273.00001 px in float64, so a 273 px span fits and pretext gives 2 lines. The
+  // float32 cell holds 272.9949951 px, so the program breaks before that span.
+  expect(Math.fround(offGridWidth)).toBe(272.9949951171875)
+  for (const formulation of ['index-read', 'segment-walker'] as const) {
+    const program = buildBatchProgram(formulation, capacity)
+    expect(executorMismatches(program, paragraphs, gridWidths)).toEqual([])
+    const outputs = decodeOutputs(program, program.compiled.evaluate(paragraphSourceTable(program, paragraphs[0]!, offGridWidth)))
+    expect([outputs.lineCount, expectedLineCount(paragraphs[0]!, offGridWidth)]).toEqual([3, 2])
+  }
+}, 30_000)
+
 test('codegen\'s generated JavaScript and batched executor run the one-hot and segment-walker programs over many paragraphs, each at its own width', () => {
   const capacity = batchCapacities.short
   const paragraphs = batchParagraphs('short', 96, 1000)
