@@ -406,6 +406,22 @@
       </article>
 
       <article class="card">
+        <h3><a href="/lab/knuth-plass/demo.html">Knuth-Plass line breaking</a></h3>
+        <p class="path">lab/knuth-plass/demo.html</p>
+        <p>The paragraphs of pretext's justification demo, broken into lines two ways: pretext's greedy <code>layoutNextLineRange</code> on the left, and on the right the breaks with the smallest total cost, min(slack, 63)² per line in whole pixels, which the program finds as a shortest path over 144 break points.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Drag the Column width slider and compare the two columns' line counts, total costs and widest justified spaces.</li>
+          <li>Switch Form to tree, which reloads the page: the same breaks from min-plus matrix products combined with Brent-Kung's network, with 154 layers where the chain has 1,422, and about 6 times the chain's time per frame on the CPU.</li>
+        </ul>
+        <p class="links">
+          <a href="/lab/knuth-plass/demo.html?window=16"><code>?window=16</code></a> lines of at most 16 boxes, with a message from 327 px
+          <a href="/lab/knuth-plass/demo.html?check=1"><code>?check=1</code></a> compares every evaluation with the reference
+          <a href="/lab/knuth-plass/README.md">README</a>
+        </p>
+      </article>
+
+      <article class="card">
         <h3><a href="/lab/ui-exploration/lists/text-rows.html">lists: text rows</a></h3>
         <p class="path">lab/ui-exploration/lists/text-rows.html</p>
         <p>A list of up to 10,000 chat messages in 64 DOM slots, whose heights come from pretext's line breaks at the container's width, read from breakpoint cells, with appended messages and scroll anchoring when a resize changes every height.</p>

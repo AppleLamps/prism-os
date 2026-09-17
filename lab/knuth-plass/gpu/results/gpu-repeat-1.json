@@ -1,0 +1,4015 @@
+{
+ "driver": {
+  "startedAt": "2026-09-17T21:58:03.237Z",
+  "loadBefore": "{ 2.38 3.04 3.42 }",
+  "memoryBefore": "System-wide memory free percentage: 63%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "main",
+   "--profile",
+   "scratchpad/experiments/knuth-plass/fixes/chrome-repeat-1",
+   "--out",
+   "~/github/indirect/lab/knuth-plass/gpu/results/gpu-repeat-1.json",
+   "--sizes",
+   "256:8:30,256:8:100,256:8:300,256:16:30,256:16:100,256:16:300,256:32:30,256:32:100,256:32:300",
+   "--kernels",
+   "dense-rows",
+   "--inputs",
+   "positions,widths",
+   "--timeout-seconds",
+   "900"
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=60225",
+   "--user-data-dir=scratchpad/experiments/knuth-plass/fixes/chrome-repeat-1",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "browser": "Chrome/153.0.8010.50",
+  "finishedAt": "2026-09-17T21:58:38.754Z",
+  "loadAfter": "{ 3.02 3.12 3.43 }",
+  "memoryAfter": "System-wide memory free percentage: 63%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-09-17T21:58:03.677Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "main",
+   "sizes": [
+    {
+     "breaks": 256,
+     "window": 8,
+     "paragraphs": 30
+    },
+    {
+     "breaks": 256,
+     "window": 8,
+     "paragraphs": 100
+    },
+    {
+     "breaks": 256,
+     "window": 8,
+     "paragraphs": 300
+    },
+    {
+     "breaks": 256,
+     "window": 16,
+     "paragraphs": 30
+    },
+    {
+     "breaks": 256,
+     "window": 16,
+     "paragraphs": 100
+    },
+    {
+     "breaks": 256,
+     "window": 16,
+     "paragraphs": 300
+    },
+    {
+     "breaks": 256,
+     "window": 32,
+     "paragraphs": 30
+    },
+    {
+     "breaks": 256,
+     "window": 32,
+     "paragraphs": 100
+    },
+    {
+     "breaks": 256,
+     "window": 32,
+     "paragraphs": 300
+    }
+   ],
+   "kernels": [
+    "dense-rows"
+   ],
+   "inputs": [
+    "positions",
+    "widths"
+   ],
+   "widths": [
+    300,
+    340
+   ],
+   "shaderSalt": 921740903,
+   "warmupMs": 500,
+   "sampleMs": 2000,
+   "minimumSamples": 15,
+   "maximumSamples": 300,
+   "maxMatrixMegabytes": 2200,
+   "checkWindows": [
+    2,
+    5,
+    8,
+    16,
+    32
+   ],
+   "checkBreaks": [
+    1,
+    2,
+    3,
+    5,
+    17,
+    37,
+    64,
+    256,
+    1024,
+    4096
+   ]
+  },
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "hasTimestamps": true,
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeWorkgroupsPerDimension": 65535
+   }
+  },
+  "compileTimes": [
+   {
+    "kernel": "dense-rows",
+    "window": 8,
+    "shaderSalt": 921740903,
+    "matrixProductMs": 43.224999994039536,
+    "vectorProductMs": 7.370000004768372,
+    "leavesFromLineCostsMs": 5.8599999994039536,
+    "leavesFromPositionsMs": 8.320000007748604,
+    "firstStateMs": 5.875,
+    "pointerMs": 13.095000013709068
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 16,
+    "shaderSalt": 921740903,
+    "matrixProductMs": 15.42000000178814,
+    "vectorProductMs": 7.199999988079071,
+    "leavesFromLineCostsMs": 5.24499998986721,
+    "leavesFromPositionsMs": 6.579999998211861,
+    "firstStateMs": 5.969999998807907,
+    "pointerMs": 7.594999998807907
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 32,
+    "shaderSalt": 921740903,
+    "matrixProductMs": 16.20499999821186,
+    "vectorProductMs": 7.260000005364418,
+    "leavesFromLineCostsMs": 5.495000004768372,
+    "leavesFromPositionsMs": 5.995000004768372,
+    "firstStateMs": 5.185000002384186,
+    "pointerMs": 6.225000008940697
+   }
+  ],
+  "results": [
+   {
+    "kind": "gpu",
+    "breaks": 256,
+    "window": 8,
+    "paragraphs": 30,
+    "kernel": "dense-rows",
+    "levels": 14,
+    "matrixProducts": 247,
+    "vectorProducts": 255,
+    "matrixMegabytes": 3.86304,
+    "lineCostMegabytes": 0.24576,
+    "positionMegabytes": 0.06144,
+    "planMs": 0.14,
+    "prepareMs": 3.89,
+    "firstEvaluationMs": 2.47,
+    "inputs": {
+     "positions": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.03
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.275,
+        "p10": 0.265,
+        "p90": 0.29,
+        "min": 0.255,
+        "max": 0.44
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.045
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.305,
+        "p10": 0.295,
+        "p90": 0.32,
+        "min": 0.28,
+        "max": 0.47
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.315,
+        "p10": 0.305,
+        "p90": 0.33,
+        "min": 0.29,
+        "max": 0.485
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.025
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.43,
+        "p10": 0.41,
+        "p90": 0.455,
+        "min": 0.365,
+        "max": 1.43
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.02
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.46,
+        "p10": 0.44,
+        "p90": 0.49,
+        "min": 0.4,
+        "max": 1.45
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.475,
+        "p10": 0.45,
+        "p90": 0.5,
+        "min": 0.405,
+        "max": 1.465
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.065,
+        "p10": 0.064,
+        "p90": 0.066,
+        "min": 0.062,
+        "max": 0.082
+       }
+      }
+     },
+     "widths": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.275,
+        "p10": 0.26,
+        "p90": 0.295,
+        "min": 0.245,
+        "max": 0.615
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.085
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.29,
+        "p10": 0.275,
+        "p90": 0.31,
+        "min": 0.255,
+        "max": 0.635
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.29,
+        "p10": 0.275,
+        "p90": 0.315,
+        "min": 0.255,
+        "max": 0.635
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.405,
+        "p10": 0.38,
+        "p90": 0.445,
+        "min": 0.355,
+        "max": 0.64
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.02
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.42,
+        "p10": 0.39,
+        "p90": 0.455,
+        "min": 0.37,
+        "max": 0.65
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.42,
+        "p10": 0.39,
+        "p90": 0.455,
+        "min": 0.37,
+        "max": 0.65
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.064,
+        "p10": 0.064,
+        "p90": 0.065,
+        "min": 0.063,
+        "max": 0.265
+       }
+      }
+     }
+    },
+    "stages": {
+     "leavesAndFirstStateMs": 0.005,
+     "levels": [
+      {
+       "matrixCount": 127,
+       "vectorCount": 1,
+       "medianMs": 0.007
+      },
+      {
+       "matrixCount": 63,
+       "vectorCount": 2,
+       "medianMs": 0.006
+      },
+      {
+       "matrixCount": 31,
+       "vectorCount": 3,
+       "medianMs": 0.006
+      },
+      {
+       "matrixCount": 15,
+       "vectorCount": 5,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 7,
+       "vectorCount": 8,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 3,
+       "vectorCount": 13,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 1,
+       "vectorCount": 21,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 34,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 46,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 51,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 41,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 22,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 7,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 1,
+       "medianMs": 0.003
+      }
+     ],
+     "pointersMs": 0.003,
+     "sumMs": {
+      "count": 5,
+      "median": 0.079,
+      "p10": 0.079,
+      "p90": 0.082,
+      "min": 0.079,
+      "max": 0.082
+     }
+    },
+    "checks": {
+     "readbacks": 4539,
+     "mismatchedValues": 0,
+     "breakChecks": 8,
+     "mismatchedBreaks": 0
+    }
+   },
+   {
+    "kind": "cpu-in-page",
+    "breaks": 256,
+    "window": 8,
+    "paragraphs": 30,
+    "referenceMicroseconds": {
+     "median": 123.556,
+     "samples": [
+      124.963,
+      123.947,
+      121.679,
+      126.242,
+      122.366,
+      123.391,
+      123.556
+     ]
+    },
+    "typedMicroseconds": {
+     "median": 84.928,
+     "samples": [
+      85.56,
+      83.951,
+      85.5,
+      87.986,
+      83.453,
+      84.447,
+      84.928
+     ]
+    }
+   },
+   {
+    "kind": "gpu",
+    "breaks": 256,
+    "window": 8,
+    "paragraphs": 100,
+    "kernel": "dense-rows",
+    "levels": 14,
+    "matrixProducts": 247,
+    "vectorProducts": 255,
+    "matrixMegabytes": 12.8768,
+    "lineCostMegabytes": 0.8192,
+    "positionMegabytes": 0.2048,
+    "planMs": 0.11,
+    "prepareMs": 0.77,
+    "firstEvaluationMs": 1.91,
+    "inputs": {
+     "positions": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.045,
+        "min": 0.03,
+        "max": 0.07
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0.05,
+        "p10": 0.045,
+        "p90": 0.055,
+        "min": 0.045,
+        "max": 0.075
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.335,
+        "p10": 0.305,
+        "p90": 0.425,
+        "min": 0.285,
+        "max": 1.035
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.005,
+        "max": 0.595
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.035
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.42,
+        "p10": 0.385,
+        "p90": 0.525,
+        "min": 0.365,
+        "max": 1.225
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.46,
+        "p10": 0.425,
+        "p90": 0.57,
+        "min": 0.4,
+        "max": 1.265
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.045,
+        "min": 0.035,
+        "max": 0.055
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0.05,
+        "p10": 0.045,
+        "p90": 0.055,
+        "min": 0.045,
+        "max": 0.06
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.47,
+        "p10": 0.445,
+        "p90": 0.54,
+        "min": 0.42,
+        "max": 0.995
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.03
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.56,
+        "p10": 0.52,
+        "p90": 0.615,
+        "min": 0.495,
+        "max": 1.09
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.595,
+        "p10": 0.56,
+        "p90": 0.655,
+        "min": 0.535,
+        "max": 1.13
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.076,
+        "p10": 0.076,
+        "p90": 0.085,
+        "min": 0.076,
+        "max": 0.214
+       }
+      }
+     },
+     "widths": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.29,
+        "p10": 0.28,
+        "p90": 0.305,
+        "min": 0.27,
+        "max": 0.855
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.28
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.315,
+        "p10": 0.3,
+        "p90": 0.335,
+        "min": 0.29,
+        "max": 1.155
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.315,
+        "p10": 0.3,
+        "p90": 0.335,
+        "min": 0.29,
+        "max": 1.155
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.43,
+        "p10": 0.405,
+        "p90": 0.485,
+        "min": 0.365,
+        "max": 0.93
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.02,
+        "min": 0,
+        "max": 0.24
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.465,
+        "p10": 0.435,
+        "p90": 0.52,
+        "min": 0.405,
+        "max": 0.965
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.465,
+        "p10": 0.435,
+        "p90": 0.52,
+        "min": 0.405,
+        "max": 0.965
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.076,
+        "p10": 0.076,
+        "p90": 0.077,
+        "min": 0.075,
+        "max": 0.567
+       }
+      }
+     }
+    },
+    "stages": {
+     "leavesAndFirstStateMs": 0.006,
+     "levels": [
+      {
+       "matrixCount": 127,
+       "vectorCount": 1,
+       "medianMs": 0.009
+      },
+      {
+       "matrixCount": 63,
+       "vectorCount": 2,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 31,
+       "vectorCount": 3,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 15,
+       "vectorCount": 5,
+       "medianMs": 0.01
+      },
+      {
+       "matrixCount": 7,
+       "vectorCount": 8,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 3,
+       "vectorCount": 13,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 1,
+       "vectorCount": 21,
+       "medianMs": 0.009
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 34,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 46,
+       "medianMs": 0.004
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 51,
+       "medianMs": 0.004
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 41,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 22,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 7,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 1,
+       "medianMs": 0.003
+      }
+     ],
+     "pointersMs": 0.005,
+     "sumMs": {
+      "count": 5,
+      "median": 0.094,
+      "p10": 0.093,
+      "p90": 0.095,
+      "min": 0.093,
+      "max": 0.095
+     }
+    },
+    "checks": {
+     "readbacks": 3543,
+     "mismatchedValues": 0,
+     "breakChecks": 8,
+     "mismatchedBreaks": 0
+    }
+   },
+   {
+    "kind": "cpu-in-page",
+    "breaks": 256,
+    "window": 8,
+    "paragraphs": 100,
+    "referenceMicroseconds": {
+     "median": 480.12,
+     "samples": [
+      480.12,
+      490.171,
+      490.368,
+      484.493,
+      478.595,
+      477.214,
+      478.923
+     ]
+    },
+    "typedMicroseconds": {
+     "median": 397.103,
+     "samples": [
+      397.103,
+      403.669,
+      395.751,
+      396.581,
+      394.941,
+      404.254,
+      407.337
+     ]
+    }
+   },
+   {
+    "kind": "gpu",
+    "breaks": 256,
+    "window": 8,
+    "paragraphs": 300,
+    "kernel": "dense-rows",
+    "levels": 14,
+    "matrixProducts": 247,
+    "vectorProducts": 255,
+    "matrixMegabytes": 38.6304,
+    "lineCostMegabytes": 2.4576,
+    "positionMegabytes": 0.6144,
+    "planMs": 0.115,
+    "prepareMs": 1.54,
+    "firstEvaluationMs": 6.31,
+    "inputs": {
+     "positions": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0.11,
+        "p10": 0.105,
+        "p90": 0.12,
+        "min": 0.095,
+        "max": 0.13
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0.145,
+        "p10": 0.135,
+        "p90": 0.155,
+        "min": 0.13,
+        "max": 0.175
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.37,
+        "p10": 0.355,
+        "p90": 0.405,
+        "min": 0.345,
+        "max": 1.055
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.035,
+        "min": 0.005,
+        "max": 0.06
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.04,
+        "min": 0.02,
+        "max": 0.045
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.575,
+        "p10": 0.55,
+        "p90": 0.625,
+        "min": 0.535,
+        "max": 1.255
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.685,
+        "p10": 0.66,
+        "p90": 0.74,
+        "min": 0.64,
+        "max": 1.37
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0.115,
+        "p10": 0.105,
+        "p90": 0.12,
+        "min": 0.1,
+        "max": 0.13
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0.145,
+        "p10": 0.135,
+        "p90": 0.15,
+        "min": 0.135,
+        "max": 0.165
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.535,
+        "p10": 0.505,
+        "p90": 0.685,
+        "min": 0.46,
+        "max": 1.4
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.015,
+        "p10": 0.005,
+        "p90": 0.04,
+        "min": 0.005,
+        "max": 0.05
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.03,
+        "p10": 0.03,
+        "p90": 0.035,
+        "min": 0.025,
+        "max": 0.04
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.745,
+        "p10": 0.7,
+        "p90": 0.875,
+        "min": 0.655,
+        "max": 1.585
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.855,
+        "p10": 0.805,
+        "p90": 0.99,
+        "min": 0.77,
+        "max": 1.7
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.134,
+        "p10": 0.132,
+        "p90": 0.258,
+        "min": 0.13,
+        "max": 0.982
+       }
+      }
+     },
+     "widths": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.02
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.36,
+        "p10": 0.345,
+        "p90": 0.385,
+        "min": 0.315,
+        "max": 0.735
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.02,
+        "p10": 0.005,
+        "p90": 0.03,
+        "min": 0.005,
+        "max": 0.235
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.035,
+        "min": 0.02,
+        "max": 0.045
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.41,
+        "p10": 0.395,
+        "p90": 0.44,
+        "min": 0.375,
+        "max": 0.835
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.415,
+        "p10": 0.395,
+        "p90": 0.44,
+        "min": 0.375,
+        "max": 0.835
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.505,
+        "p10": 0.48,
+        "p90": 0.56,
+        "min": 0.435,
+        "max": 1.185
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.035,
+        "min": 0.02,
+        "max": 0.04
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.55,
+        "p10": 0.525,
+        "p90": 0.6,
+        "min": 0.48,
+        "max": 1.225
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.55,
+        "p10": 0.525,
+        "p90": 0.6,
+        "min": 0.48,
+        "max": 1.225
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.133,
+        "p10": 0.132,
+        "p90": 0.136,
+        "min": 0.131,
+        "max": 0.804
+       }
+      }
+     }
+    },
+    "stages": {
+     "leavesAndFirstStateMs": 0.013,
+     "levels": [
+      {
+       "matrixCount": 127,
+       "vectorCount": 1,
+       "medianMs": 0.015
+      },
+      {
+       "matrixCount": 63,
+       "vectorCount": 2,
+       "medianMs": 0.014
+      },
+      {
+       "matrixCount": 31,
+       "vectorCount": 3,
+       "medianMs": 0.015
+      },
+      {
+       "matrixCount": 15,
+       "vectorCount": 5,
+       "medianMs": 0.018
+      },
+      {
+       "matrixCount": 7,
+       "vectorCount": 8,
+       "medianMs": 0.013
+      },
+      {
+       "matrixCount": 3,
+       "vectorCount": 13,
+       "medianMs": 0.009
+      },
+      {
+       "matrixCount": 1,
+       "vectorCount": 21,
+       "medianMs": 0.011
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 34,
+       "medianMs": 0.005
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 46,
+       "medianMs": 0.007
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 51,
+       "medianMs": 0.007
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 41,
+       "medianMs": 0.006
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 22,
+       "medianMs": 0.005
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 7,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 1,
+       "medianMs": 0.003
+      }
+     ],
+     "pointersMs": 0.012,
+     "sumMs": {
+      "count": 5,
+      "median": 0.156,
+      "p10": 0.154,
+      "p90": 0.371,
+      "min": 0.154,
+      "max": 0.371
+     }
+    },
+    "checks": {
+     "readbacks": 2981,
+     "mismatchedValues": 0,
+     "breakChecks": 8,
+     "mismatchedBreaks": 0
+    }
+   },
+   {
+    "kind": "cpu-in-page",
+    "breaks": 256,
+    "window": 8,
+    "paragraphs": 300,
+    "referenceMicroseconds": {
+     "median": 1487.5,
+     "samples": [
+      1504.179,
+      1487.5,
+      1468.116,
+      1509.328,
+      1467.391,
+      1470.956,
+      1492.612
+     ]
+    },
+    "typedMicroseconds": {
+     "median": 1288.654,
+     "samples": [
+      1247.469,
+      1304.416,
+      1285.064,
+      1288.654,
+      1301.299,
+      1286.795,
+      1296.731
+     ]
+    }
+   },
+   {
+    "kind": "gpu",
+    "breaks": 256,
+    "window": 16,
+    "paragraphs": 30,
+    "kernel": "dense-rows",
+    "levels": 14,
+    "matrixProducts": 247,
+    "vectorProducts": 255,
+    "matrixMegabytes": 15.45216,
+    "lineCostMegabytes": 0.49152,
+    "positionMegabytes": 0.06144,
+    "planMs": 0.095,
+    "prepareMs": 0.745,
+    "firstEvaluationMs": 1.81,
+    "inputs": {
+     "positions": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.025
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.025
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.065
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.295,
+        "p10": 0.285,
+        "p90": 0.355,
+        "min": 0.255,
+        "max": 1.08
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.145
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.325,
+        "p10": 0.31,
+        "p90": 0.38,
+        "min": 0.285,
+        "max": 1.13
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.335,
+        "p10": 0.325,
+        "p90": 0.395,
+        "min": 0.3,
+        "max": 1.145
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.015
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.02
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.46,
+        "p10": 0.425,
+        "p90": 0.765,
+        "min": 0.4,
+        "max": 2.105
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.49,
+        "p10": 0.455,
+        "p90": 0.795,
+        "min": 0.435,
+        "max": 2.145
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.5,
+        "p10": 0.465,
+        "p90": 0.81,
+        "min": 0.445,
+        "max": 2.155
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.11,
+        "p10": 0.098,
+        "p90": 0.35,
+        "min": 0.097,
+        "max": 0.43
+       }
+      }
+     },
+     "widths": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.31,
+        "p10": 0.285,
+        "p90": 0.36,
+        "min": 0.26,
+        "max": 1.35
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.395
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.325,
+        "p10": 0.295,
+        "p90": 0.375,
+        "min": 0.275,
+        "max": 1.37
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.325,
+        "p10": 0.295,
+        "p90": 0.375,
+        "min": 0.275,
+        "max": 1.37
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.495,
+        "p10": 0.48,
+        "p90": 0.53,
+        "min": 0.47,
+        "max": 1.165
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.51,
+        "p10": 0.495,
+        "p90": 0.545,
+        "min": 0.48,
+        "max": 1.175
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.51,
+        "p10": 0.495,
+        "p90": 0.545,
+        "min": 0.48,
+        "max": 1.175
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.149,
+        "p10": 0.148,
+        "p90": 0.151,
+        "min": 0.148,
+        "max": 0.738
+       }
+      }
+     }
+    },
+    "stages": {
+     "leavesAndFirstStateMs": 0.011,
+     "levels": [
+      {
+       "matrixCount": 127,
+       "vectorCount": 1,
+       "medianMs": 0.015
+      },
+      {
+       "matrixCount": 63,
+       "vectorCount": 2,
+       "medianMs": 0.012
+      },
+      {
+       "matrixCount": 31,
+       "vectorCount": 3,
+       "medianMs": 0.013
+      },
+      {
+       "matrixCount": 15,
+       "vectorCount": 5,
+       "medianMs": 0.014
+      },
+      {
+       "matrixCount": 7,
+       "vectorCount": 8,
+       "medianMs": 0.023
+      },
+      {
+       "matrixCount": 3,
+       "vectorCount": 13,
+       "medianMs": 0.023
+      },
+      {
+       "matrixCount": 1,
+       "vectorCount": 21,
+       "medianMs": 0.023
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 34,
+       "medianMs": 0.006
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 46,
+       "medianMs": 0.006
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 51,
+       "medianMs": 0.006
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 41,
+       "medianMs": 0.005
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 22,
+       "medianMs": 0.005
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 7,
+       "medianMs": 0.005
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 1,
+       "medianMs": 0.005
+      }
+     ],
+     "pointersMs": 0.007,
+     "sumMs": {
+      "count": 5,
+      "median": 0.179,
+      "p10": 0.178,
+      "p90": 0.179,
+      "min": 0.178,
+      "max": 0.179
+     }
+    },
+    "checks": {
+     "readbacks": 4213,
+     "mismatchedValues": 0,
+     "breakChecks": 8,
+     "mismatchedBreaks": 0
+    }
+   },
+   {
+    "kind": "cpu-in-page",
+    "breaks": 256,
+    "window": 16,
+    "paragraphs": 30,
+    "referenceMicroseconds": {
+     "median": 230.576,
+     "samples": [
+      231.166,
+      230.576,
+      231.155,
+      231.282,
+      228.959,
+      227.79,
+      227.109
+     ]
+    },
+    "typedMicroseconds": {
+     "median": 185.213,
+     "samples": [
+      185.213,
+      183.716,
+      186.536,
+      187.655,
+      186.772,
+      184.484,
+      184.273
+     ]
+    }
+   },
+   {
+    "kind": "gpu",
+    "breaks": 256,
+    "window": 16,
+    "paragraphs": 100,
+    "kernel": "dense-rows",
+    "levels": 14,
+    "matrixProducts": 247,
+    "vectorProducts": 255,
+    "matrixMegabytes": 51.5072,
+    "lineCostMegabytes": 1.6384,
+    "positionMegabytes": 0.2048,
+    "planMs": 0.11,
+    "prepareMs": 2.09,
+    "firstEvaluationMs": 2.59,
+    "inputs": {
+     "positions": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.045,
+        "min": 0.035,
+        "max": 0.055
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0.05,
+        "p10": 0.045,
+        "p90": 0.055,
+        "min": 0.04,
+        "max": 0.065
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.33,
+        "p10": 0.32,
+        "p90": 0.44,
+        "min": 0.305,
+        "max": 0.785
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.265
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.405,
+        "p10": 0.39,
+        "p90": 0.575,
+        "min": 0.375,
+        "max": 0.865
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.445,
+        "p10": 0.43,
+        "p90": 0.61,
+        "min": 0.41,
+        "max": 0.915
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.04,
+        "min": 0.03,
+        "max": 0.045
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0.05,
+        "p10": 0.045,
+        "p90": 0.055,
+        "min": 0.04,
+        "max": 0.06
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.475,
+        "p10": 0.45,
+        "p90": 0.515,
+        "min": 0.43,
+        "max": 0.75
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.02
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.545,
+        "p10": 0.525,
+        "p90": 0.585,
+        "min": 0.505,
+        "max": 0.825
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.58,
+        "p10": 0.56,
+        "p90": 0.62,
+        "min": 0.54,
+        "max": 0.86
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.11,
+        "p10": 0.109,
+        "p90": 0.111,
+        "min": 0.108,
+        "max": 0.233
+       }
+      }
+     },
+     "widths": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.335,
+        "p10": 0.32,
+        "p90": 0.355,
+        "min": 0.305,
+        "max": 0.67
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.32
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.36,
+        "p10": 0.34,
+        "p90": 0.38,
+        "min": 0.32,
+        "max": 0.94
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.36,
+        "p10": 0.34,
+        "p90": 0.38,
+        "min": 0.32,
+        "max": 0.94
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.46,
+        "p10": 0.44,
+        "p90": 0.49,
+        "min": 0.42,
+        "max": 0.66
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.485,
+        "p10": 0.465,
+        "p90": 0.515,
+        "min": 0.45,
+        "max": 0.69
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.485,
+        "p10": 0.465,
+        "p90": 0.515,
+        "min": 0.45,
+        "max": 0.69
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.111,
+        "p10": 0.11,
+        "p90": 0.112,
+        "min": 0.109,
+        "max": 0.242
+       }
+      }
+     }
+    },
+    "stages": {
+     "leavesAndFirstStateMs": 0.008,
+     "levels": [
+      {
+       "matrixCount": 127,
+       "vectorCount": 1,
+       "medianMs": 0.011
+      },
+      {
+       "matrixCount": 63,
+       "vectorCount": 2,
+       "medianMs": 0.009
+      },
+      {
+       "matrixCount": 31,
+       "vectorCount": 3,
+       "medianMs": 0.01
+      },
+      {
+       "matrixCount": 15,
+       "vectorCount": 5,
+       "medianMs": 0.012
+      },
+      {
+       "matrixCount": 7,
+       "vectorCount": 8,
+       "medianMs": 0.018
+      },
+      {
+       "matrixCount": 3,
+       "vectorCount": 13,
+       "medianMs": 0.013
+      },
+      {
+       "matrixCount": 1,
+       "vectorCount": 21,
+       "medianMs": 0.014
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 34,
+       "medianMs": 0.005
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 46,
+       "medianMs": 0.005
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 51,
+       "medianMs": 0.005
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 41,
+       "medianMs": 0.004
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 22,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 7,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 1,
+       "medianMs": 0.003
+      }
+     ],
+     "pointersMs": 0.007,
+     "sumMs": {
+      "count": 5,
+      "median": 0.129,
+      "p10": 0.128,
+      "p90": 0.13,
+      "min": 0.128,
+      "max": 0.13
+     }
+    },
+    "checks": {
+     "readbacks": 3734,
+     "mismatchedValues": 0,
+     "breakChecks": 8,
+     "mismatchedBreaks": 0
+    }
+   },
+   {
+    "kind": "cpu-in-page",
+    "breaks": 256,
+    "window": 16,
+    "paragraphs": 100,
+    "referenceMicroseconds": {
+     "median": 735.993,
+     "samples": [
+      735.993,
+      746.604,
+      732.664,
+      733.577,
+      735.328,
+      747.873,
+      736.985
+     ]
+    },
+    "typedMicroseconds": {
+     "median": 624.689,
+     "samples": [
+      631.855,
+      635.285,
+      628.531,
+      624.689,
+      618.92,
+      615.46,
+      622.547
+     ]
+    }
+   },
+   {
+    "kind": "gpu",
+    "breaks": 256,
+    "window": 16,
+    "paragraphs": 300,
+    "kernel": "dense-rows",
+    "levels": 14,
+    "matrixProducts": 247,
+    "vectorProducts": 255,
+    "matrixMegabytes": 154.5216,
+    "lineCostMegabytes": 4.9152,
+    "positionMegabytes": 0.6144,
+    "planMs": 0.125,
+    "prepareMs": 1.12,
+    "firstEvaluationMs": 8.205,
+    "inputs": {
+     "positions": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0.115,
+        "p10": 0.105,
+        "p90": 0.12,
+        "min": 0.1,
+        "max": 0.13
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0.145,
+        "p10": 0.14,
+        "p90": 0.155,
+        "min": 0.13,
+        "max": 0.18
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.475,
+        "p10": 0.455,
+        "p90": 0.525,
+        "min": 0.44,
+        "max": 0.88
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.03,
+        "min": 0.01,
+        "max": 0.08
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.04,
+        "min": 0.02,
+        "max": 0.05
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.675,
+        "p10": 0.65,
+        "p90": 0.74,
+        "min": 0.635,
+        "max": 1.105
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.79,
+        "p10": 0.765,
+        "p90": 0.855,
+        "min": 0.74,
+        "max": 1.22
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0.11,
+        "p10": 0.1,
+        "p90": 0.12,
+        "min": 0.1,
+        "max": 0.13
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0.145,
+        "p10": 0.135,
+        "p90": 0.155,
+        "min": 0.13,
+        "max": 0.175
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.63,
+        "p10": 0.605,
+        "p90": 0.85,
+        "min": 0.58,
+        "max": 1.745
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.02,
+        "p10": 0.01,
+        "p90": 0.03,
+        "min": 0.005,
+        "max": 0.055
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.035,
+        "min": 0.025,
+        "max": 0.04
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.835,
+        "p10": 0.79,
+        "p90": 1.055,
+        "min": 0.77,
+        "max": 1.955
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.95,
+        "p10": 0.905,
+        "p90": 1.17,
+        "min": 0.87,
+        "max": 2.07
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.235,
+        "p10": 0.227,
+        "p90": 0.326,
+        "min": 0.222,
+        "max": 0.522
+       }
+      }
+     },
+     "widths": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.02
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.455,
+        "p10": 0.44,
+        "p90": 0.48,
+        "min": 0.425,
+        "max": 1.29
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.02,
+        "p10": 0.01,
+        "p90": 0.025,
+        "min": 0.005,
+        "max": 0.085
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.035,
+        "p10": 0.025,
+        "p90": 0.05,
+        "min": 0.025,
+        "max": 0.065
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.515,
+        "p10": 0.495,
+        "p90": 0.555,
+        "min": 0.475,
+        "max": 1.37
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.515,
+        "p10": 0.495,
+        "p90": 0.555,
+        "min": 0.475,
+        "max": 1.37
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.605,
+        "p10": 0.575,
+        "p90": 0.665,
+        "min": 0.565,
+        "max": 1.04
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.025
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.045,
+        "p10": 0.04,
+        "p90": 0.055,
+        "min": 0.035,
+        "max": 0.065
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.67,
+        "p10": 0.635,
+        "p90": 0.74,
+        "min": 0.62,
+        "max": 1.11
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.67,
+        "p10": 0.635,
+        "p90": 0.74,
+        "min": 0.62,
+        "max": 1.11
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.226,
+        "p10": 0.223,
+        "p90": 0.245,
+        "min": 0.221,
+        "max": 0.646
+       }
+      }
+     }
+    },
+    "stages": {
+     "leavesAndFirstStateMs": 0.013,
+     "levels": [
+      {
+       "matrixCount": 127,
+       "vectorCount": 1,
+       "medianMs": 0.023
+      },
+      {
+       "matrixCount": 63,
+       "vectorCount": 2,
+       "medianMs": 0.025
+      },
+      {
+       "matrixCount": 31,
+       "vectorCount": 3,
+       "medianMs": 0.027
+      },
+      {
+       "matrixCount": 15,
+       "vectorCount": 5,
+       "medianMs": 0.031
+      },
+      {
+       "matrixCount": 7,
+       "vectorCount": 8,
+       "medianMs": 0.036
+      },
+      {
+       "matrixCount": 3,
+       "vectorCount": 13,
+       "medianMs": 0.021
+      },
+      {
+       "matrixCount": 1,
+       "vectorCount": 21,
+       "medianMs": 0.019
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 34,
+       "medianMs": 0.011
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 46,
+       "medianMs": 0.012
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 51,
+       "medianMs": 0.011
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 41,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 22,
+       "medianMs": 0.006
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 7,
+       "medianMs": 0.004
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 1,
+       "medianMs": 0.003
+      }
+     ],
+     "pointersMs": 0.017,
+     "sumMs": {
+      "count": 5,
+      "median": 0.268,
+      "p10": 0.259,
+      "p90": 0.306,
+      "min": 0.259,
+      "max": 0.306
+     }
+    },
+    "checks": {
+     "readbacks": 2585,
+     "mismatchedValues": 0,
+     "breakChecks": 8,
+     "mismatchedBreaks": 0
+    }
+   },
+   {
+    "kind": "cpu-in-page",
+    "breaks": 256,
+    "window": 16,
+    "paragraphs": 300,
+    "referenceMicroseconds": {
+     "median": 2175.652,
+     "samples": [
+      2142.979,
+      2141.383,
+      2156.277,
+      2175.652,
+      2183.37,
+      2204.674,
+      2177.174
+     ]
+    },
+    "typedMicroseconds": {
+     "median": 1919.717,
+     "samples": [
+      1865.833,
+      1908.585,
+      1950.385,
+      1919.717,
+      1921.321,
+      1918.868,
+      1961.275
+     ]
+    }
+   },
+   {
+    "kind": "gpu",
+    "breaks": 256,
+    "window": 32,
+    "paragraphs": 30,
+    "kernel": "dense-rows",
+    "levels": 14,
+    "matrixProducts": 247,
+    "vectorProducts": 255,
+    "matrixMegabytes": 61.80864,
+    "lineCostMegabytes": 0.98304,
+    "positionMegabytes": 0.06144,
+    "planMs": 0.1,
+    "prepareMs": 0.585,
+    "firstEvaluationMs": 2.585,
+    "inputs": {
+     "positions": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.025
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.025
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.33,
+        "p10": 0.32,
+        "p90": 0.35,
+        "min": 0.3,
+        "max": 0.75
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.15
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.025
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.36,
+        "p10": 0.345,
+        "p90": 0.38,
+        "min": 0.325,
+        "max": 0.93
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.37,
+        "p10": 0.355,
+        "p90": 0.39,
+        "min": 0.335,
+        "max": 0.94
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.02
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.46,
+        "p10": 0.44,
+        "p90": 0.51,
+        "min": 0.425,
+        "max": 1
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.02
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.49,
+        "p10": 0.47,
+        "p90": 0.53,
+        "min": 0.445,
+        "max": 1.03
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.5,
+        "p10": 0.48,
+        "p90": 0.545,
+        "min": 0.455,
+        "max": 1.05
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.105,
+        "p10": 0.105,
+        "p90": 0.107,
+        "min": 0.103,
+        "max": 0.521
+       }
+      }
+     },
+     "widths": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.09
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.33,
+        "p10": 0.315,
+        "p90": 0.35,
+        "min": 0.295,
+        "max": 1.635
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.405
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.345,
+        "p10": 0.33,
+        "p90": 0.365,
+        "min": 0.31,
+        "max": 1.665
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.345,
+        "p10": 0.33,
+        "p90": 0.365,
+        "min": 0.31,
+        "max": 1.665
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.46,
+        "p10": 0.44,
+        "p90": 0.485,
+        "min": 0.4,
+        "max": 0.685
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.47,
+        "p10": 0.455,
+        "p90": 0.5,
+        "min": 0.415,
+        "max": 0.695
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.47,
+        "p10": 0.455,
+        "p90": 0.5,
+        "min": 0.415,
+        "max": 0.695
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.104,
+        "p10": 0.104,
+        "p90": 0.106,
+        "min": 0.103,
+        "max": 0.303
+       }
+      }
+     }
+    },
+    "stages": {
+     "leavesAndFirstStateMs": 0.008,
+     "levels": [
+      {
+       "matrixCount": 127,
+       "vectorCount": 1,
+       "medianMs": 0.011
+      },
+      {
+       "matrixCount": 63,
+       "vectorCount": 2,
+       "medianMs": 0.01
+      },
+      {
+       "matrixCount": 31,
+       "vectorCount": 3,
+       "medianMs": 0.009
+      },
+      {
+       "matrixCount": 15,
+       "vectorCount": 5,
+       "medianMs": 0.009
+      },
+      {
+       "matrixCount": 7,
+       "vectorCount": 8,
+       "medianMs": 0.011
+      },
+      {
+       "matrixCount": 3,
+       "vectorCount": 13,
+       "medianMs": 0.02
+      },
+      {
+       "matrixCount": 1,
+       "vectorCount": 21,
+       "medianMs": 0.02
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 34,
+       "medianMs": 0.004
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 46,
+       "medianMs": 0.004
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 51,
+       "medianMs": 0.004
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 41,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 22,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 7,
+       "medianMs": 0.003
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 1,
+       "medianMs": 0.003
+      }
+     ],
+     "pointersMs": 0.005,
+     "sumMs": {
+      "count": 5,
+      "median": 0.128,
+      "p10": 0.125,
+      "p90": 0.13,
+      "min": 0.125,
+      "max": 0.13
+     }
+    },
+    "checks": {
+     "readbacks": 4163,
+     "mismatchedValues": 0,
+     "breakChecks": 8,
+     "mismatchedBreaks": 0
+    }
+   },
+   {
+    "kind": "cpu-in-page",
+    "breaks": 256,
+    "window": 32,
+    "paragraphs": 30,
+    "referenceMicroseconds": {
+     "median": 352.271,
+     "samples": [
+      353.481,
+      354.346,
+      353.71,
+      350.717,
+      348.519,
+      351.632,
+      352.271
+     ]
+    },
+    "typedMicroseconds": {
+     "median": 324.288,
+     "samples": [
+      323.484,
+      328.82,
+      330.429,
+      322.476,
+      318.631,
+      327.451,
+      324.288
+     ]
+    }
+   },
+   {
+    "kind": "gpu",
+    "breaks": 256,
+    "window": 32,
+    "paragraphs": 100,
+    "kernel": "dense-rows",
+    "levels": 14,
+    "matrixProducts": 247,
+    "vectorProducts": 255,
+    "matrixMegabytes": 206.0288,
+    "lineCostMegabytes": 3.2768,
+    "positionMegabytes": 0.2048,
+    "planMs": 0.115,
+    "prepareMs": 2.455,
+    "firstEvaluationMs": 6.59,
+    "inputs": {
+     "positions": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0.03,
+        "p10": 0.03,
+        "p90": 0.035,
+        "min": 0.025,
+        "max": 0.05
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0.05,
+        "p10": 0.045,
+        "p90": 0.055,
+        "min": 0.04,
+        "max": 0.08
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.415,
+        "p10": 0.4,
+        "p90": 0.48,
+        "min": 0.39,
+        "max": 1.36
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.15
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.015,
+        "p10": 0.015,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.03
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.49,
+        "p10": 0.475,
+        "p90": 0.56,
+        "min": 0.47,
+        "max": 1.435
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.52,
+        "p10": 0.505,
+        "p90": 0.59,
+        "min": 0.5,
+        "max": 1.47
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0.035,
+        "p10": 0.03,
+        "p90": 0.04,
+        "min": 0.025,
+        "max": 0.045
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0.05,
+        "p10": 0.045,
+        "p90": 0.055,
+        "min": 0.045,
+        "max": 0.06
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.025
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 1.065,
+        "p10": 0.95,
+        "p90": 1.32,
+        "min": 0.89,
+        "max": 2.335
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.025
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.025
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 1.15,
+        "p10": 1.025,
+        "p90": 1.42,
+        "min": 0.965,
+        "max": 2.435
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 1.185,
+        "p10": 1.06,
+        "p90": 1.455,
+        "min": 1,
+        "max": 2.465
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.575,
+        "p10": 0.567,
+        "p90": 0.816,
+        "min": 0.548,
+        "max": 1.516
+       }
+      }
+     },
+     "widths": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.02
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.035
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.465,
+        "p10": 0.425,
+        "p90": 0.65,
+        "min": 0.395,
+        "max": 1.94
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.02,
+        "min": 0,
+        "max": 0.06
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.015,
+        "p10": 0.015,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.025
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.5,
+        "p10": 0.455,
+        "p90": 0.695,
+        "min": 0.43,
+        "max": 1.995
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.5,
+        "p10": 0.455,
+        "p90": 0.695,
+        "min": 0.43,
+        "max": 1.995
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.02
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 0.585,
+        "p10": 0.545,
+        "p90": 0.75,
+        "min": 0.53,
+        "max": 1.475
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.02,
+        "min": 0.005,
+        "max": 0.03
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.015,
+        "p10": 0.015,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 0.62,
+        "p10": 0.58,
+        "p90": 0.795,
+        "min": 0.57,
+        "max": 1.52
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 0.62,
+        "p10": 0.58,
+        "p90": 0.795,
+        "min": 0.57,
+        "max": 1.52
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.194,
+        "p10": 0.191,
+        "p90": 0.201,
+        "min": 0.188,
+        "max": 0.942
+       }
+      }
+     }
+    },
+    "stages": {
+     "leavesAndFirstStateMs": 0.011,
+     "levels": [
+      {
+       "matrixCount": 127,
+       "vectorCount": 1,
+       "medianMs": 0.017
+      },
+      {
+       "matrixCount": 63,
+       "vectorCount": 2,
+       "medianMs": 0.016
+      },
+      {
+       "matrixCount": 31,
+       "vectorCount": 3,
+       "medianMs": 0.017
+      },
+      {
+       "matrixCount": 15,
+       "vectorCount": 5,
+       "medianMs": 0.019
+      },
+      {
+       "matrixCount": 7,
+       "vectorCount": 8,
+       "medianMs": 0.022
+      },
+      {
+       "matrixCount": 3,
+       "vectorCount": 13,
+       "medianMs": 0.032
+      },
+      {
+       "matrixCount": 1,
+       "vectorCount": 21,
+       "medianMs": 0.026
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 34,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 46,
+       "medianMs": 0.009
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 51,
+       "medianMs": 0.008
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 41,
+       "medianMs": 0.007
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 22,
+       "medianMs": 0.005
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 7,
+       "medianMs": 0.004
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 1,
+       "medianMs": 0.003
+      }
+     ],
+     "pointersMs": 0.012,
+     "sumMs": {
+      "count": 5,
+      "median": 0.213,
+      "p10": 0.213,
+      "p90": 0.215,
+      "min": 0.213,
+      "max": 0.215
+     }
+    },
+    "checks": {
+     "readbacks": 2514,
+     "mismatchedValues": 0,
+     "breakChecks": 8,
+     "mismatchedBreaks": 0
+    }
+   },
+   {
+    "kind": "cpu-in-page",
+    "breaks": 256,
+    "window": 32,
+    "paragraphs": 100,
+    "referenceMicroseconds": {
+     "median": 1174.07,
+     "samples": [
+      1189.647,
+      1172.791,
+      1169.709,
+      1159.31,
+      1174.07,
+      1181.529,
+      1186.765
+     ]
+    },
+    "typedMicroseconds": {
+     "median": 1051.042,
+     "samples": [
+      1050.417,
+      1065.372,
+      1051.042,
+      1074.362,
+      1047.188,
+      1043.49,
+      1093.098
+     ]
+    }
+   },
+   {
+    "kind": "gpu",
+    "breaks": 256,
+    "window": 32,
+    "paragraphs": 300,
+    "kernel": "dense-rows",
+    "levels": 14,
+    "matrixProducts": 247,
+    "vectorProducts": 255,
+    "matrixMegabytes": 618.0864,
+    "lineCostMegabytes": 9.8304,
+    "positionMegabytes": 0.6144,
+    "planMs": 0.125,
+    "prepareMs": 3.255,
+    "firstEvaluationMs": 25.075,
+    "inputs": {
+     "positions": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0.12,
+        "p10": 0.115,
+        "p90": 0.125,
+        "min": 0.11,
+        "max": 0.135
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0.15,
+        "p10": 0.145,
+        "p90": 0.16,
+        "min": 0.14,
+        "max": 0.195
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.025
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.95,
+        "p10": 0.89,
+        "p90": 1.255,
+        "min": 0.86,
+        "max": 2.54
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.035,
+        "min": 0.01,
+        "max": 0.12
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.05,
+        "p10": 0.04,
+        "p90": 0.055,
+        "min": 0.035,
+        "max": 0.065
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 1.19,
+        "p10": 1.115,
+        "p90": 1.52,
+        "min": 1.08,
+        "max": 2.78
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 1.31,
+        "p10": 1.235,
+        "p90": 1.64,
+        "min": 1.2,
+        "max": 2.895
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0.12,
+        "p10": 0.11,
+        "p90": 0.125,
+        "min": 0.11,
+        "max": 0.135
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0.15,
+        "p10": 0.145,
+        "p90": 0.155,
+        "min": 0.14,
+        "max": 0.17
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.025
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 1.085,
+        "p10": 1.03,
+        "p90": 1.155,
+        "min": 1,
+        "max": 1.46
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.03,
+        "min": 0.005,
+        "max": 0.035
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.05,
+        "p10": 0.04,
+        "p90": 0.055,
+        "min": 0.04,
+        "max": 0.06
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 1.31,
+        "p10": 1.25,
+        "p90": 1.38,
+        "min": 1.205,
+        "max": 1.695
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 1.43,
+        "p10": 1.36,
+        "p90": 1.515,
+        "min": 1.32,
+        "max": 1.81
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.651,
+        "p10": 0.635,
+        "p90": 0.69,
+        "min": 0.628,
+        "max": 1.023
+       }
+      }
+     },
+     "widths": {
+      "readback": {
+       "jsMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 300,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.02
+       },
+       "encodeAndSubmitMs": {
+        "count": 300,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.025
+       },
+       "waitMs": {
+        "count": 300,
+        "median": 0.895,
+        "p10": 0.86,
+        "p90": 1.015,
+        "min": 0.83,
+        "max": 2.475
+       },
+       "copyMs": {
+        "count": 300,
+        "median": 0.02,
+        "p10": 0.01,
+        "p90": 0.03,
+        "min": 0.005,
+        "max": 0.205
+       },
+       "backtrackMs": {
+        "count": 300,
+        "median": 0.045,
+        "p10": 0.04,
+        "p90": 0.055,
+        "min": 0.035,
+        "max": 0.095
+       },
+       "totalMs": {
+        "count": 300,
+        "median": 0.975,
+        "p10": 0.935,
+        "p90": 1.1,
+        "min": 0.905,
+        "max": 2.56
+       },
+       "totalWithJsMs": {
+        "count": 300,
+        "median": 0.975,
+        "p10": 0.935,
+        "p90": 1.1,
+        "min": 0.905,
+        "max": 2.56
+       }
+      },
+      "pass": {
+       "jsMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0,
+        "min": 0,
+        "max": 0.005
+       },
+       "uploadMs": {
+        "count": 60,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "encodeAndSubmitMs": {
+        "count": 60,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 60,
+        "median": 1.03,
+        "p10": 1,
+        "p90": 1.09,
+        "min": 0.98,
+        "max": 1.485
+       },
+       "copyMs": {
+        "count": 60,
+        "median": 0.025,
+        "p10": 0.015,
+        "p90": 0.03,
+        "min": 0.015,
+        "max": 0.04
+       },
+       "backtrackMs": {
+        "count": 60,
+        "median": 0.045,
+        "p10": 0.04,
+        "p90": 0.055,
+        "min": 0.035,
+        "max": 0.06
+       },
+       "totalMs": {
+        "count": 60,
+        "median": 1.11,
+        "p10": 1.075,
+        "p90": 1.185,
+        "min": 1.06,
+        "max": 1.565
+       },
+       "totalWithJsMs": {
+        "count": 60,
+        "median": 1.11,
+        "p10": 1.075,
+        "p90": 1.185,
+        "min": 1.06,
+        "max": 1.565
+       },
+       "passMs": {
+        "count": 60,
+        "median": 0.646,
+        "p10": 0.627,
+        "p90": 0.677,
+        "min": 0.622,
+        "max": 1.079
+       }
+      }
+     }
+    },
+    "stages": {
+     "leavesAndFirstStateMs": 0.025,
+     "levels": [
+      {
+       "matrixCount": 127,
+       "vectorCount": 1,
+       "medianMs": 0.072
+      },
+      {
+       "matrixCount": 63,
+       "vectorCount": 2,
+       "medianMs": 0.071
+      },
+      {
+       "matrixCount": 31,
+       "vectorCount": 3,
+       "medianMs": 0.067
+      },
+      {
+       "matrixCount": 15,
+       "vectorCount": 5,
+       "medianMs": 0.063
+      },
+      {
+       "matrixCount": 7,
+       "vectorCount": 8,
+       "medianMs": 0.07
+      },
+      {
+       "matrixCount": 3,
+       "vectorCount": 13,
+       "medianMs": 0.088
+      },
+      {
+       "matrixCount": 1,
+       "vectorCount": 21,
+       "medianMs": 0.054
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 34,
+       "medianMs": 0.022
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 46,
+       "medianMs": 0.023
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 51,
+       "medianMs": 0.021
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 41,
+       "medianMs": 0.015
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 22,
+       "medianMs": 0.009
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 7,
+       "medianMs": 0.005
+      },
+      {
+       "matrixCount": 0,
+       "vectorCount": 1,
+       "medianMs": 0.003
+      }
+     ],
+     "pointersMs": 0.044,
+     "sumMs": {
+      "count": 5,
+      "median": 0.65,
+      "p10": 0.64,
+      "p90": 0.697,
+      "min": 0.64,
+      "max": 0.697
+     }
+    },
+    "checks": {
+     "readbacks": 1845,
+     "mismatchedValues": 0,
+     "breakChecks": 8,
+     "mismatchedBreaks": 0
+    }
+   },
+   {
+    "kind": "cpu-in-page",
+    "breaks": 256,
+    "window": 32,
+    "paragraphs": 300,
+    "referenceMicroseconds": {
+     "median": 3577.321,
+     "samples": [
+      3577.321,
+      3626.964,
+      3566.897,
+      3564.655,
+      3566.034,
+      3596.429,
+      3596.607
+     ]
+    },
+    "typedMicroseconds": {
+     "median": 3314.355,
+     "samples": [
+      3361.5,
+      3228.71,
+      3287.742,
+      3314.355,
+      3363.333,
+      3339.833,
+      3298.226
+     ]
+    }
+   }
+  ],
+  "finishedAt": "2026-09-17T21:58:38.697Z",
+  "logLines": [
+   "192.49 ms: dense-rows, W = 8: compiled in {\"matrixProductMs\":43.224999994039536,\"vectorProductMs\":7.370000004768372,\"leavesFromLineCostsMs\":5.8599999994039536,\"leavesFromPositionsMs\":8.320000007748604,\"firstStateMs\":5.875,\"pointerMs\":13.095000013709068}",
+   "196.64 ms: n = 256, W = 8, P = 30: references in 3.56 ms, largest cost 97324",
+   "1860.32 ms: dense-rows, n = 256, W = 8, P = 30: positions 0.315 ms (pass 0.065), widths 0.29 ms (pass 0.064), checks {\"readbacks\":4539,\"mismatchedValues\":0,\"breakChecks\":8,\"mismatchedBreaks\":0}",
+   "3862.355 ms: in the page, n = 256, W = 8, P = 30: reference 123.556 µs, typed 84.928 µs",
+   "3870.185 ms: n = 256, W = 8, P = 100: references in 2.49 ms, largest cost 101995",
+   "5611.02 ms: dense-rows, n = 256, W = 8, P = 100: positions 0.46 ms (pass 0.076), widths 0.315 ms (pass 0.076), checks {\"readbacks\":3543,\"mismatchedValues\":0,\"breakChecks\":8,\"mismatchedBreaks\":0}",
+   "7616.215 ms: in the page, n = 256, W = 8, P = 100: reference 480.12 µs, typed 397.103 µs",
+   "7625.545 ms: n = 256, W = 8, P = 300: references in 7.185 ms, largest cost 108038",
+   "9506.14 ms: dense-rows, n = 256, W = 8, P = 300: positions 0.685 ms (pass 0.134), widths 0.415 ms (pass 0.133), checks {\"readbacks\":2981,\"mismatchedValues\":0,\"breakChecks\":8,\"mismatchedBreaks\":0}",
+   "11518.405 ms: in the page, n = 256, W = 8, P = 300: reference 1487.5 µs, typed 1288.654 µs",
+   "11569.1 ms: dense-rows, W = 16: compiled in {\"matrixProductMs\":15.42000000178814,\"vectorProductMs\":7.199999988079071,\"leavesFromLineCostsMs\":5.24499998986721,\"leavesFromPositionsMs\":6.579999998211861,\"firstStateMs\":5.969999998807907,\"pointerMs\":7.594999998807907}",
+   "11570.16 ms: n = 256, W = 16, P = 30: references in 0.805 ms, largest cost 97324",
+   "13266.015 ms: dense-rows, n = 256, W = 16, P = 30: positions 0.335 ms (pass 0.11), widths 0.325 ms (pass 0.149), checks {\"readbacks\":4213,\"mismatchedValues\":0,\"breakChecks\":8,\"mismatchedBreaks\":0}",
+   "15268.5 ms: in the page, n = 256, W = 16, P = 30: reference 230.576 µs, typed 185.213 µs",
+   "15272.525 ms: n = 256, W = 16, P = 100: references in 2.555 ms, largest cost 101995",
+   "17020.285 ms: dense-rows, n = 256, W = 16, P = 100: positions 0.445 ms (pass 0.11), widths 0.36 ms (pass 0.111), checks {\"readbacks\":3734,\"mismatchedValues\":0,\"breakChecks\":8,\"mismatchedBreaks\":0}",
+   "19026.975 ms: in the page, n = 256, W = 16, P = 100: reference 735.993 µs, typed 624.689 µs",
+   "19037.355 ms: n = 256, W = 16, P = 300: references in 7.855 ms, largest cost 108038",
+   "20995.39 ms: dense-rows, n = 256, W = 16, P = 300: positions 0.79 ms (pass 0.235), widths 0.515 ms (pass 0.226), checks {\"readbacks\":2585,\"mismatchedValues\":0,\"breakChecks\":8,\"mismatchedBreaks\":0}",
+   "23012.77 ms: in the page, n = 256, W = 16, P = 300: reference 2175.652 µs, typed 1919.717 µs",
+   "23061.235 ms: dense-rows, W = 32: compiled in {\"matrixProductMs\":16.20499999821186,\"vectorProductMs\":7.260000005364418,\"leavesFromLineCostsMs\":5.495000004768372,\"leavesFromPositionsMs\":5.995000004768372,\"firstStateMs\":5.185000002384186,\"pointerMs\":6.225000008940697}",
+   "23062.5 ms: n = 256, W = 32, P = 30: references in 1.035 ms, largest cost 97324",
+   "24767.61 ms: dense-rows, n = 256, W = 32, P = 30: positions 0.37 ms (pass 0.105), widths 0.345 ms (pass 0.104), checks {\"readbacks\":4163,\"mismatchedValues\":0,\"breakChecks\":8,\"mismatchedBreaks\":0}",
+   "26771.53 ms: in the page, n = 256, W = 32, P = 30: reference 352.271 µs, typed 324.288 µs",
+   "26776.765 ms: n = 256, W = 32, P = 100: references in 3.425 ms, largest cost 101995",
+   "28675 ms: dense-rows, n = 256, W = 32, P = 100: positions 0.52 ms (pass 0.575), widths 0.5 ms (pass 0.194), checks {\"readbacks\":2514,\"mismatchedValues\":0,\"breakChecks\":8,\"mismatchedBreaks\":0}",
+   "30687.36 ms: in the page, n = 256, W = 32, P = 100: reference 1174.07 µs, typed 1051.042 µs",
+   "30700.435 ms: n = 256, W = 32, P = 300: references in 10.75 ms, largest cost 108038",
+   "33048.455 ms: dense-rows, n = 256, W = 32, P = 300: positions 1.31 ms (pass 0.651), widths 0.975 ms (pass 0.646), checks {\"readbacks\":1845,\"mismatchedValues\":0,\"breakChecks\":8,\"mismatchedBreaks\":0}",
+   "35075.165 ms: in the page, n = 256, W = 32, P = 300: reference 3577.321 µs, typed 3314.355 µs"
+  ],
+  "done": true
+ }
+}

@@ -1,0 +1,556 @@
+{
+ "driver": {
+  "startedAt": "2026-09-17T22:01:16.929Z",
+  "loadBefore": "{ 4.93 3.90 3.69 }",
+  "memoryBefore": "System-wide memory free percentage: 61%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "check",
+   "--profile",
+   "scratchpad/experiments/knuth-plass/fixes/chrome-check-large",
+   "--out",
+   "~/github/indirect/lab/knuth-plass/gpu/results/gpu-check-2.json",
+   "--check-breaks",
+   "65536,270532",
+   "--check-windows",
+   "2,5,8,16",
+   "--timeout-seconds",
+   "2400"
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=60518",
+   "--user-data-dir=scratchpad/experiments/knuth-plass/fixes/chrome-check-large",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "browser": "Chrome/153.0.8010.50",
+  "finishedAt": "2026-09-17T22:01:34.027Z",
+  "loadAfter": "{ 4.92 3.95 3.72 }",
+  "memoryAfter": "System-wide memory free percentage: 63%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-09-17T22:01:17.377Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "check",
+   "sizes": [
+    {
+     "breaks": 64,
+     "window": 8,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 64,
+     "window": 16,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 64,
+     "window": 32,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 256,
+     "window": 8,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 256,
+     "window": 16,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 256,
+     "window": 32,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 1024,
+     "window": 8,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 1024,
+     "window": 16,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 1024,
+     "window": 32,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 4096,
+     "window": 8,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 4096,
+     "window": 16,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 4096,
+     "window": 32,
+     "paragraphs": 1
+    },
+    {
+     "breaks": 256,
+     "window": 8,
+     "paragraphs": 10
+    },
+    {
+     "breaks": 256,
+     "window": 16,
+     "paragraphs": 10
+    },
+    {
+     "breaks": 256,
+     "window": 32,
+     "paragraphs": 10
+    },
+    {
+     "breaks": 256,
+     "window": 8,
+     "paragraphs": 100
+    },
+    {
+     "breaks": 256,
+     "window": 16,
+     "paragraphs": 100
+    },
+    {
+     "breaks": 256,
+     "window": 32,
+     "paragraphs": 100
+    },
+    {
+     "breaks": 256,
+     "window": 8,
+     "paragraphs": 1000
+    },
+    {
+     "breaks": 256,
+     "window": 16,
+     "paragraphs": 1000
+    },
+    {
+     "breaks": 256,
+     "window": 32,
+     "paragraphs": 1000
+    },
+    {
+     "breaks": 256,
+     "window": 8,
+     "paragraphs": 3000
+    },
+    {
+     "breaks": 256,
+     "window": 16,
+     "paragraphs": 3000
+    },
+    {
+     "breaks": 256,
+     "window": 8,
+     "paragraphs": 10000
+    }
+   ],
+   "kernels": [
+    "full",
+    "dense-rows"
+   ],
+   "inputs": [
+    "line-costs",
+    "positions",
+    "widths"
+   ],
+   "widths": [
+    300,
+    340
+   ],
+   "shaderSalt": 463363792,
+   "warmupMs": 500,
+   "sampleMs": 2000,
+   "minimumSamples": 15,
+   "maximumSamples": 300,
+   "maxMatrixMegabytes": 2200,
+   "checkWindows": [
+    2,
+    5,
+    8,
+    16
+   ],
+   "checkBreaks": [
+    65536,
+    270532
+   ]
+  },
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "hasTimestamps": true,
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeWorkgroupsPerDimension": 65535
+   }
+  },
+  "compileTimes": [
+   {
+    "kernel": "full",
+    "window": 2,
+    "shaderSalt": 463363792,
+    "matrixProductMs": 119.48499999940395,
+    "vectorProductMs": 22.78499999642372,
+    "leavesFromLineCostsMs": 16.450000002980232,
+    "leavesFromPositionsMs": 19.730000004172325,
+    "firstStateMs": 16.49500000476837,
+    "pointerMs": 21.474999994039536
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 2,
+    "shaderSalt": 463363792,
+    "matrixProductMs": 22.40999999642372,
+    "vectorProductMs": 15.775000005960464,
+    "leavesFromLineCostsMs": 11.219999998807907,
+    "leavesFromPositionsMs": 13.944999992847443,
+    "firstStateMs": 6.415000006556511,
+    "pointerMs": 9.129999995231628
+   },
+   {
+    "kernel": "full",
+    "window": 5,
+    "shaderSalt": 463363792,
+    "matrixProductMs": 19.319999992847443,
+    "vectorProductMs": 15.714999988675117,
+    "leavesFromLineCostsMs": 13.599999994039536,
+    "leavesFromPositionsMs": 17.29500000178814,
+    "firstStateMs": 11.54500000178814,
+    "pointerMs": 15.780000001192093
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 5,
+    "shaderSalt": 463363792,
+    "matrixProductMs": 20.265000000596046,
+    "vectorProductMs": 14.004999995231628,
+    "leavesFromLineCostsMs": 10.179999992251396,
+    "leavesFromPositionsMs": 13.33500000834465,
+    "firstStateMs": 5.829999998211861,
+    "pointerMs": 6.674999997019768
+   },
+   {
+    "kernel": "full",
+    "window": 8,
+    "shaderSalt": 463363792,
+    "matrixProductMs": 18.94999998807907,
+    "vectorProductMs": 14.090000003576279,
+    "leavesFromLineCostsMs": 11.685000002384186,
+    "leavesFromPositionsMs": 15.010000005364418,
+    "firstStateMs": 5.844999998807907,
+    "pointerMs": 6.700000002980232
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 8,
+    "shaderSalt": 463363792,
+    "matrixProductMs": 13.91499999165535,
+    "vectorProductMs": 6.799999997019768,
+    "leavesFromLineCostsMs": 4.7249999940395355,
+    "leavesFromPositionsMs": 6.064999997615814,
+    "firstStateMs": 5.4000000059604645,
+    "pointerMs": 6.659999996423721
+   },
+   {
+    "kernel": "full",
+    "window": 16,
+    "shaderSalt": 463363792,
+    "matrixProductMs": 19.21500000357628,
+    "vectorProductMs": 14,
+    "leavesFromLineCostsMs": 13.239999994635582,
+    "leavesFromPositionsMs": 17.519999995827675,
+    "firstStateMs": 5.545000001788139,
+    "pointerMs": 6.24499998986721
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 16,
+    "shaderSalt": 463363792,
+    "matrixProductMs": 15.015000000596046,
+    "vectorProductMs": 7.819999992847443,
+    "leavesFromLineCostsMs": 5.7850000113248825,
+    "leavesFromPositionsMs": 7.795000001788139,
+    "firstStateMs": 6.364999994635582,
+    "pointerMs": 8.024999991059303
+   }
+  ],
+  "results": [
+   {
+    "kernel": "full",
+    "window": 2,
+    "breaks": 65536,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 5898270,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 15,
+    "paragraphsWithTotalsPast2To22": 14,
+    "failures": []
+   },
+   {
+    "kernel": "full",
+    "window": 2,
+    "breaks": 270532,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 24347910,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 12,
+    "paragraphsWithTotalsPast2To22": 19,
+    "failures": []
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 2,
+    "breaks": 65536,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 5898270,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 14,
+    "paragraphsWithTotalsPast2To22": 16,
+    "failures": []
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 2,
+    "breaks": 270532,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 24347910,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 15,
+    "paragraphsWithTotalsPast2To22": 18,
+    "failures": []
+   },
+   {
+    "kernel": "full",
+    "window": 5,
+    "breaks": 65536,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 11796510,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 13,
+    "paragraphsWithTotalsPast2To22": 16,
+    "failures": []
+   },
+   {
+    "kernel": "full",
+    "window": 5,
+    "breaks": 270532,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 48695790,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 15,
+    "paragraphsWithTotalsPast2To22": 15,
+    "failures": []
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 5,
+    "breaks": 65536,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 11796510,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 14,
+    "paragraphsWithTotalsPast2To22": 16,
+    "failures": []
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 5,
+    "breaks": 270532,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 48695790,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 14,
+    "paragraphsWithTotalsPast2To22": 18,
+    "failures": []
+   },
+   {
+    "kernel": "full",
+    "window": 8,
+    "breaks": 65536,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 17694750,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 14,
+    "paragraphsWithTotalsPast2To22": 16,
+    "failures": []
+   },
+   {
+    "kernel": "full",
+    "window": 8,
+    "breaks": 270532,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 73043670,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 15,
+    "paragraphsWithTotalsPast2To22": 14,
+    "failures": []
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 8,
+    "breaks": 65536,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 17694750,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 16,
+    "paragraphsWithTotalsPast2To22": 16,
+    "failures": []
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 8,
+    "breaks": 270532,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 73043670,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 11,
+    "paragraphsWithTotalsPast2To22": 18,
+    "failures": []
+   },
+   {
+    "kernel": "full",
+    "window": 16,
+    "breaks": 65536,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 33423390,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 15,
+    "paragraphsWithTotalsPast2To22": 14,
+    "failures": []
+   },
+   {
+    "kernel": "full",
+    "window": 16,
+    "breaks": 270532,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 137971350,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 14,
+    "paragraphsWithTotalsPast2To22": 16,
+    "failures": []
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 16,
+    "breaks": 65536,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 33423390,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 14,
+    "paragraphsWithTotalsPast2To22": 16,
+    "failures": []
+   },
+   {
+    "kernel": "dense-rows",
+    "window": 16,
+    "breaks": 270532,
+    "batches": 5,
+    "paragraphs": 10,
+    "evaluations": 15,
+    "comparedValues": 137971350,
+    "mismatchedValues": 0,
+    "mismatchedBreaks": 0,
+    "paragraphsWithTies": 14,
+    "paragraphsWithTotalsPast2To22": 16,
+    "failures": []
+   }
+  ],
+  "finishedAt": "2026-09-17T22:01:33.930Z",
+  "logLines": [
+   "342.335 ms: full, W = 2: compiled in {\"matrixProductMs\":119.48499999940395,\"vectorProductMs\":22.78499999642372,\"leavesFromLineCostsMs\":16.450000002980232,\"leavesFromPositionsMs\":19.730000004172325,\"firstStateMs\":16.49500000476837,\"pointerMs\":21.474999994039536}",
+   "675.945 ms: check full, W = 2, n = 65536: 10 paragraphs, 5898270 values compared, 0 mismatched, 0 mismatched breaks, 15 with ties, 14 past 2^22",
+   "1717.525 ms: check full, W = 2, n = 270532: 10 paragraphs, 24347910 values compared, 0 mismatched, 0 mismatched breaks, 12 with ties, 19 past 2^22",
+   "1798.565 ms: dense-rows, W = 2: compiled in {\"matrixProductMs\":22.40999999642372,\"vectorProductMs\":15.775000005960464,\"leavesFromLineCostsMs\":11.219999998807907,\"leavesFromPositionsMs\":13.944999992847443,\"firstStateMs\":6.415000006556511,\"pointerMs\":9.129999995231628}",
+   "2011.265 ms: check dense-rows, W = 2, n = 65536: 10 paragraphs, 5898270 values compared, 0 mismatched, 0 mismatched breaks, 14 with ties, 16 past 2^22",
+   "2895.215 ms: check dense-rows, W = 2, n = 270532: 10 paragraphs, 24347910 values compared, 0 mismatched, 0 mismatched breaks, 15 with ties, 18 past 2^22",
+   "2990.75 ms: full, W = 5: compiled in {\"matrixProductMs\":19.319999992847443,\"vectorProductMs\":15.714999988675117,\"leavesFromLineCostsMs\":13.599999994039536,\"leavesFromPositionsMs\":17.29500000178814,\"firstStateMs\":11.54500000178814,\"pointerMs\":15.780000001192093}",
+   "3292.6 ms: check full, W = 5, n = 65536: 10 paragraphs, 11796510 values compared, 0 mismatched, 0 mismatched breaks, 13 with ties, 16 past 2^22",
+   "4414.785 ms: check full, W = 5, n = 270532: 10 paragraphs, 48695790 values compared, 0 mismatched, 0 mismatched breaks, 15 with ties, 15 past 2^22",
+   "4486.765 ms: dense-rows, W = 5: compiled in {\"matrixProductMs\":20.265000000596046,\"vectorProductMs\":14.004999995231628,\"leavesFromLineCostsMs\":10.179999992251396,\"leavesFromPositionsMs\":13.33500000834465,\"firstStateMs\":5.829999998211861,\"pointerMs\":6.674999997019768}",
+   "4745.98 ms: check dense-rows, W = 5, n = 65536: 10 paragraphs, 11796510 values compared, 0 mismatched, 0 mismatched breaks, 14 with ties, 16 past 2^22",
+   "5858.395 ms: check dense-rows, W = 5, n = 270532: 10 paragraphs, 48695790 values compared, 0 mismatched, 0 mismatched breaks, 14 with ties, 18 past 2^22",
+   "5932.6 ms: full, W = 8: compiled in {\"matrixProductMs\":18.94999998807907,\"vectorProductMs\":14.090000003576279,\"leavesFromLineCostsMs\":11.685000002384186,\"leavesFromPositionsMs\":15.010000005364418,\"firstStateMs\":5.844999998807907,\"pointerMs\":6.700000002980232}",
+   "6333.345 ms: check full, W = 8, n = 65536: 10 paragraphs, 17694750 values compared, 0 mismatched, 0 mismatched breaks, 14 with ties, 16 past 2^22",
+   "7924.425 ms: check full, W = 8, n = 270532: 10 paragraphs, 73043670 values compared, 0 mismatched, 0 mismatched breaks, 15 with ties, 14 past 2^22",
+   "7969.75 ms: dense-rows, W = 8: compiled in {\"matrixProductMs\":13.91499999165535,\"vectorProductMs\":6.799999997019768,\"leavesFromLineCostsMs\":4.7249999940395355,\"leavesFromPositionsMs\":6.064999997615814,\"firstStateMs\":5.4000000059604645,\"pointerMs\":6.659999996423721}",
+   "8330.93 ms: check dense-rows, W = 8, n = 65536: 10 paragraphs, 17694750 values compared, 0 mismatched, 0 mismatched breaks, 16 with ties, 16 past 2^22",
+   "9762.91 ms: check dense-rows, W = 8, n = 270532: 10 paragraphs, 73043670 values compared, 0 mismatched, 0 mismatched breaks, 11 with ties, 18 past 2^22",
+   "9840.465 ms: full, W = 16: compiled in {\"matrixProductMs\":19.21500000357628,\"vectorProductMs\":14,\"leavesFromLineCostsMs\":13.239999994635582,\"leavesFromPositionsMs\":17.519999995827675,\"firstStateMs\":5.545000001788139,\"pointerMs\":6.24499998986721}",
+   "10486.21 ms: check full, W = 16, n = 65536: 10 paragraphs, 33423390 values compared, 0 mismatched, 0 mismatched breaks, 15 with ties, 14 past 2^22",
+   "13149.975 ms: check full, W = 16, n = 270532: 10 paragraphs, 137971350 values compared, 0 mismatched, 0 mismatched breaks, 14 with ties, 16 past 2^22",
+   "13202.645 ms: dense-rows, W = 16: compiled in {\"matrixProductMs\":15.015000000596046,\"vectorProductMs\":7.819999992847443,\"leavesFromLineCostsMs\":5.7850000113248825,\"leavesFromPositionsMs\":7.795000001788139,\"firstStateMs\":6.364999994635582,\"pointerMs\":8.024999991059303}",
+   "13905.01 ms: check dense-rows, W = 16, n = 65536: 10 paragraphs, 33423390 values compared, 0 mismatched, 0 mismatched breaks, 14 with ties, 16 past 2^22",
+   "16606.16 ms: check dense-rows, W = 16, n = 270532: 10 paragraphs, 137971350 values compared, 0 mismatched, 0 mismatched breaks, 14 with ties, 16 past 2^22"
+  ],
+  "done": true
+ }
+}

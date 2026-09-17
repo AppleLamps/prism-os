@@ -54,7 +54,10 @@ export function gpuPlan(breaks: number): GpuPlan {
     return result
   })
   prefixes.forEach((prefix, index) => invariant(prefix.kind === 'vector' && prefix.slot === index && prefix.breakCount === index + 1, `prefix ${index} is the state after break point ${index + 1}`))
-  const depth = Math.max(0, ...combines.map(({result}) => result.depth))
+  // A loop rather than Math.max(...combines), since V8 throws a RangeError when a call spreads the 2n combines of a
+  // paragraph past about 50,000 break points.
+  let depth = 0
+  for (const {result} of combines) depth = Math.max(depth, result.depth)
   const matrixTriples: number[] = []
   const vectorTriples: number[] = []
   const levels: GpuLevel[] = []

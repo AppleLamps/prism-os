@@ -4,7 +4,7 @@ import {expect, test} from 'bun:test'
 import {exportBatch} from '../export.ts'
 import {type Paragraph, createRandom, infeasible, lineCostCap, randomParagraph, timingParagraph} from '../paragraph.ts'
 import {knuthPlass} from '../reference.ts'
-import {type Kernel, batchParagraphs, breaksOf, expectedOut, expectedStates, gpuPlan, hasTie, knuthPlassTyped, matrixTripleSize, noPath, runPlanInJavaScript, vectorTripleSize, writeLineCosts, writePositions} from './plan.ts'
+import {type Kernel, batchParagraphs, breaksOf, expectedOut, expectedStates, gpuPlan, hasTie, knuthPlassTyped, largestGpuBreakCount, matrixTripleSize, noPath, runPlanInJavaScript, vectorTripleSize, writeLineCosts, writePositions} from './plan.ts'
 
 const tieBoxes = {minimumBox: 1, maximumBox: 4, space: 1, hyphen: 1, hyphenChance: 0.2}
 
@@ -83,8 +83,10 @@ test('many paragraphs in one batch, each at its own width, give each paragraph\'
   }
 })
 
+const wideBoxes = {minimumBox: 30, maximumBox: 40, space: 2, hyphen: 3, hyphenChance: 0.1}
+
 test('past 1,056 break points: 4,096 one-box lines wider than the column, whose totals pass 2^22, stay exact', () => {
-  const paragraph = randomParagraph(createRandom(47), 4096, {minimumBox: 30, maximumBox: 40, space: 2, hyphen: 3, hyphenChance: 0.1})
+  const paragraph = randomParagraph(createRandom(47), 4096, wideBoxes)
   const [solution] = checkBatch([paragraph], [25], 8, ['full', 'dense-rows'])
   // Every line holds one box that doesn't fit, including the last line, so every line costs lineCostCap.
   expect(solution!.totalCost).toBe(4096 * lineCostCap)
@@ -92,6 +94,27 @@ test('past 1,056 break points: 4,096 one-box lines wider than the column, whose 
   expect(noPath).toBeGreaterThan(4096 * lineCostCap)
   // The timing paragraph at 4,096 break points, with the kernel the timings use at W = 32.
   checkBatch([timingParagraph(4096)], [300], 32, ['dense-rows'])
+})
+
+test('at largestGpuBreakCount, 270,532 one-box lines wider than the column total just below noPath, and stay exact', () => {
+  const breaks = largestGpuBreakCount
+  const window = 2
+  const paragraph = randomParagraph(createRandom(59), breaks, wideBoxes)
+  const solution = knuthPlass(paragraph, 25, window)
+  expect(solution.totalCost).toBe(breaks * lineCostCap)
+  expect(noPath - solution.totalCost).toBeLessThan(lineCostCap)
+  const lineCosts = new Uint32Array(breaks * window)
+  writeLineCosts([paragraph], [25], window, lineCosts)
+  const plan = gpuPlan(breaks)
+  const expected = expectedOut(solution.costs, solution.predecessors)
+  for (const kernel of ['full', 'dense-rows'] as const) {
+    const {out} = runPlanInJavaScript(plan, kernel, window, 1, lineCosts, 7)
+    // A loop instead of toEqual, which is slow on 270,533 values.
+    let mismatched = 0
+    for (let index = 0; index < expected.length; index++) if (out[index] !== expected[index]) mismatched++
+    expect(mismatched).toBe(0)
+  }
+  expect(() => gpuPlan(breaks + 1)).toThrow()
 })
 
 test('the GPU\'s line costs are row 0 of export.ts\'s leaves, and the kernels in JavaScript give export.ts\'s expected results', () => {

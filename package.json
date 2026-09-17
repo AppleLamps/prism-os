@@ -8,6 +8,7 @@
     "start:candidates": "bun ./lab/candidate-gallery/candidate-gallery.html",
     "start:hard-attend": "bun ./lab/hard-attend/hard-attend.html",
     "start:json-highlighter": "bun ./lab/json-highlighter/index.html",
+    "start:knuth-plass": "bun ./lab/knuth-plass/demo.html",
     "start:learning": "bun ./lab/learned-gallery/learned-gallery.html",
     "start:regex-search": "bun ./lab/regex-search/demo.html",
     "start:reusable": "bun ./lab/reusable-layout/demo.html",

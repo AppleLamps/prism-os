@@ -124,7 +124,7 @@ function setUp({breaks, window, paragraphs: count}: Size) {
     paragraphs, solutions, expected, widthArrays, referenceMs,
     lineCosts: new Uint32Array(count * breaks * window),
     positions: new Int32Array(count * 2 * breaks),
-    largestCost: Math.max(...solutions.flatMap(list => list.map(solution => Math.max(...solution.costs)))),
+    largestCost: solutions.flat().reduce((largest, solution) => solution.costs.reduce((inner, cost) => Math.max(inner, cost), largest), 0),
     lines: solutions.map(list => list.reduce((total, solution) => total + solution.breaks.length, 0)),
   }
 }

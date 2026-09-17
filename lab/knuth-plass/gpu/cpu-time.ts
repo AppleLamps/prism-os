@@ -188,9 +188,13 @@ if (import.meta.main) {
     const processes = Number(argument('--processes') ?? 3)
     const memoryLimitMegabytes = Number(argument('--memory-limit-mb') ?? 16_000)
     const timeLimitMs = Number(argument('--time-limit-seconds') ?? 900) * 1000
-    const only = argument('--sizes')?.split(',').map(entry => entry.split(':').map(Number))
+    // --sizes lists the sizes to time, which needn't be default sizes, e.g. 256:8:30.
+    const listed = argument('--sizes')?.split(',').map(entry => {
+      const [breaks, window, paragraphs] = entry.split(':').map(Number)
+      return {breaks: breaks!, window: window!, paragraphs: paragraphs!}
+    })
     for (const variant of variants) {
-      const sizes = defaultSizes(variant).filter(size => only === undefined || only.some(([breaks, window, paragraphs]) => breaks === size.breaks && window === size.window && paragraphs === size.paragraphs))
+      const sizes = listed ?? defaultSizes(variant)
       for (const {breaks, window, paragraphs} of sizes) {
         for (let index = 0; index < processes; index++) {
           const result = await runInOwnProcess(['one', variant, String(breaks), String(window), String(paragraphs)], out, memoryLimitMegabytes, timeLimitMs)

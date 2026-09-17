@@ -27,6 +27,7 @@ import eventWindow from '../event-window/demo.html'
 import reusableLayout from '../reusable-layout/demo.html'
 import jsonHighlighter from '../json-highlighter/index.html'
 import regexSearch from '../regex-search/demo.html'
+import knuthPlass from '../knuth-plass/demo.html'
 
 import textWalker from './text-walker/demo.html'
 import textTabulated from './text-tabulated/demo.html'
@@ -59,6 +60,7 @@ const pages = {
   '/lab/reusable-layout/demo.html': reusableLayout,
   '/lab/json-highlighter/index.html': jsonHighlighter,
   '/lab/regex-search/demo.html': regexSearch,
+  '/lab/knuth-plass/demo.html': knuthPlass,
   '/lab/ui-exploration/text-walker/demo.html': textWalker,
   '/lab/ui-exploration/text-tabulated/demo.html': textTabulated,
   '/lab/ui-exploration/lists/list.html': virtualizedList,
@@ -93,6 +95,7 @@ const readmePaths = [
   'lab/candidate-gallery/README.md',
   'lab/json-highlighter/README.md',
   'lab/regex-search/README.md',
+  'lab/knuth-plass/README.md',
   'lab/ui-exploration/README.md',
   ...prototypeFolders.map(folder => `lab/ui-exploration/${folder}/README.md`),
 ]
