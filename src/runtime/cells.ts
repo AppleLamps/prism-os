@@ -354,8 +354,12 @@ class CellValueError extends Error {
 function createValidator(cells: readonly DeclaredCell[], rules: readonly Rule[]) {
   const minimums = Float64Array.from(cells, ({spec}) => spec.range[0])
   const maximums = Float64Array.from(cells, ({spec}) => spec.range[1])
-  const bitCells = cells.flatMap(({spec}, wire) => spec.exactBit ? [wire] : [])
-  const gridCells = cells.flatMap(({spec}, wire) => spec.grid === undefined ? [] : [{wire, grid: spec.grid}])
+  const bitWires = Int32Array.from(cells.flatMap(({spec}, wire) => spec.exactBit ? [wire] : []))
+  // Each cell's grid step sits next to its wire in two typed arrays rather than in {wire, grid} objects. With the objects,
+  // V8 kept deoptimizing this validator, most likely because a step is a small integer in some cells and a double in
+  // others, e.g. 1 and 1 / 64.
+  const gridWires = Int32Array.from(cells.flatMap(({spec}, wire) => spec.grid === undefined ? [] : [wire]))
+  const gridSteps = Float64Array.from(gridWires, wire => cells[wire]!.spec.grid!)
   return (source: Float32Array) => {
     invariant(source.length === cells.length, `the table holds ${source.length} numbers, but ${cells.length} cells are declared`)
     for (let wire = 0; wire < source.length; wire++) {
@@ -364,10 +368,13 @@ function createValidator(cells: readonly DeclaredCell[], rules: readonly Rule[])
         throw new CellValueError(`${cells[wire]!.name} must be finite and within ${minimums[wire]}..${maximums[wire]}, got ${value}`, wire)
       }
     }
-    for (const wire of bitCells) {
+    for (let index = 0; index < bitWires.length; index++) {
+      const wire = bitWires[index]!
       if (source[wire] !== 0 && source[wire] !== 1) throw new CellValueError(`${cells[wire]!.name} must be exactly 0 or 1, got ${source[wire]}`, wire)
     }
-    for (const {wire, grid} of gridCells) {
+    for (let index = 0; index < gridWires.length; index++) {
+      const wire = gridWires[index]!
+      const grid = gridSteps[index]!
       if (!Number.isInteger(source[wire]! / grid)) throw new CellValueError(`${cells[wire]!.name} must be a multiple of ${grid}, got ${source[wire]}`, wire)
     }
     for (const rule of rules) {
