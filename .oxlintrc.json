@@ -1,5 +1,8 @@
 {
   "plugins": ["typescript", "oxc"],
+  "options": {
+    "denyWarnings": true
+  },
   "rules": {
     "prefer-ts-expect-error": "error",
     "no-unnecessary-type-assertion": "error",
