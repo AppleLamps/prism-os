@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Regex search</title>
+  <style>
+    :root {--background: #f6f6f3; --panel: #ffffff; --text: #1d1d1f; --muted: #6b6b70; --border: #d8d8dc; --even: #ffdf80; --odd: #a9dcff; --error: #b3261e}
+    @media (prefers-color-scheme: dark) {
+      :root {--background: #151517; --panel: #1f1f22; --text: #ececf0; --muted: #9b9ba3; --border: #3a3a40; --even: #806000; --odd: #1c5a82; --error: #ff8a80}
+    }
+    body {margin: 0; background: var(--background); color: var(--text); font: 15px/1.5 system-ui, sans-serif}
+    main {max-width: 900px; margin: 0 auto; padding: 24px 16px 48px}
+    h1 {font-size: 20px; margin: 0 0 4px}
+    p {margin: 0 0 12px; color: var(--muted)}
+    code {font-family: ui-monospace, monospace}
+    #pattern {box-sizing: border-box; width: 100%; padding: 8px 10px; font: 16px ui-monospace, monospace; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 8px}
+    .controls {display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 10px 0}
+    label {font-size: 13px; color: var(--muted)}
+    select {font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px}
+    #error {min-height: 20px; font-size: 13px; color: var(--error)}
+    #status {margin: 4px 0 10px; font-size: 13px; color: var(--muted)}
+    #matches {white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px 14px; font: 14px/1.6 ui-monospace, monospace; background: var(--panel); border: 1px solid var(--border); border-radius: 8px}
+    mark {color: inherit; border-radius: 2px}
+    mark.even {background: var(--even)}
+    mark.odd {background: var(--odd)}
+    .past-capacity {color: var(--muted)}
+    details {margin-top: 12px}
+    textarea {box-sizing: border-box; width: 100%; min-height: 180px; margin-top: 8px; padding: 8px 10px; font: 14px/1.5 ui-monospace, monospace; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 8px}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Regex search as matrix products</h1>
+    <p>Type a pattern: literal characters, <code>.</code>, classes such as <code>[a-z]</code> or <code>[^0-9]</code>, <code>\d</code>, <code>\w</code>, <code>?</code>, <code>*</code>, <code>+</code>, <code>|</code> and groups. The program highlights every non-overlapping match, leftmost, then longest.</p>
+    <input id="pattern" autocomplete="off" spellcheck="false" aria-label="Pattern" value="(the|an?) [a-z]+">
+    <div class="controls">
+      <label>Form <select id="form"><option value="data">(a) pattern as data</option><option value="builtin">(b) pattern built into the program</option></select></label>
+      <label>States <select id="states"><option>8</option><option>16</option><option>32</option></select></label>
+      <label>Text capacity <select id="text-length"><option value="256">256</option><option value="1024">1,024</option></select></label>
+    </div>
+    <div id="error" role="alert"></div>
+    <div id="status">Building the program…</div>
+    <div id="matches"></div>
+    <details><summary>Edit the text</summary><textarea id="text" spellcheck="false" aria-label="Text"></textarea></details>
+  </main>
+  <script type="module" src="./demo.ts"></script>
+</body>
+</html>

@@ -387,6 +387,23 @@
           <a href="/lab/json-highlighter/README.md">README</a>
         </p>
       </article>
+
+      <article class="card">
+        <h3><a href="/lab/regex-search/demo.html">Regex search</a></h3>
+        <p class="path">lab/regex-search/demo.html</p>
+        <p>Search as you type over up to 1,024 code points. JavaScript compiles the pattern into an automaton, and the program runs it one code point at a time as products of transition matrices with 0/1 state vectors, in a reverse pass and a forward pass, to find leftmost, then longest matches.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Edit the pattern, e.g. add <code>(ing)?</code> after <code>[a-z]+</code>, and read the automaton's size and the frame's times in the status line.</li>
+          <li>Switch Form to "(b) pattern built into the program": each pattern change now rebuilds and recompiles the program. Paste a long pattern to get the capacity message.</li>
+        </ul>
+        <p class="note">The default, the pattern as data at 16 states and 1,024 code points, takes about 2 to 3 s before its first frame, and 32 states about 10 s.</p>
+        <p class="links">
+          <a href="/lab/regex-search/demo.html?states=8"><code>?states=8</code></a> a faster start
+          <a href="/lab/regex-search/demo.html?form=builtin&amp;states=32&amp;text=1024"><code>?form=builtin&amp;states=32&amp;text=1024</code></a>
+          <a href="/lab/regex-search/README.md">README</a>
+        </p>
+      </article>
     </div>
   </section>
 

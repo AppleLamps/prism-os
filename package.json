@@ -9,6 +9,7 @@
     "start:hard-attend": "bun ./lab/hard-attend/hard-attend.html",
     "start:json-highlighter": "bun ./lab/json-highlighter/index.html",
     "start:learning": "bun ./lab/learned-gallery/learned-gallery.html",
+    "start:regex-search": "bun ./lab/regex-search/demo.html",
     "start:reusable": "bun ./lab/reusable-layout/demo.html",
     "start:template": "bun ./template/index.html",
     "check": "bun scripts/check.ts",
