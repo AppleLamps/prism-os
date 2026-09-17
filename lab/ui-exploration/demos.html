@@ -368,6 +368,28 @@
     </div>
   </section>
 
+  <section>
+    <h2>Traditional JavaScript tasks, September 17, 2026</h2>
+    <p class="section-note">Temporary demos of tasks that are usually written in plain JavaScript, to see how one fixed program handles them. Each has a fixed capacity, named outputs for what doesn't fit, and a plain JavaScript reference that its tests compare with.</p>
+    <div class="cards">
+      <article class="card">
+        <h3><a href="/lab/json-highlighter/index.html">JSON highlighter</a></h3>
+        <p class="path">lab/json-highlighter/index.html</p>
+        <p>A JSON text box of up to 512 code points, highlighted on every keystroke. The tokenizer and the grammar are state machines read from tables in cells, and the program also returns the first error and the bracket that matches the bracket at the caret.</p>
+        <p class="try-label">Try</p>
+        <ul>
+          <li>Delete a comma or a closing brace, and read the first error's kind and position below the text.</li>
+          <li>Put the caret next to a bracket to highlight its match, or open 17 brackets to get the maximum depth error.</li>
+        </ul>
+        <p class="links">
+          <a href="/lab/json-highlighter/index.html?form=brent-kung"><code>?form=brent-kung</code></a> the state machines as prefix scans
+          <a href="/lab/json-highlighter/index.html?form=sklansky"><code>?form=sklansky</code></a>
+          <a href="/lab/json-highlighter/README.md">README</a>
+        </p>
+      </article>
+    </div>
+  </section>
+
   <footer>Served by <code>bun lab/ui-exploration/serve-demos.ts</code> from the repo root; pass <code>--port</code> or set <code>PORT</code> to change the default port 4321.</footer>
 </main>
 </body>

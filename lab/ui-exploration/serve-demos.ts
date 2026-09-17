@@ -25,6 +25,7 @@ import hardAttend from '../hard-attend/hard-attend.html'
 import generativeFields from '../generative-fields/demo.html'
 import eventWindow from '../event-window/demo.html'
 import reusableLayout from '../reusable-layout/demo.html'
+import jsonHighlighter from '../json-highlighter/index.html'
 
 import textWalker from './text-walker/demo.html'
 import textTabulated from './text-tabulated/demo.html'
@@ -54,6 +55,7 @@ const pages = {
   '/lab/generative-fields/demo.html': generativeFields,
   '/lab/event-window/demo.html': eventWindow,
   '/lab/reusable-layout/demo.html': reusableLayout,
+  '/lab/json-highlighter/index.html': jsonHighlighter,
   '/lab/ui-exploration/text-walker/demo.html': textWalker,
   '/lab/ui-exploration/text-tabulated/demo.html': textTabulated,
   '/lab/ui-exploration/lists/list.html': virtualizedList,
@@ -85,6 +87,7 @@ const readmePaths = [
   'lab/learned-gallery/README.md',
   'lab/hard-attend/README.md',
   'lab/candidate-gallery/README.md',
+  'lab/json-highlighter/README.md',
   'lab/ui-exploration/README.md',
   ...prototypeFolders.map(folder => `lab/ui-exploration/${folder}/README.md`),
 ]
