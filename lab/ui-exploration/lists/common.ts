@@ -2,6 +2,7 @@
 // comparisons on bounded continuous values, rounding and floors, spring matrix
 // powers, and compiled-size measurement.
 import {Circuit, emitMinimum, emitRelu, type Terms, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
+import {brentKungPrefix} from '../../../src/runtime/prefix-networks.ts'
 
 export type ProgramSize = {
   liveOperations: number
@@ -137,19 +138,7 @@ export function emitPrefixSums(circuit: Circuit, values: readonly Wire[], mode: 
   }
   // Brent-Kung: an up-sweep over power-of-two spans, then a down-sweep that
   // fills in the remaining positions. About 2n additions at 2 log2(n) depth.
-  const sums = [...values]
-  let span = 1
-  for (; span < count; span *= 2) {
-    for (let index = 2 * span - 1; index < count; index += 2 * span) {
-      sums[index] = circuit.roundAffine([[sums[index - span]!, 1], [sums[index]!, 1]])
-    }
-  }
-  for (span = 2 ** Math.floor(Math.log2(Math.max(1, count))) / 2; span >= 1; span /= 2) {
-    for (let index = 3 * span - 1; index < count; index += 2 * span) {
-      sums[index] = circuit.roundAffine([[sums[index - span]!, 1], [sums[index]!, 1]])
-    }
-  }
-  return sums
+  return brentKungPrefix(values, (earlier, later) => circuit.roundAffine([[earlier, 1], [later, 1]]))
 }
 
 // Names source cells and their ranges before the circuit exists.

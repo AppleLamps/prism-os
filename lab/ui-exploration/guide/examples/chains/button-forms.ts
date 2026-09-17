@@ -1,6 +1,7 @@
 // The same queue of button events (button-machine.ts) built three ways: one event
 // after another, as a prefix scan of transition matrices, and by speculation.
 import type {Wire} from '../../../../../src/runtime/numeric-ui-core.ts'
+import {brentKungPrefix, sklanskyPrefix} from '../../../../../src/runtime/prefix-networks.ts'
 import {
   type ButtonQueueCircuit,
   type StateBits,
@@ -11,7 +12,6 @@ import {
   createButtonQueueCircuit,
   eventTransitions,
 } from './button-machine.ts'
-import {brentKungPrefix, sklanskyPrefix} from './prefix-networks.ts'
 
 export type ButtonForm =
   | {kind: 'sequential'}

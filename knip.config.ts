@@ -5,6 +5,8 @@ const config = {
     'template/main.ts',
     // The template's switch in plain JavaScript, which only template/toggle.test.ts imports.
     'template/toggle-reference.ts',
+    // The prefix networks, which only lab code and tests/runtime/prefix-networks.test.ts import.
+    'src/runtime/prefix-networks.ts',
   ],
   // lab/ holds standalone experiments that run as scripts or tests, so knip only checks src/, scripts/ and the template.
   project: ['*.ts', 'src/**/*.ts', 'scripts/*.ts', 'template/*.ts'],

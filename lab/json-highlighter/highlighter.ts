@@ -20,8 +20,8 @@
 //    hit among depth comparisons (patterns.md, "findIndex when passing items can be anywhere").
 import {type Circuit, type Terms, type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
 import {type WireValues, constant, createEvaluator, createSourceTable, input, list} from '../../src/runtime/cells.ts'
+import {brentKungPrefix, sklanskyPrefix} from '../../src/runtime/prefix-networks.ts'
 import {capacity, errorKind} from './kinds.ts'
-import {brentKungPrefix, chainPrefix, sklanskyPrefix} from './prefix-networks.ts'
 import {
   bracketTable, classCount, classTable, closerTable, contextCount, depthChangeTable, depthClassTable, displayTable, eventCount,
   grammarErrorTable, grammarNextTable, grammarStateCount, grammarStates, grammarTokenTable, levelWeightTable, lexerErrorKindTable,
@@ -68,6 +68,13 @@ export const highlighterCells = {
 // 'sklansky' build the same stages as prefix networks, with the same outputs.
 export type ScanForm = 'loop' | 'brent-kung' | 'sklansky'
 export const scanForms: readonly ScanForm[] = ['loop', 'brent-kung', 'sklansky']
+
+// The loop: every prefix combines the previous prefix with the next item, a chain of k − 1 combines.
+function chainPrefix<T>(items: readonly T[], combine: (earlier: T, later: T) => T): T[] {
+  const prefixes = [...items]
+  for (let index = 1; index < prefixes.length; index++) prefixes[index] = combine(prefixes[index - 1]!, prefixes[index]!)
+  return prefixes
+}
 
 const networks = {'loop': chainPrefix, 'brent-kung': brentKungPrefix, 'sklansky': sklanskyPrefix} as const
 

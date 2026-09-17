@@ -44,7 +44,7 @@ circuit.roundAffine(heights.slice(0, row + 1).map(height => [height, 1]))
 brentKungPrefix(heights, (earlier, later) => circuit.roundAffine([[earlier, 1], [later, 1]]))
 ```
 
-`brentKungPrefix` in [prefix-networks.ts](../examples/patterns/combining-steps/prefix-networks.ts) takes any associative combine, and [events through a state machine](state-machine-prefix-scan.md) calls the same function with index reads as the combine. Use `roundAffine` rather than `affine` here: the builder copies an ordinary affine sum of fewer than 4 terms into the sums that read it and sorts its terms by wire number, which regroups the additions.
+`brentKungPrefix` in [src/runtime/prefix-networks.ts](../../../../src/runtime/prefix-networks.ts) takes any associative combine, and [events through a state machine](state-machine-prefix-scan.md) calls the same function with index reads as the combine. Use `roundAffine` rather than `affine` here: the builder copies an ordinary affine sum of fewer than 4 terms into the sums that read it and sorts its terms by wire number, which regroups the additions.
 
 ## Cost
 

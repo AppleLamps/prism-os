@@ -7,13 +7,13 @@
 // pretext: it counts how many of a row's breakpoints the runtime container width reaches.
 import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {commentLineHeight, commentTextHeight, commentWidthAt, prepareComment, tabulateStaircase, type PreparedComment} from '../hn-thread/text-heights.ts'
-import {threadLayout} from '../hn-thread/thread-model.ts'
 import {createRandom} from './common.ts'
 
 export const textRowLayout = {
-  // hn-thread's container widths, the range that text-heights.ts's tabulateStaircase samples.
-  minimumContainerWidth: threadLayout.minimumContainerWidth,
-  maximumContainerWidth: threadLayout.maximumContainerWidth,
+  // The container widths that tabulateTextRow passes to text-heights.ts's tabulateStaircase, the same as hn-thread's
+  // container widths today. The host clamps a narrower container to the minimum.
+  minimumContainerWidth: 375,
+  maximumContainerWidth: 1200,
   lineHeight: commentLineHeight,
   // 8 px above and 8 px below the text.
   verticalPadding: 16,
@@ -48,14 +48,14 @@ export function textRowHeight(prepared: PreparedText, containerWidth: number) {
   return commentTextHeight(prepared, commentWidthAt(containerWidth, 0)) + textRowLayout.verticalPadding
 }
 
-// The row's breakpoints, found with text-heights.ts's tabulateStaircase over container widths 375..1200. The host only
+// The row's breakpoints, found with text-heights.ts's tabulateStaircase over textRowLayout's container widths. The host only
 // writes whole-pixel widths, so the staircase samples pretext at the floor of each width it asks for: every change then
 // lands on a whole pixel, and each breakpoint is the smallest whole-pixel width where the new height holds. A text
 // whose line count changes more times than breakpointCapacity keeps the changes at the widest widths, and gets the
 // minimum width where the first change it can't keep happens.
 export function tabulateTextRow(prepared: PreparedText, breakpointCapacity: number, sampleStep = 16): TextRowTable {
   const {minimumContainerWidth, maximumContainerWidth, lineHeight, maximumRowHeight} = textRowLayout
-  const staircase = tabulateStaircase(containerWidth => textRowHeight(prepared, Math.floor(containerWidth)), sampleStep)
+  const staircase = tabulateStaircase(containerWidth => textRowHeight(prepared, Math.floor(containerWidth)), sampleStep, {minimumContainerWidth, maximumContainerWidth})
   // Where the height changes and by how many lines, from the narrowest width up.
   const changes: {width: number, lines: number}[] = []
   let widestHeight = staircase.baseHeight
