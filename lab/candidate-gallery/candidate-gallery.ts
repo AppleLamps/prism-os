@@ -14,7 +14,7 @@ import {
   validateCircuit,
   validateTensorProgram,
   validateWireView,
-} from './numeric-ui-core.ts'
+} from '../../numeric-ui-core.ts'
 
 export const photoCount = 12
 

@@ -1,7 +1,7 @@
 const config = {
   entry: [
     'window-manager.ts',
-    'candidate-gallery.ts',
+    'lab/candidate-gallery/candidate-gallery.ts',
     'template/main.ts',
     // The template's switch in plain JavaScript, which only template/toggle.test.ts imports.
     'template/toggle-reference.ts',

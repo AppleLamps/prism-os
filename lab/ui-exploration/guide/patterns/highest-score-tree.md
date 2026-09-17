@@ -76,7 +76,7 @@ The exact chain has the same operations as the exact tree, and 438 layers on the
 
 ## Where it's used
 
-- [candidate-gallery.ts](../../../../candidate-gallery.ts): scores its cinema, contact sheet and story layouts, each score the minimum of how well that layout's sizes fit, and reads the chosen layout's thumbnails and hero through `emitArgmax`'s one-hot.
+- [candidate-gallery.ts](../../../candidate-gallery/candidate-gallery.ts): scores its cinema, contact sheet and story layouts, each score the minimum of how well that layout's sizes fit, and reads the chosen layout's thumbnails and hero through `emitArgmax`'s one-hot.
 - [lab/cascade-argmax](../../../cascade-argmax/README.md): the tree with hand-built sign cascades, trained through soft comparisons and then run as the exact circuit, which picked the right candidate in 160 of 160 cases.
 - [indexing](../sections/indexing.md#hard-attention-as-the-limit): hard attention, with scores that are highest at the nearest position, and with runtime keys for snap targets ([hard-attention.ts](../examples/indexing/hard-attention.ts)).
 - [instanced-items](../../instanced-items/README.md): the `argmax` reduction between per-item stages.

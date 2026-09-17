@@ -49,7 +49,7 @@ When each candidate either fits or doesn't, and earlier candidates are preferred
 
 For C candidates: the sum of every candidate's operations, plus O(C) operations and O(log C) layers for the tournament and for routing its one-hot back down, plus one gather per distinct picked number. Depth is the deepest score, plus the tournament, plus 1 layer of gathers.
 
-Measured by the example's test: 3 layouts of 8 photos are 114 live operations in 25 layers. The three scores alone are 60 operations in 16 layers, the argmax takes the program to 71 operations and 24 layers, and reading the picked layout's 37 numbers and its index adds 43 operations, 18 of them gathers, and 1 layer. The Dynamic UI demo, [candidate-gallery.ts](../../../../candidate-gallery.ts), with 12 photos, clicks and focus, is 417 operations in 60 layers, of which its scores are 81 operations in 18 layers.
+Measured by the example's test: 3 layouts of 8 photos are 114 live operations in 25 layers. The three scores alone are 60 operations in 16 layers, the argmax takes the program to 71 operations and 24 layers, and reading the picked layout's 37 numbers and its index adds 43 operations, 18 of them gathers, and 1 layer. The Dynamic UI demo, [candidate-gallery.ts](../../../candidate-gallery/candidate-gallery.ts), with 12 photos, clicks and focus, is 417 operations in 60 layers, of which its scores are 81 operations in 18 layers.
 
 ## When it's exact
 
@@ -65,7 +65,7 @@ Measured by the example's test: 3 layouts of 8 photos are 114 live operations in
 
 ## Where it's used
 
-- [candidate-gallery.ts](../../../../candidate-gallery.ts), the Dynamic UI demo (`bun run start:candidates`): the Cinema, Contact and Story layouts of 12 photos, with 7 quality scales, i.e. reciprocals of target sizes, in cells.
+- [candidate-gallery.ts](../../../candidate-gallery/candidate-gallery.ts), the Dynamic UI demo (`bun run start:candidates`): the Cinema, Contact and Story layouts of 12 photos, with 7 quality scales, i.e. reciprocals of target sizes, in cells.
 - [drag-knobs](../../drag-knobs/README.md) runs its drag solver on a copy of the candidate gallery, with the gap, the rail's maximum width and the 7 quality scales as design numbers in cells, and adds each layout's unclamped score to find where the picked layout would change.
 - [lab/status.md's parked list](../../../status.md#parked-and-deferred), "Candidate futures", formerly in ideas.md, applies the same construction to next-state values, e.g. the candidates "focus item 1", "focus item 2" and "expand group", scored, with one committed. [Chains](../sections/chains.md#running-the-same-logic-several-times-one-per-guess) describes event-time's version, candidate futures as instances of one program. Neither was built.
 - [Speculation](speculation.md) also runs several candidates, one per possible value of an input that isn't computed yet, and keeps the one that matches instead of the one with the best score.

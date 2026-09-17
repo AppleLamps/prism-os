@@ -1,6 +1,6 @@
 // Run every candidate, then pick one. Three complete gallery layouts are computed on every
 // evaluation, each layout gets a score, emitArgmax picks the highest score, and every output reads
-// the picked layout through the argmax's one-hot. A smaller version of the repo root's
+// the picked layout through the argmax's one-hot. A smaller version of lab/candidate-gallery's
 // candidate-gallery.ts, the Dynamic UI demo. Sizes here lie on quarter and eighth pixel grids, and
 // target sizes are powers of two, so every score is exact both in FP32 and in float64, and the plain
 // JavaScript version below picks the same layout at every viewport.

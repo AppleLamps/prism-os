@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "bun ./index.html",
-    "start:candidates": "bun ./candidate-gallery.html",
+    "start:candidates": "bun ./lab/candidate-gallery/candidate-gallery.html",
     "start:hard-attend": "bun ./lab/hard-attend/hard-attend.html",
     "start:learning": "bun ./lab/learned-gallery/learned-gallery.html",
     "start:reusable": "bun ./lab/reusable-layout/demo.html",

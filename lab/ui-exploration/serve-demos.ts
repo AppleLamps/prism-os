@@ -19,7 +19,7 @@ import {resolve} from 'node:path'
 import indexPage from './demos.html'
 
 import indirectOS from '../../index.html'
-import candidateGallery from '../../candidate-gallery.html'
+import candidateGallery from '../candidate-gallery/candidate-gallery.html'
 import learnedGallery from '../learned-gallery/learned-gallery.html'
 import hardAttend from '../hard-attend/hard-attend.html'
 import generativeFields from '../generative-fields/demo.html'
@@ -48,7 +48,7 @@ const repoRoot = resolve(import.meta.dir, '../..')
 
 const pages = {
   '/index.html': indirectOS,
-  '/candidate-gallery.html': candidateGallery,
+  '/lab/candidate-gallery/candidate-gallery.html': candidateGallery,
   '/lab/learned-gallery/learned-gallery.html': learnedGallery,
   '/lab/hard-attend/hard-attend.html': hardAttend,
   '/lab/generative-fields/demo.html': generativeFields,
@@ -84,6 +84,7 @@ const readmePaths = [
   'lab/reusable-layout/README.md',
   'lab/learned-gallery/README.md',
   'lab/hard-attend/README.md',
+  'lab/candidate-gallery/README.md',
   'lab/ui-exploration/README.md',
   ...prototypeFolders.map(folder => `lab/ui-exploration/${folder}/README.md`),
 ]

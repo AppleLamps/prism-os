@@ -15,7 +15,6 @@ import {
   validateTensorEvaluation,
   validateTensorProgram,
 } from './numeric-ui-core.ts'
-import {createCandidateGalleryMachine} from './candidate-gallery.ts'
 import {createWindowManagerMachine} from './window-manager.ts'
 
 // Tests of gather lowering, described in execution-model.md "One-hot groups and
@@ -1212,55 +1211,11 @@ describe('seeded circuits', () => {
   })
 })
 
-// The candidate gallery and IndirectOS declare finite pixel ranges and one-hot
-// groups, so recognition engages on them. These tests pin the gather read counts
-// that lab/status.md reports, and check the lowered programs against the
-// reference evaluator on every wire across interaction traces.
-describe('IndirectOS and the candidate gallery', () => {
-  test('candidate-gallery lowers its 26 layout selection reads', () => {
-    const machine = createCandidateGalleryMachine()
-    const {circuit} = machine
-    const lowered = gatherStatistics(machine.tensorProgram)
-    const plain = gatherStatistics(
-      circuit.compileTensorProgram(Array.from(machine.tensorProgram.roots, asWire), false),
-    )
-    // One declared group: the argmax winner. The click selection's gate, the
-    // clickActive cell, is declared within 0..1, which isn't a proven bit, so
-    // emitFirstActive declares no group for it. The hero sums lower too, since
-    // circuit.multiply keeps the product of the Contact layout's bit and its
-    // constant-zero hero rectangle, so each sum covers all 3 members.
-    expect(circuit.oneHotGroups.length).toBe(1)
-    expect(lowered.readCount).toBe(26)
-    expect(lowered.slotCount).toBe(1)
-    expect(lowered.storedWeightCount).toBeLessThan(plain.storedWeightCount)
-    console.log(
-      `[survey] candidate-gallery: groups=${circuit.oneHotGroups.length}`
-        + ` gatherReads=${lowered.readCount} slots=${lowered.slotCount}`
-        + ` storedWeights=${lowered.storedWeightCount}`
-        + ` (dense compile of the same roots: ${plain.storedWeightCount})`,
-    )
-
-    // Interaction trace: resizes and clicks, every frame compared wire-for-wire
-    // against the reference evaluator, with the declared group checked exactly.
-    const random = createRandom(0xca11)
-    const viewports = [
-      [1280, 800], [700, 900], [420, 700], [1600, 500], [900, 900],
-    ] as const
-    for (let step = 0; step < 60; step++) {
-      const [width, height] = viewports[step % viewports.length]!
-      if (step % 4 === 2) {
-        machine.click(randomInteger(random, width), randomInteger(random, height))
-      }
-      machine.source[0] = width
-      machine.source[1] = height
-      const reference = circuit.evaluateReference(machine.source)
-      validateOneHotGroups(circuit, reference)
-      const values = circuit.evaluateTensor(machine.source)
-      validateTensorEvaluation(machine.source, circuit, values)
-      machine.step(width, height)
-    }
-  })
-
+// IndirectOS declares finite pixel ranges and one-hot groups, so recognition
+// engages on it. This test pins the gather read counts that lab/status.md
+// reports, and checks the lowered program against the reference evaluator on
+// every wire across an interaction trace.
+describe('IndirectOS', () => {
   test('window-manager lowers its 12 stacking reads and its Notes flow reads, and stays exact in use', () => {
     const machine = createWindowManagerMachine()
     const {circuit} = machine

@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'bun:test'
-import {createCandidateGalleryCircuit, createCandidateGalleryMachine} from '../../../../../../candidate-gallery.ts'
+import {createCandidateGalleryCircuit, createCandidateGalleryMachine} from '../../../../../candidate-gallery/candidate-gallery.ts'
 import {validateOneHotGroups, validateTensorEvaluation, asWire} from '../../../../../../numeric-ui-core.ts'
 import {createRandom, formatSize, measureProgram} from './measure.ts'
 import {buildCandidateGallery, candidateSource, chooseLayout, flattenChoice, layoutNames, viewportLimit} from './run-every-candidate.ts'

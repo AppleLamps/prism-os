@@ -1,13 +1,13 @@
 import {expect, test} from 'bun:test'
-import * as rootCandidateGallery from '../../../candidate-gallery.ts'
+import * as rootCandidateGallery from '../../candidate-gallery/candidate-gallery.ts'
 import * as candidateGalleryCopy from './candidate-gallery-copy.ts'
 import {applyInteraction, interactionFrameTime} from './indirect-os-machine.ts'
 import * as windowManagerCopy from './window-manager-copy.ts'
 
 // The folder imports copies of candidate-gallery.ts and window-manager.ts without their mount at import time (see the
-// comment at the top of each copy). Headless runs have no `document`, so the root modules can be imported here without
-// mounting anything, and the candidate-gallery test checks that its copy still builds the same program as its root
-// module, e.g. after someone edits the root module and forgets the copy.
+// comment at the top of each copy). Headless runs have no `document`, so the original modules can be imported here without
+// mounting anything, and the candidate-gallery test checks that its copy still builds the same program as its original
+// module, e.g. after someone edits the original module and forgets the copy.
 
 test('candidate-gallery-copy.ts builds the same program and steps to the same values as candidate-gallery.ts', () => {
   expect<unknown>(candidateGalleryCopy.sourceField).toEqual(rootCandidateGallery.sourceField)
