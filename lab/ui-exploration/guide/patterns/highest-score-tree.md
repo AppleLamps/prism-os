@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "`findIndex` when passing items can be anywhere, and keeping the best score so far"](../../../../patterns.md#findindex-when-passing-items-can-be-anywhere-and-keeping-the-best-score-so-far).
+Size: loop. Short entry: [patterns.md, "`findIndex` when passing items can be anywhere, and keeping the best score so far"](../../../../docs/patterns.md#findindex-when-passing-items-can-be-anywhere-and-keeping-the-best-score-so-far).
 
 # The highest score, in a tree
 

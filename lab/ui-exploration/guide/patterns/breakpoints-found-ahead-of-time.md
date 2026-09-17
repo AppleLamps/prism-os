@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "A layout function of one runtime number"](../../../../patterns.md#a-layout-function-of-one-runtime-number).
+Size: loop. Short entry: [patterns.md, "A layout function of one runtime number"](../../../../docs/patterns.md#a-layout-function-of-one-runtime-number).
 
 # Breakpoints found ahead of time
 

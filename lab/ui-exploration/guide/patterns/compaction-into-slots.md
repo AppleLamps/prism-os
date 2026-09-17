@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "`items.filter(isVisible).slice(0, K)` into K DOM nodes"](../../../../patterns.md#itemsfilterisvisibleslice0-k-into-k-dom-nodes).
+Size: loop. Short entry: [patterns.md, "`items.filter(isVisible).slice(0, K)` into K DOM nodes"](../../../../docs/patterns.md#itemsfilterisvisibleslice0-k-into-k-dom-nodes).
 
 # Compaction into K DOM slots
 
@@ -77,7 +77,7 @@ When fewer than k + 1 items are visible, the search ends past the last item, whe
 
 ## Where it's used
 
-- [patterns.md](../../../../patterns.md#itemsfilterisvisibleslice0-k-into-k-dom-nodes): the short entry, which absorbed tricks.md's "Bounded visibility compaction", where the idea was first written down.
+- [patterns.md](../../../../docs/patterns.md#itemsfilterisvisibleslice0-k-into-k-dom-nodes): the short entry, which absorbed tricks.md's "Bounded visibility compaction", where the idea was first written down.
 - [lists](../../lists/README.md): capacity routing, 1,000 items into 20 DOM slots, 0 mismatches over 208 visibility patterns.
 - [hn-thread](../../hn-thread/README.md): rank slots for the comments in view, and window slots.
 - [lists](../../lists/README.md#merged-from-index-read-september-16-2026): prefix counts and a binary search per slot, 10,000 operations and 49 layers for 1,000 items into 20, measured in [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read)'s copy of the runtime.

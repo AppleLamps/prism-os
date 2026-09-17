@@ -6,7 +6,7 @@ Each rewrite below computes the same result as the loop, and every iteration of 
 
 Three related topics are in other sections. A loop that runs a spring step a runtime number of times becomes powers of one step matrix, chosen by the binary digits of the step count, in [springs](springs.md). A loop that carries a state machine from event to event, and following links like "where does the next line start", are in [chains](chains.md). Reading `values[index]` at a computed index is in [indexing](indexing.md).
 
-The short entries for these loops are in the repo root's [patterns.md](../../../../patterns.md). Sections 1 to 5 each link a long pattern doc, which has a runnable example and a test, and keep what the pattern doc doesn't cover: other ways to compute the same result, and what the prototypes measured. Section 6 is the long form of patterns.md's water filling entry.
+The short entries for these loops are in [docs/patterns.md](../../../../docs/patterns.md). Sections 1 to 5 each link a long pattern doc, which has a runnable example and a test, and keep what the pattern doc doesn't cover: other ways to compute the same result, and what the prototypes measured. Section 6 is the long form of patterns.md's water filling entry.
 
 ## How cost is counted
 
@@ -191,7 +191,7 @@ A sorting network is a fixed list of compare-exchange steps that sorts any input
 
 The [runtime notes](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md) measured an odd-even merge network over 64 keys, without a payload, at 2,172 operations and 63 layers. So at 16 items counting was less work, at 64 items the network was, and counting stayed at a constant 5 layers.
 
-The runtime notes' network was exact only on integer keys. Its compare-exchanges computed each minimum and maximum with arithmetic on the difference, 4 operations in 3 layers, and that arithmetic drifts on fractional operands, like `emitMinimum` ([minimum and maximum](../../../../execution-model.md#minimum-and-maximum)). On fractional keys, 20 to 24% of its outputs weren't bit-equal to any input, with errors up to 6e-5. Counting copies each value without rounding, as long as its comparisons give exact bits, e.g. from `emitCompare`.
+The runtime notes' network was exact only on integer keys. Its compare-exchanges computed each minimum and maximum with arithmetic on the difference, 4 operations in 3 layers, and that arithmetic drifts on fractional operands, like `emitMinimum` ([minimum and maximum](../../../../docs/execution-model.md#minimum-and-maximum)). On fractional keys, 20 to 24% of its outputs weren't bit-equal to any input, with errors up to 6e-5. Counting copies each value without rounding, as long as its comparisons give exact bits, e.g. from `emitCompare`.
 
 ### An incremental update when one item moves
 

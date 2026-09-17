@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "A loop over items that mixes per-item work with values carried to the next item"](../../../../patterns.md#a-loop-over-items-that-mixes-per-item-work-with-values-carried-to-the-next-item).
+Size: loop. Short entry: [patterns.md, "A loop over items that mixes per-item work with values carried to the next item"](../../../../docs/patterns.md#a-loop-over-items-that-mixes-per-item-work-with-values-carried-to-the-next-item).
 
 # One program per item
 

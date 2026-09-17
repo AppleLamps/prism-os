@@ -1,12 +1,12 @@
 # Tutorial
 
-This tutorial walks through [template/](template/), a toggle switch written as one numeric program. Like a native switch, it acts on release: a press on the track arms it, and a release on the track while it's armed flips it. The thumb springs to its new side. Run it with `bun run start:template`, run its test with `bun test template`, and type-check it with `bunx tsgo -p .`, since `bun` strips types without checking them; tsgo prints nothing when the check passes. `bun run check` runs the same type-check on every lab folder and then lints, so it takes longer.
+This tutorial walks through [template/](../template/), a toggle switch written as one numeric program. Like a native switch, it acts on release: a press on the track arms it, and a release on the track while it's armed flips it. The thumb springs to its new side. Run it with `bun run start:template`, run its test with `bun test template`, and type-check it with `bunx tsgo -p .`, since `bun` strips types without checking them; tsgo prints nothing when the check passes. `bun run check` runs the same type-check on every lab folder and then lints, so it takes longer.
 
 JavaScript writes browser inputs into a `Float32Array`, the source table, and runs the program on it. The program's next-state values are written back into the table, and its other outputs go to the DOM. Builder code is ordinary JavaScript that runs once and appends operations to a `Circuit`, so nothing in the program branches or loops at runtime. `toggle.ts` holds the cells, the builder code, the host loop and the DOM writes, `toggle-reference.ts` is the same switch in plain JavaScript, `toggle.test.ts` compares the two, and `index.html` with `main.ts` is the page.
 
 ## Cells
 
-Every number the program reads, or keeps from one evaluation to the next, is a cell of the source table. [cells.ts](cells.ts) declares each cell once, with what happens to it around an evaluation, a range and an initial value:
+Every number the program reads, or keeps from one evaluation to the next, is a cell of the source table. [cells.ts](../cells.ts) declares each cell once, with what happens to it around an evaluation, a range and an initial value:
 
 ```ts
 const coordinate = () => input([-16_384, 16_384], {grid: 1 / 64})
@@ -97,7 +97,7 @@ A program can't loop a runtime number of times, so JavaScript counts the spring'
 
 ## The host loop
 
-`createToggleMachine` is the JavaScript around the program. Event handlers only queue events with their timestamps. Each frame calls `advanceFrame` from [host-timing.ts](host-timing.ts), which plans the frame's evaluations: one per distinct event timestamp, which steps the spring to that timestamp before applying the events, a settle check every 64 ms of simulated time, and one at the frame's timestamp. For each evaluation, the callback writes the spring matrix of `evaluation.steps` steps, the settle check bit, the snap bit, the viewport and the events into the table, runs the program, and writes next state back. The snap bit pins the thumb onto its destination when a frame would need more than 300 steps, e.g. after a long stall.
+`createToggleMachine` is the JavaScript around the program. Event handlers only queue events with their timestamps. Each frame calls `advanceFrame` from [host-timing.ts](../host-timing.ts), which plans the frame's evaluations: one per distinct event timestamp, which steps the spring to that timestamp before applying the events, a settle check every 64 ms of simulated time, and one at the frame's timestamp. For each evaluation, the callback writes the spring matrix of `evaluation.steps` steps, the settle check bit, the snap bit, the viewport and the events into the table, runs the program, and writes next state back. The snap bit pins the thumb onto its destination when a frame would need more than 300 steps, e.g. after a long stall.
 
 ```ts
 const evaluate = createEvaluator(built) // compiles the program for nextSource and the output
@@ -156,7 +156,7 @@ Decisions match exactly, since `emitCompare`'s bits equal JavaScript's compariso
 
 ## Adding a second switch
 
-toggle.ts builds one switch. To show two, turn the switch into a component: a plain object of its cells, and a build function that takes the circuit, the table, the component's wires and the parent's wires. Photos in [photo-gallery.ts](photo-gallery.ts) is a real one: `photoCells` holds its cells, and `buildPhotos(circuit, table, cells, host)` builds it from wires that the host passes, e.g. the size of the content box and whether Photos takes events. IndirectOS in [window-manager.ts](window-manager.ts) declares `photos: photoCells` among its own cells and passes the Photos window's content size and focus bit, while the standalone Photos machine declares the same cells next to viewport cells of its own. The parent declares the component's cells once per switch, before `createCircuit`:
+toggle.ts builds one switch. To show two, turn the switch into a component: a plain object of its cells, and a build function that takes the circuit, the table, the component's wires and the parent's wires. Photos in [photo-gallery.ts](../photo-gallery.ts) is a real one: `photoCells` holds its cells, and `buildPhotos(circuit, table, cells, host)` builds it from wires that the host passes, e.g. the size of the content box and whether Photos takes events. IndirectOS in [window-manager.ts](../window-manager.ts) declares `photos: photoCells` among its own cells and passes the Photos window's content size and focus bit, while the standalone Photos machine declares the same cells next to viewport cells of its own. The parent declares the component's cells once per switch, before `createCircuit`:
 
 ```ts
 // One switch: whether it's on, whether a press armed it, and its thumb's spring.

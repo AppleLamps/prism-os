@@ -1,4 +1,4 @@
-Size: behavior choice. Short entry: [behavior-choices.md, "Hit-test destinations instead of drawn positions"](../../../../behavior-choices.md#hit-test-destinations-instead-of-drawn-positions).
+Size: behavior choice. Short entry: [behavior-choices.md, "Hit-test destinations instead of drawn positions"](../../../../docs/behavior-choices.md#hit-test-destinations-instead-of-drawn-positions).
 
 # Hit-test destinations instead of drawn positions
 

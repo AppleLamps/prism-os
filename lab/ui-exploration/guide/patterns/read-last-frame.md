@@ -1,4 +1,4 @@
-Size: behavior choice. Short entry: [behavior-choices.md, "Read last frame's value"](../../../../behavior-choices.md#read-last-frames-value).
+Size: behavior choice. Short entry: [behavior-choices.md, "Read last frame's value"](../../../../docs/behavior-choices.md#read-last-frames-value).
 
 # Read last frame's value
 

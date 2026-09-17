@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "`findIndex` when passing items can be anywhere, and keeping the best score so far"](../../../../patterns.md#findindex-when-passing-items-can-be-anywhere-and-keeping-the-best-score-so-far).
+Size: loop. Short entry: [patterns.md, "`findIndex` when passing items can be anywhere, and keeping the best score so far"](../../../../docs/patterns.md#findindex-when-passing-items-can-be-anywhere-and-keeping-the-best-score-so-far).
 
 # The first active candidate, in a tree
 
@@ -91,7 +91,7 @@ With 15 overlapping rectangles, the hit bits are 165 operations in 4 layers, and
 
 ## Where it came from
 
-On June 9, 2026, Photos selected one of about 15 overlapping click targets, the previous and next controls, the thumbnails and the main image, with a chain in priority order. Cheng asked whether anything was written "too much like cpu and not enough like shaders/gpu", pushed from a version where each target's selection read the hit bits of all earlier targets toward "block-wise winners, recursive", and `emitFirstActive` replaced the chain. The README in that commit (dfee7a6) records the whole circuit going from 75 to 70 layers, for 0.3% more stored weights (13,094 to 13,138). With today's runtime, where `circuit.multiply` keeps its operands as separate operations, the same chain at 15 candidates is 29 operations in 29 layers, against 71 operations in 20 layers for the tree. The repo root's parallel-winner.md described the construction, and is now part of [patterns.md](../../../../patterns.md#findindex-when-passing-items-can-be-anywhere-and-keeping-the-best-score-so-far).
+On June 9, 2026, Photos selected one of about 15 overlapping click targets, the previous and next controls, the thumbnails and the main image, with a chain in priority order. Cheng asked whether anything was written "too much like cpu and not enough like shaders/gpu", pushed from a version where each target's selection read the hit bits of all earlier targets toward "block-wise winners, recursive", and `emitFirstActive` replaced the chain. The README in that commit (dfee7a6) records the whole circuit going from 75 to 70 layers, for 0.3% more stored weights (13,094 to 13,138). With today's runtime, where `circuit.multiply` keeps its operands as separate operations, the same chain at 15 candidates is 29 operations in 29 layers, against 71 operations in 20 layers for the tree. The repo root's parallel-winner.md described the construction, and is now part of [patterns.md](../../../../docs/patterns.md#findindex-when-passing-items-can-be-anywhere-and-keeping-the-best-score-so-far).
 
 ## Where it's used
 

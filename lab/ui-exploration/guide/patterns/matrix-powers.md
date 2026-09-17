@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "A linear step repeated a runtime number of times"](../../../../patterns.md#a-linear-step-repeated-a-runtime-number-of-times).
+Size: loop. Short entry: [patterns.md, "A linear step repeated a runtime number of times"](../../../../docs/patterns.md#a-linear-step-repeated-a-runtime-number-of-times).
 
 # Repeated steps as one matrix power
 
@@ -85,7 +85,7 @@ Products and sums round in FP32, so the grouping is part of the result, and no b
 
 ## Where it's used
 
-- numeric-ui-core.ts's `emitApplySpringMatrix` and `emitAnimatedObject`, with host-timing.ts's `springMatrixPower` and `advanceFrame`, are the default spring ([execution-model.md](../../../../execution-model.md#springs-and-time), [shared-runtime-springs.ts](../examples/springs/shared-runtime-springs.ts)).
+- numeric-ui-core.ts's `emitApplySpringMatrix` and `emitAnimatedObject`, with host-timing.ts's `springMatrixPower` and `advanceFrame`, are the default spring ([execution-model.md](../../../../docs/execution-model.md#springs-and-time), [shared-runtime-springs.ts](../examples/springs/shared-runtime-springs.ts)).
 - [springs](../sections/springs.md#4-javascript-writes-the-frame-matrix), forms 2 to 4, measure each way to run a runtime number of steps, and [chains](../sections/chains.md#which-steps-combine-into-a-step-of-the-same-kind) lists linear maps among the steps that combine into a step of the same kind.
 - [spring-bank](../../event-time/README.md#merged-from-spring-bank-september-16-2026), in event-time since September 16, 2026: IndirectOS went from 5,253 operations and 192 layers with its original springs to 3,580 and 137 with matrix powers read from constant tables through one-hots (`split-table`), and to 3,413 operations with JavaScript writing the matrix (`source-matrix`).
 - [event-time](../../event-time/README.md): predictions of 301 samples, where sample i holds M^i, turned into Web Animations keyframes.

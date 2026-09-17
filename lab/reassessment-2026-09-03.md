@@ -89,7 +89,7 @@ Retain the moves, or retain enough information to know whether the pointer cross
 
 ### 5. Smaller issues worth fixing alongside those
 
-- `emitSelect` is documented as exact for any finite operands, but its `off + bit * (on - off)` expansion can overflow the subtraction. With `off = fround(3e38)`, `on = fround(-3e38)`, and `bit = 0`, it returns `NaN`. The trace compiler already uses a two-product form that avoids this particular overflow. [Guarantee](../execution-model.md#selection).
+- `emitSelect` is documented as exact for any finite operands, but its `off + bit * (on - off)` expansion can overflow the subtraction. With `off = fround(3e38)`, `on = fround(-3e38)`, and `bit = 0`, it returns `NaN`. The trace compiler already uses a two-product form that avoids this particular overflow. [Guarantee](../docs/execution-model.md#selection).
 - The real-file compiler experiments read a mutable file in another repository. Three selected tests now fail because `clamp` changed, a column calculation includes `console`, and `springStep` no longer exists there. Keep the measured source revision as a fixture; make compatibility with the latest external source a separate test. [Source loading](trace-compiler/real-slice.ts).
 - Root type checking and linting include root files and `exp/*.ts`, not the new labs. The labs have separate checks, but there is no single command covering the supported code. [Package scripts](../package.json), [TypeScript configuration](../tsconfig.json).
 

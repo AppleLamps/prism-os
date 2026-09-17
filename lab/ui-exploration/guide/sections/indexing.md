@@ -112,7 +112,7 @@ const slotTops = Array.from({length: slotCount}, (_, slot) =>
   circuit.indexReadAffine([[firstVisibleRow, 1]], slot, rowTops, 'clamp', 'zero'))
 ```
 
-[execution-model.md](../../../../execution-model.md#index-reads) has the contract: which declared index ranges the builder accepts, why the index must hold an integer, which `validateIndexReads(circuit, values)` checks in tests, how `-0`, infinities and NaN come through, and which reads count as proven bits for `emitFirstActive`.
+[execution-model.md](../../../../docs/execution-model.md#index-reads) has the contract: which declared index ranges the builder accepts, why the index must hold an integer, which `validateIndexReads(circuit, values)` checks in tests, how `-0`, infinities and NaN come through, and which reads count as proven bits for `emitFirstActive`.
 
 [index-read-instruction.ts](../examples/indexing/index-read-instruction.ts) builds the first read and the linear interpolation below over index-read's copy of the runtime, which moved into [pixel-output](../../pixel-output/numeric-ui-core.ts) when [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read) was removed on September 16, 2026, and [shared-runtime-index-read.test.ts](../examples/indexing/shared-runtime-index-read.test.ts) checks that both runtimes return the same values with the same counts.
 

@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "`findIndex` when the test flips once along the items"](../../../../patterns.md#findindex-when-the-test-flips-once-along-the-items).
+Size: loop. Short entry: [patterns.md, "`findIndex` when the test flips once along the items"](../../../../docs/patterns.md#findindex-when-the-test-flips-once-along-the-items).
 
 # Count instead of search
 

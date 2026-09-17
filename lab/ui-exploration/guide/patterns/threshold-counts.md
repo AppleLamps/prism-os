@@ -1,4 +1,4 @@
-Size: expression. Short entry: [expressions.md, "Familiar expressions"](../../../../expressions.md#familiar-expressions), the `Math.floor(x / step)` row.
+Size: expression. Short entry: [expressions.md, "Familiar expressions"](../../../../docs/expressions.md#familiar-expressions), the `Math.floor(x / step)` row.
 
 # Threshold counts instead of floor and division
 

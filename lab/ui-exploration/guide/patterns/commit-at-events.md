@@ -1,4 +1,4 @@
-Size: behavior choice. Short entry: [behavior-choices.md, "Apply events at their timestamps, and write state back only at events and settle checks"](../../../../behavior-choices.md#apply-events-at-their-timestamps-and-write-state-back-only-at-events-and-settle-checks).
+Size: behavior choice. Short entry: [behavior-choices.md, "Apply events at their timestamps, and write state back only at events and settle checks"](../../../../docs/behavior-choices.md#apply-events-at-their-timestamps-and-write-state-back-only-at-events-and-settle-checks).
 
 # Commit state at events
 

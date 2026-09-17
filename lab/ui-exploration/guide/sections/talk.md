@@ -112,7 +112,7 @@ Chrome can keep playing an animation on its compositor thread while JavaScript i
 
 **Main limitation.** JavaScript now runs a schedule: when to commit, timers for settle commits, running due settle commits before a display, and undoing settle commits when an event with an earlier timestamp arrives after them. Events that arrive during a stall are still handled only once the main thread is free. A value read "from last frame" now comes from the last commit, which can be hundreds of milliseconds old, e.g. Photos laying itself out from last state's window size was 507 px off during the maximize, against 35.7 px when every frame writes back at 240 fps. A live resize also created about 181,000 keyframe objects in 11 s.
 
-**Since then.** Since September 14, 2026, host-timing.ts's `advanceFrame` applies the same rule in the repo root when `writeBack` is `'events and settle checks'`: only evaluations at events, settle checks and snaps write state back, and each frame evaluates a copy of the table ([execution-model.md](../../../../execution-model.md#which-evaluations-write-state-back)).
+**Since then.** Since September 14, 2026, host-timing.ts's `advanceFrame` applies the same rule in the repo root when `writeBack` is `'events and settle checks'`: only evaluations at events, settle checks and snaps write state back, and each frame evaluates a copy of the table ([execution-model.md](../../../../docs/execution-model.md#which-evaluations-write-state-back)).
 
 ### pixel-output: the pixel instead of the DOM element
 

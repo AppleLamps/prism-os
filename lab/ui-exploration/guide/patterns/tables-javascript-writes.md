@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "A loop over data that rarely changes"](../../../../patterns.md#a-loop-over-data-that-rarely-changes).
+Size: loop. Short entry: [patterns.md, "A loop over data that rarely changes"](../../../../docs/patterns.md#a-loop-over-data-that-rarely-changes).
 
 # Tables that JavaScript writes
 

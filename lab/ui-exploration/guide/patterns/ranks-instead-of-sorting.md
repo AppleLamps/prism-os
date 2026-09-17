@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "`items.sort(compare)`"](../../../../patterns.md#itemssortcompare).
+Size: loop. Short entry: [patterns.md, "`items.sort(compare)`"](../../../../docs/patterns.md#itemssortcompare).
 
 # Ranks instead of sorting
 

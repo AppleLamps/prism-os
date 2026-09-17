@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "Following links one at a time"](../../../../patterns.md#following-links-one-at-a-time).
+Size: loop. Short entry: [patterns.md, "Following links one at a time"](../../../../docs/patterns.md#following-links-one-at-a-time).
 
 # Following links by doubling
 

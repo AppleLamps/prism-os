@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "A state machine over queued events"](../../../../patterns.md#a-state-machine-over-queued-events).
+Size: loop. Short entry: [patterns.md, "A state machine over queued events"](../../../../docs/patterns.md#a-state-machine-over-queued-events).
 
 # Speculation
 

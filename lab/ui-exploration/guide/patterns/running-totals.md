@@ -1,4 +1,4 @@
-Size: loop. Short entry: [patterns.md, "Running totals"](../../../../patterns.md#running-totals).
+Size: loop. Short entry: [patterns.md, "Running totals"](../../../../docs/patterns.md#running-totals).
 
 # Running totals as a tree of additions
 
