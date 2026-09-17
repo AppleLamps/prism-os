@@ -93,7 +93,8 @@ const readmes = Object.fromEntries(readmePaths.map(path => [
   () => new Response(Bun.file(resolve(repoRoot, path)), {headers: {'content-type': 'text/plain; charset=utf-8'}}),
 ]))
 
-const routes = {'/': indexPage, ...pages, ...readmes}
+// Browsers request /favicon.ico on the first page they open. An empty response keeps a 404 out of that page's console.
+const routes = {'/': indexPage, ...pages, ...readmes, '/favicon.ico': new Response(null, {status: 204})}
 
 // Warn when the index page links to a path this server doesn't serve, e.g. after a demo is renamed.
 const indexHtml = readFileSync(resolve(import.meta.dir, 'demos.html'), 'utf8')

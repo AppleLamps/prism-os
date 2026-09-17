@@ -207,7 +207,9 @@ function renderStats() {
 }
 
 function frame(now: number) {
-  const elapsed = Math.min(now - previousTime, 1000) + leftoverMilliseconds
+  // A frame's timestamp can be earlier than the performance.now() taken before the frame was requested, e.g. on the
+  // first frame after the long circuit build, so a negative elapsed time counts as 0 and the step count stays within 0..maximumSteps.
+  const elapsed = Math.min(Math.max(0, now - previousTime), 1000) + leftoverMilliseconds
   previousTime = now
   const steps = Math.min(maximumSteps, Math.floor(elapsed / stepMilliseconds))
   leftoverMilliseconds = steps === maximumSteps ? 0 : elapsed - steps * stepMilliseconds

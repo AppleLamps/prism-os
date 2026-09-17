@@ -40,7 +40,9 @@ function mount(document: Document, window: Window) {
 
   function render(now: number) {
     // Times are latched relative to page load, so FP32 keeps millisecond resolution.
-    const seconds = (now - startTime) / 1000
+    // The first frame's timestamp can be earlier than startTime, so a negative time counts as 0,
+    // which keeps progress within its declared 0..1 and seconds within 0..16,384.
+    const seconds = Math.max(0, now - startTime) / 1000
     source[workloadField.viewportWidth] = Math.max(320, document.documentElement.clientWidth)
     source[workloadField.viewportHeight] = Math.max(240, document.documentElement.clientHeight)
     source[workloadField.progress] = (seconds % 8) / 8
