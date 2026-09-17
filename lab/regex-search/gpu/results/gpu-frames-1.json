@@ -1,0 +1,7014 @@
+{
+ "driver": {
+  "startedAt": "2026-09-17T14:13:08.930Z",
+  "loadBefore": "{ 2.75 3.39 3.67 }",
+  "memoryBefore": "System-wide memory free percentage: 73%",
+  "argv": [
+   "--mode",
+   "frames",
+   "--states",
+   "8,16,32",
+   "--text-lengths",
+   "1024",
+   "--frames",
+   "120",
+   "--kernels",
+   "8:row-16x16,16:row-16x16,32:row-16x16",
+   "--profile",
+   "scratchpad/demos/regex-tree/chrome-profiles/frames-1",
+   "--expected",
+   "scratchpad/demos/regex-tree/gpu/expected",
+   "--out",
+   "lab/regex-search/gpu/results/gpu-frames-1.json",
+   "--timeout-seconds",
+   "900"
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=60157",
+   "--user-data-dir=scratchpad/demos/regex-tree/chrome-profiles/frames-1",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "browser": "Chrome/153.0.8010.48",
+  "finishedAt": "2026-09-17T14:13:21.729Z",
+  "loadAfter": "{ 3.06 3.43 3.68 }",
+  "memoryAfter": "System-wide memory free percentage: 73%"
+ },
+ "page": {
+  "startedAt": "2026-09-17T14:13:09.334Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "frames",
+   "patterns": {
+    "8": "(the|an?) [a-z]+",
+    "16": "(the|an?|some) [a-z]+(ing)?s?",
+    "32": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? "
+   },
+   "states": [
+    8,
+    16,
+    32
+   ],
+   "textLengths": [
+    1024
+   ],
+   "kernels": {
+    "8": "row-16x16",
+    "16": "row-16x16",
+    "32": "row-16x16"
+   },
+   "shaderSalt": 316139847,
+   "warmupMs": 0,
+   "sampleMs": 0,
+   "minimumSamples": 0,
+   "maximumSamples": 0,
+   "frames": 120,
+   "expectedFiles": [
+    "reach-js-dense-8-32768.bin",
+    "reach-js-dense-16-4096.bin",
+    "reach-data-reverse-32-256.bin",
+    "reach-js-dense-8-16384.bin",
+    "reach-reference-8-256.bin",
+    "reach-reference-16-2048.bin",
+    "reach-reference-8-4096.bin",
+    "reach-reference-16-1024.bin",
+    "reach-js-dense-32-512.bin",
+    "reach-reference-32-65536.bin",
+    "reach-reference-32-512.bin",
+    "reach-js-dense-8-4096.bin",
+    "reach-js-dense-16-65536.bin",
+    "reach-js-dense-32-8192.bin",
+    "reach-reference-32-16384.bin",
+    "reach-reference-8-8192.bin",
+    "reach-reference-16-512.bin",
+    "reach-js-dense-16-16384.bin",
+    "reach-js-dense-8-256.bin",
+    "reach-data-reverse-8-1024.bin",
+    "reach-js-dense-32-4096.bin",
+    "reach-js-dense-16-32768.bin",
+    "reach-js-dense-16-512.bin",
+    "reach-js-dense-8-8192.bin",
+    "reach-reference-32-32768.bin",
+    "reach-js-dense-16-8192.bin",
+    "reach-js-dense-8-65536.bin",
+    "reach-reference-32-1024.bin",
+    "reach-data-reverse-16-256.bin",
+    "reach-reference-32-2048.bin",
+    "reach-js-dense-16-256.bin",
+    "reach-tree-ends-8-1024.bin",
+    "reach-reference-32-8192.bin",
+    "reach-js-dense-16-2048.bin",
+    "reach-data-reverse-8-256.bin",
+    "reach-reference-16-256.bin",
+    "reach-js-dense-16-1024.bin",
+    "reach-js-dense-8-512.bin",
+    "reach-tree-ends-16-256.bin",
+    "reach-js-dense-8-1024.bin",
+    "reach-js-dense-32-16384.bin",
+    "reach-reference-8-16384.bin",
+    "reach-reference-16-16384.bin",
+    "reach-js-dense-8-2048.bin",
+    "reach-reference-16-32768.bin",
+    "reach-reference-8-2048.bin",
+    "reach-tree-ends-8-256.bin",
+    "reach-reference-8-32768.bin",
+    "reach-js-dense-32-32768.bin",
+    "reach-data-reverse-16-1024.bin",
+    "reach-reference-16-4096.bin",
+    "reach-tree-ends-16-1024.bin",
+    "reach-reference-8-1024.bin",
+    "reach-js-dense-32-1024.bin",
+    "reach-js-dense-32-2048.bin",
+    "reach-js-dense-32-65536.bin",
+    "reach-reference-16-8192.bin",
+    "reach-tree-ends-32-256.bin",
+    "reach-reference-16-65536.bin",
+    "reach-reference-8-65536.bin",
+    "reach-data-reverse-32-1024.bin",
+    "reach-reference-32-256.bin",
+    "reach-reference-32-4096.bin",
+    "reach-reference-8-512.bin",
+    "reach-js-dense-32-256.bin"
+   ]
+  },
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "hasTimestamps": true,
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeInvocationsPerWorkgroup": 1024
+   }
+  },
+  "compileTimes": [
+   {
+    "states": 8,
+    "kernel": "row-16x16",
+    "shaderSalt": 316139847,
+    "matrixProductMs": 40.02999998629093,
+    "vectorProductMs": 5.8599999994039536,
+    "packMs": 6.180000007152557,
+    "gatherMs": 5.50500001013279
+   },
+   {
+    "states": 16,
+    "kernel": "row-16x16",
+    "shaderSalt": 316139847,
+    "matrixProductMs": 6.939999997615814,
+    "vectorProductMs": 5.299999997019768,
+    "packMs": 5.019999995827675,
+    "gatherMs": 5.314999997615814
+   },
+   {
+    "states": 32,
+    "kernel": "row-16x16",
+    "shaderSalt": 316139847,
+    "matrixProductMs": 17.109999999403954,
+    "vectorProductMs": 8.290000006556511,
+    "packMs": 7.314999997615814,
+    "gatherMs": 6.675000011920929
+   }
+  ],
+  "results": [
+   {
+    "states": 8,
+    "textLength": 1024,
+    "kernel": "row-16x16",
+    "input": "leaves",
+    "frameCount": 120,
+    "callbackIntervalMs": {
+     "count": 120,
+     "median": 16.665,
+     "p10": 15.7,
+     "p90": 17.565,
+     "min": 14.675,
+     "max": 18.65
+    },
+    "arrivalMs": {
+     "count": 120,
+     "median": 1.05,
+     "p10": 0.745,
+     "p90": 1.465,
+     "min": 0.65,
+     "max": 6.085
+    },
+    "framesUntilDrawn": [
+     {
+      "framesUntilDrawn": 1,
+      "evaluations": 120
+     }
+    ],
+    "submitToDrawCallbackMs": {
+     "count": 120,
+     "median": 16.665,
+     "p10": 15.7,
+     "p90": 17.565,
+     "min": 14.675,
+     "max": 18.65
+    },
+    "frames": [
+     {
+      "submitFrame": 1,
+      "submitCallbackStart": 138.85500000417233,
+      "leafMs": 0.015,
+      "arrivalMs": 1,
+      "totalMs": 0.93,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.78
+     },
+     {
+      "submitFrame": 2,
+      "submitCallbackStart": 155.63500000536442,
+      "leafMs": 0.015,
+      "arrivalMs": 0.71,
+      "totalMs": 0.655,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.085
+     },
+     {
+      "submitFrame": 3,
+      "submitCallbackStart": 171.7199999988079,
+      "leafMs": 0.015,
+      "arrivalMs": 0.69,
+      "totalMs": 0.625,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.185
+     },
+     {
+      "submitFrame": 4,
+      "submitCallbackStart": 188.9050000011921,
+      "leafMs": 0.015,
+      "arrivalMs": 0.9,
+      "totalMs": 0.85,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.755
+     },
+     {
+      "submitFrame": 5,
+      "submitCallbackStart": 205.65999999642372,
+      "leafMs": 0.015,
+      "arrivalMs": 1,
+      "totalMs": 0.95,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.25
+     },
+     {
+      "submitFrame": 6,
+      "submitCallbackStart": 220.90999999642372,
+      "leafMs": 0.015,
+      "arrivalMs": 0.8,
+      "totalMs": 0.745,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.065
+     },
+     {
+      "submitFrame": 7,
+      "submitCallbackStart": 238.9750000089407,
+      "leafMs": 0.01,
+      "arrivalMs": 0.67,
+      "totalMs": 0.6,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.585
+     },
+     {
+      "submitFrame": 8,
+      "submitCallbackStart": 255.5600000023842,
+      "leafMs": 0.015,
+      "arrivalMs": 1.07,
+      "totalMs": 1.015,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 9,
+      "submitCallbackStart": 272.2199999988079,
+      "leafMs": 0.015,
+      "arrivalMs": 0.65,
+      "totalMs": 0.595,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.6
+     },
+     {
+      "submitFrame": 10,
+      "submitCallbackStart": 288.8200000077486,
+      "leafMs": 0.01,
+      "arrivalMs": 0.74,
+      "totalMs": 0.67,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.765
+     },
+     {
+      "submitFrame": 11,
+      "submitCallbackStart": 305.58500000834465,
+      "leafMs": 0.015,
+      "arrivalMs": 0.765,
+      "totalMs": 0.71,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.64
+     },
+     {
+      "submitFrame": 12,
+      "submitCallbackStart": 322.2250000089407,
+      "leafMs": 0.015,
+      "arrivalMs": 0.745,
+      "totalMs": 0.695,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.69
+     },
+     {
+      "submitFrame": 13,
+      "submitCallbackStart": 338.9150000065565,
+      "leafMs": 0.015,
+      "arrivalMs": 0.78,
+      "totalMs": 0.735,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.72
+     },
+     {
+      "submitFrame": 14,
+      "submitCallbackStart": 353.6350000053644,
+      "leafMs": 0.015,
+      "arrivalMs": 1.175,
+      "totalMs": 1.125,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.64
+     },
+     {
+      "submitFrame": 15,
+      "submitCallbackStart": 371.27500000596046,
+      "leafMs": 0.02,
+      "arrivalMs": 0.775,
+      "totalMs": 0.72,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.095
+     },
+     {
+      "submitFrame": 16,
+      "submitCallbackStart": 388.3700000047684,
+      "leafMs": 0.02,
+      "arrivalMs": 0.885,
+      "totalMs": 0.825,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.385
+     },
+     {
+      "submitFrame": 17,
+      "submitCallbackStart": 403.7550000101328,
+      "leafMs": 0.015,
+      "arrivalMs": 1.175,
+      "totalMs": 1.08,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.895
+     },
+     {
+      "submitFrame": 18,
+      "submitCallbackStart": 420.65000000596046,
+      "leafMs": 0.01,
+      "arrivalMs": 1.045,
+      "totalMs": 1.015,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.22
+     },
+     {
+      "submitFrame": 19,
+      "submitCallbackStart": 438.8700000047684,
+      "leafMs": 0.015,
+      "arrivalMs": 0.865,
+      "totalMs": 0.835,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.765
+     },
+     {
+      "submitFrame": 20,
+      "submitCallbackStart": 455.6350000053644,
+      "leafMs": 0.035,
+      "arrivalMs": 1.115,
+      "totalMs": 1.05,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.585
+     },
+     {
+      "submitFrame": 21,
+      "submitCallbackStart": 472.2199999988079,
+      "leafMs": 0.025,
+      "arrivalMs": 0.925,
+      "totalMs": 0.885,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 22,
+      "submitCallbackStart": 488.8800000101328,
+      "leafMs": 0.02,
+      "arrivalMs": 0.96,
+      "totalMs": 0.915,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.655
+     },
+     {
+      "submitFrame": 23,
+      "submitCallbackStart": 505.5349999964237,
+      "leafMs": 0.015,
+      "arrivalMs": 0.845,
+      "totalMs": 0.805,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 24,
+      "submitCallbackStart": 522.2049999982119,
+      "leafMs": 0.02,
+      "arrivalMs": 0.785,
+      "totalMs": 0.75,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.68
+     },
+     {
+      "submitFrame": 25,
+      "submitCallbackStart": 538.8850000053644,
+      "leafMs": 0.015,
+      "arrivalMs": 0.775,
+      "totalMs": 0.74,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.62
+     },
+     {
+      "submitFrame": 26,
+      "submitCallbackStart": 555.5050000101328,
+      "leafMs": 0.015,
+      "arrivalMs": 0.7,
+      "totalMs": 0.68,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.725
+     },
+     {
+      "submitFrame": 27,
+      "submitCallbackStart": 572.2300000041723,
+      "leafMs": 0.015,
+      "arrivalMs": 0.72,
+      "totalMs": 0.69,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.94
+     },
+     {
+      "submitFrame": 28,
+      "submitCallbackStart": 587.1700000017881,
+      "leafMs": 0.01,
+      "arrivalMs": 0.79,
+      "totalMs": 0.77,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.585
+     },
+     {
+      "submitFrame": 29,
+      "submitCallbackStart": 603.7550000101328,
+      "leafMs": 0.005,
+      "arrivalMs": 0.81,
+      "totalMs": 0.785,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.11
+     },
+     {
+      "submitFrame": 30,
+      "submitCallbackStart": 621.8650000095367,
+      "leafMs": 0.01,
+      "arrivalMs": 1.15,
+      "totalMs": 1.12,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.545
+     },
+     {
+      "submitFrame": 31,
+      "submitCallbackStart": 638.4099999964237,
+      "leafMs": 0.01,
+      "arrivalMs": 0.815,
+      "totalMs": 0.785,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.17
+     },
+     {
+      "submitFrame": 32,
+      "submitCallbackStart": 655.5799999982119,
+      "leafMs": 0.01,
+      "arrivalMs": 1.14,
+      "totalMs": 1.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 33,
+      "submitCallbackStart": 672.2250000089407,
+      "leafMs": 0.015,
+      "arrivalMs": 0.88,
+      "totalMs": 0.845,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.65
+     },
+     {
+      "submitFrame": 34,
+      "submitCallbackStart": 688.875,
+      "leafMs": 0.01,
+      "arrivalMs": 1.19,
+      "totalMs": 1.165,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.65
+     },
+     {
+      "submitFrame": 35,
+      "submitCallbackStart": 705.5250000059605,
+      "leafMs": 0.01,
+      "arrivalMs": 0.775,
+      "totalMs": 0.745,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 36,
+      "submitCallbackStart": 722.1850000023842,
+      "leafMs": 0.015,
+      "arrivalMs": 0.815,
+      "totalMs": 0.785,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.48
+     },
+     {
+      "submitFrame": 37,
+      "submitCallbackStart": 738.6650000065565,
+      "leafMs": 0.01,
+      "arrivalMs": 1.11,
+      "totalMs": 1.09,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.905
+     },
+     {
+      "submitFrame": 38,
+      "submitCallbackStart": 755.5700000077486,
+      "leafMs": 0.015,
+      "arrivalMs": 0.82,
+      "totalMs": 0.775,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.635
+     },
+     {
+      "submitFrame": 39,
+      "submitCallbackStart": 772.2049999982119,
+      "leafMs": 0.015,
+      "arrivalMs": 0.835,
+      "totalMs": 0.805,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.655
+     },
+     {
+      "submitFrame": 40,
+      "submitCallbackStart": 788.859999999404,
+      "leafMs": 0.025,
+      "arrivalMs": 1.105,
+      "totalMs": 1.07,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 41,
+      "submitCallbackStart": 805.5199999958277,
+      "leafMs": 0.01,
+      "arrivalMs": 0.75,
+      "totalMs": 0.72,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.74
+     },
+     {
+      "submitFrame": 42,
+      "submitCallbackStart": 822.2600000053644,
+      "leafMs": 0.01,
+      "arrivalMs": 1.21,
+      "totalMs": 1.175,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.615
+     },
+     {
+      "submitFrame": 43,
+      "submitCallbackStart": 838.875,
+      "leafMs": 0.01,
+      "arrivalMs": 1.06,
+      "totalMs": 1.035,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.685
+     },
+     {
+      "submitFrame": 44,
+      "submitCallbackStart": 855.5600000023842,
+      "leafMs": 0.01,
+      "arrivalMs": 0.825,
+      "totalMs": 0.785,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.625
+     },
+     {
+      "submitFrame": 45,
+      "submitCallbackStart": 872.1850000023842,
+      "leafMs": 0.01,
+      "arrivalMs": 0.8,
+      "totalMs": 0.775,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 46,
+      "submitCallbackStart": 888.8550000041723,
+      "leafMs": 0.005,
+      "arrivalMs": 0.755,
+      "totalMs": 0.735,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 47,
+      "submitCallbackStart": 905.5250000059605,
+      "leafMs": 0.01,
+      "arrivalMs": 1.185,
+      "totalMs": 1.155,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.195
+     },
+     {
+      "submitFrame": 48,
+      "submitCallbackStart": 921.7199999988079,
+      "leafMs": 0.015,
+      "arrivalMs": 1.15,
+      "totalMs": 1.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.425
+     },
+     {
+      "submitFrame": 49,
+      "submitCallbackStart": 938.1449999958277,
+      "leafMs": 0.01,
+      "arrivalMs": 0.745,
+      "totalMs": 0.725,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.395
+     },
+     {
+      "submitFrame": 50,
+      "submitCallbackStart": 955.5400000065565,
+      "leafMs": 0.015,
+      "arrivalMs": 0.775,
+      "totalMs": 0.755,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.665
+     },
+     {
+      "submitFrame": 51,
+      "submitCallbackStart": 972.2049999982119,
+      "leafMs": 0.01,
+      "arrivalMs": 0.85,
+      "totalMs": 0.82,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 52,
+      "submitCallbackStart": 988.8650000095367,
+      "leafMs": 0.015,
+      "arrivalMs": 0.86,
+      "totalMs": 0.82,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.695
+     },
+     {
+      "submitFrame": 53,
+      "submitCallbackStart": 1005.5600000023842,
+      "leafMs": 0.015,
+      "arrivalMs": 0.83,
+      "totalMs": 0.795,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 54,
+      "submitCallbackStart": 1022.2049999982119,
+      "leafMs": 0.01,
+      "arrivalMs": 0.8,
+      "totalMs": 0.77,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.195
+     },
+     {
+      "submitFrame": 55,
+      "submitCallbackStart": 1038.4000000059605,
+      "leafMs": 0.01,
+      "arrivalMs": 0.72,
+      "totalMs": 0.7,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.94
+     },
+     {
+      "submitFrame": 56,
+      "submitCallbackStart": 1054.3400000035763,
+      "leafMs": 0.015,
+      "arrivalMs": 0.77,
+      "totalMs": 0.745,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.41
+     },
+     {
+      "submitFrame": 57,
+      "submitCallbackStart": 1071.75,
+      "leafMs": 0.015,
+      "arrivalMs": 1.13,
+      "totalMs": 1.105,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.985
+     },
+     {
+      "submitFrame": 58,
+      "submitCallbackStart": 1088.734999999404,
+      "leafMs": 0.01,
+      "arrivalMs": 1.245,
+      "totalMs": 1.215,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.33
+     },
+     {
+      "submitFrame": 59,
+      "submitCallbackStart": 1105.0649999976158,
+      "leafMs": 0.01,
+      "arrivalMs": 0.7,
+      "totalMs": 0.675,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 60,
+      "submitCallbackStart": 1121.7250000089407,
+      "leafMs": 0.01,
+      "arrivalMs": 0.81,
+      "totalMs": 0.785,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.365
+     },
+     {
+      "submitFrame": 61,
+      "submitCallbackStart": 1137.0900000035763,
+      "leafMs": 0.015,
+      "arrivalMs": 0.855,
+      "totalMs": 0.83,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.97
+     },
+     {
+      "submitFrame": 62,
+      "submitCallbackStart": 1154.0600000023842,
+      "leafMs": 0.015,
+      "arrivalMs": 0.885,
+      "totalMs": 0.86,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.635
+     },
+     {
+      "submitFrame": 63,
+      "submitCallbackStart": 1171.6950000077486,
+      "leafMs": 0.02,
+      "arrivalMs": 0.805,
+      "totalMs": 0.78,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.72
+     },
+     {
+      "submitFrame": 64,
+      "submitCallbackStart": 1187.4150000065565,
+      "leafMs": 0.02,
+      "arrivalMs": 0.72,
+      "totalMs": 0.695,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.65
+     },
+     {
+      "submitFrame": 65,
+      "submitCallbackStart": 1205.0649999976158,
+      "leafMs": 0.02,
+      "arrivalMs": 1.335,
+      "totalMs": 1.305,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.66
+     },
+     {
+      "submitFrame": 66,
+      "submitCallbackStart": 1220.7250000089407,
+      "leafMs": 0.03,
+      "arrivalMs": 1.05,
+      "totalMs": 1.015,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.085
+     },
+     {
+      "submitFrame": 67,
+      "submitCallbackStart": 1237.8100000023842,
+      "leafMs": 0.02,
+      "arrivalMs": 0.985,
+      "totalMs": 0.95,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.31
+     },
+     {
+      "submitFrame": 68,
+      "submitCallbackStart": 1255.1200000047684,
+      "leafMs": 0.03,
+      "arrivalMs": 1.445,
+      "totalMs": 1.38,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.1
+     },
+     {
+      "submitFrame": 69,
+      "submitCallbackStart": 1272.219999998808,
+      "leafMs": 0.025,
+      "arrivalMs": 1.105,
+      "totalMs": 1.06,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.81
+     },
+     {
+      "submitFrame": 70,
+      "submitCallbackStart": 1289.030000001192,
+      "leafMs": 0.03,
+      "arrivalMs": 6.085,
+      "totalMs": 6.02,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.615
+     },
+     {
+      "submitFrame": 71,
+      "submitCallbackStart": 1305.6449999958277,
+      "leafMs": 0.025,
+      "arrivalMs": 1.22,
+      "totalMs": 1.165,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.62
+     },
+     {
+      "submitFrame": 72,
+      "submitCallbackStart": 1322.265000000596,
+      "leafMs": 0.03,
+      "arrivalMs": 1.185,
+      "totalMs": 1.13,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 73,
+      "submitCallbackStart": 1338.9249999970198,
+      "leafMs": 0.05,
+      "arrivalMs": 1.45,
+      "totalMs": 1.36,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.23
+     },
+     {
+      "submitFrame": 74,
+      "submitCallbackStart": 1355.155000001192,
+      "leafMs": 0.05,
+      "arrivalMs": 1.495,
+      "totalMs": 1.405,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.665
+     },
+     {
+      "submitFrame": 75,
+      "submitCallbackStart": 1371.8200000077486,
+      "leafMs": 0.055,
+      "arrivalMs": 1.51,
+      "totalMs": 1.385,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.655
+     },
+     {
+      "submitFrame": 76,
+      "submitCallbackStart": 1388.4750000089407,
+      "leafMs": 0.07,
+      "arrivalMs": 1.44,
+      "totalMs": 1.34,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.12
+     },
+     {
+      "submitFrame": 77,
+      "submitCallbackStart": 1404.594999998808,
+      "leafMs": 0.045,
+      "arrivalMs": 1.23,
+      "totalMs": 1.15,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.19
+     },
+     {
+      "submitFrame": 78,
+      "submitCallbackStart": 1421.7849999964237,
+      "leafMs": 0.07,
+      "arrivalMs": 1.27,
+      "totalMs": 1.17,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.135
+     },
+     {
+      "submitFrame": 79,
+      "submitCallbackStart": 1438.9200000017881,
+      "leafMs": 0.03,
+      "arrivalMs": 1.28,
+      "totalMs": 1.22,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.635
+     },
+     {
+      "submitFrame": 80,
+      "submitCallbackStart": 1455.5550000071526,
+      "leafMs": 0.025,
+      "arrivalMs": 1.23,
+      "totalMs": 1.185,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.705
+     },
+     {
+      "submitFrame": 81,
+      "submitCallbackStart": 1472.2600000053644,
+      "leafMs": 0.03,
+      "arrivalMs": 1.155,
+      "totalMs": 1.1,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.73
+     },
+     {
+      "submitFrame": 82,
+      "submitCallbackStart": 1488.9900000095367,
+      "leafMs": 0.05,
+      "arrivalMs": 1.47,
+      "totalMs": 1.385,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.56
+     },
+     {
+      "submitFrame": 83,
+      "submitCallbackStart": 1505.5499999970198,
+      "leafMs": 0.03,
+      "arrivalMs": 1.18,
+      "totalMs": 1.12,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.715
+     },
+     {
+      "submitFrame": 84,
+      "submitCallbackStart": 1522.265000000596,
+      "leafMs": 0.045,
+      "arrivalMs": 1.45,
+      "totalMs": 1.39,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.665
+     },
+     {
+      "submitFrame": 85,
+      "submitCallbackStart": 1538.9300000071526,
+      "leafMs": 0.035,
+      "arrivalMs": 1.465,
+      "totalMs": 1.385,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.195
+     },
+     {
+      "submitFrame": 86,
+      "submitCallbackStart": 1555.125,
+      "leafMs": 0.05,
+      "arrivalMs": 1.555,
+      "totalMs": 1.46,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.115
+     },
+     {
+      "submitFrame": 87,
+      "submitCallbackStart": 1572.2400000095367,
+      "leafMs": 0.055,
+      "arrivalMs": 1.46,
+      "totalMs": 1.38,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.705
+     },
+     {
+      "submitFrame": 88,
+      "submitCallbackStart": 1588.9450000077486,
+      "leafMs": 0.05,
+      "arrivalMs": 1.45,
+      "totalMs": 1.365,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.64
+     },
+     {
+      "submitFrame": 89,
+      "submitCallbackStart": 1605.5850000083447,
+      "leafMs": 0.03,
+      "arrivalMs": 1.08,
+      "totalMs": 1.035,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.15
+     },
+     {
+      "submitFrame": 90,
+      "submitCallbackStart": 1621.734999999404,
+      "leafMs": 0.04,
+      "arrivalMs": 1.245,
+      "totalMs": 1.18,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.395
+     },
+     {
+      "submitFrame": 91,
+      "submitCallbackStart": 1637.1300000101328,
+      "leafMs": 0.05,
+      "arrivalMs": 1.355,
+      "totalMs": 1.28,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.205
+     },
+     {
+      "submitFrame": 92,
+      "submitCallbackStart": 1654.3350000083447,
+      "leafMs": 0.045,
+      "arrivalMs": 1.155,
+      "totalMs": 1.085,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.895
+     },
+     {
+      "submitFrame": 93,
+      "submitCallbackStart": 1672.2300000041723,
+      "leafMs": 0.03,
+      "arrivalMs": 1.07,
+      "totalMs": 1.015,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.13
+     },
+     {
+      "submitFrame": 94,
+      "submitCallbackStart": 1688.359999999404,
+      "leafMs": 0.03,
+      "arrivalMs": 0.975,
+      "totalMs": 0.915,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.745
+     },
+     {
+      "submitFrame": 95,
+      "submitCallbackStart": 1705.1050000041723,
+      "leafMs": 0.045,
+      "arrivalMs": 2.29,
+      "totalMs": 2.2,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.15
+     },
+     {
+      "submitFrame": 96,
+      "submitCallbackStart": 1720.2550000101328,
+      "leafMs": 0.035,
+      "arrivalMs": 1.185,
+      "totalMs": 1.12,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.87
+     },
+     {
+      "submitFrame": 97,
+      "submitCallbackStart": 1737.125,
+      "leafMs": 0.02,
+      "arrivalMs": 1.245,
+      "totalMs": 1.17,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.42
+     },
+     {
+      "submitFrame": 98,
+      "submitCallbackStart": 1754.5450000017881,
+      "leafMs": 0.035,
+      "arrivalMs": 1.32,
+      "totalMs": 1.27,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.565
+     },
+     {
+      "submitFrame": 99,
+      "submitCallbackStart": 1772.109999999404,
+      "leafMs": 0.055,
+      "arrivalMs": 1.505,
+      "totalMs": 1.415,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.82
+     },
+     {
+      "submitFrame": 100,
+      "submitCallbackStart": 1788.9300000071526,
+      "leafMs": 0.045,
+      "arrivalMs": 1.22,
+      "totalMs": 1.145,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.675
+     },
+     {
+      "submitFrame": 101,
+      "submitCallbackStart": 1803.6050000041723,
+      "leafMs": 0.04,
+      "arrivalMs": 1.18,
+      "totalMs": 1.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.65
+     },
+     {
+      "submitFrame": 102,
+      "submitCallbackStart": 1822.2550000101328,
+      "leafMs": 0.03,
+      "arrivalMs": 1.26,
+      "totalMs": 1.205,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.495
+     },
+     {
+      "submitFrame": 103,
+      "submitCallbackStart": 1837.75,
+      "leafMs": 0.035,
+      "arrivalMs": 1.71,
+      "totalMs": 1.635,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.97
+     },
+     {
+      "submitFrame": 104,
+      "submitCallbackStart": 1854.719999998808,
+      "leafMs": 0.035,
+      "arrivalMs": 1.34,
+      "totalMs": 1.25,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.15
+     },
+     {
+      "submitFrame": 105,
+      "submitCallbackStart": 1871.8700000047684,
+      "leafMs": 0.05,
+      "arrivalMs": 1.67,
+      "totalMs": 1.56,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.58
+     },
+     {
+      "submitFrame": 106,
+      "submitCallbackStart": 1888.4500000029802,
+      "leafMs": 0.045,
+      "arrivalMs": 1.43,
+      "totalMs": 1.355,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.075
+     },
+     {
+      "submitFrame": 107,
+      "submitCallbackStart": 1905.5250000059605,
+      "leafMs": 0.03,
+      "arrivalMs": 1.375,
+      "totalMs": 1.315,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.25
+     },
+     {
+      "submitFrame": 108,
+      "submitCallbackStart": 1921.7750000059605,
+      "leafMs": 0.06,
+      "arrivalMs": 1.495,
+      "totalMs": 1.405,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.13
+     },
+     {
+      "submitFrame": 109,
+      "submitCallbackStart": 1938.905000001192,
+      "leafMs": 0.045,
+      "arrivalMs": 1.56,
+      "totalMs": 1.475,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.7
+     },
+     {
+      "submitFrame": 110,
+      "submitCallbackStart": 1954.6050000041723,
+      "leafMs": 0.035,
+      "arrivalMs": 1.125,
+      "totalMs": 1.075,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.58
+     },
+     {
+      "submitFrame": 111,
+      "submitCallbackStart": 1972.1850000023842,
+      "leafMs": 0.005,
+      "arrivalMs": 0.79,
+      "totalMs": 0.755,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.55
+     },
+     {
+      "submitFrame": 112,
+      "submitCallbackStart": 1987.734999999404,
+      "leafMs": 0.015,
+      "arrivalMs": 0.875,
+      "totalMs": 0.835,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.545
+     },
+     {
+      "submitFrame": 113,
+      "submitCallbackStart": 2004.280000001192,
+      "leafMs": 0.02,
+      "arrivalMs": 0.86,
+      "totalMs": 0.82,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.91
+     },
+     {
+      "submitFrame": 114,
+      "submitCallbackStart": 2020.1899999976158,
+      "leafMs": 0.02,
+      "arrivalMs": 0.87,
+      "totalMs": 0.84,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.9
+     },
+     {
+      "submitFrame": 115,
+      "submitCallbackStart": 2037.0900000035763,
+      "leafMs": 0.02,
+      "arrivalMs": 1.14,
+      "totalMs": 1.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.105
+     },
+     {
+      "submitFrame": 116,
+      "submitCallbackStart": 2055.1950000077486,
+      "leafMs": 0.015,
+      "arrivalMs": 0.94,
+      "totalMs": 0.91,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.495
+     },
+     {
+      "submitFrame": 117,
+      "submitCallbackStart": 2070.689999997616,
+      "leafMs": 0.01,
+      "arrivalMs": 0.845,
+      "totalMs": 0.805,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.665
+     },
+     {
+      "submitFrame": 118,
+      "submitCallbackStart": 2088.3550000041723,
+      "leafMs": 0.01,
+      "arrivalMs": 0.79,
+      "totalMs": 0.76,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.92
+     },
+     {
+      "submitFrame": 119,
+      "submitCallbackStart": 2104.2750000059605,
+      "leafMs": 0.015,
+      "arrivalMs": 0.74,
+      "totalMs": 0.71,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.98
+     },
+     {
+      "submitFrame": 120,
+      "submitCallbackStart": 2121.255000010133,
+      "leafMs": 0.015,
+      "arrivalMs": 0.75,
+      "totalMs": 0.725,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.33
+     }
+    ],
+    "checks": {
+     "reference": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "data-reverse": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "tree-ends": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "js-dense": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     }
+    }
+   },
+   {
+    "states": 8,
+    "textLength": 1024,
+    "kernel": "row-16x16",
+    "input": "classes",
+    "frameCount": 120,
+    "callbackIntervalMs": {
+     "count": 120,
+     "median": 16.67,
+     "p10": 15.51,
+     "p90": 17.775,
+     "min": 13.94,
+     "max": 20.085
+    },
+    "arrivalMs": {
+     "count": 120,
+     "median": 0.945,
+     "p10": 0.65,
+     "p90": 1.625,
+     "min": 0.585,
+     "max": 2.02
+    },
+    "framesUntilDrawn": [
+     {
+      "framesUntilDrawn": 1,
+      "evaluations": 120
+     }
+    ],
+    "submitToDrawCallbackMs": {
+     "count": 120,
+     "median": 16.67,
+     "p10": 15.51,
+     "p90": 17.775,
+     "min": 13.94,
+     "max": 20.085
+    },
+    "frames": [
+     {
+      "submitFrame": 1,
+      "submitCallbackStart": 2153.734999999404,
+      "leafMs": 0.005,
+      "arrivalMs": 0.945,
+      "totalMs": 0.93,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.395
+     },
+     {
+      "submitFrame": 2,
+      "submitCallbackStart": 2171.130000010133,
+      "leafMs": 0,
+      "arrivalMs": 0.665,
+      "totalMs": 0.65,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.245
+     },
+     {
+      "submitFrame": 3,
+      "submitCallbackStart": 2188.375,
+      "leafMs": 0,
+      "arrivalMs": 0.66,
+      "totalMs": 0.65,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.655
+     },
+     {
+      "submitFrame": 4,
+      "submitCallbackStart": 2205.030000001192,
+      "leafMs": 0,
+      "arrivalMs": 0.71,
+      "totalMs": 0.69,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.695
+     },
+     {
+      "submitFrame": 5,
+      "submitCallbackStart": 2221.7250000089407,
+      "leafMs": 0,
+      "arrivalMs": 0.68,
+      "totalMs": 0.66,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.11
+     },
+     {
+      "submitFrame": 6,
+      "submitCallbackStart": 2236.8350000083447,
+      "leafMs": 0.005,
+      "arrivalMs": 0.905,
+      "totalMs": 0.89,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.965
+     },
+     {
+      "submitFrame": 7,
+      "submitCallbackStart": 2253.7999999970198,
+      "leafMs": 0,
+      "arrivalMs": 1.085,
+      "totalMs": 1.075,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.435
+     },
+     {
+      "submitFrame": 8,
+      "submitCallbackStart": 2272.234999999404,
+      "leafMs": 0.005,
+      "arrivalMs": 0.735,
+      "totalMs": 0.71,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.2
+     },
+     {
+      "submitFrame": 9,
+      "submitCallbackStart": 2287.435000002384,
+      "leafMs": 0.005,
+      "arrivalMs": 0.645,
+      "totalMs": 0.63,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.06
+     },
+     {
+      "submitFrame": 10,
+      "submitCallbackStart": 2305.4950000047684,
+      "leafMs": 0,
+      "arrivalMs": 0.585,
+      "totalMs": 0.58,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.215
+     },
+     {
+      "submitFrame": 11,
+      "submitCallbackStart": 2321.7100000083447,
+      "leafMs": 0.005,
+      "arrivalMs": 0.96,
+      "totalMs": 0.94,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.76
+     },
+     {
+      "submitFrame": 12,
+      "submitCallbackStart": 2338.469999998808,
+      "leafMs": 0.005,
+      "arrivalMs": 1.265,
+      "totalMs": 1.245,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.015
+     },
+     {
+      "submitFrame": 13,
+      "submitCallbackStart": 2355.484999999404,
+      "leafMs": 0,
+      "arrivalMs": 0.73,
+      "totalMs": 0.715,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 14,
+      "submitCallbackStart": 2372.155000001192,
+      "leafMs": 0.005,
+      "arrivalMs": 0.725,
+      "totalMs": 0.715,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.635
+     },
+     {
+      "submitFrame": 15,
+      "submitCallbackStart": 2388.7900000065565,
+      "leafMs": 0,
+      "arrivalMs": 0.655,
+      "totalMs": 0.65,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.7
+     },
+     {
+      "submitFrame": 16,
+      "submitCallbackStart": 2405.4900000095367,
+      "leafMs": 0,
+      "arrivalMs": 0.595,
+      "totalMs": 0.585,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.23
+     },
+     {
+      "submitFrame": 17,
+      "submitCallbackStart": 2420.719999998808,
+      "leafMs": 0,
+      "arrivalMs": 0.605,
+      "totalMs": 0.595,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.145
+     },
+     {
+      "submitFrame": 18,
+      "submitCallbackStart": 2437.8650000095367,
+      "leafMs": 0,
+      "arrivalMs": 0.65,
+      "totalMs": 0.645,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.23
+     },
+     {
+      "submitFrame": 19,
+      "submitCallbackStart": 2454.094999998808,
+      "leafMs": 0.005,
+      "arrivalMs": 0.725,
+      "totalMs": 0.71,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.97
+     },
+     {
+      "submitFrame": 20,
+      "submitCallbackStart": 2471.064999997616,
+      "leafMs": 0,
+      "arrivalMs": 0.805,
+      "totalMs": 0.79,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.9
+     },
+     {
+      "submitFrame": 21,
+      "submitCallbackStart": 2486.9650000035763,
+      "leafMs": 0,
+      "arrivalMs": 0.86,
+      "totalMs": 0.855,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.99
+     },
+     {
+      "submitFrame": 22,
+      "submitCallbackStart": 2504.954999998212,
+      "leafMs": 0.01,
+      "arrivalMs": 1.205,
+      "totalMs": 1.165,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.8
+     },
+     {
+      "submitFrame": 23,
+      "submitCallbackStart": 2521.755000010133,
+      "leafMs": 0.005,
+      "arrivalMs": 0.91,
+      "totalMs": 0.88,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.86
+     },
+     {
+      "submitFrame": 24,
+      "submitCallbackStart": 2538.6150000095367,
+      "leafMs": 0,
+      "arrivalMs": 1.545,
+      "totalMs": 1.51,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.81
+     },
+     {
+      "submitFrame": 25,
+      "submitCallbackStart": 2555.4249999970198,
+      "leafMs": 0.005,
+      "arrivalMs": 1.8,
+      "totalMs": 1.77,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.375
+     },
+     {
+      "submitFrame": 26,
+      "submitCallbackStart": 2571.7999999970198,
+      "leafMs": 0,
+      "arrivalMs": 1.16,
+      "totalMs": 1.145,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.1
+     },
+     {
+      "submitFrame": 27,
+      "submitCallbackStart": 2588.9000000059605,
+      "leafMs": 0,
+      "arrivalMs": 0.82,
+      "totalMs": 0.805,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.62
+     },
+     {
+      "submitFrame": 28,
+      "submitCallbackStart": 2605.5199999958277,
+      "leafMs": 0,
+      "arrivalMs": 1.23,
+      "totalMs": 1.21,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.6
+     },
+     {
+      "submitFrame": 29,
+      "submitCallbackStart": 2622.1200000047684,
+      "leafMs": 0,
+      "arrivalMs": 0.62,
+      "totalMs": 0.6,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.78
+     },
+     {
+      "submitFrame": 30,
+      "submitCallbackStart": 2638.9000000059605,
+      "leafMs": 0.005,
+      "arrivalMs": 0.925,
+      "totalMs": 0.9,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.34
+     },
+     {
+      "submitFrame": 31,
+      "submitCallbackStart": 2654.2400000095367,
+      "leafMs": 0.01,
+      "arrivalMs": 1.66,
+      "totalMs": 1.625,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.775
+     },
+     {
+      "submitFrame": 32,
+      "submitCallbackStart": 2672.015000000596,
+      "leafMs": 0.005,
+      "arrivalMs": 1.8,
+      "totalMs": 1.76,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.375
+     },
+     {
+      "submitFrame": 33,
+      "submitCallbackStart": 2688.390000000596,
+      "leafMs": 0.005,
+      "arrivalMs": 0.74,
+      "totalMs": 0.72,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 34,
+      "submitCallbackStart": 2705.0349999964237,
+      "leafMs": 0.005,
+      "arrivalMs": 0.735,
+      "totalMs": 0.715,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 35,
+      "submitCallbackStart": 2721.6950000077486,
+      "leafMs": 0,
+      "arrivalMs": 0.72,
+      "totalMs": 0.705,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.245
+     },
+     {
+      "submitFrame": 36,
+      "submitCallbackStart": 2736.939999997616,
+      "leafMs": 0,
+      "arrivalMs": 0.97,
+      "totalMs": 0.955,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.555
+     },
+     {
+      "submitFrame": 37,
+      "submitCallbackStart": 2755.4950000047684,
+      "leafMs": 0.005,
+      "arrivalMs": 0.68,
+      "totalMs": 0.665,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.295
+     },
+     {
+      "submitFrame": 38,
+      "submitCallbackStart": 2771.7900000065565,
+      "leafMs": 0,
+      "arrivalMs": 0.735,
+      "totalMs": 0.715,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.625
+     },
+     {
+      "submitFrame": 39,
+      "submitCallbackStart": 2788.4150000065565,
+      "leafMs": 0,
+      "arrivalMs": 0.64,
+      "totalMs": 0.63,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.61
+     },
+     {
+      "submitFrame": 40,
+      "submitCallbackStart": 2805.0250000059605,
+      "leafMs": 0,
+      "arrivalMs": 0.65,
+      "totalMs": 0.645,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.7
+     },
+     {
+      "submitFrame": 41,
+      "submitCallbackStart": 2821.7250000089407,
+      "leafMs": 0,
+      "arrivalMs": 0.68,
+      "totalMs": 0.67,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.11
+     },
+     {
+      "submitFrame": 42,
+      "submitCallbackStart": 2838.8350000083447,
+      "leafMs": 0,
+      "arrivalMs": 0.66,
+      "totalMs": 0.655,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.64
+     },
+     {
+      "submitFrame": 43,
+      "submitCallbackStart": 2855.4750000089407,
+      "leafMs": 0,
+      "arrivalMs": 0.655,
+      "totalMs": 0.65,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.44
+     },
+     {
+      "submitFrame": 44,
+      "submitCallbackStart": 2871.9150000065565,
+      "leafMs": 0,
+      "arrivalMs": 1.195,
+      "totalMs": 1.185,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.475
+     },
+     {
+      "submitFrame": 45,
+      "submitCallbackStart": 2888.390000000596,
+      "leafMs": 0,
+      "arrivalMs": 0.615,
+      "totalMs": 0.615,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.64
+     },
+     {
+      "submitFrame": 46,
+      "submitCallbackStart": 2905.030000001192,
+      "leafMs": 0,
+      "arrivalMs": 0.65,
+      "totalMs": 0.635,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 47,
+      "submitCallbackStart": 2921.7000000029802,
+      "leafMs": 0,
+      "arrivalMs": 1.13,
+      "totalMs": 1.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.115
+     },
+     {
+      "submitFrame": 48,
+      "submitCallbackStart": 2938.814999997616,
+      "leafMs": 0.005,
+      "arrivalMs": 0.615,
+      "totalMs": 0.605,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.175
+     },
+     {
+      "submitFrame": 49,
+      "submitCallbackStart": 2954.9900000095367,
+      "leafMs": 0.005,
+      "arrivalMs": 1.105,
+      "totalMs": 1.07,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.245
+     },
+     {
+      "submitFrame": 50,
+      "submitCallbackStart": 2970.234999999404,
+      "leafMs": 0.005,
+      "arrivalMs": 1.3,
+      "totalMs": 1.27,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.33
+     },
+     {
+      "submitFrame": 51,
+      "submitCallbackStart": 2988.564999997616,
+      "leafMs": 0.005,
+      "arrivalMs": 1.145,
+      "totalMs": 1.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.96
+     },
+     {
+      "submitFrame": 52,
+      "submitCallbackStart": 3004.5250000059605,
+      "leafMs": 0.01,
+      "arrivalMs": 0.81,
+      "totalMs": 0.795,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.175
+     },
+     {
+      "submitFrame": 53,
+      "submitCallbackStart": 3021.7000000029802,
+      "leafMs": 0,
+      "arrivalMs": 0.81,
+      "totalMs": 0.8,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.1
+     },
+     {
+      "submitFrame": 54,
+      "submitCallbackStart": 3038.7999999970198,
+      "leafMs": 0,
+      "arrivalMs": 0.765,
+      "totalMs": 0.75,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.75
+     },
+     {
+      "submitFrame": 55,
+      "submitCallbackStart": 3054.5499999970198,
+      "leafMs": 0,
+      "arrivalMs": 0.81,
+      "totalMs": 0.795,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.12
+     },
+     {
+      "submitFrame": 56,
+      "submitCallbackStart": 3071.670000001788,
+      "leafMs": 0,
+      "arrivalMs": 0.705,
+      "totalMs": 0.695,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.725
+     },
+     {
+      "submitFrame": 57,
+      "submitCallbackStart": 3088.3949999958277,
+      "leafMs": 0.01,
+      "arrivalMs": 1.095,
+      "totalMs": 1.07,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.74
+     },
+     {
+      "submitFrame": 58,
+      "submitCallbackStart": 3105.1350000053644,
+      "leafMs": 0.01,
+      "arrivalMs": 1.765,
+      "totalMs": 1.73,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.925
+     },
+     {
+      "submitFrame": 59,
+      "submitCallbackStart": 3121.060000002384,
+      "leafMs": 0.01,
+      "arrivalMs": 1.25,
+      "totalMs": 1.21,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.905
+     },
+     {
+      "submitFrame": 60,
+      "submitCallbackStart": 3137.9650000035763,
+      "leafMs": 0,
+      "arrivalMs": 1.075,
+      "totalMs": 1.05,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 20.085
+     },
+     {
+      "submitFrame": 61,
+      "submitCallbackStart": 3158.0499999970198,
+      "leafMs": 0,
+      "arrivalMs": 1.34,
+      "totalMs": 1.33,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 13.94
+     },
+     {
+      "submitFrame": 62,
+      "submitCallbackStart": 3171.9900000095367,
+      "leafMs": 0,
+      "arrivalMs": 1.43,
+      "totalMs": 1.42,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.565
+     },
+     {
+      "submitFrame": 63,
+      "submitCallbackStart": 3188.5550000071526,
+      "leafMs": 0.005,
+      "arrivalMs": 1.76,
+      "totalMs": 1.715,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.62
+     },
+     {
+      "submitFrame": 64,
+      "submitCallbackStart": 3205.1749999970198,
+      "leafMs": 0.01,
+      "arrivalMs": 1.025,
+      "totalMs": 1,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.63
+     },
+     {
+      "submitFrame": 65,
+      "submitCallbackStart": 3221.8050000071526,
+      "leafMs": 0.005,
+      "arrivalMs": 1.145,
+      "totalMs": 1.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.64
+     },
+     {
+      "submitFrame": 66,
+      "submitCallbackStart": 3238.4450000077486,
+      "leafMs": 0.01,
+      "arrivalMs": 1.255,
+      "totalMs": 1.205,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.605
+     },
+     {
+      "submitFrame": 67,
+      "submitCallbackStart": 3255.0499999970198,
+      "leafMs": 0.01,
+      "arrivalMs": 0.98,
+      "totalMs": 0.95,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.725
+     },
+     {
+      "submitFrame": 68,
+      "submitCallbackStart": 3271.7750000059605,
+      "leafMs": 0.01,
+      "arrivalMs": 1.145,
+      "totalMs": 1.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.075
+     },
+     {
+      "submitFrame": 69,
+      "submitCallbackStart": 3286.8500000089407,
+      "leafMs": 0.005,
+      "arrivalMs": 1.26,
+      "totalMs": 1.24,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.475
+     },
+     {
+      "submitFrame": 70,
+      "submitCallbackStart": 3305.3250000029802,
+      "leafMs": 0,
+      "arrivalMs": 1.29,
+      "totalMs": 1.25,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.265
+     },
+     {
+      "submitFrame": 71,
+      "submitCallbackStart": 3321.5900000035763,
+      "leafMs": 0.005,
+      "arrivalMs": 0.94,
+      "totalMs": 0.915,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.935
+     },
+     {
+      "submitFrame": 72,
+      "submitCallbackStart": 3338.5250000059605,
+      "leafMs": 0.005,
+      "arrivalMs": 1.76,
+      "totalMs": 1.73,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.51
+     },
+     {
+      "submitFrame": 73,
+      "submitCallbackStart": 3354.0349999964237,
+      "leafMs": 0.005,
+      "arrivalMs": 1.265,
+      "totalMs": 1.23,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.23
+     },
+     {
+      "submitFrame": 74,
+      "submitCallbackStart": 3371.265000000596,
+      "leafMs": 0,
+      "arrivalMs": 1.7,
+      "totalMs": 1.665,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.97
+     },
+     {
+      "submitFrame": 75,
+      "submitCallbackStart": 3387.234999999404,
+      "leafMs": 0.01,
+      "arrivalMs": 1.625,
+      "totalMs": 1.6,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.35
+     },
+     {
+      "submitFrame": 76,
+      "submitCallbackStart": 3404.5850000083447,
+      "leafMs": 0.005,
+      "arrivalMs": 0.84,
+      "totalMs": 0.815,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.11
+     },
+     {
+      "submitFrame": 77,
+      "submitCallbackStart": 3421.6950000077486,
+      "leafMs": 0.005,
+      "arrivalMs": 0.86,
+      "totalMs": 0.84,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.37
+     },
+     {
+      "submitFrame": 78,
+      "submitCallbackStart": 3437.064999997616,
+      "leafMs": 0.005,
+      "arrivalMs": 1.085,
+      "totalMs": 1.065,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.965
+     },
+     {
+      "submitFrame": 79,
+      "submitCallbackStart": 3455.030000001192,
+      "leafMs": 0,
+      "arrivalMs": 0.715,
+      "totalMs": 0.705,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 80,
+      "submitCallbackStart": 3471.689999997616,
+      "leafMs": 0,
+      "arrivalMs": 0.715,
+      "totalMs": 0.7,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 81,
+      "submitCallbackStart": 3488.3350000083447,
+      "leafMs": 0,
+      "arrivalMs": 1.04,
+      "totalMs": 1.035,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.035
+     },
+     {
+      "submitFrame": 82,
+      "submitCallbackStart": 3505.3700000047684,
+      "leafMs": 0,
+      "arrivalMs": 0.665,
+      "totalMs": 0.65,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.61
+     },
+     {
+      "submitFrame": 83,
+      "submitCallbackStart": 3520.9800000041723,
+      "leafMs": 0,
+      "arrivalMs": 0.67,
+      "totalMs": 0.66,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.775
+     },
+     {
+      "submitFrame": 84,
+      "submitCallbackStart": 3538.755000010133,
+      "leafMs": 0,
+      "arrivalMs": 0.625,
+      "totalMs": 0.615,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.67
+     },
+     {
+      "submitFrame": 85,
+      "submitCallbackStart": 3554.4249999970198,
+      "leafMs": 0,
+      "arrivalMs": 0.755,
+      "totalMs": 0.745,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.6
+     },
+     {
+      "submitFrame": 86,
+      "submitCallbackStart": 3571.0250000059605,
+      "leafMs": 0,
+      "arrivalMs": 0.635,
+      "totalMs": 0.63,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.745
+     },
+     {
+      "submitFrame": 87,
+      "submitCallbackStart": 3588.7699999958277,
+      "leafMs": 0.005,
+      "arrivalMs": 0.915,
+      "totalMs": 0.9,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.455
+     },
+     {
+      "submitFrame": 88,
+      "submitCallbackStart": 3605.2250000089407,
+      "leafMs": 0,
+      "arrivalMs": 1.19,
+      "totalMs": 1.185,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.875
+     },
+     {
+      "submitFrame": 89,
+      "submitCallbackStart": 3621.1000000089407,
+      "leafMs": 0,
+      "arrivalMs": 1.05,
+      "totalMs": 1.045,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.66
+     },
+     {
+      "submitFrame": 90,
+      "submitCallbackStart": 3638.7600000053644,
+      "leafMs": 0.005,
+      "arrivalMs": 0.675,
+      "totalMs": 0.66,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.795
+     },
+     {
+      "submitFrame": 91,
+      "submitCallbackStart": 3654.5550000071526,
+      "leafMs": 0.005,
+      "arrivalMs": 0.92,
+      "totalMs": 0.91,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.825
+     },
+     {
+      "submitFrame": 92,
+      "submitCallbackStart": 3671.380000010133,
+      "leafMs": 0,
+      "arrivalMs": 1.035,
+      "totalMs": 1.025,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.905
+     },
+     {
+      "submitFrame": 93,
+      "submitCallbackStart": 3688.2849999964237,
+      "leafMs": 0.005,
+      "arrivalMs": 0.76,
+      "totalMs": 0.75,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.3
+     },
+     {
+      "submitFrame": 94,
+      "submitCallbackStart": 3703.5850000083447,
+      "leafMs": 0,
+      "arrivalMs": 1.05,
+      "totalMs": 1.035,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.49
+     },
+     {
+      "submitFrame": 95,
+      "submitCallbackStart": 3722.0750000029802,
+      "leafMs": 0,
+      "arrivalMs": 1.17,
+      "totalMs": 1.155,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.31
+     },
+     {
+      "submitFrame": 96,
+      "submitCallbackStart": 3738.3850000053644,
+      "leafMs": 0,
+      "arrivalMs": 0.665,
+      "totalMs": 0.655,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.77
+     },
+     {
+      "submitFrame": 97,
+      "submitCallbackStart": 3754.155000001192,
+      "leafMs": 0,
+      "arrivalMs": 0.81,
+      "totalMs": 0.8,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.495
+     },
+     {
+      "submitFrame": 98,
+      "submitCallbackStart": 3771.6500000059605,
+      "leafMs": 0,
+      "arrivalMs": 0.695,
+      "totalMs": 0.69,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.745
+     },
+     {
+      "submitFrame": 99,
+      "submitCallbackStart": 3788.3949999958277,
+      "leafMs": 0.005,
+      "arrivalMs": 0.72,
+      "totalMs": 0.715,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.165
+     },
+     {
+      "submitFrame": 100,
+      "submitCallbackStart": 3804.560000002384,
+      "leafMs": 0.005,
+      "arrivalMs": 1.205,
+      "totalMs": 1.175,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.815
+     },
+     {
+      "submitFrame": 101,
+      "submitCallbackStart": 3820.375,
+      "leafMs": 0,
+      "arrivalMs": 1.28,
+      "totalMs": 1.235,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.375
+     },
+     {
+      "submitFrame": 102,
+      "submitCallbackStart": 3837.75,
+      "leafMs": 0.02,
+      "arrivalMs": 1.06,
+      "totalMs": 1,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.75
+     },
+     {
+      "submitFrame": 103,
+      "submitCallbackStart": 3855.5,
+      "leafMs": 0,
+      "arrivalMs": 1.015,
+      "totalMs": 0.985,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.71
+     },
+     {
+      "submitFrame": 104,
+      "submitCallbackStart": 3871.2100000083447,
+      "leafMs": 0.01,
+      "arrivalMs": 1.52,
+      "totalMs": 1.48,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.535
+     },
+     {
+      "submitFrame": 105,
+      "submitCallbackStart": 3888.7450000047684,
+      "leafMs": 0.01,
+      "arrivalMs": 1.835,
+      "totalMs": 1.805,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.32
+     },
+     {
+      "submitFrame": 106,
+      "submitCallbackStart": 3905.064999997616,
+      "leafMs": 0.005,
+      "arrivalMs": 0.81,
+      "totalMs": 0.78,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.28
+     },
+     {
+      "submitFrame": 107,
+      "submitCallbackStart": 3921.344999998808,
+      "leafMs": 0.005,
+      "arrivalMs": 1.805,
+      "totalMs": 1.765,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.87
+     },
+     {
+      "submitFrame": 108,
+      "submitCallbackStart": 3937.2150000035763,
+      "leafMs": 0.01,
+      "arrivalMs": 2.02,
+      "totalMs": 1.965,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 109,
+      "submitCallbackStart": 3953.8850000053644,
+      "leafMs": 0.01,
+      "arrivalMs": 1.13,
+      "totalMs": 1.1,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.96
+     },
+     {
+      "submitFrame": 110,
+      "submitCallbackStart": 3970.844999998808,
+      "leafMs": 0,
+      "arrivalMs": 1.025,
+      "totalMs": 1,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.315
+     },
+     {
+      "submitFrame": 111,
+      "submitCallbackStart": 3988.1599999964237,
+      "leafMs": 0.005,
+      "arrivalMs": 0.735,
+      "totalMs": 0.715,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.375
+     },
+     {
+      "submitFrame": 112,
+      "submitCallbackStart": 4003.5349999964237,
+      "leafMs": 0.005,
+      "arrivalMs": 1.34,
+      "totalMs": 1.325,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.505
+     },
+     {
+      "submitFrame": 113,
+      "submitCallbackStart": 4022.0400000065565,
+      "leafMs": 0.005,
+      "arrivalMs": 1.425,
+      "totalMs": 1.405,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.605
+     },
+     {
+      "submitFrame": 114,
+      "submitCallbackStart": 4038.6449999958277,
+      "leafMs": 0.01,
+      "arrivalMs": 1.775,
+      "totalMs": 1.735,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.79
+     },
+     {
+      "submitFrame": 115,
+      "submitCallbackStart": 4055.435000002384,
+      "leafMs": 0.01,
+      "arrivalMs": 1.49,
+      "totalMs": 1.445,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.97
+     },
+     {
+      "submitFrame": 116,
+      "submitCallbackStart": 4070.405000001192,
+      "leafMs": 0.005,
+      "arrivalMs": 1.055,
+      "totalMs": 1.03,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.4
+     },
+     {
+      "submitFrame": 117,
+      "submitCallbackStart": 4087.8050000071526,
+      "leafMs": 0.01,
+      "arrivalMs": 1.025,
+      "totalMs": 0.995,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.225
+     },
+     {
+      "submitFrame": 118,
+      "submitCallbackStart": 4105.030000001192,
+      "leafMs": 0.005,
+      "arrivalMs": 1.01,
+      "totalMs": 0.99,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.975
+     },
+     {
+      "submitFrame": 119,
+      "submitCallbackStart": 4122.005000010133,
+      "leafMs": 0.005,
+      "arrivalMs": 0.95,
+      "totalMs": 0.94,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.75
+     },
+     {
+      "submitFrame": 120,
+      "submitCallbackStart": 4138.755000010133,
+      "leafMs": 0,
+      "arrivalMs": 0.635,
+      "totalMs": 0.62,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.63
+     }
+    ],
+    "checks": {
+     "reference": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "data-reverse": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "tree-ends": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "js-dense": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     }
+    }
+   },
+   {
+    "states": 16,
+    "textLength": 1024,
+    "kernel": "row-16x16",
+    "input": "leaves",
+    "frameCount": 120,
+    "callbackIntervalMs": {
+     "count": 120,
+     "median": 16.685,
+     "p10": 15.655,
+     "p90": 17.69,
+     "min": 7.25,
+     "max": 18.62
+    },
+    "arrivalMs": {
+     "count": 120,
+     "median": 2.065,
+     "p10": 1.32,
+     "p90": 2.64,
+     "min": 1.08,
+     "max": 3.12
+    },
+    "framesUntilDrawn": [
+     {
+      "framesUntilDrawn": 1,
+      "evaluations": 120
+     }
+    ],
+    "submitToDrawCallbackMs": {
+     "count": 120,
+     "median": 16.685,
+     "p10": 15.655,
+     "p90": 17.69,
+     "min": 7.25,
+     "max": 18.62
+    },
+    "frames": [
+     {
+      "submitFrame": 1,
+      "submitCallbackStart": 4196.17499999702,
+      "leafMs": 0.025,
+      "arrivalMs": 1.08,
+      "totalMs": 1.05,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 7.25
+     },
+     {
+      "submitFrame": 2,
+      "submitCallbackStart": 4203.42499999702,
+      "leafMs": 0.025,
+      "arrivalMs": 1.14,
+      "totalMs": 1.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.62
+     },
+     {
+      "submitFrame": 3,
+      "submitCallbackStart": 4222.045000001788,
+      "leafMs": 0.03,
+      "arrivalMs": 1.135,
+      "totalMs": 1.1,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.69
+     },
+     {
+      "submitFrame": 4,
+      "submitCallbackStart": 4238.734999999404,
+      "leafMs": 0.03,
+      "arrivalMs": 1.22,
+      "totalMs": 1.19,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.92
+     },
+     {
+      "submitFrame": 5,
+      "submitCallbackStart": 4254.655000001192,
+      "leafMs": 0.035,
+      "arrivalMs": 1.71,
+      "totalMs": 1.66,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.025
+     },
+     {
+      "submitFrame": 6,
+      "submitCallbackStart": 4271.680000007153,
+      "leafMs": 0.045,
+      "arrivalMs": 1.605,
+      "totalMs": 1.555,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.875
+     },
+     {
+      "submitFrame": 7,
+      "submitCallbackStart": 4288.555000007153,
+      "leafMs": 0.055,
+      "arrivalMs": 1.48,
+      "totalMs": 1.42,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.285
+     },
+     {
+      "submitFrame": 8,
+      "submitCallbackStart": 4304.840000003576,
+      "leafMs": 0.05,
+      "arrivalMs": 1.515,
+      "totalMs": 1.46,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.835
+     },
+     {
+      "submitFrame": 9,
+      "submitCallbackStart": 4321.67499999702,
+      "leafMs": 0.05,
+      "arrivalMs": 1.54,
+      "totalMs": 1.48,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.675
+     },
+     {
+      "submitFrame": 10,
+      "submitCallbackStart": 4338.350000008941,
+      "leafMs": 0.05,
+      "arrivalMs": 1.5,
+      "totalMs": 1.44,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.825
+     },
+     {
+      "submitFrame": 11,
+      "submitCallbackStart": 4355.17499999702,
+      "leafMs": 0.055,
+      "arrivalMs": 1.57,
+      "totalMs": 1.505,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.905
+     },
+     {
+      "submitFrame": 12,
+      "submitCallbackStart": 4370.079999998212,
+      "leafMs": 0.055,
+      "arrivalMs": 1.815,
+      "totalMs": 1.745,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.525
+     },
+     {
+      "submitFrame": 13,
+      "submitCallbackStart": 4387.605000004172,
+      "leafMs": 0.075,
+      "arrivalMs": 2.485,
+      "totalMs": 2.375,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.13
+     },
+     {
+      "submitFrame": 14,
+      "submitCallbackStart": 4404.734999999404,
+      "leafMs": 0.055,
+      "arrivalMs": 1.69,
+      "totalMs": 1.63,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.27
+     },
+     {
+      "submitFrame": 15,
+      "submitCallbackStart": 4422.005000010133,
+      "leafMs": 0.05,
+      "arrivalMs": 2.025,
+      "totalMs": 1.965,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.37
+     },
+     {
+      "submitFrame": 16,
+      "submitCallbackStart": 4437.375,
+      "leafMs": 0.035,
+      "arrivalMs": 1.555,
+      "totalMs": 1.505,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.005
+     },
+     {
+      "submitFrame": 17,
+      "submitCallbackStart": 4454.380000010133,
+      "leafMs": 0.035,
+      "arrivalMs": 1.325,
+      "totalMs": 1.29,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.69
+     },
+     {
+      "submitFrame": 18,
+      "submitCallbackStart": 4472.070000007749,
+      "leafMs": 0.03,
+      "arrivalMs": 1.32,
+      "totalMs": 1.275,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.625
+     },
+     {
+      "submitFrame": 19,
+      "submitCallbackStart": 4488.695000007749,
+      "leafMs": 0.025,
+      "arrivalMs": 1.53,
+      "totalMs": 1.495,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.65
+     },
+     {
+      "submitFrame": 20,
+      "submitCallbackStart": 4505.344999998808,
+      "leafMs": 0.03,
+      "arrivalMs": 1.14,
+      "totalMs": 1.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.32
+     },
+     {
+      "submitFrame": 21,
+      "submitCallbackStart": 4521.6650000065565,
+      "leafMs": 0.025,
+      "arrivalMs": 1.17,
+      "totalMs": 1.14,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.64
+     },
+     {
+      "submitFrame": 22,
+      "submitCallbackStart": 4538.305000007153,
+      "leafMs": 0.03,
+      "arrivalMs": 1.305,
+      "totalMs": 1.265,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.925
+     },
+     {
+      "submitFrame": 23,
+      "submitCallbackStart": 4555.230000004172,
+      "leafMs": 0.02,
+      "arrivalMs": 1.335,
+      "totalMs": 1.3,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.47
+     },
+     {
+      "submitFrame": 24,
+      "submitCallbackStart": 4571.70000000298,
+      "leafMs": 0.04,
+      "arrivalMs": 1.29,
+      "totalMs": 1.23,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.945
+     },
+     {
+      "submitFrame": 25,
+      "submitCallbackStart": 4588.644999995828,
+      "leafMs": 0.03,
+      "arrivalMs": 1.235,
+      "totalMs": 1.195,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.77
+     },
+     {
+      "submitFrame": 26,
+      "submitCallbackStart": 4603.4150000065565,
+      "leafMs": 0.03,
+      "arrivalMs": 1.475,
+      "totalMs": 1.435,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.72
+     },
+     {
+      "submitFrame": 27,
+      "submitCallbackStart": 4621.135000005364,
+      "leafMs": 0.04,
+      "arrivalMs": 1.32,
+      "totalMs": 1.275,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.195
+     },
+     {
+      "submitFrame": 28,
+      "submitCallbackStart": 4638.329999998212,
+      "leafMs": 0.05,
+      "arrivalMs": 1.335,
+      "totalMs": 1.27,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.705
+     },
+     {
+      "submitFrame": 29,
+      "submitCallbackStart": 4655.034999996424,
+      "leafMs": 0.035,
+      "arrivalMs": 1.51,
+      "totalMs": 1.47,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.97
+     },
+     {
+      "submitFrame": 30,
+      "submitCallbackStart": 4672.005000010133,
+      "leafMs": 0.045,
+      "arrivalMs": 1.375,
+      "totalMs": 1.32,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.41
+     },
+     {
+      "submitFrame": 31,
+      "submitCallbackStart": 4688.4150000065565,
+      "leafMs": 0.045,
+      "arrivalMs": 1.545,
+      "totalMs": 1.485,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.995
+     },
+     {
+      "submitFrame": 32,
+      "submitCallbackStart": 4704.409999996424,
+      "leafMs": 0.04,
+      "arrivalMs": 1.505,
+      "totalMs": 1.455,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.325
+     },
+     {
+      "submitFrame": 33,
+      "submitCallbackStart": 4721.734999999404,
+      "leafMs": 0.05,
+      "arrivalMs": 1.73,
+      "totalMs": 1.665,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.605
+     },
+     {
+      "submitFrame": 34,
+      "submitCallbackStart": 4738.340000003576,
+      "leafMs": 0.045,
+      "arrivalMs": 1.645,
+      "totalMs": 1.595,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.86
+     },
+     {
+      "submitFrame": 35,
+      "submitCallbackStart": 4755.20000000298,
+      "leafMs": 0.055,
+      "arrivalMs": 2.11,
+      "totalMs": 2.045,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.49
+     },
+     {
+      "submitFrame": 36,
+      "submitCallbackStart": 4771.689999997616,
+      "leafMs": 0.045,
+      "arrivalMs": 1.745,
+      "totalMs": 1.68,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.84
+     },
+     {
+      "submitFrame": 37,
+      "submitCallbackStart": 4788.530000001192,
+      "leafMs": 0.08,
+      "arrivalMs": 2.37,
+      "totalMs": 2.265,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.705
+     },
+     {
+      "submitFrame": 38,
+      "submitCallbackStart": 4805.234999999404,
+      "leafMs": 0.095,
+      "arrivalMs": 2.52,
+      "totalMs": 2.39,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.545
+     },
+     {
+      "submitFrame": 39,
+      "submitCallbackStart": 4821.780000001192,
+      "leafMs": 0.13,
+      "arrivalMs": 2.895,
+      "totalMs": 2.73,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.705
+     },
+     {
+      "submitFrame": 40,
+      "submitCallbackStart": 4838.484999999404,
+      "leafMs": 0.135,
+      "arrivalMs": 2.62,
+      "totalMs": 2.445,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.605
+     },
+     {
+      "submitFrame": 41,
+      "submitCallbackStart": 4855.090000003576,
+      "leafMs": 0.105,
+      "arrivalMs": 2.345,
+      "totalMs": 2.21,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.77
+     },
+     {
+      "submitFrame": 42,
+      "submitCallbackStart": 4871.859999999404,
+      "leafMs": 0.09,
+      "arrivalMs": 2.345,
+      "totalMs": 2.21,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.59
+     },
+     {
+      "submitFrame": 43,
+      "submitCallbackStart": 4888.45000000298,
+      "leafMs": 0.14,
+      "arrivalMs": 2.565,
+      "totalMs": 2.395,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.685
+     },
+     {
+      "submitFrame": 44,
+      "submitCallbackStart": 4905.135000005364,
+      "leafMs": 0.125,
+      "arrivalMs": 2.71,
+      "totalMs": 2.55,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.935
+     },
+     {
+      "submitFrame": 45,
+      "submitCallbackStart": 4922.070000007749,
+      "leafMs": 0.095,
+      "arrivalMs": 2.28,
+      "totalMs": 2.155,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.33
+     },
+     {
+      "submitFrame": 46,
+      "submitCallbackStart": 4938.4000000059605,
+      "leafMs": 0.12,
+      "arrivalMs": 2.605,
+      "totalMs": 2.455,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.665
+     },
+     {
+      "submitFrame": 47,
+      "submitCallbackStart": 4955.064999997616,
+      "leafMs": 0.11,
+      "arrivalMs": 2.505,
+      "totalMs": 2.37,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.62
+     },
+     {
+      "submitFrame": 48,
+      "submitCallbackStart": 4971.685000002384,
+      "leafMs": 0.085,
+      "arrivalMs": 2.14,
+      "totalMs": 2.025,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.14
+     },
+     {
+      "submitFrame": 49,
+      "submitCallbackStart": 4988.82500000298,
+      "leafMs": 0.12,
+      "arrivalMs": 3.12,
+      "totalMs": 2.97,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 50,
+      "submitCallbackStart": 5005.469999998808,
+      "leafMs": 0.07,
+      "arrivalMs": 2.19,
+      "totalMs": 2.1,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.83
+     },
+     {
+      "submitFrame": 51,
+      "submitCallbackStart": 5021.29999999702,
+      "leafMs": 0.09,
+      "arrivalMs": 2.07,
+      "totalMs": 1.965,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.485
+     },
+     {
+      "submitFrame": 52,
+      "submitCallbackStart": 5038.784999996424,
+      "leafMs": 0.1,
+      "arrivalMs": 2.325,
+      "totalMs": 2.19,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.99
+     },
+     {
+      "submitFrame": 53,
+      "submitCallbackStart": 5053.7750000059605,
+      "leafMs": 0.11,
+      "arrivalMs": 2.14,
+      "totalMs": 2,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.765
+     },
+     {
+      "submitFrame": 54,
+      "submitCallbackStart": 5070.5400000065565,
+      "leafMs": 0.105,
+      "arrivalMs": 2.225,
+      "totalMs": 2.095,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.185
+     },
+     {
+      "submitFrame": 55,
+      "submitCallbackStart": 5088.725000008941,
+      "leafMs": 0.08,
+      "arrivalMs": 2.065,
+      "totalMs": 1.965,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.825
+     },
+     {
+      "submitFrame": 56,
+      "submitCallbackStart": 5104.54999999702,
+      "leafMs": 0.075,
+      "arrivalMs": 1.98,
+      "totalMs": 1.88,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.505
+     },
+     {
+      "submitFrame": 57,
+      "submitCallbackStart": 5122.055000007153,
+      "leafMs": 0.075,
+      "arrivalMs": 1.985,
+      "totalMs": 1.89,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.02
+     },
+     {
+      "submitFrame": 58,
+      "submitCallbackStart": 5137.07500000298,
+      "leafMs": 0.115,
+      "arrivalMs": 2.64,
+      "totalMs": 2.495,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.71
+     },
+     {
+      "submitFrame": 59,
+      "submitCallbackStart": 5153.784999996424,
+      "leafMs": 0.08,
+      "arrivalMs": 2.375,
+      "totalMs": 2.275,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.31
+     },
+     {
+      "submitFrame": 60,
+      "submitCallbackStart": 5172.094999998808,
+      "leafMs": 0.065,
+      "arrivalMs": 2.275,
+      "totalMs": 2.185,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.205
+     },
+     {
+      "submitFrame": 61,
+      "submitCallbackStart": 5188.29999999702,
+      "leafMs": 0.09,
+      "arrivalMs": 2.235,
+      "totalMs": 2.12,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.585
+     },
+     {
+      "submitFrame": 62,
+      "submitCallbackStart": 5204.885000005364,
+      "leafMs": 0.075,
+      "arrivalMs": 2.09,
+      "totalMs": 1.995,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.675
+     },
+     {
+      "submitFrame": 63,
+      "submitCallbackStart": 5221.560000002384,
+      "leafMs": 0.125,
+      "arrivalMs": 2,
+      "totalMs": 1.85,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.42
+     },
+     {
+      "submitFrame": 64,
+      "submitCallbackStart": 5237.980000004172,
+      "leafMs": 0.09,
+      "arrivalMs": 2.11,
+      "totalMs": 2,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.465
+     },
+     {
+      "submitFrame": 65,
+      "submitCallbackStart": 5255.445000007749,
+      "leafMs": 0.105,
+      "arrivalMs": 2.585,
+      "totalMs": 2.455,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.23
+     },
+     {
+      "submitFrame": 66,
+      "submitCallbackStart": 5271.67499999702,
+      "leafMs": 0.065,
+      "arrivalMs": 2.125,
+      "totalMs": 2.03,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.51
+     },
+     {
+      "submitFrame": 67,
+      "submitCallbackStart": 5287.185000002384,
+      "leafMs": 0.085,
+      "arrivalMs": 2.29,
+      "totalMs": 2.185,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.905
+     },
+     {
+      "submitFrame": 68,
+      "submitCallbackStart": 5305.090000003576,
+      "leafMs": 0.075,
+      "arrivalMs": 2.14,
+      "totalMs": 2.04,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.9
+     },
+     {
+      "submitFrame": 69,
+      "submitCallbackStart": 5320.990000009537,
+      "leafMs": 0.09,
+      "arrivalMs": 2.375,
+      "totalMs": 2.265,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.415
+     },
+     {
+      "submitFrame": 70,
+      "submitCallbackStart": 5338.405000001192,
+      "leafMs": 0.085,
+      "arrivalMs": 2.225,
+      "totalMs": 2.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 71,
+      "submitCallbackStart": 5355.064999997616,
+      "leafMs": 0.115,
+      "arrivalMs": 2.665,
+      "totalMs": 2.53,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.745
+     },
+     {
+      "submitFrame": 72,
+      "submitCallbackStart": 5371.810000002384,
+      "leafMs": 0.15,
+      "arrivalMs": 2.66,
+      "totalMs": 2.47,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.7
+     },
+     {
+      "submitFrame": 73,
+      "submitCallbackStart": 5387.510000005364,
+      "leafMs": 0.07,
+      "arrivalMs": 2.17,
+      "totalMs": 2.07,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.095
+     },
+     {
+      "submitFrame": 74,
+      "submitCallbackStart": 5404.605000004172,
+      "leafMs": 0.075,
+      "arrivalMs": 2.055,
+      "totalMs": 1.96,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.485
+     },
+     {
+      "submitFrame": 75,
+      "submitCallbackStart": 5422.090000003576,
+      "leafMs": 0.065,
+      "arrivalMs": 1.905,
+      "totalMs": 1.815,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.85
+     },
+     {
+      "submitFrame": 76,
+      "submitCallbackStart": 5437.939999997616,
+      "leafMs": 0.08,
+      "arrivalMs": 1.84,
+      "totalMs": 1.735,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.23
+     },
+     {
+      "submitFrame": 77,
+      "submitCallbackStart": 5454.170000001788,
+      "leafMs": 0.065,
+      "arrivalMs": 2.06,
+      "totalMs": 1.955,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.71
+     },
+     {
+      "submitFrame": 78,
+      "submitCallbackStart": 5471.880000010133,
+      "leafMs": 0.035,
+      "arrivalMs": 1.475,
+      "totalMs": 1.405,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.52
+     },
+     {
+      "submitFrame": 79,
+      "submitCallbackStart": 5488.4000000059605,
+      "leafMs": 0.085,
+      "arrivalMs": 2.215,
+      "totalMs": 2.105,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.76
+     },
+     {
+      "submitFrame": 80,
+      "submitCallbackStart": 5505.159999996424,
+      "leafMs": 0.09,
+      "arrivalMs": 2.05,
+      "totalMs": 1.925,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.69
+     },
+     {
+      "submitFrame": 81,
+      "submitCallbackStart": 5521.850000008941,
+      "leafMs": 0.075,
+      "arrivalMs": 2.23,
+      "totalMs": 2.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.44
+     },
+     {
+      "submitFrame": 82,
+      "submitCallbackStart": 5537.2900000065565,
+      "leafMs": 0.08,
+      "arrivalMs": 2.2,
+      "totalMs": 2.095,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.9
+     },
+     {
+      "submitFrame": 83,
+      "submitCallbackStart": 5554.189999997616,
+      "leafMs": 0.11,
+      "arrivalMs": 2.47,
+      "totalMs": 2.33,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.785
+     },
+     {
+      "submitFrame": 84,
+      "submitCallbackStart": 5570.975000008941,
+      "leafMs": 0.115,
+      "arrivalMs": 2.72,
+      "totalMs": 2.575,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.58
+     },
+     {
+      "submitFrame": 85,
+      "submitCallbackStart": 5587.555000007153,
+      "leafMs": 0.105,
+      "arrivalMs": 2.385,
+      "totalMs": 2.245,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.42
+     },
+     {
+      "submitFrame": 86,
+      "submitCallbackStart": 5603.975000008941,
+      "leafMs": 0.115,
+      "arrivalMs": 2.305,
+      "totalMs": 2.165,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.4
+     },
+     {
+      "submitFrame": 87,
+      "submitCallbackStart": 5620.375,
+      "leafMs": 0.105,
+      "arrivalMs": 2.015,
+      "totalMs": 1.885,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.47
+     },
+     {
+      "submitFrame": 88,
+      "submitCallbackStart": 5636.844999998808,
+      "leafMs": 0.12,
+      "arrivalMs": 2.72,
+      "totalMs": 2.575,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.925
+     },
+     {
+      "submitFrame": 89,
+      "submitCallbackStart": 5653.769999995828,
+      "leafMs": 0.085,
+      "arrivalMs": 2.115,
+      "totalMs": 2.005,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.075
+     },
+     {
+      "submitFrame": 90,
+      "submitCallbackStart": 5670.844999998808,
+      "leafMs": 0.065,
+      "arrivalMs": 1.96,
+      "totalMs": 1.87,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17
+     },
+     {
+      "submitFrame": 91,
+      "submitCallbackStart": 5687.844999998808,
+      "leafMs": 0.06,
+      "arrivalMs": 2.01,
+      "totalMs": 1.92,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.205
+     },
+     {
+      "submitFrame": 92,
+      "submitCallbackStart": 5705.04999999702,
+      "leafMs": 0.07,
+      "arrivalMs": 2.725,
+      "totalMs": 2.63,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.82
+     },
+     {
+      "submitFrame": 93,
+      "submitCallbackStart": 5721.870000004768,
+      "leafMs": 0.11,
+      "arrivalMs": 2.07,
+      "totalMs": 1.93,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.91
+     },
+     {
+      "submitFrame": 94,
+      "submitCallbackStart": 5738.780000001192,
+      "leafMs": 0.085,
+      "arrivalMs": 2.77,
+      "totalMs": 2.65,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.635
+     },
+     {
+      "submitFrame": 95,
+      "submitCallbackStart": 5755.4150000065565,
+      "leafMs": 0.05,
+      "arrivalMs": 1.545,
+      "totalMs": 1.475,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.6
+     },
+     {
+      "submitFrame": 96,
+      "submitCallbackStart": 5772.015000000596,
+      "leafMs": 0.04,
+      "arrivalMs": 1.825,
+      "totalMs": 1.77,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.655
+     },
+     {
+      "submitFrame": 97,
+      "submitCallbackStart": 5787.670000001788,
+      "leafMs": 0.035,
+      "arrivalMs": 1.37,
+      "totalMs": 1.335,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.41
+     },
+     {
+      "submitFrame": 98,
+      "submitCallbackStart": 5805.079999998212,
+      "leafMs": 0.035,
+      "arrivalMs": 1.315,
+      "totalMs": 1.275,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.62
+     },
+     {
+      "submitFrame": 99,
+      "submitCallbackStart": 5821.70000000298,
+      "leafMs": 0.03,
+      "arrivalMs": 1.29,
+      "totalMs": 1.25,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 100,
+      "submitCallbackStart": 5838.370000004768,
+      "leafMs": 0.035,
+      "arrivalMs": 1.405,
+      "totalMs": 1.365,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.08
+     },
+     {
+      "submitFrame": 101,
+      "submitCallbackStart": 5853.45000000298,
+      "leafMs": 0.035,
+      "arrivalMs": 1.405,
+      "totalMs": 1.365,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.235
+     },
+     {
+      "submitFrame": 102,
+      "submitCallbackStart": 5871.685000002384,
+      "leafMs": 0.04,
+      "arrivalMs": 1.445,
+      "totalMs": 1.395,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.625
+     },
+     {
+      "submitFrame": 103,
+      "submitCallbackStart": 5888.310000002384,
+      "leafMs": 0.04,
+      "arrivalMs": 1.565,
+      "totalMs": 1.52,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.05
+     },
+     {
+      "submitFrame": 104,
+      "submitCallbackStart": 5903.359999999404,
+      "leafMs": 0.04,
+      "arrivalMs": 1.82,
+      "totalMs": 1.775,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.375
+     },
+     {
+      "submitFrame": 105,
+      "submitCallbackStart": 5921.734999999404,
+      "leafMs": 0.055,
+      "arrivalMs": 1.765,
+      "totalMs": 1.7,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.21
+     },
+     {
+      "submitFrame": 106,
+      "submitCallbackStart": 5936.945000007749,
+      "leafMs": 0.05,
+      "arrivalMs": 1.51,
+      "totalMs": 1.45,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.91
+     },
+     {
+      "submitFrame": 107,
+      "submitCallbackStart": 5954.855000004172,
+      "leafMs": 0.05,
+      "arrivalMs": 1.67,
+      "totalMs": 1.61,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.94
+     },
+     {
+      "submitFrame": 108,
+      "submitCallbackStart": 5971.795000001788,
+      "leafMs": 0.06,
+      "arrivalMs": 2.055,
+      "totalMs": 1.975,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.9
+     },
+     {
+      "submitFrame": 109,
+      "submitCallbackStart": 5987.695000007749,
+      "leafMs": 0.08,
+      "arrivalMs": 2.13,
+      "totalMs": 2.02,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.725
+     },
+     {
+      "submitFrame": 110,
+      "submitCallbackStart": 6005.420000001788,
+      "leafMs": 0.08,
+      "arrivalMs": 2.295,
+      "totalMs": 2.175,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.345
+     },
+     {
+      "submitFrame": 111,
+      "submitCallbackStart": 6021.765000000596,
+      "leafMs": 0.08,
+      "arrivalMs": 2.15,
+      "totalMs": 2.05,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.14
+     },
+     {
+      "submitFrame": 112,
+      "submitCallbackStart": 6037.905000001192,
+      "leafMs": 0.105,
+      "arrivalMs": 2.79,
+      "totalMs": 2.65,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.555
+     },
+     {
+      "submitFrame": 113,
+      "submitCallbackStart": 6054.460000008345,
+      "leafMs": 0.1,
+      "arrivalMs": 2.345,
+      "totalMs": 2.22,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.675
+     },
+     {
+      "submitFrame": 114,
+      "submitCallbackStart": 6072.135000005364,
+      "leafMs": 0.135,
+      "arrivalMs": 2.255,
+      "totalMs": 2.1,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.84
+     },
+     {
+      "submitFrame": 115,
+      "submitCallbackStart": 6086.975000008941,
+      "leafMs": 0.12,
+      "arrivalMs": 2.315,
+      "totalMs": 2.165,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.055
+     },
+     {
+      "submitFrame": 116,
+      "submitCallbackStart": 6105.030000001192,
+      "leafMs": 0.08,
+      "arrivalMs": 2.215,
+      "totalMs": 2.12,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.745
+     },
+     {
+      "submitFrame": 117,
+      "submitCallbackStart": 6121.7750000059605,
+      "leafMs": 0.105,
+      "arrivalMs": 2.555,
+      "totalMs": 2.43,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.785
+     },
+     {
+      "submitFrame": 118,
+      "submitCallbackStart": 6138.560000002384,
+      "leafMs": 0.11,
+      "arrivalMs": 2.515,
+      "totalMs": 2.375,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.535
+     },
+     {
+      "submitFrame": 119,
+      "submitCallbackStart": 6155.094999998808,
+      "leafMs": 0.085,
+      "arrivalMs": 2.17,
+      "totalMs": 2.06,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.705
+     },
+     {
+      "submitFrame": 120,
+      "submitCallbackStart": 6171.79999999702,
+      "leafMs": 0.13,
+      "arrivalMs": 2.655,
+      "totalMs": 2.495,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.765
+     }
+    ],
+    "checks": {
+     "reference": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "data-reverse": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "tree-ends": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "js-dense": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     }
+    }
+   },
+   {
+    "states": 16,
+    "textLength": 1024,
+    "kernel": "row-16x16",
+    "input": "classes",
+    "frameCount": 120,
+    "callbackIntervalMs": {
+     "count": 120,
+     "median": 16.695,
+     "p10": 15.525,
+     "p90": 17.62,
+     "min": 8.64,
+     "max": 18.28
+    },
+    "arrivalMs": {
+     "count": 120,
+     "median": 1.325,
+     "p10": 1.045,
+     "p90": 1.865,
+     "min": 0.89,
+     "max": 2.27
+    },
+    "framesUntilDrawn": [
+     {
+      "framesUntilDrawn": 1,
+      "evaluations": 120
+     }
+    ],
+    "submitToDrawCallbackMs": {
+     "count": 120,
+     "median": 16.695,
+     "p10": 15.525,
+     "p90": 17.62,
+     "min": 8.64,
+     "max": 18.28
+    },
+    "frames": [
+     {
+      "submitFrame": 1,
+      "submitCallbackStart": 6213.034999996424,
+      "leafMs": 0,
+      "arrivalMs": 0.89,
+      "totalMs": 0.875,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 8.64
+     },
+     {
+      "submitFrame": 2,
+      "submitCallbackStart": 6221.67499999702,
+      "leafMs": 0,
+      "arrivalMs": 0.945,
+      "totalMs": 0.94,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.715
+     },
+     {
+      "submitFrame": 3,
+      "submitCallbackStart": 6238.390000000596,
+      "leafMs": 0.005,
+      "arrivalMs": 1.445,
+      "totalMs": 1.435,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.855
+     },
+     {
+      "submitFrame": 4,
+      "submitCallbackStart": 6255.245000004768,
+      "leafMs": 0.01,
+      "arrivalMs": 1.725,
+      "totalMs": 1.675,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.465
+     },
+     {
+      "submitFrame": 5,
+      "submitCallbackStart": 6271.710000008345,
+      "leafMs": 0.005,
+      "arrivalMs": 1.305,
+      "totalMs": 1.275,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.335
+     },
+     {
+      "submitFrame": 6,
+      "submitCallbackStart": 6287.045000001788,
+      "leafMs": 0.01,
+      "arrivalMs": 1.515,
+      "totalMs": 1.475,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.51
+     },
+     {
+      "submitFrame": 7,
+      "submitCallbackStart": 6304.555000007153,
+      "leafMs": 0.005,
+      "arrivalMs": 1.38,
+      "totalMs": 1.345,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.585
+     },
+     {
+      "submitFrame": 8,
+      "submitCallbackStart": 6321.140000000596,
+      "leafMs": 0.005,
+      "arrivalMs": 1.405,
+      "totalMs": 1.38,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.27
+     },
+     {
+      "submitFrame": 9,
+      "submitCallbackStart": 6337.409999996424,
+      "leafMs": 0.01,
+      "arrivalMs": 2.07,
+      "totalMs": 2.035,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.985
+     },
+     {
+      "submitFrame": 10,
+      "submitCallbackStart": 6355.394999995828,
+      "leafMs": 0.005,
+      "arrivalMs": 2.17,
+      "totalMs": 2.12,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.34
+     },
+     {
+      "submitFrame": 11,
+      "submitCallbackStart": 6371.734999999404,
+      "leafMs": 0,
+      "arrivalMs": 1.15,
+      "totalMs": 1.135,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.98
+     },
+     {
+      "submitFrame": 12,
+      "submitCallbackStart": 6388.715000003576,
+      "leafMs": 0.005,
+      "arrivalMs": 1.15,
+      "totalMs": 1.13,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.865
+     },
+     {
+      "submitFrame": 13,
+      "submitCallbackStart": 6404.579999998212,
+      "leafMs": 0.005,
+      "arrivalMs": 1.94,
+      "totalMs": 1.9,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.145
+     },
+     {
+      "submitFrame": 14,
+      "submitCallbackStart": 6421.725000008941,
+      "leafMs": 0,
+      "arrivalMs": 1.285,
+      "totalMs": 1.245,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.64
+     },
+     {
+      "submitFrame": 15,
+      "submitCallbackStart": 6438.365000009537,
+      "leafMs": 0.005,
+      "arrivalMs": 1.315,
+      "totalMs": 1.275,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.74
+     },
+     {
+      "submitFrame": 16,
+      "submitCallbackStart": 6455.105000004172,
+      "leafMs": 0.005,
+      "arrivalMs": 1.255,
+      "totalMs": 1.21,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.625
+     },
+     {
+      "submitFrame": 17,
+      "submitCallbackStart": 6471.730000004172,
+      "leafMs": 0.01,
+      "arrivalMs": 1.23,
+      "totalMs": 1.205,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.705
+     },
+     {
+      "submitFrame": 18,
+      "submitCallbackStart": 6488.435000002384,
+      "leafMs": 0.01,
+      "arrivalMs": 1.365,
+      "totalMs": 1.335,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.615
+     },
+     {
+      "submitFrame": 19,
+      "submitCallbackStart": 6505.04999999702,
+      "leafMs": 0,
+      "arrivalMs": 1.29,
+      "totalMs": 1.255,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.77
+     },
+     {
+      "submitFrame": 20,
+      "submitCallbackStart": 6521.820000007749,
+      "leafMs": 0.005,
+      "arrivalMs": 1.45,
+      "totalMs": 1.415,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.615
+     },
+     {
+      "submitFrame": 21,
+      "submitCallbackStart": 6538.435000002384,
+      "leafMs": 0.005,
+      "arrivalMs": 1.73,
+      "totalMs": 1.7,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.82
+     },
+     {
+      "submitFrame": 22,
+      "submitCallbackStart": 6554.255000010133,
+      "leafMs": 0.005,
+      "arrivalMs": 1.855,
+      "totalMs": 1.83,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.545
+     },
+     {
+      "submitFrame": 23,
+      "submitCallbackStart": 6570.79999999702,
+      "leafMs": 0.005,
+      "arrivalMs": 1.385,
+      "totalMs": 1.325,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.62
+     },
+     {
+      "submitFrame": 24,
+      "submitCallbackStart": 6588.420000001788,
+      "leafMs": 0.005,
+      "arrivalMs": 1.325,
+      "totalMs": 1.285,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.07
+     },
+     {
+      "submitFrame": 25,
+      "submitCallbackStart": 6605.490000009537,
+      "leafMs": 0.005,
+      "arrivalMs": 1.435,
+      "totalMs": 1.405,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.23
+     },
+     {
+      "submitFrame": 26,
+      "submitCallbackStart": 6621.719999998808,
+      "leafMs": 0.005,
+      "arrivalMs": 1.34,
+      "totalMs": 1.305,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.955
+     },
+     {
+      "submitFrame": 27,
+      "submitCallbackStart": 6638.67499999702,
+      "leafMs": 0.005,
+      "arrivalMs": 1.24,
+      "totalMs": 1.215,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.715
+     },
+     {
+      "submitFrame": 28,
+      "submitCallbackStart": 6655.390000000596,
+      "leafMs": 0.01,
+      "arrivalMs": 1.235,
+      "totalMs": 1.21,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.675
+     },
+     {
+      "submitFrame": 29,
+      "submitCallbackStart": 6671.064999997616,
+      "leafMs": 0,
+      "arrivalMs": 1.02,
+      "totalMs": 1.01,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.35
+     },
+     {
+      "submitFrame": 30,
+      "submitCallbackStart": 6688.4150000065565,
+      "leafMs": 0.01,
+      "arrivalMs": 1.01,
+      "totalMs": 0.99,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.475
+     },
+     {
+      "submitFrame": 31,
+      "submitCallbackStart": 6703.890000000596,
+      "leafMs": 0,
+      "arrivalMs": 1.285,
+      "totalMs": 1.27,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.27
+     },
+     {
+      "submitFrame": 32,
+      "submitCallbackStart": 6721.159999996424,
+      "leafMs": 0,
+      "arrivalMs": 0.955,
+      "totalMs": 0.935,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.195
+     },
+     {
+      "submitFrame": 33,
+      "submitCallbackStart": 6738.355000004172,
+      "leafMs": 0,
+      "arrivalMs": 1.035,
+      "totalMs": 1.025,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.665
+     },
+     {
+      "submitFrame": 34,
+      "submitCallbackStart": 6755.019999995828,
+      "leafMs": 0,
+      "arrivalMs": 0.985,
+      "totalMs": 0.985,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.655
+     },
+     {
+      "submitFrame": 35,
+      "submitCallbackStart": 6771.67499999702,
+      "leafMs": 0,
+      "arrivalMs": 1.33,
+      "totalMs": 1.315,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.5
+     },
+     {
+      "submitFrame": 36,
+      "submitCallbackStart": 6788.17499999702,
+      "leafMs": 0,
+      "arrivalMs": 1.39,
+      "totalMs": 1.375,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.98
+     },
+     {
+      "submitFrame": 37,
+      "submitCallbackStart": 6805.155000001192,
+      "leafMs": 0,
+      "arrivalMs": 1.405,
+      "totalMs": 1.4,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.885
+     },
+     {
+      "submitFrame": 38,
+      "submitCallbackStart": 6820.0400000065565,
+      "leafMs": 0,
+      "arrivalMs": 1.31,
+      "totalMs": 1.3,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.28
+     },
+     {
+      "submitFrame": 39,
+      "submitCallbackStart": 6838.320000007749,
+      "leafMs": 0,
+      "arrivalMs": 1.175,
+      "totalMs": 1.16,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.74
+     },
+     {
+      "submitFrame": 40,
+      "submitCallbackStart": 6855.060000002384,
+      "leafMs": 0.01,
+      "arrivalMs": 1.46,
+      "totalMs": 1.41,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.51
+     },
+     {
+      "submitFrame": 41,
+      "submitCallbackStart": 6870.570000007749,
+      "leafMs": 0,
+      "arrivalMs": 1.015,
+      "totalMs": 1.005,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.255
+     },
+     {
+      "submitFrame": 42,
+      "submitCallbackStart": 6887.82500000298,
+      "leafMs": 0,
+      "arrivalMs": 0.99,
+      "totalMs": 0.98,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.185
+     },
+     {
+      "submitFrame": 43,
+      "submitCallbackStart": 6905.010000005364,
+      "leafMs": 0,
+      "arrivalMs": 0.975,
+      "totalMs": 0.96,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.31
+     },
+     {
+      "submitFrame": 44,
+      "submitCallbackStart": 6920.320000007749,
+      "leafMs": 0,
+      "arrivalMs": 1.255,
+      "totalMs": 1.25,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.1
+     },
+     {
+      "submitFrame": 45,
+      "submitCallbackStart": 6937.420000001788,
+      "leafMs": 0.005,
+      "arrivalMs": 1.275,
+      "totalMs": 1.26,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.59
+     },
+     {
+      "submitFrame": 46,
+      "submitCallbackStart": 6955.010000005364,
+      "leafMs": 0,
+      "arrivalMs": 1.05,
+      "totalMs": 1.04,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.015
+     },
+     {
+      "submitFrame": 47,
+      "submitCallbackStart": 6970.0250000059605,
+      "leafMs": 0.005,
+      "arrivalMs": 1.13,
+      "totalMs": 1.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.725
+     },
+     {
+      "submitFrame": 48,
+      "submitCallbackStart": 6987.75,
+      "leafMs": 0,
+      "arrivalMs": 1.045,
+      "totalMs": 1.035,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.7
+     },
+     {
+      "submitFrame": 49,
+      "submitCallbackStart": 7005.45000000298,
+      "leafMs": 0.01,
+      "arrivalMs": 1.62,
+      "totalMs": 1.585,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.71
+     },
+     {
+      "submitFrame": 50,
+      "submitCallbackStart": 7021.159999996424,
+      "leafMs": 0.01,
+      "arrivalMs": 1.91,
+      "totalMs": 1.875,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.415
+     },
+     {
+      "submitFrame": 51,
+      "submitCallbackStart": 7037.57500000298,
+      "leafMs": 0.005,
+      "arrivalMs": 1.325,
+      "totalMs": 1.3,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.685
+     },
+     {
+      "submitFrame": 52,
+      "submitCallbackStart": 7055.260000005364,
+      "leafMs": 0.005,
+      "arrivalMs": 1.8,
+      "totalMs": 1.75,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.525
+     },
+     {
+      "submitFrame": 53,
+      "submitCallbackStart": 7070.784999996424,
+      "leafMs": 0.005,
+      "arrivalMs": 1.375,
+      "totalMs": 1.325,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.545
+     },
+     {
+      "submitFrame": 54,
+      "submitCallbackStart": 7088.329999998212,
+      "leafMs": 0,
+      "arrivalMs": 1.315,
+      "totalMs": 1.28,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.76
+     },
+     {
+      "submitFrame": 55,
+      "submitCallbackStart": 7105.090000003576,
+      "leafMs": 0.01,
+      "arrivalMs": 1.425,
+      "totalMs": 1.395,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.63
+     },
+     {
+      "submitFrame": 56,
+      "submitCallbackStart": 7121.719999998808,
+      "leafMs": 0.005,
+      "arrivalMs": 1.345,
+      "totalMs": 1.315,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.48
+     },
+     {
+      "submitFrame": 57,
+      "submitCallbackStart": 7137.20000000298,
+      "leafMs": 0.01,
+      "arrivalMs": 1.375,
+      "totalMs": 1.345,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.835
+     },
+     {
+      "submitFrame": 58,
+      "submitCallbackStart": 7155.034999996424,
+      "leafMs": 0,
+      "arrivalMs": 1.18,
+      "totalMs": 1.145,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.165
+     },
+     {
+      "submitFrame": 59,
+      "submitCallbackStart": 7171.20000000298,
+      "leafMs": 0.005,
+      "arrivalMs": 1.385,
+      "totalMs": 1.34,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.375
+     },
+     {
+      "submitFrame": 60,
+      "submitCallbackStart": 7188.57500000298,
+      "leafMs": 0.01,
+      "arrivalMs": 2.27,
+      "totalMs": 2.22,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.77
+     },
+     {
+      "submitFrame": 61,
+      "submitCallbackStart": 7205.344999998808,
+      "leafMs": 0.005,
+      "arrivalMs": 2.02,
+      "totalMs": 1.99,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.125
+     },
+     {
+      "submitFrame": 62,
+      "submitCallbackStart": 7220.469999998808,
+      "leafMs": 0.005,
+      "arrivalMs": 1.47,
+      "totalMs": 1.435,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.24
+     },
+     {
+      "submitFrame": 63,
+      "submitCallbackStart": 7238.710000008345,
+      "leafMs": 0.005,
+      "arrivalMs": 1.38,
+      "totalMs": 1.355,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.64
+     },
+     {
+      "submitFrame": 64,
+      "submitCallbackStart": 7255.350000008941,
+      "leafMs": 0,
+      "arrivalMs": 1.24,
+      "totalMs": 1.215,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.785
+     },
+     {
+      "submitFrame": 65,
+      "submitCallbackStart": 7271.135000005364,
+      "leafMs": 0,
+      "arrivalMs": 1.32,
+      "totalMs": 1.295,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.245
+     },
+     {
+      "submitFrame": 66,
+      "submitCallbackStart": 7288.380000010133,
+      "leafMs": 0.005,
+      "arrivalMs": 1.865,
+      "totalMs": 1.83,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17
+     },
+     {
+      "submitFrame": 67,
+      "submitCallbackStart": 7305.380000010133,
+      "leafMs": 0.01,
+      "arrivalMs": 1.31,
+      "totalMs": 1.28,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.345
+     },
+     {
+      "submitFrame": 68,
+      "submitCallbackStart": 7321.725000008941,
+      "leafMs": 0,
+      "arrivalMs": 1.555,
+      "totalMs": 1.525,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.95
+     },
+     {
+      "submitFrame": 69,
+      "submitCallbackStart": 7338.67499999702,
+      "leafMs": 0.01,
+      "arrivalMs": 1.265,
+      "totalMs": 1.235,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.905
+     },
+     {
+      "submitFrame": 70,
+      "submitCallbackStart": 7354.579999998212,
+      "leafMs": 0.005,
+      "arrivalMs": 1.185,
+      "totalMs": 1.15,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.135
+     },
+     {
+      "submitFrame": 71,
+      "submitCallbackStart": 7371.715000003576,
+      "leafMs": 0.005,
+      "arrivalMs": 1.295,
+      "totalMs": 1.265,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 72,
+      "submitCallbackStart": 7388.385000005364,
+      "leafMs": 0,
+      "arrivalMs": 1.41,
+      "totalMs": 1.37,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.695
+     },
+     {
+      "submitFrame": 73,
+      "submitCallbackStart": 7405.079999998212,
+      "leafMs": 0.005,
+      "arrivalMs": 1.29,
+      "totalMs": 1.26,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.545
+     },
+     {
+      "submitFrame": 74,
+      "submitCallbackStart": 7420.625,
+      "leafMs": 0.005,
+      "arrivalMs": 1.285,
+      "totalMs": 1.26,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.045
+     },
+     {
+      "submitFrame": 75,
+      "submitCallbackStart": 7437.670000001788,
+      "leafMs": 0.005,
+      "arrivalMs": 1.91,
+      "totalMs": 1.875,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.46
+     },
+     {
+      "submitFrame": 76,
+      "submitCallbackStart": 7455.130000010133,
+      "leafMs": 0.005,
+      "arrivalMs": 1.435,
+      "totalMs": 1.415,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.86
+     },
+     {
+      "submitFrame": 77,
+      "submitCallbackStart": 7471.990000009537,
+      "leafMs": 0.005,
+      "arrivalMs": 1.13,
+      "totalMs": 1.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.35
+     },
+     {
+      "submitFrame": 78,
+      "submitCallbackStart": 7488.340000003576,
+      "leafMs": 0,
+      "arrivalMs": 0.99,
+      "totalMs": 0.975,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 79,
+      "submitCallbackStart": 7504.984999999404,
+      "leafMs": 0,
+      "arrivalMs": 1.06,
+      "totalMs": 1.05,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.96
+     },
+     {
+      "submitFrame": 80,
+      "submitCallbackStart": 7521.945000007749,
+      "leafMs": 0,
+      "arrivalMs": 1.12,
+      "totalMs": 1.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.035
+     },
+     {
+      "submitFrame": 81,
+      "submitCallbackStart": 7536.980000004172,
+      "leafMs": 0.005,
+      "arrivalMs": 1.62,
+      "totalMs": 1.58,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.895
+     },
+     {
+      "submitFrame": 82,
+      "submitCallbackStart": 7553.875,
+      "leafMs": 0.005,
+      "arrivalMs": 1.535,
+      "totalMs": 1.495,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.84
+     },
+     {
+      "submitFrame": 83,
+      "submitCallbackStart": 7570.715000003576,
+      "leafMs": 0.01,
+      "arrivalMs": 1.29,
+      "totalMs": 1.26,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.6
+     },
+     {
+      "submitFrame": 84,
+      "submitCallbackStart": 7587.314999997616,
+      "leafMs": 0.005,
+      "arrivalMs": 1.355,
+      "totalMs": 1.32,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.74
+     },
+     {
+      "submitFrame": 85,
+      "submitCallbackStart": 7605.055000007153,
+      "leafMs": 0,
+      "arrivalMs": 1.335,
+      "totalMs": 1.31,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.595
+     },
+     {
+      "submitFrame": 86,
+      "submitCallbackStart": 7621.6500000059605,
+      "leafMs": 0,
+      "arrivalMs": 1.17,
+      "totalMs": 1.15,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.73
+     },
+     {
+      "submitFrame": 87,
+      "submitCallbackStart": 7638.380000010133,
+      "leafMs": 0.005,
+      "arrivalMs": 1.325,
+      "totalMs": 1.29,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.91
+     },
+     {
+      "submitFrame": 88,
+      "submitCallbackStart": 7654.2900000065565,
+      "leafMs": 0.01,
+      "arrivalMs": 1.86,
+      "totalMs": 1.83,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.58
+     },
+     {
+      "submitFrame": 89,
+      "submitCallbackStart": 7671.870000004768,
+      "leafMs": 0.005,
+      "arrivalMs": 1.805,
+      "totalMs": 1.76,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.29
+     },
+     {
+      "submitFrame": 90,
+      "submitCallbackStart": 7687.159999996424,
+      "leafMs": 0,
+      "arrivalMs": 1.125,
+      "totalMs": 1.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.12
+     },
+     {
+      "submitFrame": 91,
+      "submitCallbackStart": 7705.280000001192,
+      "leafMs": 0,
+      "arrivalMs": 1.155,
+      "totalMs": 1.14,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.57
+     },
+     {
+      "submitFrame": 92,
+      "submitCallbackStart": 7721.850000008941,
+      "leafMs": 0.01,
+      "arrivalMs": 1.505,
+      "totalMs": 1.47,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.82
+     },
+     {
+      "submitFrame": 93,
+      "submitCallbackStart": 7737.670000001788,
+      "leafMs": 0,
+      "arrivalMs": 1.1,
+      "totalMs": 1.09,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.62
+     },
+     {
+      "submitFrame": 94,
+      "submitCallbackStart": 7755.2900000065565,
+      "leafMs": 0,
+      "arrivalMs": 0.92,
+      "totalMs": 0.905,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.785
+     },
+     {
+      "submitFrame": 95,
+      "submitCallbackStart": 7771.07500000298,
+      "leafMs": 0,
+      "arrivalMs": 1.055,
+      "totalMs": 1.05,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.615
+     },
+     {
+      "submitFrame": 96,
+      "submitCallbackStart": 7787.689999997616,
+      "leafMs": 0,
+      "arrivalMs": 1.195,
+      "totalMs": 1.185,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.8
+     },
+     {
+      "submitFrame": 97,
+      "submitCallbackStart": 7804.490000009537,
+      "leafMs": 0,
+      "arrivalMs": 1.08,
+      "totalMs": 1.07,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.265
+     },
+     {
+      "submitFrame": 98,
+      "submitCallbackStart": 7821.755000010133,
+      "leafMs": 0.015,
+      "arrivalMs": 1.305,
+      "totalMs": 1.265,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 99,
+      "submitCallbackStart": 7838.42499999702,
+      "leafMs": 0.005,
+      "arrivalMs": 1.375,
+      "totalMs": 1.34,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.595
+     },
+     {
+      "submitFrame": 100,
+      "submitCallbackStart": 7855.019999995828,
+      "leafMs": 0.005,
+      "arrivalMs": 1.27,
+      "totalMs": 1.245,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.65
+     },
+     {
+      "submitFrame": 101,
+      "submitCallbackStart": 7871.670000001788,
+      "leafMs": 0,
+      "arrivalMs": 1.145,
+      "totalMs": 1.125,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.415
+     },
+     {
+      "submitFrame": 102,
+      "submitCallbackStart": 7888.085000008345,
+      "leafMs": 0.005,
+      "arrivalMs": 1.545,
+      "totalMs": 1.505,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.25
+     },
+     {
+      "submitFrame": 103,
+      "submitCallbackStart": 7905.335000008345,
+      "leafMs": 0.005,
+      "arrivalMs": 2.005,
+      "totalMs": 1.97,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.43
+     },
+     {
+      "submitFrame": 104,
+      "submitCallbackStart": 7921.765000000596,
+      "leafMs": 0.005,
+      "arrivalMs": 1.33,
+      "totalMs": 1.295,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.62
+     },
+     {
+      "submitFrame": 105,
+      "submitCallbackStart": 7938.385000005364,
+      "leafMs": 0.005,
+      "arrivalMs": 1.21,
+      "totalMs": 1.18,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.1
+     },
+     {
+      "submitFrame": 106,
+      "submitCallbackStart": 7955.484999999404,
+      "leafMs": 0.01,
+      "arrivalMs": 1.82,
+      "totalMs": 1.755,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.595
+     },
+     {
+      "submitFrame": 107,
+      "submitCallbackStart": 7971.079999998212,
+      "leafMs": 0.005,
+      "arrivalMs": 1.93,
+      "totalMs": 1.89,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.56
+     },
+     {
+      "submitFrame": 108,
+      "submitCallbackStart": 7988.640000000596,
+      "leafMs": 0.01,
+      "arrivalMs": 2.095,
+      "totalMs": 2.055,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.35
+     },
+     {
+      "submitFrame": 109,
+      "submitCallbackStart": 8004.990000009537,
+      "leafMs": 0,
+      "arrivalMs": 1.17,
+      "totalMs": 1.14,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.59
+     },
+     {
+      "submitFrame": 110,
+      "submitCallbackStart": 8020.579999998212,
+      "leafMs": 0.01,
+      "arrivalMs": 1.71,
+      "totalMs": 1.665,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.805
+     },
+     {
+      "submitFrame": 111,
+      "submitCallbackStart": 8037.385000005364,
+      "leafMs": 0.005,
+      "arrivalMs": 1.505,
+      "totalMs": 1.465,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.445
+     },
+     {
+      "submitFrame": 112,
+      "submitCallbackStart": 8053.829999998212,
+      "leafMs": 0,
+      "arrivalMs": 1.595,
+      "totalMs": 1.57,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.12
+     },
+     {
+      "submitFrame": 113,
+      "submitCallbackStart": 8071.95000000298,
+      "leafMs": 0.01,
+      "arrivalMs": 1.2,
+      "totalMs": 1.175,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.885
+     },
+     {
+      "submitFrame": 114,
+      "submitCallbackStart": 8087.835000008345,
+      "leafMs": 0.005,
+      "arrivalMs": 1.32,
+      "totalMs": 1.27,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.47
+     },
+     {
+      "submitFrame": 115,
+      "submitCallbackStart": 8105.305000007153,
+      "leafMs": 0,
+      "arrivalMs": 1.26,
+      "totalMs": 1.235,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.85
+     },
+     {
+      "submitFrame": 116,
+      "submitCallbackStart": 8121.155000001192,
+      "leafMs": 0.005,
+      "arrivalMs": 1.71,
+      "totalMs": 1.69,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.41
+     },
+     {
+      "submitFrame": 117,
+      "submitCallbackStart": 8138.564999997616,
+      "leafMs": 0,
+      "arrivalMs": 1.93,
+      "totalMs": 1.895,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.93
+     },
+     {
+      "submitFrame": 118,
+      "submitCallbackStart": 8153.495000004768,
+      "leafMs": 0.005,
+      "arrivalMs": 1.335,
+      "totalMs": 1.3,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.4
+     },
+     {
+      "submitFrame": 119,
+      "submitCallbackStart": 8170.894999995828,
+      "leafMs": 0.005,
+      "arrivalMs": 1.305,
+      "totalMs": 1.28,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.995
+     },
+     {
+      "submitFrame": 120,
+      "submitCallbackStart": 8187.890000000596,
+      "leafMs": 0,
+      "arrivalMs": 1.505,
+      "totalMs": 1.47,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.245
+     }
+    ],
+    "checks": {
+     "reference": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "data-reverse": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "tree-ends": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "js-dense": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     }
+    }
+   },
+   {
+    "states": 32,
+    "textLength": 1024,
+    "kernel": "row-16x16",
+    "input": "leaves",
+    "frameCount": 120,
+    "callbackIntervalMs": {
+     "count": 120,
+     "median": 16.675,
+     "p10": 15.475,
+     "p90": 17.905,
+     "min": 12.685,
+     "max": 18.48
+    },
+    "arrivalMs": {
+     "count": 120,
+     "median": 3.525,
+     "p10": 2.24,
+     "p90": 4.365,
+     "min": 1.985,
+     "max": 5.575
+    },
+    "framesUntilDrawn": [
+     {
+      "framesUntilDrawn": 1,
+      "evaluations": 120
+     }
+    ],
+    "submitToDrawCallbackMs": {
+     "count": 120,
+     "median": 16.675,
+     "p10": 15.475,
+     "p90": 17.905,
+     "min": 12.685,
+     "max": 18.48
+    },
+    "frames": [
+     {
+      "submitFrame": 1,
+      "submitCallbackStart": 8275.355000004172,
+      "leafMs": 0.105,
+      "arrivalMs": 2.335,
+      "totalMs": 2.225,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 12.685
+     },
+     {
+      "submitFrame": 2,
+      "submitCallbackStart": 8288.040000006557,
+      "leafMs": 0.11,
+      "arrivalMs": 1.985,
+      "totalMs": 1.87,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.215
+     },
+     {
+      "submitFrame": 3,
+      "submitCallbackStart": 8305.255000010133,
+      "leafMs": 0.125,
+      "arrivalMs": 2.355,
+      "totalMs": 2.23,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.04
+     },
+     {
+      "submitFrame": 4,
+      "submitCallbackStart": 8321.295000001788,
+      "leafMs": 0.14,
+      "arrivalMs": 2.185,
+      "totalMs": 2.035,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.515
+     },
+     {
+      "submitFrame": 5,
+      "submitCallbackStart": 8336.810000002384,
+      "leafMs": 0.13,
+      "arrivalMs": 2.2,
+      "totalMs": 2.06,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.48
+     },
+     {
+      "submitFrame": 6,
+      "submitCallbackStart": 8355.290000006557,
+      "leafMs": 0.115,
+      "arrivalMs": 2.24,
+      "totalMs": 2.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.43
+     },
+     {
+      "submitFrame": 7,
+      "submitCallbackStart": 8371.719999998808,
+      "leafMs": 0.115,
+      "arrivalMs": 2.265,
+      "totalMs": 2.145,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.61
+     },
+     {
+      "submitFrame": 8,
+      "submitCallbackStart": 8388.329999998212,
+      "leafMs": 0.125,
+      "arrivalMs": 2.32,
+      "totalMs": 2.18,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 9,
+      "submitCallbackStart": 8405,
+      "leafMs": 0.16,
+      "arrivalMs": 2.41,
+      "totalMs": 2.245,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.77
+     },
+     {
+      "submitFrame": 10,
+      "submitCallbackStart": 8420.769999995828,
+      "leafMs": 0.16,
+      "arrivalMs": 2.38,
+      "totalMs": 2.215,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.56
+     },
+     {
+      "submitFrame": 11,
+      "submitCallbackStart": 8438.329999998212,
+      "leafMs": 0.145,
+      "arrivalMs": 2.26,
+      "totalMs": 2.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.63
+     },
+     {
+      "submitFrame": 12,
+      "submitCallbackStart": 8454.960000008345,
+      "leafMs": 0.165,
+      "arrivalMs": 2.53,
+      "totalMs": 2.355,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.97
+     },
+     {
+      "submitFrame": 13,
+      "submitCallbackStart": 8471.930000007153,
+      "leafMs": 0.185,
+      "arrivalMs": 2.76,
+      "totalMs": 2.55,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.455
+     },
+     {
+      "submitFrame": 14,
+      "submitCallbackStart": 8487.385000005364,
+      "leafMs": 0.155,
+      "arrivalMs": 3.48,
+      "totalMs": 3.32,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.93
+     },
+     {
+      "submitFrame": 15,
+      "submitCallbackStart": 8505.314999997616,
+      "leafMs": 0.175,
+      "arrivalMs": 3.85,
+      "totalMs": 3.655,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.725
+     },
+     {
+      "submitFrame": 16,
+      "submitCallbackStart": 8522.040000006557,
+      "leafMs": 0.235,
+      "arrivalMs": 3.405,
+      "totalMs": 3.125,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.655
+     },
+     {
+      "submitFrame": 17,
+      "submitCallbackStart": 8538.695000007749,
+      "leafMs": 0.205,
+      "arrivalMs": 3.59,
+      "totalMs": 3.34,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.395
+     },
+     {
+      "submitFrame": 18,
+      "submitCallbackStart": 8555.090000003576,
+      "leafMs": 0.36,
+      "arrivalMs": 3.315,
+      "totalMs": 2.935,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.745
+     },
+     {
+      "submitFrame": 19,
+      "submitCallbackStart": 8571.835000008345,
+      "leafMs": 0.215,
+      "arrivalMs": 3.575,
+      "totalMs": 3.335,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.605
+     },
+     {
+      "submitFrame": 20,
+      "submitCallbackStart": 8588.439999997616,
+      "leafMs": 0.23,
+      "arrivalMs": 3.795,
+      "totalMs": 3.51,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.925
+     },
+     {
+      "submitFrame": 21,
+      "submitCallbackStart": 8605.365000009537,
+      "leafMs": 0.235,
+      "arrivalMs": 3.345,
+      "totalMs": 3.08,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.21
+     },
+     {
+      "submitFrame": 22,
+      "submitCallbackStart": 8620.57500000298,
+      "leafMs": 0.205,
+      "arrivalMs": 3.195,
+      "totalMs": 2.96,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.36
+     },
+     {
+      "submitFrame": 23,
+      "submitCallbackStart": 8637.935000002384,
+      "leafMs": 0.25,
+      "arrivalMs": 3.69,
+      "totalMs": 3.41,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.105
+     },
+     {
+      "submitFrame": 24,
+      "submitCallbackStart": 8655.040000006557,
+      "leafMs": 0.425,
+      "arrivalMs": 4.11,
+      "totalMs": 3.64,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.78
+     },
+     {
+      "submitFrame": 25,
+      "submitCallbackStart": 8671.820000007749,
+      "leafMs": 0.245,
+      "arrivalMs": 3.67,
+      "totalMs": 3.39,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.82
+     },
+     {
+      "submitFrame": 26,
+      "submitCallbackStart": 8688.640000000596,
+      "leafMs": 0.175,
+      "arrivalMs": 3.185,
+      "totalMs": 2.995,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.37
+     },
+     {
+      "submitFrame": 27,
+      "submitCallbackStart": 8705.010000005364,
+      "leafMs": 0.165,
+      "arrivalMs": 2.76,
+      "totalMs": 2.575,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.655
+     },
+     {
+      "submitFrame": 28,
+      "submitCallbackStart": 8721.665000006557,
+      "leafMs": 0.2,
+      "arrivalMs": 3.75,
+      "totalMs": 3.515,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.745
+     },
+     {
+      "submitFrame": 29,
+      "submitCallbackStart": 8738.409999996424,
+      "leafMs": 0.205,
+      "arrivalMs": 3.92,
+      "totalMs": 3.69,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.18
+     },
+     {
+      "submitFrame": 30,
+      "submitCallbackStart": 8753.590000003576,
+      "leafMs": 0.25,
+      "arrivalMs": 3.245,
+      "totalMs": 2.96,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.225
+     },
+     {
+      "submitFrame": 31,
+      "submitCallbackStart": 8771.814999997616,
+      "leafMs": 0.38,
+      "arrivalMs": 4.605,
+      "totalMs": 4.185,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.835
+     },
+     {
+      "submitFrame": 32,
+      "submitCallbackStart": 8788.65000000596,
+      "leafMs": 0.24,
+      "arrivalMs": 5.575,
+      "totalMs": 5.295,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.43
+     },
+     {
+      "submitFrame": 33,
+      "submitCallbackStart": 8805.079999998212,
+      "leafMs": 0.285,
+      "arrivalMs": 3.31,
+      "totalMs": 3,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.82
+     },
+     {
+      "submitFrame": 34,
+      "submitCallbackStart": 8821.90000000596,
+      "leafMs": 0.18,
+      "arrivalMs": 2.185,
+      "totalMs": 1.985,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.425
+     },
+     {
+      "submitFrame": 35,
+      "submitCallbackStart": 8838.32500000298,
+      "leafMs": 0.13,
+      "arrivalMs": 2.11,
+      "totalMs": 1.965,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.48
+     },
+     {
+      "submitFrame": 36,
+      "submitCallbackStart": 8853.805000007153,
+      "leafMs": 0.105,
+      "arrivalMs": 2.25,
+      "totalMs": 2.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.02
+     },
+     {
+      "submitFrame": 37,
+      "submitCallbackStart": 8871.82500000298,
+      "leafMs": 0.1,
+      "arrivalMs": 2.245,
+      "totalMs": 2.14,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.92
+     },
+     {
+      "submitFrame": 38,
+      "submitCallbackStart": 8886.745000004768,
+      "leafMs": 0.075,
+      "arrivalMs": 2.08,
+      "totalMs": 1.99,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.795
+     },
+     {
+      "submitFrame": 39,
+      "submitCallbackStart": 8903.540000006557,
+      "leafMs": 0.11,
+      "arrivalMs": 2.165,
+      "totalMs": 2.045,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.07
+     },
+     {
+      "submitFrame": 40,
+      "submitCallbackStart": 8921.609999999404,
+      "leafMs": 0.1,
+      "arrivalMs": 2.11,
+      "totalMs": 2,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.875
+     },
+     {
+      "submitFrame": 41,
+      "submitCallbackStart": 8938.484999999404,
+      "leafMs": 0.125,
+      "arrivalMs": 2.095,
+      "totalMs": 1.965,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.47
+     },
+     {
+      "submitFrame": 42,
+      "submitCallbackStart": 8954.954999998212,
+      "leafMs": 0.14,
+      "arrivalMs": 2.265,
+      "totalMs": 2.115,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 43,
+      "submitCallbackStart": 8971.60000000894,
+      "leafMs": 0.135,
+      "arrivalMs": 2.19,
+      "totalMs": 2.05,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.075
+     },
+     {
+      "submitFrame": 44,
+      "submitCallbackStart": 8987.67499999702,
+      "leafMs": 0.15,
+      "arrivalMs": 2.4,
+      "totalMs": 2.235,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.785
+     },
+     {
+      "submitFrame": 45,
+      "submitCallbackStart": 9004.460000008345,
+      "leafMs": 0.15,
+      "arrivalMs": 2.25,
+      "totalMs": 2.09,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.425
+     },
+     {
+      "submitFrame": 46,
+      "submitCallbackStart": 9021.885000005364,
+      "leafMs": 0.185,
+      "arrivalMs": 2.925,
+      "totalMs": 2.735,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.815
+     },
+     {
+      "submitFrame": 47,
+      "submitCallbackStart": 9038.70000000298,
+      "leafMs": 0.22,
+      "arrivalMs": 3.56,
+      "totalMs": 3.315,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.445
+     },
+     {
+      "submitFrame": 48,
+      "submitCallbackStart": 9055.144999995828,
+      "leafMs": 0.21,
+      "arrivalMs": 3.35,
+      "totalMs": 3.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.785
+     },
+     {
+      "submitFrame": 49,
+      "submitCallbackStart": 9070.930000007153,
+      "leafMs": 0.175,
+      "arrivalMs": 2.675,
+      "totalMs": 2.485,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.96
+     },
+     {
+      "submitFrame": 50,
+      "submitCallbackStart": 9087.890000000596,
+      "leafMs": 0.255,
+      "arrivalMs": 3.635,
+      "totalMs": 3.35,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.12
+     },
+     {
+      "submitFrame": 51,
+      "submitCallbackStart": 9105.010000005364,
+      "leafMs": 0.25,
+      "arrivalMs": 4.065,
+      "totalMs": 3.8,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 52,
+      "submitCallbackStart": 9121.655000001192,
+      "leafMs": 0.31,
+      "arrivalMs": 3.83,
+      "totalMs": 3.47,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.69
+     },
+     {
+      "submitFrame": 53,
+      "submitCallbackStart": 9138.344999998808,
+      "leafMs": 0.255,
+      "arrivalMs": 3.985,
+      "totalMs": 3.685,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.91
+     },
+     {
+      "submitFrame": 54,
+      "submitCallbackStart": 9154.255000010133,
+      "leafMs": 0.25,
+      "arrivalMs": 3.525,
+      "totalMs": 3.23,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.78
+     },
+     {
+      "submitFrame": 55,
+      "submitCallbackStart": 9170.034999996424,
+      "leafMs": 0.21,
+      "arrivalMs": 3.425,
+      "totalMs": 3.195,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.85
+     },
+     {
+      "submitFrame": 56,
+      "submitCallbackStart": 9187.885000005364,
+      "leafMs": 0.29,
+      "arrivalMs": 3.675,
+      "totalMs": 3.35,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.33
+     },
+     {
+      "submitFrame": 57,
+      "submitCallbackStart": 9204.215000003576,
+      "leafMs": 0.405,
+      "arrivalMs": 4.27,
+      "totalMs": 3.83,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.44
+     },
+     {
+      "submitFrame": 58,
+      "submitCallbackStart": 9221.655000001192,
+      "leafMs": 0.245,
+      "arrivalMs": 4.49,
+      "totalMs": 4.225,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.84
+     },
+     {
+      "submitFrame": 59,
+      "submitCallbackStart": 9237.495000004768,
+      "leafMs": 0.18,
+      "arrivalMs": 2.58,
+      "totalMs": 2.38,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.86
+     },
+     {
+      "submitFrame": 60,
+      "submitCallbackStart": 9254.355000004172,
+      "leafMs": 0.11,
+      "arrivalMs": 2.14,
+      "totalMs": 2.02,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.27
+     },
+     {
+      "submitFrame": 61,
+      "submitCallbackStart": 9271.625,
+      "leafMs": 0.095,
+      "arrivalMs": 2.025,
+      "totalMs": 1.915,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.735
+     },
+     {
+      "submitFrame": 62,
+      "submitCallbackStart": 9288.359999999404,
+      "leafMs": 0.17,
+      "arrivalMs": 2.35,
+      "totalMs": 2.16,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.6
+     },
+     {
+      "submitFrame": 63,
+      "submitCallbackStart": 9304.960000008345,
+      "leafMs": 0.175,
+      "arrivalMs": 2.54,
+      "totalMs": 2.35,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.755
+     },
+     {
+      "submitFrame": 64,
+      "submitCallbackStart": 9320.715000003576,
+      "leafMs": 0.175,
+      "arrivalMs": 2.65,
+      "totalMs": 2.475,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.375
+     },
+     {
+      "submitFrame": 65,
+      "submitCallbackStart": 9338.090000003576,
+      "leafMs": 0.23,
+      "arrivalMs": 3.23,
+      "totalMs": 2.97,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.27
+     },
+     {
+      "submitFrame": 66,
+      "submitCallbackStart": 9353.359999999404,
+      "leafMs": 0.14,
+      "arrivalMs": 3.255,
+      "totalMs": 3.08,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18
+     },
+     {
+      "submitFrame": 67,
+      "submitCallbackStart": 9371.359999999404,
+      "leafMs": 0.36,
+      "arrivalMs": 4.48,
+      "totalMs": 4.09,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.95
+     },
+     {
+      "submitFrame": 68,
+      "submitCallbackStart": 9388.310000002384,
+      "leafMs": 0.245,
+      "arrivalMs": 4.375,
+      "totalMs": 4.095,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.29
+     },
+     {
+      "submitFrame": 69,
+      "submitCallbackStart": 9404.60000000894,
+      "leafMs": 0.32,
+      "arrivalMs": 3.815,
+      "totalMs": 3.465,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.11
+     },
+     {
+      "submitFrame": 70,
+      "submitCallbackStart": 9421.710000008345,
+      "leafMs": 0.28,
+      "arrivalMs": 3.595,
+      "totalMs": 3.28,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.845
+     },
+     {
+      "submitFrame": 71,
+      "submitCallbackStart": 9438.555000007153,
+      "leafMs": 0.365,
+      "arrivalMs": 4.2,
+      "totalMs": 3.805,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.485
+     },
+     {
+      "submitFrame": 72,
+      "submitCallbackStart": 9455.040000006557,
+      "leafMs": 0.285,
+      "arrivalMs": 4.24,
+      "totalMs": 3.935,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.62
+     },
+     {
+      "submitFrame": 73,
+      "submitCallbackStart": 9471.659999996424,
+      "leafMs": 0.175,
+      "arrivalMs": 3.185,
+      "totalMs": 2.995,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.3
+     },
+     {
+      "submitFrame": 74,
+      "submitCallbackStart": 9486.960000008345,
+      "leafMs": 0.225,
+      "arrivalMs": 3.58,
+      "totalMs": 3.32,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.115
+     },
+     {
+      "submitFrame": 75,
+      "submitCallbackStart": 9505.07500000298,
+      "leafMs": 0.21,
+      "arrivalMs": 4.33,
+      "totalMs": 4.1,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.615
+     },
+     {
+      "submitFrame": 76,
+      "submitCallbackStart": 9521.689999997616,
+      "leafMs": 0.26,
+      "arrivalMs": 3.28,
+      "totalMs": 2.995,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.69
+     },
+     {
+      "submitFrame": 77,
+      "submitCallbackStart": 9538.380000010133,
+      "leafMs": 0.215,
+      "arrivalMs": 3.415,
+      "totalMs": 3.15,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.455
+     },
+     {
+      "submitFrame": 78,
+      "submitCallbackStart": 9553.835000008345,
+      "leafMs": 0.225,
+      "arrivalMs": 3.33,
+      "totalMs": 3.085,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.895
+     },
+     {
+      "submitFrame": 79,
+      "submitCallbackStart": 9571.730000004172,
+      "leafMs": 0.235,
+      "arrivalMs": 4.665,
+      "totalMs": 4.39,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.855
+     },
+     {
+      "submitFrame": 80,
+      "submitCallbackStart": 9588.585000008345,
+      "leafMs": 0.245,
+      "arrivalMs": 4.35,
+      "totalMs": 4.075,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.715
+     },
+     {
+      "submitFrame": 81,
+      "submitCallbackStart": 9605.29999999702,
+      "leafMs": 0.295,
+      "arrivalMs": 3.885,
+      "totalMs": 3.56,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.215
+     },
+     {
+      "submitFrame": 82,
+      "submitCallbackStart": 9620.515000000596,
+      "leafMs": 0.245,
+      "arrivalMs": 3.705,
+      "totalMs": 3.425,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.745
+     },
+     {
+      "submitFrame": 83,
+      "submitCallbackStart": 9638.260000005364,
+      "leafMs": 0.245,
+      "arrivalMs": 4.375,
+      "totalMs": 4.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.995
+     },
+     {
+      "submitFrame": 84,
+      "submitCallbackStart": 9655.255000010133,
+      "leafMs": 0.36,
+      "arrivalMs": 4.725,
+      "totalMs": 4.345,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.73
+     },
+     {
+      "submitFrame": 85,
+      "submitCallbackStart": 9670.984999999404,
+      "leafMs": 0.27,
+      "arrivalMs": 3.555,
+      "totalMs": 3.25,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.27
+     },
+     {
+      "submitFrame": 86,
+      "submitCallbackStart": 9688.255000010133,
+      "leafMs": 0.17,
+      "arrivalMs": 2.625,
+      "totalMs": 2.44,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.36
+     },
+     {
+      "submitFrame": 87,
+      "submitCallbackStart": 9704.615000009537,
+      "leafMs": 0.25,
+      "arrivalMs": 3.8,
+      "totalMs": 3.515,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.495
+     },
+     {
+      "submitFrame": 88,
+      "submitCallbackStart": 9720.109999999404,
+      "leafMs": 0.305,
+      "arrivalMs": 3.475,
+      "totalMs": 3.145,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.27
+     },
+     {
+      "submitFrame": 89,
+      "submitCallbackStart": 9738.380000010133,
+      "leafMs": 0.24,
+      "arrivalMs": 3.54,
+      "totalMs": 3.26,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.64
+     },
+     {
+      "submitFrame": 90,
+      "submitCallbackStart": 9755.019999995828,
+      "leafMs": 0.215,
+      "arrivalMs": 3.795,
+      "totalMs": 3.575,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.505
+     },
+     {
+      "submitFrame": 91,
+      "submitCallbackStart": 9771.52500000596,
+      "leafMs": 0.235,
+      "arrivalMs": 3.67,
+      "totalMs": 3.41,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.015
+     },
+     {
+      "submitFrame": 92,
+      "submitCallbackStart": 9788.540000006557,
+      "leafMs": 0.245,
+      "arrivalMs": 3.66,
+      "totalMs": 3.39,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.105
+     },
+     {
+      "submitFrame": 93,
+      "submitCallbackStart": 9804.644999995828,
+      "leafMs": 0.25,
+      "arrivalMs": 3.72,
+      "totalMs": 3.44,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.905
+     },
+     {
+      "submitFrame": 94,
+      "submitCallbackStart": 9820.54999999702,
+      "leafMs": 0.31,
+      "arrivalMs": 3.76,
+      "totalMs": 3.43,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.785
+     },
+     {
+      "submitFrame": 95,
+      "submitCallbackStart": 9838.335000008345,
+      "leafMs": 0.2,
+      "arrivalMs": 4.69,
+      "totalMs": 4.455,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.92
+     },
+     {
+      "submitFrame": 96,
+      "submitCallbackStart": 9855.255000010133,
+      "leafMs": 0.38,
+      "arrivalMs": 4.73,
+      "totalMs": 4.32,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.72
+     },
+     {
+      "submitFrame": 97,
+      "submitCallbackStart": 9869.97500000894,
+      "leafMs": 0.215,
+      "arrivalMs": 3.785,
+      "totalMs": 3.55,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.905
+     },
+     {
+      "submitFrame": 98,
+      "submitCallbackStart": 9887.880000010133,
+      "leafMs": 0.225,
+      "arrivalMs": 3.385,
+      "totalMs": 3.125,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.25
+     },
+     {
+      "submitFrame": 99,
+      "submitCallbackStart": 9905.130000010133,
+      "leafMs": 0.24,
+      "arrivalMs": 3.65,
+      "totalMs": 3.385,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.435
+     },
+     {
+      "submitFrame": 100,
+      "submitCallbackStart": 9921.564999997616,
+      "leafMs": 0.365,
+      "arrivalMs": 3.635,
+      "totalMs": 3.235,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.54
+     },
+     {
+      "submitFrame": 101,
+      "submitCallbackStart": 9937.105000004172,
+      "leafMs": 0.225,
+      "arrivalMs": 3.72,
+      "totalMs": 3.46,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.225
+     },
+     {
+      "submitFrame": 102,
+      "submitCallbackStart": 9955.329999998212,
+      "leafMs": 0.24,
+      "arrivalMs": 3.85,
+      "totalMs": 3.585,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.475
+     },
+     {
+      "submitFrame": 103,
+      "submitCallbackStart": 9970.805000007153,
+      "leafMs": 0.25,
+      "arrivalMs": 3.505,
+      "totalMs": 3.24,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.675
+     },
+     {
+      "submitFrame": 104,
+      "submitCallbackStart": 9987.480000004172,
+      "leafMs": 0.295,
+      "arrivalMs": 3.99,
+      "totalMs": 3.66,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.63
+     },
+     {
+      "submitFrame": 105,
+      "submitCallbackStart": 10005.109999999404,
+      "leafMs": 0.235,
+      "arrivalMs": 4.365,
+      "totalMs": 4.085,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.605
+     },
+     {
+      "submitFrame": 106,
+      "submitCallbackStart": 10021.715000003576,
+      "leafMs": 0.32,
+      "arrivalMs": 3.46,
+      "totalMs": 3.13,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17
+     },
+     {
+      "submitFrame": 107,
+      "submitCallbackStart": 10038.715000003576,
+      "leafMs": 0.375,
+      "arrivalMs": 4.925,
+      "totalMs": 4.515,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.87
+     },
+     {
+      "submitFrame": 108,
+      "submitCallbackStart": 10054.585000008345,
+      "leafMs": 0.305,
+      "arrivalMs": 3.44,
+      "totalMs": 3.11,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.415
+     },
+     {
+      "submitFrame": 109,
+      "submitCallbackStart": 10070,
+      "leafMs": 0.17,
+      "arrivalMs": 2.79,
+      "totalMs": 2.6,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.265
+     },
+     {
+      "submitFrame": 110,
+      "submitCallbackStart": 10087.265000000596,
+      "leafMs": 0.25,
+      "arrivalMs": 3.595,
+      "totalMs": 3.315,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.975
+     },
+     {
+      "submitFrame": 111,
+      "submitCallbackStart": 10105.240000009537,
+      "leafMs": 0.35,
+      "arrivalMs": 3.32,
+      "totalMs": 2.935,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.45
+     },
+     {
+      "submitFrame": 112,
+      "submitCallbackStart": 10121.689999997616,
+      "leafMs": 0.165,
+      "arrivalMs": 3.755,
+      "totalMs": 3.56,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.695
+     },
+     {
+      "submitFrame": 113,
+      "submitCallbackStart": 10137.385000005364,
+      "leafMs": 0.295,
+      "arrivalMs": 3.355,
+      "totalMs": 3.03,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.695
+     },
+     {
+      "submitFrame": 114,
+      "submitCallbackStart": 10155.079999998212,
+      "leafMs": 0.235,
+      "arrivalMs": 3.745,
+      "totalMs": 3.49,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.59
+     },
+     {
+      "submitFrame": 115,
+      "submitCallbackStart": 10171.670000001788,
+      "leafMs": 0.195,
+      "arrivalMs": 4.125,
+      "totalMs": 3.9,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.775
+     },
+     {
+      "submitFrame": 116,
+      "submitCallbackStart": 10188.445000007749,
+      "leafMs": 0.22,
+      "arrivalMs": 3.8,
+      "totalMs": 3.54,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.63
+     },
+     {
+      "submitFrame": 117,
+      "submitCallbackStart": 10205.07500000298,
+      "leafMs": 0.3,
+      "arrivalMs": 3.705,
+      "totalMs": 3.37,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.82
+     },
+     {
+      "submitFrame": 118,
+      "submitCallbackStart": 10221.894999995828,
+      "leafMs": 0.315,
+      "arrivalMs": 3.86,
+      "totalMs": 3.515,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.45
+     },
+     {
+      "submitFrame": 119,
+      "submitCallbackStart": 10238.344999998808,
+      "leafMs": 0.26,
+      "arrivalMs": 4.285,
+      "totalMs": 4,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.03
+     },
+     {
+      "submitFrame": 120,
+      "submitCallbackStart": 10253.375,
+      "leafMs": 0.22,
+      "arrivalMs": 3.35,
+      "totalMs": 3.105,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.36
+     }
+    ],
+    "checks": {
+     "reference": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "data-reverse": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "js-dense": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     }
+    }
+   },
+   {
+    "states": 32,
+    "textLength": 1024,
+    "kernel": "row-16x16",
+    "input": "classes",
+    "frameCount": 120,
+    "callbackIntervalMs": {
+     "count": 120,
+     "median": 16.66,
+     "p10": 15.205,
+     "p90": 18.005,
+     "min": 14.795,
+     "max": 18.55
+    },
+    "arrivalMs": {
+     "count": 120,
+     "median": 1.73,
+     "p10": 1.395,
+     "p90": 2.18,
+     "min": 1.33,
+     "max": 2.78
+    },
+    "framesUntilDrawn": [
+     {
+      "framesUntilDrawn": 1,
+      "evaluations": 120
+     }
+    ],
+    "submitToDrawCallbackMs": {
+     "count": 120,
+     "median": 16.66,
+     "p10": 15.205,
+     "p90": 18.005,
+     "min": 14.795,
+     "max": 18.55
+    },
+    "frames": [
+     {
+      "submitFrame": 1,
+      "submitCallbackStart": 10321.710000008345,
+      "leafMs": 0.005,
+      "arrivalMs": 1.485,
+      "totalMs": 1.475,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.925
+     },
+     {
+      "submitFrame": 2,
+      "submitCallbackStart": 10338.635000005364,
+      "leafMs": 0,
+      "arrivalMs": 1.91,
+      "totalMs": 1.89,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.6
+     },
+     {
+      "submitFrame": 3,
+      "submitCallbackStart": 10354.234999999404,
+      "leafMs": 0.005,
+      "arrivalMs": 2.24,
+      "totalMs": 2.215,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.97
+     },
+     {
+      "submitFrame": 4,
+      "submitCallbackStart": 10370.204999998212,
+      "leafMs": 0.005,
+      "arrivalMs": 2.275,
+      "totalMs": 2.255,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.185
+     },
+     {
+      "submitFrame": 5,
+      "submitCallbackStart": 10387.390000000596,
+      "leafMs": 0,
+      "arrivalMs": 2.14,
+      "totalMs": 2.12,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.49
+     },
+     {
+      "submitFrame": 6,
+      "submitCallbackStart": 10403.880000010133,
+      "leafMs": 0,
+      "arrivalMs": 1.995,
+      "totalMs": 1.975,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.29
+     },
+     {
+      "submitFrame": 7,
+      "submitCallbackStart": 10421.170000001788,
+      "leafMs": 0.005,
+      "arrivalMs": 2.39,
+      "totalMs": 2.365,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.34
+     },
+     {
+      "submitFrame": 8,
+      "submitCallbackStart": 10438.510000005364,
+      "leafMs": 0,
+      "arrivalMs": 2.175,
+      "totalMs": 2.155,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.91
+     },
+     {
+      "submitFrame": 9,
+      "submitCallbackStart": 10453.420000001788,
+      "leafMs": 0.005,
+      "arrivalMs": 2.51,
+      "totalMs": 2.5,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.29
+     },
+     {
+      "submitFrame": 10,
+      "submitCallbackStart": 10471.710000008345,
+      "leafMs": 0.005,
+      "arrivalMs": 2.42,
+      "totalMs": 2.4,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.315
+     },
+     {
+      "submitFrame": 11,
+      "submitCallbackStart": 10488.02500000596,
+      "leafMs": 0.005,
+      "arrivalMs": 2.41,
+      "totalMs": 2.39,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.155
+     },
+     {
+      "submitFrame": 12,
+      "submitCallbackStart": 10505.180000007153,
+      "leafMs": 0,
+      "arrivalMs": 1.73,
+      "totalMs": 1.705,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.5
+     },
+     {
+      "submitFrame": 13,
+      "submitCallbackStart": 10521.680000007153,
+      "leafMs": 0.005,
+      "arrivalMs": 2.18,
+      "totalMs": 2.16,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.89
+     },
+     {
+      "submitFrame": 14,
+      "submitCallbackStart": 10538.570000007749,
+      "leafMs": 0,
+      "arrivalMs": 2.035,
+      "totalMs": 2.015,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.98
+     },
+     {
+      "submitFrame": 15,
+      "submitCallbackStart": 10553.54999999702,
+      "leafMs": 0,
+      "arrivalMs": 1.875,
+      "totalMs": 1.85,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.55
+     },
+     {
+      "submitFrame": 16,
+      "submitCallbackStart": 10571.10000000894,
+      "leafMs": 0.01,
+      "arrivalMs": 2.42,
+      "totalMs": 2.4,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.505
+     },
+     {
+      "submitFrame": 17,
+      "submitCallbackStart": 10588.605000004172,
+      "leafMs": 0.005,
+      "arrivalMs": 2.375,
+      "totalMs": 2.345,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.44
+     },
+     {
+      "submitFrame": 18,
+      "submitCallbackStart": 10605.045000001788,
+      "leafMs": 0.005,
+      "arrivalMs": 1.945,
+      "totalMs": 1.925,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.465
+     },
+     {
+      "submitFrame": 19,
+      "submitCallbackStart": 10620.510000005364,
+      "leafMs": 0.005,
+      "arrivalMs": 2.19,
+      "totalMs": 2.17,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.93
+     },
+     {
+      "submitFrame": 20,
+      "submitCallbackStart": 10638.439999997616,
+      "leafMs": 0.005,
+      "arrivalMs": 2.085,
+      "totalMs": 2.06,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.595
+     },
+     {
+      "submitFrame": 21,
+      "submitCallbackStart": 10655.034999996424,
+      "leafMs": 0.005,
+      "arrivalMs": 1.805,
+      "totalMs": 1.785,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 22,
+      "submitCallbackStart": 10671.695000007749,
+      "leafMs": 0,
+      "arrivalMs": 1.66,
+      "totalMs": 1.65,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.995
+     },
+     {
+      "submitFrame": 23,
+      "submitCallbackStart": 10686.689999997616,
+      "leafMs": 0.005,
+      "arrivalMs": 2.3,
+      "totalMs": 2.28,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.315
+     },
+     {
+      "submitFrame": 24,
+      "submitCallbackStart": 10705.005000010133,
+      "leafMs": 0,
+      "arrivalMs": 1.55,
+      "totalMs": 1.54,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.33
+     },
+     {
+      "submitFrame": 25,
+      "submitCallbackStart": 10720.335000008345,
+      "leafMs": 0,
+      "arrivalMs": 1.92,
+      "totalMs": 1.91,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.005
+     },
+     {
+      "submitFrame": 26,
+      "submitCallbackStart": 10738.340000003576,
+      "leafMs": 0.005,
+      "arrivalMs": 1.55,
+      "totalMs": 1.535,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.605
+     },
+     {
+      "submitFrame": 27,
+      "submitCallbackStart": 10754.945000007749,
+      "leafMs": 0,
+      "arrivalMs": 1.485,
+      "totalMs": 1.475,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.665
+     },
+     {
+      "submitFrame": 28,
+      "submitCallbackStart": 10771.609999999404,
+      "leafMs": 0,
+      "arrivalMs": 1.9,
+      "totalMs": 1.89,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.425
+     },
+     {
+      "submitFrame": 29,
+      "submitCallbackStart": 10788.034999996424,
+      "leafMs": 0,
+      "arrivalMs": 1.83,
+      "totalMs": 1.815,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.205
+     },
+     {
+      "submitFrame": 30,
+      "submitCallbackStart": 10803.240000009537,
+      "leafMs": 0,
+      "arrivalMs": 1.645,
+      "totalMs": 1.635,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.67
+     },
+     {
+      "submitFrame": 31,
+      "submitCallbackStart": 10820.909999996424,
+      "leafMs": 0,
+      "arrivalMs": 1.465,
+      "totalMs": 1.465,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.685
+     },
+     {
+      "submitFrame": 32,
+      "submitCallbackStart": 10836.594999998808,
+      "leafMs": 0,
+      "arrivalMs": 1.78,
+      "totalMs": 1.78,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.52
+     },
+     {
+      "submitFrame": 33,
+      "submitCallbackStart": 10855.115000009537,
+      "leafMs": 0,
+      "arrivalMs": 1.78,
+      "totalMs": 1.775,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.32
+     },
+     {
+      "submitFrame": 34,
+      "submitCallbackStart": 10870.435000002384,
+      "leafMs": 0.005,
+      "arrivalMs": 1.82,
+      "totalMs": 1.815,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.895
+     },
+     {
+      "submitFrame": 35,
+      "submitCallbackStart": 10888.329999998212,
+      "leafMs": 0,
+      "arrivalMs": 1.895,
+      "totalMs": 1.89,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 36,
+      "submitCallbackStart": 10904.97500000894,
+      "leafMs": 0,
+      "arrivalMs": 1.47,
+      "totalMs": 1.465,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.035
+     },
+     {
+      "submitFrame": 37,
+      "submitCallbackStart": 10920.010000005364,
+      "leafMs": 0.005,
+      "arrivalMs": 1.465,
+      "totalMs": 1.455,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.245
+     },
+     {
+      "submitFrame": 38,
+      "submitCallbackStart": 10938.255000010133,
+      "leafMs": 0,
+      "arrivalMs": 1.605,
+      "totalMs": 1.595,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.675
+     },
+     {
+      "submitFrame": 39,
+      "submitCallbackStart": 10954.930000007153,
+      "leafMs": 0,
+      "arrivalMs": 1.425,
+      "totalMs": 1.415,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.345
+     },
+     {
+      "submitFrame": 40,
+      "submitCallbackStart": 10970.27500000596,
+      "leafMs": 0,
+      "arrivalMs": 1.465,
+      "totalMs": 1.455,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.985
+     },
+     {
+      "submitFrame": 41,
+      "submitCallbackStart": 10988.260000005364,
+      "leafMs": 0.005,
+      "arrivalMs": 1.79,
+      "totalMs": 1.785,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.935
+     },
+     {
+      "submitFrame": 42,
+      "submitCallbackStart": 11004.195000007749,
+      "leafMs": 0,
+      "arrivalMs": 1.48,
+      "totalMs": 1.48,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.53
+     },
+     {
+      "submitFrame": 43,
+      "submitCallbackStart": 11021.72500000894,
+      "leafMs": 0.005,
+      "arrivalMs": 1.41,
+      "totalMs": 1.4,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.8
+     },
+     {
+      "submitFrame": 44,
+      "submitCallbackStart": 11038.52500000596,
+      "leafMs": 0.01,
+      "arrivalMs": 1.875,
+      "totalMs": 1.865,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.58
+     },
+     {
+      "submitFrame": 45,
+      "submitCallbackStart": 11055.105000004172,
+      "leafMs": 0.005,
+      "arrivalMs": 1.77,
+      "totalMs": 1.765,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.505
+     },
+     {
+      "submitFrame": 46,
+      "submitCallbackStart": 11071.609999999404,
+      "leafMs": 0.005,
+      "arrivalMs": 1.43,
+      "totalMs": 1.415,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.63
+     },
+     {
+      "submitFrame": 47,
+      "submitCallbackStart": 11088.240000009537,
+      "leafMs": 0,
+      "arrivalMs": 1.495,
+      "totalMs": 1.49,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.68
+     },
+     {
+      "submitFrame": 48,
+      "submitCallbackStart": 11104.920000001788,
+      "leafMs": 0,
+      "arrivalMs": 1.78,
+      "totalMs": 1.775,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.935
+     },
+     {
+      "submitFrame": 49,
+      "submitCallbackStart": 11120.855000004172,
+      "leafMs": 0,
+      "arrivalMs": 1.37,
+      "totalMs": 1.355,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.285
+     },
+     {
+      "submitFrame": 50,
+      "submitCallbackStart": 11138.140000000596,
+      "leafMs": 0,
+      "arrivalMs": 1.335,
+      "totalMs": 1.335,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.81
+     },
+     {
+      "submitFrame": 51,
+      "submitCallbackStart": 11154.95000000298,
+      "leafMs": 0.005,
+      "arrivalMs": 1.835,
+      "totalMs": 1.825,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.825
+     },
+     {
+      "submitFrame": 52,
+      "submitCallbackStart": 11171.77500000596,
+      "leafMs": 0.005,
+      "arrivalMs": 1.41,
+      "totalMs": 1.405,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.97
+     },
+     {
+      "submitFrame": 53,
+      "submitCallbackStart": 11187.745000004768,
+      "leafMs": 0,
+      "arrivalMs": 1.395,
+      "totalMs": 1.395,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.165
+     },
+     {
+      "submitFrame": 54,
+      "submitCallbackStart": 11204.909999996424,
+      "leafMs": 0,
+      "arrivalMs": 1.505,
+      "totalMs": 1.495,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 55,
+      "submitCallbackStart": 11221.570000007749,
+      "leafMs": 0,
+      "arrivalMs": 1.37,
+      "totalMs": 1.365,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 56,
+      "submitCallbackStart": 11238.215000003576,
+      "leafMs": 0.005,
+      "arrivalMs": 1.375,
+      "totalMs": 1.37,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.715
+     },
+     {
+      "submitFrame": 57,
+      "submitCallbackStart": 11254.930000007153,
+      "leafMs": 0,
+      "arrivalMs": 1.785,
+      "totalMs": 1.785,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.8
+     },
+     {
+      "submitFrame": 58,
+      "submitCallbackStart": 11271.730000004172,
+      "leafMs": 0,
+      "arrivalMs": 1.74,
+      "totalMs": 1.735,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.54
+     },
+     {
+      "submitFrame": 59,
+      "submitCallbackStart": 11288.269999995828,
+      "leafMs": 0.005,
+      "arrivalMs": 1.47,
+      "totalMs": 1.46,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.815
+     },
+     {
+      "submitFrame": 60,
+      "submitCallbackStart": 11305.085000008345,
+      "leafMs": 0,
+      "arrivalMs": 1.65,
+      "totalMs": 1.64,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.44
+     },
+     {
+      "submitFrame": 61,
+      "submitCallbackStart": 11321.52500000596,
+      "leafMs": 0.005,
+      "arrivalMs": 1.795,
+      "totalMs": 1.785,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.305
+     },
+     {
+      "submitFrame": 62,
+      "submitCallbackStart": 11336.829999998212,
+      "leafMs": 0,
+      "arrivalMs": 1.73,
+      "totalMs": 1.725,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.73
+     },
+     {
+      "submitFrame": 63,
+      "submitCallbackStart": 11354.560000002384,
+      "leafMs": 0.005,
+      "arrivalMs": 1.38,
+      "totalMs": 1.37,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.54
+     },
+     {
+      "submitFrame": 64,
+      "submitCallbackStart": 11371.10000000894,
+      "leafMs": 0,
+      "arrivalMs": 1.33,
+      "totalMs": 1.33,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.37
+     },
+     {
+      "submitFrame": 65,
+      "submitCallbackStart": 11387.469999998808,
+      "leafMs": 0,
+      "arrivalMs": 1.77,
+      "totalMs": 1.765,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.65
+     },
+     {
+      "submitFrame": 66,
+      "submitCallbackStart": 11405.120000004768,
+      "leafMs": 0,
+      "arrivalMs": 1.85,
+      "totalMs": 1.845,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.495
+     },
+     {
+      "submitFrame": 67,
+      "submitCallbackStart": 11421.615000009537,
+      "leafMs": 0.005,
+      "arrivalMs": 1.47,
+      "totalMs": 1.455,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.645
+     },
+     {
+      "submitFrame": 68,
+      "submitCallbackStart": 11438.260000005364,
+      "leafMs": 0,
+      "arrivalMs": 1.44,
+      "totalMs": 1.44,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.65
+     },
+     {
+      "submitFrame": 69,
+      "submitCallbackStart": 11454.909999996424,
+      "leafMs": 0,
+      "arrivalMs": 1.74,
+      "totalMs": 1.735,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.96
+     },
+     {
+      "submitFrame": 70,
+      "submitCallbackStart": 11469.870000004768,
+      "leafMs": 0,
+      "arrivalMs": 1.76,
+      "totalMs": 1.75,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.55
+     },
+     {
+      "submitFrame": 71,
+      "submitCallbackStart": 11488.420000001788,
+      "leafMs": 0,
+      "arrivalMs": 1.365,
+      "totalMs": 1.36,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.665
+     },
+     {
+      "submitFrame": 72,
+      "submitCallbackStart": 11505.085000008345,
+      "leafMs": 0.005,
+      "arrivalMs": 1.38,
+      "totalMs": 1.37,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.955
+     },
+     {
+      "submitFrame": 73,
+      "submitCallbackStart": 11521.040000006557,
+      "leafMs": 0,
+      "arrivalMs": 1.425,
+      "totalMs": 1.425,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.385
+     },
+     {
+      "submitFrame": 74,
+      "submitCallbackStart": 11538.42499999702,
+      "leafMs": 0,
+      "arrivalMs": 1.415,
+      "totalMs": 1.405,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.49
+     },
+     {
+      "submitFrame": 75,
+      "submitCallbackStart": 11554.915000006557,
+      "leafMs": 0.005,
+      "arrivalMs": 1.44,
+      "totalMs": 1.43,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.67
+     },
+     {
+      "submitFrame": 76,
+      "submitCallbackStart": 11571.585000008345,
+      "leafMs": 0,
+      "arrivalMs": 1.375,
+      "totalMs": 1.375,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.835
+     },
+     {
+      "submitFrame": 77,
+      "submitCallbackStart": 11588.420000001788,
+      "leafMs": 0,
+      "arrivalMs": 1.375,
+      "totalMs": 1.375,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.865
+     },
+     {
+      "submitFrame": 78,
+      "submitCallbackStart": 11604.284999996424,
+      "leafMs": 0,
+      "arrivalMs": 1.435,
+      "totalMs": 1.435,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.3
+     },
+     {
+      "submitFrame": 79,
+      "submitCallbackStart": 11621.585000008345,
+      "leafMs": 0,
+      "arrivalMs": 1.8,
+      "totalMs": 1.8,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.82
+     },
+     {
+      "submitFrame": 80,
+      "submitCallbackStart": 11638.405000001192,
+      "leafMs": 0,
+      "arrivalMs": 1.76,
+      "totalMs": 1.755,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.64
+     },
+     {
+      "submitFrame": 81,
+      "submitCallbackStart": 11655.045000001788,
+      "leafMs": 0,
+      "arrivalMs": 1.815,
+      "totalMs": 1.815,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.535
+     },
+     {
+      "submitFrame": 82,
+      "submitCallbackStart": 11671.579999998212,
+      "leafMs": 0.005,
+      "arrivalMs": 1.415,
+      "totalMs": 1.41,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.755
+     },
+     {
+      "submitFrame": 83,
+      "submitCallbackStart": 11687.335000008345,
+      "leafMs": 0.005,
+      "arrivalMs": 1.54,
+      "totalMs": 1.53,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.76
+     },
+     {
+      "submitFrame": 84,
+      "submitCallbackStart": 11705.094999998808,
+      "leafMs": 0.005,
+      "arrivalMs": 1.82,
+      "totalMs": 1.815,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.59
+     },
+     {
+      "submitFrame": 85,
+      "submitCallbackStart": 11721.685000002384,
+      "leafMs": 0,
+      "arrivalMs": 1.78,
+      "totalMs": 1.775,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.56
+     },
+     {
+      "submitFrame": 86,
+      "submitCallbackStart": 11738.245000004768,
+      "leafMs": 0,
+      "arrivalMs": 1.425,
+      "totalMs": 1.415,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.155
+     },
+     {
+      "submitFrame": 87,
+      "submitCallbackStart": 11753.40000000596,
+      "leafMs": 0,
+      "arrivalMs": 1.555,
+      "totalMs": 1.555,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.33
+     },
+     {
+      "submitFrame": 88,
+      "submitCallbackStart": 11771.730000004172,
+      "leafMs": 0,
+      "arrivalMs": 1.365,
+      "totalMs": 1.365,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.91
+     },
+     {
+      "submitFrame": 89,
+      "submitCallbackStart": 11787.640000000596,
+      "leafMs": 0,
+      "arrivalMs": 1.7,
+      "totalMs": 1.695,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.345
+     },
+     {
+      "submitFrame": 90,
+      "submitCallbackStart": 11804.984999999404,
+      "leafMs": 0,
+      "arrivalMs": 1.775,
+      "totalMs": 1.77,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.625
+     },
+     {
+      "submitFrame": 91,
+      "submitCallbackStart": 11821.609999999404,
+      "leafMs": 0,
+      "arrivalMs": 1.465,
+      "totalMs": 1.46,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.84
+     },
+     {
+      "submitFrame": 92,
+      "submitCallbackStart": 11836.45000000298,
+      "leafMs": 0,
+      "arrivalMs": 1.8,
+      "totalMs": 1.795,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.945
+     },
+     {
+      "submitFrame": 93,
+      "submitCallbackStart": 11854.394999995828,
+      "leafMs": 0,
+      "arrivalMs": 1.805,
+      "totalMs": 1.8,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.245
+     },
+     {
+      "submitFrame": 94,
+      "submitCallbackStart": 11871.640000000596,
+      "leafMs": 0,
+      "arrivalMs": 1.805,
+      "totalMs": 1.8,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.795
+     },
+     {
+      "submitFrame": 95,
+      "submitCallbackStart": 11886.435000002384,
+      "leafMs": 0,
+      "arrivalMs": 1.81,
+      "totalMs": 1.805,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.08
+     },
+     {
+      "submitFrame": 96,
+      "submitCallbackStart": 11904.515000000596,
+      "leafMs": 0.005,
+      "arrivalMs": 1.52,
+      "totalMs": 1.51,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.045
+     },
+     {
+      "submitFrame": 97,
+      "submitCallbackStart": 11921.560000002384,
+      "leafMs": 0,
+      "arrivalMs": 1.885,
+      "totalMs": 1.885,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.87
+     },
+     {
+      "submitFrame": 98,
+      "submitCallbackStart": 11938.430000007153,
+      "leafMs": 0,
+      "arrivalMs": 2.78,
+      "totalMs": 2.775,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     },
+     {
+      "submitFrame": 99,
+      "submitCallbackStart": 11955.090000003576,
+      "leafMs": 0.005,
+      "arrivalMs": 1.455,
+      "totalMs": 1.445,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.885
+     },
+     {
+      "submitFrame": 100,
+      "submitCallbackStart": 11970.97500000894,
+      "leafMs": 0,
+      "arrivalMs": 1.465,
+      "totalMs": 1.455,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.245
+     },
+     {
+      "submitFrame": 101,
+      "submitCallbackStart": 11988.219999998808,
+      "leafMs": 0,
+      "arrivalMs": 1.815,
+      "totalMs": 1.8,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.165
+     },
+     {
+      "submitFrame": 102,
+      "submitCallbackStart": 12003.385000005364,
+      "leafMs": 0,
+      "arrivalMs": 1.76,
+      "totalMs": 1.76,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.375
+     },
+     {
+      "submitFrame": 103,
+      "submitCallbackStart": 12021.760000005364,
+      "leafMs": 0,
+      "arrivalMs": 1.91,
+      "totalMs": 1.905,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.08
+     },
+     {
+      "submitFrame": 104,
+      "submitCallbackStart": 12036.840000003576,
+      "leafMs": 0,
+      "arrivalMs": 1.635,
+      "totalMs": 1.625,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.765
+     },
+     {
+      "submitFrame": 105,
+      "submitCallbackStart": 12053.605000004172,
+      "leafMs": 0,
+      "arrivalMs": 1.465,
+      "totalMs": 1.46,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.9
+     },
+     {
+      "submitFrame": 106,
+      "submitCallbackStart": 12070.505000010133,
+      "leafMs": 0.005,
+      "arrivalMs": 1.525,
+      "totalMs": 1.515,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.73
+     },
+     {
+      "submitFrame": 107,
+      "submitCallbackStart": 12088.234999999404,
+      "leafMs": 0.005,
+      "arrivalMs": 1.43,
+      "totalMs": 1.42,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.15
+     },
+     {
+      "submitFrame": 108,
+      "submitCallbackStart": 12103.385000005364,
+      "leafMs": 0,
+      "arrivalMs": 1.59,
+      "totalMs": 1.58,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.375
+     },
+     {
+      "submitFrame": 109,
+      "submitCallbackStart": 12121.760000005364,
+      "leafMs": 0.005,
+      "arrivalMs": 1.63,
+      "totalMs": 1.615,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.88
+     },
+     {
+      "submitFrame": 110,
+      "submitCallbackStart": 12137.640000000596,
+      "leafMs": 0.005,
+      "arrivalMs": 1.8,
+      "totalMs": 1.79,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.035
+     },
+     {
+      "submitFrame": 111,
+      "submitCallbackStart": 12154.67499999702,
+      "leafMs": 0,
+      "arrivalMs": 1.765,
+      "totalMs": 1.76,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.29
+     },
+     {
+      "submitFrame": 112,
+      "submitCallbackStart": 12169.965000003576,
+      "leafMs": 0,
+      "arrivalMs": 1.745,
+      "totalMs": 1.74,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.215
+     },
+     {
+      "submitFrame": 113,
+      "submitCallbackStart": 12188.180000007153,
+      "leafMs": 0.005,
+      "arrivalMs": 1.875,
+      "totalMs": 1.865,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.745
+     },
+     {
+      "submitFrame": 114,
+      "submitCallbackStart": 12203.92499999702,
+      "leafMs": 0,
+      "arrivalMs": 1.445,
+      "totalMs": 1.445,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 17.76
+     },
+     {
+      "submitFrame": 115,
+      "submitCallbackStart": 12221.685000002384,
+      "leafMs": 0.005,
+      "arrivalMs": 1.545,
+      "totalMs": 1.54,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 14.95
+     },
+     {
+      "submitFrame": 116,
+      "submitCallbackStart": 12236.635000005364,
+      "leafMs": 0.005,
+      "arrivalMs": 1.77,
+      "totalMs": 1.76,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 18.455
+     },
+     {
+      "submitFrame": 117,
+      "submitCallbackStart": 12255.090000003576,
+      "leafMs": 0.005,
+      "arrivalMs": 1.635,
+      "totalMs": 1.625,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.6
+     },
+     {
+      "submitFrame": 118,
+      "submitCallbackStart": 12271.689999997616,
+      "leafMs": 0,
+      "arrivalMs": 1.415,
+      "totalMs": 1.405,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 15.245
+     },
+     {
+      "submitFrame": 119,
+      "submitCallbackStart": 12286.935000002384,
+      "leafMs": 0,
+      "arrivalMs": 1.695,
+      "totalMs": 1.69,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.74
+     },
+     {
+      "submitFrame": 120,
+      "submitCallbackStart": 12303.67499999702,
+      "leafMs": 0,
+      "arrivalMs": 1.395,
+      "totalMs": 1.385,
+      "framesUntilDrawn": 1,
+      "submitToDrawCallbackMs": 16.66
+     }
+    ],
+    "checks": {
+     "reference": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "data-reverse": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     },
+     "js-dense": {
+      "readbacks": 130,
+      "mismatchedPositions": 0
+     }
+    }
+   }
+  ],
+  "finishedAt": "2026-09-17T14:13:21.610Z",
+  "logLines": [
+   "118.845 ms: S = 8: compiled row-16x16 in {\"matrixProductMs\":40.02999998629093,\"vectorProductMs\":5.8599999994039536,\"packMs\":6.180000007152557,\"gatherMs\":5.50500001013279}",
+   "2139.01 ms: frames S = 8, N = 1024, leaves: arrival 1.05 ms after the submitting callback, checks {\"reference\":{\"readbacks\":130,\"mismatchedPositions\":0},\"data-reverse\":{\"readbacks\":130,\"mismatchedPositions\":0},\"tree-ends\":{\"readbacks\":130,\"mismatchedPositions\":0},\"js-dense\":{\"readbacks\":130,\"mismatchedPositions\":0}}",
+   "4155.58 ms: frames S = 8, N = 1024, classes: arrival 0.945 ms after the submitting callback, checks {\"reference\":{\"readbacks\":130,\"mismatchedPositions\":0},\"data-reverse\":{\"readbacks\":130,\"mismatchedPositions\":0},\"tree-ends\":{\"readbacks\":130,\"mismatchedPositions\":0},\"js-dense\":{\"readbacks\":130,\"mismatchedPositions\":0}}",
+   "4180.155 ms: S = 16: compiled row-16x16 in {\"matrixProductMs\":6.939999997615814,\"vectorProductMs\":5.299999997019768,\"packMs\":5.019999995827675,\"gatherMs\":5.314999997615814}",
+   "6187.91 ms: frames S = 16, N = 1024, leaves: arrival 2.065 ms after the submitting callback, checks {\"reference\":{\"readbacks\":130,\"mismatchedPositions\":0},\"data-reverse\":{\"readbacks\":130,\"mismatchedPositions\":0},\"tree-ends\":{\"readbacks\":130,\"mismatchedPositions\":0},\"js-dense\":{\"readbacks\":130,\"mismatchedPositions\":0}}",
+   "8205.595 ms: frames S = 16, N = 1024, classes: arrival 1.325 ms after the submitting callback, checks {\"reference\":{\"readbacks\":130,\"mismatchedPositions\":0},\"data-reverse\":{\"readbacks\":130,\"mismatchedPositions\":0},\"tree-ends\":{\"readbacks\":130,\"mismatchedPositions\":0},\"js-dense\":{\"readbacks\":130,\"mismatchedPositions\":0}}",
+   "8249.7 ms: S = 32: compiled row-16x16 in {\"matrixProductMs\":17.109999999403954,\"vectorProductMs\":8.290000006556511,\"packMs\":7.314999997615814,\"gatherMs\":6.675000011920929}",
+   "10272.27 ms: frames S = 32, N = 1024, leaves: arrival 3.525 ms after the submitting callback, checks {\"reference\":{\"readbacks\":130,\"mismatchedPositions\":0},\"data-reverse\":{\"readbacks\":130,\"mismatchedPositions\":0},\"js-dense\":{\"readbacks\":130,\"mismatchedPositions\":0}}",
+   "12320.495 ms: frames S = 32, N = 1024, classes: arrival 1.73 ms after the submitting callback, checks {\"reference\":{\"readbacks\":130,\"mismatchedPositions\":0},\"data-reverse\":{\"readbacks\":130,\"mismatchedPositions\":0},\"js-dense\":{\"readbacks\":130,\"mismatchedPositions\":0}}"
+  ],
+  "done": true
+ }
+}

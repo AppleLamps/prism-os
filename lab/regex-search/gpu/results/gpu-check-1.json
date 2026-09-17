@@ -1,0 +1,341 @@
+{
+ "driver": {
+  "startedAt": "2026-09-17T14:46:25.346Z",
+  "loadBefore": "{ 5.93 5.47 5.57 }",
+  "memoryBefore": "System-wide memory free percentage: 69%",
+  "argv": [
+   "--mode",
+   "check",
+   "--kernels",
+   "8:row-16x16,16:row-16x16,32:row-16x16",
+   "--profile",
+   "scratchpad/demos/regex-tree/chrome-profiles/check-1",
+   "--out",
+   "lab/regex-search/gpu/results/gpu-check-1.json",
+   "--timeout-seconds",
+   "540"
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=49705",
+   "--user-data-dir=scratchpad/demos/regex-tree/chrome-profiles/check-1",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "browser": "Chrome/153.0.8010.48",
+  "finishedAt": "2026-09-17T14:46:31.060Z",
+  "loadAfter": "{ 5.93 5.48 5.57 }",
+  "memoryAfter": "System-wide memory free percentage: 69%"
+ },
+ "page": {
+  "startedAt": "2026-09-17T14:46:25.778Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "check",
+   "patterns": {
+    "8": "(the|an?) [a-z]+",
+    "16": "(the|an?|some) [a-z]+(ing)?s?",
+    "32": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? "
+   },
+   "states": [
+    8,
+    16,
+    32
+   ],
+   "textLengths": [
+    1,
+    2,
+    3,
+    37,
+    1024,
+    4096
+   ],
+   "kernels": {
+    "8": "row-16x16",
+    "16": "row-16x16",
+    "32": "row-16x16"
+   },
+   "shaderSalt": 770985848,
+   "warmupMs": 0,
+   "sampleMs": 0,
+   "minimumSamples": 0,
+   "maximumSamples": 0,
+   "frames": 120,
+   "expectedFiles": []
+  },
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "hasTimestamps": true,
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeInvocationsPerWorkgroup": 1024
+   }
+  },
+  "compileTimes": [
+   {
+    "states": 8,
+    "kernel": "row-16x16",
+    "shaderSalt": 770985848,
+    "matrixProductMs": 77.51999999582767,
+    "vectorProductMs": 6.190000012516975,
+    "packMs": 6.290000006556511,
+    "gatherMs": 10.030000001192093
+   },
+   {
+    "states": 16,
+    "kernel": "row-16x16",
+    "shaderSalt": 770985848,
+    "matrixProductMs": 9.844999998807907,
+    "vectorProductMs": 5.685000002384186,
+    "packMs": 5.439999997615814,
+    "gatherMs": 5.239999994635582
+   },
+   {
+    "states": 32,
+    "kernel": "row-16x16",
+    "shaderSalt": 770985848,
+    "matrixProductMs": 7.699999988079071,
+    "vectorProductMs": 5.794999986886978,
+    "packMs": 5.215000003576279,
+    "gatherMs": 5.319999992847443
+   }
+  ],
+  "results": [
+   {
+    "states": 8,
+    "textLength": 1,
+    "cases": 108,
+    "positions": 108,
+    "positionsPastTheText": 18,
+    "positionsWithHighestStateBit": 3,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 8,
+    "textLength": 2,
+    "cases": 108,
+    "positions": 216,
+    "positionsPastTheText": 54,
+    "positionsWithHighestStateBit": 6,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 8,
+    "textLength": 3,
+    "cases": 108,
+    "positions": 324,
+    "positionsPastTheText": 54,
+    "positionsWithHighestStateBit": 9,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 8,
+    "textLength": 37,
+    "cases": 108,
+    "positions": 3996,
+    "positionsPastTheText": 774,
+    "positionsWithHighestStateBit": 145,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 8,
+    "textLength": 1024,
+    "cases": 108,
+    "positions": 110592,
+    "positionsPastTheText": 21510,
+    "positionsWithHighestStateBit": 3959,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 8,
+    "textLength": 4096,
+    "cases": 108,
+    "positions": 442368,
+    "positionsPastTheText": 86022,
+    "positionsWithHighestStateBit": 15773,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 16,
+    "textLength": 1,
+    "cases": 78,
+    "positions": 78,
+    "positionsPastTheText": 13,
+    "positionsWithHighestStateBit": 3,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 16,
+    "textLength": 2,
+    "cases": 78,
+    "positions": 156,
+    "positionsPastTheText": 39,
+    "positionsWithHighestStateBit": 5,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 16,
+    "textLength": 3,
+    "cases": 78,
+    "positions": 234,
+    "positionsPastTheText": 39,
+    "positionsWithHighestStateBit": 10,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 16,
+    "textLength": 37,
+    "cases": 78,
+    "positions": 2886,
+    "positionsPastTheText": 559,
+    "positionsWithHighestStateBit": 114,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 16,
+    "textLength": 1024,
+    "cases": 78,
+    "positions": 79872,
+    "positionsPastTheText": 15535,
+    "positionsWithHighestStateBit": 3019,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 16,
+    "textLength": 4096,
+    "cases": 78,
+    "positions": 319488,
+    "positionsPastTheText": 62127,
+    "positionsWithHighestStateBit": 12145,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 32,
+    "textLength": 1,
+    "cases": 84,
+    "positions": 84,
+    "positionsPastTheText": 14,
+    "positionsWithHighestStateBit": 4,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 32,
+    "textLength": 2,
+    "cases": 84,
+    "positions": 168,
+    "positionsPastTheText": 42,
+    "positionsWithHighestStateBit": 9,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 32,
+    "textLength": 3,
+    "cases": 84,
+    "positions": 252,
+    "positionsPastTheText": 42,
+    "positionsWithHighestStateBit": 11,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 32,
+    "textLength": 37,
+    "cases": 84,
+    "positions": 3108,
+    "positionsPastTheText": 602,
+    "positionsWithHighestStateBit": 154,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 32,
+    "textLength": 1024,
+    "cases": 84,
+    "positions": 86016,
+    "positionsPastTheText": 16730,
+    "positionsWithHighestStateBit": 4285,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   },
+   {
+    "states": 32,
+    "textLength": 4096,
+    "cases": 84,
+    "positions": 344064,
+    "positionsPastTheText": 66906,
+    "positionsWithHighestStateBit": 17293,
+    "mismatchedWithLeaves": 0,
+    "mismatchedWithClasses": 0,
+    "failures": []
+   }
+  ],
+  "finishedAt": "2026-09-17T14:46:30.978Z",
+  "logLines": [
+   "197.795 ms: S = 8: compiled row-16x16 in {\"matrixProductMs\":77.51999999582767,\"vectorProductMs\":6.190000012516975,\"packMs\":6.290000006556511,\"gatherMs\":10.030000001192093}",
+   "290.815 ms: check S = 8, N = 1: 108 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "371.125 ms: check S = 8, N = 2: 108 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "450.795 ms: check S = 8, N = 3: 108 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "566.25 ms: check S = 8, N = 37: 108 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "796.93 ms: check S = 8, N = 1024: 108 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "1325.5 ms: check S = 8, N = 4096: 108 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "1353.185 ms: S = 16: compiled row-16x16 in {\"matrixProductMs\":9.844999998807907,\"vectorProductMs\":5.685000002384186,\"packMs\":5.439999997615814,\"gatherMs\":5.239999994635582}",
+   "1411.67 ms: check S = 16, N = 1: 78 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "1471.99 ms: check S = 16, N = 2: 78 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "1530.015 ms: check S = 16, N = 3: 78 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "1632.505 ms: check S = 16, N = 37: 78 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "1910.765 ms: check S = 16, N = 1024: 78 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "2595 ms: check S = 16, N = 4096: 78 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "2620.66 ms: S = 32: compiled row-16x16 in {\"matrixProductMs\":7.699999988079071,\"vectorProductMs\":5.794999986886978,\"packMs\":5.215000003576279,\"gatherMs\":5.319999992847443}",
+   "2676.455 ms: check S = 32, N = 1: 84 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "2736.665 ms: check S = 32, N = 2: 84 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "2803.12 ms: check S = 32, N = 3: 84 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "2942.975 ms: check S = 32, N = 37: 84 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "3529.68 ms: check S = 32, N = 1024: 84 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves",
+   "5247.695 ms: check S = 32, N = 4096: 84 cases, mismatched positions 0 with uploaded leaves and 0 with gathered leaves"
+  ],
+  "done": true
+ }
+}

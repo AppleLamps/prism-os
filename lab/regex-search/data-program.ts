@@ -8,8 +8,8 @@
 //   Code point j continues the match when reached[j][s] && reach[j][s] for some state s, and when no match continues,
 //   a match starts at j when reach[j][initial state]. So the forward pass knows at every position whether a longer
 //   match exists, and never has to go back to where a longest match ended.
-import {type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
-import {type WireValues, constant, createEvaluator, createSourceTable, input, inputBit, list} from '../../src/runtime/cells.ts'
+import {type Circuit, type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
+import {type CellWires, type WireValues, constant, createEvaluator, createSourceTable, input, inputBit, list} from '../../src/runtime/cells.ts'
 import {type Bit, andNot, bitWire, noneOf, not, orExclusive} from './bits.ts'
 import {writeText} from './host.ts'
 import {type CompiledPattern, type SearchCapacity, capacityErrors, codePointLimit, maxCodePoint} from './pattern.ts'
@@ -35,31 +35,41 @@ export function dataSearchCells({states, classes, boundaries, textLength}: DataC
   }
 }
 
-export function buildDataSearch(capacity: DataCapacity) {
-  const {states, classes, textLength} = capacity
-  const table = createSourceTable()
-  const cells = table.declare(dataSearchCells(capacity))
-  const circuit = table.createCircuit()
+export type DataSearchCells = CellWires<ReturnType<typeof dataSearchCells>>
 
-  // The class of each code point. JS: regionClasses[[codePoint >= 0] + boundaries.filter(boundary => codePoint >= boundary).length]
+// The class of each code point. JS: regionClasses[[codePoint >= 0] + boundaries.filter(boundary => codePoint >= boundary).length]
+export function emitClasses(circuit: Circuit, cells: DataSearchCells): Wire[] {
   const zero = circuit.constant(0)
-  const classOf = cells.text.map(codePoint => {
+  return cells.text.map(codePoint => {
     const region = circuit.affine([
       [emitCompare(circuit, codePoint, '>=', zero), 1],
       ...cells.boundaries.map(boundary => [emitCompare(circuit, codePoint, '>=', boundary), 1] as const),
     ])
     return circuit.indexRead(region, cells.regionClasses)
   })
+}
 
+// JS: transitions[codePointClass][from][to] && bit, as one index read at codePointClass + classes × (1 - bit), which reads
+// +0 past the table.
+export function createStepAnd(circuit: Circuit, cells: DataSearchCells) {
+  const states = cells.accepting.length
+  const classes = cells.transitions.length
   // stepTables[s][t][c] is the cell transitions[c][s][t].
   const stepTables = list(states, from => list(states, to => cells.transitions.map(byClass => byClass[from]![to]!)))
-  // JS: transitions[codePointClass][from][to] && bit, as one index read at codePointClass + classes × (1 - bit), which reads
-  // +0 past the table.
-  const stepAnd = (codePointClass: Wire, from: number, to: number, bit: Bit): Bit => {
+  return (codePointClass: Wire, from: number, to: number, bit: Bit): Bit => {
     if (bit === false) return false
     const indexTerms = bit === true ? [[codePointClass, 1] as const] : [[codePointClass, 1], [bit, -classes]] as const
     return circuit.indexReadAffine(indexTerms, bit === true ? 0 : classes, stepTables[from]![to]!, 'clamp', 'zero')
   }
+}
+
+export function buildDataSearch(capacity: DataCapacity) {
+  const {states, textLength} = capacity
+  const table = createSourceTable()
+  const cells = table.declare(dataSearchCells(capacity))
+  const circuit = table.createCircuit()
+  const classOf = emitClasses(circuit, cells)
+  const stepAnd = createStepAnd(circuit, cells)
 
   // The reverse pass. notReachAt[j][s] is !reach[j][s]. JS: reach[j][s] = states.some(t =>
   // transitions[classOf(text[j])][s][t] && (accepting[t] || reach[j + 1][t])), where reach past the last cell is false.
@@ -94,15 +104,16 @@ export function buildDataSearch(capacity: DataCapacity) {
   }
 
   const output = {highlighted, starts, matchCount: circuit.affine(starts.map(start => [start, 1] as const))}
-  return {cells, capacity, output, ...table.finish()}
+  // notReachAt is for tests, e.g. comparing the reverse pass with form (c)'s longest ends.
+  return {cells, capacity, output, notReachAt, ...table.finish()}
 }
 
 export type DataSearch = ReturnType<typeof buildDataSearch>
 export type SearchOutput = WireValues<DataSearch['output']>
 
-// Writes a compiled pattern into the cells. Throws when the pattern doesn't fit, which the page checks first with
-// capacityErrors.
-export function writePattern(values: Float32Array, {cells, capacity}: DataSearch, {automaton, partition}: CompiledPattern) {
+// Writes a compiled pattern into the cells of form (a) or form (c). Throws when the pattern doesn't fit, which the page
+// checks first with capacityErrors.
+export function writePattern(values: Float32Array, {cells, capacity}: {cells: DataSearchCells, capacity: DataCapacity}, {automaton, partition}: CompiledPattern) {
   const errors = capacityErrors({pattern: '', automaton, partition}, capacity)
   if (errors.length > 0) throw new Error(errors.map(error => error.message).join('; '))
   cells.boundaries.forEach((wire, index) => {

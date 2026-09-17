@@ -8,6 +8,8 @@
 // The form builtin-expensive is form (b) with expensivePattern instead of the pattern from patternsByStates, e.g.
 //   bun lab/regex-search/report.ts sizes builtin-expensive 32 1024
 //   bun lab/regex-search/report.ts recompile 32 1024 expensive
+// The forms tree and tree-sklansky are form (c) with Brent-Kung's and Sklansky's networks, e.g.
+//   bun lab/regex-search/report.ts sizes tree 8 1024
 import {createEvaluator} from '../../src/runtime/cells.ts'
 import type {Wire} from '../../src/runtime/numeric-ui-core.ts'
 import {buildBuiltInSearch} from './builtin-program.ts'
@@ -16,6 +18,7 @@ import {codePointsOf, writeText} from './host.ts'
 import {compilePattern} from './pattern.ts'
 import {automatonMatches} from './reference.ts'
 import {sampleText} from './sample-text.ts'
+import {buildTreeSearch} from './tree-program.ts'
 
 // One pattern per state count, each with exactly that many states, 13 or fewer classes and 32 or fewer boundaries.
 export const patternsByStates: Record<number, string> = {
@@ -38,8 +41,14 @@ const chainClasses = [
 ]
 export const expensivePattern = `${chainClasses.slice(0, 30).map(letters => `[${letters}]*`).join('')}[${chainClasses[30]}]`
 
-type Form = 'data' | 'builtin' | 'builtin-expensive'
-const formName = (form: Form) => form === 'data' ? '(a) data' : form === 'builtin' ? '(b) built in' : '(b) built in, expensive pattern'
+type Form = 'data' | 'builtin' | 'builtin-expensive' | 'tree' | 'tree-sklansky'
+const formNames: Record<Form, string> = {
+  'data': '(a) data',
+  'builtin': '(b) built in',
+  'builtin-expensive': '(b) built in, expensive pattern',
+  'tree': '(c) tree, Brent-Kung',
+  'tree-sklansky': '(c) tree, Sklansky',
+}
 const patternOf = (form: Form, states: number) => form === 'builtin-expensive' ? expensivePattern : patternsByStates[states]!
 
 const textOf = (textLength: number) => codePointsOf(sampleText.repeat(Math.ceil(textLength / sampleText.length))).slice(0, textLength)
@@ -49,13 +58,16 @@ function prepare(form: Form, states: number, textLength: number) {
   const pattern = patternOf(form, states)
   const compiled = compilePattern(pattern)
   const codePoints = textOf(textLength)
+  const capacity = {states, classes, boundaries, textLength}
   const started = performance.now()
   const prepared = form === 'data'
-    ? {form, built: buildDataSearch({states, classes, boundaries, textLength})} as const
-    : {form, built: buildBuiltInSearch(compiled, textLength)} as const
+    ? {form, built: buildDataSearch(capacity)} as const
+    : form === 'tree' || form === 'tree-sklansky'
+      ? {form, built: buildTreeSearch(capacity, form === 'tree' ? 'brent-kung' : 'sklansky')} as const
+      : {form, built: buildBuiltInSearch(compiled, textLength)} as const
   const buildMs = performance.now() - started
   const source = new Float32Array(prepared.built.initialSource)
-  if (prepared.form === 'data') writePattern(source, prepared.built, compiled)
+  if (prepared.form === 'data' || prepared.form === 'tree' || prepared.form === 'tree-sklansky') writePattern(source, prepared.built, compiled)
   writeText(source, prepared.built.cells.text, codePoints)
   return {...prepared, source, buildMs, compiled, codePoints}
 }
@@ -91,6 +103,8 @@ function sizes(form: Form, states: number, textLength: number) {
     indexReads: program.layers.reduce((total, layer) => total + layer.indexReads.length, 0),
     buildMs, compileMs, patternWriteMicroseconds,
     rssMegabytes: process.memoryUsage().rss / 1e6,
+    // The largest RSS of the process so far, which Bun reports in kilobytes.
+    maxRssMegabytes: process.resourceUsage().maxRSS / 1e3,
   }
 }
 
@@ -169,6 +183,11 @@ function all() {
   const variants: {form: Form, states: number, textLength: number}[] = [
     ...(['data', 'builtin'] as const).flatMap(form => [8, 16, 32].flatMap(states => [256, 1024].map(textLength => ({form, states, textLength})))),
     ...[256, 1024].map(textLength => ({form: 'builtin-expensive' as const, states: 32, textLength})),
+    // Form (c) with Brent-Kung's network at every size that fits in memory, and with Sklansky's at S = 8. S = 32 at 1,024
+    // code points would build about 43 million operations.
+    ...[8, 16].flatMap(states => [256, 1024].map(textLength => ({form: 'tree' as const, states, textLength}))),
+    {form: 'tree', states: 32, textLength: 256},
+    ...[256, 1024].map(textLength => ({form: 'tree-sklansky' as const, states: 8, textLength})),
   ]
   const sizeRows: string[] = []
   const timeRows: string[] = []
@@ -176,12 +195,12 @@ function all() {
     const args = [form, String(states), String(textLength)]
     const size = runInOwnProcess<ReturnType<typeof sizes>>(['sizes', ...args])
     console.error(`sizes ${args.join(' ')}: ${size.liveOperations} live operations`)
-    sizeRows.push(`| ${formName(form)} | ${states} | ${format(textLength)} | ${format(size.cells)} | ${format(size.liveOperations)} | ${format(size.layers)} | ${format(size.storedWeights)} | ${format(size.indexReads)} | ${format(size.buildMs)} | ${format(size.compileMs)} | ${format(size.rssMegabytes)} |`)
+    sizeRows.push(`| ${formNames[form]} | ${states} | ${format(textLength)} | ${format(size.cells)} | ${format(size.liveOperations)} | ${format(size.layers)} | ${format(size.storedWeights)} | ${format(size.indexReads)} | ${format(size.buildMs)} | ${format(size.compileMs)} | ${format(size.rssMegabytes)} |`)
     const raw = [0, 1, 2].map(() => runInOwnProcess<ReturnType<typeof time>>(['time', ...args, 'raw']).medianMicroseconds)
     const full = [0, 1, 2].map(() => runInOwnProcess<ReturnType<typeof time>>(['time', ...args, 'full']).medianMicroseconds)
     console.error(`time ${args.join(' ')}: raw ${raw.map(value => format(value)).join(', ')}, full ${full.map(value => format(value)).join(', ')}`)
     const spread = (values: number[]) => `${format(median(values))} (${format(Math.min(...values))} to ${format(Math.max(...values))})`
-    timeRows.push(`| ${formName(form)} | ${states} | ${format(textLength)} | ${spread(raw)} | ${spread(full)} | ${format(median(raw) / (size.liveOperations / 1e3), 1)} |`)
+    timeRows.push(`| ${formNames[form]} | ${states} | ${format(textLength)} | ${spread(raw)} | ${spread(full)} | ${format(median(raw) / (size.liveOperations / 1e3), 1)} |`)
   }
   const recompileVariants = [
     ...[8, 16, 32].flatMap(states => [256, 1024].map(textLength => ({states, textLength, expensive: false}))),
