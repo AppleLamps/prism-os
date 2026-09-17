@@ -1402,5 +1402,485 @@
       "cardReleases": 2348,
       "clampedReleases": 79
     }
+  ],
+  "text-rows": [
+    {
+      "variant": "1000:7:scroll",
+      "capacity": 1000,
+      "breakpointCapacity": 7,
+      "slotCount": 64,
+      "frames": "scroll",
+      "sourceCells": 10004,
+      "tableCells": 9000,
+      "liveOperations": 12235,
+      "layers": 84,
+      "storedWeights": 21995,
+      "gatherReads": 0,
+      "maximumLayerWidth": 1004,
+      "indexReads": 2213,
+      "buildMs": 31.2,
+      "compileMs": 17.8,
+      "prepareMs": 32,
+      "tabulateMs": 35,
+      "clampedRows": 43,
+      "microsecondsPerFrame": 129.4,
+      "microsecondsTableCheck": 15.7,
+      "microsecondsTensorEvaluator": 83,
+      "microsecondsReference": 149.8
+    },
+    {
+      "variant": "1000:7:resize",
+      "capacity": 1000,
+      "breakpointCapacity": 7,
+      "slotCount": 64,
+      "frames": "resize",
+      "sourceCells": 10004,
+      "tableCells": 9000,
+      "liveOperations": 12235,
+      "layers": 84,
+      "storedWeights": 21995,
+      "gatherReads": 0,
+      "maximumLayerWidth": 1004,
+      "indexReads": 2213,
+      "buildMs": 32.4,
+      "compileMs": 15.8,
+      "prepareMs": 29,
+      "tabulateMs": 35,
+      "clampedRows": 43,
+      "microsecondsPerFrame": 126.9,
+      "microsecondsTableCheck": 14.8,
+      "microsecondsTensorEvaluator": 84.6,
+      "microsecondsReference": 157
+    },
+    {
+      "variant": "10000:7:scroll",
+      "capacity": 10000,
+      "breakpointCapacity": 7,
+      "slotCount": 64,
+      "frames": "scroll",
+      "sourceCells": 100004,
+      "tableCells": 90000,
+      "liveOperations": 111271,
+      "layers": 122,
+      "storedWeights": 202135,
+      "gatherReads": 0,
+      "maximumLayerWidth": 10004,
+      "indexReads": 20221,
+      "buildMs": 182.2,
+      "compileMs": 488.7,
+      "prepareMs": 184,
+      "tabulateMs": 311,
+      "clampedRows": 417,
+      "microsecondsPerFrame": 1174.6,
+      "microsecondsTableCheck": 159,
+      "microsecondsTensorEvaluator": 764.6,
+      "microsecondsReference": 1970.2
+    },
+    {
+      "variant": "10000:7:resize",
+      "capacity": 10000,
+      "breakpointCapacity": 7,
+      "slotCount": 64,
+      "frames": "resize",
+      "sourceCells": 100004,
+      "tableCells": 90000,
+      "liveOperations": 111271,
+      "layers": 122,
+      "storedWeights": 202135,
+      "gatherReads": 0,
+      "maximumLayerWidth": 10004,
+      "indexReads": 20221,
+      "buildMs": 181,
+      "compileMs": 495.9,
+      "prepareMs": 185,
+      "tabulateMs": 305,
+      "clampedRows": 417,
+      "microsecondsPerFrame": 1203.6,
+      "microsecondsTableCheck": 165.9,
+      "microsecondsTensorEvaluator": 737.9,
+      "microsecondsReference": 2184.9
+    },
+    {
+      "variant": "10000:3:resize",
+      "capacity": 10000,
+      "breakpointCapacity": 3,
+      "slotCount": 64,
+      "frames": "resize",
+      "sourceCells": 60004,
+      "tableCells": 50000,
+      "liveOperations": 81271,
+      "layers": 122,
+      "storedWeights": 142135,
+      "gatherReads": 0,
+      "maximumLayerWidth": 10004,
+      "indexReads": 10221,
+      "buildMs": 127.4,
+      "compileMs": 239.9,
+      "prepareMs": 184,
+      "tabulateMs": 308,
+      "clampedRows": 1662,
+      "microsecondsPerFrame": 787.7,
+      "microsecondsTableCheck": 90.7,
+      "microsecondsTensorEvaluator": 549.2,
+      "microsecondsReference": 2212.2
+    },
+    {
+      "variant": "10000:15:resize",
+      "capacity": 10000,
+      "breakpointCapacity": 15,
+      "slotCount": 64,
+      "frames": "resize",
+      "sourceCells": 180004,
+      "tableCells": 170000,
+      "liveOperations": 141271,
+      "layers": 122,
+      "storedWeights": 272135,
+      "gatherReads": 0,
+      "maximumLayerWidth": 10004,
+      "indexReads": 30221,
+      "buildMs": 270.8,
+      "compileMs": 1245.5,
+      "prepareMs": 185,
+      "tabulateMs": 312,
+      "clampedRows": 238,
+      "microsecondsPerFrame": 1933.4,
+      "microsecondsTableCheck": 312.3,
+      "microsecondsTensorEvaluator": 1124,
+      "microsecondsReference": 2144.7
+    }
+  ],
+  "text-rows-browser": [
+    {
+      "query": "capacity=1000&rows=900",
+      "loadMilliseconds": 218,
+      "crossOriginIsolated": true,
+      "devicePixelRatio": 1,
+      "viewport": [
+        562,
+        761
+      ],
+      "capacity": 1000,
+      "rowsAtLoad": 900,
+      "size": {
+        "liveOperations": 12235,
+        "layers": 84,
+        "storedWeights": 21995,
+        "gatherReads": 0,
+        "maximumLayerWidth": 1004
+      },
+      "prepareMilliseconds": 45,
+      "tabulateMilliseconds": 45,
+      "buildMilliseconds": 44,
+      "compileMilliseconds": 33,
+      "scroll": {
+        "frames": 300,
+        "evaluation": {
+          "mean": 155,
+          "median": 155,
+          "p95": 165
+        },
+        "domWrites": {
+          "mean": 19,
+          "median": 20,
+          "p95": 25
+        },
+        "styleAndLayout": {
+          "mean": 157,
+          "median": 170,
+          "p95": 215
+        },
+        "total": {
+          "mean": 331,
+          "median": 345,
+          "p95": 400
+        }
+      },
+      "resize": {
+        "frames": 120,
+        "evaluation": {
+          "mean": 155,
+          "median": 155,
+          "p95": 180
+        },
+        "domWrites": {
+          "mean": 26,
+          "median": 25,
+          "p95": 35
+        },
+        "styleAndLayout": {
+          "mean": 81,
+          "median": 75,
+          "p95": 120
+        },
+        "total": {
+          "mean": 262,
+          "median": 250,
+          "p95": 345
+        }
+      },
+      "scrollAndResize": {
+        "frames": 40,
+        "evaluation": {
+          "mean": 155,
+          "median": 155,
+          "p95": 170
+        },
+        "domWrites": {
+          "mean": 23,
+          "median": 25,
+          "p95": 30
+        },
+        "styleAndLayout": {
+          "mean": 96,
+          "median": 90,
+          "p95": 135
+        },
+        "total": {
+          "mean": 273,
+          "median": 270,
+          "p95": 320
+        }
+      },
+      "edit": {
+        "frames": 20,
+        "evaluation": {
+          "mean": 156,
+          "median": 155,
+          "p95": 165
+        },
+        "domWrites": {
+          "mean": 23,
+          "median": 20,
+          "p95": 50
+        },
+        "styleAndLayout": {
+          "mean": 35,
+          "median": 30,
+          "p95": 65
+        },
+        "total": {
+          "mean": 214,
+          "median": 210,
+          "p95": 280
+        }
+      },
+      "append": {
+        "frames": 20,
+        "evaluation": {
+          "mean": 154,
+          "median": 155,
+          "p95": 165
+        },
+        "domWrites": {
+          "mean": 23,
+          "median": 25,
+          "p95": 35
+        },
+        "styleAndLayout": {
+          "mean": 73,
+          "median": 70,
+          "p95": 115
+        },
+        "total": {
+          "mean": 250,
+          "median": 245,
+          "p95": 295
+        }
+      },
+      "problemCount": 0,
+      "problems": [],
+      "textHeights": {
+        "agree": 10326,
+        "disagree": 0,
+        "examples": [],
+        "distinctDisagreements": 0,
+        "disagreeingRows": 0,
+        "disagreeingRowsWithLongWord": 0
+      },
+      "anchoring": {
+        "resizesChecked": 114,
+        "resizesHeld": 114,
+        "resizesAboveView": 6,
+        "scrollAndResizeChecked": 23,
+        "scrollAndResizeHeld": 23,
+        "scrollAndResizeAboveView": 1,
+        "editsChecked": 20,
+        "editsHeld": 20,
+        "examples": []
+      },
+      "followedAppends": {
+        "checked": 20,
+        "held": 20
+      },
+      "appended": 100,
+      "full": 1,
+      "refusedAfterFull": 4
+    },
+    {
+      "query": "capacity=10000&rows=9800",
+      "loadMilliseconds": 2218,
+      "crossOriginIsolated": true,
+      "devicePixelRatio": 1,
+      "viewport": [
+        562,
+        761
+      ],
+      "capacity": 10000,
+      "rowsAtLoad": 9800,
+      "size": {
+        "liveOperations": 111271,
+        "layers": 122,
+        "storedWeights": 202135,
+        "gatherReads": 0,
+        "maximumLayerWidth": 10004
+      },
+      "prepareMilliseconds": 156,
+      "tabulateMilliseconds": 266,
+      "buildMilliseconds": 148,
+      "compileMilliseconds": 1529,
+      "scroll": {
+        "frames": 300,
+        "evaluation": {
+          "mean": 1641,
+          "median": 1465,
+          "p95": 2370
+        },
+        "domWrites": {
+          "mean": 28,
+          "median": 25,
+          "p95": 40
+        },
+        "styleAndLayout": {
+          "mean": 185,
+          "median": 185,
+          "p95": 250
+        },
+        "total": {
+          "mean": 1853,
+          "median": 1675,
+          "p95": 2620
+        }
+      },
+      "resize": {
+        "frames": 120,
+        "evaluation": {
+          "mean": 1439,
+          "median": 1435,
+          "p95": 1490
+        },
+        "domWrites": {
+          "mean": 32,
+          "median": 30,
+          "p95": 45
+        },
+        "styleAndLayout": {
+          "mean": 87,
+          "median": 85,
+          "p95": 115
+        },
+        "total": {
+          "mean": 1557,
+          "median": 1555,
+          "p95": 1650
+        }
+      },
+      "scrollAndResize": {
+        "frames": 40,
+        "evaluation": {
+          "mean": 1462,
+          "median": 1465,
+          "p95": 1540
+        },
+        "domWrites": {
+          "mean": 39,
+          "median": 35,
+          "p95": 70
+        },
+        "styleAndLayout": {
+          "mean": 118,
+          "median": 115,
+          "p95": 165
+        },
+        "total": {
+          "mean": 1619,
+          "median": 1605,
+          "p95": 1755
+        }
+      },
+      "edit": {
+        "frames": 20,
+        "evaluation": {
+          "mean": 1480,
+          "median": 1485,
+          "p95": 1575
+        },
+        "domWrites": {
+          "mean": 43,
+          "median": 40,
+          "p95": 75
+        },
+        "styleAndLayout": {
+          "mean": 46,
+          "median": 45,
+          "p95": 75
+        },
+        "total": {
+          "mean": 1568,
+          "median": 1570,
+          "p95": 1725
+        }
+      },
+      "append": {
+        "frames": 40,
+        "evaluation": {
+          "mean": 1453,
+          "median": 1455,
+          "p95": 1485
+        },
+        "domWrites": {
+          "mean": 42,
+          "median": 40,
+          "p95": 75
+        },
+        "styleAndLayout": {
+          "mean": 96,
+          "median": 90,
+          "p95": 135
+        },
+        "total": {
+          "mean": 1590,
+          "median": 1585,
+          "p95": 1705
+        }
+      },
+      "problemCount": 0,
+      "problems": [],
+      "textHeights": {
+        "agree": 10683,
+        "disagree": 0,
+        "examples": [],
+        "distinctDisagreements": 0,
+        "disagreeingRows": 0,
+        "disagreeingRowsWithLongWord": 0
+      },
+      "anchoring": {
+        "resizesChecked": 117,
+        "resizesHeld": 117,
+        "resizesAboveView": 3,
+        "scrollAndResizeChecked": 24,
+        "scrollAndResizeHeld": 24,
+        "scrollAndResizeAboveView": 0,
+        "editsChecked": 20,
+        "editsHeld": 20,
+        "examples": []
+      },
+      "followedAppends": {
+        "checked": 40,
+        "held": 40
+      },
+      "appended": 200,
+      "full": 1,
+      "refusedAfterFull": 4
+    }
   ]
 }

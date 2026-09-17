@@ -32,6 +32,7 @@ import textWalker from './text-walker/demo.html'
 import textTabulated from './text-tabulated/demo.html'
 import virtualizedList from './lists/list.html'
 import draggableCards from './lists/cards.html'
+import textRows from './lists/text-rows.html'
 import inputQueue from './input/demo.html'
 import layoutTree from './layout-tree/demo.html'
 import hnThread from './hn-thread/demo.html'
@@ -62,6 +63,7 @@ const pages = {
   '/lab/ui-exploration/text-tabulated/demo.html': textTabulated,
   '/lab/ui-exploration/lists/list.html': virtualizedList,
   '/lab/ui-exploration/lists/cards.html': draggableCards,
+  '/lab/ui-exploration/lists/text-rows.html': textRows,
   '/lab/ui-exploration/input/demo.html': inputQueue,
   '/lab/ui-exploration/layout-tree/demo.html': layoutTree,
   '/lab/ui-exploration/hn-thread/demo.html': hnThread,

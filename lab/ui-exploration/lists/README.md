@@ -6,9 +6,10 @@ This prototype asks whether lists with many items, or with an order that changes
 
 From the repo root:
 
-- `bun test lab/ui-exploration/lists`: 15 tests, about 1 s.
+- `bun test lab/ui-exploration/lists`: 24 tests, about 4 s, 9 of them for the text rows.
 - `bunx tsgo -p lab/ui-exploration/lists`: typecheck.
 - `bun lab/ui-exploration/lists/report.ts [list] [routing] [cards] [cards-seeds] [flick] [hazard] [pieces]`: the heavy measurements (several minutes for all sections). It prints one JSON line per row and merges the selected sections into `results.json`.
+- The text rows, added on September 17, 2026, whose heights come from pretext: see [How to run the text rows](#how-to-run-the-text-rows).
 - `bun lab/ui-exploration/lists/list.html` and `bun lab/ui-exploration/lists/cards.html`: demo pages. Both bundle with `bun build`, but I haven't opened either in a browser, since nobody was awake to allow browser automation. A later Chrome check opened both pages, see [Browser check](#browser-check).
 
 | file | contents |
@@ -23,6 +24,9 @@ From the repo root:
 | `checks.ts` | list, routing, and velocity checks shared by the tests and the report |
 | `report.ts`, `results.json` | measurements |
 | `list.html`, `list-demo.ts`, `cards.html`, `cards-demo.ts` | demo pages, DOM wiring only |
+| `text-rows.ts`, `text-rows-prepare.ts`, `text-rows-reference.ts` | text rows: the cells, program and host, the row texts and their pretext breakpoints, and the plain JavaScript reference |
+| `text-rows.test.ts`, `text-rows-report.ts`, `text-rows-browser.ts` | text rows: tests, measurements in Bun, and the headless Chrome check |
+| `text-rows.html`, `text-rows-demo.ts` | the text rows page, DOM wiring only |
 
 ## What was built
 
@@ -203,7 +207,7 @@ Hazard, measured on all 8,192 values of dt on the 1/64 ms grid in 0..128. Built 
 - The incremental layout suggests a general question: which UI changes can be written as small updates to laid-out state (insert, delete, move one item), and which force a recompute? The demo's persistent `y.dest` is what made the O(n) drag possible.
 - None of these timings use generated JS. Phase 1 measured it at about 10 times faster than the executor for IndirectOS, so these numbers should be rerun that way before judging CPU cost.
 - Check both demo pages in real browsers, including Safari's whole-pixel scrollTop, devicePixelRatio 1.5 and 3, and touch input.
-- Feed pretext text heights into the variable-height list and animate a row expanding. That exercises the in-circuit prefix sum on values that change every frame.
+- Feed pretext text heights into the variable-height list and animate a row expanding. That exercises the in-circuit prefix sum on values that change every frame. Update, September 17, 2026: [text rows](#text-rows-with-pretext-heights-september-17-2026) feed pretext heights into a variable-height list through breakpoint cells, with appends and scroll anchoring, but without animation.
 - A settle rule on integer-quantized spring state, or on a step count, would make animation ending exact, and would remove the timeline shifts above. The same question applies to hit tests on moving springs.
 
 ## Merged from index-read, September 16, 2026
@@ -225,3 +229,114 @@ Hazard, measured on all 8,192 values of dt on the 1/64 ms grid in 0..128. Built 
 - Reading positions back from inline styles needed a tolerance: Chrome serializes style numbers to 6 significant digits, e.g. `translateY(12353.75px)` reads back as `12353.8px`, so past 100,000 px a read-back position is only accurate to 0.5 px. The check allows for that.
 - `cards.html` with 5 cards (2,393 live operations, 86 layers, 5,577 stored weights): dragging "Drag Me 0" down past card 3 reorders the stack, and the released card gets z-index 6, i.e. n + 1. With 20 cards (8,813 live operations, 96 layers, 18,307 stored weights), a scripted drag of card 12 upward over 40 frames showed the grabbing cursor and 0.7 opacity during the drag, and card 12 landed between cards 6 and 7. With 100 cards (69,653 live operations, 105 layers, 146,992 stored weights, step median 900 µs), a scripted drag of card 3 downward landed it after card 7, and no range check stopped the machine.
 - No fixes were needed.
+
+## Text rows with pretext heights, September 17, 2026
+
+A fifth list: rows of chat message text whose heights come from pretext at the container's runtime width, in a table of up to 10,000 rows that grows while the page runs. Against the variable-height list above and [hn-thread](../hn-thread/README.md), three things are new. The width breakpoints sit in cells instead of weights, so the program reads them with index reads, and an edited or appended row only rewrites cells of the same compiled program. Rows are appended up to a capacity, with a named output when the table is full. And when a resize changes every row's height, the row at the top of the view keeps its position on screen.
+
+### How to run the text rows
+
+- `bun test lab/ui-exploration/lists/text-rows.test.ts`: 9 tests, about 3 s. With `TEXT_ROWS_COUNTS=1`, the random sessions test prints the counts under [Checks](#checks).
+- `bun lab/ui-exploration/lists/text-rows-report.ts`: sizes and µs per frame in Bun, each variant in its own process, written to `results.json` under `text-rows`, about 2 minutes.
+- `bun lab/ui-exploration/lists/text-rows-browser.ts --scratch <folder>`: bundles the page into the folder, serves it with cross-origin isolation headers, so `performance.now()` resolves to 5 µs, starts a headless Chrome with a fresh profile in the folder, runs checked scroll, resize, scroll and resize in one frame, edit and append frames at 1,000 and 10,000 rows, and writes `text-rows-browser` into `results.json` and a screenshot per size into the folder, about 1 minute.
+- `bun lab/ui-exploration/lists/text-rows.html`: the page, with 9,900 of 10,000 rows at load, or e.g. `?capacity=1000&rows=900`. The slider sets the container width, and the buttons append messages, give the row 2 rows above the view a long or a short text, and scroll to the top. The edit button is disabled while the first row in view is row 0 or 1, since no row is 2 rows above it.
+
+### What JavaScript does and what the program does
+
+JavaScript prepares each text once, with pretext's rich inline layout through text-heights.ts's `prepareComment`, and finds the row's breakpoints with text-heights.ts's `tabulateStaircase` over container widths 375..1200. The host only writes whole-pixel widths, so the height function the staircase calls reads pretext at the floor of each width, and every change lands on a whole pixel. A row's table is 9 cells: its height at its minimum width, the minimum width, and 7 breakpoints, one per line the row loses as the container widens, e.g. `[512, 512, 900, 1201, 1201, 1201, 1201]` for a row that loses 2 lines at 512 px and 1 more at 900 px, padded with 1201, which no width reaches. Rows at or past the row count hold height 0, so appending a row writes 9 cells and a larger row count. Before each evaluation, JavaScript writes the container width, the viewport height, the scroller's scrollTop floored onto quarter pixels, and the row count. The program keeps every row's bottom from the last evaluation in 10,000 state cells, and JavaScript copies their next values back with one `Float32Array.set`.
+
+| JavaScript | Program | Docs |
+| --- | --- | --- |
+| `height = baseHeight - 14 × breakpoints.filter(breakpoint => breakpoint <= containerWidth).length`, for every row | a binary search over the row's sorted breakpoints: 2 index reads, since the first read is at a constant position, 3 integer bit comparisons and 1 sum, 9 operations per row | patterns.md, "A loop over data that rarely changes" and "A layout function of one runtime number"; expressions.md, `table[index]` and `a >= b` |
+| `bottoms[row] = bottoms[row - 1] + heights[row]` | a Brent-Kung network from lists' `emitPrefixSums`, exact since heights are whole pixels | patterns.md, "Running totals" |
+| `anchorRow = previousBottoms.findIndex(bottom => bottom > scrollTop)` | a binary search over the state cells, 13 index reads and 14 comparisons at 10,000 rows | patterns.md, "`findIndex` when the test flips once along the items", under "Don't use it when" |
+| `scrollTop = atBottom ? maximumScroll : Math.min(scrollTop + tops[anchorRow] - previousTops[anchorRow], maximumScroll)` | 2 index reads, `emitMinimumExact`, `emitMaximumExact` and `emitSelect` | expressions.md, `Math.min(a, b)` and `condition ? on : off` |
+| `firstRow = rows.findIndex(row => bottoms[row] > scrollTop)` | the same binary search over the computed bottoms, then `Math.min(count, rowCount)` | the same entry |
+| DOM slot k shows the row among the 64 from `firstRow` whose index % 64 is k | `firstRow % 64` from lists' `emitFloorOnGrid`, then 3 index reads and a few bits per slot | patterns.md, "Window slots" under "Not written up yet" |
+
+The scroll position, the anchor row, the first row and the 64 slots are 1,290 operations at 10,000 rows, by subtraction, and the heights and running totals are the other 109,981.
+
+### Anchoring
+
+Before an evaluation, the DOM shows the last evaluation's layout at the scroll position the scroller reports now, which includes any scroll since then. The anchor row is the row at the top of that view: the first row whose bottom in the last evaluation's layout, kept in the state cells, is below today's scrollTop. The evaluation moves the view by as much as that row moved, `tops[anchorRow] - previousTops[anchorRow]`, which is 0 after a scroll, and the row's change of top after a resize, an edit above the view, or both in one frame, so one rule covers them, like CSS scroll anchoring.
+
+The first version stored only the first row and its top after each evaluation, i.e. the row at the top before any scroll that came after. When a scroll and a height change landed in one evaluation, which the page allows since scroll events, the slider, the ResizeObserver and the append timer all lead to one render, the view jumped by (rows scrolled past) × (change in row height). The review's example: 2,000 rows, 100 px at 1200 px wide and 170 px below 500 px, a scroll of 50,000 px and a resize to 400 px in one evaluation put the view 35,000 px away from the row scrolled to. The current version gives the review's expected scroll position for that example, 136,040 px, and the random sessions and the browser check now include scrolls in the same frame as a resize or an edit. A view that showed the end of the rows before the evaluation, `scrollTop + viewportHeight >= previousTotalHeight`, shows the end after it, e.g. when a message is appended, like a chat log. The page sets `overflow-anchor: none`, so Chrome's own scroll anchoring doesn't also move the view, writes the spacer's height before the scroll position so the browser doesn't clamp it, and writes the program's `scrollTop` only when it differs from the scroller's.
+
+### Fixed capacities and their fallbacks
+
+Following behavior-choices.md's "A fixed maximum with a named fallback":
+
+- Rows: 10,000, the size of the table. `full` is 1 at the capacity, and the page refuses more appends. `buildTextRows` refuses more than 16,384 rows: scrollTop lies on quarter pixels, and FP32 holds every quarter pixel only up to 2^22 px, which is 16,384 rows × 256 px. Above it, e.g. 4,194,304.25 becomes 4,194,304. The first version accepted up to 32,768 rows, and at 32,768 rows of 256 px, the review's scroll position 8,386,559.75 px was held as 8,386,560, so the first row came out one row too far down. At 16,384 rows, 1,980 scroll positions on quarter pixels around row tops near the end all gave the right first row.
+- Breakpoints per row: 7. A text that loses more lines than that as the container widens keeps the 7 changes at the widest widths, and is laid out no narrower than the width of the first change it can't keep, like a CSS `min-width`. Each slot's `clamped` bit reports it, and the page marks the row with an orange left edge. The scroller hides horizontal overflow, so the part of the text past the container's right edge is cut off. 417 of the 10,000 generated messages get a minimum width above 375 px. This fallback adds no operations, since it only changes which breakpoints JavaScript writes.
+- DOM slots: 64. `slotOverflow` reports rows in view past the last slot, which get no DOM node. Rows are at least 30 px tall, so 64 slots cover views up to 1,890 px tall.
+- Row height: at most 256 px at 1200 px. text-rows-prepare.ts refuses a taller text, since the declared worst-case total height, 10,000 × 256 px, sets every magnitude in the program. A text between 160 and 256 px tall at 1200 px gets its minimum width where it would pass 256 px, before it loses 7 lines.
+- Container widths within 375..1200 and viewport heights within 0..4096: the host clamps. A container narrower than 375 px, e.g. 356 px on a 390 px wide phone, lays rows out at 375 px, and the scroller cuts off the rest.
+- `writeRow` refuses a table whose breakpoints decrease, sit at or below the row's minimum width, or leave less than one line, and names the row. Before, e.g. the breakpoints `[1201, 1201, 1201, 375, 375, 375, 375]` were accepted, and the next step failed with "anchorTop must be finite and within 0..2048, got -28", which named a state cell instead of the row. Rows at or past the row count must keep their empty table, since every row's height adds into the total height. The page's `appendRow` only counts the "too tall" refusal as a refused text, and throws any other error.
+
+### Checks
+
+- Heights against pretext: 64 rows, one in 8 of them at least 470 to 1,030 characters long, at every whole-pixel container width in 375..1200, with 3 and with 7 breakpoints per row, 105,728 heights, each equal to pretext's own height at `Math.max(containerWidth, minimumWidth)`. Every table's minimum width equals the reference's, which scans pretext's heights one pixel at a time down from 1200 px, and every base height equals pretext's height at that width.
+- Heights at the 256 px limit: texts of 1,900, 2,300 and 2,700 characters, 170 to 226 px tall at 1200 px, keep fewer than 7 breakpoints, and their minimum widths equal the reference's.
+- Random sessions against the reference: 2,800 frames, at 48 rows into 8 slots with 3 breakpoints per row, and at 200 rows into 16 slots with 7, of scrolls to random positions, to row edges and past either end, resizes to random widths, to breakpoints and to minimum widths, a scroll and a resize in one frame, viewport heights from 0 to 1,200 px, appends, edits, and a scroll and an edit in one frame. Half the sessions start with 0 to 3 rows. The scroll position, the first row, the total height, `full`, `slotOverflow`, and every drawn slot's row, top, height, layout width and `clamped` bit matched on every frame. The reference finds the anchor row with its own loop over the last frame's layout, and the test also checks anchoring without the reference: the last frame's drawn row that covers the DOM's scroll position keeps its position on screen. The frames included 756 resizes that changed the total height, 588 frames where that row's position on screen was checked this way, 72 of them with a scroll in the same frame, 35 appends that the view followed, 280 refused appends, 220 frames with `slotOverflow`, 1,028 clamped slots, 268 frames with nothing in view, 43 frames with rows shorter than the view, and 481 edits. `validateIndexReads` and `validateGrids` ran every 50 frames.
+- A scripted session at 300 rows of at least 200 characters, which all get taller between 1100 and 400 px: resizing to 400 px and back keeps the top row of the view at the same position on screen, an edit 3 rows above the view grows the total height by that row's change and moves nothing in view, a scroll by half a view and a resize in one frame keep the row scrolled to at its position on screen, an append at the end is followed, an append while scrolled up moves nothing, and `full` turns on at the capacity.
+- A scripted chat log that starts empty in a 600 px view and gets 30 appended messages: while the rows are shorter than the view, scrollTop stays 0, exactly the rows below the row count are drawn, and `slotOverflow` stays 0, and after that the view follows the appended rows.
+- 10,000 rows: 24 frames of scrolls, resizes, and both in one frame, against the reference.
+- Refused inputs: a container width outside 375..1200, decreasing breakpoints, breakpoints at the minimum width, a base height that leaves less than one line, and 16,385 rows.
+- Mutations: the review changed one rule of the program at a time, and 4 of 22 changes still passed the tests, since no test ran rows shorter than the view, texts near the 256 px limit, or a scroll in the same frame as a height change. With the tests above, all 25 changes of a new mutation run fail at least one test, e.g. drawing rows past the row count, taking the anchor's previous top from the new layout, or accepting 32,768 rows.
+
+### Measured results in Bun
+
+Bun 1.4.0, on a machine shared with other agents, each variant in its own process, µs as the median of 11 batches of at least 10 ms, generated messages, 64 slots (`text-rows-report.ts`). "µs per frame" is what the host pays through `createEvaluator`: checking the source table, evaluating, and checking the next values. Where a row has a range, the scroll and resize processes measured it separately.
+
+| rows | breakpoints per row | source cells | live operations | layers | stored weights | index reads | µs per scroll frame | µs per resize frame | tensor evaluator only, µs | one table check, µs | plain JavaScript reference, µs |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1,000 | 7 | 10,004 | 12,235 | 84 | 21,995 | 2,213 | 129 | 127 | 83-85 | 15-16 | 150-157 |
+| 10,000 | 7 | 100,004 | 111,271 | 122 | 202,135 | 20,221 | 1,175 | 1,204 | 738-765 | 159-166 | 1,970-2,185 |
+| 10,000 | 3 | 60,004 | 81,271 | 122 | 142,135 | 10,221 | not run | 788 | 549 | 91 | 2,212 |
+| 10,000 | 15 | 180,004 | 141,271 | 122 | 272,135 | 30,221 | not run | 1,933 | 1,124 | 312 | 2,145 |
+
+- The table is 9 cells per row with 7 breakpoints, 90,000 cells at 10,000 rows, and 5 or 17 cells per row with 3 or 15, plus 10,000 state cells for the last evaluation's row bottoms. With 3 breakpoints, 1,662 of the 10,000 messages get a minimum width above 375 px, and with 15, 238.
+- Preparing 10,000 rows with the fake canvas: pretext's prepare 184-185 ms, and the breakpoints 305-312 ms. Building the program took 181-182 ms, and compiling it with `createEvaluator` 489-496 ms.
+- A scroll frame and a resize frame cost the same, since every operation runs on every evaluation. The plain JavaScript reference lays out every row with pretext on every frame; a JavaScript list that caches heights would pay that only on a resize.
+- Rounding points: at 1,000 rows every comparison is an integer bit, 6,694 operations. At 10,000 rows, 60,708 operations are integer bits, and one comparison is a sign cascade, `Math.min(anchored, maximumScroll)`, 17 operations, since under the declared totals its operands span more than 2^24 quarter pixels.
+- Copying the 10,000 state cells' next values back took about 140 µs per frame with a loop over their positions, and about 0.4 µs with one `Float32Array.set` over their contiguous range, which `createTextRowsMachine` checks.
+
+### Browser check
+
+Headless Chrome 153, a 1280 × 1000 window, devicePixelRatio 1, cross-origin isolated, with `text-rows-browser.ts`. Each frame runs the page's render now, then forces style and layout with a layout read, so the times leave out painting. Medians, with the 95th percentile in parentheses, over 300 scroll frames to random positions and row edges, 120 resizes to random widths, 40 frames with a scroll by up to half the view and a resize, 20 edits and 20 or 40 checked append frames:
+
+| rows | frames | evaluation, µs | DOM writes, µs | style and layout, µs | total, µs |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 1,000 | scroll | 155 (165) | 20 (25) | 170 (215) | 345 (400) |
+| 1,000 | resize | 155 (180) | 25 (35) | 75 (120) | 250 (345) |
+| 1,000 | scroll and resize | 155 (170) | 25 (30) | 90 (135) | 270 (320) |
+| 10,000 | scroll | 1,465 (2,370) | 25 (40) | 185 (250) | 1,675 (2,620) |
+| 10,000 | resize | 1,435 (1,490) | 30 (45) | 85 (115) | 1,555 (1,650) |
+| 10,000 | scroll and resize | 1,465 (1,540) | 35 (70) | 115 (165) | 1,605 (1,755) |
+| 10,000 | edit | 1,485 (1,575) | 40 (75) | 45 (75) | 1,570 (1,725) |
+| 10,000 | append | 1,455 (1,485) | 40 (75) | 90 (135) | 1,585 (1,705) |
+
+- Loading 9,800 rows took 2,218 ms from navigation: pretext's prepare with Chrome's canvas 156 ms, the breakpoints 266 ms, building 148 ms, and compiling 1,529 ms.
+- Every frame passed its checks: the scroller's scrollTop equals the program's, the drawn rows are one run from the first row, every drawn row is in view, row r is in slot r % 64, and the drawn rows reach the bottom of the view.
+- Anchoring as the browser drew it: after 114 of 120 resizes at 1,000 rows and 117 of 120 at 10,000, the anchor row's node was at the same position relative to the scroller. After the other 6 and 3, the row kept its top but got shorter than its part above the view, so it was no longer drawn, and the first row came after it. With a scroll and a resize in one frame, the row whose node covered the top of the view after the scroll, as the browser laid out the last frame, kept its position on screen in all 23 checked frames at 1,000 rows and all 24 at 10,000. The other frames of the 40 weren't checked: the view was at the end or clamped after the resize, or the row went above the view (1 frame at 1,000 rows). All 20 edits above the view at each size moved nothing in view, and the view followed all 20 and 40 checked appends. `full` turned on at the capacity, and the next appends were refused.
+- The browser's own text layout against the heights from pretext's breakpoints, over the drawn rows of every checked frame: all 10,326 checks agreed at 1,000 rows, and all 10,683 at 10,000.
+- The first version's generated messages had a 58-character URL word, and 77 of 9,894 and 50 of 10,275 checks differed, each time with Chrome drawing one line fewer. The review found the cause: when the URL word starts partway through a line, pretext moves the whole URL to the next line, while Chrome breaks inside the URL after a hyphen, e.g. after "notes-", and fills the current line. The review's probe compared the lines of rows 0..1,999 at container widths 375..1200 in 25 px steps: 1,117 of 68,000 heights differed, 1,115 of them in rows with the URL. The generated messages now use a 64-character hash instead, a word with no break opportunity inside it, so the list's checks don't depend on how URLs break. The same probe then found 5 of 68,000 heights differing, 3 of them in rows with the hash, and I didn't track down those 5. The URL case is worth reporting against pretext's rich inline line breaking.
+- A window resize: the page's ResizeObserver used to schedule a render for the next animation frame, but ResizeObserver callbacks run after this frame's animation frame callbacks, so the frame painted right after a window resize showed rows laid out for the old width. The review's probe saw the scroller at 486 px while the program's last width was still 600 px. The ResizeObserver now renders right away when the size changed. A scratch probe resized the headless window to 520, 1000, 700 and 390 px wide, and inside a second ResizeObserver registered after the page's, the program's container width already equaled the scroller's width, 486, 966 and 666 px, or 375 px for the 356 px scroller, which the host clamps. A slider resize already rendered in this frame, so the ResizeObserver skips it.
+- The edit button: at scrollTop 0, the first row in view is row 0, the button is disabled, and `editAboveView` edits nothing. Before, it edited row 0, which was in view. At row 354 the button is enabled and edits row 352.
+
+### What fit well
+
+- Text layout left the frame. The program knows nothing about text, only 9 cells per row, so resizing needs no JavaScript text layout, and an edited or appended message is a cell write through the same compiled program: 9 operations per row whether a message has 1 word or 200.
+- One anchoring rule covers resizes, edits above the view, viewport changes, and a scroll in the same frame as any of them: a binary search over the last layout, two index reads, a subtraction and an exact minimum, exact because tops are whole pixels.
+- Whole pixels and quarter pixels made nearly every decision a 2-operation integer bit: 6,694 integer bit operations and no sign cascade at 1,000 rows.
+- The fallbacks were cheap to build and to check. `full` is 2 operations, `slotOverflow` a read, 2 comparisons and an AND, and the minimum width adds no operations, and the reference defines each fallback in plain JavaScript, e.g. the minimum width as a scan down from the widest width.
+
+### What got awkward
+
+- Every frame pays for every row's height and running total: 111,271 operations and about 1.2 ms in Bun at 10,000 rows, even for a scroll that changes no height. The scroll part alone, the scroll position, the anchor row, the first row and the slots, is 1,290 operations. For this list, the fixed program makes the scroll frame as expensive as the resize frame, where plain JavaScript with cached heights makes the scroll frame cheap and the resize frame expensive.
+- Anchoring at the scroll position the DOM reports needs the last evaluation's layout, so the program keeps every row's bottom in a state cell: 10,000 more cells for the table checks and a copy back after each step. Against the first version, a frame in Bun went from 1,153 to 1,175 µs for scrolls and from 1,198 to 1,204 µs for resizes, once the copy was one `Float32Array.set`.
+- Checking tables grows with the table, not with the program: at 10,000 rows, `createEvaluator` checks 100,004 source cells before the evaluation and the next values after it, about 160 µs each, and the tensor evaluator checks the source ranges again, so about a third of the 1,175 µs frame is checks.
+- Every magnitude comes from the capacities: 10,000 rows × 256 px is 10.24 million quarter pixels, close to the 2^24 integers FP32 holds exactly. It already turns `Math.min(anchored, maximumScroll)` into a sign cascade at 10,000 rows. The capacity also has a ceiling from FP32: quarter pixels are exact only up to 2^22 px, so `buildTextRows` refuses more than 16,384 rows. At 16,384 rows, 1,714 operations are sign cascades, against 17 at 10,000, measured with 1 breakpoint per row, since the row searches' comparisons and the in-view tests become sign cascades too.
+- Breakpoints per row trade operations against clamped rows: 7 leave 4.2% of the generated messages with a minimum width above 375 px, and 15 bring that to 2.4% for 30,000 more operations, 80,000 more cells and 1.6 times the µs per frame.
+- text-heights.ts's `tabulateStaircase` samples hn-thread's container widths 375..1200 and bisects to 1e-6 px. Reading pretext at the floor of each width gave whole-pixel breakpoints without changing text-heights.ts, but the list inherits hn-thread's width range, so a container narrower than 375 px lays rows out at 375 px, and the scroller cuts off the rest.
+- Chrome ran the program slower than Bun, a median of 1,435 to 1,485 µs per evaluation against 1,175 to 1,204 µs, and compiled it in 1,529 ms against 489 to 496 ms.
