@@ -52,10 +52,11 @@ Read this README, then [tutorial.md](docs/tutorial.md), [expressions.md](docs/ex
 - `src/runtime/numeric-ui-core.ts`: circuit construction, the builder functions, compilation, and the evaluators
 - `src/runtime/host-timing.ts`: frame timing, spring step counts and matrices, and the evaluations between frames, computed in host JavaScript
 - `src/runtime/cells.ts`: cell declarations, which give each cell its position in the source table, the circuit's declarations, the initial table, a validator, and next values for write-back
+- `src/runtime/prefix-networks.ts`: Sklansky's and Brent-Kung's prefix networks, which compute every prefix of a list with any associative combine, e.g. running totals of row heights, or the state after every event of a state machine
 - `src/indirectos/`, with `window-manager.ts`, `photo-gallery.ts`, `notes.ts`, `notes-walker.ts` and `notes-paragraph.ts`, and `assets/`, with `index.html`, `window-manager.css` and `photo-gallery-*.webp`: IndirectOS
 - `template/`: the toggle switch to start an app from
 - `docs/`: the docs above, `tutorial.md`, `expressions.md`, `patterns.md`, `behavior-choices.md` and `execution-model.md`
-- `tests/runtime/`: differential tests of the reference and compiled evaluators, including seeded random circuits (`builder-differential`, `numeric-ui-core`, `numeric-semantics`, `random-hardened`), and tests of index reads, gather lowering, comparisons, springs whose matrix the host writes, macro magnitude limits and cell declarations
+- `tests/runtime/`: differential tests of the reference and compiled evaluators, including seeded random circuits (`builder-differential`, `numeric-ui-core`, `numeric-semantics`, `random-hardened`), and tests of index reads, gather lowering, comparisons, springs whose matrix the host writes, macro magnitude limits, cell declarations and prefix networks
 - `tests/indirectos/`: tests of IndirectOS and Photos over scripted traces (`window-manager`, `photo-gallery`, `oracle-trace`), and of the Notes flow against pretext's line breaks (`notes`)
 - `scripts/check.ts`, `tsconfig.json`, `package.json`: `bun run check` type-checks and lints src/, tests/, scripts/, the template and each folder directly under lab/ that has a tsconfig.json, and type-checks each lab/ui-exploration prototype through its own tsconfig.json. package.json holds the scripts above. `knip.config.ts`: `bun run knip` reports unused exports in src/, scripts/ and template/
 

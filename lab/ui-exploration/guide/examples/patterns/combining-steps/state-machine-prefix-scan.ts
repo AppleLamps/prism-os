@@ -8,7 +8,7 @@
 //   combine tables with a prefix network, where combining two tables is one index read
 //   per state, and read each prefix at the initial state.
 import {Circuit, type Wire, asWire} from '../../../../../../src/runtime/numeric-ui-core.ts'
-import {brentKungPrefix, sklanskyPrefix} from './prefix-networks.ts'
+import {brentKungPrefix, sklanskyPrefix} from '../../../../../../src/runtime/prefix-networks.ts'
 
 export const buttonEvents = ['none', 'downOnButton', 'moveInside', 'moveOutside', 'up'] as const
 export type ButtonEvent = typeof buttonEvents[number]

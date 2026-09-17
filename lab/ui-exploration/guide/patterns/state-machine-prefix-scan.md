@@ -58,7 +58,7 @@ const clicks = circuit.affine(statesBefore.map((state, entry) =>
   [circuit.indexReadAffine([[state, eventKindCount], [eventKinds[entry], 1]], 0, clickCells, 'clamp', 'clamp'), 1]))
 ```
 
-`sklanskyPrefix` and `brentKungPrefix` in [prefix-networks.ts](../examples/patterns/combining-steps/prefix-networks.ts) compute every prefix, which per-event outputs need. A plain balanced tree gives only the final state. The loop form carries the state with one read per event, `state = next[state × 5 + eventKind]`. Because the tables are cells, one compiled program runs any machine with the same number of states: the tests run the button and a toggle switch that flips on release through the same program.
+`sklanskyPrefix` and `brentKungPrefix` in [src/runtime/prefix-networks.ts](../../../../src/runtime/prefix-networks.ts) compute every prefix, which per-event outputs need. A plain balanced tree gives only the final state. The loop form carries the state with one read per event, `state = next[state × 5 + eventKind]`. Because the tables are cells, one compiled program runs any machine with the same number of states: the tests run the button and a toggle switch that flips on release through the same program.
 
 ## Cost
 

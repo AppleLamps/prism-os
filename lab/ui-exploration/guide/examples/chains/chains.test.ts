@@ -4,7 +4,6 @@ import {buildButtonQueue, buttonForms} from './button-forms.ts'
 import {type ButtonEvent, buttonEvents, runButtonQueue, stateCount, writeButtonQueue} from './button-machine.ts'
 import {measureProgram} from './measure.ts'
 import {buildLineStarts, greedyNextStarts, jumpLineStarts, walkLineStarts} from './pointer-jumping.ts'
-import {brentKungPrefix, sklanskyPrefix} from './prefix-networks.ts'
 import {buildTableMachine, buttonTable, runTableMachine, tableStateCount, toggleTable, writeTableMachine} from './table-machine.ts'
 
 function createRandom(seed: number) {
@@ -17,38 +16,6 @@ function createRandom(seed: number) {
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296
   }
 }
-
-describe('prefix networks', () => {
-  // Combines strings, so any wrong grouping or order shows up in the text. Each item
-  // also holds the length of the longest chain of combines that produced it.
-  type Tracked = {text: string, depth: number}
-  function run(network: typeof sklanskyPrefix, count: number) {
-    let combines = 0
-    const items = Array.from({length: count}, (_, index): Tracked => ({text: `${index},`, depth: 0}))
-    const prefixes = network(items, (earlier, later) => {
-      combines++
-      return {text: earlier.text + later.text, depth: Math.max(earlier.depth, later.depth) + 1}
-    })
-    return {prefixes, combines, depth: Math.max(...prefixes.map(prefix => prefix.depth))}
-  }
-
-  test('every prefix is the ordered combination of its items, for 1 to 70 items', () => {
-    for (let count = 1; count <= 70; count++) {
-      const expected = Array.from({length: count}, (_, index) =>
-        Array.from({length: index + 1}, (_, item) => `${item},`).join(''))
-      expect(run(sklanskyPrefix, count).prefixes.map(prefix => prefix.text)).toEqual(expected)
-      expect(run(brentKungPrefix, count).prefixes.map(prefix => prefix.text)).toEqual(expected)
-    }
-  })
-
-  test('work and depth follow the formulas for powers of two', () => {
-    for (const count of [4, 16, 64, 256]) {
-      const log = Math.log2(count)
-      expect(run(sklanskyPrefix, count)).toMatchObject({combines: (count / 2) * log, depth: log})
-      expect(run(brentKungPrefix, count)).toMatchObject({combines: 2 * count - 2 - log, depth: 2 * log - 2})
-    }
-  })
-})
 
 describe('a queue of button events', () => {
   const oneHot = (state: number) => Array.from({length: stateCount}, (_, candidate) => (candidate === state ? 1 : 0))

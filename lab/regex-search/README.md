@@ -203,6 +203,8 @@ This table was measured after the page fixes, later the same day, on the same ma
 - tutorial.md's host loop is built around `advanceFrame` and springs. A program with no state and nothing animating, like this search, only needs `createEvaluator` and one evaluation per frame where an input changed, and the tutorial doesn't say that `advanceFrame` can be left out. `table.finish()` with no state cells worked, and `createEvaluator` then checks every input cell twice per evaluation, before the evaluation and again as its own next value, 17,506 cells here, which didn't show in the timings.
 - execution-model.md's "Compilation" says that compiling removes operations that can't reach an output, but not that small sums copied into their readers become such operations, so `circuit.operations.length` can overstate a program, e.g. 193,950 against 133,529 in form (b).
 
+docs/ covers these notes since September 17, 2026: patterns.md's ["A loop whose decision needs later input"](../../docs/patterns.md#a-loop-whose-decision-needs-later-input) and the set of states in ["A state machine over queued events"](../../docs/patterns.md#a-state-machine-over-queued-events), expressions.md's `condition ? table[index] : 0` row, tutorial.md's ["A program without state or animation"](../../docs/tutorial.md#a-program-without-state-or-animation), and execution-model.md's [Compilation](../../docs/execution-model.md#compilation) section.
+
 ## Matrix product tree on the GPU, September 17, 2026
 
 ### Why

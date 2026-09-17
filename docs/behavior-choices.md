@@ -118,3 +118,28 @@ const visibleRows = rows.filter(isVisible) // one DOM node per visible row
 **Choosing the maximum.** Pick it from the quantity's measured distribution, so normal use doesn't reach it, e.g. 300 steps against about 4 per frame at 60 fps, or hn-thread's 48 DOM slots against at most 32 needed in its measured states. Give every maximum an output or a check: before `runOverflow` existed, a paragraph with longer runs of break opportunities than text-walker was built for started lines at the wrong segment, and no output showed the problem.
 
 **Contract, long form, tests.** execution-model.md's [Static bounds](execution-model.md#static-bounds); differentiability.md's [Static bounds with named fallbacks](../lab/ui-exploration/guide/sections/differentiability.md#static-bounds-with-named-fallbacks), and executor.md's [Fixed capacities](../lab/ui-exploration/guide/sections/executor.md#fixed-capacities) and [How a frame's events are handled](../lab/ui-exploration/guide/sections/executor.md#how-a-frames-events-are-handled); tested by [spring-matrix.test.ts](../tests/runtime/spring-matrix.test.ts), e.g. "a 3 s stall snaps every object onto its destination once, no frame runs more than 300 steps, and the committed tables stay bit-identical across frame rates".
+
+## Anchor the scroll position to the row at the top of the view
+
+When the program computes the scroll position, e.g. of a virtualized list whose row heights change with the container width, the program moves the view by as much as the row at the top of the view moved, instead of keeping the scroll position in pixels, and the host turns off the browser's own scroll anchoring. vibescript's Scrolling.md documents scroll anchoring in plain JavaScript in its "Scroll Anchoring" section, and lists CSS `overflow-anchor` among the less preferred alternatives, since Safari lacks it.
+
+```js
+// familiar: keep scrollTop in pixels, so rows above the view that change height move the rows in view
+spacer.style.height = `${totalHeight}px`
+// the choice: move the view by as much as the row at its top moved, e.g. after a resize from 1200 to 400 px
+const atBottom = scrollTop + viewportHeight >= previousTotalHeight // the view showed the end of the rows, like a chat log
+const anchorRow = previousBottoms.findIndex(bottom => bottom > scrollTop)
+scrollTop = atBottom ? maximumScroll : Math.min(scrollTop + tops[anchorRow] - previousTops[anchorRow], maximumScroll)
+```
+
+**What the user sees differently.** Rows above the view that get taller or shorter don't move the rows in view: after a resize, an edit above the view, or a scroll in the same frame as either, the row at the top of the view keeps its position on screen, and a view that showed the end of the rows keeps showing the end after an append. When the row at the top gets shorter than its part above the view, that row goes out of view and the next row comes first, e.g. after 6 of 120 random resizes at 1,000 rows in lists' browser check.
+
+**Circuit version.** The program keeps every row's bottom from the last evaluation in state cells, and finds the anchor row with a binary search over those bottoms at the scrollTop the DOM reports now, which includes any scroll since the last evaluation. Storing only the first row and its top after each evaluation misses that scroll: in lists' first version, a scroll and a resize in one evaluation moved the view by the rows scrolled past times their change in height, 35,000 px in the review's example. The host writes the spacer's height before the scroll position, so the browser doesn't clamp the new scroll position to the old height, writes `scrollTop` only when it differs from the scroller's, and sets `overflow-anchor: none` on the scroller, so Chrome's own scroll anchoring doesn't also move the view.
+
+**Cost.** In lists' text rows at 10,000 rows: 10,000 state cells for the bottoms, which the host copies back with one `Float32Array.set` in about 0.4 µs, 13 index reads and 14 comparisons for the anchor row, and 1,290 of the program's 111,271 live operations for the scroll position, the anchor row, the first row and the 64 DOM slots together.
+
+**Why choose it.** One rule covers resizes, edits above the view, viewport height changes and a scroll in the same frame as any of them, and it's exact, since row tops are whole pixels.
+
+**Don't use it when.** Row tops aren't whole pixels: each frame starts from the scrollTop that the browser rounded, so the rounding adds up. E.g. vibescript's Scrolling.md measured an anchor drifting 3 to 4 px over a 15-step continuous resize with this formula, and keeps the anchor's position on screen from when the anchor was picked instead.
+
+**Contract, long form, tests.** execution-model.md's [Index reads](execution-model.md#index-reads) and [Grids](execution-model.md#grids); lists' README, [Anchoring](../lab/ui-exploration/lists/README.md#anchoring), with the program in [text-rows.ts](../lab/ui-exploration/lists/text-rows.ts) and the DOM writes in [text-rows-demo.ts](../lab/ui-exploration/lists/text-rows-demo.ts); tested by [text-rows.test.ts](../lab/ui-exploration/lists/text-rows.test.ts), whose random sessions check on 588 frames that the last frame's drawn row covering the DOM's scroll position keeps its position on screen, and by text-rows-browser.ts in headless Chrome.

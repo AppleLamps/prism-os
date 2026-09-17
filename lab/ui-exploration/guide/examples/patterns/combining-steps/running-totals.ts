@@ -3,7 +3,7 @@
 // a Brent-Kung network. Every form returns totals[row] = heights[0] + ... + heights[row],
 // so rowTops[row + 1] is totals[row], and the last total is the content height.
 import {Circuit, type Wire} from '../../../../../../src/runtime/numeric-ui-core.ts'
-import {brentKungPrefix} from './prefix-networks.ts'
+import {brentKungPrefix} from '../../../../../../src/runtime/prefix-networks.ts'
 
 // The loop, with every addition rounded to FP32, as the circuit rounds it.
 export function runningTotalsLoop(heights: ArrayLike<number>): number[] {

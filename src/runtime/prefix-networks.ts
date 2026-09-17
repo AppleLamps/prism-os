@@ -1,8 +1,11 @@
 // Prefix networks: fixed arrangements of pairwise combines that compute every prefix items[0],
 // combine(items[0], items[1]), combine(combine(items[0], items[1]), items[2]), ... with a far shorter longest chain of
-// combines than a loop. combine(earlier, later) has to be associative, which holds exactly for reading tables of integer
-// states and for sums of integers below 2^24. Copied from lab/ui-exploration/guide/examples/patterns/combining-steps,
-// so this folder doesn't import from the guide.
+// combines than a loop. combine(earlier, later) has to be associative, i.e. combine(combine(a, b), c) has to give the
+// same result as combine(a, combine(b, c)). That holds exactly for selections, e.g. reading tables of integer states,
+// and for sums of integers below 2^24, while other FP32 sums and products hold it only up to rounding, where the last
+// bits depend on the grouping. combine doesn't have to be commutative. E.g. every row's bottom from the row heights:
+// brentKungPrefix(heights, (earlier, later) => circuit.roundAffine([[earlier, 1], [later, 1]])). docs/patterns.md's
+// "Running totals" and "A state machine over queued events" explain the costs.
 
 // Sklansky (1960): for blocks of 2, 4, 8, ... items, combine the last prefix of the block's left half into every prefix
 // of its right half. For k items, a power of two, that's (k / 2) × log2(k) combines, and a longest chain of log2(k).
@@ -37,12 +40,5 @@ export function brentKungPrefix<T>(items: readonly T[], combine: (earlier: T, la
       prefixes[index] = combine(prefixes[index - span]!, prefixes[index]!)
     }
   }
-  return prefixes
-}
-
-// The loop: every prefix combines the previous prefix with the next item, a chain of k − 1 combines.
-export function chainPrefix<T>(items: readonly T[], combine: (earlier: T, later: T) => T): T[] {
-  const prefixes = [...items]
-  for (let index = 1; index < prefixes.length; index++) prefixes[index] = combine(prefixes[index - 1]!, prefixes[index]!)
   return prefixes
 }

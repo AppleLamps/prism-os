@@ -49,22 +49,34 @@ export function commentWidthAt(containerWidth: number, indent: number) {
 }
 
 // height(containerWidth) = baseHeight + sum over steps of delta * [containerWidth >= step.containerWidth],
-// for containerWidth in minimumContainerWidth..maximumContainerWidth.
+// for containerWidth in the tabulated range, by default minimumContainerWidth..maximumContainerWidth.
 export type Staircase = {
   baseHeight: number
   steps: {containerWidth: number, delta: number}[]
 }
 
-// Samples every `sampleStep` px, then bisects each interval whose endpoints differ
-// until it is under 1e-6px. A height that changes and changes back within one
-// sampling step would be missed; report.ts checks that with a 1/4px sweep.
-export function tabulateStaircase(heightAt: (containerWidth: number) => number, sampleStep = 4): Staircase {
-  const minimum: number = threadLayout.minimumContainerWidth
-  const maximum: number = threadLayout.maximumContainerWidth
+// The container widths a staircase covers, and how close the bisection gets to
+// each change. The defaults are hn-thread's container widths, 375..1200, and 1e-6px.
+export type StaircaseRange = {
+  minimumContainerWidth?: number
+  maximumContainerWidth?: number
+  tolerance?: number
+}
+
+// Samples every `sampleStep` px from the minimum width to the maximum width, then
+// bisects each interval whose endpoints differ until it is under the tolerance. A
+// height that changes and changes back within one sampling step would be missed;
+// report.ts checks that with a 1/4px sweep.
+export function tabulateStaircase(heightAt: (containerWidth: number) => number, sampleStep = 4, range: StaircaseRange = {}): Staircase {
+  const {
+    minimumContainerWidth: minimum = threadLayout.minimumContainerWidth,
+    maximumContainerWidth: maximum = threadLayout.maximumContainerWidth,
+    tolerance = 1e-6,
+  } = range
   const steps: {containerWidth: number, delta: number}[] = []
   const refine = (low: number, lowHeight: number, high: number, highHeight: number) => {
     if (lowHeight === highHeight) return
-    if (high - low <= 1e-6) {
+    if (high - low <= tolerance) {
       steps.push({containerWidth: high, delta: highHeight - lowHeight})
       return
     }
