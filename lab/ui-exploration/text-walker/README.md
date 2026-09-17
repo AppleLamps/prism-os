@@ -16,7 +16,7 @@ bun lab/ui-exploration/text-walker/report.ts fast
 bun lab/ui-exploration/text-walker/demo.html
 ```
 
-The tests (18 tests, about 1.7 seconds) check every circuit against pretext. report.ts prints the tables below; its `fast` part builds 1023-segment circuits and takes about a minute. The demo page is a paragraph flowing around a draggable window with a spring per word.
+The tests (25 tests in 5 files, about 3.3 seconds, 7 of them in `batch/`) check every circuit against pretext. report.ts prints the tables below; its `fast` part builds 1023-segment circuits and takes about a minute. The demo page is a paragraph flowing around a draggable window with a spring per word.
 
 `pretext-src/` is a copy of pretext's `src/` (analysis, bidi, entry-geometry, layout, line-break, line-text, measurement and the generated tables) from commit 477510e of the clone in the phase 2 scratchpad, so the tests don't depend on a temporary folder. It has the same files as text-tabulated's `pretext/`, but stays a separate copy: `bun test` shares modules between test files, and pretext keeps the engine profile and measuring canvas it creates first, so the Gecko profile that this folder's and streaming-words' tests install needs its own module. The runtime is the shared `numeric-ui-core.ts`, unchanged.
 
@@ -199,13 +199,13 @@ Springs: the shared step matrix for 8 step bits (0..255 steps) is 208 live opera
 
 ## Open questions and next steps
 
-- **An executor instruction that reads a table at an integer wire.** The estimates above suggest about 9x fewer operations for gathered lines at 1023 segments, and it would turn pointer jumping from quadratic into about N log N work. It needs its own exactness contract, for example a declared integer range and a clamp. Update, September 16, 2026: the repo root has had this instruction as `circuit.indexRead` since September 14, 2026 ([execution-model.md](../../../docs/execution-model.md#index-reads)), and index-read measured line recovery with it ([Merged from index-read](#merged-from-index-read-september-16-2026)). This folder's circuits haven't been rebuilt with it.
+- **An executor instruction that reads a table at an integer wire.** The estimates above suggest about 9x fewer operations for gathered lines at 1023 segments, and it would turn pointer jumping from quadratic into about N log N work. It needs its own exactness contract, for example a declared integer range and a clamp. Update, September 16, 2026: the repo root has had this instruction as `circuit.indexRead` since September 14, 2026 ([execution-model.md](../../../docs/execution-model.md#index-reads)), and index-read measured line recovery with it ([Merged from index-read](#merged-from-index-read-september-16-2026)). This folder's circuits haven't been rebuilt with it. Update, September 17, 2026: batch/'s index-read program rebuilds gathered lines with index reads for line counts, see [Many paragraphs on the GPU](#many-paragraphs-on-the-gpu-september-17-2026). At 517 segments and 83 line slots it has 27,634 live operations, against 113,802 with integer one-hots.
 - **Static break kinds.** When kinds come from prepare instead of runtime cells, comparisons at break-after segments can be dropped, like the rows circuit's merged candidates (8 instead of 20 per line), and the run limit goes away.
 - **Runtime thresholds for the ladder.** Letter spacing, soft hyphens and emergency breaks could use in-circuit prefix sums over grapheme advances, so edited widths work beyond the fast path. Tabs need a bounded modulo.
 - **Blink's unfit-hyphen return and kerned admission.** Both need a second first-failure list per candidate, and a select between the lists.
 - **Real browser widths.** How often does the demo's mismatch counter move with real Georgia widths, and would quantizing widths to 1/64 px at the table boundary remove those mismatches without visible change?
 - **Generated JavaScript.** Phase 1 ran IndirectOS about 12 times faster as generated JS. The demo circuit would likely drop from about 230 µs to tens of µs.
-- **Many paragraphs as instances.** Masonry cards or chat bubbles share one compiled circuit, with different widths in the table. That is the case a batched or GPU executor would parallelize.
+- **Many paragraphs as instances.** Masonry cards or chat bubbles share one compiled circuit, with different widths in the table. That is the case a batched or GPU executor would parallelize. Update, September 17, 2026: [Many paragraphs on the GPU](#many-paragraphs-on-the-gpu-september-17-2026) builds one program per paragraph size for line counts, in three formulations, checks it against pretext's `layout()`, and measures it on the CPU, with an export for a GPU executor.
 - **Joining IndirectOS.** A Notes window whose text flows around the other windows, with word springs, in the same circuit as window focus and dragging.
 
 ## Merged from index-read, September 16, 2026
@@ -228,3 +228,149 @@ Springs: the shared step matrix for 8 step bits (0..255 steps) is 208 live opera
 - Small problem in the first check: dragging the title bar selected the "Drag me" text, because the title bar didn't set `user-select: none`.
 - Fixed later in `demo.css`: `.window .title` now sets `user-select: none`. `bun test lab/ui-exploration/text-walker` (18 tests) and `bunx tsgo -p lab/ui-exploration/text-walker` pass.
 - Recheck in Chrome: a real mouse drag from the "Drag me" label moved the window, e.g. from (206, 197) to (130, 306) in viewport px, the paragraph reflowed around it, and no text was selected afterwards (`getSelection().type` was "None"). No errors.
+
+## Many paragraphs on the GPU, September 17, 2026
+
+### Why
+
+Cheng asked: "technically our pretext layout, if there's lots of them, is faster than the regular cpu's, then?" So far the answer is a prediction. For one paragraph the GPU should lose: pretext's `layout()` is a few float64 additions and comparisons per segment, and stops at the end of the text, while a program pays for every line slot and every window position, and a WebGPU round trip took about 0.3 to 0.7 ms through Dawn in earlier runs on this machine. Many paragraphs in one dispatch should win past some count, predicted somewhere in the hundreds to thousands. Cheng approved measuring it: "yes to both", together with a Knuth-Plass experiment that isn't part of this section.
+
+This section is the CPU half: one per-paragraph program for pretext's greedy line breaking, checked against `layout()`, its CPU numbers, and an export for the GPU step. There are no GPU numbers yet.
+
+### What was built
+
+| File | What it holds |
+| --- | --- |
+| `batch/paragraphs.ts` | Generated paragraphs, measured by npm `@chenglou/pretext` with this folder's fake canvas, the walker's cells for each paragraph, and the programs' capacities |
+| `batch/programs.ts` | The per-paragraph program in three formulations, and the functions that write a paragraph's cells |
+| `batch/instances.ts` | Runs a program over many paragraphs at once through codegen's instance path: generated JavaScript, or the batched executor |
+| `batch/batch.test.ts` | 7 tests against pretext's `layout()` |
+| `batch/report.ts` | Program sizes, the sweep against pretext over every paragraph and width, and the summary of the timing processes |
+| `batch/cpu-time.ts` | CPU timings, one process per variant |
+| `batch/export.ts` | Writes the compiled program, the cells of N paragraphs, and pretext's line counts, for the GPU step |
+| `batch/results/` | `sizes.json`, `sweep.json`, and one JSON line per timing process |
+
+**The paragraphs.** Word soup from the same word list as `makeParagraph`, with some hyphenated words, e.g. "state-of-the-art", which pretext splits into text segments that a line can break between, and some zero-width spaces, e.g. `" ​​"`, a space and two zero-width spaces, is a run of 3 break-after segments. Short paragraphs have 14 to 26 words, and long ones 170 to 230. Every paragraph is on pretext's fast path, and at 16 px the fake canvas measures every segment in multiples of 1/4 px, so prefix sums are exact in FP32. The reference is npm `@chenglou/pretext` 0.0.9, the package Notes uses, and not this folder's `pretext-src/` copy: `layout(prepared, maxWidth, lineHeight).lineCount`, with pretext's non-Safari line fit epsilon of 0.005 px.
+
+**The program.** One compiled program serves every paragraph of a size. Its cells, after the unit cell, are `maxWidth`, `startCursor`, K segment widths and K break-after bits. A paragraph of n segments is written at the end of the K cells, after zero-width text, with `startCursor = K - n`. For example, a 39-segment paragraph in a 68-segment program starts at cell 29. The walkers with line slots start the first line at `startCursor`, so they never read the padding, and the segment walker starts at segment 0, where the padding adds 0 px to the first line. The width is a cell too, so each paragraph of a batch can have its own width.
+
+Three formulations, all over the tables of `createFastCircuit` in fast-walker.ts (prefix sums, fit thresholds, how many break-after segments a line start skips):
+
+- **One-hot**: `walkGatheredLines` without obstacles, the walker IndirectOS's Notes flow uses. Each line slot builds an integer one-hot of its start, about 2 operations per segment cell, reads the tables at that start through masked sums that the compiler lowers to gathers, and compares the window's thresholds with the width.
+- **Index read**: the same walk, where each line slot reads its start's tables with `circuit.indexRead`, 1 operation per read, instead of a one-hot and masked sums. This rebuilds gathered lines with the instruction that "Open questions and next steps" above asked about. In JavaScript terms, `startPrefix = prefix[start]` and `fits[o] = threshold[start + o] - startPrefix <= maxWidth + epsilon`. Every position past the end of the text reads the paragraph's whole width plus 8,192 px as its threshold, so nothing fits there, and a start at the end of the text reads +0 as its prefix and stays at the end.
+- **Segment walker**: `buildSegmentWalker`, pretext's walker unrolled one segment at a time. It has no line slots, no window and no run limit, so none of them can be too small, and its depth grows with the segment count.
+
+The walkers with line slots output `lineCount`, `moreLinesThanSlots` (1 when text is left after the last line slot), `windowOverflow` and `runOverflow` (nonzero when the window or the run limit was too small for the text). The segment walker outputs only `lineCount`.
+
+**Capacities.** For widths from 160 to 480 px, each capacity is the largest need over the first 65,536 paragraphs of each size, seeds 0 to 65,535 (`batchCapacities`):
+
+| Size | Segments | Line slots (lines at 160 px) | Window (segments compared after a line start, at 480 px) | Run limit |
+| --- | --- | --- | --- | --- |
+| short | 68 | 12 | 38 | 3 |
+| long | 517 | 83 | 39 | 3 |
+
+The largest needs are rare: among the 65,536 long paragraphs, 1 needs a window of 39, 2 need 38 and 12 need 37, and 5 need 83 line slots. Among the short ones, 1 needs a window of 38, 2 need 35 and 12 need 34. The widest segment is 71.75 px, narrower than 160 px, so no line breaks inside a segment. `assertFits` checks every paragraph of a timing, a sweep or an export against its capacity, and the overflow outputs report a paragraph that doesn't fit, e.g. `batch.test.ts` builds programs with one line slot too few, a window of 6 and a run limit of 1.
+
+### Correctness checks
+
+`bun test lab/ui-exploration/text-walker/batch` runs 7 tests in about 1.7 s:
+
+- All three formulations give pretext's line count, with every overflow output at 0, for 32 short paragraphs at 61 widths: 160 to 480 px in 16 px steps, each also 1/8 and 1/4 px wider, so some spans equal the width exactly. The index-read program and the segment walker do the same for 4 long paragraphs.
+- codegen's generated JavaScript and batched executor run the one-hot program and the segment walker over 96 short paragraphs, each at its own width, and give pretext's line counts. `createBatchInstanceRunner` refuses the index-read program.
+- The reference evaluator, for the one-hot and index-read programs at the short capacity and the index-read program at the long capacity: every declared one-hot group and every integer index holds (`validateOneHotGroups`, `validateIndexReads`), and the reference's and the executor's line counts equal pretext's.
+- One line slot too few gives `moreLinesThanSlots` 1 and a line count of the slot count, a window of 6 segments gives a nonzero `windowOverflow` at 480 px, and a run limit of 1 gives a nonzero `runOverflow` for a paragraph with a run of 3 break-after segments.
+- A one-segment paragraph, and a paragraph that fills every segment cell, so `startCursor` is 0.
+- The exported program survives `JSON.stringify` with its shared tables.
+
+`bun lab/ui-exploration/text-walker/batch/report.ts sweep` compared line counts with `layout()` for the first 1,024 paragraphs of each size at 385 widths: every whole pixel from 160 to 480 px, and 64 widths on the 1/8 px grid. For every paragraph at every width, generated JavaScript ran the one-hot program and the segment walker, and the executor ran the index-read program. The executor and the batched executor ran the one-hot program and the segment walker for the first 64 paragraphs.
+
+| Size | Formulation | Backend | Paragraphs × widths | Checks | Line count mismatches | Nonzero overflow outputs |
+| --- | --- | --- | --- | --- | --- | --- |
+| short | one-hot | generated JavaScript | 1,024 × 385 | 394,240 | 0 | 0 |
+| short | one-hot | executor, batched executor | 64 × 385 each | 49,280 | 0 | 0 |
+| short | index read | executor | 1,024 × 385 | 394,240 | 0 | 0 |
+| short | segment walker | generated JavaScript | 1,024 × 385 | 394,240 | 0 | 0 |
+| short | segment walker | executor, batched executor | 64 × 385 each | 49,280 | 0 | 0 |
+| long | one-hot | generated JavaScript | 1,024 × 385 | 394,240 | 0 | 0 |
+| long | one-hot | executor, batched executor | 64 × 385 each | 49,280 | 0 | 0 |
+| long | index read | executor | 1,024 × 385 | 394,240 | 0 | 0 |
+| long | segment walker | generated JavaScript | 1,024 × 385 | 394,240 | 0 | 0 |
+| long | segment walker | executor, batched executor | 64 × 385 each | 49,280 | 0 | 0 |
+
+The sweep's texts exercise how a line start skips break-after segments. At these widths, pretext laid out 1,500,260 lines for the short paragraphs and 13,563,145 for the long ones. Of the lines after each paragraph's first, 69,594 short and 781,441 long lines start right after a text segment, e.g. after a hyphen, 1,005,402 and 12,017,584 after 1 break-after segment, 21,123 and 246,238 after a run of 2, and 9,901 and 123,642 after a run of 3. `sweep.json` holds every record, with the load average during the sweep, 4.7 to 12.2.
+
+### Sizes (`report.ts sizes`)
+
+| Size | Formulation | Live ops | Layers | Stored weights | Gather reads | Gather table entries | One-hot ops | Index reads | Stored index positions | Build ms | Compile ms |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| short | one-hot | 5,517 | 110 | 10,863 | 924 | 62,832 | 1,632 | 0 | 0 | 92 | 57 |
+| short | index read | 3,846 | 86 | 8,023 | 0 | 0 | 0 | 924 | 274 | 7 | 7 |
+| short | segment walker | 1,064 | 605 | 2,126 | 0 | 0 | 0 | 0 | 0 | 7 | 3 |
+| long | one-hot | 113,802 | 684 | 226,755 | 6,557 | 3,389,969 | 85,822 | 0 | 0 | 5,631 | 2,841 |
+| long | index read | 27,634 | 518 | 58,009 | 0 | 0 | 0 | 6,557 | 2,070 | 30 | 54 |
+| long | segment walker | 8,244 | 4,646 | 16,486 | 0 | 0 | 0 | 0 | 0 | 68 | 54 |
+
+- At 517 segments, 75% of the one-hot program's operations build integer one-hots, 83 line slots × about 1,034 operations, and its gathers store 3.39 million candidate positions. The index-read program has 4.1 times fewer operations and stores 2,070 positions, because every line slot reads the same 4 tables.
+- Each line slot of the long index-read program adds 277 operations and 6 layers, from building it with 82 and 83 line slots. The slot's 79 index reads are the start's prefix, the start's next line head, 39 thresholds, each compared with the width in 4 operations, and 38 skip counts, each multiplied with its comparison. The last window position only reports a window too small, so it reads no skip count.
+- The segment walker is about 16 operations per segment cell, and has 9 layers per segment.
+- Build ms for the segment walker includes a first compile of every output `buildSegmentWalker` has, e.g. each segment's x. Compile ms is `compile()` from kit.ts, which compiles twice, once for the sizes and once inside `createTensorEvaluator`.
+- Every operation of these programs reads a paragraph's cells, so codegen's instance plan shares almost nothing: 5,515 of the short one-hot program's 5,517 rows, and 8,243 of the long segment walker's 8,244, run once per paragraph.
+
+### CPU timings (`cpu-time.ts`)
+
+Measured on September 17, 2026, on an Apple M5 Max with 18 cores and 36 GiB, macOS 27.0, and Bun 1.4.0. Other agents' processes ran throughout, e.g. another project's `bun test` workers and a headless Chrome, and the 1-minute load average before and after each timing process was between 2.2 and 7.6. Swap in use on the machine was 8.8 of 10.2 GB.
+
+Method:
+
+- `cpu-time.ts all` runs each variant in its own process, 3 processes per variant. Each process generates its paragraphs, builds its program, writes every paragraph's cells, and checks every line count against `layout()`, and every overflow output at 0, before and after timing.
+- A run lays out every paragraph at 320 px. Each process warms up for 1 s and at least 3 runs, or 120 s for generated JavaScript, then takes 7 samples of at least 300 ms of whole runs, and keeps their median. The table shows the median of the 3 processes' medians, and their range.
+- The executor figures include `createTensorEvaluator`'s check of every source cell against its declared range, 2 × segments + 3 cells per call. Generated JavaScript and the batched executor run blocks of 1,024 paragraphs, or 128 for the long one-hot program, which has 114,836 values per paragraph.
+
+µs per paragraph, at 320 px:
+
+| Variant | Short, 1,024 paragraphs | Short, 16,384 | Long, 1,024 | Long, 16,384 |
+| --- | --- | --- | --- | --- |
+| pretext `layout()` | 0.262 (0.260 to 0.278) | 0.359 (0.354 to 0.441) | 2.52 (2.51 to 2.54) | 2.65 (2.65 to 2.67) |
+| writing the cells | 0.0785 (0.0760 to 0.0814) | 0.111 (0.111 to 0.114) | 0.481 (0.472 to 0.534) | 0.834 (0.719 to 0.840) |
+| executor, one-hot | 29.9 (29.8 to 29.9) | | 683 (668 to 731) | |
+| executor, index read | 25.1 (24.9 to 29.4) | 24.2 (23.9 to 26.3) | 198 (196 to 199) | 194 (191 to 198) |
+| executor, segment walker | 28.9 (25.9 to 30.2) | | 216 (212 to 217) | |
+| generated JavaScript, one-hot | 3.67 (3.57 to 3.68) | | 186 (186 to 187) | |
+| generated JavaScript, segment walker | 1.33 (1.29 to 1.77) | 1.31 (1.30 to 1.31) | 10.5 (10.5 to 10.6) | 10.8 (10.8 to 11.8) |
+| batched executor, one-hot | 344 (342 to 345) | | 6,824 (6,786 to 6,881) | |
+| batched executor, segment walker | 56.1 (55.8 to 65.7) | | 409 (406 to 412) | |
+
+- pretext's `layout()` is the fastest variant at both sizes. A long paragraph has about 31 lines at 320 px, and `layout()` takes 2.52 µs for one.
+- At 1,024 paragraphs, the executor takes 79 to 271 times as long as pretext for long paragraphs, and 96 to 114 times for short ones. Generated JavaScript for the segment walker takes 4.2 times as long for long paragraphs, and 5.1 times for short ones.
+- The executor pays per layer as well as per operation: the long segment walker has 3.4 times fewer operations than the long index-read program, but 9 times as many layers, and takes 9% longer, 216 against 198 µs.
+- The batched executor is slower than the executor for these programs, e.g. 409 against 216 µs for the long segment walker, and 6,824 against 683 µs for the long one-hot program. codegen's README found that the batched executor beats generated JavaScript only for programs with few rows.
+- From 1,024 to 16,384 paragraphs, pretext takes 5% to 37% longer per paragraph, and writing the cells 41% to 73% longer, while the programs stay within 4%.
+- Generated JavaScript needed the long warmup. JavaScriptCore optimizes a generated function after enough calls, and a run calls each function once per block. With 1 s of warmup, the long one-hot program took 2,762 µs per paragraph, against 186 µs after 120 s and 228 to 240 runs, the long segment walker 21.1 against 10.5 µs, and the short one-hot program 8.83 against 3.67 µs, while the short segment walker didn't change, 1.30 against 1.33 µs. `cpu-time-1.jsonl` and `cpu-time-2.jsonl` hold the runs with 1 s of warmup, and `cpu-time-3.jsonl` and `cpu-time-4.jsonl` the reruns with 120 s.
+- The long one-hot program's generated JavaScript processes reached 11.4 to 12.9 GB of RSS, for 9.97 MB of generated source.
+
+What these numbers say about the GPU step, as arithmetic rather than measurements:
+
+- To win, one GPU evaluation of N paragraphs, from the upload to the readback, must take less than pretext's N × µs per paragraph: 2.6 ms for 1,024 long paragraphs and 43 ms for 16,384, or 0.27 ms for 1,024 short paragraphs and 5.9 ms for 16,384.
+- A WebGPU round trip took about 0.3 to 0.7 ms through Dawn in earlier runs on this machine, and pretext lays out about 120 to 280 long paragraphs, or about 1,100 to 2,700 short ones, in that time. So on this machine the crossover should lie above those counts, since the program's own work on the GPU comes on top of the round trip.
+- What JavaScript sends per evaluation matters, as regex-search's uploads showed. A long paragraph's cells are 1,036 float32 values, 4.1 KB, so 16,384 paragraphs are 68 MB. When only the width changes, e.g. on a resize, 1 cell per paragraph changes, and the segment cells can stay on the GPU.
+- The segment walker is 8,244 operations and 16,486 stored weights per long paragraph, with no reads at a computed index, but 4,646 layers. So it fits a shader that runs every operation of one paragraph in one invocation, like codegen's WGSL executor, and not one dispatch per layer. The index-read program has 9 times fewer layers, 518, but 27,634 operations with 6,557 index reads, which codegen's WGSL emitter doesn't take.
+
+### Export for the GPU step
+
+`bun lab/ui-exploration/text-walker/batch/export.ts <folder> --size long --count 4096 --formulation index-read --widths 160,320,480` writes:
+
+- `manifest.json`: the options, the capacity, the cell layout, the output names and roots, and the program's sizes
+- `program.json`: the compiled `TensorProgram`, with every typed array stored once in a list of tables, see `serializeTensorProgram` and `deserializeTensorProgram`
+- `instance-cells.f32`: count × (2 × segments + 2) float32 cells, one row per paragraph, with `maxWidth` set to the first width
+- `expected-line-counts.i32`: pretext's line count of each paragraph at each width, one row per paragraph
+- `texts.json`: the paragraph texts
+
+Before writing, the export checks that the program gives pretext's line counts for the first 16 paragraphs at every width. In code, `exportBatch` returns the same things. For 256 long paragraphs with the index-read program, `program.json` is 2.4 MB and `instance-cells.f32` 1.06 MB.
+
+### Not done
+
+- No GPU numbers.
+- codegen's instance path doesn't take index reads, since its `flattenProgram` reads only a layer's affine, ReGLU, boolean and gather rows. So the index-read program, the smallest with line slots, has executor numbers only, and `createBatchInstanceRunner` refuses it. codegen's WGSL emitter writes each gather as a `switch` statement over its candidates, which for the long one-hot program would be 6,557 statements of 517 cases.
+- Only line counts: no per-line widths, and no word positions.
+- Fake canvas widths on a 1/4 px grid. Real canvas widths aren't, and the programs would need widths rounded to the 1/64 px grid, like Notes does, which can move a break whose span lies within 1/128 px of the width.
+- Only pretext's fast path, and only widths at least as wide as the widest segment.

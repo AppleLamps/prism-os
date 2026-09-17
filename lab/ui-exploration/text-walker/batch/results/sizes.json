@@ -1,0 +1,218 @@
+[
+  {
+    "size": "short",
+    "formulation": "one-hot",
+    "capacity": {
+      "size": "short",
+      "segments": 68,
+      "lineSlots": 12,
+      "window": 38,
+      "runLimit": 3,
+      "minimumWidth": 160,
+      "maximumWidth": 480,
+      "epsilon": 0.005
+    },
+    "sizes": {
+      "sourceCells": 139,
+      "liveOperations": 5517,
+      "layers": 110,
+      "storedWeights": 10863,
+      "gatherReads": 924,
+      "gatherTableEntries": 62832,
+      "oneHotOperations": 1632,
+      "maximumLayerWidth": 240
+    },
+    "indexReads": {
+      "reads": 0,
+      "storedPositions": 0
+    },
+    "buildMilliseconds": 92,
+    "compileMilliseconds": 57,
+    "instancePlan": {
+      "sharedRows": 2,
+      "instanceRows": 5515,
+      "sharedWeights": 1,
+      "instanceWeights": 10862,
+      "instanceLayers": 109
+    },
+    "loadAverage": "{ 7.88 7.12 7.44 }"
+  },
+  {
+    "size": "short",
+    "formulation": "index-read",
+    "capacity": {
+      "size": "short",
+      "segments": 68,
+      "lineSlots": 12,
+      "window": 38,
+      "runLimit": 3,
+      "minimumWidth": 160,
+      "maximumWidth": 480,
+      "epsilon": 0.005
+    },
+    "sizes": {
+      "sourceCells": 139,
+      "liveOperations": 3846,
+      "layers": 86,
+      "storedWeights": 8023,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 208
+    },
+    "indexReads": {
+      "reads": 924,
+      "storedPositions": 274
+    },
+    "buildMilliseconds": 7,
+    "compileMilliseconds": 7,
+    "instancePlan": null,
+    "loadAverage": "{ 7.88 7.12 7.44 }"
+  },
+  {
+    "size": "short",
+    "formulation": "segment-walker",
+    "capacity": {
+      "size": "short",
+      "segments": 68,
+      "lineSlots": 12,
+      "window": 38,
+      "runLimit": 3,
+      "minimumWidth": 160,
+      "maximumWidth": 480,
+      "epsilon": 0.005
+    },
+    "sizes": {
+      "sourceCells": 139,
+      "liveOperations": 1064,
+      "layers": 605,
+      "storedWeights": 2126,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 102
+    },
+    "indexReads": {
+      "reads": 0,
+      "storedPositions": 0
+    },
+    "buildMilliseconds": 7,
+    "compileMilliseconds": 3,
+    "instancePlan": {
+      "sharedRows": 1,
+      "instanceRows": 1063,
+      "sharedWeights": 1,
+      "instanceWeights": 2125,
+      "instanceLayers": 605
+    },
+    "loadAverage": "{ 7.88 7.12 7.44 }"
+  },
+  {
+    "size": "long",
+    "formulation": "one-hot",
+    "capacity": {
+      "size": "long",
+      "segments": 517,
+      "lineSlots": 83,
+      "window": 39,
+      "runLimit": 3,
+      "minimumWidth": 160,
+      "maximumWidth": 480,
+      "epsilon": 0.005
+    },
+    "sizes": {
+      "sourceCells": 1037,
+      "liveOperations": 113802,
+      "layers": 684,
+      "storedWeights": 226755,
+      "gatherReads": 6557,
+      "gatherTableEntries": 3389969,
+      "oneHotOperations": 85822,
+      "maximumLayerWidth": 1811
+    },
+    "indexReads": {
+      "reads": 0,
+      "storedPositions": 0
+    },
+    "buildMilliseconds": 5631,
+    "compileMilliseconds": 2841,
+    "instancePlan": {
+      "sharedRows": 2,
+      "instanceRows": 113800,
+      "sharedWeights": 1,
+      "instanceWeights": 226754,
+      "instanceLayers": 683
+    },
+    "loadAverage": "{ 8.16 7.21 7.47 }"
+  },
+  {
+    "size": "long",
+    "formulation": "index-read",
+    "capacity": {
+      "size": "long",
+      "segments": 517,
+      "lineSlots": 83,
+      "window": 39,
+      "runLimit": 3,
+      "minimumWidth": 160,
+      "maximumWidth": 480,
+      "epsilon": 0.005
+    },
+    "sizes": {
+      "sourceCells": 1037,
+      "liveOperations": 27634,
+      "layers": 518,
+      "storedWeights": 58009,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 1611
+    },
+    "indexReads": {
+      "reads": 6557,
+      "storedPositions": 2070
+    },
+    "buildMilliseconds": 30,
+    "compileMilliseconds": 54,
+    "instancePlan": null,
+    "loadAverage": "{ 8.16 7.21 7.47 }"
+  },
+  {
+    "size": "long",
+    "formulation": "segment-walker",
+    "capacity": {
+      "size": "long",
+      "segments": 517,
+      "lineSlots": 83,
+      "window": 39,
+      "runLimit": 3,
+      "minimumWidth": 160,
+      "maximumWidth": 480,
+      "epsilon": 0.005
+    },
+    "sizes": {
+      "sourceCells": 1037,
+      "liveOperations": 8244,
+      "layers": 4646,
+      "storedWeights": 16486,
+      "gatherReads": 0,
+      "gatherTableEntries": 0,
+      "oneHotOperations": 0,
+      "maximumLayerWidth": 775
+    },
+    "indexReads": {
+      "reads": 0,
+      "storedPositions": 0
+    },
+    "buildMilliseconds": 68,
+    "compileMilliseconds": 54,
+    "instancePlan": {
+      "sharedRows": 1,
+      "instanceRows": 8243,
+      "sharedWeights": 1,
+      "instanceWeights": 16485,
+      "instanceLayers": 4646
+    },
+    "loadAverage": "{ 8.16 7.21 7.47 }"
+  }
+]
