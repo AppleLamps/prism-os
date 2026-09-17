@@ -18,7 +18,7 @@ Most familiar UI code translates into the same idea written differently, e.g. a 
 
 **The program is data.** A number in a cell can change while the page runs, differ from one copy of the program to another, or be tuned with gradients. E.g. drag-knobs moved card padding, the grid gap and three more design numbers into cells for 60 operations, so a designer can drag an edge and the design numbers change to match. One compiled window circuit ran 16,384 simulated users for 600 frames on a GPU, bit for bit equal to the CPU (user-population). A behavior can be a table in cells, so one compiled program runs both a button and a toggle switch ([tables that JavaScript writes](../patterns/tables-javascript-writes.md)). And a backward pass computes a gradient for every cell and every computed value, e.g. for the 4 cells of a spring matrix.
 
-The [translation table](#translation-table) sorts familiar JavaScript by how much changes, and the root [patterns.md](../../../../docs/patterns.md) explains each different algorithm in a short entry that links its long form.
+The [translation table](#translation-table) sorts familiar JavaScript by how much changes, and [docs/patterns.md](../../../../docs/patterns.md) explains each different algorithm in a short entry that links its long form.
 
 ## Examples in this section
 
@@ -348,7 +348,7 @@ Four pitfalls:
 
 ## Translation table
 
-Each row names a JavaScript concept, the circuit form that replaces it, how its cost grows, and where to read more. "Grows as" gives operations, then depth, in big-O terms: n is the item count, and K a capacity or a number of possible results fixed while building. A row that replaces one expression or a loop links its short entry in the root [expressions.md](../../../../docs/expressions.md) or [patterns.md](../../../../docs/patterns.md), which quote the sizes their tests pin. The other rows give a measured size, which holds under the conditions that the linked README or this section's examples state. Links to folders point to prototypes in lab/ui-exploration.
+Each row names a JavaScript concept, the circuit form that replaces it, how its cost grows, and where to read more. "Grows as" gives operations, then depth, in big-O terms: n is the item count, and K a capacity or a number of possible results fixed while building. A row that replaces one expression or a loop links its short entry in [docs/expressions.md](../../../../docs/expressions.md) or [docs/patterns.md](../../../../docs/patterns.md), which quote the sizes their tests pin. The other rows give a measured size, which holds under the conditions that the linked README or this section's examples state. Links to folders point to prototypes in lab/ui-exploration.
 
 The rows fall into three groups. Most JavaScript is the same idea written differently. Searches, sorts, floors, running totals, text layout, springs and the topmost hit need a different algorithm, and each row of that group links its short entry. And a few things have no counterpart in JavaScript, because the program is a fixed list of operations over numbers in cells.
 

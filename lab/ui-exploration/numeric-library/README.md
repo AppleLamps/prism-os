@@ -4,7 +4,7 @@ This folder adds the missing operations from phase one to the macro library: exa
 
 `numeric-ui-core.ts` is unchanged. Everything imports it with a relative path.
 
-Update, September 14, 2026: the repo root `numeric-ui-core.ts` now has its own `emitCompare`, which builds integer bits when both operands are declared on a grid, and a sign cascade otherwise, e.g. `a >= b` within 0..16,384 in 15 operations and 14 layers ([execution-model.md](../../../docs/execution-model.md#comparisons)). This folder's library doesn't read grids, and its reciprocal, division, square root, trigonometry, rounding and hash aren't in the root runtime ([expressions.md](../../../docs/expressions.md#familiar-expressions)).
+Update, September 14, 2026: the repo root `numeric-ui-core.ts` (moved into src/runtime/ on September 17, 2026) now has its own `emitCompare`, which builds integer bits when both operands are declared on a grid, and a sign cascade otherwise, e.g. `a >= b` within 0..16,384 in 15 operations and 14 layers ([execution-model.md](../../../docs/execution-model.md#comparisons)). This folder's library doesn't read grids, and its reciprocal, division, square root, trigonometry, rounding and hash aren't in the root runtime ([expressions.md](../../../docs/expressions.md#familiar-expressions)).
 
 Update, September 15, 2026: window-manager.ts now declares pointer coordinates within ±32,768 px on a 1/64 px grid, and its window hit tests compare each edge distance with `emitCompare`. What this README says about IndirectOS describes this folder's copies of the older window-manager.ts and photo-gallery.ts.
 

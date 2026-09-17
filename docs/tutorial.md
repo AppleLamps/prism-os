@@ -188,7 +188,7 @@ To start another app, copy template/ to a new folder next to it at the repo root
 - scripts/check.ts's oxlint command, e.g. `'counter'` next to `'template'`.
 - package.json's `test` script, e.g. `bun test ./tests ./template ./counter ./lab`. A script that serves the page goes next to `start:template`, e.g. `"start:counter": "bun ./counter/index.html"`.
 
-After the tsconfig.json entry, `bunx tsgo -p .` type-checks the root project with the new folder in seconds, while `bun run check` also type-checks every lab folder and lints. `bun run knip`, which reports unused exports, only looks at src/, scripts/ and template/, per knip.config.ts's `entry` and `project` lists, so it isn't a check a new folder needs; to have it cover the folder, add the page script, e.g. `counter/main.ts`, to `entry` and `counter/*.ts` to `project`.
+After the tsconfig.json entry, `bunx tsgo -p .` type-checks the root project with the new folder in seconds, while `bun run check` also type-checks every lab folder and lints. `bun run knip`, which reports unused exports, only looks at src/, scripts/ and template/, per knip.config.ts's `entry` and `project` lists, so it isn't a check a new folder needs; to have it cover the folder, add the page script and the plain JavaScript reference, e.g. `counter/main.ts` and `counter/toggle-reference.ts`, to `entry`, and `counter/*.ts` to `project`. Only the folder's test imports the reference, so without its `entry` item knip reports `counter/toggle-reference.ts` as an unused file.
 
 ## More
 
