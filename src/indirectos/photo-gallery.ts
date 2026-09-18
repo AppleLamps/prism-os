@@ -333,8 +333,7 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   }
   const mainHit = emitRectangleHit(circuit, click, main)
 
-  const previousFocus = Array.from({length: itemCount}, (_, item) => cells.focus[item]!)
-  const previousFocusMass = circuit.affine(previousFocus.map(wire => [wire, 1]))
+  const previousFocusMass = circuit.affine(cells.focus.map(wire => [wire, 1]))
   circuit.assumeRange(previousFocusMass, 0, 1)
   const previousGridMass = circuit.affine([[previousFocusMass, -1]], 1)
 
@@ -415,7 +414,7 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
     }
   }
 
-  const currentThumbnailTargets = projectThumbnailTargets(previousFocus, previousFocusMass)
+  const currentThumbnailTargets = projectThumbnailTargets(cells.focus, previousFocusMass)
   const thumbnailHit: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
     thumbnailHit.push(emitRectangleHit(circuit, click, projectThumbnail(currentThumbnailTargets[item]!)))
@@ -501,10 +500,10 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   ])
   const nextFocus: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
-    const previousShift = previousFocus[(item + 1) % itemCount]!
-    const nextShift = previousFocus[(item + itemCount - 1) % itemCount]!
+    const previousShift = cells.focus[(item + 1) % itemCount]!
+    const nextShift = cells.focus[(item + itemCount - 1) % itemCount]!
     nextFocus.push(circuit.affine([
-      [emitMultiply(circuit, currentFocusGate, previousFocus[item]!), 1],
+      [emitMultiply(circuit, currentFocusGate, cells.focus[item]!), 1],
       [emitMultiply(circuit, clickGridGate, gridHit[item]!), 1],
       [thumbnailClicks[item]!, 1],
       [emitMultiply(circuit, previousFocusGate, previousShift), 1],
@@ -661,9 +660,9 @@ export function createPhotoGalleryCircuit() {
 }
 
 // What the host writes into the 4 matrix cells for each step count, see
-// advanceFrame in host-timing.ts.
+// advanceFrame in host-timing.ts. IndirectOS writes the same matrices.
 const springStep = springStepMatrix(springConstants)
-const springMatrixPowers = Array.from(
+export const springMatrixPowers = Array.from(
   {length: defaultSpringClockConfig.maxStepsPerFrame + 1},
   (_, steps) => springMatrixPower(springStep, steps),
 )
@@ -782,14 +781,11 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
     for (let index = 0; index < roots.length; index++) values[roots[index]!] = rootValues[index]!
     // The next-state values are the first roots. Only roots are written into
     // `values`, so the finite check covers the roots, not every wire.
-    validate(rootValues.subarray(0, output.nextSource.length))
+    const nextSourceValues = rootValues.subarray(0, source.length)
+    validate(nextSourceValues)
     assertFiniteValues(rootValues, 'tensor output')
     validatePhotoGalleryOutput(values, output, numericTolerance)
-    if (evaluation.writesBack) {
-      for (let field = 0; field < source.length; field++) {
-        source[field] = values[output.nextSource[field]!]!
-      }
-    }
+    if (evaluation.writesBack) source.set(nextSourceValues)
     evaluations.push({
       kind: evaluation.kind,
       timeMs: evaluation.timeMs,
@@ -1038,7 +1034,11 @@ function emitIntervalHit(circuit: Circuit, position: Wire, start: Wire, size: Wi
   )
 }
 
-function emitIntervalDistance(circuit: Circuit, position: Wire, start: Wire, size: Wire): Wire {
+// How far the position lies inside the interval from start to start + size: the
+// smaller of its distances to the two ends, e.g. 3 when the position is 3 px past
+// start in a 100 px interval, and negative outside the interval. IndirectOS's dock
+// hit test uses it too.
+export function emitIntervalDistance(circuit: Circuit, position: Wire, start: Wire, size: Wire): Wire {
   const end = circuit.affine([[start, 1], [size, 1]])
   return emitMinimum(
     circuit,

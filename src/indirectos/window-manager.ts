@@ -22,20 +22,19 @@ import {
   type SpringClock,
   type WriteBack,
   advanceFrame,
-  defaultSpringClockConfig,
   quantizeTimeMs,
   springMatrixBound,
-  springMatrixPower,
-  springStepMatrix,
   stoppedSpringClock,
 } from '../runtime/host-timing.ts'
 import {
   type PhotoOutputs,
   buildPhotos,
   createPhotoGalleryRenderer,
+  emitIntervalDistance,
   photoCells,
   photoEvents,
   springConstants,
+  springMatrixPowers,
   validatePhotoGalleryOutput,
   validatePhotoGalleryOutputWires,
 } from './photo-gallery.ts'
@@ -419,12 +418,6 @@ function buildWindowManager(notesOptions: NotesOptions) {
       [maximumTopInset, -2],
     ])),
   }
-  const currentNormalGeometry: Geometry[] = []
-  const currentOpen: Wire[] = []
-  const currentMinimized: Wire[] = []
-  const currentMaximized: Wire[] = []
-  const currentPresent: Wire[] = []
-  const currentVisible: Wire[] = []
   const windowHit: Wire[] = []
   const closeHit: Wire[] = []
   const minimizeHit: Wire[] = []
@@ -441,28 +434,13 @@ function buildWindowManager(notesOptions: NotesOptions) {
   let photosGripHitAtUp = zero
 
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    const normalGeometry = {
-      left: cells.windows[windowIndex]!.left,
-      top: cells.windows[windowIndex]!.top,
-      width: cells.windows[windowIndex]!.width,
-      height: cells.windows[windowIndex]!.height,
-    }
-    currentNormalGeometry.push(normalGeometry)
-    const open = cells.windows[windowIndex]!.open
-    const minimized = cells.windows[windowIndex]!.minimized
-    const maximized = cells.windows[windowIndex]!.maximized
-    const present = cells.windows[windowIndex]!.present
-    currentOpen.push(open)
-    currentMinimized.push(minimized)
-    currentMaximized.push(maximized)
-    currentPresent.push(present)
-    const visible = emitMultiply(circuit, open, emitComplement(circuit, minimized, unit))
-    currentVisible.push(visible)
+    const current = cells.windows[windowIndex]!
+    const visible = emitMultiply(circuit, current.open, emitComplement(circuit, current.minimized, unit))
     const geometry = {
-      left: emitSelect(circuit, maximized, normalGeometry.left, maximumGeometry.left),
-      top: emitSelect(circuit, maximized, normalGeometry.top, maximumGeometry.top),
-      width: emitSelect(circuit, maximized, normalGeometry.width, maximumGeometry.width),
-      height: emitSelect(circuit, maximized, normalGeometry.height, maximumGeometry.height),
+      left: emitSelect(circuit, current.maximized, current.left, maximumGeometry.left),
+      top: emitSelect(circuit, current.maximized, current.top, maximumGeometry.top),
+      width: emitSelect(circuit, current.maximized, current.width, maximumGeometry.width),
+      height: emitSelect(circuit, current.maximized, current.height, maximumGeometry.height),
     }
     windowHit.push(emitMultiply(
       circuit,
@@ -556,10 +534,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
     }
   }
 
-  const currentStack = Array.from({length: windowCount}, (_, rank) =>
-    Array.from({length: windowCount}, (_, windowIndex) =>
-      cells.stack[rank]![windowIndex]!))
-  const selectedCanvas = emitFrontmost(circuit, currentStack, windowHit, unit)
+  const selectedCanvas = emitFrontmost(circuit, cells.stack, windowHit, unit)
 
   const dockGap = emitMinimum(
     circuit,
@@ -655,7 +630,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const canvas = emitMultiply(circuit, cells.down.active, selectedCanvas[windowIndex]!)
     canvasPress.push(canvas)
-    const normalWindow = emitComplement(circuit, currentMaximized[windowIndex]!, unit)
+    const normalWindow = emitComplement(circuit, cells.windows[windowIndex]!.maximized, unit)
     dragPress.push(emitMultiply(
       circuit,
       emitMultiply(circuit, canvas, dragHit[windowIndex]!),
@@ -704,7 +679,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
       emitComplement(circuit, resizePress[photosWindowIndex]!, unit),
     ]),
   )
-  const photosGripAtUp = emitAll(circuit, [photosGripHitAtUp, emitComplement(circuit, currentMaximized[photosWindowIndex]!, unit)])
+  const photosGripAtUp = emitAll(circuit, [photosGripHitAtUp, emitComplement(circuit, cells.windows[photosWindowIndex]!.maximized, unit)])
   const photosContentClick = emitAll(circuit, [
     release,
     armedPhotosContent,
@@ -759,7 +734,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
       unit,
     ))
 
-    const current = currentNormalGeometry[windowIndex]!
+    const current = cells.windows[windowIndex]!
     const widthCandidate = circuit.affine([
       [current.width, 1],
       [emitMultiply(circuit, resizeForMotion, deltaX), 1],
@@ -811,24 +786,24 @@ function buildWindowManager(notesOptions: NotesOptions) {
     const afterClose = emitSelect(
       circuit,
       closeClick[windowIndex]!,
-      currentOpen[windowIndex]!,
+      current.open,
       zero,
     )
     nextOpen.push(emitSelect(circuit, dockClick[windowIndex]!, afterClose, unit))
     const afterMinimize = emitSelect(
       circuit,
       minimizeClick[windowIndex]!,
-      currentMinimized[windowIndex]!,
+      current.minimized,
       unit,
     )
     const afterDock = emitSelect(circuit, dockClick[windowIndex]!, afterMinimize, zero)
     nextMinimized.push(emitSelect(circuit, closeClick[windowIndex]!, afterDock, zero))
     const toggledMaximized = circuit.affine([
-      [currentMaximized[windowIndex]!, 1],
+      [current.maximized, 1],
       [emitMultiply(
         circuit,
         maximizeClick[windowIndex]!,
-        circuit.affine([[unit, 1], [currentMaximized[windowIndex]!, -2]]),
+        circuit.affine([[unit, 1], [current.maximized, -2]]),
       ), 1],
     ])
     nextMaximized.push(emitSelect(
@@ -850,7 +825,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
     const terms: [Wire, number][] = []
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       terms.push([
-        emitMultiply(circuit, currentStack[rank]![windowIndex]!, selectedWindow[windowIndex]!),
+        emitMultiply(circuit, cells.stack[rank]![windowIndex]!, selectedWindow[windowIndex]!),
         1,
       ])
     }
@@ -873,7 +848,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
             emitMultiply(
               circuit,
               selectedRank[selectedRankIndex]!,
-              currentStack[sourceRank]![windowIndex]!,
+              cells.stack[sourceRank]![windowIndex]!,
             ),
             1,
           ])
@@ -883,7 +858,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
         [emitMultiply(
           circuit,
           selectionInactive,
-          currentStack[rank]![windowIndex]!,
+          cells.stack[rank]![windowIndex]!,
         ), 1],
         [circuit.affine(movedTerms), 1],
       ])
@@ -948,7 +923,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
     }
     const hiddenAndAbsent = emitMultiply(
       circuit,
-      emitComplement(circuit, currentPresent[windowIndex]!, unit),
+      emitComplement(circuit, cells.windows[windowIndex]!.present, unit),
       emitComplement(circuit, nextVisible[windowIndex]!, unit),
     )
     const direct = emitClampZeroOne(
@@ -1050,7 +1025,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
         [nextVisible[windowIndex]!, 1],
         [emitMultiply(
           circuit,
-          currentPresent[windowIndex]!,
+          cells.windows[windowIndex]!.present,
           windowAnimations[windowIndex]!.active,
         ), 1],
       ]),
@@ -1181,14 +1156,6 @@ function buildWindowManager(notesOptions: NotesOptions) {
   const output: WindowManagerOutput = {nextSource, windows, dockItems, animationActive, photos, notes}
   return {circuit, cells, output, initialSource, validate}
 }
-
-// What the host writes into the 4 matrix cells for each step count, see
-// advanceFrame in host-timing.ts.
-const springStep = springStepMatrix(springConstants)
-const springMatrixPowers = Array.from(
-  {length: defaultSpringClockConfig.maxStepsPerFrame + 1},
-  (_, steps) => springMatrixPower(springStep, steps),
-)
 
 type WindowManagerEvent = {
   kind:
@@ -1397,14 +1364,11 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     for (let index = 0; index < roots.length; index++) values[roots[index]!] = rootValues[index]!
     // The next-state values are the first roots. Only roots are written into
     // `values`, so the finite check covers the roots, not every wire.
-    validate(rootValues.subarray(0, output.nextSource.length))
+    const nextSourceValues = rootValues.subarray(0, source.length)
+    validate(nextSourceValues)
     assertFiniteValues(rootValues, 'tensor output')
     validateWindowManagerOutput(values, output, numericTolerance)
-    if (evaluation.writesBack) {
-      for (let field = 0; field < source.length; field++) {
-        source[field] = values[output.nextSource[field]!]!
-      }
-    }
+    if (evaluation.writesBack) source.set(nextSourceValues)
     evaluations.push({
       kind: evaluation.kind,
       timeMs: evaluation.timeMs,
@@ -1868,15 +1832,6 @@ function emitDockItemHit(
     unit,
   )
   return circuit.boolean(score)
-}
-
-function emitIntervalDistance(circuit: Circuit, position: Wire, start: Wire, size: Wire) {
-  const end = circuit.affine([[start, 1], [size, 1]])
-  return emitMinimum(
-    circuit,
-    circuit.affine([[position, 1], [start, -1]]),
-    circuit.affine([[end, 1], [position, -1]]),
-  )
 }
 
 // 1 when every bit is 1, otherwise 0, as relu(sum of bits - (count - 1)), e.g. a
