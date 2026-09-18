@@ -1435,7 +1435,9 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     // returns the values of its 'frame' evaluation. The first step mounts the
     // viewport, and a later step whose viewport differs from the last queued one
     // queues a resize at frameTime. An event without a timestamp applies at this
-    // frame's time.
+    // frame's time. The returned values, indexed by wire, are the machine's own
+    // array, which the next step overwrites, so a caller that keeps a frame's
+    // values across steps copies them, e.g. with values.slice().
     step(
       viewportWidth: number,
       viewportHeight: number,
@@ -1470,10 +1472,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
       evaluations.length = 0
       clock = advanceFrame(clock, frameTime, events, evaluate, writeBack)
       storedAfterLastStep.set(source)
-      // A copy of the values, indexed by wire. slice copies the memory, while
-      // Float32Array.from walks the elements one by one, which took about 1 ms
-      // for the Notes flow's wires.
-      return values.slice()
+      return values
     },
     resize(width: number, height: number, timeStamp?: number) {
       queueViewport('resize', quantizePixels(width), quantizePixels(height), timeStamp)

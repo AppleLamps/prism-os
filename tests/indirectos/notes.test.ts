@@ -378,7 +378,9 @@ test('words move straight to the new layout in the frame of the event, while the
   const time = pressTime(machine)
   machine.pointerDown(1135, 212, time)
   machine.pointerUp(1135, 212, time)
-  const values = step(machine)
+  // A copy, since the settle below overwrites the machine's values, and the line
+  // count at the end reads the frame of the press.
+  const values = step(machine).slice()
   assert.equal(machine.source[windowSourceField(3, windowStateField.minimized)], 1)
   assert.equal(values[machine.output.animationActive], 1)
   const during = readWords(machine, values)

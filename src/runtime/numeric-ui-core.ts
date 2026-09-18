@@ -1714,10 +1714,13 @@ function executeTensorProgram(
         projection[outputRow]! * Math.max(0, projection[outputSize + gateRow]!),
       )
     }
-    for (const booleanRow of layer.booleanRows) {
+    for (let booleanIndex = 0; booleanIndex < layer.booleanRows.length; booleanIndex++) {
+      const booleanRow = layer.booleanRows[booleanIndex]!
       projection[booleanRow] = evaluateBoolean(projection[booleanRow]!)
     }
-    packedValues.set(projection.subarray(0, outputSize), availableValues)
+    for (let row = 0; row < outputSize; row++) {
+      packedValues[availableValues + row] = projection[row]!
+    }
     availableValues += outputSize
   }
 }

@@ -818,7 +818,9 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
     },
     // Runs the frame at frameTime, by default 16 ms after the previous frame, and
     // returns the values of its 'frame' evaluation. An event without a timestamp
-    // applies at this frame's time.
+    // applies at this frame's time. The returned values, indexed by wire, are the
+    // machine's own array, which the next step overwrites, so a caller that keeps a
+    // frame's values across steps copies them, e.g. with values.slice().
     step(
       viewportWidth: number,
       viewportHeight: number,
@@ -856,7 +858,7 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
       clock = advanceFrame(clock, frameTime, events, evaluate, writeBack)
       previousFrameTime = frameTime
       storedAfterLastStep.set(source)
-      return Float32Array.from(values)
+      return values
     },
     resize(width: number, height: number, timeStamp?: number) {
       queueViewport('resize', width, height, timeStamp)

@@ -1574,7 +1574,7 @@ test('a Photos click during a maximize lands on the photo whose destination is u
       const frameTime = frame * 1000 / hz
       while (events.length > 0 && events[0]!.timeStamp <= frameTime) events.shift()!.send()
       const values = machine.step(viewportWidth, viewportHeight, frameTime)
-      if (frameTime < 183.9) lastFrameBeforeClick = values
+      if (frameTime < 183.9) lastFrameBeforeClick = values.slice()
     }
     // The last frame before the release draws Photos mid-maximize, and the point lies
     // outside that frame's content box. The page delivers every release to the
