@@ -1,10 +1,10 @@
 // Compares the program with the plain JavaScript reference, and the reference with JSON.parse.
-// Run from the repo root: bun test lab/json-highlighter
+// Run from the repo root: bun test tests/json-highlighter
 import {describe, expect, test} from 'bun:test'
 import {validateGrids, validateIndexReads, validateNoNaN} from '../../src/runtime/numeric-ui-core.ts'
 import {createCorpus, createRandom, edgeCases} from './corpus.ts'
-import {type HighlighterOutput, type ScanForm, createHighlighterMachine, scanForms} from './highlighter.ts'
-import {capacity, errorKind, errorKinds, maximumDepth} from './kinds.ts'
+import {type HighlighterOutput, type ScanForm, createHighlighterMachine, scanForms} from '../../src/json-highlighter/highlighter.ts'
+import {capacity, errorKind, errorKinds, maximumDepth} from '../../src/json-highlighter/kinds.ts'
 import {highlightReference} from './reference.ts'
 
 const corpus = createCorpus(20260917, {random: 700, mutated: 1600, long: 80})

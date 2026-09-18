@@ -1,5 +1,6 @@
-// Texts for the tests and the measurements: edge cases written by hand, random JSON, and random edits of random JSON.
-import {capacity, maximumDepth} from './kinds.ts'
+// Texts for the tests and for the measurement scripts in scripts/: edge cases written by hand, random JSON, and random
+// edits of random JSON.
+import {capacity, maximumDepth} from '../../src/json-highlighter/kinds.ts'
 
 // mulberry32, so tests are repeatable.
 export function createRandom(seed: number): () => number {

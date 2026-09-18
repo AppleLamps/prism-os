@@ -1,13 +1,13 @@
-// Sizes and timings of the program.
-//   bun lab/json-highlighter/measure.ts              every measurement, with each timing in its own process
-//   bun lab/json-highlighter/measure.ts sizes        source cells, live operations, layers, stored weights, per form and stage
-//   bun lab/json-highlighter/measure.ts time loop    µs per evaluation of one form, in this process
-import {type Wire, invariant} from '../../src/runtime/numeric-ui-core.ts'
-import {createEvaluator} from '../../src/runtime/cells.ts'
-import {type ScanForm, buildHighlighter, scanForms, writeText} from './highlighter.ts'
-import {timingText} from './corpus.ts'
-import {capacity} from './kinds.ts'
-import {highlightReference} from './reference.ts'
+// Sizes and timings in Bun of the JSON highlighter's program, src/json-highlighter, in its three forms.
+//   bun scripts/measure-json-highlighter.ts              every measurement, with each timing in its own process
+//   bun scripts/measure-json-highlighter.ts sizes        source cells, live operations, layers, stored weights, per form and stage
+//   bun scripts/measure-json-highlighter.ts time loop    µs per evaluation of one form, in this process
+import {type Wire, invariant} from '../src/runtime/numeric-ui-core.ts'
+import {createEvaluator} from '../src/runtime/cells.ts'
+import {type ScanForm, buildHighlighter, scanForms, writeText} from '../src/json-highlighter/highlighter.ts'
+import {capacity} from '../src/json-highlighter/kinds.ts'
+import {timingText} from '../tests/json-highlighter/corpus.ts'
+import {highlightReference} from '../tests/json-highlighter/reference.ts'
 
 function sizeOf(built: ReturnType<typeof buildHighlighter>, roots: readonly Wire[]) {
   const program = built.circuit.compileTensorProgram(roots)

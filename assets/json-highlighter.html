@@ -29,6 +29,7 @@
     }
     .editor pre {pointer-events: none; color: var(--text)}
     .editor textarea {background: transparent; color: transparent; caret-color: var(--text); resize: none; outline: none}
+    /* k0 to k8 are the display kinds in the order of src/json-highlighter/kinds.ts, e.g. k2 is a string character and k8 a key character. */
     .k0 {} .k1 {color: var(--punctuation)} .k2 {color: var(--string)} .k3 {color: var(--escape)} .k4 {color: var(--number)}
     .k5 {color: var(--literal)} .k6 {color: var(--error)} .k8 {color: var(--key)}
     .match {background: var(--match); border-radius: 2px}
@@ -48,6 +49,6 @@
     <div class="status" aria-live="polite"></div>
     <div class="timings"></div>
   </main>
-  <script type="module" src="./main.ts"></script>
+  <script type="module" src="../src/json-highlighter/main.ts"></script>
 </body>
 </html>

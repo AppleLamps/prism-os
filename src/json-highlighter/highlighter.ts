@@ -18,9 +18,9 @@
 // 6. Outputs: the first error as a count of positions before the grammar's error state (patterns.md, "findIndex when
 //    the test flips once along the items"), its kind as one read at that count, and the matching bracket as a first
 //    hit among depth comparisons (patterns.md, "findIndex when passing items can be anywhere").
-import {type Circuit, type Terms, type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
-import {type WireValues, constant, createEvaluator, createSourceTable, input, list} from '../../src/runtime/cells.ts'
-import {brentKungPrefix, sklanskyPrefix} from '../../src/runtime/prefix-networks.ts'
+import {type Circuit, type Terms, type Wire, emitCompare} from '../runtime/numeric-ui-core.ts'
+import {type WireValues, constant, createEvaluator, createSourceTable, input, list} from '../runtime/cells.ts'
+import {brentKungPrefix, sklanskyPrefix} from '../runtime/prefix-networks.ts'
 import {capacity, errorKind} from './kinds.ts'
 import {
   bracketTable, classCount, classTable, closerTable, contextCount, depthChangeTable, depthClassTable, displayTable, eventCount,
@@ -29,7 +29,7 @@ import {
 } from './tables.ts'
 
 // The largest text length the host writes. A longer text writes this length, which still reads as too long.
-export const lengthLimit = 1_048_576
+const lengthLimit = 1_048_576
 
 // A table JavaScript writes once, as constant cells within the table's own range, on a grid of 1.
 const tableCells = (values: readonly number[]) => {
@@ -37,10 +37,11 @@ const tableCells = (values: readonly number[]) => {
   return values.map(value => constant(value, range, {grid: 1}))
 }
 
-export const highlighterCells = {
+const highlighterCells = {
   // A code point per cell, and -1 after the text.
   codePoints: list(capacity, () => input([-1, 0x10ffff], {initial: -1, grid: 1})),
-  // The whole text's length in code points, up to lengthLimit, so the program knows when the text doesn't fit.
+  // The whole text's length in code points, up to lengthLimit. The program compares it with the capacity, so a text
+  // that doesn't fit is reported as truncated.
   textLength: input([0, lengthLimit], {grid: 1}),
   // The caret as a code point index, clamped to 0..513. A caret at 513 or further is past code point 512, so neither the
   // code point before it nor the one at it is in the cells, and no bracket is at the caret.
@@ -234,7 +235,7 @@ export function buildHighlighter(form: ScanForm = 'loop') {
   return {cells, output, stages, ...table.finish()}
 }
 
-export type HighlighterProgram = ReturnType<typeof buildHighlighter>
+type HighlighterProgram = ReturnType<typeof buildHighlighter>
 export type HighlighterOutput = WireValues<HighlighterProgram['output']>
 
 // Writes the text's first 512 code points, -1 after them, the text's length and the caret, a code point index clamped to

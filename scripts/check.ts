@@ -22,7 +22,7 @@ const commands = [
 
 // Most of these commands are small tsgo processes, so the check runs 8 at a time: about 2.6 s
 // instead of 11 s one at a time on an 18-core machine, with about 2.2 GB of memory at peak, where
-// all 48 at once take about 12 GB. Every command runs even when another one fails, so one run
+// all of them at once take about 12 GB. Every command runs even when another one fails, so one run
 // reports every failure. Each command's output is printed after all of them finish, in the order
 // of the list above.
 const maxConcurrentCommands = 8

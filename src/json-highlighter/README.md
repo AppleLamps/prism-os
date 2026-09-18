@@ -1,30 +1,33 @@
 # JSON highlighter
 
-A monospace text box that holds up to 512 code points, highlighted on every keystroke by one numeric program. JavaScript writes each code point, the text's length and the caret into cells. The program returns what every character is shown as (whitespace, punctuation, key, string, escape, number, literal, error, or after the text), the first error's position and kind, whether the text is too long, whether the first error is nesting past the maximum depth, and the bracket that matches the bracket at the caret. It's a temporary demo of a traditional JavaScript task, to see how the approach handles it.
+A monospace text box that holds up to 512 code points, highlighted on every keystroke by one numeric program. JavaScript writes each code point, the text's length and the caret into cells. The program returns what every character is shown as (whitespace, punctuation, key, string, escape, number, literal, error, or after the text), the first error's position and kind, whether the text is too long, whether the first error is nesting past the maximum depth, and the bracket that matches the bracket at the caret. The highlighter started on September 17, 2026 in lab/json-highlighter, as a demo of a traditional JavaScript task, to see how the approach handles it. It moved into src/ on September 18, 2026 as the repo's second app, with identical programs.
 
-Every capacity is fixed while building, and what doesn't fit has a named output. Past 512 code points, the program reads the first 512, `truncated` is 1, and the first error is `tooLong` at 512 unless an error comes first. An opening bracket at depth 16 is the error `tooDeep`, and `depthExceeded` is 1 when `tooDeep` is the first error. An earlier error hides nesting past the maximum depth, e.g. `x` on the first line followed by 17 `[` reports `unexpectedCharacter` at 0 and `depthExceeded` 0. Any text within capacity costs the same: evaluating an empty text takes 147 µs in Bun, and writing and evaluating a full text 155 µs, of which the writes take about 2 µs (119 and 122 µs since a later change to the executor, see [results](#results)).
+Every capacity is fixed while building, and what doesn't fit has a named output. Past 512 code points, the program reads the first 512, `truncated` is 1, and the first error is `tooLong` at 512 unless an error comes first. An opening bracket at depth 16 is the error `tooDeep`, and `depthExceeded` is 1 when `tooDeep` is the first error. An earlier error hides nesting past the maximum depth, e.g. `x` on the first line followed by 17 `[` reports `unexpectedCharacter` at 0 and `depthExceeded` 0. Any text within capacity costs the same: on September 18, 2026, evaluating an empty text takes 122 µs in Bun, and writing and evaluating a full text 123 µs, of which the writes take about 2 µs ([results](#results)).
 
 ## Run it
 
+From the repo root:
+
 ```sh
-bun test lab/json-highlighter                         # 12 tests, about 4 s
-bunx tsgo -p lab/json-highlighter                     # type-check
-bunx oxlint --type-aware lab/json-highlighter         # lint
-bun lab/json-highlighter/index.html                   # the page; add ?form=brent-kung or ?form=sklansky for the other builds
-bun lab/json-highlighter/measure.ts                   # sizes, then µs per evaluation with each form in its own process, about 20 s
-bun lab/json-highlighter/measure-browser.ts loop 80   # keystroke frames in headless Chrome, CHROME_PATH overrides the binary
+bun run start:json-highlighter                            # the page; add ?form=brent-kung or ?form=sklansky to the URL for the other builds
+bun test tests/json-highlighter                           # 12 tests, about 4 s
+bun run check                                             # type-check and lint, with the rest of the repo
+bun scripts/measure-json-highlighter.ts                   # sizes, then µs per evaluation with each form in its own process, about 20 s
+bun scripts/measure-json-highlighter-browser.ts loop 80   # keystroke frames in headless Chrome, CHROME_PATH overrides the binary
 ```
+
+This folder holds what the page loads. The reference and the corpus are in tests/json-highlighter/, since only the tests and the measurement scripts import them, and the measurement scripts are in scripts/.
 
 | File | What it holds |
 | --- | --- |
 | `kinds.ts` | The capacity, the maximum depth, the display kinds and the error kinds, with an example of each error |
 | `tables.ts` | The character classes, the tokenizer's 26 states and 25 events, the grammar's 8 states, and the tables JavaScript writes into cells, each built from a transition function, e.g. `lexerStep(state, characterClass)` |
 | `highlighter.ts` | The cells, the program in three forms, and the host code that writes the text |
-| `reference.ts` | The same highlighter in plain JavaScript: a scanner that consumes one token at a time and a parser with a real stack. It doesn't read tables.ts |
-| `corpus.ts` | Edge cases, random JSON, random edits of random JSON, and the 512 code point text for timings |
-| `highlighter.test.ts` | The program against the reference, and the reference against JSON.parse |
-| `measure.ts`, `measure-browser.ts` | Sizes and µs in Bun, and keystroke frames in headless Chrome |
-| `index.html`, `main.ts` | The page, where Tab types a tab and Escape then Tab moves focus out of the editor |
+| `main.ts`, [`assets/json-highlighter.html`](../../assets/json-highlighter.html) | The page, where Tab types a tab and Escape then Tab moves focus out of the editor |
+| [`tests/json-highlighter/reference.ts`](../../tests/json-highlighter/reference.ts) | The same highlighter in plain JavaScript: a scanner that consumes one token at a time and a parser with a real stack. It doesn't read tables.ts |
+| [`tests/json-highlighter/corpus.ts`](../../tests/json-highlighter/corpus.ts) | Edge cases, random JSON, random edits of random JSON, and the 512 code point text for timings |
+| [`tests/json-highlighter/highlighter.test.ts`](../../tests/json-highlighter/highlighter.test.ts) | The program against the reference, and the reference against JSON.parse |
+| [`scripts/measure-json-highlighter.ts`](../../scripts/measure-json-highlighter.ts), [`scripts/measure-json-highlighter-browser.ts`](../../scripts/measure-json-highlighter-browser.ts) | Sizes and µs in Bun, and keystroke frames in headless Chrome |
 
 ## What the program computes
 
@@ -50,9 +53,11 @@ Each stage runs over 513 positions: the 512 cells, and position 512, which is th
 6. **The first error.** The grammar's `error` state never goes back, so the bits `[state after the position === error]` read 0...0 1...1, and their count of zeros is the first error's position ([patterns.md, "`findIndex` when the test flips once along the items"](../../docs/patterns.md#findindex-when-the-test-flips-once-along-the-items)). Every position computes an error kind, the lexer's kind of its event plus the grammar's kind of its step, and the first error's kind is one index read at the count.
 7. **The matching bracket.** Brackets pair by depth, whatever their kinds. An opener's match is the closer just before the first later position whose depth before it is at most the opener's depth before it, and a closer's match is the last earlier position whose depth before it is below the closer's. Each position computes whether it's such a hit, `[depthBefore <= threshold]` and on the right side of the bracket, then a running count of hits gives the first hit as the count of `[hitsThrough < 1]` bits and the last hit as the count of `[hitsThrough < totalHits]` bits. Two `emitFirstActive` trees gave the same answers in 9,241 operations in the loop form, and the count in 6,687.
 
-The rules that go past JSON's grammar are written out at the top of reference.ts, e.g. the first error's position is the first code point at which the text stops being the start of some valid JSON text, so `[1 2]` reports `expectedCommaOrClose` at 3, and `[1` reports `unexpectedEnd` at 2. After a lexer error, e.g. the `x` of `[x]`, the rest of the line shows as an error, and tokenizing starts again after the next line feed, so later lines keep their colors. The bracket at the caret is the code point before the caret when it's a bracket, otherwise the code point at the caret. The caret cell holds 0 to 513, so a caret past code point 512, e.g. at 600 in a text of 699 code points, has neither code point among the cells, and no bracket is at the caret.
+The rules that go past JSON's grammar are written out at the top of [reference.ts](../../tests/json-highlighter/reference.ts), e.g. the first error's position is the first code point at which the text stops being the start of some valid JSON text, so `[1 2]` reports `expectedCommaOrClose` at 3, and `[1` reports `unexpectedEnd` at 2. After a lexer error, e.g. the `x` of `[x]`, the rest of the line shows as an error, and tokenizing starts again after the next line feed, so later lines keep their colors. The bracket at the caret is the code point before the caret when it's a bracket, otherwise the code point at the caret. The caret cell holds 0 to 513, so a caret past code point 512, e.g. at 600 in a text of 699 code points, has neither code point among the cells, and no bracket is at the caret.
 
 ## Results
+
+Every timing in this section was measured at the old path, lab/json-highlighter, on the date its paragraph gives, except the update of September 18, 2026. The move to src/ didn't change the programs: each form has the same source cells, live operations, layers, stored weights and compiled layers as before the move, and gives the same outputs on the 2,509 test texts, so the sizes below are current.
 
 Measured on September 17, 2026 on an Apple M5 Max with macOS 27.0: Bun 1.4.0, and Chrome 153.0.8010.48 headless in a 900 × 800 window. µs in Bun are the median of 30 batches of 50 evaluations after 200 warm-up evaluations, each form in its own process, on a valid 512 code point text that alternates one digit. Chrome timings come from the page's `performance.now()`, which Chrome rounds to 0.1 ms, over 70 keystrokes that type a digit or a Backspace into the full text, after 10 warm-up keystrokes. Other work ran on the machine at the same time, with load averages from 3.3 to 5.1. Each Chrome number is the range over two runs per form, which differed by up to 2.5 times at this load, e.g. Brent-Kung's evaluate median was 0.6 ms in one run and 1.5 ms in the other.
 
@@ -65,6 +70,8 @@ Measured on September 17, 2026 on an Apple M5 Max with macOS 27.0: Bun 1.4.0, an
 For comparison, in the same Bun processes on the same text, the plain JavaScript reference takes 11 to 13 µs and JSON.parse 1 µs. In Chrome, the time from the input event to the frame after the DOM writes has a median from 19.7 to 22.3 ms in every form, mostly waiting for frames at 60 Hz. After the DOM writes, the page copies the textarea's scroll position to the `<pre>`, which lays out the `<pre>` right away. That layout isn't in the DOM writes column, but it is in the time to the next frame.
 
 Update, later on September 17, 2026: commit 093650b stopped creating an array view per layer in `executeTensorProgram`, which the loop form did 1,043 times per evaluation, and commit 424a71a moved the grid and bit checks of cells.ts's validator into typed arrays. The loop form now takes 122 µs to write and evaluate, 138 µs with `createEvaluator`'s checks, and 119 µs for an empty text, against 146, 167 and 141 µs in a copy of the commit before both, over 3 alternated processes each at load average 4.1. The other forms and Chrome weren't measured again.
+
+Update, September 18, 2026, after the move to src/: `bun scripts/measure-json-highlighter.ts time loop`, and the same for the other forms, ran in 3 processes per form, alternated with 3 processes of lab/json-highlighter's measure.ts from before the move, while the 1-minute load average went from 7.2 down to 4.9. Each number is the median of the 3 processes' medians. The loop form takes 123 µs to write and evaluate, 140 µs with `createEvaluator`'s checks, and 122 µs for an empty text, Brent-Kung 385, 398 and 380 µs, and Sklansky 768, 786 and 759 µs. The code before the move took 125, 139 and 122 µs, 396, 399 and 378 µs, and 761, 798 and 749 µs, which is within the differences between processes, e.g. the loop form's 3 processes after the move measured 123, 123 and 136 µs. In the same processes, the plain JavaScript reference takes 11 to 13 µs and JSON.parse 1 µs. Chrome wasn't measured again.
 
 Every form has 4,575 source cells: 514 that JavaScript writes on each keystroke (512 code points, the length and the caret), and 4,061 table cells written once, e.g. 858 each for the tokenizer's next state and event tables and 704 each for the grammar's next state and error tables.
 
@@ -84,16 +91,16 @@ The tests run 2,509 texts: 129 edge cases, 700 random JSON texts, 1,600 random e
 - A tokenizer is already a table-driven state machine, so its tables moved into cells unchanged, and the loop form reads 3 tables per position: the class, the next state and the event.
 - The first error is a count, since an error state that never goes back gives bits that flip once. Its kind is one index read at that count.
 - The reference and the program were written separately, from the rules at the top of reference.ts, and agreed on the first run. JSON.parse checks the reference's validity, and table corruptions show the comparison can fail.
-- The cost doesn't depend on the text: an empty text and a full text take about the same µs, 147 and 155 in Bun with about 2 µs of writes, which is the worst case a keystroke can hit.
+- The cost doesn't depend on the text: an empty text and a full text take about the same µs, 122 and 123 in Bun on September 18, 2026, with about 2 µs of writes, which is the worst case a keystroke can hit.
 
 ## What got awkward
 
 - **The stack.** No entry in patterns.md or expressions.md covered a stack while this demo was built. The integer code in stage 4 works for two reasons that the construction depends on: the grammar ignores everything after its first error, and at 512 code points with a maximum depth of 16, the code's range of ±511 × 2^15 barely fits. `emitCompare` builds integer bits at every position except 511, where the code minus the level weight reaches exactly 2^24 and it builds a sign cascade of 17 operations. Depth 17 needs weights up to 2^16, whose totals pass 2^24 from about position 255 on, and `emitCompare` would build sign cascades of 17 or more operations there instead of 2.
-- **Prefix scans cost much more than the loop here.** The tokenizer has 26 states, so each combine is 26 reads: Brent-Kung is 18 times the loop's operations for the tokenizer, and 2.5 times its µs in Bun for the whole program. patterns.md says operations cost more than layers on today's CPU executor, and this demo measures that at 26 states.
-- **Fewer operations didn't give fewer µs.** Replacing the two `emitFirstActive` trees with the running count removed 2,554 operations from the loop form, but the count is a chain that starts after the depth totals, so layers went from 574 to 1,043, and µs stayed about the same, 141 before and 148 after. The executor pays per layer too.
+- **Prefix scans cost much more than the loop here.** The tokenizer has 26 states, so each combine is 26 reads: Brent-Kung is 18 times the loop's operations for the tokenizer, and 2.5 times its µs in Bun for the whole program on September 17, 2026, or 3.1 times on September 18, 2026, 385 against 123 µs: the executor change of September 17 took about 32 µs off the loop form's 1,043 layers, and Brent-Kung's 81 layers measured the same as before. patterns.md says operations cost more than layers on today's CPU executor, and this demo measures that at 26 states.
+- **Fewer operations didn't give fewer µs.** Replacing the two `emitFirstActive` trees with the running count removed 2,554 operations from the loop form, but the count is a chain that starts after the depth totals, so layers went from 574 to 1,043, and µs stayed about the same, 141 before and 148 after. Each layer costs the executor time too.
 - **Grids on index reads.** Index reads get no inferred grid, so every read that feeds `emitCompare`, e.g. a depth change or a level weight, needs `circuit.assumeGrid(read, 1)`. Without it, `emitCompare` builds a sign cascade with no warning. `circuit.roundingPoints()` tells which construction each comparison built, e.g. by counting its `'sign cascade'` entries, and execution-model.md's Rounding points section documents it, but expressions.md's `a >= b` row and its Decision bits section didn't point to it while this demo was built. This demo first counted operations instead, and missed the sign cascade at position 511 described in stage 4.
-- **createEvaluator on a program without state.** The program keeps no state, but `createEvaluator` checks all 4,575 cells before and after each evaluation and returns every cell's next value, most of them constant tables: 173 µs against 155 µs for `circuit.createTensorEvaluator` on the outputs only.
-- **Error recovery belongs to the behavior.** Showing the rest of an error line as an error, and starting again after a line feed, is part of the tokenizer's tables and had to be copied in the reference's scanner, as did which bracket at the caret counts and when a string is a key.
+- **createEvaluator on a program without state.** The program keeps no state, but `createEvaluator` checks all 4,575 cells before and after each evaluation and returns every cell's next value, most of them constant tables: 173 µs against 155 µs for `circuit.createTensorEvaluator` on the outputs only, or 140 against 123 µs on September 18, 2026.
+- **Error recovery is part of the behavior.** Showing the rest of an error line as an error, and starting again after a line feed, is part of the tokenizer's tables and had to be copied in the reference's scanner, as did which bracket at the caret counts and when a string is a key.
 
 ## Notes on the docs
 
