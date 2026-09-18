@@ -315,4 +315,4 @@ Display frames (`?presenter=frames`), with `requestAnimationFrame` replaced by a
 - Loads, no console errors. A scripted minimize of Files ran 15 frames, e.g. scale 0.094 at the first frame, 134 ms after the press, and scale 0 from 281 ms.
 - The "stall 500 ms" handler, dispatched 307 ms after the press, just after Files reached scale 0, blocked for 500 ms (a 508 ms heartbeat gap), and no frame ran in between.
 
-GIF: `~/Downloads/ui-exploration-event-time-demo.gif` (8 frames). No fixes.
+GIF: `~/Downloads/ui-exploration-event-time-demo.gif`, which isn't in the repo (8 frames). No fixes.

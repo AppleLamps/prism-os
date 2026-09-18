@@ -284,4 +284,4 @@ Emergent behavior appears in the population of drags. Changing card padding rewr
 - Scripted: 12 pointer moves widening "Harbor at dawn" by 10 px each, with gap and sidebarOpenWidth still locked. No unlocked knob changes a card's width while the column count stays the same, so every move reported 0 gradient steps. The search kept the starting knobs while the error grew to 70 px, then at +80 px picked a sweep that dropped the grid to 2 columns, with the edge at 684 px against a target of 611 px (error -73.33 px). Each move took 6.7 to 10.9 ms. After the release, minCardWidth was 295.7 px, and no flip sentence reported a scan that disagreed with its prediction.
 - Scripted: a `wheel` event on the stage scrolled the main area by its whole 66 px and back. Wheel ticks from the automation tool produced no frame in the hidden tab.
 - Small problem: a flip sentence reads "recent.grid drops to 1 columns if minCardWidth reaches 448.0 px".
-- GIF: `~/Downloads/ui-exploration-drag-knobs-demo.gif` (12 frames). No fixes.
+- GIF: `~/Downloads/ui-exploration-drag-knobs-demo.gif`, which isn't in the repo (12 frames). No fixes.

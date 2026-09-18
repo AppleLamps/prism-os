@@ -165,15 +165,6 @@ export function focusField(item: number) {
   return positions.focus[item]!
 }
 
-export function thumbnailSpringSourceField(item: number, field: number) {
-  invariant(Number.isInteger(item) && item >= 0 && item < itemCount, 'photo index is invalid')
-  invariant(
-    Number.isInteger(field) && field >= 0 && field < thumbnailSpringField.size,
-    'thumbnail spring field is invalid',
-  )
-  return Object.values(positions.thumbnails[item]!)[field]!
-}
-
 export const photoField = {
   left: 0,
   top: 1,

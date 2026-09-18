@@ -312,7 +312,7 @@ Rough µs per evaluation: window-manager.ts through `evaluateTensor` 59 µs, the
 
 ## Browser check
 
-2026-09-13, Chrome. I served the page with `bun lab/ui-exploration/instanced-items/demo.html` in a 1,160 by 853 CSS px viewport, which gives 4 columns. Chrome reported the tab as hidden, so for most checks a console script replaced `window.requestAnimationFrame` with callbacks driven by a Worker timer every 16 ms, running only while a frame was pending. `~/Downloads/ui-exploration-instanced-items-demo.gif` has only 7 frames, since the recorder dropped the rest. No file in this folder changed.
+2026-09-13, Chrome. I served the page with `bun lab/ui-exploration/instanced-items/demo.html` in a 1,160 by 853 CSS px viewport, which gives 4 columns. Chrome reported the tab as hidden, so for most checks a console script replaced `window.requestAnimationFrame` with callbacks driven by a Worker timer every 16 ms, running only while a frame was pending. `~/Downloads/ui-exploration-instanced-items-demo.gif`, which isn't in the repo, has only 7 frames, since the recorder dropped the rest. No file in this folder changed.
 
 ### What worked
 

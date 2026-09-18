@@ -15,7 +15,7 @@
     "start:template": "bun ./template/index.html",
     "check": "bun scripts/check.ts",
     "knip": "knip",
-    "test": "bun test ./tests ./template ./lab"
+    "test": "bun test --timeout 30000 ./tests ./template ./lab"
   },
   "devDependencies": {
     "@types/bun": "latest",

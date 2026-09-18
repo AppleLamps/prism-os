@@ -236,4 +236,4 @@ With the scratch copy, "index reads, glyph text":
 - Scripted pointer moves along a level-1 comment at y 409 px set the `row-resize` cursor over x from 0 to 22 px, `auto` from 24 px, and `text` from 72 px. I didn't confirm the emphasis color in the pixels.
 - Scripted scrolling: four 400 px `wheel` events ran 52 frames without errors, with sticky banners at the top.
 - Not checked: the count variant in Chrome, clicking a banner to collapse a comment, and pressing a gutter to peek.
-- GIF: `~/Downloads/ui-exploration-pixel-output-demo.gif` (the recorder kept 1 frame). A full screenshot of the scrolled WebGPU frame is `pixel-output-webgpu-scrolled.jpg` in the same scratch folder.
+- GIF: `~/Downloads/ui-exploration-pixel-output-demo.gif`, which isn't in the repo (the recorder kept 1 frame). A full screenshot of the scrolled WebGPU frame is `pixel-output-webgpu-scrolled.jpg`, which isn't in the repo either, in the same scratch folder.
