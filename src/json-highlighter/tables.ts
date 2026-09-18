@@ -1,26 +1,26 @@
 // The tables that JavaScript writes into the program's source table once: a character class per code point, the
 // tokenizer's transition and event tables, small tables per event, and the grammar's transition and error tables.
 // Each table comes from a transition function written from JSON's grammar (RFC 8259) and the rules in kinds.ts, e.g.
-// lexerStep(state, characterClass). reference.ts implements the same rules as a hand-written scanner and parser,
-// without these tables, and highlighter.test.ts compares the two.
+// lexerStep(state, characterClass). tests/json-highlighter/reference.ts implements the same rules as a hand-written
+// scanner and parser, without these tables, and highlighter.test.ts beside it compares the two.
 import {displayKind, errorKind, maximumDepth} from './kinds.ts'
 
 // Character classes. Letters that matter to one or more tokens get their own class, e.g. `e` is a hex digit, an
 // exponent and a letter of true and false. Every code point from U+0080 up, and U+007F, is `other`, which is only
 // allowed inside strings. `end` marks a cell after the text, and `truncatedEnd` the position after the 512th code point
 // when the text is longer.
-export const characterClasses = [
+const characterClasses = [
   'end', 'truncatedEnd', 'space', 'tabOrCarriageReturn', 'lineFeed', 'control', 'quote', 'backslash', 'slash',
   'openBrace', 'closeBrace', 'openBracket', 'closeBracket', 'colon', 'comma', 'minus', 'plus', 'dot', 'zero', 'digit',
   'a', 'b', 'e', 'capitalE', 'f', 'l', 'n', 'r', 's', 't', 'u', 'otherHexLetter', 'other',
 ] as const
-export type CharacterClass = typeof characterClasses[number]
+type CharacterClass = typeof characterClasses[number]
 export const classCount = characterClasses.length
 const classIndex = (name: CharacterClass) => characterClasses.indexOf(name)
 
-// The class of a code point below U+0080. The program reads classOfAscii[codePoint + 1], where entry 0 is `end` for the
+// The class of a code point below U+0080. The program reads classTable[codePoint + 1], where entry 0 is `end` for the
 // empty cell value -1, and a code point past the table clamps to its last entry, U+007F, which is `other`.
-export function classOfCodePoint(codePoint: number): CharacterClass {
+function classOfCodePoint(codePoint: number): CharacterClass {
   if (codePoint === -1) return 'end'
   if (codePoint === 0x20) return 'space'
   if (codePoint === 0x09 || codePoint === 0x0d) return 'tabOrCarriageReturn'
@@ -44,21 +44,21 @@ export const classTable: readonly number[] = Array.from({length: 129}, (_, entry
 // Tokenizer states. `hex4` expects 4 more hex digits of a \u escape, and `hex1` the last one. `t`, `tr` and `tru` are
 // the letters of true read so far. `errorLine` follows a lexer error up to the next line feed, where tokenizing starts
 // again, so later lines keep their colors.
-export const lexerStates = [
+const lexerStates = [
   'between', 'string', 'escape', 'hex4', 'hex3', 'hex2', 'hex1', 'minus', 'zero', 'integer', 'dot', 'fraction',
   'exponent', 'exponentSign', 'exponentDigits', 't', 'tr', 'tru', 'f', 'fa', 'fal', 'fals', 'n', 'nu', 'nul', 'errorLine',
 ] as const
-export type LexerState = typeof lexerStates[number]
+type LexerState = typeof lexerStates[number]
 export const lexerStateCount = lexerStates.length
 
 // What one character does, from the tokenizer state before it and its class.
-export const lexerEvents = [
+const lexerEvents = [
   'whitespace', 'stringStart', 'stringContent', 'stringEnd', 'escape', 'numberStart', 'numberContent', 'literalStart',
   'literalContent', 'openObject', 'openArray', 'closeObject', 'closeArray', 'colon', 'comma', 'unexpectedCharacter',
   'controlCharacterInString', 'badEscape', 'badUnicodeEscape', 'badNumber', 'badLiteral', 'errorContinuation', 'end',
   'endInsideToken', 'truncatedEnd',
 ] as const
-export type LexerEvent = typeof lexerEvents[number]
+type LexerEvent = typeof lexerEvents[number]
 export const eventCount = lexerEvents.length
 
 type Step = readonly [next: LexerState, event: LexerEvent]
@@ -110,7 +110,7 @@ function continueOr(characterClass: CharacterClass, continued: Step | null, erro
 const literalLetter = (characterClass: CharacterClass, expected: CharacterClass, next: LexerState): Step =>
   continueOr(characterClass, characterClass === expected ? [next, 'literalContent'] : null, 'badLiteral')
 
-export function lexerStep(state: LexerState, characterClass: CharacterClass): Step {
+function lexerStep(state: LexerState, characterClass: CharacterClass): Step {
   const digit = isDigit(characterClass)
   const exponentLetter = characterClass === 'e' || characterClass === 'capitalE'
   switch (state) {
@@ -176,12 +176,12 @@ export const lexerNextTable: readonly number[] = lexerStates.flatMap(state =>
 export const lexerEventTable: readonly number[] = lexerStates.flatMap(state =>
   characterClasses.map(characterClass => lexerEvents.indexOf(lexerStep(state, characterClass)[1])))
 
-// What the grammar sees of an event: nothing, the start of a string or of a number or literal, a punctuation mark, a
+// The grammar reads one token per event: none, the start of a string or of a number or literal, a punctuation mark, a
 // lexer error, or the end of the text.
-export const grammarTokens = ['none', 'string', 'scalar', 'openObject', 'openArray', 'closeObject', 'closeArray', 'colon', 'comma', 'lexerError', 'end'] as const
-export type GrammarToken = typeof grammarTokens[number]
+const grammarTokens = ['none', 'string', 'scalar', 'openObject', 'openArray', 'closeObject', 'closeArray', 'colon', 'comma', 'lexerError', 'end'] as const
+type GrammarToken = typeof grammarTokens[number]
 
-export function grammarTokenOf(event: LexerEvent): GrammarToken {
+function grammarTokenOf(event: LexerEvent): GrammarToken {
   switch (event) {
     case 'whitespace': case 'stringContent': case 'stringEnd': case 'escape': case 'numberContent': case 'literalContent': return 'none'
     case 'stringStart': return 'string'
@@ -195,7 +195,7 @@ export function grammarTokenOf(event: LexerEvent): GrammarToken {
 
 // The error kind a lexer event reports, which the program adds to the grammar's error kind. errorContinuation only
 // follows an earlier lexer error, so it reports nothing.
-export function lexerErrorKindOf(event: LexerEvent): number {
+function lexerErrorKindOf(event: LexerEvent): number {
   switch (event) {
     case 'unexpectedCharacter': case 'controlCharacterInString': case 'badEscape': case 'badUnicodeEscape': case 'badNumber': case 'badLiteral':
       return errorKind[event]
@@ -233,22 +233,22 @@ export const levelWeightTable: readonly number[] = Array.from({length: maximumDe
 // opening bracket is tooDeep. Depths past the table clamp to its ends.
 export const depthClassTable: readonly number[] = Array.from({length: maximumDepth + 1}, (_, depth) =>
   depth === 0 ? 0 : depth === 1 ? 1 : depth === maximumDepth ? 3 : 2)
-export const depthClassCount = 4
+const depthClassCount = 4
 // The grammar's context for a character: depthClass × 2 + [the container at the current depth is an object].
 export const contextCount = depthClassCount * 2
 
 // Grammar states: what may come next. The initial state is `value`. `error` absorbs everything after the first error.
 export const grammarStates = ['value', 'valueOrClose', 'keyOrClose', 'key', 'colon', 'commaOrClose', 'end', 'error'] as const
-export type GrammarState = typeof grammarStates[number]
+type GrammarState = typeof grammarStates[number]
 export const grammarStateCount = grammarStates.length
 export const symbolCount = grammarTokens.length * contextCount
 
 type GrammarStep = readonly [next: GrammarState, error: number]
 
-// The grammar between tokens, from the state before a character, what the grammar sees of it, the depth class before it,
-// and whether the container at that depth is an object. Only string starts, scalar starts and punctuation change the
+// The grammar between tokens, from the state before a character, the character's token, the depth class before it, and
+// whether the container at that depth is an object. Only string starts, scalar starts and punctuation change the
 // state, and strings in a key position lead to `colon`.
-export function grammarStep(state: GrammarState, token: GrammarToken, depthClass: number, inObject: boolean): GrammarStep {
+function grammarStep(state: GrammarState, token: GrammarToken, depthClass: number, inObject: boolean): GrammarStep {
   if (state === 'error') return ['error', errorKind.none]
   if (token === 'none') return [state, errorKind.none]
   if (token === 'lexerError') return ['error', errorKind.none]
@@ -300,7 +300,7 @@ export const grammarErrorTable: readonly number[] = grammarTable(1)
 
 // display[event × grammarStateCount + grammar state after the character]: a string character is a key when the grammar
 // expects a colon after it, which only happens inside a key.
-export function displayKindOf(event: LexerEvent, grammarAfter: GrammarState): number {
+function displayKindOf(event: LexerEvent, grammarAfter: GrammarState): number {
   switch (event) {
     case 'whitespace': return displayKind.whitespace
     case 'stringStart': case 'stringContent': case 'stringEnd': return grammarAfter === 'colon' ? displayKind.key : displayKind.string

@@ -1,16 +1,16 @@
-// Keystroke frames in headless Chrome. Serves the page with Bun.serve, starts headless Chrome with a fresh profile, fills
-// the textarea with 512 code points of JSON, types a digit and a Backspace in turn through the DevTools Protocol, and
-// reads the page's own timing of each frame.
-//   bun lab/json-highlighter/measure-browser.ts loop 80
+// Keystroke frames of the JSON highlighter's page, assets/json-highlighter.html, in headless Chrome. Serves the page
+// with Bun.serve, starts headless Chrome with a fresh profile, fills the textarea with 512 code points of JSON, types a
+// digit and a Backspace in turn through the DevTools Protocol, and reads the page's own timing of each frame.
+//   bun scripts/measure-json-highlighter-browser.ts loop 80
 // CHROME_PATH overrides the Chrome binary, CHROME_PROFILE_DIR the profile folder, which defaults to a new folder in the
 // system's temporary folder, and SCREENSHOT_PATH saves a PNG of the page with an error and a matched bracket at the end.
 // The script kills Chrome and stops the server when it finishes, and after 90 s at most.
 import {existsSync, mkdtempSync, readFileSync, writeFileSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
-import page from './index.html'
-import {timingText} from './corpus.ts'
-import {type ScanForm, scanForms} from './highlighter.ts'
+import page from '../assets/json-highlighter.html'
+import {type ScanForm, scanForms} from '../src/json-highlighter/highlighter.ts'
+import {timingText} from '../tests/json-highlighter/corpus.ts'
 
 const form = (process.argv[2] ?? 'loop') as ScanForm
 if (!scanForms.includes(form)) throw new Error(`the form must be one of ${scanForms.join(', ')}`)

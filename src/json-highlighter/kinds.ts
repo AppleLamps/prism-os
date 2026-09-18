@@ -1,6 +1,6 @@
-// Names shared by the program, the plain JavaScript reference and the page: the capacity, the maximum nesting depth,
-// what each character is shown as, and the kinds of the first error. Only names and numbers live here; the program's
-// tables are in tables.ts, and the reference in reference.ts doesn't read them.
+// Names shared by the program, the page and the plain JavaScript reference in tests/json-highlighter/reference.ts: the
+// capacity, the maximum nesting depth, what each character is shown as, and the kinds of the first error. This file
+// holds only names and numbers. The program's tables are in tables.ts, which the reference doesn't read.
 
 // The text box holds up to this many code points. Past it, the program reads only the first 512 and reports tooLong.
 export const capacity = 512
@@ -9,8 +9,8 @@ export const maximumDepth = 16
 
 // What a character is shown as. `key` is a string character in a key position, e.g. the "id" of {"id": 1}, found by the
 // grammar before the first error. `pastEnd` is a cell after the text.
-export const displayKinds = ['whitespace', 'punctuation', 'string', 'escape', 'number', 'literal', 'error', 'pastEnd', 'key'] as const
-export type DisplayKind = typeof displayKinds[number]
+const displayKinds = ['whitespace', 'punctuation', 'string', 'escape', 'number', 'literal', 'error', 'pastEnd', 'key'] as const
+type DisplayKind = typeof displayKinds[number]
 export const displayKind = Object.fromEntries(displayKinds.map((name, index) => [name, index])) as {[Name in DisplayKind]: number}
 
 // The kinds of the first error. Lexer errors come first, then grammar errors between tokens, then the named fallbacks.
@@ -47,5 +47,5 @@ export const errorKinds = [
   // The named fallback for capacity: the text holds more than 512 code points, and no error came before the 512th.
   'tooLong',
 ] as const
-export type ErrorKind = typeof errorKinds[number]
+type ErrorKind = typeof errorKinds[number]
 export const errorKind = Object.fromEntries(errorKinds.map((name, index) => [name, index])) as {[Name in ErrorKind]: number}

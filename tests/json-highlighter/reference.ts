@@ -1,5 +1,6 @@
 // The same highlighter in plain JavaScript: a hand-written scanner that consumes one token at a time, and a parser with
-// a real stack, written from JSON's grammar (RFC 8259) and the rules in kinds.ts. It doesn't read tables.ts.
+// a real stack, written from JSON's grammar (RFC 8259) and the rules in src/json-highlighter/kinds.ts. It doesn't read
+// that folder's tables.ts.
 //
 // The rules that go past JSON's grammar:
 // - The first error's position is the first code point at which the text stops being the start of some valid JSON text,
@@ -11,7 +12,7 @@
 // - The bracket at the caret is the code point before the caret when it's a bracket, otherwise the code point at the caret.
 // - Text past 512 code points isn't read, and the error is tooLong unless an error comes first. An opening bracket at
 //   depth 16 is the error tooDeep, and depthExceeded is 1 only when tooDeep is the first error.
-import {capacity, displayKind, errorKind, maximumDepth} from './kinds.ts'
+import {capacity, displayKind, errorKind, maximumDepth} from '../../src/json-highlighter/kinds.ts'
 
 export type HighlightResult = {
   displayKinds: number[]
