@@ -395,6 +395,9 @@ export class Circuit {
   }
 
   // Keep this evaluation, term order, and input wires intact, including constants.
+  // The operation stores the terms array it's given, without copying it. A caller
+  // that wants a longer sum later builds a new array instead of changing the one
+  // it passed, e.g. circuit.roundAffine([...terms, [limit, 1]]).
   roundAffine(terms: Terms, bias = 0): Wire {
     return this.append('affine', terms, bias, [], 0, {preserveRounding: true})
   }
@@ -547,13 +550,11 @@ export class Circuit {
     // bias, but before copying small affine producers in, so a producer counts as
     // read even when the operation reads the producer's own terms instead. A side
     // that ends up with no terms reads nothing, e.g. reglu([[x, 1]], 0, [], -1)
-    // folds to the constant 0 and doesn't read x.
+    // folds to the constant 0 and doesn't read x. With preserveRounding, the
+    // operation stores the given arrays without copying them (see roundAffine).
     let readLeftTerms = leftTerms
     let readGateTerms = gateTerms
-    if (options.preserveRounding) {
-      leftTerms = leftTerms.map(([wire, coefficient]) => [wire, coefficient])
-      gateTerms = gateTerms.map(([wire, coefficient]) => [wire, coefficient])
-    } else {
+    if (!options.preserveRounding) {
       ;[leftTerms, leftBias] = foldConstantTerms(normalizeTerms(leftTerms), leftBias, this.constants)
       ;[gateTerms, gateBias] = foldConstantTerms(normalizeTerms(gateTerms), gateBias, this.constants)
       readLeftTerms = leftTerms
@@ -590,7 +591,7 @@ export class Circuit {
     }
     const expressionKey = serializeExpression(kind, leftTerms, leftBias, gateTerms, gateBias)
       + (options.preserveRounding ? '|round' : '')
-      + (options.macro === undefined ? '' : `|${JSON.stringify(options.macro)}`)
+      + (options.macro === undefined ? '' : `|${serializeMacro(options.macro)}`)
     const existingWire = this.expressionWires.get(expressionKey)
     if (existingWire !== undefined) return existingWire
     const wire = (this.sourceSize + this.operations.length) as Wire
@@ -813,6 +814,13 @@ export class Circuit {
       packedIndexByWire[wire] = wire
     }
     let availableValues = this.sourceSize
+    // inputColumnByWire[wire] is the wire's column in the layer being compiled, or
+    // -1 when the layer doesn't read the wire. Every layer uses this one array and
+    // resets its own entries when it's done. A new array per layer would allocate
+    // the circuit's whole width each time, e.g. 275 layers × 116,053 wires × 4
+    // bytes, about 128 MB, for IndirectOS.
+    const inputColumnByWire = new Int32Array(width)
+    inputColumnByWire.fill(-1)
     const slotByGroup = new Map<number, number>()
     const packedTables = new Map<CandidateTable, PackedCandidateTable>()
     for (let layerIndex = 0; layerIndex < operationsByLayer.length; layerIndex++) {
@@ -844,8 +852,6 @@ export class Circuit {
       const inputIndices = compactUnsignedIndices(
         orderedInputWires.map(wire => packedIndexByWire[wire]!),
       )
-      const inputColumnByWire = new Int32Array(width)
-      inputColumnByWire.fill(-1)
       for (let column = 0; column < inputSize; column++) {
         inputColumnByWire[orderedInputWires[column]!] = column
       }
@@ -958,6 +964,9 @@ export class Circuit {
           weights[storedWeight] = coefficient
           storedWeight++
         }
+      }
+      for (let column = 0; column < inputSize; column++) {
+        inputColumnByWire[orderedInputWires[column]!] = -1
       }
       layers.push({
         inputIndices,
@@ -1315,7 +1324,7 @@ type MaskedProduct = {
   leftWire: Wire
   gateWire: Wire
   gateCoefficient: number
-  exactMultiply?: true
+  exactMultiply: boolean
 }
 
 // Undo the builder's affine composition for one side of a reglu. Small affine
@@ -1356,18 +1365,18 @@ function resolveAffineSide(
 // left side is some wire (possibly stored as that wire's inlined definition)
 // and whose gate side is a wire or its negation — exactly the shapes
 // emitMultiply builds for bit * value across the orientations it picks.
-function maskedProductShape(circuit: Circuit, wire: Wire): Omit<MaskedProduct, 'coefficient'> | undefined {
+function parseMaskedProduct(circuit: Circuit, wire: Wire, coefficient: number): MaskedProduct | undefined {
   if (wire < circuit.sourceSize) return undefined
   const operation = circuit.operations[wire - circuit.sourceSize]!
   if (operation.macro?.kind === 'multiply') {
-    return {leftWire: operation.macro.left, gateWire: operation.macro.right, gateCoefficient: 1, exactMultiply: true}
+    return {coefficient, leftWire: operation.macro.left, gateWire: operation.macro.right, gateCoefficient: 1, exactMultiply: true}
   }
   if (operation.kind !== 'reglu') return undefined
   const left = resolveAffineSide(circuit, operation.leftTerms, operation.leftBias, false)
   if (left === undefined) return undefined
   const gate = resolveAffineSide(circuit, operation.gateTerms, operation.gateBias, true)
   if (gate === undefined) return undefined
-  return {leftWire: left.wire, gateWire: gate.wire, gateCoefficient: gate.sign}
+  return {coefficient, leftWire: left.wire, gateWire: gate.wire, gateCoefficient: gate.sign, exactMultiply: false}
 }
 
 // Recognize dynamic-lookup idioms: an affine whose terms are products of a
@@ -1401,12 +1410,12 @@ function planGatherLowering(circuit: Circuit): Map<number, GatherPlan> {
         parsed = false
         break
       }
-      const shape = maskedProductShape(circuit, wire)
-      if (shape === undefined) {
+      const product = parseMaskedProduct(circuit, wire, coefficient)
+      if (product === undefined) {
         parsed = false
         break
       }
-      products.push({coefficient, ...shape})
+      products.push(product)
     }
     if (!parsed) continue
     // Every term of a matching sum references the group through its left or
@@ -1566,6 +1575,17 @@ function serializeExpression(
   parts.push('|', gateBias)
   for (const [wire, coefficient] of gateTerms) parts.push(wire, coefficient)
   return parts.join(',')
+}
+
+// The macro's part of append's deduplication key, e.g. multiply,12,40. The
+// circuit keeps every operation's key as long as the circuit lives, and most
+// operations are multiplies and selects, so the key is written by hand:
+// JSON.stringify would store {"kind":"multiply","left":12,"right":40} instead.
+function serializeMacro(macro: Macro): string {
+  switch (macro.kind) {
+    case 'multiply': return `multiply,${macro.left},${macro.right}`
+    case 'select': return `select,${macro.gate},${macro.off},${macro.on}`
+  }
 }
 
 function identityWire(terms: Terms, bias: number): Wire | undefined {
