@@ -725,9 +725,12 @@ export class Circuit {
     return gradients
   }
 
-  evaluateTensor(source: Float32Array): Float32Array {
+  // Every wire's value, with 0 for the wires that the program removed. Without `program`, it runs this.tensorProgram,
+  // which the caller may have set, e.g. to a program of a machine's roots, and which otherwise becomes a program of
+  // every operation on the first call.
+  evaluateTensor(source: Float32Array, program?: TensorProgram): Float32Array {
     this.validateSourceRanges(source)
-    return evaluateTensorProgram(source, this.tensorProgram ??= this.compileTensorProgram())
+    return evaluateTensorProgram(source, program ?? (this.tensorProgram ??= this.compileTensorProgram()))
   }
 
   // The returned output array is reused and overwritten on the next call.
@@ -735,10 +738,15 @@ export class Circuit {
     roots: readonly Wire[],
     options: CompileOptions = {},
   ): (source: Float32Array) => Float32Array {
-    const program = this.compileTensorProgram(roots, true, options)
+    return this.createTensorProgramEvaluator(this.compileTensorProgram(roots, true, options))
+  }
+
+  // createTensorEvaluator for a program that compileTensorProgram already returned, e.g. one that the caller also
+  // validates or reads counts from, so that the circuit compiles once. The evaluator returns the program's roots.
+  createTensorProgramEvaluator(program: TensorProgram): (source: Float32Array) => Float32Array {
     const workspace = createTensorWorkspace(program)
-    const positions = roots.map(root => program.wireOrder.indexOf(root))
-    const outputs = new Float32Array(roots.length)
+    const positions = Array.from(program.roots, root => program.wireOrder.indexOf(root))
+    const outputs = new Float32Array(program.roots.length)
     return source => {
       this.validateSourceRanges(source)
       executeTensorProgram(source, program, workspace)
@@ -3212,13 +3220,19 @@ export function validateGrids(circuit: Circuit, values: Float32Array) {
 // are checked, e.g. only the outputs that came out NaN. Meant for tests and error
 // messages; the evaluators never pay this cost on their own.
 export function validateNoNaN(circuit: Circuit, values: Float32Array, roots?: readonly Wire[]) {
+  const firstNaN = describeFirstNaN(circuit, values, roots)
+  if (firstNaN !== null) throw new Error(firstNaN)
+}
+
+// validateNoNaN's message, or null when no checked wire is NaN, e.g. for a caller that adds the message to its own error.
+export function describeFirstNaN(circuit: Circuit, values: Float32Array, roots?: readonly Wire[]): string | null {
   invariant(
     values.length === circuit.sourceSize + circuit.operations.length,
     'NaN validation needs the full wire values',
   )
   const checked = roots === undefined ? undefined : markWiresRead(circuit, roots)
   for (let wire = 0; wire < circuit.sourceSize; wire++) {
-    if (Number.isNaN(values[wire]) && checked?.[wire] !== 0) invariant(false, `source cell ${wire} is NaN`)
+    if (Number.isNaN(values[wire]) && checked?.[wire] !== 0) return `source cell ${wire} is NaN`
   }
   for (let operationIndex = 0; operationIndex < circuit.operations.length; operationIndex++) {
     const wire = (circuit.sourceSize + operationIndex) as Wire
@@ -3257,8 +3271,9 @@ export function validateNoNaN(circuit: Circuit, values: Float32Array, roots?: re
         break
       }
     }
-    invariant(false, `wire ${wire} is the first NaN: ${description}${context}`)
+    return `wire ${wire} is the first NaN: ${description}${context}`
   }
+  return null
 }
 
 // Marks the roots, and every wire they read directly or through other operations, with 1.

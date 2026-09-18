@@ -17,7 +17,7 @@
 // component's cells before createCircuit, either nested in its own declarations,
 // e.g. {counters: list(2, () => counterCells)}, or with a second call, e.g.
 // table.declare(counterCells, 'extra'), and calls the build function while building.
-import {Circuit, type Wire, asWire, invariant, validateNoNaN} from './numeric-ui-core.ts'
+import {Circuit, type Wire, asWire, describeFirstNaN, invariant} from './numeric-ui-core.ts'
 
 export type Range = readonly [minimum: number, maximum: number]
 
@@ -258,23 +258,16 @@ export function createEvaluator<Output>(program: {
   const {circuit, nextSource, validate, output} = program
   const outputLeaves = collectLeaves(output, '', [])
   const roots = [...nextSource, ...outputLeaves.map(([, wire]) => wire)]
-  const evaluateRoots = circuit.createTensorEvaluator(roots)
+  const tensorProgram = circuit.compileTensorProgram(roots)
+  const evaluateRoots = circuit.createTensorProgramEvaluator(tensorProgram)
 
   // Adds the operation that produced the first NaN to an error about roots[index], when that root's value is NaN.
   function withFirstNaN(error: Error, index: number, source: Float32Array, values: Float32Array): Error {
     if (!Number.isNaN(values[index])) return error
-    // The program that createTensorEvaluator compiled. evaluateTensor leaves the wires that the program removed at 0,
-    // so the error names an operation that ran.
-    const previousProgram = circuit.tensorProgram
-    circuit.tensorProgram = circuit.compileTensorProgram(roots)
-    try {
-      validateNoNaN(circuit, circuit.evaluateTensor(source), [roots[index]!])
-    } catch (nanError) {
-      return new Error(`${error.message}. ${(nanError as Error).message}`)
-    } finally {
-      circuit.tensorProgram = previousProgram
-    }
-    return error
+    // The same program again. evaluateTensor leaves the wires that the program removed at 0, so the message names an
+    // operation that ran.
+    const firstNaN = describeFirstNaN(circuit, circuit.evaluateTensor(source, tensorProgram), [roots[index]!])
+    return firstNaN === null ? error : new Error(`${error.message}. ${firstNaN}`)
   }
 
   return source => {

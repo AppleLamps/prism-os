@@ -712,7 +712,7 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
   validateTensorProgram(circuit, tensorProgram)
   // Reuses its buffers across evaluations. Each evaluation copies the roots into
   // `values`, which the validators and callers index by wire.
-  const evaluateRoots = circuit.createTensorEvaluator(roots)
+  const evaluateRoots = circuit.createTensorProgramEvaluator(tensorProgram)
   const values = new Float32Array(wireCount)
   const scratch = new Float32Array(source.length)
   const numericTolerance = 1e-5

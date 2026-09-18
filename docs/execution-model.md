@@ -293,6 +293,6 @@ The contracts in this section are pinned by numeric-semantics.test.ts, macro-ran
 
 ## Buffer lifetime
 
-`evaluateReference` and `evaluateTensor` return fresh full wire arrays. `createTensorEvaluator(roots)` captures a compiled program and reuses work buffers. Its result contains only the requested roots, in the requested order, and the next call overwrites the same result array. Copy it when retaining a frame. Recreate the evaluator after changing the circuit.
+`evaluateReference` and `evaluateTensor` return fresh full wire arrays. `createTensorEvaluator(roots)` captures a compiled program and reuses work buffers. Its result contains only the requested roots, in the requested order, and the next call overwrites the same result array. Copy it when retaining a frame. Recreate the evaluator after changing the circuit. A caller that also needs the program itself, e.g. IndirectOS, which validates the program and shows its counts in the monitor, compiles once with `program = circuit.compileTensorProgram(roots)` and builds the same evaluator with `circuit.createTensorProgramEvaluator(program)`; `createTensorEvaluator(roots)` would compile a second time.
 
 All current execution is JavaScript on the CPU. Sparse tensor-like storage is not evidence of a GPU implementation or GPU speedup. The runtime-cost study measures allocation and output-copying changes independently of scheduling.
