@@ -46,4 +46,6 @@ for (const [index, command] of commands.entries()) {
   process.stderr.write(stderr)
   if (exitCode !== 0 && firstFailedExitCode === 0) firstFailedExitCode = exitCode
 }
-process.exit(firstFailedExitCode)
+// Not process.exit, which ends the process before a pipe has taken everything written above, e.g.
+// with 1.4 MB of lint errors, a reader on a pipe got only the first 130 KB.
+process.exitCode = firstFailedExitCode
