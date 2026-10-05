@@ -1,5 +1,5 @@
 // JS reference for gesture-flick-snap-target: a transcription of
-// vibescript's demos/gesture-flick-snap-target/index.ts render() and
+// chenguini's demos/gesture-flick-snap-target/index.ts render() and
 // snap-layout.ts, with the demo's two superposed springs kept as they are.
 // Changes: DOM reads come in as arguments, DOM writes come out as a projection,
 // only mouse events and pointerdown are modeled, and the release velocity is

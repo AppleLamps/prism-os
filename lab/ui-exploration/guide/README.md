@@ -2,7 +2,7 @@
 
 ## How to read this
 
-This guide explains how Indirect writes an interactive UI as one fixed numeric program, and what the 24 prototypes in lab/ui-exploration measured about that approach. It's for people who know front-end development and vibescript's ui.md, and for agents with no context who build apps like IndirectOS. This folder holds the long explanations, the glossary and the runnable examples. [review-and-decisions.md](review-and-decisions.md) is a dated record of Cheng's review points with the guide's answers, and of the decisions as they were asked.
+This guide explains how Indirect writes an interactive UI as one fixed numeric program, and what the 24 prototypes in lab/ui-exploration measured about that approach. It's for people who know front-end development and chenguini's ui.md, and for agents with no context who build apps like IndirectOS. This folder holds the long explanations, the glossary and the runnable examples. [review-and-decisions.md](review-and-decisions.md) is a dated record of Cheng's review points with the guide's answers, and of the decisions as they were asked.
 
 Every section explains its concepts in the same order: the problem in UI terms, the familiar JavaScript, the circuit form with builder code, why the circuit form gives the same result, what it costs, measured numbers with their conditions, when not to use it, and pitfalls. Costs use two measures. Operations are the total work of one evaluation, and depth is the longest chain of operations that must run one after another, counted in layers. Big-O shapes use n for the item count, e.g. comparing every pair of n items is O(n²) operations at constant depth.
 

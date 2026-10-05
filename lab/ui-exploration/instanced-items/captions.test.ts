@@ -40,7 +40,7 @@ function compare(expected: PortRect[], actual: PortRect[]) {
   return {lineDecisionMismatches, maximumPositionError, maximumSizeError}
 }
 
-test('grid with measured captions matches the vibescript port layout across widths', () => {
+test('grid with measured captions matches the chenguini port layout across widths', () => {
   let checked = 0
   const captionHeights = new Map<number, number>()
   for (const width of [320, 333, 390, 512, 600, 756, 800, 1000, 1024, 1280, 1440, 1732, 1920, 2000]) {
@@ -61,7 +61,7 @@ test('grid with measured captions matches the vibescript port layout across widt
   expect(captionHeights.get(52) ?? 0).toBeGreaterThan(100)
 })
 
-test('strip with the caption fixed point matches the vibescript port layout', () => {
+test('strip with the caption fixed point matches the chenguini port layout', () => {
   let seed = 11
   const random = () => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0

@@ -188,7 +188,7 @@ export function multiplyMatrices(left: Matrix, right: Matrix): Matrix {
   ]
 }
 
-// vibescript's springStep: v' = v + (-k e - b v) t, then e' = e + v' t, with e = pos - dest.
+// chenguini's springStep: v' = v + (-k e - b v) t, then e' = e + v' t, with e = pos - dest.
 export function eulerStepMatrix(stiffness: number, damping: number, stepSeconds: number): Matrix {
   const velocityKeep = 1 - damping * stepSeconds
   return [
@@ -254,7 +254,7 @@ export function atLeastSmallThreshold(circuit: Circuit, value: Wire, threshold: 
   return circuit.boolean(clamped)
 }
 
-// vibescript's settle rule: |v| < 0.01 and |dest - pos| < 0.01 snaps to dest.
+// chenguini's settle rule: |v| < 0.01 and |dest - pos| < 0.01 snaps to dest.
 // Returns the displacement and velocity after snapping, plus the active bit.
 export function emitSettle(circuit: Circuit, displacement: Wire, velocity: Wire) {
   const speedAtLeast = atLeastSmallThreshold(circuit, absolute(circuit, velocity), 0.01)
@@ -267,7 +267,7 @@ export function emitSettle(circuit: Circuit, displacement: Wire, velocity: Wire)
   }
 }
 
-// vibescript's catch-up clock (Animation.md): steps = min(300, floor(elapsed / 4)),
+// chenguini's catch-up clock (Animation.md): steps = min(300, floor(elapsed / 4)),
 // where elapsed = backlog + frameDelta while animating and 0 otherwise, clamped
 // to 2^15 ms. Returns the step count and its binary digits for the matrix-power
 // stages.

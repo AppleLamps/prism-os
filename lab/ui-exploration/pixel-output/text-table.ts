@@ -2,7 +2,7 @@
 // lines at the current container width as source cells.
 //
 // JS lays the comments out with pretext only when the container width changes (the
-// vibescript port does the same on resize). The circuit keeps computing heights from
+// chenguini port does the same on resize). The circuit keeps computing heights from
 // breakpoints; `layoutTextTables` checks that its lines add up to the same heights.
 // Per comment the tables hold its lines in order; per line its top (comment
 // coordinates), its first character and its length; per character a glyph code and

@@ -1,4 +1,4 @@
-// DOM wiring for cards.html, following vibescript's draggable-cards render loop.
+// DOM wiring for cards.html, following chenguini's draggable-cards render loop.
 // Handling inputs, layout, animation, and committing state all happen in one
 // circuit evaluation (cards.ts); this file records events and projects outputs.
 import {measure, hash} from './common.ts'

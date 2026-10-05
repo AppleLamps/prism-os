@@ -1,5 +1,5 @@
 // Plain TypeScript reference for the event-window experiment: four interactive
-// rectangles in one viewport, written in the vibescript style (one tick function,
+// rectangles in one viewport, written in the chenguini style (one tick function,
 // centralized numeric state). This file is the ground truth the circuit must match
 // bit-for-bit; it must stay independent of the circuit code.
 //

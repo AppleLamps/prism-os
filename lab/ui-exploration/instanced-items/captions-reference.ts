@@ -1,5 +1,5 @@
-// Reference for the caption variant: vibescript's photo-gallery layout.ts and prompt-layout.ts
-// (frozen as port-layout.ts.txt and port-prompt-layout.ts.txt, vibescript commit f37a575), executed
+// Reference for the caption variant: chenguini's photo-gallery layout.ts and prompt-layout.ts
+// (frozen as port-layout.ts.txt and port-prompt-layout.ts.txt, chenguini commit f37a575), executed
 // natively. Only pretext's rich-inline line walker is replaced: it reports as many lines as the
 // breakpoint table says, i.e. 1 + [inner width < twoLines] + [inner width < threeLines]. The table
 // itself is checked against pretext's walker by prepare-captions.ts. Everything else, including the

@@ -11,7 +11,7 @@
 // all retarget that transition, so every change of mind is itself an
 // interpolation.
 //
-// Structure follows the repo's gallery demos and vibescript's ui.md: one DOM
+// Structure follows the repo's gallery demos and chenguini's ui.md: one DOM
 // cache built at mount, event handlers that only store raw input, and a single
 // requestAnimationFrame render that reads DOM, interprets inputs, evaluates
 // the circuit, and batches DOM writes.

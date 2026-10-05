@@ -1,4 +1,4 @@
-// Fixed-step springs as powers of one step matrix, following vibescript's Animation.md: 4ms
+// Fixed-step springs as powers of one step matrix, following chenguini's Animation.md: 4ms
 // semi-implicit Euler steps, a variable number of steps per frame, capped. One step on
 // (displacement, velocity) is a constant 2x2 matrix M, so N steps is M^N. JS writes the bits of N
 // into source cells; the circuit multiplies the selected constant powers M^(2^j) once per frame,

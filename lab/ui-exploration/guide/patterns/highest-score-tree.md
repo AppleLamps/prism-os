@@ -27,7 +27,7 @@ for (let layout = 1; layout < layoutScores.length; layout++) {
 }
 ```
 
-vibescript's gesture-flick-snap-target runs the same loop over distances in `nearestCorner`, keeping the smallest.
+chenguini's gesture-flick-snap-target runs the same loop over distances in `nearestCorner`, keeping the smallest.
 
 ## The circuit
 

@@ -1,4 +1,4 @@
-// Compiler from a restricted vibescript-style TypeScript subset to Circuit operations.
+// Compiler from a restricted chenguini-style TypeScript subset to Circuit operations.
 //
 // Design summary (details in README.md):
 // - The compiler walks the TypeScript AST with symbolic values. Compile-time constants fold;

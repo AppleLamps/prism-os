@@ -36,7 +36,7 @@ for (const item of order) {
 }
 ```
 
-And vibescript's draggable-cards (demos/draggable-cards/index.ts), where `shouldSwapUp` is `pointerY < neighborDestY + neighborSizeY / 2`:
+And chenguini's draggable-cards (demos/draggable-cards/index.ts), where `shouldSwapUp` is `pointerY < neighborDestY + neighborSizeY / 2`:
 
 ```ts
 while (dragIdx > 0 && shouldSwapUp(pointerLast.y, st.data[dragIdx - 1].y.dest, st.data[dragIdx - 1].sizeY)) {

@@ -1129,7 +1129,7 @@ function runFloat64Reference(presses: readonly Press[], frameTimes: readonly num
   return {positions, displacements, settles}
 }
 
-// vibescript ui.md's order in float64: handle inputs, new layout, then an
+// chenguini ui.md's order in float64: handle inputs, new layout, then an
 // animation tick that catches up toward the new destinations, with one settle
 // check per frame.
 function runUiMdOrder(presses: readonly Press[], frameTimes: readonly number[]) {

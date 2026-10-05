@@ -132,7 +132,7 @@ export function createHighlightMachine() {
 }
 
 // Plain float64 reference: index.ts's render(), steps 2 to 4, for this app, with
-// the 300-step cap from vibescript's ui.md.
+// the 300-step cap from chenguini's ui.md.
 export type ReferenceState = {
   animatedUntilTime: number | null
   selectedIndex: number

@@ -287,7 +287,7 @@ item 3 (key 20)      0    1    0    ·   → rank 1
 - **Cost.** O(n²) operations in O(1) layers: 4,096 operations in 3 layers at 64 items, with keys on a grid, so every bit is 2 operations. When one card moves, O(n): 1,404 operations in 8 layers at 100 cards.
 - **Exact when.** Keys are integers or declared on a grid; other keys get a sign cascade, still exact but 15 operations in 14 layers per `<=` within 0..16,384. Tops are exact while heights lie on a grid and totals stay below 2^24 grid steps. The update needs last frame's tops in rank order.
 - **Don't use it when.** There are well over a hundred items: a sorting network is O(n log² n) operations in O(log² n) layers, e.g. 10,624 operations in 105 layers against 16,512 in 5 for 64 items with a payload. The order is known while building, e.g. a fixed menu: sort in JavaScript while building. Many items move in one frame, e.g. switching the sort from date to name: recompute the ranks.
-- **Used in, long form, test.** lists' port of vibescript's draggable-cards. [ranks-instead-of-sorting.md](../lab/ui-exploration/guide/patterns/ranks-instead-of-sorting.md), tested by [ranks-instead-of-sorting.test.ts](../lab/ui-exploration/guide/examples/patterns/every-item/ranks-instead-of-sorting.test.ts).
+- **Used in, long form, test.** lists' port of chenguini's draggable-cards. [ranks-instead-of-sorting.md](../lab/ui-exploration/guide/patterns/ranks-instead-of-sorting.md), tested by [ranks-instead-of-sorting.test.ts](../lab/ui-exploration/guide/examples/patterns/every-item/ranks-instead-of-sorting.test.ts).
 
 ### `items.filter(isVisible).slice(0, K)` into K DOM nodes
 

@@ -5,7 +5,7 @@
 // TypeScript oracle runs in parallel on the same inputs as a judge, so the
 // exactness claim is visible live. Run with: bun lab/event-window/demo.html
 //
-// Structure follows the repo's demo pattern and vibescript's ui.md: a DOM
+// Structure follows the repo's demo pattern and chenguini's ui.md: a DOM
 // cache built once at mount, event handlers that only store raw input and
 // schedule a render, one render function that reads the DOM, steps the state,
 // then writes the DOM in a single batched phase.

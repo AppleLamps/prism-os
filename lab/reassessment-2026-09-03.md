@@ -12,7 +12,7 @@ This was a reassessment, not a production refactor. Existing implementation file
 
 ## What I reviewed
 
-I traced the relevant June and July Claude conversations, this conversation's experiments, the original June Codex design discussion, and the related "Explain reglu" and "Explore fp32 nonlinear logic" tasks. I read the project documentation, the talk, and the current vibescript engineering guidance. Three independent audits covered the learned interpreter, generative fields and event window, and numeric execution and compilation. I independently reran the decisive numerical, compiler, gradient, and event counterexamples. Neither I nor the reviewers read `exp/`.
+I traced the relevant June and July Claude conversations, this conversation's experiments, the original June Codex design discussion, and the related "Explain reglu" and "Explore fp32 nonlinear logic" tasks. I read the project documentation, the talk, and the current chenguini engineering guidance. Three independent audits covered the learned interpreter, generative fields and event window, and numeric execution and compilation. I independently reran the decisive numerical, compiler, gradient, and event counterexamples. Neither I nor the reviewers read `exp/`.
 
 The long original Codex discussion was reviewed selectively around the design decisions, not exhaustively message by message. Historical conversation claims were treated as hypotheses, including those written by the earlier Codex agent in this task.
 

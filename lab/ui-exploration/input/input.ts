@@ -1,4 +1,4 @@
-// The JS side of the queue, following vibescript's event handling doctrine:
+// The JS side of the queue, following chenguini's event handling doctrine:
 // event handlers only push raw input and schedule a render; the render function
 // turns the frame's pending input into queued events and splits them into as
 // many evaluations as the circuit's capacity requires.

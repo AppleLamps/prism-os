@@ -2,7 +2,7 @@
 
 ## What it is and how to run it
 
-This prototype rebuilds the render path of Cheng's nicer-hacker-news thread (nicer-hacker-news's `hn.js`, with the pretext-based comment heights of the vibescript port in vibescript's `demos/nicer-hacker-news`) as one Indirect circuit. JS writes the window size, the scroller's `scrollTop`, the pointer position, the pointer-down bit and a click latch into a Float32Array source table, runs the circuit once per frame, copies the next-state outputs back into the table, and turns the other outputs into styles. The question it answers: how much of a text-heavy UI with a comment tree fits in one circuit, when comment heights come from prepared width breakpoints and the tree never changes at runtime.
+This prototype rebuilds the render path of Cheng's nicer-hacker-news thread (nicer-hacker-news's `hn.js`, with the pretext-based comment heights of the chenguini port in chenguini's `demos/nicer-hacker-news`) as one Indirect circuit. JS writes the window size, the scroller's `scrollTop`, the pointer position, the pointer-down bit and a click latch into a Float32Array source table, runs the circuit once per frame, copies the next-state outputs back into the table, and turns the other outputs into styles. The question it answers: how much of a text-heavy UI with a comment tree fits in one circuit, when comment heights come from prepared width breakpoints and the tree never changes at runtime.
 
 Commands, from the repo root:
 
@@ -14,7 +14,7 @@ Commands, from the repo root:
 
 | File | What it holds |
 | --- | --- |
-| `hn-data.ts` | Thread 0 of the vibescript demo data: 251 comments, indents 0..10 |
+| `hn-data.ts` | Thread 0 of the chenguini demo data: 251 comments, indents 0..10 |
 | `comment-doc.ts` | HN comment HTML to paragraphs of text, italic and link runs, and code blocks, without a DOM |
 | text-tabulated's `pretext/` | An unmodified snapshot of pretext's `src/` (commit 477510e of the read-only clone), imported from text-tabulated. Until September 16, 2026 this folder held a byte-identical copy |
 | `fake-canvas.ts` | Deterministic glyph widths for running pretext under bun |
@@ -40,7 +40,7 @@ The circuit follows hn.js's `render` in order: scroll smoothing (hn.js 243-260),
 
 | hn.js construct | Circuit form | Cost at 251 comments |
 | --- | --- | --- |
-| Comment heights read from the DOM once (hn.js 213), laid out again by pretext on resize in the vibescript port | The prepare step finds every container width in 375..1200 where a comment's height changes. The circuit adds `delta * [windowWidth >= breakpoint]` per breakpoint. Comparing the raw window width works because every breakpoint lies strictly inside the clamp range | 1,768 breakpoints, 5,283 live operations, 4 layers |
+| Comment heights read from the DOM once (hn.js 213), laid out again by pretext on resize in the chenguini port | The prepare step finds every container width in 375..1200 where a comment's height changes. The circuit adds `delta * [windowWidth >= breakpoint]` per breakpoint. Comparing the raw window width works because every breakpoint lies strictly inside the clamp range | 1,768 breakpoints, 5,283 live operations, 4 layers |
 | `rowTop += height` (hn.js 434-497) | One wide sum per row, terms in row order, which performs the same rounding steps as a sequential `Math.fround` loop. Natural heights are integers, so they use a Brent-Kung scan instead | Animated tops: 506 operations, 32,637 weights, 1 layer. Natural tops: 487 operations, 974 weights, 13 more layers |
 | The first row containing the pointer, with `break` (hn.js 328-341) | The pointed row is the count of row bottoms at or above the pointer. The row one-hot is the difference of neighboring comparison bits | 252 comparisons |
 | The ancestor `while` loop over indents (hn.js 333) | A static table `ancestorAtLevel[row][indentPointed]`, read through the row one-hot and the indent-level one-hot | 2,761 table entries; the 11 level products lower to one gather read |
@@ -58,7 +58,7 @@ These are in both the circuit and the reference, and each one is explained at th
 
 - Collapse. Clicking a comment's sticky banner outside the gutter toggles `collapsed`. A collapsed comment keeps a 28px banner; its descendants get height 0. The toggle lands in the next frame's state, so the hit test this frame uses committed state.
 - A second eased height per row. hn.js keeps the rows below the pointer in place during a peek by adding every row's `natural - height` to the top gap. With collapse in the mix that would move the rows above a collapsing comment, so the gap is `restHeight - height`, where `restHeight` eases toward the collapse-aware natural height and ignores the peek.
-- Resize. When the container width changes, both heights shift by the row's change in natural height: settled rows snap, and a running animation keeps its remaining distance. The vibescript port snaps settled rows only.
+- Resize. When the container width changes, both heights shift by the row's change in natural height: settled rows snap, and a running animation keeps its remaining distance. The chenguini port snaps settled rows only.
 - The keep-rendering bit checks the sum of all rows' remaining distances instead of each row, so it can render a few frames longer than hn.js.
 - DOM slots. hn.js appends every row in view. Here the circuit routes rows into a fixed number of slot outputs, and JS attaches a cached node per row, created the first time the row gets a slot. Rank slots give slot numbers, in row order, to rows in view that are at least 0.25px tall. Window slots give slot s to the row at `first visible row + s`, which only works because rows are sorted by their top.
 
@@ -248,7 +248,7 @@ All live wires matched the executor bit for bit. Both splits were optimized by a
 
 - A gather-at-index instruction for compaction. Rank slots are the single largest cost; an executor instruction that turns an integer into a table position without a one-hot of one member per comment would make slot routing linear.
 - Frame-rate independent heights. The circuit keeps hn.js's `height += (target - height) / 5` per frame. Phase 1's matrix-power springs with fixed 4ms steps would add about 81 operations per animated value, roughly 40,000 operations for two heights per comment at 251 comments.
-- Is native `innerHTML` layout close enough to pretext's prediction in real browsers, or should the demo render pretext's line fragments like the vibescript port does? The browser check at the end found 249 of 251 comments matching at one window size in Chrome.
+- Is native `innerHTML` layout close enough to pretext's prediction in real browsers, or should the demo render pretext's line fragments like the chenguini port does? The browser check at the end found 249 of 251 comments matching at one window size in Chrome.
 - Search highlights and selection rectangles could come from per-line staircases (each line's end offset as a function of width), which phase 1 estimated to be much larger than heights alone.
 - Codegen that handles wide rows as loops over constant arrays, instead of one statement per weight, might finally beat the executor for this kind of program.
 - A thread that changes at runtime (new comments arriving) needs capacity in the tables and slots, and runtime ancestor data instead of constant tables.

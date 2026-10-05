@@ -299,7 +299,7 @@ const read = emitMaskedSum(circuit, selected, table)
 
 ### Keys that are runtime values
 
-**The problem in UI terms.** Snap a released card to the nearest of n snap positions that come from layout, e.g. card left edges, so the keys change whenever the layout changes. vibescript's gesture-flick-snap-target demo does this in 2D with `nearestCorner`, a loop over 4 corners that keeps the smallest squared distance.
+**The problem in UI terms.** Snap a released card to the nearest of n snap positions that come from layout, e.g. card left edges, so the keys change whenever the layout changes. chenguini's gesture-flick-snap-target demo does this in 2D with `nearestCorner`, a loop over 4 corners that keeps the smallest squared distance.
 
 **The familiar JavaScript way**, from hard-attention.ts:
 
@@ -386,7 +386,7 @@ A low sharpness makes the read's weights wide, spread over several positions, an
 
 ## Toy 2: learning the weights that compute a query
 
-**The task.** A paged carousel with 8 pages settles, on release, on the page nearest to where the flick would come to rest. vibescript's demos/gesture-flick-snap-target/snap-layout.ts computes the rest position as `pos + velocity / decayFriction`, with `decayFriction = 4.5`, and the demo snaps to the corner nearest that rest position. Written for pages:
+**The task.** A paged carousel with 8 pages settles, on release, on the page nearest to where the flick would come to rest. chenguini's demos/gesture-flick-snap-target/snap-layout.ts computes the rest position as `pos + velocity / decayFriction`, with `decayFriction = 4.5`, and the demo snaps to the corner nearest that rest position. Written for pages:
 
 ```ts
 function snapPageReference(releasePage: number, releaseVelocity: number) {

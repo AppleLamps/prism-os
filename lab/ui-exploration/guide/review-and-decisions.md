@@ -22,7 +22,7 @@ In a toy carousel of 8 pages, gradient descent through a soft read learned three
 
 More generally, sums, products and selects give useful gradients, while exact decisions give 0 or make the backward pass throw. A spring's matrix power backpropagates through 562 operations for any step count up to 511, against 4,202 operations for up to 300 unrolled steps with a mask per step.
 
-As your note suggested, every quantity that looks dynamic got a static bound with a named fallback, e.g. at most 300 spring steps per frame, past which vibescript and spring-bank carry the rest of the elapsed time into later frames, and host-timing.ts snaps every animated object onto its destination. A fixed bound also fixes the size of the backward pass. More in [indexing](sections/indexing.md) and [differentiability](sections/differentiability.md).
+As your note suggested, every quantity that looks dynamic got a static bound with a named fallback, e.g. at most 300 spring steps per frame, past which chenguini and spring-bank carry the rest of the elapsed time into later frames, and host-timing.ts snaps every animated object onto its destination. A fixed bound also fixes the size of the backward pass. More in [indexing](sections/indexing.md) and [differentiability](sections/differentiability.md).
 
 ### Wording
 

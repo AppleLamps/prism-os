@@ -1,4 +1,4 @@
-// life-calendar's per-cell map (vibescript demos/life-calendar) as one circuit
+// life-calendar's per-cell map (chenguini demos/life-calendar) as one circuit
 // evaluated over its 27,393 cells.
 //
 // Shared part, computed once per frame: the demo's grid sizing (sqrt, runtime

@@ -53,7 +53,7 @@ export function matrixPower(step: Matrix2, count: number): Matrix2 {
   return result
 }
 
-// The vibescript clock contract. JS rounds requestAnimationFrame timestamps to
+// The chenguini clock contract. JS rounds requestAnimationFrame timestamps to
 // this grid before subtracting, so every frame delta is exact in FP32 and the
 // sum of deltas over any partition of time is the same number.
 export type SpringClockConfig = {
@@ -95,7 +95,7 @@ export function createFrameDeltaTracker(config: SpringClockConfig) {
   }
 }
 
-// The vibescript `animatedUntilTime` clock in leftover form. `running` is
+// The chenguini `animatedUntilTime` clock in leftover form. `running` is
 // false when the previous frame ended with nothing animating, which the
 // doctrine writes as `animatedUntilTime = null`.
 export type ReferenceClock = {
@@ -127,7 +127,7 @@ export type RetargetTiming = 'doctrine' | 'deferred'
 //
 // Retarget timing:
 // - doctrine: the new destination applies to this frame's steps, as in the
-//   vibescript demos, where "handle inputs" runs before the animation tick.
+//   chenguini demos, where "handle inputs" runs before the animation tick.
 // - deferred: this frame's steps still move toward the previous destination,
 //   because those steps simulate time before this frame's timestamp. The new
 //   destination applies from the next frame's first step.

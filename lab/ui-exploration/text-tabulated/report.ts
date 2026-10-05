@@ -3,7 +3,7 @@
 // No arguments runs every section, with nondyadic in a second process. Two inputs aren't in the repo
 // and are read only by the sections that need them: PRETEXT_CLONE names a clone of pretext
 // (https://github.com/chenglou/pretext; the README numbers used commit 477510e4), whose corpora/ and
-// src/test-data.ts feed the corpora, oracle, long and nondyadic sections, and HN_DATA names vibescript's
+// src/test-data.ts feed the corpora, oracle, long and nondyadic sections, and HN_DATA names chenguini's
 // demos/nicer-hacker-news/data.ts, which feeds the hn section.
 
 import {resolve} from 'node:path'
@@ -26,7 +26,7 @@ function inputPath(variable: 'PRETEXT_CLONE' | 'HN_DATA', expected: string): str
   return resolve(value)
 }
 const pretextClone = () => inputPath('PRETEXT_CLONE', "a clone of pretext (https://github.com/chenglou/pretext), for its corpora/ folder and src/test-data.ts")
-const hnDataPath = () => inputPath('HN_DATA', "vibescript's demos/nicer-hacker-news/data.ts")
+const hnDataPath = () => inputPath('HN_DATA', "chenguini's demos/nicer-hacker-news/data.ts")
 const requested = new Set(process.argv.slice(2))
 // The nondyadic section measures with a different fake canvas, and pretext keeps the canvas it first
 // measures with, so that section runs on its own.

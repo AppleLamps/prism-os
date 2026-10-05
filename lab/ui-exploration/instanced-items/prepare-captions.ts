@@ -1,8 +1,8 @@
 // Prepare step for captions: tabulates each prompt's line breakpoints with pretext, the way a page
 // would call pretext's prepare() once per text, and writes caption-breakpoints.json.
 //
-// It runs the vibescript photo-gallery port's own prompt-layout.ts (frozen as port-prompt-layout.ts.txt,
-// vibescript commit f37a575) against a copy of pretext's src/, with a deterministic fake canvas and a
+// It runs the chenguini photo-gallery port's own prompt-layout.ts (frozen as port-prompt-layout.ts.txt,
+// chenguini commit f37a575) against a copy of pretext's src/, with a deterministic fake canvas and a
 // Blink user agent. So the widths are fake per-character advances, not DM Sans: real fonts move the
 // breakpoints, and a browser page would compute its own table at load.
 //
@@ -119,7 +119,7 @@ const breakpoints = photoGalleryData.map((photo, index) => {
 
 const output = {
   provenance: {
-    promptLayout: 'vibescript demos/photo-gallery/prompt-layout.ts at f37a5751ba5c82c210faec61770efc48b53149d5',
+    promptLayout: 'chenguini demos/photo-gallery/prompt-layout.ts at f37a5751ba5c82c210faec61770efc48b53149d5',
     pretext: 'copy of pretext src/ (scratchpad/pretext-copy, commit 477510e4)',
     canvas: 'fake per-character advances in 64ths of 14px, Blink user agent',
     units: 'inner width = box width - 24; twoLines: below this width the prompt needs at least 2 lines; threeLines: at least 3',

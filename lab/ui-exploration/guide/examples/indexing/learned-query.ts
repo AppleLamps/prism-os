@@ -2,7 +2,7 @@
 //
 // The UI rule, in plain JS: a paged carousel with 8 pages settles, on release, on the
 // page nearest to where the flick would come to rest, releasePage + releaseVelocity / 4.5.
-// That projection is decayRestPos from vibescript's gesture-flick-snap-target demo,
+// That projection is decayRestPos from chenguini's gesture-flick-snap-target demo,
 // whose decayFriction is 4.5.
 //
 // The circuit computes a query from the release with three weights held in source cells,

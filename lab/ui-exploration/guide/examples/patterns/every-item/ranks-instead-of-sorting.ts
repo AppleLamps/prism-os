@@ -87,7 +87,7 @@ export type DragInput = {
   pointerY: number
 }
 
-// JS, from vibescript's draggable-cards (index.ts and swap-layout.ts), over the card ids in rank order. The
+// JS, from chenguini's draggable-cards (index.ts and swap-layout.ts), over the card ids in rank order. The
 // demo's loops read each neighbor's destination from last frame, which cardTops holds.
 export function dragReorderReference({ranks, cardTops, cardHeights, fromRank, pointerY}: DragInput) {
   const order: number[] = []

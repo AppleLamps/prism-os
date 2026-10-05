@@ -1,8 +1,8 @@
 // A complete small app built with numeric-ui-core.ts: a toggle switch centered in the viewport. Like a native switch,
 // it acts on release: a press on the track arms it, and a release on the track while it's armed flips it. A release
 // off the track, or a pointercancel, disarms it without flipping. The thumb springs to its new side, and the pointer
-// hovering the track sets the cursor. The builder code follows the phases of vibescript's render loop
-// (vibescript's ui.md): layout and cursor, handle inputs, animation tick, commit state, DOM writes.
+// hovering the track sets the cursor. The builder code follows the phases of chenguini's render loop
+// (chenguini's ui.md): layout and cursor, handle inputs, animation tick, commit state, DOM writes.
 // toggle-switch-reference.ts is the same app as plain JavaScript, and toggle-switch.test.ts runs both over
 // toggle-switch-trace.ts. Nothing in this file runs at import.
 import {Circuit, type Wire, asWire, emitMinimum, emitSelect, emitSpring, invariant} from '../../../../../src/runtime/numeric-ui-core.ts'

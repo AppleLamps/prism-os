@@ -1,6 +1,6 @@
 {
  "provenance": {
-  "promptLayout": "vibescript demos/photo-gallery/prompt-layout.ts at f37a5751ba5c82c210faec61770efc48b53149d5",
+  "promptLayout": "chenguini demos/photo-gallery/prompt-layout.ts at f37a5751ba5c82c210faec61770efc48b53149d5",
   "pretext": "copy of pretext src/ (scratchpad/pretext-copy, commit 477510e4)",
   "canvas": "fake per-character advances in 64ths of 14px, Blink user agent",
   "units": "inner width = box width - 24; twoLines: below this width the prompt needs at least 2 lines; threeLines: at least 3"

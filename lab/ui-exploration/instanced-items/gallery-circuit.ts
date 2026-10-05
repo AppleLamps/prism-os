@@ -57,7 +57,7 @@ export type SpringName = typeof springNames[number]
 
 // Caption line breakpoints per photo, tabulated by a pretext prepare step (captions.ts).
 // `twoLines` is the inner width below which the prompt needs at least two lines, `threeLines`
-// the width below which it needs at least three. Used by the vibescript port's layout rules.
+// the width below which it needs at least three. Used by the chenguini port's layout rules.
 export type CaptionBreakpoints = {twoLines: number, threeLines: number}[]
 
 export type GalleryCircuitOptions = {
@@ -66,7 +66,7 @@ export type GalleryCircuitOptions = {
   // ('first-set-bit', 2 log2 n layers), the library's emitFirstActive, or 'prefix-count':
   // bit_i AND no earlier hit, as relu(bit_i - Σ_(j<i) bit_j) in one layer with n^2/2 weights.
   clickSelection?: 'first-set-bit' | 'library-first-active' | 'prefix-count'
-  // With captions, 2D and 1D item heights follow vibescript's photo-gallery port (layout.ts):
+  // With captions, 2D and 1D item heights follow chenguini's photo-gallery port (layout.ts):
   // prompt heights from line counts instead of index.ts's fixed 44px and 64px boxes.
   captions?: CaptionBreakpoints
   springProducts?: SpringProducts
@@ -280,7 +280,7 @@ export function buildGalleryCircuit(photos: readonly PhotoData[], options: Galle
     if (captions === undefined) {
       sizeY = circuit.affine([[sizeX, 1 / ar]], K.promptSizeY)
     } else {
-      // vibescript layout.ts: imageSizeY + (8 + 18 * min(lines, 2)) + 8
+      // chenguini layout.ts: imageSizeY + (8 + 18 * min(lines, 2)) + 8
       const twoLines = needsLines(sizeX, captions[index]!.twoLines)
       sizeY = circuit.affine([[sizeX, 1 / ar], [twoLines, 18]], 34)
     }
@@ -344,7 +344,7 @@ export function buildGalleryCircuit(photos: readonly PhotoData[], options: Galle
         return {unfocusedWidth: circuit.affine([[base, 0.7]]), focusedWidth: base, sizeX, sizeY}
       })
     } else {
-      // vibescript layout.ts get1DItemSize: a fixed point between prompt height and image width.
+      // chenguini layout.ts get1DItemSize: a fixed point between prompt height and image width.
       // Prompt areas for 1, 2 and 3 lines are 16 + 56/3 * lines. Starting from 3 lines, the loop
       // settles on 3 lines if the 3-line image still needs 3 lines, else on 2 lines if the 2-line
       // image needs 2 lines, else on 1 line. So it unrolls into two threshold tests per scale.

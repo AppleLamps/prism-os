@@ -1,4 +1,4 @@
-// The synthetic gauntlet: representative layout functions in the vibescript style, each compiled
+// The synthetic gauntlet: representative layout functions in the chenguini style, each compiled
 // to a circuit and verified bit-exactly against the fround twin over seeded random inputs.
 // The functions are deliberately close to the patterns in the real target file: responsive
 // column count (floor + clamp), gap distribution (division by a runtime column count), clamped

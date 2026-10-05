@@ -1,6 +1,6 @@
 // Comment text heights from pretext, and their tabulation into width breakpoints.
 //
-// A comment is laid out the way the vibescript port does it
+// A comment is laid out the way the chenguini port does it
 // (hn-comment-layout.ts): each paragraph is a rich inline flow of text, italic and
 // link runs, each code block is pre-wrap monospace, lines are 14px, and blocks are
 // separated by 8px. Its height is a step function of the comment width. The

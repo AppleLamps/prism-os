@@ -1,5 +1,5 @@
 // draggable-cards as one circuit: ranks as state, rank counting for the live
-// reorder, springs toward slots as matrix powers with vibescript's fixed 4 ms
+// reorder, springs toward slots as matrix powers with chenguini's fixed 4 ms
 // steps and catch-up, a pinned dragged card, z bands, and release velocity from
 // a pointer ring buffer.
 //
@@ -110,7 +110,7 @@ export function buildCards(sizes: readonly number[], options: {layout?: CardsLay
   }
   const one = constant(circuit, 1)
 
-  // === clock: steps = min(300, floor(elapsed / 4)), as vibescript's catch-up
+  // === clock: steps = min(300, floor(elapsed / 4)), as chenguini's catch-up
   const {elapsed, steps, stepBits} = emitCatchUpClock(circuit, animating, backlog, frameDelta, stageCount)
   endSection('clock and step bits')
 

@@ -27,7 +27,7 @@ Testing destinations also has a downside on a single deliberate press: 80 ms aft
 
 ## The loop it replaces
 
-vibescript's ui.md stores the press in `st.events`, and `render` handles it together with the other inputs:
+chenguini's ui.md stores the press in `st.events`, and `render` handles it together with the other inputs:
 
 ```ts
 // Handle inputs
@@ -85,7 +85,7 @@ The drawn-position form spends 140 operations on sign cascades for its 8 compari
 
 ## Where it's used
 
-- vibescript's `ui.md`, section "Hit Testing", recommends testing `dest` instead of `pos`, which prevents mis-clicks on moving elements and lets rapid repeated clicks work. chenglou.github.io's index.ts tests hover against layout targets in `hitTest2DTargets`, and in its one-photo mode lets clicks land during transitions in `hitTest1DMode`.
+- chenguini's `ui.md`, section "Hit Testing", recommends testing `dest` instead of `pos`, which prevents mis-clicks on moving elements and lets rapid repeated clicks work. chenglou.github.io's index.ts tests hover against layout targets in `hitTest2DTargets`, and in its one-photo mode lets clicks land during transitions in `hitTest1DMode`.
 - [indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2) hit-tested clicks on Photos at the window's destination size. Until September 15, 2026, window-manager.ts tested them at the animated size, so which photo a click landed on depended on spring timing: with [spring-bank](../../event-time/README.md#merged-from-spring-bank-september-16-2026)'s springs, a click during a Photos window animation landed on a different photo in 2 of 8 random 400-frame traces. window-manager.ts now lays Photos out at the destination size too, and reads a click's viewport coordinates relative to the content box at the window's destination. indirect-os-2 also flowed the Notes paragraph around the other windows' destinations, as IndirectOS's notes.ts does since September 16, 2026. With a spring per word, that was 19,854 operations and 343 layers, against 19,861 and 368 around their drawn geometry, and within 2.4e-4 px between 60 and 120 fps, against 25.4 px. After the word springs were removed on September 15, 2026, it was 18,027 operations and 337 layers, against 18,034 and 362, words at shared timestamps were identical with either obstacle source, and the drawn geometry instead made the text reflow in 8 frames with no event.
 - [Long dependency chains](../sections/chains.md#way-5-change-what-the-app-computes), way 5, and [decision 6](../review-and-decisions.md#6-should-depth-be-optimized-now) in the guide's decision record.
 - [Commit state at events](commit-at-events.md) runs the same toast stack at several frame rates.

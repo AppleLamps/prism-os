@@ -24,7 +24,7 @@ export type SpringClockConfig = {
   // One spring step simulates this many milliseconds.
   stepMs: number
   // The most steps that the evaluations of one frame run together, e.g. 300 steps
-  // (1,200 ms), like vibescript's ui.md. When a frame would need more, every
+  // (1,200 ms), like chenguini's ui.md. When a frame would need more, every
   // animated object snaps onto its destination instead, see advanceFrame.
   maxStepsPerFrame: number
   // Settling is checked every this many steps of simulated time, counted from
@@ -276,7 +276,7 @@ type TimedEvent = {readonly timeStamp: number}
 //
 // The ordering rule: before an event with timestamp T is applied, springs step to
 // T toward the destinations that were in effect before T, so a new destination
-// starts pulling within 4 ms of T at any frame rate. vibescript's ui.md orders a
+// starts pulling within 4 ms of T at any frame rate. chenguini's ui.md orders a
 // frame as handle inputs, new layout, animation tick, so a frame's catch-up steps
 // all pull toward the new destination, starting from up to one frame plus 4 ms
 // before the event, and an animation from rest starts at the frame's timestamp,

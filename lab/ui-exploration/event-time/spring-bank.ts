@@ -1,4 +1,4 @@
-// Spring bank builder: fixed-step springs with vibescript's catch-up clock,
+// Spring bank builder: fixed-step springs with chenguini's catch-up clock,
 // written as shared 2x2 matrix powers.
 //
 // One frame of the bank:

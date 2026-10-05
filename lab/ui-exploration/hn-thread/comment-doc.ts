@@ -1,5 +1,5 @@
 // Headless parser for HN comment HTML. It mirrors
-// vibescript's demos/nicer-hacker-news/hn-comment-parser.ts, which uses a
+// chenguini's demos/nicer-hacker-news/hn-comment-parser.ts, which uses a
 // DOM <template>; this version tokenizes the serialized innerHTML instead, so it
 // runs under bun without a DOM. It only needs to handle what HN emits: text,
 // <p>, <a href>, <i>, <pre><code>, and a handful of entities.

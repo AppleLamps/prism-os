@@ -3,7 +3,7 @@
 // onto DOM nodes. JS slices line text only when a line's cursors change.
 // Run with: bun lab/ui-exploration/text-tabulated/demo.html
 //
-// Structure follows vibescript's ui.md: a DOM cache built once, event handlers that only store raw
+// Structure follows chenguini's ui.md: a DOM cache built once, event handlers that only store raw
 // input and schedule a render, and one render function that reads, steps, then writes.
 
 import {createNotesMachine, createStepClock, materializeSlot, notesLayout, prepareNotesBlocks, type NotesBlock} from './notes-machine.ts'

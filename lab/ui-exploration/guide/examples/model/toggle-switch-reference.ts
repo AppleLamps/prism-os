@@ -1,4 +1,4 @@
-// The toggle switch from toggle-switch.ts as plain JavaScript in float64, written the way vibescript's ui.md writes a
+// The toggle switch from toggle-switch.ts as plain JavaScript in float64, written the way chenguini's ui.md writes a
 // render loop: event handlers only store raw input, render runs in phases, and state is committed at the end.
 import {layout, pointerLimit, springParameters, thumbTravel} from './toggle-switch.ts'
 

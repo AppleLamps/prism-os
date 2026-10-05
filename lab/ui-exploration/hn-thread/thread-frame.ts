@@ -1,6 +1,6 @@
 // The frame function in plain JS, derived from nicer-hacker-news's hn.js
-// (render, lines 233-660) with the heights of the vibescript port
-// (vibescript's demos/nicer-hacker-news/index.ts). It is the independent
+// (render, lines 233-660) with the heights of the chenguini port
+// (chenguini's demos/nicer-hacker-news/index.ts). It is the independent
 // reference the circuit is checked against, so it keeps hn.js's control flow: the
 // row search loop with `break`, the ancestor `while` loop, the gutter bottom loop
 // over following rows, float64 arithmetic, and text heights from pretext itself
@@ -16,7 +16,7 @@
 //   gap is `restHeight - height`, so collapsing a comment doesn't move the rows above it.
 // - Resize. When the container width changes, both heights shift by the change of
 //   the row's natural height, so settled rows snap and running animations keep their
-//   remaining distance. The vibescript port snaps only settled rows.
+//   remaining distance. The chenguini port snaps only settled rows.
 // - The keep-rendering check uses the sum of all rows' remaining distances instead
 //   of checking each row, so it can render a few more frames than hn.js at the end
 //   of an animation.
@@ -211,7 +211,7 @@ export function referenceFrame(
   const nextScrollDeltaPrevious = scrollTop - state.scrollTopPrevious
   const scrollTopCap = Math.max(0, scrollTop)
 
-  // vibescript index.ts 309-326: comment heights at this width; extension: collapse
+  // chenguini index.ts 309-326: comment heights at this width; extension: collapse
   const containerWidth = containerWidthF(inputs.windowWidth)
   const containerLeft = (inputs.windowWidth - containerWidth) / 2
   const widthChanged = containerWidth !== state.containerWidthPrevious

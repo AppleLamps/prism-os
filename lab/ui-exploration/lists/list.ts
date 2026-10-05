@@ -4,7 +4,7 @@
 //
 // Slot assignment is stable: row r always lands in slot r mod slotCount while it
 // stays visible, so a DOM node keeps its row (and any row-local DOM state) as the
-// list scrolls, like vibescript's domCache keyed by id.
+// list scrolls, like chenguini's domCache keyed by id.
 import {Circuit, type Wire} from '../../../src/runtime/numeric-ui-core.ts'
 import {
   SourceLayout,
@@ -208,7 +208,7 @@ export function createListRunner(list: ListCircuit) {
 
 // ---------- JS reference ----------
 
-// vibescript's stack layout (draggable-cards swap-layout.ts stackLayout) and the
+// chenguini's stack layout (draggable-cards swap-layout.ts stackLayout) and the
 // occlusion test from scroll-anchor (index.ts:155): a row is drawn when
 // `y + height > visibleTop && y < visibleBottom`.
 export function stackLayout(rowSizes: readonly number[], paddingTop: number): number[] {
