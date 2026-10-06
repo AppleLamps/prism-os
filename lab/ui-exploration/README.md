@@ -6,7 +6,7 @@ This folder holds one night of exploration (September 12-13, 2026) around a sing
 
 The work ran in rounds:
 
-1. Seven readers mapped the runtime, IndirectOS, the lab, Cheng's UI doctrine (chenguini's ui.md and demos, chenglou.github.io, nicer-hacker-news), pretext, and techniques from shaders, ML, and parallel algorithms. Their notes were in notes/, removed on September 16, 2026, and stay at the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notes). Most of them also built and checked small circuits in scratch scripts.
+1. Seven readers mapped the runtime, IndirectOS, the lab, Cheng's UI doctrine (chenguini's ui.md and demos, chenglou.github.io, nicer-hacker-news), pretext, and techniques from shaders, ML, and parallel algorithms. Their notes were in notes/, removed on September 16, 2026, and stay at the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notes), where chenguini still has its earlier name, vibescript. Most of them also built and checked small circuits in scratch scripts.
 2. Thirteen prototypes, each built by one agent, then checked by a second agent that tried to break its claims, then fixed. Every prototype has a README with measured results and sections on what fit well, what got awkward, and what stayed outside the circuit.
 3. A third round after reading the talk "Repeatable breakthrough", plus two consolidation prototypes. See [Third round](#third-round).
 

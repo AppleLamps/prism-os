@@ -2,7 +2,7 @@
 
 Historical July 2026 assignment, retained for provenance. Its proposed policies and success criteria are not current conclusions. Read [shared context](context-shared.md) and [current status](../status.md) before using this brief.
 
-Folder: `lab/trace-compiler/`. Read `lab/briefs/context-shared.md` first; conclusion 9 is your foundation. Also read `~/github/chenguini/docs/ui.md`, `~/github/chenguini/docs/engineering.md`, and the real demo `~/github/chenglou.github.io/index.ts`.
+Folder: `lab/trace-compiler/`. Read `lab/briefs/context-shared.md` first; conclusion 9 is your foundation. Also read chenguini's `docs/ui.md` and `docs/engineering.md`, and the real demo `~/github/chenglou.github.io/index.ts`.
 
 ## The question
 

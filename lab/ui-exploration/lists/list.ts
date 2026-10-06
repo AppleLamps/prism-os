@@ -209,7 +209,7 @@ export function createListRunner(list: ListCircuit) {
 // ---------- JS reference ----------
 
 // chenguini's stack layout (draggable-cards swap-layout.ts stackLayout) and the
-// occlusion test from scroll-anchor (index.ts:155): a row is drawn when
+// occlusion test from scroll-anchor (index.ts:152): a row is drawn when
 // `y + height > visibleTop && y < visibleBottom`.
 export function stackLayout(rowSizes: readonly number[], paddingTop: number): number[] {
   const result: number[] = []
