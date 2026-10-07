@@ -64,7 +64,7 @@ No more operations, one more source cell, and one more copy per evaluation that 
 | last evaluation's width | 144 | 17 |
 | the springs right after this evaluation's steps | 145 | 21 |
 
-In IndirectOS, Photos reading last frame's content size and opacity took the longest chain from 191 to 116 layers ([retiming](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/retiming/README.md)).
+In HandwiredOS, Photos reading last frame's content size and opacity took the longest chain from 191 to 116 layers ([retiming](https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/retiming/README.md)).
 
 ## When it's exact
 
@@ -73,13 +73,13 @@ The stored copy equals this evaluation's value while the value doesn't move betw
 ## When not to use it
 
 - For decisions. A column count a frame late moved thumbnails by up to 533 px here, and retiming counted a photo focused a frame late as a real one-frame glitch.
-- When an earlier value from the same evaluation exists. A spring's position right after this evaluation's steps, `destinationDuringSteps` plus the displacement of `emitApplySpringMatrix`, is 4 layers deep. The drawer's layout reading that sum is 21 layers deep and drew the same layout as this evaluation's width in every frame, since the two differ only at evaluations where the springs settle, snap or change destination. In IndirectOS the same idea took [spring-bank](../../event-time/README.md#merged-from-spring-bank-september-16-2026)'s springs from 137 to 91 layers, with Photos 6.6 px off during a live resize, against 85.7 px for last frame's value.
+- When an earlier value from the same evaluation exists. A spring's position right after this evaluation's steps, `destinationDuringSteps` plus the displacement of `emitApplySpringMatrix`, is 4 layers deep. The drawer's layout reading that sum is 21 layers deep and drew the same layout as this evaluation's width in every frame, since the two differ only at evaluations where the springs settle, snap or change destination. In HandwiredOS the same idea took [spring-bank](../../event-time/README.md#merged-from-spring-bank-september-16-2026)'s springs from 137 to 91 layers, with Photos 6.6 px off during a live resize, against 85.7 px for last frame's value.
 - With [commits at events](commit-at-events.md), where the previous evaluation means the last commit. The drawer's width lag grows from 60 px to 174 px at 60 fps, and event-time's Photos reading the last commit was 507 px off during a maximize.
 
 ## Where it's used
 
 - [Long dependency chains](../sections/chains.md#way-4-read-last-frames-value), way 4, and the glossary's [delay](../README.md#chains-of-steps).
-- [retiming](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/retiming/README.md) turned delays into a program transformation and searched for them. Hand-chosen delays were 86 to 1,380 px off, e.g. layout-tree's app shell reading last frame's sidebar spring went from 115 to 83 layers and was 1,380 px off, and delays searched on one trace produced over 7,000 decision mismatches on random traces.
-- [indirect-os-2](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2), where text obstacles that read last frame's stacking made words start moving a rendered frame later, and the shared clock then put windows 28.8 px apart between 60 and 120 fps.
+- [retiming](https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/retiming/README.md) turned delays into a program transformation and searched for them. Hand-chosen delays were 86 to 1,380 px off, e.g. layout-tree's app shell reading last frame's sidebar spring went from 115 to 83 layers and was 1,380 px off, and delays searched on one trace produced over 7,000 decision mismatches on random traces.
+- [indirect-os-2](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2), where text obstacles that read last frame's stacking made words start moving a rendered frame later, and the shared clock then put windows 28.8 px apart between 60 and 120 fps.
 - [event-time](../../event-time/README.md), which measured what a delayed read costs when only commits write back.
 - Example and test: [drawer-grid.ts](../examples/patterns/fewer-dependencies/drawer-grid.ts) and [read-last-frame.test.ts](../examples/patterns/fewer-dependencies/read-last-frame.test.ts).

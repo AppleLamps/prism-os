@@ -1,7 +1,7 @@
 // Heavy measurement for README.md: macro costs and dense error sweeps, comparison
 // plans, drifting against exact minimum, the rectangle hit test, and the workload.
-// The section that ran IndirectOS in five minimum and maximum modes was removed on
-// September 16, 2026, with the IndirectOS copies it built, and stays at the
+// The section that ran HandwiredOS in five minimum and maximum modes was removed on
+// September 16, 2026, with the HandwiredOS copies it built, and stays at the
 // exploration-2026-09 tag.
 // Run: bun lab/ui-exploration/numeric-library/report.ts [section...]
 // Sections: macros, plans, minimum, rectangle-hit, workload.
@@ -304,7 +304,7 @@ function workload() {
   return {size, dockSize, ringSize, trials, worstPosition, litMismatches, percentMismatches, nearestChecked, nearestMismatches, thresholds, spinClock}
 }
 
-// IndirectOS's rectangle hit: boolean(clamp01(min of four interval distances)).
+// HandwiredOS's rectangle hit: boolean(clamp01(min of four interval distances)).
 function rectangleHit() {
   const variants = ['drifting nested', 'exact nested', 'exact counting'] as const
   return variants.map(variant => {

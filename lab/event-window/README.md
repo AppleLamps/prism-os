@@ -121,7 +121,7 @@ From `bun lab/event-window/measure-cost.ts`:
 
 The soft training circuit at K = 1 is 496 ops with zero boolean atoms (both numbers asserted in `training.test.ts`). Closed-loop stepping through the tensor evaluator runs at 6.3µs per frame (10,000 frames in 63ms, oracle comparison included).
 
-Update, September 16, 2026: bit provenance in [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read)'s copy of the runtime, which tracks exact bits through products, complements, selects and sums of bits of which at most one can be 1, lowered this folder's products of bits, e.g. `hit * maximized`, into 11 gathers without declared groups, after declaring 13 source cells as bits and 2 one-hot groups: 414 live operations against 446 for its copy of `circuit.ts` in exact mode, with 0 mismatches over 20,000 frames. The repo root didn't take it ([lab/status.md](../status.md#open-decisions)).
+Update, September 16, 2026: bit provenance in [index-read](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/index-read)'s copy of the runtime, which tracks exact bits through products, complements, selects and sums of bits of which at most one can be 1, lowered this folder's products of bits, e.g. `hit * maximized`, into 11 gathers without declared groups, after declaring 13 source cells as bits and 2 one-hot groups: 414 live operations against 446 for its copy of `circuit.ts` in exact mode, with 0 mismatches over 20,000 frames. The repo root didn't take it ([lab/status.md](../status.md#open-decisions)).
 
 ## Failures and limits
 
@@ -163,7 +163,7 @@ bun lab/event-window/demo.html
 
 ## Merged from exp/, September 16, 2026
 
-Two July 2026 experiments from [exp/](https://github.com/chenglou/indirect/tree/exploration-2026-09/exp) came here, since both put behavior into source cells, like this folder's relation table.
+Two July 2026 experiments from [exp/](https://github.com/chenglou/handwired/tree/exploration-2026-09/exp) came here, since both put behavior into source cells, like this folder's relation table.
 
 ### Integer bits
 
@@ -176,7 +176,7 @@ Two July 2026 experiments from [exp/](https://github.com/chenglou/indirect/tree/
 
 ### Behavior cells and their growth cost
 
-[exp/exp-behavior-cells-relations.ts](https://github.com/chenglou/indirect/blob/exploration-2026-09/exp/exp-behavior-cells-relations.ts) wasn't ported. It built one circuit over 8 slots whose behavior lived in source cells next to the click state: 3 layout mode bits (row, column, grid), the gap, 8 visibility bits and an 8×8 reveal relation, with validity outputs V1 to V6 (sizes nonnegative, inside the viewport, at most one selected, no visible overlap, one layout mode, a selected slot is visible). Its tests edited cells, e.g. "put the rectangles in a row" or "selecting rectangle 2 reveals rectangle 3", without recompiling, as this folder's demo does.
+[exp/exp-behavior-cells-relations.ts](https://github.com/chenglou/handwired/blob/exploration-2026-09/exp/exp-behavior-cells-relations.ts) wasn't ported. It built one circuit over 8 slots whose behavior lived in source cells next to the click state: 3 layout mode bits (row, column, grid), the gap, 8 visibility bits and an 8×8 reveal relation, with validity outputs V1 to V6 (sizes nonnegative, inside the viewport, at most one selected, no visible overlap, one layout mode, a selected slot is visible). Its tests edited cells, e.g. "put the rectangles in a row" or "selecting rectangle 2 reveals rectangle 3", without recompiling, as this folder's demo does.
 
 Its test measured the cost of adding one behavior dimension at a time. Rerun on September 16, 2026 with the file at the tag, "Operations built" is what the test printed, and live operations come from the compiled program.
 

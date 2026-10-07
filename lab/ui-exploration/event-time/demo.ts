@@ -1,4 +1,4 @@
-// IndirectOS committed per event. With ?presenter=keyframes (the default), every
+// HandwiredOS committed per event. With ?presenter=keyframes (the default), every
 // commit predicts all 301 samples and hands them to Web Animations, and a timer
 // runs the settle commit. With ?presenter=frames, requestAnimationFrame runs a
 // display evaluation per frame while something animates. The logic lives in

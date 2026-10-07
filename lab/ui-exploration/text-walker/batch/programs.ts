@@ -15,7 +15,7 @@
 // but not for the program.
 //
 // Formulations:
-//   one-hot         walkGatheredLines without obstacles, the walker IndirectOS's Notes flow uses: per line slot, an
+//   one-hot         walkGatheredLines without obstacles, the walker HandwiredOS's Notes flow uses: per line slot, an
 //                   integer one-hot of the line's start, masked reads that the compiler lowers to gathers, and one
 //                   comparison per window position
 //   index-read      the same walk, with circuit.indexRead at the line's start instead of the one-hot and masked reads

@@ -27,7 +27,7 @@ import {
   type FrameSchedule,
   type TraceEvent,
   compareAtSharedTimes,
-  createIndirectOSTrace,
+  createHandwiredOSTrace,
   offsetPresses,
   randomPressOffsets,
   replayTrace,
@@ -82,8 +82,8 @@ function programSize(program: Program) {
   }
 }
 
-const baseTrace = createIndirectOSTrace()
-const resizeTrace = createIndirectOSTrace({liveResize: true})
+const baseTrace = createHandwiredOSTrace()
+const resizeTrace = createHandwiredOSTrace({liveResize: true})
 const durationMs = baseTrace.durationMs + 2000
 const stall500: Stall = {startMs: 2701, durationMs: 500}
 const stall2s: Stall = {startMs: 7001, durationMs: 2000}

@@ -190,8 +190,8 @@ export function buildCatchUpWithConstantCells(form: 'unrolled, one mask per step
   return {circuit, roots: outputs.flatMap(spring => [spring.displacement, spring.velocity])}
 }
 
-// IndirectOS's emitSpring for one spring, with every parameter declared nonnegative.
-export function buildIndirectOsSpring() {
+// HandwiredOS's emitSpring for one spring, with every parameter declared nonnegative.
+export function buildHandwiredOsSpring() {
   const circuit = new Circuit(11)
   const position = circuit.source(0)
   const destination = circuit.source(1)

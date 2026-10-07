@@ -16,7 +16,7 @@ import {checkCommitSprings, createDisplaySpringCheck} from './springs-check.ts'
 import {
   type FrameSchedule,
   type TraceEvent,
-  createIndirectOSTrace,
+  createHandwiredOSTrace,
   offsetPresses,
   randomPressOffsets,
   replayTrace,
@@ -26,7 +26,7 @@ import {createWgslInterpreter} from '../codegen/wgsl-interpreter.ts'
 import {emitInstanceWgsl, packSharedBuffer} from '../codegen/wgsl.ts'
 import {bankOptions, createWindowManagerMachine, sourceField, windowCount} from './window-manager.ts'
 
-const resizeTrace = createIndirectOSTrace({liveResize: true})
+const resizeTrace = createHandwiredOSTrace({liveResize: true})
 // Every press moves off the 30 fps grid by its own random offset, and Photos is
 // resized by hand, so thumbnail destinations also change between frames.
 const betweenFrames = offsetPresses(resizeTrace.events, randomPressOffsets(7, 30))
@@ -58,7 +58,7 @@ test('committed tables are bit for bit identical at 10, 30 and 240 fps and throu
 })
 
 test('split-table springs with interval settle commits: identical committed tables across frame rates', () => {
-  const events = offsetPresses(createIndirectOSTrace().events, () => 1)
+  const events = offsetPresses(createHandwiredOSTrace().events, () => 1)
   const splitReference = replay({springs: 'split-table'}, events, schedule(240), 'interval')
   for (const frames of [schedule(10), schedule(120, stall500)]) {
     const other = replay({springs: 'split-table'}, events, frames, 'interval')
@@ -219,7 +219,7 @@ test('emitted keyframes show what 240 fps displays show; through a stall, transf
   // 500 ms stall at 2,701 ms: transform and opacity match through the stall,
   // width and height wait, and held 60 fps display frames are far off in
   // transform too.
-  const framePresses = createIndirectOSTrace().events
+  const framePresses = createHandwiredOSTrace().events
   const framePressesReference = replayCommitPerEvent(createEventTimeMachine({springs: 'source-matrix'}), framePresses, times, {settle: 'predicted', durationMs}).displays
   expect(staleWindow(framePresses, times, stall500)).toBeNull()
   const restore = compareScreens(framePressesReference, presenter(framePresses, stall500).rows, groups, stallWindow(stall500))
@@ -234,7 +234,7 @@ test('emitted keyframes show what 240 fps displays show; through a stall, transf
   // main-thread frame (2,700 ms) and as the stall starts. JS commits it, but its
   // animations only reach the compositor after the stall, so transform is far
   // off inside the stale interval and exact outside it.
-  const laterEvents = offsetPresses(createIndirectOSTrace().events, () => 1)
+  const laterEvents = offsetPresses(createHandwiredOSTrace().events, () => 1)
   const laterReference = replayCommitPerEvent(createEventTimeMachine({springs: 'source-matrix'}), laterEvents, times, {settle: 'predicted', durationMs}).displays
   const laterStale = staleWindow(laterEvents, times, stall500)
   expect(laterStale).toEqual([2701, 3201])

@@ -1,6 +1,6 @@
 const config = {
   entry: [
-    'src/indirectos/window-manager.ts',
+    'src/handwiredos/window-manager.ts',
     'src/json-highlighter/main.ts',
     // The JSON highlighter's measurements, which are run by hand.
     'scripts/measure-json-highlighter.ts',
@@ -21,7 +21,7 @@ const config = {
   ignoreDependencies: ['@typescript/native-preview', 'oxlint', 'oxlint-tsgolint'],
   ignoreIssues: {
     // These names distinguish two wire views that currently share one layout.
-    'src/indirectos/photo-gallery.ts': ['duplicates'],
+    'src/handwiredos/photo-gallery.ts': ['duplicates'],
   },
 }
 

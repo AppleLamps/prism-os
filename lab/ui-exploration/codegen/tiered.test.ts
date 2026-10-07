@@ -2,11 +2,11 @@
 // with tiered.ts, while a window animates.
 import {expect, test} from 'bun:test'
 import {sameFloat} from './codegen.ts'
-import {applyInteraction, createIndirectOSMachine, interactionFrameTime} from './indirect-os-machine.ts'
+import {applyInteraction, createHandwiredOSMachine, interactionFrameTime} from './handwired-os-machine.ts'
 
 test('a machine that switches to generated JS in the middle of the scripted session writes back the same table and outputs as an executor-only machine', () => {
-  const executor = createIndirectOSMachine({evaluator: 'executor', validate: false})
-  const tiered = createIndirectOSMachine({evaluator: 'tiered', validate: true})
+  const executor = createHandwiredOSMachine({evaluator: 'executor', validate: false})
+  const tiered = createHandwiredOSMachine({evaluator: 'tiered', validate: true})
   const evaluator = tiered.tiered!
   // The root list repeats some wires, e.g. a window's next-source cell that is also a projected output.
   const roots = [...new Set(executor.program.roots)]

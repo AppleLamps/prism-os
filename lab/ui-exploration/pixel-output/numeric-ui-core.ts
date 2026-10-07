@@ -3,7 +3,7 @@
 //
 // This file is a copy of the repo root numeric-ui-core.ts (commit 8c5c4af) with
 // these additions, described in index-read's README, which stays at
-// https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/index-read/README.md.
+// https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/index-read/README.md.
 // This copy moved from index-read into lab/ui-exploration/pixel-output on
 // September 16, 2026, when index-read was removed. The additions:
 // - Circuit.indexRead / emitIndexRead: an instruction that reads

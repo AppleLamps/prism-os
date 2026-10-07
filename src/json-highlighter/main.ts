@@ -139,7 +139,7 @@ function mountJsonHighlighter(document: Document, window: Window) {
   })
 
   textarea.value = `{
-  "name": "indirect",
+  "name": "handwired",
   "version": "0.0.1",
   "private": true,
   "scripts": {"test": "bun test", "start": "bun ./index.html"},

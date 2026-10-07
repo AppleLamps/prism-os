@@ -1,7 +1,7 @@
-// Which IndirectOS window or dock item receives a press at each pixel, and
+// Which HandwiredOS window or dock item receives a press at each pixel, and
 // which part of the window (title bar, a button, the resize grip).
 //
-// The circuit reads IndirectOS's own source table layout, so a live IndirectOS
+// The circuit reads HandwiredOS's own source table layout, so a live HandwiredOS
 // source table is its shared input; the press position (downX, downY) is the
 // per-instance input. The hit tests and the frontmost selection are copies of
 // emitRectangleHit, emitFrontmost and the geometry lines in window-manager.ts,

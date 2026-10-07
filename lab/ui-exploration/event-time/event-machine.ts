@@ -1,6 +1,6 @@
 // Commit per event, sample per frame.
 //
-// IndirectOS (spring-bank's bank circuit in window-manager.ts, deferred
+// HandwiredOS (spring-bank's bank circuit in window-manager.ts, deferred
 // retargeting) writes its next-source outputs back only in commit evaluations:
 // at event timestamps, and at fixed simulated times after them (commits.ts).
 // A display evaluation computes what the screen shows at a frame's timestamp

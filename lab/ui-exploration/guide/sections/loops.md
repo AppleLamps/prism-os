@@ -113,7 +113,7 @@ A tournament compares items in pairs, then the pairs' results in pairs, like a b
 
 ### Circuit way 3: the largest key
 
-instanced-items' staged IndirectOS gives each window a key: its stacking rank + 1 when the press hits the window, where a higher rank is closer to the front, and 0 when the press misses. The frontmost hit window has the largest key, so the circuit takes the maximum key, and each window compares its own key with that maximum.
+instanced-items' staged HandwiredOS gives each window a key: its stacking rank + 1 when the press hits the window, where a higher rank is closer to the front, and 0 when the press misses. The frontmost hit window has the largest key, so the circuit takes the maximum key, and each window compares its own key with that maximum.
 
 ### Pitfalls
 
@@ -167,7 +167,7 @@ For example, item 10's row is `10 × [columnCount == 1] + 5 × [columnCount == 2
 
 - **Replacing sqrt, division and floor together.** chenguini's life-calendar sizes its grid with `Math.sqrt`, a runtime division, floor and ceil. codegen's circuit uses 141 threshold tests with constant coefficients instead: the grid has at least 7m columns exactly when `life × gridSizeX >= 49 m (m + 1) × gridSizeY`. It matched the demo's column and row counts on all 197,232 viewports of phase one's sweep.
 - **A runtime value divided by a runtime count.** life-calendar's row per cell is `floor(week / m)`, with week up to 3,913 and m up to 140. The circuit computes `round(week × (1/m) − (m − 1) / (2m))`, reading `1/m` and the offset through the one-hot of m. The quotient's fractional part is a multiple of 1/m, so after the offset the value is at least 1/(2m) away from a tie, and rounding can't give the wrong integer. It was exact for all 27,393 cells and all 140 column counts.
-- **Floor division by a constant.** `Math.floor(Math.fround(Math.fround(1 / rowHeight) × scrollTop))` misses at least one row for 74 of the 512 integer row heights from 1 to 512 ([index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read)). numeric-library's [`emitFloorDivide`](../../numeric-library/README.md#merged-from-index-read-september-16-2026), from index-read, rounds the approximate quotient, then subtracts 1 when the exact integer remainder is negative: 8 operations and 7 layers, for integer numerators in 0..2^21. It had 0 mismatches at every multiple of the row height up to 2^21, and one below each, for the first ten heights where the plain floor fails.
+- **Floor division by a constant.** `Math.floor(Math.fround(Math.fround(1 / rowHeight) × scrollTop))` misses at least one row for 74 of the 512 integer row heights from 1 to 512 ([index-read](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/index-read)). numeric-library's [`emitFloorDivide`](../../numeric-library/README.md#merged-from-index-read-september-16-2026), from index-read, rounds the approximate quotient, then subtracts 1 when the exact integer remainder is negative: 8 operations and 7 layers, for integer numerators in 0..2^21. It had 0 mismatches at every multiple of the row height up to 2^21, and one below each, for the first ten heights where the plain floor fails.
 - **A step function of one runtime width.** A paragraph's height changes in steps as its container gets wider, so the height becomes `baseHeight + Σ heightChange × [width >= threshold]`, with thresholds found in JavaScript when the text is prepared. hn-thread's 251 comment heights use 1,768 thresholds: 5,283 operations in 4 layers. The [text](text.md) section covers this.
 
 ## 5. Ranks instead of sorting
@@ -182,14 +182,14 @@ Reading "the height at sorted position p" uses the bits `[rank[item] == p]`, whi
 
 ### A sorting network instead
 
-A sorting network is a fixed list of compare-exchange steps that sorts any input, where each compare-exchange puts the smaller of two values first. Batcher's networks (bitonic and odd-even merge) use about n × log2²(n) / 4 compare-exchanges in log2(n) × (log2(n) + 1) / 2 stages, so O(n log² n) operations at O(log² n) depth. A compare-exchange on keys alone is a minimum and a maximum, 4 operations in 3 layers ([runtime notes](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md)).
+A sorting network is a fixed list of compare-exchange steps that sorts any input, where each compare-exchange puts the smaller of two values first. Batcher's networks (bitonic and odd-even merge) use about n × log2²(n) / 4 compare-exchanges in log2(n) × (log2(n) + 1) / 2 stages, so O(n log² n) operations at O(log² n) depth. A compare-exchange on keys alone is a minimum and a maximum, 4 operations in 3 layers ([runtime notes](https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md)).
 
-[outside-techniques](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md) measured both forms with integer keys and one payload value carried per item:
+[outside-techniques](https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md) measured both forms with integer keys and one payload value carried per item:
 
 - 16 items: a bitonic network was 1,248 operations and 50 layers, and ranks by counting with gathers were 1,056 operations and 5 layers.
 - 64 items: 10,624 operations and 105 layers, against 16,512 operations and 5 layers.
 
-The [runtime notes](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md) measured an odd-even merge network over 64 keys, without a payload, at 2,172 operations and 63 layers. So at 16 items counting was less work, at 64 items the network was, and counting stayed at a constant 5 layers.
+The [runtime notes](https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/notes/runtime.md) measured an odd-even merge network over 64 keys, without a payload, at 2,172 operations and 63 layers. So at 16 items counting was less work, at 64 items the network was, and counting stayed at a constant 5 layers.
 
 The runtime notes' network was exact only on integer keys. Its compare-exchanges computed each minimum and maximum with arithmetic on the difference, 4 operations in 3 layers, and that arithmetic drifts on fractional operands, like `emitMinimum` ([minimum and maximum](../../../../docs/execution-model.md#minimum-and-maximum)). On fractional keys, 20 to 24% of its outputs weren't bit-equal to any input, with errors up to 6e-5. Counting copies each value without rounding, as long as its comparisons give exact bits, e.g. from `emitCompare`.
 
@@ -197,7 +197,7 @@ The runtime notes' network was exact only on integer keys. Its compare-exchanges
 
 The pattern doc's update finds the dragged card's new rank from the pointer's position. rank-sort.ts's `buildMoveRanks` instead takes the dragged item's rank before and after the move, `fromRank` and `toRank`, and matches `order.splice(fromRank, 1); order.splice(toRank, 0, draggedItem)`: only the items between the two ranks change rank, each by 1, so each item compares its own rank with the two shared ranks instead of with every other item. For example, moving the item at rank 1 to rank 3, with items ranked 0, 1, 2 and 3, gives the ranks 0, 3, 1 and 2. That's 17 operations per item in 5 layers, e.g. 17,409 operations for 1,024 items. In lists' port of draggable-cards, recomputing the ranks every frame made its two O(n²) parts 18% of the circuit at 20 cards and 68% at 200 cards, where the circuit was 208,703 operations, against 71,807 with the incremental update ([lists](../../lists/README.md)).
 
-Store order as ranks, or as a permutation matrix in the source table the way IndirectOS stores its 4 × 4 window stacking order, rather than as a link from each item to the next. Following links needs reads at computed positions: [outside-techniques](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md) estimated pointer jumping over links, which replaces each link by its target's link in every round, at about 8n² operations per round with one-hots.
+Store order as ranks, or as a permutation matrix in the source table the way HandwiredOS stores its 4 × 4 window stacking order, rather than as a link from each item to the next. Following links needs reads at computed positions: [outside-techniques](https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md) estimated pointer jumping over links, which replaces each link by its target's link in every round, at about 8n² operations per round with one-hots.
 
 ## 6. Grow and shrink with min and max (water filling)
 
@@ -236,7 +236,7 @@ Operations depend on how many clamp points are runtime values. Each child's test
 
 ## 7. Counting and attention
 
-RASP (Weiss, Goldberg and Yahav, "Thinking Like Transformers", 2021) is a programming language whose operations match what a transformer layer computes. As [outside-techniques](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md) noted, two of this section's rewrites are RASP programs. A count of the items that pass a test is RASP's `selector_width`, e.g. "how many visible items come before this item". Ranks by counting are how RASP sorts.
+RASP (Weiss, Goldberg and Yahav, "Thinking Like Transformers", 2021) is a programming language whose operations match what a transformer layer computes. As [outside-techniques](https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md) noted, two of this section's rewrites are RASP programs. A count of the items that pass a test is RASP's `selector_width`, e.g. "how many visible items come before this item". Ranks by counting are how RASP sorts.
 
 Attention scores stored keys against a query and returns stored values weighted by those scores, and hard attention returns only the best-scoring value. A masked sum over the first visible row's one-hot is hard attention whose keys are row positions and whose scores are exact bits. The [indexing](indexing.md) section follows this further, including what a transformer has that these circuits don't: queries and keys computed by learned weights.
 

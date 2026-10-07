@@ -29,7 +29,7 @@ import {
 } from '../../src/runtime/host-timing.ts'
 
 // Tests for springs whose step matrix the host writes, and for the host timing
-// utilities, ported from spring-bank's tests (https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/spring-bank),
+// utilities, ported from spring-bank's tests (https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/spring-bank),
 // lab/ui-exploration/event-time and lab/ui-exploration/guide/examples/springs.
 
 // Seeded hash, copied from numeric-ui-core.test.ts so the suite stays deterministic.

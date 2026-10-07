@@ -5,7 +5,7 @@
 //   one-hot of it (exactly one bit is 1), multiplies each bit with its row top,
 //   and adds the products. That sum is the "masked sum".
 // - Stored one-hot: the selection is kept as one bit per row in source cells,
-//   the way IndirectOS keeps a photo's focus. The circuit only builds the
+//   the way HandwiredOS keeps a photo's focus. The circuit only builds the
 //   masked sum.
 //
 // Each circuit compiles two ways: dense, where the executor runs every product,

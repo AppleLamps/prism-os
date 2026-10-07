@@ -1,4 +1,4 @@
-// The demo page's logic without the DOM: IndirectOS committed per event, one
+// The demo page's logic without the DOM: HandwiredOS committed per event, one
 // prediction of all 301 samples per commit, and a keyframe plan per prediction.
 // demo.ts only reads plans and writes styles.
 import {type Committer, createCommitter} from './commits.ts'

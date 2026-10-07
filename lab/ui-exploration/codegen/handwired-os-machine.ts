@@ -34,7 +34,7 @@ import {createTieredEvaluator} from './tiered.ts'
 // generated JS once every live wire matches the executor.
 export type Evaluator = 'executor' | 'generated' | 'tiered'
 
-export type IndirectOSMachineOptions = {
+export type HandwiredOSMachineOptions = {
   evaluator: Evaluator
   validate: boolean
   rowsPerFunction?: number
@@ -65,7 +65,7 @@ function springSourceField(windowIndex: number, field: number) {
   return sourceField.springStart + windowIndex * springStateSize + field
 }
 
-export function createIndirectOSMachine(options: IndirectOSMachineOptions) {
+export function createHandwiredOSMachine(options: HandwiredOSMachineOptions) {
   const buildStart = performance.now()
   const production = createWindowManagerMachine()
   const buildAndCompileMilliseconds = performance.now() - buildStart
@@ -181,13 +181,13 @@ export function createIndirectOSMachine(options: IndirectOSMachineOptions) {
   }
 }
 
-export type IndirectOSMachine = ReturnType<typeof createIndirectOSMachine>
-type EventTarget = Pick<IndirectOSMachine, 'pointerDown' | 'pointerMove' | 'pointerUp' | 'photoClick' | 'photoNext' | 'photoPrevious' | 'photoClose'>
+export type HandwiredOSMachine = ReturnType<typeof createHandwiredOSMachine>
+type EventTarget = Pick<HandwiredOSMachine, 'pointerDown' | 'pointerMove' | 'pointerUp' | 'photoClick' | 'photoNext' | 'photoPrevious' | 'photoClose'>
 
-// A deterministic 240-frame session over IndirectOS's initial layout at
+// A deterministic 240-frame session over HandwiredOS's initial layout at
 // 1280×800, with one 90 ms stall at frame 90. Windows are numbered by
 // windowIndex; Photos is window 3. Each press lands on the part named in the
-// comments, and indirect-os-machine.test.ts checks both the part under each
+// comments, and handwired-os-machine.test.ts checks both the part under each
 // press (with referenceOwnership) and the state change the press causes.
 export function interactionFrameTime(frame: number) {
   return 1000 + frame * 16.667 + (frame >= 90 ? 90 : 0)

@@ -86,7 +86,7 @@ So decisions stay exact without dyadic advances, delta row widths drift by a few
 | text tables alone, line counts only | 190 | 4 | 270 |
 | 16 springs sharing one step matrix | 600 | 22 | 1,100 |
 
-The 10 blocks hold 244 thresholds in total. The paragraphs have 40, 62, 88, and 40 thresholds with 6, 9, 11, and 5 line count changes, and the bubbles and heading have 0 to 4 each. Tabulating everything with the fake canvas takes 16ms, and building and compiling the machine takes 5ms. The same outputs as gathered rows would take 5,792 source cells. For comparison, IndirectOS with Photos is 5,253 live ops, 192 layers, and 11,598 weights.
+The 10 blocks hold 244 thresholds in total. The paragraphs have 40, 62, 88, and 40 thresholds with 6, 9, 11, and 5 line count changes, and the bubbles and heading have 0 to 4 each. Tabulating everything with the fake canvas takes 16ms, and building and compiling the machine takes 5ms. The same outputs as gathered rows would take 5,792 source cells. For comparison, HandwiredOS with Photos is 5,253 live ops, 192 layers, and 11,598 weights.
 
 | per frame, rough | µs |
 | --- | --- |
@@ -189,7 +189,7 @@ Tabulation can only miss a change that changes back between two widths it compar
 - Exactness at the ulp level was cheap. Snapping thresholds to FP32 widths at prepare time lets a 4-atom comparison reproduce pretext's float64 decision at every FP32 width. So line membership, cursors, and line counts are exact bits and integers, with no cascade.
 - The black box absorbed everything pretext does on the single-paragraph APIs: soft hyphens, emergency breaks at dashes, tabs, letter spacing, CJK, keep-all, and pre-wrap chunks. There was no feature-specific code, and 0 wrong decisions on pretext's own oracle cases.
 - Searches whose answer is a function of a step function, e.g. the bubbles demo's tight width or balanced text, move entirely into the prepare step. The circuit then only reads the answer for the current piece. JS formulas in a block's width, including `Math.floor`, also move into the prepare step.
-- The shared-width circuit composes like any other UI state. The springing window width feeds the tables, and the tables feed height and bubble-width springs that share one step matrix. The whole Notes window (2,030 live ops) would add less than half of IndirectOS's size to IndirectOS.
+- The shared-width circuit composes like any other UI state. The springing window width feeds the tables, and the tables feed height and bubble-width springs that share one step matrix. The whole Notes window (2,030 live ops) would add less than half of HandwiredOS's size to HandwiredOS.
 - Edits are affordable at UI scale. Re-preparing, re-tabulating, and recompiling the whole Notes circuit took about 3ms per keystroke with the fake canvas.
 
 ### What got awkward
@@ -214,7 +214,7 @@ Tabulation can only miss a change that changes back between two widths it compar
 - Incremental re-tabulation: an edit at a character only changes lines at or after the line containing the character, so most of a long paragraph's table could be kept.
 - Painting budget: tabulate cursor rows only for line slots near the viewport, or switch long paragraphs to phase 1's next-start table with a compiler pass that lowers "integer index, then read" to one gather.
 - Two runtime variables that aren't a scale, e.g. width and a line clamp, or width and a column count, would need a table per value of the second variable, or thresholds that are functions of both.
-- Put the Notes window into IndirectOS as an app, so the window's resize springs drive its text through the existing window geometry.
+- Put the Notes window into HandwiredOS as an app, so the window's resize springs drive its text through the existing window geometry.
 
 ## Browser check
 

@@ -13,7 +13,7 @@ import {
   createLifeCalendarWorkload,
   createOwnershipWorkload,
   createShapesWorkload,
-  sessionIndirectOSSource,
+  sessionHandwiredOSSource,
   type Workload,
 } from './workloads.ts'
 
@@ -21,7 +21,7 @@ export type DemoKind = 'shapes' | 'ownership' | 'life' | 'grid'
 
 export const demoTitles: Record<DemoKind, string> = {
   shapes: 'SDF shapes',
-  ownership: 'IndirectOS press map',
+  ownership: 'HandwiredOS press map',
   life: 'life-calendar cells',
   grid: 'candidate-gallery layout map',
 }
@@ -47,7 +47,7 @@ export function createDemoModel(kind: DemoKind): DemoModel {
   const workload = kind === 'shapes'
     ? createShapesWorkload(560, 360)
     : kind === 'ownership'
-      ? createOwnershipWorkload(sessionIndirectOSSource(), 640, 400)
+      ? createOwnershipWorkload(sessionHandwiredOSSource(), 640, 400)
       : kind === 'life' ? createLifeCalendarWorkload(720, 450) : createCandidateGridWorkload()
   const sharedSource = new Float32Array(workload.sharedSources[0]!)
   const runner = compileInstanceProgram(workload.plan, {rowsPerFunction: 128, blockSize: 1024})

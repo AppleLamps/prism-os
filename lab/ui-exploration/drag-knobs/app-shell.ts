@@ -140,7 +140,7 @@ export function createAppShellTree(options: AppShellOptions = defaultOptions, de
   const root = column({name: 'root', width: grow(), height: grow()}, [
     row({name: 'header', width: grow(), height: fixed(56), padding: padding(8, 16), gap: 12, alignY: 'center'}, [
       box('menuButton', fixed(40), fixed(40)),
-      addText('title', 'Indirect layout tree', 'title'),
+      addText('title', 'Handwired layout tree', 'title'),
       box('headerSpacer', grow(), fixed(1)),
       row({name: 'actions', gap: 8, alignY: 'center'}, [
         button('shareButton', 'Share'),

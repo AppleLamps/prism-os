@@ -1,4 +1,4 @@
-// IndirectOS (window-manager.ts with Photos from photo-gallery.ts) as a staged program: windows,
+// HandwiredOS (window-manager.ts with Photos from photo-gallery.ts) as a staged program: windows,
 // dock items and photos are instance arrays, each per-item section is a map stage written once,
 // and the loops across items are reductions.
 //
@@ -131,7 +131,7 @@ function projectThumbnail(circuit: Circuit, centerX: Wire, scale: Wire, present:
   }
 }
 
-export function buildStagedIndirectOS(options: {rebuildSmallAffines?: boolean | undefined} = {}) {
+export function buildStagedHandwiredOS(options: {rebuildSmallAffines?: boolean | undefined} = {}) {
   const program = new StagedProgram(options)
   const cell = (name: string, [minimum, maximum]: readonly [number, number]) => program.sharedCell(name, minimum, maximum)
   const shared = {
@@ -602,12 +602,12 @@ export function buildStagedIndirectOS(options: {rebuildSmallAffines?: boolean | 
   return {program, shared, window, photo, outputs}
 }
 
-export type StagedIndirectOS = ReturnType<typeof buildStagedIndirectOS>
+export type StagedHandwiredOS = ReturnType<typeof buildStagedHandwiredOS>
 
 export const latchCells = ['downActive', 'moveActive', 'upActive', 'clickActive', 'previousActive', 'nextActive', 'closeActive'] as const
 
-export function createStagedIndirectOSMachine(options: {rebuildSmallAffines?: boolean | undefined} = {}) {
-  const built = buildStagedIndirectOS(options)
+export function createStagedHandwiredOSMachine(options: {rebuildSmallAffines?: boolean | undefined} = {}) {
+  const built = buildStagedHandwiredOS(options)
   const executor = createExecutor(built.program)
   const {shared, window, photo} = built
   const set = executor.set
@@ -665,4 +665,4 @@ export function createStagedIndirectOSMachine(options: {rebuildSmallAffines?: bo
   }
 }
 
-export type StagedIndirectOSMachine = ReturnType<typeof createStagedIndirectOSMachine>
+export type StagedHandwiredOSMachine = ReturnType<typeof createStagedHandwiredOSMachine>

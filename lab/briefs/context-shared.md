@@ -4,7 +4,7 @@ Updated September 2026 after the reassessment. Read `lab/reassessment-2026-09-03
 
 ## Goals
 
-Indirect explores whether making state and behavior into smaller numeric pieces enables useful new computation, learning, and generative UI. It is an art/science project, not an exercise in replacing every conventional UI technique for production.
+Handwired explores whether making state and behavior into smaller numeric pieces enables useful new computation, learning, and generative UI. It is an art/science project, not an exercise in replacing every conventional UI technique for production.
 
 Read Cheng's talk in `lab/briefs/talk-repeatable-breakthrough.md`, the repository's `agents.md`, and chenguini's current `docs/engineering.md`. Cheap prototypes, clear measurements, and useful pivots matter. Do not constrain a new experiment to reproduce a prior agent's preferred architecture.
 

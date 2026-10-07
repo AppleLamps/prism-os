@@ -2,7 +2,7 @@
 import type {TextTable} from './tree.ts'
 
 export const appTextTables: Record<string, TextTable> = {
-  "title": {"naturalWidth":192.09375,"minWidth":81,"baseLines":1,"thresholds":[105.4637508392334,192.0887508392334]},
+  "title": {"naturalWidth":198.84375,"minWidth":87.75,"baseLines":1,"thresholds":[105.4637508392334,198.8387508392334]},
   "shareButton.label": {"naturalWidth":37.40625,"minWidth":37.40625,"baseLines":1,"thresholds":[]},
   "exportButton.label": {"naturalWidth":46.375,"minWidth":46.375,"baseLines":1,"thresholds":[]},
   "newButton.label": {"naturalWidth":86.84375,"minWidth":61.46875,"baseLines":1,"thresholds":[86.8387508392334]},

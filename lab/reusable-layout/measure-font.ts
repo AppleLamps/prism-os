@@ -6,7 +6,7 @@ const words = new Set<string>([' '])
 for (const [name, short, long] of photoCaptions) {
   for (const word of `${name}. ${short} ${long}`.split(' ')) words.add(word)
 }
-const process = Bun.spawn(['swift', '-module-cache-path', '/tmp/indirect-font-cache', `${import.meta.dir}/measure-font.swift`], {
+const process = Bun.spawn(['swift', '-module-cache-path', '/tmp/handwired-font-cache', `${import.meta.dir}/measure-font.swift`], {
   stdin: new Blob([JSON.stringify([...words])]), stdout: 'pipe', stderr: 'inherit',
 })
 const output = await new Response(process.stdout).text()

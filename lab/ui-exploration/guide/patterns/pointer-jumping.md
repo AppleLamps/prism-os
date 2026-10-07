@@ -86,6 +86,6 @@ The conditions: every `nextStart[s]` holds an integer within 1..n, and `nextStar
 ## Where it's used
 
 - [chains](../sections/chains.md#way-3-pointer-jumping-for-linked-structures), way 3, with one-hot reads in [examples/chains/pointer-jumping.ts](../examples/chains/pointer-jumping.ts).
-- [text-walker](../../text-walker/README.md#merged-from-index-read-september-16-2026): the line starts of a 1,023-segment paragraph from pretext's next-start table, 490 layers by walking and 66 by pointer jumping, measured in [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read)'s copy of the runtime.
+- [text-walker](../../text-walker/README.md#merged-from-index-read-september-16-2026): the line starts of a 1,023-segment paragraph from pretext's next-start table, 490 layers by walking and 66 by pointer jumping, measured in [index-read](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/index-read)'s copy of the runtime.
 - [text](../sections/text.md#five-ways-to-recover-lines) lists pointer jumping among five ways to recover lines, and [text-walker](../../text-walker/README.md) built it with one-hots at 255 segments, where one-hots were 83% of 235,633 operations.
 - Example and test: [pointer-jumping.ts](../examples/patterns/combining-steps/pointer-jumping.ts) and [pointer-jumping.test.ts](../examples/patterns/combining-steps/pointer-jumping.test.ts).

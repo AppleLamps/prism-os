@@ -13,7 +13,7 @@
 // A component exports its cell declarations as a plain object and a build function
 // that takes the circuit, the table, its cells' wires and the parent's wires, e.g.
 // counterCells and buildCounter in cells.test.ts, or photoCells and buildPhotos in
-// photo-gallery.ts, which IndirectOS includes. The parent declares the
+// photo-gallery.ts, which HandwiredOS includes. The parent declares the
 // component's cells before createCircuit, either nested in its own declarations,
 // e.g. {counters: list(2, () => counterCells)}, or with a second call, e.g.
 // table.declare(counterCells, 'extra'), and calls the build function while building.

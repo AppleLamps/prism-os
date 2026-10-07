@@ -56,19 +56,19 @@ export function emitRowHeight(circuit: Circuit, shared: {headerHeight: Wire, lin
 ## When it's exact
 
 - The staged program gives the duplicated circuit's bits when each reduction takes the same FP32 steps as its operations in the duplicated circuit, e.g. a prefix sum in row order, rounded after every addition, against a chain of `roundAffine`.
-- A stage boundary can change where a value rounds: the builder copies small affine sums into the operations that read them, and a per-item constant that was a weight becomes a product. E.g. with instanced-items' rebuild of small sums across stages turned off, 217 of 2,885,400 values on the gallery's scripted trace changed, by at most 0.00003 px and with no decision changed, and products for per-item constants moved IndirectOS's thumbnail centers by up to 0.0012 px.
+- A stage boundary can change where a value rounds: the builder copies small affine sums into the operations that read them, and a per-item constant that was a weight becomes a product. E.g. with instanced-items' rebuild of small sums across stages turned off, 217 of 2,885,400 values on the gallery's scripted trace changed, by at most 0.00003 px and with no decision changed, and products for per-item constants moved HandwiredOS's thumbnail centers by up to 0.0012 px.
 - The example's host contract puts every input on a quarter-pixel grid with totals below 2^21 px, so every sum is exact, and the test compares the stages, the duplicated circuit and the plain loop exactly.
 
 ## When not to use it
 
-- A handful of items whose constants sit in lookup tables: staging IndirectOS's 20 small items took it from 5,253 to 6,282 operations, because table entries that were weights became products.
+- A handful of items whose constants sit in lookup tables: staging HandwiredOS's 20 small items took it from 5,253 to 6,282 operations, because table entries that were weights became products.
 - Items that don't share a program, e.g. a settings page where every control is different.
 - When the one fixed program is the point, e.g. an executor that runs a whole layer at once: a staged program runs as a list of stages and loops, and the duplicated circuit stays the single program of layers.
 
 ## Where it's used
 
 - [Instancing](../sections/instancing.md): the gallery's 6 map stages and 31 reductions, the reductions' costs, [per-item constants](../sections/instancing.md#per-item-constants-from-weights-to-inputs), [accumulation order](../sections/instancing.md#accumulation-order-is-part-of-the-result), and a row of cards in [examples/instancing](../examples/instancing/).
-- [instanced-items](../../instanced-items/README.md): the staged builder (staged.ts), the gallery and IndirectOS as staged programs, and executors with one generated loop per stage and GPU compute shaders per stage.
+- [instanced-items](../../instanced-items/README.md): the staged builder (staged.ts), the gallery and HandwiredOS as staged programs, and executors with one generated loop per stage and GPU compute shaders per stage.
 - gallery-circuit.ts in [instanced-items](../../instanced-items/README.md#merged-from-gallery-september-16-2026): the duplicated form, 48,411 operations for 221 photos.
 - [codegen](../../codegen/README.md): life-calendar's 27,393 grid squares, where only 63 of its 2,054 operations run once per square, and the other 1,991 run once for the whole grid.
 - Example and test: [one-program-per-item.ts](../examples/patterns/every-item/one-program-per-item.ts) and [one-program-per-item.test.ts](../examples/patterns/every-item/one-program-per-item.test.ts), which compare the stages in both evaluators, the duplicated circuit in both evaluators and the plain loop, with scrollTop and pointerY on row edges and one quarter pixel to either side, and rows of height 0.

@@ -1110,7 +1110,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
     // A click is at the up latch's point, in viewport coordinates, and Photos reads it
     // relative to the content box at the window's destination, like presses hit-test
     // window destinations. E.g. a click during a maximize lands on the photo that ends
-    // up under the pointer. IndirectOS leaves Photos' own click coordinate cells at 0.
+    // up under the pointer. HandwiredOS leaves Photos' own click coordinate cells at 0.
     click: {
       x: circuit.affine([
         [cells.up.x, 1],

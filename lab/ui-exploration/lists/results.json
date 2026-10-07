@@ -1326,7 +1326,7 @@
       "maximumLayerWidth": 4
     },
     {
-      "label": "IndirectOS emitSpring: 4 substeps of a runtime timestep (parameters as source cells)",
+      "label": "HandwiredOS emitSpring: 4 substeps of a runtime timestep (parameters as source cells)",
       "liveOperations": 46,
       "layers": 33,
       "storedWeights": 104,

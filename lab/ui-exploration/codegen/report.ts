@@ -7,7 +7,7 @@
 import {createWindowManagerMachine} from './window-manager-copy.ts'
 import {compileScalarProgram, type FroundAccess} from './codegen.ts'
 import {compileInstanceProgram, createBatchedExecutor, instanceSourceTable} from './instance.ts'
-import {applyInteraction, createIndirectOSMachine, interactionFrameTime} from './indirect-os-machine.ts'
+import {applyInteraction, createHandwiredOSMachine, interactionFrameTime} from './handwired-os-machine.ts'
 import {lifeCalendarSource, referenceLifeCalendar} from './life-calendar.ts'
 import {
   createCandidateGridWorkload,
@@ -15,7 +15,7 @@ import {
   createLifeCalendarWorkload,
   createOwnershipWorkload,
   createShapesWorkload,
-  sessionIndirectOSSource,
+  sessionHandwiredOSSource,
   type Workload,
 } from './workloads.ts'
 
@@ -57,7 +57,7 @@ function parseVariant(variant: string) {
 
 function createSessionMachine(variant: string, validate = false, froundAccess?: FroundAccess) {
   const {evaluator, rowsPerFunction} = parseVariant(variant)
-  return createIndirectOSMachine({evaluator, validate, rowsPerFunction, ...(froundAccess === undefined ? {} : {froundAccess})})
+  return createHandwiredOSMachine({evaluator, validate, rowsPerFunction, ...(froundAccess === undefined ? {} : {froundAccess})})
 }
 
 // ----- Fresh-process runs -----
@@ -222,10 +222,10 @@ if (mode === 'cold') {
     await Bun.write(new URL('./results.json', import.meta.url), `${JSON.stringify(results, null, 2)}\n`)
   }
 
-  // Warm evaluation cost of the IndirectOS program alone, by granularity.
+  // Warm evaluation cost of the HandwiredOS program alone, by granularity.
   const production = createWindowManagerMachine()
   const program = production.tensorProgram
-  const sessionSource = sessionIndirectOSSource()
+  const sessionSource = sessionHandwiredOSSource()
   const executor = production.circuit.createTensorEvaluator([...program.roots])
   const evaluation: Record<string, unknown> = {
     'executor, reusable evaluator': round(warmMicroseconds(() => executor(sessionSource), 2500)),
@@ -241,7 +241,7 @@ if (mode === 'cold') {
       }
     }
   }
-  await log('IndirectOS evaluation, warm µs per evaluation', evaluation)
+  await log('HandwiredOS evaluation, warm µs per evaluation', evaluation)
 
   // Frame loop, warm, in fresh processes.
   const frameLoop: Record<string, unknown> = {}
@@ -265,9 +265,9 @@ if (mode === 'cold') {
       frame++
     }, 2500))
   }
-  await log('IndirectOS frame loop, warm µs per frame', frameLoop)
+  await log('HandwiredOS frame loop, warm µs per frame', frameLoop)
 
-  await log('IndirectOS cold start, fresh processes', ['executor', 'generated:64', 'generated:128', 'generated:512', 'generated:monolithic'].map(variant => child('cold', variant)))
+  await log('HandwiredOS cold start, fresh processes', ['executor', 'generated:64', 'generated:128', 'generated:512', 'generated:monolithic'].map(variant => child('cold', variant)))
   await log('JavaScriptCore size limits, warm µs per frame in fresh processes', {
     'generated:128, default options': child('warm', 'generated:128').warmFrameMicroseconds,
     'generated:1024, default options': child('warm', 'generated:1024').warmFrameMicroseconds,

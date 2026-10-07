@@ -158,7 +158,7 @@ export const bankOptions: WindowManagerOptions = {
   debugOutputs: false,
 }
 
-// The constants IndirectOS writes into its spring cells at startup. Constant
+// The constants HandwiredOS writes into its spring cells at startup. Constant
 // power variants bake them in; source-table and source-matrix read the cells.
 export const windowSpringConstants: SpringConstants = {stiffness: 650, damping: 45}
 const runtimeFrameBound = 256
@@ -2120,4 +2120,4 @@ function assertApproximatelyOne(value: number, label: string, tolerance = 1e-8) 
   invariant(Math.abs(value - 1) <= tolerance, `${label} must equal one`)
 }
 
-// This copy doesn't mount itself. spring-bank's indirect-os-demo.ts called mountWindowManager, see https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/spring-bank/indirect-os-demo.ts
+// This copy doesn't mount itself. spring-bank's indirect-os-demo.ts called mountWindowManager, see https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/spring-bank/indirect-os-demo.ts
