@@ -35,6 +35,9 @@ import {
 // spaces are 20/64 and punctuation 22/64, so every width lies on the 1/64 px grid
 // at 14 px. notes-paragraph.ts's default widths were baked with this rule. The
 // "Tie Test" font measures in whole and 1/64 px for the line fit tie test below.
+// lab/ui-exploration/text-walker/fake-canvas.ts has the same "Tie Test" widths, since
+// pretext keeps the first canvas it measures with, and that canvas is a lab test's
+// when lab/ runs before tests/, e.g. under `bun test` without arguments.
 function fakeTextWidth(text: string, font: string): number {
   const fontSize = Number.parseFloat(font.match(/(\d+(?:\.\d+)?)\s*px/)?.[1] ?? '16')
   if (font.includes('Tie Test')) {
