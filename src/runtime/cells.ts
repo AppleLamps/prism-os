@@ -22,7 +22,6 @@ import {Circuit, type Wire, asWire, describeFirstNaN, invariant} from './numeric
 export type Range = readonly [minimum: number, maximum: number]
 
 export const anyNumber: Range = [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]
-export const nonNegative: Range = [0, Number.POSITIVE_INFINITY]
 export const unitInterval: Range = [0, 1]
 
 // What happens to a cell around an evaluation:

@@ -134,8 +134,10 @@ const photoGalleryCells = {
 const layout = createSourceTable()
 const positions = layout.declare(photoGalleryCells)
 
+/** @public */
 export const thumbnailSpringField = fieldIndices(thumbnailSpringCells)
 
+/** @public */
 export const sourceField = {
   viewportWidth: positions.viewportWidth,
   viewportHeight: positions.viewportHeight,
@@ -160,6 +162,7 @@ export const sourceField = {
   size: layout.size,
 }
 
+/** @public */
 export function focusField(item: number) {
   invariant(Number.isInteger(item) && item >= 0 && item < itemCount, 'photo index is invalid')
   return positions.focus[item]!
@@ -683,6 +686,7 @@ type PhotoGalleryObserver = {
   afterEvaluate?: (values: Float32Array, table: Float32Array, evaluation: PlannedEvaluation<PhotoGalleryEvent>) => void
 }
 
+/** @public */
 export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {}) {
   const writeBack = options.writeBack ?? 'events and settle checks'
   const {circuit, cells, output, initialSource, validate} = createPhotoGalleryCircuit()

@@ -83,6 +83,7 @@ export type FrameTiming = {
 // duration and its events' times relative to the frame, on the time grid.
 // Absolute timestamps stay in float64 here, since an FP32 cell holding
 // performance.now() stores it on a 0.5 ms grid from about 70 minutes into a session.
+/** @public */
 export function quantizeFrameTiming(
   frameTimeStamp: number,
   previousFrameTimeMs: number | null,

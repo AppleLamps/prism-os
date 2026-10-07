@@ -2374,6 +2374,7 @@ export function emitMaximumExact(circuit: Circuit, a: Wire, b: Wire): Wire {
 }
 
 // Math.min(Math.max(value, minimum), maximum), e.g. maximum when minimum > maximum.
+/** @public */
 export function emitClampExact(circuit: Circuit, value: Wire, minimum: Wire, maximum: Wire): Wire {
   return emitMinimumExact(circuit, emitMaximumExact(circuit, value, minimum), maximum)
 }
@@ -2398,6 +2399,7 @@ function emitSelectOperand(
   return result
 }
 
+/** @public */
 export function emitSpring(
   circuit: Circuit,
   positionSource: Wire,
@@ -2882,6 +2884,7 @@ function routeWinner(
 // options.allowExistingReaders applies to the source circuit's declared ranges
 // and grids landing on target wires that operations already read, e.g. a timestep that
 // the target's springs read before the source circuit declares it nonnegative.
+/** @public */
 export function inlineCircuit(
   target: Circuit,
   source: Circuit,
@@ -3163,6 +3166,7 @@ export function validateTensorProgram(circuit: Circuit, program: TensorProgram) 
 // member is exactly 0 or 1 and the members sum to exactly 1 (or 0 where the
 // group allows the all-zero state). Meant for tests and for checking trainer
 // writebacks; the evaluators never pay this cost on their own.
+/** @public */
 export function validateOneHotGroups(circuit: Circuit, values: Float32Array) {
   invariant(
     values.length === circuit.sourceSize + circuit.operations.length,
@@ -3189,6 +3193,7 @@ export function validateOneHotGroups(circuit: Circuit, values: Float32Array) {
 // equals a one-hot masked sum over the same table. E.g. an index built as
 // scrollTop / 28 fails here at scrollTop 14. Meant for tests; the evaluators
 // never pay this cost on their own.
+/** @public */
 export function validateIndexReads(circuit: Circuit, values: Float32Array) {
   invariant(
     values.length === circuit.sourceSize + circuit.operations.length,
@@ -3214,6 +3219,7 @@ export function validateIndexReads(circuit: Circuit, values: Float32Array) {
 // on a 1/64 grid fails here at 100.01. Inferred grids rest on the declared grids
 // and ranges of their operands, so one false declaration can fail many wires.
 // Meant for tests; the evaluators never pay this cost on their own.
+/** @public */
 export function validateGrids(circuit: Circuit, values: Float32Array) {
   invariant(
     values.length === circuit.sourceSize + circuit.operations.length,
@@ -3239,6 +3245,7 @@ export function validateGrids(circuit: Circuit, values: Float32Array) {
 // only the roots and the wires they read, directly or through other operations,
 // are checked, e.g. only the outputs that came out NaN. Meant for tests and error
 // messages; the evaluators never pay this cost on their own.
+/** @public */
 export function validateNoNaN(circuit: Circuit, values: Float32Array, roots?: readonly Wire[]) {
   const firstNaN = describeFirstNaN(circuit, values, roots)
   if (firstNaN !== null) throw new Error(firstNaN)
@@ -3332,6 +3339,7 @@ function forEachInput(operation: Circuit['operations'][number], visit: (input: W
   for (const candidate of operation.indexRead?.table.candidates ?? []) visit(candidate)
 }
 
+/** @public */
 export function validateTensorEvaluation(
   source: Float32Array,
   circuit: Circuit,

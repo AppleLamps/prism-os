@@ -14,7 +14,8 @@ const config = {
   project: ['*.ts', 'src/**/*.ts', 'scripts/*.ts', 'template/*.ts'],
   // Bun otherwise discovers tests as entries before the ignore is applied.
   bun: false,
-  // Test imports should not keep production exports alive.
+  // Test imports should not keep production exports alive. An export that stays for tests/ or lab/,
+  // e.g. validateGrids, has a /** @public */ comment above its declaration, which knip skips.
   ignore: ['**/*.test.ts'],
   ignoreExportsUsedInFile: true,
   // scripts/check.ts runs these tools through bunx, which knip doesn't see.
