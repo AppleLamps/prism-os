@@ -6,7 +6,7 @@ import {
   type FrameSchedule,
   type ReplayMachine,
   compareAtSharedTimes,
-  createIndirectOSTrace,
+  createHandwiredOSTrace,
   createWindowSpringCheck,
   offsetPresses,
   randomPressOffsets,
@@ -14,7 +14,7 @@ import {
   scheduleFrameTimes,
 } from './trace.ts'
 
-const trace = createIndirectOSTrace()
+const trace = createHandwiredOSTrace()
 
 type Program = {valueCount: number, sourceSize: number, layers: {weights: Float32Array}[]}
 function sizes(program: Program) {
@@ -40,7 +40,7 @@ const at = (fps: number, stall?: FrameSchedule['stall']): FrameSchedule =>
 const stall = {startMs: 2701, durationMs: 500}
 const bank = (options: Partial<WindowManagerOptions> = {}) => () => createWindowManagerMachine({...bankOptions, ...options})
 
-test('springs: original rebuilds the original IndirectOS circuit, and its outputs match bit for bit', () => {
+test('springs: original rebuilds the original HandwiredOS circuit, and its outputs match bit for bit', () => {
   const original = createOriginalMachine()
   const copy = createWindowManagerMachine(originalOptions)
   expect(sizes(copy.tensorProgram)).toEqual(sizes(original.tensorProgram))
@@ -62,7 +62,7 @@ test('the spring bank cuts live operations, layers, and stored weights', () => {
   expect(banked.weights).toBeLessThan(original.weights * 0.75)
 })
 
-test('window springs inside IndirectOS match float64 doctrine springs along the trace', () => {
+test('window springs inside HandwiredOS match float64 doctrine springs along the trace', () => {
   const machine = createWindowManagerMachine({...bankOptions, debugOutputs: true})
   const check = createWindowSpringCheck(machine)
   replayTrace(machine, trace.events, scheduleFrameTimes(at(60)), {
@@ -88,7 +88,7 @@ test('with presses on frame times that every rate renders, 30, 60 and 120 fps an
 test('with presses between frames, deferred retargeting agrees across frame rates only with event-time evaluations', () => {
   // Every press moves by its own random offset off the 30 fps grid, and Photos
   // is resized by hand, so thumbnail destinations also change between frames.
-  const events = offsetPresses(createIndirectOSTrace({liveResize: true}).events, randomPressOffsets(7, 30))
+  const events = offsetPresses(createHandwiredOSTrace({liveResize: true}).events, randomPressOffsets(7, 30))
   const replayEvents = (options: Partial<WindowManagerOptions>, schedule: FrameSchedule, evaluateAtEventTimes: boolean) =>
     replayTrace(createWindowManagerMachine({...bankOptions, ...options}), events, scheduleFrameTimes(schedule), {evaluateAtEventTimes})
   const reference = replayEvents({}, at(120), true)

@@ -11,7 +11,7 @@
 // - 'event time, settle per step': the same, and the settle check runs after
 //   every 4 ms step instead of once per frame, so the moment a spring settles
 //   doesn't depend on which step counts the frames happen to land on.
-// - 'IndirectOS substeps': window-manager.ts's timing, 4 substeps of
+// - 'HandwiredOS substeps': window-manager.ts's timing, 4 substeps of
 //   min(frame duration, 32 ms) / 4 per frame, with index.ts's settle rule.
 
 export const msPerAnimationStep = 4
@@ -72,9 +72,9 @@ function stepSpringCheckingEachStep(previous: Spring, dest: number, steps: numbe
 
 export type Press = {time: number, destination: number}
 
-export type TimingRule = 'index.ts' | 'event time' | 'event time, settle per step' | 'IndirectOS substeps'
+export type TimingRule = 'index.ts' | 'event time' | 'event time, settle per step' | 'HandwiredOS substeps'
 
-export const timingRules: readonly TimingRule[] = ['index.ts', 'event time', 'event time, settle per step', 'IndirectOS substeps']
+export const timingRules: readonly TimingRule[] = ['index.ts', 'event time', 'event time, settle per step', 'HandwiredOS substeps']
 
 // Positions at every frame time, keyed by the frame time.
 export function runTimingRule(rule: TimingRule, presses: readonly Press[], frameTimes: readonly number[]): Map<number, number> {
@@ -101,7 +101,7 @@ export function runTimingRule(rule: TimingRule, presses: readonly Press[], frame
   }
 
   for (const now of frameTimes) {
-    if (rule === 'index.ts' || rule === 'IndirectOS substeps') {
+    if (rule === 'index.ts' || rule === 'HandwiredOS substeps') {
       // Handle inputs: index.ts keeps the latest press of the frame.
       while (nextPress < presses.length && presses[nextPress]!.time <= now) {
         destination = presses[nextPress]!.destination
@@ -127,7 +127,7 @@ export function runTimingRule(rule: TimingRule, presses: readonly Press[], frame
       newAnimatedUntilTime += steps * msPerAnimationStep
       current = stepSpringTo(current, destination, steps)
       animatedUntilTime = springStillAnimating(current) ? newAnimatedUntilTime : null
-    } else if (rule === 'IndirectOS substeps') {
+    } else if (rule === 'HandwiredOS substeps') {
       const frameDuration = previousFrameTime === null ? 0 : Math.min(Math.max(0, now - previousFrameTime), 32)
       current = stepSpringTo(current, destination, 4, frameDuration / 4 / 1000)
     } else {

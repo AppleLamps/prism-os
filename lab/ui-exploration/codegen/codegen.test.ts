@@ -65,7 +65,7 @@ test('generated JS stays bit-identical to the executor even when a circuit break
   }
 })
 
-test('generated JS matches the reference on candidate-gallery and on IndirectOS after an interaction', () => {
+test('generated JS matches the reference on candidate-gallery and on HandwiredOS after an interaction', () => {
   const candidate = createCandidateGalleryMachine()
   candidate.step(1280, 800)
   candidate.click(400, 300)

@@ -15,14 +15,14 @@ import {
   validateTensorEvaluation,
   validateTensorProgram,
 } from '../../src/runtime/numeric-ui-core.ts'
-import {createWindowManagerMachine} from '../../src/indirectos/window-manager.ts'
+import {createWindowManagerMachine} from '../../src/handwiredos/window-manager.ts'
 
 // Tests of gather lowering, described in execution-model.md "One-hot groups and
 // gathers": a masked sum over a declared one-hot group compiles to a read of the
 // selected candidate. These tests moved here from lab/gather-lowering on
 // September 16, 2026. That folder's README, with the July exactness argument,
 // benchmarks and executor study, is at
-// https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/gather-lowering
+// https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/gather-lowering
 
 type CompiledProgram = ReturnType<Circuit['compileTensorProgram']>
 
@@ -1211,11 +1211,11 @@ describe('seeded circuits', () => {
   })
 })
 
-// IndirectOS declares finite pixel ranges and one-hot groups, so recognition
+// HandwiredOS declares finite pixel ranges and one-hot groups, so recognition
 // engages on it. This test pins the gather read counts that lab/status.md
 // reports, and checks the lowered program against the reference evaluator on
 // every wire across an interaction trace.
-describe('IndirectOS', () => {
+describe('HandwiredOS', () => {
   test('window-manager lowers its 12 stacking reads and its Notes flow reads, and stays exact in use', () => {
     const machine = createWindowManagerMachine()
     const {circuit} = machine

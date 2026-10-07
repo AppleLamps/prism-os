@@ -7,7 +7,7 @@ import {
   sourceField as candidateSourceTable,
 } from './candidate-gallery.ts'
 
-// The candidate gallery's part of tests/indirectos/oracle-trace.test.ts, which moved here with the gallery.
+// The candidate gallery's part of tests/handwiredos/oracle-trace.test.ts, which moved here with the gallery.
 
 // Seeded hash from numeric-ui-core.test.ts; the only source of "randomness".
 function createRandom(seed: number) {

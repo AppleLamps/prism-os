@@ -1,4 +1,4 @@
-// Runs window-manager.ts's machine and the staged IndirectOS through the same scripted session and
+// Runs window-manager.ts's machine and the staged HandwiredOS through the same scripted session and
 // compares every output and every next source cell, frame by frame. With resync, the staged cells
 // are copied from the original before each frame, so every frame compares one evaluation from
 // identical state.
@@ -18,7 +18,7 @@ import {
   windowSourceField,
   windowStateField,
 } from '../codegen/window-manager-copy.ts'
-import {animationFields, createStagedIndirectOSMachine, photoCount, type StagedIndirectOSMachine} from './indirect-os-staged.ts'
+import {animationFields, createStagedHandwiredOSMachine, photoCount, type StagedHandwiredOSMachine} from './handwired-os-staged.ts'
 import type {Value} from './staged.ts'
 
 type Driver = {
@@ -34,7 +34,7 @@ type Driver = {
 export const sessionFrames = 220
 export const sessionFrameTime = (frame: number) => 16 + frame * 16.67 + (frame >= 150 ? 90 : 0)
 
-// At 1280×800 from IndirectOS's initial layout: drag window 0 by its title bar, resize it by its grip,
+// At 1280×800 from HandwiredOS's initial layout: drag window 0 by its title bar, resize it by its grip,
 // close window 1, reopen it from the dock, maximize Photos, open photo 0 from the grid, next twice,
 // previous, close the lightbox, restore Photos, minimize window 1, with a 90 ms stall at frame 150.
 export function applySession(machine: Driver, frame: number) {
@@ -70,7 +70,7 @@ const sharedNames = [
 ] as const
 
 // The staged cell behind each of window-manager.ts's 201 source cells, and whether the cell holds a decision.
-export function cellTable(staged: StagedIndirectOSMachine) {
+export function cellTable(staged: StagedHandwiredOSMachine) {
   const {shared, window, photo} = staged.built
   const table: ({value: Value, instance: number, label: string, decision: boolean} | undefined)[] = Array(sourceField.size)
   const place = (index: number, value: Value, instance: number, label: string, decision: boolean) => {
@@ -115,7 +115,7 @@ export function cellTable(staged: StagedIndirectOSMachine) {
 type Original = ReturnType<typeof createWindowManagerMachine>
 
 // Each output of window-manager.ts, paired with the staged value and instance that computes it.
-export function outputTable(original: Original, staged: StagedIndirectOSMachine) {
+export function outputTable(original: Original, staged: StagedHandwiredOSMachine) {
   const {outputs} = staged.built
   const pairs: {label: string, wire: number, value: Value, instance: number, decision: boolean}[] = []
   const windowFields = ['translateX', 'translateY', 'width', 'height', 'scale', 'opacity', 'focused', 'stack', 'maximized', 'contentWidth', 'contentHeight'] as const
@@ -147,10 +147,10 @@ export function outputTable(original: Original, staged: StagedIndirectOSMachine)
 
 export type LabelComparison = {compared: number, identical: number, maximumDifference: number, worst: string}
 
-export function runIndirectOSComparison(options: {frames?: number, resync: boolean, rebuildSmallAffines?: boolean}) {
+export function runHandwiredOSComparison(options: {frames?: number, resync: boolean, rebuildSmallAffines?: boolean}) {
   const frames = options.frames ?? sessionFrames
   const original = createWindowManagerMachine()
-  const staged = createStagedIndirectOSMachine({rebuildSmallAffines: options.rebuildSmallAffines})
+  const staged = createStagedHandwiredOSMachine({rebuildSmallAffines: options.rebuildSmallAffines})
   const cells = cellTable(staged)
   const pairs = outputTable(original, staged)
   const byLabel = new Map<string, LabelComparison>()

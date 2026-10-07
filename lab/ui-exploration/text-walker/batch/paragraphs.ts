@@ -5,7 +5,7 @@
 // that a line can break between, and some zero-width spaces, e.g. " ​​" gives a run of 3 break-after segments.
 // Every paragraph is on pretext's fast path (text, spaces and zero-width spaces, no letter spacing).
 import {type PreparedTextWithSegments, layout, prepareWithSegments} from '@chenglou/pretext'
-import {longestBreakAfterRun} from '../../../../src/indirectos/notes-walker.ts'
+import {longestBreakAfterRun} from '../../../../src/handwiredos/notes-walker.ts'
 import {invariant} from '../../../../src/runtime/numeric-ui-core.ts'
 import {fakeTextWidth} from '../fake-canvas.ts'
 import {type FastParagraph, fastWindow, maximumSegmentWidth} from '../fast-walker.ts'
@@ -19,7 +19,7 @@ export const lineHeight = 20
 export const lineFitEpsilon = 0.005
 
 // pretext creates its measuring context at its first measurement, so this runs before the first prepare call. Under
-// `bun test`, modules are shared between test files, e.g. tests/indirectos/notes.test.ts sets its own fake canvas with
+// `bun test`, modules are shared between test files, e.g. tests/handwiredos/notes.test.ts sets its own fake canvas with
 // the same rule for letters, spaces and punctuation. Either way, the circuit and the reference read the same prepared
 // widths, and prepareBatchParagraph checks that they are on the 1/64 px grid.
 export function installBatchCanvas() {

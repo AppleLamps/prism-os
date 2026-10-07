@@ -15,7 +15,7 @@ import {
 import {
   buildCatchUp,
   buildCatchUpWithConstantCells,
-  buildIndirectOsSpring,
+  buildHandwiredOsSpring,
   catchUpForms,
   measureProgram,
 } from './costs.ts'
@@ -62,8 +62,8 @@ for (const form of ['unrolled, one mask per step', 'binary digits, per spring'] 
   const size = measureProgram(one.circuit, one.roots)
   console.log(`| ${form}, stiffness and damping in cells | ${size.liveOperations} / ${size.layers} / ${size.storedWeights} | |`)
 }
-const indirectOs = buildIndirectOsSpring()
-console.log('IndirectOS emitSpring, one spring, with settle', measureProgram(indirectOs.circuit, indirectOs.roots))
+const handwiredOs = buildHandwiredOsSpring()
+console.log('HandwiredOS emitSpring, one spring, with settle', measureProgram(handwiredOs.circuit, handwiredOs.roots))
 
 console.log('\n## Statement order')
 console.log(checkBuildOrder(4, 100_000))

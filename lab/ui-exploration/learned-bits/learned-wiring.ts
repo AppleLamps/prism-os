@@ -5,7 +5,7 @@
 // wiring is fixed: every (source, target) pair exists as a cell, and training
 // decides each cell's bit. The July 2026 plan for differentiable logic gates,
 // exp/exp-dlgn-plan.md (removed; README.md's "Related work" keeps its sources,
-// https://github.com/chenglou/indirect/blob/exploration-2026-09/exp/exp-dlgn-plan.md),
+// https://github.com/chenglou/handwired/blob/exploration-2026-09/exp/exp-dlgn-plan.md),
 // goes further in its stage 3 -- learn which OPERATION each node computes --
 // but explicitly parks connection learning:
 // "Connections (fan-in wiring) stay random and fixed per Petersen -- learning

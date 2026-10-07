@@ -4,7 +4,7 @@ import type {Circuit} from '../../../src/runtime/numeric-ui-core.ts'
 import {createCandidateGalleryMachine, sourceField as candidateSourceField} from './candidate-gallery-copy.ts'
 import type {TensorProgram} from './codegen.ts'
 import {instanceSourceTable, planInstances, type InstancePlan} from './instance.ts'
-import {applyInteraction, createIndirectOSMachine, interactionFrameTime} from './indirect-os-machine.ts'
+import {applyInteraction, createHandwiredOSMachine, interactionFrameTime} from './handwired-os-machine.ts'
 import {createLifeCalendarCircuit, life, lifeCalendarSource, lifeCellIndices} from './life-calendar.ts'
 import {buildRandomCircuit, createRandom, randomSource} from './random-circuit.ts'
 import {createSdfShapesCircuit, pixelCenters, sdfShapesSource} from './sdf-shapes.ts'
@@ -26,11 +26,11 @@ export type Workload = {
   skip?: (sharedIndex: number, instance: number) => boolean
 }
 
-// The IndirectOS source table after the scripted session in
-// indirect-os-machine.ts: window 0 moved and resized, window 1 minimized, and
+// The HandwiredOS source table after the scripted session in
+// handwired-os-machine.ts: window 0 moved and resized, window 1 minimized, and
 // Photos restored after being maximized.
-export function sessionIndirectOSSource() {
-  const machine = createIndirectOSMachine({evaluator: 'generated', validate: false})
+export function sessionHandwiredOSSource() {
+  const machine = createHandwiredOSMachine({evaluator: 'generated', validate: false})
   for (let frame = 0; frame < 240; frame++) {
     applyInteraction(machine, frame)
     machine.step(1280, 800, interactionFrameTime(frame))
@@ -38,12 +38,12 @@ export function sessionIndirectOSSource() {
   return new Float32Array(machine.source)
 }
 
-export function createOwnershipWorkload(indirectOSSource: Float32Array, width = 1280, height = 800): Workload {
+export function createOwnershipWorkload(handwiredOSSource: Float32Array, width = 1280, height = 800): Workload {
   const ownership = createWindowOwnershipCircuit()
   const program = ownership.circuit.compileTensorProgram(ownership.outputs)
   const pixels = new Float32Array(width * height * 2)
-  const viewportWidth = indirectOSSource[0]!
-  const viewportHeight = indirectOSSource[1]!
+  const viewportWidth = handwiredOSSource[0]!
+  const viewportHeight = handwiredOSSource[1]!
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       pixels[(y * width + x) * 2] = (x + 0.5) * viewportWidth / width
@@ -51,11 +51,11 @@ export function createOwnershipWorkload(indirectOSSource: Float32Array, width = 
     }
   }
   return {
-    name: `IndirectOS ownership map, ${width}×${height} pixels`,
+    name: `HandwiredOS ownership map, ${width}×${height} pixels`,
     circuit: ownership.circuit,
     program,
     plan: planInstances(program, ownership.instanceSources, ownership.outputs),
-    sharedSources: [indirectOSSource],
+    sharedSources: [handwiredOSSource],
     instanceSources: pixels,
     count: width * height,
     width,
@@ -185,7 +185,7 @@ export function createRandomWorkloads(seeds = 12, count = 256): Workload[] {
 
 export function buildAllWorkloads(): Workload[] {
   return [
-    createOwnershipWorkload(sessionIndirectOSSource()),
+    createOwnershipWorkload(sessionHandwiredOSSource()),
     createLifeCalendarWorkload(),
     createCandidateWidthWorkload(),
     createCandidateGridWorkload(),

@@ -1,5 +1,5 @@
 // Web Animations keyframes from a prediction (chenguini docs/Animation.md's
-// predictive keyframes, for all of IndirectOS). Sample i is on screen for 4 ms
+// predictive keyframes, for all of HandwiredOS). Sample i is on screen for 4 ms
 // from originTime + 4 i (less half a clock grid step, see planKeyframes), so the
 // keyframes step instead of interpolating, the animation's start time is the
 // prediction's origin, and the last keyframe is the settle sample, held by

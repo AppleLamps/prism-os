@@ -51,7 +51,7 @@ export const itemCount = 12
 export const columnCount = 4
 export const rowCount = 3
 
-// Thumbnails and IndirectOS's windows share these constants, so one spring matrix
+// Thumbnails and HandwiredOS's windows share these constants, so one spring matrix
 // serves both.
 export const springConstants: SpringConstants = {stiffness: 650, damping: 45}
 // Every FP32 matrix entry the host writes for up to 300 steps stays within this
@@ -74,7 +74,7 @@ const thumbnailSpringCells = {
 }
 
 // Photos' own cells. A host declares them once, e.g. nested as {photos: photoCells}
-// in IndirectOS, adds the rule for photoEvents, and passes the cells' wires to
+// in HandwiredOS, adds the rule for photoEvents, and passes the cells' wires to
 // buildPhotos.
 export const photoCells = {
   // Spacing and control-size constants live in the tens of pixels; 1024 is
@@ -83,7 +83,7 @@ export const photoCells = {
   mainInset: constant(92, [0, 1024]),
   thumbnailHeight: constant(82, [0, 1024]),
   controlSize: constant(52, [0, 1024]),
-  // x and y are in the host's coordinates, e.g. IndirectOS's viewport coordinates.
+  // x and y are in the host's coordinates, e.g. HandwiredOS's viewport coordinates.
   // The host passes buildPhotos the click position relative to Photos' content box.
   click: {active: event(), x: input(anyNumber), y: input(anyNumber)},
   previous: event(),
@@ -201,7 +201,7 @@ type ThumbnailTarget = {
   focused: Wire
 }
 
-// What buildPhotos returns, e.g. IndirectOS's output.photos.
+// What buildPhotos returns, e.g. HandwiredOS's output.photos.
 export type PhotoOutputs = {
   backdropOpacity: Wire
   animationActive: Wire
@@ -252,7 +252,7 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   // with headroom while staying far inside FP32's exact-integer band
   // (execution-model.md's macro contracts keep min, max and clamp operands under
   // 2^23). Finite bounds also make the geometry eligible for gather lowering. In
-  // IndirectOS, the bounds are contracts on the window's content size, which is
+  // HandwiredOS, the bounds are contracts on the window's content size, which is
   // clamped to the viewport and so honors them.
   circuit.assumeRange(host.viewportWidth, 0, 16_384)
   circuit.assumeRange(host.viewportHeight, 0, 16_384)
@@ -651,7 +651,7 @@ export function createPhotoGalleryCircuit() {
 }
 
 // What the host writes into the 4 matrix cells for each step count, see
-// advanceFrame in host-timing.ts. IndirectOS writes the same matrices.
+// advanceFrame in host-timing.ts. HandwiredOS writes the same matrices.
 const springStep = springStepMatrix(springConstants)
 export const springMatrixPowers = Array.from(
   {length: defaultSpringClockConfig.maxStepsPerFrame + 1},
@@ -1027,7 +1027,7 @@ function emitIntervalHit(circuit: Circuit, position: Wire, start: Wire, size: Wi
 
 // How far the position lies inside the interval from start to start + size: the
 // smaller of its distances to the two ends, e.g. 3 when the position is 3 px past
-// start in a 100 px interval, and negative outside the interval. IndirectOS's dock
+// start in a 100 px interval, and negative outside the interval. HandwiredOS's dock
 // hit test uses it too.
 export function emitIntervalDistance(circuit: Circuit, position: Wire, start: Wire, size: Wire): Wire {
   const end = circuit.affine([[start, 1], [size, 1]])

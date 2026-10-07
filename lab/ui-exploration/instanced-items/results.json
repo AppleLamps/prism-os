@@ -1971,7 +1971,7 @@
   },
   "decisionMismatchesAgainstIndexTs": 0
  },
- "IndirectOS sizes": {
+ "HandwiredOS sizes": {
   "window-manager.ts": {
    "liveOperations": 5253,
    "layers": 192,
@@ -1993,7 +1993,7 @@
    "photos": 270
   }
  },
- "IndirectOS staged stages and reductions": [
+ "HandwiredOS staged stages and reductions": [
   {
    "name": "workspace, dock layout, pointer",
    "kind": "shared",
@@ -2213,7 +2213,7 @@
    "gatherReads": 0
   }
  ],
- "IndirectOS against window-manager.ts, free-running": {
+ "HandwiredOS against window-manager.ts, free-running": {
   "frames": 220,
   "compared": 94380,
   "identical": 93249,
@@ -2236,7 +2236,7 @@
    }
   }
  },
- "IndirectOS against window-manager.ts, cells copied every frame": {
+ "HandwiredOS against window-manager.ts, cells copied every frame": {
   "frames": 220,
   "compared": 94380,
   "identical": 93764,
@@ -2259,7 +2259,7 @@
    }
   }
  },
- "IndirectOS rough µs per evaluation": {
+ "HandwiredOS rough µs per evaluation": {
   "window-manager.ts executor (evaluateTensor, no validation)": 58.9,
   "staged executor (generated JS per stage)": 9.1
  },
@@ -6419,7 +6419,7 @@
   },
   "decisionMismatchesAgainstIndexTs": 0
  },
- "rebuild rule, IndirectOS": {
+ "rebuild rule, HandwiredOS": {
   "with the rule": {
    "operationsPerAxis": {
     "shared": 254,

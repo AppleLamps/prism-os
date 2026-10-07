@@ -1,7 +1,7 @@
 import {expect, test} from 'bun:test'
 import * as rootCandidateGallery from '../../candidate-gallery/candidate-gallery.ts'
 import * as candidateGalleryCopy from './candidate-gallery-copy.ts'
-import {applyInteraction, interactionFrameTime} from './indirect-os-machine.ts'
+import {applyInteraction, interactionFrameTime} from './handwired-os-machine.ts'
 import * as windowManagerCopy from './window-manager-copy.ts'
 
 // The folder imports copies of candidate-gallery.ts and window-manager.ts without their mount at import time (see the
@@ -29,8 +29,8 @@ test('candidate-gallery-copy.ts builds the same program and steps to the same va
 
 // Until September 15, 2026, this test compared window-manager-copy.ts with window-manager.ts. The root module then moved
 // to host-timed springs, and the copy, with photo-gallery-copy.ts, keeps the program from commit ce37920, which the lab
-// folders that measure the original IndirectOS import. So the test pins that program and the table after the session.
-test('window-manager-copy.ts keeps the IndirectOS program from commit ce37920 and steps to the same table over the scripted session', () => {
+// folders that measure the original HandwiredOS import. So the test pins that program and the table after the session.
+test('window-manager-copy.ts keeps the HandwiredOS program from commit ce37920 and steps to the same table over the scripted session', () => {
   const copy = windowManagerCopy.createWindowManagerMachine()
   const program = copy.tensorProgram
   expect([

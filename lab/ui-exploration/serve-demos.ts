@@ -18,7 +18,7 @@ import {resolve} from 'node:path'
 
 import indexPage from './demos.html'
 
-import indirectOS from '../../assets/index.html'
+import handwiredOS from '../../assets/index.html'
 import candidateGallery from '../candidate-gallery/candidate-gallery.html'
 import learnedGallery from '../learned-gallery/learned-gallery.html'
 import hardAttend from '../hard-attend/hard-attend.html'
@@ -51,7 +51,7 @@ import codePoints from './code-points/demo.html'
 const repoRoot = resolve(import.meta.dir, '../..')
 
 const pages = {
-  '/assets/index.html': indirectOS,
+  '/assets/index.html': handwiredOS,
   '/lab/candidate-gallery/candidate-gallery.html': candidateGallery,
   '/lab/learned-gallery/learned-gallery.html': learnedGallery,
   '/lab/hard-attend/hard-attend.html': hardAttend,
@@ -152,4 +152,4 @@ try {
   process.exit(1)
 }
 
-console.log(`Indirect demos: ${server.url}`)
+console.log(`Handwired demos: ${server.url}`)

@@ -1,9 +1,9 @@
 import {expect, test} from 'bun:test'
 import {expandDuplicated, measureCircuit} from './expand.ts'
-import {runIndirectOSComparison} from './indirect-os-compare.ts'
+import {runHandwiredOSComparison} from './handwired-os-compare.ts'
 
-test('staged IndirectOS, free-running beside window-manager.ts through the session: every decision matches every frame, and the session did what it says', () => {
-  const result = runIndirectOSComparison({resync: false})
+test('staged HandwiredOS, free-running beside window-manager.ts through the session: every decision matches every frame, and the session did what it says', () => {
+  const result = runHandwiredOSComparison({resync: false})
   if (result.decisionMismatches > 0) console.log(result.firstDecisionMismatches)
   expect(result.decisionMismatches).toBe(0)
   const at = (frame: number) => result.states[frame]!
@@ -27,14 +27,14 @@ test('staged IndirectOS, free-running beside window-manager.ts through the sessi
   }
 })
 
-test('staged IndirectOS with cells copied from window-manager.ts every frame: every decision matches, most values are bit-identical', () => {
-  const result = runIndirectOSComparison({resync: true})
+test('staged HandwiredOS with cells copied from window-manager.ts every frame: every decision matches, most values are bit-identical', () => {
+  const result = runHandwiredOSComparison({resync: true})
   expect(result.decisionMismatches).toBe(0)
   expect(result.identical / result.compared).toBeGreaterThan(0.8)
 })
 
-test('staged IndirectOS expands into a duplicated circuit of 6,282 live operations, 215 layers and 13,346 stored weights, next to window-manager.ts\'s 5,253 / 192 / 11,598', () => {
-  const {original, staged} = runIndirectOSComparison({resync: false, frames: 1})
+test('staged HandwiredOS expands into a duplicated circuit of 6,282 live operations, 215 layers and 13,346 stored weights, next to window-manager.ts\'s 5,253 / 192 / 11,598', () => {
+  const {original, staged} = runHandwiredOSComparison({resync: false, frames: 1})
   const originalSize = measureCircuit(original.circuit, [...original.tensorProgram.roots])
   expect([originalSize.liveOperations, originalSize.layers, originalSize.storedWeights]).toEqual([5253, 192, 11_598])
   const duplicated = expandDuplicated(staged.built.program)

@@ -3,7 +3,7 @@
 // lab/ui-exploration/indirect-os-2's notes.ts (configuration 4, with the obstacles
 // read from destinations), rewritten on cells.ts declarations and
 // numeric-ui-core.ts's helpers. indirect-os-2 was removed on September 16, 2026, and
-// stays at https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2
+// stays at https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2
 //
 // Coordinates are local to the Notes content box. Each other window's destination
 // rectangle, where the window is going, becomes an obstacle while the window is
@@ -44,7 +44,7 @@ import {type CellWires, constant, input, inputBit} from '../runtime/cells.ts'
 import type {FastParagraph} from './notes-walker.ts'
 import type {NotesOptions} from './notes-paragraph.ts'
 
-// The Notes window's index among IndirectOS's windows.
+// The Notes window's index among HandwiredOS's windows.
 export const notesWindowIndex = 1
 // Word and obstacle coordinates local to the content box stay within this range
 // for any viewport within 0..16,384 px.

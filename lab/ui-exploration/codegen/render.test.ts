@@ -2,7 +2,7 @@ import {expect, test} from 'bun:test'
 import {compileInstanceProgram, type InstanceRunner} from './instance.ts'
 import {lifeOutputField} from './life-calendar.ts'
 import {renderCandidateGrid, renderLifeCalendar, renderOwnership, renderShapes} from './render.ts'
-import {createCandidateGridWorkload, createLifeCalendarWorkload, createOwnershipWorkload, createShapesWorkload, sessionIndirectOSSource, type Workload} from './workloads.ts'
+import {createCandidateGridWorkload, createLifeCalendarWorkload, createOwnershipWorkload, createShapesWorkload, sessionHandwiredOSSource, type Workload} from './workloads.ts'
 
 function run(workload: Workload): {outputs: Float32Array, runner: InstanceRunner} {
   const runner = compileInstanceProgram(workload.plan, {rowsPerFunction: 128, blockSize: 1024})
@@ -19,7 +19,7 @@ function distinctColors(pixels: Uint8ClampedArray) {
 }
 
 test('each projection paints its workload outputs into pixels', () => {
-  const ownership = createOwnershipWorkload(sessionIndirectOSSource(), 128, 80)
+  const ownership = createOwnershipWorkload(sessionHandwiredOSSource(), 128, 80)
   const ownershipPixels = new Uint8ClampedArray(ownership.count * 4)
   renderOwnership(run(ownership).outputs, ownership.count, ownershipPixels)
   expect(distinctColors(ownershipPixels)).toBeGreaterThan(5)

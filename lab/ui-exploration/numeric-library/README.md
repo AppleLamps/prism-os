@@ -6,9 +6,9 @@ This folder adds the missing operations from phase one to the macro library: exa
 
 Update, September 14, 2026: the repo root `numeric-ui-core.ts` (moved into src/runtime/ on September 17, 2026) now has its own `emitCompare`, which builds integer bits when both operands are declared on a grid, and a sign cascade otherwise, e.g. `a >= b` within 0..16,384 in 15 operations and 14 layers ([execution-model.md](../../../docs/execution-model.md#comparisons)). This folder's library doesn't read grids, and its reciprocal, division, square root, trigonometry, rounding and hash aren't in the root runtime ([expressions.md](../../../docs/expressions.md#familiar-expressions)).
 
-Update, September 15, 2026: window-manager.ts now declares pointer coordinates within ±32,768 px on a 1/64 px grid, and its window hit tests compare each edge distance with `emitCompare`. What this README says about IndirectOS describes this folder's copies of the older window-manager.ts and photo-gallery.ts.
+Update, September 15, 2026: window-manager.ts now declares pointer coordinates within ±32,768 px on a 1/64 px grid, and its window hit tests compare each edge distance with `emitCompare`. What this README says about HandwiredOS describes this folder's copies of the older window-manager.ts and photo-gallery.ts.
 
-Update, September 16, 2026: those copies, with their minimum and maximum modes and float64 references, were removed, since the exact minimum, maximum and clamp are in the root runtime (`emitMinimumExact`, `emitMaximumExact`, `emitClampExact`). They stay at the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/numeric-library), and [IndirectOS with exact minimum and maximum](#indirectos-with-exact-minimum-and-maximum) stays as a record of what they measured.
+Update, September 16, 2026: those copies, with their minimum and maximum modes and float64 references, were removed, since the exact minimum, maximum and clamp are in the root runtime (`emitMinimumExact`, `emitMaximumExact`, `emitClampExact`). They stay at the [exploration-2026-09 tag](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/numeric-library), and [HandwiredOS with exact minimum and maximum](#handwiredos-with-exact-minimum-and-maximum) stays as a record of what they measured.
 
 ## How to run it
 
@@ -16,7 +16,7 @@ From the repo root:
 
 - `bun test lab/ui-exploration/numeric-library` runs 20 tests in about 1 to 3 seconds. That covers library sweeps with asserted bounds and the workload against float64.
 - `bunx tsgo -p lab/ui-exploration/numeric-library` typechecks.
-- `bun lab/ui-exploration/numeric-library/report.ts [section...]` runs the heavy measurements and merges them into `report-output.json`. The sections are `macros` (about 27 s), `plans`, `minimum`, `rectangle-hit`, and `workload`. All numbers in this README come from that file, except the IndirectOS modes, which come from the file's `indirect-os` section at the exploration-2026-09 tag. Timings are rough, because other agents share the machine.
+- `bun lab/ui-exploration/numeric-library/report.ts [section...]` runs the heavy measurements and merges them into `report-output.json`. The sections are `macros` (about 27 s), `plans`, `minimum`, `rectangle-hit`, and `workload`. All numbers in this README come from that file, except the HandwiredOS modes, which come from the file's `indirect-os` section at the exploration-2026-09 tag. Timings are rough, because other agents share the machine.
 - `bun lab/ui-exploration/numeric-library/demo.html` serves the workload as a page: the dock magnifies around the pointer, and the ring spins and fills.
 
 ## What was built
@@ -30,7 +30,7 @@ From the repo root:
 | `shaping.ts` | `emitMix`, `emitRemap`, `emitRemapRuntime`, `emitSmoothstep`, `emitSmoothstepRuntime`, `emitExp`, `emitHash`, `hashReference` |
 | `library.ts` | re-exports all of the above |
 | `library.test.ts` | dense and boundary sampling for every macro, asserting the bounds in the contract table |
-| `window-manager-copy.ts`, `photo-gallery-copy.ts`, `min-max-mode.ts`, `indirect-os-agreement.ts`, `window-manager-copy.test.ts` | removed on September 16, 2026, and kept at the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/numeric-library): copies of IndirectOS whose `emitMinimum` and `emitMaximum` calls went through five modes, float64 references for the settled layout and for presses near edges, and `window-manager.test.ts` pointed at the copy |
+| `window-manager-copy.ts`, `photo-gallery-copy.ts`, `min-max-mode.ts`, `indirect-os-agreement.ts`, `window-manager-copy.test.ts` | removed on September 16, 2026, and kept at the [exploration-2026-09 tag](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/numeric-library): copies of HandwiredOS whose `emitMinimum` and `emitMaximum` calls went through five modes, float64 references for the settled layout and for presses near edges, and `window-manager.test.ts` pointed at the copy |
 | `workload.ts`, `workload.test.ts`, `demo.html`, `demo.ts` | the dock and progress ring circuit, `emitPercentOfUnit`, the float64 reference, and the page |
 | `report.ts`, `report-output.json`, `measure.ts` | measurement script, its output, shared helpers (seeded random values, FP32 stepping, `ceilFloat32`, chi-square p-values) |
 
@@ -88,7 +88,7 @@ Exact minimum and maximum select an operand with the bit: `on * relu(bit) + off 
 
 When the first operand is the minimum, the drifting form subtracts an exact zero, so the error only appears in one operand order.
 
-### IndirectOS's rectangle hit test
+### HandwiredOS's rectangle hit test
 
 This is `boolean(clamp01(min(x - left, left + width - x, y - top, top + height - y)))`. Rectangles are on a 1/64 grid, placed up to 8,000 px from the origin with sizes up to 8,000 px, and presses sit within 4e-4 px of the 0.5 px threshold inside an edge. At that threshold, a float64 hit test and exact FP32 distances must agree. Counts over 1M presses (`report.ts rectangle-hit`):
 
@@ -100,9 +100,9 @@ This is `boolean(clamp01(min(x - left, left + width - x, y - top, top + height -
 
 The counting form is one layer shallower than the drifting form it replaces.
 
-### IndirectOS with exact minimum and maximum
+### HandwiredOS with exact minimum and maximum
 
-Measured on September 13, 2026, with this folder's copies of the window-manager.ts and photo-gallery.ts from before September 15, which stay at the [exploration-2026-09 tag](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/numeric-library). IndirectOS has 273 unique minimum and maximum call sites, Photos included. Exact forms need finite declared ranges on both operands, and today most operands have open ranges. The modes (`report.ts indirect-os` at the tag):
+Measured on September 13, 2026, with this folder's copies of the window-manager.ts and photo-gallery.ts from before September 15, which stay at the [exploration-2026-09 tag](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/numeric-library). HandwiredOS has 273 unique minimum and maximum call sites, Photos included. Exact forms need finite declared ranges on both operands, and today most operands have open ranges. The modes (`report.ts indirect-os` at the tag):
 
 - `drifting`: today's macros.
 - `exact-one-stage`: exact where both declared ranges are finite, with the one-stage resolution of 2^-45 times the difference bound (2^-30 px for operands in [0, 16384]).
@@ -122,7 +122,7 @@ The executor timings come from one run on a machine shared with other agents. Th
 
 Where the 231 open-range sites come from:
 
-- 141 trace back to pointer and click coordinates, which IndirectOS never gives a range. These are the window hit tests (`emitRectangleHit` and `emitIntervalDistance`), the drag and resize clamps that add pointer deltas, and the Photos interval hits against the click latch. Declaring the coordinate ranges converts all 141.
+- 141 trace back to pointer and click coordinates, which HandwiredOS never gives a range. These are the window hit tests (`emitRectangleHit` and `emitIntervalDistance`), the drag and resize clamps that add pointer deltas, and the Photos interval hits against the click latch. Declaring the coordinate ranges converts all 141.
 - 90 clamp spring outputs and the frame duration: window width, height, center, and scale projections, and thumbnail center and scale. Their ranges are open because the spring stiffness, damping, and velocity cells, and the frame timestamps, have open ranges.
 
 Converting every site costs 927 more operations (+18%) and 25 more layers (+13%) with one-stage comparisons. Resolving every FP32 pair at just the 42 sites with finite ranges costs 91 more layers, because each of those comparisons has 5 or 6 clamp stages.
@@ -149,7 +149,7 @@ The Photos grid disagreements (1,056 in `height`, 428 in `top`) were the same in
 
 #### Decisions
 
-- Press decisions near window edges: 3,000 presses within 2e-4 px of 0.5 px inside a right or bottom edge. 57 landed in a title bar and were skipped, since a close button changes visibility. 2,190 of the scores fell within 1e-3 of the threshold. Every mode matched the float64 frontmost-hit reference, including `drifting`, because IndirectOS coordinates stay small enough that the drifting reconstruction is exact.
+- Press decisions near window edges: 3,000 presses within 2e-4 px of 0.5 px inside a right or bottom edge. 57 landed in a title bar and were skipped, since a close button changes visibility. 2,190 of the scores fell within 1e-3 of the threshold. Every mode matched the float64 frontmost-hit reference, including `drifting`, because HandwiredOS coordinates stay small enough that the drifting reconstruction is exact.
 - Random actions (the mix from `window-manager.test.ts`: viewport changes, random clicks, window controls, dock clicks, drags, resizes). 3,000 actions ran in all five modes side by side with 0 decision divergences and 0 decision cells that weren't exact bits. The largest source table difference from `drifting` was 7.6e-6 px.
 - The promise held on every evaluated frame of all three sweeps: 0 of 112 promised operand wires exceeded 2^16.
 - All 14 behavior tests of `window-manager.test.ts` pass in `exact-one-stage` and `exact-one-stage-promised`.
@@ -193,9 +193,9 @@ The spin clock hit a real FP32 limit. Near 16,384 seconds, `f(f(1 / 2.4) * secon
 
 ### What got awkward
 
-- Exactness is gated by declared ranges, and IndirectOS leaves most of them open. 231 of 273 sites couldn't convert. Declaring pointer coordinates fixes 141 honestly. The other 90 sit downstream of springs, whose intermediate ranges grow without bound under range propagation, so they need either a promise or a spring whose state is bounded by construction. A relu-based clamp can't saturate an unbounded value: its plateau breaks once the scaled difference passes 2^24.
+- Exactness is gated by declared ranges, and HandwiredOS leaves most of them open. 231 of 273 sites couldn't convert. Declaring pointer coordinates fixes 141 honestly. The other 90 sit downstream of springs, whose intermediate ranges grow without bound under range propagation, so they need either a promise or a spring whose state is bounded by construction. A relu-based clamp can't saturate an unbounded value: its plateau breaks once the scaled difference passes 2^24.
 - Promises are easy to check wrongly. My first violation count read unrelated wires, because Photos is built as its own circuit and inlined, so its wire numbers change. The fix was remapping the promised operands through the map `inlineCircuit` returns. A tool that tracks contracts across inlining has to do the same.
-- Exactness costs depth. A single exact minimum is 7 operations and 5 layers against 3 and 3. On IndirectOS's sweeps, no mode changed the largest layout differences from float64. One FP32 step of affine rounding sets those (6e-5 px near 1,000 px), and IndirectOS's coordinates rarely mix magnitudes enough for the drifting minimum to err. The exact modes did change which outputs round like `fround(float64)`. Pointer ranges removed the 6 stored rectangle disagreements, but every exact mode added 26 in dock item positions, because an exact selection reaches its consumers as more affine terms. The decision differences showed up only at 8,000-px coordinates (0.24% of near-edge presses decided wrong) and on mixed magnitudes (4.9e-4 px errors).
+- Exactness costs depth. A single exact minimum is 7 operations and 5 layers against 3 and 3. On HandwiredOS's sweeps, no mode changed the largest layout differences from float64. One FP32 step of affine rounding sets those (6e-5 px near 1,000 px), and HandwiredOS's coordinates rarely mix magnitudes enough for the drifting minimum to err. The exact modes did change which outputs round like `fround(float64)`. Pointer ranges removed the 6 stored rectangle disagreements, but every exact mode added 26 in dock item positions, because an exact selection reaches its consumers as more affine terms. The decision differences showed up only at 8,000-px coordinates (0.24% of near-edge presses decided wrong) and on mixed magnitudes (4.9e-4 px errors).
 - "Resolves every FP32 pair" is expensive: 22 operations per comparison within 2^15. It pays to state a resolution, and the right resolution is a property of the data, e.g. geometry on a 1/64 px grid, or operands that are either 0 or at least 2^-7 px. Nothing in the builder knew a value's grid then, so the caller had to say it. numeric-ui-core.ts has since added `circuit.assumeGrid(wire, step)`, and its own `emitCompare` builds integer bits when both operands are declared on a grid.
 - A product that needs more than 24 significant bits before a floor has to be split by hand. The percent label needed 25 operations instead of 8 to match `Math.floor(progress * 100)`.
 - Several contracts have range ratios built in. Reciprocal and square root need `high / low <= 2^22` and a `minimumPositive`, because their composed threshold scores break the clamp plateau above that ratio. Exp's error doubles with each squaring. The hash spreads keys evenly only for small key sets. At 1,024 keys the chi-square p is 0.31, at 16,384 keys it is 0.018, and past 65,536 keys the spread is far from even, likely because `key * .1031` keeps only about 11 fractional bits there.
@@ -211,16 +211,16 @@ The spin clock hit a real FP32 limit. Near 16,384 seconds, `f(f(1 / 2.4) * secon
 
 ## Open questions and next steps
 
-- Bounded springs. If a spring clamps its displacement and velocity inside the frame step, range propagation would stay finite, and the last 90 IndirectOS sites would convert without a promise. How much would the clamps cost next to the 2x2 frame-matrix spring from phase one?
+- Bounded springs. If a spring clamps its displacement and velocity inside the frame step, range propagation would stay finite, and the last 90 HandwiredOS sites would convert without a promise. How much would the clamps cost next to the 2x2 frame-matrix spring from phase one?
 - A resolution per value. A builder-level grid declaration (e.g. "this wire is a multiple of 1/64") would let `emitCompare`, `emitFloor`, and gather planning pick the cheapest exact form automatically, and warn when a composed score crosses the 2^22 plateau limit. numeric-ui-core.ts took part of this on September 14, 2026: `circuit.assumeGrid(wire, step)` declares a grid, the builder infers grids for sums and products, and the root runtime's `emitCompare` builds integer bits on grids and a sign cascade otherwise, with no warning when grid operands are too wide for integer bits. This library's `emitCompare` and `emitFloor`, and gather planning, don't read grids.
-- Counting minimums inside IndirectOS. Replacing the nested hit-test minimums with `emitMinimumOf` would test whether exact decisions can reduce layers in a whole program, not just in one hit test.
+- Counting minimums inside HandwiredOS. Replacing the nested hit-test minimums with `emitMinimumOf` would test whether exact decisions can reduce layers in a whole program, not just in one hit test.
 - Cheaper seeds. A linear seed per bucket would cut two Newton steps from the reciprocal and square root. Comparing squared distances instead of distances would remove the dock's 9 square roots, e.g. a falloff that is smoothstep in `d^2`.
 - Not built: `log`, `pow`, and `atan2`. `atan2` would follow the sine construction (octant reduction by exact comparisons, then a short series), and `log` could use octave bits plus a series.
 - Generated JavaScript from phase one could make the extra booleans nearly free on the CPU. The executor timings above are too noisy to show what the booleans cost today.
 
 ## Merged from index-read, September 16, 2026
 
-`emitFloorDivide` and its test came from [index-read](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read), where it computed a virtualized list's first row, `floor(scrollTop / rowHeight)`, before reading rows at that index ([lists](../lists/README.md#merged-from-index-read-september-16-2026)). The plain `Math.floor(f(f(1 / rowHeight) * scrollTop))` misses at least one row for 74 of the 512 integer row heights from 1 to 512, checked at every multiple of the height up to 2^21 and one below each, e.g. height 41 at scrollTop 41 gives row 0. The first failing heights are 41, 47, 55, 61, 82, 83, 94, 97, 107 and 109. index-read measured this on September 13, 2026, and a scratch script got the same counts on September 16. index-read's version declared no ranges. This one reuses `emitRound`, which needs a declared range, so the approximate quotient declares one, and the cost stays 8 operations in 7 layers.
+`emitFloorDivide` and its test came from [index-read](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/index-read), where it computed a virtualized list's first row, `floor(scrollTop / rowHeight)`, before reading rows at that index ([lists](../lists/README.md#merged-from-index-read-september-16-2026)). The plain `Math.floor(f(f(1 / rowHeight) * scrollTop))` misses at least one row for 74 of the 512 integer row heights from 1 to 512, checked at every multiple of the height up to 2^21 and one below each, e.g. height 41 at scrollTop 41 gives row 0. The first failing heights are 41, 47, 55, 61, 82, 83, 94, 97, 107 and 109. index-read measured this on September 13, 2026, and a scratch script got the same counts on September 16. index-read's version declared no ranges. This one reuses `emitRound`, which needs a declared range, so the approximate quotient declares one, and the cost stays 8 operations in 7 layers.
 
 ## Browser check
 

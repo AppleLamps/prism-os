@@ -1,4 +1,4 @@
-// Runs the per-sample part of an IndirectOS prediction on a GPU, headlessly:
+// Runs the per-sample part of a HandwiredOS prediction on a GPU, headlessly:
 // 301 instances, instance i holding M^i in the 4 source-matrix cells, compared
 // bit for bit with the generated instance loop on the CPU, from committed
 // tables taken along the live resize trace while something animates. Prints
@@ -11,7 +11,7 @@ import {replayCommitPerEvent} from './commits.ts'
 import {createEventTimeMachine} from './event-machine.ts'
 import {compareOutputs, createGpuInstanceRunner} from '../codegen/gpu-runner.ts'
 import {createPredictor, sampleCount} from './prediction.ts'
-import {createIndirectOSTrace, offsetPresses, randomPressOffsets} from './trace.ts'
+import {createHandwiredOSTrace, offsetPresses, randomPressOffsets} from './trace.ts'
 import {emitInstanceWgsl, packSharedBuffer} from '../codegen/wgsl.ts'
 
 type HostGlobals = {
@@ -40,7 +40,7 @@ const adapter = await gpu.requestAdapter({powerPreference: 'high-performance'})
 if (adapter === null) throw new Error('no GPU adapter')
 const device = await adapter.requestDevice()
 
-const trace = createIndirectOSTrace({liveResize: true})
+const trace = createHandwiredOSTrace({liveResize: true})
 const events = offsetPresses(trace.events, randomPressOffsets(7, 30))
 const durationMs = trace.durationMs + 2000
 const results: unknown[] = []

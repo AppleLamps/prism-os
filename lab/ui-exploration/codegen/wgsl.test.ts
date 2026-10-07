@@ -2,7 +2,7 @@ import {expect, test} from 'bun:test'
 import {createCandidateGalleryMachine, sourceField as candidateSourceField} from './candidate-gallery-copy.ts'
 import {sameFloat} from './codegen.ts'
 import {compileInstanceProgram, instanceSourceTable, planInstances, type InstancePlan} from './instance.ts'
-import {createIndirectOSMachine} from './indirect-os-machine.ts'
+import {createHandwiredOSMachine} from './handwired-os-machine.ts'
 import {createLifeCalendarCircuit, lifeCalendarSource} from './life-calendar.ts'
 import {buildRandomCircuit, createRandom, randomSource} from './random-circuit.ts'
 import {createSdfShapesCircuit, pixelCenters, sdfShapesSource} from './sdf-shapes.ts'
@@ -99,7 +99,7 @@ test('the emitted WGSL, with and without the max guard, interpreted with strict 
 })
 
 test('the emitted WGSL for the four workloads, with and without the max guard, interpreted, reproduces the CPU outputs', () => {
-  const machine = createIndirectOSMachine({evaluator: 'generated', validate: false})
+  const machine = createHandwiredOSMachine({evaluator: 'generated', validate: false})
   machine.step(1280, 800, 16)
   const ownership = createWindowOwnershipCircuit()
   const ownershipPlan = planInstances(ownership.circuit.compileTensorProgram(ownership.outputs), ownership.instanceSources, ownership.outputs)

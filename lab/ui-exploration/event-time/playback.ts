@@ -1,4 +1,4 @@
-// Screen models, for comparing two ways of putting commit-per-event IndirectOS
+// Screen models, for comparing two ways of putting commit-per-event HandwiredOS
 // on screen at display times:
 // - Display frames: the main thread evaluates a display at each frame time, and
 //   the screen keeps the last rendered frame until the next one, so it freezes

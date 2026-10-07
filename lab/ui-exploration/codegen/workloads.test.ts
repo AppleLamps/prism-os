@@ -1,12 +1,12 @@
 import {expect, test} from 'bun:test'
 import {compileInstanceProgram, createBatchedExecutor, planInstances} from './instance.ts'
-import {applyInteraction, createIndirectOSMachine, interactionFrameTime} from './indirect-os-machine.ts'
+import {applyInteraction, createHandwiredOSMachine, interactionFrameTime} from './handwired-os-machine.ts'
 import {createLifeCalendarCircuit, life, lifeCalendarSource, lifeCellIndices, lifeOutputField, referenceLifeCalendar} from './life-calendar.ts'
 import {createSdfShapesCircuit, defaultShapes, referenceShapeDistance, referenceShapesPixel, sdfOutputField, sdfShapesSource} from './sdf-shapes.ts'
 import {createWindowOwnershipCircuit, referenceOwnership} from './window-ownership.ts'
 
-test('the per-pixel ownership map matches an independent stack walk on a live IndirectOS source table', () => {
-  const machine = createIndirectOSMachine({evaluator: 'generated', validate: false})
+test('the per-pixel ownership map matches an independent stack walk on a live HandwiredOS source table', () => {
+  const machine = createHandwiredOSMachine({evaluator: 'generated', validate: false})
   for (let frame = 0; frame < 240; frame++) {
     applyInteraction(machine, frame)
     machine.step(1280, 800, interactionFrameTime(frame))

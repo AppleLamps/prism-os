@@ -95,8 +95,8 @@ On June 9, 2026, Photos selected one of about 15 overlapping click targets, the 
 
 ## Where it's used
 
-- [photo-gallery.ts](../../../../src/indirectos/photo-gallery.ts): Photos' click priority, the previous and next controls, then the thumbnails, then the main image. [candidate-gallery.ts](../../../candidate-gallery/candidate-gallery.ts): the clicked thumbnail of the chosen layout.
+- [photo-gallery.ts](../../../../src/handwiredos/photo-gallery.ts): Photos' click priority, the previous and next controls, then the thumbnails, then the main image. [candidate-gallery.ts](../../../candidate-gallery/candidate-gallery.ts): the clicked thumbnail of the chosen layout.
 - [lab/event-window](../../../event-window/README.md): overlapping rectangles, maximized rectangles first, then the lowest index.
 - [instanced-items](../../instanced-items/README.md): the photo under a click, as a tournament in gallery-circuit.ts and as the `firstActive` reduction between per-photo stages. In this guide: [loops](../sections/loops.md#2-when-the-test-isnt-monotone-the-first-hit) with [first-hit.ts](../examples/loops/first-hit.ts), and the hovered card in [instancing](../sections/instancing.md#a-runnable-example-a-row-of-cards)'s [cards-duplicated.ts](../examples/instancing/cards-duplicated.ts).
-- Not in IndirectOS: `emitFrontmost` in [window-manager.ts](../../../../src/indirectos/window-manager.ts) scans the stacking order one rank at a time, since at 4 windows that chain is smaller than an `emitFirstActive` tree (decided on September 15, 2026).
+- Not in HandwiredOS: `emitFrontmost` in [window-manager.ts](../../../../src/handwiredos/window-manager.ts) scans the stacking order one rank at a time, since at 4 windows that chain is smaller than an `emitFirstActive` tree (decided on September 15, 2026).
 - Example and test: [first-active-tree.ts](../examples/patterns/selection/first-active-tree.ts) and [first-active-tree.test.ts](../examples/patterns/selection/first-active-tree.test.ts).

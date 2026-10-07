@@ -72,7 +72,7 @@
   },
   "results": [
     {
-      "workload": "IndirectOS ownership map, 1280×800 pixels",
+      "workload": "HandwiredOS ownership map, 1280×800 pixels",
       "guard": "none",
       "instanceRows": 458,
       "sharedRows": 116,
@@ -463,7 +463,7 @@
       "medianGpuMilliseconds": 0.62
     },
     {
-      "workload": "IndirectOS ownership map, 1280×800 pixels",
+      "workload": "HandwiredOS ownership map, 1280×800 pixels",
       "guard": "max",
       "instanceRows": 458,
       "sharedRows": 116,

@@ -2,7 +2,7 @@
 
 ## What it is and how to run it
 
-This folder asks how far a flexbox-like, Clay-like layout engine goes when it is written as circuit layers. A static tree of rows, columns, wrapping rows, grids, scroll containers, boxes and texts compiles into one Indirect circuit that runs Clay's passes in order: fit widths, widths (grow and shrink with min and max), text line counts, fit heights, heights, and positions. The tree's shape and constants are fixed at compile time. At runtime only the viewport size, scroll positions, a sidebar width driven by a spring, and prepared text tables change. A separate JavaScript implementation of the same algorithm, written with ordinary loops, checks every result.
+This folder asks how far a flexbox-like, Clay-like layout engine goes when it is written as circuit layers. A static tree of rows, columns, wrapping rows, grids, scroll containers, boxes and texts compiles into one handwired circuit that runs Clay's passes in order: fit widths, widths (grow and shrink with min and max), text line counts, fit heights, heights, and positions. The tree's shape and constants are fixed at compile time. At runtime only the viewport size, scroll positions, a sidebar width driven by a spring, and prepared text tables change. A separate JavaScript implementation of the same algorithm, written with ordinary loops, checks every result.
 
 Run from the repo root:
 
@@ -60,7 +60,7 @@ Counts come from `compileTensorProgram` on the requested roots. Stored weights a
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 186 | 61 / 45 / 80 | 8 | 153 (284) | 544 | 2,806 | 115 | 7,451 | 573 | 28 |
 
-For comparison, IndirectOS with Photos is 5,253 live ops, 192 layers and 11,598 stored weights. Circuit evaluation on the CPU executor took about 24 µs, and the machine step including reading results into Maps took about 36 µs.
+For comparison, HandwiredOS with Photos is 5,253 live ops, 192 layers and 11,598 stored weights. Circuit evaluation on the CPU executor took about 24 µs, and the machine step including reading results into Maps took about 36 µs.
 
 Against the JS reference, at the inputs each frame used, 319 frames matched with at most 0.000122 px of drift and 0 mismatches over 29,348 discrete results. The frames covered viewport widths from 320 to 2400, scroll requests past the content's bottom (the circuit clamps these), a request above the top (JS clamps the scroll cell to 0 before the circuit runs, since the cell's declared range is 0..8192), and every frame of two sidebar toggles while the spring moved.
 
@@ -219,7 +219,7 @@ Unrolling Clay's loop into layers would need a bound of hundreds of rounds and w
 - Discrete results that must be exact bits are exact. Text line counts, wrap line membership and grid column counts had 0 mismatches over 48,420 results on random trees, 29,348 in app shell frames, and every width sweep in the child-count table. Positions drifted at most 0.0004 px in random trees and app shell frames. In the widest rows the drift reached 0.013 px, and it comes from adding many widths in FP32, not from the water fill.
 - Grids with auto-fill columns cost at most 15 layers at any child count. The one-hot over column counts turns row lookups into gathers (28 gather reads in the app shell), so a child's height and top store no weights.
 - Text heights join the layout as comparisons against pretext's tabulated thresholds, which matched pretext at every width checked.
-- A whole app shell with a spring-driven sidebar, two grids of cards with text, sticky headers, a wrapping tag row and scrolling is 2,806 live ops, about half of IndirectOS.
+- A whole app shell with a spring-driven sidebar, two grids of cards with text, sticky headers, a wrapping tag row and scrolling is 2,806 live ops, about half of HandwiredOS.
 
 ### What got awkward
 
@@ -239,7 +239,7 @@ Unrolling Clay's loop into layers would need a bound of hundreds of rounds and w
 - The prepare step: segmenting and measuring text, then tabulating line counts by bisection. Headless it uses pretext with a fake canvas; the browser demo uses canvas `measureText` and a greedy word wrap.
 - The DOM projection: nested transforms and sizes, font loading, and the browser's own line breaking inside each text box. The demo relies on the canvas staircase agreeing with the browser's line breaks, which I did not verify, since nobody was awake to grant browser automation. A later Chrome check found the browser's line breaks agreeing with the staircase for all 80 texts, see [Browser check](#browser-check).
 - Event plumbing: JS accumulates wheel deltas into the scroll cell and keeps the cell within its declared range of 0..8192, records press coordinates, and measures frame time. The circuit clamps the scroll position to the content's bottom and writes it back.
-- The tree's structure. Children cannot appear or disappear at runtime. A list whose length changes would need a fixed capacity plus presence bits, and changes of structure would need the constructions in [outside-techniques.md](https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md).
+- The tree's structure. Children cannot appear or disappear at runtime. A list whose length changes would need a fixed capacity plus presence bits, and changes of structure would need the constructions in [outside-techniques.md](https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/notes/outside-techniques.md).
 
 ## Open questions and next steps
 

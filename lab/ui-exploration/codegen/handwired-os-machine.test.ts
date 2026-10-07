@@ -2,10 +2,10 @@ import {expect, test} from 'bun:test'
 import {itemCount as photoCount} from './photo-gallery-copy.ts'
 import {createWindowManagerMachine, photoFocusSourceField, sourceField, windowSourceField, windowStateField} from './window-manager-copy.ts'
 import {sameFloat} from './codegen.ts'
-import {applyInteraction, createIndirectOSMachine, interactionFrameTime} from './indirect-os-machine.ts'
+import {applyInteraction, createHandwiredOSMachine, interactionFrameTime} from './handwired-os-machine.ts'
 import {ownerCode, referenceOwnership, regionCode} from './window-ownership.ts'
 
-// The part of IndirectOS under each pointer press of the session, by frame.
+// The part of HandwiredOS under each pointer press of the session, by frame.
 const pressTargets = new Map([
   [5, {owner: ownerCode.firstWindow + 0, region: regionCode.titleBar}],
   [60, {owner: ownerCode.firstWindow + 0, region: regionCode.resizeGrip}],
@@ -39,10 +39,10 @@ const transitions: [frame: number, description: string, holds: (source: Float32A
   [225, 'window 1 minimized', source => windowCell(source, 1, 'minimized') === 1],
 ]
 
-test('the IndirectOS frame loop with generated JS or the executor tracks the production machine bit for bit over a scripted session', () => {
+test('the HandwiredOS frame loop with generated JS or the executor tracks the production machine bit for bit over a scripted session', () => {
   const production = createWindowManagerMachine()
-  const generated = createIndirectOSMachine({evaluator: 'generated', validate: true, rowsPerFunction: 128})
-  const executor = createIndirectOSMachine({evaluator: 'executor', validate: false})
+  const generated = createHandwiredOSMachine({evaluator: 'generated', validate: true, rowsPerFunction: 128})
+  const executor = createHandwiredOSMachine({evaluator: 'executor', validate: false})
   // The root list repeats some wires, e.g. a window's next-source cell that is also a projected output.
   const roots = [...new Set(production.tensorProgram.roots)]
   expect(production.tensorProgram.roots.length).toBe(429)

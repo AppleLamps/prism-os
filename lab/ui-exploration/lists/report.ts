@@ -282,7 +282,7 @@ if (wants('pieces')) {
     record('pieces', {label: 'one spring lane: 9 matrix-power stages plus settling (position, destination, velocity, and step bits as source cells)', ...measure(circuit, [lane.position, lane.velocity, lane.active])})
   }
   {
-    // IndirectOS emitSpring, with its parameters as source cells.
+    // HandwiredOS emitSpring, with its parameters as source cells.
     const layout = new SourceLayout()
     const [position, destination, velocity, stiffness, damping, timestep, settleDistance, settleSpeed, settleDistanceScale, settleSpeedScale, unit] = layout.cells(11, -65536, 65536)
     const circuit = layout.createCircuit()
@@ -295,7 +295,7 @@ if (wants('pieces')) {
     circuit.assumeRange(settleSpeedScale!, 0, 1000)
     circuit.assumeRange(unit!, 1, 1)
     const spring = emitSpring(circuit, position!, destination!, velocity!, stiffness!, damping!, timestep!, settleDistance!, settleSpeed!, settleDistanceScale!, settleSpeedScale!, unit!)
-    record('pieces', {label: 'IndirectOS emitSpring: 4 substeps of a runtime timestep (parameters as source cells)', ...measure(circuit, [spring.position, spring.velocity, spring.active])})
+    record('pieces', {label: 'HandwiredOS emitSpring: 4 substeps of a runtime timestep (parameters as source cells)', ...measure(circuit, [spring.position, spring.velocity, spring.active])})
   }
   {
     // The catch-up clock as cards.ts builds it, including the animating gate and

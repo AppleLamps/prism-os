@@ -89,7 +89,7 @@ export function buildToggleSwitch() {
   const nextArmed = emitAll(circuit, [armedAfterDown, emitNot(circuit, cells.upActive), emitNot(circuit, cells.cancelActive)])
 
   // Animation tick. The absolute clock stays in JS, which writes this frame's duration in ms. The circuit caps it at
-  // 32 ms and steps the spring 4 times toward this frame's destination, as IndirectOS's emitSpring does.
+  // 32 ms and steps the spring 4 times toward this frame's destination, as HandwiredOS's emitSpring does.
   const cappedDuration = emitMinimum(circuit, cells.frameDuration, emitConstant(circuit, layout.maxFrameDuration))
   const timestep = circuit.affine([[cappedDuration, 0.001 / 4]])
   const thumb = emitSpring(
@@ -178,7 +178,7 @@ export function createToggleSwitchMachine() {
       return result
     },
     // Event handlers only store raw input; the next frame's evaluation reads it. A second event of the same kind in one
-    // frame overwrites the first, as IndirectOS's latches do.
+    // frame overwrites the first, as HandwiredOS's latches do.
     pointerMove(x: number, y: number) {
       source[cells.pointerX] = x
       source[cells.pointerY] = y

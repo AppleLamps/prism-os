@@ -1,7 +1,7 @@
 {
   "bun": "1.4.0",
   "note": "rough medians on a shared machine",
-  "IndirectOS evaluation, warm µs per evaluation": {
+  "HandwiredOS evaluation, warm µs per evaluation": {
     "executor, reusable evaluator": 30.094,
     "generated, 16 rows per function": {
       "functions": 329,
@@ -44,13 +44,13 @@
       "microseconds": 219.908
     }
   },
-  "IndirectOS frame loop, warm µs per frame": {
+  "HandwiredOS frame loop, warm µs per frame": {
     "production machine.step (validation, evaluateTensor, writeback)": 110.785,
     "copy, executor, no validation": 31.538,
     "copy, generated 128 rows, no validation": 3.574,
     "copy, generated 128 rows, validation": 49.637
   },
-  "IndirectOS cold start, fresh processes": [
+  "HandwiredOS cold start, fresh processes": [
     {
       "variant": "executor",
       "constructMilliseconds": 35.3,
@@ -136,7 +136,7 @@
   },
   "instance workloads": [
     {
-      "workload": "IndirectOS ownership map, 1280×800 pixels",
+      "workload": "HandwiredOS ownership map, 1280×800 pixels",
       "instances": 1024000,
       "liveOperations": 574,
       "layers": 39,

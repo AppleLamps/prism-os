@@ -270,7 +270,7 @@ Emergent behavior appears in the population of drags. Changing card padding rewr
 - A reachability hint during a drag: sweep the unlocked knobs as instances and show how far the edge can go before starting, so an unreachable target reads as a wall instead of a stuck drag.
 - Make emitArgmax's comparison saturate like layout's comparison, and measure what that costs. Straight-through would then equal frozen, and learned rules could keep using straight-through.
 - Check the linear font-scale model against real browser line breaks at scaled font sizes.
-- Run the same machinery on IndirectOS through [notation](https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/notation)'s 19 constant cells (title height, button size, dock gaps, spring stiffness), where some knobs feed springs and hit tests instead of layout.
+- Run the same machinery on HandwiredOS through [notation](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/notation)'s 19 constant cells (title height, button size, dock gaps, spring stiffness), where some knobs feed springs and hit tests instead of layout.
 
 ## Browser check
 

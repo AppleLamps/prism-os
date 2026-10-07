@@ -217,7 +217,7 @@ export type CompileOptions = {
   // compiled program, instead of at its build-time depth. A lowered gather read
   // then stops waiting for the products it replaced, and everything downstream
   // can move up. Off by default, since it changes the layers of existing
-  // programs, e.g. IndirectOS.
+  // programs, e.g. HandwiredOS.
   recomputeDepths?: boolean
 }
 
@@ -687,7 +687,7 @@ export class Circuit {
           // index i, with bits built from relu(i - j + 1) - relu(i - j): the ReLU
           // at its corner gets slope 0, so the index receives read(i) - read(i - 1),
           // with the same rule outside the table. Ported from index-read, kept at
-          // https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read,
+          // https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/index-read,
           // which compared the two on every source wire.
           const floorIndex = Math.floor(indexValue)
           const difference = readIndexedValue(values, read, floorIndex)
@@ -818,7 +818,7 @@ export class Circuit {
     // -1 when the layer doesn't read the wire. Every layer uses this one array and
     // resets its own entries when it's done. A new array per layer would allocate
     // the circuit's whole width each time, e.g. 275 layers × 116,053 wires × 4
-    // bytes, about 128 MB, for IndirectOS.
+    // bytes, about 128 MB, for HandwiredOS.
     const inputColumnByWire = new Int32Array(width)
     inputColumnByWire.fill(-1)
     const slotByGroup = new Map<number, number>()
@@ -1183,7 +1183,7 @@ function findLiveOperations(
 // products, and an index read reads its index form and its candidates.
 // Operations come after everything they read, so one pass in operation order
 // suffices. Without gather plans this reproduces the build-time depths.
-// Ported from index-read, kept at https://github.com/chenglou/indirect/tree/exploration-2026-09/lab/ui-exploration/index-read.
+// Ported from index-read, kept at https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/index-read.
 function computeCompiledDepths(
   circuit: Circuit,
   liveOperations: Uint8Array,
@@ -1757,7 +1757,7 @@ function executeTensorProgram(
 // engine's top JIT tier fails to optimize the whole evaluation function and
 // gather-heavy programs run several times slower on identical work (measured
 // 3.6x-5.3x on Bun 1.3 / JavaScriptCore in July 2026 by executor-study.ts, at
-// https://github.com/chenglou/indirect/blob/exploration-2026-09/lab/gather-lowering/executor-study.ts).
+// https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/gather-lowering/executor-study.ts).
 function applyGathers(
   layer: TensorLayer,
   packedValues: Float32Array,

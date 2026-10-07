@@ -1,4 +1,4 @@
-// A timestamped IndirectOS input trace, replayed at any frame rate, plus a
+// A timestamped HandwiredOS input trace, replayed at any frame rate, plus a
 // float64 doctrine reference for the window springs inside the circuit.
 import {itemCount as photoCount, photoField} from './photo-gallery.ts'
 import {
@@ -63,7 +63,7 @@ const at = (thirtyFpsFrame: number) => frameIndexTime(thirtyFpsFrame, 30)
 // resize fall between frames at every rate. `offsetPresses` moves presses off
 // the frame grid. Coordinates come from the initial window layout at 1280x800
 // (window-manager.ts createWindowManagerMachine).
-export function createIndirectOSTrace(options: {liveResize?: boolean} = {}) {
+export function createHandwiredOSTrace(options: {liveResize?: boolean} = {}) {
   const events: TraceEvent[] = []
   const click = (time: number, x: number, y: number) => {
     events.push({time, kind: 'pointerDown', x, y}, {time, kind: 'pointerUp', x, y})
@@ -312,7 +312,7 @@ type BankReplayMachine = ReplayMachine & {
 const laneCount = 5
 const springFieldCount = 10
 
-// Checks the window springs inside this folder's bank IndirectOS against plain
+// Checks the window springs inside this folder's bank HandwiredOS against plain
 // float64 doctrine loops. Each frame starts the reference from the circuit's own
 // FP32 state, takes the destinations and snap bits the circuit computed, steps
 // with the reference clock, and compares the written-back state. Needs a

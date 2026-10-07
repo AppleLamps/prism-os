@@ -1,4 +1,4 @@
-// A copy of window-manager.ts from the repo root: the IndirectOS circuit, createWindowManagerMachine and the
+// A copy of window-manager.ts from the repo root: the HandwiredOS circuit, createWindowManagerMachine and the
 // validators, with the code unchanged except for the import paths. The original module also mounts its own page at import
 // time whenever `document` exists, so importing it from demo.html threw "desktop is missing". This copy leaves out
 // mountWindowManager, projectDockGeometry (only the mount calls it), the createPhotoGalleryRenderer import, and the

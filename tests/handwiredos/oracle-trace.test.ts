@@ -9,14 +9,14 @@ import {
   windowOutputField,
   windowSourceField,
   windowStateField,
-} from '../../src/indirectos/window-manager.ts'
+} from '../../src/handwiredos/window-manager.ts'
 import {
   controlField,
   createPhotoGalleryMachine,
   itemCount as photoItemCount,
   photoField,
   thumbnailField,
-} from '../../src/indirectos/photo-gallery.ts'
+} from '../../src/handwiredos/photo-gallery.ts'
 
 // Seeded hash from numeric-ui-core.test.ts; the only source of "randomness".
 function createRandom(seed: number) {

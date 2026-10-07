@@ -1,8 +1,8 @@
 # Instancing: write the per-item program once
 
-Many UIs show a collection of similar items, e.g. photos in a gallery, cards in a row, windows on a desktop. In JavaScript you write the per-item work once, inside a loop. Indirect's first hand-written gallery circuit instead contained the per-photo arithmetic once per photo, 221 copies in one circuit. The instanced-items prototype built the alternative, the way a GPU shader is written: write the per-photo program once, run that program for every photo, and put the few computations that read many photos' values between those runs.
+Many UIs show a collection of similar items, e.g. photos in a gallery, cards in a row, windows on a desktop. In JavaScript you write the per-item work once, inside a loop. The repo's first hand-written gallery circuit instead contained the per-photo arithmetic once per photo, 221 copies in one circuit. The instanced-items prototype built the alternative, the way a GPU shader is written: write the per-photo program once, run that program for every photo, and put the few computations that read many photos' values between those runs.
 
-This section covers the Photos gallery before and after (gallery-circuit.ts and gallery-staged.ts, both in lab/ui-exploration/instanced-items), which parts of the gallery needed computations across photos and why, what each form costs, why the order of additions matters, why staging IndirectOS made it bigger, how a staged program runs on the CPU and the GPU, a runnable example of a row of cards, and what all of this has in common with a transformer.
+This section covers the Photos gallery before and after (gallery-circuit.ts and gallery-staged.ts, both in lab/ui-exploration/instanced-items), which parts of the gallery needed computations across photos and why, what each form costs, why the order of additions matters, why staging HandwiredOS made it bigger, how a staged program runs on the CPU and the GPU, a runnable example of a row of cards, and what all of this has in common with a transformer.
 
 Instancing isn't a line-by-line translation of JavaScript loops. A loop over items becomes a list of steps, where each step is either one small program that runs for every item, or one computation across all items. A few habits change along the way, e.g. an item's program no longer reads its neighbor's value directly, and an item's constants are no longer written into the code.
 
@@ -36,7 +36,7 @@ The numbers below use four measures. **Live operations**, or just operations, ar
 
 **Which parts needed computations across photos?** Only the parts where one photo's result depends on other photos, or where one shared result depends on every photo: row maxima, row tops, strip left edges, the clicked photo, whether any photo is hovered, the scroll anchor, reads at the focused photo or the anchor photo, and whether anything is still animating. Sizes, the focus relation, grid targets, hover, destinations, springs and occlusion stayed per photo.
 
-**What does it cost?** The program's size stops growing with the item count, while the work per frame still grows the way a shader's does: n × 233 operations for n photos, plus a loop per reduction. The duplicated form of the same gallery at 10,000 photos is 2,571,887 operations and took 4.7 s to build and compile, while the staged program built in 22 ms. Constants that were free weights become inputs read by products, which made the gallery's per-photo arithmetic about 33 operations larger, and made IndirectOS's 20 small items bigger than its hand-written circuit (6,282 against 5,253 operations).
+**What does it cost?** The program's size stops growing with the item count, while the work per frame still grows the way a shader's does: n × 233 operations for n photos, plus a loop per reduction. The duplicated form of the same gallery at 10,000 photos is 2,571,887 operations and took 4.7 s to build and compile, while the staged program built in 22 ms. Constants that were free weights become inputs read by products, which made the gallery's per-photo arithmetic about 33 operations larger, and made HandwiredOS's 20 small items bigger than its hand-written circuit (6,282 against 5,253 operations).
 
 **Is this attention?** Partly. A transformer block is a per-token program (a map stage) plus attention across tokens (a reduction that reads other tokens' values). The staged gallery already has per-item programs, hard reads at computed indices, first-match selections, and maxima and sums across items. It has no soft attention: no fractional weights computed at runtime from how well a query matches each key, no query per item, and nothing learned.
 
@@ -433,29 +433,29 @@ const blurred = emitAnd(circuit, [circuit.affine([[equal(-1), 1], [equal(0), 1],
 
 The neighbor blur becomes "this photo is at most 1 away from the focused photo", so no photo's operations read another photo's wire, at the cost of a few operations per photo.
 
-**Neighbors come from reads at constant indices.** When an item does need a neighbor's value, a reduction reads the value at a per-item constant index. In the staged IndirectOS, pressing Previous focuses the photo before the focused one, so `gatherIndexed` reads, for each photo, the focus bit of the photo after it (`focusAfter` in indirect-os-staged.ts) at the per-item constant index `(index + 1) % 12`, and a photo becomes focused when Previous is pressed and that bit is 1.
+**Neighbors come from reads at constant indices.** When an item does need a neighbor's value, a reduction reads the value at a per-item constant index. In the staged HandwiredOS, pressing Previous focuses the photo before the focused one, so `gatherIndexed` reads, for each photo, the focus bit of the photo after it (`focusAfter` in handwired-os-staged.ts) at the per-item constant index `(index + 1) % 12`, and a photo becomes focused when Previous is pressed and that bit is 1.
 
 **Runtime layout choices become variants plus a gather.** A photo's row depends on the column count, which is only known at runtime, while `gatherIndexed` only takes constant indices. So the staged gallery keeps one array of rows per column count, 7 in all, and each photo gathers its row values through the column count's one-hot.
 
 ### When not to use per-item constants
 
-For a handful of items whose constants sit in lookup tables, the duplicated circuit can be smaller, as IndirectOS showed (next section).
+For a handful of items whose constants sit in lookup tables, the duplicated circuit can be smaller, as HandwiredOS showed (next section).
 
 ### Pitfalls
 
-- A product rounds at a different point than a weight, so values can differ from the duplicated circuit's. IndirectOS's thumbnail falloff multiplies `f32(−0.22)` by an integer distance, where photo-gallery.ts rounds `−0.22 × k` once as a weight, and thumbnail centers moved by up to 0.0012 px.
+- A product rounds at a different point than a weight, so values can differ from the duplicated circuit's. HandwiredOS's thumbnail falloff multiplies `f32(−0.22)` by an integer distance, where photo-gallery.ts rounds `−0.22 × k` once as a weight, and thumbnail centers moved by up to 0.0012 px.
 - A stage boundary can change the arithmetic. numeric-ui-core.ts merges a small sum (fewer than 4 terms, not written with `roundAffine`) into the operations that read it, and staged.ts rebuilds such a sum from its terms when a later stage reads it, so the later stage merges the sum the same way. In staged.test.ts's two-stage example, turning the rebuild off changed 252 of 600 values; on the gallery's scripted trace, only 217 of 2,885,400 values changed, by at most 0.00003 px, and no decision changed.
 
-## Why staging IndirectOS made it bigger
+## Why staging HandwiredOS made it bigger
 
-IndirectOS has 4 windows, 4 dock items and 12 photos. instanced-items/indirect-os-staged.ts writes those as three arrays of items, with 7 shared stages, 8 map stages and 17 reductions. Over a 220-frame session of dragging, resizing, closing and reopening windows and opening photos, it made 0 decision mismatches against window-manager.ts in 94,380 values, and 98.8% of the values were bit-identical; only thumbnail centers and their velocities differed, by up to 0.0012 px and 0.013 px/s. But expanded into one circuit, the staged version is larger:
+HandwiredOS has 4 windows, 4 dock items and 12 photos. instanced-items/handwired-os-staged.ts writes those as three arrays of items, with 7 shared stages, 8 map stages and 17 reductions. Over a 220-frame session of dragging, resizing, closing and reopening windows and opening photos, it made 0 decision mismatches against window-manager.ts in 94,380 values, and 98.8% of the values were bit-identical; only thumbnail centers and their velocities differed, by up to 0.0012 px and 0.013 px/s. But expanded into one circuit, the staged version is larger:
 
 | Circuit | Live operations | Layers | Stored weights |
 | --- | ---: | ---: | ---: |
 | window-manager.ts | 5,253 | 192 | 11,598 |
 | staged program, duplicated | 6,282 | 215 | 13,346 |
 
-On September 15, 2026, window-manager.ts moved to host-timed springs and `emitCompare` hit tests, at 3,654 live operations, 124 layers and 7,890 stored weights, so instanced-items now compares with codegen's copy of the pre-change IndirectOS.
+On September 15, 2026, window-manager.ts moved to host-timed springs and `emitCompare` hit tests, at 3,654 live operations, 124 layers and 7,890 stored weights, so instanced-items now compares with codegen's copy of the pre-change HandwiredOS.
 
 With so few items, writing each item out costs little, and photo-gallery.ts keeps per-item lookup tables in weights. Each thumbnail's offset from the focused photo is a weighted sum over all 12 focus bits, with the table entry as the weight, so reading the table costs no operation:
 
@@ -472,9 +472,9 @@ for (let focusedItem = 0; focusedItem < itemCount; focusedItem++) {
 const offset = circuit.affine(offsetTerms)
 ```
 
-In a thumbnail program written once, the item's index isn't a constant while building. So the staged version computes the wrapped offset `index − focusIndex` at runtime, turns the offset into 13 equality bits (one per offset from −6 to 6), and reads each table through those bits. With those lookups, the map stages over photos come to 270 operations per photo. Likewise, the frontmost window under a press became a maximum over per-window keys (the window's stacking rank + 1 when the press hits the window, else 0), and each window's key is compared with that maximum. In all, the staged IndirectOS has 254 shared operations, 681 per window, 19 per dock item and 270 per photo.
+In a thumbnail program written once, the item's index isn't a constant while building. So the staged version computes the wrapped offset `index − focusIndex` at runtime, turns the offset into 13 equality bits (one per offset from −6 to 6), and reads each table through those bits. With those lookups, the map stages over photos come to 270 operations per photo. Likewise, the frontmost window under a press became a maximum over per-window keys (the window's stacking rank + 1 when the press hits the window, else 0), and each window's key is compared with that maximum. In all, the staged HandwiredOS has 254 shared operations, 681 per window, 19 per dock item and 270 per photo.
 
-So instancing helps most when the item count is large, or not known while building. For a handful of items whose constants sit in lookup tables, the duplicated circuit can be smaller. The staged executor did run IndirectOS faster, about 9 µs against 59 µs through `evaluateTensor`, but most of that difference comes from generated JavaScript: codegen measured about 3 µs for the flat IndirectOS circuit as generated JavaScript.
+So instancing helps most when the item count is large, or not known while building. For a handful of items whose constants sit in lookup tables, the duplicated circuit can be smaller. The staged executor did run HandwiredOS faster, about 9 µs against 59 µs through `evaluateTensor`, but most of that difference comes from generated JavaScript: codegen measured about 3 µs for the flat HandwiredOS circuit as generated JavaScript.
 
 ## Accumulation order is part of the result
 
@@ -790,7 +790,7 @@ Soft attention is attention with those fractional weights, where many tokens con
 | The same MLP for every token | map stages, e.g. 233 operations per photo | yes, with weights written by hand |
 | A token's position | the per-item constant `index`, e.g. each photo's program computing `[newIndex − index = 0]` | yes, as a constant |
 | Hard attention by position | `gatherAt`, e.g. the strip left edge at the focused photo | yes |
-| Hard attention by content, with one query | `firstActive` over hit bits, where the pointer is the query and each photo's rectangle a key; IndirectOS's frontmost window as a `max` over per-window keys | yes |
+| Hard attention by content, with one query | `firstActive` over hit bits, where the pointer is the query and each photo's rectangle a key; HandwiredOS's frontmost window as a `max` over per-window keys | yes |
 | Pooling, i.e. a maximum or a sum over tokens | `max`, `groupMax`, `sum`, `countBits` | yes |
 | Causal attention with equal weights, which averages earlier tokens | `prefixSum`: each item's total is the sum of the earlier items, with every weight 1 and no normalization | partly |
 | Soft attention: fractional weights computed at runtime from query-key scores | none | no |
@@ -801,7 +801,7 @@ The structure lines up: a staged program alternates per-item programs with compu
 
 ## When not to use instancing
 
-- A handful of items with per-item lookup tables, like IndirectOS's 12 thumbnails. Writing them out costs little, and the tables stay weights.
+- A handful of items with per-item lookup tables, like HandwiredOS's 12 thumbnails. Writing them out costs little, and the tables stay weights.
 - Items that don't share a program, e.g. a settings page where every control is different.
 - A per-item runtime index into another array, e.g. each photo reading its row for the current column count, unless a few variants plus a gather cover every case.
 - When the single fixed numeric program is the point. A staged program runs as a list of stages and loops, not as one list of layers where each layer is one sparse matrix multiplication. The duplicated circuit remains the single-program form, and the definition the executors are checked against.
@@ -817,6 +817,6 @@ The structure lines up: a staged program alternates per-item programs with compu
 
 ## Files
 
-- Prototype: [instanced-items](../../instanced-items/README.md) (gallery-circuit.ts, the duplicated circuit, [merged from gallery](../../instanced-items/README.md#merged-from-gallery-september-16-2026); staged.ts, gallery-staged.ts, indirect-os-staged.ts, expand.ts, executor.ts, gpu-executor.ts, wgsl.ts).
+- Prototype: [instanced-items](../../instanced-items/README.md) (gallery-circuit.ts, the duplicated circuit, [merged from gallery](../../instanced-items/README.md#merged-from-gallery-september-16-2026); staged.ts, gallery-staged.ts, handwired-os-staged.ts, expand.ts, executor.ts, gpu-executor.ts, wgsl.ts).
 - Source: lab/trace-compiler/fixtures/index.ts.txt, photo-gallery.ts and window-manager.ts.
 - Examples: [examples/instancing](../examples/instancing/).

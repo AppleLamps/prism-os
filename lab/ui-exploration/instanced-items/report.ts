@@ -1,7 +1,7 @@
 // Heavy measurements for the README: stage and circuit sizes, differential traces against index.ts
-// and gallery-circuit.ts, fold order effects, scaling to 1,000 and 10,000 photos, and IndirectOS.
+// and gallery-circuit.ts, fold order effects, scaling to 1,000 and 10,000 photos, and HandwiredOS.
 // Run: bun lab/ui-exploration/instanced-items/report.ts [section ...]
-// Sections: sizes, traces, orders, scaling, precision, indirect-os, rebuild. Without arguments, every section runs
+// Sections: sizes, traces, orders, scaling, precision, handwired-os, rebuild. Without arguments, every section runs
 // (several minutes; the 10,000-photo duplicated circuit needs about 3 GB of heap). Results merge
 // into results.json. Run one process at a time: each process rewrites results.json from what it read at start.
 import {existsSync, readFileSync, writeFileSync} from 'node:fs'
@@ -14,8 +14,8 @@ import {runScenario, scriptedTrace, type DifferentialReport} from './gallery-dif
 import {createDuplicatedEngine, createOriginalEngine, createStagedEngine, createTeeEngine, createTeeStats, summarizeTee, type GalleryEngine} from './gallery-engine.ts'
 import {initializeEngine} from './gallery-host.ts'
 import {buildStagedGallery, sharedCellNames, springFields, type StagedGalleryOptions} from './gallery-staged.ts'
-import {applySession, cellTable, outputTable, runIndirectOSComparison, sessionFrames, sessionFrameTime} from './indirect-os-compare.ts'
-import {createStagedIndirectOSMachine} from './indirect-os-staged.ts'
+import {applySession, cellTable, outputTable, runHandwiredOSComparison, sessionFrames, sessionFrameTime} from './handwired-os-compare.ts'
+import {createStagedHandwiredOSMachine} from './handwired-os-staged.ts'
 import {photoGalleryData, type PhotoData} from './photo-data.ts'
 import {createReferenceGallery} from './reference.ts'
 import {stageStats, type StagedProgram} from './staged.ts'
@@ -313,26 +313,26 @@ if (wants('precision')) {
 
 const pickSize = ({liveOperations, layers, storedWeights, gatherReads, widestLayer}: ReturnType<typeof measureCircuit>) => ({liveOperations, layers, storedWeights, gatherReads, widestLayer})
 
-function summarizeIndirectOS(result: ReturnType<typeof runIndirectOSComparison>) {
+function summarizeHandwiredOS(result: ReturnType<typeof runHandwiredOSComparison>) {
   return {
     frames: result.frames, compared: result.compared, identical: result.identical, decisionMismatches: result.decisionMismatches,
     differing: Object.fromEntries([...result.byLabel].filter(([, entry]) => entry.identical !== entry.compared).map(([label, entry]) => [label, {identical: entry.identical, compared: entry.compared, maximumDifference: entry.maximumDifference}])),
   }
 }
 
-// === IndirectOS: sizes and the frame-by-frame comparison with window-manager.ts
-if (wants('indirect-os')) {
-  const free = runIndirectOSComparison({resync: false})
-  const resynced = runIndirectOSComparison({resync: true})
+// === HandwiredOS: sizes and the frame-by-frame comparison with window-manager.ts
+if (wants('handwired-os')) {
+  const free = runHandwiredOSComparison({resync: false})
+  const resynced = runHandwiredOSComparison({resync: true})
   const originalSize = measureCircuit(free.original.circuit, [...free.original.tensorProgram.roots])
   const duplicated = expandDuplicated(free.staged.built.program)
   const stagedSize = measureCircuit(duplicated.circuit, duplicated.roots)
-  log('IndirectOS sizes', {'window-manager.ts': pickSize(originalSize), 'staged program, duplicated circuit': pickSize(stagedSize), 'staged program, live operations per axis': perAxisOperations(free.staged.built.program)})
-  log('IndirectOS staged stages and reductions', stageTable(free.staged.built.program))
-  log('IndirectOS against window-manager.ts, free-running', summarizeIndirectOS(free))
-  log('IndirectOS against window-manager.ts, cells copied every frame', summarizeIndirectOS(resynced))
+  log('HandwiredOS sizes', {'window-manager.ts': pickSize(originalSize), 'staged program, duplicated circuit': pickSize(stagedSize), 'staged program, live operations per axis': perAxisOperations(free.staged.built.program)})
+  log('HandwiredOS staged stages and reductions', stageTable(free.staged.built.program))
+  log('HandwiredOS against window-manager.ts, free-running', summarizeHandwiredOS(free))
+  log('HandwiredOS against window-manager.ts, cells copied every frame', summarizeHandwiredOS(resynced))
   const warmState = free.staged.executor
-  log('IndirectOS rough µs per evaluation', {
+  log('HandwiredOS rough µs per evaluation', {
     'window-manager.ts executor (evaluateTensor, no validation)': microsecondsPerCall(() => free.original.circuit.evaluateTensor(free.original.source)),
     'staged executor (generated JS per stage)': microsecondsPerCall(() => warmState.step()),
   })
@@ -367,9 +367,9 @@ if (wants('rebuild')) {
     }
   }
 
-  // IndirectOS: both staged programs through the session, free-running, compared on every output and next cell.
-  const withMachine = createStagedIndirectOSMachine()
-  const withoutMachine = createStagedIndirectOSMachine({rebuildSmallAffines: false})
+  // HandwiredOS: both staged programs through the session, free-running, compared on every output and next cell.
+  const withMachine = createStagedHandwiredOSMachine()
+  const withoutMachine = createStagedHandwiredOSMachine({rebuildSmallAffines: false})
   const tableMachine = createWindowManagerMachine()
   const comparedValues = (machine: typeof withMachine) => [
     ...outputTable(tableMachine, machine).map(({label, value, instance}) => ({label, value, instance})),
@@ -400,13 +400,13 @@ if (wants('rebuild')) {
       }
     })
   }
-  log('rebuild rule, IndirectOS', {
+  log('rebuild rule, HandwiredOS', {
     'with the rule': {operationsPerAxis: perAxisOperations(withMachine.built.program), duplicated: duplicatedSize(withMachine.built.program)},
     'without the rule': {
       operationsPerAxis: perAxisOperations(withoutMachine.built.program),
       duplicated: duplicatedSize(withoutMachine.built.program),
-      'against window-manager.ts, free-running': summarizeIndirectOS(runIndirectOSComparison({resync: false, rebuildSmallAffines: false})),
-      'against window-manager.ts, cells copied every frame': summarizeIndirectOS(runIndirectOSComparison({resync: true, rebuildSmallAffines: false})),
+      'against window-manager.ts, free-running': summarizeHandwiredOS(runHandwiredOSComparison({resync: false, rebuildSmallAffines: false})),
+      'against window-manager.ts, cells copied every frame': summarizeHandwiredOS(runHandwiredOSComparison({resync: true, rebuildSmallAffines: false})),
     },
     'without the rule against with the rule, free-running over the session': {
       frames: sessionFrames, compared, identical,
