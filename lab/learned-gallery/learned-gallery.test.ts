@@ -401,7 +401,7 @@ test('pointer moves over the sketch train nothing once training has settled', ()
   }
   // The page before trained 10 steps at each of these moves.
   assert.equal(page.machine.trainingStep, trainingStepsAfterChange)
-  assert.deepEqual(page.frame().loss, settled.loss)
+  assert.equal(page.frame().loss, settled.loss)
 })
 
 test('a sketch without rectangles asks for no more frames', () => {
@@ -419,16 +419,17 @@ test('a sketch without rectangles asks for no more frames', () => {
   assert.equal(frame.training, false)
   assert.equal(frame.loss, 0)
   assert.equal(frame.selected, null)
-  const step = page.machine.trainingStep
+  // Later frames train nothing either, e.g. at pointer moves, and "Train again" has nothing to train.
+  const stepsBefore = page.machine.trainingStep
   for (let frameIndex = 0; frameIndex < 10; frameIndex++) {
-    frame = page.frame([move(100 + frameIndex, 100)])
+    frame = page.frame([move(100 + frameIndex, 100, false, false)])
     assert.equal(frame.training, false)
     assert.equal(frame.stepsThisFrame, 0)
   }
+  assert.equal(page.machine.trainingStep, stepsBefore)
   frame = page.frame([{kind: 'train again'}])
   assert.equal(frame.training, false)
-  assert.equal(page.machine.trainingStep, 0)
-  assert.equal(step > 0, true)
+  assert.equal(frame.step, 0)
 })
 
 test('training continues from the current weights while a rectangle is dragged', () => {
