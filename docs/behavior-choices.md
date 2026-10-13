@@ -146,7 +146,7 @@ scrollTop = atBottom ? maximumScroll : Math.min(scrollTop + tops[anchorRow] - pr
 
 ## Scroll a list natively, and select a row at the release
 
-HandwiredOS's Files list is a virtualized list in a native scroller. The program keeps no scroll position: the host reads the scroller's `scrollTop` at the top of each frame, the way ui.md's "State The Browser Keeps" treats state that the browser keeps, and the program computes which row each DOM slot shows. The program asks the host to scroll only after a key that moves the selection, or when the sidebar shows another location. A row is selected at a release over the list instead of at the press, and the list takes its six keys only while Files is the focused window. The entry above this one covers the other case, a list whose program computes the scroll position.
+HandwiredOS's Files list is a virtualized list in a native scroller. The program keeps no scroll position: the host reads the scroller's `scrollTop` at the top of each frame, as ui.md's "State The Browser Keeps" section says to read such state, and the program computes which row each DOM slot shows. The program asks the host to scroll only after a key that moves the selection, or when the sidebar shows another location. A row is selected at a release over the list instead of at the press, and the list takes its six keys only while Files is the focused window. The entry above this one covers the other case, a list whose program computes the scroll position.
 
 ```js
 // familiar: select at the press
