@@ -24,6 +24,25 @@ test('inlined circuits become one graph and share matching expressions', () => {
   assert.equal(parent.evaluateTensor(new Float32Array([2, 3]))[output], 10)
 })
 
+test("a program's evaluator exposes the packed values of its last evaluation: the source cells, then every live operation in wireOrder", () => {
+  const circuit = new Circuit(2)
+  const sum = circuit.roundAffine([[circuit.source(0), 1], [circuit.source(1), 1]])
+  const unused = circuit.roundAffine([[circuit.source(0), 5]])
+  const product = circuit.reglu([[sum, 1]], 0, [[circuit.source(0), 1]], 0)
+  const program = circuit.compileTensorProgram([product])
+  const evaluate = circuit.createTensorProgramEvaluator(program)
+  assert.deepEqual([...evaluate(new Float32Array([2, 3]))], [10])
+  // The compiler removed the operation that no root reads, so it has no packed value.
+  assert.deepEqual([...program.wireOrder], [0, 1, sum, product])
+  assert.equal(program.wireOrder.includes(unused), false)
+  const packedValues = evaluate.packedValues
+  assert.deepEqual([...packedValues], [2, 3, 5, 10])
+  // The next evaluation overwrites the same array.
+  evaluate(new Float32Array([4, 1]))
+  assert.equal(evaluate.packedValues, packedValues)
+  assert.deepEqual([...packedValues], [4, 1, 5, 20])
+})
+
 test('tensor layers append only their new values', () => {
   const circuit = new Circuit(2)
   const first = circuit.affine([[circuit.source(0), 2]])

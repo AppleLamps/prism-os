@@ -219,83 +219,189 @@ body {
   border-bottom: 1px solid rgb(255 255 255 / 28%);
 }
 
+/* Files: a sidebar of locations and a virtualized list in a native scroller.
+   files.ts creates the sidebar's items, the header's cells and the rows. Every frame
+   it gives each row its transform, display and --selected, each sidebar item its
+   --selected, and the spacer its height, and it rewrites a row's value when the
+   value changed. At mount it copies the program's layout numbers into the custom
+   properties below and places the sidebar's items on the rectangles that the
+   program hit-tests. */
 .files-content {
-  display: grid;
-  grid-template-columns: 132px 1fr;
+  --files-sidebar-width: 132px;
+  --files-header-height: 28px;
+  --files-row-height: 24px;
+  --files-scrollbar-strip: 16px;
+  background: rgb(0 0 0 / 14%);
 }
 
-.file-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 18px 12px;
+.files-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--files-sidebar-width);
   border-right: 1px solid rgb(255 255 255 / 7%);
   background: rgb(0 0 0 / 9%);
   font-size: 11px;
 }
 
-.file-sidebar strong {
-  margin: 0 8px 8px;
+.files-sidebar strong {
+  position: absolute;
+  top: 18px;
+  left: 17px;
   color: rgb(255 255 255 / 35%);
   font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.file-sidebar span {
-  padding: 7px 9px;
+.files-location {
+  --selected: 0;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding: 0 9px;
   border-radius: 7px;
-  color: rgb(255 255 255 / 55%);
+  background: rgb(97 218 251 / calc(var(--selected) * 14%));
+  color: rgb(calc(255 - var(--selected) * 67) calc(255 - var(--selected) * 16) 255 / calc(0.55 + var(--selected) * 0.45));
+  cursor: pointer;
 }
 
-.file-sidebar .selected {
-  background: rgb(97 218 251 / 14%);
-  color: #bcefff;
+.files-list {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--files-sidebar-width);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
 }
 
-.file-grid {
+.files-header,
+.files-row {
+  align-items: center;
+  column-gap: 8px;
+  padding: 0 var(--files-scrollbar-strip) 0 14px;
+}
+
+/* Each location shows the columns that it has a title for, and the value last. In
+   a narrow window the columns between the name and the value give up their width
+   first, e.g. at the window's minimum width only the name and the value are left. */
+.files-list-state .files-header,
+.files-list-state .files-row {
+  grid-template-columns: minmax(36px, 1fr) minmax(0, 56px) minmax(48px, 96px);
+}
+
+.files-list-operations .files-header,
+.files-list-operations .files-row {
+  grid-template-columns: minmax(36px, 1fr) minmax(0, 52px) minmax(0, 36px) minmax(0, 52px) minmax(48px, 96px);
+}
+
+.files-list-outputs .files-header,
+.files-list-outputs .files-row {
+  grid-template-columns: minmax(36px, 1fr) minmax(48px, 96px);
+}
+
+.files-list-state .files-cell-layer,
+.files-list-state .files-cell-weights,
+.files-list-outputs .files-cell-kind,
+.files-list-outputs .files-cell-layer,
+.files-list-outputs .files-cell-weights {
+  display: none;
+}
+
+/* The header keeps the room of the scroller's scrollbar, so its cells line up with
+   the rows' cells where scrollbars take room. */
+.files-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(100px, 1fr));
-  align-content: start;
-  gap: 12px;
-  padding: 18px;
+  height: var(--files-header-height);
+  overflow: hidden;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  border-bottom: 1px solid rgb(255 255 255 / 8%);
+  color: rgb(255 255 255 / 38%);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.folder {
+/* The browser scrolls the list: the program reads the position and never sets
+   the physics. pan-y lets a touch scroll the list inside #desktop's touch-action:
+   none, and contain keeps the rubber-band without scrolling anything behind. The
+   program moves the view itself after a key, so the browser's own anchoring is
+   off. */
+.files-scroller {
+  position: absolute;
+  top: var(--files-header-height);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+  scrollbar-color: rgb(255 255 255 / 24%) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  touch-action: pan-y;
+}
+
+.files-spacer {
+  position: relative;
+}
+
+.files-row {
+  --selected: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--files-row-height);
+  border-bottom: 1px solid rgb(255 255 255 / 4%);
+  background: rgb(97 218 251 / calc(var(--selected) * 18%));
+  color: rgb(255 255 255 / calc(0.62 + var(--selected) * 0.3));
+}
+
+.files-cell {
   min-width: 0;
-  padding: 14px;
-  border: 1px solid rgb(255 255 255 / 7%);
-  border-radius: 12px;
-  background: rgb(255 255 255 / 3%);
-}
-
-.folder i {
-  display: block;
-  width: 32px;
-  height: 24px;
-  margin-bottom: 14px;
-  border-radius: 5px;
-  background: linear-gradient(145deg, #83d9ff, #3f8fd8);
-  box-shadow: inset 0 1px rgb(255 255 255 / 35%);
-}
-
-.folder span,
-.folder small {
-  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.folder span {
-  color: rgb(255 255 255 / 78%);
-  font-size: 11px;
+/* Numbers line up on their last digit. */
+.files-cell-layer,
+.files-cell-weights,
+.files-cell-value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
-.folder small {
-  margin-top: 4px;
-  color: rgb(255 255 255 / 34%);
-  font-size: 9px;
+.files-row .files-cell-value {
+  color: #b7f7cd;
+}
+
+.files-cell-kind {
+  color: rgb(188 239 255 / 62%);
+}
+
+/* Shown while the list's viewport holds more rows than there are DOM slots. */
+.files-overflow {
+  position: absolute;
+  right: var(--files-scrollbar-strip);
+  bottom: 6px;
+  display: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgb(255 200 87 / 16%);
+  color: #ffc857;
+  font-size: 10px;
+  pointer-events: none;
 }
 
 .notes-content {
@@ -559,17 +665,3 @@ body {
 .dock-notes { background: linear-gradient(145deg, #ffc857, #c98916); }
 .dock-monitor { background: linear-gradient(145deg, #76e6a5, #25834c); }
 .dock-photos { background: linear-gradient(145deg, #ff7b72, #a93842); }
-
-@media (max-width: 720px) {
-  .file-sidebar {
-    display: none;
-  }
-
-  .files-content {
-    grid-template-columns: 1fr;
-  }
-
-  .file-grid {
-    grid-template-columns: repeat(2, minmax(80px, 1fr));
-  }
-}

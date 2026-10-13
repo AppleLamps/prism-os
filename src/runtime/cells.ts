@@ -175,6 +175,9 @@ export function createSourceTable() {
       return cells.length
     },
     nameOf: (wire: Wire) => cells[wire]?.name ?? `wire ${wire}`,
+    // What happens to a cell around an evaluation, e.g. 'state', for a host that lists
+    // the table, or undefined for a wire that isn't a cell.
+    policyOf: (wire: Wire) => cells[wire]?.spec.policy,
     createCircuit() {
       invariant(circuit === null, 'createCircuit may only run once')
       const created = new Circuit(cells.length)
