@@ -144,16 +144,16 @@ function mount(limits = pageLimits) {
   }
   // A keydown at the textarea, as the window's keydown listener passes it to the host. Returns whether the host
   // prevented the browser's own handling of the key.
-  function key(name: string, modifiers: {shift?: boolean, meta?: boolean} = {}) {
+  function key(name: string, modifiers: {shift?: boolean, meta?: boolean, alt?: boolean, control?: boolean, composing?: boolean} = {}) {
     let prevented = false
     const event = {
       target: input,
       key: name,
       shiftKey: modifiers.shift ?? false,
       metaKey: modifiers.meta ?? false,
-      altKey: false,
-      ctrlKey: false,
-      isComposing: false,
+      altKey: modifiers.alt ?? false,
+      ctrlKey: modifiers.control ?? false,
+      isComposing: modifiers.composing ?? false,
       preventDefault() {
         prevented = true
       },
@@ -270,6 +270,14 @@ test('a typed character reaches the program as one event at the input event\'s t
   assert.deepEqual(machine.evaluations.map(evaluation => evaluation.events), [['notes text'], []])
   const lastWord = placeOf(machine, values, 8)
   assert.equal(caret.style['transform'], `translate3d(${lastWord.x + measure('more') + measure(' ')}px,${lastWord.y}px,0)`)
+  // A value that changed without an input event, e.g. when the browser restores a form: the text reaches the program
+  // at the frame's time, not at the time of the input event of an earlier frame.
+  const typedAt = machine.evaluations[0]!.timeMs
+  input.value = 'A restored text'
+  frame()
+  const restored = machine.evaluations.map(evaluation => [evaluation.kind, evaluation.timeMs, evaluation.events])
+  assert.deepEqual(restored, [['events', typedAt + 8 + 16, ['notes text']], ['frame', typedAt + 8 + 16, []]])
+  assert.deepEqual(shownWords().map(node => node.textContent), ['A', 'restored', 'text'])
 })
 
 test('an empty note keeps its caret in the first usable band, and the textarea stays inside the content box', () => {
@@ -320,6 +328,10 @@ test('a press on the note moves the textarea\'s caret to the character that is u
   assert.equal(input.focusCalls.length, 1)
   // Later frames move no caret.
   frame()
+  frame()
+  assert.equal(input.selectionCalls.length, 1)
+  // A second press at the same point asks for the selection that the textarea already has, so the host makes no call.
+  press(520, 209)
   frame()
   assert.equal(input.selectionCalls.length, 1)
   // A press right of the last line's end, at 300,120 in the content box, puts the caret at the end of the text.
@@ -388,6 +400,11 @@ test('the keys that move by lines move the textarea\'s caret along the lines tha
   assert.deepEqual([input.selectionStart, lineOf(88)], [notesText.length, 4])
   // The browser keeps the keys that it can handle in a text of one line.
   assert.deepEqual(['ArrowLeft', 'ArrowRight', 'Backspace', 'a', 'Enter'].map(name => key(name)), [false, false, false, false, false])
+  // So do the line move keys while an input method composes, which then uses the arrow keys itself, and with Alt or
+  // Control, e.g. Alt with ArrowUp goes to the paragraph's start. None of them is stored: the next frame moves no caret.
+  assert.deepEqual([key('ArrowUp', {composing: true}), key('ArrowDown', {alt: true}), key('Home', {control: true})], [false, false, false])
+  frame()
+  assert.deepEqual(input.selectionCalls, [])
   // A key at another element isn't the note's.
   assert.equal(host.takesKey({target: null, key: 'ArrowUp'} as unknown as KeyboardEvent), false)
   // ArrowUp: the browser's move is prevented, and the frame moves the caret to the fourth line, at the place

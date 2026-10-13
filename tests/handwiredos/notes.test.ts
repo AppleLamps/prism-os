@@ -889,6 +889,19 @@ test('a line with more segments than the window wraps at the window, and windowO
   const again = typeAndCompare(machine, shorter)
   assert.deepEqual(again.problems, [])
   assert.deepEqual([again.matchesPretext, again.values[machine.output.notes.windowOverflow], again.values[machine.output.notes.lineCount]], [true, 0, 1])
+  // The boundary. A line that holds exactly `window` segments and ends the text didn't wrap early: the cell after
+  // the window holds no text. "a-b" is two segments, so the text has an even count. With one more segment, the
+  // line wraps at the window.
+  const exactly = measure(`${Array.from({length: window / 2 - 1}, () => 'i').join(' ')} a-b`)
+  assert.equal(exactly.paragraph.widths.length, window)
+  const whole = typeAndCompare(machine, exactly)
+  assert.deepEqual(whole.problems, [])
+  assert.deepEqual([whole.matchesPretext, whole.values[machine.output.notes.windowOverflow], whole.values[machine.output.notes.lineCount]], [true, 0, 1])
+  const oneMore = measure(Array.from({length: window / 2 + 1}, () => 'i').join(' '))
+  assert.equal(oneMore.paragraph.widths.length, window + 1)
+  const wrapped = typeAndCompare(machine, oneMore)
+  assert.deepEqual(wrapped.problems, [])
+  assert.deepEqual([wrapped.matchesPretext, wrapped.values[machine.output.notes.windowOverflow], wrapped.values[machine.output.notes.lineCount]], [false, 1, 2])
 })
 
 test('a word wider than its slot is laid out whole and reaches past the slot, where pretext would break it between two letters', () => {
@@ -965,6 +978,111 @@ test('two break-after segments in a row are reported by runOverflow instead of s
   assert.deepEqual(readSegments(machine, values, 4).map(segment => segment.visible), [1, 1, 1, 1])
   machine.notesText({widths: [20, 4, 20], breakAfter: [0, 1, 0]}, pressTime(machine))
   assert.equal(step(machine)[machine.output.notes.runOverflow], 0)
+})
+
+test('cells at the ends of their declared ranges follow the walker\'s rule: widths up to 512 px, zero widths, and runs of break-after segments', () => {
+  const machines = {'Notes in front': machineWithNotesInFront(), 'starting arrangement': machineAtStart()}
+  const declarationChecks = Object.values(machines).map(checkDeclarationsOnEveryEvaluation)
+  const random = createRandom(37)
+  const onGrid = (width: number) => Math.round(width * 64) / 64
+  const failures: unknown[] = []
+  const seen = {widestText: 0, linesPastWindow: 0, truncated: 0, runs: 0, fullCells: 0, emptyCells: 0}
+  const trials = 120
+  for (let trial = 0; trial < trials; trial++) {
+    const kind = trial % 4
+    const count = trial < 4 ? notesCapacity : trial < 8 ? 0 : randomInteger(random, 0, notesCapacity)
+    const cells: FastParagraph = {widths: [], breakAfter: []}
+    for (let segment = 0; segment < count; segment++) {
+      if (kind === 0) {
+        // Every cell as wide as a cell may be, so the text is as wide as the prefix sums hold exactly, 2^17 px.
+        cells.widths.push(maximumSegmentWidth)
+        cells.breakAfter.push(segment % 2)
+      } else if (kind === 1) {
+        // Any width a cell may hold, with runs of segments that break after themselves.
+        cells.widths.push(onGrid(random() * maximumSegmentWidth))
+        cells.breakAfter.push(random() < 0.4 ? 1 : 0)
+      } else if (kind === 2) {
+        // Segments of a few px, which pass the walker's window, and zero widths.
+        cells.widths.push(random() < 0.2 ? 0 : onGrid(random() * 6))
+        cells.breakAfter.push(random() < 0.5 ? 1 : 0)
+      } else {
+        // Words and spaces of ordinary sizes, and now and then a segment wider than any slot.
+        const breakAfter = segment % 2
+        cells.widths.push(breakAfter === 1 ? 4.375 : random() < 0.05 ? onGrid(440 + random() * 72) : onGrid(8 + random() * 60))
+        cells.breakAfter.push(breakAfter)
+      }
+    }
+    let runs = 0
+    for (let segment = 0; segment + 1 < count; segment++) if (cells.breakAfter[segment] === 1 && cells.breakAfter[segment + 1] === 1) runs++
+    for (const [label, machine] of Object.entries(machines)) {
+      assert.equal(machine.notesText(cells, pressTime(machine)), count)
+      const values = step(machine)
+      const walked = walkedFlow(cells, arrangementOf(machine.source), notesOptions)
+      const problems = flowProblems(machine, values, walked)
+      const windowOverflow = values[machine.output.notes.windowOverflow]!
+      if (windowOverflow !== walked.windowOverflow) problems.push(`window overflow ${windowOverflow}, expected ${walked.windowOverflow}`)
+      const runOverflow = values[machine.output.notes.runOverflow]!
+      if (runOverflow !== runs) problems.push(`run overflow ${runOverflow}, expected ${runs}`)
+      if (problems.length > 0 && failures.length < 5) failures.push({label, trial, kind, count, problems: problems.slice(0, 4)})
+      seen.linesPastWindow += walked.windowOverflow
+      seen.truncated += walked.truncated
+    }
+    seen.widestText = Math.max(seen.widestText, cells.widths.reduce((sum, width) => sum + width, 0))
+    seen.runs += runs
+    if (count === notesCapacity) seen.fullCells++
+    if (count === 0) seen.emptyCells++
+  }
+  assert.deepEqual(failures, [])
+  assert.equal(seen.widestText, notesCapacity * maximumSegmentWidth)
+  assert.ok(seen.linesPastWindow > 20 && seen.truncated > 40 && seen.runs > 500, JSON.stringify(seen))
+  assert.ok(seen.fullCells >= 4 && seen.emptyCells >= 4, JSON.stringify(seen))
+  for (const checks of declarationChecks) assert.equal(checks.evaluations, 2 * trials)
+}, 60_000)
+
+test('a text change in the same evaluation as a drag move, and as a maximize release, is laid out around the windows as that evaluation leaves them', () => {
+  const machine = machineWithNotesInFront()
+  checkDeclarationsOnEveryEvaluation(machine)
+  const laidOutWidths = (comparison: Comparison) => comparison.walked.bands.filter(band => band.lineStart !== null).map(band => band.slotWidth)
+  // A press on Photos' title bar raises Photos above Notes. Photos is 650,190 560×430, right of the note's column.
+  machine.pointerDown(1000, 212, pressTime(machine))
+  step(machine)
+  // One move drags Photos 100 px left and 48 px down, over the right of the column, and the text changes at the
+  // move's timestamp, as when a key and a pointer move arrive together. Both apply in one evaluation.
+  const first = measure(typedSentence.slice(0, 150))
+  let time = pressTime(machine)
+  machine.pointerMove(900, 260, time)
+  machine.notesText(first.paragraph, time)
+  let values = step(machine)
+  assert.deepEqual(machine.evaluations.map(evaluation => [evaluation.kind, evaluation.events]), [['events', ['pointer move', 'notes text']], ['frame', []]])
+  assert.deepEqual([machine.source[windowSourceField(3, windowStateField.left)], machine.source[windowSourceField(3, windowStateField.top)]], [550, 238])
+  const dragged = compareWithReferences(machine, values, machine.source, first)
+  assert.deepEqual(dragged.problems, [])
+  assert.equal(dragged.matchesPretext, true)
+  // The new text is laid out around Photos where the move put it: two lines of the whole column above Photos, then
+  // lines of the 105 px that Photos leaves at its left.
+  const draggedWidths = laidOutWidths(dragged)
+  assert.deepEqual(draggedWidths.slice(0, 3), [440, 440, 105])
+  assert.ok(draggedWidths.length > 3 && draggedWidths.slice(2).every(width => width === 105), `lines of ${draggedWidths.join(', ')} px`)
+  machine.pointerUp(900, 260, pressTime(machine))
+  step(machine)
+  // A press and a release on Notes' maximize button, at 863,126, which Photos doesn't cover. Another text arrives at
+  // the release's timestamp, so one evaluation maximizes Notes, raises it and lays the new text out in the maximized
+  // window, where no window is above the note.
+  machine.pointerDown(863, 126, pressTime(machine))
+  step(machine)
+  const second = measure(typedSentence)
+  time = pressTime(machine)
+  machine.notesText(second.paragraph, time)
+  machine.pointerUp(863, 126, time)
+  values = step(machine)
+  assert.deepEqual(machine.evaluations.map(evaluation => [evaluation.kind, evaluation.events]), [['events', ['notes text', 'pointer up']], ['frame', []]])
+  assert.equal(machine.source[windowSourceField(notesWindowIndex, windowStateField.maximized)], 1)
+  assert.equal(values[machine.output.animationActive], 1)
+  const maximized = compareWithReferences(machine, values, machine.source, second)
+  assert.deepEqual(maximized.problems, [])
+  assert.equal(maximized.matchesPretext, true)
+  assert.ok(laidOutWidths(maximized).every(width => width === 440))
+  assert.ok(maximized.segments.every(segment => segment.visible === 1))
 })
 
 // The stored count of presses on the note's content, and the last such press's point in the content box.

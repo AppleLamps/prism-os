@@ -36,12 +36,13 @@ test('a value is normalized like pretext normalizes it, and every offset of the 
   assert.deepEqual(normalizeNotesValue('a  b'), {normalized: 'a b', normalizedOffsets: [0, 1, 2, 2, 3], trailingWhitespaceStart: 4})
   assert.deepEqual(normalizeNotesValue(' a b '), {normalized: 'a b', normalizedOffsets: [0, 0, 1, 2, 3, 3], trailingWhitespaceStart: 4})
   assert.deepEqual(normalizeNotesValue('a\n\tb\r\n'), {normalized: 'a b', normalizedOffsets: [0, 1, 2, 2, 3, 3, 3], trailingWhitespaceStart: 4})
+  assert.deepEqual(normalizeNotesValue('a\fb'), {normalized: 'a b', normalizedOffsets: [0, 1, 2, 3], trailingWhitespaceStart: 3})
   assert.deepEqual(normalizeNotesValue(''), {normalized: '', normalizedOffsets: [0], trailingWhitespaceStart: 0})
   assert.deepEqual(normalizeNotesValue('   '), {normalized: '', normalizedOffsets: [0, 0, 0, 0], trailingWhitespaceStart: 0})
-  // Random values of letters and white space: pretext's segments spell the normalized value, and the offsets never
-  // go backwards and end at its length.
+  // Random values of letters and each kind of white space that pretext collapses: pretext's segments spell the
+  // normalized value, and the offsets never go backwards and end at its length.
   const random = createRandom(3)
-  const characters = ['a', 'b', 'c', ',', ' ', ' ', '\n', '\t']
+  const characters = ['a', 'b', 'c', ',', ' ', ' ', '\n', '\t', '\r', '\f']
   for (let trial = 0; trial < 400; trial++) {
     const value = Array.from({length: Math.floor(random() * 30)}, () => characters[Math.floor(random() * characters.length)]!).join('')
     const {normalized, normalizedOffsets} = normalizeNotesValue(value)
@@ -89,6 +90,14 @@ test('characters that pretext\'s fast walker doesn\'t lay out still get cells, a
     assert.ok(text.paragraph.breakAfter.every((bit, cell) => bit === 0 || text.paragraph.breakAfter[cell - 1] !== 1), JSON.stringify(value))
     assert.equal(text.cellStarts.length, text.cellTexts.length + 1)
   }
+  // A font size at which the canvas's widths lie off the 1/64 px grid, e.g. 'lines' measures 38.43125 px: the
+  // cells' widths are rounded onto the grid, here to 38.4375, since the caret and the selection add them to the
+  // program's positions.
+  const offGridFont = '14.3px Test Serif'
+  const offGrid = prepareNotesText('The lines break', offGridFont, limits, text => fakeTextWidth(text, offGridFont))
+  const measured = prepareWithSegments('The lines break', offGridFont).widths
+  assert.ok(measured.some(width => !Number.isInteger(width * 64)), 'the canvas measures off the grid at this size')
+  assert.deepEqual(offGrid.paragraph.widths, measured.map(width => Math.round(width * 64) / 64))
 })
 
 test('when pretext throws, the text is cut at its spaces and measured by the host', () => {
@@ -230,6 +239,14 @@ test('a selection is one stretch per band, from its first selected character on 
   assert.deepEqual(spans(0, 12), withSpans([0, 24, cd + widths[2]! + widths[3]!], [2, 100, 100 + widths[4]! + widths[5]! + widths[6]!]))
   // Cells that the program doesn't hold have no stretch.
   assert.deepEqual(spans(0, 12, 4), withSpans([0, 24, cd + widths[2]! + widths[3]!]))
+  // Neither does a cell that no band laid out, e.g. the last word of a text that needs more lines than are free.
+  // The program still reports an x and a y for such a cell, which mean nothing, here a place on band 5. With 'gh'
+  // not laid out, the second line's stretch ends after the space before it, and band 5 has no stretch.
+  const withoutLastWord: NotesLayout = {...layout, cell: cell => cell === 6 ? {x: 300, y: 24 + 5 * 22, visible: false} : layout.cell(cell)}
+  assert.deepEqual(
+    selectionSpans(text, 7, 0, 12, withoutLastWord, measure),
+    withSpans([0, 24, cd + widths[2]! + widths[3]!], [2, 100, 100 + widths[4]! + widths[5]!]),
+  )
 })
 
 test('line moves follow the laid-out lines: up and down keep their x through a short line, and line start and end stay on the caret\'s line', () => {
@@ -265,6 +282,37 @@ test('line moves follow the laid-out lines: up and down keep their x through a s
   const empty = prepare('')
   const emptyLayout: NotesLayout = {...layoutOfLines([], []), band: band => ({usable: band === 0, left: 24, width: 440})}
   assert.deepEqual(offsetAfterLineMove(empty, 0, 0, 'down', null, emptyLayout, measure), {offset: 0, x: 24})
+})
+
+test('cells that no band laid out take no part in presses and line moves, although the program reports places for them', () => {
+  const text = prepare('ab cd ef gh ij')
+  assert.deepEqual(text.cellTexts, ['ab', ' ', 'cd', ' ', 'ef', ' ', 'gh', ' ', 'ij'])
+  // 'ab cd ' on band 0 and 'ef ' on band 1, and no band for 'gh ij'. The program's x and y for such cells mean
+  // nothing, but they are numbers, and the y is the last band's. When every band holds a line, that band is the
+  // last line's own, and the x of such a cell goes on from that line's end. Otherwise the last band, band 15, lies
+  // below the lines. This layout has 2 bands of text, so the first case reports band 1.
+  const lines = layoutOfLines(text.paragraph.widths, [{firstCell: 0, left: 24, band: 0}, {firstCell: 4, left: 24, band: 1}])
+  const withoutLastWords = (reportedBand: number): NotesLayout => ({
+    ...lines,
+    cell: cell => cell >= 6 ? {x: lines.cell(cell).x, y: 24 + 22 * reportedBand, visible: false} : lines.cell(cell),
+  })
+  const onLastLine = withoutLastWords(1)
+  const below = withoutLastWords(15)
+  const afterEf = 8
+  // A press right of the last line, also where 'gh' would be, lands at the line's end, before the space that hangs.
+  const whereGhWouldBe = lines.cell(6).x + 2
+  assert.deepEqual([900, whereGhWouldBe].map(x => offsetAtPoint(text, 9, onLastLine, measure, x, 24 + 22 + 11)), [afterEf, afterEf])
+  // A press far below the last line lands on the last line that was laid out, here after the 'e' of 'ef'.
+  assert.equal(offsetAtPoint(text, 9, below, measure, 24 + measure('e') + 1, 400), 7)
+  // Down from the last laid-out line goes to the end of the text, not to a line of cells that weren't laid out, and
+  // the end of that line is the end of its last laid-out cell.
+  for (const layout of [onLastLine, below]) {
+    assert.equal(offsetAfterLineMove(text, 9, 7, 'down', null, layout, measure).offset, text.value.length)
+    assert.equal(offsetAfterLineMove(text, 9, 7, 'lineEnd', null, layout, measure).offset, afterEf)
+    assert.equal(offsetAfterLineMove(text, 9, 1, 'down', null, layout, measure).offset, 7)
+    // A caret in the words without a line isn't drawn.
+    assert.equal(caretPosition(text, 9, 10, layout, measure), null)
+  }
 })
 
 test('a run of letters wider than the narrowest column is cut into pieces that fit the narrowest slot, and an ordinary long word stays whole', () => {
