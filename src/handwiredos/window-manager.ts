@@ -90,7 +90,7 @@ import {
 } from './notes-paragraph.ts'
 import {createCanvasMeasure, createNotesHost} from './notes-host.ts'
 import {arrangeInitialWindows} from './arrangement.ts'
-import {createMonitor} from './monitor.ts'
+import {createMonitor, frameCapacity as monitorFrameCapacity} from './monitor.ts'
 import {mountWiring} from './wiring.ts'
 
 export {bandOutputField, notesWindowIndex, segmentOutputField}
@@ -1899,6 +1899,18 @@ function mountWindowManager(document: Document, window: Window) {
   // was given. The machine gets the position at the next step.
   let filesScrollTop = 0
 
+  // How many more frames the page runs by itself after it loads. Monitor's chart
+  // shows the program's time in each of the last 60 frames, and a page that runs a
+  // frame only for an input would open with a chart of one dot: the first frame,
+  // which takes about 3.5 ms in Chrome where a later frame takes 0.3 ms, since the
+  // browser hasn't compiled the program's loops yet. So the page starts with as
+  // many frames as the chart holds, after 12 more for the slow ones, which is 1.2 s
+  // at 60 frames a second. Each is a real frame with no input: it steps the machine,
+  // writes the DOM and adds its time to the chart, so the chart is full of the
+  // times of frames that ran. After them, a frame runs only for an input or while a
+  // spring moves.
+  let openingFramesLeft = monitorFrameCapacity + 12
+
   let scheduledRaf: number | null = null
   function scheduleRender() {
     if (scheduledRaf !== null) return
@@ -1974,8 +1986,10 @@ function mountWindowManager(document: Document, window: Window) {
     if (filesScrollTo !== null) filesScrollTop = files.scrollTo(filesScrollTo)
 
     // Frames continue while springs are stepping, i.e. until an evaluation that
-    // writes state back finds nothing animating.
-    if (machine.clock.animatedUntilMs !== null) scheduleRender()
+    // writes state back finds nothing animating, and through the page's opening
+    // frames, see openingFramesLeft.
+    if (openingFramesLeft > 0) openingFramesLeft--
+    if (machine.clock.animatedUntilMs !== null || openingFramesLeft > 0) scheduleRender()
   }
 
   // Each event carries its own timestamp, which shares the time origin of

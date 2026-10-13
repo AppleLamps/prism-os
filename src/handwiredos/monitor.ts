@@ -10,7 +10,7 @@ import {type Circuit, invariant} from '../runtime/numeric-ui-core.ts'
 type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 
 // How many frames the chart shows.
-const frameCapacity = 60
+export const frameCapacity = 60
 
 // The program's operations by kind, e.g. {affine: 5_413, gatherReads: 908, reglu:
 // 7_022, boolean: 676, indexReads: 0} for HandwiredOS with the baked Notes paragraph.
