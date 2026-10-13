@@ -84,7 +84,7 @@ test('Monitor\'s legend and the rows of Files\' Operations location count the sa
   const count = (text: string) => Number(text.replaceAll(',', ''))
   const legend = [...content.innerHTML.matchAll(/<li class="(kind-[a-z]+)"[^>]*><b>([\d,]+)<\/b> ([^<]+)<\/li>/g)]
     .map(([, kindClass, entryCount, name]) => ({kindClass: kindClass!, count: count(entryCount!), name: name!}))
-  assert.deepEqual(legend.map(entry => [entry.kindClass, entry.name]), [['kind-affine', 'affine'], ['kind-reglu', 'ReGLU'], ['kind-boolean', 'boolean'], ['kind-index', 'index reads']])
+  assert.deepEqual(legend.map(entry => [entry.kindClass, entry.name]), [['kind-affine', 'affine'], ['kind-reglu', 'ReGLU'], ['kind-boolean', 'boolean'], ['kind-index', 'index']])
   assert.deepEqual(Object.fromEntries(legend.map(entry => [entry.kindClass, entry.count])), rowsByKind)
   // The bar's segments grow by the same counts, in the same order.
   const segments = [...content.innerHTML.matchAll(/<i class="(kind-[a-z]+)" style="flex-grow: (\d+)"/g)].map(([, kindClass, grow]) => [kindClass, Number(grow)])

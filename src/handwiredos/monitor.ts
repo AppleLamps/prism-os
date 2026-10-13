@@ -127,7 +127,9 @@ export function createMonitor(elements: {content: HTMLElement, statistics: HTMLE
     {
       className: 'kind-index',
       count: kinds.indexReads,
-      name: kinds.indexReads === 1 ? 'index read' : 'index reads',
+      // Files' rows say 'index read'. The legend says 'index', so that its four
+      // entries fit on one line in a Monitor window of the default width.
+      name: 'index',
       title: `Index read, a copy of the table entry at a computed position: ${formatCount(kinds.indexReads)} operations, ${share(kinds.indexReads)}.`,
     },
   ].filter(part => part.count > 0)
@@ -154,7 +156,7 @@ export function createMonitor(elements: {content: HTMLElement, statistics: HTMLE
       <figcaption>The program's time in each of the last ${frameCapacity} frames</figcaption>
     </figure>
     <div class="monitor-parts">
-      <div class="monitor-bar" role="img" aria-label="Operations by kind: ${parts.map(part => `${formatCount(part.count)} ${part.name}`).join(', ')}">
+      <div class="monitor-bar" role="img" aria-label="Operations by kind: ${parts.map(part => `${formatCount(part.count)} ${part.name === 'index' ? 'index reads' : part.name}`).join(', ')}">
         ${parts.map(part => `<i class="${part.className}" style="flex-grow: ${part.count}" title="${part.title}"></i>`).join('')}
       </div>
       <ul class="monitor-legend">
