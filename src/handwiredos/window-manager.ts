@@ -65,6 +65,7 @@ import {
   notesWords,
 } from './notes-paragraph.ts'
 import {arrangeInitialWindows} from './arrangement.ts'
+import {createMonitor} from './monitor.ts'
 
 export {bandOutputField, notesWindowIndex, wordOutputField}
 
@@ -1479,24 +1480,14 @@ function mountWindowManager(document: Document, window: Window) {
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
   const photosViewport = document.querySelector<HTMLElement>('.photos-content')
-  const monitorValues = document.querySelector<HTMLElement>('#monitor-values')
-  const monitorOperations = document.querySelector<HTMLElement>('#monitor-operations')
-  const monitorLayers = document.querySelector<HTMLElement>('#monitor-layers')
-  const monitorWeights = document.querySelector<HTMLElement>('#monitor-weights')
-  const monitorMemory = document.querySelector<HTMLElement>('#monitor-memory')
-  const monitorFrame = document.querySelector<HTMLElement>('#monitor-frame')
-  const monitorRaf = document.querySelector<HTMLElement>('#monitor-raf')
+  const monitorContent = document.querySelector<HTMLElement>('.monitor-content')
+  const systemStatistics = document.querySelector<HTMLElement>('.system-stats')
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
   invariant(photosViewport !== null, 'Photos viewport is missing')
-  invariant(monitorValues !== null, 'monitor values row is missing')
-  invariant(monitorOperations !== null, 'monitor operations row is missing')
-  invariant(monitorLayers !== null, 'monitor layers row is missing')
-  invariant(monitorWeights !== null, 'monitor weights row is missing')
-  invariant(monitorMemory !== null, 'monitor memory row is missing')
-  invariant(monitorFrame !== null, 'monitor frame row is missing')
-  invariant(monitorRaf !== null, 'monitor RAF row is missing')
+  invariant(monitorContent !== null, 'Monitor content is missing')
+  invariant(systemStatistics !== null, 'system bar statistics are missing')
   const windowContents = windows.map(element => {
     const content = element.querySelector<HTMLElement>('.window-content')
     invariant(content !== null, 'window content is missing')
@@ -1508,59 +1499,11 @@ function mountWindowManager(document: Document, window: Window) {
     windowContents, // mount lifetime
     dockItems, // mount lifetime
     photosViewport, // mount lifetime
-    monitorFrame, // mount lifetime
-    monitorRaf, // mount lifetime
     wordNodes: createWordNodes(document, windowContents[notesWindowIndex]!, notesWords), // mount lifetime
   }
   const photos = createPhotoGalleryRenderer(document, domCache.photosViewport)
-  const program = machine.tensorProgram
-  let affineCount = 0
-  let regluCount = 0
-  let booleanCount = 0
-  let weightCount = 0
-  let weightBytes = 0
-  let biasBytes = 0
-  let bookkeepingBytes = program.roots.byteLength + program.wireOrder.byteLength
-  let denseWeightCount = 0
-  let maximumLayerWidth = 0
-  const inputCount = program.sourceSize
-  const outputCount = program.roots.length
-  const activationCount = program.valueCount - program.sourceSize
-  const layerCount = program.layers.length
-  for (const layer of program.layers) {
-    const layerWidth = layer.outputSize + layer.gateRows.length
-    regluCount += layer.gateRows.length
-    booleanCount += layer.booleanRows.length
-    affineCount += layer.outputSize - layer.gateRows.length - layer.booleanRows.length
-    weightCount += layer.weights.length
-    weightBytes += layer.weights.byteLength
-    biasBytes += layer.bias.byteLength
-    bookkeepingBytes +=
-      layer.inputIndices.byteLength
-      + layer.gateRows.byteLength
-      + layer.booleanRows.byteLength
-      + layer.rowOffsets.byteLength
-      + layer.columns.byteLength
-    denseWeightCount += layerWidth * layer.inputSize
-    maximumLayerWidth = Math.max(maximumLayerWidth, layerWidth)
-  }
-  const formatCount = (value: number) => value.toLocaleString('en-US')
-  const formatKilobytes = (bytes: number) => `${(bytes / 1_000).toFixed(1)} KB`
-  monitorValues.textContent =
-    `${formatCount(inputCount)} inputs · ${formatCount(outputCount)} outputs`
-    + ` · ${formatCount(activationCount)} activations`
-  monitorOperations.textContent =
-    `${formatCount(affineCount)} affine · ${formatCount(regluCount)} ReGLU`
-    + ` · ${formatCount(booleanCount)} boolean`
-  monitorLayers.textContent =
-    `${formatCount(layerCount)} · max width ${formatCount(maximumLayerWidth)}`
-  monitorWeights.textContent =
-    `${formatCount(denseWeightCount)} dense · ${formatCount(weightCount)} sparse`
-  monitorMemory.textContent =
-    `${formatKilobytes(weightBytes)} weights · ${formatKilobytes(biasBytes)} biases`
-    + ` · ${formatKilobytes(bookkeepingBytes)} bookkeeping`
-  domCache.monitorFrame.textContent = '—'
-  domCache.monitorRaf.textContent = 'no'
+  // Monitor's content and the system bar's counters, see monitor.ts.
+  const monitor = createMonitor({content: monitorContent, statistics: systemStatistics}, machine.tensorProgram)
 
   domCache.desktop.style.setProperty('--title-height', `${machine.source[machine.cells.titleHeight]}px`)
   domCache.desktop.style.setProperty('--button-size', `${machine.source[machine.cells.buttonSize]}px`)
@@ -1610,12 +1553,8 @@ function mountWindowManager(document: Document, window: Window) {
 
     // Frames continue while springs are stepping, i.e. until an evaluation that
     // writes state back finds nothing animating.
-    const nextRafRequested = machine.clock.animatedUntilMs !== null
-    if (nextRafRequested) scheduleRender()
-    domCache.monitorRaf.textContent = nextRafRequested ? 'yes' : 'no'
-    const evaluationCount = machine.evaluations.length
-    domCache.monitorFrame.textContent =
-      `${executionMs.toFixed(2)} ms · ${evaluationCount} ${evaluationCount === 1 ? 'evaluation' : 'evaluations'}`
+    if (machine.clock.animatedUntilMs !== null) scheduleRender()
+    monitor.update(executionMs)
   }
 
   // Each event carries its own timestamp, which shares the time origin of
@@ -1709,9 +1648,8 @@ export function projectWindowElements(
     frame.style.zIndex = `${10 + read(windowOutputField.stack)}`
     frame.style.setProperty('--focused', `${read(windowOutputField.focused)}`)
     frame.style.setProperty('--maximized', `${read(windowOutputField.maximized)}`)
-    // window-manager.css anchors .window-content to all four sides of the frame,
-    // and the lab demos that share the stylesheet rely on that. With left and top
-    // set, the browser ignores right and bottom once width and height are set.
+    // handwired-os.css gives .window-content its top and left only, so the box
+    // takes its whole size from these two writes.
     content.style.width = `${read(windowOutputField.contentWidth)}px`
     content.style.height = `${read(windowOutputField.contentHeight)}px`
   }

@@ -4,13 +4,42 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HandwiredOS</title>
-  <link rel="stylesheet" href="./window-manager.css">
+  <link rel="stylesheet" href="./site.css">
+  <link rel="stylesheet" href="./handwired-os.css">
 </head>
 <body>
   <main id="desktop">
     <header id="system-bar">
-      <div class="system-mark"><span></span>HandwiredOS</div>
+      <div class="system-left">
+        <a class="system-mark" href="../">
+          <svg class="mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M1 4h3.5l3.4 4.2M1 10h5.6M1 16h3.5l3.4-4.2M13.4 10H19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle class="mark-eyelet" cx="10" cy="10" r="3" stroke-width="1.5"/>
+          </svg>
+          HandwiredOS
+        </a>
+        <span class="system-caption">Every window, spring and line break here is computed by one fixed numeric program.</span>
+      </div>
+      <div class="system-right">
+        <!-- monitor.ts writes the program's size and the last frame's time here. -->
+        <div class="system-stats"></div>
+        <nav class="system-links">
+          <a href="../">Demos</a>
+          <a href="https://github.com/chenglou/handwired">Source</a>
+        </nav>
+      </div>
     </header>
+
+    <!-- Printed on the desk, behind the windows. -->
+    <aside class="desk-legend">
+      <div class="label">Try</div>
+      <ul class="eyelets">
+        <li>Drag a window by its title bar, or resize it from its lower right corner</li>
+        <li>Drag Files or Photos over Notes, and watch the lines</li>
+        <li>Click a photo, then press <kbd>&larr;</kbd> and <kbd>&rarr;</kbd></li>
+        <li>Close a window, then open it again from the dock</li>
+      </ul>
+    </aside>
 
     <section class="window window-files">
       <div class="titlebar">
@@ -55,23 +84,15 @@
 
     <section class="window window-monitor">
       <div class="titlebar">
-        <div class="window-title"><span class="app-dot dot-monitor"></span>System Monitor</div>
+        <div class="window-title"><span class="app-dot dot-monitor"></span>Monitor</div>
         <div class="window-controls">
           <span class="window-button minimize"></span>
           <span class="window-button maximize"></span>
           <span class="window-button close"></span>
         </div>
       </div>
-      <div class="window-content monitor-content">
-        <div class="monitor-heading"><span>COMPILED SYSTEM</span><strong>LIVE</strong></div>
-        <div class="metric-row"><span>values</span><b id="monitor-values"></b></div>
-        <div class="metric-row"><span>operations</span><b id="monitor-operations"></b></div>
-        <div class="metric-row"><span>layers</span><b id="monitor-layers"></b></div>
-        <div class="metric-row"><span>weights</span><b id="monitor-weights"></b></div>
-        <div class="metric-row"><span>memory</span><b id="monitor-memory"></b></div>
-        <div class="metric-row"><span>frame execution</span><b id="monitor-frame"></b></div>
-        <div class="metric-row"><span>next RAF</span><b id="monitor-raf"></b></div>
-      </div>
+      <!-- monitor.ts writes the content: the program's size, its kinds of operations and the last frames' times. -->
+      <div class="window-content monitor-content"></div>
       <div class="resize-grip"></div>
     </section>
 
@@ -88,17 +109,49 @@
       </div>
       <div class="window-content photos-content">
         <div class="photos-backdrop"></div>
-        <div class="photos-control photos-previous">&larr;</div>
-        <div class="photos-control photos-next">&rarr;</div>
+        <div class="photos-control photos-previous"></div>
+        <div class="photos-control photos-next"></div>
       </div>
       <div class="resize-grip"></div>
     </section>
 
+    <!-- Each item's <i> is its joint on the wire: hollow while its window is closed, filled
+         while it is open, and a bar while it has focus. -->
     <nav id="dock">
-      <div class="dock-item dock-files"><span>F</span><i></i></div>
-      <div class="dock-item dock-notes"><span>N</span><i></i></div>
-      <div class="dock-item dock-monitor"><span>M</span><i></i></div>
-      <div class="dock-item dock-photos"><span>P</span><i></i></div>
+      <span class="dock-wire"></span>
+      <div class="dock-item dock-files" title="Files">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9.5a2 2 0 0 1 2-2h4.4a2 2 0 0 1 1.5.6l1.2 1.3a2 2 0 0 0 1.5.6H22a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+          <path class="accent" d="M8 14.5h6M8 18h9"/>
+        </svg>
+        <i></i>
+      </div>
+      <div class="dock-item dock-notes" title="Notes">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8.5 4.5h8l4.5 4.5v12.5a2 2 0 0 1-2 2h-10.5a2 2 0 0 1-2-2v-15a2 2 0 0 1 2-2z"/>
+          <path d="M16.5 4.5v4.5h4.5"/>
+          <path d="M10.5 13.5h7M10.5 17h7M10.5 20.5h3"/>
+          <path class="accent" d="M16 19v3"/>
+        </svg>
+        <i></i>
+      </div>
+      <div class="dock-item dock-monitor" title="Monitor">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4" y="6.5" width="20" height="15" rx="2.5"/>
+          <path d="M8 17.5a6 6 0 0 1 12 0"/>
+          <path class="accent" d="M14 17.5l3.2-5.6"/>
+          <circle class="accent-fill" cx="14" cy="17.5" r="1.4"/>
+        </svg>
+        <i></i>
+      </div>
+      <div class="dock-item dock-photos" title="Photos">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4" y="6" width="20" height="16" rx="2.5"/>
+          <path d="M4.5 18.5l4.6-4.8a1.2 1.2 0 0 1 1.7 0l3.2 3.3 1.9-1.9a1.2 1.2 0 0 1 1.7 0l5.9 6"/>
+          <circle class="accent-fill" cx="18.5" cy="10.8" r="1.8"/>
+        </svg>
+        <i></i>
+      </div>
     </nav>
   </main>
   <script type="module" src="../src/handwiredos/window-manager.ts"></script>

@@ -1,0 +1,1065 @@
+/* HandwiredOS's desktop in the paper look: a desk, sheets of paper for windows, and one
+   copper wire under the dock. Loads after site.css, which holds the tokens and the
+   components that every demo page shares.
+
+   The program computes every position and size, and JavaScript writes them as inline
+   styles each frame: a window's width, height, transform, opacity and z-index, its content
+   box's width and height, a dock item's rectangle, each Notes word's and each photo's
+   position, and the numbers --focused, --maximized, --inactive and --open, each 0 or 1.
+   So no rule here gives one of those properties a transition, an animation or a default.
+   What depends on the four numbers is arithmetic on them, e.g. a shadow that grows with
+   --focused.
+
+   The sizes are the program's too: the 44 px title bar, the 18 px buttons 10 px apart, the
+   24 px grip, the 76 px dock, the 36 px system bar and the windows' 1 px border. The
+   program's hit tests use them, so a size changes in window-manager.ts, not here. */
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+/* The desk's color also shows where a touch pulls the page past its edge. */
+html {
+  background: var(--desk);
+}
+
+body {
+  overflow: hidden;
+  background: var(--desk);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* The desk: one warm surface with paper grain and a dot every 24 px, lit from the top left.
+   Nothing on it moves, so the dots show how far a window has been dragged. */
+#desktop {
+  /* JavaScript copies these six from the program's table when the page loads. The values
+     here are for what is painted before that: the system bar and the list of things to try. */
+  --title-height: 44px;
+  --button-size: 18px;
+  --button-gap: 10px;
+  --resize-grip: 24px;
+  --dock-height: 76px;
+  --system-bar-height: 36px;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font: var(--type-ui);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  background:
+    radial-gradient(circle at 0.5px 0.5px, var(--edge) 0 0.75px, transparent 1.25px) 11px 11px / 24px 24px,
+    var(--grain),
+    radial-gradient(1100px 620px at 22% 4%, color-mix(in srgb, var(--sheet) 30%, transparent), transparent 72%),
+    radial-gradient(900px 560px at 100% 100%, color-mix(in srgb, var(--copper) 9%, transparent), transparent 70%),
+    var(--desk);
+  background-blend-mode: normal, soft-light, normal, normal, normal;
+}
+
+/* Things to try, printed on the desk's lower right corner. Windows pass over it. The
+   windows' first arrangement, see arrangement.ts, leaves this corner free on a viewport of
+   at least 1100 × 850 px. */
+.desk-legend {
+  position: absolute;
+  z-index: 0;
+  right: 32px;
+  bottom: calc(var(--dock-height) + 28px);
+  /* As wide as its longest line, in whatever font the system has. */
+  width: max-content;
+  max-width: 440px;
+}
+
+.desk-legend .label {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-2);
+}
+
+.desk-legend kbd {
+  margin: 0 1px;
+  padding: 1px 4px 2px;
+}
+
+@media (max-width: 1099px), (max-height: 849px) {
+  .desk-legend {
+    display: none;
+  }
+}
+
+/* System bar: this page's header, caption and statistics in one strip. The program reads
+   presses anywhere on the page, and no window can be placed under the bar, so only the
+   bar's links take the pointer. */
+#system-bar {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--system-bar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--edge);
+  background: var(--paper);
+  color: var(--ink-2);
+  font: var(--type-small);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+#system-bar a {
+  pointer-events: auto;
+}
+
+.system-left,
+.system-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.system-left {
+  min-width: 0;
+}
+
+.system-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink);
+  font: var(--type-title-xs);
+  text-decoration: none;
+}
+
+.system-mark:hover .mark-eyelet {
+  fill: var(--copper);
+}
+
+.system-caption {
+  min-width: 0;
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--rule);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.system-stats {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.system-stats b {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The last frame's time changes while the page runs, so its box keeps one width. */
+.system-frame-time {
+  display: inline-block;
+  min-width: 4ch;
+  text-align: right;
+}
+
+.system-links {
+  display: flex;
+  gap: var(--space-4);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--rule);
+}
+
+.system-stats:empty + .system-links {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.system-links a {
+  color: var(--ink-2);
+  text-decoration-color: transparent;
+}
+
+.system-links a:hover {
+  color: var(--copper);
+  text-decoration-color: currentColor;
+}
+
+/* A narrower bar drops the caption first, then the statistics. */
+@media (max-width: 1039px) {
+  .system-caption {
+    display: none;
+  }
+}
+
+@media (max-width: 599px) {
+  .system-stats {
+    display: none;
+  }
+
+  .system-links {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+/* Windows: sheets of paper. The window with focus is whiter and casts the larger shadow. */
+.window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  /* The program's content box is the frame minus this 1 px border and the title bar. */
+  border: 1px solid var(--edge);
+  border-radius: calc(var(--radius-3) - var(--maximized) * 8px);
+  /* --sheet with focus, a step toward --paper without. */
+  background: color-mix(in srgb, var(--sheet) calc(86% + var(--focused) * 14%), var(--paper));
+  /* --shadow-2 without focus and --shadow-3 with it, written out so the two can mix. */
+  box-shadow:
+    0 calc(1px + var(--focused) * 1px) calc(2px + var(--focused) * 2px) rgb(60 42 22 / calc(0.08 + var(--focused) * 0.02)),
+    0 calc(10px + var(--focused) * 18px) calc(28px + var(--focused) * 36px) calc(-8px - var(--focused) * 8px) rgb(60 42 22 / calc(0.24 + var(--focused) * 0.14));
+  /* The program scales a window around its center while it flies to or from the dock. */
+  transform-origin: 50% 50%;
+  transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
+}
+
+/* The frame's border takes 1 px on each side, and the program's title bar starts at the
+   frame's outer edge. So the padding is 1 px less on the right than the program's gap, and
+   1 px at the bottom: the buttons are then centered 22 px below the frame's top and end
+   10 px before its right edge, exactly on the rectangles that the program tests presses
+   against. */
+.titlebar {
+  height: var(--title-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 calc(var(--button-gap) - 1px) 1px 14px;
+  border-bottom: 1px solid var(--rule);
+  cursor: grab;
+}
+
+.titlebar:active {
+  cursor: grabbing;
+}
+
+.window-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 9px;
+  color: color-mix(in srgb, var(--ink) calc(var(--focused) * 100%), var(--ink-2));
+  font: var(--type-title-xs);
+  transition: color var(--quick) var(--ease);
+}
+
+/* The joint before a title: a hollow eyelet, filled with copper while the window has focus. */
+.app-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid color-mix(in srgb, var(--copper) calc(var(--focused) * 100%), var(--ink-3));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--copper) calc(var(--focused) * 100%), transparent);
+  transition: background-color var(--quick) var(--ease), border-color var(--quick) var(--ease);
+}
+
+.window-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--button-gap);
+}
+
+/* Minimize, maximize, close: three glyphs of 1 px ink in 18 px boxes. A ring appears under
+   the pointer, and close fills with copper. The states change colors only. */
+.window-button {
+  position: relative;
+  flex: none;
+  width: var(--button-size);
+  height: var(--button-size);
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--ink) calc(var(--focused) * 100%), var(--ink-3));
+  cursor: pointer;
+  transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease), color var(--quick) var(--ease);
+}
+
+/* The glyph is a mask, so it takes the button's color and that color's transition. */
+.window-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  -webkit-mask: var(--glyph) center / 100% 100% no-repeat;
+  mask: var(--glyph) center / 100% 100% no-repeat;
+}
+
+/* The program takes a press within half the gap around a button, so the pointer does too. */
+.window-button::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--button-gap) * -0.5);
+}
+
+.window-button.minimize {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4 9.5h10' stroke='%23000'/%3E%3C/svg%3E");
+}
+
+.window-button.maximize {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Crect x='4.5' y='4.5' width='9' height='9' rx='2' fill='none' stroke='%23000'/%3E%3C/svg%3E");
+}
+
+.window-button.close {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.75 4.75l8.5 8.5m0-8.5l-8.5 8.5' fill='none' stroke='%23000' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.window-button:hover {
+  background-color: var(--wash);
+  box-shadow: 0 0 0 4px var(--wash);
+  color: var(--ink);
+}
+
+.window-button.close:hover {
+  background-color: var(--copper);
+  box-shadow: 0 0 0 4px var(--copper);
+  color: var(--sheet);
+}
+
+.window-button:active {
+  background-color: var(--rule);
+  box-shadow: 0 0 0 4px var(--rule);
+}
+
+.window-button.close:active {
+  background-color: var(--ink);
+  box-shadow: 0 0 0 4px var(--ink);
+}
+
+/* JavaScript sets the width and height to the size the window is heading to, and the frame
+   clips the box while the frame itself still animates. */
+.window-content {
+  position: absolute;
+  top: var(--title-height);
+  left: 0;
+  overflow: hidden;
+}
+
+/* The grip is an arc around the corner's center. A maximized window can't be resized, so
+   its grip has no size. */
+.resize-grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: calc(var(--resize-grip) * (1 - var(--maximized)));
+  height: calc(var(--resize-grip) * (1 - var(--maximized)));
+  overflow: hidden;
+  cursor: nwse-resize;
+}
+
+.resize-grip::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--resize-grip);
+  height: var(--resize-grip);
+  background: var(--ink-3);
+  -webkit-mask: var(--glyph) center / 100% 100% no-repeat;
+  mask: var(--glyph) center / 100% 100% no-repeat;
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M21 12A9 9 0 0 1 12 21' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* The kinds of the program's operations, in Monitor's bar and in Files' list. Copper,
+   indigo and ochre are the chart colors, in that order. */
+.kind-affine { --kind-color: var(--copper); }
+.kind-reglu { --kind-color: var(--wire-indigo); }
+.kind-boolean { --kind-color: var(--wire-ochre); }
+.kind-index { --kind-color: var(--wire-plum); }
+
+/* Files: a list of the program's own operations in a native scroller. JavaScript creates
+   the header's cells and the rows, and writes each row's transform, display and --selected
+   every frame, the spacer's height, and the three sizes below. */
+.files-content {
+  --files-header-height: 28px;
+  --files-row-height: 24px;
+  --files-scrollbar-strip: 16px;
+  color: var(--ink);
+  font: 400 12px/24px var(--font-mono);
+}
+
+.files-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 152px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px var(--space-2) 0;
+  border-right: 1px solid var(--rule);
+}
+
+.files-sidebar .label {
+  margin: 0 var(--space-2) 6px;
+}
+
+.files-location {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-1);
+  color: var(--ink-2);
+  font: var(--type-ui);
+  cursor: pointer;
+}
+
+.files-location b {
+  color: var(--ink-3);
+  font: var(--type-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.files-location:hover {
+  background: var(--wash);
+}
+
+/* A selection is a copper wash in the window with focus, and a neutral one elsewhere. */
+.files-location.is-selected {
+  background: color-mix(in srgb, var(--copper-wash) calc(var(--focused) * 100%), color-mix(in srgb, var(--rule) 55%, transparent));
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.files-location.is-selected b {
+  color: var(--ink-2);
+}
+
+.files-list {
+  position: absolute;
+  inset: 0;
+}
+
+.files-sidebar ~ .files-list {
+  left: 152px;
+}
+
+.files-header,
+.files-row {
+  grid-template-columns: minmax(0, 1fr) 76px 44px 72px;
+  align-items: center;
+  padding: 0 var(--files-scrollbar-strip) 0 var(--space-3);
+}
+
+/* The header keeps the room of the scroller's scrollbar, so its cells line up with the
+   rows' cells where scrollbars take room. */
+.files-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: grid;
+  height: var(--files-header-height);
+  overflow: hidden;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-3);
+  font: var(--type-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The browser scrolls the list, and the program reads the position. pan-y lets a touch
+   scroll the list inside the desktop's touch-action: none, and contain keeps the list's
+   rubber band from scrolling anything behind it. */
+.files-scroller {
+  position: absolute;
+  top: var(--files-header-height);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--rule-strong) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  touch-action: pan-y;
+}
+
+.files-spacer {
+  position: relative;
+}
+
+/* Every row is 24 px tall, so the list draws only the rows in view. Ruled like a ledger.
+   The pointer's wash is a second layer, over the selection's. */
+.files-row {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--files-row-height);
+  background-color: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--copper-wash) calc(var(--focused) * 100%), color-mix(in srgb, var(--rule) 55%, transparent)) calc(var(--selected) * 100%),
+    transparent
+  );
+  box-shadow: inset 0 -1px color-mix(in srgb, var(--rule) 55%, transparent);
+}
+
+.files-row:hover {
+  background-image: linear-gradient(var(--wash), var(--wash));
+}
+
+.files-cell {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.files-cell-layer,
+.files-cell-weights {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.files-row .files-cell-kind,
+.files-row .files-cell-layer {
+  color: var(--ink-2);
+}
+
+/* The swatch carries the kind's color and the word stays in ink. Monitor's bar uses the
+   same colors. */
+.files-row .files-cell-kind {
+  font-family: var(--font-sans);
+}
+
+.files-row .files-cell-kind::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 1.5px;
+  background: var(--kind-color, var(--ink-3));
+  vertical-align: 1px;
+}
+
+/* Shown while the list's viewport holds more rows than there are row nodes. */
+.files-overflow {
+  position: absolute;
+  right: var(--files-scrollbar-strip);
+  bottom: 6px;
+  padding: 3px var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--sheet);
+  color: var(--ink-2);
+  font: var(--type-small);
+  box-shadow: var(--shadow-1);
+  pointer-events: none;
+}
+
+/* Notes: plain paper. JavaScript creates one span per word and places it in the content
+   box's coordinates. The program is built from a measurement of the paragraph in the font
+   that notesFont in notes-paragraph.ts names, so the three font lines below must name that
+   font, and the inherited kerning and legibility settings are set back to the defaults
+   that the measurement uses. */
+.notes-word {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  line-height: 22px;
+  font-kerning: auto;
+  text-rendering: auto;
+  white-space: pre;
+  pointer-events: none;
+}
+
+/* The caret blinks through its visibility, which JavaScript doesn't write. */
+.notes-caret {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 18px;
+  margin-top: 2px;
+  border-radius: 1px;
+  background: var(--copper);
+  pointer-events: none;
+  animation: notes-caret 1.1s steps(1) infinite;
+}
+
+@keyframes notes-caret {
+  50% {
+    visibility: hidden;
+  }
+}
+
+.notes-selection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 22px;
+  background: color-mix(in srgb, var(--copper) 22%, transparent);
+  pointer-events: none;
+}
+
+/* Monitor: one sentence, three figures, the last frames' times, and what the program is
+   made of. monitor.ts writes all of it. The content box is a container, so a smaller
+   window keeps the sentence and the figures and drops the parts below them. */
+.monitor-content {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 0;
+  container-type: size;
+}
+
+.monitor-lede {
+  margin: 0;
+  color: var(--ink-2);
+  font: 400 15px/20px var(--font-serif);
+}
+
+.monitor-figures {
+  display: grid;
+  grid-template-columns: 1.25fr 0.9fr 1fr;
+  margin: 10px 0 0;
+}
+
+/* The number above its label. */
+.monitor-figures div {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.monitor-figures dd {
+  margin: 0;
+  color: var(--ink);
+  font: var(--type-figure-l);
+  letter-spacing: -0.022em;
+  white-space: nowrap;
+}
+
+.monitor-figures dd small {
+  margin-left: 3px;
+  color: var(--ink-2);
+  font: 500 15px/1 var(--font-sans);
+  letter-spacing: 0;
+}
+
+.monitor-figures dt {
+  color: var(--ink-3);
+  font: var(--type-small);
+}
+
+/* Only the frame time changes while the page runs, so only it is tabular. */
+.monitor-frame-time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The chart takes the height that the window has to spare, from 30 to 120 px. Its right
+   44 px hold the scale's two labels. */
+.monitor-chart {
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 18px 0 0;
+}
+
+.monitor-plot {
+  position: relative;
+  flex: 1 1 auto;
+  height: 52px;
+  min-height: 30px;
+  margin-right: 44px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* The path's box is 59 units wide and 1 unit tall, stretched over the plot, and the
+   strokes keep their widths in px. The last frame's dot is 5 px from the plot's right
+   edge, so its ring stays inside. */
+.monitor-plot svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% - 5px);
+  height: 100%;
+  overflow: visible;
+}
+
+.monitor-plot path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.monitor-plot .area {
+  fill: var(--copper);
+  fill-opacity: 0.1;
+}
+
+.monitor-plot .line {
+  stroke: var(--copper);
+  stroke-width: 2;
+}
+
+.monitor-plot .end-ring {
+  stroke: var(--sheet);
+  stroke-width: 10;
+}
+
+.monitor-plot .end {
+  stroke: var(--copper);
+  stroke-width: 6;
+}
+
+/* Each label is centered on its grid line. */
+.monitor-scale {
+  position: absolute;
+  right: -44px;
+  color: var(--ink-3);
+  font: var(--type-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.monitor-scale-top {
+  top: -9px;
+}
+
+.monitor-scale-bottom {
+  bottom: -9px;
+}
+
+.monitor-chart figcaption {
+  flex: none;
+  margin-top: var(--space-1);
+  color: var(--ink-3);
+  font: var(--type-small);
+}
+
+/* Part to whole: one segment per kind, with a 2 px gap of the surface between them. */
+.monitor-parts {
+  flex: none;
+  margin: 14px 0 0;
+}
+
+.monitor-bar {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+}
+
+.monitor-bar i {
+  flex-basis: 0;
+  min-width: 2px;
+  background: var(--kind-color);
+}
+
+.monitor-bar i:first-child {
+  border-radius: var(--radius-1) 0 0 var(--radius-1);
+}
+
+.monitor-bar i:last-child {
+  border-radius: 0 var(--radius-1) var(--radius-1) 0;
+}
+
+.monitor-legend {
+  display: flex;
+  gap: var(--space-4);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-2);
+  font: var(--type-small);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.monitor-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.monitor-legend li::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--kind-color);
+}
+
+.monitor-legend b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Inside the padding, the content at full size is 218 px tall. In a shorter window the
+   chart shrinks by up to 22 px, then the parts go, then the chart. A window too narrow
+   for three figures of 30 px gets smaller ones. */
+@container (max-height: 195px) {
+  .monitor-parts {
+    display: none;
+  }
+}
+
+@container (max-height: 149px) {
+  .monitor-chart {
+    display: none;
+  }
+}
+
+@container (max-width: 319px) {
+  .monitor-figures dd {
+    font: var(--type-figure-s);
+  }
+
+  .monitor-figures dd small {
+    font-size: 13px;
+  }
+
+  .monitor-legend {
+    gap: var(--space-3);
+  }
+}
+
+/* Photos: a grid and a lightbox, both laid out by the program. JavaScript creates a node
+   for each photo and each thumbnail while the program draws it, and writes its size,
+   position, opacity and --focused, which is 1 for the open photo and its thumbnail. */
+.photos-content {
+  cursor: pointer;
+}
+
+.photos-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--sheet);
+  pointer-events: none;
+}
+
+.photos-photo,
+.photos-thumbnail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  pointer-events: none;
+}
+
+/* The hairline is inside the photo, so a pale photo keeps its edge on the sheet. The open
+   photo floats: --shadow-2, scaled by --focused. */
+.photos-photo {
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 1px var(--edge),
+    0 calc(var(--focused) * 1px) calc(var(--focused) * 2px) rgb(60 42 22 / 0.08),
+    0 calc(var(--focused) * 10px) calc(var(--focused) * 28px) calc(var(--focused) * -8px) rgb(60 42 22 / 0.24);
+}
+
+/* The open photo's name, on a paper label. */
+.photos-photo span {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 3px 10px 4px;
+  border-radius: var(--radius-1);
+  background: var(--sheet);
+  color: var(--ink);
+  font: italic 400 14px/20px var(--font-serif);
+  box-shadow: var(--shadow-1);
+  opacity: var(--focused);
+}
+
+.photos-thumbnail {
+  border-radius: 10%;
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+
+.photos-thumbnail::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px var(--copper), inset 0 0 0 4px var(--sheet);
+  opacity: var(--focused);
+}
+
+.image-0 { background-image: url("./photo-gallery-00.webp"); }
+.image-1 { background-image: url("./photo-gallery-01.webp"); }
+.image-2 { background-image: url("./photo-gallery-02.webp"); }
+.image-3 { background-image: url("./photo-gallery-03.webp"); }
+.image-4 { background-image: url("./photo-gallery-04.webp"); }
+.image-5 { background-image: url("./photo-gallery-05.webp"); }
+.image-6 { background-image: url("./photo-gallery-06.webp"); }
+.image-7 { background-image: url("./photo-gallery-07.webp"); }
+.image-8 { background-image: url("./photo-gallery-08.webp"); }
+.image-9 { background-image: url("./photo-gallery-09.webp"); }
+.image-10 { background-image: url("./photo-gallery-10.webp"); }
+.image-11 { background-image: url("./photo-gallery-11.webp"); }
+
+/* Previous and next: a chevron in the program's 52 px box, with a disc under the pointer. */
+.photos-control {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+}
+
+.photos-control::before,
+.photos-control::after {
+  content: "";
+  grid-area: 1 / 1;
+}
+
+.photos-control::before {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: background-color var(--quick) var(--ease);
+}
+
+.photos-control:hover::before {
+  background-color: var(--wash);
+}
+
+.photos-control:active::before {
+  background-color: var(--rule);
+}
+
+.photos-control::after {
+  width: 9px;
+  height: 16px;
+  background: var(--ink-2);
+  -webkit-mask: var(--glyph) center / 100% 100% no-repeat;
+  mask: var(--glyph) center / 100% 100% no-repeat;
+}
+
+.photos-previous {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 16'%3E%3Cpath d='M7.5 1.5L1.5 8l6 6.5' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.photos-next {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 16'%3E%3Cpath d='M1.5 1.5L7.5 8l-6 6.5' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* Dock: four tiles above one copper wire. Each tile's joint on the wire is hollow while
+   its window is closed, filled while it is open, and a bar while it has focus. */
+#dock {
+  position: absolute;
+  z-index: 9;
+  inset: 0;
+  pointer-events: none;
+}
+
+.dock-wire {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  width: min(344px, 100% - 48px);
+  height: 1px;
+  background: var(--copper-line);
+  translate: -50% 0;
+}
+
+/* The wire ends in two terminals. */
+.dock-wire::before,
+.dock-wire::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--copper);
+  border-radius: 50%;
+  background: var(--desk);
+}
+
+.dock-wire::before {
+  left: -7px;
+}
+
+.dock-wire::after {
+  right: -7px;
+}
+
+.dock-item {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-3);
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: box-shadow var(--quick) var(--ease), border-color var(--quick) var(--ease), background-color var(--quick) var(--ease);
+}
+
+.dock-item:hover {
+  border-color: var(--copper-line);
+  box-shadow: var(--shadow-2);
+}
+
+.dock-item:active {
+  background-color: var(--paper);
+  box-shadow: none;
+}
+
+/* The icon fades while its window is closed or minimized. */
+.dock-item svg {
+  width: 64%;
+  height: 64%;
+  opacity: calc(1 - var(--inactive) * 0.55);
+  pointer-events: none;
+}
+
+.dock-item .accent {
+  stroke: var(--copper);
+}
+
+.dock-item .accent-fill {
+  fill: var(--copper);
+  stroke: none;
+}
+
+/* The joint's middle row is the wire's row: the tile's padding box ends 7 px above the
+   desktop's bottom, the wire is the row 6 px above it, and the joint is 7 px tall. */
+.dock-item i {
+  position: absolute;
+  bottom: -11px;
+  left: 50%;
+  width: calc(7px + var(--focused) * 11px);
+  height: 7px;
+  margin-left: calc(-3.5px - var(--focused) * 5.5px);
+  border: 1.5px solid var(--copper);
+  border-radius: var(--radius-1);
+  background: color-mix(in srgb, var(--copper) calc(var(--open) * 100%), var(--desk));
+}
+
+/* First paint. A window or a dock item has no rectangle until the program's first frame
+   writes one into its style attribute, and before that it isn't painted. So the first paint
+   holds either the desk alone, or the program's first frame. */
+.window:not([style]),
+.dock-item:not([style]) {
+  visibility: hidden;
+}
