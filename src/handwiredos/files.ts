@@ -173,9 +173,9 @@ export type FilesOutputs = {
   // is past it, e.g. right after the window grew, before the browser clamped the
   // scroller's position.
   scroll: Wire
-  // After a key, the scroll position that shows the whole selected row, and
-  // otherwise `scroll`. scrollRequest is 1 when scrollTarget differs from `scroll`,
-  // and the host then scrolls to scrollTarget.
+  // After a key, the scroll position that shows the whole selected row, 0 when a
+  // release shows another location, and otherwise `scroll`. scrollRequest is 1 when
+  // scrollTarget differs from `scroll`, and the host then scrolls to scrollTarget.
   scrollTarget: Wire
   scrollRequest: Wire
   // 1 when more rows are in view than there are slots, so some get no DOM node.
