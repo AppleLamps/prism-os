@@ -403,6 +403,25 @@ body {
   font: 16px Georgia, "Times New Roman", serif;
 }
 
+/* What the note says when its text passes one of the flow's capacities, e.g. "The
+   last 5 words don't fit in the lines that are free." It sits in the 24 px above
+   the first line, where no text is laid out. */
+.notes-notice {
+  position: absolute;
+  top: 5px;
+  left: 24px;
+  max-width: calc(100% - 48px);
+  overflow: hidden;
+  color: #ffc857;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* The selected text of one line, drawn under the words. */
 .notes-selection {
   position: absolute;

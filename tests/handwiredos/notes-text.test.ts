@@ -8,7 +8,9 @@ import {
   type NotesLayout,
   caretCell,
   caretPosition,
+  cutIntoPieces,
   normalizeNotesValue,
+  notesNotice,
   offsetAfterLineMove,
   offsetAtPoint,
   prepareNotesText,
@@ -16,7 +18,9 @@ import {
 } from '../../src/handwiredos/notes-text.ts'
 
 const measure = (text: string) => fakeTextWidth(text, testFont)
-const prepare = (value: string) => prepareNotesText(value, testFont, measure)
+// The page's limits: a run wider than the narrowest column is cut into pieces that fit the narrowest slot.
+const limits = {longestWholeSegment: 230, pieceWidth: 80}
+const prepare = (value: string) => prepareNotesText(value, testFont, limits, measure)
 
 function createRandom(seed: number) {
   return () => {
@@ -88,7 +92,7 @@ test('characters that pretext\'s fast walker doesn\'t lay out still get cells, a
 })
 
 test('when pretext throws, the text is cut at its spaces and measured by the host', () => {
-  const text = prepareNotesText(' two  words here ', testFont, measure, () => {
+  const text = prepareNotesText(' two  words here ', testFont, limits, measure, () => {
     throw new Error('pretext failed')
   })
   assert.deepEqual(text.cellTexts, ['two', ' ', 'words', ' ', 'here'])
@@ -261,4 +265,55 @@ test('line moves follow the laid-out lines: up and down keep their x through a s
   const empty = prepare('')
   const emptyLayout: NotesLayout = {...layoutOfLines([], []), band: band => ({usable: band === 0, left: 24, width: 440})}
   assert.deepEqual(offsetAfterLineMove(empty, 0, 0, 'down', null, emptyLayout, measure), {offset: 0, x: 24})
+})
+
+test('a run of letters wider than the narrowest column is cut into pieces that fit the narrowest slot, and an ordinary long word stays whole', () => {
+  // 21 letters, 154 px: wider than a slot, narrower than the limit.
+  const word = 'incomprehensibilities'
+  assert.ok(measure(word) > 80 && measure(word) < 230)
+  assert.deepEqual(prepare(`an ${word} of`).cellTexts, ['an', ' ', word, ' ', 'of'])
+  // 70 letters without a space, about 540 px.
+  const run = 'qwertyuiopasdfghjklzxcvbnm'.repeat(3).slice(0, 70)
+  assert.ok(measure(run) > 440)
+  const text = prepare(`see ${run} end`)
+  const pieces = text.cellTexts.slice(2, -2)
+  assert.deepEqual([text.cellTexts.slice(0, 2), text.cellTexts.slice(-2)], [['see', ' '], [' ', 'end']])
+  assert.equal(pieces.join(''), run)
+  assert.ok(pieces.length >= 7 && pieces.length <= 9, `${pieces.length} pieces`)
+  pieces.forEach((piece, index) => {
+    const width = text.paragraph.widths[2 + index]!
+    assert.equal(width, measure(piece))
+    assert.ok(width <= 80, `piece ${piece} is ${width} px wide`)
+    // Each piece but the last is as long as fits: one more letter would pass 80 px.
+    if (index < pieces.length - 1) assert.ok(measure(piece + pieces[index + 1]![0]!) > 80)
+  })
+  assert.deepEqual(text.paragraph.breakAfter, [0, 1, ...pieces.map(() => 0), 1, 0])
+  // The cells still spell the text, so a caret inside the run has its place in a piece.
+  assert.equal(text.cellTexts.join(''), text.normalized)
+  const fourth = caretCell(text, 4 + pieces[0]!.length + pieces[1]!.length + pieces[2]!.length + 2)!
+  assert.deepEqual([fourth.cell, fourth.charactersBefore], [5, 2])
+  // A letter and its combining accent stay in one piece, and so do the two halves of a surrogate pair.
+  for (const cluster of ['e\u0301', '\u{1F600}']) {
+    const clusters = cutIntoPieces(cluster.repeat(40), 30, measure)
+    assert.ok(clusters.length > 1)
+    assert.ok(clusters.every(piece => piece.text.length % cluster.length === 0 && piece.text === cluster.repeat(piece.text.length / cluster.length)))
+  }
+  // A letter wider than the piece width is a piece of its own.
+  assert.deepEqual(cutIntoPieces('mmm', 1, measure).map(piece => piece.text), ['m', 'm', 'm'])
+  assert.deepEqual(cutIntoPieces('', 80, measure), [])
+})
+
+test('the notice names each capacity that the text passes, in plain sentences', () => {
+  const within = {segments: 89, capacity: 128, hiddenWords: 0, wrappedLines: 0, window: 40}
+  assert.equal(notesNotice(within), '')
+  assert.equal(notesNotice({...within, segments: 128}), '')
+  assert.equal(notesNotice({...within, segments: 399}), 'This text has 399 words and spaces, and the note lays out the first 128.')
+  assert.equal(notesNotice({...within, hiddenWords: 10}), 'The last 10 words don\'t fit in the lines that are free.')
+  assert.equal(notesNotice({...within, hiddenWords: 1}), 'The last word doesn\'t fit in the lines that are free.')
+  assert.equal(notesNotice({...within, wrappedLines: 2}), 'A line holds 40 words and spaces at most, so 2 lines wrap early.')
+  assert.equal(notesNotice({...within, wrappedLines: 1}), 'A line holds 40 words and spaces at most, so 1 line wraps early.')
+  assert.equal(
+    notesNotice({segments: 150, capacity: 128, hiddenWords: 3, wrappedLines: 1, window: 40}),
+    'This text has 150 words and spaces, and the note lays out the first 128. The last 3 words don\'t fit in the lines that are free. A line holds 40 words and spaces at most, so 1 line wraps early.',
+  )
 })

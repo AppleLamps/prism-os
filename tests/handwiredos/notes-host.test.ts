@@ -18,7 +18,7 @@ class FakeElement {
   style: Record<string, string> = {}
   children: FakeElement[] = []
   attributes: Record<string, string> = {}
-  listeners = new Map<string, ((event: {timeStamp: number}) => void)[]>()
+  listeners = new Map<string, ((event: Record<string, unknown>) => void)[]>()
   textWrites = 0
   // A textarea's state, which the test changes like a browser would. Assigning the value moves the caret to the end
   // of the text, as the HTML standard says.
@@ -54,11 +54,11 @@ class FakeElement {
   setAttribute(name: string, value: string) {
     this.attributes[name] = value
   }
-  addEventListener(type: string, listener: (event: {timeStamp: number}) => void) {
+  addEventListener(type: string, listener: (event: Record<string, unknown>) => void) {
     this.listeners.set(type, [...this.listeners.get(type) ?? [], listener])
   }
-  dispatch(type: string, timeStamp: number) {
-    for (const listener of this.listeners.get(type) ?? []) listener({timeStamp})
+  dispatch(type: string, event: Record<string, unknown>) {
+    for (const listener of this.listeners.get(type) ?? []) listener(event)
   }
   focus(options?: unknown) {
     this.focusCalls.push(options)
@@ -87,8 +87,11 @@ class FakeDocument {
   }
 }
 
+// The page's limits: a run wider than the narrowest column is cut into pieces that fit the narrowest slot.
+const pageLimits = {longestWholeSegment: 230, pieceWidth: 80}
+
 // A mounted host and its machine, with one function that runs a frame the way mountWindowManager's render does.
-function mount() {
+function mount(limits = pageLimits) {
   const machine = createWindowManagerMachine()
   const document = new FakeDocument()
   const content = document.createElement('div')
@@ -105,6 +108,7 @@ function mount() {
       contentHeight: machine.output.windows[notesWindow + windowOutputField.contentHeight]!,
     },
     notesOptions,
+    limits,
     notesText,
     measure,
     () => {
@@ -131,7 +135,7 @@ function mount() {
   function type(value: string, caretOffset = value.length, beforeFrame = 8) {
     input.value = value
     input.selectionStart = input.selectionEnd = caretOffset
-    input.dispatch('input', frameTime + 16 - beforeFrame)
+    input.dispatch('input', {timeStamp: frameTime + 16 - beforeFrame})
   }
   function press(x: number, y: number) {
     machine.pointerDown(x, y, frameTime + 4)
@@ -159,7 +163,8 @@ function mount() {
   const words = () => nodesOf('notes-word')
   const shownWords = () => words().filter(node => node.style['display'] === 'block')
   const selections = nodesOf('notes-selection')
-  return {machine, document, content, host, input, caret, selections, scheduled, frame, type, press, key, words, shownWords, lastRead: () => lastRead}
+  const notice = nodesOf('notes-notice')[0]!
+  return {machine, document, content, host, input, caret, selections, notice, scheduled, frame, type, press, key, words, shownWords, lastRead: () => lastRead}
 }
 
 // The outputs of a segment cell in a frame's values.
@@ -175,8 +180,8 @@ test('the textarea is created once with the starting text, and the first frame d
   const values = frame()
   assert.deepEqual(machine.evaluations.map(evaluation => [evaluation.kind, evaluation.events]), [['events', ['mount', 'notes text']], ['frame', []]])
   assert.deepEqual(words().map(node => node.textContent), notesWords)
-  // One rectangle per band for the selection, the caret, the textarea, and the words.
-  assert.equal(content.children.length, notesOptions.bands + 2 + notesWords.length)
+  // One rectangle per band for the selection, the caret, the notice, the textarea, and the words.
+  assert.equal(content.children.length, notesOptions.bands + 3 + notesWords.length)
   words().forEach((node, word) => {
     const place = placeOf(machine, values, 2 * word)
     assert.deepEqual(
@@ -267,7 +272,8 @@ test('a typed character reaches the program as one event at the input event\'s t
 })
 
 test('an empty note keeps its caret in the first usable band, and the textarea stays inside the content box', () => {
-  const {input, caret, frame, type, press} = mount()
+  // Without the cut of long runs, so that a word can reach past the content box.
+  const {input, caret, frame, type, press} = mount({longestWholeSegment: Number.POSITIVE_INFINITY, pieceWidth: 80})
   frame()
   press(450, 126)
   frame()
@@ -424,4 +430,65 @@ test('the keys that move by lines move the textarea\'s caret along the lines tha
   frame()
   const secondLineEnd = offsetOfWord(lineStarts[2]!) - 1
   assert.deepEqual([input.selectionStart, input.selectionEnd, caret.style['display']], [secondLineEnd, secondLineEnd, 'block'])
+})
+
+test('a run of letters wider than the column is drawn as pieces that wrap inside the column', () => {
+  const {machine, frame, type, press, shownWords, notice} = mount()
+  frame()
+  press(450, 126)
+  frame()
+  const run = 'qwertyuiopasdfghjklzxcvbnm'.repeat(3).slice(0, 70)
+  type(`see ${run} end`)
+  const values = frame()
+  const drawn = shownWords().map(node => node.textContent)
+  assert.deepEqual([drawn[0], drawn.at(-1), drawn.slice(1, -1).join('')], ['see', 'end', run])
+  assert.ok(drawn.length >= 9)
+  // Every piece ends inside the 440 px column, which starts at x 24, and the run takes more than one line.
+  const places = shownWords().map(node => /translate3d\(([-\d.]+)px,([-\d.]+)px/.exec(node.style['transform']!)!.slice(1).map(Number))
+  places.forEach(([x], index) => assert.ok(x! >= 24 && x! + measure(drawn[index]!) <= 24 + 440, `${drawn[index]} at ${x}`))
+  assert.deepEqual([...new Set(places.map(([, y]) => y))], [24, 46])
+  assert.deepEqual([values[machine.output.notes.lineCount], values[machine.output.notes.truncated], values[machine.output.notes.windowOverflow]], [2, 0, 0])
+  assert.equal(notice.style['display'], 'none')
+})
+
+test('the note says which capacity its text passes, and writes the sentence only when it changes', () => {
+  const {frame, type, press, notice, shownWords, input} = mount()
+  // At the start, Photos and System Monitor leave 7 lines, and the paragraph's last 10 words have none.
+  frame()
+  assert.deepEqual([notice.style['display'], notice.textContent], ['block', 'The last 10 words don\'t fit in the lines that are free.'])
+  frame()
+  assert.equal(notice.textWrites, 1)
+  // With Notes in front, the paragraph fits, and the notice is hidden.
+  press(450, 126)
+  frame()
+  assert.deepEqual([notice.style['display'], notice.textContent, notice.textWrites], ['none', '', 2])
+  // 200 words are 399 segments: the cells hold the first 128, i.e. 64 words, and the textarea keeps the whole text.
+  const long = Array.from({length: 200}, (_, index) => index % 2 === 0 ? 'word' : 'another').join(' ')
+  type(long)
+  frame()
+  assert.deepEqual([notice.style['display'], notice.textContent], ['block', 'This text has 399 words and spaces, and the note lays out the first 128.'])
+  assert.equal(shownWords().length, 64)
+  assert.equal(input.value, long)
+  // 60 one-letter words: two lines wrap at the walker's window.
+  type(Array.from({length: 60}, () => 'i').join(' '))
+  frame()
+  assert.equal(notice.textContent, 'A line holds 40 words and spaces at most, so 2 lines wrap early.')
+  type('short again')
+  frame()
+  assert.deepEqual([notice.style['display'], notice.textContent], ['none', ''])
+})
+
+test('Enter inserts nothing: the textarea refuses a line break before the browser inserts it', () => {
+  const {input} = mount()
+  const prevented = (inputType: string) => {
+    let wasPrevented = false
+    input.dispatch('beforeinput', {
+      inputType,
+      preventDefault() {
+        wasPrevented = true
+      },
+    })
+    return wasPrevented
+  }
+  assert.deepEqual(['insertLineBreak', 'insertParagraph', 'insertText', 'insertFromPaste', 'deleteContentBackward'].map(prevented), [true, true, false, false, false])
 })

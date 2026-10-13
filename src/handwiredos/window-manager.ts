@@ -1603,6 +1603,13 @@ function mountWindowManager(document: Document, window: Window) {
       contentHeight: machine.output.windows[notesWindowOutput + windowOutputField.contentHeight]!,
     },
     notesOptions,
+    // A run of letters is cut into pieces of at most the narrowest slot's width once it is wider than the column of
+    // the narrowest Notes window: the minimum window width, less the 1 px border and the flow's padding on both
+    // sides, 230 px.
+    {
+      longestWholeSegment: machine.source[machine.cells.minWidth]! - 2 - 2 * notesOptions.padding,
+      pieceWidth: notesOptions.minimumSlotWidth,
+    },
     notesText,
     createCanvasMeasure(document, notesFont),
     scheduleRender,

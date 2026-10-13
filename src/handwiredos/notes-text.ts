@@ -11,6 +11,17 @@ import type {FastParagraph} from './notes-walker.ts'
 // The width of a string in the note's font, in px, e.g. from a canvas's measureText.
 export type MeasureText = (text: string) => number
 
+export type NotesTextLimits = {
+  // A segment that doesn't break after itself and is wider than this many px is cut
+  // into pieces, e.g. a run of 40 letters typed without a space. The page passes the
+  // column's width in the narrowest Notes window, 230 px, so no segment is wider than
+  // the column at any window size, and an ordinary long word stays whole.
+  longestWholeSegment: number
+  // The pieces are at most this many px wide. The page passes the narrowest slot that
+  // a band may use, 80 px, so every piece fits every slot.
+  pieceWidth: number
+}
+
 export type NotesText = {
   // The textarea value this was prepared from.
   value: string
@@ -68,7 +79,34 @@ export function normalizeNotesValue(value: string) {
   return {normalized, normalizedOffsets, trailingWhitespaceStart}
 }
 
-// pretext's segments as segment cells. Two differences keep any typed text within
+let graphemeSegmenter: Intl.Segmenter | null = null
+
+// A string cut between letters into pieces of at most `pieceWidth` px, each measured
+// by itself, e.g. 70 letters of about 7 px each become 7 pieces. A single letter
+// wider than `pieceWidth` is a piece of its own. Letters are grapheme clusters, so a
+// letter and its combining accent stay together.
+export function cutIntoPieces(text: string, pieceWidth: number, measure: MeasureText) {
+  graphemeSegmenter ??= new Intl.Segmenter(undefined, {granularity: 'grapheme'})
+  const pieces: {text: string, width: number}[] = []
+  let piece = ''
+  let width = 0
+  for (const {segment: grapheme} of graphemeSegmenter.segment(text)) {
+    const candidate = piece + grapheme
+    const candidateWidth = measure(candidate)
+    if (piece !== '' && candidateWidth > pieceWidth) {
+      pieces.push({text: piece, width})
+      piece = grapheme
+      width = measure(grapheme)
+    } else {
+      piece = candidate
+      width = candidateWidth
+    }
+  }
+  if (piece !== '') pieces.push({text: piece, width})
+  return pieces
+}
+
+// pretext's segments as segment cells. Three differences keep any typed text within
 // what the program lays out:
 // - Segments that break after themselves and follow each other share one cell, e.g.
 //   a space and a zero-width space, since the program's walker skips one such
@@ -76,7 +114,19 @@ export function normalizeNotesValue(value: string) {
 // - A segment of another kind than text, space or zero-width break is a cell that
 //   doesn't break after itself, e.g. a no-break space. pretext keeps such a segment
 //   with the words around it, and here a line can break next to it.
-function cellsFromSegments(segments: readonly string[], widths: readonly number[], breaksAfter: readonly boolean[]) {
+// - A segment that doesn't break after itself and is wider than
+//   limits.longestWholeSegment is cut into pieces, see cutIntoPieces. The program
+//   lays a segment out whole, so without the cut a run of letters wider than the
+//   column would run out of the window. A line can break between two pieces, so the
+//   run fills each line up to the last piece that fits, where pretext would fill it
+//   up to the last letter that fits.
+function cellsFromSegments(
+  segments: readonly string[],
+  widths: readonly number[],
+  breaksAfter: readonly boolean[],
+  limits: NotesTextLimits,
+  measure: MeasureText,
+) {
   const texts: string[] = []
   const cellWidths: number[] = []
   const breakAfter: number[] = []
@@ -87,6 +137,12 @@ function cellsFromSegments(segments: readonly string[], widths: readonly number[
     if (breaksAfter[segment]! && breakAfter[last] === 1) {
       texts[last] += text
       cellWidths[last]! += width
+    } else if (!breaksAfter[segment]! && width > limits.longestWholeSegment) {
+      for (const piece of cutIntoPieces(text, limits.pieceWidth, measure)) {
+        texts.push(piece.text)
+        cellWidths.push(piece.width)
+        breakAfter.push(0)
+      }
     } else {
       texts.push(text)
       cellWidths.push(width)
@@ -105,10 +161,11 @@ function segmentAtSpaces(normalized: string, measure: MeasureText) {
 }
 
 // A textarea value as segment cells, measured in `font` by pretext. `measure` gives
-// the width of a space, and of every segment when pretext throws. Widths are rounded
-// to 1/64 px, the grid of the program's width cells. `prepare` is pretext's
-// prepareWithSegments, and a parameter so that a test can make it throw.
-export function prepareNotesText(value: string, font: string, measure: MeasureText, prepare = prepareWithSegments): NotesText {
+// the width of a space and of the pieces of a long run, and of every segment when
+// pretext throws. Widths are rounded to 1/64 px, the grid of the program's width
+// cells. `prepare` is pretext's prepareWithSegments, and a parameter so that a test
+// can make it throw.
+export function prepareNotesText(value: string, font: string, limits: NotesTextLimits, measure: MeasureText, prepare = prepareWithSegments): NotesText {
   const {normalized, normalizedOffsets, trailingWhitespaceStart} = normalizeNotesValue(value)
   let measured: {segments: readonly string[], widths: readonly number[], breaksAfter: readonly boolean[]}
   try {
@@ -121,7 +178,7 @@ export function prepareNotesText(value: string, font: string, measure: MeasureTe
   } catch {
     measured = segmentAtSpaces(normalized, measure)
   }
-  const cells = cellsFromSegments(measured.segments, measured.widths, measured.breaksAfter)
+  const cells = cellsFromSegments(measured.segments, measured.widths, measured.breaksAfter, limits, measure)
   const cellStarts: number[] = []
   let start = 0
   for (const text of cells.texts) {
@@ -342,4 +399,26 @@ export function offsetAfterLineMove(
   }
   if (lineY === null) return {offset: move === 'up' ? 0 : text.value.length, x}
   return {offset: offsetAtPoint(text, laidOutCells, layout, measure, x, lineY + layout.lineHeight / 2), x}
+}
+
+// What the note tells the visitor when the text passes one of the flow's fixed
+// capacities, as plain sentences in one line, or '' when the whole text is laid out
+// as pretext would lay it out. `segments` is how many segment cells the text needs
+// and `capacity` how many the program has; `hiddenWords` is how many words within
+// the capacity no band laid out, which are always the last ones; `wrappedLines` is
+// the program's windowOverflow output, and `window` how many segments a line holds.
+export function notesNotice(counts: {segments: number, capacity: number, hiddenWords: number, wrappedLines: number, window: number}) {
+  const sentences: string[] = []
+  if (counts.segments > counts.capacity) {
+    sentences.push(`This text has ${counts.segments} words and spaces, and the note lays out the first ${counts.capacity}.`)
+  }
+  if (counts.hiddenWords > 0) {
+    sentences.push(counts.hiddenWords === 1
+      ? 'The last word doesn\'t fit in the lines that are free.'
+      : `The last ${counts.hiddenWords} words don't fit in the lines that are free.`)
+  }
+  if (counts.wrappedLines > 0) {
+    sentences.push(`A line holds ${counts.window} words and spaces at most, so ${counts.wrappedLines === 1 ? '1 line wraps' : `${counts.wrappedLines} lines wrap`} early.`)
+  }
+  return sentences.join(' ')
 }

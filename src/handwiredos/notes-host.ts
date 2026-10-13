@@ -20,6 +20,12 @@
 // and the frame moves the caret by the lines that the program laid out. Every
 // other key is the browser's, e.g. ArrowLeft, Backspace and the keys that type.
 //
+// The flow's capacities are fixed, and the note says so when a text passes one: a
+// line above the text tells the visitor that the text has more segments than the
+// program has cells, that the last words have no free line, or that a line wrapped
+// early, see notesNotice. A note is one paragraph: Enter inserts nothing, and a
+// pasted line break is laid out as a space.
+//
 // mountWindowManager creates one host and calls it from its render function in the
 // order of chenguini's ui.md: `read` at the top with the other DOM reads, `queueText`
 // before the machine's step, `write` with the other DOM writes, and
@@ -32,7 +38,9 @@ import {
   type MeasureText,
   type NotesLayout,
   type NotesText,
+  type NotesTextLimits,
   caretPosition,
+  notesNotice,
   offsetAfterLineMove,
   offsetAtPoint,
   prepareNotesText,
@@ -96,6 +104,7 @@ export function createNotesHost(
   machine: {notesText(paragraph: FastParagraph, timeStamp?: number): number},
   wires: NotesHostWires,
   options: NotesOptions,
+  limits: NotesTextLimits,
   initialValue: string,
   measure: MeasureText,
   scheduleRender: () => void,
@@ -110,6 +119,9 @@ export function createNotesHost(
   const caret = document.createElement('div')
   caret.className = 'notes-caret'
   content.appendChild(caret)
+  const notice = document.createElement('div')
+  notice.className = 'notes-notice'
+  content.appendChild(notice)
   const input = document.createElement('textarea')
   input.className = 'notes-input'
   input.spellcheck = false
@@ -127,6 +139,8 @@ export function createNotesHost(
     input, // mount lifetime
     caret, // mount lifetime
     selections, // mount lifetime: one rectangle per band, shown while the band's line holds selected text
+    notice, // mount lifetime
+    noticeText: '', // the text last written into the notice, so that textContent is written only when it changes
     // One node per word, in the text's order. Created when a text first needs them, then kept for the mount's
     // lifetime: a node past the text's last word is hidden, and shown again when a longer text needs it.
     wordNodes: [] as HTMLElement[],
@@ -139,7 +153,7 @@ export function createNotesHost(
 
   // The text that the program's cells hold, or will hold after the queued event, and how many of its cells the
   // program has room for. The first text is queued before the machine's first step, so it commits with the mount.
-  let text: NotesText = prepareNotesText(initialValue, notesFont, measure)
+  let text: NotesText = prepareNotesText(initialValue, notesFont, limits, measure)
   let laidOutCells = machine.notesText(text.paragraph)
   // Transient input, reset at the end of every render: the time of the frame's last input event, and the frame's
   // line move keys in order, each with whether Shift was held, which extends the selection.
@@ -156,6 +170,12 @@ export function createNotesHost(
   input.addEventListener('input', (event: Event) => {
     events.inputTime = event.timeStamp
     scheduleRender()
+  })
+  // A note is one paragraph, so Enter inserts nothing. The browser asks before it inserts a line break, and the
+  // answer has to come from the handler. A pasted line break still arrives, and is laid out as a space.
+  input.addEventListener('beforeinput', (event: Event) => {
+    const {inputType} = event as InputEvent
+    if (inputType === 'insertLineBreak' || inputType === 'insertParagraph') event.preventDefault()
   })
   // A caret that moves without a change of the text, e.g. after Select All from the browser's menu. Chrome and Safari
   // dispatch selectionchange at the document, and Firefox at the textarea.
@@ -207,7 +227,7 @@ export function createNotesHost(
     // Without an input event, e.g. after the browser restored a form, the event applies at the frame's time.
     queueText(read: NotesRead) {
       if (read.value === text.value) return
-      text = prepareNotesText(read.value, notesFont, measure)
+      text = prepareNotesText(read.value, notesFont, limits, measure)
       laidOutCells = machine.notesText(text.paragraph, events.inputTime ?? undefined)
     },
 
@@ -246,6 +266,7 @@ export function createNotesHost(
 
       // One node per word, i.e. per cell that doesn't break after itself. A space draws nothing.
       let node = 0
+      let hiddenWords = 0
       for (let cell = 0; cell < Math.min(laidOutCells, text.cellTexts.length); cell++) {
         if (text.paragraph.breakAfter[cell] === 1) continue
         let wordNode = domCache.wordNodes[node]
@@ -265,6 +286,7 @@ export function createNotesHost(
         wordNode.style.display = 'block'
         wordNode.style.transform = `translate3d(${place.x}px,${place.y}px,0)`
         wordNode.style.opacity = place.visible ? '1' : '0'
+        if (!place.visible) hiddenWords++
         node++
       }
       for (; node < domCache.wordNodes.length; node++) {
@@ -273,6 +295,20 @@ export function createNotesHost(
         wordNode.style.transform = 'translate3d(0px,0px,0)'
         wordNode.style.opacity = '0'
       }
+
+      // The notice names each capacity that the text passes, see notesNotice.
+      const noticeText = notesNotice({
+        segments: text.cellTexts.length,
+        capacity: options.capacity,
+        hiddenWords,
+        wrappedLines: values[wires.notes.windowOverflow]!,
+        window: options.window,
+      })
+      if (noticeText !== domCache.noticeText) {
+        domCache.notice.textContent = noticeText
+        domCache.noticeText = noticeText
+      }
+      domCache.notice.style.display = noticeText === '' ? 'none' : 'block'
 
       domCache.selections.forEach((selection, band) => {
         const span = selected ? spans[band]! : null
