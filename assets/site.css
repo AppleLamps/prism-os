@@ -22,8 +22,11 @@
 
   /* Wire colors, after the cloth-covered wire in old amplifiers. They color the kinds of a
      highlighted character and the kinds of an operation; green and red also mean valid and
-     error. Each passes 4.5:1 as text on --sheet. Copper, indigo and ochre, in that order, are
-     the chart colors, checked for color-blind separation. */
+     error. Each passes 4.5:1 as text on --sheet. Copper, indigo, ochre and plum, in that
+     order, are the chart colors, e.g. the four kinds of operation in HandwiredOS's Monitor.
+     Each is checked for color-blind separation from its neighbors in that order. Keep the
+     order: copper and ochre look alike to an eye without green cones, so indigo goes
+     between them. */
   --wire-green: #2e6a4c;
   --wire-indigo: #33589e;
   --wire-plum: #7a3355;
