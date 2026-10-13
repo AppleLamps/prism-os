@@ -3,38 +3,88 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Differentiable UI</title>
+  <title>Learned gallery · Handwired</title>
+  <meta name="description" content="A small network places photos. Edit a sketch of rectangles, and the page trains the network's 244 weights with backpropagation until the photos match the sketch.">
+  <!-- learned-gallery.css imports assets/site.css, the tokens and components that every demo page shares. -->
   <link rel="stylesheet" href="./learned-gallery.css">
 </head>
 <body>
-  <main id="learning-demo">
-    <header class="learning-header">
-      <h1>Differentiable UI</h1>
-      <p>Backprop learns the geometry network itself from a rectangle sketch.</p>
+  <!-- The links are written for the published site, where this page is at learned-gallery/ and the index is one folder up. -->
+  <main id="learning-demo" class="page wide">
+    <header class="masthead">
+      <a class="brand" href="../">
+        <svg class="mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M1 4h3.5l3.4 4.2M1 10h5.6M1 16h3.5l3.4-4.2M13.4 10H19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle class="mark-eyelet" cx="10" cy="10" r="3" stroke-width="1.5"/>
+        </svg>
+        Handwired
+      </a>
+      <nav>
+        <a href="../">Demos</a>
+        <a href="https://github.com/chenglou/handwired/tree/main/lab/learned-gallery">Source</a>
+      </nav>
     </header>
 
-    <section class="learning-workspace">
-      <article>
-        <h2>
-          <span>Target</span>
-          <small>Drag to move · drag corner to scale · click empty space to add · Delete to remove</small>
-        </h2>
-        <div
-          id="learning-target"
-          class="learning-stage"
-          aria-label="Editable target rectangles"
-          tabindex="0"
-        ></div>
-      </article>
-      <article>
-        <h2>Learned</h2>
-        <div id="learning-result" class="learning-stage" aria-label="Learned photo gallery"></div>
-      </article>
+    <h1 class="title">Learned gallery</h1>
+    <!-- 244 is the network's weight count, which learned-gallery.test.ts pins. -->
+    <p class="deck">The other demos&rsquo; programs are wired by hand. This one is the same kind of program, but its 244 weights are trained instead: backpropagation adjusts them until the photos match the sketch.</p>
+
+    <div class="try">
+      <span class="label">Try</span>
+      <ul>
+        <li>Drag a rectangle</li>
+        <li>Drag its corner to resize it</li>
+        <!-- learned-gallery.css shows the words for a finger where the main pointer is one, e.g. on a phone, which
+             has no Delete key either. -->
+        <li><span class="for-mouse">Click</span><span class="for-finger">Tap</span> empty space to add one, up to 12</li>
+        <li>Remove the selected one with <span class="for-mouse"><kbd>Delete</kbd> or </span>the Delete button</li>
+      </ul>
+    </div>
+
+    <section class="stages">
+      <div>
+        <div class="stage-head"><span class="label">Sketch</span><span id="learning-count"></span></div>
+        <!-- learned-gallery.ts adds the rectangles, which are positioned in percent of this box. The sketch takes
+             focus at a press, so that the Delete key reaches it. It isn't a stop of the Tab key, since no key
+             selects or moves a rectangle. -->
+        <div id="learning-target" class="surface stage sketch" tabindex="-1" role="group" aria-label="Sketch: rectangles to drag, resize, add and delete">
+          <!-- learned-gallery.ts shows this line while the sketch has no rectangle. -->
+          <p id="learning-empty" class="stage-hint" style="display: none"><span class="for-mouse">Click</span><span class="for-finger">Tap</span> to add a rectangle</p>
+        </div>
+        <div class="tools">
+          <div id="learning-layouts" class="segments" role="group" aria-label="Start from a sketch">
+            <button type="button" data-layout="story">Story</button>
+            <button type="button" data-layout="cinema">Cinema</button>
+            <button type="button" data-layout="contact">Contact sheet</button>
+          </div>
+          <button id="learning-delete" class="button" type="button" title="Delete the selected rectangle">Delete</button>
+        </div>
+      </div>
+      <div>
+        <div class="stage-head"><span class="label">Learned</span><span>placed by the network</span></div>
+        <div id="learning-result" class="surface stage learned" role="group" aria-label="The photos, where the network places them"></div>
+        <div class="tools training">
+          <!-- The loss after each frame of training, for the latest 500 steps. learned-gallery.ts draws the line in
+               CSS pixels, at whatever width this row leaves the chart. -->
+          <svg id="learning-chart" class="loss-chart" role="img" aria-label="The loss over the latest 500 training steps, on a logarithmic scale">
+            <polygon class="area"/>
+            <line class="hairline" y1="0"/>
+            <polyline class="line"/>
+            <circle class="marker" r="4"/>
+          </svg>
+          <!-- Two halves, so that a column too narrow for the whole line breaks it between them. -->
+          <div class="loss"><span>Loss <b id="learning-loss"></b></span> <span>after <b id="learning-step"></b> steps</span></div>
+          <button id="learning-train" class="button" type="button" title="Set the weights back to their starting values and train them again">Train again</button>
+        </div>
+      </div>
     </section>
 
-    <footer class="learning-footer">
-      <span><b id="learning-coefficients"></b> trainable coefficients</span>
-      <span>loss <b id="learning-loss"></b></span>
+    <!-- learned-gallery.ts fills the numbers, and shows the part about one step's cost once it has timed a step. -->
+    <p class="stats">The loss measures how far the photos are from the sketch, and each training step changes the <b id="learning-coefficients"></b> weights a little to lower the loss. Each change of the sketch gets <b id="learning-steps-after-change"></b> more steps, at up to <b id="learning-steps-per-second"></b> steps a second<span id="learning-step-cost-clause" style="display: none">, and one step takes about <b id="learning-step-cost"></b> on this device</span>. The program is <b id="learning-operations"></b> operations in <b id="learning-layers"></b> layers, and the weights are its only input.</p>
+
+    <footer class="colophon">
+      <span>The network learns the rectangles&rsquo; positions and sizes, not the photos.</span>
+      <span><a href="../">All demos</a></span>
     </footer>
   </main>
   <script type="module" src="./learned-gallery.ts"></script>
