@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Regex search · Handwired</title>
   <meta name="description" content="Search a text as you type a pattern. The pattern becomes tables of numbers, and one fixed program of weighted sums and ReLU gates returns every match.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Crect width='20' height='20' rx='4' fill='%23f3eee4'/%3E%3Cpath d='M1 4h3.5l3.4 4.2M1 10h5.6M1 16h3.5l3.4-4.2M13.4 10H19' fill='none' stroke='%231e1a16' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='10' cy='10' r='3' fill='%23f3eee4' stroke='%23a64d1d' stroke-width='1.5'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="../../assets/site.css">
-  <link rel="stylesheet" href="../../assets/tool.css">
+  <meta name="theme-color" content="#f3eee4">
+  <!-- One stylesheet, which imports assets/site.css and assets/tool.css in that order. Bun's development server puts
+       several stylesheet links in the reverse of their order here, while the build keeps the order. -->
   <link rel="stylesheet" href="./demo.css">
 </head>
 <body>
+  <!-- The links between pages are written for the published site, where this page is at regex-search/: the index is
+       "../", and another demo is e.g. "../json-highlighter/". -->
   <main class="page">
     <header class="masthead">
       <a class="brand" href="../">

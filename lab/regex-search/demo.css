@@ -1,7 +1,14 @@
-/* Regex search only: what this page needs beyond assets/site.css and assets/tool.css.
-   A rule here that replaces one of theirs has a more specific selector than the rule it replaces, e.g.
-   .surface.text-editor textarea for .surface textarea. The order of the three files isn't enough: `bun build` keeps the
-   page's order, and Bun's development server links them in the reverse order, this file first. */
+/* The regex search's page, lab/regex-search/demo.html. This file is the page's only stylesheet: it imports site.css,
+   the tokens and the parts every page shares, then tool.css, the parts the two text tools share, and adds what only
+   this page needs. With three links in the page, Bun's development server (1.4.3) serves the stylesheets in the
+   reverse of the page's order, and `bun build` in the page's order, so a rule here that replaces one of theirs could
+   apply in one and not in the other. */
+@import "../../assets/site.css";
+@import "../../assets/tool.css";
+
+/* The deeper of the two copper washes, behind every second match and behind an example while it is pressed. It is
+   site.css's --copper-wash-deep, or the same color mixed here where site.css has no such token. */
+:root { --deep-wash: var(--copper-wash-deep, color-mix(in srgb, var(--copper) 25%, transparent)); }
 
 /* The examples in the Try line are buttons: a click writes the example into the pattern field. */
 .try-pattern {
@@ -22,7 +29,7 @@
   background: var(--copper-wash);
   box-shadow: inset 0 0 0 1px var(--copper-line);
 }
-.try-pattern:active code { background: color-mix(in srgb, var(--copper) 24%, transparent); }
+.try-pattern:active code { background: var(--deep-wash); }
 
 /* The result line, the count of characters and the text are one grid. The result line has a row of its own between
    the selects and the text, where tool.css puts it to the right of the selects: an error is a full sentence, e.g.
@@ -42,15 +49,6 @@
    start, so the lines under the statistics don't move when the first program is built. */
 .page .stats { min-height: 40px; }
 .stats > span { display: block; }
-/* While a program is being built, the dot fades in and out. The fade runs on the compositor, so it keeps moving
-   while the build holds the main thread. */
-.status.busy::before { animation: busy 0.7s var(--ease) infinite alternate; }
-@keyframes busy { to { opacity: 0.2; } }
-/* site.css shortens every animation to 0.01 ms for a reader who asked for less motion, which would make this one
-   flicker, so the dot stays still instead. */
-@media (prefers-reduced-motion: reduce) {
-  .status.busy::before { animation: none; }
-}
 
 /* The text, in four layers from back to front: a rectangle per match, the text in the page's flow, a fade over the
    text that the program doesn't read, and a textarea of the same size whose own text is transparent, so the caret and
@@ -135,7 +133,7 @@
   box-shadow: inset 0 -1px var(--copper);
 }
 .marks .odd {
-  background: color-mix(in srgb, var(--copper) 25%, transparent);
+  background: var(--deep-wash);
   box-shadow: inset 0 -1px var(--copper);
 }
 /* Where the program stops reading: a hairline, and the sheet's color over the text after it, which leaves that text
@@ -197,11 +195,6 @@
 .syntax td:first-child {
   padding-right: var(--space-4);
   white-space: nowrap;
-}
-
-/* iOS zooms the page when a focused control's text is smaller than 16 px, so on iOS the selects get 16 px. */
-@supports (-webkit-touch-callout: none) {
-  .controls .select { font-size: 16px; }
 }
 
 /* Two columns of reference need about 360 px each. */
