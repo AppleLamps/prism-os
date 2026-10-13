@@ -431,16 +431,18 @@ body {
 .kind-boolean { --kind-color: var(--wire-ochre); }
 .kind-index { --kind-color: var(--wire-plum); }
 
-/* Files: a list of the program's own operations in a native scroller. JavaScript creates
-   the header's cells and the rows, writes each row's transform, display and --selected
-   every frame, and the spacer's height, and copies the three sizes below from the
-   program's numbers when the page loads. */
+/* Files: a sidebar of locations, and a list of the program's own numbers in a native
+   scroller. JavaScript creates the sidebar's items, the header's cells and the rows, and
+   places each sidebar item on the rectangle that the program tests presses against.
+   Every frame it writes each row's transform, display and --selected, each sidebar
+   item's --selected, and the spacer's height. When the page loads it copies the four
+   sizes below from the program's numbers. */
 .files-content {
+  --files-sidebar-width: 132px;
   --files-header-height: 28px;
   --files-row-height: 24px;
   --files-scrollbar-strip: 16px;
   color: var(--ink);
-  font: 400 12px/24px var(--font-mono);
 }
 
 .files-sidebar {
@@ -448,66 +450,105 @@ body {
   top: 0;
   bottom: 0;
   left: 0;
-  width: 152px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 14px var(--space-2) 0;
+  width: var(--files-sidebar-width);
   border-right: 1px solid var(--rule);
 }
 
-.files-sidebar .label {
-  margin: 0 var(--space-2) 6px;
-}
-
-.files-location {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 28px;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-1);
-  color: var(--ink-2);
-  font: var(--type-ui);
-  cursor: pointer;
-}
-
-.files-location b {
+/* The sidebar's heading, in the label style, above the first item, which the program puts
+   40 px below the content box's top and 8 px in. */
+.files-sidebar strong {
+  position: absolute;
+  top: 14px;
+  left: var(--space-4);
   color: var(--ink-3);
-  font: var(--type-small);
-  font-variant-numeric: tabular-nums;
-}
-
-.files-location:hover {
-  background: var(--wash);
+  font: var(--type-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* A selection is a copper wash in the window with focus, and a neutral one elsewhere. */
-.files-location.is-selected {
-  background: color-mix(in srgb, var(--copper-wash) calc(var(--focused) * 100%), color-mix(in srgb, var(--rule) 55%, transparent));
-  color: var(--ink);
-  font-weight: 500;
+.files-location,
+.files-row {
+  --selection: color-mix(in srgb, var(--copper-wash) calc(var(--focused) * 100%), color-mix(in srgb, var(--rule) 55%, transparent));
+  background-color: color-mix(in srgb, var(--selection) calc(var(--selected) * 100%), transparent);
 }
 
-.files-location.is-selected b {
-  color: var(--ink-2);
+/* The pointer's wash is a second layer, over the selection's. */
+.files-location:hover,
+.files-row:hover {
+  background-image: linear-gradient(var(--wash), var(--wash));
+}
+
+.files-location {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-1);
+  color: color-mix(in srgb, var(--ink) calc(var(--selected) * 100%), var(--ink-2));
+  font: var(--type-ui);
+  font-weight: calc(400 + var(--selected) * 100);
+  cursor: pointer;
 }
 
 .files-list {
   position: absolute;
-  inset: 0;
-}
-
-.files-sidebar ~ .files-list {
-  left: 152px;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--files-sidebar-width);
+  font: 400 12px/24px var(--font-mono);
+  container-type: inline-size;
 }
 
 .files-header,
 .files-row {
-  grid-template-columns: minmax(0, 1fr) 72px 48px 68px;
   align-items: center;
-  column-gap: var(--space-3);
+  column-gap: var(--space-2);
   padding: 0 var(--files-scrollbar-strip) 0 var(--space-3);
+}
+
+/* Each location shows the columns that it has a title for, and the value last. In a
+   narrow window the columns between the name and the value give up their width first,
+   e.g. at the window's minimum width only the name and the value are left. */
+.files-list-state .files-header,
+.files-list-state .files-row {
+  grid-template-columns: minmax(36px, 1fr) minmax(0, 60px) minmax(48px, 96px);
+}
+
+.files-list-operations .files-header,
+.files-list-operations .files-row {
+  grid-template-columns: minmax(36px, 1fr) minmax(0, 60px) minmax(0, 44px) minmax(0, 60px) minmax(48px, 96px);
+}
+
+.files-list-outputs .files-header,
+.files-list-outputs .files-row {
+  grid-template-columns: minmax(36px, 1fr) minmax(48px, 96px);
+}
+
+.files-list-state .files-cell-layer,
+.files-list-state .files-cell-weights,
+.files-list-outputs .files-cell-kind,
+.files-list-outputs .files-cell-layer,
+.files-list-outputs .files-cell-weights {
+  display: none;
+}
+
+/* Under 200 px, e.g. in a window under 334 px wide, the columns between the name and the
+   value would be slivers of a few px each, so the list shows the name and the value only,
+   and the value takes no more room than its digits. */
+@container (max-width: 199px) {
+  .files-list .files-header,
+  .files-list .files-row {
+    grid-template-columns: minmax(36px, 1fr) minmax(48px, max-content);
+  }
+
+  .files-list .files-cell-kind,
+  .files-list .files-cell-layer,
+  .files-list .files-cell-weights {
+    display: none;
+  }
 }
 
 /* The header keeps the room of the scroller's scrollbar, so its cells line up with the
@@ -531,7 +572,8 @@ body {
 
 /* The browser scrolls the list, and the program reads the position. pan-y lets a touch
    scroll the list inside the desktop's touch-action: none, and contain keeps the list's
-   rubber band from scrolling anything behind it. */
+   rubber band from scrolling anything behind it. The program moves the view itself after
+   a key, so the browser's own scroll anchoring is off. */
 .files-scroller {
   position: absolute;
   top: var(--files-header-height);
@@ -552,24 +594,14 @@ body {
   position: relative;
 }
 
-/* Every row is 24 px tall, so the list draws only the rows in view. Ruled like a ledger.
-   The pointer's wash is a second layer, over the selection's. */
+/* Every row is 24 px tall, so the list draws only the rows in view. Ruled like a ledger. */
 .files-row {
   position: absolute;
   top: 0;
   right: 0;
   left: 0;
   height: var(--files-row-height);
-  background-color: color-mix(
-    in srgb,
-    color-mix(in srgb, var(--copper-wash) calc(var(--focused) * 100%), color-mix(in srgb, var(--rule) 55%, transparent)) calc(var(--selected) * 100%),
-    transparent
-  );
   box-shadow: inset 0 -1px color-mix(in srgb, var(--rule) 55%, transparent);
-}
-
-.files-row:hover {
-  background-image: linear-gradient(var(--wash), var(--wash));
 }
 
 .files-cell {
@@ -579,14 +611,18 @@ body {
   white-space: nowrap;
 }
 
+/* Numbers line up on their last digit. */
 .files-cell-layer,
-.files-cell-weights {
+.files-cell-weights,
+.files-cell-value {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
+/* A row's name and its value are in ink, and what lies between them is quieter. */
 .files-row .files-cell-kind,
-.files-row .files-cell-layer {
+.files-row .files-cell-layer,
+.files-row .files-cell-weights {
   color: var(--ink-2);
 }
 
@@ -641,32 +677,56 @@ body {
   pointer-events: none;
 }
 
-/* The caret blinks through its visibility, which JavaScript doesn't write. */
-.notes-caret {
+/* A browser scrolls a box with overflow: hidden to show the caret of a focused textarea
+   that the box cuts off, which would shift every word. A box with overflow: clip can't be
+   scrolled. The frame cuts the content box off while it grows to a new size, e.g. during
+   a maximize, so the frame can't be scrolled either. */
+.window-notes,
+.notes-flow {
+  overflow: clip;
+}
+
+/* The note's text as the visitor types it. The textarea is never shown: it holds the
+   characters, the caret and the selection, and JavaScript moves it to the caret, so that
+   an input method opens its candidate window there. Its font is at least 16 px, so that
+   iOS Safari doesn't zoom the page when the textarea gets the focus. */
+.notes-input {
   position: absolute;
   top: 0;
   left: 0;
-  width: 2px;
-  height: 18px;
-  margin-top: 2px;
-  border-radius: 1px;
-  background: var(--copper);
+  width: 1px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  opacity: 0;
+  resize: none;
+  overflow: hidden;
+  white-space: pre;
   pointer-events: none;
-  animation: notes-caret 1.1s steps(1) infinite;
+  user-select: text;
+  -webkit-user-select: text;
+  font: 16px Georgia, "Times New Roman", serif;
 }
 
-@keyframes notes-caret {
-  50% {
-    visibility: hidden;
-  }
+/* What the note says when its text passes one of the flow's capacities, e.g. "The last 5
+   words don't fit in the lines that are free." It sits in the 24 px above the first line,
+   where no text is laid out. */
+.notes-notice {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-5);
+  max-width: calc(100% - 48px);
+  overflow: hidden;
+  color: var(--copper);
+  font: var(--type-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .notes-caret {
-    animation: none;
-  }
-}
-
+/* The selected text of one line, drawn under the words. */
 .notes-selection {
   position: absolute;
   top: 0;
@@ -674,6 +734,41 @@ body {
   height: 22px;
   background: color-mix(in srgb, var(--copper) 22%, transparent);
   pointer-events: none;
+}
+
+/* The caret, drawn where the program laid out the character after it. Its two animations
+   have the same keyframes: JavaScript switches between them when the caret moves, which
+   starts the blink again. */
+.notes-caret {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  width: 2px;
+  height: 18px;
+  border-radius: 1px;
+  background: var(--copper);
+  pointer-events: none;
+  animation: notes-caret-blink-a 1.1s steps(1) infinite;
+}
+
+@keyframes notes-caret-blink-a {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes notes-caret-blink-b {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* site.css shortens every animation to 0.01 ms for a visitor who asked for less motion,
+   which would make the caret flicker, so it stays lit instead. */
+@media (prefers-reduced-motion: reduce) {
+  .notes-caret {
+    animation-iteration-count: 1;
+  }
 }
 
 /* Monitor: one sentence, three figures, the last frames' times, and what the program is
