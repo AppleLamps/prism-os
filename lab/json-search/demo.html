@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Search 100,000 JSON documents · Handwired</title>
+  <meta name="description" content="Type a pattern, and a fixed program of weighted sums, ReLU gates and table reads searches 100,000 JSON documents again at each keystroke, once per document, in one pass on the GPU.">
+  <meta name="theme-color" content="#f3eee4">
+  <!-- One stylesheet, which imports assets/site.css and assets/tool.css in that order. Bun's development server puts
+       several stylesheet links in the reverse of their order here, while the build keeps the order. -->
+  <link rel="stylesheet" href="./demo.css">
+</head>
+<body>
+  <!-- The links between pages are written for the published site, where this page is at json-search/: the index is
+       "../", and another demo is e.g. "../learned-gallery/". -->
+  <main class="page wide">
+    <header class="masthead">
+      <a class="brand" href="../">
+        <svg class="mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M1 4h3.5l3.4 4.2M1 10h5.6M1 16h3.5l3.4-4.2M13.4 10H19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle class="mark-eyelet" cx="10" cy="10" r="3" stroke-width="1.5"/>
+        </svg>
+        Handwired
+      </a>
+      <nav>
+        <a href="../">Demos</a>
+        <a href="https://github.com/chenglou/handwired/tree/main/lab/json-search">Source</a>
+      </nav>
+    </header>
+
+    <!-- A window narrower than 720 px loads 20,000 documents, and demo.css shows the count that fits the window, so
+         the title is right from the first paint. demo.ts decides by the same width. -->
+    <h1 class="title">Search <span class="at-wide">100,000</span><span class="at-narrow">20,000</span> JSON documents</h1>
+    <p class="deck">Each keystroke runs regex search, a fixed program of weighted sums, ReLU gates and table reads, once per document. One pass on the GPU runs them all, since no document reads another. The JSON highlighter, a second such program, ran the same way once at load.</p>
+    <!-- What the page shows instead, and why, e.g. without WebGPU. demo.ts writes the sentence. -->
+    <p id="notice" class="notice" style="display: none"></p>
+
+    <div class="try">
+      <span class="label">Try</span>
+      <ul>
+        <li>An email address: <button class="try-pattern" type="button" data-pattern="[a-z0-9.]+@[a-z.]+" data-scope="strings" aria-label="Search string values for the pattern [a-z0-9.]+@[a-z.]+"><code>[a-z0-9.]+@[a-z.]+</code></button></li>
+        <li>Keys that end in Id: <button class="try-pattern" type="button" data-pattern="[a-z]+Id" data-scope="keys" aria-label="Search keys for the pattern [a-z]+Id"><code>[a-z]+Id</code></button></li>
+        <li>A date, which needs a larger program: <button class="try-pattern" type="button" data-pattern="\d\d\d\d-\d\d-\d\d" data-scope="everything" aria-label="Search everything for the pattern \d\d\d\d-\d\d-\d\d"><code>\d\d\d\d-\d\d-\d\d</code></button></li>
+        <li>A pattern that makes JavaScript&rsquo;s RegExp backtrack: <button class="try-pattern" type="button" data-pattern="([a-z]+)+x" data-scope="everything" aria-label="Search everything for the pattern ([a-z]+)+x"><code>([a-z]+)+x</code></button></li>
+        <li>Point at the map to read a document, and click to keep it</li>
+      </ul>
+    </div>
+
+    <div class="pattern">
+      <input id="pattern" class="input" value="error" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Pattern">
+    </div>
+
+    <!-- What the search reads, the result as a sentence, and the search's time. On a phone the three are stacked. -->
+    <div class="results">
+      <label class="field"><span class="label">Search in</span>
+        <select id="scope" class="select"><option value="everything" selected>everything</option><option value="strings">string values</option><option value="keys">keys</option></select>
+      </label>
+      <p id="status" class="status idle" role="status"><span></span></p>
+      <span id="timing" class="timing"></span>
+    </div>
+
+    <!-- The map: one mark per document, drawn on the canvas. demo.ts sets the map's height from its width before the
+         documents exist, so the lines under the map don't move when the marks appear. demo.css has a first height for
+         the widths that it knows. -->
+    <section class="surface map-sheet" aria-label="A map of every document">
+      <div id="map" class="map">
+        <canvas id="marks" role="img" aria-label="One mark per document: copper for a document with a match"></canvas>
+        <div id="labels" class="map-labels"></div>
+        <i id="pointer-ring" class="ring pointer" style="display: none"></i>
+        <i id="selected-ring" class="ring selected" style="display: none"></i>
+        <div id="preparing" class="preparing">
+          <p class="status busy"><span id="preparing-line">Preparing <span class="at-wide">100,000</span><span class="at-narrow">20,000</span> documents&hellip;</span></p>
+          <i class="progress"><i id="progress"></i></i>
+        </div>
+      </div>
+      <div class="surface-bar legend">
+        <span class="legend-keys">
+          <span><i class="swatch match"></i>a match</span>
+          <span><i class="swatch valid"></i>valid JSON, no match</span>
+          <span><i class="swatch error"></i>an error, no match</span>
+        </span>
+        <span id="errors" class="legend-errors"></span>
+      </div>
+    </section>
+
+    <div class="detail">
+      <!-- The selected document, drawn as code: the colors are the highlighter's display kinds, read back from the
+           GPU, and the marked characters are the search's matches. -->
+      <section class="surface document" aria-label="The selected document">
+        <div class="document-head">
+          <p id="document-line" class="document-line"></p>
+          <div class="document-tools">
+            <button id="previous-match" class="button" type="button" disabled>Previous match</button>
+            <button id="next-match" class="button" type="button" disabled>Next match</button>
+            <button id="release" class="button" type="button" style="display: none">First match</button>
+          </div>
+        </div>
+        <pre id="document-text" class="document-text" tabindex="0" aria-label="The document&rsquo;s text"></pre>
+        <div class="surface-bar">
+          <p id="document-status" class="status idle"><span></span></p>
+          <span id="document-size" class="capacity"></span>
+        </div>
+      </section>
+
+      <!-- README.md's three rows, measured in this page for the search on screen. -->
+      <section class="comparison" aria-labelledby="comparison-title">
+        <h2 id="comparison-title" class="label">The same answers, three ways</h2>
+        <table class="times">
+          <thead>
+            <tr><td></td><th scope="col">Highlight every document, once</th><th scope="col">This search</th></tr>
+          </thead>
+          <tbody>
+            <tr><th id="program-row" scope="row">The two programs on the GPU</th><td id="program-highlight"></td><td id="program-search"></td></tr>
+            <tr><th scope="row">Plain JavaScript: a loop over the highlighter&rsquo;s tables, then <span id="plain-how">RegExp on each document</span></th><td id="plain-highlight"></td><td id="plain-search"></td></tr>
+            <tr id="cpu-row"><th scope="row">The same two programs on the CPU</th><td id="cpu-highlight"></td><td id="cpu-search"></td></tr>
+          </tbody>
+        </table>
+        <p id="verdict" class="verdict"></p>
+      </section>
+    </div>
+
+    <p id="check" class="status idle check"><span></span></p>
+    <p id="stats" class="stats"></p>
+
+    <details class="disclosure">
+      <summary>How it works</summary>
+      <div class="how">
+        <p>The page writes its documents itself: package manifests, user records, log events and four more shapes, each up to 512 characters, and 1 in 10 broken on purpose, e.g. by a missing quote. Each character goes to the GPU once, as a number.</p>
+        <p>The JSON highlighter is one small step, built by hand from weighted sums, ReLU gates and table reads. It runs at each of a document&rsquo;s 512 positions and says what each character is, e.g. part of a key or of a string value, and where the first error is.</p>
+        <p>Regex search is a second such step. A keystroke turns the pattern into tables of numbers, and the step runs over each document&rsquo;s positions, backward and then forward, and counts the matches. A new pattern changes the tables, never the program.</p>
+        <p>The search reads the highlighter&rsquo;s answer for each character from the GPU&rsquo;s memory, which is how it can read only string values or only keys.</p>
+        <p>No document reads another document&rsquo;s numbers, so the GPU runs every document at the same time. JavaScript gets back one match count per document and paints the map, and for the document on screen, a mark per character.</p>
+      </div>
+    </details>
+
+    <footer class="colophon">
+      <span><a href="../learned-gallery/">Previous: Learned gallery</a></span>
+      <span><a href="../">All demos</a></span>
+    </footer>
+  </main>
+  <script type="module" src="./demo.ts"></script>
+</body>
+</html>

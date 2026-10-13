@@ -1,0 +1,338 @@
+/* The page that searches many JSON documents, lab/json-search/demo.html. This file is the page's only stylesheet: it
+   imports site.css, the tokens and the parts every page shares, then tool.css, the pattern field, the display kinds'
+   colors and the folded details that the text tools share, and adds what only this page needs. With several links in
+   the page, Bun's development server (1.4.3) serves the stylesheets in the reverse of the page's order, and
+   `bun build` in the page's order. */
+@import "../../assets/site.css";
+@import "../../assets/tool.css";
+
+:root {
+  /* The deeper of the two copper washes, behind every second match. */
+  --deep-wash: var(--copper-wash-deep, color-mix(in srgb, var(--copper) 25%, transparent));
+  /* How strong a mark of the map is: ink for a valid document without a match, and the error red for a document with
+     an error and no match. A document with a match is plain copper. demo.ts reads these two numbers and the three
+     tokens for the canvas, and the legend's swatches below use the same ones. */
+  --mark-valid-strength: 0.3;
+  --mark-error-strength: 0.42;
+}
+
+/* The count of documents in the title and in the line that stands in the map while the documents are made: 100,000,
+   or 20,000 in a window narrower than 720 px. demo.ts picks the count by the same media query. */
+.at-narrow { display: none; }
+@media (max-width: 719px) {
+  .at-wide { display: none; }
+  .at-narrow { display: inline; }
+}
+
+/* The caption is three sentences, so it gets a wider column than site.css's one-sentence caption. */
+.deck { max-width: 47em; }
+
+/* What the page shows instead of 100,000 documents on the GPU, and why. */
+.notice {
+  max-width: 47em;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-2);
+  background: var(--sheet);
+  color: var(--ink);
+  font: var(--type-ui);
+  text-wrap: pretty;
+}
+
+/* The examples in the Try line are buttons: a click writes the example into the pattern field. */
+.try-pattern {
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-1);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.try-pattern code {
+  color: var(--copper);
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: background var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
+}
+.try-pattern:hover code {
+  background: var(--copper-wash);
+  box-shadow: inset 0 0 0 1px var(--copper-line);
+}
+.try-pattern:active code { background: var(--deep-wash); }
+.pattern { margin-top: var(--space-5); }
+
+/* What the search reads, the result line, and the search's time, in one row. The result line takes the room between
+   the other two, and wraps there. */
+.results {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-5);
+  min-height: 28px;
+  margin-top: var(--space-3);
+}
+.results .timing {
+  color: var(--ink-2);
+  font: var(--type-ui);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.results .timing b { color: var(--ink); font-weight: 600; }
+/* A line without a result has no dot, e.g. while the documents are made. */
+.status.idle::before { visibility: hidden; }
+
+/* The map's sheet. */
+.map-sheet {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4) 0;
+}
+/* demo.ts sets the map's height from its width, the screen's pixels and the count of documents. These are the
+   heights it computes for a page of full width, 1104 px, i.e. in a window of 1152 px or more, with 100,000
+   documents: with two device pixels per CSS px or more, and with one. demo.test.ts compares them with demo-map.ts. */
+.map {
+  position: relative;
+  height: 267px;
+  margin-bottom: var(--space-3);
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+@media (max-resolution: 1.49dppx) {
+  .map { height: 451px; }
+}
+/* A narrower map has 4 blocks in a row, and its height changes with its width, so these are heights from the middle
+   of each range, which demo.ts replaces. A window narrower than 720 px has 2 blocks in a row and 20,000 documents. */
+@media (max-width: 1151px) {
+  .map { height: 390px; }
+}
+@media (max-width: 1151px) and (max-resolution: 1.49dppx) {
+  .map { height: 640px; }
+}
+@media (max-width: 719px) {
+  .map { height: 403px; }
+}
+.map canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  transition: opacity var(--quick) var(--ease);
+}
+/* A group's name above its block of marks, and beside it how many of the group's documents have a match. */
+.map-labels span {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  height: 16px;
+  overflow: hidden;
+  color: var(--ink-2);
+  font: var(--type-small);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.map-labels b {
+  color: var(--copper);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.map-labels b.none { color: var(--ink-3); font-weight: 400; }
+/* The mark of the selected document, and the mark under the pointer: a ring around each. JavaScript moves a ring
+   with a transform, to the mark's center. */
+.ring {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.ring.selected {
+  border: 1.5px solid var(--ink);
+  box-shadow: 0 0 0 1.5px var(--sheet), inset 0 0 0 1.5px var(--sheet);
+}
+.ring.pointer { border: 1px solid var(--ink-3); }
+/* While the documents are made: one line in the middle of the empty map, and a line under it that fills up. */
+.preparing {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  color: var(--ink-2);
+  cursor: default;
+}
+.preparing .status { color: var(--ink-2); }
+.progress {
+  width: 160px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--rule);
+  overflow: hidden;
+}
+.progress i {
+  display: block;
+  height: 100%;
+  background: var(--copper);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+/* The legend: a swatch for each of a mark's three colors, and how many documents have an error. */
+.legend { color: var(--ink-2); }
+.legend-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+}
+.legend-keys span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+}
+.swatch.match { background: var(--copper); }
+.swatch.valid { background: color-mix(in srgb, var(--ink) calc(var(--mark-valid-strength) * 100%), transparent); }
+.swatch.error { background: color-mix(in srgb, var(--wire-red) calc(var(--mark-error-strength) * 100%), transparent); }
+.legend-errors { font-variant-numeric: tabular-nums; }
+.legend-errors b { color: var(--ink); font-weight: 600; }
+
+/* Under the map: the selected document on the left, and the comparison on the right. */
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: var(--space-5) var(--space-6);
+  align-items: start;
+  margin-top: var(--space-5);
+}
+
+/* The selected document: a line that says which one it is, its text, and what the highlighter says about it. The
+   text has a fixed height and scrolls inside it, so the page doesn't move while the pointer crosses the map. */
+.document { display: flex; flex-direction: column; min-width: 0; }
+.document-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  min-height: 48px;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--rule);
+}
+.document-line {
+  margin: 0;
+  color: var(--ink-2);
+  font: var(--type-ui);
+  font-variant-numeric: tabular-nums;
+}
+.document-line b { color: var(--ink); font-weight: 600; }
+.document-tools { display: flex; gap: var(--space-2); }
+.document-tools .button { height: 28px; padding: 0 10px; box-shadow: none; }
+.surface pre.document-text {
+  height: 264px;
+  padding: var(--space-3) var(--space-4);
+  overflow: auto;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 2;
+  scrollbar-width: thin;
+}
+.document-text:focus-visible { outline-offset: -2px; }
+/* A match: neighboring matches alternate between a light and a deep copper wash, each with a copper line under it,
+   so two matches in a row stay apart, as on the regex search's page. A match that wraps keeps its look on each line. */
+.document-text .hit {
+  border-radius: 2px;
+  box-shadow: inset 0 -1px var(--copper);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.document-text .hit.even { background: var(--copper-wash); }
+.document-text .hit.odd { background: var(--deep-wash); }
+.document .surface-bar .status { color: var(--ink-2); }
+.document .surface-bar .status.bad { color: var(--wire-red); }
+@media (pointer: coarse) {
+  .document-tools .button { height: 40px; }
+}
+
+/* The comparison: a row for each way to get the same answers, and a column for each of the two answers. */
+.comparison h2 { margin: var(--space-2) 0 var(--space-3); }
+.times {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink-2);
+  font: var(--type-ui);
+  font-variant-numeric: tabular-nums;
+}
+.times th, .times td {
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--rule);
+  font-weight: 400;
+  text-align: left;
+  vertical-align: top;
+  text-wrap: pretty;
+}
+.times thead th, .times thead td {
+  padding-top: 0;
+  border-top: 0;
+  color: var(--ink-3);
+  font: var(--type-small);
+}
+.times tbody th { width: 38%; padding-right: var(--space-4); color: var(--ink); }
+.times td { width: 31%; padding-right: var(--space-3); }
+.times td:last-child { padding-right: 0; }
+.times b { color: var(--ink); font-weight: 600; }
+.verdict {
+  min-height: 60px;
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+  color: var(--ink-2);
+  font: var(--type-ui);
+  text-wrap: pretty;
+}
+.verdict b { color: var(--ink); font-weight: 600; }
+
+/* The check's line and the statistics, one sentence to a line. */
+.status.check { margin-top: var(--space-6); color: var(--ink-2); }
+.status.check.bad { color: var(--wire-red); }
+.stats > span { display: block; }
+.stats > span + span { margin-top: var(--space-1); }
+
+.how {
+  max-width: 47em;
+  padding: var(--space-1) 0 0 14px;
+}
+.how p { margin: var(--space-2) 0 0; text-wrap: pretty; }
+
+/* Below the page's full width the comparison goes under the document. */
+@media (max-width: 1023px) {
+  .detail { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 719px) {
+  /* The select, the result and the time are stacked, and the result keeps the room of two lines, so the map stays
+     where it is while a pattern is typed. */
+  .results { grid-template-columns: minmax(0, 1fr); row-gap: var(--space-2); justify-items: start; }
+  .results .status { min-height: 40px; align-items: flex-start; }
+  .results .status::before { transform: translateY(6px); }
+  .results .timing { min-height: 20px; text-align: left; }
+  .map-sheet { padding: var(--space-3) var(--space-3) 0; }
+  .surface pre.document-text { padding: var(--space-3); }
+  .document-head { padding-left: var(--space-3); }
+  /* A row of the comparison is its name, and under it the two times side by side. */
+  .times thead { display: none; }
+  .times tr { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--rule); }
+  .times tbody th, .times td { width: auto; padding: 0; border-top: 0; }
+  .times tbody th { grid-column: 1 / -1; }
+  .times td::before { display: block; color: var(--ink-3); font: var(--type-small); }
+  .times td:nth-child(2)::before { content: "Highlight every document"; }
+  .times td:nth-child(3)::before { content: "This search"; }
+  .how { padding-left: 0; }
+}
