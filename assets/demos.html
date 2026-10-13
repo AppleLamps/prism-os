@@ -80,12 +80,13 @@
       <h2 class="label section-label" id="demos">Demos</h2>
 
       <!-- A card's link is named by its title, so a list of the page's links reads as the demos' names.
-           The numbers that change when a demo's program changes are written once each, in the cards' elements with
-           the class "facts", and rounded, e.g. "about 15,000". They were read on October 13, 2026: HandwiredOS's
-           from its Monitor window in Chrome (14,467 operations in 275 layers), the JSON highlighter's from
-           `bun scripts/measure-json-highlighter.ts` (15,928 operations in 1,043 layers for the loop form, which
-           the page runs), and the regex search's from the page's own status line at its default settings (697,070
-           operations in 8,192 layers). `bun run site:check` prints what HandwiredOS and the regex search show. -->
+           The numbers that change when a demo's program changes are written once each, rounded, e.g. "about
+           15,000", in an element with data-count inside the card's element with the class "facts". They were read on
+           October 13, 2026: HandwiredOS's from its Monitor window in Chrome (14,467 operations in 275 layers), the
+           JSON highlighter's from `bun scripts/measure-json-highlighter.ts` (15,928 operations in 1,043 layers for
+           the loop form, which the page runs), and the regex search's from the page's own status line at its
+           default settings (697,070 operations in 8,192 layers). `bun run site:check` prints what each demo's page
+           reports, and fails when a number here is more than 10% away from the page's. -->
       <section class="demos" aria-labelledby="demos">
         <a class="card demo is-first" href="os/" aria-labelledby="handwiredos-title">
           <div class="demo-picture">
@@ -96,8 +97,8 @@
             <h3 id="handwiredos-title">HandwiredOS</h3>
             <p>A small desktop: drag, resize and stack four windows, open a photo, and watch a paragraph reflow around the windows above it. One program computes all of it, e.g. the springs, the line breaks and which window a press lands on.</p>
             <dl class="figures facts">
-              <div><dt>operations</dt><dd><small>about</small> 15,000</dd></div>
-              <div><dt>layers</dt><dd><small>about</small> 280</dd></div>
+              <div><dt>operations</dt><dd><small>about</small> <span data-count="operations">15,000</span></dd></div>
+              <div><dt>layers</dt><dd><small>about</small> <span data-count="layers">280</span></dd></div>
               <div><dt>trained weights</dt><dd>0</dd></div>
             </dl>
             <span class="go">Open the desktop</span>
@@ -117,7 +118,7 @@
           <div class="demo-body">
             <h3 id="json-highlighter-title">JSON highlighter</h3>
             <p>A text box highlighted on every keystroke by one program that keeps no state. The program returns what each character is, e.g. a key or a string, where the first error is, and which bracket matches the one at the caret.</p>
-            <p class="meta facts">About <b>16,000</b> operations in about <b>1,000</b> layers</p>
+            <p class="meta facts">About <b data-count="operations">16,000</b> operations in about <b data-count="layers">1,000</b> layers</p>
           </div>
         </a>
 
@@ -131,7 +132,7 @@
           <div class="demo-body">
             <h3 id="regex-search-title">Regex search</h3>
             <p>Type a pattern, and one program finds every match in a text as you type. The pattern reaches the program as tables of numbers, so every pattern runs on the same program.</p>
-            <p class="meta facts">About <b>700,000</b> operations in about <b>8,000</b> layers</p>
+            <p class="meta facts">About <b data-count="operations">700,000</b> operations in about <b data-count="layers">8,000</b> layers</p>
           </div>
         </a>
 
@@ -156,7 +157,7 @@
           <div class="demo-body">
             <h3 id="learned-gallery-title">Learned gallery</h3>
             <p>Here the numbers are trained instead of written by hand. A small network places the photos, and the page trains it with backpropagation to match the rectangles you sketch.</p>
-            <p class="meta facts"><b>244</b> trained weights</p>
+            <p class="meta facts"><b data-count="weights">244</b> trained weights</p>
           </div>
         </a>
 

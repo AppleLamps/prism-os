@@ -6,7 +6,8 @@
 // For each page of demo-site-pages.ts, the check fails when the page logs an error or a warning, throws, requests a
 // file that fails to load, or requests anything outside the site, and when a link on the page to another page of the
 // site doesn't resolve. It also waits for what each demo shows once its program has run, and prints it, e.g.
-// HandwiredOS's Monitor window with the program's sizes.
+// HandwiredOS's Monitor window with the program's sizes. The index's cards round those sizes, e.g. "about 15,000
+// operations", and the check fails when a rounded number is more than 10% away from what the demo's page reports.
 // The server listens on a free port unless --port names one, and Chrome picks its debugging port unless
 // --debugging-port names one. CHROME_PATH overrides the Chrome binary, and CHROME_PROFILE_DIR the profile folder,
 // which defaults to a new folder in the system's temporary folder. --screenshots saves a PNG of each page.
@@ -214,6 +215,10 @@ try {
 
   // Every page a link points to is requested once, however many pages link to it.
   const linkStatus = new Map<string, number>()
+  // The rounded counts on the index's cards, each in an element with data-count inside the card's link, e.g.
+  // <b data-count="operations">16,000</b> in the link to json-highlighter/. And each page's printed report.
+  let indexCounts: {path: string, name: string, value: number}[] = []
+  const reports = new Map<string, string>()
   for (const page of sitePages) {
     pageProblems = []
     requestUrls = new Map()
@@ -235,6 +240,12 @@ try {
     await evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))')
     await Bun.sleep(300)
 
+    reports.set(page.path, report)
+    if (page.path === '') {
+      indexCounts = await evaluate<typeof indexCounts>(`[...document.querySelectorAll('a[href] [data-count]')].filter(element => element.checkVisibility()).map(element => ({
+        path: element.closest('a').href.slice(${JSON.stringify(siteUrl)}.length), name: element.dataset.count, value: Number(element.textContent.replaceAll(',', '')),
+      }))`)
+    }
     const title = await evaluate<string>('document.title')
     if (title.trim() === '') pageProblems.push('the page has no title')
     const links = await evaluate<{href: string, visible: boolean}[]>(`[...document.querySelectorAll('a[href]')].map(link => ({href: link.href, visible: link.checkVisibility()}))`)
@@ -273,6 +284,25 @@ try {
     for (const line of report.split('\n')) if (line !== '') console.log(`      ${line}`)
     for (const problem of pageProblems) console.log(`      problem: ${problem}`)
     if (pageProblems.length > 0) failed = true
+  }
+
+  // A count on the index against the first "<number> <name>" of the demo's report, e.g. "63,529 operations". One
+  // word may stand between the two, e.g. "244 trained weights".
+  if (indexCounts.length > 0) console.log(`\nThe index's rounded counts, each within 10% of what the demo's page reports:`)
+  for (const count of indexCounts) {
+    const found = new RegExp(`(\\d[\\d,]*) +(?:\\w+ +)?${count.name}\\b`).exec(reports.get(count.path) ?? '')
+    const onTheIndex = `${prefix}${count.path} ${count.name}: ${count.value.toLocaleString('en-US')} on the index`
+    if (found === null) {
+      console.log(`      not compared, since the page's report above has no count of ${count.name}: ${onTheIndex}`)
+      continue
+    }
+    const reported = Number(found[1]!.replaceAll(',', ''))
+    if (Math.abs(count.value - reported) <= 0.1 * reported) {
+      console.log(`ok    ${onTheIndex}, ${reported.toLocaleString('en-US')} on the page`)
+    } else {
+      failed = true
+      console.log(`FAIL  ${onTheIndex}, ${reported.toLocaleString('en-US')} on the page. Write ${Number(reported.toPrecision(2)).toLocaleString('en-US')} in the card's element with data-count="${count.name}" in assets/demos.html.`)
+    }
   }
 
   const outside = requests.filter(request => !request.path.startsWith(prefix) && `${request.path}/` !== prefix)
