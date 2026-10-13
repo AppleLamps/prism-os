@@ -121,17 +121,17 @@
 .go::after { content: " \2192"; display: inline-block; margin-left: var(--space-1); transition: transform var(--quick) var(--ease); }
 a.card:hover .go::after { transform: translateX(3px); }
 
-/* A card that is alone in the last row takes the whole row. */
-.demo:last-child:nth-child(even) { grid-column: 1 / -1; }
-/* While the last card is hidden, three small cards remain. They sit three to a row where the page is wide enough
-   for three. Below that width the third takes a whole row, with its picture on the left. */
+/* The fifth card is hidden until its demo ships, which leaves three small cards after HandwiredOS. The three sit
+   in one row where the page is wide enough for three. Below that width the third takes a whole row, with its
+   picture on the left. Once the fifth card is shown, the four small cards sit two to a row at every width above a
+   phone's. */
 @media (min-width: 1100px) {
-  .demos:has(> .demo[hidden]) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .demos:not(:has(> .demo:nth-child(5):not([hidden]))) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (min-width: 641px) and (max-width: 1099px) {
-  .demo:has(+ .demo[hidden]) { grid-column: 1 / -1; flex-direction: row; }
+  .demos:not(:has(> .demo:nth-child(5):not([hidden]))) > .demo:nth-child(4) { grid-column: 1 / -1; flex-direction: row; }
   /* The picture is as wide as a card of the row above, so its right edge continues that card's right edge. */
-  .demo:has(+ .demo[hidden]) .demo-picture {
+  .demos:not(:has(> .demo:nth-child(5):not([hidden]))) > .demo:nth-child(4) .demo-picture {
     flex: none;
     width: calc(50% - var(--space-5) / 2);
     height: auto;

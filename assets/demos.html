@@ -79,20 +79,21 @@
 
       <h2 class="label section-label" id="demos">Demos</h2>
 
-      <!-- The numbers that change when a demo's program changes are written once each, in the cards' elements with
+      <!-- A card's link is named by its title, so a list of the page's links reads as the demos' names.
+           The numbers that change when a demo's program changes are written once each, in the cards' elements with
            the class "facts", and rounded, e.g. "about 15,000". They were read on October 13, 2026: HandwiredOS's
            from its Monitor window in Chrome (14,467 operations in 275 layers), the JSON highlighter's from
            `bun scripts/measure-json-highlighter.ts` (15,928 operations in 1,043 layers for the loop form, which
            the page runs), and the regex search's from the page's own status line at its default settings (697,070
            operations in 8,192 layers). `bun run site:check` prints what HandwiredOS and the regex search show. -->
       <section class="demos" aria-labelledby="demos">
-        <a class="card demo is-first" href="os/">
+        <a class="card demo is-first" href="os/" aria-labelledby="handwiredos-title">
           <div class="demo-picture">
             <!-- The file is 1520 by 800 px, twice the size the card shows it at. demos.css repeats this shape. -->
-            <img src="./demos-handwiredos.webp" width="1520" height="800" alt="A screenshot of HandwiredOS: four overlapping windows on a desk, with a grid of photos in front.">
+            <img src="./demos-handwiredos.webp" width="1520" height="800" decoding="async" alt="A screenshot of HandwiredOS: four overlapping windows on a desk, with a grid of photos in front.">
           </div>
           <div class="demo-body">
-            <h3>HandwiredOS</h3>
+            <h3 id="handwiredos-title">HandwiredOS</h3>
             <p>A small desktop: drag, resize and stack four windows, open a photo, and watch a paragraph reflow around the windows above it. One program computes all of it, e.g. the springs, the line breaks and which window a press lands on.</p>
             <dl class="figures facts">
               <div><dd><small>about</small> 15,000</dd><dt>operations</dt></div>
@@ -103,7 +104,7 @@
           </div>
         </a>
 
-        <a class="card demo" href="json-highlighter/">
+        <a class="card demo" href="json-highlighter/" aria-labelledby="json-highlighter-title">
           <div class="demo-picture" aria-hidden="true">
 <pre class="peek peek-json"><span class="punctuation">{</span>
   <span class="key">"name"</span><span class="punctuation">:</span> <span class="string">"handwired"</span><span class="punctuation">,</span>
@@ -114,13 +115,13 @@
 <span class="punctuation">}</span></pre>
           </div>
           <div class="demo-body">
-            <h3>JSON highlighter</h3>
+            <h3 id="json-highlighter-title">JSON highlighter</h3>
             <p>A text box highlighted on every keystroke by one program that keeps no state. The program returns what each character is, e.g. a key or a string, where the first error is, and which bracket matches the one at the caret.</p>
             <p class="meta facts">About <b>16,000</b> operations in about <b>1,000</b> layers</p>
           </div>
         </a>
 
-        <a class="card demo" href="regex-search/">
+        <a class="card demo" href="regex-search/" aria-labelledby="regex-search-title">
           <div class="demo-picture" aria-hidden="true">
             <div class="peek peek-regex">
               <div class="peek-pattern"><i>/</i>(the|an?) [a-z]+<i>/</i></div>
@@ -128,13 +129,13 @@
             </div>
           </div>
           <div class="demo-body">
-            <h3>Regex search</h3>
+            <h3 id="regex-search-title">Regex search</h3>
             <p>Type a pattern, and one program finds every match in a text as you type. The pattern reaches the program as tables of numbers, so every pattern runs on the same program.</p>
             <p class="meta facts">About <b>700,000</b> operations in about <b>8,000</b> layers</p>
           </div>
         </a>
 
-        <a class="card demo" href="learned-gallery/">
+        <a class="card demo" href="learned-gallery/" aria-labelledby="learned-gallery-title">
           <div class="demo-picture" aria-hidden="true">
             <div class="pair">
               <div class="sketch">
@@ -153,7 +154,7 @@
             </div>
           </div>
           <div class="demo-body">
-            <h3>Learned gallery</h3>
+            <h3 id="learned-gallery-title">Learned gallery</h3>
             <p>Here the numbers are trained instead of written by hand. A small network places the photos, and the page trains it with backpropagation to match the rectangles you sketch.</p>
             <p class="meta facts"><b>244</b> trainable coefficients</p>
           </div>
@@ -162,7 +163,7 @@
         <!-- The GPU demo's card, hidden until the demo ships. To show it, remove the hidden attribute on the next
              line. The site build publishes lab/json-search/demo.html at json-search/ when that file exists, and
              fails when this card is shown without it. -->
-        <a class="card demo" href="json-search/" hidden>
+        <a class="card demo" href="json-search/" aria-labelledby="json-search-title" hidden>
           <div class="demo-picture" aria-hidden="true">
             <svg class="documents" viewBox="0 0 540 208" preserveAspectRatio="xMidYMid slice">
               <defs>
@@ -182,7 +183,7 @@
             </svg>
           </div>
           <div class="demo-body">
-            <h3>Search 100,000 JSON documents</h3>
+            <h3 id="json-search-title">Search 100,000 JSON documents</h3>
             <p>The JSON highlighter&rsquo;s program, run on 100,000 documents at once. Every document runs the same operations and reads no other document, so one pass on the GPU computes all of them in parallel.</p>
             <p class="meta facts">Needs a browser with WebGPU</p>
           </div>
