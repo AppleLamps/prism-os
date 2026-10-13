@@ -6,7 +6,7 @@ Cheng asked: "I was wondering if there's a point where regex search or json high
 
 The JSON highlighter ([src/json-highlighter](../../src/json-highlighter/README.md)) is one fixed numeric program: JavaScript writes up to 512 code points into cells, and the program returns what each character is shown as, where the first error is, and whether the text is valid. One document takes 80 to 90 µs on the CPU executor in Chrome, which runs every one of the program's operations whatever the text, and a round trip to the GPU alone takes 0.6 ms or more, so one document is no case for a GPU. Many documents are: every document runs the same operations, and no document reads another one's values.
 
-So this folder emits the compiled program as one WGSL compute shader that runs every operation for one document, and one WebGPU compute pass runs that shader once per document, for up to 100,000 documents. It measures the pass against JSON.parse, two plain JavaScript highlighters, generated JavaScript of the same program, and the CPU executor, all in the same page of headless Chrome, and compares every value the GPU returned with the executor's.
+So this folder emits the compiled program as one WGSL compute shader that runs every operation for one document, and one WebGPU compute pass runs that shader once per document, for up to 100,000 documents. It measures the pass against JSON.parse, two plain JavaScript highlighters, generated JavaScript of the same program, and the CPU executor, all in the same page of headless Chrome, and compares what the GPU returned with the executor's values: 7.3 to 7.6 billion values per run, none of them different.
 
 The answer in plain words is in [Is the GPU clearly faster?](#is-the-gpu-clearly-faster).
 
@@ -229,7 +229,7 @@ The parts of one back to back evaluation, ms, as medians of the runs' medians. "
 | display-all | 100,000 | 0.015 | 10.565 | 3.065 | 13.660 | 0.400 |
 | display-all, every value compared | 100,000 | 0.025 | 12.855 | 3.163 | 16.0 (15.4 to 17.2) | 53.910 |
 
-display-all's evaluations after a pause follow a comparison of every value, so at 100,000 documents the GPU has been left alone for 54 ms more than the column says.
+In display-all's rows of the first table, an evaluation after a pause follows a comparison of every value, so at 100,000 documents the GPU has been left alone for 54 ms more than the column says.
 
 - Up to 10,000 documents an evaluation takes 0.6 to 0.8 ms whatever the count: 0.58 ms for 1 document, 0.73 ms for 100, 0.76 ms for 10,000. That is the round trip to the GPU, almost all of it between `submit` and the readback being mapped. Then the pass grows with the count: 1.34 ms at 30,000 and 3.75 ms at 100,000, i.e. 34 ns per document for 7,186 operations, about 210 billion operations per second.
 - The kinds cost little when they stay on the GPU. The display shader with the kinds of 64 documents read back takes 5.66 ms at 100,000 documents, 1.9 ms more than the summary, for 512 more operations and 512 more values written per document.
@@ -345,7 +345,7 @@ With the display kinds of the 64 documents on screen read back as well, the GPU 
 - **Measuring changed the measurement.** Comparing 51.2 million values takes 54 ms, and that pause made the next evaluation 2.3 ms slower. The first batch of runs didn't record the pause, and was discarded.
 - **`firstErrorKind`, `depthExceeded` and the matching bracket can't be emitted.** Their index reads pick among 513 values computed per document, and a shader with one `let` per value has nothing to index. A page gets the kind of the first error from the table loop or the executor for the few documents it shows.
 - **A document is 2,052 bytes of float32 cells for at most 512 code points.** 100,000 documents are 205 MB on the GPU and again in JavaScript, and writing those cells takes JavaScript 37 ms.
-- **A device binds 128 MiB per storage buffer unless the page asks for more**, i.e. 65,408 documents, so 100,000 documents fail on a device from `requestDevice()` without `requiredLimits`.
+- **A device binds 128 MiB per storage buffer unless the page asks for more**, i.e. 65,408 documents. So by WebGPU's default limits, the cells of 100,000 documents can't be bound on a device from `requestDevice()` without `requiredLimits`. I didn't run that failing case.
 - **JSON.parse's time depends on the documents.** A document where it throws costs 7 times a valid one, so the fraction of broken documents changes the crossover.
 - **The repo's lint has no exception for generated code.** oxlint flags `new Function`, so generated-js.ts calls `Reflect.construct(Function, [source])`.
 - **Two interpreters.** codegen's WGSL interpreter has no `floor`, `u32()`, `<` or `>`, and other agents were working in other folders, so wgsl-interpreter.ts is a changed copy instead of an edit.
