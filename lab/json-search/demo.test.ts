@@ -137,8 +137,8 @@ describe('the map of every document', () => {
       expect(pixels.filter(pixel => pixel !== 0).length).toBe(6 * layout.mark * layout.mark)
       const last = offsets[map.positionOf[5]!]! + (layout.mark - 1) * (layout.width + 1)
       expect(pixels[last]).toBe(33)
-      // Without a search, every mark has one of the two quiet colors.
-      paintMarks(pixels, layout, offsets, map.order, valid, null, colors)
+      // Without a search, i.e. with a count of 0 for every document, every mark has one of the two quiet colors.
+      paintMarks(pixels, layout, offsets, map.order, valid, new Float32Array(6), colors)
       expect([0, 1, 2, 3, 4, 5].map(colorOf)).toEqual([11, 11, 33, 11, 11, 33])
     }
   })

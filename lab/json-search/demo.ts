@@ -79,6 +79,8 @@ type World = {
   order: MapOrder
   // How many documents aren't valid, and why, as a sentence.
   notValid: Line
+  // A match count of 0 for every document, for the map before a search and for a pattern that isn't searched.
+  noMatches: Float32Array
   baselines: Baselines
   // How many documents a window of marks holds: the selected document and its neighbors by index.
   windowDocuments: number
@@ -425,6 +427,7 @@ function mountJsonSearch(document: Document, window: Window) {
     return {
       id: nextWorldId++, backend: searcher.backend, searcher, device, documentCount: texts.length, texts, shapeOf, order,
       notValid: notValidLine(searcher.validation.firstErrorKind, searcher.validation.valid, positions),
+      noMatches: new Float32Array(texts.length),
       baselines: createBaselines(texts, {withCpu: searcher.backend === 'gpu'}),
       windowDocuments: searcher.backend === 'gpu' ? 64 : 8,
       ...times, readyAfterMs: window.performance.now() - pageStart,
@@ -875,7 +878,7 @@ function mountJsonSearch(document: Document, window: Window) {
         const paintStarted = window.performance.now()
         mapCache.image ??= domCache.context.createImageData(layout.width, layout.height)
         mapCache.pixels ??= new Uint32Array(mapCache.image.data.buffer)
-        paintMarks(mapCache.pixels, layout, mapCache.offsets, world.order.order, world.searcher.validation.valid, mapCounts, colors)
+        paintMarks(mapCache.pixels, layout, mapCache.offsets, world.order.order, world.searcher.validation.valid, mapCounts ?? world.noMatches, colors)
         domCache.context.putImageData(mapCache.image, 0, 0)
         mapCache.painted = mapCounts
         paintMs = window.performance.now() - paintStarted
