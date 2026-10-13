@@ -20,10 +20,11 @@ export function duration(ms: number): string {
   if (ms >= 9.95) return `${Math.round(ms)}\u00a0ms`
   return ms < 0.05 ? 'under 0.1\u00a0ms' : `${ms.toFixed(1)}\u00a0ms`
 }
-// A time that is computed from a sample, e.g. 100,000 times what one document took, with two digits: 25 s, 5.9 minutes.
+// A time that is computed from a sample, e.g. 100,000 times what one document took, with two digits: 25 s, 5.9
+// minutes, 1.0 minutes.
 export function roughDuration(ms: number): string {
   if (ms < 995) return duration(ms)
-  const twoDigits = (value: number) => Number(value.toPrecision(2)).toLocaleString('en-US')
+  const twoDigits = (value: number) => value < 9.95 ? value.toFixed(1) : Number(value.toPrecision(2)).toLocaleString('en-US')
   if (ms < 59_500) return `${twoDigits(ms / 1000)}\u00a0s`
   if (ms < 3_570_000) return `${twoDigits(ms / 60_000)}\u00a0minutes`
   return `${twoDigits(ms / 3_600_000)}\u00a0hours`
@@ -52,7 +53,8 @@ export type LoadReason =
   | {kind: 'noWebGpu'}
   | {kind: 'cpuAsked'}
   | {kind: 'gpuFailed', message: string}
-  | {kind: 'checkFailed', mismatches: number}
+  // `asked` when the address asks the page to treat the check as failed, to show what the page does then.
+  | {kind: 'checkFailed', mismatches: number, asked: boolean}
 
 // The count the page asks the GPU for: what the address names, e.g. ?documents=20000, or a count by the window's width.
 export function wantedDocumentCount(asked: number | null, narrowWindow: boolean): {documentCount: number, reason: LoadReason} {
@@ -78,7 +80,7 @@ export function loadNotice(reason: LoadReason, documentCount: number): string | 
     case 'none':
       return null
     case 'narrowWindow':
-      return `A narrow window gets ${count(documentCount)} documents, so that every one of them still has a mark on the map. A window of 720 px or more gets ${count(wideDocumentCount)}.`
+      return `A window this narrow gets ${count(documentCount)} documents, and one of 720 px or more gets ${count(wideDocumentCount)}.`
     case 'asked':
       return `This page’s address asks for ${count(documentCount)} documents.`
     case 'bufferLimit':
@@ -90,6 +92,7 @@ export function loadNotice(reason: LoadReason, documentCount: number): string | 
     case 'gpuFailed':
       return `The GPU didn’t run the programs (${reason.message}), ${onTheCpu}.`
     case 'checkFailed':
+      if (reason.asked) return `This page’s address asks it to treat the check of the GPU’s values as failed, ${onTheCpu}.`
       return `This GPU returned ${count(reason.mismatches)} ${reason.mismatches === 1 ? 'value that differs' : 'values that differ'} from the CPU’s, ${onTheCpu}.`
   }
 }
@@ -376,8 +379,9 @@ export function comparisonVerdict(numbers: ComparisonNumbers, program: {patternS
   if (states > smallestStates) {
     sentences.push([`This pattern has ${count(patternStates)} states, more than the ${count(smallestStates)} that the smallest search program holds, so it ran on the program for ${count(states)}, which does ${count(program.operations)} operations at each character instead of ${count(program.smallestOperations)}.`])
   }
-  if (searchMs !== null && plainSearch.state === 'done' && plainSearch.ms > 0) {
-    const ratio = plainSearch.ms / searchMs
+  if (searchMs !== null && plainSearch.state === 'done') {
+    // A time that the clock reads as 0, e.g. RegExp on 500 documents, counts as half the clock's step of 0.1 ms.
+    const ratio = Math.max(plainSearch.ms, 0.05) / searchMs
     const regExpTook = ['RegExp on one thread took ', strong(duration(plainSearch.ms)), ' for the same search'] as const
     if (ratio >= 10) {
       sentences.push([...regExpTook, ', ', strong(times(ratio)), ` as long. A search program takes the same time for every pattern of up to ${count(states)} states, and RegExp’s time depends on the pattern.`])

@@ -146,10 +146,14 @@ function windowAround(index: number, documentCount: number, windowDocuments: num
 }
 const holds = (window: DocumentWindow, index: number) => index >= window.firstDocument && index < window.firstDocument + window.documentCount
 
-// A pause that lets the browser handle input and paint before the next piece of work.
-const channel = new MessageChannel()
+// A pause that lets the browser handle input and paint before the next piece of work: a message to oneself, which
+// arrives as a task of its own, without the 4 ms that a timer waits at least once timers follow each other.
 const nextTask = () => new Promise<void>(resolve => {
-  channel.port1.onmessage = () => resolve()
+  const channel = new MessageChannel()
+  channel.port1.onmessage = () => {
+    channel.port1.close()
+    resolve()
+  }
   channel.port2.postMessage(null)
 })
 
@@ -310,7 +314,8 @@ function mountJsonSearch(document: Document, window: Window) {
   const askedDocuments = params.get('documents')
   const narrowWindow = window.matchMedia('(max-width: 719px)').matches
   const wanted = wantedDocumentCount(askedDocuments === null ? null : Number(askedDocuments), narrowWindow)
-  const hasWebGpu = 'gpu' in window.navigator
+  // A browser without WebGPU has no navigator.gpu, or an undefined one.
+  const hasWebGpu = (window.navigator as {gpu?: unknown}).gpu !== undefined
   const cpuAsked = params.get('backend') === 'cpu'
   const firstPlan: {documentCount: number, reason: LoadReason} = cpuAsked ? {documentCount: Math.min(wanted.documentCount, cpuDocumentCount), reason: {kind: 'cpuAsked'}}
     : hasWebGpu ? wanted
@@ -390,7 +395,12 @@ function mountJsonSearch(document: Document, window: Window) {
       if (render()) scheduleRender()
     })
   }
+  // The timer for a frame that something waits for, e.g. the self check for the keys to stop.
   let wakeTimer: number | undefined
+  function wake() {
+    st.wakeAt = null
+    scheduleRender()
+  }
 
   // Starts one piece of work. Its answer arrives in a later frame.
   let nextJobId = 1
@@ -605,9 +615,9 @@ function mountJsonSearch(document: Document, window: Window) {
     // A GPU that failed, or whose values differ from the CPU's: the page goes on with the CPU version.
     let world = st.world
     if (world !== null && world.backend === 'gpu') {
-      const checkFailed = st.check.mismatches > 0 || (params.get('simulate') === 'check-failure' && st.check.piecesDone > 0)
-      if (gpuFailure !== null || checkFailed) {
-        const reason: LoadReason = gpuFailure !== null ? {kind: 'gpuFailed', message: gpuFailure} : {kind: 'checkFailed', mismatches: Math.max(1, st.check.mismatches)}
+      const checkFailureAsked = params.get('simulate') === 'check-failure' && st.check.piecesDone > 0
+      if (gpuFailure !== null || st.check.mismatches > 0 || checkFailureAsked) {
+        const reason: LoadReason = gpuFailure !== null ? {kind: 'gpuFailed', message: gpuFailure} : {kind: 'checkFailed', mismatches: st.check.mismatches, asked: st.check.mismatches === 0}
         const cpuWorld = createCpuWorld(world.texts, world.shapeOf, world.writeDocumentsMs)
         world.searcher.destroy()
         world.device?.destroy()
@@ -794,9 +804,10 @@ function mountJsonSearch(document: Document, window: Window) {
     const check: CheckState = st.check.piecesDone === 0 && st.job?.name !== 'check' ? {state: 'waiting'}
       : checkDue ? {state: 'checking'}
       : {state: 'done', values: st.check.values, mismatches: st.check.mismatches, documents: st.check.documents}
-    const checkView = world !== null && world.backend === 'cpu'
+    // After a check that found a difference, the line keeps what the check found, next to the CPU version's results.
+    const checkView = world !== null && world.backend === 'cpu' && st.check.mismatches === 0
       ? {state: 'idle' as const, line: ['On a GPU, the page compares the GPU’s values with these programs on the CPU. Here the CPU’s values are the page’s own.'] as Line}
-      : checkLine(check, 'gpu')
+      : checkLine(world !== null && world.backend === 'cpu' ? {state: 'done', values: st.check.values, mismatches: st.check.mismatches, documents: st.check.documents} : check, 'gpu')
     const statsLines: Line[] = []
     if (world !== null) {
       statsLines.push(...programLines(st.programs, positions))
@@ -952,9 +963,9 @@ function mountJsonSearch(document: Document, window: Window) {
     // The one piece of work that is due, most urgent first: the search for the pattern in the field, the marks and
     // the kinds of the document that the panel should show, a piece of the self check, and the highlighter's time.
     // What waits for the page to be idle sets a timer for the frame that starts it.
-    const wake = {at: null as number | null}
+    const due = {at: null as number | null}
     const wakeBy = (time: number) => {
-      wake.at = wake.at === null ? time : Math.min(wake.at, time)
+      due.at = due.at === null ? time : Math.min(due.at, time)
     }
     if (world !== null && st.job === null && targetWindow !== null && st.failure === null) {
       const {searcher} = world
@@ -1015,10 +1026,12 @@ function mountJsonSearch(document: Document, window: Window) {
       }
     }
     if (searchPending && !searchRunsLong && st.searchStartedAt !== null) wakeBy(st.searchStartedAt + longSearchMs)
-    if (wake.at !== st.wakeAt) {
+    if (due.at !== st.wakeAt) {
       window.clearTimeout(wakeTimer)
-      if (wake.at !== null) wakeTimer = window.setTimeout(scheduleRender, Math.max(0, wake.at - window.performance.now()))
-      st.wakeAt = wake.at
+      // A timer may fire a fraction of a ms early, and its frame would then find nothing due yet. So the timer aims
+      // a ms late, and when it fires, the state forgets it, so that a frame that still waits sets a new one.
+      if (due.at !== null) wakeTimer = window.setTimeout(wake, Math.ceil(Math.max(0, due.at - window.performance.now())) + 1)
+      st.wakeAt = due.at
     }
 
     // The events are handled.

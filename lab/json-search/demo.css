@@ -23,6 +23,12 @@
   .at-wide { display: none; }
   .at-narrow { display: inline; }
 }
+/* What to do with the map, in the Try line: for a mouse, and for a finger. */
+.with-touch { display: none; }
+@media (pointer: coarse) {
+  .with-mouse { display: none; }
+  .with-touch { display: inline; }
+}
 
 /* The caption is three sentences, so it gets a wider column than site.css's one-sentence caption. */
 .deck { max-width: 47em; }
@@ -352,10 +358,13 @@
   .map-sheet { padding: var(--space-3) var(--space-3) 0; }
   .surface pre.document-text { padding: var(--space-3); }
   .document-head { padding-left: var(--space-3); }
-  /* A row of the comparison is its name, and under it the two times side by side. */
+  /* A row of the comparison is its name, and under it the two times side by side. The table and its body are plain
+     blocks here, so a row is as tall as its two cells. */
+  .times, .times tbody { display: block; }
   .times thead { display: none; }
   .times tr { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--space-3); padding: var(--space-2) 0; border-top: 1px solid var(--rule); }
   .times tbody th, .times td { width: auto; padding: 0; border-top: 0; }
+  .times tbody td { height: auto; min-height: 84px; }
   .times tbody th { grid-column: 1 / -1; }
   .times td::before { display: block; color: var(--ink-3); font: var(--type-small); }
   .times td:nth-child(2)::before { content: "Validate and highlight every document"; }

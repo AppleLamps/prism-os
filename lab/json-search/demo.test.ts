@@ -185,10 +185,11 @@ describe('how many documents the page loads', () => {
     expect(loadNotice({kind: 'noWebGpu'}, 500)).toBe('WebGPU isn’t available in this browser, so the same programs run on the CPU here, on 500 documents.')
     expect(loadNotice({kind: 'cpuAsked'}, 500)).toBe('This page’s address asks for the CPU, so the same programs run on the CPU here, on 500 documents.')
     expect(loadNotice({kind: 'bufferLimit', wanted: 100_000}, 65_000)).toBe('One buffer of this device’s GPU holds 65,000 documents, so the page searches 65,000 instead of 100,000.')
-    expect(loadNotice({kind: 'checkFailed', mismatches: 12}, 500)).toBe('This GPU returned 12 values that differ from the CPU’s, so the same programs run on the CPU here, on 500 documents.')
-    expect(loadNotice({kind: 'checkFailed', mismatches: 1}, 500)).toContain('1 value that differs from the CPU’s')
+    expect(loadNotice({kind: 'checkFailed', mismatches: 12, asked: false}, 500)).toBe('This GPU returned 12 values that differ from the CPU’s, so the same programs run on the CPU here, on 500 documents.')
+    expect(loadNotice({kind: 'checkFailed', mismatches: 1, asked: false}, 500)).toContain('1 value that differs from the CPU’s')
+    expect(loadNotice({kind: 'checkFailed', mismatches: 0, asked: true}, 500)).toBe('This page’s address asks it to treat the check of the GPU’s values as failed, so the same programs run on the CPU here, on 500 documents.')
     expect(loadNotice({kind: 'gpuFailed', message: 'WebGPU out of memory'}, 500)).toBe('The GPU didn’t run the programs (WebGPU out of memory), so the same programs run on the CPU here, on 500 documents.')
-    expect(loadNotice({kind: 'narrowWindow'}, 20_000)).toContain('A narrow window gets 20,000 documents')
+    expect(loadNotice({kind: 'narrowWindow'}, 20_000)).toBe('A window this narrow gets 20,000 documents, and one of 720 px or more gets 100,000.')
     expect(loadNotice({kind: 'asked'}, 5000)).toBe('This page’s address asks for 5,000 documents.')
   })
 })
@@ -197,7 +198,7 @@ describe('the page\'s sentences', () => {
   test('writes numbers with separators and times with a unit that fits their size', () => {
     expect(count(1_203_712)).toBe('1,203,712')
     expect([0.02, 0.84, 8.14, 17.6, 64.9, 994, 996, 2154, 12_300].map(duration)).toEqual(['under 0.1\u00a0ms', '0.8\u00a0ms', '8.1\u00a0ms', '18\u00a0ms', '65\u00a0ms', '994\u00a0ms', '1.0\u00a0s', '2.2\u00a0s', '12\u00a0s'])
-    expect([820, 24_500, 59_400, 59_600, 354_000, 3_600_000 * 1.24].map(roughDuration)).toEqual(['820\u00a0ms', '25\u00a0s', '59\u00a0s', '0.99\u00a0minutes', '5.9\u00a0minutes', '1.2\u00a0hours'])
+    expect([820, 1040, 8400, 24_500, 59_400, 59_600, 61_000, 354_000, 3_600_000 * 1.24].map(roughDuration)).toEqual(['820\u00a0ms', '1.0\u00a0s', '8.4\u00a0s', '25\u00a0s', '59\u00a0s', '1.0\u00a0minutes', '1.0\u00a0minutes', '5.9\u00a0minutes', '1.2\u00a0hours'])
     expect([0.00146, 0.0841, 0.245, 0.9994, 3.61].map(perDocument)).toEqual(['1.5\u00a0µs', '84\u00a0µs', '245\u00a0µs', '999\u00a0µs', '3.6\u00a0ms'])
   })
 
