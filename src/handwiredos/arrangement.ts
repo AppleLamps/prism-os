@@ -176,8 +176,9 @@ function arrangeColumn(workspace: Rectangle, minimum: Size, [files, notes, monit
   // What stays in view of each window above the next one. Photos, in front, takes up
   // to 45% of the height, with square photos when that fits: 3 rows between 4 gaps of
   // 18 px, under the title bar. Notes shows its whole paragraph where the height
-  // allows. Files and Monitor share the rest: each keeps its title bar, and Monitor
-  // shows its sentence, 113 px with the title bar, before either shows more.
+  // allows. Monitor shows as much as fits of: all of it, its sentence and its three
+  // figures, its sentence, or its title bar. Files shows the rest, at least its
+  // title bar.
   const notesNeeds = notesHeightFor(notesLinesFor(width - notesHorizontalInset))
   const photoSize = (width - 2 - 5 * 18) / 4
   const photosHeight = clamp(
@@ -187,10 +188,12 @@ function arrangeColumn(workspace: Rectangle, minimum: Size, [files, notes, monit
   )
   const notesShown = Math.max(titleBar, Math.min(notesNeeds, available - photosHeight - 2 * titleBar))
   const rest = Math.max(2 * titleBar, available - photosHeight - notesShown)
-  const monitorSentence = 113
-  const beyond = rest - titleBar - monitorSentence
-  const filesShown = beyond < 0 ? rest - titleBar : Math.min(titleBar + beyond * 0.4, files.height + margin)
-  const monitorShown = beyond < 0 ? titleBar : Math.min(monitorSentence + beyond * 0.6, monitor.height + margin)
+  // From Monitor's top to 10 px under its sentence, which takes one line in a window
+  // from 460 px wide, in the system's serif, and two lines in a narrower one. The
+  // figures and the 12 px under them take 64 px more.
+  const sentence = width >= 460 ? 93 : 113
+  const monitorShown = [monitor.height + margin, sentence + 64, sentence].find(shown => shown <= rest - titleBar) ?? titleBar
+  const filesShown = Math.min(rest - monitorShown, files.height + margin)
   const height = filesShown + notesShown + monitorShown + photosHeight
   const filesTop = workspace.top + margin + Math.max(0, (available - height) / 2)
   const notesTop = filesTop + filesShown

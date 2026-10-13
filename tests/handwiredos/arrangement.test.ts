@@ -113,6 +113,24 @@ test('every window keeps part of its title bar in view', () => {
   }
 })
 
+test('in one column, each window is covered just under a part of its content', () => {
+  // A phone: 8 px from the viewport's sides.
+  const phone = arrangeWindows(workspaceOf(390, 844), minimum, natural)
+  for (const rectangle of phone) assert.deepEqual([rectangle.left, rectangle.width], [8, 374])
+  const shown = (rectangles: readonly Rectangle[]) => rectangles.slice(1).map((rectangle, index) => rectangle.top - rectangles[index]!.top)
+  // Files shows its title bar and 10 px, Notes its 7 lines of 22 px below the 69 px
+  // above the first line, and Monitor its sentence on two lines.
+  assert.deepEqual(shown(phone), [54, 69 + 7 * 22 + 4, 113])
+  // Photos, in front, ends 8 px above the dock.
+  assert.equal(phone[3]!.top + phone[3]!.height, 844 - dockHeight - 8)
+
+  // A wider and taller column has room for Monitor's three figures, under its
+  // sentence on one line, and for 5 lines of Notes.
+  const tall = arrangeWindows(workspaceOf(600, 1000), minimum, natural)
+  for (const rectangle of tall) assert.deepEqual([rectangle.left, rectangle.width], [40, 520])
+  assert.deepEqual(shown(tall), [140, 69 + 5 * 22 + 4, 93 + 64])
+})
+
 test('the program keeps the arrangement as written, starts at rest, and lays out every Notes word', () => {
   for (const [width, height] of viewports.slice(0, 6)) {
     const machine = createWindowManagerMachine()
