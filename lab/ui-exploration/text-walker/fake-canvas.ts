@@ -25,8 +25,8 @@ function isWideCharacter(codePoint: number): boolean {
 
 export function fakeTextWidth(text: string, font: string): number {
   const fontSize = parseFontSize(font)
-  // The "Tie Test" font of tests/handwiredos/notes.test.ts, with the same widths as that file's
-  // fakeTextWidth. npm pretext keeps the first canvas it measures with, and `bun test` without
+  // The "Tie Test" font of tests/handwiredos/notes.test.ts, with the same widths as fakeTextWidth
+  // in tests/handwiredos/fake-canvas.ts. npm pretext keeps the first canvas it measures with, and `bun test` without
   // arguments runs lab/ before tests/, so batch/paragraphs.ts's canvas or lab/knuth-plass's can
   // be the canvas that measures the Notes tie test.
   if (font.includes('Tie Test')) {

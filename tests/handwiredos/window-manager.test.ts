@@ -1,27 +1,29 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {type WriteBack, quantizeTimeMs} from '../../src/runtime/host-timing.ts'
-import {validateGrids} from '../../src/runtime/numeric-ui-core.ts'
-import {defaultLineFitEpsilon, defaultNotesParagraph, notesOptionsFor} from '../../src/handwiredos/notes-paragraph.ts'
+import {validateGrids, validateIndexReads} from '../../src/runtime/numeric-ui-core.ts'
+import {defaultLineFitEpsilon, defaultNotesParagraph, notesCapacity, notesOptionsFor} from '../../src/handwiredos/notes-paragraph.ts'
+import type {FastParagraph} from '../../src/handwiredos/notes-walker.ts'
 import {
   armedSourceField,
   createWindowManagerMachine,
   dockOutputField,
   dragSourceField,
   filesSourceField,
+  notesSourceField,
   notesWindowIndex,
   photoFocusSourceField,
   photoSourceField,
   photoThumbnailSpringSourceField,
   projectWindowElements,
   resizeSourceField,
+  segmentOutputField,
   sourceField,
   stackSourceField,
   windowCount,
   windowOutputField,
   windowSourceField,
   windowStateField,
-  wordOutputField,
 } from '../../src/handwiredos/window-manager.ts'
 import {itemCount as photoCount, photoField, thumbnailSpringField} from '../../src/handwiredos/photo-gallery.ts'
 
@@ -353,15 +355,16 @@ function createRandomAction(
 
 // Checks every declared and inferred grid on every evaluation's table, e.g. that
 // stored window geometry stays on the 1/64 px grid, which the hit tests' integer
-// bits rely on. The values come from the compiled program, which leaves the wires
-// it removed at 0: the reference evaluator would also run the masked products
-// that gather lowering replaces, about 100,000 operations for the Notes flow's
-// line walker, on every evaluation.
+// bits rely on, and that every index read's index is a whole number within its
+// declared range, e.g. the segment that a Notes line starts at. The values come
+// from the compiled program, which leaves the wires it removed at 0.
 function checkGridsOnEveryEvaluation(machine: Machine) {
   const counts = {evaluations: 0}
   machine.observe({
     beforeEvaluate(table) {
-      validateGrids(machine.circuit, machine.circuit.evaluateTensor(table))
+      const values = machine.circuit.evaluateTensor(table)
+      validateGrids(machine.circuit, values)
+      validateIndexReads(machine.circuit, values)
       counts.evaluations++
     },
   })
@@ -737,7 +740,7 @@ test('long mixed event sequences preserve Boolean state, stacking and grids', ()
     assertWindowManagerInvariants(machine, values, width, height)
   }
   assert.ok(gridChecks.evaluations > 2_000, `${gridChecks.evaluations} evaluations checked`)
-})
+}, 60_000)
 
 test('a press hits a window when it is at least half a pixel inside, with pointer coordinates on a 1/64 px grid within ±32,768 px', () => {
   // Window 0 spans x from 54 to 574, and no other window covers (54.5, 224).
@@ -826,9 +829,11 @@ test('next state is a direct numeric view and runtime atoms remain fixed', () =>
   // below; here we pin the window-manager-specific output wiring and atoms.
   assert.equal(machine.output.windows.length, windowCount * windowOutputField.size)
   assert.equal(machine.output.dockItems.length, windowCount * dockOutputField.size)
+  // Index reads since October 13, 2026: the Notes flow's line walker reads its tables at each line's start with
+  // circuit.indexRead, and each segment reads its line's offset.
   assert.deepEqual(
     [...new Set(machine.circuit.operations.map(operation => operation.kind))].sort(),
-    ['affine', 'boolean', 'reglu'],
+    ['affine', 'boolean', 'index', 'reglu'],
   )
   assert.equal(machine.source[sourceField.downActive], 0)
   assert.equal(machine.source[windowSourceField(0, windowStateField.left)], 54)
@@ -1549,7 +1554,7 @@ test("while nothing animates and no press is held, a frame's pointer moves run a
   assert.deepEqual(runningEveryMove.evaluations.map(evaluation => evaluation.events), [['resize', 'pointer move', 'pointer move'], []])
   assert.deepEqual([coalescing.source[coalescing.cells.pointer.x], coalescing.source[coalescing.cells.pointer.y]], [700, 600])
   assert.equal(differingBits(coalescing.source, runningEveryMove.source), 0)
-})
+}, 60_000)
 
 // A stand-in for an element: projectWindowElements only writes style properties.
 function createFakeElement() {
@@ -1685,8 +1690,23 @@ type SessionEvent =
   | {kind: 'photo previous' | 'photo next' | 'photo close', timeStamp: number}
   | {kind: 'files key', key: 'up' | 'down' | 'pageUp' | 'pageDown' | 'home' | 'end', timeStamp: number}
   | {kind: 'resize', width: number, height: number, timeStamp: number}
+  | {kind: 'notes text', paragraph: FastParagraph, timeStamp: number}
 
 const sessionEndMs = 9500
+// The Notes text after each of the session's two text changes: the starting paragraph
+// with 6 more words, as if typed at its end, then the same text without its first 5
+// words, as if they were deleted. A space is 4.375 px wide in the starting paragraph.
+const sessionTypedWidths = [31.5, 22.75, 44.625, 14.875, 52.5, 38.0625]
+const sessionTypedParagraph: FastParagraph = {
+  widths: [...defaultNotesParagraph.widths, ...sessionTypedWidths.flatMap(width => [4.375, width])],
+  breakAfter: [...defaultNotesParagraph.breakAfter, ...sessionTypedWidths.flatMap(() => [1, 0])],
+}
+const sessionShortenedParagraph: FastParagraph = {
+  widths: sessionTypedParagraph.widths.slice(10),
+  breakAfter: sessionTypedParagraph.breakAfter.slice(10),
+}
+const sessionTypedMs = 2103.5
+const sessionShortenedMs = 8303.9
 // The release that opens photo 5 during the second maximize, 20.2 ms after the
 // release that maximizes Photos.
 const sessionPhotoClickMs = 4912.1
@@ -1754,6 +1774,10 @@ function createSessionEvents() {
     events.push({kind: 'move', x: 635 + 8 * Math.min(index, 10 - index), y: 366, timeStamp: 2003.3 + 4 * index})
   }
   events.push({kind: 'up', x: 635, y: 366, timeStamp: 2051.7})
+  // The Notes text changes while System Monitor still shrinks.
+  events.push({kind: 'notes text', paragraph: sessionTypedParagraph, timeStamp: sessionTypedMs})
+  // A press on the note's content: Notes is at 300,104 since the drag, so its content box starts at 301,149.
+  press(400, 300, 2153.3, 2161.7)
   // Focus Photos, open photo 5 with a press and a release on it, and maximize Photos
   // while the photo is open. Pointer coordinates are viewport coordinates: Photos'
   // content box starts at (651, 235) at its normal size, and at (13, 93) maximized.
@@ -1803,6 +1827,8 @@ function createSessionEvents() {
   press(499, 76, 7103.3, 7151.7)
   events.push({kind: 'resize', width: 1000, height: 700, timeStamp: 7803.6})
   events.push({kind: 'resize', width: 1280, height: 800, timeStamp: 8203.1})
+  // The Notes text changes again, while Photos covers part of the paragraph.
+  events.push({kind: 'notes text', paragraph: sessionShortenedParagraph, timeStamp: sessionShortenedMs})
   // Drag Photos, which the 1000 px viewport moved to left 440 and which is stacked
   // above Notes, right by its title bar until the viewport clamps it at left 720.
   // The Notes paragraph reflows at each move, around where Photos is going.
@@ -1831,9 +1857,9 @@ function sessionFrameTimes(hz: number, stall?: {startMs: number, lengthMs: numbe
 }
 
 type SessionRun = {
-  // Every evaluation that wrote state back, with the table after it and the Notes
-  // words it laid out.
-  commits: {kind: string, timeMs: number, events: string[], table: Float32Array, words: Float32Array}[]
+  // Every evaluation that wrote state back, with the table after it and the outputs
+  // of every Notes segment cell, i.e. where it laid out the words.
+  commits: {kind: string, timeMs: number, events: string[], table: Float32Array, segments: Float32Array}[]
   // Each frame's window, dock, Photos, Notes, Files and animationActive outputs.
   frames: Map<number, Float32Array>
   mostStepsInOneFrame: number
@@ -1862,7 +1888,7 @@ function runSession(frameTimes: readonly number[], writeBack: WriteBack): Sessio
     ...machine.output.photos.thumbnails,
     ...machine.output.photos.previousControl,
     ...machine.output.photos.nextControl,
-    ...machine.output.notes.words,
+    ...machine.output.notes.segments,
     machine.output.files.totalHeight,
     machine.output.files.scroll,
     machine.output.files.scrollTarget,
@@ -1892,23 +1918,23 @@ function runSession(frameTimes: readonly number[], writeBack: WriteBack): Sessio
     wordLayouts: new Set(),
   }
   let animating = false
-  let lastWords: Float32Array | null = null
+  let lastSegments: Float32Array | null = null
   checkGridsOnEveryEvaluation(machine)
   machine.observe({
     afterEvaluate(values, table, evaluation) {
       const eventKinds = evaluation.events.map(event => event.kind)
       if (eventKinds.includes('resize')) run.resizeEvaluationKinds.push(evaluation.kind)
-      const words = Float32Array.from(machine.output.notes.words, wire => values[wire]!)
-      if (eventKinds.length === 0 && lastWords !== null && differingBits(words, lastWords) > 0) run.wordMovesWithoutEvent++
-      lastWords = words
-      run.wordLayouts.add(words.join(','))
+      const segments = Float32Array.from(machine.output.notes.segments, wire => values[wire]!)
+      if (eventKinds.length === 0 && lastSegments !== null && differingBits(segments, lastSegments) > 0) run.wordMovesWithoutEvent++
+      lastSegments = segments
+      run.wordLayouts.add(segments.join(','))
       if (!evaluation.writesBack) {
         for (const cell of destinationCells) {
           if (values[machine.output.nextSource[cell]!] !== table[cell]) run.destinationMismatches++
         }
         return
       }
-      run.commits.push({kind: evaluation.kind, timeMs: evaluation.timeMs, events: eventKinds, table: Float32Array.from(table), words})
+      run.commits.push({kind: evaluation.kind, timeMs: evaluation.timeMs, events: eventKinds, table: Float32Array.from(table), segments})
       const nowAnimating = values[machine.output.animationActive]! > 0
       if (animating && !nowAnimating) run.clockStops.push(evaluation.timeMs)
       animating = nowAnimating
@@ -1950,6 +1976,9 @@ function runSession(frameTimes: readonly number[], writeBack: WriteBack): Sessio
           viewport = {width: event.width, height: event.height}
           machine.resize(event.width, event.height, event.timeStamp)
           break
+        case 'notes text':
+          machine.notesText(event.paragraph, event.timeStamp)
+          break
       }
     }
     const values = machine.step(viewport.width, viewport.height, frameTime)
@@ -1972,13 +2001,14 @@ function differingBits(left: Float32Array, right: Float32Array) {
 // overlap a window that is visible and stacked above Notes, and how many are on a
 // line level with part of such a window. A window's destination rectangle comes from
 // its springs' destination cells, which hold its center and size, e.g. the maximized
-// rectangle from the release of a maximize button on.
+// rectangle from the release of a maximize button on. The words are the segment cells
+// that hold text in the commit's table and don't break after themselves, and a
+// word's width is its width cell.
 function countWordsAgainstWindowsAbove(commits: SessionRun['commits']) {
-  const lineHeight = notesOptionsFor(defaultNotesParagraph, defaultLineFitEpsilon).lineHeight
-  const wordSegments = defaultNotesParagraph.breakAfter.flatMap((breakAfter, segment) => breakAfter === 0 ? [segment] : [])
+  const lineHeight = notesOptionsFor(defaultLineFitEpsilon).lineHeight
   let overlapping = 0
   let besideWindowsAbove = 0
-  for (const {table, words} of commits) {
+  for (const {table, segments} of commits) {
     // Each window stores 5 springs: center x, center y, width, height and scale.
     const destinationOf = (windowIndex: number) => {
       const destination = (spring: number) => table[sourceField.springStart + 3 * (windowIndex * 5 + spring) + 2]!
@@ -1995,15 +2025,16 @@ function countWordsAgainstWindowsAbove(commits: SessionRun['commits']) {
         && table[windowSourceField(windowIndex, windowStateField.minimized)] === 0
         && rankOf(windowIndex) > rankOf(notesWindowIndex))
       .map(destinationOf)
-    wordSegments.forEach((segment, word) => {
-      const read = (field: number) => words[word * wordOutputField.size + field]!
-      if (read(wordOutputField.visible) === 0) return
-      const left = contentLeft + read(wordOutputField.x)
-      const top = contentTop + read(wordOutputField.y)
+    for (let segment = 0; segment < table[notesSourceField.arrivedCount]!; segment++) {
+      if (table[notesSourceField.breakAfterStart + segment] === 1) continue
+      const read = (field: number) => segments[segment * segmentOutputField.size + field]!
+      if (read(segmentOutputField.visible) === 0) continue
+      const left = contentLeft + read(segmentOutputField.x)
+      const top = contentTop + read(segmentOutputField.y)
       const level = windowsAbove.filter(window => top < window.top + window.height && top + lineHeight > window.top)
       if (level.length > 0) besideWindowsAbove++
-      if (level.some(window => left < window.left + window.width && left + defaultNotesParagraph.widths[segment]! > window.left)) overlapping++
-    })
+      if (level.some(window => left < window.left + window.width && left + table[notesSourceField.widthStart + segment]! > window.left)) overlapping++
+    }
   }
   return {overlapping, besideWindowsAbove}
 }
@@ -2101,9 +2132,30 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   // The Notes paragraph reflowed at events only: at the release that maximizes Photos
   // over it, no word is laid out; after the release that restores Photos, words are
   // laid out again; and the drag of Photos gave a new layout at each move.
-  const wordVisible = (commit: SessionRun['commits'][number]) => Array.from({length: commit.words.length / wordOutputField.size}, (_, word) => commit.words[word * wordOutputField.size + wordOutputField.visible]!)
-  assert.ok(wordVisible(commitAt(2851.1, 'pointer up')).every(visible => visible === 0))
-  assert.ok(wordVisible(commitAt(4051.6, 'pointer up')).some(visible => visible === 1))
+  const segmentVisible = (commit: SessionRun['commits'][number]) => Array.from({length: notesCapacity}, (_, segment) => commit.segments[segment * segmentOutputField.size + segmentOutputField.visible]!)
+  assert.ok(segmentVisible(commitAt(2851.1, 'pointer up')).every(visible => visible === 0))
+  assert.ok(segmentVisible(commitAt(4051.6, 'pointer up')).some(visible => visible === 1))
+  // The two text changes applied at their own times, each in an evaluation of its own, and the words moved in those
+  // evaluations: the 6 typed words gave the paragraph another layout while System Monitor still shrank, and the cells
+  // hold the shortened text from the second change on.
+  const typed = commitAt(sessionTypedMs, 'notes text')
+  const shortened = commitAt(sessionShortenedMs, 'notes text')
+  assert.deepEqual([typed.events, shortened.events], [['notes text'], ['notes text']])
+  assert.deepEqual(
+    [typed.table[notesSourceField.arrivedCount], shortened.table[notesSourceField.arrivedCount], final[notesSourceField.arrivedCount]],
+    [101, 91, 91],
+  )
+  const commitBefore = (commit: SessionRun['commits'][number]) => baseline.commits[baseline.commits.indexOf(commit) - 1]!
+  assert.equal(commitBefore(typed).table[notesSourceField.arrivedCount], 89)
+  assert.ok(differingBits(typed.segments, commitBefore(typed).segments) > 0)
+  assert.ok(differingBits(shortened.segments, commitBefore(shortened).segments) > 0)
+  assert.ok(baseline.clockStops.every(time => time < 2051.7 || time > sessionTypedMs), 'System Monitor still animated at the first text change')
+  // The press on the note was counted at its down, with its point in the content box, and no other press of the
+  // session was on the note.
+  const notePress = (table: Float32Array) => [table[notesSourceField.pressCount], table[notesSourceField.pressX], table[notesSourceField.pressY]]
+  assert.deepEqual(notePress(commitBefore(commitAt(2153.3, 'pointer down')).table), [0, 0, 0])
+  assert.deepEqual(notePress(commitAt(2153.3, 'pointer down').table), [1, 99, 151])
+  assert.deepEqual(notePress(final), [1, 99, 151])
   assert.equal(baseline.wordMovesWithoutEvent, 0)
   assert.ok(baseline.wordLayouts.size >= 12, `${baseline.wordLayouts.size} word layouts`)
   // No laid-out word overlaps a window that is visible and stacked above Notes.
@@ -2112,7 +2164,7 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   assert.ok(wordChecks.besideWindowsAbove > 2000, `${wordChecks.besideWindowsAbove} words beside a window above Notes`)
   const photosDragCommits = baseline.commits.filter(commit => commit.timeMs > 8500 && commit.events.includes('pointer move'))
   assert.equal(photosDragCommits.length, 10)
-  const dragLayouts = new Set(photosDragCommits.map(commit => commit.words.join(','))).size
+  const dragLayouts = new Set(photosDragCommits.map(commit => commit.segments.join(','))).size
   assert.ok(dragLayouts >= 5, `${dragLayouts} word layouts during the Photos drag`)
 
   const stall = {startMs: 2900, lengthMs: 500}
@@ -2163,7 +2215,7 @@ test('a 2 s stall that holds presses and resizes snaps once, applies each event 
       assert.equal(differingBits(commit.table, runs[0]!.commits[index]!.table), 0, `table after ${commitLabel(commit)}`)
     })
   }
-})
+}, 60_000)
 
 test("writing back every evaluation draws within 5e-4 px of the committed session at 60 fps, and stops the clock at the same times", () => {
   const frameTimes = sessionFrameTimes(60)
@@ -2178,4 +2230,4 @@ test("writing back every evaluation draws within 5e-4 px of the committed sessio
   }
   assert.ok(worst < 5e-4, `worst difference ${worst} px`)
   assert.deepEqual(everyEvaluation.clockStops, committed.clockStops)
-})
+}, 60_000)

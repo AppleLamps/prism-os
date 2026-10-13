@@ -1055,15 +1055,25 @@ test("after a step, the machine's packed values hold every source cell and live 
 
   const operations = describeOperations(program, machine.packedValues)
   assert.equal(operations.rowCount, program.valueCount - program.sourceSize)
-  // The kinds are counted like the System Monitor counts them, the layers go from 1
-  // to the program's layer count in order, and the weights add up to the program's
-  // stored weights.
+  // Each row's kind is the kind of the operation that the circuit built at the row's
+  // wire, under the name and with the class of that kind, the layers go from 1 to the
+  // program's layer count in order, and the weights add up to the program's stored
+  // weights, which include each ReGLU's gate and each index read's index.
+  const kindOf = {
+    affine: {name: 'affine', className: 'kind-affine'},
+    reglu: {name: 'ReGLU', className: 'kind-reglu'},
+    boolean: {name: 'boolean', className: 'kind-boolean'},
+    index: {name: 'index read', className: 'kind-index'},
+  }
   const kindCounts = new Map<string, number>()
   let weights = 0
   let lastLayer = 1
   for (let operation = 0; operation < operations.rowCount; operation++) {
     const [wire, kind, layer, storedWeights] = operations.text(operation)
     assert.equal(Number(wire), program.wireOrder[program.sourceSize + operation])
+    const built = kindOf[machine.circuit.operations[Number(wire) - program.sourceSize]!.kind]
+    assert.equal(kind, built.name, `the kind of wire ${wire}`)
+    assert.equal(operations.kindClass?.(operation), built.className, `the kind class of wire ${wire}`)
     kindCounts.set(kind, (kindCounts.get(kind) ?? 0) + 1)
     assert.ok(Number(layer) === lastLayer || Number(layer) === lastLayer + 1, `layer ${layer} after layer ${lastLayer}`)
     lastLayer = Number(layer)
@@ -1072,12 +1082,31 @@ test("after a step, the machine's packed values hold every source cell and live 
   }
   assert.equal(lastLayer, program.layers.length)
   assert.equal(weights, program.layers.reduce((sum, layer) => sum + layer.weights.length, 0))
+  // The counts of the four kinds are the compiled program's: its layers' ReGLU
+  // rows, boolean rows and index reads, and every other row is a sum. A sum that the
+  // compiler lowered to a gather read is an affine row with no stored weight. The
+  // Notes flow's line walker is what reads by index, 2,320 times.
   const regluCount = program.layers.reduce((sum, layer) => sum + layer.gateRows.length, 0)
   const booleanCount = program.layers.reduce((sum, layer) => sum + layer.booleanRows.length, 0)
+  const indexReadCount = program.layers.reduce((sum, layer) => sum + layer.indexReads.length, 0)
   assert.deepEqual(
-    [kindCounts.get('affine'), kindCounts.get('ReGLU'), kindCounts.get('boolean')],
-    [operations.rowCount - regluCount - booleanCount, regluCount, booleanCount],
+    [...kindCounts].sort(([left], [right]) => left < right ? -1 : 1),
+    [['ReGLU', regluCount], ['affine', operations.rowCount - regluCount - booleanCount - indexReadCount], ['boolean', booleanCount], ['index read', indexReadCount]],
   )
+  assert.equal(indexReadCount, 2320)
+  // An index read's weights are its index's, here always one wire's value, and a
+  // gather read has none.
+  let rowsBefore = 0
+  let gatherReadCount = 0
+  for (const layer of program.layers) {
+    for (const read of layer.indexReads) assert.deepEqual(operations.text(rowsBefore + read.row).slice(1), ['index read', operations.text(rowsBefore + read.row)[2], '1'])
+    for (const read of layer.gatherReads) assert.deepEqual(operations.text(rowsBefore + read.row).slice(1), ['affine', operations.text(rowsBefore + read.row)[2], '0'])
+    gatherReadCount += layer.gatherReads.length
+    rowsBefore += layer.outputSize
+  }
+  assert.equal(gatherReadCount, 60)
+  // The other two locations give their kind cells no class.
+  assert.equal(state.kindClass, undefined)
 
   const outputs = describeOutputs(machine.namedOutputs, machine.values)
   assert.equal(outputs.rowCount, program.roots.length - program.sourceSize)
@@ -1091,8 +1120,8 @@ test("after a step, the machine's packed values hold every source cell and live 
   assert.deepEqual(outputs.text(0), ['windows.0.translateX', '', '', ''])
   assert.equal(outputs.value(0), 54)
   for (const name of ['windows.3.destinationHeight', 'dockItems.2.left', 'animationActive', 'photos.backdropOpacity', 'photos.photos.11.focused',
-    'photos.thumbnails.0.left', 'photos.nextControl.opacity', 'notes.words.44.visible', 'notes.bands.15.start', 'notes.runOverflow',
-    'files.totalHeight', 'files.locations.2', 'files.slots.63.selected']) {
+    'photos.thumbnails.0.left', 'photos.nextControl.opacity', 'notes.segments.0.x', 'notes.segments.255.visible', 'notes.bands.15.start', 'notes.runOverflow',
+    'notes.press.count', 'notes.press.x', 'notes.press.y', 'files.totalHeight', 'files.locations.2', 'files.slots.63.selected']) {
     assert.ok(names.includes(name), name)
   }
   assert.equal(outputs.value(names.indexOf('files.totalHeight')), operations.rowCount * rowHeight)
@@ -1119,8 +1148,8 @@ test('a value is shown as the shortest decimal that reads back as the same FP32 
   }
 })
 
-// A stand-in for the elements that the renderer uses: a class name, children, style
-// properties, a scroll position, and a text that counts how often it's written.
+// A stand-in for the elements that the renderer uses: children, style properties, a
+// scroll position, and a text and a class name that count how often they're written.
 type FakeElement = {
   className: string
   children: FakeElement[]
@@ -1132,15 +1161,22 @@ type FakeElement = {
 }
 
 function createFakeDom() {
-  const counts = {textWrites: 0}
-  function createElement(className = ''): FakeElement {
+  const counts = {textWrites: 0, classWrites: 0}
+  function createElement(initialClassName = ''): FakeElement {
     let text = ''
+    let className = initialClassName
     const style = {} as FakeElement['style']
     Object.defineProperty(style, 'setProperty', {enumerable: false, value: (name: string, value: string) => {
       style[name] = value
     }})
     const element: FakeElement = {
-      className,
+      get className() {
+        return className
+      },
+      set className(value: string) {
+        className = value
+        counts.classWrites++
+      },
       children: [],
       style,
       scrollTop: 0,
@@ -1178,7 +1214,7 @@ function createFakeDom() {
   return {counts, document: {createElement: () => createElement()}, root, sidebar, list, header, scroller, spacer, overflow}
 }
 
-test("the renderer writes a row's text only when a slot's row changes, a value's text only when the value changes, and every slot's display and transform in every frame", () => {
+test("the renderer writes a row's text only when a slot's row changes, its kind cell's class only when the kind changes, a value's text only when the value changes, and every slot's display and transform in every frame", () => {
   const machine = createMachine()
   const dom = createFakeDom()
   const locations = [
@@ -1191,6 +1227,25 @@ test("the renderer writes a row's text only when a slot's row changes, a value's
   const rowTexts = (node: FakeElement) => node.children.map(cell => cell.textContent)
   const drawnNodes = () => rowNodes.filter(node => node.style['display'] === 'grid').sort((left, right) => Number.parseFloat(left.style['transform']!.slice(11)) - Number.parseFloat(right.style['transform']!.slice(11)))
   const expectedTexts = (location: number, row: number) => [...locations[location]!.text(row), formatValue(locations[location]!.value(row))]
+  // The kind cell is a row node's second cell. In Operations its class ends with the
+  // row's kind, e.g. 'files-cell files-cell-kind kind-reglu', and in the other two
+  // locations it is 'files-cell files-cell-kind' alone.
+  const kindClasses = () => rowNodes.map(node => node.children[1]!.className)
+  const expectedKindClass = (location: number, row: number) => {
+    const kindClass = locations[location]!.kindClass?.(row)
+    return kindClass === undefined ? 'files-cell files-cell-kind' : `files-cell files-cell-kind ${kindClass}`
+  }
+  // Renders a frame and returns how many kind cells got another class in it. The
+  // renderer may write a class only where it changes, so the test fails when the
+  // frame wrote more classes than that, e.g. every drawn row's class in every frame.
+  const renderAndCountKindChanges = (values: Float32Array, otherClassWrites = 0) => {
+    const before = kindClasses()
+    const classWrites = dom.counts.classWrites
+    renderer.render(values, machine.output.files)
+    const changed = kindClasses().filter((kindClass, slot) => kindClass !== before[slot]).length
+    assert.equal(dom.counts.classWrites - classWrites, changed + otherClassWrites, 'class writes in the frame')
+    return changed
+  }
 
   // At mount: the layout numbers, 64 row nodes of 5 cells, and one sidebar item per
   // location on the rectangle that the program hit-tests.
@@ -1207,9 +1262,12 @@ test("the renderer writes a row's text only when a slot's row changes, a value's
   )
 
   // The first frame shows Operations from the top: 14 rows, each in the slot of its
-  // index, with its text and its value.
+  // index, with its text, its kind's class and its value. The frame also writes the
+  // list's class once, for the location.
   let values = step(machine)
-  renderer.render(values, machine.output.files)
+  assert.equal(renderAndCountKindChanges(values, 1), 14)
+  assert.deepEqual(kindClasses().slice(0, 14), Array.from({length: 14}, (_, row) => expectedKindClass(operationsLocation, row)))
+  assert.ok(kindClasses().slice(14).every(kindClass => kindClass === 'files-cell files-cell-kind'))
   assert.equal(dom.list.className, 'files-list files-list-operations')
   assert.deepEqual(dom.header.children.map(cell => cell.textContent), ['wire', 'kind', 'layer', 'weights', 'value'])
   assert.deepEqual(dom.sidebar.children.map(node => node.style['--selected']), ['0', '1', '0'])
@@ -1221,11 +1279,11 @@ test("the renderer writes a row's text only when a slot's row changes, a value's
     assert.equal(rowNodes[row]!.style['--selected'], '0')
     assert.deepEqual(rowTexts(rowNodes[row]!), expectedTexts(operationsLocation, row))
   }
-  // The same frame again writes no text.
+  // The same frame again writes no text and no class.
   let textWrites = dom.counts.textWrites
   for (const node of rowNodes) node.style['display'] = 'stale'
   values = step(machine)
-  renderer.render(values, machine.output.files)
+  assert.equal(renderAndCountKindChanges(values), 0)
   assert.equal(dom.counts.textWrites, textWrites)
   // The display, which the renderer writes for every slot in every frame, is back.
   assert.equal(drawnNodes().length, 14)
@@ -1234,25 +1292,36 @@ test("the renderer writes a row's text only when a slot's row changes, a value's
   // their text, and the one row that comes into the drawn range is written, 4 texts
   // and a value.
   values = step(machine, rowHeight)
-  renderer.render(values, machine.output.files)
+  assert.equal(renderAndCountKindChanges(values), 1)
   assert.equal(dom.counts.textWrites, textWrites + 5)
   assert.deepEqual(rowTexts(rowNodes[14]!), expectedTexts(operationsLocation, 14))
+  assert.equal(kindClasses()[14], expectedKindClass(operationsLocation, 14))
   assert.deepEqual(drawnNodes().map(node => rowNodes.indexOf(node)), Array.from({length: 15}, (_, row) => row))
   // Far down the list, a slot shows another row of its own: row 4,174 is in slot 14.
+  // Every drawn row has its own kind's class, and the rows drawn there are of more
+  // than one kind.
   values = step(machine, 100_000)
-  renderer.render(values, machine.output.files)
+  renderAndCountKindChanges(values)
   assert.deepEqual(rowTexts(rowNodes[4174 % slotCount]!), expectedTexts(operationsLocation, 4174))
   assert.equal(rowNodes[4174 % slotCount]!.style['transform'], `translateY(${4174 * rowHeight}px)`)
+  const rowsFarDown = drawnNodes().map(node => Number.parseFloat(node.style['transform']!.slice(11)) / rowHeight)
+  assert.equal(rowsFarDown.length, 16)
+  assert.deepEqual(drawnNodes().map(node => node.children[1]!.className), rowsFarDown.map(row => expectedKindClass(operationsLocation, row)))
+  assert.ok(new Set(rowsFarDown.map(row => expectedKindClass(operationsLocation, row))).size > 1)
   // A selected row.
   values = click(machine, rowPoint(4170, 100_000), undefined, 100_000)
   renderer.render(values, machine.output.files)
   assert.deepEqual(rowNodes.filter(node => node.style['--selected'] === '1').map(node => rowNodes.indexOf(node)), [4170 % slotCount])
 
   // Another location: the header's titles, the list's class name, and the text of
-  // every drawn row, which the program draws from the top.
+  // every drawn row, which the program draws from the top. State's rows have no kind
+  // class, so each of its 14 drawn slots that held an operation's class loses it.
   textWrites = dom.counts.textWrites
   values = click(machine, locationPoint(stateLocation), undefined, 100_000)
-  renderer.render(values, machine.output.files)
+  const slotsWithKind = kindClasses().slice(0, 14).filter(kindClass => kindClass !== 'files-cell files-cell-kind').length
+  assert.equal(slotsWithKind, 14)
+  assert.equal(renderAndCountKindChanges(values, 1), slotsWithKind)
+  assert.ok(kindClasses().slice(0, 14).every(kindClass => kindClass === 'files-cell files-cell-kind'))
   assert.equal(dom.list.className, 'files-list files-list-state')
   assert.deepEqual(dom.header.children.map(cell => cell.textContent), ['cell', 'kind', '', '', 'value'])
   assert.deepEqual(dom.sidebar.children.map(node => node.style['--selected']), ['1', '0', '0'])

@@ -455,6 +455,7 @@ export function createFilesCircuit() {
 // a number of stored weights, which never change, and a location leaves a column
 // out with an empty title. The value column comes last.
 const textColumnNames = ['name', 'kind', 'layer', 'weights'] as const
+const kindColumn = textColumnNames.indexOf('kind')
 type ColumnTexts = readonly [name: string, kind: string, layer: string, weights: string]
 export type FilesLocation = {
   // The sidebar item's text, e.g. 'Operations'. The list's class name ends with it
@@ -464,6 +465,9 @@ export type FilesLocation = {
   titles: ColumnTexts
   rowCount: number
   text: (row: number) => ColumnTexts
+  // A class for the row's kind cell, e.g. 'kind-reglu', which the stylesheet draws a
+  // color swatch from. A location without one gives its kind cells no such class.
+  kindClass?: (row: number) => string
   // The row's value in the last evaluation.
   value: (row: number) => number
 }
@@ -483,34 +487,51 @@ export function formatValue(value: number) {
 
 type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 
+// The four kinds of live operation that Files and the System Monitor both name,
+// each with the text that a row shows and the class that the row's kind cell gets:
+// a weighted sum, a ReGLU, a boolean atom and an index read. A sum that the
+// compiler lowered to a gather read is still a sum, so it is an affine operation
+// in both windows.
+const operationKinds = [
+  {name: 'affine', className: 'kind-affine'},
+  {name: 'ReGLU', className: 'kind-reglu'},
+  {name: 'boolean', className: 'kind-boolean'},
+  {name: 'index read', className: 'kind-index'},
+] as const
+
 // The rows of a compiled program's live operations, in the program's packed order,
 // i.e. layer by layer: the operation's wire, its kind, its layer counted from 1,
-// and its number of stored weights, which for a ReGLU includes its gate's. The
-// kinds are counted like the System Monitor counts them, so a sum that the
-// compiler lowered to a gather read, which stores no weights, is an affine
-// operation. The numbers are kept in typed arrays, and a row's text is formatted
-// when a slot shows the row. `packedValues` is the array that the program's
-// evaluator computes in, see createTensorProgramEvaluator.
+// and its number of stored weights. A ReGLU's weights include its gate's. An index
+// read's are the weights of its index, e.g. 1 for a read at one wire's value: the
+// read copies the table entry at that position and stores no weight for the
+// entries. A gather read stores no weights. The numbers are kept in typed arrays,
+// and a row's text is formatted when a slot shows the row. `packedValues` is the
+// array that the program's evaluator computes in, see createTensorProgramEvaluator.
 export function describeOperations(program: TensorProgram, packedValues: Float32Array): FilesLocation {
   const rowCount = program.valueCount - program.sourceSize
   const kinds = new Uint8Array(rowCount)
   const layers = new Uint16Array(rowCount)
   const weights = new Uint32Array(rowCount)
-  const kindNames = ['affine', 'ReGLU', 'boolean']
   let firstRow = 0
   program.layers.forEach((layer, layerIndex) => {
+    const storedWeights = (projectionRow: number) => layer.rowOffsets[projectionRow + 1]! - layer.rowOffsets[projectionRow]!
     for (let output = 0; output < layer.outputSize; output++) {
       layers[firstRow + output] = layerIndex + 1
-      weights[firstRow + output] = layer.rowOffsets[output + 1]! - layer.rowOffsets[output]!
+      weights[firstRow + output] = storedWeights(output)
     }
     for (let gate = 0; gate < layer.gateRows.length; gate++) {
       const row = firstRow + layer.gateRows[gate]!
       kinds[row] = 1
       // A ReGLU's gate is a projection row after the layer's outputs.
-      const gateRow = layer.outputSize + gate
-      weights[row] = weights[row]! + layer.rowOffsets[gateRow + 1]! - layer.rowOffsets[gateRow]!
+      weights[row] = weights[row]! + storedWeights(layer.outputSize + gate)
     }
     for (let index = 0; index < layer.booleanRows.length; index++) kinds[firstRow + layer.booleanRows[index]!] = 2
+    for (const read of layer.indexReads) {
+      const row = firstRow + read.row
+      kinds[row] = 3
+      // An index read's index is a projection row after the gates' rows.
+      weights[row] = weights[row]! + storedWeights(read.indexRow)
+    }
     firstRow += layer.outputSize
   })
   invariant(firstRow === rowCount, 'the layers hold every live operation')
@@ -520,10 +541,11 @@ export function describeOperations(program: TensorProgram, packedValues: Float32
     rowCount,
     text: row => [
       String(program.wireOrder[program.sourceSize + row]),
-      kindNames[kinds[row]!]!,
+      operationKinds[kinds[row]!]!.name,
       String(layers[row]),
       String(weights[row]),
     ],
+    kindClass: row => operationKinds[kinds[row]!]!.className,
     value: row => packedValues[program.sourceSize + row]!,
   }
 }
@@ -607,13 +629,14 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
     location: -1,
     // The nodes have mount lifetime. Each slot also keeps the row whose text its
     // cells hold, or -1, until the slot shows another row or the list another
-    // location, and the value whose text its last cell holds, until the row's
-    // value changes.
+    // location, the kind class that its kind cell has, '' for none as at creation,
+    // until a row of another kind takes the slot, and the value whose text its last
+    // cell holds, until the row's value changes.
     slots: Array.from({length: slotCount}, () => {
       const node = document.createElement('div')
       node.className = 'files-row'
       spacer.appendChild(node)
-      return {node, cells: createCells(node), row: -1, value: Number.NaN}
+      return {node, cells: createCells(node), row: -1, kindClass: '', value: Number.NaN}
     }),
   }
 
@@ -660,6 +683,13 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
           text.forEach((columnText, column) => {
             slot.cells[column]!.textContent = columnText
           })
+          // The kind cell's whole class name, written only when the slot's row is of
+          // another kind than the row before it, e.g. when a ReGLU follows a sum.
+          const kindClass = location.kindClass?.(row) ?? ''
+          if (kindClass !== slot.kindClass) {
+            slot.cells[kindColumn]!.className = kindClass === '' ? 'files-cell files-cell-kind' : `files-cell files-cell-kind ${kindClass}`
+            slot.kindClass = kindClass
+          }
           slot.row = row
         }
         const value = location.value(row)
