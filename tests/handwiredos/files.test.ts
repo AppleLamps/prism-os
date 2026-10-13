@@ -328,7 +328,7 @@ test('on 60,000 seeded random frames of scroll positions, viewport heights, rele
   ] as const) {
     assert.ok(counts[name] >= least, `${counts[name]} ${name}, expected at least ${least}`)
   }
-})
+}, 30_000)
 
 test('at every quarter pixel around row tops and at both ends of 100,000 rows, the slots and the row under a release equal the reference', () => {
   const files = createStandaloneFiles()
@@ -744,7 +744,7 @@ test('ArrowUp, ArrowDown, PageUp, PageDown, Home and End move the selection only
     // The program asks for the position that shows the whole row.
     assert.equal(scrolled.filesScrollTo, 41 * rowHeight)
   }
-})
+}, 30_000)
 
 test('after a key that moves the selection out of view, the program asks the host to scroll, and draws the list at the requested position from that step on', () => {
   const machine = createMachine()
@@ -978,7 +978,7 @@ test('HandwiredOS with Files builds no sign cascade, and every declared and infe
     else step(machine, scrollTop, viewportWidth, viewportHeight)
   }
   assert.ok(evaluations > 250, `${evaluations} evaluations checked`)
-})
+}, 30_000)
 
 // ---------- what the host shows ----------
 

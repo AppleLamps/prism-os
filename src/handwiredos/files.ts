@@ -192,9 +192,9 @@ export type FilesOutputs = {
 // subtracting it again rounds to the nearest whole number.
 const roundingBase = 2 ** 23 + 2 ** 22
 
-// JS: Math.round(value), for |value| < 2^22 and no value halfway between two
-// whole numbers. Two operations, each a rounding point that a backend must
-// evaluate in FP32 as written.
+// JS: Math.round(value), for |value| < 2^22, except that a value halfway between
+// two whole numbers goes to the even one, as FP32 addition rounds. Two operations,
+// each a rounding point that a backend must evaluate in FP32 as written.
 function emitRound(circuit: Circuit, value: Wire, minimum: number, maximum: number): Wire {
   const shifted = circuit.roundAffine([[value, 1]], roundingBase)
   const rounded = circuit.roundAffine([[shifted, 1]], -roundingBase)

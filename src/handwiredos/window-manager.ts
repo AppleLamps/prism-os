@@ -1870,7 +1870,6 @@ function mountWindowManager(document: Document, window: Window) {
     }
 
     // DOM writes.
-
     projectWindowElements(domCache.windows, domCache.windowContents, values, machine.output.windows)
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       const element = domCache.dockItems[windowIndex]!
@@ -1902,13 +1901,13 @@ function mountWindowManager(document: Document, window: Window) {
       `${executionMs.toFixed(2)} ms · ${evaluationCount} ${evaluationCount === 1 ? 'evaluation' : 'evaluations'}`
 
     // Side effects. The program asks for a scroll after a key that moved Files'
-    // selection out of view. The scroll comes after every DOM write, so the spacer
-    // already has its height and the browser doesn't clamp the new position to an
-    // old height. The browser may still round or clamp the position, so the host
-    // reads it back once and keeps what the browser kept (chenguini's Scrolling.md,
-    // "Scroll Anchoring", steps 4 and 5). The host scrolls at no other time: a
-    // position that the machine only clamped for its own cell, e.g. during a
-    // rubber-band, is never written back.
+    // selection out of view, and when the list shows another location. The scroll
+    // comes after every DOM write, so the spacer already has its height and the
+    // browser doesn't clamp the new position to an old height. The browser may
+    // still round or clamp the position, so the host reads it back once and keeps
+    // what the browser kept (chenguini's Scrolling.md, "Scroll Anchoring", steps 4
+    // and 5). The host scrolls at no other time: a position that the machine only
+    // clamped for its own cell, e.g. during a rubber-band, is never written back.
     const filesScrollTo = machine.filesScrollTo
     if (filesScrollTo !== null) filesScrollTop = files.scrollTo(filesScrollTo)
 
