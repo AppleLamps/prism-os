@@ -141,10 +141,14 @@
   background: var(--deep-wash);
   box-shadow: inset 0 -1px var(--copper);
 }
-/* Where the program stops reading: a hairline, and the sheet's color over the text after it, which leaves that text
-   gray. The veil is the text's content box, so the fade never reaches the surface's rounded corners. */
+/* Where the program stops reading: a bar between two characters, one line tall, and the sheet's color over the text
+   after it, which leaves that text gray. The bar is thicker and taller than a caret, so it isn't taken for one. The
+   veil is the text's content box, so the fade never reaches the surface's rounded corners. */
 .veil { inset: var(--text-padding-y) var(--text-padding-x); }
-.veil .cut { background: var(--ink-3); }
+.veil .cut {
+  border-radius: 1px;
+  background: var(--ink-2);
+}
 .veil .past {
   background: var(--sheet);
   opacity: 0.62;
@@ -152,7 +156,7 @@
 /* A contrast theme, e.g. on Windows, drops every background and shadow and paints a plate behind every line of text,
    the textarea's included, which would leave no match on the page. There the marks and the fade lie over the
    textarea, a match is a line under its text in the theme's highlight color, every second match also has a line
-   over it, and the fade and the hairline take the theme's colors. */
+   over it, and the fade and the bar take the theme's colors. */
 @media (forced-colors: active) {
   .marks,
   .veil { z-index: 1; }

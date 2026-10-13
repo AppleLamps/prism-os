@@ -219,7 +219,7 @@ function mountRegexSearch(document: Document, window: Window) {
     // One rectangle per match and line, behind the text. A frame that draws replaces all of them: they hold no focus
     // and no selection, since the textarea above them takes every pointer and key.
     marks: find<HTMLElement>('#marks'), // mount lifetime; its children live for one drawn frame
-    // The fade over the text that the program doesn't read, and the hairline where that text starts.
+    // The fade over the text that the program doesn't read, and the bar where that text starts.
     veil: find<HTMLElement>('#veil'), // mount lifetime; its children live for one drawn frame
     statsProgram: lineNode('#stats-program'), // mount lifetime
     statsTimes: lineNode('#stats-times'), // mount lifetime
@@ -530,10 +530,11 @@ function mountRegexSearch(document: Document, window: Window) {
         const veilOrigin = domCache.veil.getBoundingClientRect()
         const left = first.left - veilOrigin.left
         const lineTop = first.top + first.height / 2 - lineHeight / 2 - veilOrigin.top
+        // The bar comes last, so it lies over the fade.
         veil.push(
-          createBox('cut', left - 0.5, lineTop + 4, 1, lineHeight - 8),
           createBox('past', left, lineTop, veilOrigin.width - left, lineHeight),
           createBox('past', 0, lineTop + lineHeight, veilOrigin.width, Math.max(0, veilOrigin.height - lineTop - lineHeight)),
+          createBox('cut', left - 1, lineTop, 2, lineHeight),
         )
       }
     }
