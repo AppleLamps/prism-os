@@ -203,8 +203,14 @@ body {
   text-decoration: none;
 }
 
-.system-mark:hover .mark-eyelet {
-  fill: var(--copper);
+/* Every :hover rule of this page is inside a (hover: hover) query, i.e. for a pointer
+   that can rest on something without pressing it. On a touch screen a browser keeps
+   :hover on the last element tapped, e.g. a dock tile would keep its copper edge and a
+   window button its ring until the next tap somewhere else. */
+@media (hover: hover) {
+  .system-mark:hover .mark-eyelet {
+    fill: var(--copper);
+  }
 }
 
 .system-caption {
@@ -247,9 +253,11 @@ body {
   text-decoration-color: transparent;
 }
 
-.system-links a:hover {
-  color: var(--copper);
-  text-decoration-color: currentColor;
+@media (hover: hover) {
+  .system-links a:hover {
+    color: var(--copper);
+    text-decoration-color: currentColor;
+  }
 }
 
 /* A narrower bar drops the caption first, then the statistics, each before it would be cut
@@ -383,16 +391,18 @@ body {
   --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.75 4.75l8.5 8.5m0-8.5l-8.5 8.5' fill='none' stroke='%23000' stroke-width='1.25' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
-.window-button:hover {
-  background-color: var(--wash);
-  box-shadow: 0 0 0 4px var(--wash);
-  color: var(--ink);
-}
+@media (hover: hover) {
+  .window-button:hover {
+    background-color: var(--wash);
+    box-shadow: 0 0 0 4px var(--wash);
+    color: var(--ink);
+  }
 
-.window-button.close:hover {
-  background-color: var(--copper);
-  box-shadow: 0 0 0 4px var(--copper);
-  color: var(--sheet);
+  .window-button.close:hover {
+    background-color: var(--copper);
+    box-shadow: 0 0 0 4px var(--copper);
+    color: var(--sheet);
+  }
 }
 
 .window-button:active {
@@ -535,9 +545,11 @@ body {
 }
 
 /* The pointer's wash is a second layer, over the selection's. */
-.files-location:hover,
-.files-row:hover {
-  background-image: linear-gradient(var(--wash), var(--wash));
+@media (hover: hover) {
+  .files-location:hover,
+  .files-row:hover {
+    background-image: linear-gradient(var(--wash), var(--wash));
+  }
 }
 
 .files-location {
@@ -1172,9 +1184,11 @@ body {
   transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
 }
 
-.photos-control:hover::before {
-  background-color: var(--sheet);
-  box-shadow: 0 0 0 1px var(--edge), var(--shadow-1);
+@media (hover: hover) {
+  .photos-control:hover::before {
+    background-color: var(--sheet);
+    box-shadow: 0 0 0 1px var(--edge), var(--shadow-1);
+  }
 }
 
 .photos-control:active::before {
@@ -1209,8 +1223,10 @@ body {
     box-shadow: 0 0 0 1px var(--edge), var(--shadow-1);
   }
 
-  .photos-control:hover::before {
-    box-shadow: 0 0 0 1px var(--copper-line), var(--shadow-2);
+  @media (hover: hover) {
+    .photos-control:hover::before {
+      box-shadow: 0 0 0 1px var(--copper-line), var(--shadow-2);
+    }
   }
 
   .photos-control:active::before {
@@ -1272,9 +1288,11 @@ body {
   transition: box-shadow var(--quick) var(--ease), border-color var(--quick) var(--ease), background-color var(--quick) var(--ease);
 }
 
-.dock-item:hover {
-  border-color: var(--copper-line);
-  box-shadow: var(--shadow-2);
+@media (hover: hover) {
+  .dock-item:hover {
+    border-color: var(--copper-line);
+    box-shadow: var(--shadow-2);
+  }
 }
 
 .dock-item:active {
