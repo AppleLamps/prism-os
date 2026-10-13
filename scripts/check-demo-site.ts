@@ -52,6 +52,12 @@ const expectations: Record<string, {ready: string, report: string}> = {
     ready: `/\\d/.test(document.querySelector('#learning-coefficients')?.textContent ?? '')`,
     report: `document.querySelector('#learning-coefficients').textContent.trim() + ' trained weights'`,
   },
+  'json-search/': {
+    // The page is ready once its documents are loaded and the first search's result is painted. It searches 100,000
+    // documents on the GPU, and 500 on the CPU in a browser without WebGPU, where it also shows a sentence that says so.
+    ready: `window.jsonSearch?.ready === true && window.jsonSearch.searches.length >= 1`,
+    report: textOf('#status, #timing, #notice'),
+  },
 }
 
 if (!process.argv.includes('--no-build')) {
