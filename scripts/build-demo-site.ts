@@ -22,6 +22,7 @@ import {iconLinkTag, repoRoot, siteFoldersNotBuilt, sitePages} from './demo-site
 
 const outdir = path.join(repoRoot, 'site')
 const problems: string[] = []
+const pagesWithSeveralStylesheets: string[] = []
 
 // The tags whose URL names a file that the page loads. Bun points these URLs at the files it wrote.
 const loadingTags = /<(?:link|script|img)\b[^>]*>/g
@@ -98,9 +99,7 @@ async function movePage(source: string, sitePath: string) {
   // Bun joins a page's stylesheets into one file, so the page's own links are counted in its source.
   const sourceHtml = (await readFile(path.join(repoRoot, source), 'utf8')).replace(/<!--[\s\S]*?-->/g, '')
   const stylesheetCount = [...sourceHtml.matchAll(loadingTags)].filter(([tag]) => /\brel="stylesheet"/.test(tag)).length
-  if (stylesheetCount > 1) {
-    console.warn(`Note: ${source} links ${stylesheetCount} stylesheets. Bun's development server writes several stylesheet links in the reverse of the page's order (seen in Bun 1.4.3), and this build keeps the page's order. So a rule that overrides a rule of an earlier stylesheet at the same specificity applies in the built site and loses while developing. A page that links one stylesheet, which starts with an @import of the others, looks the same in both.`)
-  }
+  if (stylesheetCount > 1) pagesWithSeveralStylesheets.push(`${source} (${stylesheetCount})`)
 }
 
 // Every URL of a built HTML or CSS file, with the text around it for the report.
@@ -186,6 +185,9 @@ for (const name of await readdir(outdir)) {
   if (name.endsWith('.js') && (await stat(path.join(outdir, name))).size === 0) await rm(path.join(outdir, name))
 }
 const {fileCount, byteCount} = await checkSite()
+if (pagesWithSeveralStylesheets.length > 0) {
+  console.warn(`Note: these pages link more than one stylesheet: ${pagesWithSeveralStylesheets.join(', ')}. Bun's development server writes several stylesheet links in the reverse of the page's order (seen in Bun 1.4.3), and this build keeps the page's order. So a rule that overrides a rule of an earlier stylesheet at the same specificity applies in the built site and loses while developing. A page that links one stylesheet, which starts with an @import of the others, looks the same in both.`)
+}
 
 if (problems.length > 0) {
   console.error(`\nThe site in ${outdir} has ${problems.length === 1 ? 'a problem' : `${problems.length} problems`}:`)

@@ -26,21 +26,26 @@ function option(name: string): string | undefined {
 }
 
 // What each demo shows once its program has run: `ready` is polled until it is true, and `report` is printed.
-// Both are JavaScript evaluated in the page. A page without an entry is loaded and given a moment.
+// Both are JavaScript evaluated in the page. A page without an entry is loaded and given a moment. The reports
+// include each page's own line of statistics, which is where the rounded numbers on the index's cards come from.
+const textOf = (selector: string) => `[...document.querySelectorAll('${selector}')].map(element => element.textContent.trim().replace(/\\s+/g, ' ')).filter(text => text !== '').join('\\n')`
 const expectations: Record<string, {ready: string, report: string}> = {
   'os/': {
-    // The Monitor window's rows, which the page fills from the compiled program at mount, e.g. the operations row
-    // "6,513 affine · 7,214 ReGLU · 740 boolean".
-    ready: `/\\d/.test(document.querySelector('#monitor-operations')?.textContent ?? '')`,
-    report: `[...document.querySelectorAll('[id^="monitor-"]')].map(element => element.id.slice('monitor-'.length) + ': ' + element.textContent.trim()).join('\\n')`,
+    // HandwiredOS reports its program: the page fills the system bar's counters from the compiled program at
+    // mount, e.g. "14,467 operations", "275 layers". The page as it was before its restyle has no counters in the
+    // system bar, and fills the Monitor window's rows instead, e.g. "6,513 affine · 7,214 ReGLU · 740 boolean".
+    ready: `/\\d/.test((document.querySelector('.system-stats') ?? document.querySelector('#monitor-operations'))?.textContent ?? '')`,
+    report: `document.querySelector('.system-stats') !== null
+      ? [...document.querySelectorAll('.system-stats > *')].map(element => element.textContent.trim()).join(', ')
+      : [...document.querySelectorAll('[id^="monitor-"]')].map(element => element.id.slice('monitor-'.length) + ': ' + element.textContent.trim()).join('\\n')`,
   },
   'json-highlighter/': {
     ready: `(window.jsonHighlighter?.frameTimings.length ?? 0) >= 1`,
-    report: `document.querySelector('.status').textContent.trim()`,
+    report: textOf('.status, .stats, .timings'),
   },
   'regex-search/': {
     ready: `window.regexSearchReady === true`,
-    report: `document.querySelector('#status').textContent.trim()`,
+    report: textOf('#status, #stats'),
   },
   'learned-gallery/': {
     ready: `/\\d/.test(document.querySelector('#learning-coefficients')?.textContent ?? '')`,
@@ -85,6 +90,11 @@ const origin = `http://127.0.0.1:${server.port}`
 const siteUrl = `${origin}${prefix}`
 
 const chromePath = process.env['CHROME_PATH'] ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+if (!existsSync(chromePath)) {
+  console.error(`Chrome isn't at ${chromePath}. Set CHROME_PATH to a Chrome or Chromium binary.`)
+  void server.stop(true)
+  process.exit(1)
+}
 const profile = process.env['CHROME_PROFILE_DIR'] ?? mkdtempSync(path.join(tmpdir(), 'handwired-site-check-chrome-'))
 const screenshots = option('screenshots')
 const debuggingPort = option('debugging-port')
@@ -214,7 +224,7 @@ try {
     let report = ''
     if (expectation !== undefined) {
       try {
-        await waitFor(async () => (await evaluate<boolean>(expectation.ready)) ? true : undefined, expectation.ready, 60_000)
+        await waitFor(async () => (await evaluate<boolean>(expectation.ready)) ? true : undefined, expectation.ready, 30_000)
         report = await evaluate<string>(expectation.report)
       } catch (error) {
         pageProblems.push(`the page never showed what its program computes: ${error instanceof Error ? error.message : String(error)}`)
