@@ -51,6 +51,19 @@
 }
 /* The surface's copper hairline and ring already show the focus. */
 .stage.sketch:focus-visible { outline: none; }
+/* What an empty sketch says, in its middle: the line is 20 px tall. learned-gallery.ts writes its
+   display. A press on the line is a press on the sketch. */
+.stage-hint {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  margin: -10px 0 0;
+  color: var(--ink-3);
+  font: var(--type-ui);
+  text-align: center;
+  pointer-events: none;
+}
 .target-rectangle {
   border: 1px solid var(--copper-line);
   background: var(--copper-wash);

@@ -335,6 +335,8 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
   // The time that training has reached, like animatedUntilTime in ui.md's render loop. null while nothing trains.
   let trainedUntilTime: number | null = null
   let measuredMsPerStep = 0
+  // The steps of the current training and the time they took, and their average, which the page shows. The
+  // average stays while a later training takes no step.
   let runSteps = 0
   let runMs = 0
   let averageMsPerStep: number | null = null
@@ -662,6 +664,7 @@ type LearnedGalleryDomCache = {
   // free slot.
   sketchRectangles: HTMLElement[] // mount lifetime
   outputRectangles: HTMLElement[] // mount lifetime
+  emptyHint: HTMLElement // mount lifetime
   rectangleCount: HTMLElement // mount lifetime
   layoutButtons: {name: LearnedLayoutName, button: HTMLButtonElement}[] // mount lifetime
   deleteButton: HTMLButtonElement // mount lifetime
@@ -746,6 +749,7 @@ function createLearnedGalleryDomCache(document: Document, editor: LearnedGallery
     sketchStage,
     sketchRectangles,
     outputRectangles,
+    emptyHint: requireElement(document, '#learning-empty', 'empty sketch hint is missing'),
     rectangleCount: requireElement(document, '#learning-count', 'rectangle count is missing'),
     layoutButtons,
     deleteButton: requireElement<HTMLButtonElement>(document, '#learning-delete', 'delete button is missing'),
@@ -876,6 +880,8 @@ function mountLearnedGallery(document: Document, window: Window) {
       )
     }
     domCache.sketchStage.style.cursor = frame.cursor
+    // An empty sketch says how to add a rectangle.
+    domCache.emptyHint.style.display = frame.activeCount === 0 ? 'block' : 'none'
     for (const {name, button} of domCache.layoutButtons) {
       button.setAttribute('aria-pressed', frame.layout === name ? 'true' : 'false')
     }
