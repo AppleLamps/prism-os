@@ -2,7 +2,7 @@
 
 ## What it is
 
-Search as you type over a text of fixed capacity, 256 or 1,024 code points. JavaScript parses a pattern and compiles it into an automaton with at most S states and 16 character classes. The program runs the automaton one step per code point, as products of a class's transition matrix with a 0/1 state vector, and returns one highlighted bit and one match start bit per code point. It finds every non-overlapping, non-empty match, leftmost, then longest. There are three forms of the program:
+Search as you type over a text of fixed capacity, e.g. 256 or 1,024 code points, and the page offers 256, 512, 768 and 1,024. JavaScript parses a pattern and compiles it into an automaton with at most S states and 16 character classes. The program runs the automaton one step per code point, as products of a class's transition matrix with a 0/1 state vector, and returns one highlighted bit and one match start bit per code point. It finds every non-overlapping, non-empty match, leftmost, then longest. There are three forms of the program:
 
 - (a) The pattern as data, in data-program.ts. The transition matrix of every class, the accepting states and the class of every code point sit in cells, so a new pattern writes cells and changes no program.
 - (b) The pattern built into the program, in builtin-program.ts. The builder knows the automaton, so each step is a fixed sparse sum over the steps the pattern has, and a new pattern rebuilds and recompiles the program.
@@ -18,22 +18,23 @@ From the repo root:
 bun test lab/regex-search                                   # 13 tests in 2 files, about 6 seconds
 bunx tsgo -p lab/regex-search                               # type-check, including gpu/
 bunx oxlint --type-aware lab/regex-search                   # lint
-bun lab/regex-search/demo.html                              # the page, e.g. ?form=builtin&states=32&text=1024
+bun start                                                   # the page at /regex-search/, next to the other demos
+bun lab/regex-search/demo.html                              # the page alone, e.g. ?form=builtin&states=32&text=1024, where its links to the demo index don't resolve
 bun lab/regex-search/report.ts                              # every Bun measurement of forms (a) and (b) below, each variant in its own process, about 7 minutes
-bun lab/regex-search/browser-frame.ts --profile <folder>    # keystroke frames in headless Chrome, with a fresh Chrome profile folder, a few minutes
+bun lab/regex-search/browser-frame.ts --profile <folder>    # keystroke frames in headless Chrome, with a fresh Chrome profile folder, a few minutes; --port and --debugging-port fix the two ports
 bun lab/regex-search/report.ts sizes tree 8 1024            # one size of form (c), e.g. with Brent-Kung's network
 bun lab/regex-search/gpu/run.ts --mode check --profile <folder> --out <file.json>   # the GPU tree in headless Chrome over many patterns and texts, about 1 minute
 ```
 
 The GPU measurements need reference bits from the CPU first, see the comments at the top of gpu/cpu-time.ts, gpu/run.ts and gpu/summarize.ts. The raw results are in gpu/results/, and summarize.ts prints every table in [Matrix product tree on the GPU](#matrix-product-tree-on-the-gpu-september-17-2026) from them, with `--gpu` gpu-main-1.json to gpu-main-4.json, `--frames gpu-frames-1.json`, `--checks gpu-check-1.json` and `--cpu cpu-programs.jsonl,cpu-programs-2.jsonl,cpu-js.jsonl`, in that order, so the second batch of form (a)'s timings replaces the first, which ran at load average 12 to 14.
 
-The page has a pattern field, a form selector, S = 8, 16 or 32, and a text capacity of 256 or 1,024 code points, and the text is editable under "Edit the text". It evaluates once in each frame where the pattern or the text changed, and draws the matches as alternating colors, so neighboring matches stay apart. The status line shows the automaton's size against the capacity, the program's size, and the frame's times. It counts every operation the builder appended, which overstates form (b), see [what got awkward](#what-got-awkward). A frame that doesn't evaluate, because the pattern has a syntax error or doesn't fit, shows "No matches", plus the automaton's size when the pattern compiled.
+The page, rewritten on October 13, 2026, has a pattern field and three selects: Program, with form (a) as "one for every pattern" and form (b) as "built for each pattern", States, with 8, 12, 16 and 32, and Text capacity, with 256, 512, 768 and 1,024 code points. It starts with form (a) at 12 states and 768 code points. A change of a select builds the program in place, after a frame that shows "Building the program…", and keeps the choice in the query string. The page refuses to build form (a) above 1 million operations, i.e. 32 states at 512 code points or more, and says why. The text is edited in place, in a transparent textarea over the text, and the matches are rectangles behind the text in two copper washes that alternate, so neighboring matches stay apart. The page evaluates once in each frame where the pattern, the text or the program changed. The result line shows the count of matches, or one sentence per problem when the pattern has a syntax error or doesn't fit, and then no match is drawn. A text longer than the capacity is searched up to the capacity: the result line then reads e.g. "7 matches in the first 256 characters", the count of characters turns red, and the text after a bar is gray. The statistics show the compiled program's operations and layers, e.g. 312,108 operations in 6,142 layers at the starting choice, the time to build the program, and the time of the last search, and "How the pattern fits the program" shows the automaton's size against the capacity. [Keystroke frames in headless Chrome](#keystroke-frames-in-headless-chrome) has the page's times since the rewrite.
 
 | File | What it holds |
 | --- | --- |
 | `pattern.ts` | The parser, the position automaton (Glushkov's construction), the class partition, and the capacity check with its messages |
-| `data-program.ts` | Form (a): cells, builder code, writing a pattern into cells, and the machine the page runs |
-| `builtin-program.ts` | Form (b): builder code for one pattern, and its machine |
+| `data-program.ts` | Form (a): cells, builder code, writing a pattern into cells, and the machine the tests run |
+| `builtin-program.ts` | Form (b): builder code for one pattern, and the machine the tests run |
 | `tree-program.ts` | Form (c): builder code, with Brent-Kung's or Sklansky's prefix network from src/runtime/prefix-networks.ts |
 | `tree-inputs.ts` | Form (c) in plain JavaScript: a loop that computes what form (c) computes, the network's combines in levels, and the (S + 1) × (S + 1) matrices whose products give the reverse pass's bits |
 | `gpu/automaton-inputs.ts`, `gpu/kernels.ts` | The GPU tree: class matrices, leaf matrices, the plan of slots per level, the WGSL kernels and the host loop, plus two plain JavaScript loops to compare with |
@@ -43,7 +44,8 @@ The page has a pattern field, a form selector, S = 8, 16 or 32, and a text capac
 | `reference.ts` | The two plain JavaScript references |
 | `regex-search.test.ts` | Differential tests |
 | `report.ts`, `browser-frame.ts` | Measurements in Bun and in headless Chrome |
-| `demo.html`, `demo.ts`, `sample-text.ts` | The page |
+| `demo.html`, `demo.css`, `demo.ts` | The page. It compiles `buildDataSearch`'s or `buildBuiltInSearch`'s program itself, to show the compiled program's size. demo.css imports assets/site.css and assets/tool.css, which hold the look that the demo pages share |
+| `sample-text.ts` | The text of the measurements. The page starts with a text of its own, which is in demo.html |
 
 ## What the search finds
 
@@ -76,7 +78,7 @@ Form (a)'s cells, at S states, C = 16 classes, K = 32 class boundaries and N tex
 | `transitions` | C × S × S bits, `transitions[c][s][t]` | the pattern changes |
 | `accepting` | S bits | the pattern changes |
 
-A pattern that needs more states, classes or boundaries gets a named message instead of a program, e.g. `the pattern needs 33 states, and the program holds 32`, and the page shows it, highlights nothing, and shows the automaton's size in the status line. The page checks the same capacity in form (b), so form (b) never builds a program for a pattern with more than S states, 16 classes or 32 class boundaries, e.g. a pasted pattern of 400 literal characters. A text longer than N is searched only up to N code points, and the page says so and draws the rest in gray.
+A pattern that needs more states, classes or boundaries gets a named message instead of a program, e.g. `the pattern needs 33 states, and the program holds 32`, and the page shows a sentence for it, e.g. "This pattern needs 33 states, and the program holds 32.", highlights nothing, and shows the automaton's size under "How the pattern fits the program". The page checks the same capacity in form (b), so form (b) never builds a program for a pattern with more than S states, 16 classes or 32 class boundaries, e.g. a pasted pattern of 400 literal characters. A text longer than N is searched only up to N code points, and the page says so and draws the rest in gray.
 
 Form (a)'s operations for one code point:
 
@@ -175,6 +177,32 @@ One process per row. From the pattern string to its first evaluation: `compilePa
 
 This table was measured after the page fixes, later the same day, on the same machine with other agents' work running. Chrome evaluated the same programs more slowly than Bun, e.g. 30 ms against 28.7 ms for form (a) at S = 32 and 1,024 code points, and 2.2 ms against 1.1 ms for form (b), and built and compiled form (b) faster, about 306 ms against 451 ms. The S = 8 scenario has only 4 evaluated frames.
 
+Update, October 13, 2026: the table above is for the page as it was until that day. The rewritten page was measured with the same script on the same machine, with Bun 1.4.3 and headless Chrome 155.0.8059.40, in one run at load average 4.0 to 5.0. The script's first scenario is now the page's starting choice, and its last one form (a) at S = 32 and 256 code points, since the page refuses S = 32 at 1,024. Ready now includes one frame that draws "Building the program…", and the DOM writes, 0.4 to 0.5 ms at the median here, include the layout that the matches' rectangles are read from. The heap is `performance.memory.usedJSHeapSize` without a collection.
+
+| Scenario | Ready ms | JS heap MB | Keystrokes, evaluated | Evaluation ms, median (max) | Callback ms, median (max) | Input to next frame ms, median (max) |
+| --- | --- | --- | --- | --- | --- | --- |
+| (a) S = 12, N = 768, the page's starting choice, typing the 8-state pattern | 590 | 225 | 16, 4 | 4.3 (4.9) | 5.0 (5.8) | 30.8 (30.9) |
+| (a) S = 8, N = 256, typing the pattern | 142 | 47 | 16, 4 | 0.9 (1.0) | 1.5 (1.5) | 28.3 (31.0) |
+| (a) S = 16, N = 1,024, typing the pattern | 1,261 | 407 | 29, 8 | 9.5 (9.8) | 10.1 (10.6) | 26.2 (26.7) |
+| (a) S = 16, N = 1,024, typing 24 code points at the end of the text | 1,352 | 401 | 24, 24 | 8.9 (12.6) | 9.6 (13.5) | 27.2 (30.0) |
+| (b) S = 32, N = 1,024, typing the pattern | 199 | 65 | 49, 7 | 2.3 (4.9) | 245.7 (287.2), of which building and compiling 243.1 at the median | 249.1 (288.8) |
+| (a) S = 32, N = 256, typing the pattern | 899 | 431 | 49, 7 | 7.7 (10.4) | 8.1 (11.3) | 27.5 (31.0) |
+
+On Bun's development server, which `bun start` also runs, the starting choice was ready 0.58 to 0.68 s after the navigation started, over three sets of 5 loads at load averages from 4 to 11, and held 169 MB of JavaScript heap after a forced collection in each set. Ready is the page's `performance.now()` when `window.regexSearchReady` becomes true. Other choices, with 2 loads each on the same server, the same day:
+
+| Form | States | Code points | Operations | Layers | Ready ms | Heap MB after a collection |
+| --- | ---: | ---: | ---: | ---: | --- | ---: |
+| (a) | 8 | 256 | 58,920 | 2,046 | 156 to 160 | 32 |
+| (a) | 8 | 1,024 | 236,328 | 8,190 | 517 to 548 | 123 |
+| (a) | 12 | 256 | 103,724 | 2,046 | 238 to 245 | 57 |
+| (a) | 12 | 1,024 | 416,300 | 8,190 | 802 to 895 | 226 |
+| (a) | 16 | 256 | 164,816 | 2,046 | 314 to 326 | 93 |
+| (a) | 16 | 1,024 | 661,712 | 8,190 | 1,276 to 1,277 | 364 |
+| (a) | 32 | 256 | 572,064 | 2,046 | 997 to 1,061 | 321 |
+| (a) | 32 | 512, 768 or 1,024 | refused by the page | | 42 to 53 | 1 |
+| (b), the starting pattern | 12 | 768 | 40,549 | 3,074 | 165 to 178 | 25 |
+| (b), the starting pattern | 32 | 1,024 | 54,117 | 4,098 | 218 to 221 | 33 |
+
 ## What fit well
 
 - Every value in both programs is an exact bit or a small integer, so the tests compare matches exactly, with no tolerance: 26 hand-written cases, and 400 random patterns with 6 texts each. 4 of the texts are random, over an alphabet with line terminators including U+2028 and U+2029, an emoji, U+10FFFF, escaped syntax characters, and the code points where `\d` and `\w` start or stop, e.g. `9`, `Z` and `_`. The other 2 are made of the code points just below, at and above the pattern's class boundaries. A last test puts a pattern at the largest capacity whose last match ends on the last cell. At every variant in the Bun tables, report.ts also checks the match count against the automaton simulator, including at 1,024 code points.
@@ -188,11 +216,11 @@ This table was measured after the page fixes, later the same day, on the same ma
 
 - A matrix whose entries are runtime values costs S² operations per product, so form (a) is about 2S² operations per code point, and one evaluation at S = 32 and 1,024 code points takes about 28 ms in Bun and 30 ms in Chrome, about two frames at 60 fps. The same pattern built into the program is 133,529 operations, 17 times fewer, and 1.2 ms in Bun.
 - The lookahead doubles the work and the depth: every forward step reads the reverse pass at its position, so the forward pass comes after the whole reverse pass, and the program has about 8 layers per code point, 8,190 at 1,024 code points. Grouping the steps into a tree of matrix products ([patterns.md](../../docs/patterns.md), "Why a tree gives the loop's answer") gives O(log N) layers, but combining two S × S matrices of bits is S³ products, 32,768 at S = 32, for each of about N combines. Form (c) built that tree later the same day, see [Matrix product tree on the GPU](#matrix-product-tree-on-the-gpu-september-17-2026).
-- Building at this size is slow and uses a lot of memory. Form (a) at S = 32 and 1,024 code points appends 2,367,454 operations in 3.4 to 3.7 s and compiles them in 3.6 to 4.3 s, and the Bun process reaches 5.8 to 8.1 GB, depending on the run. In Chrome, the page takes 9.7 s before its first frame, with 1,468 MB of JS heap. `compileTensorProgram` allocates an `Int32Array` of the circuit's whole width for every layer, so compile time grows with layers × width, and `createTensorEvaluator` looks up each output root with `wireOrder.indexOf`. Update, later on September 17, 2026: since commit 351e5cd, `compileTensorProgram` allocates one such array per compile instead of one per layer, so compile time no longer grows with layers × width. `bun lab/regex-search/report.ts sizes data 32 1024` now takes 3.2 to 3.8 s to build and 1.3 to 1.5 s to compile, and the process peaks at 4.8 to 5.8 GB of RSS, over 6 processes at load average 1.8 to 3.0. A copy of the commit before, alternated with 3 of those processes, took 3.3 to 3.5 s to build and 3.0 to 3.7 s to compile, and peaked at 6.9 to 7.5 GB. Form (b)'s rebuild, `report.ts recompile 32 1024`, went from 461 to 482 ms to 400 to 402 ms in the same session, over 3 alternated processes each, all of the difference in the compile. Every other time and RSS in this README was measured before that change, including Chrome's 9.7 s. The `wireOrder.indexOf` lookup is unchanged.
+- Building at this size is slow and uses a lot of memory. Form (a) at S = 32 and 1,024 code points appends 2,367,454 operations in 3.4 to 3.7 s and compiles them in 3.6 to 4.3 s, and the Bun process reaches 5.8 to 8.1 GB, depending on the run. In Chrome, the page takes 9.7 s before its first frame, with 1,468 MB of JS heap. `compileTensorProgram` allocates an `Int32Array` of the circuit's whole width for every layer, so compile time grows with layers × width, and `createTensorEvaluator` looks up each output root with `wireOrder.indexOf`. Update, later on September 17, 2026: since commit 351e5cd, `compileTensorProgram` allocates one such array per compile instead of one per layer, so compile time no longer grows with layers × width. `bun lab/regex-search/report.ts sizes data 32 1024` now takes 3.2 to 3.8 s to build and 1.3 to 1.5 s to compile, and the process peaks at 4.8 to 5.8 GB of RSS, over 6 processes at load average 1.8 to 3.0. A copy of the commit before, alternated with 3 of those processes, took 3.3 to 3.5 s to build and 3.0 to 3.7 s to compile, and peaked at 6.9 to 7.5 GB. Form (b)'s rebuild, `report.ts recompile 32 1024`, went from 461 to 482 ms to 400 to 402 ms in the same session, over 3 alternated processes each, all of the difference in the compile. Every other time and RSS in this README was measured before that change, including Chrome's 9.7 s. The `wireOrder.indexOf` lookup is unchanged. Update, October 13, 2026: a survey before the page's rewrite measured the page at this size again, in Chrome 155: ready after 4.3 s, with 1,295 MB of JavaScript heap after a collection. Since that day the page refuses to build form (a) above 1 million operations, so it no longer builds this program.
 - Form (b) rebuilds on every keystroke that changes the pattern: 459 ms in Bun and about 306 ms in Chrome at S = 32 and 1,024 code points, almost all of it building and compiling, and 1,024 ms in Bun for the expensive pattern. Before the page checked the capacity in form (b), a pasted pattern with 133 states took more than 1.5 s per keystroke in Chrome. Now that pattern gets the named message and builds nothing.
 - Form (a) stores the full C × S × S matrices. A position automaton only needs S × S bits for which steps exist and C × S bits for which classes each state reads, 1,536 cells instead of 16,384 at S = 32, but the operations would stay S² per product, since the step bits are runtime values either way. The full matrices keep the program an executor for any automaton within capacity, e.g. one with fewer states after minimization.
 - Classes are JavaScript's work: `partitionClasses` finds the code points where the class changes. The program then pays K + 1 comparisons per code point for the class, 68 of about 2,244 operations per code point at S = 32, but 68 of about 231 at S = 8.
-- Built operations and live operations differ in form (b): a sum of fewer than 4 terms is copied into the operations that read it and stays in `circuit.operations` without readers, e.g. 193,950 built against 133,529 live operations at S = 32 and 1,024 code points. The page shows built operations, so it overstates form (b).
+- Built operations and live operations differ in form (b): a sum of fewer than 4 terms is copied into the operations that read it and stays in `circuit.operations` without readers, e.g. 193,950 built against 133,529 live operations at S = 32 and 1,024 code points. Until October 13, 2026 the page showed built operations, which overstated form (b). It now shows the compiled program's operations and layers, e.g. 133,529 operations in 6,137 layers for that pattern.
 - The search never reports an empty match, e.g. `a*` finds nothing in `bcd`, while RegExp's `matchAll` with the `g` flag reports an empty match at positions 0, 1, 2 and 3. Reporting empty matches would need the definition to say how the scan moves past them.
 
 ## Where the docs were missing, wrong or confusing
@@ -384,3 +412,7 @@ Separately, scripts/check.ts didn't find gpu/tsconfig.json, so the gpu folder's 
 - The programs' times past 1,024 code points are extrapolations, and form (c) at S = 32 has only 256 code points.
 - Only one frames run.
 - The demo page doesn't offer form (c).
+
+### Update, October 13, 2026: many documents instead of one long text
+
+Form (a)'s step also runs as a loop on the GPU, over many documents instead of one long text: [lab/json-search](../json-search/README.md#regex-searchs-step) builds one code point's work with this folder's `emitClasses` and `createStepAnd`, and a shader loops it over a document's 512 positions. The shader compiles in 0.05 to 0.11 s at 8 states, and one search of 100,000 documents takes 7 to 8 ms for a pattern of up to 8 states, 64 ms up to 16 states and 871 ms up to 32, when searches follow each other. In the same page, RegExp counts every match of ordinary patterns in 8 to 43 ms on one thread, and in 2 to 7 ms in 8 workers. A search after a pause of 200 ms or more takes longer, e.g. 17 to 21 ms at 8 states. The September timings above in this section sampled evaluations one after another and measured no pause, and their JavaScript loops ran on one thread.
