@@ -144,6 +144,11 @@
   text-underline-offset: 4px;
   text-decoration-skip-ink: none;
 }
+/* In the editor the underlined token is red as a whole, as the mockup shows a broken word, and
+   as the matched brackets are copper as a whole. The program gives the error's color only to
+   the character where the error is, e.g. the comma after tru, and without this rule the word
+   before the comma keeps a literal's plum. */
+.editor-text .first-error { color: var(--wire-red); }
 /* The first error when no character can show it: at a line feed, e.g. where a string's line ends
    before its closing quote, and at the end of the text. The mark stands after the line's last
    character, where the textarea has nothing, so it moves no character. */
