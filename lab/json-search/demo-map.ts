@@ -178,15 +178,20 @@ export type MarkColors = {valid: number, match: number, error: number}
 
 // Writes every mark's pixels: a document with a match in one color, a valid document without one in a second, and a
 // document that isn't valid and has no match in a third. `matchCounts` is one count per document, and all zeros
-// before a search: the page keeps such an array instead of passing nothing, so the loop always reads the same kind
-// of array. With null for "no search", the first paint of a search's result took 1.0 ms instead of 0.5 ms in
-// Chrome, for 100,000 marks. One call writes e.g. 400,000 pixels for 100,000 marks of 2 by 2 pixels.
+// before a search. One call writes e.g. 400,000 pixels for 100,000 marks of 2 by 2 pixels, in 0.2 to 0.6 ms in
+// Chrome once the JavaScript engine has compiled the loop, and two things keep the loop in that compiled code:
+// - The three colors are read before the loop. Read inside it, the match's color was first read in the second
+//   paint, since the first paint has no match, and the engine left the compiled loop there: the third paint of a
+//   page took 4 to 6 ms instead of 1 ms.
+// - The counts are always an array, also for "no search", where null made the second paint take 1.0 ms instead of
+//   0.5 ms.
 export function paintMarks(pixels: Uint32Array, layout: MapLayout, offsets: Uint32Array, order: Uint32Array, valid: Uint8Array, matchCounts: Float32Array, colors: MarkColors) {
   const {mark, width} = layout
+  const {valid: validColor, match: matchColor, error: errorColor} = colors
   const count = offsets.length
   for (let position = 0; position < count; position++) {
     const index = order[position]!
-    const color = matchCounts[index]! > 0 ? colors.match : valid[index] === 1 ? colors.valid : colors.error
+    const color = matchCounts[index]! > 0 ? matchColor : valid[index] === 1 ? validColor : errorColor
     const offset = offsets[position]!
     if (mark === 1) {
       pixels[offset] = color
