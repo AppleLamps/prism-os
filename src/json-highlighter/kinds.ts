@@ -15,6 +15,10 @@ export type Limits = {
 export const capacity = 512
 export const maximumDepth = 16
 export const defaultLimits: Limits = {capacity, maximumDepth}
+// The limits of the page, assets/json-highlighter.html: the largest power of two whose program Chrome 155 evaluates in
+// about 1 ms per keystroke on an Apple M5 Max, at the largest depth where every comparison of the container kinds is
+// an integer bit, since 2,048 × 2^12 is below 2^24 (highlighter.ts, stage 4).
+export const pageLimits: Limits = {capacity: 2048, maximumDepth: 13}
 
 // What a character is shown as. `key` is a string character in a key position, e.g. the "id" of {"id": 1}, found by the
 // grammar before the first error. `pastEnd` is a cell after the text.

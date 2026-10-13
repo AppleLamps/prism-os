@@ -1,0 +1,25 @@
+/* The JSON highlighter's page, assets/json-highlighter.html. This file is the page's only stylesheet: it imports
+   site.css, the tokens and the parts every page shares, then tool.css, the editor and the parts the two text tools
+   share, and adds what only this page needs. */
+@import "./site.css";
+@import "./tool.css";
+
+/* When the page scrolls to keep the caret in the window, it leaves this much room under the caret, so the result
+   line and the statistics line under the editor stay in the window too. */
+html { scroll-padding-bottom: calc(var(--space-8) + var(--space-6)); }
+
+/* src/json-highlighter/main.ts writes the result line and the two statistics lines when it has built the program.
+   Until then each keeps the room its text will take, one line here and two on a phone, so nothing below it moves,
+   and the result line shows no dot. */
+.stats { min-height: 20px; }
+.status:not(.ok, .bad)::before { visibility: hidden; }
+@media (max-width: 640px) {
+  .stats { min-height: 40px; }
+}
+
+/* The details line, folded under the statistics line. */
+.disclosure .stats {
+  max-width: 44em;
+  margin-top: var(--space-2);
+  text-wrap: pretty;
+}

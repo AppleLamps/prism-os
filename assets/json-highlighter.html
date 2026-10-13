@@ -3,51 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JSON highlighter</title>
-  <style>
-    :root {
-      --background: #fbfbfa; --text: #1d1d1f; --muted: #6e6e73; --panel: #ffffff; --border: #d9d9de;
-      --punctuation: #6e6e73; --key: #7c3aed; --string: #15803d; --escape: #b45309; --number: #1d4ed8;
-      --literal: #be185d; --error: #dc2626; --match: rgb(250 204 21 / 0.45);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --background: #161618; --text: #ececf0; --muted: #9a9aa2; --panel: #1f1f22; --border: #34343a;
-        --punctuation: #9a9aa2; --key: #c4b5fd; --string: #86efac; --escape: #fbbf24; --number: #93c5fd;
-        --literal: #f9a8d4; --error: #f87171; --match: rgb(250 204 21 / 0.3);
-      }
-    }
-    body {margin: 0; background: var(--background); color: var(--text); font: 14px/1.45 system-ui, sans-serif}
-    main {max-width: 760px; margin: 0 auto; padding: 24px 16px}
-    h1 {font-size: 18px; margin: 0 0 4px}
-    p {margin: 0 0 12px; color: var(--muted)}
-    .editor {position: relative; height: 420px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); overflow: hidden}
-    .editor pre, .editor textarea {
-      position: absolute; inset: 0; margin: 0; padding: 12px; box-sizing: border-box; width: 100%; height: 100%;
-      font: 13px/20px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; overflow: auto; tab-size: 4;
-      border: 0; letter-spacing: 0;
-    }
-    .editor pre {pointer-events: none; color: var(--text)}
-    .editor textarea {background: transparent; color: transparent; caret-color: var(--text); resize: none; outline: none}
-    /* k0 to k8 are the display kinds in the order of src/json-highlighter/kinds.ts, e.g. k2 is a string character and k8 a key character. */
-    .k0 {} .k1 {color: var(--punctuation)} .k2 {color: var(--string)} .k3 {color: var(--escape)} .k4 {color: var(--number)}
-    .k5 {color: var(--literal)} .k6 {color: var(--error)} .k8 {color: var(--key)}
-    .match {background: var(--match); border-radius: 2px}
-    .first-error {text-decoration: underline wavy var(--error); text-decoration-skip-ink: none}
-    .end-marker {display: inline-block; width: 7px; height: 16px; vertical-align: -3px; background: var(--error); opacity: 0.6}
-    .past-capacity {color: var(--muted); opacity: 0.6}
-    .status {margin-top: 10px; min-height: 20px}
-    .status .bad {color: var(--error)}
-    .timings {margin-top: 4px; color: var(--muted); font-size: 12px}
-  </style>
+  <title>JSON highlighter · Handwired</title>
+  <meta name="description" content="A JSON editor whose colors, first error and matching bracket come out of one fixed numeric program on every keystroke, with no parser written as ordinary code.">
+  <meta name="theme-color" content="#f3eee4">
+  <!-- One stylesheet, which imports site.css and tool.css in that order. Bun's development server puts two stylesheet
+       links in the reverse of their order here, while the build keeps the order, and tool.css has to come second. -->
+  <link rel="stylesheet" href="./json-highlighter.css">
 </head>
 <body>
-  <main>
-    <h1>JSON highlighter</h1>
-    <p>Every keystroke writes up to 512 code points and the caret into one numeric program, which returns a kind per character, the first error and the matching bracket. Tab types a tab, and Escape then Tab moves focus out of the editor.</p>
-    <div class="editor"><pre aria-hidden="true"></pre><textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="JSON text"></textarea></div>
-    <div class="status" aria-live="polite"></div>
-    <div class="timings"></div>
+  <!-- The page is published at <site>/json-highlighter/, so the index is "../" and another demo is e.g.
+       "../regex-search/". -->
+  <main class="page">
+    <header class="masthead">
+      <a class="brand" href="../">
+        <svg class="mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M1 4h3.5l3.4 4.2M1 10h5.6M1 16h3.5l3.4-4.2M13.4 10H19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle class="mark-eyelet" cx="10" cy="10" r="3" stroke-width="1.5"/>
+        </svg>
+        Handwired
+      </a>
+      <nav>
+        <a href="../">Demos</a>
+        <a href="https://github.com/chenglou/handwired/tree/main/src/json-highlighter">Source</a>
+      </nav>
+    </header>
+
+    <h1 class="title">JSON highlighter</h1>
+    <p class="deck">Every keystroke runs one fixed numeric program that returns each character&rsquo;s color, the first error and the matching bracket; nothing here is parsed by ordinary code.</p>
+
+    <div class="try">
+      <span class="label">Try</span>
+      <ul>
+        <li>Break a value, e.g. change <code>true</code> to <code>tru</code></li>
+        <li>Put the caret next to a bracket</li>
+        <li>Delete a closing quote</li>
+      </ul>
+    </div>
+
+    <!-- The <pre> shows the text, and the transparent <textarea> over it takes the typing. src/json-highlighter/main.ts
+         fills the gutter, the <pre>, the result line and the statistics line, and finds the first <textarea> and the
+         first <pre> of the page. -->
+    <div class="surface editor">
+      <div class="editor-scroll">
+        <div class="editor-gutter" aria-hidden="true"></div>
+        <div class="editor-text">
+          <pre aria-hidden="true"></pre>
+          <textarea wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="JSON text"></textarea>
+        </div>
+      </div>
+      <div class="surface-bar">
+        <p class="status" role="status"><span><b></b><span></span></span></p>
+        <span class="capacity"><b></b><span></span></span>
+      </div>
+    </div>
+
+    <p class="stats"></p>
+
+    <details class="disclosure">
+      <summary>Details</summary>
+      <p class="stats"></p>
+    </details>
+
+    <footer class="colophon">
+      <span><kbd>Tab</kbd> types a tab. <kbd>Esc</kbd> then <kbd>Tab</kbd> leaves the editor.</span>
+      <span><a href="../regex-search/">Next: Regex search</a></span>
+    </footer>
   </main>
   <script type="module" src="../src/json-highlighter/main.ts"></script>
 </body>

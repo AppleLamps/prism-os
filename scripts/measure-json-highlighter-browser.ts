@@ -1,26 +1,33 @@
 // Keystroke frames of the JSON highlighter's page, assets/json-highlighter.html, in headless Chrome. Serves the page
-// with Bun.serve, starts headless Chrome with a fresh profile, fills the textarea with 512 code points of JSON, types a
-// digit and a Backspace in turn through the DevTools Protocol, and reads the page's own timing of each frame.
-//   bun scripts/measure-json-highlighter-browser.ts loop 80
+// with Bun.serve, starts headless Chrome with a fresh profile, fills the textarea with a text that fills the capacity,
+// types a digit and a Backspace in turn through the DevTools Protocol, and reads the page's own timing of each frame.
+//   bun scripts/measure-json-highlighter-browser.ts loop 80           the page's limits, 2,048 code points and depth 13
+//   bun scripts/measure-json-highlighter-browser.ts loop 80 512 16    another capacity and maximum depth
 // CHROME_PATH overrides the Chrome binary, CHROME_PROFILE_DIR the profile folder, which defaults to a new folder in the
 // system's temporary folder, and SCREENSHOT_PATH saves a PNG of the page with an error and a matched bracket at the end.
+// PORT and CHROME_DEBUGGING_PORT fix the server's port and Chrome's debugging port, which are otherwise any free ports.
 // The script kills Chrome and stops the server when it finishes, and after 90 s at most.
 import {existsSync, mkdtempSync, readFileSync, writeFileSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import page from '../assets/json-highlighter.html'
 import {type ScanForm, scanForms} from '../src/json-highlighter/highlighter.ts'
+import {pageLimits} from '../src/json-highlighter/kinds.ts'
 import {timingText} from '../tests/json-highlighter/corpus.ts'
 
 const form = (process.argv[2] ?? 'loop') as ScanForm
 if (!scanForms.includes(form)) throw new Error(`the form must be one of ${scanForms.join(', ')}`)
 const keystrokes = Number(process.argv[3] ?? 80)
+const capacity = Number(process.argv[4] ?? pageLimits.capacity)
+const maximumDepth = Number(process.argv[5] ?? pageLimits.maximumDepth)
 const chromePath = process.env['CHROME_PATH'] ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const profile = process.env['CHROME_PROFILE_DIR'] ?? mkdtempSync(join(tmpdir(), 'json-highlighter-chrome-'))
 const screenshotPath = process.env['SCREENSHOT_PATH']
 
-const server = Bun.serve({port: 0, hostname: '127.0.0.1', development: false, routes: {'/': page}})
-const chrome = Bun.spawn([chromePath, '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`,
+const debuggingPort = process.env['CHROME_DEBUGGING_PORT']
+
+const server = Bun.serve({port: Number(process.env['PORT'] ?? 0), hostname: '127.0.0.1', development: false, routes: {'/': page}})
+const chrome = Bun.spawn([chromePath, '--headless=new', `--remote-debugging-port=${debuggingPort ?? 0}`, `--user-data-dir=${profile}`,
   '--no-first-run', '--no-default-browser-check', '--window-size=900,800', 'about:blank'], {stdout: 'ignore', stderr: 'ignore'})
 const finish = (code: number) => {
   chrome.kill('SIGKILL')
@@ -42,7 +49,7 @@ async function waitFor<T>(check: () => T | undefined | Promise<T | undefined>, w
   throw new Error(`timed out waiting for ${what}`)
 }
 
-// Chrome writes the port it picked into the profile folder, as the file's first line.
+// When Chrome picks the port itself, it writes the port into the profile folder, as the file's first line.
 function readDevToolsPort(portFile: string): string | undefined {
   if (!existsSync(portFile)) return undefined
   const firstLine = readFileSync(portFile, 'utf8').split('\n')[0] ?? ''
@@ -50,7 +57,7 @@ function readDevToolsPort(portFile: string): string | undefined {
 }
 
 try {
-  const port = await waitFor(() => readDevToolsPort(join(profile, 'DevToolsActivePort')), 'DevToolsActivePort')
+  const port = debuggingPort ?? await waitFor(() => readDevToolsPort(join(profile, 'DevToolsActivePort')), 'DevToolsActivePort')
   const target = await waitFor(async () => {
     const list = await fetch(`http://127.0.0.1:${port}/json/list`).then(response => response.json() as Promise<{type: string, webSocketDebuggerUrl: string}[]>).catch(() => [])
     return list.find(candidate => candidate.type === 'page')
@@ -75,12 +82,15 @@ try {
     (await send<{result: {value: T}}>('Runtime.evaluate', {expression, returnByValue: true, awaitPromise: true})).result.value
   const frameCount = () => evaluate<number | undefined>('window.jsonHighlighter?.frameTimings.length')
 
-  await send('Page.navigate', {url: `http://${server.hostname}:${server.port}/?form=${form}`})
+  await send('Page.navigate', {url: `http://${server.hostname}:${server.port}/?form=${form}&capacity=${capacity}&depth=${maximumDepth}`})
   await waitFor(async () => ((await frameCount()) ?? 0) >= 1 ? true : undefined, 'the first frame')
   const version = await send<{product: string}>('Browser.getVersion')
-  // Fill the textarea through the page, then put the caret in the middle.
-  const text = timingText()
-  await evaluate(`(() => { const area = document.querySelector('textarea'); area.value = ${JSON.stringify(text)}; area.focus(); area.setSelectionRange(250, 250); area.dispatchEvent(new Event('input')); })()`)
+  const built = await evaluate<{limits: {capacity: number, maximumDepth: number}, buildMs: number}>('({limits: window.jsonHighlighter.limits, buildMs: window.jsonHighlighter.buildMs})')
+  if (built.limits.capacity !== capacity || built.limits.maximumDepth !== maximumDepth) throw new Error(`the page built ${JSON.stringify(built.limits)}, which isn't the capacity ${capacity} and the maximum depth ${maximumDepth}`)
+  // Fill the textarea through the page, then put the caret in the text's first half.
+  const text = timingText(capacity)
+  const caret = Math.min(250, Math.floor(capacity / 2))
+  await evaluate(`(() => { const area = document.querySelector('textarea'); area.value = ${JSON.stringify(text)}; area.focus(); area.setSelectionRange(${caret}, ${caret}); area.dispatchEvent(new Event('input')); })()`)
   let frames = await waitFor(async () => {
     const count = await frameCount()
     return count !== undefined && count >= 2 ? count : undefined
@@ -109,7 +119,8 @@ try {
     const at = (fraction: number) => values[Math.min(values.length - 1, Math.floor(fraction * values.length))]!.toFixed(2)
     return `median ${at(0.5)} ms, 95th percentile ${at(0.95)} ms, largest ${at(1)} ms`
   }
-  console.log(`${form}, ${version.product}, ${timings.length} keystroke frames after 10 warm-up frames, text of ${finalLength} code points`)
+  console.log(`${form}, ${capacity} code points at depth ${maximumDepth}, ${version.product}, ${timings.length} keystroke frames after 10 warm-up frames, text of ${finalLength} code points`)
+  console.log(`  building and compiling the program when the page loaded: ${built.buildMs.toFixed(0)} ms`)
   console.log(`  evaluate: ${summarize('evaluateMs')}`)
   console.log(`  DOM writes: ${summarize('domMs')}`)
   console.log(`  input event to the frame after the DOM writes: ${summarize('inputToFrameMs')}`)
