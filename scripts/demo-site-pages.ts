@@ -1,4 +1,5 @@
-// The demo site's pages, and its icon. serve-demo-site.ts serves the pages at these paths while developing.
+// The demo site's pages, and its icon. Two scripts read this file, so a page has the same path in both:
+// build-demo-site.ts builds the pages into site/, and serve-demo-site.ts serves them while developing.
 import {existsSync} from 'node:fs'
 import {resolve} from 'node:path'
 
@@ -27,6 +28,9 @@ export const sitePages: SitePage[] = [
   ...publishedPages,
   ...pagesBuiltWhenTheyExist.filter(page => existsSync(resolve(repoRoot, page.source))),
 ]
+export const siteFoldersNotBuilt: string[] = pagesBuiltWhenTheyExist
+  .filter(page => !existsSync(resolve(repoRoot, page.source)))
+  .map(page => page.path)
 
 // The project's mark, three wires into one eyelet and one wire out, on a tile of the paper color, so the mark also
 // shows on a dark tab bar. The colors repeat --paper, --ink and --copper of assets/site.css, since an image can't read
@@ -38,3 +42,8 @@ export const iconSvg = [
   `<circle cx='16' cy='16' r='4.3' fill='#f3eee4' stroke='#a64d1d' stroke-width='2.4'/>`,
   `</svg>`,
 ].join('')
+
+// The icon as a link tag with the image inline, so a page needs no icon file and no request to the host's root, where
+// /favicon.ico belongs to another site when this one is served under a path prefix. Inside a URL in a double-quoted
+// attribute, only these three characters of the image need escaping.
+export const iconLinkTag = `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${iconSvg.replaceAll('#', '%23').replaceAll('<', '%3C').replaceAll('>', '%3E')}">`
