@@ -1461,7 +1461,8 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     else queued.push(event)
   }
 
-  // width and height are already on the 1/64 px grid, see quantizePixels.
+  // width and height are already on the 1/64 px grid and within the viewport
+  // cells' range, see quantizeViewport.
   function queueViewport(kind: 'mount' | 'resize', width: number, height: number, timeStamp: number | undefined) {
     queuedViewport = [width, height]
     queue(kind, timeStamp, table => {
@@ -1655,8 +1656,8 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
           }
         }
       }
-      const width = quantizePixels(viewportWidth)
-      const height = quantizePixels(viewportHeight)
+      const width = quantizeViewport(viewportWidth)
+      const height = quantizeViewport(viewportHeight)
       if (!mounted) {
         mounted = true
         const earliest = queued.reduce((time, event) => Math.min(time, event.timeStamp ?? frameTime), frameTime)
@@ -1675,7 +1676,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
       return values
     },
     resize(width: number, height: number, timeStamp?: number) {
-      queueViewport('resize', quantizePixels(width), quantizePixels(height), timeStamp)
+      queueViewport('resize', quantizeViewport(width), quantizeViewport(height), timeStamp)
     },
     pointerDown(x: number, y: number, timeStamp?: number) {
       receivePointer('pointer down', cells.down, x, y, timeStamp)
@@ -1917,11 +1918,19 @@ function mountWindowManager(document: Document, window: Window) {
   // Each event carries its own timestamp, which shares the time origin of
   // requestAnimationFrame timestamps, so springs step to the event's time before
   // it applies, at any frame rate.
+  //
+  // The program has one pointer with one button. Only the primary button of the
+  // primary pointer presses: a right-button press opens the browser's context menu
+  // and sends no pointerup, so a title bar pressed with it would follow the pointer
+  // with no button held, and a second finger's events would move and release the
+  // first finger's drag.
   window.addEventListener('pointerdown', (event: PointerEvent) => {
+    if (!event.isPrimary || event.button !== 0) return
     machine.pointerDown(event.clientX, event.clientY, event.timeStamp)
     scheduleRender()
   })
   window.addEventListener('pointermove', (event: PointerEvent) => {
+    if (!event.isPrimary) return
     // Chrome dispatches about one pointermove per frame, while the coalesced
     // samples keep their own timestamps, so which moves apply doesn't depend on
     // the frame rate.
@@ -1938,11 +1947,15 @@ function mountWindowManager(document: Document, window: Window) {
   // so a listener on the drawn .photos-content misses a release at a photo's
   // destination that the growing frame doesn't cover yet, and a listener on window
   // also gets the click after a drag or a resize.
+  // A pointerup's button is the last button released, e.g. the right button when
+  // both were held, so every pointerup of the primary pointer ends the press.
   window.addEventListener('pointerup', (event: PointerEvent) => {
+    if (!event.isPrimary) return
     machine.pointerUp(event.clientX, event.clientY, event.timeStamp)
     scheduleRender()
   })
   window.addEventListener('pointercancel', (event: PointerEvent) => {
+    if (!event.isPrimary) return
     machine.pointerCancel(event.clientX, event.clientY, event.timeStamp)
     scheduleRender()
   })
@@ -2169,6 +2182,14 @@ function emitClampZeroOne(circuit: Circuit, value: Wire, unit: Wire) {
 function quantizePixels(value: number) {
   invariant(Number.isFinite(value), 'a pixel coordinate or size must be finite')
   return Math.round(value / pixelGrid) * pixelGrid
+}
+
+// A viewport size on the 1/64 px grid, clamped into the viewport cells' range, e.g.
+// 20,000 becomes 16,384. A browser can report more than 16,384 CSS px, e.g. an 8K
+// display at 25% zoom, and a value outside a cell's range fails the table check
+// before every later evaluation too, since the queued event never commits.
+function quantizeViewport(value: number) {
+  return Math.min(pixel[1], Math.max(pixel[0], quantizePixels(value)))
 }
 
 // A scroll position floored onto the scroll grid and clamped into the scrollTop

@@ -763,6 +763,27 @@ test('a press hits a window when it is at least half a pixel inside, with pointe
   )
 })
 
+test('a viewport past the 16,384 px that the program declares is clamped, so the machine keeps running', () => {
+  const machine = createWindowManagerMachine()
+  step(machine)
+  // E.g. an 8K display at 25% browser zoom reports 30,720 CSS px. Unclamped, the
+  // resize failed the table check, and every later step failed too.
+  let values = step(machine, 30_720, 17_280)
+  assert.deepEqual([machine.source[sourceField.viewportWidth], machine.source[sourceField.viewportHeight]], [16_384, 16_384])
+  assertWindowManagerInvariants(machine, values, 16_384, 16_384)
+  machine.resize(20_000.4, 500, eventTime(machine, 4))
+  values = step(machine, 20_000.4, 500)
+  assert.deepEqual([machine.source[sourceField.viewportWidth], machine.source[sourceField.viewportHeight]], [16_384, 500])
+  values = settle(machine, 20_000.4, 500)
+  assertWindowManagerInvariants(machine, values, 16_384, 500)
+  // The windows were clamped into the 388 px between the system bar and the dock.
+  assert.deepEqual(projectWindows(machine, values).map(window => window.top + window.height <= 424), [true, true, true, true])
+  // A first step past the range mounts the clamped viewport.
+  const mounted = createWindowManagerMachine()
+  step(mounted, 1e9, 1e9)
+  assert.deepEqual([mounted.source[sourceField.viewportWidth], mounted.source[sourceField.viewportHeight]], [16_384, 16_384])
+})
+
 test('the machine checks the table against its rules before an evaluation, and the next-state values after it', () => {
   // Values written before the first step commit with the mount, so the table check before the mount evaluation sees them.
   const writtenBeforeFirstStep = (write: (machine: Machine) => void) => () => {
