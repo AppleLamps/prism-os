@@ -18,11 +18,15 @@
   --copper: #a64d1d;       /* the accent: links, focus, and whatever the program points at */
   --copper-line: rgb(166 77 29 / 0.5);    /* 1 px copper: focus outlines, hovered edges, wires */
   --copper-wash: rgb(166 77 29 / 0.13);   /* fill behind a copper mark: a selection, a match */
+  --copper-wash-deep: rgb(166 77 29 / 0.25);   /* a second fill, to tell two neighboring copper marks apart, e.g. two matches in a row */
 
   /* Wire colors, after the cloth-covered wire in old amplifiers. They color the kinds of a
      highlighted character and the kinds of an operation; green and red also mean valid and
-     error. Each passes 4.5:1 as text on --sheet. Copper, indigo and ochre, in that order, are
-     the chart colors, checked for color-blind separation. */
+     error. Each passes 4.5:1 as text on --sheet. Copper, indigo, ochre and plum, in that
+     order, are the chart colors, e.g. the four kinds of operation in HandwiredOS's Monitor.
+     Each is checked for color-blind separation from its neighbors in that order. Keep the
+     order: copper and ochre look alike to an eye without green cones, so indigo goes
+     between them. */
   --wire-green: #2e6a4c;
   --wire-indigo: #33589e;
   --wire-plum: #7a3355;
@@ -72,10 +76,12 @@
   --radius-3: 12px;
 
   /* Shadows: warm, and two layers each, a tight contact shadow and a soft one.
-     1 rests on the page, 2 floats, 3 is the window with focus. */
-  --shadow-1: 0 1px 1px rgb(60 42 22 / 0.05), 0 2px 6px rgb(60 42 22 / 0.06);
-  --shadow-2: 0 1px 2px rgb(60 42 22 / 0.08), 0 10px 28px -8px rgb(60 42 22 / 0.24);
-  --shadow-3: 0 2px 4px rgb(60 42 22 / 0.1), 0 28px 64px -16px rgb(60 42 22 / 0.38);
+     1 rests on the page, 2 floats, 3 is the window with focus. --shadow-ink is their color
+     as channels, so HandwiredOS can mix shadow 2 into shadow 3 as a window gains focus. */
+  --shadow-ink: 60 42 22;
+  --shadow-1: 0 1px 1px rgb(var(--shadow-ink) / 0.05), 0 2px 6px rgb(var(--shadow-ink) / 0.06);
+  --shadow-2: 0 1px 2px rgb(var(--shadow-ink) / 0.08), 0 10px 28px -8px rgb(var(--shadow-ink) / 0.24);
+  --shadow-3: 0 2px 4px rgb(var(--shadow-ink) / 0.1), 0 28px 64px -16px rgb(var(--shadow-ink) / 0.38);
 
   /* Motion, for what CSS animates. Whatever the program positions gets no transition. */
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -123,8 +129,11 @@ a:hover { text-decoration-color: currentColor; }
 :focus-visible {
   outline: 2px solid var(--copper);
   outline-offset: 2px;
-  border-radius: var(--radius-1);
 }
+/* An element without a radius of its own gets a small one while it has focus, so the outline's corners are round.
+   :where() gives this rule no specificity, so any rule that sets a radius replaces it, e.g. a card's 12 px, in
+   whichever order the stylesheets load. */
+:where(:focus-visible) { border-radius: var(--radius-1); }
 
 /* Every number that changes while the page runs gets tabular figures. */
 .num, .stats b, .status b { font-variant-numeric: tabular-nums; }
@@ -271,6 +280,10 @@ kbd {
 .status.bad::before { background: var(--wire-red); }
 .status.bad { color: var(--wire-red); }
 .status b { font-weight: 600; }
+/* While the page works on the answer, e.g. builds a program, the dot fades out and in. The animation is of opacity
+   alone, which a browser can run while the page's script is busy. */
+.status.busy::before { animation: busy 0.7s var(--ease) infinite alternate; }
+@keyframes busy { to { opacity: 0.2; } }
 
 /* Surfaces */
 
@@ -345,6 +358,14 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
 .button:active { transform: translateY(1px); background: var(--paper); box-shadow: none; }
 .button.primary { border-color: var(--ink); background: var(--ink); color: var(--sheet); }
 .button.primary:hover { background: color-mix(in srgb, var(--ink) 86%, var(--sheet)); }
+.button:disabled {
+  border-color: var(--rule);
+  background: transparent;
+  color: var(--ink-3);
+  box-shadow: none;
+  transform: none;
+  cursor: default;
+}
 
 .input {
   width: 100%;
@@ -393,6 +414,19 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
   border-color: var(--copper-line);
   box-shadow: 0 0 0 3px var(--copper-wash);
 }
+/* iOS zooms the page when a focused control's text is under 16 px, and only iOS knows -webkit-touch-callout. */
+@supports (-webkit-touch-callout: none) {
+  .select { font-size: 16px; }
+}
+
+/* Under a finger a button and a select are 40 px tall, where a mouse gets 32 and 28 px. A link of the header or
+   the footer is one 20 px line of text, and padding above and below gives a finger 40 px of it without moving
+   anything: the header is 40 px tall and centers its links, and a link of the footer is inline, where padding
+   above and below takes no room. */
+@media (pointer: coarse) {
+  .button, .select { height: 40px; }
+  .brand, .masthead nav a, .colophon a { padding-block: 10px; }
+}
 
 /* Footer: one hairline and one line. */
 .colophon {
@@ -414,6 +448,7 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
     --type-title-m: 400 32px/36px var(--font-serif);
     --type-title-l: 400 40px/44px var(--font-serif);
     --type-deck: 400 17px/28px var(--font-serif);
+    --type-code: 400 12px/22px var(--font-mono);
   }
   .page { width: min(100% - 40px, var(--page-width, 800px)); padding-top: var(--space-3); }
   .title { margin-top: var(--space-6); }
@@ -422,5 +457,5 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Handwired: an interactive UI as one numeric program</title>
+  <meta name="description" content="Handwired writes an interactive UI as one fixed numeric program with the form of a neural network, wired by hand instead of trained. The demos run in your browser: a small desktop, a JSON highlighter, a regex search and a learned photo gallery.">
+  <meta name="theme-color" content="#f3eee4">
+  <!-- One stylesheet, which imports site.css. Bun's development server puts two stylesheet links in the reverse of
+       their order here, while the build keeps the order, so with two links a rule could apply in one and not in
+       the other. -->
+  <link rel="stylesheet" href="./demos.css">
+</head>
+<body>
+  <!-- The demo site's index, published at the site's root. The site is served under a path prefix, so every link to
+       another page is relative, e.g. "os/". scripts/demo-site-pages.ts lists the pages and their paths. This page
+       loads no script. -->
+  <div class="page wide">
+    <header class="masthead">
+      <a class="brand" href="./" aria-current="page">
+        <svg class="mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M1 4h3.5l3.4 4.2M1 10h5.6M1 16h3.5l3.4-4.2M13.4 10H19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle class="mark-eyelet" cx="10" cy="10" r="3" stroke-width="1.5"/>
+        </svg>
+        Handwired
+      </a>
+      <nav aria-label="The project on GitHub">
+        <a href="https://github.com/chenglou/handwired#readme">README</a>
+        <a href="https://github.com/chenglou/handwired">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="opening">
+        <h1>One numeric program runs the whole interface.</h1>
+        <div class="opening-text">
+          <p class="deck">Handwired writes an interactive UI as one fixed numeric program with the form of a neural network: layers of weighted sums and ReLU gates, wired by hand with builder functions instead of trained. JavaScript writes inputs such as the pointer&rsquo;s position into a table of numbers, runs the program, and copies outputs such as each window&rsquo;s position and size to the page.</p>
+          <div class="opening-links">
+            <a class="button primary" href="os/">Open HandwiredOS</a>
+            <a href="https://github.com/chenglou/handwired#readme">Read the README</a>
+          </div>
+        </div>
+
+        <!-- Math.min(a, b) as emitMinimum in src/runtime/numeric-ui-core.ts builds it, a - relu(a - b): a weighted
+             sum of a and b with the weights +1 and -1, a ReLU of that sum, and a weighted sum of a and the ReLU with
+             the weights +1 and -1. -->
+        <figure class="wiring">
+          <svg viewBox="0 20 352 160" role="img" aria-label="The wiring of Math.min(a, b). A first weighted sum computes a minus b, a ReLU gate keeps that difference when it is positive, and a second weighted sum subtracts the gate's output from a.">
+            <path class="wire" d="M22 56H260"/>
+            <path class="wire" d="M64 56V120a8 8 0 0 0 8 8H100"/>
+            <path class="wire" d="M22 144H100"/>
+            <path class="wire" d="M136 136H168"/>
+            <path class="wire" d="M204 136H224a8 8 0 0 0 8-8V80a8 8 0 0 1 8-8H260"/>
+            <path class="wire" d="M296 64H330"/>
+            <rect class="part" x="100.5" y="118.5" width="35" height="35" rx="6"/>
+            <rect class="part" x="168.5" y="118.5" width="35" height="35" rx="6"/>
+            <rect class="part" x="260.5" y="46.5" width="35" height="35" rx="6"/>
+            <text class="sigma" x="118" y="142" text-anchor="middle">&Sigma;</text>
+            <path class="glyph" d="M176.5 142h8l9.5-11.5"/>
+            <text class="sigma" x="278" y="70" text-anchor="middle">&Sigma;</text>
+            <circle class="joint" cx="64" cy="56" r="3"/>
+            <circle class="eyelet" cx="18" cy="56" r="4.25"/>
+            <circle class="eyelet" cx="18" cy="144" r="4.25"/>
+            <circle class="eyelet" cx="334" cy="64" r="4.25"/>
+            <text class="name" x="18" y="40" text-anchor="middle">a</text>
+            <text class="name" x="18" y="128" text-anchor="middle">b</text>
+            <text class="name" x="340" y="36" text-anchor="end">min(a, b)</text>
+            <text class="weight" x="94" y="123" text-anchor="end">+1</text>
+            <text class="weight" x="94" y="139" text-anchor="end">&minus;1</text>
+            <text class="weight" x="254" y="51" text-anchor="end">+1</text>
+            <text class="weight" x="254" y="67" text-anchor="end">&minus;1</text>
+            <text x="118" y="172" text-anchor="middle">a &minus; b</text>
+            <text x="186" y="172" text-anchor="middle">relu</text>
+            <text x="278" y="100" text-anchor="middle">a &minus; relu(a &minus; b)</text>
+          </svg>
+          <figcaption><code>Math.min(a, b)</code>, wired by hand as a&nbsp;&minus;&nbsp;relu(a&nbsp;&minus;&nbsp;b): a weighted sum, a ReLU gate and a second weighted sum. The builder function <code>emitMinimum</code> emits these three, and HandwiredOS is thousands of operations like them.</figcaption>
+        </figure>
+      </section>
+
+      <h2 class="label section-label" id="demos">Demos</h2>
+
+      <!-- A card's link is named by its title, so a list of the page's links reads as the demos' names.
+           The numbers that change when a demo's program changes are written once each, rounded, e.g. "about
+           15,000", in an element with data-count inside the card's element with the class "facts". They were read on
+           October 13, 2026: HandwiredOS's from its Monitor window in Chrome (14,467 operations in 275 layers), the
+           JSON highlighter's from `bun scripts/measure-json-highlighter.ts` (15,928 operations in 1,043 layers for
+           the loop form, which the page runs), and the regex search's from the page's own status line at its
+           default settings (697,070 operations in 8,192 layers). `bun run site:check` prints what each demo's page
+           reports, and fails when a number here is more than 10% away from the page's. -->
+      <section class="demos" aria-labelledby="demos">
+        <a class="card demo is-first" href="os/" aria-labelledby="handwiredos-title">
+          <div class="demo-picture">
+            <!-- The file is 1520 by 800 px, and demos.css repeats its shape, 1.9 to 1. From a window of 1152 px the
+                 card shows the picture 722 px wide, about half the file's size. In a narrower window the picture is
+                 as wide as the card, up to 1101 px, where a screen with two device pixels per CSS px shows it soft.
+                 A file of 2204 by 1160 px would be sharp at every width. -->
+            <img src="./demos-handwiredos.webp" width="1520" height="800" decoding="async" alt="A screenshot of HandwiredOS: four windows on a desk, with a grid of photos in front.">
+          </div>
+          <div class="demo-body">
+            <h3 id="handwiredos-title">HandwiredOS</h3>
+            <p>A small desktop: drag, resize and stack four windows, open a photo, and watch a paragraph reflow around the windows above it. One program computes all of it, e.g. the springs, the line breaks and which window a press lands on.</p>
+            <dl class="figures facts">
+              <div><dt>operations</dt><dd><small>about</small> <span data-count="operations">15,000</span></dd></div>
+              <div><dt>layers</dt><dd><small>about</small> <span data-count="layers">280</span></dd></div>
+              <div><dt>trained weights</dt><dd>0</dd></div>
+            </dl>
+            <span class="go">Open the desktop</span>
+          </div>
+        </a>
+
+        <a class="card demo" href="json-highlighter/" aria-labelledby="json-highlighter-title">
+          <div class="demo-picture" aria-hidden="true">
+<pre class="peek peek-json"><span class="punctuation">{</span>
+  <span class="key">"name"</span><span class="punctuation">:</span> <span class="string">"handwired"</span><span class="punctuation">,</span>
+  <span class="key">"private"</span><span class="punctuation">:</span> <span class="literal">true</span><span class="punctuation">,</span>
+  <span class="key">"tags"</span><span class="punctuation">:</span> <span class="punctuation match">[</span><span class="caret"></span><span class="string">"ui"</span><span class="punctuation">,</span> <span class="number">12</span><span class="punctuation">,</span> <span class="number">1e3</span><span class="punctuation">,</span> <span class="literal">null</span><span class="punctuation match">]</span><span class="punctuation">,</span>
+  <span class="key">"escaped"</span><span class="punctuation">:</span> <span class="string">"caf</span><span class="escape">&#92;u00e9</span><span class="string"> </span><span class="escape">&#92;"</span><span class="string">hi</span><span class="escape">&#92;"</span><span class="string">"</span><span class="punctuation">,</span>
+  <span class="key">"ready"</span><span class="punctuation">:</span> <span class="error first-error">y</span><span class="error">es</span>
+<span class="punctuation">}</span></pre>
+          </div>
+          <div class="demo-body">
+            <h3 id="json-highlighter-title">JSON highlighter</h3>
+            <p>A text box highlighted on every keystroke by one program that keeps no state. The program returns what each character is, e.g. a key or a string, where the first error is, and which bracket matches the one at the caret.</p>
+            <p class="meta facts">About <b data-count="operations">16,000</b> operations in about <b data-count="layers">1,000</b> layers</p>
+          </div>
+        </a>
+
+        <a class="card demo" href="regex-search/" aria-labelledby="regex-search-title">
+          <div class="demo-picture" aria-hidden="true">
+            <div class="peek peek-regex">
+              <div class="peek-pattern"><i>/</i>(the|an?) [a-z]+<i>/</i></div>
+              <p>Some mornings <mark class="even">the harbor</mark> is quiet, and <mark class="odd">an old</mark> ferry waits at <mark class="even">the pier</mark> while <mark class="odd">the gulls</mark> argue over something that washed up overnight. This is <mark class="even">the hour</mark> when <mark class="odd">the bakers</mark> finish their first loaves.</p>
+            </div>
+          </div>
+          <div class="demo-body">
+            <h3 id="regex-search-title">Regex search</h3>
+            <p>Type a pattern, and one program finds every match in a text as you type. The pattern reaches the program as tables of numbers, so every pattern runs on the same program.</p>
+            <p class="meta facts">About <b data-count="operations">700,000</b> operations in about <b data-count="layers">8,000</b> layers</p>
+          </div>
+        </a>
+
+        <a class="card demo" href="learned-gallery/" aria-labelledby="learned-gallery-title">
+          <div class="demo-picture" aria-hidden="true">
+            <div class="pair">
+              <div class="sketch">
+                <i style="left: 0; top: 0; width: 100%; height: 56%"></i>
+                <i style="left: 0; top: 64%; width: 29%; height: 36%"></i>
+                <i style="left: 35.5%; top: 64%; width: 29%; height: 36%"></i>
+                <i style="left: 71%; top: 64%; width: 29%; height: 36%"></i>
+              </div>
+              <svg width="18" height="12" viewBox="0 0 18 12"><path d="M1 6h15M11.5 1.5L16 6l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="placed">
+                <img src="./photo-gallery-08.webp" alt="" loading="lazy" decoding="async" style="left: 0; top: 0; width: 100%; height: 56%">
+                <img src="./photo-gallery-05.webp" alt="" loading="lazy" decoding="async" style="left: 0; top: 64%; width: 29%; height: 36%">
+                <img src="./photo-gallery-10.webp" alt="" loading="lazy" decoding="async" style="left: 35.5%; top: 64%; width: 29%; height: 36%">
+                <img src="./photo-gallery-01.webp" alt="" loading="lazy" decoding="async" style="left: 71%; top: 64%; width: 29%; height: 36%">
+              </div>
+            </div>
+          </div>
+          <div class="demo-body">
+            <h3 id="learned-gallery-title">Learned gallery</h3>
+            <p>Here the numbers are trained instead of written by hand. A small network places the photos, and the page trains it with backpropagation to match the rectangles you sketch.</p>
+            <p class="meta facts"><b data-count="weights">244</b> trained weights</p>
+          </div>
+        </a>
+
+        <!-- The GPU demo's card, hidden until the demo ships. To show it, remove the hidden attribute on the next
+             line. The site build publishes lab/json-search/demo.html at json-search/ when that file exists, and
+             fails when this card is shown without it. -->
+        <a class="card demo" href="json-search/" aria-labelledby="json-search-title" hidden>
+          <div class="demo-picture" aria-hidden="true">
+            <svg class="documents" viewBox="0 0 540 208" preserveAspectRatio="xMidYMid slice">
+              <defs>
+                <pattern id="every-document" width="18" height="8" patternUnits="userSpaceOnUse">
+                  <rect class="document" x="2" y="2.5" width="14" height="3" rx="1.5"/>
+                </pattern>
+              </defs>
+              <rect width="540" height="208" fill="url(#every-document)"/>
+              <g class="found">
+                <rect x="38" y="18.5" width="14" height="3" rx="1.5"/><rect x="164" y="10.5" width="14" height="3" rx="1.5"/><rect x="290" y="26.5" width="14" height="3" rx="1.5"/><rect x="452" y="18.5" width="14" height="3" rx="1.5"/>
+                <rect x="110" y="42.5" width="14" height="3" rx="1.5"/><rect x="236" y="50.5" width="14" height="3" rx="1.5"/><rect x="380" y="42.5" width="14" height="3" rx="1.5"/><rect x="506" y="58.5" width="14" height="3" rx="1.5"/>
+                <rect x="20" y="74.5" width="14" height="3" rx="1.5"/><rect x="182" y="82.5" width="14" height="3" rx="1.5"/><rect x="326" y="74.5" width="14" height="3" rx="1.5"/><rect x="434" y="90.5" width="14" height="3" rx="1.5"/>
+                <rect x="74" y="106.5" width="14" height="3" rx="1.5"/><rect x="254" y="114.5" width="14" height="3" rx="1.5"/><rect x="362" y="122.5" width="14" height="3" rx="1.5"/><rect x="488" y="106.5" width="14" height="3" rx="1.5"/>
+                <rect x="146" y="138.5" width="14" height="3" rx="1.5"/><rect x="218" y="154.5" width="14" height="3" rx="1.5"/><rect x="308" y="146.5" width="14" height="3" rx="1.5"/><rect x="416" y="162.5" width="14" height="3" rx="1.5"/>
+                <rect x="56" y="170.5" width="14" height="3" rx="1.5"/><rect x="128" y="186.5" width="14" height="3" rx="1.5"/><rect x="344" y="178.5" width="14" height="3" rx="1.5"/><rect x="470" y="194.5" width="14" height="3" rx="1.5"/>
+              </g>
+            </svg>
+          </div>
+          <div class="demo-body">
+            <h3 id="json-search-title">Search 100,000 JSON documents</h3>
+            <p>The JSON highlighter&rsquo;s program, run on 100,000 documents at once. Every document runs the same operations and reads no other document, so one pass on the GPU computes all of them in parallel.</p>
+            <p class="meta facts">Needs a browser with WebGPU</p>
+          </div>
+        </a>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <span>Research code by Cheng Lou, under the MIT license.</span>
+      <span><a href="https://github.com/chenglou/handwired#readme">README</a> &nbsp;&middot;&nbsp; <a href="https://github.com/chenglou/handwired/blob/main/docs/tutorial.md">Tutorial</a> &nbsp;&middot;&nbsp; <a href="https://github.com/chenglou/handwired">GitHub</a></span>
+    </footer>
+  </div>
+</body>
+</html>

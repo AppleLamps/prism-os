@@ -4,7 +4,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "start": "bun ./assets/index.html",
+    "start": "bun scripts/serve-demo-site.ts",
     "start:candidates": "bun ./lab/candidate-gallery/candidate-gallery.html",
     "start:hard-attend": "bun ./lab/hard-attend/hard-attend.html",
     "start:json-highlighter": "bun ./assets/json-highlighter.html",
@@ -13,6 +13,8 @@
     "start:regex-search": "bun ./lab/regex-search/demo.html",
     "start:reusable": "bun ./lab/reusable-layout/demo.html",
     "start:template": "bun ./template/index.html",
+    "site:build": "bun scripts/build-demo-site.ts",
+    "site:check": "bun scripts/check-demo-site.ts",
     "check": "bun scripts/check.ts",
     "knip": "knip",
     "test": "bun test --timeout 30000 ./tests ./template ./lab"
