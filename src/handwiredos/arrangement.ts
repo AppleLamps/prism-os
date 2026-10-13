@@ -178,8 +178,8 @@ function arrangeColumn(workspace: Rectangle, minimum: Size, [files, notes, monit
   // to 45% of the height, with square photos when that fits: 3 rows between 4 gaps of
   // 18 px, under the title bar. Notes shows its whole paragraph where the height
   // allows. Monitor shows as much as fits of: all of it, its sentence and its three
-  // figures, its sentence, or its title bar. Files shows the rest, at least its
-  // title bar.
+  // figures, its sentence, or its title bar. Files shows the rest: its title bar,
+  // and its content under the bar when the rest holds at least the list's header.
   const notesNeeds = notesHeightFor(notesLinesFor(width - notesHorizontalInset))
   const photoSize = (width - 2 - 5 * 18) / 4
   const photosHeight = clamp(
@@ -194,7 +194,12 @@ function arrangeColumn(workspace: Rectangle, minimum: Size, [files, notes, monit
   // figures and the 12 px under them take 64 px more.
   const sentence = width >= 460 ? 93 : 113
   const monitorShown = [monitor.height + margin, sentence + 64, sentence].find(shown => shown <= rest - titleBar) ?? titleBar
-  const filesShown = Math.min(rest - monitorShown, files.height + margin)
+  // Under Files' title bar, a strip thinner than the list's 28 px header shows the
+  // upper half of one line of letters, e.g. 10 px at 390 × 844. Files then shows its
+  // title bar alone, and the column is centered in the height that the strip took.
+  const filesHeader = 28
+  const filesRest = Math.min(rest - monitorShown, files.height + margin)
+  const filesShown = filesRest < titleBar + filesHeader ? titleBar : filesRest
   const height = filesShown + notesShown + monitorShown + photosHeight
   const filesTop = workspace.top + margin + Math.max(0, (available - height) / 2)
   const notesTop = filesTop + filesShown

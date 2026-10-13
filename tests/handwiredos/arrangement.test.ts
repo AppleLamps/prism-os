@@ -118,11 +118,20 @@ test('in one column, each window is covered just under a part of its content', (
   const phone = arrangeWindows(workspaceOf(390, 844), minimum, natural)
   for (const rectangle of phone) assert.deepEqual([rectangle.left, rectangle.width], [8, 374])
   const shown = (rectangles: readonly Rectangle[]) => rectangles.slice(1).map((rectangle, index) => rectangle.top - rectangles[index]!.top)
-  // Files shows its title bar and 10 px, Notes its 7 lines of 22 px below the 69 px
-  // above the first line, and Monitor its sentence on two lines.
-  assert.deepEqual(shown(phone), [54, 69 + 7 * 22 + 4, 113])
-  // Photos, in front, ends 8 px above the dock.
-  assert.equal(phone[3]!.top + phone[3]!.height, 844 - dockHeight - 8)
+  // Files shows its title bar alone, since 10 px of its content would show half a
+  // line of letters. Notes shows its 7 lines of 22 px below the 69 px above the first
+  // line, and Monitor its sentence on two lines.
+  assert.deepEqual(shown(phone), [44, 69 + 7 * 22 + 4, 113])
+  // The column is centered in the 10 px that Files gave up: 13 px under the system
+  // bar, and Photos, in front, ends 13 px above the dock.
+  assert.equal(phone[0]!.top, systemBarHeight + 13)
+  assert.equal(phone[3]!.top + phone[3]!.height, 844 - dockHeight - 13)
+
+  // A taller phone has 38 px for Files' content, which hold the list's 28 px header,
+  // so Files shows them, and the column starts 8 px under the system bar.
+  const taller = arrangeWindows(workspaceOf(414, 896), minimum, natural)
+  assert.equal(shown(taller)[0], 44 + 38)
+  assert.equal(taller[0]!.top, systemBarHeight + 8)
 
   // A wider and taller column has room for Monitor's three figures, under its
   // sentence on one line, and for 5 lines of Notes.
