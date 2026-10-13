@@ -280,7 +280,8 @@ export type LearnedGalleryFrame = {
   // Whether steps remain, i.e. whether the page needs another frame.
   training: boolean
   stepsThisFrame: number
-  // The average cost of a step since training last started, or null before any step.
+  // The average cost of a step over the latest training that took a step, or null before the first step, e.g. in
+  // the page's first frame. A training that takes no step, e.g. "Train again" with an empty sketch, keeps the number.
   msPerStep: number | null
   activeCount: number
   // The preset that the sketch still equals, or null after an edit.
@@ -336,6 +337,7 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
   let measuredMsPerStep = 0
   let runSteps = 0
   let runMs = 0
+  let averageMsPerStep: number | null = null
   // The outputs that training fits to the sketch. A new rectangle takes the lowest free output, and a deleted
   // rectangle frees the output that it was paired with, so the photo on the deleted rectangle is the one that
   // disappears, and no other photo moves.
@@ -605,6 +607,7 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       measuredMsPerStep = trainingMs / stepsThisFrame
       runSteps += stepsThisFrame
       runMs += trainingMs
+      averageMsPerStep = runMs / runSteps
     } else if (sketchEdited || restarted) {
       result = machine.evaluate()
     }
@@ -627,7 +630,7 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       step: result.step,
       training,
       stepsThisFrame,
-      msPerStep: runSteps > 0 ? runMs / runSteps : null,
+      msPerStep: averageMsPerStep,
       activeCount,
       layout,
       selected,
@@ -669,6 +672,7 @@ type LearnedGalleryDomCache = {
   chartHairline: SVGLineElement // mount lifetime
   trainingStep: HTMLElement // mount lifetime
   trainingLoss: HTMLElement // mount lifetime
+  stepCostClause: HTMLElement // mount lifetime
   stepCost: HTMLElement // mount lifetime
 }
 
@@ -755,6 +759,7 @@ function createLearnedGalleryDomCache(document: Document, editor: LearnedGallery
       '#learning-loss',
       'training loss is missing',
     ),
+    stepCostClause: requireElement(document, '#learning-step-cost-clause', 'step cost clause is missing'),
     stepCost: requireElement(document, '#learning-step-cost', 'step cost is missing'),
   }
 }
@@ -883,9 +888,11 @@ function mountLearnedGallery(document: Document, window: Window) {
     // e.g. 3.04e-7 with a minus sign, U+2212, instead of toExponential's hyphen.
     const trainingLoss = markedSample.loss === 0 ? '0' : markedSample.loss.toExponential(2).replace('-', '\u2212')
     if (written.trainingLoss !== trainingLoss) domCache.trainingLoss.textContent = written.trainingLoss = trainingLoss
+    // The statistics line says what a step costs once a step has been timed, i.e. from the page's second frame on.
     // A no-break space, U+00A0, keeps the unit on the number's line.
     const stepCost = frame.msPerStep === null ? '' : `${frame.msPerStep.toFixed(2)}\u00a0ms`
     if (written.stepCost !== stepCost) domCache.stepCost.textContent = written.stepCost = stepCost
+    domCache.stepCostClause.style.display = frame.msPerStep === null ? 'none' : 'inline'
 
     const chartLine = frame.history.map(sample => `${chartX(sample.step).toFixed(1)},${chartY(sample.loss).toFixed(1)}`).join(' ')
     if (written.chartLine !== chartLine) domCache.chartLine.setAttribute('points', written.chartLine = chartLine)

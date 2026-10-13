@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
 import {test} from 'bun:test'
 import {
   createLearnedGalleryEditor,
@@ -427,9 +428,41 @@ test('a sketch without rectangles asks for no more frames', () => {
     assert.equal(frame.stepsThisFrame, 0)
   }
   assert.equal(page.machine.trainingStep, stepsBefore)
+  const costBefore = frame.msPerStep
   frame = page.frame([{kind: 'train again'}])
   assert.equal(frame.training, false)
   assert.equal(frame.step, 0)
+  // This training takes no step, so the page's sentence "one step takes about 0.38 ms on this device" keeps the
+  // number of the training before. With a number only for the current training, the sentence had none here.
+  assert.notEqual(costBefore, null)
+  assert.equal(frame.msPerStep, costBefore)
+})
+
+test('the cost of a step is unknown only until the first step', () => {
+  const page = createEditorDriver()
+  // The page's first frame draws the seeded weights' output and takes no step, so the page leaves the cost out.
+  let frame = page.frame()
+  assert.equal(frame.stepsThisFrame, 0)
+  assert.equal(frame.msPerStep, null)
+  // The driver's clock makes each frame's steps seem to take 0.01 ms together.
+  frame = page.frame()
+  assert.equal(frame.stepsThisFrame, unmeasuredTrainingStepsPerFrame)
+  assert.ok(Math.abs(frame.msPerStep! - 0.01 / unmeasuredTrainingStepsPerFrame) < 1e-9)
+  // The number is the average over the latest training: "Train again" starts a new average at its first step.
+  const settled = page.settle()
+  frame = page.frame([{kind: 'train again'}])
+  assert.equal(frame.msPerStep, settled.msPerStep)
+  frame = page.frame()
+  assert.ok(Math.abs(frame.msPerStep! - 0.01 / frame.stepsThisFrame) < 1e-9)
+})
+
+test('the numbers in the page\'s text are the code\'s', () => {
+  // The caption, the description and the instructions are static text, so their numbers are written by hand.
+  const html = readFileSync(new URL('./learned-gallery.html', import.meta.url), 'utf8')
+  const {parameterCount} = createLearnedGalleryMachine()
+  assert.ok(html.includes(`but its ${parameterCount} weights are trained`))
+  assert.ok(html.includes(`trains the network's ${parameterCount} weights`))
+  assert.ok(html.includes(`empty space to add one, up to ${learnedPhotoCount}<`))
 })
 
 test('training continues from the current weights while a rectangle is dragged', () => {

@@ -195,8 +195,13 @@
   .stages { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
 }
 
+/* The instructions name what the main pointer does: a mouse clicks, a finger taps. */
+.for-finger { display: none; }
+
 /* A finger needs a larger target than a mouse pointer. */
 @media (pointer: coarse) {
   .tools .button { height: 40px; }
   .segments button { height: 38px; }
+  .for-mouse { display: none; }
+  .for-finger { display: inline; }
 }

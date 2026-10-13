@@ -34,8 +34,10 @@
       <ul>
         <li>Drag a rectangle</li>
         <li>Drag its corner to resize it</li>
-        <li>Click empty space to add one, up to 12</li>
-        <li>Remove the selected one with <kbd>Delete</kbd> or the Delete button</li>
+        <!-- learned-gallery.css shows the words for a finger where the main pointer is one, e.g. on a phone, which
+             has no Delete key either. -->
+        <li><span class="for-mouse">Click</span><span class="for-finger">Tap</span> empty space to add one, up to 12</li>
+        <li>Remove the selected one with <span class="for-mouse"><kbd>Delete</kbd> or </span>the Delete button</li>
       </ul>
     </div>
 
@@ -65,14 +67,14 @@
             <circle class="marker" r="4"/>
           </svg>
           <!-- Two halves, so that a column too narrow for the whole line breaks it between them. -->
-          <div class="loss"><span>loss <b id="learning-loss"></b></span> <span>after <b id="learning-step"></b> steps</span></div>
+          <div class="loss"><span>Loss <b id="learning-loss"></b></span> <span>after <b id="learning-step"></b> steps</span></div>
           <button id="learning-train" class="button" type="button" title="Set the weights back to their starting values and train them again">Train again</button>
         </div>
       </div>
     </section>
 
-    <!-- learned-gallery.ts fills the numbers. -->
-    <p class="stats">The loss measures how far the photos are from the sketch, and each training step changes the <b id="learning-coefficients"></b> weights a little to lower the loss. Each change of the sketch gets <b id="learning-steps-after-change"></b> more steps, at <b id="learning-steps-per-second"></b> steps a second, and one step takes about <b id="learning-step-cost"></b> on this device. The program is <b id="learning-operations"></b> operations in <b id="learning-layers"></b> layers, and the weights are its only input.</p>
+    <!-- learned-gallery.ts fills the numbers, and shows the part about one step's cost once it has timed a step. -->
+    <p class="stats">The loss measures how far the photos are from the sketch, and each training step changes the <b id="learning-coefficients"></b> weights a little to lower the loss. Each change of the sketch gets <b id="learning-steps-after-change"></b> more steps, at up to <b id="learning-steps-per-second"></b> steps a second<span id="learning-step-cost-clause" style="display: none">, and one step takes about <b id="learning-step-cost"></b> on this device</span>. The program is <b id="learning-operations"></b> operations in <b id="learning-layers"></b> layers, and the weights are its only input.</p>
 
     <footer class="colophon">
       <span>The network learns the rectangles&rsquo; positions and sizes, not the photos.</span>
