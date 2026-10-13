@@ -16,9 +16,11 @@ import {
 } from './demo-text.ts'
 import {generateDocuments, shapes} from './documents.ts'
 import {createPlainSearch} from './plain-search.ts'
+import {cellsPerDocument, writeDocumentCells} from './program.ts'
 import {bufferBytesFor, createCpuSearcher} from './searcher.ts'
 
-const text = (line: Line) => line.map(part => typeof part === 'string' ? part : part.strong).join('')
+// A line as plain text, with a small part in brackets.
+const text = (line: Line) => line.map(part => typeof part === 'string' ? part : 'strong' in part ? part.strong : ` [${part.small}]`).join('')
 const layoutFor = (widthCss: number, scale: number, groupSizes: readonly number[], nominalSizes: readonly number[] = groupSizes) =>
   mapLayout(mapGrid(widthCss, scale, nominalSizes), groupSizes, nominalSizes)
 
@@ -299,44 +301,81 @@ describe('the page\'s sentences', () => {
     expect(checkLine({state: 'waiting'}, 'gpu').state).toBe('idle')
   })
 
-  test('fills the comparison only with measured numbers, and claims only what they say', () => {
+  test('fills the comparison only with measured numbers, and says no more than README.md allows a page to say', () => {
     const numbers: ComparisonNumbers = {
-      backend: 'gpu', documentCount: 100_000, scope: 'strings', highlightMs: 8.3, plainHighlightMsPerDocument: 0.00146, plainSampleDocuments: 4000, cpuHighlightMsPerDocument: 0.108, searchMs: 17.5,
-      plainSearch: {state: 'done', ms: 22.6, matches: 41_347, differing: 0}, plainRunsMs: 94.5, cpuSearchMsPerDocument: 0.245, cpuSampleDocuments: 32,
+      backend: 'gpu', documentCount: 100_000, scope: 'strings', highlightMs: 131, secondPassMs: 8.3, plainHighlightMsPerDocument: 0.00146, plainSampleDocuments: 4000,
+      cpuHighlightMsPerDocument: 0.108, searchMs: 17.5, searchAfterPause: true, plainSearch: {state: 'done', ms: 22.6, matches: 41_347, differing: 0}, plainRunsMs: 94.5,
+      cpuSearchMsPerDocument: 0.245, cpuSampleDocuments: 32,
     }
     const program = {patternStates: 8, states: 8, smallestStates: 8, operations: 243, smallestOperations: 243}
     const cells = comparisonCells(numbers)
     expect(Object.fromEntries(Object.entries(cells).map(([name, line]) => [name, text(line)]))).toEqual({
-      programHighlight: '8.3\u00a0ms', programSearch: '18\u00a0ms', plainHighlight: 'about 146\u00a0ms, from 4,000 documents at 1.5\u00a0µs each', plainSearch: '23\u00a0ms, after 95\u00a0ms once to find the string values',
-      cpuHighlight: 'about 11\u00a0s, from 32 documents at 108\u00a0µs each', cpuSearch: 'about 25\u00a0s, from 32 documents at 245\u00a0µs each',
+      // The GPU's time to validate is the time from the texts, and the pass alone is said to be a second pass.
+      programHighlight: '131\u00a0ms from the texts [A second pass, over the documents that are already on the GPU, took 8.3\u00a0ms.]',
+      programSearch: '18\u00a0ms after a pause',
+      plainHighlight: 'about 146\u00a0ms [from 4,000 documents at 1.5\u00a0µs each]',
+      plainSearch: '23\u00a0ms [after 95\u00a0ms once to find the string values]',
+      cpuHighlight: 'about 11\u00a0s [from 32 documents at 108\u00a0µs each]',
+      cpuSearch: 'about 25\u00a0s [from 32 documents at 245\u00a0µs each]',
     })
-    // 22.6 ms against 17.5 ms is about the same time, and the verdict says so.
-    expect(text(comparisonVerdict(numbers, program))).toBe('RegExp and the GPU took about the same time on this pattern. On the CPU, the same search program would take about 1,400\u00a0times as long as on the GPU.')
-    // A pattern that makes RegExp backtrack.
-    const slow = {...numbers, searchMs: 8, plainSearch: {state: 'done', ms: 567, matches: 44_399, differing: 0}} as const
-    expect(text(comparisonVerdict(slow, program))).toStartWith('RegExp took 71\u00a0times as long as the GPU on this pattern. A search program takes the same time for every pattern of up to 8 states, and RegExp’s time depends on the pattern.')
-    // A pattern on the larger program, where RegExp is faster: the page says both.
-    const larger = {...numbers, searchMs: 65.3, plainSearch: {state: 'done', ms: 12.7, matches: 27_415, differing: 0}} as const
+    expect(text(comparisonCells({...numbers, secondPassMs: null}).programHighlight)).toBe('131\u00a0ms from the texts')
+    expect(text(comparisonCells({...numbers, searchAfterPause: false}).programSearch)).toBe('18\u00a0ms')
+    // 22.6 ms against 17.5 ms: the verdict gives RegExp's time and says the two are in the same range, as it does
+    // from a third of the GPU's time to 3 times it.
+    const cpuSentence = ' On the CPU, the same search program would take about 1,400\u00a0times as long as on the GPU.'
+    expect(text(comparisonVerdict(numbers, program))).toBe(`RegExp on one thread took 23\u00a0ms for the same search: the two are in the same range.${cpuSentence}`)
+    for (const ms of [6.1, 12, 43, 52]) {
+      expect(text(comparisonVerdict({...numbers, plainSearch: {state: 'done', ms, matches: 41_347, differing: 0}}, program))).toContain('the two are in the same range')
+    }
+    expect(text(comparisonVerdict({...numbers, plainSearch: {state: 'done', ms: 60, matches: 41_347, differing: 0}}, program))).toStartWith('RegExp on one thread took 60\u00a0ms for the same search, 3.4\u00a0times as long.')
+    // A pattern that makes RegExp backtrack: the one case where the verdict says how many times as long RegExp took in bold.
+    const slow = {...numbers, plainSearch: {state: 'done', ms: 567, matches: 44_399, differing: 0}} as const
+    expect(text(comparisonVerdict(slow, program))).toBe(`RegExp on one thread took 567\u00a0ms for the same search, 32\u00a0times as long. A search program takes the same time for every pattern of up to 8 states, and RegExp’s time depends on the pattern.${cpuSentence}`)
+    // A pattern on the larger program, where RegExp takes less time: the page says both.
+    const larger = {...numbers, searchMs: 65.3, searchAfterPause: false, plainSearch: {state: 'done', ms: 12.7, matches: 27_415, differing: 0}} as const
     expect(text(comparisonVerdict(larger, {patternStates: 11, states: 16, smallestStates: 8, operations: 667, smallestOperations: 243}))).toStartWith(
-      'This pattern has 11 states, more than the 8 that the smallest search program holds, so it ran on the program for 16, which does 667 operations at each character instead of 243. RegExp was 5.1\u00a0times faster than the GPU on this pattern.')
+      'This pattern has 11 states, more than the 8 that the smallest search program holds, so it ran on the program for 16, which does 667 operations at each character instead of 243. RegExp on one thread took 13\u00a0ms for the same search: 5.1\u00a0times as fast.')
+    // The larger program is named before RegExp's time is measured.
+    expect(text(comparisonVerdict({...larger, plainSearch: {state: 'none'}, cpuSearchMsPerDocument: null}, {patternStates: 17, states: 32, smallestStates: 8, operations: 2283, smallestOperations: 243}))).toBe(
+      'This pattern has 17 states, more than the 8 that the smallest search program holds, so it ran on the program for 32, which does 2,283 operations at each character instead of 243.')
     // RegExp counts differently on some patterns, and the page says in how many documents.
     const differing = {...numbers, plainSearch: {state: 'done', ms: 22.6, matches: 120, differing: 7}} as const
     expect(text(comparisonVerdict(differing, program))).toContain('RegExp counts 120 matches, and its count differs from the program’s in 7 documents')
     // Before anything is measured, the cells say so and the verdict is empty.
-    const unmeasured: ComparisonNumbers = {...numbers, highlightMs: null, plainHighlightMsPerDocument: null, cpuHighlightMsPerDocument: null, searchMs: null, plainSearch: {state: 'none'}, plainRunsMs: null, cpuSearchMsPerDocument: null}
-    expect(text(comparisonCells(unmeasured).plainSearch)).toBe('measured once the page is idle')
+    const unmeasured: ComparisonNumbers = {...numbers, highlightMs: null, secondPassMs: null, plainHighlightMsPerDocument: null, cpuHighlightMsPerDocument: null, searchMs: null, searchAfterPause: false, plainSearch: {state: 'none'}, plainRunsMs: null, cpuSearchMsPerDocument: null}
+    expect(text(comparisonCells(unmeasured).plainSearch)).toBe(' [measured once the page is idle]')
+    expect(text(comparisonCells(unmeasured).programSearch)).toBe(' [no search yet]')
     expect(comparisonVerdict(unmeasured, program)).toEqual([])
-    expect(text(comparisonCells({...numbers, plainSearch: {state: 'running', ms: 1234, documents: 55_000}}).plainSearch)).toBe('1.2\u00a0s so far, for 55,000 documents')
+    expect(text(comparisonCells({...numbers, plainSearch: {state: 'running', ms: 1234, documents: 55_000}}).plainSearch)).toBe('1.2\u00a0s so far [for 55,000 of the documents]')
     // A time that was measured on every document isn't said to be from a sample, e.g. the table loop's on the CPU
     // version's 500 documents.
     expect(text(comparisonCells({...numbers, documentCount: 500, plainSampleDocuments: 500}).plainHighlight)).toBe('0.7\u00a0ms')
-    // The CPU version has no third row to compare with.
-    expect(text(comparisonVerdict({...numbers, backend: 'cpu', searchMs: 126, plainSearch: {state: 'done', ms: 0.2, matches: 203, differing: 0}}, program))).toBe('RegExp was 630\u00a0times faster than the programs on the CPU on this pattern.')
+    // The CPU version: its own time has no "from the texts", and there is no third row to compare with.
+    const onTheCpu = {...numbers, backend: 'cpu', highlightMs: 46, secondPassMs: null, searchMs: 126, searchAfterPause: false, plainSearch: {state: 'done', ms: 0.2, matches: 203, differing: 0}} as const
+    expect(text(comparisonCells(onTheCpu).programHighlight)).toBe('46\u00a0ms')
+    expect(text(comparisonVerdict(onTheCpu, program))).toBe('RegExp on one thread took 0.2\u00a0ms for the same search: 630\u00a0times as fast.')
   })
 })
 
 describe('the comparison\'s baselines', () => {
   const texts = generateDocuments(620).map(document => document.text)
+
+  test('a searcher that is handed the documents\' cells answers as one that writes them from the texts', async () => {
+    // The page writes the cells a few documents at a time while it loads, and hands them to the searcher.
+    const few = texts.slice(0, 40)
+    const cells = new Float32Array(few.length * cellsPerDocument)
+    few.forEach((document, row) => writeDocumentCells(cells, row * cellsPerDocument, document))
+    const [own, handed] = [createCpuSearcher(few), createCpuSearcher(few, {cells})]
+    expect(handed.validation).toEqual(own.validation)
+    expect(own.validation.validCount).toBeLessThan(few.length)
+    const request = {pattern: '(the|an?) [a-z]+', scope: 'strings', window: {firstDocument: 0, documentCount: few.length}} as const
+    const [ownResult, handedResult] = [await own.search(request), await handed.search(request)]
+    if (ownResult?.status !== 'searched' || handedResult?.status !== 'searched') throw new Error('a searcher didn\'t search')
+    expect(ownResult.matches).toBeGreaterThan(0)
+    expect([...handedResult.matchCounts]).toEqual([...ownResult.matchCounts])
+    expect([...handedResult.marks]).toEqual([...ownResult.marks])
+    expect(() => createCpuSearcher(few, {cells: cells.subarray(0, 100)})).toThrow('the cells of 40 documents are 20520 numbers, got 100')
+  })
 
   // Runs the pieces until the comparison of one search is complete, as the page does from its frames.
   async function measure(baselines: ReturnType<typeof createBaselines>, request: Parameters<ReturnType<typeof createBaselines>['step']>[0], budgetMs: number) {

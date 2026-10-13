@@ -119,20 +119,26 @@
   transition: opacity var(--quick) var(--ease);
 }
 /* A group's name above its block of marks, and beside it how many of the group's documents have a match. */
-.map-labels span {
+.map-labels > span {
   position: absolute;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--space-1);
   height: 16px;
-  overflow: hidden;
   color: var(--ink-2);
   font: var(--type-small);
   white-space: nowrap;
   pointer-events: none;
 }
+/* The count keeps its room, and a name that is too long for the rest ends in an ellipsis, e.g. in a wider font. */
+.map-labels > span > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .map-labels b {
+  flex: none;
   color: var(--copper);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -236,7 +242,7 @@
 .document-tools { display: flex; gap: var(--space-2); }
 .document-tools .button { height: 28px; padding: 0 10px; box-shadow: none; }
 .surface pre.document-text {
-  height: 264px;
+  height: 384px;
   padding: var(--space-3) var(--space-4);
   overflow: auto;
   color: var(--ink);
@@ -285,12 +291,23 @@
   color: var(--ink-3);
   font: var(--type-small);
 }
-.times tbody th { width: 38%; padding-right: var(--space-4); color: var(--ink); }
-.times td { width: 31%; padding-right: var(--space-3); }
+.times tbody th { width: 36%; padding-right: var(--space-4); color: var(--ink); }
+.times td { width: 32%; padding-right: var(--space-3); }
 .times td:last-child { padding-right: 0; }
 .times b { color: var(--ink); font-weight: 600; }
+/* Under a time, what it was measured on. */
+.times small {
+  display: block;
+  color: var(--ink-3);
+  font: var(--type-small);
+  text-wrap: pretty;
+}
+/* A cell keeps the room of its time and two small lines, and the sentences under the table with the note under them
+   the room of six lines of sentences, so the lines below don't move while a pattern is typed and its times are
+   measured. */
+.times tbody td { height: 68px; }
+.comparison .notes { min-height: 196px; }
 .verdict {
-  min-height: 60px;
   margin: 0;
   padding-top: var(--space-3);
   border-top: 1px solid var(--rule);
@@ -299,6 +316,15 @@
   text-wrap: pretty;
 }
 .verdict b { color: var(--ink); font-weight: 600; }
+/* What the page didn't measure itself. */
+.comparison .aside {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-3);
+  font: var(--type-small);
+  text-wrap: pretty;
+}
+.comparison .aside a { color: inherit; }
+.comparison .aside a:hover { color: var(--copper); }
 
 /* The check's line and the statistics, one sentence to a line. */
 .status.check { margin-top: var(--space-6); color: var(--ink-2); }
@@ -332,7 +358,7 @@
   .times tbody th, .times td { width: auto; padding: 0; border-top: 0; }
   .times tbody th { grid-column: 1 / -1; }
   .times td::before { display: block; color: var(--ink-3); font: var(--type-small); }
-  .times td:nth-child(2)::before { content: "Highlight every document"; }
+  .times td:nth-child(2)::before { content: "Validate and highlight every document"; }
   .times td:nth-child(3)::before { content: "This search"; }
   .how { padding-left: 0; }
 }

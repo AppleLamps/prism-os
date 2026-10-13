@@ -26,6 +26,7 @@ import {
 } from './demo-text.ts'
 import {defaultSeed, documentAt, shapes} from './documents.ts'
 import {requestBatchDevice} from './gpu/host.ts'
+import {cellsPerDocument, writeDocumentCells} from './program.ts'
 import {type DocumentWindow, type ProgramDescription, type Searcher, type SelfCheck, bufferBytesFor, createCpuSearcher, createGpuSearcher, defaultSelfCheckSearches} from './searcher.ts'
 
 // What one search took on its way to the screen, for scripts that measure the page.
@@ -33,6 +34,10 @@ export type SearchTiming = {
   pattern: string
   scope: string
   states: number
+  matches: number
+  documentsWithMatches: number
+  // When the frame that painted the result ended, in ms since the page's navigation started.
+  paintedAt: number
   // The searcher's own time for the search.
   searchMs: number
   // Painting every mark of the map into the canvas.
@@ -47,10 +52,13 @@ export type JsonSearchDebug = {
   // Each piece of work on the main thread while the page loaded, in ms: the slices that write the documents, and
   // around the calls that create the searcher.
   loadBlocks: number[]
-  loadMs: {writeDocuments: number, createSearcher: number, total: number} | null
+  loadMs: {writeDocuments: number, writeCells: number, createSearcher: number, total: number} | null
+  // The searches whose results were painted, the latest 1,000, and each repaint of the map in ms.
   searches: SearchTiming[]
   paints: number[]
   check: CheckState
+  // Where a document's mark is in the window, in CSS px, or null before the documents exist.
+  locate: (index: number) => {x: number, y: number} | null
 }
 
 declare global {
@@ -74,8 +82,10 @@ type World = {
   baselines: Baselines
   // How many documents a window of marks holds: the selected document and its neighbors by index.
   windowDocuments: number
-  // In ms: writing the documents, creating the searcher, and from the page's start until the searcher existed.
+  // In ms: writing the documents' texts, writing their characters as numbers, creating the searcher, and from the
+  // page's start until the searcher existed.
   writeDocumentsMs: number
+  writeCellsMs: number
   createSearcherMs: number
   readyAfterMs: number
 }
@@ -101,7 +111,8 @@ type Answer =
   | {kind: 'search', key: string, found: Omit<Found, 'byGroup' | 'firstMatch'> | null, marks: Marks | null}
   | {kind: 'window', marks: Marks | null, kinds: {firstDocument: number, values: Float32Array} | null}
   | {kind: 'check', result: SelfCheck, piece: number, searchPrograms: number}
-  | {kind: 'highlightTime', ms: number}
+  | {kind: 'searchTime', key: string, ms: number | null}
+  | {kind: 'secondPassTime', ms: number}
   | {kind: 'failed', message: string}
 // What arrives between two frames: the loaded documents, the answer of the piece of work in flight, by its id, and a
 // GPU device that stopped working.
@@ -110,13 +121,20 @@ type Arrival =
   | {kind: 'answer', job: number, answer: Answer}
   | {kind: 'deviceFailed', message: string}
 
-// A search that has been in flight this long gets a line that says so, and its map fades. The self check waits this
-// long after the last key, and the comparison this long.
+// A search that has been in flight this long gets a line that says so, and its map fades.
 const longSearchMs = 80
+// How long after the last key the self check and the comparison start. Both work on the main thread in pieces: about
+// 30 ms for a piece of the check and 8 ms for one of the comparison while the smallest search program is the only
+// one. The first piece after a larger program was built also builds that program for the CPU, once, which takes up
+// to 0.15 s for 32 states, so those pieces wait longer for the keys to stop.
 const checkIdleMs = 200
 const comparisonIdleMs = 500
-// How long one piece of the comparison works in a frame.
+const largerProgramIdleMs = 1000
+// How long one piece of the comparison works in a frame, and how long the GPU rests before the page times a search
+// "after a pause": README.md measured that a search after 200 ms or more of rest takes more than twice the time of
+// one that follows another.
 const comparisonPieceMs = 8
+const gpuPauseMs = 300
 
 const nominalOf = (documentCount: number) => nominalGroupSizes(documentCount, shapes.length)
 const keyOf = (pattern: string, scope: ScopeChoice) => `${scope}\n${pattern}`
@@ -137,8 +155,9 @@ const nextTask = () => new Promise<void>(resolve => {
 
 // The same search on the CPU searcher, a few documents at a time: one call of search blocks until its documents are
 // done, 0.25 ms per document at 8 states, so each piece is about 6 ms of them. Resolves to null when the page wants
-// another search before this one is done.
-async function searchInPieces(searcher: Searcher, pattern: string, scope: ScopeChoice, key: string, window: DocumentWindow, isWanted: () => boolean): Promise<{found: Omit<Found, 'byGroup' | 'firstMatch'>, marks: Marks} | null> {
+// another search before this one is done. The search's time is the sum of the pieces' times, and when the first piece
+// also builds the search program, that piece counts with its loops' time alone.
+async function searchInPieces(searcher: Searcher, pattern: string, scope: ScopeChoice, key: string, window: DocumentWindow, programExists: boolean, isWanted: () => boolean): Promise<{found: Omit<Found, 'byGroup' | 'firstMatch'>, marks: Marks} | null> {
   const {documentCount} = searcher
   const matchCounts = new Float32Array(documentCount)
   const marks = new Float32Array(window.documentCount * positions)
@@ -154,7 +173,7 @@ async function searchInPieces(searcher: Searcher, pattern: string, scope: ScopeC
     for (let row = 0; row < piece.documentCount; row++) {
       if (holds(window, first + row)) marks.set(result.marks.subarray(row * positions, (row + 1) * positions), (first + row - window.firstDocument) * positions)
     }
-    ms += result.timings.evaluateMs
+    ms += programExists || first > 0 ? result.timings.totalMs : result.timings.evaluateMs
     states = result.states
     patternStates = result.patternStates
     first += piece.documentCount
@@ -202,7 +221,7 @@ function mountJsonSearch(document: Document, window: Window) {
     // match.
     groupLabels: groupNames.map(name => { // mount lifetime
       const node = labels.appendChild(document.createElement('span'))
-      node.append(name)
+      node.appendChild(document.createElement('span')).textContent = name
       return {node, count: {node: node.appendChild(document.createElement('b')), written: ''}, countClass: '', placed: ''}
     }),
     pointerRing: find<HTMLElement>('#pointer-ring'), // mount lifetime
@@ -275,9 +294,9 @@ function mountJsonSearch(document: Document, window: Window) {
     target.written = key
     target.node.replaceChildren(...line.map(part => {
       if (typeof part === 'string') return part
-      const bold = document.createElement('b')
-      bold.textContent = part.strong
-      return bold
+      const node = document.createElement('strong' in part ? 'b' : 'small')
+      node.textContent = 'strong' in part ? part.strong : part.small
+      return node
     }))
   }
 
@@ -297,7 +316,16 @@ function mountJsonSearch(document: Document, window: Window) {
     : hasWebGpu ? wanted
     : {documentCount: Math.min(wanted.documentCount, cpuDocumentCount), reason: {kind: 'noWebGpu'}}
 
-  const debug: JsonSearchDebug = {ready: false, backend: null, documentCount: firstPlan.documentCount, loadBlocks: [], loadMs: null, searches: [], paints: [], check: {state: 'waiting'}}
+  const debug: JsonSearchDebug = {
+    ready: false, backend: null, documentCount: firstPlan.documentCount, loadBlocks: [], loadMs: null, searches: [], paints: [], check: {state: 'waiting'},
+    locate(index) {
+      const world = st.world
+      if (world === null || mapCache.layout === null || index < 0 || index >= world.documentCount) return null
+      const center = markCenterCss(mapCache.layout, world.order.positionOf[index]!)
+      const box = domCache.map.getBoundingClientRect()
+      return {x: box.left + center.x, y: box.top + center.y}
+    },
+  }
   window.jsonSearch = debug
 
   const st = {
@@ -312,11 +340,12 @@ function mountJsonSearch(document: Document, window: Window) {
     // The last search's answer, which the page shows while its key is the wanted one.
     found: null as Found | null,
     marks: null as Marks | null,
-    // The time of the last change of the pattern or the scope, and when the search in flight started.
+    // The time of the last change of the pattern or the scope, and since when the page has wanted a search's answer
+    // that it doesn't have.
     lastTypingAt: 0,
     searchStartedAt: null as number | null,
     // The piece of work in flight. Its promise's callback pushes an arrival with its id.
-    job: null as {id: number, name: 'search' | 'window' | 'check' | 'highlightTime'} | null,
+    job: null as {id: number, name: 'search' | 'window' | 'check' | 'searchTime' | 'secondPassTime'} | null,
     arrivals: [] as Arrival[],
     // A failure with nothing to fall back on, e.g. of the CPU version. The page shows it and starts no more work.
     failure: null as string | null,
@@ -326,12 +355,20 @@ function mountJsonSearch(document: Document, window: Window) {
     shownDocument: 0,
     // The self check: how many pieces are done, of how many search programs, and what they found.
     check: {piecesDone: 0, searchProgramsChecked: 0, values: 0, mismatches: 0, documents: 0},
-    // The highlighter's pass over every document, timed once when the page is idle.
-    highlightMs: null as number | null,
+    // For the comparison, on the GPU version: the search on screen made again after a pause, which is what a search
+    // per keystroke takes, the highlighter's pass made again over the documents that are already on the GPU, and
+    // when the GPU last finished a piece of work, since a pause is the time since then.
+    pausedSearch: null as {key: string, ms: number} | null,
+    secondPassMs: null as number | null,
+    gpuWorkEndedAt: 0,
     // The last result line and time line, and the lines of the document that the panel shows. They stay on screen
     // while a search is in flight.
     resultView: {statusClass: 'status idle', status: [] as Line, timing: [] as Line},
     documentView: {key: '', line: [] as Line, statusClass: 'status idle', status: [] as Line, size: [] as Line},
+    // What else the last search's answer decided, which also stays while a search is in flight, so that nothing
+    // flashes between two keystrokes: each group's count of documents with a match, whether there is a match to
+    // step to, and the comparison's cells and sentences.
+    answerView: {byGroup: null as readonly number[] | null, stepDisabled: true, cells: null as ReturnType<typeof comparisonCells> | null, verdict: [] as Line},
     // The last search's timing, which the next frame completes.
     openTiming: null as {timing: SearchTiming, inputTime: number | null} | null,
     wakeAt: null as number | null,
@@ -367,14 +404,14 @@ function mountJsonSearch(document: Document, window: Window) {
   }
 
   let nextWorldId = 1
-  function createWorld(searcher: Searcher, device: GPUDevice | null, texts: readonly string[], shapeOf: Uint8Array, writeDocumentsMs: number, createSearcherMs: number): World {
+  function createWorld(searcher: Searcher, device: GPUDevice | null, texts: readonly string[], shapeOf: Uint8Array, times: Pick<World, 'writeDocumentsMs' | 'writeCellsMs' | 'createSearcherMs'>): World {
     const order = groupDocuments(shapeOf, searcher.validation.valid, shapes.length)
     return {
       id: nextWorldId++, backend: searcher.backend, searcher, device, documentCount: texts.length, texts, shapeOf, order,
       errorCount: texts.length - searcher.validation.validCount,
       baselines: createBaselines(texts, {withCpu: searcher.backend === 'gpu'}),
       windowDocuments: searcher.backend === 'gpu' ? 64 : 8,
-      writeDocumentsMs, createSearcherMs, readyAfterMs: window.performance.now() - pageStart,
+      ...times, readyAfterMs: window.performance.now() - pageStart,
     }
   }
   // The CPU version over the first documents, e.g. where there is no WebGPU. It holds search programs of up to 16
@@ -383,11 +420,14 @@ function mountJsonSearch(document: Document, window: Window) {
     const started = window.performance.now()
     const documentCount = Math.min(texts.length, cpuDocumentCount)
     const searcher = createCpuSearcher(texts.slice(0, documentCount), {stateCapacities: [8, 16]})
-    return createWorld(searcher, null, texts.slice(0, documentCount), shapeOf.slice(0, documentCount), writeDocumentsMs, window.performance.now() - started)
+    const createSearcherMs = window.performance.now() - started
+    return createWorld(searcher, null, texts.slice(0, documentCount), shapeOf.slice(0, documentCount), {writeDocumentsMs, writeCellsMs: searcher.load.cellsMs, createSearcherMs: createSearcherMs - searcher.load.cellsMs})
   }
 
   // The load: asks for a GPU device, writes the documents in slices of about 6 ms with a pause after each, so the
-  // page answers input while it loads, and creates the searcher.
+  // page answers input while it loads, and creates the searcher. For the GPU, each slice also writes its documents'
+  // characters as numbers, the searcher's cells, which the searcher would otherwise write in one piece of about
+  // 45 ms for 100,000 documents.
   async function load(): Promise<World> {
     // The frame that asked for the load paints the empty map first.
     await nextTask()
@@ -418,28 +458,35 @@ function mountJsonSearch(document: Document, window: Window) {
     st.plan = plan
     scheduleRender()
 
-    const writeStarted = window.performance.now()
     const texts: string[] = []
     const shapeOf = new Uint8Array(plan.documentCount)
+    const cells = device === null ? null : new Float32Array(plan.documentCount * cellsPerDocument)
+    let writeDocumentsMs = 0
+    let writeCellsMs = 0
     while (texts.length < plan.documentCount) {
       const sliceStarted = window.performance.now()
+      const first = texts.length
       do {
         const generated = documentAt(defaultSeed, texts.length)
         shapeOf[texts.length] = shapes.indexOf(generated.shape)
         texts.push(generated.text)
-      } while (texts.length < plan.documentCount && (texts.length % 32 !== 0 || window.performance.now() - sliceStarted < 6))
-      debug.loadBlocks.push(window.performance.now() - sliceStarted)
+      } while (texts.length < plan.documentCount && (texts.length % 32 !== 0 || window.performance.now() - sliceStarted < 5))
+      const textsWritten = window.performance.now()
+      if (cells !== null) for (let index = first; index < texts.length; index++) writeDocumentCells(cells, index * cellsPerDocument, texts[index]!)
+      const sliceEnded = window.performance.now()
+      writeDocumentsMs += textsWritten - sliceStarted
+      writeCellsMs += sliceEnded - textsWritten
+      debug.loadBlocks.push(sliceEnded - sliceStarted)
       st.documentsWritten = texts.length
       scheduleRender()
       await nextTask()
     }
-    const writeDocumentsMs = window.performance.now() - writeStarted
 
-    if (device !== null) {
+    if (device !== null && cells !== null) {
       const createStarted = window.performance.now()
       try {
-        const searcher = await createGpuSearcher(device, texts)
-        return createWorld(searcher, device, texts, shapeOf, writeDocumentsMs, window.performance.now() - createStarted)
+        const searcher = await createGpuSearcher(device, texts, {cells})
+        return createWorld(searcher, device, texts, shapeOf, {writeDocumentsMs, writeCellsMs, createSearcherMs: window.performance.now() - createStarted})
       } catch (error) {
         device.destroy()
         st.plan = {documentCount: Math.min(texts.length, cpuDocumentCount), reason: {kind: 'gpuFailed', message: error instanceof Error ? error.message : String(error)}}
@@ -506,10 +553,10 @@ function mountJsonSearch(document: Document, window: Window) {
       // the CPU version, is dropped.
       if (st.job?.id !== arrival.job) continue
       st.job = null
+      st.gpuWorkEndedAt = frameStart
       const {answer} = arrival
       switch (answer.kind) {
         case 'search':
-          st.searchStartedAt = null
           // An answer to a search that the page no longer wants is dropped, e.g. after another keystroke.
           if (answer.found !== null && answer.key === st.wantedKey && st.world !== null) {
             const {matchCounts} = answer.found
@@ -541,11 +588,13 @@ function mountJsonSearch(document: Document, window: Window) {
           }
           break
         }
-        case 'highlightTime':
-          st.highlightMs = answer.ms
+        case 'searchTime':
+          if (answer.ms !== null && answer.key === st.wantedKey) st.pausedSearch = {key: answer.key, ms: answer.ms}
+          break
+        case 'secondPassTime':
+          st.secondPassMs = answer.ms
           break
         case 'failed':
-          st.searchStartedAt = null
           if (st.world?.backend === 'gpu') gpuFailure ??= answer.message
           else st.failure = answer.message
           break
@@ -568,10 +617,12 @@ function mountJsonSearch(document: Document, window: Window) {
         st.searchStartedAt = null
         st.found = null
         st.marks = null
-        st.highlightMs = null
+        st.pausedSearch = null
+        st.secondPassMs = null
         st.pinned = null
         st.shownDocument = 0
         st.documentView = {key: '', line: [], statusClass: 'status idle', status: [], size: []}
+        st.answerView = {byGroup: null, stepDisabled: true, cells: null, verdict: []}
         kindsCache.clear()
       }
     }
@@ -581,10 +632,12 @@ function mountJsonSearch(document: Document, window: Window) {
     }
     if (world !== null && !debug.ready) {
       debug.ready = true
-      debug.loadMs = {writeDocuments: world.writeDocumentsMs, createSearcher: world.createSearcherMs, total: world.readyAfterMs}
+      debug.loadMs = {writeDocuments: world.writeDocumentsMs, writeCells: world.writeCellsMs, createSearcher: world.createSearcherMs, total: world.readyAfterMs}
     }
     debug.backend = world?.backend ?? null
     debug.documentCount = st.plan.documentCount
+
+    const programOf = (states: number) => st.programs.find(program => program.name === `regex search, ${states} states`)
 
     // Inputs: the pattern and the scope. An example of the Try line replaces both.
     const example = st.events.example
@@ -599,6 +652,9 @@ function mountJsonSearch(document: Document, window: Window) {
     // The search's answer, while it is the answer for the pattern in the field.
     const found = st.found !== null && st.found.key === key && analysis.kind === 'fits' ? st.found : null
     const searchPending = analysis.kind === 'fits' && found === null && st.failure === null
+    // Since when the page has been without the answer that it wants.
+    if (!searchPending) st.searchStartedAt = null
+    else st.searchStartedAt ??= frameStart
     const searchRunsLong = searchPending && st.searchStartedAt !== null && frameStart - st.searchStartedAt >= longSearchMs
     const idleFor = frameStart - st.lastTypingAt
 
@@ -649,11 +705,16 @@ function mountJsonSearch(document: Document, window: Window) {
     // whenever a search program exists that no piece has run, e.g. the one of 16 states after its first search.
     const searchProgramsBuilt = Math.max(0, st.programs.length - 1)
     const checkDue = world !== null && world.backend === 'gpu' && (st.check.piecesDone < defaultSelfCheckSearches.length || st.check.searchProgramsChecked < searchProgramsBuilt)
-    // The comparison, a piece per frame while nothing else is going on: no key for half a second, no search or check
-    // in flight or due, and the pointer away from the map.
-    const highlightTimeDue = world !== null && world.backend === 'gpu' && st.highlightMs === null
+    // For the comparison, on the GPU version: the search on screen once more after a pause, when it ran on the
+    // smallest search program, where a pause more than doubles the time, and the highlighter's pass once more.
+    const pausedSearch = st.pausedSearch !== null && st.pausedSearch.key === key ? st.pausedSearch : null
+    const searchTimeDue = world !== null && world.backend === 'gpu' && found !== null && found.states === world.searcher.stateCapacities[0] && pausedSearch === null
+    const secondPassTimeDue = world !== null && world.backend === 'gpu' && st.secondPassMs === null
+    // The comparison's baselines, a piece per frame while nothing else is going on: no key for half a second, no
+    // search or check in flight or due, and the pointer away from the map.
+    const comparisonIdle = found !== null && world !== null && found.states > world.searcher.stateCapacities[0]! ? largerProgramIdleMs : comparisonIdleMs
     let comparing = false
-    if (world !== null && found !== null && st.job === null && targetReady && !checkDue && !highlightTimeDue && idleFor >= comparisonIdleMs && hovered === null) {
+    if (world !== null && found !== null && st.job === null && targetReady && !checkDue && idleFor >= comparisonIdle && hovered === null) {
       comparing = world.baselines.step({pattern, scope, states: found.states, programCounts: found.matchCounts}, comparisonPieceMs)
     }
 
@@ -708,16 +769,25 @@ function mountJsonSearch(document: Document, window: Window) {
     const baselineNumbers = world?.baselines.numbers(found === null ? null : {pattern, scope, states: found.states, programCounts: found.matchCounts})
     const comparisonNumbers = world === null || baselineNumbers === undefined ? null : {
       backend: world.backend, documentCount, scope,
-      highlightMs: world.backend === 'gpu' ? st.highlightMs : world.searcher.load.validateMs,
-      searchMs: found?.ms ?? null,
+      // From the texts: JavaScript writing the characters as numbers, then the upload, the highlighter's shader
+      // compile and its pass, or on the CPU, building the highlighter and running it.
+      highlightMs: world.writeCellsMs + world.searcher.load.validateMs,
+      secondPassMs: st.secondPassMs,
+      searchMs: pausedSearch?.ms ?? found?.ms ?? null,
+      searchAfterPause: pausedSearch !== null,
       ...baselineNumbers,
     }
-    const cells = comparisonNumbers === null ? null : comparisonCells(comparisonNumbers)
-    const programOf = (states: number) => st.programs.find(program => program.name === `regex search, ${states} states`)
-    const verdict = comparisonNumbers === null || found === null || world === null ? [] : comparisonVerdict(comparisonNumbers, {
-      patternStates: found.patternStates, states: found.states, smallestStates: world.searcher.stateCapacities[0]!,
-      operations: operationsPerPosition(programOf(found.states)), smallestOperations: operationsPerPosition(programOf(world.searcher.stateCapacities[0]!)),
-    })
+    // A search that runs long, e.g. on the program for 32 states, leaves the last answer's numbers no place.
+    const answerView = searchPending && !searchRunsLong ? st.answerView : {
+      byGroup: found?.byGroup ?? null,
+      stepDisabled: found === null || found.documentsWithMatches === 0,
+      cells: comparisonNumbers === null ? null : comparisonCells(comparisonNumbers),
+      verdict: comparisonNumbers === null || found === null || world === null ? [] : comparisonVerdict(comparisonNumbers, {
+        patternStates: found.patternStates, states: found.states, smallestStates: world.searcher.stateCapacities[0]!,
+        operations: operationsPerPosition(programOf(found.states)), smallestOperations: operationsPerPosition(programOf(world.searcher.stateCapacities[0]!)),
+      }),
+    }
+    const {cells, verdict} = answerView
     const plainHow = scope === 'everything' ? 'RegExp on each document' : scope === 'strings' ? 'RegExp on each string value' : 'RegExp on each key'
 
     // The check's line and the statistics.
@@ -730,11 +800,10 @@ function mountJsonSearch(document: Document, window: Window) {
     const statsLines: Line[] = []
     if (world !== null) {
       statsLines.push(...programLines(st.programs, positions))
-      const {load} = world.searcher
       const size = world.backend === 'gpu' ? `, and the documents and their display kinds take ${megabytes(documentCount * (2 * positions + 1) * 4)} on the GPU` : ''
       statsLines.push([
         'The page was ready ', strong(duration(world.readyAfterMs)), ' after it started: ', strong(duration(world.writeDocumentsMs)), ` to write ${count(documentCount)} documents, `,
-        strong(duration(load.cellsMs)), ' to write their characters as numbers, and ', strong(duration(world.createSearcherMs - load.cellsMs)),
+        strong(duration(world.writeCellsMs)), ' to write their characters as numbers, and ', strong(duration(world.createSearcherMs)),
         world.backend === 'gpu' ? ' to upload them, compile the two shaders and run the highlighter' : ' to build the highlighter and run it', `${size}.`,
       ])
     }
@@ -742,6 +811,7 @@ function mountJsonSearch(document: Document, window: Window) {
     // Commit what the frame decided.
     st.resultView = resultView
     st.documentView = documentView
+    st.answerView = answerView
     st.shownDocument = shown
     debug.check = check
 
@@ -797,7 +867,7 @@ function mountJsonSearch(document: Document, window: Window) {
       if (label === undefined) return
       const placed = `left: ${block.x / scale}px; top: ${block.y / scale - labelBandCss}px; width: ${((layout.columns - 1) * layout.pitch + layout.mark) / scale}px`
       if (label.placed !== placed) label.node.style.cssText = label.placed = placed
-      const matching = found === null ? null : found.byGroup[group] ?? 0
+      const matching = answerView.byGroup === null ? null : answerView.byGroup[group] ?? 0
       // A group without a match gets a quiet 0, and the copper is for the groups that the search found something in.
       const countClass = matching === 0 ? 'none' : ''
       if (label.countClass !== countClass) label.count.node.className = label.countClass = countClass
@@ -832,7 +902,7 @@ function mountJsonSearch(document: Document, window: Window) {
     if (written.documentStatusClass !== documentView.statusClass) domCache.documentStatus.className = written.documentStatusClass = documentView.statusClass
     writeLine(domCache.documentStatusLine, documentView.status)
     writeLine(domCache.documentSize, documentView.size)
-    const stepDisabled = found === null || found.documentsWithMatches === 0
+    const {stepDisabled} = answerView
     if (written.stepDisabled !== stepDisabled) domCache.previousMatch.disabled = domCache.nextMatch.disabled = written.stepDisabled = stepDisabled
     const releaseDisplay = st.pinned === null ? 'none' : 'inline-flex'
     if (written.releaseDisplay !== releaseDisplay) domCache.release.style.display = written.releaseDisplay = releaseDisplay
@@ -872,7 +942,9 @@ function mountJsonSearch(document: Document, window: Window) {
     // The search's timing, once its result is on the canvas.
     if (found !== null && paintMs !== null && written.timedCounts !== found.matchCounts) {
       written.timedCounts = found.matchCounts
-      const timing: SearchTiming = {pattern, scope, states: found.states, searchMs: found.ms, paintMs}
+      const timing: SearchTiming = {pattern, scope, states: found.states, matches: found.matches, documentsWithMatches: found.documentsWithMatches, paintedAt: window.performance.now(), searchMs: found.ms, paintMs}
+      if (debug.searches.length >= 1000) debug.searches.shift()
+      if (debug.paints.length >= 1000) debug.paints.splice(0, debug.paints.length - 999)
       debug.searches.push(timing)
       st.openTiming = {timing, inputTime: st.events.firstInputTime}
     }
@@ -886,16 +958,35 @@ function mountJsonSearch(document: Document, window: Window) {
     }
     if (world !== null && st.job === null && targetWindow !== null && st.failure === null) {
       const {searcher} = world
-      if (searchPending) {
-        st.searchStartedAt = window.performance.now()
+      const startCheckPiece = () => {
+        // A piece runs every search program built so far on the CPU, at 0.25 ms per document for 8 states and up to
+        // 4 ms for 32, so it checks fewer documents once a larger program exists.
+        const piece = st.check.piecesDone
+        const largestStates = Math.max(...st.programs.map(program => Number(program.name.replace(/\D/g, ''))))
+        const documents = largestStates > 16 ? 8 : largestStates > 8 ? 24 : 64
+        const search = defaultSelfCheckSearches[piece < defaultSelfCheckSearches.length ? piece : 0]!
+        start('check', searcher.selfCheck(documents, [search]), (result): Answer => ({kind: 'check', result, piece, searchPrograms: searchProgramsBuilt}))
+      }
+      if (searchPending && world.backend === 'gpu' && st.check.piecesDone < defaultSelfCheckSearches.length && programOf(analysis.states) === undefined) {
+        // A search that needs a larger program waits for the check's first four pieces, so that they run while the
+        // smallest search program is the only one, on 64 documents.
+        startCheckPiece()
+      } else if (searchPending) {
+        // A search's time runs from before the pattern is compiled until the results are copied. The first search on
+        // a program also builds that program, and on the GPU compiles its shader, once: that search's time leaves
+        // both out, and the statistics have the shader's compile time.
+        const programExists = programOf(analysis.states) !== undefined
         if (world.backend === 'gpu') {
           start('search', searcher.search({pattern, scope, window: targetWindow}), (result): Answer => result?.status !== 'searched' ? {kind: 'search', key, found: null, marks: null} : {
             kind: 'search', key,
-            found: {key, matchCounts: result.matchCounts, matches: result.matches, documentsWithMatches: result.documentsWithMatches, states: result.states, patternStates: result.patternStates, ms: result.timings.totalMs},
+            found: {
+              key, matchCounts: result.matchCounts, matches: result.matches, documentsWithMatches: result.documentsWithMatches, states: result.states, patternStates: result.patternStates,
+              ms: programExists ? result.timings.totalMs : result.timings.evaluateMs,
+            },
             marks: {key, ...targetWindow, values: result.marks},
           })
         } else {
-          start('search', searchInPieces(searcher, pattern, scope, key, targetWindow, () => st.wantedKey === key), (result): Answer => ({kind: 'search', key, found: result?.found ?? null, marks: result?.marks ?? null}))
+          start('search', searchInPieces(searcher, pattern, scope, key, targetWindow, programExists, () => st.wantedKey === key), (result): Answer => ({kind: 'search', key, found: result?.found ?? null, marks: result?.marks ?? null}))
         }
       } else if (!targetReady) {
         const needsMarks = found !== null && targetMarks === null
@@ -906,22 +997,21 @@ function mountJsonSearch(document: Document, window: Window) {
           return {marks: result?.status === 'searched' ? {key, ...targetWindow, values: result.marks} : null, kinds}
         })(), ({marks, kinds}): Answer => ({kind: 'window', marks, kinds: kinds === null ? null : {firstDocument: targetWindow.firstDocument, values: kinds}}))
       } else if (checkDue) {
-        if (idleFor >= checkIdleMs) {
-          // A piece runs every search program built so far on the CPU, at 0.25 ms per document for 8 states and up
-          // to 4 ms for 32, so it checks fewer documents once a larger program exists.
-          const piece = st.check.piecesDone
-          const largestStates = Math.max(...st.programs.map(program => Number(program.name.replace(/\D/g, ''))))
-          const documents = largestStates > 16 ? 8 : largestStates > 8 ? 24 : 64
-          const search = defaultSelfCheckSearches[piece < defaultSelfCheckSearches.length ? piece : 0]!
-          start('check', searcher.selfCheck(documents, [search]), (result): Answer => ({kind: 'check', result, piece, searchPrograms: searchProgramsBuilt}))
+        const checkIdle = st.check.piecesDone < defaultSelfCheckSearches.length ? checkIdleMs : largerProgramIdleMs
+        if (idleFor >= checkIdle) startCheckPiece()
+        else wakeBy(st.lastTypingAt + checkIdle)
+      } else if (searchTimeDue || secondPassTimeDue) {
+        // Both are times after a pause: no key for half a second, and nothing on the GPU for 0.3 s.
+        const startAt = Math.max(st.lastTypingAt + comparisonIdle, st.gpuWorkEndedAt + gpuPauseMs)
+        if (frameStart < startAt) {
+          wakeBy(startAt)
+        } else if (searchTimeDue) {
+          start('searchTime', searcher.search({pattern, scope, window: targetWindow}), (result): Answer => ({kind: 'searchTime', key, ms: result?.status === 'searched' ? result.timings.totalMs : null}))
         } else {
-          wakeBy(st.lastTypingAt + checkIdleMs)
+          start('secondPassTime', searcher.validate(), ({evaluateMs}): Answer => ({kind: 'secondPassTime', ms: evaluateMs}))
         }
-      } else if (highlightTimeDue) {
-        if (idleFor >= comparisonIdleMs) start('highlightTime', searcher.validate(), ({evaluateMs}): Answer => ({kind: 'highlightTime', ms: evaluateMs}))
-        else wakeBy(st.lastTypingAt + comparisonIdleMs)
-      } else if (found !== null && idleFor < comparisonIdleMs) {
-        wakeBy(st.lastTypingAt + comparisonIdleMs)
+      } else if (found !== null && idleFor < comparisonIdle) {
+        wakeBy(st.lastTypingAt + comparisonIdle)
       }
     }
     if (searchPending && !searchRunsLong && st.searchStartedAt !== null) wakeBy(st.searchStartedAt + longSearchMs)

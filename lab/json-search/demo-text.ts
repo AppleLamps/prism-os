@@ -6,9 +6,11 @@ import {type CapacityError, PatternSyntaxError, capacityErrors, compilePattern} 
 import {type SearchScope, boundaryCapacity, classCapacity} from './search-step.ts'
 import type {ProgramDescription} from './searcher.ts'
 
-// A line of text for the page. A strong part is drawn bold, e.g. the number in "26,456 of 100,000 documents".
-export type Line = readonly (string | {readonly strong: string})[]
+// A line of text for the page. A strong part is drawn bold, e.g. the number in "26,456 of 100,000 documents", and a
+// small part stands on a line of its own in small letters, e.g. what a time in the comparison was measured on.
+export type Line = readonly (string | {readonly strong: string} | {readonly small: string})[]
 export const strong = (text: string) => ({strong: text})
+export const small = (text: string) => ({small: text})
 
 export const count = (value: number) => value.toLocaleString('en-US')
 // A measured time. Chrome's clock reads in steps of 0.1 ms on this page, so a short time gets one decimal. The space
@@ -29,7 +31,8 @@ export function roughDuration(ms: number): string {
 // The time of one document, in µs below a ms, e.g. "84 µs", so that 100,000 times it is the total beside it.
 export const perDocument = (ms: number) => ms >= 0.9995 ? duration(ms) : ms < 0.00995 ? `${(ms * 1000).toFixed(1)}\u00a0µs` : `${count(Math.round(ms * 1000))}\u00a0µs`
 // How many times one time is another, e.g. "2.6 times", "71 times".
-export const times = (ratio: number) => `${ratio >= 9.95 ? count(Math.round(ratio)) : ratio.toFixed(1)}\u00a0times`
+// A ratio of 100 or more has two digits, e.g. "1,400 times", since the times it is made of don't have more.
+export const times = (ratio: number) => `${ratio >= 99.5 ? count(Number(ratio.toPrecision(2))) : ratio >= 9.95 ? count(Math.round(ratio)) : ratio.toFixed(1)}\u00a0times`
 export const megabytes = (bytes: number) => `${count(Math.round(bytes / 1e6))}\u00a0MB`
 
 // How many documents the page loads.
@@ -100,8 +103,10 @@ export const scopeChoices = [
 export type ScopeChoice = typeof scopeChoices[number]['scope']
 export const scopeChoiceOf = (value: string | null): ScopeChoice => scopeChoices.find(choice => choice.scope === value)?.scope ?? 'everything'
 
-// The groups of the map, in the order of documents.ts's shapes, and last the documents with an error.
-export const groupNames = ['Package manifests', 'User records', 'Log events', 'Editor settings', 'Orders', 'Map features', 'Sensor readings', 'With an error'] as const
+// The groups of the map, in the order of documents.ts's shapes, and last the documents with an error. A name stands
+// above its group's block of marks, beside a count of up to 6 characters, in the 123 px that a block is wide on a
+// page of full width, so the names are short.
+export const groupNames = ['Packages', 'User records', 'Log events', 'Settings', 'Orders', 'Map features', 'Sensors', 'With an error'] as const
 // A document of each group, in the selected document's line, e.g. "a log event".
 export const groupNouns = ['a package manifest', 'a user record', 'a log event', 'editor settings', 'an order', 'a map feature', 'sensor readings'] as const
 
@@ -294,14 +299,20 @@ export type ComparisonNumbers = {
   backend: 'gpu' | 'cpu'
   documentCount: number
   scope: ScopeChoice
-  // The highlighter over every document: the page's own pass, the table loop in plain JavaScript per document, as
-  // timed on some of the documents, and on the GPU version the same program on the CPU, per document.
+  // Validating and highlighting every document, from the texts: on the GPU, JavaScript writing the characters as
+  // numbers, the upload, the highlighter's shader compile and its pass, and on the CPU version, creating the searcher.
   highlightMs: number | null
+  // On the GPU, the highlighter's pass again over the documents that are already there.
+  secondPassMs: number | null
+  // The table loop in plain JavaScript per document, as timed on some of the documents, and on the GPU version the
+  // same program on the CPU, per document.
   plainHighlightMsPerDocument: number | null
   plainSampleDocuments: number
   cpuHighlightMsPerDocument: number | null
-  // This search.
+  // This search: the page's own time, and whether it is of a search made again after a pause, which is what a search
+  // per keystroke takes on a GPU.
   searchMs: number | null
+  searchAfterPause: boolean
   plainSearch: {state: 'none'} | {state: 'running', ms: number, documents: number} | {state: 'done', ms: number, matches: number, differing: number} | {state: 'refused', message: string}
   // Finding the runs of searched characters, e.g. every string value, which JavaScript does once per scope.
   plainRunsMs: number | null
@@ -309,35 +320,42 @@ export type ComparisonNumbers = {
   cpuSampleDocuments: number
 }
 
-const notYet: Line = ['measured once the page is idle']
+const notYet: Line = [small('measured once the page is idle')]
 
-// The cells of the comparison: for each of the three ways, the highlighter's pass and this search.
+// The cells of the comparison: for each of the three ways, validating and highlighting every document, and this
+// search. A cell is a time, and under it in small letters what the time is of.
 export function comparisonCells(numbers: ComparisonNumbers): {programHighlight: Line, programSearch: Line, plainHighlight: Line, plainSearch: Line, cpuHighlight: Line, cpuSearch: Line} {
-  const {documentCount, plainSearch} = numbers
+  const {documentCount, plainSearch, backend} = numbers
   // A time that was measured on some of the documents says so, and one that was measured on all of them is plain.
   const fromSample = (msPerDocument: number | null, sampleDocuments: number): Line => msPerDocument === null ? notYet
     : sampleDocuments >= documentCount ? [strong(duration(msPerDocument * documentCount))]
-    : ['about ', strong(roughDuration(msPerDocument * documentCount)), `, from ${count(sampleDocuments)} documents at ${perDocument(msPerDocument)} each`]
+    : ['about ', strong(roughDuration(msPerDocument * documentCount)), small(`from ${count(sampleDocuments)} documents at ${perDocument(msPerDocument)} each`)]
   let plainSearchLine: Line
   switch (plainSearch.state) {
     case 'none':
       plainSearchLine = notYet
       break
     case 'running':
-      plainSearchLine = [strong(duration(plainSearch.ms)), ` so far, for ${count(plainSearch.documents)} documents`]
+      plainSearchLine = [strong(duration(plainSearch.ms)), ' so far', small(`for ${count(plainSearch.documents)} of the documents`)]
       break
     case 'done':
       // Before its first search of a scope, JavaScript finds the runs of searched characters, e.g. every string value.
       plainSearchLine = numbers.plainRunsMs === null || numbers.scope === 'everything' ? [strong(duration(plainSearch.ms))]
-        : [strong(duration(plainSearch.ms)), `, after ${duration(numbers.plainRunsMs)} once to find the ${numbers.scope === 'strings' ? 'string values' : 'keys'}`]
+        : [strong(duration(plainSearch.ms)), small(`after ${duration(numbers.plainRunsMs)} once to find the ${numbers.scope === 'strings' ? 'string values' : 'keys'}`)]
       break
     case 'refused':
-      plainSearchLine = [plainSearch.message]
+      plainSearchLine = [small(plainSearch.message)]
       break
   }
+  let programHighlight: Line = notYet
+  if (numbers.highlightMs !== null) {
+    programHighlight = backend === 'cpu' ? [strong(duration(numbers.highlightMs))]
+      : numbers.secondPassMs === null ? [strong(duration(numbers.highlightMs)), ' from the texts']
+      : [strong(duration(numbers.highlightMs)), ' from the texts', small(`A second pass, over the documents that are already on the GPU, took ${duration(numbers.secondPassMs)}.`)]
+  }
   return {
-    programHighlight: numbers.highlightMs === null ? notYet : [strong(duration(numbers.highlightMs))],
-    programSearch: numbers.searchMs === null ? ['no search yet'] : [strong(duration(numbers.searchMs))],
+    programHighlight,
+    programSearch: numbers.searchMs === null ? [small('no search yet')] : numbers.searchAfterPause ? [strong(duration(numbers.searchMs)), ' after a pause'] : [strong(duration(numbers.searchMs))],
     plainHighlight: fromSample(numbers.plainHighlightMsPerDocument, numbers.plainSampleDocuments),
     plainSearch: plainSearchLine,
     cpuHighlight: fromSample(numbers.cpuHighlightMsPerDocument, numbers.cpuSampleDocuments),
@@ -345,23 +363,31 @@ export function comparisonCells(numbers: ComparisonNumbers): {programHighlight: 
   }
 }
 
-// What the measured numbers say, in sentences, for the search on screen. It claims only what the page measured.
+// What the measured numbers say, in sentences, for the search on screen. It says only what the page measured, and
+// what README.md allows a page to say: the search is in the range of RegExp on one thread on ordinary patterns, a
+// pattern on a larger program is slower, a pattern that takes RegExp 10 times as long or more is the one case where
+// the programs' time is clearly less, and the same programs on the CPU take hundreds of times as long.
 // `operations` and `smallestOperations` are the operations at each character of the program that ran and of the
 // smallest search program.
 export function comparisonVerdict(numbers: ComparisonNumbers, program: {patternStates: number, states: number, smallestStates: number, operations: number, smallestOperations: number}): Line {
   const {searchMs, plainSearch, backend} = numbers
   const {patternStates, states, smallestStates} = program
-  const where = backend === 'gpu' ? 'the GPU' : 'the programs on the CPU'
   const sentences: Line[] = []
   if (states > smallestStates) {
     sentences.push([`This pattern has ${count(patternStates)} states, more than the ${count(smallestStates)} that the smallest search program holds, so it ran on the program for ${count(states)}, which does ${count(program.operations)} operations at each character instead of ${count(program.smallestOperations)}.`])
   }
   if (searchMs !== null && plainSearch.state === 'done' && plainSearch.ms > 0) {
     const ratio = plainSearch.ms / searchMs
-    if (ratio >= 1.5) sentences.push(['RegExp took ', strong(times(ratio)), ` as long as ${where} on this pattern.`])
-    else if (ratio > 1 / 1.5) sentences.push([`RegExp and ${where} took about the same time on this pattern.`])
-    else sentences.push(['RegExp was ', strong(times(1 / ratio)), ` faster than ${where} on this pattern.`])
-    if (ratio >= 1.5 && states === smallestStates) sentences.push([`A search program takes the same time for every pattern of up to ${count(states)} states, and RegExp’s time depends on the pattern.`])
+    const regExpTook = ['RegExp on one thread took ', strong(duration(plainSearch.ms)), ' for the same search'] as const
+    if (ratio >= 10) {
+      sentences.push([...regExpTook, ', ', strong(times(ratio)), ` as long. A search program takes the same time for every pattern of up to ${count(states)} states, and RegExp’s time depends on the pattern.`])
+    } else if (ratio >= 3) {
+      sentences.push([...regExpTook, `, ${times(ratio)} as long.`])
+    } else if (ratio > 1 / 3) {
+      sentences.push([...regExpTook, ': the two are in the same range.'])
+    } else {
+      sentences.push([...regExpTook, ': ', strong(times(1 / ratio)), ' as fast.'])
+    }
     if (plainSearch.differing > 0) {
       sentences.push([`RegExp counts ${count(plainSearch.matches)} matches, and its count differs from the program’s in ${count(plainSearch.differing)} ${plainSearch.differing === 1 ? 'document' : 'documents'}: RegExp takes the first alternative that matches and also counts empty matches, and the program takes the longest match and never an empty one.`])
     }

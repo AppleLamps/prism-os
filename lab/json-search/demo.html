@@ -102,20 +102,27 @@
         </div>
       </section>
 
-      <!-- README.md's three rows, measured in this page for the search on screen. -->
+      <!-- README.md's three rows, measured in this page for the search on screen. demo.ts fills the times, each
+           with what it was measured on, and writes the sentences under the table from the measured numbers. -->
       <section class="comparison" aria-labelledby="comparison-title">
         <h2 id="comparison-title" class="label">The same answers, three ways</h2>
         <table class="times">
           <thead>
-            <tr><td></td><th scope="col">Highlight every document, once</th><th scope="col">This search</th></tr>
+            <tr><td></td><th scope="col">Validate and highlight every document, once</th><th scope="col">This search</th></tr>
           </thead>
           <tbody>
             <tr><th id="program-row" scope="row">The two programs on the GPU</th><td id="program-highlight"></td><td id="program-search"></td></tr>
-            <tr><th scope="row">Plain JavaScript: a loop over the highlighter&rsquo;s tables, then <span id="plain-how">RegExp on each document</span></th><td id="plain-highlight"></td><td id="plain-search"></td></tr>
-            <tr id="cpu-row"><th scope="row">The same two programs on the CPU</th><td id="cpu-highlight"></td><td id="cpu-search"></td></tr>
+            <tr><th scope="row">Plain JavaScript on one thread: a loop over the highlighter&rsquo;s tables, then <span id="plain-how">RegExp on each document</span></th><td id="plain-highlight"></td><td id="plain-search"></td></tr>
+            <tr id="cpu-row"><th scope="row">The same two programs on the CPU, as generated JavaScript</th><td id="cpu-highlight"></td><td id="cpu-search"></td></tr>
           </tbody>
         </table>
+        <!-- The sentences and the note under them keep the room of the longest sentences, so the lines under the
+             comparison don't move while a pattern is typed. The note was measured for lab/json-search/README.md on an
+             Apple M5 Max, not in this page. -->
+        <div class="notes">
         <p id="verdict" class="verdict"></p>
+        <p class="aside">JavaScript gets one thread here. With 100,000 documents shared among 8 workers, RegExp counted an ordinary pattern&rsquo;s matches in 2 to 7&nbsp;ms on the Apple M5 Max that the <a href="https://github.com/chenglou/handwired/tree/main/lab/json-search#javascript-in-several-workers">README</a> was measured on, less than the search takes on that machine&rsquo;s GPU.</p>
+        </div>
       </section>
     </div>
 

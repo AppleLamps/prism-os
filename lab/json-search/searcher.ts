@@ -138,6 +138,10 @@ export type SearcherOptions = {
   windowCapacity?: number
   // Goes into every shader's source, see gpu/host.ts. For measuring cold compiles.
   shaderSalt?: number
+  // Every document's cells, from a caller that has written them already with program.ts's writeDocumentCells, e.g. a
+  // page that writes them a few documents at a time between frames: writing the cells of 100,000 documents in one
+  // piece takes about 45 ms. Without it, the searcher writes them from the texts.
+  cells?: Float32Array
 }
 
 export const defaultSelfCheckSearches: readonly {pattern: string, scope: SearchScope}[] = [
@@ -218,7 +222,11 @@ function validationOf(summary: Float32Array, documentCount: number): Validation 
   return validation
 }
 
-function writeCells(texts: readonly string[]) {
+function writeCells(texts: readonly string[], written: Float32Array | undefined) {
+  if (written !== undefined) {
+    invariant(written.length === texts.length * cellsPerDocument, `the cells of ${texts.length} documents are ${texts.length * cellsPerDocument} numbers, got ${written.length}`)
+    return written
+  }
   const cells = new Float32Array(texts.length * cellsPerDocument)
   for (let row = 0; row < texts.length; row++) writeDocumentCells(cells, row * cellsPerDocument, texts[row]!)
   return cells
@@ -248,7 +256,7 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
   const stateCapacities = [...(options.stateCapacities ?? defaultStateCapacities)].sort((left, right) => left - right)
   const windowCapacity = options.windowCapacity ?? 64
   const backend = options.backend ?? 'generated'
-  const cells = writeCells(texts)
+  const cells = writeCells(texts, options.cells)
   const cellsMs = performance.now() - started
   const json = buildJsonLoop(cellsPerDocument)
   const jsonRunner = createLoopRunner(json.loop, backend)
@@ -367,7 +375,7 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
   const windowCapacity = options.windowCapacity ?? 64
   const maxDocuments = Math.floor(Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) / (cellsPerDocument * 4))
   invariant(documentCount <= maxDocuments, `${documentCount} documents need a buffer of ${bufferBytesFor(documentCount)} bytes, and this device binds ${device.limits.maxStorageBufferBindingSize}. Ask for more with requestBatchDevice(bufferBytesFor(count)), or pass fewer documents.`)
-  const cells = writeCells(texts)
+  const cells = writeCells(texts, options.cells)
   const cellsMs = performance.now() - started
   const store = await createDocumentStore(device, cellsPerDocument, documentCount)
   store.write(cells, documentCount)
