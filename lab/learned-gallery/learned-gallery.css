@@ -113,17 +113,21 @@
 /* A row's button sits at the row's right end, also on a line of its own, where a row is too
    narrow for the button, e.g. Delete at a 320 px window. */
 .tools .button { margin-left: auto; }
-/* The training's row: the chart takes the width that the numbers and the button leave it, which
-   is at least 104 px in a column of 440 px. In a narrower column the chart gets a line to itself,
-   and the numbers and the button share the next line. */
+/* The training's row: the chart has a line to itself, and the numbers and the button share the
+   next line. In a column of 440 px or more the three are on one line, where the chart takes the
+   width that the numbers and the button leave it, at least 104 px. There the numbers' width has
+   room for a count of 5 digits, e.g. 12,500, which is 202 px wide, so the chart keeps its width
+   while the count grows. The two lines are the form without the query, so a browser without
+   container queries, e.g. Safari 15, shows them at every width. */
 .tools.training {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
-@container (max-width: 439px) {
-  .tools.training { grid-template-columns: minmax(0, 1fr) auto; }
-  .tools.training .loss-chart { grid-column: 1 / -1; }
-  .tools.training .loss { min-width: 0; }
+.tools.training .loss-chart { grid-column: 1 / -1; }
+@container (min-width: 440px) {
+  .tools.training { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .tools.training .loss-chart { grid-column: auto; }
+  .tools.training .loss { min-width: 16em; }
 }
 /* A button that can't act yet, e.g. Delete while no rectangle is selected. */
 .tools .button:disabled {
@@ -179,12 +183,10 @@
 .loss-chart .line { fill: none; stroke: var(--copper); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .loss-chart .marker { fill: var(--copper); stroke: var(--paper); stroke-width: 2; }
 .loss-chart .hairline { stroke: var(--rule-strong); }
-/* The loss now and the number of steps so far, or those of the sample under the mouse. The width
-   has room for a count of 5 digits, e.g. 12,500, which is 202 px wide, so the chart beside the
-   numbers keeps its width while the count grows. The line breaks only between its two halves,
-   e.g. in the 169 px that a 320 px window leaves beside the button. */
+/* The loss now and the number of steps so far, or those of the sample under the mouse. The line
+   breaks only between its two halves, e.g. in the 169 px that a 320 px window leaves beside the
+   button. */
 .loss {
-  min-width: 16em;
   color: var(--ink-2);
   font: var(--type-ui);
 }
