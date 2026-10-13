@@ -4,6 +4,11 @@ import {createEvaluator} from '../../src/runtime/cells.ts'
 import {validateGrids} from '../../src/runtime/numeric-ui-core.ts'
 import {
   createFilesCircuit,
+  createFilesRenderer,
+  describeOperations,
+  describeOutputs,
+  describeState,
+  formatValue,
   maximumScrollTop,
   rowCapacity,
   scrollGrid,
@@ -481,7 +486,7 @@ test("the three locations' row counts are the program's own numbers of source ce
   const program = machine.tensorProgram
   const values = step(machine)
   assert.deepEqual(rowCountsOf(machine), [program.sourceSize, program.valueCount - program.sourceSize, program.roots.length - program.sourceSize])
-  assert.deepEqual([machine.sourceCells.length, machine.outputNames.length], [rowCountsOf(machine)[stateLocation], rowCountsOf(machine)[outputsLocation]])
+  assert.deepEqual([machine.sourceCells.length, machine.namedOutputs.length], [rowCountsOf(machine)[stateLocation], rowCountsOf(machine)[outputsLocation]])
   assert.equal(shownLocation(machine), operationsLocation)
   assert.ok(rowCountOf(machine) > 14_000)
   assert.equal(values[machine.output.files.totalHeight], rowCountOf(machine) * rowHeight)
@@ -973,4 +978,263 @@ test('HandwiredOS with Files builds no sign cascade, and every declared and infe
     else step(machine, scrollTop, viewportWidth, viewportHeight)
   }
   assert.ok(evaluations > 250, `${evaluations} evaluations checked`)
+})
+
+// ---------- what the host shows ----------
+
+test("after a step, the machine's packed values hold every source cell and live operation of the frame's evaluation, and the three locations read their rows from them", () => {
+  const machine = createWindowManagerMachine()
+  const program = machine.tensorProgram
+  let frameTable: Float32Array | null = null
+  machine.observe({
+    beforeEvaluate(table, evaluation) {
+      if (evaluation.kind === 'frame') frameTable = Float32Array.from(table)
+    },
+  })
+  machine.pointerDown(rowPoint(3).x, rowPoint(3).y, 4)
+  machine.pointerUp(rowPoint(3).x, rowPoint(3).y, 8)
+  const values = step(machine, 480)
+  assert.equal(machine.values, values)
+  // The compiled program again, on the table that the frame's evaluation ran on.
+  const expected = machine.circuit.evaluateTensor(frameTable!)
+  assert.equal(machine.packedValues.length, program.valueCount)
+  for (let index = 0; index < program.valueCount; index++) {
+    assert.equal(machine.packedValues[index], expected[program.wireOrder[index]!], `packed value ${index}`)
+  }
+
+  const state = describeState(machine.sourceCells, machine.packedValues)
+  assert.equal(state.rowCount, program.sourceSize)
+  assert.deepEqual(state.text(0), ['viewportWidth', 'input', '', ''])
+  assert.equal(state.value(0), viewportWidth)
+  // A cell's name follows its place in the cell declarations, written with dots.
+  const row = (name: string) => machine.sourceCells.findIndex(cell => cell.name === name)
+  assert.deepEqual(state.text(row('windows[3].left')), ['windows.3.left', 'state', '', ''])
+  assert.equal(state.value(row('windows[3].left')), 650)
+  assert.deepEqual(state.text(row('springs[0].centerX.velocity')), ['springs.0.centerX.velocity', 'state', '', ''])
+  assert.deepEqual(state.text(row('titleHeight')), ['titleHeight', 'constant', '', ''])
+  assert.deepEqual(state.text(row('files.keys.down')), ['files.keys.down', 'event', '', ''])
+  assert.equal(state.value(row('files.scrollTop')), 480)
+  assert.equal(state.value(row('files.selected')), 23)
+  assert.deepEqual(new Set(machine.sourceCells.map(cell => cell.policy)), new Set(['constant', 'input', 'event', 'state']))
+
+  const operations = describeOperations(program, machine.packedValues)
+  assert.equal(operations.rowCount, program.valueCount - program.sourceSize)
+  // The kinds are counted like the System Monitor counts them, the layers go from 1
+  // to the program's layer count in order, and the weights add up to the program's
+  // stored weights.
+  const kindCounts = new Map<string, number>()
+  let weights = 0
+  let lastLayer = 1
+  for (let operation = 0; operation < operations.rowCount; operation++) {
+    const [wire, kind, layer, storedWeights] = operations.text(operation)
+    assert.equal(Number(wire), program.wireOrder[program.sourceSize + operation])
+    kindCounts.set(kind, (kindCounts.get(kind) ?? 0) + 1)
+    assert.ok(Number(layer) === lastLayer || Number(layer) === lastLayer + 1, `layer ${layer} after layer ${lastLayer}`)
+    lastLayer = Number(layer)
+    weights += Number(storedWeights)
+    assert.equal(operations.value(operation), expected[Number(wire)])
+  }
+  assert.equal(lastLayer, program.layers.length)
+  assert.equal(weights, program.layers.reduce((sum, layer) => sum + layer.weights.length, 0))
+  const regluCount = program.layers.reduce((sum, layer) => sum + layer.gateRows.length, 0)
+  const booleanCount = program.layers.reduce((sum, layer) => sum + layer.booleanRows.length, 0)
+  assert.deepEqual(
+    [kindCounts.get('affine'), kindCounts.get('ReGLU'), kindCounts.get('boolean')],
+    [operations.rowCount - regluCount - booleanCount, regluCount, booleanCount],
+  )
+
+  const outputs = describeOutputs(machine.namedOutputs, machine.values)
+  assert.equal(outputs.rowCount, program.roots.length - program.sourceSize)
+  // The names follow the order of the program's roots after the next-state values.
+  machine.namedOutputs.forEach(({wire}, output) => {
+    assert.equal(wire, program.roots[program.sourceSize + output])
+    assert.equal(outputs.value(output), expected[wire])
+  })
+  const names = machine.namedOutputs.map(({name}) => name)
+  assert.equal(new Set(names).size, names.length)
+  assert.deepEqual(outputs.text(0), ['windows.0.translateX', '', '', ''])
+  assert.equal(outputs.value(0), 54)
+  for (const name of ['windows.3.destinationHeight', 'dockItems.2.left', 'animationActive', 'photos.backdropOpacity', 'photos.photos.11.focused',
+    'photos.thumbnails.0.left', 'photos.nextControl.opacity', 'notes.words.44.visible', 'notes.bands.15.start', 'notes.runOverflow',
+    'files.totalHeight', 'files.locations.2', 'files.slots.63.selected']) {
+    assert.ok(names.includes(name), name)
+  }
+  assert.equal(outputs.value(names.indexOf('files.totalHeight')), operations.rowCount * rowHeight)
+  assert.equal(outputs.value(names.indexOf('files.selected')), 23)
+  assert.equal(outputs.value(names.indexOf('files.scroll')), 480)
+})
+
+test('a value is shown as the shortest decimal that reads back as the same FP32 value', () => {
+  for (const [value, text] of [
+    [0, '0'], [-0, '0'], [1, '1'], [-1, '-1'], [2_399_976, '2399976'], [0.5, '0.5'], [Math.fround(0.1), '0.1'], [Math.fround(-0.3), '-0.3'],
+    [Math.fround(1 / 3), '0.33333334'], [Math.fround(54.015625), '54.015625'], [Math.fround(1234.5677), '1234.5677'], [2 ** -20, '9.536743e-7'],
+    [Math.fround(1e-7), '1e-7'], [Math.fround(16_777_216.5), '16777216'], [Math.fround(3.4e38), '3.4e+38'], [Number.NaN, 'NaN'], [Number.POSITIVE_INFINITY, 'Infinity'],
+  ] as const) {
+    assert.equal(formatValue(value), text)
+    // -0 is shown as 0.
+    if (Number.isFinite(value)) assert.ok(Math.fround(Number(text)) === value, text)
+  }
+  const random = createRandom(0xf0a7)
+  for (let index = 0; index < 20_000; index++) {
+    const value = Math.fround((random() - 0.5) * 10 ** Math.floor(random() * 14 - 6))
+    const text = formatValue(value)
+    assert.equal(Math.fround(Number(text)), value, text)
+    assert.ok(text.length <= 16, text)
+  }
+})
+
+// A stand-in for the elements that the renderer uses: a class name, children, style
+// properties, a scroll position, and a text that counts how often it's written.
+type FakeElement = {
+  className: string
+  children: FakeElement[]
+  style: Record<string, string> & {setProperty: (name: string, value: string) => void}
+  scrollTop: number
+  textContent: string
+  appendChild: (child: FakeElement) => FakeElement
+  querySelector: (selector: string) => FakeElement | null
+}
+
+function createFakeDom() {
+  const counts = {textWrites: 0}
+  function createElement(className = ''): FakeElement {
+    let text = ''
+    const style = {} as FakeElement['style']
+    Object.defineProperty(style, 'setProperty', {enumerable: false, value: (name: string, value: string) => {
+      style[name] = value
+    }})
+    const element: FakeElement = {
+      className,
+      children: [],
+      style,
+      scrollTop: 0,
+      get textContent() {
+        return text
+      },
+      set textContent(value: string) {
+        text = value
+        counts.textWrites++
+      },
+      appendChild(child) {
+        element.children.push(child)
+        return child
+      },
+      // The first descendant with the class, e.g. '.files-header'.
+      querySelector(selector) {
+        for (const child of element.children) {
+          if (child.className.split(' ').includes(selector.slice(1))) return child
+          const found = child.querySelector(selector)
+          if (found !== null) return found
+        }
+        return null
+      },
+    }
+    return element
+  }
+  // The static markup of assets/index.html inside .files-content.
+  const root = createElement('window-content files-content')
+  const sidebar = root.appendChild(createElement('files-sidebar'))
+  const list = root.appendChild(createElement('files-list'))
+  const header = list.appendChild(createElement('files-header'))
+  const scroller = list.appendChild(createElement('files-scroller'))
+  const spacer = scroller.appendChild(createElement('files-spacer'))
+  const overflow = list.appendChild(createElement('files-overflow'))
+  return {counts, document: {createElement: () => createElement()}, root, sidebar, list, header, scroller, spacer, overflow}
+}
+
+test("the renderer writes a row's text only when a slot's row changes, a value's text only when the value changes, and every slot's display and transform in every frame", () => {
+  const machine = createMachine()
+  const dom = createFakeDom()
+  const locations = [
+    describeState(machine.sourceCells, machine.packedValues),
+    describeOperations(machine.tensorProgram, machine.packedValues),
+    describeOutputs(machine.namedOutputs, machine.values),
+  ]
+  const renderer = createFilesRenderer(dom.document as unknown as Document, dom.root as unknown as HTMLElement, locations)
+  const rowNodes = dom.spacer.children
+  const rowTexts = (node: FakeElement) => node.children.map(cell => cell.textContent)
+  const drawnNodes = () => rowNodes.filter(node => node.style['display'] === 'grid').sort((left, right) => Number.parseFloat(left.style['transform']!.slice(11)) - Number.parseFloat(right.style['transform']!.slice(11)))
+  const expectedTexts = (location: number, row: number) => [...locations[location]!.text(row), formatValue(locations[location]!.value(row))]
+
+  // At mount: the layout numbers, 64 row nodes of 5 cells, and one sidebar item per
+  // location on the rectangle that the program hit-tests.
+  assert.deepEqual(
+    ['--files-sidebar-width', '--files-header-height', '--files-row-height', '--files-scrollbar-strip'].map(name => dom.root.style[name]),
+    ['132px', '28px', '24px', '16px'],
+  )
+  assert.equal(rowNodes.length, slotCount)
+  assert.ok(rowNodes.every(node => node.className === 'files-row' && node.children.length === 5))
+  assert.deepEqual(rowNodes[0]!.children.map(cell => cell.className), ['name', 'kind', 'layer', 'weights', 'value'].map(column => `files-cell files-cell-${column}`))
+  assert.deepEqual(
+    dom.sidebar.children.map(node => [node.className, node.textContent, node.style['left'], node.style['top'], node.style['width'], node.style['height']]),
+    [['files-location', 'State', '8px', '40px', '116px', '28px'], ['files-location', 'Operations', '8px', '68px', '116px', '28px'], ['files-location', 'Outputs', '8px', '96px', '116px', '28px']],
+  )
+
+  // The first frame shows Operations from the top: 14 rows, each in the slot of its
+  // index, with its text and its value.
+  let values = step(machine)
+  renderer.render(values, machine.output.files)
+  assert.equal(dom.list.className, 'files-list files-list-operations')
+  assert.deepEqual(dom.header.children.map(cell => cell.textContent), ['wire', 'kind', 'layer', 'weights', 'value'])
+  assert.deepEqual(dom.sidebar.children.map(node => node.style['--selected']), ['0', '1', '0'])
+  assert.equal(dom.spacer.style['height'], `${rowCountOf(machine) * rowHeight}px`)
+  assert.equal(dom.overflow.style['display'], 'none')
+  assert.deepEqual(rowNodes.map(node => node.style['display']), Array.from({length: slotCount}, (_, slot) => slot < 14 ? 'grid' : 'none'))
+  for (let row = 0; row < 14; row++) {
+    assert.equal(rowNodes[row]!.style['transform'], `translateY(${row * rowHeight}px)`)
+    assert.equal(rowNodes[row]!.style['--selected'], '0')
+    assert.deepEqual(rowTexts(rowNodes[row]!), expectedTexts(operationsLocation, row))
+  }
+  // The same frame again writes no text.
+  let textWrites = dom.counts.textWrites
+  for (const node of rowNodes) node.style['display'] = 'stale'
+  values = step(machine)
+  renderer.render(values, machine.output.files)
+  assert.equal(dom.counts.textWrites, textWrites)
+  // The display, which the renderer writes for every slot in every frame, is back.
+  assert.equal(drawnNodes().length, 14)
+
+  // The list scrolled by one row: the rows that stay drawn keep their nodes and
+  // their text, and the one row that comes into the drawn range is written, 4 texts
+  // and a value.
+  values = step(machine, rowHeight)
+  renderer.render(values, machine.output.files)
+  assert.equal(dom.counts.textWrites, textWrites + 5)
+  assert.deepEqual(rowTexts(rowNodes[14]!), expectedTexts(operationsLocation, 14))
+  assert.deepEqual(drawnNodes().map(node => rowNodes.indexOf(node)), Array.from({length: 15}, (_, row) => row))
+  // Far down the list, a slot shows another row of its own: row 4,174 is in slot 14.
+  values = step(machine, 100_000)
+  renderer.render(values, machine.output.files)
+  assert.deepEqual(rowTexts(rowNodes[4174 % slotCount]!), expectedTexts(operationsLocation, 4174))
+  assert.equal(rowNodes[4174 % slotCount]!.style['transform'], `translateY(${4174 * rowHeight}px)`)
+  // A selected row.
+  values = click(machine, rowPoint(4170, 100_000), undefined, 100_000)
+  renderer.render(values, machine.output.files)
+  assert.deepEqual(rowNodes.filter(node => node.style['--selected'] === '1').map(node => rowNodes.indexOf(node)), [4170 % slotCount])
+
+  // Another location: the header's titles, the list's class name, and the text of
+  // every drawn row, which the program draws from the top.
+  textWrites = dom.counts.textWrites
+  values = click(machine, locationPoint(stateLocation), undefined, 100_000)
+  renderer.render(values, machine.output.files)
+  assert.equal(dom.list.className, 'files-list files-list-state')
+  assert.deepEqual(dom.header.children.map(cell => cell.textContent), ['cell', 'kind', '', '', 'value'])
+  assert.deepEqual(dom.sidebar.children.map(node => node.style['--selected']), ['1', '0', '0'])
+  assert.equal(dom.counts.textWrites, textWrites + 5 + 14 * 5)
+  assert.deepEqual(rowTexts(rowNodes[0]!), ['viewportWidth', 'input', '', '', '1280'])
+  // The program asked for the top, which the host gives the scroller after its DOM
+  // writes, and the position read back is what the scroller kept.
+  assert.equal(machine.filesScrollTo, 0)
+  dom.scroller.scrollTop = 100_000
+  assert.equal(renderer.readScrollTop(), 100_000)
+  assert.equal(renderer.scrollTo(0), 0)
+  assert.equal(dom.scroller.scrollTop, 0)
+
+  // A value that changed: the viewport is 1 px wider, and only that cell's value is
+  // written.
+  textWrites = dom.counts.textWrites
+  values = step(machine, 0, viewportWidth + 1)
+  renderer.render(values, machine.output.files)
+  assert.equal(dom.counts.textWrites, textWrites + 1)
+  assert.deepEqual(rowTexts(rowNodes[0]!), ['viewportWidth', 'input', '', '', '1281'])
 })

@@ -222,9 +222,10 @@ body {
 /* Files: a sidebar of locations and a virtualized list in a native scroller.
    files.ts creates the sidebar's items, the header's cells and the rows. Every frame
    it gives each row its transform, display and --selected, each sidebar item its
-   --selected, and the spacer its height. At mount it copies the program's layout
-   numbers into the custom properties below and places the sidebar's items on the
-   rectangles that the program hit-tests. */
+   --selected, and the spacer its height, and it rewrites a row's value when the
+   value changed. At mount it copies the program's layout numbers into the custom
+   properties below and places the sidebar's items on the rectangles that the
+   program hit-tests. */
 .files-content {
   --files-sidebar-width: 132px;
   --files-header-height: 28px;
@@ -284,20 +285,20 @@ body {
   padding: 0 var(--files-scrollbar-strip) 0 14px;
 }
 
-/* Each location shows the columns that it has a title for. */
+/* Each location shows the columns that it has a title for, and the value last. */
 .files-list-state .files-header,
 .files-list-state .files-row {
-  grid-template-columns: minmax(0, 1fr) 64px;
+  grid-template-columns: minmax(0, 1fr) 56px 96px;
 }
 
 .files-list-operations .files-header,
 .files-list-operations .files-row {
-  grid-template-columns: minmax(0, 1fr) 56px 40px 56px;
+  grid-template-columns: minmax(0, 1fr) 52px 36px 52px 96px;
 }
 
 .files-list-outputs .files-header,
 .files-list-outputs .files-row {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 96px;
 }
 
 .files-list-state .files-cell-layer,
@@ -371,10 +372,16 @@ body {
   white-space: nowrap;
 }
 
+/* Numbers line up on their last digit. */
 .files-cell-layer,
-.files-cell-weights {
+.files-cell-weights,
+.files-cell-value {
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+.files-row .files-cell-value {
+  color: #b7f7cd;
 }
 
 .files-cell-kind {

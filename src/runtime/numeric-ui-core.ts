@@ -744,11 +744,14 @@ export class Circuit {
 
   // createTensorEvaluator for a program that compileTensorProgram already returned, e.g. one that the caller also
   // validates or reads counts from, so that the circuit compiles once. The evaluator returns the program's roots.
-  createTensorProgramEvaluator(program: TensorProgram): (source: Float32Array) => Float32Array {
+  // Its packedValues property is the array that the evaluator computes in: after a call, packedValues[index] is the
+  // value of wire program.wireOrder[index], for the source cells and every live operation, e.g. for HandwiredOS's Files
+  // window, which lists each operation's current value. The next call overwrites the array.
+  createTensorProgramEvaluator(program: TensorProgram): ((source: Float32Array) => Float32Array) & {packedValues: Float32Array} {
     const workspace = createTensorWorkspace(program)
     const positions = Array.from(program.roots, root => program.wireOrder.indexOf(root))
     const outputs = new Float32Array(program.roots.length)
-    return source => {
+    const evaluate = (source: Float32Array) => {
       this.validateSourceRanges(source)
       executeTensorProgram(source, program, workspace)
       for (let index = 0; index < positions.length; index++) {
@@ -756,6 +759,7 @@ export class Circuit {
       }
       return outputs
     }
+    return Object.assign(evaluate, {packedValues: workspace.packedValues})
   }
 
   validateSourceRanges(source: Float32Array) {

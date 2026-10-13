@@ -442,10 +442,11 @@ export function createFilesCircuit() {
   return {circuit, cells, output: files, nextSource, initialSource, validate}
 }
 
-// What the host shows in the list: a title per column for the header, and each
-// row's text. A row has a name, a kind, a layer and a number of stored weights,
-// and a location leaves a column out with an empty title.
-const columnNames = ['name', 'kind', 'layer', 'weights'] as const
+// What the host shows in the list: a title per text column for the header, each
+// row's text, and each row's current value. A row has a name, a kind, a layer and
+// a number of stored weights, which never change, and a location leaves a column
+// out with an empty title. The value column comes last.
+const textColumnNames = ['name', 'kind', 'layer', 'weights'] as const
 type ColumnTexts = readonly [name: string, kind: string, layer: string, weights: string]
 export type FilesLocation = {
   // The sidebar item's text, e.g. 'Operations'. The list's class name ends with it
@@ -455,6 +456,21 @@ export type FilesLocation = {
   titles: ColumnTexts
   rowCount: number
   text: (row: number) => ColumnTexts
+  // The row's value in the last evaluation.
+  value: (row: number) => number
+}
+
+// An FP32 value as the shortest decimal that reads back as the same FP32 value,
+// e.g. '0.1' for f(0.1), whose float64 digits are 0.10000000149011612. 9
+// significant digits always identify an FP32 value. A whole number below 10^21,
+// where JavaScript still prints every digit, is shown exactly, e.g. 2399976.
+export function formatValue(value: number) {
+  if (!Number.isFinite(value) || (Number.isInteger(value) && Math.abs(value) < 1e21)) return String(value)
+  for (let digits = 1; digits <= 9; digits++) {
+    const rounded = Number(value.toPrecision(digits))
+    if (Math.fround(rounded) === value) return String(rounded)
+  }
+  return String(value)
 }
 
 type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
@@ -465,8 +481,9 @@ type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 // kinds are counted like the System Monitor counts them, so a sum that the
 // compiler lowered to a gather read, which stores no weights, is an affine
 // operation. The numbers are kept in typed arrays, and a row's text is formatted
-// when a slot shows the row.
-export function describeOperations(program: TensorProgram): FilesLocation {
+// when a slot shows the row. `packedValues` is the array that the program's
+// evaluator computes in, see createTensorProgramEvaluator.
+export function describeOperations(program: TensorProgram, packedValues: Float32Array): FilesLocation {
   const rowCount = program.valueCount - program.sourceSize
   const kinds = new Uint8Array(rowCount)
   const layers = new Uint16Array(rowCount)
@@ -499,28 +516,34 @@ export function describeOperations(program: TensorProgram): FilesLocation {
       String(layers[row]),
       String(weights[row]),
     ],
+    value: row => packedValues[program.sourceSize + row]!,
   }
 }
 
 // The rows of a source table's cells, in table order: the cell's name from its place
 // in the cell declarations, written with dots, e.g. 'windows.3.left' for the table's
 // 'windows[3].left', and what happens to the cell around an evaluation, e.g. 'state'.
-export function describeState(cells: readonly {name: string, policy: string}[]): FilesLocation {
+// The source cells are the first packed values, so a cell's value is the one that
+// the last evaluation read, e.g. the spring matrix that the host wrote for it.
+export function describeState(cells: readonly {name: string, policy: string}[], packedValues: Float32Array): FilesLocation {
   return {
     label: 'State',
     titles: ['cell', 'kind', '', ''],
     rowCount: cells.length,
     text: row => [cells[row]!.name.replaceAll(/\[(\d+)\]/g, '.$1'), cells[row]!.policy, '', ''],
+    value: row => packedValues[row]!,
   }
 }
 
 // The rows of the outputs that a page draws from, by name, e.g. 'windows.0.translateX'.
-export function describeOutputs(names: readonly string[]): FilesLocation {
+// `values` is the machine's array of root values, indexed by wire.
+export function describeOutputs(outputs: readonly {name: string, wire: Wire}[], values: Float32Array): FilesLocation {
   return {
     label: 'Outputs',
     titles: ['output', '', '', ''],
-    rowCount: names.length,
-    text: row => [names[row]!, '', '', ''],
+    rowCount: outputs.length,
+    text: row => [outputs[row]!.name, '', '', ''],
+    value: row => values[outputs[row]!.wire]!,
   }
 }
 
@@ -546,7 +569,7 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
   root.style.setProperty('--files-header-height', `${filesLayout.headerHeight}px`)
   root.style.setProperty('--files-row-height', `${filesLayout.rowHeight}px`)
   root.style.setProperty('--files-scrollbar-strip', `${filesLayout.scrollbarStrip}px`)
-  const createCells = (parent: HTMLElement) => columnNames.map(column => {
+  const createCells = (parent: HTMLElement) => [...textColumnNames, 'value'].map(column => {
     const cell = document.createElement('span')
     cell.className = `files-cell files-cell-${column}`
     parent.appendChild(cell)
@@ -573,12 +596,13 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
     }),
     // The location whose titles the header shows, or -1 before the first frame.
     location: -1,
-    // mount lifetime. Each slot keeps the row whose text its cells hold, or -1.
+    // mount lifetime. Each slot keeps the row whose text its cells hold, or -1, and
+    // the value whose text its last cell holds.
     slots: Array.from({length: slotCount}, () => {
       const node = document.createElement('div')
       node.className = 'files-row'
       spacer.appendChild(node)
-      return {node, cells: createCells(node), row: -1}
+      return {node, cells: createCells(node), row: -1, value: Number.NaN}
     }),
   }
 
@@ -600,7 +624,7 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
         // name, and every slot's text, since a row index now means another row.
         domCache.list.className = `files-list files-list-${location.label.toLowerCase()}`
         domCache.headerCells.forEach((cell, column) => {
-          cell.textContent = location.titles[column]!
+          cell.textContent = location.titles[column] ?? 'value'
         })
         for (const slot of domCache.slots) slot.row = -1
         domCache.location = locationIndex
@@ -614,14 +638,23 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
         slot.node.style.display = present ? 'grid' : 'none'
         slot.node.style.transform = `translateY(${values[output.slots[outputStart + slotField.top]!]}px)`
         slot.node.style.setProperty('--selected', `${values[output.slots[outputStart + slotField.selected]!]}`)
-        // Text is written only when the slot's row changes: a row keeps its slot
-        // while it's drawn, so scrolling by one row writes one row's text.
-        if (present && slot.row !== row) {
+        if (!present) return
+        // A row's text is written only when the slot's row changes: a row keeps its
+        // slot while it's drawn, so scrolling by one row writes one row's text. The
+        // value's text is written when the row or the value changes, compared with
+        // the number kept here rather than with the DOM.
+        const rowChanged = slot.row !== row
+        if (rowChanged) {
           const text = location.text(row)
-          slot.cells.forEach((cell, column) => {
-            cell.textContent = text[column]!
+          text.forEach((columnText, column) => {
+            slot.cells[column]!.textContent = columnText
           })
           slot.row = row
+        }
+        const value = location.value(row)
+        if (rowChanged || !Object.is(value, slot.value)) {
+          slot.cells[textColumnNames.length]!.textContent = formatValue(value)
+          slot.value = value
         }
       })
     },

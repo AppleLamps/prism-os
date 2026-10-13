@@ -1598,11 +1598,17 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     output,
     source,
     tensorProgram,
-    // What Files' State and Outputs locations list: each source cell's name and
-    // policy in table order, and each output's name in the order of the program's
-    // roots after the next-state values, e.g. 'windows.0.translateX'.
+    // What Files lists. sourceCells holds each source cell's name and policy in
+    // table order, and namedOutputs each output's wire and name in the order of the
+    // program's roots after the next-state values, e.g. 'windows.0.translateX'.
+    // After a step, `values` holds every root's value in the frame's evaluation,
+    // indexed by wire, and packedValues the value of every source cell and live
+    // operation in it, in the program's packed order, see
+    // createTensorProgramEvaluator. step() returns `values`.
     sourceCells,
-    outputNames: namedOutputs.map(({name}) => name),
+    namedOutputs,
+    values,
+    packedValues: evaluateRoots.packedValues,
     // A host requests frames while clock.animatedUntilMs isn't null.
     get clock() {
       return clock
@@ -1765,13 +1771,13 @@ function mountWindowManager(document: Document, window: Window) {
   }
   const photos = createPhotoGalleryRenderer(document, domCache.photosViewport)
   const program = machine.tensorProgram
-  // Files lists the program itself, one location per kind of number. The rows'
-  // text stays in JavaScript, and the program computes which rows the list's DOM
-  // slots show.
+  // Files lists the program itself, one location per kind of number, each with
+  // its value in the frame's evaluation. The rows' text stays in JavaScript, and
+  // the program computes which rows the list's DOM slots show.
   const files = createFilesRenderer(document, domCache.filesContent, [
-    describeState(machine.sourceCells),
-    describeOperations(program),
-    describeOutputs(machine.outputNames),
+    describeState(machine.sourceCells, machine.packedValues),
+    describeOperations(program, machine.packedValues),
+    describeOutputs(machine.namedOutputs, machine.values),
   ])
   let affineCount = 0
   let regluCount = 0
