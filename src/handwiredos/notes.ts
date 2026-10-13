@@ -73,7 +73,7 @@ const pressCountLimit = 256
 // A paragraph as the segment cells can hold it: at most `capacity` segments, each width
 // a multiple of 1/64 px within the cells' range, and each break-after bit exactly 0 or
 // 1. E.g. a width of 30.4 px becomes 30.40625, a width that isn't a finite number
-// becomes 0, and the 129th segment is left out of 128 cells. Every text passes through
+// becomes 0, and the 257th segment is left out of 256 cells. Every text passes through
 // this function before the machine writes cells, like pointer coordinates are rounded
 // and clamped: a value outside a cell's declared range fails the machine's table check,
 // and after a failed check the machine stops for good.
@@ -89,7 +89,7 @@ export function fitNotesParagraph(paragraph: FastParagraph, capacity: number): F
 
 // Notes' own cells: `capacity` segment cells, each a measured width and a break-after
 // bit, how many of them hold the text, and the segment the text starts at. The cells
-// after the text hold width 0 and break-after 0, see walkGatheredLines. The host
+// after the text hold width 0 and break-after 0, see walkIndexedLines. The host
 // rewrites the cells when the text changes, e.g. at every typed character, through
 // the machine's notesText in window-manager.ts. `paragraph` is the text the cells
 // start with. Segments carry no state.

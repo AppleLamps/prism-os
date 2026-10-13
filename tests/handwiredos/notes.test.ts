@@ -723,8 +723,10 @@ function createTally() {
 }
 
 // Words of at most 7 letters, so each fits the narrowest slot, 80 px, and pretext never breaks one between two
-// letters. The words of one and two letters put the most segments on a line: a 440 px line of them can hold more
-// than the walker's window of 40 segments, and such states are checked against the walker's rule only.
+// letters. The words of one and two letters put the most segments on a line: in 3,000 random texts of these words,
+// a 440 px line held at most 47 segments, fewer than the walker's window of 64. So the random texts below stay
+// within the program's limits, and pretext is the reference in every state. The test of a line with more segments
+// than the window covers the other case.
 const vocabulary = 'the quick brown fox jumps over a lazy dog and then it naps under an old oak tree while rain taps on every window of our small quiet house near wide green fields I am so on to we be at by is as of in up no go do my me he if or us ox'.split(' ')
 
 function randomText(random: () => number, wordCount: number) {
@@ -804,8 +806,7 @@ test('random texts of every length that fits the cells match pretext, through th
     add(`random windows, trial ${trial}`, text, compareAroundRandomWindows(machines['Notes in front'], text, random))
   }
   assert.deepEqual(tally.failures, [])
-  assert.deepEqual([tally.states, tally.statesWherePretextBrokeWords, tally.cutAtCapacity], [900, 0, 0])
-  assert.ok(tally.statesMatchingPretext > 850, `${tally.statesMatchingPretext} states compared with pretext`)
+  assert.deepEqual([tally.states, tally.statesMatchingPretext, tally.cutAtCapacity], [900, 900, 0])
   assert.ok(wordCounts.size > 0.8 * mostWordsInCells, `${wordCounts.size} different word counts`)
   assert.ok(tally.truncatedStates > 100, `${tally.truncatedStates} truncated states`)
   for (const checks of declarationChecks) assert.equal(checks.evaluations, 600)
@@ -832,8 +833,7 @@ test('inserting and deleting words in the middle of a text matches pretext after
     add(`random windows, edit ${edit}`, text, compareAroundRandomWindows(machines['Notes in front'], text, random))
   }
   assert.deepEqual(tally.failures, [])
-  assert.deepEqual([tally.states, tally.statesWherePretextBrokeWords, tally.cutAtCapacity], [900, 0, 0])
-  assert.ok(tally.statesMatchingPretext > 850, `${tally.statesMatchingPretext} states compared with pretext`)
+  assert.deepEqual([tally.states, tally.statesMatchingPretext, tally.cutAtCapacity], [900, 900, 0])
   assert.ok(insertions > 100 && deletions > 100, `${insertions} insertions and ${deletions} deletions`)
 }, 60_000)
 
@@ -851,8 +851,7 @@ test('a text with more segments than the cells is cut at the capacity, and the s
     add(`random windows, trial ${trial}`, text, compareAroundRandomWindows(machines['Notes in front'], text, random))
   }
   assert.deepEqual(tally.failures, [])
-  assert.deepEqual([tally.states, tally.statesWherePretextBrokeWords, tally.cutAtCapacity], [180, 0, 180])
-  assert.ok(tally.statesMatchingPretext > 160, `${tally.statesMatchingPretext} states compared with pretext`)
+  assert.deepEqual([tally.states, tally.statesMatchingPretext, tally.cutAtCapacity], [180, 180, 180])
   // With Notes in front, the segments that the cells hold fit the bands, so `truncated` is 0 although the text was
   // cut: the program only knows the cells. Whether the text was cut is the host's to know, from notesText's result.
   const inFront = machines['Notes in front']

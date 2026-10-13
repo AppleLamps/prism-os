@@ -1530,7 +1530,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     // move in that evaluation like at any other event. The paragraph first passes
     // through fitNotesParagraph, which rounds and clamps the widths and leaves out
     // the segments past the cells' capacity. Returns how many segments the cells
-    // hold after the event, e.g. 128 for a text of 300 segments.
+    // hold after the event, e.g. 256 for a text of 300 segments.
     notesText(paragraph: FastParagraph, timeStamp?: number) {
       const {widths, breakAfter} = fitNotesParagraph(paragraph, notesOptions.capacity)
       queue('notes text', timeStamp, table => {
