@@ -90,8 +90,11 @@
       <section class="demos" aria-labelledby="demos">
         <a class="card demo is-first" href="os/" aria-labelledby="handwiredos-title">
           <div class="demo-picture">
-            <!-- The file is 1520 by 800 px, twice the size the card shows it at. demos.css repeats this shape. -->
-            <img src="./demos-handwiredos.webp" width="1520" height="800" decoding="async" alt="A screenshot of HandwiredOS: four overlapping windows on a desk, with a grid of photos in front.">
+            <!-- The file is 1520 by 800 px, and demos.css repeats its shape, 1.9 to 1. From a window of 1152 px the
+                 card shows the picture 722 px wide, about half the file's size. In a narrower window the picture is
+                 as wide as the card, up to 1101 px, where a screen with two device pixels per CSS px shows it soft.
+                 A file of 2204 by 1160 px would be sharp at every width. -->
+            <img src="./demos-handwiredos.webp" width="1520" height="800" decoding="async" alt="A screenshot of HandwiredOS: four windows on a desk, with a grid of photos in front.">
           </div>
           <div class="demo-body">
             <h3 id="handwiredos-title">HandwiredOS</h3>
