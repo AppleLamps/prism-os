@@ -40,10 +40,15 @@ export function countOperationKinds(program: TensorProgram): OperationKinds {
   return kinds
 }
 
-// The stored weights, and the bytes of every array the program holds.
-function measureProgram(program: TensorProgram) {
+// The stored weights, and the bytes of every array the program holds. The index
+// reads of one table share one array of the table's positions, e.g. HandwiredOS's
+// 2,320 index reads share 5 arrays of 1,572 bytes in all, so each array is counted
+// once, however many reads point at it.
+/** @public */
+export function measureProgram(program: TensorProgram) {
   let weights = 0
   let bytes = program.roots.byteLength + program.wireOrder.byteLength
+  const indexTables = new Set<ArrayBufferView>()
   for (const layer of program.layers) {
     weights += layer.weights.length
     bytes +=
@@ -56,8 +61,9 @@ function measureProgram(program: TensorProgram) {
       + layer.columns.byteLength
     for (const compute of layer.gatherComputes) bytes += compute.bitPositions.byteLength
     for (const read of layer.gatherReads) bytes += read.candidatePositions.byteLength
-    for (const read of layer.indexReads) bytes += read.candidatePositions.byteLength
+    for (const read of layer.indexReads) indexTables.add(read.candidatePositions)
   }
+  for (const table of indexTables) bytes += table.byteLength
   return {weights, bytes}
 }
 
