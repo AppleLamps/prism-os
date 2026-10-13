@@ -5,7 +5,7 @@
 //   bun lab/json-search/gpu/run.ts --mode check --profile <new folder> --out <file.json> [--guards none,max]
 // Every run needs a profile folder that no other Chrome uses: Chrome starts with a fresh profile there, and the run
 // ends only the Chrome it started. Chrome runs with --enable-webgpu-developer-features, so timestamp queries aren't
-// rounded to 100 µs. The main mode takes about 10 minutes, most of it the idle gaps.
+// rounded to 100 µs. The main mode takes about 8 minutes, most of it waiting before the evaluations after a pause.
 import {mkdirSync, writeFileSync} from 'node:fs'
 import type {Guard} from '../emit.ts'
 import {defaultInvalidFraction, defaultSeed} from '../documents.ts'

@@ -121,7 +121,7 @@ const idleAt = (result: GpuResult, idleMs: number) => result.afterIdle?.find(ent
 const idleGaps = first.results[0]!.afterIdle?.map(entry => entry.idleMs) ?? []
 
 console.log('\nOne evaluation with the documents already on the GPU, ms:\n')
-console.log(`| Variant | Documents | MB read back | Back to back | Compute pass, timestamps | ${idleGaps.map(gap => `After ${format(gap)} ms idle`).join(' | ')} |`)
+console.log(`| Variant | Documents | MB read back | Back to back | Compute pass, timestamps | ${idleGaps.map(gap => `After a pause of ${format(gap)} ms`).join(' | ')} |`)
 console.log(`| --- | --- | --- | --- | --- | ${idleGaps.map(() => '---').join(' | ')} |`)
 for (const variant of variants) {
   for (const count of counts) {
@@ -149,8 +149,8 @@ for (const variant of variants) {
   }
 }
 
-console.log('\nThe summary variant after idle, with a timestamp query: total ms and compute pass ms, median of the runs\' medians:\n')
-console.log(`| Documents | Back to back: total, pass | ${idleGaps.map(gap => `${format(gap)} ms idle: total, pass`).join(' | ')} | ${first.results[0]!.afterIdleWithKeepWarm === undefined ? '' : `${format(first.results[0]!.afterIdleWithKeepWarm.idleMs)} ms with a one-document dispatch every 16 ms: total |`}`)
+console.log('\nThe summary variant after a pause, with a timestamp query: total ms and compute pass ms, median of the runs\' medians:\n')
+console.log(`| Documents | Back to back: total, pass | ${idleGaps.map(gap => `Pause of ${format(gap)} ms: total, pass`).join(' | ')} | ${first.results[0]!.afterIdleWithKeepWarm === undefined ? '' : `Pause of ${format(first.results[0]!.afterIdleWithKeepWarm.idleMs)} ms with a one-document dispatch every 16 ms: total |`}`)
 console.log(`| --- | --- | ${idleGaps.map(() => '---').join(' | ')} | --- |`)
 for (const count of counts) {
   const results = resultsOf('summary', count)
@@ -183,14 +183,14 @@ console.log(`The self check over ${format(first.selfCheck.documents)} documents:
 type Series = {name: string, variant: string, pick: (result: GpuResult) => Summary | undefined}
 const series: Series[] = [
   {name: 'summary, back to back', variant: 'summary', pick: result => result.backToBack.totalMs},
-  {name: 'summary, after 16 ms idle', variant: 'summary', pick: result => idleAt(result, 16)?.totalMs},
-  {name: 'summary, after 1,000 ms idle', variant: 'summary', pick: result => idleAt(result, 1000)?.totalMs},
-  {name: 'summary, with upload', variant: 'summary', pick: result => result.withUpload?.totalWithCellsMs},
+  {name: 'summary, after a pause of 16 ms', variant: 'summary', pick: result => idleAt(result, 16)?.totalMs},
+  {name: 'summary, after a pause of 1,000 ms', variant: 'summary', pick: result => idleAt(result, 1000)?.totalMs},
+  {name: 'summary, with an upload', variant: 'summary', pick: result => result.withUpload?.totalWithCellsMs},
   {name: 'display-window, back to back', variant: 'display-window', pick: result => result.backToBack.totalMs},
-  {name: 'display-window, after 16 ms idle', variant: 'display-window', pick: result => idleAt(result, 16)?.totalMs},
-  {name: 'display-window, after 1,000 ms idle', variant: 'display-window', pick: result => idleAt(result, 1000)?.totalMs},
+  {name: 'display-window, after a pause of 16 ms', variant: 'display-window', pick: result => idleAt(result, 16)?.totalMs},
+  {name: 'display-window, after a pause of 1,000 ms', variant: 'display-window', pick: result => idleAt(result, 1000)?.totalMs},
   {name: 'display-all, back to back', variant: 'display-all', pick: result => result.backToBack.totalMs},
-  {name: 'display-all, with upload', variant: 'display-all', pick: result => result.withUpload?.totalWithCellsMs},
+  {name: 'display-all, with an upload', variant: 'display-all', pick: result => result.withUpload?.totalWithCellsMs},
 ]
 const nearestCount = (count: number) => counts.reduce((best, candidate) => Math.abs(Math.log(candidate / count)) < Math.abs(Math.log(best / count)) ? candidate : best)
 type Point = {count: number, gpu: number, cpu: number}
