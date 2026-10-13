@@ -16,7 +16,8 @@
 //   a search can read only string values, only keys, or everything. There is one such program per state capacity,
 //   8, 16 and 32 by default, and a pattern runs on the smallest one that holds it, since a step's cost grows with the
 //   square of the capacity.
-// On the GPU a search uploads the pattern's cells, 1,107 to 16,491 numbers, and nothing per document.
+// On the GPU a search uploads the search program's shared cells, 1,135 to 16,591 numbers, of which the pattern writes
+// 1,097 to 16,481, and nothing per document.
 //
 // A page calls search when the pattern, the scope or the window changes. One evaluation is in flight at a time: a
 // request waits for the one before it, and a request that a newer one replaced, before or while it ran, resolves to
@@ -235,7 +236,7 @@ type CpuOptions = SearcherOptions & {backend?: 'generated' | 'executor'}
 type EvaluateOnCpu = (compiled: CompiledPattern, states: number, request: SearchRequest, patternStarted: number) => SearchResult & {status: 'searched'}
 
 // The same programs on the CPU. `backend` is 'generated' unless given: generated JavaScript of each step, which takes
-// e.g. 0.3 ms per document and search at 8 states, so a page gives it hundreds of documents, not tens of thousands.
+// e.g. 0.25 ms per document and search at 8 states, so a page gives it hundreds of documents, not tens of thousands.
 export function createCpuSearcher(texts: readonly string[], options: CpuOptions = {}): Searcher {
   return buildCpuSearcher(texts, options).searcher
 }

@@ -1,6 +1,6 @@
 // The JSON highlighter (src/json-highlighter/highlighter.ts, the loop form) as the work of one position, for
 // loop-program.ts. The highlighter writes that work out for each of its 513 positions, e.g. 7,698 operations for the
-// summary and the display kinds, and as one straight-line shader they took 1.9 to 2.3 s to compile. Here the stages of
+// summary and the display kinds, and as one shader with a statement per operation they took 1.9 to 2.3 s to compile. Here the stages of
 // highlighter.ts are written for one position, with the same tables, reads and comparisons:
 //   step   positions 0 to 511: the character's class, the tokenizer's event and next state, the depth and the container
 //          code after it, whether the innermost container is an object, the grammar's next state, and the display kind

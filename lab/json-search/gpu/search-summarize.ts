@@ -221,7 +221,7 @@ if (combinedRuns.length > 0) {
   const programNames = [...new Set(pages.flatMap(page => page.results.flatMap(result => result.programs.map(program => program.name))))]
   for (const name of programNames) {
     const example = first.results.flatMap(result => result.programs).find(program => program.name === name) ?? pages.flatMap(page => page.results.flatMap(result => result.programs)).find(program => program.name === name)!
-    console.log(`| ${name} | ${example.operations.map(whole).join(', ')} | ${example.statements ?? ''} | ${counts.map(count => `${whole(count)}: ${cell(count, result => result.programs.find(program => program.name === name)?.compileMs, 0)}`).join('; ')} |`)
+    console.log(`| ${name} | ${example.operations.map(whole).join(', ')} | ${example.statements === undefined ? '' : whole(example.statements)} | ${counts.map(count => `${whole(count)}: ${cell(count, result => result.programs.find(program => program.name === name)?.compileMs, 0)}`).join('; ')} |`)
   }
   if (first.straightLineDisplayShader !== undefined) {
     const straight = defined(pages.map(page => page.straightLineDisplayShader))
@@ -280,7 +280,7 @@ if (combinedRuns.length > 0) {
       const program = at(page, largest)?.programsOnTheCpu.find(other => other.name === name)
       return program === undefined ? undefined : choose(program)
     }))
-    console.log(`| ${name} | ${pick(program => program.documents)} | ${pick(program => program.validateMicrosecondsPerDocument)} | ${pick(program => program['searchMicrosecondsPerDocumentAt8States'])} | ${pick(program => program['searchMicrosecondsPerDocumentAt16States'])} | ${pick(program => program['searchMicrosecondsPerDocumentAt32States'])} |`)
+    console.log(`| ${name} | ${whole(at(first, largest)!.programsOnTheCpu.find(program => program.name === name)!.documents)} | ${pick(program => program.validateMicrosecondsPerDocument)} | ${pick(program => program['searchMicrosecondsPerDocumentAt8States'])} | ${pick(program => program['searchMicrosecondsPerDocumentAt16States'])} | ${pick(program => program['searchMicrosecondsPerDocumentAt32States'])} |`)
   }
 
   console.log('\n### Checks\n')

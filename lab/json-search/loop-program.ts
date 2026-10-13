@@ -3,7 +3,7 @@
 // as its own small program, and it runs once per position. JS for what a looped stage does:
 //
 //   for (let position = 0; position < positions; position++) {
-//     const values = step(codePoints[position], carried)   // the compiled step, e.g. 115 operations
+//     const values = step(codePoints[position], carried)   // the compiled step, e.g. 37 operations
 //     carried = values.next                                // carried to the next position
 //     perPosition[position] = values.kept                  // kept for a later loop, or for the page
 //   }

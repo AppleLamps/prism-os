@@ -1,6 +1,6 @@
 // Regex search's form (a) (lab/regex-search/data-program.ts, the pattern as data) as the work of one code point, for
 // loop-program.ts. The full program writes that work out once per code point, e.g. 58,920 operations for 256 code
-// points at 8 states, and as one straight-line shader it took 107 to 130 s to compile. Here the same builder code runs
+// points at 8 states, and as one shader with a statement per operation it took 107 to 130 s to compile. Here the same builder code runs
 // for one position: the class of the code point, one step of the reverse pass, and one step of the forward pass, 240
 // operations at 8 states, whatever the number of positions. A new pattern still writes cells and changes no program.
 //
