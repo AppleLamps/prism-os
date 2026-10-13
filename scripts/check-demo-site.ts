@@ -79,7 +79,7 @@ const server = Bun.serve({
     const file = path.join(siteFolder, decodeURIComponent(url.pathname.slice(prefix.length)))
     if (file !== siteFolder && !file.startsWith(siteFolder + path.sep)) return respond(404, 'Not found')
     if (existsSync(file) && statSync(file).isDirectory()) {
-      if (!url.pathname.endsWith('/')) return respond(301, null, {location: `${url.pathname}/`})
+      if (!url.pathname.endsWith('/')) return respond(301, null, {location: `${url.pathname}/${url.search}`})
       const index = path.join(file, 'index.html')
       return existsSync(index) ? respond(200, Bun.file(index)) : respond(404, 'Not found')
     }

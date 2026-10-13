@@ -23,7 +23,7 @@ function option(name: string): string | undefined {
   return undefined
 }
 
-const routes: Record<string, Bun.HTMLBundle | Response> = {
+const routes: Record<string, Bun.HTMLBundle | Response | ((request: Request) => Response)> = {
   // The built pages carry the icon inline. Here the browser's request for /favicon.ico gets the same image.
   '/favicon.ico': new Response(iconSvg, {headers: {'content-type': 'image/svg+xml'}}),
 }
@@ -31,7 +31,8 @@ for (const page of sitePages) {
   // The list of pages decides which files are imported, so the import's path is computed.
   const module = await import(resolve(repoRoot, page.source)) as {default: Bun.HTMLBundle}
   routes[`/${page.path}`] = module.default
-  if (page.path !== '') routes[`/${page.path.slice(0, -1)}`] = new Response(null, {status: 302, headers: {location: `/${page.path}`}})
+  // The redirect keeps the query, e.g. /regex-search?states=8 goes to /regex-search/?states=8.
+  if (page.path !== '') routes[`/${page.path.slice(0, -1)}`] = request => new Response(null, {status: 302, headers: {location: `/${page.path}${new URL(request.url).search}`}})
 }
 
 const portText = option('port') ?? process.env['PORT'] ?? '3000'
