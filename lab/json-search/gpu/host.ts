@@ -103,8 +103,9 @@ export type Evaluation = {
 }
 
 export type EvaluateOptions = {
-  // Evaluates documents 0 to count - 1.
+  // Evaluates `count` documents, from firstDocument on, which is 0 unless given. Only a loop shader reads firstDocument.
   count: number
+  firstDocument?: number
   // At most one readback per group. A windowed group's rows are the window's documents, so its readback starts at 0.
   readbacks: readonly Readback[]
   // New cells for the first `count` documents, uploaded before the pass.
@@ -202,8 +203,8 @@ export async function createProgramRunner(device: GPUDevice, shader: RunnableSha
   const readbackArrays: (Float32Array | undefined)[] = shader.outputCounts.map(() => undefined)
   const paramValues = new Uint32Array(4)
 
-  async function evaluate({count, readbacks, cells, shared: newShared, window, timestamps = false}: EvaluateOptions): Promise<Evaluation> {
-    invariant(Number.isInteger(count) && count >= 1 && count <= capacity, 'the count lies within the store\'s capacity')
+  async function evaluate({count, firstDocument = 0, readbacks, cells, shared: newShared, window, timestamps = false}: EvaluateOptions): Promise<Evaluation> {
+    invariant(Number.isInteger(count) && count >= 1 && firstDocument >= 0 && firstDocument + count <= capacity, 'the documents lie within the store\'s capacity')
     invariant(!timestamps || querySet !== undefined, 'this device has no timestamp queries')
     invariant(new Set(readbacks.map(readback => readback.group)).size === readbacks.length, 'a group is read back once per evaluation')
     invariant(window === undefined || (window.firstDocument >= 0 && window.documentCount >= 0 && window.documentCount <= windowCapacity), 'the window holds at most windowCapacity documents')
@@ -225,6 +226,7 @@ export async function createProgramRunner(device: GPUDevice, shader: RunnableSha
     paramValues[0] = count
     paramValues[1] = window?.firstDocument ?? 0
     paramValues[2] = window?.documentCount ?? 0
+    paramValues[3] = firstDocument
     device.queue.writeBuffer(params, 0, paramValues.buffer, 0, 16)
     const uploaded = performance.now()
     const encoder = device.createCommandEncoder()
@@ -266,6 +268,23 @@ export async function createProgramRunner(device: GPUDevice, shader: RunnableSha
     device.queue.writeBuffer(shared, offset * 4, values.buffer, values.byteOffset, values.byteLength)
   }
 
+  // Copies some documents' values of one output group out of the GPU without running a pass, e.g. the display kinds of
+  // the documents that scrolled into view. The values are what the last evaluation that covered those documents wrote.
+  async function read({group, firstDocument, documentCount}: Readback) {
+    const outputCount = shader.outputCounts[group]
+    invariant(outputCount !== undefined && firstDocument >= 0 && documentCount >= 1 && firstDocument + documentCount <= groupCapacity[group]!, 'a read lies within its group')
+    const bytes = documentCount * outputCount * 4
+    const target = device.createBuffer({size: bytes, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST})
+    const encoder = device.createCommandEncoder()
+    encoder.copyBufferToBuffer(outputBuffers[group]!, firstDocument * outputCount * 4, target, 0, bytes)
+    device.queue.submit([encoder.finish()])
+    await target.mapAsync(GPUMapMode.READ, 0, bytes)
+    const values = new Float32Array(target.getMappedRange(0, bytes).slice(0))
+    target.unmap()
+    target.destroy()
+    return values
+  }
+
   return {
     compileMs,
     hasTimestamps,
@@ -274,6 +293,7 @@ export async function createProgramRunner(device: GPUDevice, shader: RunnableSha
     // Each output group's buffer on the GPU, e.g. to give the display kinds to a search runner as an input.
     outputBuffers,
     evaluate,
+    read,
     writeShared,
     destroy() {
       for (const created of buffers) created.destroy()

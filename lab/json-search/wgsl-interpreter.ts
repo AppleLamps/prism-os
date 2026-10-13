@@ -413,9 +413,9 @@ function compileBlock(lines: readonly string[], start: number, scope: Scope, isM
 }
 
 // Runs the shader's statements for instances 0 to count - 1, writing each output group into its own array. `inputs`
-// are the per-document buffers after the first one, e.g. the display kinds a masked search reads, and `window` the
-// documents that get per position outputs.
-export type WgslInterpreter = (shared: Float32Array, sources: Float32Array, count: number, outputs: Float32Array[], options?: {inputs?: readonly Float32Array[], window?: {first: number, count: number}}) => void
+// are the per-document buffers after the first one, e.g. the display kinds a masked search reads, `window` the
+// documents that get per position outputs, and `first` the document that instance 0 runs in a loop shader.
+export type WgslInterpreter = (shared: Float32Array, sources: Float32Array, count: number, outputs: Float32Array[], options?: {inputs?: readonly Float32Array[], window?: {first: number, count: number}, first?: number}) => void
 
 export function createWgslInterpreter(code: string): WgslInterpreter {
   const mainStart = code.indexOf('fn main(')
@@ -430,6 +430,7 @@ export function createWgslInterpreter(code: string): WgslInterpreter {
   const instanceIndex = builtIn('i')
   const windowFirst = builtIn('params.window_first')
   const windowCount = builtIn('params.window_count')
+  const firstDocument = builtIn('params.first')
   const {statements} = compileBlock(lines, 0, scope, true)
   const slots = new Float64Array(scope.slotCount)
   const arrays = scope.arrays.map(({elementType, length}) => elementType === 'f32' ? new Float32Array(length) : new Uint32Array(length))
@@ -437,6 +438,7 @@ export function createWgslInterpreter(code: string): WgslInterpreter {
     const state: State = {slots, arrays, shared, inputs: [sources, ...(options.inputs ?? [])], outputs}
     slots[windowFirst] = options.window?.first ?? 0
     slots[windowCount] = options.window?.count ?? 0
+    slots[firstDocument] = options.first ?? 0
     for (let instance = 0; instance < count; instance++) {
       slots[instanceIndex] = instance
       for (const statement of statements) statement(state)

@@ -166,9 +166,9 @@ describe('regex search as a loop over positions', () => {
       return [describeLoop(loop).map(stage => stage.operations), operationsPerDocument(loop), loop.sharedValues.length, patternCells, shader.statementCount]
     })
     expect(sizes).toEqual([
-      [[8, 148, 92], 122_888, 1125, 1097, 495],
-      [[16, 356, 308], 339_984, 4229, 4177, 1367],
-      [[32, 1156, 1124], 1_167_392, 16_581, 16_481, 4647],
+      [[8, 148, 92], 122_888, 1125, 1097, 496],
+      [[16, 356, 308], 339_984, 4229, 4177, 1368],
+      [[32, 1156, 1124], 1_167_392, 16_581, 16_481, 4648],
     ])
   })
 
@@ -237,6 +237,10 @@ describe('regex search as a loop over positions', () => {
     marks.fill(9)
     interpret(shared, documents, 3, [counts, marks], {window: {first: 7, count: 1}})
     expect(marks.every(mark => mark === 9)).toBe(true)
+    // One document from document 2 on: only its count and its marks are written.
+    counts.fill(9)
+    interpret(shared, documents, 1, [counts, marks], {window: {first: 2, count: 1}, first: 2})
+    expect([[...counts], [...marks.subarray(0, 5)]]).toEqual([[9, 9, 2], [0, 2, 2, 0, 0]])
   })
 })
 
@@ -345,9 +349,9 @@ describe('the JSON highlighter as a loop over positions', () => {
     return mismatches
   }
 
-  test('the step is 37 operations, and its shader 106 statements', () => {
+  test('the step is 37 operations, and its shader 107 statements', () => {
     expect(describeLoop(built.loop).map(stage => [stage.name, stage.operations, stage.indexReads])).toEqual([['step', 37, 12], ['end', 17, 6]])
-    expect([operationsPerDocument(built.loop), built.loop.sharedValues.length, shader.statementCount, shader.outputCounts, shader.windowedGroups]).toEqual([18_961, 3994, 106, [4, 512], [false, true]])
+    expect([operationsPerDocument(built.loop), built.loop.sharedValues.length, shader.statementCount, shader.outputCounts, shader.windowedGroups]).toEqual([18_961, 3994, 107, [4, 512], [false, true]])
     // The test texts reach every error kind except none at all: the first error's kind is carried, not read.
     expect(new Set(errorKinds).size).toBe(Object.keys(errorKind).length)
   })

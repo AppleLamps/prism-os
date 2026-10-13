@@ -9,6 +9,7 @@
 //   instance_inputs_b   buffer b, e.g. the display kind of every code point, which another shader wrote
 //   instance_outputs_g  output group g. A 'document' group has a row per document. A 'position' group has a row only
 //                       for the documents params.window_first to window_first + window_count - 1, e.g. the ones on screen
+//   params              count documents run, from document params.first on, e.g. every document, or only the window
 //
 // A register is a `var` of the function, and a looped stage reads it at the start of its body and assigns it at the
 // end. A field is an array of the function: f32 values, or for a field of bits one u32 word per position, which keeps
@@ -197,11 +198,13 @@ export function emitLoopWgsl(loop: LoopProgram, options: LoopWgslOptions = {}): 
     // Static uses keep every binding in the automatic pipeline layout.
     '_ = arrayLength(&shared_values);',
     ...loop.buffers.map((_, buffer) => `_ = arrayLength(&${bufferName(buffer)});`),
-    ...loop.buffers.map((buffer, index) => `let ${baseName(index)}: u32 = i * ${buffer.cellsPerDocument}u;`),
-    ...groups.flatMap((group, index) => group.kind === 'document' ? [`let output_base_${index}: u32 = i * ${group.valuesPerDocument}u;`] : []),
-    'let in_window: bool = i >= params.window_first && i - params.window_first < params.window_count;',
+    // Invocation i runs document params.first + i, e.g. only the documents on screen after a scroll.
+    'let row: u32 = params.first + i;',
+    ...loop.buffers.map((buffer, index) => `let ${baseName(index)}: u32 = row * ${buffer.cellsPerDocument}u;`),
+    ...groups.flatMap((group, index) => group.kind === 'document' ? [`let output_base_${index}: u32 = row * ${group.valuesPerDocument}u;`] : []),
+    'let in_window: bool = row >= params.window_first && row - params.window_first < params.window_count;',
     // Only read where in_window holds, so the subtraction's wraparound for an earlier document doesn't matter.
-    ...groups.flatMap((group, index) => group.kind === 'position' ? [`let window_base_${index}: u32 = (i - params.window_first) * ${positions}u;`] : []),
+    ...groups.flatMap((group, index) => group.kind === 'position' ? [`let window_base_${index}: u32 = (row - params.window_first) * ${positions}u;`] : []),
     ...[...hoistedShared].sort((left, right) => left - right).map(position => `let s${position}: f32 = shared_values[${position}u];`),
     ...[...hoistedCells.values()],
     // The text's length is a whole number of at most 1,048,576, so the conversion is exact.
@@ -218,7 +221,7 @@ export function emitLoopWgsl(loop: LoopProgram, options: LoopWgslOptions = {}): 
     '  count: u32,',
     '  window_first: u32,',
     '  window_count: u32,',
-    '  pad0: u32,',
+    '  first: u32,',
     '}',
     '@group(0) @binding(0) var<uniform> params: Params;',
     '@group(0) @binding(1) var<storage, read> shared_values: array<f32>;',
