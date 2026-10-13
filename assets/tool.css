@@ -156,24 +156,12 @@
   background: var(--wire-red);
   opacity: 0.6;
 }
+/* The text that the program doesn't read, past its capacity. */
 .past-capacity { color: var(--ink-3); opacity: 0.6; }
-/* Where the program stops reading: the capacity, as a small mark in the text. */
-.capacity-mark {
-  margin: 0 6px 0 2px;
-  padding: 1px 5px;
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--radius-1);
-  color: var(--ink-3);
-  font: var(--type-label);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-  vertical-align: 2px;
-  white-space: nowrap;
-}
-/* The same place in the editor, where a mark can't take room: the textarea over the <pre> has no
-   such mark, and its characters have to stay over the <pre>'s. So the mark is a bar between two
-   characters, one line tall, which is taller and thicker than a caret, and the text after it is
-   gray, as on the regex page. */
+/* Where the program stops reading. A mark can't take room there: the textarea over the <pre> has
+   no such mark, and its characters have to stay over the <pre>'s. So the mark is a bar between
+   two characters, one line tall, which is taller and thicker than a caret, and the text after it
+   is gray, as on the regex page. */
 .cut-mark { position: relative; }
 .cut-mark::before {
   content: "";
@@ -197,7 +185,8 @@
 /* The text is longer than the capacity. */
 .capacity.over, .capacity.over b { color: var(--wire-red); }
 
-/* Regex search: a pattern field, three selects, and the text with its matches. */
+/* Regex search: a pattern field, three selects, and the box of the text. The page's own
+   stylesheet, lab/regex-search/demo.css, draws the matches. */
 .pattern {
   position: relative;
   margin-top: var(--space-6);
@@ -223,7 +212,6 @@
   gap: var(--space-3) var(--space-5);
   margin-top: var(--space-3);
 }
-.controls .status { margin-left: auto; }
 
 .matches {
   margin-top: var(--space-4);
@@ -232,23 +220,6 @@
   font: var(--type-reading);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-}
-/* Neighboring matches alternate between two marks, so two matches in a row stay apart.
-   Each mark is a wash with a line under it, so the two differ by more than hue. */
-.matches mark {
-  padding: 2px 0;
-  border-radius: 2px;
-  color: inherit;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-}
-.matches mark.even {
-  background: var(--copper-wash);
-  box-shadow: inset 0 -1px var(--copper);
-}
-.matches mark.odd {
-  background: color-mix(in srgb, var(--wire-indigo) 12%, transparent);
-  box-shadow: inset 0 -1px var(--wire-indigo);
 }
 
 .disclosure {
@@ -300,7 +271,6 @@
     align-content: flex-start;
     min-height: calc(3 * 20px + 2 * var(--space-2) + var(--space-1) + 1px);
   }
-  .controls .status { margin-left: 0; width: 100%; }
   .matches { padding: var(--space-4); }
 }
 
