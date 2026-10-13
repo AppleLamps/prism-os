@@ -1,34 +1,39 @@
 // The Notes flow in HandwiredOS, checked against pretext's layoutNextLineRange
 // (npm @chenglou/pretext) with a deterministic fake canvas: the circuit and the
 // reference read widths from the same prepared text, so the reference's lines and
-// word positions are what the circuit must reproduce.
+// segment positions are what the circuit must reproduce. The text is whatever the
+// machine's notesText last wrote into the segment cells, e.g. every prefix of a
+// sentence typed one character at a time.
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {type LayoutLineRange, type PreparedTextWithSegments, layoutNextLineRange, prepareWithSegments} from '@chenglou/pretext'
-import {Circuit} from '../../src/runtime/numeric-ui-core.ts'
-import {type FastParagraph, attachFastCircuit, fastWindow, segmentGeometry, walkGatheredLines} from '../../src/handwiredos/notes-walker.ts'
+import {type PreparedTextWithSegments, layoutNextLineRange, prepareWithSegments} from '@chenglou/pretext'
+import {Circuit, validateGrids, validateOneHotGroups} from '../../src/runtime/numeric-ui-core.ts'
+import {type FastParagraph, attachFastCircuit, fastWindow, maximumSegmentWidth, segmentGeometry, walkGatheredLines} from '../../src/handwiredos/notes-walker.ts'
 import {
   type NotesOptions,
   defaultLineFitEpsilon,
   defaultNotesParagraph,
   lineFitEpsilonFor,
   measureNotesParagraph,
+  notesCapacity,
   notesOptionsFor,
+  notesText,
   notesWords,
 } from '../../src/handwiredos/notes-paragraph.ts'
 import {
   bandOutputField,
   createWindowManagerMachine,
   createWordNodes,
+  notesSourceField,
   notesWindowIndex,
   projectNotesWords,
+  segmentOutputField,
   sourceField,
   stackSourceField,
   windowCount,
   windowOutputField,
   windowSourceField,
   windowStateField,
-  wordOutputField,
 } from '../../src/handwiredos/window-manager.ts'
 
 // A deterministic canvas: letters vary between 28/64 and 40/64 of the font size,
@@ -74,9 +79,16 @@ const viewportHeight = 800
 const frameDuration = 16
 // pretext under bun: the navigator isn't Safari's, so its epsilon is 0.005.
 const epsilon = defaultLineFitEpsilon
-const measured = measureNotesParagraph(testFont)
-const notesOptions = notesOptionsFor(defaultNotesParagraph, epsilon)
-// The segment index of each word, e.g. word 1 is segment 2, after the first space.
+const notesOptions = notesOptionsFor(epsilon)
+
+// A text as the fake canvas measures it: pretext's prepared text, which the pretext
+// reference lays out, and every segment's width and break-after bit, which the
+// machine's notesText writes into the segment cells, cut at the capacity.
+type MeasuredText = {prepared: PreparedTextWithSegments, paragraph: FastParagraph}
+const measure = (text: string): MeasuredText => measureNotesParagraph(testFont, text)
+// The paragraph that Notes starts with.
+const measured = measure(notesText)
+// The segment index of each of its words, e.g. word 1 is segment 2, after the first space.
 const wordSegments = defaultNotesParagraph.breakAfter.flatMap((breakAfter, segment) => breakAfter === 0 ? [segment] : [])
 
 type Machine = ReturnType<typeof createWindowManagerMachine>
@@ -101,14 +113,21 @@ function pressTime(machine: Machine) {
   return (frameTimeByMachine.get(machine) ?? 0) + frameDuration - 8
 }
 
-type Word = {x: number, y: number, visible: number}
+type Segment = {x: number, y: number, visible: number}
 
-function readWords(machine: Machine, values: Float32Array): Word[] {
-  return notesWords.map((_, word) => {
-    const start = word * wordOutputField.size
-    const read = (field: number) => values[machine.output.notes.words[start + field]!]!
-    return {x: read(wordOutputField.x), y: read(wordOutputField.y), visible: read(wordOutputField.visible)}
+// The outputs of the first `count` segment cells, i.e. the cells that hold the text.
+function readSegments(machine: Machine, values: Float32Array, count: number): Segment[] {
+  return Array.from({length: count}, (_, segment) => {
+    const start = segment * segmentOutputField.size
+    const read = (field: number) => values[machine.output.notes.segments[start + field]!]!
+    return {x: read(segmentOutputField.x), y: read(segmentOutputField.y), visible: read(segmentOutputField.visible)}
   })
+}
+
+// The starting paragraph's words, in order.
+function readWords(machine: Machine, values: Float32Array): Segment[] {
+  const segments = readSegments(machine, values, defaultNotesParagraph.widths.length)
+  return wordSegments.map(segment => segments[segment]!)
 }
 
 function readBands(machine: Machine, values: Float32Array) {
@@ -121,13 +140,17 @@ function readBands(machine: Machine, values: Float32Array) {
 
 type Rectangle = {left: number, top: number, width: number, height: number}
 
-// Whether a laid-out word's box, as wide as the word and one line tall, overlaps a
-// rectangle. Both are in the content box's coordinates.
-function wordOverlaps(word: Word, wordIndex: number, rectangle: Rectangle) {
-  const wordWidth = measured.paragraph.widths[wordSegments[wordIndex]!]!
-  return word.visible === 1
-    && word.x < rectangle.left + rectangle.width && word.x + wordWidth > rectangle.left
-    && word.y < rectangle.top + rectangle.height && word.y + notesOptions.lineHeight > rectangle.top
+// Whether a laid-out segment's box, as wide as the segment and one line tall, overlaps
+// a rectangle. Both are in the content box's coordinates.
+function segmentOverlaps(segment: Segment, width: number, rectangle: Rectangle) {
+  return segment.visible === 1
+    && segment.x < rectangle.left + rectangle.width && segment.x + width > rectangle.left
+    && segment.y < rectangle.top + rectangle.height && segment.y + notesOptions.lineHeight > rectangle.top
+}
+
+// The same for a word of the starting paragraph.
+function wordOverlaps(word: Segment, wordIndex: number, rectangle: Rectangle) {
+  return segmentOverlaps(word, measured.paragraph.widths[wordSegments[wordIndex]!]!, rectangle)
 }
 
 // The obstacles as the reference sees them, from a stored table: every window's
@@ -181,26 +204,19 @@ function arrangementOf(table: Float32Array): Arrangement {
   }
 }
 
-// The reference: dynamic-layout's column carving for several rectangles, with
-// pretext's layoutNextLineRange per band. Plain float64. A band is unusable when
-// no slot is at least minimumSlotWidth wide, or when its bottom lies below the
-// content box.
+// Each band's slot: dynamic-layout's column carving for several rectangles. Plain
+// float64. A band is unusable when no slot is at least minimumSlotWidth wide, or
+// when its bottom lies below the content box.
 type Cursor = {segmentIndex: number, graphemeIndex: number}
 type Interval = {left: number, right: number}
-type ReferenceFlow = {
-  bands: {usable: boolean, left: number, slotWidth: number, line: LayoutLineRange | null, cutByHeight: boolean}[]
-  segments: {visible: boolean, x: number, y: number}[]
-}
+type Band = {top: number, usable: boolean, left: number, slotWidth: number, cutByHeight: boolean}
 
-function referenceNotesFlow(prepared: PreparedTextWithSegments, paragraph: FastParagraph, arrangement: Arrangement, options: NotesOptions): ReferenceFlow {
-  const bands: ReferenceFlow['bands'] = []
-  const segments = paragraph.widths.map(() => ({visible: false, x: 0, y: 0}))
-  let cursor: Cursor = {segmentIndex: 0, graphemeIndex: 0}
-  for (let band = 0; band < options.bands; band++) {
-    const bandTop = options.padding + band * options.lineHeight
-    const bandBottom = bandTop + options.lineHeight
+function carveBands(arrangement: Arrangement, options: NotesOptions): Band[] {
+  return Array.from({length: options.bands}, (_, band) => {
+    const top = options.padding + band * options.lineHeight
+    const bottom = top + options.lineHeight
     const blocked: Interval[] = arrangement.obstacles
-      .filter(obstacle => obstacle.active && !(bandBottom <= obstacle.top - options.verticalPadding || bandTop >= obstacle.top + obstacle.height + options.verticalPadding))
+      .filter(obstacle => obstacle.active && !(bottom <= obstacle.top - options.verticalPadding || top >= obstacle.top + obstacle.height + options.verticalPadding))
       .map(obstacle => ({left: obstacle.left - options.horizontalPadding, right: obstacle.left + obstacle.width + options.horizontalPadding}))
     let slots: Interval[] = [{left: arrangement.columnLeft, right: arrangement.columnLeft + arrangement.columnWidth}]
     for (const interval of blocked) {
@@ -216,67 +232,182 @@ function referenceNotesFlow(prepared: PreparedTextWithSegments, paragraph: FastP
       slots = next
     }
     slots = slots.filter(slot => slot.right - slot.left >= options.minimumSlotWidth)
-    const cutByHeight = slots.length > 0 && bandBottom > arrangement.contentHeight
-    if (slots.length === 0 || cutByHeight) {
-      bands.push({usable: false, left: 0, slotWidth: 0, line: null, cutByHeight})
-      continue
-    }
+    const cutByHeight = slots.length > 0 && bottom > arrangement.contentHeight
+    if (slots.length === 0 || cutByHeight) return {top, usable: false, left: 0, slotWidth: 0, cutByHeight}
     let slot = slots[0]!
     for (const candidate of slots.slice(1)) {
       const bestWidth = slot.right - slot.left
       const candidateWidth = candidate.right - candidate.left
       if (candidateWidth > bestWidth || (candidateWidth === bestWidth && candidate.left > slot.left)) slot = candidate
     }
-    const slotWidth = slot.right - slot.left
-    const line = layoutNextLineRange(prepared, cursor, slotWidth)
-    bands.push({usable: true, left: slot.left, slotWidth, line, cutByHeight: false})
-    if (line === null) continue
-    let x = slot.left
-    for (let segment = line.start.segmentIndex; segment < line.end.segmentIndex; segment++) {
-      segments[segment] = {visible: true, x, y: bandTop}
-      x += paragraph.widths[segment]!
-    }
-    cursor = line.end
-  }
-  return {bands, segments}
+    return {top, usable: true, left: slot.left, slotWidth: slot.right - slot.left, cutByHeight: false}
+  })
 }
 
-// Evaluates the machine's program on a table and compares the Notes outputs with
-// the reference for that table's arrangement: each band's slot and line start,
-// and each word's position and visibility.
-function compareWithReference(machine: Machine, table: Float32Array) {
-  const values = machine.circuit.evaluateTensor(table)
-  const arrangement = arrangementOf(table)
-  const reference = referenceNotesFlow(measured.prepared, measured.paragraph, arrangement, notesOptions)
+// What the program must output for the segment cells that hold text: per band, the
+// segment its line starts at, or null when the band holds no line of the text, and
+// per segment, whether a band laid it out, and where.
+type Flow = {
+  bands: (Band & {lineStart: number | null})[]
+  segments: {visible: boolean, x: number, y: number}[]
+  lineCount: number
+  truncated: number
+}
+
+// The pretext reference: layoutNextLineRange per usable band, over the whole text,
+// reported for the `count` segments that the cells hold. A segment before the cut gets
+// the line it gets in the whole text, since a line's breaks depend only on the
+// segments up to the first one that doesn't fit. brokeInsideSegment is true when
+// pretext broke a segment between two letters, which the program never does.
+function pretextFlow(text: MeasuredText, count: number, arrangement: Arrangement, options: NotesOptions): Flow & {brokeInsideSegment: boolean} {
+  const all = text.paragraph.widths.map(() => ({visible: false, x: 0, y: 0}))
+  let brokeInsideSegment = false
+  let cursor: Cursor = {segmentIndex: 0, graphemeIndex: 0}
+  const bands = carveBands(arrangement, options).map(band => {
+    if (!band.usable) return {...band, lineStart: null}
+    const line = layoutNextLineRange(text.prepared, cursor, band.slotWidth)
+    if (line === null) return {...band, lineStart: null}
+    if (line.start.graphemeIndex !== 0 || line.end.graphemeIndex !== 0) brokeInsideSegment = true
+    let x = band.left
+    for (let segment = line.start.segmentIndex; segment < line.end.segmentIndex; segment++) {
+      all[segment] = {visible: true, x, y: band.top}
+      x += text.paragraph.widths[segment]!
+    }
+    cursor = line.end
+    return {...band, lineStart: line.start.segmentIndex < count ? line.start.segmentIndex : null}
+  })
+  const segments = all.slice(0, count)
+  return {
+    bands,
+    segments,
+    lineCount: bands.filter(band => band.lineStart !== null).length,
+    truncated: Number(count > 0 && !segments[count - 1]!.visible),
+    brokeInsideSegment,
+  }
+}
+
+// The walker's own rule in plain float64, over the segments that the cells hold. It
+// is pretext's fast walker (see the tie test's referenceStarts below) with the
+// program's two fixed limits: a line holds at most `window` segments, and a segment
+// wider than its slot is laid out whole. So this reference also covers the texts
+// where the program differs from pretext on purpose. windowOverflow counts the lines
+// that wrapped at the window although the next segment fit.
+function walkedFlow(cells: FastParagraph, arrangement: Arrangement, options: NotesOptions): Flow & {windowOverflow: number} {
+  const count = cells.widths.length
+  const segments = cells.widths.map(() => ({visible: false, x: 0, y: 0}))
+  let start = 0
+  let windowOverflow = 0
+  const bands = carveBands(arrangement, options).map(band => {
+    if (!band.usable || start >= count) return {...band, lineStart: null}
+    const lineStart = start
+    let span = cells.widths[start]!
+    let end = start + 1
+    const fits = (segment: number) => span + (cells.breakAfter[segment] === 1 ? 0 : cells.widths[segment]!) <= band.slotWidth + options.epsilon
+    while (end < count && end - start < options.window && fits(end)) {
+      span += cells.widths[end]!
+      end++
+    }
+    if (end < count && end - start === options.window && fits(end)) windowOverflow++
+    // A segment that breaks after itself and comes first after the line hangs at the line's end, like a space that fit.
+    if (end < count && cells.breakAfter[end] === 1) end++
+    let x = band.left
+    for (let segment = start; segment < end; segment++) {
+      segments[segment] = {visible: true, x, y: band.top}
+      x += cells.widths[segment]!
+    }
+    start = end
+    return {...band, lineStart}
+  })
+  return {bands, segments, lineCount: bands.filter(band => band.lineStart !== null).length, truncated: Number(start < count), windowOverflow}
+}
+
+// The ways the Notes outputs in `values` differ from a flow.
+function flowProblems(machine: Machine, values: Float32Array, expected: Flow) {
   const problems: string[] = []
   readBands(machine, values).forEach((band, index) => {
-    const expected = reference.bands[index]!
-    if (band.usable !== Number(expected.usable)) problems.push(`band ${index} usable ${band.usable}, expected ${Number(expected.usable)}`)
-    else if (expected.usable && (band.left !== expected.left || band.width !== expected.slotWidth)) problems.push(`band ${index} slot ${band.left},${band.width}, expected ${expected.left},${expected.slotWidth}`)
-    else if (expected.usable) {
-      const start = expected.line === null ? measured.paragraph.widths.length : expected.line.start.segmentIndex
-      if (band.start !== start) problems.push(`band ${index} starts at ${band.start}, expected ${start}`)
-    }
+    const expectedBand = expected.bands[index]!
+    if (band.usable !== Number(expectedBand.usable)) problems.push(`band ${index} usable ${band.usable}, expected ${Number(expectedBand.usable)}`)
+    else if (expectedBand.usable && (band.left !== expectedBand.left || band.width !== expectedBand.slotWidth)) problems.push(`band ${index} slot ${band.left},${band.width}, expected ${expectedBand.left},${expectedBand.slotWidth}`)
+    // A usable band after the text's last line starts at or after the count of cells that hold text.
+    else if (expectedBand.usable && expectedBand.lineStart === null && band.start < expected.segments.length) problems.push(`band ${index} starts at ${band.start}, inside the text`)
+    else if (expectedBand.lineStart !== null && band.start !== expectedBand.lineStart) problems.push(`band ${index} starts at ${band.start}, expected ${expectedBand.lineStart}`)
   })
-  const words = readWords(machine, values)
+  readSegments(machine, values, expected.segments.length).forEach((segment, index) => {
+    const expectedSegment = expected.segments[index]!
+    if (segment.visible !== Number(expectedSegment.visible)) problems.push(`segment ${index} visible ${segment.visible}, expected ${Number(expectedSegment.visible)}`)
+    else if (expectedSegment.visible && (segment.x !== Math.fround(expectedSegment.x) || segment.y !== expectedSegment.y)) problems.push(`segment ${index} at ${segment.x},${segment.y}, expected ${expectedSegment.x},${expectedSegment.y}`)
+  })
+  const lineCount = values[machine.output.notes.lineCount]!
+  if (lineCount !== expected.lineCount) problems.push(`line count ${lineCount}, expected ${expected.lineCount}`)
+  const truncated = values[machine.output.notes.truncated]!
+  if (truncated !== expected.truncated) problems.push(`truncated ${truncated}, expected ${expected.truncated}`)
+  return problems
+}
+
+// Compares the Notes outputs in `values` with both references, for the arrangement
+// and the segment cells that `table` holds and the text that was written into those
+// cells. The walker's rule must hold for every text. pretext must agree whenever the
+// text stays within the program's limits, i.e. no line reaches past the window and
+// pretext broke no segment between two letters.
+function compareWithReferences(machine: Machine, values: Float32Array, table: Float32Array, text: MeasuredText) {
+  const arrangement = arrangementOf(table)
+  const count = Math.min(notesCapacity, text.paragraph.widths.length)
+  const cells: FastParagraph = {widths: text.paragraph.widths.slice(0, count), breakAfter: text.paragraph.breakAfter.slice(0, count)}
+  const problems: string[] = []
+  if (table[notesSourceField.arrivedCount] !== count) problems.push(`the cells hold ${table[notesSourceField.arrivedCount]} segments, expected ${count}`)
+  for (let segment = 0; segment < notesCapacity; segment++) {
+    const width = table[notesSourceField.widthStart + segment]
+    const breakAfter = table[notesSourceField.breakAfterStart + segment]
+    if (width !== (cells.widths[segment] ?? 0) || breakAfter !== (cells.breakAfter[segment] ?? 0)) problems.push(`cell ${segment} holds ${width},${breakAfter}, expected ${cells.widths[segment] ?? 0},${cells.breakAfter[segment] ?? 0}`)
+  }
+  const walked = walkedFlow(cells, arrangement, notesOptions)
+  problems.push(...flowProblems(machine, values, walked))
+  const windowOverflow = values[machine.output.notes.windowOverflow]!
+  if (windowOverflow !== walked.windowOverflow) problems.push(`window overflow ${windowOverflow}, expected ${walked.windowOverflow}`)
+  const pretext = pretextFlow(text, count, arrangement, notesOptions)
+  const matchesPretext = !pretext.brokeInsideSegment && walked.windowOverflow === 0
+  if (matchesPretext) problems.push(...flowProblems(machine, values, pretext).map(problem => `against pretext: ${problem}`))
+  const segments = readSegments(machine, values, count)
   const windowsAbove = arrangement.obstacles.filter(obstacle => obstacle.active)
   // Laid-out words on a line that is level with part of a window stacked above
-  // Notes, i.e. the words that the overlap check could catch.
+  // Notes, i.e. the words that the overlap check could catch. A word wider than its
+  // band's slot reaches past the slot, so the check leaves such a word out.
   let wordsBesideWindowsAbove = 0
-  words.forEach((word, wordIndex) => {
-    const segment = wordSegments[wordIndex]!
-    const expected = reference.segments[segment]!
-    if (word.visible !== (expected.visible ? 1 : 0)) problems.push(`segment ${segment} visible ${word.visible}, expected ${Number(expected.visible)}`)
-    else if (expected.visible && (word.x !== Math.fround(expected.x) || word.y !== expected.y)) problems.push(`segment ${segment} at ${word.x},${word.y}, expected ${expected.x},${expected.y}`)
-    if (word.visible === 1 && windowsAbove.some(window => word.y < window.top + window.height && word.y + notesOptions.lineHeight > window.top)) wordsBesideWindowsAbove++
+  segments.forEach((segment, index) => {
+    if (cells.breakAfter[index] === 1 || segment.visible === 0) return
+    const band = walked.bands[Math.round((segment.y - notesOptions.padding) / notesOptions.lineHeight)]!
+    if (cells.widths[index]! > band.slotWidth) return
+    if (windowsAbove.some(window => segment.y < window.top + window.height && segment.y + notesOptions.lineHeight > window.top)) wordsBesideWindowsAbove++
     for (const window of windowsAbove) {
-      if (wordOverlaps(word, wordIndex, window)) problems.push(`segment ${segment} at ${word.x},${word.y} overlaps the window above Notes at ${window.left},${window.top}`)
+      if (segmentOverlaps(segment, cells.widths[index]!, window)) problems.push(`segment ${index} at ${segment.x},${segment.y} overlaps the window above Notes at ${window.left},${window.top}`)
     }
   })
-  const truncated = values[machine.output.notes.truncated]!
-  const expectedTruncated = Number(!reference.segments.at(-1)!.visible)
-  if (truncated !== expectedTruncated) problems.push(`truncated ${truncated}, expected ${expectedTruncated}`)
-  return {problems, reference, arrangement, values, words, wordsBesideWindowsAbove}
+  return {problems, arrangement, walked, pretext, matchesPretext, values, segments, wordsBesideWindowsAbove}
+}
+
+// Evaluates the machine's program on a table that holds the starting paragraph, and
+// compares the Notes outputs with both references for that table's arrangement.
+function compareWithReference(machine: Machine, table: Float32Array) {
+  const values = machine.circuit.evaluateTensor(table)
+  const comparison = compareWithReferences(machine, values, table, measured)
+  return {...comparison, reference: comparison.pretext, words: wordSegments.map(segment => comparison.segments[segment]!)}
+}
+
+// Checks, on the table of every evaluation, every declared and inferred grid, and
+// every declared one-hot group, e.g. the walker's one-hot of each band's line start.
+// The values come from the compiled program, which leaves the wires it removed at 0,
+// and every group's members are live there, since the gather reads read them.
+function checkDeclarationsOnEveryEvaluation(machine: Machine) {
+  const counts = {evaluations: 0}
+  machine.observe({
+    beforeEvaluate(table) {
+      const values = machine.circuit.evaluateTensor(table)
+      validateGrids(machine.circuit, values)
+      validateOneHotGroups(machine.circuit, values)
+      counts.evaluations++
+    },
+  })
+  return counts
 }
 
 function createRandom(seed: number) {
@@ -306,7 +437,16 @@ function writeArrangement(table: Float32Array, random: () => number) {
     table[windowSourceField(windowIndex, windowStateField.minimized)] = windowIndex !== notesWindowIndex && random() < 0.15 ? 1 : 0
     table[windowSourceField(windowIndex, windowStateField.maximized)] = 0
   }
-  const order = Array.from({length: windowCount}, (_, index) => index).sort(() => random() - 0.5)
+  // A Fisher-Yates shuffle, which draws 3 random values. Sorting with a random comparator, as this function did
+  // before, draws as many values as the engine's sort makes comparisons, and Bun's sort makes other comparisons once
+  // the calling loop is optimized, so one seed gave different arrangements in different runs of the same test.
+  const order = Array.from({length: windowCount}, (_, index) => index)
+  for (let index = windowCount - 1; index > 0; index--) {
+    const other = randomInteger(random, 0, index)
+    const moved = order[index]!
+    order[index] = order[other]!
+    order[other] = moved
+  }
   for (let rank = 0; rank < windowCount; rank++) {
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       table[stackSourceField(rank, windowIndex)] = order[rank] === windowIndex ? 1 : 0
@@ -319,7 +459,9 @@ test('the fake canvas measurement reproduces the baked default paragraph, and th
   assert.equal(measured.prepared.segments.length, 89)
   assert.equal(notesWords.length, 45)
   assert.deepEqual(measured.prepared.segments.filter((_, index) => defaultNotesParagraph.breakAfter[index] === 0), notesWords)
-  assert.deepEqual([notesOptions.window, notesOptions.runLimit, notesOptions.minimumSlotWidth], [26, 1, 80])
+  assert.deepEqual([notesOptions.capacity, notesOptions.window, notesOptions.runLimit, notesOptions.minimumSlotWidth], [128, 40, 1, 80])
+  // The starting paragraph's longest line in the widest column holds 25 segments, so fastWindow asks for 26 comparisons.
+  assert.equal(fastWindow(defaultNotesParagraph, notesOptions.maximumColumnWidth, epsilon), 26)
   // The fake widths lie on the 1/64 px grid, so the reference and the circuit see the same numbers.
   assert.ok(measured.prepared.widths.every(width => Number.isInteger(width * 64)))
   assert.equal(lineFitEpsilonFor(navigator), epsilon)
@@ -328,11 +470,36 @@ test('the fake canvas measurement reproduces the baked default paragraph, and th
   assert.equal(lineFitEpsilonFor({userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0', vendor: ''}), 0.005)
 })
 
-test('the machine refuses a paragraph with other segments than the default one', () => {
-  assert.throws(
-    () => createWindowManagerMachine({notes: {paragraph: {widths: [10, 4, 10], breakAfter: [0, 1, 0]}, epsilon}}),
-    /the Notes paragraph must have the same segments as the default one/,
-  )
+// The cells that hold the Notes text in a table: the widths and break-after bits of the first cells, and the count.
+function readTextCells(table: Float32Array, cells: number) {
+  return {
+    widths: Array.from({length: cells}, (_, segment) => table[notesSourceField.widthStart + segment]!),
+    breakAfter: Array.from({length: cells}, (_, segment) => table[notesSourceField.breakAfterStart + segment]!),
+    arrivedCount: table[notesSourceField.arrivedCount]!,
+  }
+}
+
+test('a machine starts with any paragraph, and a text is rounded, clamped and cut to what the cells hold', () => {
+  const machine = createWindowManagerMachine({notes: {paragraph: {widths: [10, 4, 10], breakAfter: [0, 1, 0]}, epsilon}})
+  assert.deepEqual(readTextCells(machine.source, 4), {widths: [10, 4, 10, 0], breakAfter: [0, 1, 0, 0], arrivedCount: 3})
+  const values = step(machine)
+  assert.deepEqual(readSegments(machine, values, 3).map(segment => segment.visible), [1, 1, 1])
+  // A width off the 1/64 px grid, a width that isn't a number, a width above the cells' range, a negative width, and
+  // break-after values that aren't bits. The table check passes, since notesText fits the paragraph to the cells first.
+  assert.equal(machine.notesText({widths: [30.4, Number.NaN, 3000, -5, Number.POSITIVE_INFINITY], breakAfter: [0, 2, 0.5, 1, -1]}), 5)
+  step(machine)
+  assert.deepEqual(readTextCells(machine.source, 6), {widths: [30.40625, 0, maximumSegmentWidth, 0, 0, 0], breakAfter: [0, 0, 0, 1, 0, 0], arrivedCount: 5})
+  // More segments than cells: the cells hold the first 128.
+  const long: FastParagraph = {widths: Array.from({length: 300}, (_, segment) => segment % 2 === 0 ? 20 : 4), breakAfter: Array.from({length: 300}, (_, segment) => segment % 2)}
+  assert.equal(machine.notesText(long), notesCapacity)
+  step(machine)
+  const cells = readTextCells(machine.source, notesCapacity)
+  assert.equal(cells.arrivedCount, notesCapacity)
+  assert.deepEqual(cells.widths, long.widths.slice(0, notesCapacity))
+  assert.deepEqual(cells.breakAfter, long.breakAfter.slice(0, notesCapacity))
+  const cut = createWindowManagerMachine({notes: {paragraph: long, epsilon}})
+  assert.equal(readTextCells(cut.source, 1).arrivedCount, notesCapacity)
+  assert.throws(() => machine.notesText({widths: [10, 4], breakAfter: [0]}), /one break-after bit per segment/)
 })
 
 test('flows around random window arrangements match pretext line for line and word for word', () => {
@@ -346,10 +513,11 @@ test('flows around random window arrangements match pretext line for line and wo
   let truncatedArrangements = 0
   let wordsBesideWindows = 0
   const failures: unknown[] = []
-  for (let trial = 0; trial < 40; trial++) {
+  for (let trial = 0; trial < 60; trial++) {
     const table = Float32Array.from(machine.source)
     writeArrangement(table, random)
-    const {problems, reference, arrangement, wordsBesideWindowsAbove} = compareWithReference(machine, table)
+    const {problems, reference, arrangement, wordsBesideWindowsAbove, matchesPretext} = compareWithReference(machine, table)
+    assert.ok(matchesPretext, 'the starting paragraph stays within the program\'s limits')
     checkedWords += reference.segments.filter(segment => segment.visible).length
     wordsBesideWindows += wordsBesideWindowsAbove
     blockedBands += reference.bands.filter(band => !band.usable || band.slotWidth < arrangement.columnWidth).length
@@ -370,7 +538,7 @@ test('flows around random window arrangements match pretext line for line and wo
   // above Notes; this many words were on a line level with such a window.
   assert.ok(wordsBesideWindows > 500, `${wordsBesideWindows} words beside a window above Notes`)
   assert.ok(bandsCutByHeight > 0, 'some band was cut by the content height')
-  assert.ok(truncatedArrangements > 0 && truncatedArrangements < 40, `${truncatedArrangements} arrangements truncated`)
+  assert.ok(truncatedArrangements > 0 && truncatedArrangements < 60, `${truncatedArrangements} arrangements truncated`)
 })
 
 test('words move straight to the new layout in the frame of the event, while the windows still animate', () => {
@@ -459,7 +627,7 @@ test('a band below the content box is unusable, so no word is placed where the w
   assert.equal(values[machine.output.notes.lineCount], 2)
   // The gate hides words: without it, the reference lays out more of the paragraph
   // in bands below the content box.
-  const ungated = referenceNotesFlow(measured.prepared, measured.paragraph, {...arrangement, contentHeight: Infinity}, notesOptions)
+  const ungated = pretextFlow(measured, measured.paragraph.widths.length, {...arrangement, contentHeight: Infinity}, notesOptions)
   const hiddenByGate = wordSegments.filter(segment => ungated.segments[segment]!.visible && !reference.segments[segment]!.visible)
   assert.ok(hiddenByGate.length > 0, 'some word is hidden only by the content height')
   assert.ok(hiddenByGate.every(segment => ungated.segments[segment]!.y + notesOptions.lineHeight > contentHeight))
@@ -491,7 +659,7 @@ test('a paragraph that needs more lines than the flow has bands stays finite, wi
   const {problems, values, words, reference} = compareWithReference(machine, table)
   assert.deepEqual(problems, [])
   const notesWires = [
-    ...machine.output.notes.words,
+    ...machine.output.notes.segments,
     ...machine.output.notes.bands,
     machine.output.notes.lineCount,
     machine.output.notes.truncated,
@@ -508,6 +676,319 @@ test('a paragraph that needs more lines than the flow has bands stays finite, wi
   // Every laid-out word is inside its band's slot, and the invisible words come last.
   assert.ok(words.every(word => word.visible === 0 || (word.x >= 379 && word.x < 464)))
   assert.deepEqual(words.map(word => word.visible), words.map((_, index) => Number(index < visibleWords)))
+})
+
+// A machine at rest in the starting arrangement, where Photos covers the right of the
+// Notes column and System Monitor its lower left.
+function machineAtStart() {
+  const machine = createWindowManagerMachine()
+  step(machine)
+  return machine
+}
+
+// A machine with Notes raised above the other windows by a press on its title bar, so
+// the column is 440 px wide and nothing covers it.
+function machineWithNotesInFront() {
+  const machine = machineAtStart()
+  const time = pressTime(machine)
+  machine.pointerDown(450, 126, time)
+  machine.pointerUp(450, 126, time)
+  step(machine)
+  settle(machine)
+  return machine
+}
+
+// A machine with Notes raised, then Files dragged over it to 380,60, which leaves
+// the two bands below Files, see the test of the band below the content box.
+function machineWithFilesOverNotes() {
+  const machine = machineWithNotesInFront()
+  let time = pressTime(machine)
+  machine.pointerDown(100, 70, time)
+  machine.pointerMove(426, 76, time += 4)
+  machine.pointerUp(426, 76, time += 4)
+  step(machine)
+  settle(machine)
+  return machine
+}
+
+// Writes a text into Notes with the machine's notesText, as an event 8 ms before the
+// next frame, runs that frame, and compares the frame's outputs with both references.
+function typeAndCompare(machine: Machine, text: MeasuredText) {
+  const cellsWithText = machine.notesText(text.paragraph, pressTime(machine))
+  assert.equal(cellsWithText, Math.min(notesCapacity, text.paragraph.widths.length))
+  const values = step(machine)
+  assert.deepEqual(machine.evaluations.map(evaluation => [evaluation.kind, evaluation.events]), [['events', ['notes text']], ['frame', []]])
+  return compareWithReferences(machine, values, machine.source, text)
+}
+
+// The same text around a random arrangement of the windows: the machine's program on a
+// copy of its stored table.
+function compareAroundRandomWindows(machine: Machine, text: MeasuredText, random: () => number) {
+  const table = Float32Array.from(machine.source)
+  writeArrangement(table, random)
+  return compareWithReferences(machine, machine.circuit.evaluateTensor(table), table, text)
+}
+
+type Comparison = ReturnType<typeof compareWithReferences>
+
+// Counts over the states of one test, so that the test can say what it covered. A state is either compared with
+// pretext, or it has a line past the walker's window, or pretext broke a word in it between two letters.
+function createTally() {
+  const tally = {states: 0, statesMatchingPretext: 0, statesPastWindow: 0, statesWherePretextBrokeWords: 0, truncatedStates: 0, cutAtCapacity: 0, mostLines: 0, checkedSegments: 0, failures: [] as unknown[]}
+  return {
+    tally,
+    add: (label: string, text: MeasuredText, comparison: Comparison) => {
+      tally.states++
+      if (comparison.matchesPretext) tally.statesMatchingPretext++
+      else if (comparison.pretext.brokeInsideSegment) tally.statesWherePretextBrokeWords++
+      else tally.statesPastWindow++
+      if (comparison.walked.truncated === 1) tally.truncatedStates++
+      if (text.paragraph.widths.length > notesCapacity) tally.cutAtCapacity++
+      tally.mostLines = Math.max(tally.mostLines, comparison.walked.lineCount)
+      tally.checkedSegments += comparison.segments.length
+      if (comparison.problems.length > 0 && tally.failures.length < 5) tally.failures.push({label, problems: comparison.problems.slice(0, 4)})
+    },
+  }
+}
+
+// Words of at most 7 letters, so each fits the narrowest slot, 80 px, and pretext never breaks one between two
+// letters. The words of one and two letters put the most segments on a line: a 440 px line of them can hold more
+// than the walker's window of 40 segments, and such states are checked against the walker's rule only.
+const vocabulary = 'the quick brown fox jumps over a lazy dog and then it naps under an old oak tree while rain taps on every window of our small quiet house near wide green fields I am so on to we be at by is as of in up no go do my me he if or us ox'.split(' ')
+
+function randomText(random: () => number, wordCount: number) {
+  const words: string[] = []
+  for (let index = 0; index < wordCount; index++) {
+    const word = vocabulary[randomInteger(random, 0, vocabulary.length - 1)]!
+    words.push(random() < 0.12 ? `${word}${random() < 0.5 ? ',' : '.'}` : word)
+  }
+  return words.join(' ')
+}
+
+const typedSentence =
+  'Hello there. This is a note that I am typing into the same circuit that runs the windows, one key at a time, '
+  + 'and every key is one new table of widths. It wraps at the right edge, and words move to the next line when they '
+  + 'stop fitting, and they come back when I delete.'
+
+test('typing a sentence one character at a time, then deleting it, lays out every prefix where pretext does', () => {
+  const whole = measure(typedSentence).paragraph
+  assert.ok(whole.widths.length <= notesCapacity, 'the sentence fits the cells')
+  assert.ok(fastWindow(whole, notesOptions.maximumColumnWidth, epsilon) <= notesOptions.window, 'no line of the sentence reaches past the window')
+  const machines = {
+    'Notes in front': machineWithNotesInFront(),
+    'starting arrangement': machineAtStart(),
+    'Files over Notes': machineWithFilesOverNotes(),
+  }
+  const declarationChecks = Object.values(machines).map(checkDeclarationsOnEveryEvaluation)
+  const random = createRandom(5)
+  const {tally, add} = createTally()
+  let mostCellsChangedByOneKey = 0
+  let previous: FastParagraph = {widths: [], breakAfter: []}
+  // Every prefix while typing, then every third prefix while deleting.
+  const lengths = [
+    ...Array.from({length: typedSentence.length + 1}, (_, length) => length),
+    ...Array.from({length: Math.floor(typedSentence.length / 3) + 1}, (_, index) => typedSentence.length - 3 * index),
+  ]
+  lengths.forEach((length, index) => {
+    const text = measure(typedSentence.slice(0, length))
+    // While typing, after the first character: how many cells this key changed.
+    if (index >= 2 && index <= typedSentence.length) {
+      let changed = 0
+      for (let segment = 0; segment < Math.max(text.paragraph.widths.length, previous.widths.length); segment++) {
+        if ((text.paragraph.widths[segment] ?? 0) !== (previous.widths[segment] ?? 0)) changed++
+        if ((text.paragraph.breakAfter[segment] ?? 0) !== (previous.breakAfter[segment] ?? 0)) changed++
+      }
+      mostCellsChangedByOneKey = Math.max(mostCellsChangedByOneKey, changed)
+    }
+    previous = text.paragraph
+    for (const [label, machine] of Object.entries(machines)) add(`${label}, ${length} characters`, text, typeAndCompare(machine, text))
+    add(`random windows, ${length} characters`, text, compareAroundRandomWindows(machines['Notes in front'], text, random))
+  })
+  assert.deepEqual(tally.failures, [])
+  assert.equal(tally.states, 4 * lengths.length)
+  // The sentence stays within the program's limits in every state, so pretext is the reference in every state.
+  assert.equal(tally.statesMatchingPretext, tally.states)
+  assert.ok(tally.truncatedStates > 200 && tally.truncatedStates < tally.states, `${tally.truncatedStates} truncated states`)
+  assert.ok(tally.mostLines >= 12, `${tally.mostLines} lines at most`)
+  assert.ok(tally.checkedSegments > 80_000, `${tally.checkedSegments} segments checked`)
+  // A key at the end of the text changes the last word's width cell, or adds a space's two cells and a word's width cell.
+  assert.equal(mostCellsChangedByOneKey, 3)
+  for (const checks of declarationChecks) assert.equal(checks.evaluations, 2 * lengths.length)
+}, 60_000)
+
+test('random texts of 0 to 64 words match pretext, through the machine and around random window arrangements', () => {
+  const machines = {'Notes in front': machineWithNotesInFront(), 'starting arrangement': machineAtStart()}
+  const declarationChecks = Object.values(machines).map(checkDeclarationsOnEveryEvaluation)
+  const random = createRandom(13)
+  const {tally, add} = createTally()
+  const wordCounts = new Set<number>()
+  for (let trial = 0; trial < 300; trial++) {
+    const wordCount = trial < 3 ? [0, 1, 64][trial]! : randomInteger(random, 0, 64)
+    wordCounts.add(wordCount)
+    const text = measure(randomText(random, wordCount))
+    for (const [label, machine] of Object.entries(machines)) add(`${label}, trial ${trial}`, text, typeAndCompare(machine, text))
+    add(`random windows, trial ${trial}`, text, compareAroundRandomWindows(machines['Notes in front'], text, random))
+  }
+  assert.deepEqual(tally.failures, [])
+  assert.deepEqual([tally.states, tally.statesWherePretextBrokeWords, tally.cutAtCapacity], [900, 0, 0])
+  assert.ok(tally.statesMatchingPretext > 850, `${tally.statesMatchingPretext} states compared with pretext`)
+  assert.ok(wordCounts.size > 55, `${wordCounts.size} different word counts`)
+  assert.ok(tally.truncatedStates > 100, `${tally.truncatedStates} truncated states`)
+  for (const checks of declarationChecks) assert.equal(checks.evaluations, 600)
+}, 60_000)
+
+test('inserting and deleting words in the middle of a text matches pretext after every edit', () => {
+  const machines = {'Notes in front': machineWithNotesInFront(), 'starting arrangement': machineAtStart()}
+  const random = createRandom(19)
+  const {tally, add} = createTally()
+  const words = randomText(random, 40).split(' ')
+  let insertions = 0
+  let deletions = 0
+  for (let edit = 0; edit < 300; edit++) {
+    const position = randomInteger(random, 0, words.length)
+    if (words.length >= 64 || (words.length > 5 && random() < 0.45)) {
+      words.splice(Math.min(position, words.length - 1), 1)
+      deletions++
+    } else {
+      words.splice(position, 0, vocabulary[randomInteger(random, 0, vocabulary.length - 1)]!)
+      insertions++
+    }
+    const text = measure(words.join(' '))
+    for (const [label, machine] of Object.entries(machines)) add(`${label}, edit ${edit}`, text, typeAndCompare(machine, text))
+    add(`random windows, edit ${edit}`, text, compareAroundRandomWindows(machines['Notes in front'], text, random))
+  }
+  assert.deepEqual(tally.failures, [])
+  assert.deepEqual([tally.states, tally.statesWherePretextBrokeWords, tally.cutAtCapacity], [900, 0, 0])
+  assert.ok(tally.statesMatchingPretext > 850, `${tally.statesMatchingPretext} states compared with pretext`)
+  assert.ok(insertions > 100 && deletions > 100, `${insertions} insertions and ${deletions} deletions`)
+}, 60_000)
+
+test('a text with more segments than the cells is cut at the capacity, and the segments before the cut get pretext\'s lines', () => {
+  const machines = {'Notes in front': machineWithNotesInFront(), 'starting arrangement': machineAtStart()}
+  const random = createRandom(29)
+  const {tally, add} = createTally()
+  for (let trial = 0; trial < 60; trial++) {
+    const text = measure(randomText(random, randomInteger(random, 65, 150)))
+    for (const [label, machine] of Object.entries(machines)) {
+      const comparison = typeAndCompare(machine, text)
+      add(`${label}, trial ${trial}`, text, comparison)
+      assert.equal(comparison.segments.length, notesCapacity)
+    }
+    add(`random windows, trial ${trial}`, text, compareAroundRandomWindows(machines['Notes in front'], text, random))
+  }
+  assert.deepEqual(tally.failures, [])
+  assert.deepEqual([tally.states, tally.statesWherePretextBrokeWords, tally.cutAtCapacity], [180, 0, 180])
+  assert.ok(tally.statesMatchingPretext > 160, `${tally.statesMatchingPretext} states compared with pretext`)
+  // With Notes in front, the 128 segments that the cells hold fit the bands, so `truncated` is 0 although the text was
+  // cut: the program only knows the cells. Whether the text was cut is the host's to know, from notesText's result.
+  const inFront = machines['Notes in front']
+  const text = measure(randomText(random, 100))
+  assert.equal(text.paragraph.widths.length, 199)
+  const comparison = typeAndCompare(inFront, text)
+  assert.deepEqual(comparison.problems, [])
+  assert.equal(comparison.values[inFront.output.notes.truncated], 0)
+  assert.ok(comparison.segments.every(segment => segment.visible === 1))
+}, 60_000)
+
+test('a line with more segments than the window wraps after 40 segments, and windowOverflow counts such lines', () => {
+  const machine = machineWithNotesInFront()
+  checkDeclarationsOnEveryEvaluation(machine)
+  // 60 one-letter words are 119 segments of 6.34 and 4.375 px. The 440 px column fits 41 words and the 41 spaces after
+  // them, so pretext lays the text out in 2 lines, and the program in 3: two lines of 40 segments, then the other 39.
+  const text = measure(Array.from({length: 60}, () => 'i').join(' '))
+  assert.equal(text.paragraph.widths.length, 119)
+  const comparison = typeAndCompare(machine, text)
+  assert.deepEqual(comparison.problems, [])
+  assert.equal(comparison.matchesPretext, false)
+  assert.equal(comparison.pretext.lineCount, 2)
+  assert.deepEqual(comparison.pretext.bands.slice(0, 3).map(band => band.lineStart), [0, 82, null])
+  assert.deepEqual(readBands(machine, comparison.values).slice(0, 3).map(band => band.start), [0, 40, 80])
+  assert.deepEqual(
+    [comparison.values[machine.output.notes.lineCount], comparison.values[machine.output.notes.windowOverflow], comparison.values[machine.output.notes.truncated]],
+    [3, 2, 0],
+  )
+  assert.ok(comparison.segments.every(segment => segment.visible === 1))
+  // 39 words are within the window, and windowOverflow is 0 again.
+  const shorter = measure(Array.from({length: 20}, () => 'i').join(' '))
+  const again = typeAndCompare(machine, shorter)
+  assert.deepEqual(again.problems, [])
+  assert.deepEqual([again.matchesPretext, again.values[machine.output.notes.windowOverflow], again.values[machine.output.notes.lineCount]], [true, 0, 1])
+})
+
+test('a word wider than its slot is laid out whole and reaches past the slot, where pretext would break it between two letters', () => {
+  const machine = machineAtStart()
+  const text = measure('an incomprehensibilities of it')
+  const wideWord = 2
+  assert.equal(text.prepared.segments[wideWord], 'incomprehensibilities')
+  const wordWidth = text.paragraph.widths[wideWord]!
+  assert.ok(wordWidth > 150 && wordWidth < 180, `the word is ${wordWidth} px wide`)
+  // At the start, the column beside Photos is 205 px wide, and the word fits it.
+  const fitting = typeAndCompare(machine, text)
+  assert.deepEqual(fitting.problems, [])
+  assert.equal(fitting.matchesPretext, true)
+  // Notes at the left edge, and Files above it covering the column except an 85 px slot from 379 to 464.
+  const table = Float32Array.from(machine.source)
+  const write = (windowIndex: number, geometry: [left: number, top: number, width: number, height: number]) => {
+    const [left, top, width, height] = geometry
+    table[windowSourceField(windowIndex, windowStateField.left)] = left
+    table[windowSourceField(windowIndex, windowStateField.top)] = top
+    table[windowSourceField(windowIndex, windowStateField.width)] = width
+    table[windowSourceField(windowIndex, windowStateField.height)] = height
+  }
+  write(notesWindowIndex, [0, 36, 500, 500])
+  write(0, [0, 36, 370, 500])
+  table[windowSourceField(2, windowStateField.minimized)] = 1
+  table[windowSourceField(3, windowStateField.minimized)] = 1
+  const order = [2, 3, 1, 0]
+  for (let rank = 0; rank < windowCount; rank++) {
+    for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+      table[stackSourceField(rank, windowIndex)] = order[rank] === windowIndex ? 1 : 0
+    }
+  }
+  const values = machine.circuit.evaluateTensor(table)
+  const narrow = compareWithReferences(machine, values, table, text)
+  assert.deepEqual(narrow.problems, [])
+  assert.ok(narrow.walked.bands.every(band => band.usable && band.slotWidth === 85))
+  assert.equal(narrow.pretext.brokeInsideSegment, true)
+  assert.equal(narrow.matchesPretext, false)
+  // The word starts its own line at the slot's left edge and ends past the slot's right edge, and the words after it
+  // follow on the next lines.
+  const word = narrow.segments[wideWord]!
+  assert.deepEqual([word.visible, word.x, word.y], [1, 379, notesOptions.padding + notesOptions.lineHeight])
+  assert.ok(word.x + wordWidth > 464)
+  assert.deepEqual(narrow.segments.map(segment => segment.visible), [1, 1, 1, 1, 1, 1, 1])
+  assert.equal(values[machine.output.notes.lineCount], 3)
+})
+
+test('an empty text lays out nothing, and a text typed after it is laid out again', () => {
+  const machines = {'Notes in front': machineWithNotesInFront(), 'starting arrangement': machineAtStart()}
+  for (const [label, machine] of Object.entries(machines)) {
+    checkDeclarationsOnEveryEvaluation(machine)
+    const empty = typeAndCompare(machine, measure(''))
+    assert.deepEqual(empty.problems, [], label)
+    assert.equal(machine.source[notesSourceField.arrivedCount], 0)
+    const outputs = [...machine.output.notes.segments, ...machine.output.notes.bands, machine.output.notes.lineCount, machine.output.notes.truncated, machine.output.notes.windowOverflow, machine.output.notes.runOverflow]
+    assert.ok(outputs.every(wire => Number.isFinite(empty.values[wire])), 'every Notes output is finite')
+    assert.deepEqual(
+      [machine.output.notes.lineCount, machine.output.notes.truncated, machine.output.notes.windowOverflow, machine.output.notes.runOverflow].map(wire => empty.values[wire]),
+      [0, 0, 0, 0],
+    )
+    // The bands still report their slots, e.g. for a caret in the first usable band.
+    assert.equal(readBands(machine, empty.values)[0]!.usable, 1)
+    const typed = typeAndCompare(machine, measure('a'))
+    assert.deepEqual(typed.problems, [], label)
+    assert.deepEqual([typed.segments[0]!.visible, typed.values[machine.output.notes.lineCount]], [1, 1])
+  }
+})
+
+test('two break-after segments in a row are reported by runOverflow instead of stopping the machine', () => {
+  const machine = machineWithNotesInFront()
+  machine.notesText({widths: [20, 4, 0, 20], breakAfter: [0, 1, 1, 0]}, pressTime(machine))
+  const values = step(machine)
+  assert.equal(values[machine.output.notes.runOverflow], 1)
+  assert.deepEqual(readSegments(machine, values, 4).map(segment => segment.visible), [1, 1, 1, 1])
+  machine.notesText({widths: [20, 4, 20], breakAfter: [0, 1, 0]}, pressTime(machine))
+  assert.equal(step(machine)[machine.output.notes.runOverflow], 0)
 })
 
 // The walker over a three-word paragraph whose first two words span exactly 1/64 px
@@ -548,29 +1029,32 @@ test('the walker breaks a line at a 1/64 px tie the way pretext does, at either 
   assert.deepEqual(referenceStarts(0.005), [0, 2, 4])
   assert.deepEqual(referenceStarts(1 / 64), [0, 4])
   for (const lineFitEpsilon of [0.005, 1 / 64]) {
-    const circuit = new Circuit(2 + 2 * paragraph.widths.length)
+    const circuit = new Circuit(3 + 2 * paragraph.widths.length)
     const unit = circuit.source(0)
     circuit.assumeRange(unit, 1, 1)
     const startCursor = circuit.source(1)
     circuit.assumeRange(startCursor, 0, paragraph.widths.length)
+    // Every cell holds text.
+    const arrivedCount = circuit.source(2)
+    circuit.assumeRange(arrivedCount, 0, paragraph.widths.length)
     const widthCells = paragraph.widths.map((_, index) => {
-      const wire = circuit.source(2 + index)
-      circuit.assumeRange(wire, 0, 2048)
+      const wire = circuit.source(3 + index)
+      circuit.assumeRange(wire, 0, maximumSegmentWidth)
       return wire
     })
     const breakAfterCells = paragraph.widths.map((_, index) => {
-      const wire = circuit.source(2 + paragraph.widths.length + index)
+      const wire = circuit.source(3 + paragraph.widths.length + index)
       circuit.assumeRange(wire, 0, 1)
       return wire
     })
     const fc = attachFastCircuit(circuit, unit, {startCursor, widthCells, breakAfterCells}, lineFitEpsilon, 1)
     const bands = 3
     const limit = circuit.constant(lineWidth)
-    const walk = walkGatheredLines(fc, fastWindow(paragraph, lineWidth, lineFitEpsilon), Array.from({length: bands}, () => limit), Array.from({length: bands}, () => unit))
+    const walk = walkGatheredLines(fc, fastWindow(paragraph, lineWidth, lineFitEpsilon), Array.from({length: bands}, () => limit), Array.from({length: bands}, () => unit), arrivedCount)
     const geometry = segmentGeometry(fc, walk, Array.from({length: bands}, () => circuit.constant(0)), 0, 10)
     const roots = [...walk.starts, walk.lineCount, walk.windowOverflow, ...geometry.x, ...geometry.y, ...geometry.visible]
     const evaluate = circuit.createTensorEvaluator(roots)
-    const values = evaluate(Float32Array.from([1, 0, ...paragraph.widths, ...paragraph.breakAfter]))
+    const values = evaluate(Float32Array.from([1, 0, paragraph.widths.length, ...paragraph.widths, ...paragraph.breakAfter]))
     const expectedStarts = referenceStarts(lineFitEpsilon)
     const starts = [...values.subarray(0, bands)]
     assert.deepEqual(starts.slice(0, expectedStarts.length), expectedStarts, `line starts at epsilon ${lineFitEpsilon}`)
@@ -609,7 +1093,7 @@ test('one span per word is created once and positioned from the outputs', () => 
   assert.equal(appended.length, notesWords.length)
   assert.deepEqual(created.map(node => node.textContent), notesWords)
   assert.ok(created.every(node => node.className === 'notes-word'))
-  projectNotesWords(nodes, values, machine.output.notes.words)
+  projectNotesWords(nodes, wordSegments, values, machine.output.notes.segments)
   const words = readWords(machine, values)
   created.forEach((node, index) => {
     assert.equal(node.style['transform'], `translate3d(${words[index]!.x}px,${words[index]!.y}px,0)`)

@@ -1,9 +1,10 @@
-// The Notes paragraph: its text, how the host measures it with pretext, the
-// options the flow is built with, and a baked default measurement so that
-// createWindowManagerMachine() builds the same program in every process without
-// a canvas.
+// The Notes paragraph: the text the note starts with, how the host measures a text
+// with pretext, the options the flow is built with, and a baked default measurement
+// of the starting text, so that createWindowManagerMachine() starts from the same
+// table in every process without a canvas. The program itself is the same for every
+// text and every font: its size follows from notesCapacity and notesWindow.
 import {type PreparedTextWithSegments, prepareWithSegments} from '@chenglou/pretext'
-import {type FastParagraph, fastWindow, longestBreakAfterRun, maximumSegmentWidth} from './notes-walker.ts'
+import {type FastParagraph, maximumSegmentWidth} from './notes-walker.ts'
 import {invariant} from '../runtime/numeric-ui-core.ts'
 
 export const notesText =
@@ -48,13 +49,14 @@ export function lineFitEpsilonFor(navigator: {userAgent: string, vendor?: string
   return safari ? 1 / 64 : defaultLineFitEpsilon
 }
 
-// The paragraph as pretext segments and measures it in `font`, with each width
-// rounded to 1/64 px so prefix sums in the circuit stay exact in FP32 (pretext
-// itself keeps the unrounded widths, so a browser line whose span lies within
-// 1/128 px of the limit can break differently there). Returns the prepared text
-// too, so a test can run pretext's own layoutNextLineRange on the same measurement.
-export function measureNotesParagraph(font = notesFont): {paragraph: FastParagraph, prepared: PreparedTextWithSegments} {
-  const prepared = prepareWithSegments(notesText, font)
+// A text as pretext segments and measures it in `font`, with each width rounded to
+// 1/64 px so prefix sums in the circuit stay exact in FP32 (pretext itself keeps the
+// unrounded widths, so a browser line whose span lies within 1/128 px of the limit
+// can break differently there). Returns the prepared text too, so a test can run
+// pretext's own layoutNextLineRange on the same measurement. Throws for a text that
+// leaves pretext's fast path, e.g. one with a soft hyphen.
+export function measureNotesParagraph(font = notesFont, text = notesText): {paragraph: FastParagraph, prepared: PreparedTextWithSegments} {
+  const prepared = prepareWithSegments(text, font)
   invariant(prepared.simpleLineWalkFastPath && prepared.letterSpacing === 0, 'the walker needs pretext fast-path text')
   const breakAfter = prepared.kinds.map(kind => kind === 'space' || kind === 'zero-width-break' ? 1 : 0)
   const widths = prepared.widths.map(width => Math.round(width * 64) / 64)
@@ -63,9 +65,10 @@ export function measureNotesParagraph(font = notesFont): {paragraph: FastParagra
 }
 
 export type NotesOptions = {
-  paragraph: FastParagraph
+  // How many segment cells the flow has.
+  capacity: number
   epsilon: number
-  // The fast walker's window: segments compared after a line start, see fastWindow.
+  // The fast walker's window: how many segments a line can hold.
   window: number
   runLimit: number
   // Line slots, each lineHeight px tall, starting `padding` px below the top of
@@ -80,23 +83,39 @@ export type NotesOptions = {
   minimumSlotWidth: number
 }
 
-// The flow's structural constants for a paragraph, e.g. the walker window and the
-// narrowest slot a band may use. The circuit's size follows from them, so a machine
-// built from a live measurement fits that measurement's widths.
-export function notesOptionsFor(paragraph: FastParagraph, epsilon: number): NotesOptions {
-  const maximumColumnWidth = 440
+// How many segment cells the flow has. A segment is a word or the space after it,
+// so the starting paragraph's 45 words take 89 cells, and 128 cells hold 64 words.
+// A text with more segments is cut at the capacity, see the machine's notesText in
+// window-manager.ts. Every cell is paid on every evaluation, whether or not the
+// text uses it.
+export const notesCapacity = 128
+// How many segments one line can hold, e.g. 20 words and the 20 spaces after them.
+// The starting paragraph's longest line in the widest column holds 25 segments at
+// the baked widths. A line with more segments wraps after 40, and the flow's
+// windowOverflow output counts such lines.
+export const notesWindow = 40
+
+// The flow's structural constants, e.g. the walker window and the narrowest slot a
+// band may use. The circuit's size follows from them, and none depends on the text.
+export function notesOptionsFor(epsilon: number): NotesOptions {
   return {
-    paragraph,
+    capacity: notesCapacity,
     epsilon,
-    window: fastWindow(paragraph, maximumColumnWidth, epsilon),
-    runLimit: longestBreakAfterRun(paragraph.breakAfter),
+    window: notesWindow,
+    // Segments that break after themselves never follow each other: pretext collapses
+    // white space into single spaces, and a host that measures other text keeps runs
+    // apart, e.g. by merging a space and a zero-width space into one segment. The
+    // flow's runOverflow output counts the runs that do occur.
+    runLimit: 1,
     bands: 16,
     lineHeight: 22,
     padding: 24,
-    maximumColumnWidth,
+    maximumColumnWidth: 440,
     horizontalPadding: 10,
     verticalPadding: 4,
-    // Every slot fits the widest word, so the fast path never needs an emergency break.
-    minimumSlotWidth: Math.max(80, Math.ceil(Math.max(...paragraph.widths)) + 1),
+    // A segment wider than its band's slot is laid out whole and reaches past the
+    // slot's edge, e.g. a 120 px word in an 85 px slot beside a window. pretext would
+    // break such a word between two letters.
+    minimumSlotWidth: 80,
   }
 }

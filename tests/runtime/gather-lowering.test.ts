@@ -1231,10 +1231,15 @@ describe('HandwiredOS', () => {
     // declares nothing. Since September 16, 2026, the Notes flow (notes.ts and
     // notes-walker.ts) declares 32 more groups, two per line band: the set of other windows that block the
     // band, one of the 8 subsets of the 3 other windows, and the segment that the
-    // band's line starts at, one of 89. Reads over those groups bring the total
-    // from 12 to 908.
+    // band's line starts at, one of the segment cells. Reads over those groups
+    // brought the total from 12 to 908 while Notes had 89 segment cells and a walker
+    // window of 26. Since October 13, 2026, Notes takes typed text in 128 segment
+    // cells with a window of 40. Each band then has 84 reads: 3 for its slot, 2 at
+    // its line's start, 2 for each of the 39 segments after the start, and 1 for the
+    // comparison that reports a line past the window. 16 bands and the 12 stacking
+    // reads make 1,356.
     expect(circuit.oneHotGroups.length).toBe(40)
-    expect(statistics.readCount).toBe(908)
+    expect(statistics.readCount).toBe(1356)
     expect(statistics.slotCount).toBe(40)
     expect(statistics.storedWeightCount).toBeLessThan(baseline.storedWeightCount)
     console.log(
@@ -1310,5 +1315,5 @@ describe('HandwiredOS', () => {
     for (let settle = 0; settle < 10; settle++) compareStep(1280, 800)
     // 84 steps, plus event and settle check evaluations between frames.
     expect(evaluations).toBeGreaterThan(84)
-  })
+  }, 60_000)
 })

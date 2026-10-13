@@ -17,6 +17,11 @@
 // press and not at every frame of the animation, and word positions are the same
 // at every frame rate.
 //
+// The text is whatever the segment cells hold: the program has a fixed number of
+// cells, the host measures a text into segments, e.g. with pretext, and writes them
+// with an event, see the machine's notesText in window-manager.ts. So a typed
+// character reflows the text in its event's evaluation, like a moved window does.
+//
 // The carving depends on the band only through which obstacles block it, so the
 // slot is computed once for each subset of the obstacles (8 subsets of 3), and each
 // band reads its subset's slot through a one-hot of its 3 blocking bits.
@@ -38,6 +43,15 @@
 // - A band whose bottom lies below the content box is unusable, so no word is
 //   placed where the window would clip it. The content height is the destination
 //   height, so this gate changes only at events, like the obstacles.
+// - The flow has a fixed number of segment cells, see notesCapacity. A text with
+//   more segments is cut at the capacity before it reaches the cells, and only the
+//   host knows that it was cut.
+// - A line holds a fixed number of segments at most, see notesWindow. A line of
+//   more segments wraps early, and `windowOverflow` counts such lines.
+// - A segment wider than its band's slot is laid out whole, alone on its line, and
+//   reaches past the slot's edge, e.g. under the window beside the slot. pretext
+//   would break such a word between two letters, so the host cuts a run of letters
+//   that is wider than the whole column into shorter segments before it writes them.
 import {type Circuit, type Terms, type Wire, emitMaximum, emitMinimum, emitMultiply, emitRelu, emitSelect, invariant} from '../runtime/numeric-ui-core.ts'
 import {type FastCircuit, attachFastCircuit, integerAtLeast, maximumSegmentWidth, segmentGeometry, walkGatheredLines} from './notes-walker.ts'
 import {type CellWires, constant, input, inputBit} from '../runtime/cells.ts'
@@ -54,14 +68,37 @@ const localRange = [-32_768, 32_768] as const
 // exact in FP32.
 const widthGrid = 1 / 64
 
-// Notes' own cells: the paragraph's measured widths and break-after bits, which the
-// host writes once, and the segment the paragraph starts at. Words carry no state.
-export function notesCells(paragraph: FastParagraph) {
+// A paragraph as the segment cells can hold it: at most `capacity` segments, each width
+// a multiple of 1/64 px within the cells' range, and each break-after bit exactly 0 or
+// 1. E.g. a width of 30.4 px becomes 30.40625, a width that isn't a finite number
+// becomes 0, and the 129th segment is left out of 128 cells. Every text passes through
+// this function before the machine writes cells, like pointer coordinates are rounded
+// and clamped: a value outside a cell's declared range fails the machine's table check,
+// and after a failed check the machine stops for good.
+export function fitNotesParagraph(paragraph: FastParagraph, capacity: number): FastParagraph {
   invariant(paragraph.widths.length === paragraph.breakAfter.length, 'one break-after bit per segment')
+  const count = Math.min(capacity, paragraph.widths.length)
   return {
-    widths: paragraph.widths.map(width => input([0, maximumSegmentWidth], {initial: width, grid: widthGrid})),
-    breakAfter: paragraph.breakAfter.map(breakAfter => inputBit(breakAfter)),
-    startCursor: constant(0, [0, paragraph.widths.length]),
+    widths: paragraph.widths.slice(0, count).map(width =>
+      Number.isFinite(width) ? Math.min(maximumSegmentWidth, Math.max(0, Math.round(width / widthGrid) * widthGrid)) : 0),
+    breakAfter: paragraph.breakAfter.slice(0, count).map(breakAfter => breakAfter === 1 ? 1 : 0),
+  }
+}
+
+// Notes' own cells: `capacity` segment cells, each a measured width and a break-after
+// bit, how many of them hold the text, and the segment the text starts at. The cells
+// after the text hold width 0 and break-after 0, see walkGatheredLines. The host
+// rewrites the cells when the text changes, e.g. at every typed character, through
+// the machine's notesText in window-manager.ts. `paragraph` is the text the cells
+// start with. Segments carry no state.
+export function notesCells(capacity: number, paragraph: FastParagraph) {
+  invariant(paragraph.widths.length === paragraph.breakAfter.length, 'one break-after bit per segment')
+  invariant(paragraph.widths.length <= capacity, 'the paragraph has more segments than the flow has segment cells')
+  return {
+    widths: Array.from({length: capacity}, (_, segment) => input([0, maximumSegmentWidth], {initial: paragraph.widths[segment] ?? 0, grid: widthGrid})),
+    breakAfter: Array.from({length: capacity}, (_, segment) => inputBit(paragraph.breakAfter[segment] ?? 0)),
+    arrivedCount: input([0, capacity], {initial: paragraph.widths.length, grid: 1}),
+    startCursor: constant(0, [0, capacity]),
   }
 }
 type NotesCells = CellWires<ReturnType<typeof notesCells>>
@@ -78,8 +115,11 @@ type NotesContext = {
   contentHeight: Wire
 }
 
-// Per word: x and y in the content box's coordinates, and whether a band laid it out.
-export const wordOutputField = {x: 0, y: 1, visible: 2, size: 3} as const
+// Per segment cell: x and y in the content box's coordinates, and whether a band laid
+// the segment out. Which cells hold words is known only at run time, from the
+// break-after bits that the host wrote, so every cell has outputs, e.g. the cell of a
+// space too. The outputs of a cell after the text mean nothing.
+export const segmentOutputField = {x: 0, y: 1, visible: 2, size: 3} as const
 // Per band: whether the band has a slot within the content box, the slot's left
 // edge and width, and the segment its line starts at. These wires are live in the
 // walker anyway, so reporting them costs no operations; the line's painted width
@@ -87,28 +127,27 @@ export const wordOutputField = {x: 0, y: 1, visible: 2, size: 3} as const
 export const bandOutputField = {usable: 0, left: 1, width: 2, start: 3, size: 4} as const
 
 export type NotesOutputs = {
-  words: Wire[]
+  segments: Wire[]
   bands: Wire[]
+  // How many bands hold a line of the text.
   lineCount: Wire
-  // 1 when the paragraph needs more bands than the flow has, or more than fit
-  // in the content box, so some words aren't laid out.
+  // 1 when the text needs more bands than the flow has, or more than fit in the
+  // content box, so some segments of the text aren't laid out.
   truncated: Wire
-  // Nonzero when a line reaches past the walker's window, or when a run of
-  // break-after segments is longer than the flow was built for; both mean the
-  // options don't fit the paragraph.
+  // The flow's two other capacities, reported instead of thrown, since typed text can
+  // reach both. windowOverflow counts the bands whose line holds more segments than
+  // the walker's window compares, e.g. 60 one-letter words in a wide column: such a
+  // line wraps after `window` segments. runOverflow counts the places where more
+  // break-after segments follow each other than the flow was built for, e.g. a space
+  // next to a zero-width space with a run limit of 1: a line can then start with one
+  // of them.
   windowOverflow: Wire
   runOverflow: Wire
 }
 
-function textSegments(paragraph: FastParagraph) {
-  return paragraph.breakAfter.flatMap((breakAfter, index) => breakAfter === 0 ? [index] : [])
-}
-
 export function buildNotes(circuit: Circuit, cells: NotesCells, options: NotesOptions, context: NotesContext): NotesOutputs {
   const {unit, titleHeight, nextStack, contentHeight} = context
-  const {paragraph} = options
-  invariant(cells.widths.length === paragraph.widths.length, 'the cells were declared for another paragraph')
-  invariant(options.minimumSlotWidth >= Math.max(...paragraph.widths), 'every slot must fit the widest segment, so the fast path never needs an emergency break')
+  invariant(cells.widths.length === options.capacity, 'the cells were declared for another capacity')
   invariant(context.windows.length > notesWindowIndex, 'the context needs the Notes window')
   const zero = circuit.constant(0)
   const affine = (terms: Terms, bias = 0) => circuit.affine(terms, bias)
@@ -228,16 +267,14 @@ export function buildNotes(circuit: Circuit, cells: NotesCells, options: NotesOp
     options.epsilon,
     options.runLimit,
   )
-  const walk = walkGatheredLines(fc, options.window, bands.map(band => band.width), bands.map(band => band.usable))
+  const walk = walkGatheredLines(fc, options.window, bands.map(band => band.width), bands.map(band => band.usable), cells.arrivedCount)
   const geometry = segmentGeometry(fc, walk, bands.map(band => band.left), options.padding, options.lineHeight)
 
-  const words = textSegments(paragraph).flatMap(segment => [geometry.x[segment]!, geometry.y[segment]!, geometry.visible[segment]!])
-  const lastSegment = paragraph.widths.length - 1
   return {
-    words,
+    segments: cells.widths.flatMap((_, segment) => [geometry.x[segment]!, geometry.y[segment]!, geometry.visible[segment]!]),
     bands: bands.flatMap((band, index) => [band.usable, band.left, band.width, walk.starts[index]!]),
     lineCount: walk.lineCount,
-    truncated: assume(affine([[unit, 1], [geometry.visible[lastSegment]!, -1]]), 0, 1),
+    truncated: walk.moreLinesThanSlots,
     windowOverflow: walk.windowOverflow,
     runOverflow: fc.runOverflow,
   }

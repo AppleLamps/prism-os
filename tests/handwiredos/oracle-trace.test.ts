@@ -225,7 +225,51 @@ describe('production circuits match the reference interpreter across scripted tr
     values = advance(irregularFrameTime(random))
     for (let settle = 0; settle < 3; settle++) values = advance(irregularFrameTime(random))
 
-    // Phase 6: viewport resizes, including tiny and zero sizes, with idle frames.
+    // Phase 6: Notes texts, written the way typed text is: an empty text, one word,
+    // narrow segments that fill the line walker's window, a segment wider than any
+    // slot, more segments than Notes has cells, and random widths. Each text is laid
+    // out around the windows where the phases above left them, then again after a
+    // press on Notes' title bar raises Notes above them.
+    const randomParagraph = (segments: number, widestWord: number) => ({
+      widths: Array.from({length: segments}, (_, segment) => segment % 2 === 1 ? 4.375 : Math.round(random() * widestWord * 64) / 64),
+      breakAfter: Array.from({length: segments}, (_, segment) => segment % 2),
+    })
+    const paragraphs = [
+      {widths: [], breakAfter: []},
+      {widths: [31.5], breakAfter: [0]},
+      randomParagraph(119, 8),
+      {widths: [20, 4.375, 500, 4.375, 20], breakAfter: [0, 1, 0, 1, 0]},
+      randomParagraph(300, 60),
+      randomParagraph(77, 90),
+      randomParagraph(128, 200),
+    ]
+    let mostNotesLines = 0
+    let mostWindowOverflow = 0
+    let notesTruncations = 0
+    for (const raiseNotes of [false, true]) {
+      if (raiseNotes) {
+        const window = projectWindow(values, 1)
+        const x = window.left + 40
+        const y = window.top + machine.source[windowSourceFieldTable.titleHeight]! / 2
+        machine.pointerDown(x, y)
+        machine.pointerUp(x, y)
+        values = advance(irregularFrameTime(random))
+      }
+      for (const paragraph of paragraphs) {
+        machine.notesText(paragraph)
+        values = advance(irregularFrameTime(random))
+        mostNotesLines = Math.max(mostNotesLines, values[machine.output.notes.lineCount]!)
+        mostWindowOverflow = Math.max(mostWindowOverflow, values[machine.output.notes.windowOverflow]!)
+        notesTruncations += values[machine.output.notes.truncated]!
+      }
+    }
+    // The texts reached the flow's limits: each of the 13 bands that Notes' content box fits held a line, a line
+    // wrapped at the walker's window, and the widest text left segments without a band, before and after the press.
+    expect(mostNotesLines).toBe(13)
+    expect(mostWindowOverflow).toBeGreaterThanOrEqual(1)
+    expect(notesTruncations).toBeGreaterThanOrEqual(2)
+
+    // Phase 7: viewport resizes, including tiny and zero sizes, with idle frames.
     for (const [resizeWidth, resizeHeight] of [
       [960, 600],
       [320, 240],
@@ -245,7 +289,7 @@ describe('production circuits match the reference interpreter across scripted tr
     expect(checked.evaluations).toBeGreaterThan(steps)
     // Surface the totals for the run report.
     console.log(`window manager: ${steps} steps, ${checked.evaluations} evaluations, ${checked.comparisons} wire comparisons`)
-  })
+  }, 60_000)
 
   test('photo gallery: selection, wraparound navigation, lightbox close, tiny viewports', () => {
     const machine = createPhotoGalleryMachine()

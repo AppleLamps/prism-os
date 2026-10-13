@@ -1,6 +1,10 @@
 // pretext's fast-path line walker (text, space and zero-width break segments, no
-// letter spacing, every line at least as wide as the widest segment) as circuit
-// arithmetic over runtime segment widths and break-after bits, plus the circuit
+// letter spacing) as circuit arithmetic over runtime segment widths and break-after
+// bits. It gives pretext's lines while every line is at least as wide as its widest
+// segment and holds no more segments than the walker's window. Past those limits it
+// keeps laying out: a segment wider than its line is placed whole, where pretext
+// would break it between two letters, and a line of more segments than the window
+// wraps early. The file also holds the circuit
 // helpers it builds on: exact integer comparisons, integer one-hots and masked
 // reads. Ported from lab/ui-exploration/text-walker's fast-walker.ts and its helpers,
 // through indirect-os-2's trimmed copies, fast-walker.ts and text-kit.ts, which were
@@ -29,7 +33,10 @@ export type FastParagraph = {
 }
 
 // The largest segment count window a paragraph needs: over every start, how far the line reaches
-// at the widest width, plus one comparison that reports a window too small.
+// at the widest width, plus one comparison that reports a window too small. The Notes flow's
+// window is fixed, see notesWindow in notes-paragraph.ts, so only tests call this function, e.g.
+// to say which texts stay within the window.
+/** @public */
 export function fastWindow(paragraph: FastParagraph, maximumWidth: number, epsilon: number): number {
   const segmentCount = paragraph.widths.length
   let widest = 1
@@ -47,6 +54,10 @@ export function fastWindow(paragraph: FastParagraph, maximumWidth: number, epsil
   return widest + 1
 }
 
+// The longest run of segments that break after themselves, which is the run limit a paragraph
+// needs. The Notes flow's run limit is fixed at 1, and lab/ui-exploration/text-walker's batch
+// programs call this function for their paragraphs.
+/** @public */
 export function longestBreakAfterRun(breakAfter: readonly number[]): number {
   let longest = 1
   let run = 0
@@ -57,7 +68,9 @@ export function longestBreakAfterRun(breakAfter: readonly number[]): number {
   return longest
 }
 
-export const maximumSegmentWidth = 2048
+// The widest segment a width cell may hold, in px. Every cell's range check enforces it, so the
+// widths of up to 256 cells add up to at most maximumParagraphWidth for any table, e.g. for typed text.
+export const maximumSegmentWidth = 512
 const maximumLineWidth = 4096
 // FP32 bound for the comparison score: 64 * span must stay within 2^23.
 const maximumParagraphWidth = 2 ** 17
@@ -198,6 +211,7 @@ export function attachFastCircuit(
   const {startCursor, widthCells, breakAfterCells} = cells
   const segmentCount = widthCells.length
   invariant(segmentCount >= 1 && breakAfterCells.length === segmentCount, 'a paragraph needs one break-after bit per segment')
+  invariant(segmentCount * maximumSegmentWidth <= maximumParagraphWidth, 'the widths of this many segment cells can add up to more than the prefix sums hold exactly')
   const zero = circuit.roundAffine([[unit, 0]])
   circuit.assumeRange(zero, 0, 0)
 
@@ -278,13 +292,26 @@ type GatheredWalk = {
   startPrefixes: Wire[]
   oneHots: OneHot[]
   finalStart: Wire
+  // How many slots hold a line of the text.
   lineCount: Wire
+  // How many slots hold a line that reaches past the window, so the line wraps after `window` segments.
   windowOverflow: Wire
+  // 1 when some segment of the text comes after the last slot's line.
+  moreLinesThanSlots: Wire
 }
 
 // The line walker with one integer one-hot per line slot and comparisons against that slot's own
 // width. A band whose usable gate is 0 lays out nothing and the start stays put.
-export function walkGatheredLines(fc: FastCircuit, window: number, lineWidths: readonly Wire[], usable: readonly Wire[]): GatheredWalk {
+//
+// `arrivedCount` is how many of the segment cells hold text, like the cell of the same name in
+// lab/ui-exploration/streaming-words/stream-walker.ts. The cells after the text hold width 0 and
+// break-after 0, so they always fit: they glue onto the end of the text's last line, and the slots
+// after that line walk over them, `window` cells per slot. The text's own segments get the lines
+// they would get without those cells, and only the outputs that describe the whole text read the
+// count: a slot holds a line when its start comes before the count, a line reaches past the window
+// only when the segment after the window is part of the text, and lines are missing when the start
+// after the last slot comes before the count.
+export function walkGatheredLines(fc: FastCircuit, window: number, lineWidths: readonly Wire[], usable: readonly Wire[], arrivedCount: Wire): GatheredWalk {
   const {circuit, unit, segmentCount} = fc
   invariant(Number.isInteger(window) && window >= 2, 'the walker window must be at least 2 segments')
   invariant(usable.length === lineWidths.length, 'one usable bit per line slot')
@@ -328,7 +355,9 @@ export function walkGatheredLines(fc: FastCircuit, window: number, lineWidths: r
       const threshold = maskedRead(circuit, oneHot.members, shiftedThreshold[offset - 1]!)
       const fits = fitBit(circuit, unit, [[threshold, 1], [unit, exhaustedThresholdOffset], [startPrefix, -1]], lineWidths[line]!, fc.epsilon)
       if (offset === window) {
-        overflowBits.push(circuit.multiply(fits, usable[line]!))
+        // [arrivedCount - start >= window + 1]: the segment at start + window is part of the text.
+        const arrivedPastWindow = integerAtLeast(circuit, [[arrivedCount, 1], [start, -1]], 0, window + 1)
+        overflowBits.push(integerAtLeast(circuit, [[fits, 1], [usable[line]!, 1], [arrivedPastWindow, 1]], 0, 3))
         break
       }
       nextTerms.push([fits, 1], [circuit.multiply(maskedRead(circuit, oneHot.members, shiftedDeltaSkip[offset - 1]!), fits), 1])
@@ -336,12 +365,11 @@ export function walkGatheredLines(fc: FastCircuit, window: number, lineWidths: r
     }
     const width = circuit.roundAffine(widthTerms)
     circuit.assumeRange(width, 0, maximumLineWidth + maximumSegmentWidth)
-    // notExhausted = [start <= N - 1]
-    const notExhausted = circuit.roundAffine(oneHot.atLeast(segmentCount).map(([wire, coefficient]) => [wire, -coefficient] as const), 1)
-    circuit.assumeRange(notExhausted, 0, 1)
+    // [arrivedCount - start >= 1]: the slot's line starts inside the text.
+    const startsInText = integerAtLeast(circuit, [[arrivedCount, 1], [start, -1]], 0, 1)
     const gate = usable[line]!
     widths.push(circuit.multiply(width, gate))
-    countTerms.push([circuit.multiply(notExhausted, gate), 1])
+    countTerms.push([integerAtLeast(circuit, [[startsInText, 1], [gate, 1]], 0, 2), 1])
     const advance = circuit.roundAffine([...nextTerms, [start, -1]], segmentCount)
     circuit.assumeRange(advance, 0, window + fc.runLimit)
     start = circuit.roundAffine([[start, 1], [circuit.multiply(advance, gate), 1]])
@@ -355,6 +383,7 @@ export function walkGatheredLines(fc: FastCircuit, window: number, lineWidths: r
     finalStart: start,
     lineCount: circuit.roundAffine(countTerms),
     windowOverflow: anyBit(fc, overflowBits),
+    moreLinesThanSlots: integerAtLeast(circuit, [[arrivedCount, 1], [start, -1]], 0, 1),
   }
 }
 
