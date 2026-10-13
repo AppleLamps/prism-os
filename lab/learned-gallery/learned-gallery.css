@@ -1,6 +1,9 @@
-/* The learned gallery. Loads after assets/site.css, which has the tokens, the page header, the
-   title, the caption, the "Try" list, the statistics line, the buttons and the footer. This file
-   has the two stages, the controls under them and the loss chart. */
+/* The learned gallery: the two stages, the controls under them and the loss chart. The tokens,
+   the page header, the title, the caption, the "Try" list, the statistics line, the buttons and
+   the footer come from assets/site.css. The page links this file only, and the import below puts
+   site.css's rules before this file's: with two links, Bun's development server (1.4.3) serves
+   the stylesheets in the reverse of the page's order, and bun build in the page's order. */
+@import "../../assets/site.css";
 
 .stages {
   display: grid;
