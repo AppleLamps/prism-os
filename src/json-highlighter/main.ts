@@ -353,8 +353,11 @@ function mountJsonHighlighter(document: Document, window: Window) {
   // The run whose DOM writes haven't reached the screen yet. The next frame completes its timing.
   let pending: Run | null = null
 
-  function renderHighlighter(frameTime: number) {
+  function renderHighlighter() {
     scheduledRaf = null
+    // The time this frame's callback runs. An animation frame's own timestamp is when the frame began, which is
+    // before the events that a long task delayed, e.g. the 0.15 s of building the program when the page mounts.
+    const frameTime = window.performance.now()
 
     // DOM reads.
     const text = domCache.textarea.value
@@ -530,8 +533,8 @@ function mountJsonHighlighter(document: Document, window: Window) {
       if (written.countUsed !== countUsedText) domCache.countUsed.textContent = written.countUsed = countUsedText
     }
 
-    // The statistics line shows a run in the run's own frame. The details line also says when the next frame began,
-    // so it shows a keystroke one frame later.
+    // The statistics line shows a run in the run's own frame. The details line also says when the run's result
+    // reached the screen, which the next frame's start stands for, so it shows a keystroke one frame later.
     const domEnd = window.performance.now()
     if (changed) {
       pending = {keystroke: typed, inputTime, evaluateMs, domMs: domEnd - domStart, inputToFrameMs: null}
@@ -544,7 +547,7 @@ function mountJsonHighlighter(document: Document, window: Window) {
       if (written.statistics !== statisticsText) domCache.statistics.innerHTML = written.statistics = statisticsText
       if (!described.keystroke || described.inputToFrameMs !== null) {
         const detailsText = `${detailsStart} ${name} took <b>${formatMs(described.evaluateMs)}</b> to run the program and <b>${formatMs(described.domMs)}</b> to update the page`
-          + `${described.inputToFrameMs === null || !described.keystroke ? '.' : `, and the next frame began <b>${formatMs(described.inputToFrameMs)}</b> after the key press.`}`
+          + `${described.inputToFrameMs === null || !described.keystroke ? '.' : `, and its result reached the screen about <b>${Math.round(described.inputToFrameMs)} ms</b> after the key press.`}`
         if (written.details !== detailsText) domCache.details.innerHTML = written.details = detailsText
       }
     }
@@ -598,7 +601,7 @@ function mountJsonHighlighter(document: Document, window: Window) {
   textarea.focus({preventScroll: true})
   textarea.setSelectionRange(firstCaret, firstCaret)
   // The first frame runs here and not in an animation frame, so the text is never painted without its colors.
-  renderHighlighter(window.performance.now())
+  renderHighlighter()
 }
 
 mountJsonHighlighter(document, window)
