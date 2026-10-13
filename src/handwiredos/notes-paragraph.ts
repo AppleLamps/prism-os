@@ -71,11 +71,13 @@ export type NotesOptions = {
 }
 
 // How many segment cells the flow has. A segment is a word or the space after it,
-// so the starting paragraph's 45 words take 89 cells, and 128 cells hold 64 words.
+// so the starting paragraph's 45 words take 89 cells, and 160 cells hold 80 words.
 // A text with more segments is cut at the capacity, see the machine's notesText in
 // window-manager.ts. Every cell is paid on every evaluation, whether or not the
-// text uses it.
-export const notesCapacity = 128
+// text uses it, and when the machine is built: at 160 cells and a window of 40 the
+// machine builds in about 0.2 s in Bun, and 192 cells with a window of 48 take
+// about 0.3 s, which the page would spend before it shows its windows.
+export const notesCapacity = 160
 // How many segments one line can hold, e.g. 20 words and the 20 spaces after them.
 // The starting paragraph's longest line in the widest column holds 25 segments at
 // the baked widths. A line with more segments wraps after 40, and the flow's

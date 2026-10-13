@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {fakeTextWidth, testFont} from './fake-canvas.ts'
 import {type NotesRead, createNotesHost} from '../../src/handwiredos/notes-host.ts'
-import {defaultLineFitEpsilon, notesOptionsFor, notesText, notesWords} from '../../src/handwiredos/notes-paragraph.ts'
+import {defaultLineFitEpsilon, notesCapacity, notesOptionsFor, notesText, notesWords} from '../../src/handwiredos/notes-paragraph.ts'
 import {createWindowManagerMachine, notesWindowIndex, segmentOutputField, windowOutputField} from '../../src/handwiredos/window-manager.ts'
 
 const measure = (text: string) => fakeTextWidth(text, testFont)
@@ -462,12 +462,13 @@ test('the note says which capacity its text passes, and writes the sentence only
   press(450, 126)
   frame()
   assert.deepEqual([notice.style['display'], notice.textContent, notice.textWrites], ['none', '', 2])
-  // 200 words are 399 segments: the cells hold the first 128, i.e. 64 words, and the textarea keeps the whole text.
+  // 200 words are 399 segments: the cells hold as many segments as there are cells, i.e. half as many words, and
+  // the textarea keeps the whole text.
   const long = Array.from({length: 200}, (_, index) => index % 2 === 0 ? 'word' : 'another').join(' ')
   type(long)
   frame()
-  assert.deepEqual([notice.style['display'], notice.textContent], ['block', 'This text has 399 words and spaces, and the note lays out the first 128.'])
-  assert.equal(shownWords().length, 64)
+  assert.deepEqual([notice.style['display'], notice.textContent], ['block', `This text has 399 words and spaces, and the note lays out the first ${notesCapacity}.`])
+  assert.equal(shownWords().length, notesCapacity / 2)
   assert.equal(input.value, long)
   // 60 one-letter words: two lines wrap at the walker's window.
   type(Array.from({length: 60}, () => 'i').join(' '))

@@ -1233,7 +1233,7 @@ describe('HandwiredOS', () => {
     // band, one of the 8 subsets of the 3 other windows, and the segment that the
     // band's line starts at, one of the segment cells. Reads over those groups
     // brought the total from 12 to 908 while Notes had 89 segment cells and a walker
-    // window of 26. Since October 13, 2026, Notes takes typed text in 128 segment
+    // window of 26. Since October 13, 2026, Notes takes typed text in 160 segment
     // cells with a window of 40. Each band then has 84 reads: 3 for its slot, 2 at
     // its line's start, 2 for each of the 39 segments after the start, and 1 for the
     // comparison that reports a line past the window. 16 bands and the 12 stacking

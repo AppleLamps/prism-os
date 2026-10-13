@@ -427,7 +427,7 @@ test('the fake canvas measurement reproduces the baked default paragraph, and th
   assert.equal(measured.prepared.segments.length, 89)
   assert.equal(notesWords.length, 45)
   assert.deepEqual(measured.prepared.segments.filter((_, index) => defaultNotesParagraph.breakAfter[index] === 0), notesWords)
-  assert.deepEqual([notesOptions.capacity, notesOptions.window, notesOptions.runLimit, notesOptions.minimumSlotWidth], [128, 40, 1, 80])
+  assert.deepEqual([notesOptions.capacity, notesOptions.window, notesOptions.runLimit, notesOptions.minimumSlotWidth], [160, 40, 1, 80])
   // The starting paragraph's longest line in the widest column holds 25 segments, so fastWindow asks for 26 comparisons.
   assert.equal(fastWindow(defaultNotesParagraph, notesOptions.maximumColumnWidth, epsilon), 26)
   // The fake widths lie on the 1/64 px grid, so the reference and the circuit see the same numbers.
@@ -457,7 +457,7 @@ test('a machine starts with any paragraph, and a text is rounded, clamped and cu
   assert.equal(machine.notesText({widths: [30.4, Number.NaN, 3000, -5, Number.POSITIVE_INFINITY], breakAfter: [0, 2, 0.5, 1, -1]}), 5)
   step(machine)
   assert.deepEqual(readTextCells(machine.source, 6), {widths: [30.40625, 0, maximumSegmentWidth, 0, 0, 0], breakAfter: [0, 0, 0, 1, 0, 0], arrivedCount: 5})
-  // More segments than cells: the cells hold the first 128.
+  // More segments than cells: the cells hold as many as there are cells, from the first on.
   const long: FastParagraph = {widths: Array.from({length: 300}, (_, segment) => segment % 2 === 0 ? 20 : 4), breakAfter: Array.from({length: 300}, (_, segment) => segment % 2)}
   assert.equal(machine.notesText(long), notesCapacity)
   step(machine)
@@ -784,14 +784,17 @@ test('typing a sentence one character at a time, then deleting it, lays out ever
   for (const checks of declarationChecks) assert.equal(checks.evaluations, 2 * lengths.length)
 }, 60_000)
 
-test('random texts of 0 to 64 words match pretext, through the machine and around random window arrangements', () => {
+// The most words whose segments, i.e. the words and the spaces between them, fit the cells.
+const mostWordsInCells = notesCapacity / 2
+
+test('random texts of every length that fits the cells match pretext, through the machine and around random window arrangements', () => {
   const machines = {'Notes in front': machineWithNotesInFront(), 'starting arrangement': machineAtStart()}
   const declarationChecks = Object.values(machines).map(checkDeclarationsOnEveryEvaluation)
   const random = createRandom(13)
   const {tally, add} = createTally()
   const wordCounts = new Set<number>()
   for (let trial = 0; trial < 300; trial++) {
-    const wordCount = trial < 3 ? [0, 1, 64][trial]! : randomInteger(random, 0, 64)
+    const wordCount = trial < 3 ? [0, 1, mostWordsInCells][trial]! : randomInteger(random, 0, mostWordsInCells)
     wordCounts.add(wordCount)
     const text = measure(randomText(random, wordCount))
     for (const [label, machine] of Object.entries(machines)) add(`${label}, trial ${trial}`, text, typeAndCompare(machine, text))
@@ -800,7 +803,7 @@ test('random texts of 0 to 64 words match pretext, through the machine and aroun
   assert.deepEqual(tally.failures, [])
   assert.deepEqual([tally.states, tally.statesWherePretextBrokeWords, tally.cutAtCapacity], [900, 0, 0])
   assert.ok(tally.statesMatchingPretext > 850, `${tally.statesMatchingPretext} states compared with pretext`)
-  assert.ok(wordCounts.size > 55, `${wordCounts.size} different word counts`)
+  assert.ok(wordCounts.size > 0.8 * mostWordsInCells, `${wordCounts.size} different word counts`)
   assert.ok(tally.truncatedStates > 100, `${tally.truncatedStates} truncated states`)
   for (const checks of declarationChecks) assert.equal(checks.evaluations, 600)
 }, 60_000)
@@ -814,7 +817,7 @@ test('inserting and deleting words in the middle of a text matches pretext after
   let deletions = 0
   for (let edit = 0; edit < 300; edit++) {
     const position = randomInteger(random, 0, words.length)
-    if (words.length >= 64 || (words.length > 5 && random() < 0.45)) {
+    if (words.length >= mostWordsInCells || (words.length > 5 && random() < 0.45)) {
       words.splice(Math.min(position, words.length - 1), 1)
       deletions++
     } else {
@@ -836,7 +839,7 @@ test('a text with more segments than the cells is cut at the capacity, and the s
   const random = createRandom(29)
   const {tally, add} = createTally()
   for (let trial = 0; trial < 60; trial++) {
-    const text = measure(randomText(random, randomInteger(random, 65, 150)))
+    const text = measure(randomText(random, randomInteger(random, mostWordsInCells + 1, 2 * mostWordsInCells)))
     for (const [label, machine] of Object.entries(machines)) {
       const comparison = typeAndCompare(machine, text)
       add(`${label}, trial ${trial}`, text, comparison)
@@ -847,11 +850,11 @@ test('a text with more segments than the cells is cut at the capacity, and the s
   assert.deepEqual(tally.failures, [])
   assert.deepEqual([tally.states, tally.statesWherePretextBrokeWords, tally.cutAtCapacity], [180, 0, 180])
   assert.ok(tally.statesMatchingPretext > 160, `${tally.statesMatchingPretext} states compared with pretext`)
-  // With Notes in front, the 128 segments that the cells hold fit the bands, so `truncated` is 0 although the text was
+  // With Notes in front, the segments that the cells hold fit the bands, so `truncated` is 0 although the text was
   // cut: the program only knows the cells. Whether the text was cut is the host's to know, from notesText's result.
   const inFront = machines['Notes in front']
-  const text = measure(randomText(random, 100))
-  assert.equal(text.paragraph.widths.length, 199)
+  const text = measure(randomText(random, notesCapacity))
+  assert.equal(text.paragraph.widths.length, 2 * notesCapacity - 1)
   const comparison = typeAndCompare(inFront, text)
   assert.deepEqual(comparison.problems, [])
   assert.equal(comparison.values[inFront.output.notes.truncated], 0)
