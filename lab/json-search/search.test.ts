@@ -129,7 +129,8 @@ describe('regex search as a loop over positions', () => {
   const loopOptions = {positions, cellsPerDocument: positions + 1, masked: false, stopAtLength: false}
 
   test('the cases cover the capacities, and the full program finds what the automaton simulator finds', () => {
-    expect(cases.length).toBeGreaterThan(150)
+    // The hand-written patterns and the random ones that fit 8 states, 16 classes and 32 class boundaries, with 8 texts each.
+    expect([cases.length, rows]).toEqual([274, 2192])
     const partitions = cases.map(entry => entry.compiled)
     expect(Math.max(...partitions.map(compiled => compiled.automaton.stateCount))).toBe(states)
     const fullClasses = compilePattern(fullClassesPattern)

@@ -273,10 +273,11 @@ async function run() {
     for (const pattern of config.patterns) {
       for (const scope of config.scopes) {
         const expected = expectedFor(pattern, scope)
-        const {matchCounts, matches} = plain.search(pattern, scope)
+        // The first search of a scope finds its runs of searched characters, and the timed ones only run RegExp.
+        const {matchCounts, matches, prepareMs, runs} = plain.search(pattern, scope)
         let sameCount = 0
         for (let row = 0; row < count; row++) if (matchCounts[row] === expected[row]) sameCount++
-        regExp.push({pattern, scope, states: compilePattern(pattern).automaton.stateCount, matches, documentsWhereTheProgramCountsTheSame: sameCount, ...timeCpu(config, () => {
+        regExp.push({pattern, scope, states: compilePattern(pattern).automaton.stateCount, matches, documentsWhereTheProgramCountsTheSame: sameCount, runs, findingTheRunsMs: round(prepareMs), ...timeCpu(config, () => {
           sink += plain.search(pattern, scope).matches
         }, count)})
       }

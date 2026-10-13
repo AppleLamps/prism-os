@@ -30,7 +30,7 @@ type CombinedPage = {
   crossOriginIsolated: boolean, error?: string, emptyPipelineMs: number,
   results: {
     count: number,
-    plainJavaScript: {tableLoop: CpuTime, jsonParse: CpuTime, regExp: ({pattern: string, scope: string, states: number, matches: number, documentsWhereTheProgramCountsTheSame: number} & CpuTime)[]},
+    plainJavaScript: {tableLoop: CpuTime, jsonParse: CpuTime, regExp: ({pattern: string, scope: string, states: number, matches: number, documentsWhereTheProgramCountsTheSame: number, runs?: number, findingTheRunsMs?: number} & CpuTime)[]},
     load: {cellsMs: number, validateMs: number, totalMs: number, megabytesOfCells: number},
     validationCheck: {documents: number, values: number, mismatches: number, validDocuments: number},
     selfCheck: {documents: number, searches: number, values: number, mismatches: number, cpuMs: number, gpuMs: number},
@@ -176,7 +176,7 @@ if (searchRuns.length > 0) {
     return entry === undefined ? undefined : pick(entry)
   })))
   const pauses = idleGaps.filter(gap => gap >= 200).slice(0, 1)
-  console.log(`| Pattern | ${counts.map(count => `RegExp ms at ${whole(count)}`).join(' | ')} | Documents from which the GPU takes less time, back to back | ${pauses.map(gap => `After a pause of ${whole(gap)} ms`).join(' | ')} |`)
+  console.log(`| What runs | ${counts.map(count => `ms at ${whole(count)} documents`).join(' | ')} | Documents from which the GPU takes less time, back to back | ${pauses.map(gap => `After a pause of ${whole(gap)} ms`).join(' | ')} |`)
   console.log(`| --- | ${counts.map(() => '---').join(' | ')} | --- | ${pauses.map(() => '---').join(' | ')} |`)
   const crossover = (gpu: number[], cpu: number[]) => {
     // The smallest count from which the GPU takes less time at every larger measured count, interpolated on a
@@ -197,7 +197,7 @@ if (searchRuns.length > 0) {
     const states = first.results.flatMap(result => result.patterns).find(pattern => pattern.pattern === entry.pattern)?.states
     if (states === undefined || states > 8) continue
     const regExpMs = counts.map(count => median(defined(pages.map(page => page.regExp.find(other => other.positions === 512 && other.pattern === entry.pattern)?.byCount.find(other => other.count === count)?.countAll.microsecondsPerDocument))) * count / 1000)
-    console.log(`| \`${entry.pattern.replaceAll('|', '\\|')}\` | ${regExpMs.map(value => format(value)).join(' | ')} | ${crossover(counts.map(count => stepAt(count, other => other.backToBack.totalMs?.median)), regExpMs)} | ${pauses.map(gap => crossover(counts.map(count => stepAt(count, other => other.afterIdle?.find(idle => idle.idleMs === gap)?.totalMs?.median)), regExpMs)).join(' | ')} |`)
+    console.log(`| RegExp, \`${entry.pattern.replaceAll('|', '\\|')}\` | ${regExpMs.map(value => format(value)).join(' | ')} | ${crossover(counts.map(count => stepAt(count, other => other.backToBack.totalMs?.median)), regExpMs)} | ${pauses.map(gap => crossover(counts.map(count => stepAt(count, other => other.afterIdle?.find(idle => idle.idleMs === gap)?.totalMs?.median)), regExpMs)).join(' | ')} |`)
   }
 }
 
@@ -252,15 +252,22 @@ if (combinedRuns.length > 0) {
     }
   }
 
-  console.log('\n### The same searches in plain JavaScript: RegExp on each run of searched characters\n')
+  // Only the runs whose plain JavaScript baseline keeps each scope's runs as strings: an earlier version of
+  // plain-search.ts found the runs again in every search, and the first runs were measured with it.
   const largest = Math.max(...counts)
+  const baselinePages = pages.filter(page => page.results[0]!.plainJavaScript.regExp[0]!.findingTheRunsMs !== undefined)
+  console.log(`\n### The same searches in plain JavaScript: RegExp on each run of searched characters (${baselinePages.length} of ${pages.length} runs)\n`)
   const scopes = [...new Set(first.results[0]!.plainJavaScript.regExp.map(entry => entry.scope))]
   console.log(`| Pattern | States | ${scopes.map(scope => `${scope}: matches | ms for ${whole(largest)} documents | µs per document | at 1,000 documents`).join(' | ')} |`)
   console.log(`| --- | --- | ${scopes.map(() => '--- | --- | --- | ---').join(' | ')} |`)
   for (const pattern of [...new Set(first.results[0]!.plainJavaScript.regExp.map(entry => entry.pattern))]) {
     const entryAt = (page: CombinedPage, count: number, scope: string) => at(page, count)?.plainJavaScript.regExp.find(entry => entry.pattern === pattern && entry.scope === scope)
     const example = entryAt(first, largest, scopes[0]!)!
-    console.log(`| \`${pattern.replaceAll('|', '\\|')}\` | ${example.states} | ${scopes.map(scope => `${whole(entryAt(first, largest, scope)!.matches)} | ${spread(pages.map(page => entryAt(page, largest, scope)?.microsecondsPerDocument).map(value => value === undefined ? undefined : value * largest / 1000))} | ${spread(pages.map(page => entryAt(page, largest, scope)?.microsecondsPerDocument), 3)} | ${spread(pages.map(page => entryAt(page, 1000, scope)?.microsecondsPerDocument), 3)}`).join(' | ')} |`)
+    console.log(`| \`${pattern.replaceAll('|', '\\|')}\` | ${example.states} | ${scopes.map(scope => `${whole(entryAt(first, largest, scope)!.matches)} | ${spread(baselinePages.map(page => entryAt(page, largest, scope)?.microsecondsPerDocument).map(value => value === undefined ? undefined : value * largest / 1000))} | ${spread(baselinePages.map(page => entryAt(page, largest, scope)?.microsecondsPerDocument), 3)} | ${spread(baselinePages.map(page => entryAt(page, 1000, scope)?.microsecondsPerDocument), 3)}`).join(' | ')} |`)
+  }
+  for (const scope of scopes) {
+    const entries = defined(baselinePages.map(page => at(page, largest)?.plainJavaScript.regExp.find(entry => entry.scope === scope)))
+    if (entries.length > 0) console.log(`\n${scope}: ${whole(entries[0]!.runs ?? 0)} runs in ${whole(largest)} documents, found once in ${spread(entries.map(entry => entry.findingTheRunsMs))} ms.`)
   }
   const differing = pages.flatMap(page => page.results.flatMap(result => result.plainJavaScript.regExp.filter(entry => entry.documentsWhereTheProgramCountsTheSame !== result.count)))
   console.log(`\nPatterns, scopes and counts where RegExp's count differs from the program's for some document: ${differing.length}${differing.length === 0 ? '' : `, e.g. ${JSON.stringify(differing[0])}`}.`)
