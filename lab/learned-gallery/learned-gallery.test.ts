@@ -345,8 +345,9 @@ function press(x: number, y: number, touch = false): LearnedGalleryInput {
   return {kind: 'pointer down', pointerId: 1, x, y, touch}
 }
 
-function move(x: number, y: number, touch = false): LearnedGalleryInput {
-  return {kind: 'pointer move', pointerId: 1, x, y, touch}
+// A move with the button or the finger down, as during a drag. A mouse that only hovers moves without it.
+function move(x: number, y: number, touch = false, pressed = true): LearnedGalleryInput {
+  return {kind: 'pointer move', pointerId: 1, x, y, touch, pressed}
 }
 
 const release: LearnedGalleryInput = {kind: 'pointer up', pointerId: 1}
@@ -394,7 +395,7 @@ test('pointer moves over the sketch train nothing once training has settled', ()
   const settled = page.settle()
   assert.equal(settled.step, trainingStepsAfterChange)
   for (let frameIndex = 0; frameIndex < 40; frameIndex++) {
-    const frame = page.frame([move(40 + frameIndex * 5, 60 + frameIndex * 2)])
+    const frame = page.frame([move(40 + frameIndex * 5, 60 + frameIndex * 2, false, false)])
     assert.equal(frame.stepsThisFrame, 0)
     assert.equal(frame.training, false)
   }
@@ -665,6 +666,22 @@ test('a drag by the corner resizes, and a smaller rectangle is above a larger on
   frame = page.frame([press(besideCell.x, besideCell.y), move(besideCell.x - 2000, besideCell.y - 2000), release])
   assert.equal(targetGeometry(machine, 0).left, 0)
   assert.equal(targetGeometry(machine, 0).top, 0)
+})
+
+test('a move without a button held ends a drag whose release never arrived', () => {
+  const page = createEditorDriver()
+  const {machine} = page
+  page.settle()
+  const cell = pointOf(machine, 3)
+  let frame = page.frame([press(cell.x, cell.y), move(cell.x + 30, cell.y)])
+  assert.equal(frame.cursor, 'grabbing')
+  const dragged = targetGeometry(machine, 3)
+  // The button went up where the page got no event, e.g. over another window. The next move reports no button.
+  frame = page.frame([move(cell.x + 90, cell.y, false, false)])
+  assert.deepEqual(targetGeometry(machine, 3), dragged)
+  assert.equal(frame.cursor, 'grab')
+  frame = page.frame([move(cell.x + 120, cell.y - 40, false, false)])
+  assert.deepEqual(targetGeometry(machine, 3), dragged)
 })
 
 test('a finger adds a rectangle with a tap, and has a larger corner to grab', () => {

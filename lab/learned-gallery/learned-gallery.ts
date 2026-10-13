@@ -251,9 +251,11 @@ const touchHandleReach = 28
 const tapSlop = 10
 
 // What a pointer, a key or a button did since the last frame. Positions are CSS pixels from the top left corner of
-// the sketch's stage, inside its border.
+// the sketch's stage, inside its border. A move's `pressed` says whether a mouse button, a finger or a pen's tip
+// was down during the move.
 export type LearnedGalleryInput =
-  | {kind: 'pointer down' | 'pointer move', pointerId: number, x: number, y: number, touch: boolean}
+  | {kind: 'pointer down', pointerId: number, x: number, y: number, touch: boolean}
+  | {kind: 'pointer move', pointerId: number, x: number, y: number, touch: boolean, pressed: boolean}
   | {kind: 'pointer up' | 'pointer cancel' | 'pointer leave', pointerId: number}
   | {kind: 'delete'}
   | {kind: 'layout', name: LearnedLayoutName}
@@ -470,6 +472,12 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
             pendingTap = null
           }
           if (drag?.pointerId !== input.pointerId) break
+          // The release never arrived, e.g. the button went up while another window had the mouse. Without this,
+          // the rectangle would follow the mouse with no button held.
+          if (!input.pressed) {
+            drag = null
+            break
+          }
           const horizontalChange = x - drag.startX
           const verticalChange = y - drag.startY
           const {left, top, width, height} = drag.geometry
@@ -760,7 +768,7 @@ const chartPadding = 5
 
 function mountLearnedGallery(document: Document, window: Window) {
   // A press or a move as the listener records it. The frame turns its position into the stage's coordinates.
-  type RawPointer = {pointerId: number, clientX: number, clientY: number, touch: boolean, button: number}
+  type RawPointer = {pointerId: number, clientX: number, clientY: number, touch: boolean, button: number, buttons: number}
   type OtherInput = Exclude<LearnedGalleryInput, {kind: 'pointer down' | 'pointer move'}>
   type RawInput = ({kind: 'pointer down'} & RawPointer) | ({kind: 'pointer move'} & RawPointer) | OtherInput
 
@@ -795,15 +803,20 @@ function mountLearnedGallery(document: Document, window: Window) {
     for (const input of rawInputs) {
       if (input.kind !== 'pointer down' && input.kind !== 'pointer move') {
         inputs.push(input)
-      } else if (stageWidth > 0 && stageHeight > 0 && (input.kind === 'pointer move' || input.button === 0)) {
+        continue
+      }
+      if (stageWidth <= 0 || stageHeight <= 0) continue
+      const position = {
+        pointerId: input.pointerId,
+        x: input.clientX - stageLeft,
+        y: input.clientY - stageTop,
+        touch: input.touch,
+      }
+      if (input.kind === 'pointer move') {
+        inputs.push({kind: 'pointer move', ...position, pressed: input.buttons !== 0})
+      } else if (input.button === 0) {
         // Only the main button presses, e.g. the right button opens the browser's menu.
-        inputs.push({
-          kind: input.kind,
-          pointerId: input.pointerId,
-          x: input.clientX - stageLeft,
-          y: input.clientY - stageTop,
-          touch: input.touch,
-        })
+        inputs.push({kind: 'pointer down', ...position})
       }
     }
     rawInputs = []
@@ -900,6 +913,7 @@ function mountLearnedGallery(document: Document, window: Window) {
         clientY: event.clientY,
         touch: event.pointerType === 'touch',
         button: event.button,
+        buttons: event.buttons,
       })
       scheduleRender()
     }
