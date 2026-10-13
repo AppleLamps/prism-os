@@ -456,7 +456,7 @@ test('the note says which capacity its text passes, and writes the sentence only
   const {frame, type, press, notice, shownWords, input} = mount()
   // At the start, Photos and System Monitor leave 7 lines, and the paragraph's last 10 words have none.
   frame()
-  assert.deepEqual([notice.style['display'], notice.textContent], ['block', 'The last 10 words don\'t fit in the lines that are free.'])
+  assert.deepEqual([notice.style['display'], notice.textContent], ['-webkit-box', 'The last 10 words don\'t fit in the lines that are free.'])
   frame()
   assert.equal(notice.textWrites, 1)
   // With Notes in front, the paragraph fits, and the notice is hidden.
@@ -468,7 +468,7 @@ test('the note says which capacity its text passes, and writes the sentence only
   const long = Array.from({length: 200}, () => 'word').join(' ')
   type(long)
   frame()
-  assert.deepEqual([notice.style['display'], notice.textContent], ['block', `This text has 399 words and spaces, and the note lays out the first ${notesCapacity}.`])
+  assert.deepEqual([notice.style['display'], notice.textContent], ['-webkit-box', `This text has 399 words and spaces, and the note lays out the first ${notesCapacity}.`])
   assert.equal(shownWords().length, notesCapacity / 2)
   assert.equal(input.value, long)
   // 10 more one-letter words than a line's window holds segments: the first two lines wrap at the window, where

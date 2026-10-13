@@ -405,10 +405,14 @@ body {
 
 /* What the note says when its text passes one of the flow's capacities, e.g. "The
    last 5 words don't fit in the lines that are free." It sits in the 24 px above
-   the first line, where no text is laid out. */
+   the first line, where no text is laid out, and is centered there on one line or
+   on two: the sentences wrap, so that the narrowest Notes window, whose column is
+   230 px wide, shows a whole sentence, and a 500 px window two of them. Text past
+   the second line ends in an ellipsis. The line clamp needs display: -webkit-box,
+   which notes-host.ts writes while the notice has text. */
 .notes-notice {
   position: absolute;
-  top: 5px;
+  top: 12px;
   left: 24px;
   max-width: calc(100% - 48px);
   overflow: hidden;
@@ -416,10 +420,12 @@ body {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  line-height: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 11px;
   pointer-events: none;
+  transform: translateY(-50%);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 /* The selected text of one line, drawn under the words. */

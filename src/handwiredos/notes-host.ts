@@ -314,7 +314,8 @@ export function createNotesHost(
         domCache.notice.textContent = noticeText
         domCache.noticeText = noticeText
       }
-      domCache.notice.style.display = noticeText === '' ? 'none' : 'block'
+      // -webkit-box is the display that the stylesheet's two line clamp of the notice works with.
+      domCache.notice.style.display = noticeText === '' ? 'none' : '-webkit-box'
 
       domCache.selections.forEach((selection, band) => {
         const span = selected ? spans[band] ?? null : null
