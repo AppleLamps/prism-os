@@ -215,17 +215,13 @@ body {
   gap: var(--space-4);
 }
 
+/* The last frame's time changes while the page runs. Its digits are tabular, and under
+   100 ms it is always three digits and a point, e.g. 0.40 or 12.3, so it keeps one width
+   without a box of its own. */
 .system-stats b {
   color: var(--ink);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-}
-
-/* The last frame's time changes while the page runs, so its box keeps one width. */
-.system-frame-time {
-  display: inline-block;
-  min-width: 4ch;
-  text-align: right;
 }
 
 .system-links {
