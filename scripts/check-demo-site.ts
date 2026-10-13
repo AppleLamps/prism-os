@@ -49,7 +49,7 @@ const expectations: Record<string, {ready: string, report: string}> = {
   },
   'learned-gallery/': {
     ready: `/\\d/.test(document.querySelector('#learning-coefficients')?.textContent ?? '')`,
-    report: `document.querySelector('#learning-coefficients').textContent.trim() + ' trainable coefficients'`,
+    report: `document.querySelector('#learning-coefficients').textContent.trim() + ' trained weights'`,
   },
 }
 
