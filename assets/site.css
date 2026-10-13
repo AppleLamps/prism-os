@@ -1,0 +1,426 @@
+/* Handwired, "paper" direction: the tokens, and the components every page shares.
+   Paper, ink and one copper accent. No web fonts and no external requests. */
+
+:root {
+  color-scheme: light;
+
+  /* Color: paper, ink, copper. */
+  --paper: #f3eee4;        /* page background */
+  --sheet: #fffdf8;        /* raised surfaces: cards, windows, editors, inputs */
+  --desk: #dcd2c1;         /* the desktop behind HandwiredOS's windows */
+  --ink: #1e1a16;          /* text */
+  --ink-2: #5f564d;        /* secondary text */
+  --ink-3: #72675c;        /* labels, column heads, idle glyphs */
+  --rule: #dcd2c4;         /* 1 px hairlines on paper and on sheets */
+  --rule-strong: #cbbfae;  /* a hairline under the pointer, and dashed outlines */
+  --edge: rgb(52 38 24 / 0.16);   /* 1 px outline of a surface that floats over other content */
+  --wash: rgb(52 38 24 / 0.06);   /* neutral fill: hover, a selection in a window without focus */
+  --copper: #a64d1d;       /* the accent: links, focus, and whatever the program points at */
+  --copper-line: rgb(166 77 29 / 0.5);    /* 1 px copper: focus outlines, hovered edges, wires */
+  --copper-wash: rgb(166 77 29 / 0.13);   /* fill behind a copper mark: a selection, a match */
+
+  /* Wire colors, after the cloth-covered wire in old amplifiers. They color the kinds of a
+     highlighted character and the kinds of an operation; green and red also mean valid and
+     error. Each passes 4.5:1 as text on --sheet. Copper, indigo and ochre, in that order, are
+     the chart colors, checked for color-blind separation. */
+  --wire-green: #2e6a4c;
+  --wire-indigo: #33589e;
+  --wire-plum: #7a3355;
+  --wire-ochre: #8a6412;
+  --wire-red: #b3261e;
+
+  /* Type: named local families and generic system families only, so nothing loads late.
+     The serif is named because Chrome has no ui-serif, and because HandwiredOS measures a
+     paragraph in it with canvas, which needs a family that isn't an optical-size system font.
+     Iowan Old Style ships with macOS and iOS, Palatino Linotype with Windows. */
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* The scale. Serif for titles and for text to read, sans for the interface, mono for code
+     and for values. Every line height is a multiple of 4 px, except the Notes paragraph's,
+     which is the program's own 22 px. */
+  --type-label: 600 11px/16px var(--font-sans);      /* uppercase and tracked: see .label */
+  --type-small: 400 12px/16px var(--font-sans);
+  --type-ui: 400 13px/20px var(--font-sans);
+  --type-body: 400 15px/24px var(--font-sans);
+  --type-code: 400 13px/24px var(--font-mono);
+  --type-notes: 400 15px/22px var(--font-serif);
+  --type-reading: 400 17px/28px var(--font-serif);
+  --type-deck: 400 19px/28px var(--font-serif);
+  --type-title-xs: 700 16px/20px var(--font-serif);  /* the project name, a window's title */
+  --type-title-s: 700 20px/24px var(--font-serif);
+  --type-title-m: 400 40px/44px var(--font-serif);
+  --type-title-l: 400 60px/64px var(--font-serif);
+  --type-figure-s: 600 20px/24px var(--font-sans);   /* a number that leads a line */
+  --type-figure-l: 600 30px/36px var(--font-sans);
+
+  /* Spacing: a 4 px grid. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radii: marks, controls, surfaces. A nested corner is its parent's radius minus the inset
+     between them, e.g. a photo 6 px inside a window is calc(var(--radius-3) - 6px). */
+  --radius-1: 4px;
+  --radius-2: 8px;
+  --radius-3: 12px;
+
+  /* Shadows: warm, and two layers each, a tight contact shadow and a soft one.
+     1 rests on the page, 2 floats, 3 is the window with focus. */
+  --shadow-1: 0 1px 1px rgb(60 42 22 / 0.05), 0 2px 6px rgb(60 42 22 / 0.06);
+  --shadow-2: 0 1px 2px rgb(60 42 22 / 0.08), 0 10px 28px -8px rgb(60 42 22 / 0.24);
+  --shadow-3: 0 2px 4px rgb(60 42 22 / 0.1), 0 28px 64px -16px rgb(60 42 22 / 0.38);
+
+  /* Motion, for what CSS animates. Whatever the program positions gets no transition. */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --quick: 120ms;
+  --slow: 280ms;
+
+  /* Paper grain: fine gray noise, inline, centered on middle gray. Blend it with soft-light,
+     so it lightens as much as it darkens and the color under it stays the token's. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='0.5' intercept='0.25'/%3E%3CfeFuncG type='linear' slope='0.5' intercept='0.25'/%3E%3CfeFuncB type='linear' slope='0.5' intercept='0.25'/%3E%3CfeFuncA type='linear' slope='0' intercept='1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* Base */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* The paper and its grain are on html, so they reach the bottom of a page shorter than the window. */
+html {
+  background: var(--grain), var(--paper);
+  background-blend-mode: soft-light, normal;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font: var(--type-body);
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: color-mix(in srgb, var(--copper) 22%, transparent); }
+
+a {
+  color: var(--copper);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--copper-line);
+  transition: text-decoration-color var(--quick) var(--ease), color var(--quick) var(--ease);
+}
+a:hover { text-decoration-color: currentColor; }
+
+:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+  border-radius: var(--radius-1);
+}
+
+/* Every number that changes while the page runs gets tabular figures. */
+.num, .stats b, .status b { font-variant-numeric: tabular-nums; }
+
+code, kbd { font: 0.87em/1 var(--font-mono); }
+code {
+  padding: 2px 5px;
+  border-radius: var(--radius-1);
+  background: var(--wash);
+}
+kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 3px 5px;
+  border: 1px solid var(--rule);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-1);
+  background: var(--sheet);
+  color: var(--ink-2);
+  text-align: center;
+}
+
+/* Page frame: one column, 800 px for a tool and 1104 px for a page with two columns. */
+.page {
+  width: min(100% - 48px, var(--page-width, 800px));
+  margin: 0 auto;
+  padding: var(--space-5) 0 var(--space-8);
+}
+.page.wide { --page-width: 1104px; }
+
+/* The label: uppercase sans, tracked. Section heads, column heads, "Try". */
+.label {
+  font: var(--type-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Page header: the project name, which links to the demo index, and the repo links. */
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: 40px;
+  border-bottom: 1px solid var(--rule);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink);
+  font: var(--type-title-xs);
+  text-decoration: none;
+}
+/* The mark: three wires into one eyelet, and one wire out. */
+.mark { flex: none; color: var(--ink); }
+.mark-eyelet { fill: var(--paper); stroke: var(--copper); transition: fill var(--quick) var(--ease); }
+.brand:hover .mark-eyelet { fill: var(--copper); }
+.masthead nav {
+  display: flex;
+  gap: var(--space-5);
+  font: var(--type-ui);
+}
+.masthead nav a { color: var(--ink-2); text-decoration-color: transparent; }
+.masthead nav a:hover { color: var(--copper); text-decoration-color: currentColor; }
+
+/* Title, and the one-sentence caption under it. */
+.title {
+  margin: var(--space-7) 0 0;
+  font: var(--type-title-m);
+  letter-spacing: -0.015em;
+}
+.deck {
+  max-width: 31em;   /* about 66 characters */
+  margin: var(--space-3) 0 0;
+  font: var(--type-deck);
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* Things to try: a label and a short list. One line on a desktop, stacked on a phone.
+   The bullet is an eyelet, a small copper ring. */
+.try {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  margin: var(--space-5) 0 0;
+}
+.try ul, .eyelets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: var(--type-ui);
+  color: var(--ink-2);
+}
+.try ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+}
+.try li, .eyelets li {
+  position: relative;
+  padding-left: 14px;
+}
+.try li::before, .eyelets li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--copper);
+  border-radius: 50%;
+}
+
+/* Statistics line: plain words, with the numbers in ink and in tabular figures. */
+.stats {
+  margin: var(--space-3) 0 0;
+  font: var(--type-ui);
+  color: var(--ink-2);
+}
+.stats b { color: var(--ink); font-weight: 600; }
+
+/* Result line: a sentence with a state, a dot before it. */
+.status {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font: var(--type-ui);
+  color: var(--ink);
+}
+.status::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  transform: translateY(-1px);
+}
+.status.ok::before { background: var(--wire-green); }
+.status.bad::before { background: var(--wire-red); }
+.status.bad { color: var(--wire-red); }
+.status b { font-weight: 600; }
+
+/* Surfaces */
+
+.card {
+  display: block;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--sheet);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: var(--shadow-1);
+  transition: transform var(--slow) var(--ease), box-shadow var(--slow) var(--ease), border-color var(--quick) var(--ease);
+}
+a.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--copper-line);
+  box-shadow: var(--shadow-2);
+}
+a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
+
+/* A code or editor surface: a sheet with a hairline. Focus inside it turns the hairline copper. */
+.surface {
+  position: relative;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--sheet);
+  box-shadow: var(--shadow-1);
+}
+.surface:focus-within, .surface.is-focused {
+  border-color: var(--copper-line);
+  box-shadow: var(--shadow-1), 0 0 0 3px var(--copper-wash);
+}
+.surface pre, .surface textarea {
+  margin: 0;
+  font: var(--type-code);
+  tab-size: 2;
+}
+/* A strip along a surface's bottom edge, for a result line. */
+.surface-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+  min-height: 40px;
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--rule);
+  font: var(--type-ui);
+  color: var(--ink-2);
+}
+
+/* Controls */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-2);
+  background: var(--sheet);
+  color: var(--ink);
+  font: 600 13px/20px var(--font-sans);
+  text-decoration: none;
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  transition: background var(--quick) var(--ease), border-color var(--quick) var(--ease), transform var(--quick) var(--ease);
+}
+.button:hover { border-color: var(--ink-3); }
+.button:active { transform: translateY(1px); background: var(--paper); box-shadow: none; }
+.button.primary { border-color: var(--ink); background: var(--ink); color: var(--sheet); }
+.button.primary:hover { background: color-mix(in srgb, var(--ink) 86%, var(--sheet)); }
+
+.input {
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--sheet);
+  color: var(--ink);
+  font: 400 16px/24px var(--font-mono);   /* 16 px keeps iOS from zooming on focus */
+  box-shadow: var(--shadow-1);
+  caret-color: var(--copper);
+  transition: border-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
+}
+.input:hover { border-color: var(--rule-strong); }
+.input:focus, .input.is-focused {
+  outline: none;
+  border-color: var(--copper-line);
+  box-shadow: var(--shadow-1), 0 0 0 3px var(--copper-wash);
+}
+.input::placeholder { color: var(--ink-3); }
+
+/* A select with its label to the left, in the label style. */
+.field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.select {
+  height: 28px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--sheet) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235f564d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 9px center;
+  color: var(--ink);
+  font: 500 13px/20px var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: border-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
+}
+.select:hover { border-color: var(--rule-strong); }
+.select:focus-visible {
+  outline: none;
+  border-color: var(--copper-line);
+  box-shadow: 0 0 0 3px var(--copper-wash);
+}
+
+/* Footer: one hairline and one line. */
+.colophon {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-8);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+  font: var(--type-ui);
+  color: var(--ink-3);
+}
+.colophon a { color: var(--ink-2); }
+.colophon a:hover { color: var(--copper); }
+
+@media (max-width: 640px) {
+  :root {
+    --type-title-m: 400 32px/36px var(--font-serif);
+    --type-title-l: 400 40px/44px var(--font-serif);
+    --type-deck: 400 17px/28px var(--font-serif);
+  }
+  .page { width: min(100% - 40px, var(--page-width, 800px)); padding-top: var(--space-3); }
+  .title { margin-top: var(--space-6); }
+  .try { flex-direction: column; gap: var(--space-2); }
+  .try ul { flex-direction: column; gap: var(--space-1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
