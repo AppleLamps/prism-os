@@ -28,6 +28,9 @@ export type TrainableGeometry = {
 export type TrainableGeometryTarget = {
   geometries: Float32Array
   active: Uint8Array
+  // Which output rectangles the active targets are fitted with, 1 for as many slots as there are active targets.
+  // Without it they are the first outputs, e.g. outputs 0 to 9 for 10 targets.
+  outputs?: Uint8Array
 }
 
 type ParameterLayout = {
@@ -432,18 +435,30 @@ export function createTrainableGeometryMachine(
     return loss
   }
 
+  function activeOutputItems(outputCount: number) {
+    if (target.outputs === undefined) {
+      return Array.from({length: outputCount}, (_, item) => item)
+    }
+    const items: number[] = []
+    for (let item = 0; item < slotCount; item++) {
+      if (target.outputs[item] === 1) items.push(item)
+    }
+    invariant(items.length === outputCount, 'as many outputs as targets must be active')
+    return items
+  }
+
   function matchRectangles(
     values: Float32Array,
     targetItems: readonly number[],
   ) {
-    const outputCount = targetItems.length
+    const outputItems = activeOutputItems(targetItems.length)
     if (matching === 'ordered') {
-      return Int32Array.from({length: outputCount}, (_, item) => item)
+      return Int32Array.from(outputItems)
     }
     const costs = targetItems.map(targetItem =>
-      Array.from({length: outputCount}, (_, outputItem) =>
+      outputItems.map(outputItem =>
         geometryLoss(values, targetItem, outputItem)))
-    return minimumCostAssignment(costs)
+    return minimumCostAssignment(costs).map(index => outputItems[index]!)
   }
 
   function targetRelationValue(

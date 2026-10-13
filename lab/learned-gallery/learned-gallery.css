@@ -1,191 +1,85 @@
-:root {
-  color-scheme: dark;
-  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
+/* The learned gallery. Loads after assets/site.css, which has the tokens, the page header, the
+   title, the caption, the "Try" list, the statistics line, the buttons and the footer. This file
+   has the two stages, the controls under them and the loss chart. */
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  width: 100%;
-  min-width: 320px;
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-  color: #f5f0e7;
-  background:
-    radial-gradient(circle at 12% 0%, rgb(125 86 58 / 20%), transparent 34%),
-    radial-gradient(circle at 90% 90%, rgb(55 82 106 / 22%), transparent 36%),
-    #0a0c0e;
-}
-
-#learning-demo {
-  min-height: 100vh;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 18px;
-  padding: 20px;
-}
-
-.learning-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.learning-header h1,
-.learning-header p,
-.learning-workspace h2 {
-  margin: 0;
-}
-
-.learning-header h1 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(28px, 3.4vw, 48px);
-  font-weight: 400;
-  letter-spacing: -0.04em;
-}
-
-.learning-header p {
-  max-width: 420px;
-  color: rgb(245 240 231 / 48%);
-  font-size: 12px;
-  line-height: 1.4;
-  text-align: right;
-}
-
-.learning-workspace {
-  min-height: 0;
+.stages {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
 }
-
-.learning-workspace article {
-  min-width: 0;
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 8px;
-}
-
-.learning-workspace h2 {
-  min-width: 0;
+.stage-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
-  color: rgb(245 240 231 / 54%);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+.stage-head span:last-child {
+  color: var(--ink-3);
+  font: var(--type-small);
+  font-variant-numeric: tabular-nums;
 }
 
-.learning-workspace h2 small {
-  min-width: 0;
-  flex: 1;
+/* A stage is 5 wide and 4 tall at every page width, which the preset sketches in
+   learned-gallery.ts are drawn for. The rectangles inside are placed in percent of the stage by
+   learned-gallery.ts, which writes their display, left, top, width, height and z-index, and the
+   sketch's cursor, so none of those has a value here. */
+.stage {
+  aspect-ratio: 5 / 4;
   overflow: hidden;
-  color: rgb(245 240 231 / 28%);
-  font-size: 8px;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-overflow: ellipsis;
-  text-transform: none;
-  white-space: nowrap;
 }
-
-.learning-stage {
-  position: relative;
-  min-width: 0;
-  min-height: 360px;
-  overflow: hidden;
-  border: 1px solid rgb(245 240 231 / 14%);
-  border-radius: 20px;
-  background: rgb(0 0 0 / 40%);
-  box-shadow:
-    0 26px 72px rgb(0 0 0 / 26%),
-    inset 0 1px rgb(255 255 255 / 4%);
-}
-
-#learning-target {
-  outline: none;
-  touch-action: none;
-}
-
-#learning-target:focus-visible {
-  border-color: rgb(240 189 115 / 54%);
-}
-
 .target-rectangle,
 .learned-rectangle {
   position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-1);
 }
 
+/* The sketch: rectangles to drag, each with a grip in its bottom right corner. A finger on a
+   rectangle drags the rectangle, and a finger on the empty space between them scrolls the page. */
+.stage.sketch {
+  background:
+    radial-gradient(circle at 0.5px 0.5px, var(--edge) 0 0.75px, transparent 1.25px) 11px 11px / 24px 24px,
+    var(--sheet);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* The surface's copper hairline and ring already show the focus. */
+.stage.sketch:focus-visible { outline: none; }
 .target-rectangle {
-  border: 2px solid rgb(240 189 115 / 74%);
-  background: rgb(240 189 115 / 8%);
-  cursor: grab;
+  border: 1px solid var(--copper-line);
+  background: var(--copper-wash);
+  touch-action: none;
+  transition: border-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
 }
-
-.target-rectangle.is-selected {
-  z-index: 1;
-  border-color: #f4d39f;
-  background: rgb(240 189 115 / 13%);
-  box-shadow: 0 0 0 1px rgb(244 211 159 / 28%);
-}
-
-.target-resize-handle {
-  position: absolute;
-  right: -2px;
-  bottom: -2px;
-  width: 14px;
-  height: 14px;
-  cursor: nwse-resize;
-}
-
-.target-resize-handle::after {
+.target-rectangle::after {
   content: "";
   position: absolute;
   right: 3px;
   bottom: 3px;
-  width: 5px;
-  height: 5px;
-  border-right: 2px solid rgb(244 211 159 / 82%);
-  border-bottom: 2px solid rgb(244 211 159 / 82%);
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--copper);
+  border-bottom: 1.5px solid var(--copper);
+  border-bottom-right-radius: 2px;
+}
+.target-rectangle.is-hovered { border-color: var(--copper); }
+.target-rectangle.is-selected {
+  border-color: var(--copper);
+  box-shadow: 0 0 0 1px var(--copper), 0 0 0 4px var(--copper-wash);
 }
 
+/* The gallery: wherever the network puts each photo, exact or not. */
 .learned-rectangle {
-  overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 18%);
-  background-position: center;
-  background-size: cover;
-  box-shadow:
-    0 10px 24px rgb(0 0 0 / 28%),
-    inset 0 0 0 1px rgb(255 255 255 / 4%);
+  background: center / cover no-repeat;
+  box-shadow: inset 0 0 0 1px var(--edge), var(--shadow-1);
 }
-
-.learned-rectangle span {
-  position: absolute;
-  right: 14px;
-  bottom: 12px;
-  left: 14px;
-  color: white;
-  font-size: 15px;
-  font-weight: 650;
-  text-shadow: 0 2px 12px rgb(0 0 0 / 75%);
-  opacity: 0;
+/* The photo that training pairs with the selected rectangle of the sketch. */
+.learned-rectangle.is-selected {
+  box-shadow: inset 0 0 0 1px var(--edge), 0 0 0 2px var(--sheet), 0 0 0 4px var(--copper);
 }
-
 .image-0 { background-image: url("../../assets/photo-gallery-00.webp"); }
 .image-1 { background-image: url("../../assets/photo-gallery-01.webp"); }
 .image-2 { background-image: url("../../assets/photo-gallery-02.webp"); }
@@ -199,42 +93,92 @@ body {
 .image-10 { background-image: url("../../assets/photo-gallery-10.webp"); }
 .image-11 { background-image: url("../../assets/photo-gallery-11.webp"); }
 
-.learning-footer {
+/* The row under each stage: the sketch's controls under the sketch, and the training's chart,
+   numbers and button under the photos. Both rows are as tall as the chart, so their buttons line
+   up when the stages are side by side. */
+.tools {
   display: flex;
-  gap: 16px;
-  color: rgb(245 240 231 / 46%);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  min-height: 40px;
+  margin-top: var(--space-2);
+}
+/* A button that can't act yet, e.g. Delete while no rectangle is selected. */
+.tools .button:disabled {
+  border-color: var(--rule);
+  background: transparent;
+  color: var(--ink-3);
+  box-shadow: none;
+  transform: none;
+  cursor: default;
 }
 
-.learning-footer b {
-  color: #f5f0e7;
-  font-weight: 500;
+/* The preset sketches: three buttons in one outline, as tall as a .button. The pressed one is the
+   preset that the sketch still equals. */
+.segments {
+  display: inline-flex;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-2);
+  background: var(--sheet);
+  box-shadow: var(--shadow-1);
+}
+.segments button {
+  height: 30px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-left: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink-2);
+  font: 600 13px/20px var(--font-sans);
+  cursor: pointer;
+  transition: background var(--quick) var(--ease), color var(--quick) var(--ease);
+}
+/* The corners are the outline's 8 px minus its 1 px border. */
+.segments button:first-child { border-left: 0; border-radius: 7px 0 0 7px; }
+.segments button:last-child { border-radius: 0 7px 7px 0; }
+.segments button:hover { background: var(--wash); color: var(--ink); }
+.segments button:active { background: var(--paper); }
+.segments button[aria-pressed="true"] { background: var(--copper-wash); color: var(--copper); }
+
+/* The loss chart takes the width that the numbers and the button leave, with a hairline as its base. */
+.loss-chart {
+  display: block;
+  flex: 1 1 96px;
+  min-width: 96px;
+  height: 40px;
+  border-bottom: 1px solid var(--rule);
+}
+.loss-chart .line { fill: none; stroke: var(--copper); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.loss-chart .marker { fill: var(--copper); stroke: var(--paper); stroke-width: 2; }
+.loss-chart .hairline { stroke: var(--rule-strong); }
+/* The loss now and the number of steps so far, or those of the sample under the mouse. The width
+   has room for a count of 5 digits, e.g. 12,500, so the button beside the numbers doesn't move
+   while the count grows. */
+.loss {
+  min-width: 29ch;
+  color: var(--ink-2);
+  font: var(--type-ui);
+  white-space: nowrap;
+}
+.loss b { color: var(--ink); font: 600 13px/20px var(--font-mono); }
+
+.stages + .stats {
+  max-width: 50em;
+  margin-top: var(--space-5);
 }
 
 @media (max-width: 760px) {
-  #learning-demo {
-    gap: 14px;
-    padding: 12px;
-  }
-
-  .learning-header {
-    display: block;
-  }
-
-  .learning-header p {
-    margin-top: 4px;
-    text-align: left;
-  }
-
+  .stages { grid-template-columns: 1fr; gap: var(--space-6); }
+}
+/* At phone width the chart gets a row of its own, above the numbers and the button. */
+@media (max-width: 480px) {
+  .loss-chart { flex-basis: 100%; }
 }
 
-@media (max-width: 560px) {
-  #learning-demo {
-    grid-template-rows: auto auto auto;
-  }
-
-  .learning-workspace {
-    grid-template-columns: 1fr;
-  }
+/* A finger needs a larger target than a mouse pointer. */
+@media (pointer: coarse) {
+  .tools .button { height: 40px; }
+  .segments button { height: 38px; }
 }
