@@ -4,7 +4,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "start": "bun ./assets/index.html",
+    "start": "bun scripts/serve-demo-site.ts",
     "start:candidates": "bun ./lab/candidate-gallery/candidate-gallery.html",
     "start:hard-attend": "bun ./lab/hard-attend/hard-attend.html",
     "start:json-highlighter": "bun ./assets/json-highlighter.html",

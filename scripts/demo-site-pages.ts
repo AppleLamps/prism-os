@@ -1,0 +1,40 @@
+// The demo site's pages, and its icon. serve-demo-site.ts serves the pages at these paths while developing.
+import {existsSync} from 'node:fs'
+import {resolve} from 'node:path'
+
+export const repoRoot = resolve(import.meta.dir, '..')
+
+// `source` is the page's file in the repo, and `path` is its folder on the site, relative to the site's root, e.g.
+// 'os/' is served at <site>/os/ and built as site/os/index.html. The site is served under a path prefix, e.g.
+// https://example.com/handwired/, so every link between pages is relative and written for these paths: the index
+// links to HandwiredOS as "os/", and HandwiredOS links to the index as "../" and to another demo as e.g.
+// "../regex-search/".
+export type SitePage = {source: string, path: string}
+
+const publishedPages: SitePage[] = [
+  {source: 'assets/demos.html', path: ''},
+  {source: 'assets/index.html', path: 'os/'},
+  {source: 'assets/json-highlighter.html', path: 'json-highlighter/'},
+  {source: 'lab/regex-search/demo.html', path: 'regex-search/'},
+  {source: 'lab/learned-gallery/learned-gallery.html', path: 'learned-gallery/'},
+]
+// The GPU search demo is on the site only once its page exists. Its card in assets/demos.html has a hidden attribute
+// until then.
+const pagesBuiltWhenTheyExist: SitePage[] = [
+  {source: 'lab/json-search/demo.html', path: 'json-search/'},
+]
+export const sitePages: SitePage[] = [
+  ...publishedPages,
+  ...pagesBuiltWhenTheyExist.filter(page => existsSync(resolve(repoRoot, page.source))),
+]
+
+// The project's mark, three wires into one eyelet and one wire out, on a tile of the paper color, so the mark also
+// shows on a dark tab bar. The colors repeat --paper, --ink and --copper of assets/site.css, since an image can't read
+// the page's custom properties.
+export const iconSvg = [
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>`,
+  `<rect width='32' height='32' rx='7' fill='#f3eee4'/>`,
+  `<path d='M5 8.5h4.5l4.6 5.4M5 16h6.2M5 23.5h4.5l4.6-5.4M20.8 16H27' fill='none' stroke='#1e1a16' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/>`,
+  `<circle cx='16' cy='16' r='4.3' fill='#f3eee4' stroke='#a64d1d' stroke-width='2.4'/>`,
+  `</svg>`,
+].join('')

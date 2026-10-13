@@ -1,0 +1,273 @@
+/* The demo index, assets/demos.html: the opening with the wiring figure, the demo cards, and the footer.
+   This file is the page's only stylesheet. It imports site.css first and uses only site.css's tokens. */
+@import "./site.css";
+
+/* The opening: the headline and what Handwired is on the left, the wiring figure on the right. */
+.opening {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 352px;
+  gap: var(--space-8);
+  align-items: end;
+  margin-top: var(--space-8);
+}
+.opening h1 {
+  margin: 0;
+  font: var(--type-title-l);
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+}
+.opening .deck { margin-top: var(--space-5); }
+.opening-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  margin-top: var(--space-5);
+  font: var(--type-ui);
+}
+
+/* The wiring figure: Math.min(a, b) as the three operations that emitMinimum emits. Wires are copper, and each
+   wire ends in an eyelet, a small ring, like the mark in the header. */
+.wiring { margin: 0; }
+.wiring svg { display: block; width: 100%; height: auto; overflow: visible; }
+.wiring .wire { fill: none; stroke: var(--copper); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.wiring .part { fill: var(--sheet); stroke: var(--ink); stroke-width: 1; }
+.wiring .glyph { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.wiring .eyelet { fill: var(--paper); stroke: var(--copper); stroke-width: 1.5; }
+.wiring .joint { fill: var(--copper); }
+.wiring text { fill: var(--ink-2); font: 500 11px/1 var(--font-sans); font-variant-numeric: tabular-nums; }
+.wiring .weight { fill: var(--ink-3); }
+.wiring .name { fill: var(--ink); font: italic 400 15px/1 var(--font-serif); }
+.wiring .sigma { fill: var(--ink); font: 400 16px/1 var(--font-serif); }
+.wiring figcaption {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+  color: var(--ink-2);
+  font: var(--type-ui);
+  text-wrap: pretty;
+}
+
+.section-label { margin: var(--space-8) 0 var(--space-4); }
+
+/* The demos: HandwiredOS across the full width, then the smaller cards, two to a row. */
+.demos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+.demo { display: flex; flex-direction: column; overflow: hidden; }
+/* The hidden attribute is the switch of a card whose demo isn't published. display: flex above would show the card. */
+.demo[hidden] { display: none; }
+/* A card's picture is a piece of the demo, drawn straight on the card's sheet. */
+.demo-picture {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--rule);
+}
+.demo-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 20px var(--space-5) var(--space-5);
+}
+.demo h3 { margin: 0; font: var(--type-title-s); }
+.demo p { margin: var(--space-2) 0 0; color: var(--ink-2); font: var(--type-body); text-wrap: pretty; }
+/* The line of facts sits at the card's bottom edge, so the lines of neighboring cards align. */
+.demo .meta {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  color: var(--ink-3);
+  font: var(--type-small);
+  font-variant-numeric: tabular-nums;
+}
+.demo .meta b { color: var(--ink-2); font-weight: 600; }
+
+/* HandwiredOS, the first and largest card: the screenshot on the left and the text on the right. */
+.demo.is-first {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
+}
+.demo.is-first .demo-picture {
+  height: auto;
+  border-right: 1px solid var(--rule);
+  border-bottom: 0;
+  background: var(--desk);
+}
+/* The picture is at least as tall as the screenshot's own shape, 1520 by 800, and as tall as the text beside it
+   when the text is taller. The screenshot then keeps its shape and loses a little of its left and right edges. */
+.demo.is-first .demo-picture::before { content: ""; display: block; padding-top: calc(100% * 800 / 1520); }
+.demo.is-first .demo-picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.demo.is-first .demo-body { padding: var(--space-6); }
+.demo.is-first h3 { font: var(--type-title-m); letter-spacing: -0.015em; }
+.demo.is-first p { max-width: 36em; margin-top: var(--space-3); }
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) 20px;
+  margin: var(--space-5) 0 0;
+}
+.figures dd { margin: 0; color: var(--ink); font: var(--type-figure-s); letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+.figures dd small { color: var(--ink-3); font: var(--type-ui); letter-spacing: 0; }
+.figures dt { color: var(--ink-3); font: var(--type-small); }
+.go {
+  margin-top: auto;
+  padding-top: var(--space-5);
+  color: var(--copper);
+  font: 600 13px/20px var(--font-sans);
+}
+.go::after { content: " \2192"; display: inline-block; margin-left: var(--space-1); transition: transform var(--quick) var(--ease); }
+a.card:hover .go::after { transform: translateX(3px); }
+
+/* A card that is alone in the last row takes the whole row. */
+.demo:last-child:nth-child(even) { grid-column: 1 / -1; }
+/* While the last card is hidden, three small cards remain. They sit three to a row where the page is wide enough
+   for three. Below that width the third takes a whole row, with its picture on the left. */
+@media (min-width: 1100px) {
+  .demos:has(> .demo[hidden]) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 641px) and (max-width: 1099px) {
+  .demo:has(+ .demo[hidden]) { grid-column: 1 / -1; flex-direction: row; }
+  /* The picture is as wide as a card of the row above, so its right edge continues that card's right edge. */
+  .demo:has(+ .demo[hidden]) .demo-picture {
+    flex: none;
+    width: calc(50% - var(--space-5) / 2);
+    height: auto;
+    min-height: 200px;
+    border-right: 1px solid var(--rule);
+    border-bottom: 0;
+  }
+}
+
+/* The pictures of the two text demos show a few of their own lines. A line too many for the card fades out at the
+   picture's bottom edge. */
+.peek {
+  --fade-at-the-bottom: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  --fade-at-the-right: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  -webkit-mask-image: var(--fade-at-the-bottom);
+  mask-image: var(--fade-at-the-bottom);
+}
+
+/* JSON highlighter: the colors its page gives each kind of character. Keys stay in ink, so the structure reads
+   first and the values carry the color. Lines of code don't wrap, so a line too long for the card also fades out,
+   at the picture's right edge. */
+.peek-json {
+  padding: var(--space-4) var(--space-5);
+  color: var(--ink);
+  font: var(--type-code);
+  white-space: pre;
+  -webkit-mask-image: var(--fade-at-the-bottom), var(--fade-at-the-right);
+  mask-image: var(--fade-at-the-bottom), var(--fade-at-the-right);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+.peek-json .punctuation { color: var(--ink-3); }
+.peek-json .string { color: var(--wire-green); }
+.peek-json .escape { color: var(--wire-ochre); }
+.peek-json .number { color: var(--wire-indigo); }
+.peek-json .literal { color: var(--wire-plum); }
+.peek-json .error { color: var(--wire-red); }
+/* The program returns the position of the first error, and the page underlines the character there. */
+.peek-json .first-error {
+  text-decoration: underline wavy var(--wire-red);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-skip-ink: none;
+}
+/* Copper marks what the program points at: the bracket at the caret and the bracket that matches it. */
+.peek-json .match {
+  border-radius: var(--radius-1);
+  background: var(--copper-wash);
+  box-shadow: 0 0 0 1px var(--copper-line);
+  color: var(--copper);
+}
+.peek-json .caret {
+  display: inline-block;
+  width: 2px;
+  height: 18px;
+  margin: 0 -1px;
+  vertical-align: -4px;
+  border-radius: 1px;
+  background: var(--copper);
+}
+
+/* Regex search: the pattern field, drawn as it looks with focus, and the text with its matches. */
+.peek-regex { padding: var(--space-5) var(--space-5) 0; }
+.peek-pattern {
+  padding: 0 var(--space-3);
+  border: 1px solid var(--copper-line);
+  border-radius: var(--radius-2);
+  background: var(--sheet);
+  box-shadow: 0 0 0 3px var(--copper-wash);
+  color: var(--ink);
+  font: 400 13px/32px var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.peek-pattern i { color: var(--ink-3); font-style: normal; }
+.peek-pattern i:first-child { margin-right: 6px; }
+.peek-pattern i:last-child { margin-left: 6px; }
+.demo .peek-regex p { margin: var(--space-4) 0 0; color: var(--ink); font: var(--type-notes); }
+/* Neighboring matches alternate between two marks, as on the demo's page: a wash with a line under it. */
+.peek-regex mark { padding: 2px 0; border-radius: 2px; color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.peek-regex mark.even { background: var(--copper-wash); box-shadow: inset 0 -1px var(--copper); }
+.peek-regex mark.odd { background: color-mix(in srgb, var(--wire-indigo) 12%, transparent); box-shadow: inset 0 -1px var(--wire-indigo); }
+
+/* Learned gallery: the sketch of rectangles on the left, and where the network puts the photos on the right,
+   close to the sketch and not exactly on it. */
+.pair {
+  position: absolute;
+  inset: var(--space-5);
+  display: grid;
+  grid-template-columns: 1fr 40px 1fr;
+  align-items: center;
+}
+.pair > div { position: relative; height: 100%; }
+.pair > svg { justify-self: center; color: var(--ink-3); }
+.pair i, .pair img { position: absolute; border-radius: var(--radius-1); }
+.pair .sketch i { border: 1px solid var(--copper-line); background: var(--copper-wash); }
+/* The outline is drawn over the photo's edge, as an inset shadow would be if an img could show one. */
+.pair .placed img { object-fit: cover; outline: 1px solid var(--edge); outline-offset: -1px; background: var(--wash); }
+
+/* Search 100,000 JSON documents: a small bar for each document, and the documents found in copper. */
+.documents { display: block; width: 100%; height: 100%; }
+.documents .document { fill: var(--ink); fill-opacity: 0.13; }
+.documents .found { fill: var(--copper); }
+
+/* Below this width the text beside the screenshot would be too narrow, so the screenshot goes on top. */
+@media (max-width: 1099px) {
+  .demo.is-first { grid-template-columns: 1fr; }
+  .demo.is-first .demo-picture { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .go { margin-top: 0; }
+}
+@media (max-width: 900px) {
+  .opening { grid-template-columns: 1fr; gap: var(--space-6); margin-top: var(--space-7); }
+  .wiring { max-width: 400px; }
+  .demo.is-first .demo-body { padding: var(--space-5); }
+}
+/* One card to a row. No neighbor's picture needs to line up, so each picture is as tall as what it shows. */
+@media (max-width: 640px) {
+  .opening { margin-top: var(--space-6); }
+  .demos { grid-template-columns: 1fr; gap: var(--space-4); }
+  .section-label { margin-top: var(--space-7); }
+  .demo-body { padding: var(--space-4) 20px 20px; }
+  .demo.is-first .demo-body { padding: 20px; }
+  .figures { column-gap: var(--space-4); }
+  .demo-picture { height: auto; }
+  .peek { height: auto; -webkit-mask-image: none; mask-image: none; }
+  /* The same size as the code on the JSON highlighter's page at this width. */
+  .peek-json {
+    padding: var(--space-4) 20px;
+    font: 400 12px/22px var(--font-mono);
+    -webkit-mask-image: var(--fade-at-the-right);
+    mask-image: var(--fade-at-the-right);
+  }
+  .peek-regex { padding: 20px; }
+  .pair { position: relative; inset: auto; height: 144px; margin: 20px; grid-template-columns: 1fr 28px 1fr; }
+  .documents { height: 176px; }
+}
