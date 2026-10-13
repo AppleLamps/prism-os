@@ -97,9 +97,9 @@
   background: var(--desk);
 }
 /* The picture is at least as tall as the screenshot's own shape, 1520 by 800, and as tall as the text beside it
-   when the text is taller. The screenshot then keeps its shape and loses a little of its left and right edges. */
+   when the text is taller. The screenshot then keeps its shape and its left edge, and loses some of its right edge. */
 .demo.is-first .demo-picture::before { content: ""; display: block; padding-top: calc(100% * 800 / 1520); }
-.demo.is-first .demo-picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.demo.is-first .demo-picture img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: left center; }
 .demo.is-first .demo-body { padding: var(--space-6); }
 .demo.is-first h3 { font: var(--type-title-m); letter-spacing: -0.015em; }
 .demo.is-first p { max-width: 36em; margin-top: var(--space-3); }
@@ -124,13 +124,13 @@
 a.card:hover .go::after { transform: translateX(3px); }
 
 /* The fifth card is hidden until its demo ships, which leaves three small cards after HandwiredOS. The three sit
-   in one row where the page is wide enough for three. Below that width the third takes a whole row, with its
-   picture on the left. Once the fifth card is shown, the four small cards sit two to a row at every width above a
-   phone's. */
-@media (min-width: 1100px) {
+   in one row where the page has its full width, 1104 px, i.e. in a window of 1152 px or more. Below that width
+   the third takes a whole row, with its picture on the left. Once the fifth card is shown, the four small cards
+   sit two to a row at every width above 719 px. */
+@media (min-width: 1152px) {
   .demos:not(:has(> .demo:nth-child(5):not([hidden]))) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-@media (min-width: 641px) and (max-width: 1099px) {
+@media (min-width: 720px) and (max-width: 1151px) {
   .demos:not(:has(> .demo:nth-child(5):not([hidden]))) > .demo:nth-child(4) { grid-column: 1 / -1; flex-direction: row; }
   /* The picture is as wide as a card of the row above, so its right edge continues that card's right edge. */
   .demos:not(:has(> .demo:nth-child(5):not([hidden]))) > .demo:nth-child(4) .demo-picture {
@@ -146,7 +146,7 @@ a.card:hover .go::after { transform: translateX(3px); }
 /* The pictures of the two text demos show a few of their own lines. A line too many for the card fades out at the
    picture's bottom edge. */
 .peek {
-  --fade-at-the-bottom: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  --fade-at-the-bottom: linear-gradient(to bottom, #000 calc(100% - 16px), transparent);
   --fade-at-the-right: linear-gradient(to right, #000 calc(100% - 28px), transparent);
   height: 100%;
   margin: 0;
@@ -241,8 +241,8 @@ a.card:hover .go::after { transform: translateX(3px); }
 .documents .document { fill: var(--ink); fill-opacity: 0.13; }
 .documents .found { fill: var(--copper); }
 
-/* Below this width the text beside the screenshot would be too narrow, so the screenshot goes on top. */
-@media (max-width: 1099px) {
+/* Below the page's full width the text beside the screenshot would be too narrow, so the screenshot goes on top. */
+@media (max-width: 1151px) {
   .demo.is-first { grid-template-columns: 1fr; }
   .demo.is-first .demo-picture { border-right: 0; border-bottom: 1px solid var(--rule); }
   .go { margin-top: 0; }
@@ -252,24 +252,23 @@ a.card:hover .go::after { transform: translateX(3px); }
   .wiring { max-width: 400px; }
   .demo.is-first .demo-body { padding: var(--space-5); }
 }
-/* One card to a row. No neighbor's picture needs to line up, so each picture is as tall as what it shows. */
-@media (max-width: 640px) {
-  .opening { margin-top: var(--space-6); }
+/* One card to a row, below the width where two cards side by side still fit a line of the JSON picture's code.
+   No neighbor's picture needs to line up, so each picture is as tall as what it shows. */
+@media (max-width: 719px) {
   .demos { grid-template-columns: 1fr; gap: var(--space-4); }
-  .section-label { margin-top: var(--space-7); }
   .demo-body { padding: var(--space-4) 20px 20px; }
   .demo.is-first .demo-body { padding: 20px; }
   .figures { column-gap: var(--space-4); }
   .demo-picture { height: auto; }
   .peek { height: auto; -webkit-mask-image: none; mask-image: none; }
-  /* The same size as the code on the JSON highlighter's page at this width. */
-  .peek-json {
-    padding: var(--space-4) 20px;
-    font: 400 12px/22px var(--font-mono);
-    -webkit-mask-image: var(--fade-at-the-right);
-    mask-image: var(--fade-at-the-right);
-  }
+  .peek-json { padding: var(--space-4) 20px; -webkit-mask-image: var(--fade-at-the-right); mask-image: var(--fade-at-the-right); }
   .peek-regex { padding: 20px; }
   .pair { position: relative; inset: auto; height: 144px; margin: 20px; grid-template-columns: 1fr 28px 1fr; }
   .documents { height: 176px; }
+}
+/* The width where site.css makes the titles smaller, and where the JSON highlighter's page makes its code this size. */
+@media (max-width: 640px) {
+  .opening { margin-top: var(--space-6); }
+  .section-label { margin-top: var(--space-7); }
+  .peek-json { font: 400 12px/22px var(--font-mono); }
 }
