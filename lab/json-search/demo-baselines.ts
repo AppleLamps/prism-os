@@ -36,9 +36,11 @@ export type BaselineNumbers = {
   // Finding the runs of searched characters, e.g. every string value, which JavaScript does once per scope.
   plainRunsMs: number | null
   plainSearch: PlainSearchProgress
+  // The same programs on the CPU, per document, and how many documents each was timed on.
   cpuHighlightMsPerDocument: number | null
+  cpuHighlightDocuments: number
   cpuSearchMsPerDocument: number | null
-  cpuSampleDocuments: number
+  cpuSearchDocuments: number
 }
 
 export type Baselines = ReturnType<typeof createBaselines>
@@ -116,9 +118,10 @@ export function createBaselines(texts: readonly string[], options: {withCpu: boo
       plainRunsMs: scopeRuns !== undefined && scopeRuns.chunks === chunkCount ? scopeRuns.ms : null,
       plainSearch,
       cpuHighlightMsPerDocument: cpuHighlightTimes.length >= 2 ? Math.min(...cpuHighlightTimes) / cpuSample : null,
+      cpuHighlightDocuments: cpuSample,
       // A pattern that the CPU searcher didn't search has no time.
       cpuSearchMsPerDocument: Number.isFinite(cpuFastest) ? cpuFastest / cpuSearchDocuments : null,
-      cpuSampleDocuments: cpuSearchDocuments,
+      cpuSearchDocuments,
     }
   }
 

@@ -77,7 +77,7 @@
         <span class="legend-keys">
           <span><i class="swatch match"></i>a match</span>
           <span><i class="swatch valid"></i>valid JSON, no match</span>
-          <span><i class="swatch error"></i>an error, no match</span>
+          <span><i class="swatch error"></i>not valid, no match</span>
         </span>
         <span id="errors" class="legend-errors"></span>
       </div>
@@ -132,11 +132,10 @@
     <details class="disclosure">
       <summary>How it works</summary>
       <div class="how">
-        <p>The page writes its documents itself: package manifests, user records, log events and four more shapes, each up to 512 characters, and 1 in 10 broken on purpose, e.g. by a missing quote. Each character goes to the GPU once, as a number.</p>
-        <p>The JSON highlighter is one small step, built by hand from weighted sums, ReLU gates and table reads. It runs at each of a document&rsquo;s 512 positions and says what each character is, e.g. part of a key or of a string value, and where the first error is.</p>
-        <p>Regex search is a second such step. A keystroke turns the pattern into tables of numbers, and the step runs over each document&rsquo;s positions, backward and then forward, and counts the matches. A new pattern changes the tables, never the program.</p>
-        <p>The search reads the highlighter&rsquo;s answer for each character from the GPU&rsquo;s memory, which is how it can read only string values or only keys.</p>
-        <p>No document reads another document&rsquo;s numbers, so the GPU runs every document at the same time. JavaScript gets back one match count per document and paints the map, and for the document on screen, a mark per character.</p>
+        <p>The page writes its documents itself: seven kinds, each up to 512 characters, 1 in 10 broken on purpose, e.g. by a missing quote. Every character goes to the GPU once, as a number.</p>
+        <p>The JSON highlighter is one small step, built by hand from weighted sums, ReLU gates and table reads. It runs at each of a document&rsquo;s 512 positions and says what each character is, e.g. part of a key, and where the first error is.</p>
+        <p>Regex search is a second such step: a keystroke turns the pattern into tables of numbers, and the step runs over each document&rsquo;s positions, backward and then forward, and counts the matches. It reads the highlighter&rsquo;s answer for each character from the GPU&rsquo;s memory, which is how it can read only string values or only keys.</p>
+        <p>No document reads another document&rsquo;s numbers, so the GPU runs all of them at the same time. JavaScript gets back one match count per document, which it paints on the map, and a mark per character for the document on screen.</p>
       </div>
     </details>
 

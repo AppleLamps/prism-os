@@ -11,7 +11,7 @@ import {
 } from './demo-map.ts'
 import {
   type ComparisonNumbers, type Line, analyzePattern, checkLine, comparisonCells, comparisonVerdict, count, cpuDocumentCount, documentLine, documentRuns,
-  documentsThatFit, duration, groupNames, loadNotice, perDocument, programLines, resultLine, roughDuration, runClassName, scopeChoiceOf, validitySentence,
+  documentsThatFit, duration, groupNames, loadNotice, notValidLine, perDocument, programLines, resultLine, roughDuration, runClassName, scopeChoiceOf, validitySentence,
   wantedDocumentCount,
 } from './demo-text.ts'
 import {generateDocuments, shapes} from './documents.ts'
@@ -273,9 +273,23 @@ describe('the page\'s sentences', () => {
     expect(documentRuns('"😀a"', [string, string, string, string], [0, 0, 2, 0], -1, capacity).runs.map(run => [run.text, run.match])).toEqual([['"😀', 0], ['a', 1], ['"', 0]])
   })
 
+  test('says how many documents aren\'t valid, and which of them only pass the highlighter\'s limits', () => {
+    const {none, expectedColon, unexpectedEnd, tooLong, tooDeep} = errorKind
+    const kinds = Uint8Array.from([none, expectedColon, tooLong, none, tooDeep, unexpectedEnd, tooLong, none])
+    const valid = Uint8Array.from([1, 0, 0, 1, 0, 0, 0, 1])
+    expect(text(notValidLine(kinds, valid, capacity))).toBe('5 documents aren’t valid: 2 have an error, 2 are longer than the 512 characters that the highlighter reads and 1 nests deeper than its 16 levels.')
+    expect(text(notValidLine(Uint8Array.from([none, tooLong]), Uint8Array.from([1, 0]), capacity))).toBe('1 document isn’t valid: 1 is longer than the 512 characters that the highlighter reads.')
+    expect(text(notValidLine(Uint8Array.from([expectedColon, tooDeep, unexpectedEnd]), Uint8Array.from([0, 0, 0]), capacity))).toBe('3 documents aren’t valid: 2 have an error and 1 nests deeper than its 16 levels.')
+    expect(text(notValidLine(Uint8Array.from([none, none]), Uint8Array.from([1, 1]), capacity))).toBe('Every document is valid JSON.')
+    // The 100,000 documents of the page: README.md counts 10,057 that aren't valid, 601 of them too long and 622 too deep.
+    const few = generateDocuments(3000).map(document => document.text)
+    const searcher = createCpuSearcher(few.slice(0, 300))
+    expect(text(notValidLine(searcher.validation.firstErrorKind, searcher.validation.valid, capacity))).toMatch(/^\d+ documents aren’t valid: \d+ have an error, \d+ (is|are) longer than the 512 characters that the highlighter reads and \d+ nests? deeper than its 16 levels\.$/)
+  })
+
   test('names the selected document', () => {
     expect(text(documentLine(7, 100_000, 2, true, 1, true))).toBe('Document 8 of 100,000, a log event, the first with a match')
-    expect(text(documentLine(73_511, 100_000, 0, false, 3, false))).toBe('Document 73,512 of 100,000, a package manifest with an error, with 3 matches')
+    expect(text(documentLine(73_511, 100_000, 0, false, 3, false))).toBe('Document 73,512 of 100,000, a package manifest, not valid, with 3 matches')
     expect(text(documentLine(0, 500, 6, true, 0, false))).toBe('Document 1 of 500, sensor readings')
     expect(text(documentLine(0, 500, 4, true, null, false))).toBe('Document 1 of 500, an order')
     expect<number>(groupNames.length).toBe(shapes.length + 1)
@@ -306,7 +320,7 @@ describe('the page\'s sentences', () => {
     const numbers: ComparisonNumbers = {
       backend: 'gpu', documentCount: 100_000, scope: 'strings', highlightMs: 131, secondPassMs: 8.3, plainHighlightMsPerDocument: 0.00146, plainSampleDocuments: 4000,
       cpuHighlightMsPerDocument: 0.108, searchMs: 17.5, searchAfterPause: true, plainSearch: {state: 'done', ms: 22.6, matches: 41_347, differing: 0}, plainRunsMs: 94.5,
-      cpuSearchMsPerDocument: 0.245, cpuSampleDocuments: 32,
+      cpuSearchMsPerDocument: 0.245, cpuHighlightDocuments: 32, cpuSearchDocuments: 32,
     }
     const program = {patternStates: 8, states: 8, smallestStates: 8, operations: 243, smallestOperations: 243}
     const cells = comparisonCells(numbers)
@@ -323,7 +337,8 @@ describe('the page\'s sentences', () => {
     expect(text(comparisonCells({...numbers, searchAfterPause: false}).programSearch)).toBe('18\u00a0ms')
     // 22.6 ms against 17.5 ms: the verdict gives RegExp's time and says the two are in the same range, as it does
     // from a third of the GPU's time to 3 times it.
-    const cpuSentence = ' On the CPU, the same search program would take about 1,400\u00a0times as long as on the GPU.'
+    // 131 ms from the texts against about 146 ms for the loop in JavaScript: about the same, and the verdict says so.
+    const cpuSentence = ' On the CPU, the same search program would take about 1,400\u00a0times as long as on the GPU. Validating and highlighting every document from its text took the GPU about what the loop in JavaScript takes.'
     expect(text(comparisonVerdict(numbers, program))).toBe(`RegExp on one thread took 23\u00a0ms for the same search: the two are in the same range.${cpuSentence}`)
     for (const ms of [6.1, 12, 43, 52]) {
       expect(text(comparisonVerdict({...numbers, plainSearch: {state: 'done', ms, matches: 41_347, differing: 0}}, program))).toContain('the two are in the same range')
@@ -332,12 +347,14 @@ describe('the page\'s sentences', () => {
     // A pattern that makes RegExp backtrack: the one case where the verdict says how many times as long RegExp took in bold.
     const slow = {...numbers, plainSearch: {state: 'done', ms: 567, matches: 44_399, differing: 0}} as const
     expect(text(comparisonVerdict(slow, program))).toBe(`RegExp on one thread took 567\u00a0ms for the same search, 32\u00a0times as long. A search program takes the same time for every pattern of up to 8 states, and RegExp’s time depends on the pattern.${cpuSentence}`)
-    // A pattern on the larger program, where RegExp takes less time: the page says both.
-    const larger = {...numbers, searchMs: 65.3, searchAfterPause: false, plainSearch: {state: 'done', ms: 12.7, matches: 27_415, differing: 0}} as const
+    // A pattern on the larger program, where RegExp takes less time: the page says both. Its time on the CPU is from
+    // fewer documents than the highlighter's, and each cell names its own count.
+    const larger = {...numbers, searchMs: 65.3, searchAfterPause: false, plainSearch: {state: 'done', ms: 12.7, matches: 27_415, differing: 0}, cpuSearchMsPerDocument: 0.61, cpuSearchDocuments: 12} as const
+    expect([text(comparisonCells(larger).cpuHighlight), text(comparisonCells(larger).cpuSearch)]).toEqual(['about 11\u00a0s [from 32 documents at 108\u00a0µs each]', 'about 1.0\u00a0minutes [from 12 documents at 610\u00a0µs each]'])
     expect(text(comparisonVerdict(larger, {patternStates: 11, states: 16, smallestStates: 8, operations: 667, smallestOperations: 243}))).toStartWith(
       'This pattern has 11 states, more than the 8 that the smallest search program holds, so it ran on the program for 16, which does 667 operations at each character instead of 243. RegExp on one thread took 13\u00a0ms for the same search: 5.1\u00a0times as fast.')
     // The larger program is named before RegExp's time is measured.
-    expect(text(comparisonVerdict({...larger, plainSearch: {state: 'none'}, cpuSearchMsPerDocument: null}, {patternStates: 17, states: 32, smallestStates: 8, operations: 2283, smallestOperations: 243}))).toBe(
+    expect(text(comparisonVerdict({...larger, plainSearch: {state: 'none'}, cpuSearchMsPerDocument: null, plainHighlightMsPerDocument: null}, {patternStates: 17, states: 32, smallestStates: 8, operations: 2283, smallestOperations: 243}))).toBe(
       'This pattern has 17 states, more than the 8 that the smallest search program holds, so it ran on the program for 32, which does 2,283 operations at each character instead of 243.')
     // RegExp counts differently on some patterns, and the page says in how many documents.
     const differing = {...numbers, plainSearch: {state: 'done', ms: 22.6, matches: 120, differing: 7}} as const
@@ -354,7 +371,11 @@ describe('the page\'s sentences', () => {
     // The CPU version: its own time has no "from the texts", and there is no third row to compare with.
     const onTheCpu = {...numbers, backend: 'cpu', highlightMs: 46, secondPassMs: null, searchMs: 126, searchAfterPause: false, plainSearch: {state: 'done', ms: 0.2, matches: 203, differing: 0}} as const
     expect(text(comparisonCells(onTheCpu).programHighlight)).toBe('46\u00a0ms')
-    expect(text(comparisonVerdict(onTheCpu, program))).toBe('RegExp on one thread took 0.2\u00a0ms for the same search: 630\u00a0times as fast.')
+    expect(text(comparisonVerdict({...onTheCpu, plainHighlightMsPerDocument: null}, program))).toBe('RegExp on one thread took 0.2\u00a0ms for the same search: 630\u00a0times as fast.')
+    // On the CPU the programs take many times what the loop in JavaScript takes, and the verdict says how many.
+    expect(text(comparisonVerdict({...onTheCpu, documentCount: 500, plainHighlightMsPerDocument: 0.0014, plainSampleDocuments: 500}, program))).toEndWith('Validating and highlighting every document took the programs on the CPU 66\u00a0times as long as the loop in JavaScript.')
+    // A GPU that validated in a small part of the loop's time would have that said in numbers too.
+    expect(text(comparisonVerdict({...numbers, highlightMs: 20}, program))).toEndWith('Validating and highlighting every document took the loop in JavaScript 7.3\u00a0times as long as the GPU.')
   })
 })
 
@@ -394,7 +415,7 @@ describe('the comparison\'s baselines', () => {
     const plain = createPlainSearch(texts)
     const searcher = createCpuSearcher(texts)
     const baselines = createBaselines(texts, {withCpu: false})
-    expect(baselines.numbers(null)).toEqual({plainHighlightMsPerDocument: null, plainSampleDocuments: texts.length, plainRunsMs: null, plainSearch: {state: 'none'}, cpuHighlightMsPerDocument: null, cpuSearchMsPerDocument: null, cpuSampleDocuments: 32})
+    expect(baselines.numbers(null)).toEqual({plainHighlightMsPerDocument: null, plainSampleDocuments: texts.length, plainRunsMs: null, plainSearch: {state: 'none'}, cpuHighlightMsPerDocument: null, cpuHighlightDocuments: 32, cpuSearchMsPerDocument: null, cpuSearchDocuments: 32})
     for (const [pattern, scope] of [['error', 'everything'], ['(the|an?) [a-z]+', 'strings'], ['[a-z]+Id', 'keys'], ['a|ab|b', 'everything'], ['a*', 'everything']] as const) {
       const result = await searcher.search({pattern, scope})
       if (result?.status !== 'searched') throw new Error(`the searcher didn't search ${pattern}`)
@@ -430,14 +451,15 @@ describe('the comparison\'s baselines', () => {
     const request: Parameters<typeof baselines.step>[0] = {pattern: 'error', scope: 'everything', states: 8, programCounts: new Float32Array(texts.length)}
     await measure(baselines, request, 2)
     const numbers = baselines.numbers(request)
-    expect(numbers.cpuSampleDocuments).toBe(32)
+    expect([numbers.cpuHighlightDocuments, numbers.cpuSearchDocuments]).toEqual([32, 32])
     expect(numbers.cpuHighlightMsPerDocument).toBeGreaterThan(0)
     expect(numbers.cpuSearchMsPerDocument).toBeGreaterThan(0)
     expect(numbers.cpuSearchMsPerDocument).toBeLessThan(50)
     // A search on the program of 16 states is timed on 12 documents.
     const longer = {...request, pattern: '\\d\\d\\d\\d-\\d\\d-\\d\\d', states: 16}
     await measure(baselines, longer, 2)
-    expect(baselines.numbers(longer).cpuSampleDocuments).toBe(12)
+    // The highlighter's time is still the one of 32 documents.
+    expect([baselines.numbers(longer).cpuHighlightDocuments, baselines.numbers(longer).cpuSearchDocuments]).toEqual([32, 12])
     expect(baselines.numbers(longer).cpuSearchMsPerDocument).toBeGreaterThan(0)
   })
 })

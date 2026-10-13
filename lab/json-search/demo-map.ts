@@ -1,8 +1,8 @@
 // The demo page's map: one small square mark per document. This file is the map's arithmetic, with no DOM: which group
 // a document belongs to, where each mark is, which document a point is over, and the marks' pixels.
 //
-// The documents are shown in groups, e.g. the seven shapes of documents.ts and, last, the documents in which the
-// highlighter found an error. Every group is a block of marks, all blocks have the same number of columns, and a block
+// The documents are shown in groups, e.g. the seven shapes of documents.ts and, last, the documents that the
+// highlighter doesn't call valid. Every group is a block of marks, all blocks have the same number of columns, and a block
 // is filled row after row, so a block's height shows how many documents its group has. A wide map has all the blocks
 // side by side, and a narrow one has 4 or 2 blocks in a row.
 //
@@ -18,7 +18,7 @@ export type MapOrder = {
   groupSizes: number[]
 }
 
-// Groups the documents: a valid document goes to the group of its shape, and a document with an error to the last
+// Groups the documents: a valid document goes to the group of its shape, and a document that isn't valid to the last
 // group, whatever its shape.
 export function groupDocuments(shapeOf: Uint8Array, valid: Uint8Array, shapeCount: number): MapOrder {
   const documentCount = shapeOf.length
@@ -177,7 +177,7 @@ export function markOffsets(layout: MapLayout): Uint32Array {
 export type MarkColors = {valid: number, match: number, error: number}
 
 // Writes every mark's pixels: a document with a match in one color, a valid document without one in a second, and a
-// document with an error and no match in a third. `matchCounts` is one count per document, or null before a search.
+// document that isn't valid and has no match in a third. `matchCounts` is one count per document, or null before a search.
 // One call writes e.g. 400,000 pixels for 100,000 marks of 2 by 2 pixels.
 export function paintMarks(pixels: Uint32Array, layout: MapLayout, offsets: Uint32Array, order: Uint32Array, valid: Uint8Array, matchCounts: Float32Array | null, colors: MarkColors) {
   const {mark, width} = layout

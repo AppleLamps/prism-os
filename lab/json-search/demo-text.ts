@@ -106,10 +106,10 @@ export const scopeChoices = [
 export type ScopeChoice = typeof scopeChoices[number]['scope']
 export const scopeChoiceOf = (value: string | null): ScopeChoice => scopeChoices.find(choice => choice.scope === value)?.scope ?? 'everything'
 
-// The groups of the map, in the order of documents.ts's shapes, and last the documents with an error. A name stands
-// above its group's block of marks, beside a count of up to 6 characters, in the 123 px that a block is wide on a
-// page of full width, so the names are short.
-export const groupNames = ['Packages', 'User records', 'Log events', 'Settings', 'Orders', 'Map features', 'Sensors', 'With an error'] as const
+// The groups of the map, in the order of documents.ts's shapes, and last the documents that the highlighter doesn't
+// call valid. A name stands above its group's block of marks, beside a count of up to 6 characters, in the 123 px
+// that a block is wide on a page of full width, so the names are short.
+export const groupNames = ['Packages', 'User records', 'Log events', 'Settings', 'Orders', 'Map features', 'Sensors', 'Not valid'] as const
 // A document of each group, in the selected document's line, e.g. "a log event".
 export const groupNouns = ['a package manifest', 'a user record', 'a log event', 'editor settings', 'an order', 'a map feature', 'sensor readings'] as const
 
@@ -259,8 +259,34 @@ export function runClassName(run: Run): string {
 export function documentLine(index: number, documentCount: number, group: number, valid: boolean, matches: number | null, firstWithMatch: boolean): Line {
   const noun = groupNouns[group]
   const line: (string | {strong: string})[] = ['Document ', strong(count(index + 1)), ` of ${count(documentCount)}`]
-  if (noun !== undefined) line.push(valid ? `, ${noun}` : `, ${noun} with an error`)
+  if (noun !== undefined) line.push(valid ? `, ${noun}` : `, ${noun}, not valid`)
   if (matches !== null && matches > 0) line.push(firstWithMatch ? ', the first with a match' : matches === 1 ? ', with 1 match' : `, with ${count(matches)} matches`)
+  return line
+}
+
+// How many documents the highlighter doesn't call valid, and why: an error in the text, or a text past one of the
+// program's two limits, which the highlighter reports as the errors tooLong and tooDeep. Such a text may be valid
+// JSON, e.g. 600 characters without an error, so the page says which is which.
+export function notValidLine(firstErrorKinds: Uint8Array, valid: Uint8Array, capacity: number): Line {
+  let withError = 0
+  let tooLong = 0
+  let tooDeep = 0
+  for (let index = 0; index < valid.length; index++) {
+    if (valid[index] === 1) continue
+    const kind = errorKinds[firstErrorKinds[index]!]
+    if (kind === 'tooLong') tooLong++
+    else if (kind === 'tooDeep') tooDeep++
+    else withError++
+  }
+  const total = withError + tooLong + tooDeep
+  if (total === 0) return ['Every document is valid JSON.']
+  const reasons: Line[] = []
+  if (withError > 0) reasons.push([strong(count(withError)), withError === 1 ? ' has an error' : ' have an error'])
+  if (tooLong > 0) reasons.push([strong(count(tooLong)), `${tooLong === 1 ? ' is' : ' are'} longer than the ${count(capacity)} characters that the highlighter reads`])
+  if (tooDeep > 0) reasons.push([strong(count(tooDeep)), `${tooDeep === 1 ? ' nests' : ' nest'} deeper than its ${maximumDepth} levels`])
+  const line: (string | {strong: string})[] = [strong(count(total)), total === 1 ? ' document isn’t valid: ' : ' documents aren’t valid: ']
+  reasons.forEach((reason, index) => line.push(...(index === 0 ? [] : [index === reasons.length - 1 ? ' and ' : ', ']), ...reason as (string | {strong: string})[]))
+  line.push('.')
   return line
 }
 
@@ -320,7 +346,9 @@ export type ComparisonNumbers = {
   // Finding the runs of searched characters, e.g. every string value, which JavaScript does once per scope.
   plainRunsMs: number | null
   cpuSearchMsPerDocument: number | null
-  cpuSampleDocuments: number
+  // How many documents the programs on the CPU were timed on: the highlighter, and this search.
+  cpuHighlightDocuments: number
+  cpuSearchDocuments: number
 }
 
 const notYet: Line = [small('measured once the page is idle')]
@@ -361,8 +389,8 @@ export function comparisonCells(numbers: ComparisonNumbers): {programHighlight: 
     programSearch: numbers.searchMs === null ? [small('no search yet')] : numbers.searchAfterPause ? [strong(duration(numbers.searchMs)), ' after a pause'] : [strong(duration(numbers.searchMs))],
     plainHighlight: fromSample(numbers.plainHighlightMsPerDocument, numbers.plainSampleDocuments),
     plainSearch: plainSearchLine,
-    cpuHighlight: fromSample(numbers.cpuHighlightMsPerDocument, numbers.cpuSampleDocuments),
-    cpuSearch: fromSample(numbers.cpuSearchMsPerDocument, numbers.cpuSampleDocuments),
+    cpuHighlight: fromSample(numbers.cpuHighlightMsPerDocument, numbers.cpuHighlightDocuments),
+    cpuSearch: fromSample(numbers.cpuSearchMsPerDocument, numbers.cpuSearchDocuments),
   }
 }
 
@@ -398,6 +426,15 @@ export function comparisonVerdict(numbers: ComparisonNumbers, program: {patternS
   }
   if (backend === 'gpu' && searchMs !== null && numbers.cpuSearchMsPerDocument !== null) {
     sentences.push(['On the CPU, the same search program would take about ', strong(times(numbers.cpuSearchMsPerDocument * numbers.documentCount / searchMs)), ' as long as on the GPU.'])
+  }
+  // The first column: from the texts, the programs take about what the loop in JavaScript takes on a GPU, and the
+  // sentence says so, or says how far apart the two are.
+  if (numbers.highlightMs !== null && numbers.plainHighlightMsPerDocument !== null) {
+    const programs = backend === 'gpu' ? 'the GPU' : 'the programs on the CPU'
+    const ratio = numbers.highlightMs / Math.max(numbers.plainHighlightMsPerDocument * numbers.documentCount, 0.05)
+    if (ratio >= 3) sentences.push([`Validating and highlighting every document took ${programs} ${times(ratio)} as long as the loop in JavaScript.`])
+    else if (ratio > 1 / 3) sentences.push([`Validating and highlighting every document from its text took ${programs} about what the loop in JavaScript takes.`])
+    else sentences.push([`Validating and highlighting every document took the loop in JavaScript ${times(1 / ratio)} as long as ${programs}.`])
   }
   return sentences.flatMap((sentence, index) => index === 0 ? sentence : [' ', ...sentence])
 }

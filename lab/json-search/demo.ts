@@ -21,7 +21,7 @@ import {
 } from './demo-map.ts'
 import {
   type CheckState, type Line, type LoadReason, type PatternAnalysis, type ScopeChoice, analyzePattern, checkLine, comparisonCells, comparisonVerdict,
-  count, cpuDocumentCount, documentLine, documentRuns, documentsThatFit, duration, groupNames, loadNotice, megabytes, operationsPerPosition, programLines,
+  count, cpuDocumentCount, documentLine, documentRuns, documentsThatFit, duration, groupNames, loadNotice, megabytes, notValidLine, operationsPerPosition, programLines,
   resultLine, runClassName, scopeChoiceOf, scopeChoices, strong, validitySentence, wantedDocumentCount,
 } from './demo-text.ts'
 import {defaultSeed, documentAt, shapes} from './documents.ts'
@@ -49,8 +49,7 @@ export type JsonSearchDebug = {
   ready: boolean
   backend: 'gpu' | 'cpu' | null
   documentCount: number
-  // Each piece of work on the main thread while the page loaded, in ms: the slices that write the documents, and
-  // around the calls that create the searcher.
+  // The slices that wrote the documents while the page loaded, each in ms of work on the main thread.
   loadBlocks: number[]
   loadMs: {writeDocuments: number, writeCells: number, createSearcher: number, total: number} | null
   // The searches whose results were painted, the latest 1,000, and each repaint of the map in ms.
@@ -78,7 +77,8 @@ type World = {
   // The index of each document's shape in documents.ts's shapes.
   shapeOf: Uint8Array
   order: MapOrder
-  errorCount: number
+  // How many documents aren't valid, and why, as a sentence.
+  notValid: Line
   baselines: Baselines
   // How many documents a window of marks holds: the selected document and its neighbors by index.
   windowDocuments: number
@@ -183,7 +183,9 @@ async function searchInPieces(searcher: Searcher, pattern: string, scope: ScopeC
     states = result.states
     patternStates = result.patternStates
     first += piece.documentCount
-    pieceDocuments = Math.max(1, Math.min(64, Math.round(6 * piece.documentCount / Math.max(0.1, result.timings.evaluateMs))))
+    // The next piece holds the documents of about 6 ms, and at most 32, since a short piece's time is only known to
+    // the clock's 0.1 ms.
+    pieceDocuments = Math.max(1, Math.min(32, Math.round(6 * piece.documentCount / Math.max(0.1, result.timings.evaluateMs))))
     await nextTask()
     if (!isWanted()) return null
   }
@@ -281,6 +283,8 @@ function mountJsonSearch(document: Document, window: Window) {
   }
   // The display kinds of the documents read back so far, 512 per document. Emptied when it holds 4,096 documents.
   const kindsCache = new Map<number, Float32Array>()
+  // What the pattern in the field is to the page, kept from frame to frame while the pattern stays.
+  const analysisCache = {pattern: null as string | null, capacities: '', analysis: {kind: 'empty'} as PatternAnalysis}
 
   // The marks' colors, from the tokens: a pixel of an ImageData is four bytes, red, green, blue and alpha, read here
   // as one 32-bit word.
@@ -420,7 +424,7 @@ function mountJsonSearch(document: Document, window: Window) {
     const order = groupDocuments(shapeOf, searcher.validation.valid, shapes.length)
     return {
       id: nextWorldId++, backend: searcher.backend, searcher, device, documentCount: texts.length, texts, shapeOf, order,
-      errorCount: texts.length - searcher.validation.validCount,
+      notValid: notValidLine(searcher.validation.firstErrorKind, searcher.validation.valid, positions),
       baselines: createBaselines(texts, {withCpu: searcher.backend === 'gpu'}),
       windowDocuments: searcher.backend === 'gpu' ? 64 : 8,
       ...times, readyAfterMs: window.performance.now() - pageStart,
@@ -660,7 +664,12 @@ function mountJsonSearch(document: Document, window: Window) {
       st.wantedKey = key
       st.lastTypingAt = frameStart
     }
-    const analysis: PatternAnalysis = world === null ? {kind: 'empty'} : analyzePattern(pattern, world.searcher.stateCapacities)
+    if (world !== null && (analysisCache.pattern !== pattern || analysisCache.capacities !== world.searcher.stateCapacities.join())) {
+      analysisCache.pattern = pattern
+      analysisCache.capacities = world.searcher.stateCapacities.join()
+      analysisCache.analysis = analyzePattern(pattern, world.searcher.stateCapacities)
+    }
+    const analysis: PatternAnalysis = world === null ? {kind: 'empty'} : analysisCache.analysis
     // The search's answer, while it is the answer for the pattern in the field.
     const found = st.found !== null && st.found.key === key && analysis.kind === 'fits' ? st.found : null
     const searchPending = analysis.kind === 'fits' && found === null && st.failure === null
@@ -733,10 +742,10 @@ function mountJsonSearch(document: Document, window: Window) {
     // What the page shows: the result line and the search's time.
     const notice = loadNotice(st.plan.reason, documentCount)
     let resultView = st.resultView
-    if (world === null) {
+    if (st.failure !== null) {
+      resultView = {statusClass: 'status bad', status: [world === null ? `The page couldn’t load its documents: ${st.failure}.` : `The search stopped: ${st.failure}.`], timing: []}
+    } else if (world === null) {
       resultView = {statusClass: 'status idle', status: [], timing: []}
-    } else if (st.failure !== null) {
-      resultView = {statusClass: 'status bad', status: [`The search stopped: ${st.failure}.`], timing: []}
     } else if (analysis.kind === 'empty') {
       resultView = {statusClass: 'status idle', status: [`Type a pattern to search the ${count(documentCount)} documents.`], timing: []}
     } else if (analysis.kind === 'refused') {
@@ -896,7 +905,7 @@ function mountJsonSearch(document: Document, window: Window) {
     if (written.pointerRing !== pointerRing) domCache.pointerRing.style.cssText = written.pointerRing = pointerRing
     const selectedRing = ringAt(documentView.key === '' ? null : shown)
     if (written.selectedRing !== selectedRing) domCache.selectedRing.style.cssText = written.selectedRing = selectedRing
-    writeLine(domCache.errors, world === null ? [] : [strong(count(world.errorCount)), world.errorCount === 1 ? ' document has an error' : ' documents have an error'])
+    writeLine(domCache.errors, world === null ? [] : world.notValid)
 
     // The selected document.
     writeLine(domCache.documentLine, documentView.line)
@@ -1092,7 +1101,14 @@ function mountJsonSearch(document: Document, window: Window) {
   // appears, and a scroll moves the map under a pointer that stays where it is.
   window.addEventListener('resize', scheduleRender)
   window.addEventListener('scroll', scheduleRender, {passive: true})
-  new ResizeObserver(scheduleRender).observe(domCache.map)
+  const mapObserver = new ResizeObserver(scheduleRender)
+  mapObserver.observe(domCache.map)
+  // The marks are drawn for the screen's device pixels, and a window that moves to another screen keeps its size in
+  // CSS px. Where the browser can observe an element's size in device pixels, the map is drawn again for the new
+  // screen, and elsewhere after the next resize.
+  try {
+    mapObserver.observe(domCache.map, {box: 'device-pixel-content-box'})
+  } catch {}
 
   const initialPattern = params.get('pattern')
   if (initialPattern !== null) domCache.pattern.value = initialPattern
@@ -1102,8 +1118,11 @@ function mountJsonSearch(document: Document, window: Window) {
   scheduleRender()
   // The first frame paints the empty map before the documents are written.
   window.requestAnimationFrame(() => {
-    void load().then(world => {
+    load().then(world => {
       st.arrivals.push({kind: 'loaded', world})
+      scheduleRender()
+    }, (error: unknown) => {
+      st.failure = error instanceof Error ? error.message : String(error)
       scheduleRender()
     })
   })

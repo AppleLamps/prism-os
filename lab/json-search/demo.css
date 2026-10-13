@@ -193,7 +193,7 @@
   transform: scaleX(0);
   transform-origin: left;
 }
-/* The legend: a swatch for each of a mark's three colors, and how many documents have an error. */
+/* The legend: a swatch for each of a mark's three colors, and how many documents aren't valid, and why. */
 .legend { color: var(--ink-2); }
 .legend-keys {
   display: flex;
@@ -309,10 +309,10 @@
   text-wrap: pretty;
 }
 /* A cell keeps the room of its time and two small lines, and the sentences under the table with the note under them
-   the room of six lines of sentences, so the lines below don't move while a pattern is typed and its times are
+   the room of eight lines of sentences, so the lines below don't move while a pattern is typed and its times are
    measured. */
 .times tbody td { height: 68px; }
-.comparison .notes { min-height: 196px; }
+.comparison .notes { min-height: 236px; }
 .verdict {
   margin: 0;
   padding-top: var(--space-3);
