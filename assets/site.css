@@ -72,10 +72,12 @@
   --radius-3: 12px;
 
   /* Shadows: warm, and two layers each, a tight contact shadow and a soft one.
-     1 rests on the page, 2 floats, 3 is the window with focus. */
-  --shadow-1: 0 1px 1px rgb(60 42 22 / 0.05), 0 2px 6px rgb(60 42 22 / 0.06);
-  --shadow-2: 0 1px 2px rgb(60 42 22 / 0.08), 0 10px 28px -8px rgb(60 42 22 / 0.24);
-  --shadow-3: 0 2px 4px rgb(60 42 22 / 0.1), 0 28px 64px -16px rgb(60 42 22 / 0.38);
+     1 rests on the page, 2 floats, 3 is the window with focus. --shadow-ink is their color
+     as channels, so HandwiredOS can mix shadow 2 into shadow 3 as a window gains focus. */
+  --shadow-ink: 60 42 22;
+  --shadow-1: 0 1px 1px rgb(var(--shadow-ink) / 0.05), 0 2px 6px rgb(var(--shadow-ink) / 0.06);
+  --shadow-2: 0 1px 2px rgb(var(--shadow-ink) / 0.08), 0 10px 28px -8px rgb(var(--shadow-ink) / 0.24);
+  --shadow-3: 0 2px 4px rgb(var(--shadow-ink) / 0.1), 0 28px 64px -16px rgb(var(--shadow-ink) / 0.38);
 
   /* Motion, for what CSS animates. Whatever the program positions gets no transition. */
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
