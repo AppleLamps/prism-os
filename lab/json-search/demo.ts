@@ -121,8 +121,10 @@ type Arrival =
   | {kind: 'answer', job: number, answer: Answer}
   | {kind: 'deviceFailed', message: string}
 
-// A search that has been in flight this long gets a line that says so, and its map fades.
-const longSearchMs = 80
+// A search that has been in flight this long gets a line that says so, and its map fades. A search on the GPU takes
+// up to 80 ms on the programs for 8 and 16 states, and one on the CPU about 125 ms at 8 states, so those never show
+// the line, which would flash at each key. A search on the program for 32 states takes about 0.9 s, and shows it.
+const longSearchMs = 250
 // How long after the last key the self check and the comparison start. Both work on the main thread in pieces: about
 // 30 ms for a piece of the check and 8 ms for one of the comparison while the smallest search program is the only
 // one. The first piece after a larger program was built also builds that program for the CPU, once, which takes up
