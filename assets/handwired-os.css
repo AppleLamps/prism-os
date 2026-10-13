@@ -280,11 +280,10 @@ body {
   /* --sheet with focus, a step toward --paper without. */
   background: color-mix(in srgb, var(--sheet) calc(86% + var(--focused) * 14%), var(--paper));
   /* --shadow-2 without focus and --shadow-3 with it, written out so the two can mix.
-     --shadow-ink is the shadows' color as channels. The value after the comma is that
-     color again, for a site.css from before the token was added. */
+     --shadow-ink is the shadows' color as channels. */
   box-shadow:
-    0 calc(1px + var(--focused) * 1px) calc(2px + var(--focused) * 2px) rgb(var(--shadow-ink, 60 42 22) / calc(0.08 + var(--focused) * 0.02)),
-    0 calc(10px + var(--focused) * 18px) calc(28px + var(--focused) * 36px) calc(-8px - var(--focused) * 8px) rgb(var(--shadow-ink, 60 42 22) / calc(0.24 + var(--focused) * 0.14));
+    0 calc(1px + var(--focused) * 1px) calc(2px + var(--focused) * 2px) rgb(var(--shadow-ink) / calc(0.08 + var(--focused) * 0.02)),
+    0 calc(10px + var(--focused) * 18px) calc(28px + var(--focused) * 36px) calc(-8px - var(--focused) * 8px) rgb(var(--shadow-ink) / calc(0.24 + var(--focused) * 0.14));
   /* The program scales a window around its center while it flies to or from the dock. */
   transform-origin: 50% 50%;
 }
@@ -756,7 +755,8 @@ body {
 
 /* The caret, drawn where the program laid out the character after it. Its two animations
    have the same keyframes: JavaScript switches between them when the caret moves, which
-   starts the blink again. */
+   starts the blink again. For a visitor who asked for less motion, site.css runs every
+   animation once in 0.01 ms, so the caret stays lit. */
 .notes-caret {
   position: absolute;
   top: 2px;
@@ -778,14 +778,6 @@ body {
 @keyframes notes-caret-blink-b {
   50% {
     opacity: 0;
-  }
-}
-
-/* site.css shortens every animation to 0.01 ms for a visitor who asked for less motion,
-   which would make the caret flicker, so it stays lit instead. */
-@media (prefers-reduced-motion: reduce) {
-  .notes-caret {
-    animation-iteration-count: 1;
   }
 }
 
@@ -1044,8 +1036,8 @@ body {
   border-radius: calc(var(--radius-3) / 2);
   box-shadow:
     inset 0 0 0 1px var(--edge),
-    0 calc(var(--focused) * 1px) calc(var(--focused) * 2px) rgb(var(--shadow-ink, 60 42 22) / 0.08),
-    0 calc(var(--focused) * 10px) calc(var(--focused) * 28px) calc(var(--focused) * -8px) rgb(var(--shadow-ink, 60 42 22) / 0.24);
+    0 calc(var(--focused) * 1px) calc(var(--focused) * 2px) rgb(var(--shadow-ink) / 0.08),
+    0 calc(var(--focused) * 10px) calc(var(--focused) * 28px) calc(var(--focused) * -8px) rgb(var(--shadow-ink) / 0.24);
 }
 
 /* The open photo's name, on a paper label. */
