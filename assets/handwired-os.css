@@ -519,9 +519,11 @@ body {
   padding: 0 var(--files-scrollbar-strip) 0 var(--space-3);
 }
 
-/* Each location shows the columns that it has a title for, and the value last. In a
-   narrow window the columns between the name and the value give up their width first,
-   e.g. at the window's minimum width only the name and the value are left. */
+/* Each location shows the columns that it has a title for, and the value last. The kind
+   column of Operations holds a swatch and the longest kind's name, "index read", in
+   76 px. A list too narrow for its columns drops columns whole, see below, since a column
+   that only shrinks ends up as an ellipsis, e.g. a kind cell that shows a swatch and
+   three dots. */
 .files-list-state .files-header,
 .files-list-state .files-row {
   grid-template-columns: minmax(36px, 1fr) minmax(0, 60px) minmax(48px, 96px);
@@ -529,7 +531,7 @@ body {
 
 .files-list-operations .files-header,
 .files-list-operations .files-row {
-  grid-template-columns: minmax(36px, 1fr) minmax(0, 60px) minmax(0, 44px) minmax(0, 60px) minmax(48px, 96px);
+  grid-template-columns: minmax(36px, 1fr) minmax(0, 76px) minmax(0, 44px) minmax(0, 60px) minmax(48px, 96px);
 }
 
 .files-list-outputs .files-header,
@@ -545,10 +547,25 @@ body {
   display: none;
 }
 
-/* Under 200 px, e.g. in a window under 334 px wide, the columns between the name and the
-   value would be slivers of a few px each, so the list shows the name and the value only,
-   and the value takes no more room than its digits. */
-@container (max-width: 199px) {
+/* The five columns of Operations are whole in a list from 376 px: 28 px of padding, four
+   gaps of 8 px, 36 px for the wire's digits, and 76, 44, 60 and 96 px. A narrower list,
+   e.g. the 330 px of the 464 px window that a 1280 px wide viewport opens Files at, leaves
+   the weights out, and the other four columns are whole from 308 px. */
+@container (max-width: 375px) {
+  .files-list-operations .files-header,
+  .files-list-operations .files-row {
+    grid-template-columns: minmax(36px, 1fr) minmax(0, 76px) minmax(0, 44px) minmax(48px, 96px);
+  }
+
+  .files-list-operations .files-cell-weights {
+    display: none;
+  }
+}
+
+/* Under 308 px, e.g. the 240 px of a phone's 374 px window, or the 146 px of a window at
+   its minimum width, a list shows the name and the value only, and the value takes no
+   more room than its digits, so a cell's name in State keeps most of the width. */
+@container (max-width: 307px) {
   .files-list .files-header,
   .files-list .files-row {
     grid-template-columns: minmax(36px, 1fr) minmax(48px, max-content);
