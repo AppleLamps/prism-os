@@ -216,14 +216,19 @@
 .legend-errors { font-variant-numeric: tabular-nums; }
 .legend-errors b { color: var(--ink); font-weight: 600; }
 
-/* Under the map: the selected document on the left, and the comparison on the right. */
+/* Under the map: the selected document on the left, with the check's line and the statistics under it, and the
+   comparison on the right, beside both. */
 .detail {
   display: grid;
   grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  grid-template-rows: auto 1fr;
   gap: var(--space-5) var(--space-6);
   align-items: start;
   margin-top: var(--space-5);
 }
+.detail .document { grid-column: 1; grid-row: 1; }
+.detail .comparison { grid-column: 2; grid-row: 1 / span 2; }
+.detail .facts { grid-column: 1; grid-row: 2; }
 
 /* The selected document: a line that says which one it is, its text, and what the highlighter says about it. The
    text has a fixed height and scrolls inside it, so the page doesn't move while the pointer crosses the map. */
@@ -333,9 +338,9 @@
 .comparison .aside a:hover { color: var(--copper); }
 
 /* The check's line and the statistics, one sentence to a line. */
-.status.check { margin-top: var(--space-6); color: var(--ink-2); }
+.status.check { color: var(--ink-2); }
 .status.check.bad { color: var(--wire-red); }
-.stats > span { display: block; }
+.stats > span { display: block; text-wrap: pretty; }
 .stats > span + span { margin-top: var(--space-1); }
 
 .how {
@@ -344,9 +349,11 @@
 }
 .how p { margin: var(--space-2) 0 0; text-wrap: pretty; }
 
-/* Below the page's full width the comparison goes under the document. */
+/* Below the page's full width the comparison goes under the document, and the check and the statistics under the
+   comparison. */
 @media (max-width: 1023px) {
-  .detail { grid-template-columns: minmax(0, 1fr); }
+  .detail { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .detail .document, .detail .comparison, .detail .facts { grid-column: 1; grid-row: auto; }
 }
 @media (max-width: 719px) {
   /* The select, the result and the time are stacked, and the result keeps the room of two lines, so the map stays

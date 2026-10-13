@@ -124,10 +124,14 @@
         <p class="aside">JavaScript gets one thread here. With 100,000 documents shared among 8 workers, RegExp counted an ordinary pattern&rsquo;s matches in 2 to 7&nbsp;ms on the Apple M5 Max that the <a href="https://github.com/chenglou/handwired/tree/main/lab/json-search#javascript-in-several-workers">README</a> was measured on, less than the search takes on that machine&rsquo;s GPU.</p>
         </div>
       </section>
-    </div>
 
-    <p id="check" class="status idle check"><span></span></p>
-    <p id="stats" class="stats"></p>
+      <!-- Under the document on a wide page, and under the comparison on a narrow one: what the self check found, and
+           the programs' sizes with the load's times, one sentence to a line. -->
+      <div class="facts">
+        <p id="check" class="status idle check"><span></span></p>
+        <p id="stats" class="stats"></p>
+      </div>
+    </div>
 
     <details class="disclosure">
       <summary>How it works</summary>
