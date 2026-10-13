@@ -89,6 +89,9 @@ import {
   notesText,
 } from './notes-paragraph.ts'
 import {createCanvasMeasure, createNotesHost} from './notes-host.ts'
+import {arrangeInitialWindows} from './arrangement.ts'
+import {createMonitor} from './monitor.ts'
+import {mountWiring} from './wiring.ts'
 
 export {bandOutputField, notesWindowIndex, segmentOutputField}
 
@@ -1813,25 +1816,17 @@ function mountWindowManager(document: Document, window: Window) {
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
   const photosViewport = document.querySelector<HTMLElement>('.photos-content')
   const filesContent = document.querySelector<HTMLElement>('.files-content')
-  const monitorValues = document.querySelector<HTMLElement>('#monitor-values')
-  const monitorOperations = document.querySelector<HTMLElement>('#monitor-operations')
-  const monitorLayers = document.querySelector<HTMLElement>('#monitor-layers')
-  const monitorWeights = document.querySelector<HTMLElement>('#monitor-weights')
-  const monitorMemory = document.querySelector<HTMLElement>('#monitor-memory')
-  const monitorFrame = document.querySelector<HTMLElement>('#monitor-frame')
-  const monitorRaf = document.querySelector<HTMLElement>('#monitor-raf')
+  const monitorContent = document.querySelector<HTMLElement>('.monitor-content')
+  const systemStatistics = document.querySelector<HTMLElement>('.system-stats')
+  const wiringCanvas = document.querySelector<HTMLCanvasElement>('.desk-wiring')
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
   invariant(photosViewport !== null, 'Photos viewport is missing')
   invariant(filesContent !== null, 'Files content is missing')
-  invariant(monitorValues !== null, 'monitor values row is missing')
-  invariant(monitorOperations !== null, 'monitor operations row is missing')
-  invariant(monitorLayers !== null, 'monitor layers row is missing')
-  invariant(monitorWeights !== null, 'monitor weights row is missing')
-  invariant(monitorMemory !== null, 'monitor memory row is missing')
-  invariant(monitorFrame !== null, 'monitor frame row is missing')
-  invariant(monitorRaf !== null, 'monitor RAF row is missing')
+  invariant(monitorContent !== null, 'Monitor content is missing')
+  invariant(systemStatistics !== null, 'system bar statistics are missing')
+  invariant(wiringCanvas !== null, 'the desk\'s wiring canvas is missing')
   const windowContents = windows.map(element => {
     const content = element.querySelector<HTMLElement>('.window-content')
     invariant(content !== null, 'window content is missing')
@@ -1844,8 +1839,6 @@ function mountWindowManager(document: Document, window: Window) {
     dockItems, // mount lifetime
     photosViewport, // mount lifetime
     filesContent, // mount lifetime
-    monitorFrame, // mount lifetime
-    monitorRaf, // mount lifetime
   }
   const photos = createPhotoGalleryRenderer(document, domCache.photosViewport)
   // The note's text: a textarea that the visitor types into, and the nodes that draw the text where the program lays
@@ -1873,67 +1866,17 @@ function mountWindowManager(document: Document, window: Window) {
     createCanvasMeasure(document, notesFont),
     scheduleRender,
   )
-  const program = machine.tensorProgram
   // Files lists the program itself, one location per kind of number, each with
   // its value in the frame's evaluation. The rows' text stays in JavaScript, and
   // the program computes which rows the list's DOM slots show.
   const files = createFilesRenderer(document, domCache.filesContent, [
     describeState(machine.sourceCells, machine.packedValues),
-    describeOperations(program, machine.packedValues),
+    describeOperations(machine.tensorProgram, machine.packedValues),
     describeOutputs(machine.namedOutputs, machine.values),
   ])
-  let affineCount = 0
-  let regluCount = 0
-  let booleanCount = 0
-  let indexReadCount = 0
-  let weightCount = 0
-  let weightBytes = 0
-  let biasBytes = 0
-  let bookkeepingBytes = program.roots.byteLength + program.wireOrder.byteLength
-  let denseWeightCount = 0
-  let maximumLayerWidth = 0
-  const inputCount = program.sourceSize
-  const outputCount = program.roots.length
-  const activationCount = program.valueCount - program.sourceSize
-  const layerCount = program.layers.length
-  for (const layer of program.layers) {
-    // A layer's rows: one per operation, one more per ReGLU for its gate, and one
-    // more per index read for its index. The kinds are the four that Files names
-    // in its Operations location, see describeOperations.
-    const layerWidth = layer.outputSize + layer.gateRows.length + layer.indexReads.length
-    regluCount += layer.gateRows.length
-    booleanCount += layer.booleanRows.length
-    indexReadCount += layer.indexReads.length
-    affineCount += layer.outputSize - layer.gateRows.length - layer.booleanRows.length - layer.indexReads.length
-    weightCount += layer.weights.length
-    weightBytes += layer.weights.byteLength
-    biasBytes += layer.bias.byteLength
-    bookkeepingBytes +=
-      layer.inputIndices.byteLength
-      + layer.gateRows.byteLength
-      + layer.booleanRows.byteLength
-      + layer.rowOffsets.byteLength
-      + layer.columns.byteLength
-    denseWeightCount += layerWidth * layer.inputSize
-    maximumLayerWidth = Math.max(maximumLayerWidth, layerWidth)
-  }
-  const formatCount = (value: number) => value.toLocaleString('en-US')
-  const formatKilobytes = (bytes: number) => `${(bytes / 1_000).toFixed(1)} KB`
-  monitorValues.textContent =
-    `${formatCount(inputCount)} inputs · ${formatCount(outputCount)} outputs`
-    + ` · ${formatCount(activationCount)} activations`
-  monitorOperations.textContent =
-    `${formatCount(affineCount)} affine · ${formatCount(regluCount)} ReGLU`
-    + ` · ${formatCount(booleanCount)} boolean · ${formatCount(indexReadCount)} index reads`
-  monitorLayers.textContent =
-    `${formatCount(layerCount)} · max width ${formatCount(maximumLayerWidth)}`
-  monitorWeights.textContent =
-    `${formatCount(denseWeightCount)} dense · ${formatCount(weightCount)} sparse`
-  monitorMemory.textContent =
-    `${formatKilobytes(weightBytes)} weights · ${formatKilobytes(biasBytes)} biases`
-    + ` · ${formatKilobytes(bookkeepingBytes)} bookkeeping`
-  domCache.monitorFrame.textContent = '—'
-  domCache.monitorRaf.textContent = 'no'
+  // Monitor's content and the system bar's counters, see monitor.ts. Its legend
+  // counts the operations by the four kinds that Files' Operations rows name.
+  const monitor = createMonitor({content: monitorContent, statistics: systemStatistics}, machine.tensorProgram)
 
   domCache.desktop.style.setProperty('--title-height', `${machine.source[machine.cells.titleHeight]}px`)
   domCache.desktop.style.setProperty('--button-size', `${machine.source[machine.cells.buttonSize]}px`)
@@ -1944,6 +1887,9 @@ function mountWindowManager(document: Document, window: Window) {
     '--system-bar-height',
     `${machine.source[machine.cells.systemBarHeight]}px`,
   )
+  // The desk's wallpaper, the program's weights as arcs, see wiring.ts. The canvas's
+  // size follows from the system bar's height, which is set just above.
+  mountWiring(wiringCanvas, machine.tensorProgram, window)
 
   // The focused window in the last frame's outputs, or -1, for the keydown listener.
   let focusedWindowAtLastFrame = -1
@@ -2005,13 +1951,9 @@ function mountWindowManager(document: Document, window: Window) {
     photos.render(values, machine.output.photos)
     notes.write(notesRead, values)
     files.render(values, machine.output.files)
-    // Frames continue while springs are stepping, i.e. until an evaluation that
-    // writes state back finds nothing animating.
-    const nextRafRequested = machine.clock.animatedUntilMs !== null
-    domCache.monitorRaf.textContent = nextRafRequested ? 'yes' : 'no'
-    const evaluationCount = machine.evaluations.length
-    domCache.monitorFrame.textContent =
-      `${executionMs.toFixed(2)} ms · ${evaluationCount} ${evaluationCount === 1 ? 'evaluation' : 'evaluations'}`
+    // Monitor's chart and the system bar get the time that the program took in this
+    // frame, i.e. the time of machine.step.
+    monitor.update(executionMs)
 
     // Side effects, after every DOM write. The note's textarea gets the selection
     // that a press or a line move placed, and the keyboard focus exactly while Notes
@@ -2031,7 +1973,9 @@ function mountWindowManager(document: Document, window: Window) {
     const filesScrollTo = machine.filesScrollTo
     if (filesScrollTo !== null) filesScrollTop = files.scrollTo(filesScrollTo)
 
-    if (nextRafRequested) scheduleRender()
+    // Frames continue while springs are stepping, i.e. until an evaluation that
+    // writes state back finds nothing animating.
+    if (machine.clock.animatedUntilMs !== null) scheduleRender()
   }
 
   // Each event carries its own timestamp, which shares the time origin of
@@ -2148,6 +2092,17 @@ function mountWindowManager(document: Document, window: Window) {
     )
     scheduleRender()
   })
+  // The windows' first rectangles are chosen for the viewport, and written before
+  // the first step, so they commit with the mount, see arrangement.ts. The viewport
+  // is clamped like the first step clamps the size that it reads, e.g. to 16,384 px
+  // on a display wider than that, so the windows are arranged in the viewport that
+  // the program lays out.
+  arrangeInitialWindows(
+    machine.source,
+    machine.cells,
+    quantizeViewport(document.documentElement.clientWidth),
+    quantizeViewport(document.documentElement.clientHeight),
+  )
   renderWindowManager(window.performance.now())
 }
 
@@ -2177,9 +2132,8 @@ export function projectWindowElements(
     frame.style.zIndex = `${10 + read(windowOutputField.stack)}`
     frame.style.setProperty('--focused', `${read(windowOutputField.focused)}`)
     frame.style.setProperty('--maximized', `${read(windowOutputField.maximized)}`)
-    // window-manager.css anchors .window-content to all four sides of the frame.
-    // With left and top set, the browser ignores right and bottom once width and
-    // height are set.
+    // handwired-os.css gives .window-content its top and left only, so the box
+    // takes its whole size from these two writes.
     content.style.width = `${read(windowOutputField.contentWidth)}px`
     content.style.height = `${read(windowOutputField.contentHeight)}px`
   }
