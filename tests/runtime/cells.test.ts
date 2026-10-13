@@ -43,6 +43,7 @@ test('positions follow declaration order, and a name prefixes the cells of a lat
   expect(table.size).toBe(19)
   expect(table.nameOf(keep.child.velocity)).toBe('child.velocity')
   expect(table.nameOf(cells.order[1]![2]!)).toBe('order[1][2]')
+  expect([cells.margin, cells.width, cells.click, cells.count, keep.child.velocity].map(table.policyOf)).toEqual(['constant', 'input', 'event', 'state', 'state'])
   expect(() => permutation([0, 0, 2])).toThrow('0, 0, 2 is not a permutation of 0..2')
 })
 

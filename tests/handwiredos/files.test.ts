@@ -29,23 +29,35 @@ const overscanRows = 2
 const maximumViewportHeight = 16_384
 const pixelGrid = 1 / 64
 
+const locationCount = 3
+// The sidebar's locations, in order. The window opens on Operations.
+const [stateLocation, operationsLocation, outputsLocation] = [0, 1, 2] as const
+
 const keys = ['up', 'down', 'pageUp', 'pageDown', 'home', 'end'] as const
 type Key = (typeof keys)[number]
+
+// What Files stores: the location that the list shows, and its selected row or -1.
+type ReferenceState = {location: number, selected: number}
 
 type ReferenceFrame = {
   viewportHeight: number
   scrollTop: number
-  rowCount: number
+  // Each location's number of rows.
+  rowCounts: readonly number[]
   focused: boolean
   // The y of a release over the list after a press on the list, relative to the
   // list viewport's top edge, or null.
   listClickY: number | null
+  // The location whose sidebar item a release is over, after a press on that item, or null.
+  locationClick: number | null
   key: Key | null
 }
 
-// `selected` is the selected row before the frame, or -1.
-function referenceFiles(selected: number, frame: ReferenceFrame) {
-  const {rowCount} = frame
+function referenceFiles(state: ReferenceState, frame: ReferenceFrame) {
+  const location = frame.locationClick ?? state.location
+  const locationChanged = location !== state.location
+  const rowCount = frame.rowCounts[location]!
+  let selected = state.selected
   const totalHeight = rowCount * rowHeight
   const viewportFloor = Math.floor(frame.viewportHeight)
   const viewportCeil = Math.ceil(frame.viewportHeight)
@@ -81,6 +93,11 @@ function referenceFiles(selected: number, frame: ReferenceFrame) {
 
   let scrollTarget = scroll
   if (keyActive) scrollTarget = Math.min(Math.max(scroll, (selected + 1) * rowHeight - viewportFloor), selected * rowHeight)
+  // Another location starts with no selection and at the top.
+  if (locationChanged) {
+    selected = -1
+    scrollTarget = 0
+  }
 
   // The rows that get a DOM node, in row order. A row past the last slot gets none.
   const drawn: {slot: number, row: number, top: number, selected: boolean}[] = []
@@ -88,7 +105,9 @@ function referenceFiles(selected: number, frame: ReferenceFrame) {
     drawn.push({slot: row % slotCount, row, top: row * rowHeight, selected: row === selected})
   }
   return {
+    location,
     selected,
+    rowCount,
     totalHeight,
     scroll,
     scrollTarget,
@@ -125,19 +144,27 @@ function createStandaloneFiles() {
   return {
     program,
     source,
-    get selected() {
-      return source[cells.files.selected]!
+    get state(): ReferenceState {
+      return {location: cells.files.location.findIndex(cell => source[cell] === 1), selected: source[cells.files.selected]!}
     },
-    set selected(row: number) {
-      source[cells.files.selected] = row
+    set state({location, selected}: ReferenceState) {
+      cells.files.location.forEach((cell, index) => {
+        source[cell] = Number(index === location)
+      })
+      source[cells.files.selected] = selected
     },
     step(frame: ReferenceFrame) {
       source[cells.viewportHeight] = frame.viewportHeight
       source[cells.focused] = frame.focused ? 1 : 0
       source[cells.listClick.active] = frame.listClickY === null ? 0 : 1
       source[cells.listClick.y] = frame.listClickY ?? 0
+      cells.locationClicks.forEach((cell, index) => {
+        source[cell] = Number(index === frame.locationClick)
+      })
       source[cells.files.scrollTop] = frame.scrollTop
-      source[cells.files.rowCount] = frame.rowCount
+      cells.files.rowCounts.forEach((cell, index) => {
+        source[cell] = frame.rowCounts[index]!
+      })
       for (const key of keys) source[cells.files.keys[key]] = frame.key === key ? 1 : 0
       const result = evaluate(source)
       const table = Float32Array.from(source)
@@ -156,6 +183,8 @@ function differenceFromReference(output: StandaloneOutput, expected: Reference):
   }
   if (output.scrollRequest !== Number(expected.scrollRequest)) return `scrollRequest: got ${output.scrollRequest}, expected ${expected.scrollRequest}`
   if (output.slotOverflow !== Number(expected.slotOverflow)) return `slotOverflow: got ${output.slotOverflow}, expected ${expected.slotOverflow}`
+  const locations = Array.from({length: locationCount}, (_, index) => Number(index === expected.location))
+  if (output.locations.join() !== locations.join()) return `locations: got ${output.locations.join()}, expected ${locations.join()}`
   const drawn: Reference['drawn'] = []
   for (let slot = 0; slot < slotCount; slot++) {
     const read = (field: number) => output.slots[slot * slotField.size + field]!
@@ -185,22 +214,31 @@ test('the reference and the program share their constants', () => {
   assert.equal(createFilesCircuit().output.slots.length, slotCount * slotField.size)
 })
 
-test('on 60,000 seeded random frames of scroll positions, viewport heights, releases and keys, every output equals the plain JavaScript reference', () => {
+test('on 60,000 seeded random frames of scroll positions, viewport heights, releases, keys and location changes, every output equals the plain JavaScript reference', () => {
   const files = createStandaloneFiles()
   const random = createRandom(0xf11e5)
   const pick = <Value>(values: readonly Value[]) => values[Math.floor(random() * values.length)]!
   const counts = {
     clicks: 0, clicksThatChangedTheSelection: 0, clicksBelowTheLastRow: 0, keys: new Map<Key, number>(), keysFromNoSelection: 0,
     keysWhileNotFocused: 0, clickAndKey: 0, scrollRequests: 0, slotOverflows: 0, scrollAtARowEdge: 0, scrollPastTheEnd: 0,
-    emptyLists: 0, selectionsPastTheEnd: 0, gridChecks: 0,
+    emptyLists: 0, selectionsPastTheEnd: 0, locationChanges: 0, locationChangesWhileScrolled: 0, clicksOnTheShownLocation: 0,
+    locationChangesWithAKeyOrARelease: 0, shownLocations: new Set<number>(), gridChecks: 0,
   }
-  let rowCount = rowCapacity
+  const rowCounts = [rowCapacity, rowCapacity, rowCapacity]
   for (let frame = 0; frame < 60_000; frame++) {
+    // Now and then another row count for one location: any count, none, the
+    // capacity, or a few rows.
     const rowCountKind = random()
-    if (rowCountKind < 0.03) rowCount = Math.floor(random() * (rowCapacity + 1))
-    else if (rowCountKind < 0.04) rowCount = 0
-    else if (rowCountKind < 0.06) rowCount = rowCapacity
-    else if (rowCountKind < 0.08) rowCount = Math.floor(random() * 40)
+    if (rowCountKind < 0.08) {
+      rowCounts[Math.floor(random() * locationCount)] = rowCountKind < 0.03 ? Math.floor(random() * (rowCapacity + 1))
+        : rowCountKind < 0.04 ? 0
+          : rowCountKind < 0.06 ? rowCapacity
+            : Math.floor(random() * 40)
+    }
+    if (random() < 0.05) files.state = {location: Math.floor(random() * locationCount), selected: Math.floor(random() * (rowCapacity + 1)) - 1}
+    const stateBefore = files.state
+    const locationClick = random() < 0.08 ? Math.floor(random() * locationCount) : null
+    const rowCount = rowCounts[locationClick ?? stateBefore.location]!
     const viewportKind = random()
     const viewportHeight = viewportKind < 0.05 ? 0
       : viewportKind < 0.1 ? maximumViewportHeight
@@ -228,25 +266,32 @@ test('on 60,000 seeded random frames of scroll positions, viewport heights, rele
       listClickY = Math.max(-49_152, Math.min(49_152, listClickY))
     }
     const key = random() < 0.3 ? pick(keys) : null
-    const input: ReferenceFrame = {viewportHeight, scrollTop, rowCount, focused: random() < 0.9, listClickY, key}
-    if (random() < 0.05) files.selected = Math.floor(random() * (rowCapacity + 1)) - 1
-    const selectedBefore = files.selected
-    const expected = referenceFiles(selectedBefore, input)
+    const input: ReferenceFrame = {viewportHeight, scrollTop, rowCounts, focused: random() < 0.9, listClickY, locationClick, key}
+    const expected = referenceFiles(stateBefore, input)
     const {output, table} = files.step(input)
     const difference = differenceFromReference(output, expected)
-    assert.equal(difference, undefined, `frame ${frame}: ${difference} for ${JSON.stringify({input, selectedBefore})}`)
-    assert.equal(files.selected, expected.selected, `frame ${frame}: the stored selection`)
+    assert.equal(difference, undefined, `frame ${frame}: ${difference} for ${JSON.stringify({input, stateBefore})}`)
+    assert.deepEqual(files.state, {location: expected.location, selected: expected.selected}, `frame ${frame}: the stored state`)
 
-    if (listClickY !== null) {
+    const locationChanged = expected.location !== stateBefore.location
+    counts.shownLocations.add(expected.location)
+    if (locationChanged) {
+      counts.locationChanges++
+      if (expected.scroll > 0) counts.locationChangesWhileScrolled++
+      if (key !== null || listClickY !== null) counts.locationChangesWithAKeyOrARelease++
+    } else if (locationClick !== null) {
+      counts.clicksOnTheShownLocation++
+    }
+    if (listClickY !== null && !locationChanged) {
       counts.clicks++
       if (key !== null) counts.clickAndKey++
       const clickedRow = expected.firstVisible + Math.floor((Math.max(0, listClickY) + expected.scroll % rowHeight) / rowHeight)
       if (clickedRow >= rowCount) counts.clicksBelowTheLastRow++
-      else if (key === null && expected.selected !== selectedBefore) counts.clicksThatChangedTheSelection++
+      else if (key === null && expected.selected !== stateBefore.selected) counts.clicksThatChangedTheSelection++
     }
-    if (key !== null) {
+    if (key !== null && !locationChanged) {
       if (expected.keyActive) counts.keys.set(key, (counts.keys.get(key) ?? 0) + 1)
-      if (expected.keyActive && listClickY === null && selectedBefore === -1) counts.keysFromNoSelection++
+      if (expected.keyActive && listClickY === null && stateBefore.selected === -1) counts.keysFromNoSelection++
       if (!input.focused) counts.keysWhileNotFocused++
     }
     if (expected.scrollRequest) counts.scrollRequests++
@@ -254,7 +299,7 @@ test('on 60,000 seeded random frames of scroll positions, viewport heights, rele
     if (scrollTop % rowHeight === 0 || scrollTop % rowHeight === rowHeight - scrollGrid) counts.scrollAtARowEdge++
     if (expected.scroll !== scrollTop) counts.scrollPastTheEnd++
     if (rowCount === 0) counts.emptyLists++
-    if (selectedBefore > rowCount - 1) counts.selectionsPastTheEnd++
+    if (stateBefore.selected > rowCount - 1) counts.selectionsPastTheEnd++
     if (frame % 250 === 0) {
       // Every declared and inferred grid holds on the evaluated values, and the
       // compiled program returns the literal instruction evaluator's values.
@@ -268,10 +313,13 @@ test('on 60,000 seeded random frames of scroll positions, viewport heights, rele
   }
   // The frames reached every case.
   for (const key of keys) assert.ok((counts.keys.get(key) ?? 0) >= 1_000, `${counts.keys.get(key)} ${key} keys`)
+  assert.equal(counts.shownLocations.size, locationCount)
   for (const [name, least] of [
     ['clicks', 15_000], ['clicksThatChangedTheSelection', 5_000], ['clicksBelowTheLastRow', 1_000], ['keysFromNoSelection', 200],
     ['keysWhileNotFocused', 1_000], ['clickAndKey', 3_000], ['scrollRequests', 5_000], ['slotOverflows', 5_000],
-    ['scrollAtARowEdge', 10_000], ['scrollPastTheEnd', 10_000], ['emptyLists', 2_000], ['selectionsPastTheEnd', 1_000], ['gridChecks', 240],
+    ['scrollAtARowEdge', 10_000], ['scrollPastTheEnd', 10_000], ['emptyLists', 1_000], ['selectionsPastTheEnd', 1_000],
+    ['locationChanges', 2_000], ['locationChangesWhileScrolled', 1_500], ['clicksOnTheShownLocation', 1_000],
+    ['locationChangesWithAKeyOrARelease', 1_000], ['gridChecks', 240],
   ] as const) {
     assert.ok(counts[name] >= least, `${counts[name]} ${name}, expected at least ${least}`)
   }
@@ -284,8 +332,10 @@ test('at every quarter pixel around row tops and at both ends of 100,000 rows, t
   const check = (scrollTop: number) => {
     if (scrollTop < 0 || scrollTop > maximumScrollTop) return
     // A release in the middle of the viewport selects a row at every position.
-    const input: ReferenceFrame = {viewportHeight, scrollTop, rowCount: rowCapacity, focused: true, listClickY: viewportHeight / 2, key: null}
-    const expected = referenceFiles(files.selected, input)
+    const input: ReferenceFrame = {
+      viewportHeight, scrollTop, rowCounts: [rowCapacity, rowCapacity, rowCapacity], focused: true, listClickY: viewportHeight / 2, locationClick: null, key: null,
+    }
+    const expected = referenceFiles(files.state, input)
     const difference = differenceFromReference(files.step(input).output, expected)
     assert.equal(difference, undefined, `scrollTop ${scrollTop}: ${difference}`)
     checked++
@@ -311,6 +361,7 @@ test('Files builds only integer bits and marked rounding points, and no sign cas
   assert.ok((kinds.get('integer bit') ?? 0) > 400, `${kinds.get('integer bit')} integer bit operations`)
   // Two per rounded quotient or rounded height.
   assert.equal(kinds.get('marked'), 14)
+  assert.equal(circuit.oneHotGroups.length, 0)
 })
 
 // ---------- Files inside HandwiredOS's machine ----------
@@ -319,10 +370,13 @@ const viewportWidth = 1280
 const viewportHeight = 800
 const frameDuration = 16
 // Files is window 0 at 54,54 520×340, so its content box starts at (55, 99) and is
-// 518×294. The list viewport is the content box below the 28 px header row and
-// left of the 16 px scrollbar strip: x from 55 to 557 and y from 127 to 393, 266 px
-// tall.
-const list = {left: 55, top: 127, right: 557, bottom: 393, height: 266}
+// 518×294. The list viewport is the content box right of the 132 px sidebar, below
+// the 28 px header row and left of the 16 px scrollbar strip: x from 187 to 557 and
+// y from 127 to 393, 266 px tall.
+const list = {left: 187, top: 127, right: 557, bottom: 393, height: 266}
+// The center of a location's sidebar item: the items are 116×28, 8 px from the
+// content box's left edge, and the first one starts 40 px below its top edge.
+const locationPoint = (location: number) => ({x: 55 + 8 + 58, y: 99 + 40 + 28 * location + 14})
 // Points on the title bars of Files and Notes that no other window covers.
 const filesTitleBar = {x: 100, y: 76}
 const notesTitleBar = {x: 800, y: 126}
@@ -337,11 +391,11 @@ const filesDockItem = {x: 547, y: 762}
 type Machine = ReturnType<typeof createWindowManagerMachine>
 const frameTimeByMachine = new WeakMap<Machine, number>()
 
-// A machine whose first frame ran, optionally with another row count, which a host
-// writes before the first step.
-function createMachine(rowCount?: number) {
+// A machine whose first frame ran, optionally with another row count for the
+// Operations location, which a host writes before the first step.
+function createMachine(operationsRowCount?: number) {
   const machine = createWindowManagerMachine()
-  if (rowCount !== undefined) machine.source[machine.cells.files.rowCount] = rowCount
+  if (operationsRowCount !== undefined) machine.source[machine.cells.files.rowCounts[operationsLocation]!] = operationsRowCount
   step(machine)
   return machine
 }
@@ -378,7 +432,10 @@ function rowPoint(row: number, scrollTop = 0, inset = rowHeight / 2) {
 }
 
 const selectedRow = (machine: Machine) => machine.source[machine.cells.files.selected]!
-const rowCountOf = (machine: Machine) => machine.source[machine.cells.files.rowCount]!
+const shownLocation = (machine: Machine) => machine.cells.files.location.findIndex(cell => machine.source[cell] === 1)
+const rowCountsOf = (machine: Machine) => machine.cells.files.rowCounts.map(cell => machine.source[cell]!)
+// The row count of the location that the list shows.
+const rowCountOf = (machine: Machine) => rowCountsOf(machine)[shownLocation(machine)]!
 
 // Files' outputs in the frame's values, in the form that differenceFromReference reads.
 function filesOutput(machine: Machine, values: Float32Array): StandaloneOutput {
@@ -390,6 +447,7 @@ function filesOutput(machine: Machine, values: Float32Array): StandaloneOutput {
     scrollRequest: values[output.scrollRequest]!,
     slotOverflow: values[output.slotOverflow]!,
     selected: values[output.selected]!,
+    locations: output.locations.map(wire => values[wire]!),
     slots: output.slots.map(wire => values[wire]!),
   }
 }
@@ -408,8 +466,8 @@ function drawnRows(machine: Machine, values: Float32Array) {
 // A frame without events draws what the reference draws for the same scroll
 // position, viewport height and selection.
 function assertDrawsLikeReference(machine: Machine, values: Float32Array, scrollTop: number, listViewportHeight: number) {
-  const expected = referenceFiles(selectedRow(machine), {
-    viewportHeight: listViewportHeight, scrollTop, rowCount: rowCountOf(machine), focused: true, listClickY: null, key: null,
+  const expected = referenceFiles({location: shownLocation(machine), selected: selectedRow(machine)}, {
+    viewportHeight: listViewportHeight, scrollTop, rowCounts: rowCountsOf(machine), focused: true, listClickY: null, locationClick: null, key: null,
   })
   assert.equal(differenceFromReference(filesOutput(machine, values), expected), undefined)
   return expected
@@ -418,11 +476,13 @@ function assertDrawsLikeReference(machine: Machine, values: Float32Array, scroll
 const focusedWindow = (machine: Machine, values: Float32Array) =>
   [0, 1, 2, 3].find(windowIndex => values[machine.output.windows[windowIndex * windowOutputField.size + windowOutputField.focused]!] === 1) ?? -1
 
-test("the list's row count is the program's own number of live operations, and the first frame draws the rows at the top", () => {
+test("the three locations' row counts are the program's own numbers of source cells, live operations and outputs, and the first frame draws Operations from the top", () => {
   const machine = createWindowManagerMachine()
   const program = machine.tensorProgram
   const values = step(machine)
-  assert.equal(rowCountOf(machine), program.valueCount - program.sourceSize)
+  assert.deepEqual(rowCountsOf(machine), [program.sourceSize, program.valueCount - program.sourceSize, program.roots.length - program.sourceSize])
+  assert.deepEqual([machine.sourceCells.length, machine.outputNames.length], [rowCountsOf(machine)[stateLocation], rowCountsOf(machine)[outputsLocation]])
+  assert.equal(shownLocation(machine), operationsLocation)
   assert.ok(rowCountOf(machine) > 14_000)
   assert.equal(values[machine.output.files.totalHeight], rowCountOf(machine) * rowHeight)
   // 266 px hold 12 rows, the last one partly, and 2 more are drawn below the view.
@@ -457,14 +517,15 @@ test('a release over the list after a press on the list selects the row under th
   assert.equal(selectedRow(machine), 4)
 
   // Releases that select nothing: off the list after a press on a row, i.e. on the
-  // header row, on the scrollbar strip, on the title bar and outside the window; on
-  // a row after a press on the header row or on the scrollbar strip; and a
-  // pointercancel over a row.
+  // header row, on the scrollbar strip, on the sidebar, on the title bar and outside
+  // the window; on a row after a press on the header row, on the scrollbar strip or
+  // on the sidebar; and a pointercancel over a row.
   const header = {x: list.left + 100, y: list.top - 10}
   const scrollbar = {x: list.right + 8, y: list.top + 100}
+  const sidebar = {x: list.left - 40, y: list.top + 150}
   for (const [press, release] of [
-    [rowPoint(8), header], [rowPoint(8), scrollbar], [rowPoint(8), filesTitleBar], [rowPoint(8), {x: 30, y: 600}],
-    [header, rowPoint(8)], [scrollbar, rowPoint(8)],
+    [rowPoint(8), header], [rowPoint(8), scrollbar], [rowPoint(8), sidebar], [rowPoint(8), filesTitleBar], [rowPoint(8), {x: 30, y: 600}],
+    [header, rowPoint(8)], [scrollbar, rowPoint(8)], [sidebar, rowPoint(8)],
   ] as const) {
     click(machine, press, release)
     assert.equal(selectedRow(machine), 4, `a press at ${JSON.stringify(press)} released at ${JSON.stringify(release)}`)
@@ -537,6 +598,104 @@ test('a press reaches a row only when Files is the frontmost window at that poin
   assert.equal(selectedRow(machine), 7)
   click(machine, rowPoint(2), {x: 420, y: 140})
   assert.equal(selectedRow(machine), 0)
+})
+
+test('a release on a sidebar location after a press on it shows that location: its row count, no selection, and the list at the top', () => {
+  const machine = createMachine()
+  const [stateRows, operationsRows, outputsRows] = rowCountsOf(machine)
+  let values = click(machine, rowPoint(4))
+  assert.equal(selectedRow(machine), 4)
+  // The press arms the location and changes nothing yet.
+  const point = locationPoint(stateLocation)
+  machine.pointerDown(point.x, point.y, eventTime(machine, 4))
+  values = step(machine)
+  assert.equal(machine.source[armedSourceField('filesLocation', stateLocation)], 1)
+  assert.deepEqual([shownLocation(machine), selectedRow(machine)], [operationsLocation, 4])
+  machine.pointerUp(point.x, point.y, eventTime(machine, 4))
+  values = step(machine)
+  assert.equal(machine.source[armedSourceField('filesLocation', stateLocation)], 0)
+  assert.deepEqual([shownLocation(machine), selectedRow(machine)], [stateLocation, -1])
+  assert.equal(values[machine.output.files.totalHeight], stateRows! * rowHeight)
+  assert.deepEqual(machine.output.files.locations.map(wire => values[wire]), [1, 0, 0])
+  // The list was at the top already, so the program asks for no scroll.
+  assert.equal(machine.filesScrollTo, null)
+  assertDrawsLikeReference(machine, values, 0, list.height)
+  // A row of the new location, then the location again: the same location keeps its
+  // selection.
+  click(machine, rowPoint(2))
+  click(machine, point)
+  assert.deepEqual([shownLocation(machine), selectedRow(machine)], [stateLocation, 2])
+  // Releases that show no other location: on another location than the pressed
+  // one, off the sidebar, a pointercancel, and a release on a location after a
+  // press on a row.
+  for (const [press, release] of [
+    [locationPoint(outputsLocation), locationPoint(operationsLocation)], [locationPoint(outputsLocation), rowPoint(1)], [rowPoint(1), locationPoint(outputsLocation)],
+  ] as const) {
+    click(machine, press, release)
+    assert.equal(shownLocation(machine), stateLocation, `a press at ${JSON.stringify(press)} released at ${JSON.stringify(release)}`)
+  }
+  machine.pointerDown(locationPoint(outputsLocation).x, locationPoint(outputsLocation).y, eventTime(machine, 4))
+  machine.pointerCancel(locationPoint(outputsLocation).x, locationPoint(outputsLocation).y, eventTime(machine, 8))
+  step(machine)
+  assert.equal(shownLocation(machine), stateLocation)
+  // The items' edges: half a pixel inside the last item's bottom edge is that
+  // item, and the heading above the first item is no location.
+  click(machine, {x: 55 + 8 + 0.5, y: 99 + 40 + 3 * 28 - 0.5})
+  assert.equal(shownLocation(machine), outputsLocation)
+  click(machine, {x: 55 + 8 + 58, y: 99 + 40 - 0.5 + 1 / 64})
+  click(machine, {x: 55 + 8 + 0.5 - 1 / 64, y: 99 + 40 + 14})
+  click(machine, {x: 55 + 8 + 58, y: 99 + 40 + 3 * 28 - 0.5 + 1 / 64})
+  assert.equal(shownLocation(machine), outputsLocation)
+  values = step(machine)
+  assert.equal(values[machine.output.files.totalHeight], outputsRows! * rowHeight)
+
+  // From a scrolled list with a selection, another location starts at the top: the
+  // program asks the host to scroll to 0, and the frame of the same step already
+  // draws the new location's first rows.
+  click(machine, locationPoint(operationsLocation))
+  const scrolled = 100_000
+  click(machine, rowPoint(4170, scrolled), undefined, scrolled)
+  assert.deepEqual([shownLocation(machine), selectedRow(machine)], [operationsLocation, 4170])
+  values = click(machine, locationPoint(outputsLocation), undefined, scrolled)
+  assert.deepEqual([shownLocation(machine), selectedRow(machine)], [outputsLocation, -1])
+  assert.equal(machine.filesScrollTo, 0)
+  assert.equal(values[machine.output.files.scroll], 0)
+  assert.equal(values[machine.output.files.totalHeight], outputsRows! * rowHeight)
+  assert.deepEqual(drawnRows(machine, values).map(row => row.row), Array.from({length: 14}, (_, row) => row))
+  assert.ok(operationsRows! > outputsRows! && outputsRows! > stateRows!)
+  // A key in the same evaluation as the release that shows another location
+  // doesn't select: the new location starts with no selection.
+  click(machine, filesTitleBar)
+  machine.pointerDown(locationPoint(stateLocation).x, locationPoint(stateLocation).y, eventTime(machine, 4))
+  machine.pointerUp(locationPoint(stateLocation).x, locationPoint(stateLocation).y, eventTime(machine, 8))
+  machine.filesKey('end', eventTime(machine, 8))
+  step(machine)
+  assert.deepEqual([shownLocation(machine), selectedRow(machine)], [stateLocation, -1])
+  // The next key acts in the new location: End selects State's last row.
+  pressKey(machine, 'end')
+  assert.equal(selectedRow(machine), stateRows! - 1)
+  assert.equal(machine.filesScrollTo, stateRows! * rowHeight - list.height)
+})
+
+test('a sidebar location covered by another window, or in a minimized Files, takes no press', () => {
+  const machine = createMachine()
+  // Drag Notes by its title bar over Files' sidebar: Notes moves from 410,104 to 60,84.
+  machine.pointerDown(notesTitleBar.x, notesTitleBar.y, eventTime(machine, 4))
+  machine.pointerMove(notesTitleBar.x - 350, notesTitleBar.y - 20, eventTime(machine, 8))
+  machine.pointerUp(notesTitleBar.x - 350, notesTitleBar.y - 20, eventTime(machine, 12))
+  let values = step(machine)
+  assert.equal(machine.source[windowSourceField(1, windowStateField.left)], 60)
+  click(machine, locationPoint(stateLocation))
+  assert.equal(shownLocation(machine), operationsLocation)
+  // Files' title bar is still free at x 100: raise Files, and the location takes the press.
+  click(machine, {x: 57, y: 76})
+  click(machine, locationPoint(stateLocation))
+  assert.equal(shownLocation(machine), stateLocation)
+  values = click(machine, filesMinimize)
+  for (let frame = 0; frame < 60; frame++) values = step(machine)
+  click(machine, locationPoint(outputsLocation))
+  assert.equal(shownLocation(machine), stateLocation)
+  assert.notEqual(focusedWindow(machine, values), 0)
 })
 
 test('ArrowUp, ArrowDown, PageUp, PageDown, Home and End move the selection only while Files is the focused window', () => {
@@ -791,7 +950,7 @@ test('with more rows in view than DOM slots, 64 rows get a node and slotOverflow
 
 test('HandwiredOS with Files builds no sign cascade, and every declared and inferred grid holds on each evaluation of a Files session', () => {
   const machine = createWindowManagerMachine()
-  machine.source[machine.cells.files.rowCount] = rowCapacity
+  for (const cell of machine.cells.files.rowCounts) machine.source[cell] = rowCapacity
   assert.equal(machine.circuit.roundingPoints().filter(point => point.kind === 'sign cascade').length, 0)
   let evaluations = 0
   // The compiled program's values, with 0 for the wires that the compiler removed.
@@ -810,6 +969,7 @@ test('HandwiredOS with Files builds no sign cascade, and every declared and infe
     if (kind < 0.3) click(machine, {x: list.left + onPixelGrid(random() * 400), y: list.top + onPixelGrid(random() * list.height)}, undefined, scrollTop)
     else if (kind < 0.6) pressKey(machine, keys[Math.floor(random() * keys.length)]!, scrollTop)
     else if (kind < 0.7) click(machine, machine.source[windowSourceField(0, windowStateField.maximized)] === 1 ? maximizedMaximize : filesMaximize, undefined, scrollTop)
+    else if (kind < 0.8 && machine.source[windowSourceField(0, windowStateField.maximized)] === 0) click(machine, locationPoint(Math.floor(random() * locationCount)), undefined, scrollTop)
     else step(machine, scrollTop, viewportWidth, viewportHeight)
   }
   assert.ok(evaluations > 250, `${evaluations} evaluations checked`)

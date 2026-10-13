@@ -64,7 +64,7 @@ describe('production circuits match the reference interpreter across scripted tr
     const machine = createWindowManagerMachine()
     // Files' list at its capacity, which a host writes before the first step, so that
     // the trace reaches scroll positions up to 2,400,000 px.
-    machine.source[filesSourceField.rowCount] = filesRowCapacity
+    for (const rowCount of filesSourceField.rowCounts) machine.source[rowCount] = filesRowCapacity
     const checked = verifyEvaluations(machine)
     const random = createRandom(0x0c1a5e)
     let frameClock = 0
@@ -236,8 +236,9 @@ describe('production circuits match the reference interpreter across scripted tr
     // Phase 6: Files' list. Files' dock item raises and focuses Files, which earlier
     // phases left at its minimum size. Then, at scroll positions on the quarter pixel
     // grid from the top of the list to its end, a press and a release on the list and
-    // each of the six keys, at Files' normal size and maximized. A key's scroll
-    // request moves the list for the frames until the next position is set.
+    // each of the six keys, at Files' normal size and maximized, each time in another
+    // of the sidebar's three locations. A key's scroll request moves the list for the
+    // frames until the next position is set.
     {
       const dock = projectDock(values, 0)
       machine.pointerDown(dock.left + dock.width / 2, dock.top + dock.height / 2)
@@ -253,15 +254,23 @@ describe('production circuits match the reference interpreter across scripted tr
           for (let settle = 0; settle < 4; settle++) values = advance(irregularFrameTime(random))
         }
         expect(machine.source[windowSourceField(0, windowStateField.maximized)]).toBe(maximized ? 1 : 0)
-        // The list viewport starts 1 px inside the frame, below the title bar and the
-        // 28 px header row. A maximized window's rectangle isn't stored, so the points
-        // come from the frame's destination, which the content size outputs follow.
+        // The content box starts 1 px inside the frame and below the title bar. The
+        // list viewport starts right of the 132 px sidebar and below the 28 px header
+        // row, and the sidebar's 28 px locations start 8 px in and 40 px down. A
+        // maximized window's rectangle isn't stored: it is at 12,48.
         const window = projectWindow(values, 0)
-        const listLeft = maximized ? 13 : machine.source[windowSourceField(0, windowStateField.left)]! + 1
-        const listTop = (maximized ? 48 : machine.source[windowSourceField(0, windowStateField.top)]!)
-          + machine.source[windowSourceFieldTable.titleHeight]! + 1 + 28
+        const contentLeft = maximized ? 13 : machine.source[windowSourceField(0, windowStateField.left)]! + 1
+        const contentTop = (maximized ? 48 : machine.source[windowSourceField(0, windowStateField.top)]!)
+          + machine.source[windowSourceFieldTable.titleHeight]! + 1
+        const listLeft = contentLeft + 132
+        const listTop = contentTop + 28
         const listHeight = window.contentHeight - 28
-        for (const scrollTop of scrollPositions) {
+        for (const [index, scrollTop] of scrollPositions.entries()) {
+          const location = {x: contentLeft + 8 + 58, y: contentTop + 40 + 28 * (index % 3) + 14}
+          machine.pointerDown(location.x, location.y)
+          machine.pointerUp(location.x, location.y)
+          values = advance(irregularFrameTime(random))
+          expect(machine.source[filesSourceField.location[index % 3]!]).toBe(1)
           filesScrollTop = scrollTop
           const x = listLeft + 20 + random() * 100
           const y = listTop + 0.5 + random() * (listHeight - 30)

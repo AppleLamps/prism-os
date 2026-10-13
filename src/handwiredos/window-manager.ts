@@ -32,25 +32,32 @@ import {
   buildFiles,
   createFilesRenderer,
   describeOperations,
+  describeOutputs,
+  describeState,
   filesCells,
   filesKeys,
   filesLayout,
   filesWindowIndex,
+  locationCount,
   maximumScrollTop,
   rowCapacity,
   scrollGrid,
+  slotField,
   validateFilesOutput,
   validateFilesOutputWires,
 } from './files.ts'
 import {
   type PhotoOutputs,
   buildPhotos,
+  controlField,
   createPhotoGalleryRenderer,
   emitIntervalDistance,
   photoCells,
   photoEvents,
+  photoField,
   springConstants,
   springMatrixPowers,
+  thumbnailField,
   validatePhotoGalleryOutput,
   validatePhotoGalleryOutputWires,
 } from './photo-gallery.ts'
@@ -223,8 +230,8 @@ const windowManagerCellsFor = (paragraph: FastParagraph) => ({
   drag: oneHot(list(windowCount, () => stateBit(0, {grid: 1})), {allowAllZero: true, declareToCircuit: false}),
   resize: oneHot(list(windowCount, () => stateBit(0, {grid: 1})), {allowAllZero: true, declareToCircuit: false}),
   // The control that the press being held armed, if any: a window's close, minimize
-  // or maximize button, a window's dock item, Photos' content, or Files' list. At
-  // most one is 1, see buildWindowManager.
+  // or maximize button, a window's dock item, Photos' content, Files' list, or one
+  // of Files' sidebar locations. At most one is 1, see buildWindowManager.
   armed: {
     close: list(windowCount, () => stateBit(0, {grid: 1})),
     minimize: list(windowCount, () => stateBit(0, {grid: 1})),
@@ -232,6 +239,7 @@ const windowManagerCellsFor = (paragraph: FastParagraph) => ({
     dockItem: list(windowCount, () => stateBit(0, {grid: 1})),
     photosContent: stateBit(0, {grid: 1}),
     filesList: stateBit(0, {grid: 1}),
+    filesLocation: list(locationCount, () => stateBit(0, {grid: 1})),
   },
   // The stacking state is a permutation matrix: exactly one window per rank
   // and exactly one rank per window. Declared as one-hot groups, the
@@ -282,9 +290,12 @@ export const photoSourceField = {
   size: layout.size,
 }
 
+// rowCounts and location hold one position per sidebar location, in the sidebar's
+// order: State, Operations, Outputs.
 export const filesSourceField = {
   scrollTop: positions.files.scrollTop,
-  rowCount: positions.files.rowCount,
+  rowCounts: positions.files.rowCounts,
+  location: positions.files.location,
   selected: positions.files.selected,
 }
 
@@ -348,9 +359,10 @@ export function resizeSourceField(windowIndex: number) {
 
 // The position of an armed control's bit, e.g. armedSourceField('close', 0) holds 1
 // while a press on Files' close button is held, armedSourceField('photosContent')
-// holds 1 while a press on Photos' content is held, and armedSourceField('filesList')
-// while a press on Files' list is held.
-export function armedSourceField(control: 'close' | 'minimize' | 'maximize' | 'dockItem' | 'photosContent' | 'filesList', windowIndex?: number) {
+// holds 1 while a press on Photos' content is held, armedSourceField('filesList')
+// while a press on Files' list is held, and armedSourceField('filesLocation', 2)
+// while a press on Files' third sidebar location is held.
+export function armedSourceField(control: 'close' | 'minimize' | 'maximize' | 'dockItem' | 'photosContent' | 'filesList' | 'filesLocation', windowIndex?: number) {
   if (control === 'photosContent') {
     invariant(windowIndex === undefined || windowIndex === photosWindowIndex, 'only Photos has an armed content bit')
     return positions.armed.photosContent
@@ -359,8 +371,8 @@ export function armedSourceField(control: 'close' | 'minimize' | 'maximize' | 'd
     invariant(windowIndex === undefined || windowIndex === filesWindowIndex, 'only Files has an armed list bit')
     return positions.armed.filesList
   }
-  invariant(windowIndex !== undefined, `${control} needs a window index`)
-  return cellAt(positions.armed[control], windowIndex, `${control} window index`)
+  invariant(windowIndex !== undefined, `${control} needs an index`)
+  return cellAt(positions.armed[control], windowIndex, `${control} index`)
 }
 
 export function stackSourceField(rank: number, windowIndex: number) {
@@ -413,6 +425,7 @@ function buildWindowManager(notesOptions: NotesOptions) {
     ...cells.armed.dockItem,
     cells.armed.photosContent,
     cells.armed.filesList,
+    ...cells.armed.filesLocation,
   ])
   const circuit = table.createCircuit()
 
@@ -465,11 +478,14 @@ function buildWindowManager(notesOptions: NotesOptions) {
   let photosContentHit = zero
   let photosContentHitAtUp = zero
   let photosGripHitAtUp = zero
-  // Files' list viewport and grip, at the down and at the up, and the list's top edge.
+  // Files' list viewport, sidebar locations and grip, at the down and at the up, and
+  // the list's top edge.
   let filesListHit = zero
   let filesListHitAtUp = zero
   let filesGripHitAtUp = zero
   let filesListTop = zero
+  const filesLocationHit: Wire[] = []
+  const filesLocationHitAtUp: Wire[] = []
 
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const current = cells.windows[windowIndex]!
@@ -558,19 +574,33 @@ function buildWindowManager(notesOptions: NotesOptions) {
     }
     resizeHit.push(emitRectangleHit(circuit, cells.down.x, cells.down.y, gripRectangle))
     if (windowIndex === filesWindowIndex) {
-      // The list viewport: the content box without the header row at its top, and
-      // without the strip at its right edge where the native scrollbar is drawn, so
-      // a press on the scrollbar is on no row.
+      // The list viewport: the content box without the sidebar at its left, without
+      // the header row at its top, and without the strip at its right edge where the
+      // native scrollbar is drawn, so a press on the scrollbar is on no row.
       const listRectangle: Geometry = {
-        left: circuit.affine([[geometry.left, 1], [unit, 1]]),
+        left: circuit.affine([[geometry.left, 1], [unit, 1]], filesLayout.sidebarWidth),
         top: circuit.affine([[geometry.top, 1], [cells.titleHeight, 1], [unit, 1]], filesLayout.headerHeight),
-        width: circuit.affine([[geometry.width, 1], [unit, -2]], -filesLayout.scrollbarStrip),
+        width: circuit.affine([[geometry.width, 1], [unit, -2]], -filesLayout.sidebarWidth - filesLayout.scrollbarStrip),
         height: circuit.affine([[geometry.height, 1], [cells.titleHeight, -1], [unit, -2]], -filesLayout.headerHeight),
       }
       filesListHit = emitRectangleHit(circuit, cells.down.x, cells.down.y, listRectangle)
       filesListHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, listRectangle)
       filesGripHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, gripRectangle)
       filesListTop = listRectangle.top
+      // The sidebar's locations, one below the other.
+      for (let location = 0; location < locationCount; location++) {
+        const locationRectangle: Geometry = {
+          left: circuit.affine([[geometry.left, 1], [unit, 1]], filesLayout.locationInset),
+          top: circuit.affine(
+            [[geometry.top, 1], [cells.titleHeight, 1], [unit, 1]],
+            filesLayout.locationTop + location * filesLayout.locationHeight,
+          ),
+          width: circuit.constant(filesLayout.sidebarWidth - 2 * filesLayout.locationInset),
+          height: circuit.constant(filesLayout.locationHeight),
+        }
+        filesLocationHit.push(emitRectangleHit(circuit, cells.down.x, cells.down.y, locationRectangle))
+        filesLocationHitAtUp.push(emitRectangleHit(circuit, cells.up.x, cells.up.y, locationRectangle))
+      }
     }
     if (windowIndex === photosWindowIndex) {
       // The content box inside the 1 px border and below the title bar, where Photos
@@ -760,6 +790,24 @@ function buildWindowManager(notesOptions: NotesOptions) {
     filesListHitAtUp,
     emitComplement(circuit, filesGripAtUp, unit),
   ])
+  // A sidebar location is pressed and released like a dock item: the press arms the
+  // location, and a release over the same location shows it.
+  const armedFilesLocation = filesLocationHit.map((hit, location) => emitSelect(
+    circuit,
+    cells.down.active,
+    cells.armed.filesLocation[location]!,
+    emitAll(circuit, [
+      canvasPress[filesWindowIndex]!,
+      hit,
+      emitComplement(circuit, resizePress[filesWindowIndex]!, unit),
+    ]),
+  ))
+  const filesLocationClick = armedFilesLocation.map((armed, location) => emitAll(circuit, [
+    release,
+    armed,
+    filesLocationHitAtUp[location]!,
+    emitComplement(circuit, filesGripAtUp, unit),
+  ]))
 
   const baselineX = emitSelect(
     circuit,
@@ -1124,7 +1172,12 @@ function buildWindowManager(notesOptions: NotesOptions) {
   }
   table.next(cells.drag, nextDrag)
   table.next(cells.resize, nextResize)
-  table.next(cells.armed, {...nextArmed, photosContent: nextArmedFor(armedPhotosContent), filesList: nextArmedFor(armedFilesList)})
+  table.next(cells.armed, {
+    ...nextArmed,
+    photosContent: nextArmedFor(armedPhotosContent),
+    filesList: nextArmedFor(armedFilesList),
+    filesLocation: armedFilesLocation.map(nextArmedFor),
+  })
   table.next(cells.stack, nextStack)
 
   const windows: Wire[] = []
@@ -1238,11 +1291,67 @@ function buildWindowManager(notesOptions: NotesOptions) {
       active: filesListClick,
       y: circuit.affine([[cells.up.y, 1], [filesListTop, -1]]),
     },
+    locationClicks: filesLocationClick,
   })
 
   const {nextSource, initialSource, validate} = table.finish()
   const output: WindowManagerOutput = {nextSource, windows, dockItems, animationActive, photos, notes, files}
-  return {circuit, cells, output, initialSource, validate}
+  // Each cell's name and what happens to the cell around an evaluation, in table
+  // order, e.g. {name: 'windows[3].left', policy: 'state'}. Files lists them.
+  const sourceCells = Array.from({length: table.size}, (_, index) => {
+    const cell = circuit.source(index)
+    const policy = table.policyOf(cell)
+    invariant(policy !== undefined, 'every source wire is a declared cell')
+    return {name: table.nameOf(cell), policy}
+  })
+  return {circuit, cells, output, sourceCells, initialSource, validate}
+}
+
+// The wires of a flat output view with their names: 'prefix.item.field' for a view
+// of several items, e.g. 'windows.0.translateX', and 'prefix.field' for a view of one
+// item, e.g. 'photos.nextControl.left'. `fields` is the view's field table.
+function nameOutputView(prefix: string, wires: readonly Wire[], fields: {readonly [field: string]: number}) {
+  const fieldNames: string[] = []
+  for (const [field, index] of Object.entries(fields)) {
+    if (field !== 'size') fieldNames[index] = field
+  }
+  const single = wires.length === fieldNames.length
+  return wires.map((wire, index) => ({
+    wire,
+    name: single
+      ? `${prefix}.${fieldNames[index]}`
+      : `${prefix}.${Math.floor(index / fieldNames.length)}.${fieldNames[index % fieldNames.length]}`,
+  }))
+}
+
+// Every output that the page draws from, with its name, in the order of the
+// compiled program's roots after the next-state values.
+function nameWindowManagerOutputs(output: WindowManagerOutput) {
+  const {photos, notes, files} = output
+  return [
+    ...nameOutputView('windows', output.windows, windowOutputField),
+    ...nameOutputView('dockItems', output.dockItems, dockOutputField),
+    {wire: output.animationActive, name: 'animationActive'},
+    {wire: photos.backdropOpacity, name: 'photos.backdropOpacity'},
+    ...nameOutputView('photos.photos', photos.photos, photoField),
+    ...nameOutputView('photos.thumbnails', photos.thumbnails, thumbnailField),
+    ...nameOutputView('photos.previousControl', photos.previousControl, controlField),
+    ...nameOutputView('photos.nextControl', photos.nextControl, controlField),
+    ...nameOutputView('notes.words', notes.words, wordOutputField),
+    ...nameOutputView('notes.bands', notes.bands, bandOutputField),
+    {wire: notes.lineCount, name: 'notes.lineCount'},
+    {wire: notes.truncated, name: 'notes.truncated'},
+    {wire: notes.windowOverflow, name: 'notes.windowOverflow'},
+    {wire: notes.runOverflow, name: 'notes.runOverflow'},
+    {wire: files.totalHeight, name: 'files.totalHeight'},
+    {wire: files.scroll, name: 'files.scroll'},
+    {wire: files.scrollTarget, name: 'files.scrollTarget'},
+    {wire: files.scrollRequest, name: 'files.scrollRequest'},
+    {wire: files.slotOverflow, name: 'files.slotOverflow'},
+    {wire: files.selected, name: 'files.selected'},
+    ...files.locations.map((wire, location) => ({wire, name: `files.locations.${location}`})),
+    ...nameOutputView('files.slots', files.slots, slotField),
+  ]
 }
 
 type WindowManagerEvent = {
@@ -1302,38 +1411,20 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     'the Notes paragraph must have the same segments as the default one; only the widths may differ',
   )
   const notesOptions = notesOptionsFor(paragraph, options.notes?.epsilon ?? defaultLineFitEpsilon)
-  const {circuit, cells, output, initialSource, validate} = buildWindowManager(notesOptions)
+  const {circuit, cells, output, sourceCells, initialSource, validate} = buildWindowManager(notesOptions)
   const source = new Float32Array(initialSource)
   const wireCount = validateCircuit(circuit)
   validateWindowManagerOutputWires(output, wireCount)
-  const roots = [
-    ...output.nextSource,
-    ...output.windows,
-    ...output.dockItems,
-    output.animationActive,
-    output.photos.backdropOpacity,
-    ...output.photos.photos,
-    ...output.photos.thumbnails,
-    ...output.photos.previousControl,
-    ...output.photos.nextControl,
-    ...output.notes.words,
-    ...output.notes.bands,
-    output.notes.lineCount,
-    output.notes.truncated,
-    output.notes.windowOverflow,
-    output.notes.runOverflow,
-    output.files.totalHeight,
-    output.files.scroll,
-    output.files.scrollTarget,
-    output.files.scrollRequest,
-    output.files.slotOverflow,
-    output.files.selected,
-    ...output.files.slots,
-  ]
+  const namedOutputs = nameWindowManagerOutputs(output)
+  const roots = [...output.nextSource, ...namedOutputs.map(({wire}) => wire)]
   const tensorProgram = circuit.tensorProgram = circuit.compileTensorProgram(roots)
-  // Files lists the program's own live operations, so the program's size is the
-  // list's row count. A value written before the first step commits with the mount.
-  source[cells.files.rowCount] = Math.min(rowCapacity, tensorProgram.valueCount - tensorProgram.sourceSize)
+  // Files lists the program itself, so its three locations' row counts are the
+  // program's own sizes: the source cells, the live operations and the outputs.
+  // Values written before the first step commit with the mount.
+  const filesRowCounts = [tensorProgram.sourceSize, tensorProgram.valueCount - tensorProgram.sourceSize, namedOutputs.length]
+  filesRowCounts.forEach((rowCount, location) => {
+    source[cells.files.rowCounts[location]!] = Math.min(rowCapacity, rowCount)
+  })
   validateTensorProgram(circuit, tensorProgram)
   // Reuses its buffers across evaluations. Each evaluation copies the roots into
   // `values`, which the validators and callers index by wire.
@@ -1433,6 +1524,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     ...cells.armed.dockItem,
     cells.armed.photosContent,
     cells.armed.filesList,
+    ...cells.armed.filesLocation,
   ]
 
   // While nothing animates and no press is held, a pointer move changes only the
@@ -1506,6 +1598,11 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     output,
     source,
     tensorProgram,
+    // What Files' State and Outputs locations list: each source cell's name and
+    // policy in table order, and each output's name in the order of the program's
+    // roots after the next-state values, e.g. 'windows.0.translateX'.
+    sourceCells,
+    outputNames: namedOutputs.map(({name}) => name),
     // A host requests frames while clock.animatedUntilMs isn't null.
     get clock() {
       return clock
@@ -1668,9 +1765,14 @@ function mountWindowManager(document: Document, window: Window) {
   }
   const photos = createPhotoGalleryRenderer(document, domCache.photosViewport)
   const program = machine.tensorProgram
-  // Files lists the program's own live operations. The rows' text stays in
-  // JavaScript, and the program computes which rows the list's DOM slots show.
-  const files = createFilesRenderer(document, domCache.filesContent, describeOperations(program))
+  // Files lists the program itself, one location per kind of number. The rows'
+  // text stays in JavaScript, and the program computes which rows the list's DOM
+  // slots show.
+  const files = createFilesRenderer(document, domCache.filesContent, [
+    describeState(machine.sourceCells),
+    describeOperations(program),
+    describeOutputs(machine.outputNames),
+  ])
   let affineCount = 0
   let regluCount = 0
   let booleanCount = 0

@@ -219,30 +219,93 @@ body {
   border-bottom: 1px solid rgb(255 255 255 / 28%);
 }
 
-/* Files: a virtualized list in a native scroller. files.ts creates the header's
-   cells and the rows, gives each row its transform, display and --selected every
-   frame, sets the spacer's height, and copies the program's layout numbers into
-   the custom properties below at mount. */
+/* Files: a sidebar of locations and a virtualized list in a native scroller.
+   files.ts creates the sidebar's items, the header's cells and the rows. Every frame
+   it gives each row its transform, display and --selected, each sidebar item its
+   --selected, and the spacer its height. At mount it copies the program's layout
+   numbers into the custom properties below and places the sidebar's items on the
+   rectangles that the program hit-tests. */
 .files-content {
+  --files-sidebar-width: 132px;
   --files-header-height: 28px;
   --files-row-height: 24px;
   --files-scrollbar-strip: 16px;
   background: rgb(0 0 0 / 14%);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.files-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--files-sidebar-width);
+  border-right: 1px solid rgb(255 255 255 / 7%);
+  background: rgb(0 0 0 / 9%);
   font-size: 11px;
+}
+
+.files-sidebar strong {
+  position: absolute;
+  top: 18px;
+  left: 17px;
+  color: rgb(255 255 255 / 35%);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.files-location {
+  --selected: 0;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 7px;
+  background: rgb(97 218 251 / calc(var(--selected) * 14%));
+  color: rgb(calc(255 - var(--selected) * 67) calc(255 - var(--selected) * 16) 255 / calc(0.55 + var(--selected) * 0.45));
+  cursor: pointer;
 }
 
 .files-list {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--files-sidebar-width);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
 }
 
 .files-header,
 .files-row {
-  grid-template-columns: minmax(0, 1fr) 64px 48px 64px;
   align-items: center;
   column-gap: 12px;
   padding: 0 var(--files-scrollbar-strip) 0 14px;
+}
+
+/* Each location shows the columns that it has a title for. */
+.files-list-state .files-header,
+.files-list-state .files-row {
+  grid-template-columns: minmax(0, 1fr) 64px;
+}
+
+.files-list-operations .files-header,
+.files-list-operations .files-row {
+  grid-template-columns: minmax(0, 1fr) 56px 40px 56px;
+}
+
+.files-list-outputs .files-header,
+.files-list-outputs .files-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.files-list-state .files-cell-layer,
+.files-list-state .files-cell-weights,
+.files-list-outputs .files-cell-kind,
+.files-list-outputs .files-cell-layer,
+.files-list-outputs .files-cell-weights {
+  display: none;
 }
 
 /* The header keeps the room of the scroller's scrollbar, so its cells line up with

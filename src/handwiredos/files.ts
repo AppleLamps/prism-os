@@ -1,12 +1,14 @@
-// The Files window's list, in the same circuit as the window manager: a
-// virtualized list of rows of one height, scrolled by a native scroller.
+// The Files window, in the same circuit as the window manager: a sidebar of three
+// locations, each a virtualized list of rows of one height, scrolled by a native
+// scroller.
 //
 // The program holds no row. JavaScript keeps each row's text in arrays, and the
 // program computes which row each of 64 DOM slots shows, from the scroll position
 // that the host reads from the scroller at the top of a frame. Row r is drawn in
 // slot r % 64, so a row keeps its DOM node while it stays drawn, and rows are
 // positioned in the scroller's content coordinates, so the browser moves them
-// while scrolling. One integer state cell holds the selected row.
+// while scrolling. One integer state cell holds the selected row, and three state
+// bits the location, which selects the row count among three cells.
 //
 // Behavior choices:
 // - The scroll position is browser state that the program only reads
@@ -19,6 +21,8 @@
 // - A row is selected at a release over the list after a press on the list, like
 //   HandwiredOS's buttons. A press alone selects nothing, so the press that starts
 //   a touch scroll, which the browser ends with a pointercancel, selects nothing.
+// - Another location starts with no row selected and at the top: the program
+//   clears the selection and asks the host to scroll to 0.
 //
 // FP32: the scroll position is at most 2,400,000 px on a 1/4 px grid, which is
 // within the 2^24 grid steps that FP32 holds exactly. The row at the top of the
@@ -46,7 +50,10 @@ import {
   event,
   input,
   inputBit,
+  list,
+  oneHot,
   state,
+  stateBit,
 } from '../runtime/cells.ts'
 
 // The Files window's index among HandwiredOS's windows.
@@ -69,11 +76,22 @@ export const maximumScrollTop = rowCapacity * rowHeight
 // HandwiredOS's pointer coordinates and window geometry lie on this grid.
 const pixelGrid = 1 / 64
 const maximumViewportHeight = 16_384
+// The sidebar's locations: State, Operations and Outputs. The window opens on
+// Operations, the longest list.
+export const locationCount = 3
+const initialLocation = 1
 
-// The list's layout inside the Files content box, in px. window-manager.ts builds
-// the hit rectangles from these numbers, and the renderer copies them into CSS
-// custom properties at mount.
+// Files' layout inside its content box, in px. window-manager.ts builds the hit
+// rectangles from these numbers, and the renderer gives them to the DOM at mount.
 export const filesLayout = {
+  // The sidebar at the content box's left edge. The list takes the rest.
+  sidebarWidth: 132,
+  // Each location is a rectangle of locationHeight, locationInset from the sidebar's
+  // left and right edges, and the first one starts locationTop below the content
+  // box's top edge.
+  locationInset: 8,
+  locationTop: 40,
+  locationHeight: 28,
   // The header row above the scroller.
   headerHeight: 28,
   rowHeight,
@@ -101,8 +119,9 @@ export const filesCells = {
   // onto the scroll grid and clamped into this range by the machine. The machine
   // writes it before every evaluation, like the spring matrix.
   scrollTop: input([0, maximumScrollTop], {grid: scrollGrid}),
-  // The number of rows, which the host writes once, before the first step.
-  rowCount: input([0, rowCapacity], {grid: 1}),
+  // Each location's number of rows, which the host writes once, before the first
+  // step.
+  rowCounts: list(locationCount, () => input([0, rowCapacity], {grid: 1})),
   keys: {
     up: event({grid: 1}),
     down: event({grid: 1}),
@@ -111,7 +130,10 @@ export const filesCells = {
     home: event({grid: 1}),
     end: event({grid: 1}),
   },
-  // The selected row, or -1 for none.
+  // The location that the list shows. Only the validator checks the group: with 3
+  // members, the sums over it are too short for the compiler to lower to gathers.
+  location: oneHot(list(locationCount, index => stateBit(Number(index === initialLocation), {grid: 1})), {declareToCircuit: false}),
+  // The selected row of that location, or -1 for none.
   selected: state([-1, rowCapacity - 1], {initial: -1, grid: 1}),
 }
 type FilesCells = CellWires<typeof filesCells>
@@ -133,6 +155,9 @@ type FilesHost = {
   // A release over the list after a press on the list, and the release's y relative
   // to the list viewport's top edge, on a grid of 1/64 px or finer.
   listClick: {active: Wire, y: Wire}
+  // Per location, a release over the location's sidebar item after a press on it.
+  // At most one is 1.
+  locationClicks: readonly Wire[]
 }
 
 // Per DOM slot: the row that the slot shows, the row's top in the scroller's
@@ -157,6 +182,9 @@ export type FilesOutputs = {
   slotOverflow: Wire
   // The selected row after this evaluation's events, or -1.
   selected: Wire
+  // The location after this evaluation's events: one bit per location, of which
+  // exactly one is 1. The host shows that location's rows.
+  locations: Wire[]
   slots: Wire[]
 }
 
@@ -211,23 +239,40 @@ function emitAll(circuit: Circuit, bits: readonly Wire[]): Wire {
   return all
 }
 
-// Builds Files into the host's circuit, pairs Files' state cell with its next
-// value, and returns Files' outputs.
+// Builds Files into the host's circuit, pairs Files' state cells with their next
+// values, and returns Files' outputs.
 export function buildFiles(circuit: Circuit, table: SourceTable, cells: FilesCells, host: FilesHost): FilesOutputs {
   // What Files assumes of the host's wires. In HandwiredOS, the viewport height
   // comes from window geometry that the table check keeps on the 1/64 px grid
-  // within the viewport, and the two bits are sums and products of exact bits. The
+  // within the viewport, and the bits are sums and products of exact bits. The
   // builder infers none of that for them, and without declared grids emitCompare
   // would build sign cascades of about 15 operations instead of integer bits of 2.
+  invariant(host.locationClicks.length === locationCount, 'one click per location')
   circuit.assumeRange(host.viewportHeight, 0, maximumViewportHeight)
   circuit.assumeGrid(host.viewportHeight, pixelGrid)
-  for (const bit of [host.focused, host.listClick.active]) {
+  for (const bit of [host.focused, host.listClick.active, ...host.locationClicks]) {
     circuit.assumeRange(bit, 0, 1)
     circuit.assumeGrid(bit, 1)
   }
-  const {rowCount} = cells
   const zero = circuit.constant(0)
   const one = circuit.constant(1)
+
+  // A release on a location's sidebar item shows that location.
+  // JS: nextLocation = locationClicks.includes(1) ? locationClicks : location
+  const anyLocationClick = circuit.affine(host.locationClicks.map(click => [click, 1] as const))
+  const nextLocation = cells.location.map((stored, index) => {
+    const kept = circuit.reglu([[stored, 1]], 0, [[anyLocationClick, -1]], 1)
+    const next = circuit.roundAffine([[kept, 1], [host.locationClicks[index]!, 1]])
+    circuit.assumeRange(next, 0, 1)
+    return next
+  })
+  // JS: locationChanged = locationClicks.some((click, index) => click === 1 && location[index] === 0)
+  const locationChanged = circuit.roundAffine(cells.location.map((stored, index) =>
+    [circuit.reglu([], 1, [[host.locationClicks[index]!, 1], [stored, -1]], 0), 1] as const))
+  circuit.assumeRange(locationChanged, 0, 1)
+  // JS: rowCount = rowCounts[nextLocation.indexOf(1)]
+  const rowCount = circuit.roundAffine(nextLocation.map((bit, index) => [emitMultiply(circuit, bit, cells.rowCounts[index]!), 1] as const))
+  circuit.assumeRange(rowCount, 0, rowCapacity)
 
   // JS: totalHeight = rowCount * rowHeight
   const totalHeight = circuit.roundAffine([[rowCount, rowHeight]])
@@ -305,9 +350,14 @@ export function buildFiles(circuit: Circuit, table: SourceTable, cells: FilesCel
   // JS: afterKeys = keyActive ? clamp(withEnd, 0, rowCount - 1) : afterClick
   const afterKeys = emitSelect(circuit, keyActive, afterClick, emitClampExact(circuit, withEnd, zero, lastRow))
   circuit.assumeGrid(afterKeys, 1)
-  // A list that got shorter drops a selection past its end.
-  // JS: nextSelected = Math.min(afterKeys, rowCount - 1)
-  const nextSelected = emitMinimumExact(circuit, afterKeys, lastRow)
+  // A list that got shorter drops a selection past its end, and another location
+  // starts with no selection, whatever else the evaluation's events did.
+  // JS: nextSelected = locationChanged ? -1 : Math.min(afterKeys, rowCount - 1)
+  const selectedInRange = emitMinimumExact(circuit, afterKeys, lastRow)
+  circuit.assumeRange(selectedInRange, -1, rowCapacity - 1)
+  circuit.assumeGrid(selectedInRange, 1)
+  // (selectedInRange + 1) × (1 - locationChanged) - 1
+  const nextSelected = circuit.roundAffine([[circuit.reglu([[selectedInRange, 1]], 1, [[locationChanged, -1]], 1), 1]], -1)
   circuit.assumeRange(nextSelected, -1, rowCapacity - 1)
   circuit.assumeGrid(nextSelected, 1)
 
@@ -319,15 +369,20 @@ export function buildFiles(circuit: Circuit, table: SourceTable, cells: FilesCel
   circuit.assumeGrid(atLeastLowest, scrollGrid)
   const revealed = emitMinimumExact(circuit, atLeastLowest, selectedTop)
   circuit.assumeGrid(revealed, scrollGrid)
-  // JS: scrollTarget = keyActive ? revealed : scroll
-  const scrollTarget = emitSelect(circuit, keyActive, scroll, revealed)
+  // JS: keyTarget = keyActive ? revealed : scroll
+  const keyTarget = emitSelect(circuit, keyActive, scroll, revealed)
   // The builder adds the ranges of a selection's two sides. A selection returns
   // one side: `scroll`, or with a key `revealed`, which then lies between the top
   // of the first row and `scroll`'s maximum.
+  circuit.assumeRange(keyTarget, 0, maximumScrollTop)
+  circuit.assumeGrid(keyTarget, scrollGrid)
+  // Another location starts at the top.
+  // JS: scrollTarget = locationChanged ? 0 : keyTarget
+  const scrollTarget = circuit.reglu([[keyTarget, 1]], 0, [[locationChanged, -1]], 1)
   circuit.assumeRange(scrollTarget, 0, maximumScrollTop)
   circuit.assumeGrid(scrollTarget, scrollGrid)
-  // Without a key, the selection returns `scroll` itself, so the two are equal in
-  // every bit.
+  // Without a key or another location, both selections return `scroll` itself, so
+  // the two are equal in every bit.
   // JS: scrollRequest = scrollTarget !== scroll
   const scrollRequest = circuit.roundAffine([[emitCompare(circuit, scrollTarget, '===', scroll), -1]], 1)
   circuit.assumeRange(scrollRequest, 0, 1)
@@ -357,12 +412,13 @@ export function buildFiles(circuit: Circuit, table: SourceTable, cells: FilesCel
   const slotOverflow = emitCompare(circuit, circuit.roundAffine([[endDrawn, 1], [firstDrawn, -1]]), '>', circuit.constant(slotCount))
 
   table.next(cells.selected, nextSelected)
-  return {totalHeight, scroll, scrollTarget, scrollRequest, slotOverflow, selected: nextSelected, slots}
+  table.next(cells.location, nextLocation)
+  return {totalHeight, scroll, scrollTarget, scrollRequest, slotOverflow, selected: nextSelected, locations: nextLocation, slots}
 }
 
 // Files on its own, in a table that also holds the cells that a host otherwise
-// provides: the list viewport's height, whether Files is focused, and a release
-// over the list with its y.
+// provides: the list viewport's height, whether Files is focused, a release over
+// the list with its y, and a release on each location.
 /** @public */
 export function createFilesCircuit() {
   const table = createSourceTable()
@@ -370,14 +426,17 @@ export function createFilesCircuit() {
     viewportHeight: input([0, maximumViewportHeight], {initial: 266, grid: pixelGrid}),
     focused: inputBit(1),
     listClick: {active: event({grid: 1}), y: input([-49_152, 49_152], {grid: pixelGrid})},
+    locationClicks: list(locationCount, () => event({grid: 1})),
     files: filesCells,
   })
   table.atMostOne('files keys', filesKeys(cells.files))
+  table.atMostOne('location clicks', cells.locationClicks)
   const circuit = table.createCircuit()
   const files = buildFiles(circuit, table, cells.files, {
     viewportHeight: cells.viewportHeight,
     focused: cells.focused,
     listClick: cells.listClick,
+    locationClicks: cells.locationClicks,
   })
   const {nextSource, initialSource, validate} = table.finish()
   return {circuit, cells, output: files, nextSource, initialSource, validate}
@@ -389,9 +448,10 @@ export function createFilesCircuit() {
 const columnNames = ['name', 'kind', 'layer', 'weights'] as const
 type ColumnTexts = readonly [name: string, kind: string, layer: string, weights: string]
 export type FilesLocation = {
-  // The list's class name ends with it, e.g. files-list-operations, so the
-  // stylesheet can size the location's columns.
-  name: string
+  // The sidebar item's text, e.g. 'Operations'. The list's class name ends with it
+  // in lower case, e.g. files-list-operations, so the stylesheet can size the
+  // location's columns.
+  label: string
   titles: ColumnTexts
   rowCount: number
   text: (row: number) => ColumnTexts
@@ -430,7 +490,7 @@ export function describeOperations(program: TensorProgram): FilesLocation {
   })
   invariant(firstRow === rowCount, 'the layers hold every live operation')
   return {
-    name: 'operations',
+    label: 'Operations',
     titles: ['wire', 'kind', 'layer', 'weights'],
     rowCount,
     text: row => [
@@ -442,20 +502,47 @@ export function describeOperations(program: TensorProgram): FilesLocation {
   }
 }
 
-// Creates the header's cells and the slots' row nodes inside `root`, the Files
-// content box, and returns a frame's DOM read, DOM writes and side effect.
-export function createFilesRenderer(document: Document, root: HTMLElement, location: FilesLocation) {
+// The rows of a source table's cells, in table order: the cell's name from its place
+// in the cell declarations, written with dots, e.g. 'windows.3.left' for the table's
+// 'windows[3].left', and what happens to the cell around an evaluation, e.g. 'state'.
+export function describeState(cells: readonly {name: string, policy: string}[]): FilesLocation {
+  return {
+    label: 'State',
+    titles: ['cell', 'kind', '', ''],
+    rowCount: cells.length,
+    text: row => [cells[row]!.name.replaceAll(/\[(\d+)\]/g, '.$1'), cells[row]!.policy, '', ''],
+  }
+}
+
+// The rows of the outputs that a page draws from, by name, e.g. 'windows.0.translateX'.
+export function describeOutputs(names: readonly string[]): FilesLocation {
+  return {
+    label: 'Outputs',
+    titles: ['output', '', '', ''],
+    rowCount: names.length,
+    text: row => [names[row]!, '', '', ''],
+  }
+}
+
+// Creates the sidebar's items, the header's cells and the slots' row nodes inside
+// `root`, the Files content box, and returns a frame's DOM read, DOM writes and
+// side effect. `locations` holds one entry per location of the program, in order.
+export function createFilesRenderer(document: Document, root: HTMLElement, locations: readonly FilesLocation[]) {
+  invariant(locations.length === locationCount, 'one entry per location')
+  const sidebar = root.querySelector<HTMLElement>('.files-sidebar')
   const list = root.querySelector<HTMLElement>('.files-list')
   const header = root.querySelector<HTMLElement>('.files-header')
   const scroller = root.querySelector<HTMLElement>('.files-scroller')
   const spacer = root.querySelector<HTMLElement>('.files-spacer')
   const overflow = root.querySelector<HTMLElement>('.files-overflow')
+  invariant(sidebar !== null, 'Files sidebar is missing')
   invariant(list !== null, 'Files list is missing')
   invariant(header !== null, 'Files header is missing')
   invariant(scroller !== null, 'Files scroller is missing')
   invariant(spacer !== null, 'Files spacer is missing')
   invariant(overflow !== null, 'Files overflow notice is missing')
   // The program's layout numbers, which the stylesheet reads, e.g. for a row's height.
+  root.style.setProperty('--files-sidebar-width', `${filesLayout.sidebarWidth}px`)
   root.style.setProperty('--files-header-height', `${filesLayout.headerHeight}px`)
   root.style.setProperty('--files-row-height', `${filesLayout.rowHeight}px`)
   root.style.setProperty('--files-scrollbar-strip', `${filesLayout.scrollbarStrip}px`)
@@ -465,15 +552,27 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
     parent.appendChild(cell)
     return cell
   })
-  list.className = `files-list files-list-${location.name}`
-  createCells(header).forEach((cell, column) => {
-    cell.textContent = location.titles[column]!
-  })
   overflow.textContent = `Only ${slotCount} rows are drawn at a time.`
   const domCache = {
+    list, // mount lifetime
     scroller, // mount lifetime
     spacer, // mount lifetime
     overflow, // mount lifetime
+    headerCells: createCells(header), // mount lifetime
+    // mount lifetime. Each item sits on the rectangle that the program hit-tests.
+    locationNodes: locations.map((location, index) => {
+      const node = document.createElement('div')
+      node.className = 'files-location'
+      node.textContent = location.label
+      node.style.left = `${filesLayout.locationInset}px`
+      node.style.top = `${filesLayout.locationTop + index * filesLayout.locationHeight}px`
+      node.style.width = `${filesLayout.sidebarWidth - 2 * filesLayout.locationInset}px`
+      node.style.height = `${filesLayout.locationHeight}px`
+      sidebar.appendChild(node)
+      return node
+    }),
+    // The location whose titles the header shows, or -1 before the first frame.
+    location: -1,
     // mount lifetime. Each slot keeps the row whose text its cells hold, or -1.
     slots: Array.from({length: slotCount}, () => {
       const node = document.createElement('div')
@@ -490,6 +589,22 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
     },
     // A frame's DOM writes.
     render(values: Float32Array, output: FilesOutputs) {
+      const locationIndex = output.locations.findIndex(wire => values[wire] === 1)
+      const location = locations[locationIndex]
+      invariant(location !== undefined, 'Files shows one location')
+      domCache.locationNodes.forEach((node, index) => {
+        node.style.setProperty('--selected', `${values[output.locations[index]!]}`)
+      })
+      if (domCache.location !== locationIndex) {
+        // Another location: its column titles, its columns' sizes through the class
+        // name, and every slot's text, since a row index now means another row.
+        domCache.list.className = `files-list files-list-${location.label.toLowerCase()}`
+        domCache.headerCells.forEach((cell, column) => {
+          cell.textContent = location.titles[column]!
+        })
+        for (const slot of domCache.slots) slot.row = -1
+        domCache.location = locationIndex
+      }
       domCache.spacer.style.height = `${values[output.totalHeight]}px`
       domCache.overflow.style.display = values[output.slotOverflow] === 1 ? 'block' : 'none'
       domCache.slots.forEach((slot, index) => {
@@ -524,6 +639,7 @@ export function validateFilesOutputWires(output: FilesOutputs, wireCount: number
   for (const wire of [output.totalHeight, output.scroll, output.scrollTarget, output.scrollRequest, output.slotOverflow, output.selected]) {
     assertWire(wire, wireCount)
   }
+  validateWireView(output.locations, locationCount, wireCount)
   validateWireView(output.slots, slotCount * slotField.size, wireCount)
 }
 
@@ -539,6 +655,13 @@ export function validateFilesOutput(values: Float32Array, output: FilesOutputs) 
   invariant(isBit(values[output.slotOverflow]), `Files slot overflow must equal zero or one, got ${values[output.slotOverflow]}`)
   const selected = values[output.selected]!
   invariant(Number.isInteger(selected) && selected >= -1, `Files selected row must be a row or -1, got ${selected}`)
+  let locationMass = 0
+  for (const wire of output.locations) {
+    const bit = values[wire]
+    invariant(bit === 0 || bit === 1, `a Files location bit must equal zero or one, got ${bit}`)
+    locationMass += bit
+  }
+  invariant(locationMass === 1, `Files must show exactly one location, got ${locationMass}`)
   for (let slot = 0; slot < slotCount; slot++) {
     const outputStart = slot * slotField.size
     const row = values[output.slots[outputStart + slotField.row]!]!
