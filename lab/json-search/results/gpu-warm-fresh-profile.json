@@ -1,0 +1,1508 @@
+{
+ "driver": {
+  "startedAt": "2026-10-13T15:45:18.074Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 5.19 5.10 4.83 }",
+  "memoryBefore": "System-wide memory free percentage: 58%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "main",
+   "--profile",
+   "<scratch>",
+   "--out",
+   "lab/json-search/results/gpu-warm-fresh-profile.json",
+   "--salt",
+   "581980117",
+   "--counts",
+   "100",
+   "--crossover-counts",
+   "10",
+   "--idle-gaps",
+   "16",
+   "--idle-samples",
+   "1",
+   "--timeout-seconds",
+   "150"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-13T15:45:28.132Z",
+    "load": "{ 5.41 5.15 4.85 }"
+   },
+   {
+    "at": "2026-10-13T15:45:38.133Z",
+    "load": "{ 6.33 5.36 4.93 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9421",
+   "--user-data-dir=<scratch>",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "chromePid": 78108,
+  "browser": "Chrome/155.0.8059.40",
+  "finishedAt": "2026-10-13T15:45:44.033Z",
+  "loadAfter": "{ 6.22 5.35 4.93 }",
+  "memoryAfter": "System-wide memory free percentage: 55%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-13T15:45:18.587Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "main",
+   "counts": [
+    100
+   ],
+   "crossoverCounts": [
+    10
+   ],
+   "idleGapsMs": [
+    16
+   ],
+   "idleSamples": 1,
+   "idleTimestampSamples": 3,
+   "keepWarmGapMs": 1000,
+   "windowDocuments": 64,
+   "shaderSalt": 581980117,
+   "seed": 20261013,
+   "invalidFraction": 0.1,
+   "workgroupSize": 64,
+   "warmupMs": 300,
+   "sampleMs": 1500,
+   "minimumSamples": 15,
+   "maximumSamples": 200,
+   "cpuWarmupMs": 500,
+   "cpuSampleMs": 200,
+   "cpuSamples": 5,
+   "executorDocuments": 300,
+   "generatedJsDocuments": 5000,
+   "selfCheckDocuments": 500,
+   "guards": [
+    "none",
+    "max"
+   ],
+   "checkDocuments": 20000
+  },
+  "results": [
+   {
+    "kind": "gpu",
+    "variant": "summary",
+    "count": 100,
+    "at": "2026-10-13T15:45:37.587Z",
+    "megabytesReadBack": 0.001,
+    "megabytesOfCells": 0.205,
+    "backToBack": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.005
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.565,
+      "p10": 0.545,
+      "p90": 0.59,
+      "min": 0.525,
+      "max": 0.61
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.002,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 0.57,
+      "p10": 0.55,
+      "p90": 0.6,
+      "min": 0.535,
+      "max": 0.62
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 0.57,
+      "p10": 0.55,
+      "p90": 0.6,
+      "min": 0.535,
+      "max": 0.62
+     },
+     "gapMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.02
+     }
+    },
+    "withTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.005
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.02
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.048,
+      "p10": 0.845,
+      "p90": 1.42,
+      "min": 0.77,
+      "max": 1.65
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.06,
+      "p10": 0.85,
+      "p90": 1.435,
+      "min": 0.775,
+      "max": 1.66
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 1.06,
+      "p10": 0.85,
+      "p90": 1.435,
+      "min": 0.775,
+      "max": 1.66
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.673,
+      "p10": 0.508,
+      "p90": 1.049,
+      "min": 0.46,
+      "max": 1.297
+     },
+     "gapMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.01
+     }
+    },
+    "afterIdle": [
+     {
+      "idleMs": 16,
+      "cellsMs": {
+       "count": 1,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "uploadMs": {
+       "count": 1,
+       "median": 0.005,
+       "p10": 0.005,
+       "p90": 0.005,
+       "min": 0.005,
+       "max": 0.005
+      },
+      "encodeAndSubmitMs": {
+       "count": 1,
+       "median": 0.02,
+       "p10": 0.02,
+       "p90": 0.02,
+       "min": 0.02,
+       "max": 0.02
+      },
+      "waitMs": {
+       "count": 1,
+       "median": 1.85,
+       "p10": 1.85,
+       "p90": 1.85,
+       "min": 1.85,
+       "max": 1.85
+      },
+      "copyMs": {
+       "count": 1,
+       "median": 0.01,
+       "p10": 0.01,
+       "p90": 0.01,
+       "min": 0.01,
+       "max": 0.01
+      },
+      "totalMs": {
+       "count": 1,
+       "median": 1.885,
+       "p10": 1.885,
+       "p90": 1.885,
+       "min": 1.885,
+       "max": 1.885
+      },
+      "totalWithCellsMs": {
+       "count": 1,
+       "median": 1.885,
+       "p10": 1.885,
+       "p90": 1.885,
+       "min": 1.885,
+       "max": 1.885
+      },
+      "gapMs": {
+       "count": 1,
+       "median": 16.27,
+       "p10": 16.27,
+       "p90": 16.27,
+       "min": 16.27,
+       "max": 16.27
+      },
+      "totals": [
+       1.885
+      ]
+     }
+    ],
+    "afterIdleWithTimestamps": [
+     {
+      "idleMs": 16,
+      "cellsMs": {
+       "count": 3,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "uploadMs": {
+       "count": 3,
+       "median": 0.01,
+       "p10": 0,
+       "p90": 0.01,
+       "min": 0,
+       "max": 0.01
+      },
+      "encodeAndSubmitMs": {
+       "count": 3,
+       "median": 0.025,
+       "p10": 0.025,
+       "p90": 0.03,
+       "min": 0.025,
+       "max": 0.03
+      },
+      "waitMs": {
+       "count": 3,
+       "median": 2.38,
+       "p10": 2.18,
+       "p90": 2.515,
+       "min": 2.18,
+       "max": 2.515
+      },
+      "copyMs": {
+       "count": 3,
+       "median": 0.01,
+       "p10": 0.01,
+       "p90": 0.015,
+       "min": 0.01,
+       "max": 0.015
+      },
+      "totalMs": {
+       "count": 3,
+       "median": 2.415,
+       "p10": 2.23,
+       "p90": 2.565,
+       "min": 2.23,
+       "max": 2.565
+      },
+      "totalWithCellsMs": {
+       "count": 3,
+       "median": 2.415,
+       "p10": 2.23,
+       "p90": 2.565,
+       "min": 2.23,
+       "max": 2.565
+      },
+      "passMs": {
+       "count": 3,
+       "median": 1.551,
+       "p10": 1.522,
+       "p90": 1.563,
+       "min": 1.522,
+       "max": 1.563
+      },
+      "gapMs": {
+       "count": 3,
+       "median": 18.08,
+       "p10": 18.05,
+       "p90": 19.05,
+       "min": 18.05,
+       "max": 19.05
+      },
+      "totals": [
+       2.415,
+       2.23,
+       2.565
+      ],
+      "passes": [
+       1.551,
+       1.522,
+       1.563
+      ]
+     }
+    ],
+    "afterIdleWithKeepWarm": {
+     "idleMs": 1000,
+     "dispatchesPerGap": 50,
+     "cellsMs": {
+      "count": 1,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "uploadMs": {
+      "count": 1,
+      "median": 0.01,
+      "p10": 0.01,
+      "p90": 0.01,
+      "min": 0.01,
+      "max": 0.01
+     },
+     "encodeAndSubmitMs": {
+      "count": 1,
+      "median": 0.03,
+      "p10": 0.03,
+      "p90": 0.03,
+      "min": 0.03,
+      "max": 0.03
+     },
+     "waitMs": {
+      "count": 1,
+      "median": 2.38,
+      "p10": 2.38,
+      "p90": 2.38,
+      "min": 2.38,
+      "max": 2.38
+     },
+     "copyMs": {
+      "count": 1,
+      "median": 0.02,
+      "p10": 0.02,
+      "p90": 0.02,
+      "min": 0.02,
+      "max": 0.02
+     },
+     "totalMs": {
+      "count": 1,
+      "median": 2.44,
+      "p10": 2.44,
+      "p90": 2.44,
+      "min": 2.44,
+      "max": 2.44
+     },
+     "totalWithCellsMs": {
+      "count": 1,
+      "median": 2.44,
+      "p10": 2.44,
+      "p90": 2.44,
+      "min": 2.44,
+      "max": 2.44
+     },
+     "gapMs": {
+      "count": 1,
+      "median": 1003.705,
+      "p10": 1003.705,
+      "p90": 1003.705,
+      "min": 1003.705,
+      "max": 1003.705
+     },
+     "totals": [
+      2.44
+     ]
+    },
+    "withUpload": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.035,
+      "p10": 0.035,
+      "p90": 0.04,
+      "min": 0.03,
+      "max": 0.055
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.055,
+      "p10": 0.05,
+      "p90": 0.06,
+      "min": 0.045,
+      "max": 0.085
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.905,
+      "p10": 0.86,
+      "p90": 0.955,
+      "min": 0.82,
+      "max": 0.995
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 0.97,
+      "p10": 0.925,
+      "p90": 1.02,
+      "min": 0.88,
+      "max": 1.06
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 1.005,
+      "p10": 0.96,
+      "p90": 1.06,
+      "min": 0.915,
+      "max": 1.095
+     },
+     "gapMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.015
+     }
+    },
+    "checks": {
+     "readbacks": 1698,
+     "values": 509400,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "gpu",
+    "variant": "display-window",
+    "count": 100,
+    "at": "2026-10-13T15:45:40.134Z",
+    "megabytesReadBack": 0.132,
+    "megabytesOfCells": 0.205,
+    "backToBack": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.005
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.02
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.99,
+      "p10": 0.945,
+      "p90": 1.03,
+      "min": 0.92,
+      "max": 1.26
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1,
+      "p10": 0.955,
+      "p90": 1.045,
+      "min": 0.935,
+      "max": 1.27
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 1,
+      "p10": 0.955,
+      "p90": 1.045,
+      "min": 0.935,
+      "max": 1.27
+     },
+     "gapMs": {
+      "count": 200,
+      "median": 0.035,
+      "p10": 0.03,
+      "p90": 0.04,
+      "min": 0.03,
+      "max": 0.045
+     }
+    },
+    "withTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.005
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.415,
+      "p10": 1.17,
+      "p90": 1.68,
+      "min": 1.125,
+      "max": 2.015
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.43,
+      "p10": 1.18,
+      "p90": 1.7,
+      "min": 1.135,
+      "max": 2.03
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 1.43,
+      "p10": 1.18,
+      "p90": 1.7,
+      "min": 1.135,
+      "max": 2.03
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.985,
+      "p10": 0.793,
+      "p90": 1.233,
+      "min": 0.782,
+      "max": 1.618
+     },
+     "gapMs": {
+      "count": 200,
+      "median": 0.035,
+      "p10": 0.03,
+      "p90": 0.04,
+      "min": 0.03,
+      "max": 0.065
+     }
+    },
+    "afterIdle": [
+     {
+      "idleMs": 16,
+      "cellsMs": {
+       "count": 1,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "uploadMs": {
+       "count": 1,
+       "median": 0.005,
+       "p10": 0.005,
+       "p90": 0.005,
+       "min": 0.005,
+       "max": 0.005
+      },
+      "encodeAndSubmitMs": {
+       "count": 1,
+       "median": 0.02,
+       "p10": 0.02,
+       "p90": 0.02,
+       "min": 0.02,
+       "max": 0.02
+      },
+      "waitMs": {
+       "count": 1,
+       "median": 1.71,
+       "p10": 1.71,
+       "p90": 1.71,
+       "min": 1.71,
+       "max": 1.71
+      },
+      "copyMs": {
+       "count": 1,
+       "median": 0.01,
+       "p10": 0.01,
+       "p90": 0.01,
+       "min": 0.01,
+       "max": 0.01
+      },
+      "totalMs": {
+       "count": 1,
+       "median": 1.745,
+       "p10": 1.745,
+       "p90": 1.745,
+       "min": 1.745,
+       "max": 1.745
+      },
+      "totalWithCellsMs": {
+       "count": 1,
+       "median": 1.745,
+       "p10": 1.745,
+       "p90": 1.745,
+       "min": 1.745,
+       "max": 1.745
+      },
+      "gapMs": {
+       "count": 1,
+       "median": 18.065,
+       "p10": 18.065,
+       "p90": 18.065,
+       "min": 18.065,
+       "max": 18.065
+      },
+      "totals": [
+       1.745
+      ]
+     }
+    ],
+    "checks": {
+     "readbacks": 1868,
+     "values": 30885512,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "gpu",
+    "variant": "display-all",
+    "count": 100,
+    "at": "2026-10-13T15:45:41.278Z",
+    "megabytesReadBack": 0.206,
+    "megabytesOfCells": 0.205,
+    "backToBack": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.005
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.785,
+      "p10": 0.765,
+      "p90": 0.84,
+      "min": 0.725,
+      "max": 1.255
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.04
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 0.795,
+      "p10": 0.775,
+      "p90": 0.855,
+      "min": 0.735,
+      "max": 1.28
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 0.795,
+      "p10": 0.775,
+      "p90": 0.855,
+      "min": 0.735,
+      "max": 1.28
+     },
+     "gapMs": {
+      "count": 200,
+      "median": 0.05,
+      "p10": 0.05,
+      "p90": 0.055,
+      "min": 0.045,
+      "max": 0.065
+     }
+    },
+    "withTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.015
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.025
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.46,
+      "p10": 1.075,
+      "p90": 2.165,
+      "min": 1.015,
+      "max": 2.28
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.015
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.475,
+      "p10": 1.085,
+      "p90": 2.18,
+      "min": 1.03,
+      "max": 2.3
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 1.475,
+      "p10": 1.085,
+      "p90": 2.18,
+      "min": 1.03,
+      "max": 2.3
+     },
+     "passMs": {
+      "count": 200,
+      "median": 1.028,
+      "p10": 0.685,
+      "p90": 1.737,
+      "min": 0.641,
+      "max": 1.785
+     },
+     "gapMs": {
+      "count": 200,
+      "median": 0.055,
+      "p10": 0.05,
+      "p90": 0.06,
+      "min": 0.045,
+      "max": 0.075
+     }
+    },
+    "afterIdle": [
+     {
+      "idleMs": 16,
+      "cellsMs": {
+       "count": 1,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "uploadMs": {
+       "count": 1,
+       "median": 0.01,
+       "p10": 0.01,
+       "p90": 0.01,
+       "min": 0.01,
+       "max": 0.01
+      },
+      "encodeAndSubmitMs": {
+       "count": 1,
+       "median": 0.015,
+       "p10": 0.015,
+       "p90": 0.015,
+       "min": 0.015,
+       "max": 0.015
+      },
+      "waitMs": {
+       "count": 1,
+       "median": 2.205,
+       "p10": 2.205,
+       "p90": 2.205,
+       "min": 2.205,
+       "max": 2.205
+      },
+      "copyMs": {
+       "count": 1,
+       "median": 0.01,
+       "p10": 0.01,
+       "p90": 0.01,
+       "min": 0.01,
+       "max": 0.01
+      },
+      "totalMs": {
+       "count": 1,
+       "median": 2.24,
+       "p10": 2.24,
+       "p90": 2.24,
+       "min": 2.24,
+       "max": 2.24
+      },
+      "totalWithCellsMs": {
+       "count": 1,
+       "median": 2.24,
+       "p10": 2.24,
+       "p90": 2.24,
+       "min": 2.24,
+       "max": 2.24
+      },
+      "gapMs": {
+       "count": 1,
+       "median": 17.15,
+       "p10": 17.15,
+       "p90": 17.15,
+       "min": 17.15,
+       "max": 17.15
+      },
+      "totals": [
+       2.24
+      ]
+     }
+    ],
+    "withUpload": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0.035,
+      "p10": 0.035,
+      "p90": 0.04,
+      "min": 0.03,
+      "max": 0.055
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0.05,
+      "p10": 0.05,
+      "p90": 0.06,
+      "min": 0.045,
+      "max": 0.1
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.02
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.225,
+      "p10": 1.195,
+      "p90": 1.345,
+      "min": 1.17,
+      "max": 1.415
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.02
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.295,
+      "p10": 1.26,
+      "p90": 1.415,
+      "min": 1.23,
+      "max": 1.49
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 1.33,
+      "p10": 1.295,
+      "p90": 1.45,
+      "min": 1.265,
+      "max": 1.525
+     },
+     "gapMs": {
+      "count": 200,
+      "median": 0.055,
+      "p10": 0.05,
+      "p90": 0.065,
+      "min": 0.05,
+      "max": 0.1
+     }
+    },
+    "checks": {
+     "readbacks": 2692,
+     "values": 69319000,
+     "mismatches": 0
+    }
+   },
+   {
+    "kind": "gpu",
+    "variant": "summary",
+    "count": 10,
+    "at": "2026-10-13T15:45:42.985Z",
+    "megabytesReadBack": 0,
+    "megabytesOfCells": 0.021,
+    "backToBack": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.005
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.02
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 0.71,
+      "p10": 0.685,
+      "p90": 0.74,
+      "min": 0.67,
+      "max": 0.77
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 0.72,
+      "p10": 0.695,
+      "p90": 0.75,
+      "min": 0.675,
+      "max": 0.785
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 0.72,
+      "p10": 0.695,
+      "p90": 0.75,
+      "min": 0.675,
+      "max": 0.785
+     },
+     "gapMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.015
+     }
+    },
+    "withTimestamps": {
+     "cellsMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "uploadMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.005
+     },
+     "encodeAndSubmitMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0.005,
+      "p90": 0.01,
+      "min": 0,
+      "max": 0.025
+     },
+     "waitMs": {
+      "count": 200,
+      "median": 1.12,
+      "p10": 0.96,
+      "p90": 1.625,
+      "min": 0.86,
+      "max": 2.2
+     },
+     "copyMs": {
+      "count": 200,
+      "median": 0.005,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.01
+     },
+     "totalMs": {
+      "count": 200,
+      "median": 1.127,
+      "p10": 0.965,
+      "p90": 1.64,
+      "min": 0.87,
+      "max": 2.21
+     },
+     "totalWithCellsMs": {
+      "count": 200,
+      "median": 1.127,
+      "p10": 0.965,
+      "p90": 1.64,
+      "min": 0.87,
+      "max": 2.21
+     },
+     "passMs": {
+      "count": 200,
+      "median": 0.706,
+      "p10": 0.573,
+      "p90": 1.167,
+      "min": 0.505,
+      "max": 1.652
+     },
+     "gapMs": {
+      "count": 200,
+      "median": 0,
+      "p10": 0,
+      "p90": 0.005,
+      "min": 0,
+      "max": 0.01
+     }
+    },
+    "checks": {
+     "readbacks": 1046,
+     "values": 31380,
+     "mismatches": 0
+    }
+   }
+  ],
+  "programs": [
+   {
+    "rootSet": "summary",
+    "buildMs": 41.58,
+    "sourceCells": 4575,
+    "operations": 7186,
+    "layers": 536,
+    "storedWeights": 12307,
+    "indexReads": 4609,
+    "compileMs": 8.645,
+    "emitMs": 19.575,
+    "statements": 11814,
+    "shaderBytes": 728228,
+    "rowCounts": {
+     "affine": 1033,
+     "reglu": 1544,
+     "boolean": 0,
+     "index": 4609
+    },
+    "outputCounts": [
+     3
+    ]
+   },
+   {
+    "rootSet": "display",
+    "buildMs": 41.58,
+    "sourceCells": 4575,
+    "operations": 7698,
+    "layers": 536,
+    "storedWeights": 13331,
+    "indexReads": 5121,
+    "compileMs": 7.525,
+    "emitMs": 18.68,
+    "statements": 13350,
+    "shaderBytes": 820204,
+    "rowCounts": {
+     "affine": 1033,
+     "reglu": 1544,
+     "boolean": 0,
+     "index": 5121
+    },
+    "outputCounts": [
+     3,
+     512
+    ]
+   }
+  ],
+  "documents": {
+   "generateMs": 2.13,
+   "writeCellsMs": 0.52,
+   "megabytesOfCells": 0.205,
+   "count": 100,
+   "invalid": 14,
+   "nonAscii": 24,
+   "lengths": {
+    "minimum": 76,
+    "quartile1": 202,
+    "median": 302,
+    "quartile3": 375,
+    "maximum": 503,
+    "mean": 287.6
+   },
+   "histogram": [
+    0,
+    12,
+    11,
+    16,
+    19,
+    22,
+    10,
+    10,
+    0
+   ],
+   "shapes": {
+    "packageManifest": 10,
+    "userRecord": 14,
+    "logEvent": 15,
+    "settings": 18,
+    "order": 14,
+    "mapFeature": 14,
+    "sensorReadings": 15
+   },
+   "defects": {
+    "none": 86,
+    "missingQuote": 1,
+    "trailingComma": 5,
+    "badEscape": 1,
+    "tooDeep": 2,
+    "tooLong": 0,
+    "missingColon": 1,
+    "unquotedKey": 0,
+    "truncatedText": 0,
+    "singleQuotes": 0,
+    "badLiteral": 1,
+    "badNumber": 1,
+    "missingComma": 0,
+    "mismatchedBracket": 1,
+    "controlCharacter": 0,
+    "comment": 1,
+    "extraText": 0
+   }
+  },
+  "agreement": {
+   "documents": 100,
+   "labelDisagrees": 0,
+   "jsonParseDisagrees": 0,
+   "referenceDisagrees": 0,
+   "tableLoopDisagrees": 0,
+   "validDocuments": 86
+  },
+  "cpu": {
+   "byCount": [
+    {
+     "count": 100,
+     "executorDocuments": 100,
+     "generatedJsDocuments": 100,
+     "jsonParse": {
+      "microsecondsPerDocument": 0.765,
+      "samples": [
+       0.765,
+       0.765,
+       0.751,
+       0.769,
+       0.758
+      ]
+     },
+     "reference": {
+      "microsecondsPerDocument": 5.382,
+      "samples": [
+       5.377,
+       5.382,
+       5.29,
+       5.484,
+       5.413
+      ]
+     },
+     "tableLoop": {
+      "microsecondsPerDocument": 1.249,
+      "samples": [
+       1.238,
+       1.263,
+       1.22,
+       1.249,
+       1.262
+      ]
+     },
+     "executorSummary": {
+      "microsecondsPerDocument": 86.881,
+      "samples": [
+       86.619,
+       86.231,
+       86.881,
+       87.924,
+       88.146
+      ]
+     },
+     "executorDisplay": {
+      "microsecondsPerDocument": 90.517,
+      "samples": [
+       94.136,
+       92.195,
+       89.841,
+       90.409,
+       90.517
+      ]
+     },
+     "generatedJsSummary": {
+      "microsecondsPerDocument": 19.719,
+      "samples": [
+       23.195,
+       18.906,
+       19.716,
+       19.719,
+       19.879
+      ]
+     },
+     "generatedJsDisplay": {
+      "microsecondsPerDocument": 22.821,
+      "samples": [
+       28.251,
+       24.425,
+       22.821,
+       22.548,
+       22.324
+      ]
+     }
+    }
+   ],
+   "executorEveryDocumentMs": 14.81,
+   "generatedJsMismatchesAgainstExecutor": 0,
+   "generatedJsSourceBytes": [
+    615953,
+    675938
+   ],
+   "jsonParseValidOnly": {
+    "documents": 86,
+    "microsecondsPerDocument": 0.378,
+    "samples": [
+     0.385,
+     0.381,
+     0.376,
+     0.369,
+     0.378
+    ]
+   },
+   "jsonParseThrowingOnly": {
+    "documents": 12,
+    "microsecondsPerDocument": 4.317,
+    "samples": [
+     4.317,
+     4.232,
+     4.274,
+     4.609,
+     4.445
+    ]
+   },
+   "sink": 34407767
+  },
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeWorkgroupsPerDimension": 65535
+   },
+   "hasTimestamps": true,
+   "grantedBufferBytes": 134217728
+  },
+  "compile": {
+   "emptyPipelineMs": 34.44,
+   "programs": [
+    {
+     "rootSet": "summary",
+     "shaderSalt": 581980117,
+     "statements": 11814,
+     "shaderBytes": 728228,
+     "compileMs": 1956.75,
+     "corpusCheck": {
+      "texts": 2509,
+      "values": 7527,
+      "mismatches": 0
+     }
+    },
+    {
+     "rootSet": "display",
+     "shaderSalt": 581980117,
+     "statements": 13350,
+     "shaderBytes": 820204,
+     "compileMs": 2508.835,
+     "corpusCheck": {
+      "texts": 2509,
+      "values": 1292135,
+      "mismatches": 0
+     }
+    }
+   ]
+  },
+  "firstLoad": {
+   "documents": 100,
+   "megabytesUploaded": 0.205,
+   "uploadAndFirstEvaluationMs": 6.3,
+   "mismatches": 0
+  },
+  "selfCheck": {
+   "documents": 100,
+   "values": 51500,
+   "mismatches": 0,
+   "cpuMs": 12.22000002861023,
+   "gpuMs": 2.575000047683716
+  },
+  "finishedAt": "2026-10-13T15:45:43.989Z",
+  "logLines": [
+   "164.485 ms: 100 documents generated in 2.13 ms, cells written in 0.52 ms",
+   "184.18 ms: the executor ran the display program over 100 documents in 14.81 ms",
+   "188.35 ms: agreement with the executor: {\"documents\":100,\"labelDisagrees\":0,\"jsonParseDisagrees\":0,\"referenceDisagrees\":0,\"tableLoopDisagrees\":0,\"validDocuments\":86}",
+   "10881.18 ms: CPU in this page, 100 documents, µs per document: jsonParse 0.765, reference 5.382, tableLoop 1.249, executorSummary 86.881, executorDisplay 90.517, generatedJsSummary 19.719, generatedJsDisplay 22.821",
+   "16191.795 ms: summary: 11814 statements compiled in 1956.75 ms, test texts {\"texts\":2509,\"values\":7527,\"mismatches\":0}",
+   "19036.37 ms: display: 13350 statements compiled in 2508.835 ms, test texts {\"texts\":2509,\"values\":1292135,\"mismatches\":0}",
+   "19058.715 ms: first load {\"documents\":100,\"megabytesUploaded\":0.205,\"uploadAndFirstEvaluationMs\":6.3,\"mismatches\":0}, self check {\"documents\":100,\"values\":51500,\"mismatches\":0,\"cpuMs\":12.22000002861023,\"gpuMs\":2.575000047683716}",
+   "21605.095 ms: summary, 100 documents: back to back 0.57 ms, pass 0.673 ms, with upload 1.005 ms, checks {\"readbacks\":1698,\"values\":509400,\"mismatches\":0}",
+   "22746.31 ms: display-window, 100 documents: back to back 1 ms, pass 0.985 ms, with upload undefined ms, checks {\"readbacks\":1868,\"values\":30885512,\"mismatches\":0}",
+   "24455.9 ms: display-all, 100 documents: back to back 0.795 ms, pass 1.028 ms, with upload 1.33 ms, checks {\"readbacks\":2692,\"values\":69319000,\"mismatches\":0}",
+   "25458.87 ms: summary, 10 documents: back to back 0.72 ms, pass 0.706 ms, with upload undefined ms, checks {\"readbacks\":1046,\"values\":31380,\"mismatches\":0}"
+  ],
+  "done": true
+ }
+}
