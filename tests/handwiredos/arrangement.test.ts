@@ -16,7 +16,7 @@ const natural = [
 ]
 // What arrangeInitialWindows reads from the table of a machine that starts with the
 // default paragraph: the 44 px title bar, Photos' 18 px gap, and the paragraph's
-// length on one line, 1,735.34375 px at the baked widths, rounded up to 1,800 px.
+// length on one line, 1,752.40625 px at the baked widths, rounded up to 1,800 px.
 const metrics: ArrangementMetrics = {titleHeight: 44, notesTextWidth: 1800, photosGap: 18}
 
 // The viewports that the page was checked at in a browser, and other common ones.
@@ -146,7 +146,7 @@ test('in one column, each window is covered just under a part of its content', (
 })
 
 test('the arrangement reads the title bar, Photos\' gap and the length of Notes\' text from the table, and a longer text gets more lines', () => {
-  // The default paragraph's widths add up to 1,735.34375 px on October 13, 2026, which
+  // The default paragraph's widths add up to 1,752.40625 px on October 13, 2026, which
   // the arrangement rounds up to the next 100 px.
   const paragraphWidth = defaultNotesParagraph.widths.reduce((sum, width) => sum + width, 0)
   assert.equal(Math.ceil(paragraphWidth / 100) * 100, metrics.notesTextWidth)
@@ -157,10 +157,10 @@ test('the arrangement reads the title bar, Photos\' gap and the length of Notes\
   )
   const shown = (rectangles: readonly Rectangle[]) => rectangles.slice(1).map((rectangle, index) => rectangle.top - rectangles[index]!.top)
 
-  // The same paragraph twice, with the space between the two, is 3,475.0625 px long
-  // at those widths, i.e. 3,500 px for the arrangement. In the phone's column of
-  // 324 px that is 11 lines and one to spare, where the default paragraph has 6 and
-  // one. So Notes shows 12 lines and not 7, Photos gives up 31 px of its 322, and
+  // The same paragraph twice, with the space between the two, is 3,509.1875 px long
+  // at those widths, i.e. 3,600 px for the arrangement. In the phone's column of
+  // 324 px that is 12 lines and one to spare, where the default paragraph has 6 and
+  // one. So Notes shows 13 lines and not 7, Photos gives up 53 px of its 322, and
   // Monitor is left with its title bar.
   const doubled = {
     widths: [...defaultNotesParagraph.widths, 4.375, ...defaultNotesParagraph.widths],
@@ -170,8 +170,8 @@ test('the arrangement reads the title bar, Photos\' gap and the length of Notes\
   const longerRectangles = arrangeInitialWindows(longer.source, longer.cells, 390, 844)
   assert.deepEqual(longerRectangles, arrangeWindows(workspaceOf(390, 844), minimum, natural, {...metrics, notesTextWidth: Math.ceil((2 * paragraphWidth + 4.375) / 100) * 100}))
   assert.deepEqual(shown(arrangeWindows(workspaceOf(390, 844), minimum, natural, metrics)), [44, 69 + 7 * 22 + 4, 113])
-  assert.deepEqual(shown(longerRectangles), [44, 69 + 12 * 22 + 4, 44])
-  assert.deepEqual([arrangeWindows(workspaceOf(390, 844), minimum, natural, metrics)[3]!.height, longerRectangles[3]!.height], [322, 291])
+  assert.deepEqual(shown(longerRectangles), [44, 69 + 13 * 22 + 4, 44])
+  assert.deepEqual([arrangeWindows(workspaceOf(390, 844), minimum, natural, metrics)[3]!.height, longerRectangles[3]!.height], [322, 269])
 
   // A taller title bar and a smaller gap in the table move the column's parts by the
   // same amounts: with a 50 px title bar, Notes' first line starts 6 px lower.

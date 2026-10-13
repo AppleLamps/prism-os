@@ -7,7 +7,7 @@
 import type {FastParagraph} from './notes-walker.ts'
 
 export const notesText =
-  'This paragraph is laid out by the same circuit that runs the windows. Drag Files or Photos over this note, ' +
+  'Type anything here. The same program that runs the windows lays out this note. Drag Files or Photos over it, ' +
   'and every line narrows around them. Words move straight to their new places in one frame, and the lines break ' +
   'where pretext would break them.'
 
@@ -25,9 +25,9 @@ export const notesFont = '14px Georgia, "Times New Roman", serif'
 export const notesWords = notesText.split(' ')
 export const defaultNotesParagraph: FastParagraph = {
   widths: [
-    28.4375, 4.375, 69.5625, 4.375, 14.875, 4.375, 28.875, 4.375, 22.53125, 4.375, 14.65625, 4.375, 23.1875, 4.375,
-    31.5, 4.375, 51.625, 4.375, 31.0625, 4.375, 30.40625, 4.375, 23.1875, 4.375, 56, 4.375, 31.28125, 4.375,
-    37.40625, 4.375, 15.96875, 4.375, 45.28125, 4.375, 30.625, 4.375, 29.75, 4.375, 36.96875, 4.375, 22.96875, 4.375,
+    30.625, 4.375, 59.28125, 4.375, 35.875, 4.375, 21.875, 4.375, 31.5, 4.375, 55.5625, 4.375, 31.0625, 4.375,
+    30.40625, 4.375, 23.1875, 4.375, 51.1875, 4.375, 29.96875, 4.375, 22.53125, 4.375, 29.75, 4.375, 36.96875, 4.375,
+    31.28125, 4.375, 37.40625, 4.375, 15.96875, 4.375, 45.28125, 4.375, 30.625, 4.375, 19.90625, 4.375, 22.96875, 4.375,
     38.28125, 4.375, 29.09375, 4.375, 54.25, 4.375, 45.0625, 4.375, 35.21875, 4.375, 40.6875, 4.375, 29.53125, 4.375,
     63, 4.375, 16.40625, 4.375, 37.84375, 4.375, 22.3125, 4.375, 47.03125, 4.375, 13.78125, 4.375, 23.40625, 4.375,
     44.625, 4.375, 22.96875, 4.375, 23.1875, 4.375, 37.625, 4.375, 38.5, 4.375, 37.625, 4.375, 57.09375, 4.375,

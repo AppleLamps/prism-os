@@ -76,10 +76,12 @@ const notesFlow = notesOptionsFor(defaultLineFitEpsilon)
 // both sides, 50 px.
 const notesHorizontalInset = 2 * (border + notesFlow.padding)
 
-// The length of Notes' text on one line, rounded up to the next 100 px. The room to
-// spare is for the page's font: at mount the cells hold the baked measurement of the
-// starting paragraph, 1,735 px, and the page's own measurement, which arrives with
-// the first step, is about 1,770 px in Georgia at 14 px. Both give 1,800.
+// The length of Notes' text on one line, rounded up to the next 100 px. At mount the
+// cells hold the baked measurement of the starting paragraph, 1,752 px, which gives
+// 1,800. The page's own measurement arrives with the first step, after the windows
+// are arranged, and is shorter: 1,567 px in Georgia at 14 px in Chrome on macOS. So
+// in the page the text has more room to spare than the rounding adds, e.g. the
+// phone's column of 324 px gets 7 lines for a text that takes 5.
 function notesTextWidthOf(source: Float32Array, widthCells: readonly Wire[]) {
   let width = 0
   for (const cell of widthCells) width += source[cell]!

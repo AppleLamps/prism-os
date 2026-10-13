@@ -190,9 +190,10 @@ test('the textarea is created once with the starting text, and the first frame d
       ['block', `translate3d(${place.x}px,${place.y}px,0)`, `${place.visible}`],
     )
   })
-  // At the starting arrangement the last 10 words have no line, and Photos is the focused window: no caret, and
-  // the textarea isn't focused.
-  assert.equal(words().filter(node => node.style['opacity'] === '1').length, 35)
+  // At the starting arrangement the last 12 words have no line, and Photos is the focused window: no caret, and
+  // the textarea isn't focused. The 7 free lines of 205 px hold 33 of the 45 words at the baked widths, up to
+  // "straight to their new places".
+  assert.equal(words().filter(node => node.style['opacity'] === '1').length, 33)
   assert.equal(caret.style['display'], 'none')
   assert.deepEqual([input.focusCalls.length, input.blurCalls], [0, 0])
   // Later frames write no text again.
@@ -471,9 +472,9 @@ test('a run of letters wider than the column is drawn as pieces that wrap inside
 
 test('the note says which capacity its text passes, and writes the sentence only when it changes', () => {
   const {frame, type, press, notice, shownWords, input} = mount()
-  // At the start, Photos and System Monitor leave 7 lines, and the paragraph's last 10 words have none.
+  // At the start, Photos and System Monitor leave 7 lines, and the paragraph's last 12 words have none.
   frame()
-  assert.deepEqual([notice.style['display'], notice.textContent], ['-webkit-box', 'The last 10 words don\'t fit in the lines that are free.'])
+  assert.deepEqual([notice.style['display'], notice.textContent], ['-webkit-box', 'The last 12 words don\'t fit in the lines that are free.'])
   frame()
   assert.equal(notice.textWrites, 1)
   // With Notes in front, the paragraph fits, and the notice is hidden.

@@ -1236,12 +1236,16 @@ test('the walker breaks a line at a 1/64 px tie the way pretext does, at either 
   }
 })
 
-test('at the starting arrangement the paragraph gets 7 lines of 205 px, and its last 10 words have no line', () => {
+test('at the starting arrangement the paragraph gets 7 lines of 205 px, and its last 12 words have no line', () => {
   const machine = machineAtStart()
   const values = step(machine)
-  // Photos covers the right of the column and System Monitor the lower left.
+  // Photos covers the right of the column and System Monitor the lower left. pretext
+  // alone breaks the starting text into these 7 lines at 205 px, which hold 33 of
+  // its 45 words: "Type anything here. The same", "program that runs the", "windows
+  // lays out this note.", "Drag Files or Photos over it,", "and every line narrows",
+  // "around them. Words move", "straight to their new places".
   const words = readWords(machine, values)
-  assert.equal(words.filter(word => word.visible === 1).length, 35)
+  assert.equal(words.filter(word => word.visible === 1).length, 33)
   assert.equal(values[machine.output.notes.lineCount], 7)
   assert.equal(values[machine.output.notes.truncated], 1)
   assert.ok(words.filter(word => word.visible === 1).every(word => word.x >= 24 && word.x < 24 + 205))
