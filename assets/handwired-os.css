@@ -425,8 +425,9 @@ body {
 .kind-index { --kind-color: var(--wire-plum); }
 
 /* Files: a list of the program's own operations in a native scroller. JavaScript creates
-   the header's cells and the rows, and writes each row's transform, display and --selected
-   every frame, the spacer's height, and the three sizes below. */
+   the header's cells and the rows, writes each row's transform, display and --selected
+   every frame, and the spacer's height, and copies the three sizes below from the
+   program's numbers when the page loads. */
 .files-content {
   --files-header-height: 28px;
   --files-row-height: 24px;
@@ -963,7 +964,7 @@ body {
 .image-10 { background-image: url("./photo-gallery-10.webp"); }
 .image-11 { background-image: url("./photo-gallery-11.webp"); }
 
-/* Previous and next: a chevron in the program's 52 px box. In a window under 1150 px wide
+/* Previous and next: a chevron in the program's 52 px box. In a window under 765 px wide
    the box reaches over the open photo's edge, so the controls are above the photos, and
    the disc under the pointer is a round sheet of paper and not a wash. */
 .photos-control {
@@ -985,6 +986,7 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 50%;
+  /* --sheet at no opacity, so the disc fades in without passing through gray. */
   background-color: color-mix(in srgb, var(--sheet) 0%, transparent);
   transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
 }
@@ -1096,8 +1098,9 @@ body {
   stroke: none;
 }
 
-/* The joint's middle row is the wire's row: the tile's padding box ends 7 px above the
-   desktop's bottom, the wire is the row 6 px above it, and the joint is 7 px tall. */
+/* The joint is 7 px tall, and its middle row is the wire's row: a 50 px tile's padding box
+   ends 14 px above the desktop's bottom, the joint's box ends 11 px below that, and the
+   wire is the row from 7 to 6 px above the bottom. */
 .dock-item i {
   position: absolute;
   bottom: -11px;
