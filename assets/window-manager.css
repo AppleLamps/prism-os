@@ -352,9 +352,18 @@ body {
 }
 
 /* The Notes paragraph as one span per word, positioned by the circuit in the
-   content box's coordinates. */
+   content box's coordinates. The browser scrolls a box with overflow: hidden to show
+   the caret of a focused textarea that the box cuts off, which would shift every
+   word, and a box with overflow: clip can't be scrolled. */
 .notes-flow {
   padding: 0;
+  overflow: clip;
+}
+
+/* The Notes window's frame cuts its content box off while the frame grows to a new
+   size, e.g. during a maximize, so the frame can't be scrolled either. */
+.window-notes {
+  overflow: clip;
 }
 
 .notes-word {
@@ -367,6 +376,57 @@ body {
   line-height: 22px;
   white-space: pre;
   pointer-events: none;
+}
+
+/* The note's text as the visitor types it. The textarea is never shown: it holds the
+   characters, the caret and the selection, and notes-host.ts moves it to the caret,
+   so that an input method opens its candidate window there. */
+.notes-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  opacity: 0;
+  resize: none;
+  overflow: hidden;
+  white-space: pre;
+  pointer-events: none;
+  user-select: text;
+  -webkit-user-select: text;
+  /* At least 16px, so that iOS Safari doesn't zoom the page when the textarea gets
+     the focus. */
+  font: 16px Georgia, "Times New Roman", serif;
+}
+
+/* The caret, drawn where the program laid out the character after it. Its two
+   animations have the same keyframes: notes-host.ts switches between them when the
+   caret moves, which starts the blink again. */
+.notes-caret {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  width: 1.5px;
+  height: 17px;
+  background: #ffc857;
+  pointer-events: none;
+  animation: notes-caret-blink-a 1.1s steps(1) infinite;
+}
+
+@keyframes notes-caret-blink-a {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes notes-caret-blink-b {
+  50% {
+    opacity: 0;
+  }
 }
 
 .monitor-content {

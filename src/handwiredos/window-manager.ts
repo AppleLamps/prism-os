@@ -60,10 +60,12 @@ import {
   defaultLineFitEpsilon,
   defaultNotesParagraph,
   lineFitEpsilonFor,
-  measureNotesParagraph,
   notesCapacity,
+  notesFont,
   notesOptionsFor,
+  notesText,
 } from './notes-paragraph.ts'
+import {createCanvasMeasure, createNotesHost} from './notes-host.ts'
 
 export {bandOutputField, notesWindowIndex, segmentOutputField}
 
@@ -1211,12 +1213,13 @@ type WindowManagerObserver = {
 // copy of the table, so the stored table depends only on the timestamped events.
 //
 // `notes` is the measurement of the text that Notes starts with, and pretext's line
-// fit epsilon, e.g. the browser's at mount, see measureNotesParagraph. The default
-// is a baked measurement of the starting paragraph, so every process starts from the
-// same table. The paragraph only sets the initial values of Notes' segment cells:
-// the program is the same for every paragraph, and notesText replaces the text
-// later. A paragraph with more segments than the cells hold is cut, as in notesText.
-export function createWindowManagerMachine(options: {writeBack?: WriteBack, notes?: {paragraph: FastParagraph, epsilon: number}} = {}) {
+// fit epsilon, e.g. the browser's at mount. The default paragraph is a baked
+// measurement of the starting paragraph, so every process starts from the same
+// table. The paragraph only sets the initial values of Notes' segment cells: the
+// program is the same for every paragraph, and notesText replaces the text later,
+// e.g. the page queues its own measurement before the first step. A paragraph with
+// more segments than the cells hold is cut, as in notesText.
+export function createWindowManagerMachine(options: {writeBack?: WriteBack, notes?: {paragraph?: FastParagraph, epsilon?: number}} = {}) {
   const writeBack = options.writeBack ?? 'events and settle checks'
   const notesOptions = notesOptionsFor(options.notes?.epsilon ?? defaultLineFitEpsilon)
   const notesParagraph = fitNotesParagraph(options.notes?.paragraph ?? defaultNotesParagraph, notesOptions.capacity)
@@ -1474,7 +1477,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     },
     // The Notes text changed, e.g. a character was typed. `paragraph` is the new
     // text's measurement: one width and one break-after bit per segment, see
-    // measureNotesParagraph. The event rewrites every segment cell and the count of
+    // prepareNotesText in notes-text.ts. The event rewrites every segment cell and the count of
     // cells that hold text, so its evaluation lays the new text out, and the words
     // move in that evaluation like at any other event. The paragraph first passes
     // through fitNotesParagraph, which rounds and clamps the widths and leaves out
@@ -1495,13 +1498,12 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
 }
 
 function mountWindowManager(document: Document, window: Window) {
-  // The Notes paragraph is measured in the page's font with pretext, and Notes'
-  // cells start with that measurement. The program is built with the line fit
-  // epsilon that pretext uses in this browser.
-  const {paragraph, prepared} = measureNotesParagraph()
-  const machine = createWindowManagerMachine({notes: {paragraph, epsilon: lineFitEpsilonFor(window.navigator)}})
-  // The segment cell of each word, e.g. the second word's cell is 2, after the first space's.
-  const wordSegments = paragraph.breakAfter.flatMap((breakAfter, segment) => breakAfter === 0 && segment < notesCapacity ? [segment] : [])
+  // The program is built with the line fit epsilon that pretext uses in this
+  // browser, and is otherwise the same in every browser and for every font. Notes'
+  // cells start with the baked measurement of the starting paragraph, and the Notes
+  // host below queues the page's own measurement before the first step.
+  const notesOptions = notesOptionsFor(lineFitEpsilonFor(window.navigator))
+  const machine = createWindowManagerMachine({notes: {epsilon: notesOptions.epsilon}})
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
@@ -1537,9 +1539,26 @@ function mountWindowManager(document: Document, window: Window) {
     photosViewport, // mount lifetime
     monitorFrame, // mount lifetime
     monitorRaf, // mount lifetime
-    wordNodes: createWordNodes(document, windowContents[notesWindowIndex]!, wordSegments.map(segment => prepared.segments[segment]!)), // mount lifetime
   }
   const photos = createPhotoGalleryRenderer(document, domCache.photosViewport)
+  // The note's text: a textarea that the visitor types into, and the nodes that draw the text where the program lays
+  // it out, see notes-host.ts.
+  const notesWindowOutput = notesWindowIndex * windowOutputField.size
+  const notes = createNotesHost(
+    document,
+    windowContents[notesWindowIndex]!,
+    machine,
+    {
+      notes: machine.output.notes,
+      focused: machine.output.windows[notesWindowOutput + windowOutputField.focused]!,
+      contentWidth: machine.output.windows[notesWindowOutput + windowOutputField.contentWidth]!,
+      contentHeight: machine.output.windows[notesWindowOutput + windowOutputField.contentHeight]!,
+    },
+    notesOptions,
+    notesText,
+    createCanvasMeasure(document, notesFont),
+    scheduleRender,
+  )
   const program = machine.tensorProgram
   let affineCount = 0
   let regluCount = 0
@@ -1609,6 +1628,8 @@ function mountWindowManager(document: Document, window: Window) {
     scheduledRaf = null
     const viewportWidth = document.documentElement.clientWidth
     const viewportHeight = document.documentElement.clientHeight
+    const notesRead = notes.read()
+    notes.queueText(notesRead)
     const executionStart = window.performance.now()
     const values = machine.step(viewportWidth, viewportHeight, frameTime)
     const executionMs = window.performance.now() - executionStart
@@ -1633,7 +1654,8 @@ function mountWindowManager(document: Document, window: Window) {
     }
 
     photos.render(values, machine.output.photos)
-    projectNotesWords(domCache.wordNodes, wordSegments, values, machine.output.notes.segments)
+    notes.write(notesRead, values)
+    notes.applySideEffects(notesRead, values)
 
     // Frames continue while springs are stepping, i.e. until an evaluation that
     // writes state back finds nothing animating.
@@ -1678,6 +1700,12 @@ function mountWindowManager(document: Document, window: Window) {
     scheduleRender()
   })
   window.addEventListener('keydown', (event: KeyboardEvent) => {
+    // A key typed into the note is the textarea's, e.g. the arrow keys move its caret instead of turning Photos'
+    // pages. The frame after the key reads where the caret went.
+    if (notes.takesKey(event)) {
+      scheduleRender()
+      return
+    }
     switch (event.key) {
       case 'ArrowLeft':
         machine.photoPrevious(event.timeStamp)
@@ -1739,34 +1767,6 @@ export function projectWindowElements(
     content.style.width = `${read(windowOutputField.contentWidth)}px`
     content.style.height = `${read(windowOutputField.contentHeight)}px`
   }
-}
-
-// One absolutely positioned span per Notes word, in the Notes content box, which
-// is the positioned parent, so a word's x and y are its transform.
-export function createWordNodes(
-  document: Pick<Document, 'createElement'>,
-  content: Pick<HTMLElement, 'appendChild'>,
-  words: readonly string[],
-) {
-  return words.map(word => {
-    const node = document.createElement('span')
-    node.className = 'notes-word'
-    node.textContent = word
-    content.appendChild(node)
-    return node
-  })
-}
-
-// Writes each word's position and whether a band laid it out. segments[word] is the
-// word's segment cell, whose outputs the word's node shows.
-export function projectNotesWords(nodes: readonly HTMLElement[], segments: readonly number[], values: Float32Array, output: readonly Wire[]) {
-  invariant(nodes.length === segments.length, 'word node count mismatch')
-  nodes.forEach((node, word) => {
-    const outputStart = segments[word]! * segmentOutputField.size
-    const read = (field: number) => values[output[outputStart + field]!]!
-    node.style.transform = `translate3d(${read(segmentOutputField.x)}px,${read(segmentOutputField.y)}px,0)`
-    node.style.opacity = `${read(segmentOutputField.visible)}`
-  })
 }
 
 function projectDockGeometry(

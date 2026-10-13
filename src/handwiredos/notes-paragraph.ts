@@ -1,11 +1,10 @@
-// The Notes paragraph: the text the note starts with, how the host measures a text
-// with pretext, the options the flow is built with, and a baked default measurement
-// of the starting text, so that createWindowManagerMachine() starts from the same
-// table in every process without a canvas. The program itself is the same for every
-// text and every font: its size follows from notesCapacity and notesWindow.
-import {type PreparedTextWithSegments, prepareWithSegments} from '@chenglou/pretext'
-import {type FastParagraph, maximumSegmentWidth} from './notes-walker.ts'
-import {invariant} from '../runtime/numeric-ui-core.ts'
+// The Notes paragraph: the text the note starts with, the options the flow is built
+// with, and a baked default measurement of the starting text, so that
+// createWindowManagerMachine() starts from the same table in every process without a
+// canvas. The program itself is the same for every text and every font: its size
+// follows from notesCapacity and notesWindow. notes-text.ts measures the text that
+// the visitor types.
+import type {FastParagraph} from './notes-walker.ts'
 
 export const notesText =
   'This paragraph is laid out by the same circuit that runs the windows. Drag Files or Photos over this note, ' +
@@ -18,8 +17,11 @@ export const notesFont = '14px Georgia, "Times New Roman", serif'
 // the break-after bits alternate. The default widths were measured once with a
 // deterministic fake canvas ("14px Test Serif", the rule in notes.test.ts) under
 // @chenglou/pretext@0.0.9; notes.test.ts checks that the measurement still gives
-// them. The browser measures the real font at mount instead, see
-// measureNotesParagraph.
+// them. The browser measures the real font at mount instead, see prepareNotesText
+// in notes-text.ts, which rounds each width to 1/64 px so that prefix sums in the
+// circuit stay exact in FP32. pretext itself keeps the unrounded widths, so a
+// browser line whose span lies within 1/128 px of the limit can break differently
+// there.
 export const notesWords = notesText.split(' ')
 export const defaultNotesParagraph: FastParagraph = {
   widths: [
@@ -47,21 +49,6 @@ export function lineFitEpsilonFor(navigator: {userAgent: string, vendor?: string
     && userAgent.includes('Safari/')
     && !['Chrome/', 'Chromium/', 'CriOS/', 'FxiOS/', 'EdgiOS/'].some(engine => userAgent.includes(engine))
   return safari ? 1 / 64 : defaultLineFitEpsilon
-}
-
-// A text as pretext segments and measures it in `font`, with each width rounded to
-// 1/64 px so prefix sums in the circuit stay exact in FP32 (pretext itself keeps the
-// unrounded widths, so a browser line whose span lies within 1/128 px of the limit
-// can break differently there). Returns the prepared text too, so a test can run
-// pretext's own layoutNextLineRange on the same measurement. Throws for a text that
-// leaves pretext's fast path, e.g. one with a soft hyphen.
-export function measureNotesParagraph(font = notesFont, text = notesText): {paragraph: FastParagraph, prepared: PreparedTextWithSegments} {
-  const prepared = prepareWithSegments(text, font)
-  invariant(prepared.simpleLineWalkFastPath && prepared.letterSpacing === 0, 'the walker needs pretext fast-path text')
-  const breakAfter = prepared.kinds.map(kind => kind === 'space' || kind === 'zero-width-break' ? 1 : 0)
-  const widths = prepared.widths.map(width => Math.round(width * 64) / 64)
-  invariant(widths.every(width => width >= 0 && width <= maximumSegmentWidth), 'a segment is wider than the walker allows')
-  return {paragraph: {widths, breakAfter}, prepared}
 }
 
 export type NotesOptions = {

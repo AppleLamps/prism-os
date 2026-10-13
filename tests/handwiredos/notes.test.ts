@@ -8,13 +8,14 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {type PreparedTextWithSegments, layoutNextLineRange, prepareWithSegments} from '@chenglou/pretext'
 import {Circuit, validateGrids, validateOneHotGroups} from '../../src/runtime/numeric-ui-core.ts'
+// The fake canvas is installed before the first prepare call of this file.
+import {testFont} from './fake-canvas.ts'
 import {type FastParagraph, attachFastCircuit, fastWindow, maximumSegmentWidth, segmentGeometry, walkGatheredLines} from '../../src/handwiredos/notes-walker.ts'
 import {
   type NotesOptions,
   defaultLineFitEpsilon,
   defaultNotesParagraph,
   lineFitEpsilonFor,
-  measureNotesParagraph,
   notesCapacity,
   notesOptionsFor,
   notesText,
@@ -23,10 +24,8 @@ import {
 import {
   bandOutputField,
   createWindowManagerMachine,
-  createWordNodes,
   notesSourceField,
   notesWindowIndex,
-  projectNotesWords,
   segmentOutputField,
   sourceField,
   stackSourceField,
@@ -36,44 +35,6 @@ import {
   windowStateField,
 } from '../../src/handwiredos/window-manager.ts'
 
-// A deterministic canvas: letters vary between 28/64 and 40/64 of the font size,
-// spaces are 20/64 and punctuation 22/64, so every width lies on the 1/64 px grid
-// at 14 px. notes-paragraph.ts's default widths were baked with this rule. The
-// "Tie Test" font measures in whole and 1/64 px for the line fit tie test below.
-// lab/ui-exploration/text-walker/fake-canvas.ts has the same "Tie Test" widths, since
-// pretext keeps the first canvas it measures with, and that canvas is a lab test's
-// when lab/ runs before tests/, e.g. under `bun test` without arguments.
-function fakeTextWidth(text: string, font: string): number {
-  const fontSize = Number.parseFloat(font.match(/(\d+(?:\.\d+)?)\s*px/)?.[1] ?? '16')
-  if (font.includes('Tie Test')) {
-    let width = 0
-    for (const character of text) width += character === ' ' ? 0.5 : character === 'b' ? 1 / 64 : 1
-    return width
-  }
-  let sixtyFourths = 0
-  for (const character of text) {
-    if (character === ' ') sixtyFourths += 20
-    else if (/[.,!?;:%)\]}'"”’»›…—-]/u.test(character)) sixtyFourths += 22
-    else sixtyFourths += 28 + (character.codePointAt(0)! % 13)
-  }
-  return sixtyFourths * fontSize / 64
-}
-
-class FakeContext {
-  font = ''
-  measureText(text: string) {
-    return {width: fakeTextWidth(text, this.font)}
-  }
-}
-// pretext creates its measuring context at its first measurement, so this runs
-// before any prepare call in this file.
-Reflect.set(globalThis, 'OffscreenCanvas', class {
-  getContext() {
-    return new FakeContext()
-  }
-})
-
-const testFont = '14px Test Serif'
 const viewportWidth = 1280
 const viewportHeight = 800
 const frameDuration = 16
@@ -83,9 +44,16 @@ const notesOptions = notesOptionsFor(epsilon)
 
 // A text as the fake canvas measures it: pretext's prepared text, which the pretext
 // reference lays out, and every segment's width and break-after bit, which the
-// machine's notesText writes into the segment cells, cut at the capacity.
+// machine's notesText writes into the segment cells, cut at the capacity. One cell
+// per pretext segment, so the text must stay on pretext's fast path, e.g. letters,
+// spaces and punctuation. notes-text.test.ts covers how the page turns other texts
+// into cells.
 type MeasuredText = {prepared: PreparedTextWithSegments, paragraph: FastParagraph}
-const measure = (text: string): MeasuredText => measureNotesParagraph(testFont, text)
+function measure(text: string): MeasuredText {
+  const prepared = prepareWithSegments(text, testFont)
+  assert.ok(prepared.simpleLineWalkFastPath && prepared.letterSpacing === 0, 'the text is on pretext\'s fast path')
+  return {prepared, paragraph: {widths: prepared.widths.map(width => Math.round(width * 64) / 64), breakAfter: prepared.kinds.map(kind => kind === 'space' || kind === 'zero-width-break' ? 1 : 0)}}
+}
 // The paragraph that Notes starts with.
 const measured = measure(notesText)
 // The segment index of each of its words, e.g. word 1 is segment 2, after the first space.
@@ -1070,40 +1038,14 @@ test('the walker breaks a line at a 1/64 px tie the way pretext does, at either 
   }
 })
 
-test('one span per word is created once and positioned from the outputs', () => {
-  const machine = createWindowManagerMachine()
+test('at the starting arrangement the paragraph gets 7 lines of 205 px, and its last 10 words have no line', () => {
+  const machine = machineAtStart()
   const values = step(machine)
-  const created: {className: string, textContent: string, style: Record<string, string>}[] = []
-  const document = {
-    createElement() {
-      const node = {className: '', textContent: '', style: {} as Record<string, string>}
-      created.push(node)
-      return node as unknown as HTMLElement
-    },
-  }
-  const appended: unknown[] = []
-  const content = {
-    appendChild(node: Node) {
-      appended.push(node)
-      return node
-    },
-  }
-  const nodes = createWordNodes(document, content as unknown as HTMLElement, notesWords)
-  assert.equal(created.length, notesWords.length)
-  assert.equal(appended.length, notesWords.length)
-  assert.deepEqual(created.map(node => node.textContent), notesWords)
-  assert.ok(created.every(node => node.className === 'notes-word'))
-  projectNotesWords(nodes, wordSegments, values, machine.output.notes.segments)
+  // Photos covers the right of the column and System Monitor the lower left.
   const words = readWords(machine, values)
-  created.forEach((node, index) => {
-    assert.equal(node.style['transform'], `translate3d(${words[index]!.x}px,${words[index]!.y}px,0)`)
-    assert.equal(node.style['opacity'], `${words[index]!.visible}`)
-  })
-  // At the default arrangement, Photos covers the right of the column and System
-  // Monitor the lower left, so the paragraph gets 7 lines of 205 px, and the last 10
-  // words aren't laid out.
   assert.equal(words.filter(word => word.visible === 1).length, 35)
   assert.equal(values[machine.output.notes.lineCount], 7)
   assert.equal(values[machine.output.notes.truncated], 1)
   assert.ok(words.filter(word => word.visible === 1).every(word => word.x >= 24 && word.x < 24 + 205))
+  assert.deepEqual(readBands(machine, values).slice(0, 8).map(band => band.usable === 1 ? band.width : 'unusable'), [205, 205, 205, 205, 205, 205, 205, 'unusable'])
 })
