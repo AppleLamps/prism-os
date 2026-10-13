@@ -1,0 +1,244 @@
+{
+ "driver": {
+  "startedAt": "2026-10-13T15:43:07.376Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 3.68 4.97 4.74 }",
+  "memoryBefore": "System-wide memory free percentage: 60%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "check",
+   "--profile",
+   "second-check-1",
+   "--out",
+   "lab/json-search/results/gpu-check-1.json"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-13T15:43:17.427Z",
+    "load": "{ 3.82 4.95 4.74 }"
+   },
+   {
+    "at": "2026-10-13T15:43:27.429Z",
+    "load": "{ 3.92 4.94 4.74 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9421",
+   "--user-data-dir=second-check-1",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "chromePid": 76831,
+  "browser": "Chrome/155.0.8059.40",
+  "finishedAt": "2026-10-13T15:43:33.615Z",
+  "loadAfter": "{ 4.09 4.96 4.75 }",
+  "memoryAfter": "System-wide memory free percentage: 59%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-13T15:43:07.795Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "check",
+   "counts": [
+    100,
+    1000,
+    10000,
+    100000
+   ],
+   "crossoverCounts": [
+    1,
+    10,
+    30,
+    300,
+    3000,
+    30000
+   ],
+   "idleGapsMs": [
+    1,
+    4,
+    16,
+    50,
+    200,
+    1000,
+    3000
+   ],
+   "idleSamples": 5,
+   "idleTimestampSamples": 3,
+   "keepWarmGapMs": 1000,
+   "windowDocuments": 64,
+   "shaderSalt": 143513822,
+   "seed": 20261013,
+   "invalidFraction": 0.1,
+   "workgroupSize": 64,
+   "warmupMs": 300,
+   "sampleMs": 1500,
+   "minimumSamples": 15,
+   "maximumSamples": 200,
+   "cpuWarmupMs": 500,
+   "cpuSampleMs": 200,
+   "cpuSamples": 5,
+   "executorDocuments": 300,
+   "generatedJsDocuments": 5000,
+   "selfCheckDocuments": 500,
+   "guards": [
+    "none",
+    "max"
+   ],
+   "checkDocuments": 20000
+  },
+  "results": [
+   {
+    "kind": "check",
+    "rootSet": "summary",
+    "guard": "none",
+    "statements": 11814,
+    "shaderBytes": 728228,
+    "guards": 0,
+    "compileMs": 1804.51,
+    "corpusCheck": {
+     "texts": 2509,
+     "values": 7527,
+     "mismatches": 0
+    },
+    "generatedCheck": {
+     "documents": 20000,
+     "values": 60000,
+     "mismatches": 0,
+     "cpuMs": 2052.819999933243,
+     "gpuMs": 11.900000095367432
+    },
+    "summaryBackToBackMs": {
+     "count": 200,
+     "median": 1.135,
+     "p10": 1.11,
+     "p90": 1.16,
+     "min": 1.085,
+     "max": 1.26
+    }
+   },
+   {
+    "kind": "check",
+    "rootSet": "display",
+    "guard": "none",
+    "statements": 13350,
+    "shaderBytes": 820204,
+    "guards": 0,
+    "compileMs": 2290.56,
+    "corpusCheck": {
+     "texts": 2509,
+     "values": 1292135,
+     "mismatches": 0
+    },
+    "generatedCheck": {
+     "documents": 20000,
+     "values": 10300000,
+     "mismatches": 0,
+     "cpuMs": 2182.9950001239777,
+     "gpuMs": 21.990000009536743
+    },
+    "summaryBackToBackMs": {
+     "count": 200,
+     "median": 1.58,
+     "p10": 1.56,
+     "p90": 1.635,
+     "min": 1.545,
+     "max": 1.815
+    }
+   },
+   {
+    "kind": "check",
+    "rootSet": "summary",
+    "guard": "max",
+    "statements": 11814,
+    "shaderBytes": 848193,
+    "guards": 9225,
+    "compileMs": 4010.955,
+    "corpusCheck": {
+     "texts": 2509,
+     "values": 7527,
+     "mismatches": 0
+    },
+    "generatedCheck": {
+     "documents": 20000,
+     "values": 60000,
+     "mismatches": 0,
+     "cpuMs": 2083.8300001621246,
+     "gpuMs": 8.375
+    },
+    "summaryBackToBackMs": {
+     "count": 200,
+     "median": 0.945,
+     "p10": 0.935,
+     "p90": 0.965,
+     "min": 0.915,
+     "max": 1.025
+    }
+   },
+   {
+    "kind": "check",
+    "rootSet": "display",
+    "guard": "max",
+    "statements": 13350,
+    "shaderBytes": 946825,
+    "guards": 9737,
+    "compileMs": 5226.97,
+    "corpusCheck": {
+     "texts": 2509,
+     "values": 1292135,
+     "mismatches": 0
+    },
+    "generatedCheck": {
+     "documents": 20000,
+     "values": 10300000,
+     "mismatches": 0,
+     "cpuMs": 2316.6900000572205,
+     "gpuMs": 31.40999984741211
+    },
+    "summaryBackToBackMs": {
+     "count": 200,
+     "median": 1.705,
+     "p10": 1.635,
+     "p90": 1.795,
+     "min": 1.585,
+     "max": 2.09
+    }
+   }
+  ],
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeWorkgroupsPerDimension": 65535
+   },
+   "hasTimestamps": true,
+   "grantedBufferBytes": 134217728
+  },
+  "compile": {
+   "emptyPipelineMs": 35.8
+  },
+  "finishedAt": "2026-10-13T15:43:33.587Z",
+  "logLines": [
+   "4916.55 ms: check summary, none guard: {\"kind\":\"check\",\"rootSet\":\"summary\",\"guard\":\"none\",\"statements\":11814,\"shaderBytes\":728228,\"guards\":0,\"compileMs\":1804.51,\"corpusCheck\":{\"texts\":2509,\"values\":7527,\"mismatches\":0},\"generatedCheck\":{\"documents\":20000,\"values\":60000,\"mismatches\":0,\"cpuMs\":2052.819999933243,\"gpuMs\":11.900000095367432},\"summaryBackToBackMs\":{\"count\":200,\"median\":1.135,\"p10\":1.11,\"p90\":1.16,\"min\":1.085,\"max\":1.26}}",
+   "10348.14 ms: check display, none guard: {\"kind\":\"check\",\"rootSet\":\"display\",\"guard\":\"none\",\"statements\":13350,\"shaderBytes\":820204,\"guards\":0,\"compileMs\":2290.56,\"corpusCheck\":{\"texts\":2509,\"values\":1292135,\"mismatches\":0},\"generatedCheck\":{\"documents\":20000,\"values\":10300000,\"mismatches\":0,\"cpuMs\":2182.9950001239777,\"gpuMs\":21.990000009536743},\"summaryBackToBackMs\":{\"count\":200,\"median\":1.58,\"p10\":1.56,\"p90\":1.635,\"min\":1.545,\"max\":1.815}}",
+   "17242.77 ms: check summary, max guard: {\"kind\":\"check\",\"rootSet\":\"summary\",\"guard\":\"max\",\"statements\":11814,\"shaderBytes\":848193,\"guards\":9225,\"compileMs\":4010.955,\"corpusCheck\":{\"texts\":2509,\"values\":7527,\"mismatches\":0},\"generatedCheck\":{\"documents\":20000,\"values\":60000,\"mismatches\":0,\"cpuMs\":2083.8300001621246,\"gpuMs\":8.375},\"summaryBackToBackMs\":{\"count\":200,\"median\":0.945,\"p10\":0.935,\"p90\":0.965,\"min\":0.915,\"max\":1.025}}",
+   "25842.03 ms: check display, max guard: {\"kind\":\"check\",\"rootSet\":\"display\",\"guard\":\"max\",\"statements\":13350,\"shaderBytes\":946825,\"guards\":9737,\"compileMs\":5226.97,\"corpusCheck\":{\"texts\":2509,\"values\":1292135,\"mismatches\":0},\"generatedCheck\":{\"documents\":20000,\"values\":10300000,\"mismatches\":0,\"cpuMs\":2316.6900000572205,\"gpuMs\":31.40999984741211},\"summaryBackToBackMs\":{\"count\":200,\"median\":1.705,\"p10\":1.635,\"p90\":1.795,\"min\":1.585,\"max\":2.09}}"
+  ],
+  "done": true
+ }
+}
