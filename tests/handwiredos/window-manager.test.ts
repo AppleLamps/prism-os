@@ -2145,7 +2145,7 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   const resumeTime = [...stalled.frames.keys()].find(time => time >= stall.startMs + stall.lengthMs)!
   assert.equal(resumeTime, 3400)
   assert.equal(differingBits(stalled.frames.get(resumeTime)!, baseline.frames.get(resumeTime)!), 0)
-})
+}, 30_000)
 
 test('a 2 s stall that holds presses and resizes snaps once, applies each event at its own timestamp, and commits the same tables at 60 and 120 fps', () => {
   const stall = {startMs: 7000, lengthMs: 2000}

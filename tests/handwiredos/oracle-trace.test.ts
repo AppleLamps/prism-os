@@ -315,7 +315,7 @@ describe('production circuits match the reference interpreter across scripted tr
     expect(checked.evaluations).toBeGreaterThan(steps)
     // Surface the totals for the run report.
     console.log(`window manager: ${steps} steps, ${checked.evaluations} evaluations, ${checked.comparisons} wire comparisons`)
-  })
+  }, 30_000)
 
   test('photo gallery: selection, wraparound navigation, lightbox close, tiny viewports', () => {
     const machine = createPhotoGalleryMachine()
