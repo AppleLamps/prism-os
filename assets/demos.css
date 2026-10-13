@@ -242,8 +242,9 @@ a.card:hover .go::after { transform: translateX(3px); }
 .peek-regex mark.even { background: var(--copper-wash); }
 .peek-regex mark.odd { background: var(--copper-wash-deep); }
 
-/* Learned gallery: the sketch of rectangles on the left, and where the network puts the photos on the right,
-   close to the sketch and not exactly on it. */
+/* Learned gallery: the sketch of rectangles on the left, and where the network puts the photos on the right. The
+   photos have the sketch's rectangles exactly: once trained, the network is within a pixel of the sketch on the
+   demo's page, which is less than this small picture can show. */
 .pair {
   position: absolute;
   inset: var(--space-5);
