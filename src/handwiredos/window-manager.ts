@@ -64,6 +64,7 @@ import {
   notesOptionsFor,
   notesWords,
 } from './notes-paragraph.ts'
+import {arrangeInitialWindows} from './arrangement.ts'
 
 export {bandOutputField, notesWindowIndex, wordOutputField}
 
@@ -1676,6 +1677,9 @@ function mountWindowManager(document: Document, window: Window) {
     )
     scheduleRender()
   })
+  // The windows' first rectangles are chosen for the viewport, and written before
+  // the first step, so they commit with the mount, see arrangement.ts.
+  arrangeInitialWindows(machine.source, machine.cells, document.documentElement.clientWidth, document.documentElement.clientHeight)
   renderWindowManager(window.performance.now())
 }
 
