@@ -39,7 +39,7 @@ const notesTitleBar = {x: 600, y: 126}
 const photosTitleBar = {x: 1000, y: 212}
 // On Files' list and on the note, where Notes covers the list: row 5 of the list.
 const onBoth = {x: 480, y: 250}
-// On the note only: right of Files, left of Photos and above System Monitor.
+// On the note only: right of Files, left of Photos and above Monitor.
 const onNoteOnly = {x: 600, y: 250}
 // A point on a row of the list that Notes doesn't cover, 100 px from the list's left edge.
 const rowPoint = (row: number) => ({x: list.left + 100, y: list.top + row * rowHeight + rowHeight / 2})
@@ -158,7 +158,7 @@ test('a press on one of the two windows that is released over the other acts on 
 test("a press on Files' grip where the note covers the grip goes to the note, and with Files in front the grip resizes and the note counts nothing", () => {
   const machine = createMachine()
   // Files' grip is the 24 px square at its bottom right corner, 550..574 by 370..394,
-  // which lies inside the note's content box, and under System Monitor until a
+  // which lies inside the note's content box, and under Monitor until a
   // press on Notes' title bar raises Notes above both.
   const grip = {x: 562, y: 382}
   let values = click(machine, notesTitleBar)

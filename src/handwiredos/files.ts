@@ -487,7 +487,7 @@ export function formatValue(value: number) {
 
 type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 
-// The four kinds of live operation that Files and the System Monitor both name,
+// The four kinds of live operation that Files and the Monitor window both name,
 // each with the text that a row shows and the class that the row's kind cell gets:
 // a weighted sum, a ReGLU, a boolean atom and an index read. A sum that the
 // compiler lowered to a gather read is still a sum, so it is an affine operation

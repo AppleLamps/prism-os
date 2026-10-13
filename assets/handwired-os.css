@@ -547,10 +547,10 @@ body {
   display: none;
 }
 
-/* The five columns of Operations are whole in a list from 376 px: 28 px of padding, four
-   gaps of 8 px, 36 px for the wire's digits, and 76, 44, 60 and 96 px. A narrower list,
-   e.g. the 330 px of the 464 px window that a 1280 px wide viewport opens Files at, leaves
-   the weights out, and the other four columns are whole from 308 px. */
+/* The five columns of Operations take 372 px: 28 px of padding, four gaps of 8 px, 36 px
+   for the wire's digits, and 76, 44, 60 and 96 px. A list under 376 px, e.g. the 330 px of
+   the 464 px window that a 1280 px wide viewport opens Files at, leaves the weights out.
+   The other four columns take 304 px. */
 @container (max-width: 375px) {
   .files-list-operations .files-header,
   .files-list-operations .files-row {
