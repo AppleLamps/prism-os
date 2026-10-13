@@ -219,83 +219,117 @@ body {
   border-bottom: 1px solid rgb(255 255 255 / 28%);
 }
 
+/* Files: a virtualized list in a native scroller. files.ts creates the header's
+   cells and the rows, gives each row its transform, display and --selected every
+   frame, sets the spacer's height, and copies the program's layout numbers into
+   the custom properties below at mount. */
 .files-content {
-  display: grid;
-  grid-template-columns: 132px 1fr;
-}
-
-.file-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 18px 12px;
-  border-right: 1px solid rgb(255 255 255 / 7%);
-  background: rgb(0 0 0 / 9%);
+  --files-header-height: 28px;
+  --files-row-height: 24px;
+  --files-scrollbar-strip: 16px;
+  background: rgb(0 0 0 / 14%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
 }
 
-.file-sidebar strong {
-  margin: 0 8px 8px;
-  color: rgb(255 255 255 / 35%);
+.files-list {
+  position: absolute;
+  inset: 0;
+}
+
+.files-header,
+.files-row {
+  grid-template-columns: minmax(0, 1fr) 64px 48px 64px;
+  align-items: center;
+  column-gap: 12px;
+  padding: 0 var(--files-scrollbar-strip) 0 14px;
+}
+
+/* The header keeps the room of the scroller's scrollbar, so its cells line up with
+   the rows' cells where scrollbars take room. */
+.files-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: grid;
+  height: var(--files-header-height);
+  overflow: hidden;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  border-bottom: 1px solid rgb(255 255 255 / 8%);
+  color: rgb(255 255 255 / 38%);
   font-size: 9px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.file-sidebar span {
-  padding: 7px 9px;
-  border-radius: 7px;
-  color: rgb(255 255 255 / 55%);
+/* The browser scrolls the list: the program reads the position and never sets
+   the physics. pan-y lets a touch scroll the list inside #desktop's touch-action:
+   none, and contain keeps the rubber-band without scrolling anything behind. The
+   program moves the view itself after a key, so the browser's own anchoring is
+   off. */
+.files-scroller {
+  position: absolute;
+  top: var(--files-header-height);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+  scrollbar-color: rgb(255 255 255 / 24%) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  touch-action: pan-y;
 }
 
-.file-sidebar .selected {
-  background: rgb(97 218 251 / 14%);
-  color: #bcefff;
+.files-spacer {
+  position: relative;
 }
 
-.file-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(100px, 1fr));
-  align-content: start;
-  gap: 12px;
-  padding: 18px;
+.files-row {
+  --selected: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--files-row-height);
+  border-bottom: 1px solid rgb(255 255 255 / 4%);
+  background: rgb(97 218 251 / calc(var(--selected) * 18%));
+  color: rgb(255 255 255 / calc(0.62 + var(--selected) * 0.3));
 }
 
-.folder {
+.files-cell {
   min-width: 0;
-  padding: 14px;
-  border: 1px solid rgb(255 255 255 / 7%);
-  border-radius: 12px;
-  background: rgb(255 255 255 / 3%);
-}
-
-.folder i {
-  display: block;
-  width: 32px;
-  height: 24px;
-  margin-bottom: 14px;
-  border-radius: 5px;
-  background: linear-gradient(145deg, #83d9ff, #3f8fd8);
-  box-shadow: inset 0 1px rgb(255 255 255 / 35%);
-}
-
-.folder span,
-.folder small {
-  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.folder span {
-  color: rgb(255 255 255 / 78%);
-  font-size: 11px;
+.files-cell-layer,
+.files-cell-weights {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
-.folder small {
-  margin-top: 4px;
-  color: rgb(255 255 255 / 34%);
-  font-size: 9px;
+.files-cell-kind {
+  color: rgb(188 239 255 / 62%);
+}
+
+/* Shown while the list's viewport holds more rows than there are DOM slots. */
+.files-overflow {
+  position: absolute;
+  right: var(--files-scrollbar-strip);
+  bottom: 6px;
+  display: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgb(255 200 87 / 16%);
+  color: #ffc857;
+  font-size: 10px;
+  pointer-events: none;
 }
 
 .notes-content {
@@ -559,17 +593,3 @@ body {
 .dock-notes { background: linear-gradient(145deg, #ffc857, #c98916); }
 .dock-monitor { background: linear-gradient(145deg, #76e6a5, #25834c); }
 .dock-photos { background: linear-gradient(145deg, #ff7b72, #a93842); }
-
-@media (max-width: 720px) {
-  .file-sidebar {
-    display: none;
-  }
-
-  .files-content {
-    grid-template-columns: 1fr;
-  }
-
-  .file-grid {
-    grid-template-columns: repeat(2, minmax(80px, 1fr));
-  }
-}

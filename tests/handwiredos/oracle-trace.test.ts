@@ -3,6 +3,7 @@ import {validateTensorEvaluation} from '../../src/runtime/numeric-ui-core.ts'
 import {
   createWindowManagerMachine,
   dockOutputField,
+  filesSourceField,
   photoSourceField,
   sourceField as windowSourceFieldTable,
   windowCount,
@@ -10,6 +11,7 @@ import {
   windowSourceField,
   windowStateField,
 } from '../../src/handwiredos/window-manager.ts'
+import {rowCapacity as filesRowCapacity} from '../../src/handwiredos/files.ts'
 import {
   controlField,
   createPhotoGalleryMachine,
@@ -58,20 +60,26 @@ function verifyEvaluations(machine: Machine & {
 }
 
 describe('production circuits match the reference interpreter across scripted traces', () => {
-  test('window manager: drags, controls, photos, and viewport resizes', () => {
+  test('window manager: drags, controls, photos, the Files list, and viewport resizes', () => {
     const machine = createWindowManagerMachine()
+    // Files' list at its capacity, which a host writes before the first step, so that
+    // the trace reaches scroll positions up to 2,400,000 px.
+    machine.source[filesSourceField.rowCount] = filesRowCapacity
     const checked = verifyEvaluations(machine)
     const random = createRandom(0x0c1a5e)
     let frameClock = 0
     let steps = 0
     let width = 1280
     let height = 800
+    // The Files scroller's position, as a host reads it at the top of a frame.
+    // While undefined, the list stays where the machine's last step left it.
+    let filesScrollTop: number | undefined
 
     // Drive one frame. The observer checks every evaluation the step runs.
     function advance(elapsed: number) {
       frameClock += elapsed
       steps++
-      return machine.step(width, height, frameClock)
+      return machine.step(width, height, frameClock, filesScrollTop)
     }
 
     function projectWindow(values: Float32Array, windowIndex: number) {
@@ -225,7 +233,60 @@ describe('production circuits match the reference interpreter across scripted tr
     values = advance(irregularFrameTime(random))
     for (let settle = 0; settle < 3; settle++) values = advance(irregularFrameTime(random))
 
-    // Phase 6: viewport resizes, including tiny and zero sizes, with idle frames.
+    // Phase 6: Files' list. Files' dock item raises and focuses Files, which earlier
+    // phases left at its minimum size. Then, at scroll positions on the quarter pixel
+    // grid from the top of the list to its end, a press and a release on the list and
+    // each of the six keys, at Files' normal size and maximized. A key's scroll
+    // request moves the list for the frames until the next position is set.
+    {
+      const dock = projectDock(values, 0)
+      machine.pointerDown(dock.left + dock.width / 2, dock.top + dock.height / 2)
+      machine.pointerUp(dock.left + dock.width / 2, dock.top + dock.height / 2)
+      values = advance(irregularFrameTime(random))
+      const filesKeys = ['down', 'pageDown', 'end', 'up', 'pageUp', 'home'] as const
+      const scrollPositions = [0, 1000.25, 123_456.5, 2_399_000, 2_399_999.75, filesRowCapacity * 24]
+      for (const maximized of [false, true]) {
+        if (maximized) {
+          const point = controlPoint(values, 0, 'maximize')
+          machine.pointerDown(point.x, point.y)
+          machine.pointerUp(point.x, point.y)
+          for (let settle = 0; settle < 4; settle++) values = advance(irregularFrameTime(random))
+        }
+        expect(machine.source[windowSourceField(0, windowStateField.maximized)]).toBe(maximized ? 1 : 0)
+        // The list viewport starts 1 px inside the frame, below the title bar and the
+        // 28 px header row. A maximized window's rectangle isn't stored, so the points
+        // come from the frame's destination, which the content size outputs follow.
+        const window = projectWindow(values, 0)
+        const listLeft = maximized ? 13 : machine.source[windowSourceField(0, windowStateField.left)]! + 1
+        const listTop = (maximized ? 48 : machine.source[windowSourceField(0, windowStateField.top)]!)
+          + machine.source[windowSourceFieldTable.titleHeight]! + 1 + 28
+        const listHeight = window.contentHeight - 28
+        for (const scrollTop of scrollPositions) {
+          filesScrollTop = scrollTop
+          const x = listLeft + 20 + random() * 100
+          const y = listTop + 0.5 + random() * (listHeight - 30)
+          machine.pointerDown(x, y)
+          values = advance(irregularFrameTime(random))
+          machine.pointerUp(x, y)
+          values = advance(irregularFrameTime(random))
+          filesScrollTop = undefined
+          for (const key of filesKeys) {
+            machine.filesKey(key)
+            values = advance(irregularFrameTime(random))
+          }
+        }
+      }
+      // Home was the last key, so row 0 is selected and the list is at the top.
+      expect(machine.source[filesSourceField.selected]).toBe(0)
+      expect(values[machine.output.files.scroll]).toBe(0)
+      // Restore Files.
+      const point = controlPoint(values, 0, 'maximize')
+      machine.pointerDown(point.x, point.y)
+      machine.pointerUp(point.x, point.y)
+      for (let settle = 0; settle < 4; settle++) values = advance(irregularFrameTime(random))
+    }
+
+    // Phase 7: viewport resizes, including tiny and zero sizes, with idle frames.
     for (const [resizeWidth, resizeHeight] of [
       [960, 600],
       [320, 240],

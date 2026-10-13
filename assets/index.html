@@ -21,19 +21,15 @@
           <span class="window-button close"></span>
         </div>
       </div>
+      <!-- A list of the program's own operations. files.ts creates the header's cells and
+           one row node per DOM slot, and the program gives each slot its row. -->
       <div class="window-content files-content">
-        <aside class="file-sidebar">
-          <strong>Favorites</strong>
-          <span class="selected">Desktop</span>
-          <span>Documents</span>
-          <span>Downloads</span>
-          <span>Archive</span>
-        </aside>
-        <div class="file-grid">
-          <div class="folder"><i></i><span>Experiments</span><small>18 items</small></div>
-          <div class="folder"><i></i><span>References</span><small>32 items</small></div>
-          <div class="folder"><i></i><span>Weights</span><small>9 items</small></div>
-          <div class="folder"><i></i><span>Exports</span><small>5 items</small></div>
+        <div class="files-list">
+          <div class="files-header"></div>
+          <div class="files-scroller">
+            <div class="files-spacer"></div>
+          </div>
+          <div class="files-overflow"></div>
         </div>
       </div>
       <div class="resize-grip"></div>
