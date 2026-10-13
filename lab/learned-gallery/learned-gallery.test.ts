@@ -732,6 +732,15 @@ test('a preset and "Train again" start over from the seeded weights', () => {
   assert.equal(frame.selected, null)
   const story = page.settle()
   assert.equal(story.loss, first.loss)
+
+  // In the middle of training too, the frame of the restart shows the seeded weights' output, at step 0.
+  page.frame([{kind: 'layout', name: 'cinema'}])
+  for (let frameIndex = 0; frameIndex < 10; frameIndex++) page.frame()
+  frame = page.frame([{kind: 'train again'}])
+  assert.equal(frame.step, 0)
+  assert.equal(frame.stepsThisFrame, 0)
+  assert.deepEqual(frame.history, [{step: 0, loss: frame.loss}])
+  assert.equal(page.settle().step, trainingStepsAfterChange)
 })
 
 test('the loss chart gets one sample per frame of training, for the latest 500 steps', () => {

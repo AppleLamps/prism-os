@@ -142,10 +142,12 @@
 .segments button:active { background: var(--paper); }
 .segments button[aria-pressed="true"] { background: var(--copper-wash); color: var(--copper); }
 
-/* The loss chart takes the width that the numbers and the button leave, with a hairline as its base. */
+/* The loss chart takes the width that the numbers and the button leave, with a hairline as its
+   base. Where that would be under 160 px, e.g. at phone width, the chart gets the row to itself
+   and the numbers and the button wrap to the next row. */
 .loss-chart {
   display: block;
-  flex: 1 1 96px;
+  flex: 1 1 160px;
   min-width: 96px;
   height: 40px;
   border-bottom: 1px solid var(--rule);
@@ -157,7 +159,7 @@
    has room for a count of 5 digits, e.g. 12,500, so the button beside the numbers doesn't move
    while the count grows. */
 .loss {
-  min-width: 29ch;
+  min-width: 28ch;
   color: var(--ink-2);
   font: var(--type-ui);
   white-space: nowrap;
@@ -169,12 +171,10 @@
   margin-top: var(--space-5);
 }
 
+/* minmax(0, 1fr) and not 1fr, which would keep the column as wide as its widest content, e.g. an
+   svg without a width is 300 px wide by default, more than a 320 px window leaves. */
 @media (max-width: 760px) {
-  .stages { grid-template-columns: 1fr; gap: var(--space-6); }
-}
-/* At phone width the chart gets a row of its own, above the numbers and the button. */
-@media (max-width: 480px) {
-  .loss-chart { flex-basis: 100%; }
+  .stages { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
 }
 
 /* A finger needs a larger target than a mouse pointer. */

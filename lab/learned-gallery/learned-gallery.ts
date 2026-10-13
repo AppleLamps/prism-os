@@ -547,9 +547,13 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
     }
     const activeCount = machine.activeCount()
     if (sketchEdited) layout = null
-    // A preset and "Train again" start from the seeded weights. Every other change continues from the current
-    // weights and the optimizer's current state, so the photos follow a drag instead of forming again from a pile.
-    if (restarted) machine.reset()
+    // A preset and "Train again" start from the seeded weights, and their frame draws those weights' output before
+    // any step, as the page's first frame does. Every other change continues from the current weights and the
+    // optimizer's current state, so the photos follow a drag instead of forming again from a pile.
+    if (restarted) {
+      machine.reset()
+      trainedUntilTime = null
+    }
     if (sketchEdited || restarted) {
       if (stepsRemaining === 0 || restarted) {
         runSteps = 0
