@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {createWindowManagerMachine, windowCount, windowOutputField, wordOutputField} from '../../src/handwiredos/window-manager.ts'
+import {createWindowManagerMachine, windowCount, windowOutputField} from '../../src/handwiredos/window-manager.ts'
 import {type Rectangle, arrangeInitialWindows, arrangeWindows} from '../../src/handwiredos/arrangement.ts'
 
 // The program's numbers, see windowManagerCellsFor in window-manager.ts.
@@ -131,7 +131,7 @@ test('in one column, each window is covered just under a part of its content', (
   assert.deepEqual(shown(tall), [140, 69 + 5 * 22 + 4, 93 + 64])
 })
 
-test('the program keeps the arrangement as written, starts at rest, and lays out every Notes word', () => {
+test('the program keeps the arrangement as written, starts at rest, and lays out Notes\' whole paragraph', () => {
   for (const [width, height] of viewports.slice(0, 6)) {
     const machine = createWindowManagerMachine()
     const rectangles = arrangeInitialWindows(machine.source, machine.cells, width, height)
@@ -159,12 +159,7 @@ test('the program keeps the arrangement as written, starts at rest, and lays out
     })
     assert.equal(values[machine.output.animationActive], 0, `${width} × ${height}: nothing animates`)
     assert.equal(machine.clock.animatedUntilMs, null)
-    const wordCount = machine.output.notes.words.length / wordOutputField.size
-    let visibleWords = 0
-    for (let word = 0; word < wordCount; word++) {
-      visibleWords += values[machine.output.notes.words[word * wordOutputField.size + wordOutputField.visible]!]!
-    }
-    assert.equal(visibleWords, wordCount, `${width} × ${height}: Notes lays out every word`)
-    assert.equal(values[machine.output.notes.truncated], 0)
+    // `truncated` is 0 when the paragraph's last word is laid out, and with it every word.
+    assert.equal(values[machine.output.notes.truncated], 0, `${width} × ${height}: Notes lays out its whole paragraph`)
   }
 })

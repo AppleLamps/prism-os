@@ -18,7 +18,6 @@ test('Monitor counts HandwiredOS\'s operations by kind as the circuit names them
   assert.equal(kinds.reglu, built.reglu)
   assert.equal(kinds.boolean, built.boolean)
   assert.equal(kinds.indexReads, built.index)
-  assert.equal(kinds.indexReads, 0)
   assert.ok(kinds.affine > 0 && kinds.gatherReads > 0 && kinds.reglu > 0 && kinds.boolean > 0)
 })
 

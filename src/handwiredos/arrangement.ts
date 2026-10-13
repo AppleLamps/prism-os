@@ -128,9 +128,10 @@ function arrangeDesk(workspace: Rectangle, minimum: Size, [files, notes, monitor
   const monitorHeight = clamp(height - minimum.height - gap, minimum.height, monitor.height)
   const monitorTop = height - monitorHeight
   const filesHeight = clamp(monitorTop - gap, minimum.height, files.height)
-  // Monitor sits up to 200 px right of Files' left edge, partly under Notes, while
-  // it starts below the 9 lines of text that Notes keeps free beside Photos. A
-  // shorter group puts Monitor under Files alone, at most as wide as Files.
+  // Monitor sits up to 200 px right of Files' left edge, where it can cover Notes'
+  // lower left corner, while it starts below the 9 lines that Notes' paragraph may
+  // take beside Photos. A shorter group puts Monitor below Files alone, at most as
+  // wide as Files.
   const monitorClearsText = monitorTop >= notesHeightFor(9)
   const monitorWidth = monitorClearsText ? monitor.width : Math.min(monitor.width, filesWidth)
   const monitorLeft = monitorClearsText ? clamp(filesWidth - 320, 0, 200) : (filesWidth - monitorWidth) / 2
