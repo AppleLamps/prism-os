@@ -1,0 +1,340 @@
+{
+ "driver": {
+  "startedAt": "2026-10-13T19:01:49.250Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 2.90 3.25 3.31 }",
+  "memoryBefore": "System-wide memory free percentage: 63%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "many",
+   "--profile",
+   "profile-review-many-1",
+   "--out",
+   "review-many-1.json",
+   "--port",
+   "4427",
+   "--devtools-port",
+   "9427",
+   "--timeout-seconds",
+   "1800"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-13T19:01:59.297Z",
+    "load": "{ 3.00 3.26 3.32 }"
+   },
+   {
+    "at": "2026-10-13T19:02:09.299Z",
+    "load": "{ 3.40 3.33 3.34 }"
+   },
+   {
+    "at": "2026-10-13T19:02:19.301Z",
+    "load": "{ 3.42 3.34 3.34 }"
+   },
+   {
+    "at": "2026-10-13T19:02:29.303Z",
+    "load": "{ 3.28 3.31 3.33 }"
+   },
+   {
+    "at": "2026-10-13T19:02:39.305Z",
+    "load": "{ 3.23 3.30 3.33 }"
+   },
+   {
+    "at": "2026-10-13T19:02:49.305Z",
+    "load": "{ 3.12 3.27 3.32 }"
+   },
+   {
+    "at": "2026-10-13T19:02:59.307Z",
+    "load": "{ 2.94 3.23 3.30 }"
+   },
+   {
+    "at": "2026-10-13T19:03:09.309Z",
+    "load": "{ 2.87 3.21 3.29 }"
+   },
+   {
+    "at": "2026-10-13T19:03:19.310Z",
+    "load": "{ 2.74 3.17 3.28 }"
+   },
+   {
+    "at": "2026-10-13T19:03:29.312Z",
+    "load": "{ 2.62 3.13 3.26 }"
+   },
+   {
+    "at": "2026-10-13T19:03:39.314Z",
+    "load": "{ 2.53 3.09 3.25 }"
+   },
+   {
+    "at": "2026-10-13T19:03:49.316Z",
+    "load": "{ 2.53 3.07 3.24 }"
+   },
+   {
+    "at": "2026-10-13T19:03:59.317Z",
+    "load": "{ 2.68 3.08 3.24 }"
+   },
+   {
+    "at": "2026-10-13T19:04:09.319Z",
+    "load": "{ 3.26 3.19 3.28 }"
+   },
+   {
+    "at": "2026-10-13T19:04:19.321Z",
+    "load": "{ 3.44 3.24 3.29 }"
+   },
+   {
+    "at": "2026-10-13T19:04:29.322Z",
+    "load": "{ 3.30 3.21 3.28 }"
+   },
+   {
+    "at": "2026-10-13T19:04:39.324Z",
+    "load": "{ 3.49 3.25 3.30 }"
+   },
+   {
+    "at": "2026-10-13T19:04:49.326Z",
+    "load": "{ 3.64 3.29 3.31 }"
+   },
+   {
+    "at": "2026-10-13T19:04:59.328Z",
+    "load": "{ 3.31 3.23 3.29 }"
+   },
+   {
+    "at": "2026-10-13T19:05:09.330Z",
+    "load": "{ 2.95 3.16 3.26 }"
+   },
+   {
+    "at": "2026-10-13T19:05:19.333Z",
+    "load": "{ 2.73 3.11 3.24 }"
+   },
+   {
+    "at": "2026-10-13T19:05:29.335Z",
+    "load": "{ 2.78 3.10 3.24 }"
+   },
+   {
+    "at": "2026-10-13T19:05:39.337Z",
+    "load": "{ 2.58 3.05 3.22 }"
+   },
+   {
+    "at": "2026-10-13T19:05:49.339Z",
+    "load": "{ 2.34 2.98 3.19 }"
+   },
+   {
+    "at": "2026-10-13T19:05:59.341Z",
+    "load": "{ 2.21 2.93 3.17 }"
+   },
+   {
+    "at": "2026-10-13T19:06:09.343Z",
+    "load": "{ 2.24 2.92 3.16 }"
+   },
+   {
+    "at": "2026-10-13T19:06:19.345Z",
+    "load": "{ 2.35 2.92 3.16 }"
+   },
+   {
+    "at": "2026-10-13T19:06:29.346Z",
+    "load": "{ 2.29 2.89 3.15 }"
+   },
+   {
+    "at": "2026-10-13T19:06:39.348Z",
+    "load": "{ 2.17 2.84 3.13 }"
+   },
+   {
+    "at": "2026-10-13T19:06:49.349Z",
+    "load": "{ 2.30 2.85 3.12 }"
+   },
+   {
+    "at": "2026-10-13T19:06:59.351Z",
+    "load": "{ 2.71 2.92 3.15 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9427",
+   "--user-data-dir=profile-review-many-1",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "chromePid": 72161,
+  "browser": "Chrome/155.0.8059.40",
+  "finishedAt": "2026-10-13T19:07:07.935Z",
+  "loadAfter": "{ 3.61 3.10 3.21 }",
+  "memoryAfter": "System-wide memory free percentage: 62%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-13T19:01:49.714Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "many",
+   "shaderSalt": 463822435,
+   "seed": 20261013,
+   "invalidFraction": 0.1,
+   "edgeSizes": {
+    "broken": 400,
+    "generated": 200,
+    "random": 100,
+    "mutated": 300,
+    "long": 40
+   },
+   "windowDocuments": 64,
+   "documents": 100000,
+   "executorDocuments": 2000,
+   "generatedDocumentsAt32States": 10000,
+   "patterns": [
+    "(the|an?) [a-z]+",
+    "error",
+    "[a-z0-9.]+@[a-z.]+",
+    "\"[a-z]+\":",
+    "[A-Z][a-z]+ [A-Z][a-z]+",
+    "\\d+\\.\\d+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "(the|an?|some) [a-z]+(ing)?s?",
+    "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "([a-z]+)+x"
+   ],
+   "workerCounts": [
+    1,
+    2,
+    4,
+    8,
+    16
+   ],
+   "warmupMs": 200,
+   "sampleMs": 1000,
+   "minimumSamples": 15,
+   "maximumSamples": 200,
+   "cpuWarmupMs": 300,
+   "cpuSampleMs": 200,
+   "cpuSamples": 5
+  },
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeWorkgroupsPerDimension": 65535
+   },
+   "hasTimestamps": true,
+   "grantedBufferBytes": 205200000
+  },
+  "validationAgainstTheHighlighterOnTheExecutor": {
+   "documents": 100000,
+   "values": 51600000,
+   "mismatches": 0,
+   "expectedValidDocuments": 89943,
+   "expectedKindsThatAreNotWhitespace": 47024076,
+   "executorMs": 24726.175
+  },
+  "validateBackToBack": {
+   "fromCallToResolveMs": {
+    "count": 50,
+    "median": 2.355,
+    "p10": 2.315,
+    "p90": 2.88,
+    "min": 2.285,
+    "max": 3.415
+   },
+   "evaluateMs": {
+    "count": 50,
+    "median": 2.12,
+    "p10": 2.1,
+    "p90": 2.655,
+    "min": 2.075,
+    "max": 3.19
+   }
+  },
+  "againstGeneratedJavaScript": {
+   "documents": 100000,
+   "validationValues": 51600000,
+   "validationMismatches": 0,
+   "searches": 5,
+   "searchValues": 992160,
+   "searchMismatches": 0,
+   "expectedMatches": 2668777,
+   "referenceSearchMs": [
+    25324.9,
+    25676.38,
+    25539.77,
+    25661.52,
+    62561.89
+   ],
+   "examples": [],
+   "searchesRun": [
+    {
+     "pattern": "(the|an?) [a-z]+",
+     "scope": "strings"
+    },
+    {
+     "pattern": "\"[a-z]+\":",
+     "scope": "everything"
+    },
+    {
+     "pattern": "[a-z0-9.]+@[a-z.]+",
+     "scope": "stringsAndKeys"
+    },
+    {
+     "pattern": "[a-z]+",
+     "scope": "keys"
+    },
+    {
+     "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+     "scope": "strings"
+    }
+   ],
+   "validateMicrosecondsPerDocument": 90.149,
+   "totalMs": 174454.845
+  },
+  "at32StatesAgainstGeneratedJavaScript": {
+   "documents": 10000,
+   "validationValues": 5160000,
+   "validationMismatches": 0,
+   "searches": 2,
+   "searchValues": 85536,
+   "searchMismatches": 0,
+   "expectedMatches": 4114,
+   "referenceSearchMs": [
+    37906.06,
+    35298.14
+   ],
+   "examples": [],
+   "totalMs": 75916.54
+  },
+  "againstTheLoopProgramsOnTheExecutor": {
+   "documents": 2000,
+   "validationValues": 1032000,
+   "validationMismatches": 0,
+   "searches": 3,
+   "searchValues": 104304,
+   "searchMismatches": 0,
+   "expectedMatches": 22864,
+   "referenceSearchMs": [
+    6580.75,
+    8664.18,
+    20705.57
+   ],
+   "examples": [],
+   "validateMicrosecondsPerDocument": 2701.967,
+   "totalMs": 41515.56
+  },
+  "finishedAt": "2026-10-13T19:07:07.889Z",
+  "logLines": [
+   "1287.585 ms: 100000 generated documents on the GPU, 89943 valid",
+   "26326.375 ms: validate back to back: {\"fromCallToResolveMs\":{\"count\":50,\"median\":2.355,\"p10\":2.315,\"p90\":2.88,\"min\":2.285,\"max\":3.415},\"evaluateMs\":{\"count\":50,\"median\":2.12,\"p10\":2.1,\"p90\":2.655,\"min\":2.075,\"max\":3.19}}",
+   "26326.43 ms: validation and kinds against the highlighter on the executor: {\"documents\":100000,\"values\":51600000,\"mismatches\":0,\"expectedValidDocuments\":89943,\"expectedKindsThatAreNotWhitespace\":47024076,\"executorMs\":24726.175}",
+   "200784.09 ms: against the loop programs as generated JavaScript: {\"documents\":100000,\"validationValues\":51600000,\"validationMismatches\":0,\"searches\":5,\"searchValues\":992160,\"searchMismatches\":0,\"expectedMatches\":2668777,\"referenceSearchMs\":[25324.9,25676.38,25539.77,25661.52,62561.89],\"examples\":[],\"searchesRun\":[{\"pattern\":\"(the|an?) [a-z]+\",\"scope\":\"strings\"},{\"pattern\":\"\\\"[a-z]+\\\":\",\"scope\":\"everything\"},{\"pattern\":\"[a-z0-9.]+@[a-z.]+\",\"scope\":\"stringsAndKeys\"},{\"pattern\":\"[a-z]+\",\"scope\":\"keys\"},{\"pattern\":\"(the|an?|some) [a-z]+(ing)?s?\",\"scope\":\"strings\"}],\"validateMicrosecondsPerDocument\":90.149,\"totalMs\":174454.845}",
+   "276703.035 ms: 32 states against generated JavaScript: {\"documents\":10000,\"validationValues\":5160000,\"validationMismatches\":0,\"searches\":2,\"searchValues\":85536,\"searchMismatches\":0,\"expectedMatches\":4114,\"referenceSearchMs\":[37906.06,35298.14],\"examples\":[],\"totalMs\":75916.54}",
+   "318223.41 ms: against the loop programs on the executor: {\"documents\":2000,\"validationValues\":1032000,\"validationMismatches\":0,\"searches\":3,\"searchValues\":104304,\"searchMismatches\":0,\"expectedMatches\":22864,\"referenceSearchMs\":[6580.75,8664.18,20705.57],\"examples\":[],\"validateMicrosecondsPerDocument\":2701.967,\"totalMs\":41515.56}"
+  ],
+  "done": true
+ }
+}

@@ -9,36 +9,43 @@ Both are fixed numeric programs. The JSON highlighter ([src/json-highlighter](..
 The folder was built in two stages:
 
 1. **The highlighter with every position written out.** emit.ts writes the compiled program as one WGSL compute shader with one statement per operation, and one compute pass runs it once per document. 100,000 documents that are already on the GPU take 3.75 ms, against 87.5 ms for JSON.parse in the same page. The shader takes about 2 s to compile.
-2. **Both programs as loops over a document's positions.** The work of one position is built once with the builder and written once in the shader, inside a `for` loop, which is docs/patterns.md's pattern for repeated work. The highlighter's shader then compiles in 0.04 s and validates 100,000 documents in 2.2 ms. Regex search's shader compiles in 0.1 s at 8 states, where the same program with every position written out took 107 to 130 s, and searches 100,000 documents in 7 ms. A search can read only some kinds of characters, e.g. string values, by reading the highlighter's display kinds, which stay on the GPU. searcher.ts is one module that does all of it for a page, on the GPU or on the CPU.
+2. **Both programs as loops over a document's positions.** The work of one position is built once with the builder and written once in the shader, inside a `for` loop, which is docs/patterns.md's pattern for repeated work. The highlighter's shader then compiles in 0.04 s and validates 100,000 documents that are already on the GPU in 2.2 ms. Regex search's shader compiles in 0.05 to 0.1 s at 8 states, where the same program with every position written out, at 256 positions, took 107 to 130 s in a scratch probe, and searches 100,000 documents in 7 ms when searches follow each other. A search can read only some kinds of characters, e.g. string values, by reading the highlighter's display kinds, which stay on the GPU. searcher.ts is one module that does all of it for a page, on the GPU or on the CPU.
 
-Every value that came back from the GPU was compared with the CPU: 7.3 to 7.6 billion per run in the first stage, and 0.7 to 1.0 billion per run in the second, none of them different.
+Every value that came back from the GPU was compared with a value computed on the CPU, and none differed: 7.3 to 7.6 billion per run in the first stage, against the CPU executor, and 0.7 to 1.0 billion per run in the second, against a plain JavaScript highlighter and a plain JavaScript loop over the same automaton, which each run first compares with the programs on the CPU for its first 200 documents.
+
+A review then ran everything again, compared the GPU with the programs that have every position written out, on the CPU executor, for documents and patterns at the limits and for all 100,000 documents, timed JavaScript in several workers, and corrected this README where it claimed more than the measurements show. [What the review found, and what changed](#what-the-review-found-and-what-changed) has the list.
 
 The answer comes first, then how to run everything, what was built, the checks and every measurement.
 
 ## Is the GPU clearly faster?
 
-The short answer to Cheng's question, for all of it:
+The short answer to Cheng's question, for all of it. Every number is for one Apple M5 Max, headless Chrome 155, and the 100,000 generated documents, and a range is what the runs of this folder measured over about four hours.
 
-- **Against the same program on the CPU: yes, by a wide margin, from about ten documents on.** For 100,000 documents the GPU takes 2.2 ms to validate and 7.6 ms to search, where generated JavaScript of the same programs takes 11 and 25 s, and the executor 5 and 6 minutes.
-- **Against plain JavaScript, for validating and highlighting JSON: yes, when the documents stay on the GPU**, from about 1,000 documents when evaluations follow each other, and from a few thousand after a pause: 2.2 to 8.3 ms for 100,000 documents, against 79 ms for JSON.parse and 146 ms for a JavaScript highlighter. Not when every evaluation has to upload its documents.
-- **Against plain JavaScript, for regex search: not clearly.** RegExp is fast. With a pattern of up to 8 states the GPU takes 7 ms for 100,000 documents and RegExp 12 to 43 ms, which is 1.7 to 6 times, and after a pause the GPU takes 17 ms, which is about even. With a longer pattern the program is slower than RegExp: 64 ms at up to 16 states and 0.87 s at up to 32. Only on a pattern that makes RegExp backtrack is the GPU clearly faster, 7 ms against 2.1 s.
-- **For both in one app: the part that is clearly faster is the first one.** A page that loads 100,000 documents has them validated and highlighted on the GPU in 2.2 ms, where JavaScript takes 146 ms. Each keystroke after that is a search, which is about as fast as RegExp, also when it reads only string values or keys: 7.6 to 17.6 ms on the GPU against 17 to 24 ms for RegExp on each string value.
+- **Against the same programs on the CPU: yes, by a wide margin, from about ten documents on.** For 100,000 documents that are already on the GPU, the highlighter's pass takes 2.2 ms and a search at 8 states 7 to 8 ms, when one evaluation follows the other. On the CPU, the highlighter as the repo ships it, with every position written out, takes 8.4 to 9.2 s on the executor and 2.1 s as generated JavaScript, and a search takes 24.5 s as generated JavaScript and 3.2 minutes on the executor.
+- **Against plain JavaScript on one thread, for the highlighter's pass alone: yes, from about 10,000 documents that are already on the GPU.** For 10,000 documents the pass takes 0.65 ms back to back and 2.6 to 3.4 ms after a pause, against 7 to 10 ms for JSON.parse and 12 to 17 ms for a JavaScript highlighter. For 100,000 documents it takes 2.2 ms and 8.3 to 9.3 ms, against 75 to 103 ms and 119 to 152 ms. Below about 1,000 documents JavaScript takes less time.
+- **But a page runs that pass once per set of documents, and from the texts the GPU isn't faster.** A document's display kinds and first error only change when its text changes. For 100,000 documents, JavaScript writes the cells in 44 ms, the upload of 205 MB and the pass take about 40 ms, and the shader compiles in about 40 ms: 0.13 s before the page has its answers, where the JavaScript highlighter takes 0.12 to 0.15 s.
+- **Against RegExp on one thread, for regex search: about even, not clearly faster.** With a pattern of up to 8 states the GPU takes 7 to 8 ms for 100,000 documents when searches follow each other, and 17 to 21 ms after a pause of 200 ms or more, which is what a page that searches per keystroke gets. RegExp takes 12 to 43 ms to count every match, and 5 to 35 ms to say only whether each document has one. With a longer pattern the program is slower than RegExp: 64 ms at up to 16 states and 0.87 s at up to 32. Only on a pattern that makes RegExp backtrack is the GPU clearly faster, 7 to 21 ms against 2.1 s.
+- **Against JavaScript in several workers: no.** Every comparison above gives JavaScript one of this machine's 18 cores. With the documents shared among 8 workers, RegExp counts every match in 100,000 documents in 1.9 to 6.7 ms and JSON.parse validates them in 10.9 ms, and with 16 workers in 1.3 to 4.0 ms and 6.2 ms, from the request until every worker's answer has arrived. The pattern that backtracks takes 279 and 136 ms there, which the GPU's 7 to 21 ms still beats.
+- **For both in one app:** loading and validating is about even with plain JavaScript, and each keystroke after that is a search, which is about as fast as RegExp on one thread, also when it reads only string values or keys: 7.6 ms back to back and 17.6 to 20.8 ms after a pause, against 15 to 24 ms for RegExp on each string value.
 
-So a demo that searches a ton of JSON documents is honest if it says what it shows: the repo's own programs, the same ones that take seconds to minutes on the CPU, answering in a few ms per keystroke for 100,000 documents, about as fast as the browser's native regex engine on ordinary patterns of up to 7 characters, and with the same time for a pattern that takes RegExp 2 s. It isn't honest if it claims to beat RegExp by a wide margin, or shows a long pattern without saying that the program for it is slower.
+So there is no document count at which the search on the GPU is clearly faster than the browser's own regex engine on ordinary patterns, and the highlighter's pass is clearly faster only as a repeated pass over documents that stay on the GPU, which a page has no reason to repeat. What the GPU gives is the repo's own programs at the speed of native code on one thread, where the CPU takes 200 to 25,000 times as long for the same programs.
+
+A demo that searches a ton of JSON documents is honest if it says what it shows: the repo's own programs, built with the builder and compiled once, the same ones that take seconds to minutes on the CPU, answering in 8 to 21 ms per keystroke for 100,000 documents, with every value equal to the CPU's, in the range of the browser's native regex engine on one thread for ordinary patterns of up to 7 characters or classes, and with the same time for a pattern that takes RegExp 2 s. It isn't honest if it claims to beat RegExp or JavaScript, or shows a long pattern without saying that the program for it is slower.
 
 ### The three rows
 
-The task: 100,000 generated JSON documents of up to 512 code points, 300 on average, 1 in 10 broken. Once: which are valid, where is the first error, and what is each character shown as. Then per keystroke: how many matches of a pattern lie inside each document's string values. Everything was measured in the same Chrome page, and the CPU rows' times for 100,000 documents are extrapolated from the first 200 and 16 documents.
+The task: 100,000 generated JSON documents of up to 512 code points, 300 on average, 1 in 10 broken. Once: which are valid, where is the first error, and what is each character shown as. Then per keystroke: how many matches of a pattern lie inside each document's string values. Everything was measured in the same Chrome page, and a time on the CPU that isn't for all 100,000 documents says how many it was measured on.
 
 | | Validate and highlight every document, once | One search inside string values, pattern of up to 8 states | The same search with `([a-z]+)+x`, which makes RegExp backtrack |
 | --- | --- | --- | --- |
-| Plain JavaScript: a table loop, then RegExp on each string value | 146 ms | 17 to 24 ms, after 95 ms once to find the string values | 567 ms |
-| The same programs on the CPU: as generated JavaScript, and on the executor | 10.8 s, and 4.9 minutes | 24.5 s, and 5.7 minutes | the same |
-| The same programs on the GPU, back to back, and after a pause of 1 s | 2.2 ms, and 8.3 ms | 7.6 ms, and 17.6 ms | the same |
+| Plain JavaScript on one thread: a table loop, then RegExp on each string value | 119 to 152 ms | 15 to 24 ms, after 82 to 117 ms once to find the string values | 546 to 617 ms |
+| The same programs on the CPU: as generated JavaScript, and on the executor | 2.1 s, extrapolated from 5,000 documents, and 8.4 to 9.2 s, with every position written out | 24.5 s as a loop, extrapolated from 200 documents, and 3.2 minutes with every position written out, extrapolated from 40 | the same |
+| The same programs on the GPU | 0.13 s from the texts. The pass alone, with the documents already there: 2.2 ms back to back, and 8.3 to 9.3 ms after a pause of 1 s | 7.6 ms back to back, and 17.6 to 20.8 ms after a pause of 200 ms or more | the same |
 
-- The GPU row needs a load first: 0.18 s, of which 44 ms is JavaScript writing every document's cells, 86 ms the upload of 205 MB with the highlighter's shader compile and the validation itself, and the rest the search shader's compile.
+- The GPU's 0.13 s is 44 ms of JavaScript writing every document's cells, about 40 ms for the upload of 205 MB and the pass, and about 40 ms for the highlighter's shader compile. The search shader's compile adds 46 ms, so the page is ready after 0.17 to 0.18 s, and after 0.28 s in one of the six runs.
+- The loop forms run slower on the CPU than the forms with every position written out, since this folder's CPU runner calls the executor once per position, and the executor checks every source cell's range on each call: the highlighter's loop takes 90 µs per document as generated JavaScript and 2.7 ms on the executor, and a search at 8 states 3.3 to 3.4 ms per document on the executor. So the table gives each program's faster form on the CPU.
 - Row 1 isn't the same search as rows 2 and 3 for every pattern: RegExp takes the first alternative that matches, and the program the longest match. On the patterns measured here the counts are equal for every document.
-- JSON.parse, which only says whether a document is valid, takes 79 ms for the 100,000 documents.
+- JSON.parse, which only says whether a document is valid, takes 75 to 103 ms for the 100,000 documents on one thread, and 6 to 11 ms in 8 to 16 workers.
 
 ### What depends on what
 
@@ -50,11 +57,15 @@ The task: 100,000 generated JSON documents of up to 512 code points, 300 on aver
 | 9 to 16 states | 63.8 ms | 74.2 ms | 8.3 and 29.1 ms | 3.69 ms |
 | 17 to 32 states | 871 ms | 882 ms | 28.9 ms | 4.85 ms |
 
-So the search that is as fast as RegExp holds patterns of up to 7 characters or classes. The hand-written kernel shows that this GPU can run the same automaton 2 to 13 times faster than RegExp counts, at any of these sizes, when a row of states is one 32-bit word. The repo's program can't be that kernel, since an AND of two words isn't a sum or a ReLU gate. [Not done](#not-done) has two ideas for a cheaper step.
+So the search that is as fast as RegExp holds patterns of up to 7 characters or classes. The hand-written kernel shows that this GPU can run the same automaton 2 to 13 times faster than RegExp counts on one thread, at any of these sizes, when a row of states is one 32-bit word and searches follow each other. After a pause of 1 s the kernel takes 11 to 14 ms, which is RegExp's range again. The repo's program can't be that kernel, since an AND of two words isn't a sum or a ReLU gate. [Not done](#not-done) has two ideas for a cheaper step.
 
-**The document count.** A pass has a floor, one document's operations in one GPU thread, of about 1 ms at 8 states, 7 ms at 16 and 77 ms at 32, and the time stays near it up to about 10,000 documents. RegExp's time grows with the count from the first document. So at 8 states the GPU takes less time than RegExp from 1,700 to 13,000 documents on, depending on the pattern, when searches follow each other, and from 11,000 to 27,000 after a pause, or not at all up to 100,000 for the two patterns that RegExp matches fastest.
+**The document count.** A pass has a floor, one document's operations in one GPU thread, of about 1 ms at 8 states, 7 ms at 16 and 77 ms at 32, and the time stays near it up to about 10,000 documents. RegExp's time grows with the count from the first document. So at 8 states the GPU takes less time than RegExp on one thread from about 2,000 to about 13,000 documents on, depending on the pattern, when searches follow each other, and from 11,000 to 30,000 after a pause, or not at all up to 100,000 for the two patterns that RegExp matches fastest. These counts are interpolated between four measured counts, and one pattern's count moved by up to 40% between the three runs and the review's run, e.g. from 10,000 to 6,100 for `\d+\.\d+`.
 
-**Whether the GPU was busy.** A search after a pause of 200 ms or more takes 2.4 times the back to back time at 8 states and 100,000 documents, 17 ms instead of 7 ms, as in the first stage. A page that searches per keystroke gets the slower number.
+**Whether the GPU was busy.** A search after a pause of 200 ms or more takes 2.4 to 2.8 times the back to back time at 8 states and 100,000 documents, 17 to 21 ms instead of 7 to 8 ms, as in the first stage. A page that searches per keystroke gets the slower number.
+
+**How many cores JavaScript gets.** RegExp and JSON.parse above run on one thread. Eight workers that each hold an eighth of the documents count a pattern's matches in 1.9 to 6.7 ms, which is less than the GPU takes, see [JavaScript in several workers](#javascript-in-several-workers).
+
+**What else the machine does.** In the three search runs and the review's run, at a 1-minute load average of 2.2 to 7.5, a search of 100,000 documents at 8 states took 6.9 to 7.3 ms. In two single runs at a load average of 6 to 15 it took 10.8 and 11.1 ms, and during two seconds of the review's first-stage run the highlighter took 13 to 20 ms where it otherwise took 4 ms. Other processes use the same GPU.
 
 **The documents.** These have a median of 300 code points. The program runs all 512 positions of every document, and RegExp reads only the text, so shorter documents favor RegExp and documents near 512 favor the GPU.
 
@@ -64,36 +75,44 @@ So the search that is as fast as RegExp holds patterns of up to 7 characters or 
 
 A page built on searcher.ts runs the repo's own programs: the highlighter's step and regex search's step, built with the builder, compiled once each, and run once per position of every document on the GPU. It doesn't run the hand-written kernel. With 100,000 documents:
 
-- It loads in about 0.18 s: 44 ms of JavaScript writing cells, 86 ms for the upload, the highlighter's compile and the validation, and 46 ms for the search shader's compile.
-- Every keystroke of a pattern of up to 8 states searches all 100,000 documents in 7.6 to 17.6 ms, in every document or only inside string values or keys, and returns the marks of the documents on screen. A scroll takes 1.2 to 2.5 ms, since it searches only those.
+- It loads in 0.17 to 0.18 s: 44 ms of JavaScript writing cells, 78 to 86 ms for the upload, the highlighter's compile and the validation, and 46 ms for the search shader's compile. That is about what plain JavaScript takes to validate and highlight the same documents, 0.12 to 0.15 s.
+- Every keystroke of a pattern of up to 8 states searches all 100,000 documents in 7.6 ms when searches follow each other and in 17.6 to 20.8 ms after a pause of 200 ms or more, in every document or only inside string values or keys, and returns the marks of the documents on screen. A scroll takes 1.1 to 2.5 ms, since it searches only those.
 - A pattern of 9 to 16 states takes 65 ms, and one of 17 to 32 states about 0.9 s, so a page should say which program ran, or hold fewer documents: at 10,000 documents they take 9 and 132 ms.
-- A pattern like `([a-z]+)+x` takes the same 7 to 18 ms, where RegExp takes 0.57 to 2.1 s.
+- A pattern like `([a-z]+)+x` takes the same 8 to 21 ms, where RegExp takes 0.57 to 2.1 s on one thread.
 - The same programs on the CPU, behind the same interface, take 0.25 ms per document as generated JavaScript, 24.5 s for 100,000 documents, for one search, which a page can show by running them on a few hundred documents.
+- RegExp on one thread answers the same searches in 15 to 24 ms, so the page's claim is the first one above and the last two, not a faster search.
 
 ## How to run it
 
 From the repo root:
 
 ```sh
-bun test lab/json-search                         # 40 tests in 3 files, about 30 seconds, no GPU
+bun test lab/json-search                         # 45 tests in 4 files, about 40 seconds, no GPU
 bunx tsgo -p lab/json-search                     # type-check, including gpu/
 bunx oxlint --type-aware lab/json-search         # lint
 bun lab/json-search/report.ts sizes              # the first stage's two programs and their shaders, with and without guards
 bun lab/json-search/report.ts loops              # the loop programs' stages and their shaders
 bun lab/json-search/report.ts documents          # the 100,000 documents' shapes, defects and lengths
 bun lab/json-search/report.ts examples 8         # the first 8 documents' texts
+bun lab/json-search/report.ts edge-cases         # the searcher on the CPU against the written-out programs on the executor, at the limits, about 5 minutes
 bun lab/json-search/gpu/run.ts --mode main --profile <new folder> --out <file.json>    # the first stage's timings, about 8 minutes
 bun lab/json-search/gpu/run.ts --mode check --profile <new folder> --out <file.json>   # its shaders with and without guards, about 1 minute
 bun lab/json-search/gpu/search-run.ts --profile <new folder> --out <file.json>         # regex search at every capacity, about 13 minutes
 bun lab/json-search/gpu/combined-run.ts --profile <new folder> --out <file.json>       # the searcher at every document count, about 7 minutes
+bun lab/json-search/gpu/review-run.ts --mode edge --profile <new folder> --out <file.json>       # the review: documents and patterns at the limits on the GPU, about 5 minutes
+bun lab/json-search/gpu/review-run.ts --mode many --profile <new folder> --out <file.json>       # the review: 100,000 documents on the GPU against the programs on the CPU, about 6 minutes
+bun lab/json-search/gpu/review-run.ts --mode baselines --profile <new folder> --out <file.json>  # the review: other plain JavaScript baselines, and workers, about 3 minutes
 ```
 
-Each `run` script starts its own headless Chrome with WebGPU on a profile folder that no other Chrome uses, serves its page with cross-origin isolation headers so that `performance.now()` reads in steps of 5 µs, and ends only the Chrome it started. `--port` and `--devtools-port` choose its two ports: 4421 and 9421 by default for run.ts, and 4424 and 9424 for the other two. The raw results are in results/, and two scripts print every table below from them:
+Each `run` script starts its own headless Chrome with WebGPU on a profile folder that no other Chrome uses, serves its page with cross-origin isolation headers so that `performance.now()` reads in steps of 5 µs, and ends only the Chrome it started. `--port` and `--devtools-port` choose its two ports: 4421 and 9421 by default for run.ts, 4424 and 9424 for search-run.ts and combined-run.ts, and 4427 and 9427 for review-run.ts. The raw results are in results/, and three scripts print every table below from them:
 
 ```sh
 bun lab/json-search/gpu/summarize.ts --main lab/json-search/results/gpu-main-1.json,lab/json-search/results/gpu-main-2.json,lab/json-search/results/gpu-main-3.json --checks lab/json-search/results/gpu-check-1.json
 bun lab/json-search/gpu/search-summarize.ts --search lab/json-search/results/search-main-1.json,lab/json-search/results/search-main-2.json,lab/json-search/results/search-main-3.json --combined lab/json-search/results/combined-main-1.json,lab/json-search/results/combined-main-2.json,lab/json-search/results/combined-main-3.json,lab/json-search/results/combined-main-4.json,lab/json-search/results/combined-main-5.json
+bun lab/json-search/gpu/review-summarize.ts --baselines lab/json-search/results/review-baselines-1.json,lab/json-search/results/review-baselines-2.json,lab/json-search/results/review-baselines-3.json --edge lab/json-search/results/review-edge-1.json --many lab/json-search/results/review-many-1.json
 ```
+
+The review's reruns of the three measurement pages are results/review-rerun-gpu-main.json, review-rerun-search.json and review-rerun-combined.json, and the first two scripts print their tables when given one of them alone.
 
 | File | What it holds |
 | --- | --- |
@@ -111,15 +130,17 @@ bun lab/json-search/gpu/search-summarize.ts --search lab/json-search/results/sea
 | `table-loop.ts` | A plain JavaScript highlighter over the program's own tables, the fastest JavaScript baseline here |
 | `generated-js.ts` | A program's operations as JavaScript statements, a CPU backend without the executor's loop over layers |
 | `check.ts` | The executor's outputs for many documents, and the count of values that differ |
+| `edge-cases.ts` | The review's documents and patterns at the limits, and the comparison of a searcher with the programs that have every position written out, on the CPU executor |
 | `gpu/host.ts` | The WebGPU host: a device with the buffer limits it needs, a store for the documents' cells, and a runner per shader with compile time, evaluation, readback of chosen documents, and a self check |
 | `gpu/page.ts`, `gpu/run.ts`, `gpu/summarize.ts` | The first stage's measurement page, its harness and its tables |
 | `gpu/search-page.ts`, `gpu/search-run.ts` | The measurement page for regex search at every capacity, and its harness |
 | `gpu/combined-page.ts`, `gpu/combined-run.ts` | The measurement page for the searcher, and its harness |
 | `gpu/search-summarize.ts` | The tables of the last two |
+| `gpu/review-page.ts`, `gpu/review-run.ts`, `gpu/review-summarize.ts` | The review's page, its harness and its tables: the limits on the GPU, 100,000 documents against the programs on the CPU, and other plain JavaScript baselines |
 | `gpu/chrome.ts`, `gpu/measure.ts` | What the harnesses and the pages share: the headless Chrome driver, and the sampling helpers |
 | `results/` | The raw results |
 | `report.ts` | Sizes and the documents' distribution, without a GPU |
-| `json-search.test.ts`, `search.test.ts`, `searcher.test.ts` | The tests |
+| `json-search.test.ts`, `search.test.ts`, `searcher.test.ts`, `edge-cases.test.ts` | The tests |
 
 ## What was built
 
@@ -316,7 +337,7 @@ The interpreter rounds every f32 operation on its own, and says nothing about wh
 
 ### Regex search, the highlighter's loop and the searcher
 
-`bun test lab/json-search` runs 40 tests in 3 files without a GPU. The ones for the loops, in search.test.ts and searcher.test.ts:
+`bun test lab/json-search` runs 45 tests in 4 files without a GPU. The ones for the loops, in search.test.ts and searcher.test.ts:
 
 - **Regex search's loop against form (a).** For 274 patterns of up to 8 states with 8 texts each, at a capacity of 40 positions, the loop program gives the match count and the marks of lab/regex-search's `buildDataSearch` on the CPU executor: on the executor, as generated JavaScript, and through the WGSL interpreter. The interpreter also runs the shader in the compiled program's statement order, with the bits as f32 values, and stopping at the text's end, each on every third or fifth pattern. The patterns are lab/regex-search's edge cases, the measurement's patterns, random ones, and the capacities: patterns of exactly 8 states, and one with 16 classes and 32 class boundaries, `([aeimquyC]|[cekmsuAC]|…|a|c)+`. Every pattern gets an empty text, a text as long as the program holds, a longer one, and two that end with a match on the last position. The full program's outputs are compared with lab/regex-search's automaton simulator first, so a mistake shared by the loop and the full program fails too.
 - **16 and 32 states**, including patterns with exactly that many states: the loop as generated JavaScript and through the interpreter against form (a) at 24 positions.
@@ -334,6 +355,32 @@ In headless Chrome:
 - **The searcher**: in each of 5 runs, the validation of every document and every display kind against the table loop, 57.3 million values, 9,430 to 9,823 searches with 390 to 409 million values against the plain loop masked by the table loop's kinds, the plain loop against the loop program on the CPU for the first 200 documents, 10.8 million values for 10 patterns and 3 scopes, and the searcher's self check, 2.6 million values. None differed.
 - On these documents RegExp's count equals the program's for every measured pattern and every document, in every scope. That is a property of these patterns, not of RegExp: `a|abab` finds 2 matches in `xabab` where the program finds 1.
 - Only one GPU and one compiler were tested, as in the first stage: an Apple M5 Max through Metal, in Chrome 155.
+
+### The review's checks: the limits, and the programs with every position written out
+
+The checks above compare the GPU with the CPU executor for the first stage, and for the second stage with a plain JavaScript highlighter and a plain JavaScript loop over the automaton, which each run compares with the programs on the CPU for its first 200 documents. The documents are generated JSON, of which 601 in 100,000 pass the capacity and none is empty. So the review added documents and patterns at the limits, and a reference that is the repo's own programs with every position written out.
+
+edge-cases.ts has 280 hand-written documents and the comparison:
+
+- **Lengths**: the empty text, every ASCII character as a text of one code point, lone surrogates, and texts of 511, 512, 513 and 514 code points: a string, an array, spaces, a number or an error at the last position, a bracket that opens at the last position, a string of emoji, an escape that the capacity cuts, and texts of 1,200 and 2,000 code points.
+- **Nesting**: arrays, objects, and both in turn, 1, 2, 15, 16, 17, 18 and 40 deep, 16 and 17 openers that end exactly at code point 511, braces closed by brackets, only closers, only openers, and texts that keep adding 2^15 to the container code after the first error, e.g. `[[[[[[[[[[[[[[[{]{]{]…`.
+- **Matches**: at the first and at the last position, a match whose last code point the capacity cuts, 512 times the same character, emoji around a match, the same words as a key, as a value and outside strings, and an escape inside a string.
+- **Patterns**, 18, 5 and 4 at 8, 16 and 32 states: as many states as each program holds, e.g. `abcdefg` and 31 times `a`, one of each capacity with 16 classes and 32 class boundaries, the empty class `[]`, which matches nothing, `[^]`, which matches every code point on its own, `[^]+`, which matches the whole text, and the empty pattern and `a*`, whose empty matches the search never reports. Every pattern runs over every kind of character, and a second time over string values, keys, both, numbers and literals, or no kind at all.
+- `edgeDocuments` adds generated documents of which every one is broken, generated documents with 1 in 10 broken, and the highlighter's own kinds of test texts with another seed.
+- `compareWithWrittenOutPrograms(searcher, texts, searches)` takes a searcher on the CPU or on the GPU, and compares its validation, every display kind, every match count and every mark with [src/json-highlighter/highlighter.ts](../../src/json-highlighter/highlighter.ts) and with `buildMaskedSearch`, both on the CPU executor. It also counts what the expected values hold, e.g. matches and marked positions, so that zeros compared with zeros can't pass unnoticed.
+
+Without a GPU:
+
+- edge-cases.test.ts, 5 tests in about 18 s: the executor's values say that the documents reach the limits, e.g. a string of 512 code points is valid, one of 513 is `tooLong` at code point 512, 16 arrays deep is valid and 17 is `tooDeep` at code point 16, `[^]` finds 512 matches in 512 and in 513 times `a`, and `abcdefg` matches on the last 7 positions and not when the capacity cuts its `g`. The searcher as generated JavaScript gives the written-out programs' values: the validation and kinds of all 280 documents, and 24 searches at 8 states over the 144 documents of more than one code point. So does the searcher on the CPU executor for 36 documents and 8 searches, a window of 16 at a time, and at 16 states for 72 documents and 10 searches. At 32 states the two CPU backends are compared. With `truncated` computed as `length >= 512` in json-step.ts, the second test fails with 70 different values.
+- `bun lab/json-search/report.ts edge-cases`, about 5 minutes: 1,449 documents and 46 searches up to 16 states, 34.2 million search values and 747,684 validation values, 0 different, with 540,943 expected matches. At 32 states, against the written-out program of 1,167,392 operations: 144 documents and 8 searches, 590,976 values, 0 different. The loop programs on the CPU executor: 36 documents and 16 searches, 295,808 values, 0 different. The highlighter's loop alone over 31,629 more texts: 16.3 million values, 0 different.
+
+In headless Chrome, one process each (results/review-edge-1.json and review-many-1.json, 1-minute load average 3.3 to 4.4 and 2.2 to 3.6):
+
+- **The limits on the GPU**: a GPU searcher over the same 1,449 documents, against the written-out programs on the CPU executor. Validation and kinds: 747,684 values, 0 different. 46 searches up to 16 states, every match count and the marks of every document: 34.2 million values, 0 different, with 540,943 expected matches and 1.68 million marked positions, and 36 of the 46 searches find something. The executor took 179 s for the expected values. At 32 states, against the loop program as generated JavaScript: 8 searches, 2.8 million values, 0 different, and against the loop program on the CPU executor for 32 of the documents: 131,328 values, 0 different.
+- **Three requests at once on the GPU**, 20 rounds: the two older requests resolved to `undefined` every time, and the newest one's counts and marks equal those of the same search alone, 2.65 million values, 0 different.
+- **The first stage's two shaders** over the same 1,449 documents, against the executor: 4,347 and 746,235 values, 0 different.
+- **All 100,000 generated documents**: the searcher's validation and every display kind against highlighter.ts on the CPU executor, 51.6 million values, 0 different, of which 47.0 million expected kinds aren't 0. Five searches against the loop programs as generated JavaScript over every document, four at 8 states and one at 16, which took the CPU 25 s and 63 s each: 992,160 values, 0 different, 2.67 million expected matches. Two searches at 32 states over the first 10,000 documents, and three searches on the CPU executor over the first 2,000: 189,840 values, 0 different.
+- So on this GPU the loops gave the full programs' values at every limit that was tried. Other GPUs, other browsers, and other documents remain untested.
 
 ## Measured results: the highlighter with every position written out
 
@@ -526,7 +573,7 @@ With the display kinds of the 64 documents on screen read back as well, the GPU 
 
 - The documents: JSON.parse and the JavaScript highlighters take longer for longer documents and stop early at an error, while the GPU runs all 7,186 operations for every document. These documents have a median of 300 code points, so shorter documents move every crossover up, and documents near 512 move it down. With fewer broken documents JSON.parse gets faster, down to 0.64 µs per document with none.
 - The machine: one Apple M5 Max, one browser, headless. The shader compile time, the pause behavior and the exactness without guards may all differ on another GPU.
-- The baselines are single-threaded JavaScript in the page. JavaScript in several workers wasn't measured.
+- The baselines are single-threaded JavaScript in the page. With 16 workers JSON.parse takes 6.2 ms for the 100,000 documents instead of 76 to 103 ms, see [JavaScript in several workers](#javascript-in-several-workers).
 
 ## Measured results: regex search as a loop
 
@@ -717,7 +764,7 @@ Patterns and sizes where RegExp's count differs from the automaton's for some do
 - **The hand-written kernel takes 3.38, 3.69 and 4.85 ms** for 100,000 documents at 8, 16 and 32 states and 512 positions, and 11.1 to 14.4 ms after a pause of 1 s. It is 2 times faster than the program's step at 8 states, 17 times at 16 and 180 times at 32, since a row of up to 32 states is one word there.
 - **RegExp takes 0.08 to 0.43 µs per document on the nine ordinary patterns**, i.e. 8.3 to 42.8 ms for 100,000 documents of 512 code points, and 4.7 to 34.8 ms for `test`. On `([a-z]+)+x` it takes 21.4 µs per document, 2,143 ms for 100,000: a run of lowercase letters that no `x` follows is split in every possible way before the match fails. The program's time is the same for every pattern of a capacity.
 - **Against RegExp counting every match, the step at 8 states and 512 positions takes less time from 1,700 to 13,000 documents on, depending on the pattern**, when searches follow each other. After a pause of 200 ms it takes less time from 11,000 to 27,000 documents on for four of the six ordinary patterns, and for two it never does up to 100,000. On `([a-z]+)+x` it takes less time from below 100 documents, and from 130 after a pause.
-- **The same program on the CPU takes 241 µs per document as generated JavaScript and 1.9 to 3.4 ms on the executor**, at 8 states and 512 positions, i.e. 24 s to 5.6 minutes for 100,000 documents, where the GPU takes 7.04 ms. The plain JavaScript loop over 32-bit rows takes 4.3 µs per document there, 430 ms for 100,000.
+- **The same program on the CPU takes 241 µs per document as generated JavaScript, and on the executor 1.9 ms with every position written out and 3.4 ms as a loop**, at 8 states and 512 positions, i.e. 24 s, 3.2 minutes and 5.6 minutes for 100,000 documents, where the GPU takes 7.04 ms. The plain JavaScript loop over 32-bit rows takes 4.3 µs per document there, 430 ms for 100,000.
 - **Stopping the loops at the text's end was slower** in run 1 at 100,000 documents in every capacity, e.g. 9.44 ms against 7.02 ms at 8 states and 512 positions and 78.7 ms against 63.6 ms at 16, although the documents have 300 code points on average.
 
 ### The choices that were measured
@@ -848,18 +895,128 @@ Patterns, scopes and counts where RegExp's count differs from the program's for 
 | generated JavaScript | 200 | 108 (93 to 179) | 245 (242 to 255) | 597 (595 to 638) | 3,614 (3,408 to 4,041) |
 | CPU executor | 16 | 2,910 (2,814 to 3,031) | 3,424 (3,264 to 3,633) | 10,648 (10,424 to 11,281) | 38,656 (37,333 to 41,148) |
 
+The Validate column is one run per process over the first documents, which includes building the program and the first, unoptimized calls. Warm and over all 100,000 documents, the highlighter's loop takes 90 µs per document as generated JavaScript, and 2.7 ms on the executor over 2,000 documents (results/review-many-1.json). These are the loop forms through this folder's CPU runner, which calls the executor once per position, and the executor checks every source cell's range on each call. The highlighter with every position written out takes 20.6 µs per document as generated JavaScript and 84 µs on the executor, see [The CPU baselines](#the-cpu-baselines), and form (a) with every position written out takes 1.9 ms per document on the executor at 8 states, see [The CPU, µs per document](#the-cpu-µs-per-document).
+
 ### What the searcher's tables say
 
 - **Creating a searcher for 100,000 documents takes 177 ms**: 43.8 ms of JavaScript writing 51.3 million cells, 85.5 ms for uploading 205 MB, compiling the highlighter's shader and validating every document, and the rest for compiling the search shader of 8 states.
 - **The highlighter's loop shader compiles in 14 to 42 ms**, where the display shader with every position written out compiled in 2,204 ms in the same processes.
-- **The loop validates 100,000 documents in 2.19 ms back to back and 8.28 ms after a pause of 200 ms or more**, with the display kinds of every document written on the GPU. The shader with every position written out takes 5.68 ms back to back in the same processes, although the loop runs 18,961 operations per document instead of 7,698. I didn't look for the reason. One difference is that a loop's body has 37 values alive, and the other shader 13,350.
-- **In the same page the table loop takes 146 ms and JSON.parse 78.8 ms** for the 100,000 documents, 67 and 36 times the loop's back to back time, and 18 and 10 times its time after a pause. At 1,000 documents the loop on the GPU takes 0.65 ms, what JSON.parse takes, and 1.9 ms after a pause.
+- **The loop validates 100,000 documents in 2.19 ms back to back and 8.28 ms after a pause of 200 ms or more**, with the display kinds of every document written on the GPU. That is the evaluation's own time. From the call of `searcher.validate()` until its promise resolves, which adds JavaScript turning the summary into four typed arrays, the review measured 2.36 ms against 2.12 ms. The shader with every position written out takes 5.68 ms back to back in the same processes, although the loop runs 18,961 operations per document instead of 7,698. I didn't look for the reason. One difference is that a loop's body has 37 values alive, and the other shader 13,350.
+- **In the same page the table loop takes 146 ms and JSON.parse 78.8 ms** for the 100,000 documents, 67 and 36 times the loop's back to back time, and 18 and 10 times its time after a pause. At 1,000 documents the loop on the GPU takes 0.65 ms, what JSON.parse takes, and 1.9 ms after a pause. The first stage's page measured the same table loop at 119 ms, and the review's pages at 123 to 139 ms. The pass is over documents that are already on the GPU: from the texts, the searcher's 130 ms of cells, upload, compile and pass are what the table loop takes.
 - **A search through the searcher takes 7.63 ms at 8 states and 100,000 documents**, and 17.5 to 17.6 ms after a pause of 200 ms or more, in every scope: a scope is nine shared cells. That is about 0.6 ms more than the step alone in the section before, for reading the kinds, the copies of the results, and the 0.75 ms between two searches here.
 - **A longer pattern costs what it costs without the searcher**: 65.3 ms at up to 16 states, and 132 ms at up to 32 states for 10,000 documents.
 - **Searching only the window's 64 documents**, as after a scroll, takes 1.2 to 2.5 ms at 8 states, 7.8 ms at 16 and 58 ms at 32: one document's operations in one GPU thread, whatever the count.
 - **RegExp on each string value takes 12.7 to 24.2 ms for 100,000 documents on the nine ordinary patterns**, 15.8 to 28.8 ms on each key, and 8.1 to 44.1 ms on the whole text, after finding the runs once, 95 ms for the 785,185 string values and 101 ms for the 1,230,015 keys. So at 8 states the searcher is 2.2 to 3.2 times faster than RegExp on string values when searches follow each other, and about even after a pause. On `([a-z]+)+x` RegExp takes 567 ms on the string values, 1,601 ms on the keys and 2,128 ms on the whole text.
-- **The same programs on the CPU**, as generated JavaScript, take 108 µs per document to validate and 245, 597 and 3,614 µs per document and search at 8, 16 and 32 states, i.e. 10.8 s, 24.5 s, 1.0 minute and 6.0 minutes for 100,000 documents. On the executor they take 2.9 ms per document to validate and 3.4, 10.6 and 38.7 ms per search, i.e. 5.7 minutes for one search of 100,000 documents at 8 states.
+- **The same loop programs on the CPU**, as generated JavaScript, take 90 to 108 µs per document to validate and 245, 597 and 3,614 µs per document and search at 8, 16 and 32 states, i.e. 9 to 11 s, 24.5 s, 1.0 minute and 6.0 minutes for 100,000 documents. On the executor the loops take 2.7 to 2.9 ms per document to validate and 3.4, 10.6 and 38.7 ms per search. Those aren't the CPU's best times for these programs: with every position written out, the highlighter takes 8.4 to 9.2 s for 100,000 documents on the executor and 2.1 s as generated JavaScript, and a search at 8 states takes 1.9 ms per document on the executor, 3.2 minutes.
 - **The self check** over 300 documents takes about 0.43 s: 0.35 s of generated JavaScript and 0.08 s on the GPU.
+
+## What the review found, and what changed
+
+A second pass over this folder, a few hours after the measurements above. Each measurement page ran once more in a fresh Chrome process, the code and the tests were read, the GPU was compared with the CPU at the limits of both programs, and the plain JavaScript baselines were written in other ways and given more threads.
+
+The review found no defect in the programs, the shaders, the host or the searcher: every value that it read back from the GPU equals the CPU's, see [The review's checks](#the-reviews-checks-the-limits-and-the-programs-with-every-position-written-out). It found these problems in the write-up and gaps in the checks, which are fixed:
+
+- **The times for "the same programs on the CPU" were the loop forms' times through this folder's CPU runner, from one cold run.** The summary said that validating 100,000 documents takes 11 s as generated JavaScript and 5 minutes on the executor. Both came from one run per process over the first 200 and 16 documents, which includes building the program, and they time the loop form, which the runner calls once per position while the executor checks every source cell's range on each call. The highlighter as the repo ships it, with every position written out, takes 8.4 to 9.2 s on the executor, which every first-stage run measured over all 100,000 documents, and 2.1 s as generated JavaScript. The search's 6 minutes on the executor was the loop form too, and form (a) with every position written out takes 1.9 ms per document there, 3.2 minutes. The summary now gives each program's faster form on the CPU, and says which one.
+- **"Validated and highlighted on the GPU in 2.2 ms, where JavaScript takes 146 ms" compared a second pass with a first one.** The 2.2 ms is the pass over documents that are already on the GPU, and a page needs that pass once. From the texts, the GPU's answers arrive after 0.13 s, where the plain JavaScript highlighter takes 0.12 to 0.15 s. The summary and the three rows now say so, and no longer call the highlighter's part of a combined app clearly faster.
+- **Every baseline ran on one of 18 cores, which the summary didn't say.** [JavaScript in several workers](#javascript-in-several-workers) is new. With 8 workers RegExp counts a pattern's matches in 100,000 documents in 1.9 to 6.7 ms, less than the GPU's 7 to 21 ms.
+- **The same plain JavaScript highlighter measured 119 ms in one page and 146 ms in another**, and the summary quoted the larger one. It is the same loop over the same documents. The review's pages measured 123, 132 and 139 ms, and writing the kinds into one array of 512 or into an array of every document's kinds makes no difference, 123 against 122 ms. The summary now gives the range.
+- **The ranges were the spread of runs made within half an hour of each other.** The table below has the review's runs next to them: most cells agree within 5%, and some differ by 10 to 20%, e.g. the first stage's JSON.parse, 103 ms where the three runs had 87.5 ms (86.9 to 89.2). No conclusion changes. The summary's ranges now cover every run.
+- **The crossovers against RegExp had two digits.** They are interpolated between four counts, and the review's run moved single patterns by up to 40%, e.g. `\d+\.\d+` from 10,000 to 6,100 documents. The summary now says about 2,000 to about 13,000.
+- **The loop shaders' compile times differ between pages.** The three search runs measured 0.11, 0.26 and 1.1 s at 8, 16 and 32 states, and the searcher's runs and the review's search run 0.05, 0.13 and 0.5 to 0.65 s for the same shaders with a new salt. I didn't find out why. The summary says 0.05 to 0.1 s at 8 states.
+- **"A few ms per keystroke" was 7.6 to 17.6 ms**, and a keystroke comes after a pause, so the summary now says 8 to 21 ms.
+- **`searcher.validate()`'s time leaves out JavaScript's part after the readback**, turning the summary into four typed arrays: 2.36 ms from the call until the promise resolves, against 2.12 ms for the evaluation, in the same run.
+- **The searches on the GPU had been compared with a plain JavaScript loop, and with the programs on the CPU only for each run's first 200 documents.** The loop is another implementation of the same automaton, not the program. The review compared the GPU with the loop programs as generated JavaScript over all 100,000 documents, and with the programs that have every position written out, on the CPU executor, over 1,449 documents at the limits.
+- **No check ran a search at 512 positions at the limits**: an empty text, a text of exactly 512 code points, a match on the last position, 512 matches in one document, or patterns that fill 16 and 32 states together with 16 classes and 32 class boundaries. The generated documents have none of these. edge-cases.ts and its 5 tests are new, and so is `bun lab/json-search/report.ts edge-cases`.
+- **Only the newest of several requests getting a result was tested on the CPU searcher alone**, where an evaluation finishes before the next request is made. On the GPU, three requests at once behaved the same in 20 rounds.
+- **Nothing said that the self check's searches find something.** A new test does: each of the four finds matches in the first 300 generated documents, 13,188 in all, so a GPU that returned zeros would fail the check.
+
+What the review looked for and didn't find:
+
+- **A median that is a minimum or a maximum.** The summarize scripts take the mean of the middle two values of an even count, and every row of the tables above is printed by them from results/, which the review compared line by line.
+- **A baseline timed in another runtime.** Every baseline runs in the Chrome page that runs the GPU.
+- **A timing that leaves out JavaScript's work, the upload or the readback.** A search's time runs from before `compilePattern` until the results are copied. The times with the documents already on the GPU upload nothing per evaluation, and say so. `searcher.validate()` above is the one exception.
+- **A baseline written slowly.** Counting a pattern's matches with `match`, with `match` without the `u` flag, with a loop of `test` and with a loop of `exec` takes the same time within 12% on every pattern but one, see the table below.
+- **A mistake at a limit.** See the checks.
+
+### The review's runs next to the earlier ones
+
+One fresh Chrome process per page, between 11:25 and 11:53 on the same day, three hours after the first stage's runs and between 40 minutes and two hours after the others, at a 1-minute load average of 2.55 to 8.32, 2.24 to 5.88 and 1.86 to 4.06 (results/review-rerun-gpu-main.json, review-rerun-search.json, review-rerun-combined.json). ms for 100,000 documents:
+
+| What | The earlier runs: median (range) | The review's run |
+| --- | --- | --- |
+| First stage: the summary, documents on the GPU, back to back | 3.75 (3.72 to 3.79) | 4.13 |
+| The same after a pause of 1 s | 11.0 (11.0 to 11.0) | 11.0 |
+| The same with an upload per evaluation | 66.6 (66.5 to 68.0) | 77.5 |
+| First stage's page: JSON.parse | 87.5 (86.9 to 89.2) | 103 |
+| First stage's page: the table loop | 119 (119 to 120) | 132 |
+| First stage's page: the executor over all 100,000 documents, display program, one pass | 8,300 to 8,700 | 9,248 |
+| The summary shader's compile | 1,871 (1,777 to 2,071) | 1,983 |
+| The search step, 8 states, 512 positions, back to back | 7.04 (7.02 to 7.33) | 6.86 |
+| The same after a pause of 200 ms | 16.7 (9.6 to 17.0) | 17.2 |
+| The search step, 16 states | 63.8 (63.6 to 64.6) | 64.5 |
+| The search step, 32 states | 871 (866 to 872) | 860 |
+| The hand-written kernel, 8 states | 3.38 (3.31 to 3.39) | 3.31 |
+| RegExp, every match, `(the\|an?) [a-z]+` | 23.2 (22.8 to 24.4) | 23.3 |
+| The search shader's compile, 8 states, 512 positions | 114 (106 to 116) | 51 |
+| Creating the searcher | 177 (169 to 280) | 166 |
+| The highlighter's loop, back to back | 2.19 (2.17 to 2.31) | 2.18 |
+| The same after a pause of 1 s | 8.28 (8.26 to 9.07) | 9.27 |
+| One search through the searcher, 8 states, string values, back to back | 7.63 (7.42 to 8.11) | 7.57 |
+| The same after a pause of 200 ms | 17.5 (10.1 to 17.6) | 20.8 |
+| The same after a pause of 1 s | 17.6 (17.6 to 18.0) | 19.3 |
+| Searcher's page: the table loop | 146 (139 to 152) | 139 |
+| Searcher's page: JSON.parse | 78.8 (75.2 to 84.2) | 74.7 |
+| RegExp on each string value, the five patterns of up to 8 states that don't backtrack | 16.8 to 24.2 | 15.3 to 22.7 |
+
+- Every readback of the reruns was compared as before: 7.60 billion values against the executor in the first stage's page, 711 million and 406 million against the plain JavaScript loop in the other two, and 57.3 million against the table loop, none different.
+- For about two seconds of the first-stage run, the summary of 100,000 documents took 13 to 20 ms after pauses of 1 to 16 ms, where the earlier runs measured 4.2 to 4.3 ms, and the series with a timestamp query before it had a median of 7.8 ms instead of 3.9 ms. The next series measured 4.3 to 6.3 ms again. Another process was using the GPU or the machine, which a page in a browser has to expect.
+
+### JavaScript in several workers
+
+The baselines above run on one thread, and the machine has 18 cores. The review's page gives each of N workers an equal share of the 100,000 documents once, as strings cut to their first 512 code points. One request is one message to every worker, each worker answers with one typed array, e.g. a match count per document, and the request's time runs until the last answer has arrived in the page. 5 requests of warmup and 15 samples, or at least 1 and 3 for the pattern that backtracks. Three fresh Chrome processes (results/review-baselines-1.json to review-baselines-3.json), at a 1-minute load average of 2.61 to 3.15, 3.99 to 6.04 and 3.78 to 7.67. ms for 100,000 documents:
+
+| What | One thread in the page | 1 worker | 2 workers | 4 workers | 8 workers | 16 workers |
+| --- | --- | --- | --- | --- | --- | --- |
+| Sending the documents to the workers, once | | 18.8 (18.6 to 21.1) | 12.8 (12.1 to 14.5) | 10.9 (10.8 to 10.9) | 11.4 (10.4 to 12.0) | 11.9 (11.6 to 25.6) |
+| JSON.parse | 77.7 (76.1 to 80.4) | 64.7 (64.1 to 70.7) | 32.8 (31.7 to 33.4) | 17.3 (16.2 to 17.7) | 10.9 (10.5 to 11.0) | 6.19 (5.80 to 6.69) |
+| RegExp, every match, `(the\|an?) [a-z]+` | 23.2 (23.0 to 23.4) | 24.6 (23.6 to 25.0) | 12.7 (12.3 to 12.7) | 6.56 (6.49 to 6.74) | 4.30 (4.09 to 4.31) | 2.65 (2.52 to 2.66) |
+| RegExp, every match, `error` | 21.0 (20.7 to 21.2) | 21.8 (21.2 to 21.8) | 11.3 (11.0 to 11.4) | 6.01 (5.83 to 6.09) | 3.66 (3.48 to 3.78) | 2.23 (2.15 to 2.46) |
+| RegExp, every match, `[a-z0-9.]+@[a-z.]+` | 41.3 (40.1 to 41.4) | 42.5 (41.7 to 42.8) | 21.9 (21.5 to 22.0) | 11.2 (11.1 to 11.2) | 6.72 (6.29 to 6.78) | 4.01 (3.87 to 4.07) |
+| RegExp, every match, `"[a-z]+":` | 30.1 (29.9 to 30.3) | 31.5 (31.1 to 31.5) | 16.2 (15.9 to 16.4) | 8.52 (8.30 to 8.69) | 5.48 (4.89 to 5.50) | 3.12 (3.05 to 3.20) |
+| RegExp, every match, `[A-Z][a-z]+ [A-Z][a-z]+` | 11.8 (11.8 to 11.9) | 12.5 (12.5 to 12.6) | 6.81 (6.54 to 6.85) | 3.67 (3.63 to 3.77) | 2.50 (2.36 to 2.58) | 1.65 (1.64 to 1.67) |
+| RegExp, every match, `\d+\.\d+` | 16.8 (16.8 to 17.5) | 17.3 (17.2 to 17.4) | 9.83 (9.59 to 9.99) | 4.97 (4.80 to 4.99) | 3.24 (3.09 to 3.28) | 2.08 (2.07 to 2.11) |
+| RegExp, every match, `\d\d\d\d-\d\d-\d\d` | 8.30 (8.00 to 8.60) | 9.04 (9.03 to 9.15) | 4.91 (4.80 to 4.94) | 2.75 (2.69 to 2.77) | 1.91 (1.81 to 2.01) | 1.34 (1.34 to 1.39) |
+| RegExp, every match, `(the\|an?\|some) [a-z]+(ing)?s?` | 27.7 (27.1 to 28.6) | 29.1 (28.8 to 29.4) | 15.1 (14.4 to 15.5) | 7.73 (7.68 to 7.80) | 4.92 (4.78 to 5.10) | 3.32 (3.05 to 3.51) |
+| RegExp, every match, `(the\|an?\|some\|this\|that\|these) [a-z]+(ing\|ed\|s)? ` | 28.2 (28.0 to 30.1) | 30.1 (29.6 to 30.4) | 15.5 (15.4 to 15.5) | 7.95 (7.90 to 8.05) | 5.12 (4.93 to 5.16) | 3.18 (3.05 to 3.55) |
+| RegExp, every match, `([a-z]+)+x` | 2,114 (2,102 to 2,336) | 2,201 (2,105 to 2,227) | 1,094 (1,077 to 1,133) | 559 (545 to 561) | 279 (277 to 288) | 136 (134 to 138) |
+
+- One worker takes about what the page's own thread takes, so a request's messages cost little. Sending the documents takes 11 to 19 ms, once.
+- With 4 workers RegExp takes 3.7 to 11.2 ms on the six patterns of up to 8 states, about what the search step takes on the GPU when searches follow each other, 7 ms, and with 8 workers it takes less, 2.5 to 6.7 ms. After a pause the GPU takes 17 to 21 ms, which 2 workers match or beat on five of those six patterns.
+- JSON.parse in 16 workers, 6 ms, takes 3 times the highlighter's pass back to back, 2.2 ms, and less than the pass after a pause, 8.3 to 9.3 ms. It only says whether a document is valid.
+- The pattern that backtracks still takes 136 ms with 16 workers, 6 to 19 times the GPU's 7 to 21 ms.
+- Not measured: the table loop in workers, workers after a pause, and how many cores a visitor's machine has.
+
+The same page timed four ways to count a pattern's matches on one thread, and the table loop written two ways, ms for 100,000 documents:
+
+| Pattern | Matches | `text.match(pattern)` with the `g` and `u` flags, as measured above | The same without the `u` flag | A loop of `pattern.test(text)` | A loop of `pattern.exec(text)` |
+| --- | --- | --- | --- | --- | --- |
+| `(the\|an?) [a-z]+` | 42,356 | 23.2 (23.0 to 23.4) | 23.3 | 22.3 (22.3 to 22.6) | 23.5 (23.4 to 23.5) |
+| `error` | 12,482 | 21.0 (20.7 to 21.2) | 20.8 (20.2 to 21.2) | 20.5 (20.0 to 20.5) | 20.8 (20.2 to 21.1) |
+| `[a-z0-9.]+@[a-z.]+` | 14,555 | 41.3 (40.1 to 41.4) | 38.2 (37.2 to 38.4) | 40.6 (40.3 to 40.6) | 40.6 (40.0 to 41.0) |
+| `"[a-z]+":` | 1,037,641 | 30.1 (29.9 to 30.3) | 30.0 (29.8 to 30.2) | 31.0 (30.9 to 31.1) | 36.4 (36.3 to 36.6) |
+| `[A-Z][a-z]+ [A-Z][a-z]+` | 23,862 | 11.8 (11.8 to 11.9) | 11.6 (11.5 to 11.6) | 11.6 (11.4 to 11.7) | 12.0 (11.8 to 12.1) |
+| `\d+\.\d+` | 254,601 | 16.8 (16.8 to 17.5) | 16.0 (16.0 to 17.1) | 15.6 (15.4 to 15.7) | 17.7 (17.4 to 17.7) |
+| `\d\d\d\d-\d\d-\d\d` | 27,809 | 8.30 (8.00 to 8.60) | 7.40 (7.30 to 7.80) | 7.90 (7.70 to 8.20) | 8.30 (8.20 to 8.40) |
+| `(the\|an?\|some) [a-z]+(ing)?s?` | 46,068 | 27.7 (27.1 to 28.6) | 28.2 (27.3 to 28.3) | 26.8 (26.4 to 29.3) | 28.0 (27.4 to 30.4) |
+| `(the\|an?\|some\|this\|that\|these) [a-z]+(ing\|ed\|s)? ` | 40,611 | 28.2 (28.0 to 30.1) | 28.3 (26.7 to 29.1) | 27.6 (27.1 to 28.3) | 28.5 (27.9 to 29.9) |
+| `([a-z]+)+x` | 69,548 | 2,114 (2,102 to 2,336) | 2,162 (2,123 to 2,274) | 2,160 (2,151 to 2,205) | 2,170 (2,099 to 2,182) |
+
+| JSON.parse | Table loop, every document's kinds into one array of 512 | Table loop, into an array of every document's kinds |
+| --- | --- | --- |
+| 77.7 (76.1 to 80.4) | 123 (121 to 123) | 122 (121 to 122) |
+
+- The four ways give the same counts. `match` builds an array of the matched strings, and the loops build nothing or one array per match, and the times differ by 12% or less, except that the loop of `exec` takes 20% more on the pattern with a million matches.
+- The table loop takes the same time either way, so the 119 and 146 ms of the two earlier pages aren't a difference in what the loop writes.
 
 ## What fit well
 
@@ -881,7 +1038,8 @@ Patterns, scopes and counts where RegExp's count differs from the program's for 
 
 - **A search step's cost grows with the square of the state capacity, and on this GPU faster than that.** A position is 240, 664 and 2,280 operations at 8, 16 and 32 states, and 100,000 documents take 7.04, 63.8 and 871 ms, i.e. 9 and 124 times the 8-state time for 2.8 and 9.5 times the operations. The hand-written kernel takes 3.38, 3.69 and 4.85 ms, since a row of 32 states is one word there.
 - **One document's operations run one after the other in one GPU thread**, so a pass has a floor that the document count doesn't lower: 100 documents take 1.0 ms at 8 states, 7.4 ms at 16 and 77 ms at 32, nearly what 10,000 take.
-- **RegExp is fast.** It takes 0.08 to 0.43 µs per document on ordinary patterns, 0.3 to 1.4 ns per code point, so 100,000 documents take 8 to 43 ms on one CPU core. Only a pattern that makes it backtrack is slow.
+- **RegExp is fast.** It takes 0.08 to 0.43 µs per document on ordinary patterns, 0.3 to 1.4 ns per code point, so 100,000 documents take 8 to 43 ms on one CPU core, and 1.3 to 6.7 ms in 8 to 16 workers. Only a pattern that makes it backtrack is slow.
+- **The comparison with one thread flatters the GPU.** A GPU pass uses every GPU thread, and each plain JavaScript baseline one of 18 cores. With workers, plain JavaScript scales almost with their number up to 8, e.g. JSON.parse takes 77.7, 32.8, 17.3, 10.9 and 6.2 ms on 1 thread and in 2, 4, 8 and 16 workers.
 - **The order of a stage's statements changed the time by up to 2.3 times**, and stopping the loops at the text's end made a search slower although it runs 40% fewer positions. Neither follows from WGSL, so another GPU compiler may behave differently.
 - **The highlighter's step is larger than a written out position.** One step serves every position, so every position gets position 511's sign cascade, 17 operations instead of 2: 18,961 operations per document instead of 7,698.
 - **A mask of display kinds is coarser than JSON's structure.** An escape inside a string value is its own kind, so a match of `'strings'` can't cross `\n`, and an escape inside a key is the same kind as one inside a value.
@@ -906,11 +1064,12 @@ Patterns, scopes and counts where RegExp's count differs from the program's for 
 - Packing a document or its kinds into fewer bytes, e.g. 4 bits per display kind, which would cut the kinds from 205 MB to 26 MB for 100,000 documents.
 - More than 512 positions per document, and more than 100,000 documents. One dispatch holds 4,194,240 documents at a workgroup of 64.
 - The CPU searcher in a worker, or in slices between frames. It blocks for the whole search.
-- JavaScript in several workers as a baseline. Every baseline is one thread.
+- The table loop in several workers, and workers after a pause. JSON.parse and RegExp in 1 to 16 workers are in [JavaScript in several workers](#javascript-in-several-workers).
 - Other workgroup sizes than 64.
 - Regex search's forms (b) and (c) as loops. Form (b) builds the pattern into the program, so every pattern would be a new shader.
 - Uploading only the documents that changed, e.g. one edited document of 2,052 bytes, which `store.write(cells, 1, index)` already allows. The searcher takes its documents once.
 - Whether a reload in the same Chrome process, or a page that stays open, compiles the same shader faster.
+- A second Chrome process for the review's checks at the limits and over 100,000 documents, which ran once each, and a device that grants less than the documents need, where `createGpuSearcher` throws with a message that no browser run has shown.
 
 ## Entry points for a demo page
 
@@ -934,5 +1093,6 @@ What a page has to do with the searcher:
 - **Run the self check once**, e.g. `await searcher.selfCheck(300)`, about 0.4 s, and use `createCpuSearcher` with a few hundred documents when it finds a mismatch or when the browser has no WebGPU.
 - **Derive the request from the page's state in each frame**: when the pattern or the scope differs from the result on screen, `search({pattern, scope, window})`, and when only the window moved, `search({pattern, scope, window, documents: 'window'})` and `kinds(window)`. A request that resolves to `undefined` was replaced by a newer one. A result is an input of a later frame, never of the frame that asked for it.
 - **Quote the time after a pause.** A page that searches once per keystroke gets the columns "after a pause" of the tables above, 2 to 3 times the back to back time.
+- **Show plain JavaScript's time next to the GPU's instead of claiming a faster search.** `createPlainSearch(texts)` gives the same answers on one thread, 15 to 24 ms per search of 100,000 documents on ordinary patterns. What the page can claim is that the repo's programs get there at all: the same programs take 24 s on the CPU.
 - **Say which program ran.** `result.states` is the capacity, 8, 16 or 32, and a search takes about 9 and 120 times as long at 16 and 32 as at 8. `searcher.prepare(16)` compiles a larger program before its first search, 0.13 to 0.27 s at 16 states and 0.6 to 1.0 s at 32.
 - **A mark** is 0 outside a match, 1 inside one and 2 at a match's first code point, 512 per document of the window, indexed by code point, and so are the kinds. A character past U+FFFF is one code point and two UTF-16 units.

@@ -10,7 +10,7 @@
    "--mode",
    "check",
    "--profile",
-   "<scratch>",
+   "second-check-1",
    "--out",
    "lab/json-search/results/gpu-check-1.json"
   ],
@@ -29,7 +29,7 @@
    "--enable-unsafe-webgpu",
    "--enable-webgpu-developer-features",
    "--remote-debugging-port=9421",
-   "--user-data-dir=<scratch>",
+   "--user-data-dir=second-check-1",
    "--no-first-run",
    "--no-default-browser-check",
    "--disable-background-timer-throttling",
