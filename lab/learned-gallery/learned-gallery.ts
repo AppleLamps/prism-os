@@ -667,6 +667,7 @@ type LearnedGalleryDomCache = {
   deleteButton: HTMLButtonElement // mount lifetime
   trainButton: HTMLButtonElement // mount lifetime
   chart: SVGSVGElement // mount lifetime
+  chartArea: SVGPolygonElement // mount lifetime
   chartLine: SVGPolylineElement // mount lifetime
   chartMarker: SVGCircleElement // mount lifetime
   chartHairline: SVGLineElement // mount lifetime
@@ -750,6 +751,7 @@ function createLearnedGalleryDomCache(document: Document, editor: LearnedGallery
     deleteButton: requireElement<HTMLButtonElement>(document, '#learning-delete', 'delete button is missing'),
     trainButton: requireElement<HTMLButtonElement>(document, '#learning-train', 'train button is missing'),
     chart: requireElement<SVGSVGElement>(document, '#learning-chart', 'loss chart is missing'),
+    chartArea: requireElement<SVGPolygonElement>(document, '#learning-chart polygon', 'loss area is missing'),
     chartLine: requireElement<SVGPolylineElement>(document, '#learning-chart polyline', 'loss line is missing'),
     chartMarker: requireElement<SVGCircleElement>(document, '#learning-chart circle', 'loss marker is missing'),
     chartHairline: requireElement<SVGLineElement>(document, '#learning-chart line', 'loss hairline is missing'),
@@ -895,7 +897,14 @@ function mountLearnedGallery(document: Document, window: Window) {
     domCache.stepCostClause.style.display = frame.msPerStep === null ? 'none' : 'inline'
 
     const chartLine = frame.history.map(sample => `${chartX(sample.step).toFixed(1)},${chartY(sample.loss).toFixed(1)}`).join(' ')
-    if (written.chartLine !== chartLine) domCache.chartLine.setAttribute('points', written.chartLine = chartLine)
+    if (written.chartLine !== chartLine) {
+      domCache.chartLine.setAttribute('points', written.chartLine = chartLine)
+      // The wash under the line: the line's points, closed along the chart's bottom edge.
+      domCache.chartArea.setAttribute(
+        'points',
+        `${chartLine} ${chartX(latestSample.step).toFixed(1)},${chartBounds.height} ${chartX(frame.history[0]!.step).toFixed(1)},${chartBounds.height}`,
+      )
+    }
     const markerX = chartX(markedSample.step).toFixed(1)
     domCache.chartMarker.setAttribute('cx', markerX)
     domCache.chartMarker.setAttribute('cy', chartY(markedSample.loss).toFixed(1))

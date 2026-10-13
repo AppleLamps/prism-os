@@ -149,6 +149,7 @@
   padding: 0 var(--space-3);
   border: 0;
   border-left: 1px solid var(--rule);
+  border-radius: 0;
   background: transparent;
   color: var(--ink-2);
   font: 600 13px/20px var(--font-sans);
@@ -161,6 +162,9 @@
 .segments button:hover { background: var(--wash); color: var(--ink); }
 .segments button:active { background: var(--paper); }
 .segments button[aria-pressed="true"] { background: var(--copper-wash); color: var(--copper); }
+/* The focus outline is drawn inside the button, in the button's own form, where site.css's outline
+   2 px outside would lie over the neighboring buttons. */
+.segments button:focus-visible { outline-offset: -2px; }
 
 /* The loss chart, with a hairline as its base. An svg without a width is 300 px wide, so the
    chart takes its width from its grid cell. */
@@ -170,6 +174,8 @@
   height: 40px;
   border-bottom: 1px solid var(--rule);
 }
+/* A wash from the line down to the base, as under the line of HandwiredOS's frame time chart. */
+.loss-chart .area { fill: var(--copper); fill-opacity: 0.1; }
 .loss-chart .line { fill: none; stroke: var(--copper); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .loss-chart .marker { fill: var(--copper); stroke: var(--paper); stroke-width: 2; }
 .loss-chart .hairline { stroke: var(--rule-strong); }
