@@ -182,6 +182,7 @@
 .fit > div { display: contents; }
 .fit dt { color: var(--ink); font-weight: 600; }
 .fit dd { margin: 0; }
+.fit .note { text-wrap: pretty; }
 .fit .figure { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* The reference under the tool: what a pattern can use, what the search finds, and the limits. */
