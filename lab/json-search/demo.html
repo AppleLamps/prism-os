@@ -136,7 +136,7 @@
     <details class="disclosure">
       <summary>How it works</summary>
       <div class="how">
-        <p>The page writes its documents itself: seven kinds, each up to 512 characters, 1 in 10 broken on purpose, e.g. by a missing quote. Every character goes to the GPU once, as a number.</p>
+        <p>The page writes its documents itself: seven kinds, about 300 characters each, 1 in 10 broken on purpose, e.g. by a missing quote. The programs read a document&rsquo;s first 512 characters, which go to the GPU once, as numbers.</p>
         <p>The JSON highlighter is one small step, built by hand from weighted sums, ReLU gates and table reads. It runs at each of a document&rsquo;s 512 positions and says what each character is, e.g. part of a key, and where the first error is.</p>
         <p>Regex search is a second such step: a keystroke turns the pattern into tables of numbers, and the step runs over each document&rsquo;s positions, backward and then forward, and counts the matches. It reads the highlighter&rsquo;s answer for each character from the GPU&rsquo;s memory, which is how it can read only string values or only keys.</p>
         <p>No document reads another document&rsquo;s numbers, so the GPU runs all of them at the same time. JavaScript gets back one match count per document, which it paints on the map, and a mark per character for the document on screen.</p>
