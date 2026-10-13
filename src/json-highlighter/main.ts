@@ -571,10 +571,13 @@ function mountJsonHighlighter(document: Document, window: Window) {
   textarea.addEventListener('keydown', event => {
     const plainTab = event.key === 'Tab' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey
     if (plainTab && !escapePressed) {
-      // Typing the tab can't wait for the frame: a key pressed before the frame would be typed first. setRangeText
-      // fires no input event, and the keydown listener above has scheduled the frame.
+      // Typing the tab can't wait for the frame: a key pressed before the frame would be typed first. The editing
+      // command types the tab the way a key does, so the browser's undo steps back over it. Writing the tab with
+      // setRangeText left the undo history pointing at the old text, e.g. in Chrome 155 an undo after a tab put the
+      // text from before a paste back behind the current text. setRangeText stays for a browser without the command,
+      // and fires no input event there: the keydown listener above has scheduled the frame.
       event.preventDefault()
-      textarea.setRangeText('\t', textarea.selectionStart, textarea.selectionEnd, 'end')
+      if (!document.execCommand('insertText', false, '\t')) textarea.setRangeText('\t', textarea.selectionStart, textarea.selectionEnd, 'end')
     }
     escapePressed = event.key === 'Escape'
   })
