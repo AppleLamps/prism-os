@@ -109,6 +109,8 @@
   gap: var(--space-3) 20px;
   margin: var(--space-5) 0 0;
 }
+/* A figure is written as its name and then its number, and shown with the number on top. */
+.figures div { display: flex; flex-direction: column-reverse; }
 .figures dd { margin: 0; color: var(--ink); font: var(--type-figure-s); letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
 .figures dd small { color: var(--ink-3); font: var(--type-ui); letter-spacing: 0; }
 .figures dt { color: var(--ink-3); font: var(--type-small); }
