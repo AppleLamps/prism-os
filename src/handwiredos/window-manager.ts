@@ -66,6 +66,7 @@ import {
 } from './notes-paragraph.ts'
 import {arrangeInitialWindows} from './arrangement.ts'
 import {createMonitor} from './monitor.ts'
+import {mountWiring} from './wiring.ts'
 
 export {bandOutputField, notesWindowIndex, wordOutputField}
 
@@ -1482,12 +1483,14 @@ function mountWindowManager(document: Document, window: Window) {
   const photosViewport = document.querySelector<HTMLElement>('.photos-content')
   const monitorContent = document.querySelector<HTMLElement>('.monitor-content')
   const systemStatistics = document.querySelector<HTMLElement>('.system-stats')
+  const wiringCanvas = document.querySelector<HTMLCanvasElement>('.desk-wiring')
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
   invariant(photosViewport !== null, 'Photos viewport is missing')
   invariant(monitorContent !== null, 'Monitor content is missing')
   invariant(systemStatistics !== null, 'system bar statistics are missing')
+  invariant(wiringCanvas !== null, 'the desk\'s wiring canvas is missing')
   const windowContents = windows.map(element => {
     const content = element.querySelector<HTMLElement>('.window-content')
     invariant(content !== null, 'window content is missing')
@@ -1514,6 +1517,9 @@ function mountWindowManager(document: Document, window: Window) {
     '--system-bar-height',
     `${machine.source[machine.cells.systemBarHeight]}px`,
   )
+  // The desk's wallpaper, the program's weights as arcs, see wiring.ts. The canvas's
+  // size follows from the system bar's height, which is set just above.
+  mountWiring(wiringCanvas, machine.tensorProgram, window)
 
   let scheduledRaf: number | null = null
   function scheduleRender() {

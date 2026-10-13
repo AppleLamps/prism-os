@@ -60,6 +60,33 @@ body {
   background-blend-mode: normal, soft-light, normal, normal, normal;
 }
 
+/* The wallpaper: the program's stored weights as arcs, one per weight, which wiring.ts
+   draws over the whole canvas when the page loads. The arcs stand on the dock's wire: the
+   canvas ends 6 px above the desktop's bottom, and the wire is the canvas's last row. */
+.desk-wiring {
+  position: absolute;
+  z-index: 0;
+  top: calc(var(--system-bar-height) + 12px);
+  left: 24px;
+  width: calc(100% - 48px);
+  height: calc(100% - var(--system-bar-height) - 18px);
+  pointer-events: none;
+}
+
+/* A narrower canvas holds the same arcs closer together, so the whole picture is fainter
+   there. */
+@media (max-width: 999px) {
+  .desk-wiring {
+    opacity: 0.7;
+  }
+}
+
+@media (max-width: 639px) {
+  .desk-wiring {
+    opacity: 0.5;
+  }
+}
+
 /* Things to try, printed on the desk's lower right corner. Windows pass over it. The
    windows' first arrangement, see arrangement.ts, leaves this corner free on a viewport of
    at least 1100 × 850 px. */
@@ -86,6 +113,16 @@ body {
 @media (max-width: 1099px), (max-height: 849px) {
   .desk-legend {
     display: none;
+  }
+}
+
+/* Where the list is shown, the arcs behind it fade to a fifth, so no arc strikes through
+   a word. The clearing is an ellipse around the list's middle, which lies 218 px from the
+   canvas's right edge and 151 px above its bottom. */
+@media (min-width: 1100px) and (min-height: 850px) {
+  .desk-wiring {
+    -webkit-mask-image: radial-gradient(330px 140px at calc(100% - 218px) calc(100% - 151px), rgb(0 0 0 / 0.2) 70%, #000);
+    mask-image: radial-gradient(330px 140px at calc(100% - 218px) calc(100% - 151px), rgb(0 0 0 / 0.2) 70%, #000);
   }
 }
 
