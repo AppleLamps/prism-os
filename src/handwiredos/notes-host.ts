@@ -317,7 +317,7 @@ export function createNotesHost(
       domCache.notice.style.display = noticeText === '' ? 'none' : 'block'
 
       domCache.selections.forEach((selection, band) => {
-        const span = selected ? spans[band]! : null
+        const span = selected ? spans[band] ?? null : null
         selection.style.display = span === null ? 'none' : 'block'
         selection.style.transform = `translate3d(${span?.left ?? 0}px,${options.padding + band * options.lineHeight}px,0)`
         selection.style.width = `${span === null ? 0 : span.right - span.left}px`
