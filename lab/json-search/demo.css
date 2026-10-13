@@ -231,15 +231,20 @@
 .detail .facts { grid-column: 1; grid-row: 2; }
 
 /* The selected document: a line that says which one it is, its text, and what the highlighter says about it. The
-   text has a fixed height and scrolls inside it, so the page doesn't move while the pointer crosses the map. */
-.document { display: flex; flex-direction: column; min-width: 0; }
+   pointer crossing the map shows a new document at each mark, so nothing here may change its place from one document
+   to the next:
+   - The panel has a fixed height, and the text scrolls inside what the line, the buttons and the bar leave of it:
+     384 px when the bar is one row. A long sentence about an error, e.g. "Line 14, column 3. This character needs an
+     escape inside a string, e.g. \t for a tab.", moves the count of characters to a second row of the bar, which takes
+     its 21 px from the text's lower end, and nothing under the panel moves.
+   - The line has a row of its own, and the buttons the row under it. Side by side, the buttons went to the next row
+     for a long line, e.g. for a document that isn't valid, and the text under them moved by 25 px. */
+.document { display: flex; flex-direction: column; min-width: 0; height: 500px; }
 .document-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
-  min-height: 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--space-2);
+  flex: none;
   padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--rule);
 }
@@ -252,8 +257,10 @@
 .document-line b { color: var(--ink); font-weight: 600; }
 .document-tools { display: flex; gap: var(--space-2); }
 .document-tools .button { height: 28px; padding: 0 10px; box-shadow: none; }
+.document .surface-bar { flex: none; }
 .surface pre.document-text {
-  height: 384px;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: var(--space-3) var(--space-4);
   overflow: auto;
   color: var(--ink);
@@ -365,6 +372,11 @@
   .map-sheet { padding: var(--space-3) var(--space-3) 0; }
   .surface pre.document-text { padding: var(--space-3); }
   .document-head { padding-left: var(--space-3); }
+  /* The line keeps the room of two lines, which the longer lines need at this width, e.g. "Document 15,046 of 20,000,
+     a log event, not valid, with 1 match", and the panel is taller by that line and by the taller buttons of a touch
+     screen, so the text keeps its 384 px there. */
+  .document { height: 532px; }
+  .document-line { min-height: 40px; }
   /* A row of the comparison is its name, and under it the two times side by side. The table and its body are plain
      blocks here, so a row is as tall as its two cells. */
   .times, .times tbody { display: block; }
