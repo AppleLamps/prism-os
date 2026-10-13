@@ -416,9 +416,13 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
   .select { font-size: 16px; }
 }
 
-/* Under a finger a button and a select are 40 px tall, where a mouse gets 32 and 28 px. */
+/* Under a finger a button and a select are 40 px tall, where a mouse gets 32 and 28 px. A link of the header or
+   the footer is one 20 px line of text, and padding above and below gives a finger 40 px of it without moving
+   anything: the header is 40 px tall and centers its links, and a link of the footer is inline, where padding
+   above and below takes no room. */
 @media (pointer: coarse) {
   .button, .select { height: 40px; }
+  .brand, .masthead nav a, .colophon a { padding-block: 10px; }
 }
 
 /* Footer: one hairline and one line. */
