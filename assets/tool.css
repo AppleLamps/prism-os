@@ -172,7 +172,8 @@
 }
 /* The same place in the editor, where a mark can't take room: the textarea over the <pre> has no
    such mark, and its characters have to stay over the <pre>'s. So the mark is a bar between two
-   characters, one line tall, and the text after it lies on a hatch. */
+   characters, one line tall, which is taller and thicker than a caret, and the text after it is
+   gray, as on the regex page. */
 .cut-mark { position: relative; }
 .cut-mark::before {
   content: "";
@@ -185,9 +186,6 @@
   border-radius: 1px;
   background: var(--ink-2);
   transform: translateY(-50%);
-}
-.editor-text .past-capacity {
-  background: repeating-linear-gradient(-45deg, transparent 0 3px, var(--wash) 3px 4px);
 }
 /* The caret's place in the <pre>, an empty span that the page scrolls into view. The margins
    keep a line and the editor's padding above and below the caret, so the first and the last two
