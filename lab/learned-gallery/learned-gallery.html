@@ -44,8 +44,10 @@
     <section class="stages">
       <div>
         <div class="stage-head"><span class="label">Sketch</span><span id="learning-count"></span></div>
-        <!-- learned-gallery.ts adds the rectangles, which are positioned in percent of this box. -->
-        <div id="learning-target" class="surface stage sketch" tabindex="0" role="group" aria-label="Sketch: rectangles to drag, resize, add and delete"></div>
+        <!-- learned-gallery.ts adds the rectangles, which are positioned in percent of this box. The sketch takes
+             focus at a press, so that the Delete key reaches it. It isn't a stop of the Tab key, since no key
+             selects or moves a rectangle. -->
+        <div id="learning-target" class="surface stage sketch" tabindex="-1" role="group" aria-label="Sketch: rectangles to drag, resize, add and delete"></div>
         <div class="tools">
           <div id="learning-layouts" class="segments" role="group" aria-label="Start from a sketch">
             <button type="button" data-layout="story">Story</button>
