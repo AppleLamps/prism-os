@@ -118,7 +118,7 @@ export function wgslFloat(value: number): string {
 
 const isPowerOfTwo = (magnitude: number) => magnitude > 0 && Number.isInteger(Math.log2(magnitude))
 // A candidate table may run backwards, e.g. a reversed run of cells has a stride of -1.
-const wgslInt = (value: number) => value < 0 ? `(${value}i)` : `${value}i`
+export const wgslInt = (value: number) => value < 0 ? `(${value}i)` : `${value}i`
 
 export type Guard = 'none' | 'max'
 
@@ -154,21 +154,21 @@ export type WgslModule = {
 // A sum of more terms continues in a new statement, so that no expression nests deeper than this many guards.
 const termsPerStatement = 32
 
-export function emitWgsl(program: TensorProgram, options: WgslOptions): WgslModule {
-  const workgroupSize = options.workgroupSize ?? 64
-  const guard = options.guard ?? 'none'
-  const rows = flattenProgram(program)
-  const {sourceSize} = program
-  const columnOfSource = new Map<number, number>()
-  options.instanceCells.forEach((wire, column) => {
-    invariant(wire < sourceSize && program.wireOrder[wire] === wire, 'an instance cell must be a source wire')
-    invariant(!columnOfSource.has(wire), 'an instance cell is listed once')
-    columnOfSource.set(wire, column)
-  })
-  const outputs = options.outputGroups.map(group => positionsOfWires(program, group))
-  const lowestOffset = sourceSize
-  const usedColumns = new Set<number>()
-  const hoisted = new Set<number>()
+export type IndexRow = Extract<Row, {kind: 'index'}>
+
+// Writes rows as WGSL `let` statements, one row at a time, into `body`. The caller says how a source cell is read and
+// where an index read's candidates are, so the same statements serve a shader that runs a whole program once per
+// instance (emitWgsl below) and one that runs a program once per position inside a loop (loop-emit.ts).
+export function createRowWriter(sourceSize: number, options: {
+  guard: Guard
+  // Goes before the name of every `let`, so that two programs in one function don't share names, e.g. 'b_' gives b_v4576.
+  prefix: string
+  // The text that reads the source cell at a packed position, e.g. 's12' for a shared cell that the caller hoists.
+  source: (position: number) => string
+  // The text that reads an index read's candidate at the clamped index.
+  candidate: (row: IndexRow, clamped: string) => string
+}) {
+  const {guard, prefix} = options
   const body: string[] = []
   const counts = {guards: 0, largeIntegerLiterals: 0, fractionalLiterals: 0}
   const rowCounts = {affine: 0, reglu: 0, boolean: 0, index: 0}
@@ -183,16 +183,7 @@ export function emitWgsl(program: TensorProgram, options: WgslOptions): WgslModu
     counts.guards++
     return `max(${text}, lowest)`
   }
-  const name = (position: number) => {
-    if (position >= sourceSize) return `v${position}`
-    const column = columnOfSource.get(position)
-    if (column !== undefined) {
-      usedColumns.add(column)
-      return `c${column}`
-    }
-    hoisted.add(position)
-    return `s${position}`
-  }
+  const name = (position: number) => position >= sourceSize ? `${prefix}v${position}` : options.source(position)
   // |weight| × value. A product with a power of two is exact, so fusing it into a sum changes nothing.
   const product = (term: Term) => {
     const magnitude = Math.abs(term.weight)
@@ -220,9 +211,9 @@ export function emitWgsl(program: TensorProgram, options: WgslOptions): WgslModu
     return text
   }
 
-  for (const row of rows) {
+  function write(row: Row) {
     rowCounts[row.kind]++
-    const target = `v${row.position}`
+    const target = `${prefix}v${row.position}`
     switch (row.kind) {
       case 'affine':
         body.push(`let ${target}: f32 = ${sum(target, row.bias, row.terms)};`)
@@ -231,33 +222,17 @@ export function emitWgsl(program: TensorProgram, options: WgslOptions): WgslModu
         body.push(`let ${target}: f32 = select(0.0f, 1.0f, ${sum(target, row.bias, row.terms)} >= 0.5f);`)
         break
       case 'reglu': {
-        const gate = `max(0.0f, ${sum(`g${row.position}`, row.gateBias, row.gateTerms)})`
+        const gate = `max(0.0f, ${sum(`${prefix}g${row.position}`, row.gateBias, row.gateTerms)})`
         // fround(1 × max(0, gate)) is max(0, gate).
         if (row.terms.length === 0 && row.bias === 1) body.push(`let ${target}: f32 = ${gate};`)
         else body.push(`let ${target}: f32 = ${guarded(`(${sum(target, row.bias, row.terms)}) * ${gate}`)};`)
         break
       }
       case 'index': {
-        const index = `p${row.position}`
+        const index = `${prefix}p${row.position}`
         body.push(`let ${index}: i32 = i32(floor(${sum(index, row.indexBias, row.indexTerms)}));`)
         const last = row.candidateCount - 1
-        const clamped = `clamp(${index}, 0i, ${last}i)`
-        // Every candidate is a shared cell, or every candidate is an instance cell at evenly spaced columns.
-        const firstColumn = columnOfSource.get(row.candidateBase)
-        let read: string
-        if (firstColumn === undefined) {
-          for (let candidate = 0; candidate < row.candidateCount; candidate++) {
-            invariant(!columnOfSource.has(row.candidateBase + candidate * row.candidateStride), 'an index read\'s candidates are all shared cells or all instance cells')
-          }
-          read = `shared_values[u32(${row.candidateBase}i + ${clamped} * ${wgslInt(row.candidateStride)})]`
-        } else {
-          const columnStride = row.candidateCount > 1 ? columnOfSource.get(row.candidateBase + row.candidateStride)! - firstColumn : 0
-          for (let candidate = 0; candidate < row.candidateCount; candidate++) {
-            const column = columnOfSource.get(row.candidateBase + candidate * row.candidateStride)
-            invariant(column === firstColumn + candidate * columnStride, 'an index read\'s instance cells sit at evenly spaced columns')
-          }
-          read = `instance_sources[source_base + u32(${firstColumn}i + ${clamped} * ${wgslInt(columnStride)})]`
-        }
+        let read = options.candidate(row, `clamp(${index}, 0i, ${last}i)`)
         if (row.aboveZero) read = `select(${read}, 0.0f, ${index} > ${last}i)`
         if (row.belowZero) read = `select(${read}, 0.0f, ${index} < 0i)`
         body.push(`let ${target}: f32 = ${read};`)
@@ -265,6 +240,53 @@ export function emitWgsl(program: TensorProgram, options: WgslOptions): WgslModu
       }
     }
   }
+  return {body, counts, rowCounts, name, write}
+}
+
+export function emitWgsl(program: TensorProgram, options: WgslOptions): WgslModule {
+  const workgroupSize = options.workgroupSize ?? 64
+  const guard = options.guard ?? 'none'
+  const rows = flattenProgram(program)
+  const {sourceSize} = program
+  const columnOfSource = new Map<number, number>()
+  options.instanceCells.forEach((wire, column) => {
+    invariant(wire < sourceSize && program.wireOrder[wire] === wire, 'an instance cell must be a source wire')
+    invariant(!columnOfSource.has(wire), 'an instance cell is listed once')
+    columnOfSource.set(wire, column)
+  })
+  const outputs = options.outputGroups.map(group => positionsOfWires(program, group))
+  const lowestOffset = sourceSize
+  const usedColumns = new Set<number>()
+  const hoisted = new Set<number>()
+  const {body, counts, rowCounts, name, write} = createRowWriter(sourceSize, {
+    guard, prefix: '',
+    source: position => {
+      const column = columnOfSource.get(position)
+      if (column !== undefined) {
+        usedColumns.add(column)
+        return `c${column}`
+      }
+      hoisted.add(position)
+      return `s${position}`
+    },
+    // Every candidate is a shared cell, or every candidate is an instance cell at evenly spaced columns.
+    candidate: (row, clamped) => {
+      const firstColumn = columnOfSource.get(row.candidateBase)
+      if (firstColumn === undefined) {
+        for (let candidate = 0; candidate < row.candidateCount; candidate++) {
+          invariant(!columnOfSource.has(row.candidateBase + candidate * row.candidateStride), 'an index read\'s candidates are all shared cells or all instance cells')
+        }
+        return `shared_values[u32(${row.candidateBase}i + ${clamped} * ${wgslInt(row.candidateStride)})]`
+      }
+      const columnStride = row.candidateCount > 1 ? columnOfSource.get(row.candidateBase + row.candidateStride)! - firstColumn : 0
+      for (let candidate = 0; candidate < row.candidateCount; candidate++) {
+        const column = columnOfSource.get(row.candidateBase + candidate * row.candidateStride)
+        invariant(column === firstColumn + candidate * columnStride, 'an index read\'s instance cells sit at evenly spaced columns')
+      }
+      return `instance_sources[source_base + u32(${firstColumn}i + ${clamped} * ${wgslInt(columnStride)})]`
+    },
+  })
+  for (const row of rows) write(row)
   outputs.forEach((positions, group) => {
     positions.forEach((position, output) => body.push(`instance_outputs_${group}[output_base_${group} + ${output}u] = ${name(position)};`))
   })

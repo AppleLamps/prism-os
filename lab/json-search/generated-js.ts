@@ -13,7 +13,9 @@ const termsPerStatement = 16
 
 const literal = (value: number) => Object.is(value, -0) ? '-0' : String(value)
 
-export function emitJavaScript(program: TensorProgram, options: {instanceCells: readonly number[], outputGroups: readonly (readonly number[])[]}) {
+// The program's rows as functions over one array `v` of every value: the source table comes first, as in the compiled
+// program, and each function writes the values of its rows.
+export function compileChunks(program: TensorProgram) {
   const rows = flattenProgram(program)
   const read = (position: number) => `v[${position}]`
   const piece = (term: Term) => term.weight === 1 ? read(term.position) : term.weight === -1 ? `-${read(term.position)}` : `f(${literal(term.weight)} * ${read(term.position)})`
@@ -71,13 +73,17 @@ export function emitJavaScript(program: TensorProgram, options: {instanceCells: 
   const source = `"use strict"\nconst f = Math.fround\nreturn [\n${functions.join(',\n')}\n]`
   // The Function constructor compiles the generated source, as codegen's compileScalarProgram does.
   const compile = Reflect.construct(Function, [source]) as () => ((values: Float32Array) => void)[]
-  const chunks = compile()
+  return {chunks: compile(), sourceBytes: source.length}
+}
+
+export function emitJavaScript(program: TensorProgram, options: {instanceCells: readonly number[], outputGroups: readonly (readonly number[])[]}) {
+  const {chunks, sourceBytes} = compileChunks(program)
   const cellPositions = Int32Array.from(options.instanceCells)
   const outputPositions = options.outputGroups.map(group => Int32Array.from(positionsOfWires(program, group)))
   const values = new Float32Array(program.valueCount)
   const cellCount = cellPositions.length
   return {
-    sourceBytes: source.length,
+    sourceBytes,
     functionCount: chunks.length,
     // Runs the first `count` instances. `shared` is the source table, `cells` holds cellCount values per instance, and
     // each output group is written to its own array.

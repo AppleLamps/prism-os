@@ -1,8 +1,10 @@
-// The WebGPU host for emit.ts's shaders: plain functions with no page globals, for the measurement page and for a demo
-// page. One compute pass runs a shader once per document. Buffers:
+// The WebGPU host for emit.ts's and loop-emit.ts's shaders: plain functions with no page globals, for the measurement
+// pages and for a demo page. One compute pass runs a shader once per document. Buffers:
 //   documents   a store of count × cellsPerDocument float32 cells, uploaded once and read by every program's shader
-//   shared      a program's source table and the guards' lowest value, see emit.ts's packSharedValues, uploaded once
-//   params      the document count of this evaluation
+//   shared      a program's source table, uploaded once, or again when it changes, e.g. a new pattern's cells
+//   params      the document count of this evaluation, and for a loop shader the window of documents that get per
+//               position outputs
+//   inputs      for a loop shader, other per-document buffers, e.g. the display kinds that another runner computed
 //   outputs     one buffer per output group, e.g. 3 summary values per document and 512 display kinds per document.
 //               They stay on the GPU, and an evaluation copies the ranges it reads back into mappable buffers, e.g. the
 //               summary of every document and the kinds of the 64 documents on screen.
@@ -14,7 +16,6 @@
 //   const {outputs} = await runner.evaluate({count: documentCount, readbacks: [{group: 0, firstDocument: 0, documentCount}]})
 import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
 import {countMismatches, expectedOutputs} from '../check.ts'
-import type {WgslModule} from '../emit.ts'
 import type {BatchProgram} from '../program.ts'
 
 // WebGPU's constants, with the values from the WebGPU specification, since TypeScript's DOM library declares the types and
@@ -104,21 +105,51 @@ export type Evaluation = {
 export type EvaluateOptions = {
   // Evaluates documents 0 to count - 1.
   count: number
-  // At most one readback per group.
+  // At most one readback per group. A windowed group's rows are the window's documents, so its readback starts at 0.
   readbacks: readonly Readback[]
   // New cells for the first `count` documents, uploaded before the pass.
   cells?: Float32Array
+  // New shared values, uploaded before the pass, e.g. the cells of the pattern to search for.
+  shared?: Float32Array
+  // For a loop shader: the documents that get per position outputs, e.g. the ones on screen.
+  window?: {firstDocument: number, documentCount: number}
   timestamps?: boolean
+}
+
+// What a runner needs from a shader: emit.ts's WgslModule and loop-emit.ts's LoopWgslModule both have it.
+export type RunnableShader = {
+  code: string
+  workgroupSize: number
+  sharedLength: number
+  cellsPerInstance: number
+  outputCounts: number[]
+  // true for an output group that only holds the documents of a window.
+  windowedGroups?: boolean[]
+  // The cells per document of the buffers a loop shader reads after the store.
+  inputCells?: number[]
+}
+
+export type RunnerOptions = {
+  // The buffers of shader.inputCells, in order, e.g. another runner's outputBuffers[1].
+  inputs?: readonly GPUBuffer[]
+  // How many documents a windowed output group holds.
+  windowCapacity?: number
 }
 
 export type ProgramRunner = Awaited<ReturnType<typeof createProgramRunner>>
 
 // Compiles one shader and creates its buffers over a store's documents. A `salt` goes into the shader's source without
 // changing its work, so a salt that no earlier run used compiles without hitting a shader cache, e.g. Metal's.
-export async function createProgramRunner(device: GPUDevice, shader: WgslModule, sharedValues: Float32Array, store: DocumentStore, salt?: number) {
+export async function createProgramRunner(device: GPUDevice, shader: RunnableShader, sharedValues: Float32Array, store: DocumentStore, salt?: number, options: RunnerOptions = {}) {
   invariant(shader.cellsPerInstance === store.cellsPerDocument, 'the shader reads the store\'s cells per document')
   invariant(sharedValues.length === shader.sharedLength, 'the shared values have the shader\'s length, see packSharedValues')
   const {capacity} = store
+  const inputs = options.inputs ?? []
+  invariant(inputs.length === (shader.inputCells?.length ?? 0), 'the runner gets one buffer per input of the shader')
+  inputs.forEach((input, index) => invariant(input.size >= capacity * shader.inputCells![index]! * 4, 'an input buffer holds every document of the store'))
+  const windowCapacity = options.windowCapacity ?? 0
+  // How many documents each output group holds.
+  const groupCapacity = shader.outputCounts.map((_, group) => shader.windowedGroups?.[group] === true ? windowCapacity : capacity)
   invariant(Math.ceil(capacity / shader.workgroupSize) <= device.limits.maxComputeWorkgroupsPerDimension, 'too many documents for one dispatch dimension')
   let code = shader.code
   if (salt !== undefined) {
@@ -146,7 +177,7 @@ export async function createProgramRunner(device: GPUDevice, shader: WgslModule,
     const created = {
       params: buffer({size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST}),
       shared: buffer({size: sharedValues.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST, mappedAtCreation: true}),
-      outputBuffers: shader.outputCounts.map(outputCount => buffer({size: Math.max(4, capacity * outputCount * 4), usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC})),
+      outputBuffers: shader.outputCounts.map((outputCount, group) => buffer({size: Math.max(4, groupCapacity[group]! * outputCount * 4), usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC})),
       querySet: hasTimestamps ? device.createQuerySet({type: 'timestamp', count: 2}) : undefined,
       queryResolve: buffer({size: 16, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC}),
       queryReadback: buffer({size: 16, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}),
@@ -159,7 +190,8 @@ export async function createProgramRunner(device: GPUDevice, shader: WgslModule,
         {binding: 0, resource: {buffer: created.params}},
         {binding: 1, resource: {buffer: created.shared}},
         {binding: 2, resource: {buffer: store.buffer}},
-        ...created.outputBuffers.map((outputBuffer, group) => ({binding: 3 + group, resource: {buffer: outputBuffer}})),
+        ...inputs.map((input, index) => ({binding: 3 + index, resource: {buffer: input}})),
+        ...created.outputBuffers.map((outputBuffer, group) => ({binding: 3 + inputs.length + group, resource: {buffer: outputBuffer}})),
       ],
     })
     return {...created, bindGroup}
@@ -170,13 +202,14 @@ export async function createProgramRunner(device: GPUDevice, shader: WgslModule,
   const readbackArrays: (Float32Array | undefined)[] = shader.outputCounts.map(() => undefined)
   const paramValues = new Uint32Array(4)
 
-  async function evaluate({count, readbacks, cells, timestamps = false}: EvaluateOptions): Promise<Evaluation> {
+  async function evaluate({count, readbacks, cells, shared: newShared, window, timestamps = false}: EvaluateOptions): Promise<Evaluation> {
     invariant(Number.isInteger(count) && count >= 1 && count <= capacity, 'the count lies within the store\'s capacity')
     invariant(!timestamps || querySet !== undefined, 'this device has no timestamp queries')
     invariant(new Set(readbacks.map(readback => readback.group)).size === readbacks.length, 'a group is read back once per evaluation')
+    invariant(window === undefined || (window.firstDocument >= 0 && window.documentCount >= 0 && window.documentCount <= windowCapacity), 'the window holds at most windowCapacity documents')
     const ranges = readbacks.map(({group, firstDocument, documentCount}) => {
       const outputCount = shader.outputCounts[group]
-      invariant(outputCount !== undefined && firstDocument >= 0 && documentCount >= 1 && firstDocument + documentCount <= capacity, 'a readback lies within its group')
+      invariant(outputCount !== undefined && firstDocument >= 0 && documentCount >= 1 && firstDocument + documentCount <= groupCapacity[group]!, 'a readback lies within its group')
       const bytes = documentCount * outputCount * 4
       let target = readbackBuffers[group]
       if (target === undefined || target.size < bytes) {
@@ -188,7 +221,10 @@ export async function createProgramRunner(device: GPUDevice, shader: WgslModule,
     })
     const started = performance.now()
     if (cells !== undefined) store.write(cells, count)
+    if (newShared !== undefined) writeShared(newShared)
     paramValues[0] = count
+    paramValues[1] = window?.firstDocument ?? 0
+    paramValues[2] = window?.documentCount ?? 0
     device.queue.writeBuffer(params, 0, paramValues.buffer, 0, 16)
     const uploaded = performance.now()
     const encoder = device.createCommandEncoder()
@@ -224,17 +260,21 @@ export async function createProgramRunner(device: GPUDevice, shader: WgslModule,
     return {uploadMs: uploaded - started, encodeAndSubmitMs: submitted - uploaded, waitMs: mapped - submitted, copyMs: finished - mapped, totalMs: finished - started, passMs, outputs}
   }
 
+  // New shared values from `offset` on, e.g. another pattern's cells in a search program.
+  function writeShared(values: Float32Array, offset = 0) {
+    invariant(offset + values.length <= shader.sharedLength, 'the values lie within the shared buffer')
+    device.queue.writeBuffer(shared, offset * 4, values.buffer, values.byteOffset, values.byteLength)
+  }
+
   return {
     compileMs,
     hasTimestamps,
     capacity,
     outputCounts: shader.outputCounts,
+    // Each output group's buffer on the GPU, e.g. to give the display kinds to a search runner as an input.
+    outputBuffers,
     evaluate,
-    // New shared values from `offset` on, e.g. another pattern's cells in a search program.
-    writeShared(values: Float32Array, offset = 0) {
-      invariant(offset + values.length <= shader.sharedLength, 'the values lie within the shared buffer')
-      device.queue.writeBuffer(shared, offset * 4, values.buffer, values.byteOffset, values.byteLength)
-    },
+    writeShared,
     destroy() {
       for (const created of buffers) created.destroy()
       for (const created of readbackBuffers) created?.destroy()
@@ -259,4 +299,90 @@ export async function selfCheck(runner: ProgramRunner, program: BatchProgram, ce
     mismatches += countMismatches(group, expected[groupIndex]!, group.length)
   })
   return {documents: count, values, mismatches, cpuMs, gpuMs: totalMs}
+}
+
+export type KernelRunner = Awaited<ReturnType<typeof createKernelRunner>>
+
+// A runner for bit-rows.ts's hand-written kernel, which reads its pattern from a buffer of u32 values and writes one
+// match count per document. It's here for the comparison with the loop shader, and reads the same store.
+export async function createKernelRunner(device: GPUDevice, kernel: {code: string, workgroupSize: number, tableLength: number, cellsPerDocument: number}, store: DocumentStore, salt?: number) {
+  invariant(kernel.cellsPerDocument === store.cellsPerDocument, 'the kernel reads the store\'s cells per document')
+  const {capacity} = store
+  let code = kernel.code
+  if (salt !== undefined) {
+    const marker = 'let i: u32 = id.x;'
+    invariant(code.includes(marker), 'unexpected shader text')
+    code = code.replace(marker, `let salt: u32 = ${salt}u;\n_ = salt;\n${marker}`)
+  }
+  const compileStarted = performance.now()
+  const pipeline = await checked(device, async () => {
+    const module = device.createShaderModule({code})
+    const errors = (await module.getCompilationInfo()).messages.filter(message => message.type === 'error')
+    if (errors.length > 0) throw new Error(`WGSL errors: ${errors.slice(0, 5).map(message => `line ${message.lineNum}: ${message.message}`).join('; ')}`)
+    return device.createComputePipelineAsync({layout: 'auto', compute: {module, entryPoint: 'main'}})
+  })
+  const compileMs = performance.now() - compileStarted
+  const hasTimestamps = device.features.has('timestamp-query')
+  const buffers = await checked(device, () => ({
+    params: device.createBuffer({size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST}),
+    tables: device.createBuffer({size: kernel.tableLength * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST}),
+    counts: device.createBuffer({size: capacity * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC}),
+    readback: device.createBuffer({size: capacity * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}),
+    queryResolve: device.createBuffer({size: 16, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC}),
+    queryReadback: device.createBuffer({size: 16, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST}),
+  }))
+  const querySet = hasTimestamps ? device.createQuerySet({type: 'timestamp', count: 2}) : undefined
+  const bindGroup = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+      {binding: 0, resource: {buffer: buffers.params}},
+      {binding: 1, resource: {buffer: buffers.tables}},
+      {binding: 2, resource: {buffer: store.buffer}},
+      {binding: 3, resource: {buffer: buffers.counts}},
+    ],
+  })
+  const counts = new Float32Array(capacity)
+  const paramValues = new Uint32Array(4)
+  return {
+    compileMs,
+    hasTimestamps,
+    // Runs the first `count` documents with the given pattern tables, uploaded before the pass, and reads back every
+    // document's match count into an array that the next call overwrites.
+    async evaluate({count, tables, timestamps = false}: {count: number, tables?: Uint32Array, timestamps?: boolean}) {
+      invariant(count >= 1 && count <= capacity, 'the count lies within the store\'s capacity')
+      const started = performance.now()
+      if (tables !== undefined) device.queue.writeBuffer(buffers.tables, 0, tables.buffer, tables.byteOffset, tables.byteLength)
+      paramValues[0] = count
+      device.queue.writeBuffer(buffers.params, 0, paramValues.buffer, 0, 16)
+      const encoder = device.createCommandEncoder()
+      const pass = encoder.beginComputePass(timestamps ? {timestampWrites: {querySet: querySet!, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1}} : {})
+      pass.setPipeline(pipeline)
+      pass.setBindGroup(0, bindGroup)
+      pass.dispatchWorkgroups(Math.ceil(count / kernel.workgroupSize))
+      pass.end()
+      encoder.copyBufferToBuffer(buffers.counts, 0, buffers.readback, 0, count * 4)
+      if (timestamps) {
+        encoder.resolveQuerySet(querySet!, 0, 2, buffers.queryResolve, 0)
+        encoder.copyBufferToBuffer(buffers.queryResolve, 0, buffers.queryReadback, 0, 16)
+      }
+      device.queue.submit([encoder.finish()])
+      await buffers.readback.mapAsync(GPUMapMode.READ, 0, count * 4)
+      const values = counts.subarray(0, count)
+      values.set(new Float32Array(buffers.readback.getMappedRange(0, count * 4)))
+      buffers.readback.unmap()
+      const totalMs = performance.now() - started
+      let passMs: number | undefined
+      if (timestamps) {
+        await buffers.queryReadback.mapAsync(GPUMapMode.READ, 0, 16)
+        const times = new BigUint64Array(buffers.queryReadback.getMappedRange(0, 16).slice(0))
+        buffers.queryReadback.unmap()
+        passMs = Number(times[1]! - times[0]!) / 1e6
+      }
+      return {totalMs, passMs, counts: values}
+    },
+    destroy() {
+      for (const created of Object.values(buffers)) created.destroy()
+      querySet?.destroy()
+    },
+  }
 }
