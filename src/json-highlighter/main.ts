@@ -26,30 +26,32 @@ const formDescriptions: {[Form in ScanForm]: string} = {
 }
 
 // The first error as a sentence. Each sentence is about the character at the error's position, which the page
-// underlines, e.g. the 2 of [1 2] for expectedCommaOrClose. kinds.ts has an example of every kind.
+// underlines, e.g. the 2 of [1 2] for expectedCommaOrClose. kinds.ts has an example of every kind. Every sentence is
+// short enough to stay on one line beside the character count in a page 800 px wide, so the lines under the editor
+// don't move while errors come and go with the keystrokes.
 function errorSentences({maximumDepth}: Limits): {[Kind in typeof errorKinds[number]]: string} {
   return {
     none: 'Valid JSON.',
-    unexpectedCharacter: 'Nothing in JSON starts with this character; a string or a key, e.g. "name", needs double quotes.',
+    unexpectedCharacter: 'Nothing in JSON starts with this character.',
     // For a tab or another control character. A line break has its own sentence, unclosedStringSentence.
-    controlCharacterInString: 'A string can\'t hold a tab or another control character as typed, only as an escape, e.g. \\t.',
-    badEscape: 'After a backslash, a string allows only " \\ / b f n r t or u.',
+    controlCharacterInString: 'This character needs an escape inside a string, e.g. \\t for a tab.',
+    badEscape: 'After a backslash come only " \\ / b f n r t or u.',
     badUnicodeEscape: '\\u needs four hexadecimal digits after it, e.g. \\u00e9.',
-    badNumber: 'This isn\'t a number JSON accepts, e.g. 01 has an extra zero, and -, 1. and 1e end without a digit.',
+    badNumber: 'This isn\'t a JSON number, just as 01, 1. and 1e aren\'t.',
     badLiteral: 'This word isn\'t true, false or null.',
-    expectedValue: 'A value was expected here, e.g. a string, a number or an opening bracket.',
+    expectedValue: 'A value was expected here, e.g. a string or a number.',
     expectedKey: 'A key in double quotes was expected here, e.g. "name".',
-    expectedColon: 'A colon was expected here, between the key and its value.',
+    expectedColon: 'A colon was expected here, after the key.',
     expectedCommaOrClose: 'A comma or a closing bracket was expected here.',
-    mismatchedBracket: 'This bracket closes the other kind of bracket: { closes with } and [ closes with ].',
-    extraAfterValue: 'The value ended before this, and only spaces and line breaks may follow it.',
-    tooDeep: `This bracket opens level ${maximumDepth + 1} of nesting, and the program follows ${maximumDepth} levels.`,
+    mismatchedBracket: 'This bracket is the wrong kind: { ends with } and [ with ].',
+    extraAfterValue: 'The value ended before this, and only blank space may follow it.',
+    tooDeep: `This bracket opens nesting level ${maximumDepth + 1}, and the program follows ${maximumDepth}.`,
     unexpectedEnd: 'The text ends before the value is complete.',
     // The page writes this sentence itself, with the text's length.
     tooLong: '',
   }
 }
-const unclosedStringSentence = 'This string isn\'t closed: its line ends before the closing quote.'
+const unclosedStringSentence = 'This string isn\'t closed before the end of its line.'
 
 // The characters before a lexer error that belong to the token it breaks, by display kind, e.g. the tru of trux for
 // badLiteral. The page underlines them together with the error's character, so "this word" has a word to point at.
@@ -480,7 +482,7 @@ function mountJsonHighlighter(document: Document, window: Window) {
         const unclosedString = kind === 'controlCharacterInString' && errorCharacter === lineFeed
         sentence = kind === 'tooLong'
           ? ` This text has ${formatCount(codePointCount)} characters, and the program reads the first ${formatCount(capacity)}.`
-          : ` ${unclosedString ? unclosedStringSentence : sentences[kind]}${output.truncated === 1 ? ` The text is also longer than the ${formatCount(capacity)} characters the program reads.` : ''}`
+          : ` ${unclosedString ? unclosedStringSentence : sentences[kind]}${output.truncated === 1 ? ` Past character ${formatCount(capacity)}, the text isn't read.` : ''}`
       }
       const countClass = output.truncated === 1 ? 'capacity over' : 'capacity'
       const countUsedText = formatCount(codePointCount)

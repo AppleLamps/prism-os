@@ -114,7 +114,11 @@
   appearance: none;
   -webkit-appearance: none;
 }
-.editor .surface-bar { grid-column: 1 / -1; }
+/* The result line and the character count. The count keeps its place at the right also when the
+   result is too long for one line and wraps beside it. */
+.editor .surface-bar { grid-column: 1 / -1; flex-wrap: nowrap; }
+.editor .status { flex: 1 1 auto; }
+.editor .capacity { flex: none; }
 
 /* What a character is shown as: k0 to k8 in the order of src/json-highlighter/kinds.ts.
    Keys stay in ink, so the structure reads first and the values carry the color. */
@@ -273,6 +277,14 @@
 .disclosure[open] summary::before { transform: rotate(45deg); }
 .disclosure summary:hover { color: var(--copper); }
 
+/* In a window under 848 px the page is narrower than 800 px, since site.css's .page keeps 24 px
+   free on each side. The count then goes under the result, so the result has the whole width
+   and an error's sentence stays on one line down to 641 px. */
+@media (max-width: 847px) {
+  .editor .surface-bar { flex-wrap: wrap; }
+  .editor .capacity { flex-basis: 100%; }
+}
+
 @media (max-width: 640px) {
   /* The editor's code is smaller on a narrow screen. The token is set on the editor, not on
      :root as in site.css: a rule on :root here would only replace site.css's when this file
@@ -282,6 +294,13 @@
   .editor-gutter { min-width: calc(2ch + 19px); }
   .editor-gutter span { padding: 0 8px 0 10px; }
   .editor-text pre, .editor-text textarea { padding-left: var(--space-3); padding-right: var(--space-3); }
+  /* On a phone the strip has room for the two lines an error's sentence takes there and for
+     the count, three lines of 20 px with its padding, its gap and its hairline, so the lines
+     under the editor don't move when an error comes or goes. */
+  .editor .surface-bar {
+    align-content: flex-start;
+    min-height: calc(3 * 20px + 2 * var(--space-2) + var(--space-1) + 1px);
+  }
   .controls .status { margin-left: 0; width: 100%; }
   .matches { padding: var(--space-4); }
 }
