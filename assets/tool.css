@@ -1,0 +1,190 @@
+/* The two text tools, JSON highlighter and Regex search. Loads after site.css.
+   Both pages share one structure: masthead, title, caption, things to try, the instrument,
+   a result line, a statistics line. */
+
+/* The editor: a gutter of line numbers and the highlighted text. In the real page the <pre>
+   sits under a transparent <textarea> with the same font, padding and line height. */
+.editor {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin-top: var(--space-6);
+  overflow: hidden;
+}
+.editor-gutter {
+  padding: var(--space-4) 0;
+  border-right: 1px solid var(--rule);
+  color: var(--ink-3);
+  font: var(--type-code);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.editor-gutter span {
+  display: block;
+  padding: 0 10px 0 14px;
+  opacity: 0.75;
+}
+.editor-gutter .is-current { color: var(--ink); opacity: 1; }
+.editor-gutter .is-error { color: var(--wire-red); opacity: 1; font-weight: 600; }
+.editor-text {
+  position: relative;
+  min-width: 0;
+  overflow-x: auto;
+}
+.editor-text pre {
+  padding: var(--space-4) var(--space-5) var(--space-4) var(--space-4);
+  color: var(--ink);
+  white-space: pre;
+}
+.editor .surface-bar { grid-column: 1 / -1; }
+
+/* What a character is shown as: k0 to k8 in the order of src/json-highlighter/kinds.ts.
+   Keys stay in ink, so the structure reads first and the values carry the color. */
+.k1 { color: var(--ink-3); }               /* punctuation */
+.k2 { color: var(--wire-green); }          /* string */
+.k3 { color: var(--wire-ochre); }          /* escape */
+.k4 { color: var(--wire-indigo); }         /* number */
+.k5 { color: var(--wire-plum); }           /* literal */
+.k6 { color: var(--wire-red); }            /* error */
+.k8 { color: var(--ink); }                 /* key */
+
+/* Copper marks what the program points at: the bracket at the caret and its partner. */
+.match {
+  border-radius: var(--radius-1);
+  background: var(--copper-wash);
+  box-shadow: 0 0 0 1px var(--copper-line);
+  color: var(--copper);
+}
+.first-error {
+  text-decoration: underline wavy var(--wire-red);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  text-decoration-skip-ink: none;
+}
+.end-marker {
+  display: inline-block;
+  width: 7px;
+  height: 16px;
+  vertical-align: -3px;
+  border-radius: 1px;
+  background: var(--wire-red);
+  opacity: 0.6;
+}
+.past-capacity { color: var(--ink-3); opacity: 0.6; }
+/* Where the program stops reading: the capacity, as a small mark in the text. */
+.capacity-mark {
+  margin: 0 6px 0 2px;
+  padding: 1px 5px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-1);
+  color: var(--ink-3);
+  font: var(--type-label);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+/* The mock's caret. The real page gets one from the textarea: caret-color: var(--copper). */
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 18px;
+  margin: 0 -1px;
+  vertical-align: -4px;
+  border-radius: 1px;
+  background: var(--copper);
+  animation: caret 1.1s steps(1) infinite;
+}
+@keyframes caret { 50% { opacity: 0; } }
+
+.capacity { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.capacity b { color: var(--ink-2); font-weight: 600; }
+
+/* Regex search: a pattern field, three selects, and the text with its matches. */
+.pattern {
+  position: relative;
+  margin-top: var(--space-6);
+}
+/* The slashes around the field are decoration: they say "this is a pattern". */
+.pattern::before,
+.pattern::after {
+  content: "/";
+  position: absolute;
+  top: 0;
+  color: var(--ink-3);
+  font: 400 16px/44px var(--font-mono);
+  pointer-events: none;
+}
+.pattern::before { left: 14px; }
+.pattern::after { right: 14px; }
+.pattern .input { padding: 0 30px; }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  margin-top: var(--space-3);
+}
+.controls .status { margin-left: auto; }
+
+.matches {
+  margin-top: var(--space-4);
+  padding: var(--space-6) var(--space-7);
+  color: var(--ink);
+  font: var(--type-reading);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+/* Neighboring matches alternate between two marks, so two matches in a row stay apart.
+   Each mark is a wash with a line under it, so the two differ by more than hue. */
+.matches mark {
+  padding: 2px 0;
+  border-radius: 2px;
+  color: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.matches mark.even {
+  background: var(--copper-wash);
+  box-shadow: inset 0 -1px var(--copper);
+}
+.matches mark.odd {
+  background: color-mix(in srgb, var(--wire-indigo) 12%, transparent);
+  box-shadow: inset 0 -1px var(--wire-indigo);
+}
+
+.disclosure {
+  margin-top: var(--space-4);
+  font: var(--type-ui);
+  color: var(--ink-2);
+}
+.disclosure summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  list-style: none;
+}
+.disclosure summary::-webkit-details-marker { display: none; }
+.disclosure summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--ink-3);
+  border-bottom: 1.5px solid var(--ink-3);
+  transform: rotate(-45deg);
+  transition: transform var(--quick) var(--ease);
+}
+.disclosure[open] summary::before { transform: rotate(45deg); }
+.disclosure summary:hover { color: var(--copper); }
+
+@media (max-width: 640px) {
+  :root { --type-code: 400 12px/22px var(--font-mono); }
+  .editor, .pattern { margin-top: var(--space-5); }
+  .editor-gutter span { padding: 0 8px 0 10px; }
+  .editor-text pre { padding-left: var(--space-3); padding-right: var(--space-3); }
+  .controls .status { margin-left: 0; width: 100%; }
+  .matches { padding: var(--space-4); }
+}
