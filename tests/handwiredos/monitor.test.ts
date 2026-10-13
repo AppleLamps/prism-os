@@ -95,17 +95,20 @@ test('Monitor\'s legend and the rows of Files\' Operations location count the sa
 })
 
 test('Monitor\'s size of the program counts every array once, also a table that many index reads share', () => {
-  // HandwiredOS: the Notes flow reads 5 tables with 2,320 index reads, and every read
-  // of a table points at the same array of the table's positions. Counted once per
-  // read, those arrays would add up to about 1.06 MB, twice the rest of the program.
+  // HandwiredOS: on October 13, 2026 the Notes flow reads 5 tables with 2,320 index
+  // reads, and every read of a table points at the same array of the table's
+  // positions. Counted once per read, those arrays would add up to about 1.06 MB,
+  // twice the rest of the program.
   const program = createWindowManagerMachine().tensorProgram
   const {weights, bytes} = measureProgram(program)
   assert.equal(weights, program.layers.reduce((sum, layer) => sum + layer.weights.length, 0))
   assert.equal(bytes, bytesOfEveryArray(program))
   const indexReads = program.layers.flatMap(layer => layer.indexReads)
   const tables = new Set(indexReads.map(read => read.candidatePositions))
-  assert.deepEqual([indexReads.length, tables.size], [2320, 5])
-  assert.ok(bytes > 500_000 && bytes < 700_000, `${bytes} bytes`)
+  assert.ok(indexReads.length > 100 * tables.size, `${indexReads.length} index reads of ${tables.size} tables`)
+  // What the old sum added for the shared tables alone is more than the whole program.
+  const perRead = indexReads.reduce((sum, read) => sum + read.candidatePositions.byteLength, 0)
+  assert.ok(perRead > bytes, `${perRead} bytes counted per read, ${bytes} bytes in all`)
 
   // Two reads of one table of 4 computed values, and one read of another table: the
   // first table's positions are counted once. The values are listed out of the order
