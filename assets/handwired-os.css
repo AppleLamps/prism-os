@@ -1226,10 +1226,11 @@ body {
   box-shadow: none;
 }
 
-/* The icon fades while its window is closed or minimized. */
+/* The icon is two thirds of the tile's inner size, i.e. 32 px in a 50 px tile, where it
+   starts on a whole pixel, 8 px in. It fades while its window is closed or minimized. */
 .dock-item svg {
-  width: 64%;
-  height: 64%;
+  width: calc(100% * 2 / 3);
+  height: calc(100% * 2 / 3);
   opacity: calc(1 - var(--inactive) * 0.55);
   pointer-events: none;
 }
