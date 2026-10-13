@@ -54,22 +54,26 @@
       </label>
     </div>
 
-    <div class="result">
+    <!-- The result line, the count of characters and the text. On a wide page the count is at the right end of the
+         result line, and on a phone it is under the text. -->
+    <div class="results">
       <p id="status" class="status busy" role="status"><span>Building the program&hellip;</span></p>
       <span id="capacity" class="capacity"></span>
+
+      <!-- The text is in the page from the start, so the first paint shows it. The script copies it into the textarea,
+           and from then on the textarea holds the text, and the script writes the text under it and draws the matches
+           as rectangles behind it. #matches holds one text node and nothing else, not even a space around it. -->
+      <div class="surface text-editor">
+        <div id="marks" class="marks" aria-hidden="true"></div>
+        <div id="matches" class="matches" aria-hidden="true">Some mornings the harbor is quiet, and an old ferry waits at the pier while the gulls argue over something that washed up overnight. This is the hour when the bakers finish their first loaves and the fishing boats come back with their nets folded. A sailor in a yellow coat is painting the railing again, as he does every spring, and some children are racing along the seawall, shouting at the waves. These small scenes repeat with surprising regularity. The tide rises, the market opens, and an argument starts about the price of mussels. That argument ends, as it always ends, with laughter and a handshake. By noon the streets are crowded with visitors carrying maps they never read, asking for directions to the lighthouse or the museum.</div>
+        <div id="veil" class="veil" aria-hidden="true"></div>
+        <textarea id="text" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Text to search"></textarea>
+      </div>
     </div>
 
-    <!-- The text is in the page from the start, so the first paint shows it. The script copies it into the textarea,
-         and from then on the textarea holds the text, and the script writes the text under it and draws the matches
-         as rectangles behind it. #matches holds one text node and nothing else, not even a space around it. -->
-    <div class="surface text-editor">
-      <div id="marks" class="marks" aria-hidden="true"></div>
-      <div id="matches" class="matches" aria-hidden="true">Some mornings the harbor is quiet, and an old ferry waits at the pier while the gulls argue over something that washed up overnight. This is the hour when the bakers finish their first loaves and the fishing boats come back with their nets folded. A sailor in a yellow coat is painting the railing again, as he does every spring, and some children are racing along the seawall, shouting at the waves. These small scenes repeat with surprising regularity. The tide rises, the market opens, and an argument starts about the price of mussels. That argument ends, as it always ends, with laughter and a handshake. By noon the streets are crowded with visitors carrying maps they never read, asking for directions to the lighthouse or the museum.</div>
-      <div id="veil" class="veil" aria-hidden="true"></div>
-      <textarea id="text" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Text to search"></textarea>
-    </div>
-
-    <p id="stats" class="stats"></p>
+    <!-- Two sentences, each on a line of its own: what the program is, and how long it took. The space between the
+         two keeps them apart for a script that reads the paragraph's text, e.g. browser-frame.ts. -->
+    <p id="stats" class="stats"><span id="stats-program"></span> <span id="stats-times"></span></p>
 
     <details class="disclosure">
       <summary>How the pattern fits the program</summary>

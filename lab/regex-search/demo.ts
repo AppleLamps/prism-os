@@ -174,7 +174,9 @@ type View = {
   statusState: 'busy' | 'bad' | 'ok'
   status: Line
   capacity: Line
-  stats: Line
+  // The statistics: what the program is, and how long building it and the last search took.
+  statsProgram: Line
+  statsTimes: Line
   fitStates: Line
   fitClasses: Line
   fitBoundaries: Line
@@ -217,7 +219,8 @@ function mountRegexSearch(document: Document, window: Window) {
     marks: find<HTMLElement>('#marks'), // mount lifetime; its children live for one drawn frame
     // The fade over the text that the program doesn't read, and the hairline where that text starts.
     veil: find<HTMLElement>('#veil'), // mount lifetime; its children live for one drawn frame
-    stats: lineNode('#stats'), // mount lifetime
+    statsProgram: lineNode('#stats-program'), // mount lifetime
+    statsTimes: lineNode('#stats-times'), // mount lifetime
     fitStates: lineNode('#fit-states'), // mount lifetime
     fitClasses: lineNode('#fit-classes'), // mount lifetime
     fitBoundaries: lineNode('#fit-boundaries'), // mount lifetime
@@ -384,21 +387,28 @@ function mountRegexSearch(document: Document, window: Window) {
       ? ['The program reads the first ', strong(count(choice.textLength)), ' of ', strong(count(length)), ' characters.']
       : [strong(count(length)), ` of ${count(choice.textLength)} characters`]
 
+    // The statistics' two sentences. Without a program to describe, the first one says what the page does instead,
+    // and there is no second one.
     const searchMs = found?.evaluateMs ?? st.lastSearch?.ms
     const timesOf = (built: Program): Line => searchMs === undefined
-      ? [' Building it took ', strong(duration(built.buildMs)), '.']
-      : [' Building it took ', strong(duration(built.buildMs)), ', and the last search took ', strong(duration(searchMs)), '.']
-    let stats: Line
+      ? ['Building it took ', strong(duration(built.buildMs)), '.']
+      : ['Building it took ', strong(duration(built.buildMs)), ', and the last search took ', strong(duration(searchMs)), '.']
+    let statsProgram: Line
+    let statsTimes: Line = []
     if (refused) {
-      stats = ['Choose fewer states or a smaller text capacity, or let the page build a program for each pattern.']
+      statsProgram = ['Choose fewer states or a smaller text capacity, or let the page build a program for each pattern.']
     } else if (choice.form === 'data') {
-      stats = program === null
-        ? [`The page is building one program that searches for every pattern of up to ${choice.states} states in up to ${count(choice.textLength)} characters.`]
-        : ['One program of ', strong(count(program.operations)), ' operations in ', strong(count(program.layers)), ' layers searches for every pattern.', ...timesOf(program)]
+      if (program === null) {
+        statsProgram = [`The page is building one program that searches for every pattern of up to ${choice.states} states in up to ${count(choice.textLength)} characters.`]
+      } else {
+        statsProgram = ['One program of ', strong(count(program.operations)), ' operations in ', strong(count(program.layers)), ' layers searches for every pattern.']
+        statsTimes = timesOf(program)
+      }
     } else if (program !== null && program.pattern === pattern) {
-      stats = ['This pattern has a program of its own, of ', strong(count(program.operations)), ' operations in ', strong(count(program.layers)), ' layers.', ...timesOf(program)]
+      statsProgram = ['This pattern has a program of its own, of ', strong(count(program.operations)), ' operations in ', strong(count(program.layers)), ' layers.']
+      statsTimes = timesOf(program)
     } else {
-      stats = [building ? 'The page is building a program for this pattern.' : 'The page builds a program for each pattern that has no error and fits.']
+      statsProgram = [building ? 'The page is building a program for this pattern.' : 'The page builds a program for each pattern that has no error and fits.']
     }
 
     const of = (used: number, held: number): Line => [strong(count(used)), ` of ${count(held)}`]
@@ -413,7 +423,8 @@ function mountRegexSearch(document: Document, window: Window) {
       statusState,
       status,
       capacity,
-      stats,
+      statsProgram,
+      statsTimes,
       fitStates: compiled === null ? none : of(compiled.automaton.stateCount, choice.states),
       fitClasses: compiled === null ? none : of(compiled.partition.classCount, classes),
       fitBoundaries: compiled === null ? none : of(compiled.partition.boundaries.length, boundaries),
@@ -472,7 +483,8 @@ function mountRegexSearch(document: Document, window: Window) {
     domCache.status.className = `status ${view.statusState}`
     writeLine(domCache.statusLine, view.status)
     writeLine(domCache.capacity, view.capacity)
-    writeLine(domCache.stats, view.stats)
+    writeLine(domCache.statsProgram, view.statsProgram)
+    writeLine(domCache.statsTimes, view.statsTimes)
     writeLine(domCache.fitStates, view.fitStates)
     writeLine(domCache.fitClasses, view.fitClasses)
     writeLine(domCache.fitBoundaries, view.fitBoundaries)

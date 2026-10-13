@@ -142,9 +142,10 @@ async function measure(port: number, {query, field, typed}: Scenario) {
       const values = evaluated.map(frame => frame[name] as number)
       return {median: round(median(values)), max: round(Math.max(...values))}
     }
-    // The result line, e.g. "27 matches", and the statistics line with the program's size.
+    // The result line, e.g. "27 matches", and the statistics with the program's size. The statistics are two sentences
+    // with a space between them, which is left at the end when the page shows only the first one.
     const status = await cdp.evaluate<string>('document.querySelector("#status").textContent')
-    const statistics = await cdp.evaluate<string>('document.querySelector("#stats").textContent')
+    const statistics = await cdp.evaluate<string>('document.querySelector("#stats").textContent.trim()')
     return {
       query, field, typed, readyMs: round(readyMs), heapMegabytes: Math.round(heapMegabytes), keystrokes: frames.length, evaluatedFrames: evaluated.length,
       compilePatternMs: summary('compilePatternMs'), programMs: summary('programMs'), evaluateMs: summary('evaluateMs'),

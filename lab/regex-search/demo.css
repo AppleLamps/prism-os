@@ -24,28 +24,24 @@
 }
 .try-pattern:active code { background: color-mix(in srgb, var(--copper) 24%, transparent); }
 
-/* The result line and the count of characters share a row between the selects and the text, at every width. tool.css
-   puts the result line to the right of the selects on a wide page, where an error doesn't fit: an error is a full
-   sentence, e.g. "This pattern needs 13 states, and the program holds 12." */
-.result {
-  display: flex;
-  flex-wrap: wrap;
+/* The result line, the count of characters and the text are one grid. The result line has a row of its own between
+   the selects and the text, where tool.css puts it to the right of the selects: an error is a full sentence, e.g.
+   "This pattern needs 13 states, and the program holds 12.", and doesn't fit there. The count is at the right end of
+   that row, and a result line that is longer than its column wraps beside the count, so the count stays where it is. */
+.results {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-1) var(--space-5);
+  column-gap: var(--space-5);
   margin-top: var(--space-4);
 }
-/* The count becomes a sentence when the text is longer than the capacity, and a sentence may wrap on a phone. */
-.result .capacity {
-  font: var(--type-ui);
-  white-space: normal;
-}
-/* The statistics are two sentences, on two lines of about the same length on a wide page. The room for two lines is
-   there from the start, so the lines under the statistics don't move when the first program is built. */
-.page .stats {
-  min-height: 40px;
-  text-wrap: balance;
-}
+.results .text-editor { grid-column: 1 / -1; }
+.results .capacity { font: var(--type-ui); }
+/* The statistics are two sentences, each on a line of its own, so a number that changes with every keystroke, e.g.
+   the last search's time, never moves a word from one line to the other. The room for two lines is there from the
+   start, so the lines under the statistics don't move when the first program is built. */
+.page .stats { min-height: 40px; }
+.stats > span { display: block; }
 /* While a program is being built, the dot fades in and out. The fade runs on the compositor, so it keeps moving
    while the build holds the main thread. */
 .status.busy::before { animation: busy 0.7s var(--ease) infinite alternate; }
@@ -213,6 +209,18 @@
   .reference { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
+  /* On a phone an error is as wide as the page and often takes two lines, e.g. "This pattern needs 13 states, and the
+     program holds 12." So the result line always has the room of two lines, and the text under it stays where it is
+     while a pattern is typed. The count goes under the text, where it takes no room from the result line. */
+  .results { grid-template-columns: minmax(0, 1fr); }
+  .results .status { min-height: 40px; }
+  .results .capacity {
+    grid-row: 3;
+    justify-self: end;
+    margin-top: var(--space-2);
+    text-align: right;
+    white-space: normal;
+  }
   .text-editor {
     --text-padding-x: var(--space-4);
     --text-padding-y: var(--space-4);
