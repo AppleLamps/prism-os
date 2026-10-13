@@ -164,32 +164,56 @@
           </div>
         </a>
 
-        <!-- The GPU demo's card, hidden until the demo ships. To show it, remove the hidden attribute on the next
-             line. The site build publishes lab/json-search/demo.html at json-search/ when that file exists, and
-             fails when this card is shown without it. -->
-        <a class="card demo" href="json-search/" aria-labelledby="json-search-title" hidden>
+        <!-- The GPU demo's card. The site build publishes lab/json-search/demo.html at json-search/. The card's numbers
+             are from lab/json-search/README.md, measured on an Apple M5 Max in headless Chrome 155 on October 13,
+             2026: a search of 100,000 documents takes 8 to 21 ms for a pattern of up to 8 states, which is a pattern
+             of up to 7 characters or sets, and RegExp on one thread takes 12 to 43 ms for the same searches. They
+             aren't marked with data-count, since the demo's page shows other numbers on another machine, e.g. 500
+             documents without WebGPU. -->
+        <a class="card demo" href="json-search/" aria-labelledby="json-search-title">
           <div class="demo-picture" aria-hidden="true">
-            <svg class="documents" viewBox="0 0 540 208" preserveAspectRatio="xMidYMid slice">
+            <!-- A piece of the demo's map: a small mark for each document, in a block for each kind of document. A
+                 search for "error" finds the log events, the third block, and the last block is the documents with
+                 an error. A block is one rectangle filled with a pattern of marks, and a second one for its last,
+                 shorter row. The picture keeps its shape and shows all eight blocks at every width. -->
+            <svg class="documents" viewBox="0 0 540 208" preserveAspectRatio="xMidYMid meet">
               <defs>
-                <pattern id="every-document" width="18" height="8" patternUnits="userSpaceOnUse">
-                  <rect class="document" x="2" y="2.5" width="14" height="3" rx="1.5"/>
+                <pattern id="every-document" width="4" height="4" patternUnits="userSpaceOnUse">
+                  <rect class="document" width="3" height="3"/>
+                </pattern>
+                <!-- Most log events have a match, and a few don't: every fifth mark of two rows in seven is pale. -->
+                <pattern id="found-document" width="20" height="28" patternUnits="userSpaceOnUse">
+                  <rect width="20" height="28" fill="url(#found-mark)"/>
+                  <rect class="hole" x="8" y="4" width="4" height="4"/><rect class="document" x="8" y="4" width="3" height="3"/>
+                  <rect class="hole" x="16" y="16" width="4" height="4"/><rect class="document" x="16" y="16" width="3" height="3"/>
+                  <rect class="hole" x="0" y="20" width="4" height="4"/><rect class="document" x="0" y="20" width="3" height="3"/>
+                </pattern>
+                <pattern id="found-mark" width="4" height="4" patternUnits="userSpaceOnUse">
+                  <rect class="found" width="3" height="3"/>
+                </pattern>
+                <pattern id="with-error-document" width="28" height="20" patternUnits="userSpaceOnUse">
+                  <rect width="28" height="20" fill="url(#with-error-mark)"/>
+                  <rect class="hole" x="12" y="8" width="4" height="4"/><rect class="found" x="12" y="8" width="3" height="3"/>
+                  <rect class="hole" x="24" y="16" width="4" height="4"/><rect class="found" x="24" y="16" width="3" height="3"/>
+                </pattern>
+                <pattern id="with-error-mark" width="4" height="4" patternUnits="userSpaceOnUse">
+                  <rect class="with-error" width="3" height="3"/>
                 </pattern>
               </defs>
-              <rect width="540" height="208" fill="url(#every-document)"/>
-              <g class="found">
-                <rect x="38" y="18.5" width="14" height="3" rx="1.5"/><rect x="164" y="10.5" width="14" height="3" rx="1.5"/><rect x="290" y="26.5" width="14" height="3" rx="1.5"/><rect x="452" y="18.5" width="14" height="3" rx="1.5"/>
-                <rect x="110" y="42.5" width="14" height="3" rx="1.5"/><rect x="236" y="50.5" width="14" height="3" rx="1.5"/><rect x="380" y="42.5" width="14" height="3" rx="1.5"/><rect x="506" y="58.5" width="14" height="3" rx="1.5"/>
-                <rect x="20" y="74.5" width="14" height="3" rx="1.5"/><rect x="182" y="82.5" width="14" height="3" rx="1.5"/><rect x="326" y="74.5" width="14" height="3" rx="1.5"/><rect x="434" y="90.5" width="14" height="3" rx="1.5"/>
-                <rect x="74" y="106.5" width="14" height="3" rx="1.5"/><rect x="254" y="114.5" width="14" height="3" rx="1.5"/><rect x="362" y="122.5" width="14" height="3" rx="1.5"/><rect x="488" y="106.5" width="14" height="3" rx="1.5"/>
-                <rect x="146" y="138.5" width="14" height="3" rx="1.5"/><rect x="218" y="154.5" width="14" height="3" rx="1.5"/><rect x="308" y="146.5" width="14" height="3" rx="1.5"/><rect x="416" y="162.5" width="14" height="3" rx="1.5"/>
-                <rect x="56" y="170.5" width="14" height="3" rx="1.5"/><rect x="128" y="186.5" width="14" height="3" rx="1.5"/><rect x="344" y="178.5" width="14" height="3" rx="1.5"/><rect x="470" y="194.5" width="14" height="3" rx="1.5"/>
-              </g>
+              <rect x="28" y="28" width="52" height="148" fill="url(#every-document)"/><rect x="28" y="176" width="32" height="4" fill="url(#every-document)"/>
+              <rect x="90" y="28" width="52" height="152" fill="url(#every-document)"/><rect x="90" y="180" width="12" height="4" fill="url(#every-document)"/>
+              <rect x="152" y="28" width="52" height="152" fill="url(#found-document)"/><rect x="152" y="180" width="44" height="4" fill="url(#found-document)"/>
+              <rect x="214" y="28" width="52" height="148" fill="url(#every-document)"/><rect x="214" y="176" width="20" height="4" fill="url(#every-document)"/>
+              <rect x="276" y="28" width="52" height="144" fill="url(#every-document)"/><rect x="276" y="172" width="8" height="4" fill="url(#every-document)"/>
+              <rect x="338" y="28" width="52" height="152" fill="url(#every-document)"/><rect x="338" y="180" width="28" height="4" fill="url(#every-document)"/>
+              <rect x="400" y="28" width="52" height="148" fill="url(#every-document)"/><rect x="400" y="176" width="40" height="4" fill="url(#every-document)"/>
+              <rect x="462" y="28" width="52" height="116" fill="url(#with-error-document)"/><rect x="462" y="144" width="28" height="4" fill="url(#with-error-document)"/>
             </svg>
           </div>
           <div class="demo-body">
             <h3 id="json-search-title">Search 100,000 JSON documents</h3>
-            <p>The JSON highlighter&rsquo;s program, run on 100,000 documents at once. Every document runs the same operations and reads no other document, so one pass on the GPU computes all of them in parallel.</p>
-            <p class="meta facts">Needs a browser with WebGPU</p>
+            <p>Type a pattern, and regex search&rsquo;s program runs once per document on the GPU, over 100,000 JSON documents at each keystroke. No document reads another, so one pass runs them all, in about the time that RegExp takes on one thread for a pattern of up to 7 characters.</p>
+            <p class="meta facts">A search takes 8 to 21&nbsp;ms on an Apple M5 Max. Without WebGPU, the page searches 500 documents on the CPU.</p>
           </div>
         </a>
       </section>
