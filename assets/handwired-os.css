@@ -1015,6 +1015,8 @@ body {
    position, opacity and --focused, which is 1 for the open photo and its thumbnail. */
 .photos-content {
   cursor: pointer;
+  /* The previous and next controls look at the content box's width, see below. */
+  container-type: inline-size;
 }
 
 .photos-backdrop {
@@ -1138,6 +1140,26 @@ body {
 
 .photos-next {
   --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 16'%3E%3Cpath d='M1.5 1.5L7.5 8l-6 6.5' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* The open photo starts 8% of the content box's width from the box's edge, and the chevron
+   ends 39.5 px from it. So in a content box under 519 px wide, e.g. on a phone, the chevron
+   lies on the photo or within 2 px of it, where its ink is hard to see. There the round
+   sheet is drawn at all times, as under the arrows of a carousel, and the pointer changes
+   its edge to copper. */
+@container (max-width: 518px) {
+  .photos-control::before {
+    background-color: var(--sheet);
+    box-shadow: 0 0 0 1px var(--edge), var(--shadow-1);
+  }
+
+  .photos-control:hover::before {
+    box-shadow: 0 0 0 1px var(--copper-line), var(--shadow-2);
+  }
+
+  .photos-control:active::before {
+    box-shadow: 0 0 0 1px var(--edge);
+  }
 }
 
 /* Dock: four tiles above one copper wire. Each tile's joint on the wire is hollow while
