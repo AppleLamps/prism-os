@@ -306,7 +306,9 @@
 }
 
 /* iOS Safari zooms the page when a focused field's text is smaller than 16 px, so on a touch
-   screen the editor's text, which is typed into, is 16 px at every width. */
+   screen the editor's text, which is typed into, is 16 px at every width. A summary there is
+   40 px tall, for a finger, with its text in the middle. */
 @media (pointer: coarse) {
   .editor { --type-code: 400 16px/24px var(--font-mono); }
+  .disclosure summary { min-height: 40px; }
 }
