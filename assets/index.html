@@ -4,6 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HandwiredOS</title>
+  <!-- The first paint should be the program's first frame, so the page's script has to block
+       rendering until it has run, which is what blocking="render" on its tag asks for. Bun's
+       bundler writes that tag itself, at the end of the head, and drops the attributes written
+       at the bottom of this file. So this adds the attribute when the parser inserts Bun's tag:
+       a parser runs observers before it prepares a script, and a browser reads the attribute
+       when it prepares the script. Where a browser doesn't know the attribute, the desk can be
+       painted first, without windows, see "First paint" in handwired-os.css. -->
+  <script>
+    new MutationObserver((records, observer) => {
+      const script = document.head.querySelector('script[type=module][src]')
+      if (script === null) return
+      script.setAttribute('blocking', 'render')
+      observer.disconnect()
+    }).observe(document.head, {childList: true})
+  </script>
   <link rel="stylesheet" href="./site.css">
   <link rel="stylesheet" href="./handwired-os.css">
 </head>
@@ -154,6 +169,6 @@
       </div>
     </nav>
   </main>
-  <script type="module" src="../src/handwiredos/window-manager.ts"></script>
+  <script type="module" blocking="render" src="../src/handwiredos/window-manager.ts"></script>
 </body>
 </html>

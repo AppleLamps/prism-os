@@ -8,7 +8,8 @@
    position, and the numbers --focused, --maximized, --inactive and --open, each 0 or 1.
    So no rule here gives one of those properties a transition, an animation or a default.
    What depends on the four numbers is arithmetic on them, e.g. a shadow that grows with
-   --focused.
+   --focused, and has no transition either: focus changes in the frame of the press, and
+   the first frame paints every window as that frame computed it.
 
    The sizes are the program's too: the 44 px title bar, the 18 px buttons 10 px apart, the
    24 px grip, the 76 px dock, the 36 px system bar and the windows' 1 px border. The
@@ -225,7 +226,6 @@ body {
     0 calc(10px + var(--focused) * 18px) calc(28px + var(--focused) * 36px) calc(-8px - var(--focused) * 8px) rgb(60 42 22 / calc(0.24 + var(--focused) * 0.14));
   /* The program scales a window around its center while it flies to or from the dock. */
   transform-origin: 50% 50%;
-  transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
 }
 
 /* The frame's border takes 1 px on each side, and the program's title bar starts at the
@@ -254,7 +254,6 @@ body {
   gap: 9px;
   color: color-mix(in srgb, var(--ink) calc(var(--focused) * 100%), var(--ink-2));
   font: var(--type-title-xs);
-  transition: color var(--quick) var(--ease);
 }
 
 /* The joint before a title: a hollow eyelet, filled with copper while the window has focus. */
@@ -265,7 +264,6 @@ body {
   border: 1.5px solid color-mix(in srgb, var(--copper) calc(var(--focused) * 100%), var(--ink-3));
   border-radius: 50%;
   background: color-mix(in srgb, var(--copper) calc(var(--focused) * 100%), transparent);
-  transition: background-color var(--quick) var(--ease), border-color var(--quick) var(--ease);
 }
 
 .window-controls {
@@ -275,7 +273,8 @@ body {
 }
 
 /* Minimize, maximize, close: three glyphs of 1 px ink in 18 px boxes. A ring appears under
-   the pointer, and close fills with copper. The states change colors only. */
+   the pointer, and close fills with copper. The states change colors only. The ring fades
+   in, and the glyph's color, which also follows the window's focus, changes at once. */
 .window-button {
   position: relative;
   flex: none;
@@ -284,10 +283,10 @@ body {
   border-radius: 50%;
   color: color-mix(in srgb, var(--ink) calc(var(--focused) * 100%), var(--ink-3));
   cursor: pointer;
-  transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease), color var(--quick) var(--ease);
+  transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
 }
 
-/* The glyph is a mask, so it takes the button's color and that color's transition. */
+/* The glyph is a mask, so it takes the button's color. */
 .window-button::before {
   content: "";
   position: absolute;
@@ -1056,9 +1055,10 @@ body {
   background: color-mix(in srgb, var(--copper) calc(var(--open) * 100%), var(--desk));
 }
 
-/* First paint. A window or a dock item has no rectangle until the program's first frame
-   writes one into its style attribute, and before that it isn't painted. So the first paint
-   holds either the desk alone, or the program's first frame. */
+/* First paint. index.html asks the browser to hold the first paint until the script has
+   run, and then the first paint is the program's first frame. A browser that paints
+   earlier paints the desk alone: a window or a dock item has no rectangle until the first
+   frame writes one into its style attribute, and it isn't painted before that. */
 .window:not([style]),
 .dock-item:not([style]) {
   visibility: hidden;
