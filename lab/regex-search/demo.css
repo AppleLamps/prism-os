@@ -109,6 +109,8 @@
   overflow: hidden;
   outline: none;
 }
+/* A selection in the text is gray, where site.css's is copper: a selected word in copper looks like a match. */
+.surface.text-editor textarea::selection { background: color-mix(in srgb, var(--ink) 16%, transparent); }
 /* iOS draws a textarea's text 3 px further in on the left and on the right than the textarea's padding, and no CSS
    removes that, so on iOS the text under the textarea moves in by the same 3 px. Only iOS supports
    -webkit-touch-callout. */
