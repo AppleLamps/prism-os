@@ -412,3 +412,7 @@ Separately, scripts/check.ts didn't find gpu/tsconfig.json, so the gpu folder's 
 - The programs' times past 1,024 code points are extrapolations, and form (c) at S = 32 has only 256 code points.
 - Only one frames run.
 - The demo page doesn't offer form (c).
+
+### Update, October 13, 2026: many documents instead of one long text
+
+Form (a)'s step also runs as a loop on the GPU, over many documents instead of one long text: [lab/json-search](../json-search/README.md#regex-searchs-step) builds one code point's work with this folder's `emitClasses` and `createStepAnd`, and a shader loops it over a document's 512 positions. The shader compiles in 0.11 s at 8 states, and one search of 100,000 documents takes 7.0 ms for a pattern of up to 8 states, 64 ms up to 16 states and 871 ms up to 32, when searches follow each other. In the same page, RegExp counts every match of ordinary patterns in 8 to 43 ms. A search after a pause of 200 ms or more takes longer, e.g. 17 ms instead of 7.0 ms at 8 states. The September timings above in this section sampled evaluations one after another, and measured no pause.
