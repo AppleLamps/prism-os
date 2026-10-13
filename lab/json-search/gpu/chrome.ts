@@ -32,12 +32,16 @@ export type RunOptions = {
 export async function runPage({page, config, label, profile, out, port, devToolsPort, timeoutMs, chromePath}: RunOptions) {
   const loadAverage = () => Bun.spawnSync(['sysctl', '-n', 'vm.loadavg']).stdout.toString().trim()
   const memoryFree = () => Bun.spawnSync(['memory_pressure']).stdout.toString().trim().split('\n').at(-1)
-  // The busiest processes on the machine, e.g. another agent's Chrome, by CPU percentage.
-  const busiest = () => Bun.spawnSync(['ps', '-Ao', 'pcpu=,rss=,comm=', '-r']).stdout.toString().trim().split('\n').slice(0, 6).map(line => line.trim().replace(/\s+/g, ' ').slice(0, 140))
+  // A path without its folders, e.g. a profile folder's name, so that a result file holds no path of the machine it
+  // was measured on.
+  const withoutFolders = (text: string) => text.replace(/(?:\/[^/]+)+\//, '')
+  // The busiest processes on the machine, e.g. another agent's Chrome, by CPU percentage: each one's CPU percentage,
+  // resident kilobytes and name.
+  const busiest = () => Bun.spawnSync(['ps', '-Ao', 'pcpu=,rss=,comm=', '-r']).stdout.toString().trim().split('\n').slice(0, 6).map(line => withoutFolders(line.trim().replace(/\s+/g, ' ')).slice(0, 140))
   const machine = () => `${Bun.spawnSync(['sysctl', '-n', 'machdep.cpu.brand_string']).stdout.toString().trim()}, ${Bun.spawnSync(['sysctl', '-n', 'hw.ncpu']).stdout.toString().trim()} cores, ${Math.round(Number(Bun.spawnSync(['sysctl', '-n', 'hw.memsize']).stdout.toString()) / 2 ** 30)} GiB, macOS ${Bun.spawnSync(['sw_vers', '-productVersion']).stdout.toString().trim()}`
   // The 1-minute load average every 10 s, with the time, so a measurement can be read next to the load around it.
   const loadSamples: {at: string, load: string}[] = []
-  const driver: Record<string, unknown> = {startedAt: new Date().toISOString(), machine: machine(), bun: Bun.version, loadBefore: loadAverage(), memoryBefore: memoryFree(), busiestBefore: busiest(), argv: process.argv.slice(2), loadSamples}
+  const driver: Record<string, unknown> = {startedAt: new Date().toISOString(), machine: machine(), bun: Bun.version, loadBefore: loadAverage(), memoryBefore: memoryFree(), busiestBefore: busiest(), argv: process.argv.slice(2).map(withoutFolders), loadSamples}
   let latestPage: unknown
   const writeOut = () => writeFileSync(out, `${JSON.stringify({driver, page: latestPage}, null, 1)}\n`)
   const loadTimer = setInterval(() => loadSamples.push({at: new Date().toISOString(), load: loadAverage()}), 10_000)
@@ -76,7 +80,7 @@ export async function runPage({page, config, label, profile, out, port, devTools
     `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-background-timer-throttling',
     '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--window-size=1200,900',
   ]
-  driver['flags'] = flags
+  driver['flags'] = flags.map(withoutFolders)
   const occupied = await fetch(`http://127.0.0.1:${devToolsPort}/json/version`).then(() => true, () => false)
   if (occupied) throw new Error(`port ${devToolsPort} already has a debugger listening, pick another --devtools-port`)
   const chrome = Bun.spawn([chromePath, ...flags, 'about:blank'], {stdout: 'ignore', stderr: Bun.file(`${profile}.log`)})

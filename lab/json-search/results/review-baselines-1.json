@@ -1,0 +1,1410 @@
+{
+ "driver": {
+  "startedAt": "2026-10-13T18:54:24.053Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 2.46 2.80 3.26 }",
+  "memoryBefore": "System-wide memory free percentage: 62%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "baselines",
+   "--profile",
+   "profile-review-baselines-1",
+   "--out",
+   "review-baselines-1.json",
+   "--port",
+   "4427",
+   "--devtools-port",
+   "9427",
+   "--timeout-seconds",
+   "1800"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-13T18:54:34.124Z",
+    "load": "{ 2.62 2.82 3.26 }"
+   },
+   {
+    "at": "2026-10-13T18:54:44.126Z",
+    "load": "{ 2.67 2.83 3.26 }"
+   },
+   {
+    "at": "2026-10-13T18:54:54.126Z",
+    "load": "{ 2.72 2.83 3.26 }"
+   },
+   {
+    "at": "2026-10-13T18:55:04.128Z",
+    "load": "{ 2.61 2.80 3.24 }"
+   },
+   {
+    "at": "2026-10-13T18:55:14.130Z",
+    "load": "{ 2.83 2.84 3.25 }"
+   },
+   {
+    "at": "2026-10-13T18:55:24.133Z",
+    "load": "{ 2.70 2.81 3.24 }"
+   },
+   {
+    "at": "2026-10-13T18:55:34.135Z",
+    "load": "{ 2.74 2.82 3.23 }"
+   },
+   {
+    "at": "2026-10-13T18:55:44.137Z",
+    "load": "{ 2.86 2.84 3.24 }"
+   },
+   {
+    "at": "2026-10-13T18:55:54.139Z",
+    "load": "{ 2.80 2.83 3.23 }"
+   },
+   {
+    "at": "2026-10-13T18:56:04.141Z",
+    "load": "{ 2.75 2.82 3.22 }"
+   },
+   {
+    "at": "2026-10-13T18:56:14.143Z",
+    "load": "{ 2.93 2.86 3.23 }"
+   },
+   {
+    "at": "2026-10-13T18:56:24.146Z",
+    "load": "{ 2.85 2.84 3.22 }"
+   },
+   {
+    "at": "2026-10-13T18:56:34.148Z",
+    "load": "{ 2.87 2.85 3.21 }"
+   },
+   {
+    "at": "2026-10-13T18:56:44.150Z",
+    "load": "{ 2.90 2.85 3.21 }"
+   },
+   {
+    "at": "2026-10-13T18:56:54.152Z",
+    "load": "{ 3.15 2.91 3.23 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9427",
+   "--user-data-dir=profile-review-baselines-1",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "chromePid": 70115,
+  "browser": "Chrome/155.0.8059.40",
+  "finishedAt": "2026-10-13T18:57:00.540Z",
+  "loadAfter": "{ 4.42 3.17 3.32 }",
+  "memoryAfter": "System-wide memory free percentage: 61%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-13T18:54:24.525Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "baselines",
+   "shaderSalt": 952424508,
+   "seed": 20261013,
+   "invalidFraction": 0.1,
+   "edgeSizes": {
+    "broken": 400,
+    "generated": 200,
+    "random": 100,
+    "mutated": 300,
+    "long": 40
+   },
+   "windowDocuments": 64,
+   "documents": 100000,
+   "executorDocuments": 2000,
+   "generatedDocumentsAt32States": 10000,
+   "patterns": [
+    "(the|an?) [a-z]+",
+    "error",
+    "[a-z0-9.]+@[a-z.]+",
+    "\"[a-z]+\":",
+    "[A-Z][a-z]+ [A-Z][a-z]+",
+    "\\d+\\.\\d+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "(the|an?|some) [a-z]+(ing)?s?",
+    "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "([a-z]+)+x"
+   ],
+   "workerCounts": [
+    1,
+    2,
+    4,
+    8,
+    16
+   ],
+   "warmupMs": 200,
+   "sampleMs": 1000,
+   "minimumSamples": 15,
+   "maximumSamples": 200,
+   "cpuWarmupMs": 300,
+   "cpuSampleMs": 200,
+   "cpuSamples": 5
+  },
+  "validate": {
+   "jsonParse": {
+    "microsecondsPerDocument": 0.761,
+    "samples": [
+     0.764,
+     0.761,
+     0.766,
+     0.76,
+     0.755
+    ]
+   },
+   "tableLoopIntoOneArrayOf512": {
+    "microsecondsPerDocument": 1.232,
+    "samples": [
+     1.212,
+     1.224,
+     1.232,
+     1.246,
+     1.234
+    ]
+   },
+   "tableLoopIntoEveryDocumentsKinds": {
+    "microsecondsPerDocument": 1.224,
+    "samples": [
+     1.236,
+     1.224,
+     1.22,
+     1.224,
+     1.229
+    ]
+   }
+  },
+  "regExp": [
+   {
+    "pattern": "(the|an?) [a-z]+",
+    "totals": {
+     "match": 42356,
+     "matchWithoutTheUFlag": 42356,
+     "testLoop": 42356,
+     "execLoop": 42356
+    },
+    "times": {
+     "match": {
+      "microsecondsPerDocument": 0.234,
+      "samples": [
+       0.234,
+       0.234,
+       0.237,
+       0.237,
+       0.233
+      ]
+     },
+     "matchWithoutTheUFlag": {
+      "microsecondsPerDocument": 0.233,
+      "samples": [
+       0.233,
+       0.236,
+       0.23,
+       0.232,
+       0.233
+      ]
+     },
+     "testLoop": {
+      "microsecondsPerDocument": 0.223,
+      "samples": [
+       0.222,
+       0.223,
+       0.223,
+       0.224,
+       0.226
+      ]
+     },
+     "execLoop": {
+      "microsecondsPerDocument": 0.235,
+      "samples": [
+       0.237,
+       0.235,
+       0.237,
+       0.231,
+       0.231
+      ]
+     }
+    }
+   },
+   {
+    "pattern": "error",
+    "totals": {
+     "match": 12482,
+     "matchWithoutTheUFlag": 12482,
+     "testLoop": 12482,
+     "execLoop": 12482
+    },
+    "times": {
+     "match": {
+      "microsecondsPerDocument": 0.21,
+      "samples": [
+       0.21,
+       0.21,
+       0.208,
+       0.211,
+       0.207
+      ]
+     },
+     "matchWithoutTheUFlag": {
+      "microsecondsPerDocument": 0.202,
+      "samples": [
+       0.202,
+       0.202,
+       0.202,
+       0.201,
+       0.202
+      ]
+     },
+     "testLoop": {
+      "microsecondsPerDocument": 0.2,
+      "samples": [
+       0.19,
+       0.198,
+       0.201,
+       0.2,
+       0.203
+      ]
+     },
+     "execLoop": {
+      "microsecondsPerDocument": 0.202,
+      "samples": [
+       0.202,
+       0.202,
+       0.202,
+       0.201,
+       0.202
+      ]
+     }
+    }
+   },
+   {
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "totals": {
+     "match": 14555,
+     "matchWithoutTheUFlag": 14555,
+     "testLoop": 14555,
+     "execLoop": 14555
+    },
+    "times": {
+     "match": {
+      "microsecondsPerDocument": 0.401,
+      "samples": [
+       0.399,
+       0.401,
+       0.403,
+       0.401,
+       0.401
+      ]
+     },
+     "matchWithoutTheUFlag": {
+      "microsecondsPerDocument": 0.372,
+      "samples": [
+       0.372,
+       0.37,
+       0.374,
+       0.371,
+       0.376
+      ]
+     },
+     "testLoop": {
+      "microsecondsPerDocument": 0.403,
+      "samples": [
+       0.395,
+       0.404,
+       0.4,
+       0.403,
+       0.404
+      ]
+     },
+     "execLoop": {
+      "microsecondsPerDocument": 0.4,
+      "samples": [
+       0.398,
+       0.399,
+       0.4,
+       0.403,
+       0.407
+      ]
+     }
+    }
+   },
+   {
+    "pattern": "\"[a-z]+\":",
+    "totals": {
+     "match": 1037641,
+     "matchWithoutTheUFlag": 1037641,
+     "testLoop": 1037641,
+     "execLoop": 1037641
+    },
+    "times": {
+     "match": {
+      "microsecondsPerDocument": 0.299,
+      "samples": [
+       0.3,
+       0.3,
+       0.296,
+       0.298,
+       0.299
+      ]
+     },
+     "matchWithoutTheUFlag": {
+      "microsecondsPerDocument": 0.298,
+      "samples": [
+       0.298,
+       0.299,
+       0.298,
+       0.296,
+       0.298
+      ]
+     },
+     "testLoop": {
+      "microsecondsPerDocument": 0.309,
+      "samples": [
+       0.309,
+       0.308,
+       0.308,
+       0.31,
+       0.309
+      ]
+     },
+     "execLoop": {
+      "microsecondsPerDocument": 0.364,
+      "samples": [
+       0.365,
+       0.364,
+       0.364,
+       0.362,
+       0.365
+      ]
+     }
+    }
+   },
+   {
+    "pattern": "[A-Z][a-z]+ [A-Z][a-z]+",
+    "totals": {
+     "match": 23862,
+     "matchWithoutTheUFlag": 23862,
+     "testLoop": 23862,
+     "execLoop": 23862
+    },
+    "times": {
+     "match": {
+      "microsecondsPerDocument": 0.118,
+      "samples": [
+       0.11,
+       0.111,
+       0.118,
+       0.119,
+       0.12
+      ]
+     },
+     "matchWithoutTheUFlag": {
+      "microsecondsPerDocument": 0.115,
+      "samples": [
+       0.114,
+       0.114,
+       0.117,
+       0.115,
+       0.117
+      ]
+     },
+     "testLoop": {
+      "microsecondsPerDocument": 0.116,
+      "samples": [
+       0.116,
+       0.116,
+       0.119,
+       0.116,
+       0.115
+      ]
+     },
+     "execLoop": {
+      "microsecondsPerDocument": 0.118,
+      "samples": [
+       0.119,
+       0.12,
+       0.118,
+       0.118,
+       0.118
+      ]
+     }
+    }
+   },
+   {
+    "pattern": "\\d+\\.\\d+",
+    "totals": {
+     "match": 254601,
+     "matchWithoutTheUFlag": 254601,
+     "testLoop": 254601,
+     "execLoop": 254601
+    },
+    "times": {
+     "match": {
+      "microsecondsPerDocument": 0.168,
+      "samples": [
+       0.168,
+       0.168,
+       0.167,
+       0.168,
+       0.169
+      ]
+     },
+     "matchWithoutTheUFlag": {
+      "microsecondsPerDocument": 0.16,
+      "samples": [
+       0.16,
+       0.16,
+       0.165,
+       0.159,
+       0.161
+      ]
+     },
+     "testLoop": {
+      "microsecondsPerDocument": 0.156,
+      "samples": [
+       0.156,
+       0.156,
+       0.155,
+       0.157,
+       0.155
+      ]
+     },
+     "execLoop": {
+      "microsecondsPerDocument": 0.177,
+      "samples": [
+       0.177,
+       0.18,
+       0.177,
+       0.168,
+       0.169
+      ]
+     }
+    }
+   },
+   {
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "totals": {
+     "match": 27809,
+     "matchWithoutTheUFlag": 27809,
+     "testLoop": 27809,
+     "execLoop": 27809
+    },
+    "times": {
+     "match": {
+      "microsecondsPerDocument": 0.08,
+      "samples": [
+       0.079,
+       0.078,
+       0.08,
+       0.08,
+       0.08
+      ]
+     },
+     "matchWithoutTheUFlag": {
+      "microsecondsPerDocument": 0.073,
+      "samples": [
+       0.073,
+       0.075,
+       0.074,
+       0.073,
+       0.073
+      ]
+     },
+     "testLoop": {
+      "microsecondsPerDocument": 0.077,
+      "samples": [
+       0.077,
+       0.078,
+       0.077,
+       0.078,
+       0.077
+      ]
+     },
+     "execLoop": {
+      "microsecondsPerDocument": 0.082,
+      "samples": [
+       0.083,
+       0.084,
+       0.082,
+       0.082,
+       0.082
+      ]
+     }
+    }
+   },
+   {
+    "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+    "totals": {
+     "match": 46068,
+     "matchWithoutTheUFlag": 46068,
+     "testLoop": 46068,
+     "execLoop": 46068
+    },
+    "times": {
+     "match": {
+      "microsecondsPerDocument": 0.271,
+      "samples": [
+       0.271,
+       0.269,
+       0.273,
+       0.271,
+       0.271
+      ]
+     },
+     "matchWithoutTheUFlag": {
+      "microsecondsPerDocument": 0.273,
+      "samples": [
+       0.274,
+       0.273,
+       0.279,
+       0.271,
+       0.273
+      ]
+     },
+     "testLoop": {
+      "microsecondsPerDocument": 0.264,
+      "samples": [
+       0.264,
+       0.263,
+       0.264,
+       0.268,
+       0.263
+      ]
+     },
+     "execLoop": {
+      "microsecondsPerDocument": 0.274,
+      "samples": [
+       0.274,
+       0.275,
+       0.273,
+       0.274,
+       0.273
+      ]
+     }
+    }
+   },
+   {
+    "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "totals": {
+     "match": 40611,
+     "matchWithoutTheUFlag": 40611,
+     "testLoop": 40611,
+     "execLoop": 40611
+    },
+    "times": {
+     "match": {
+      "microsecondsPerDocument": 0.28,
+      "samples": [
+       0.278,
+       0.283,
+       0.284,
+       0.28,
+       0.28
+      ]
+     },
+     "matchWithoutTheUFlag": {
+      "microsecondsPerDocument": 0.267,
+      "samples": [
+       0.267,
+       0.269,
+       0.267,
+       0.267,
+       0.271
+      ]
+     },
+     "testLoop": {
+      "microsecondsPerDocument": 0.271,
+      "samples": [
+       0.28,
+       0.271,
+       0.271,
+       0.273,
+       0.271
+      ]
+     },
+     "execLoop": {
+      "microsecondsPerDocument": 0.279,
+      "samples": [
+       0.268,
+       0.268,
+       0.279,
+       0.285,
+       0.284
+      ]
+     }
+    }
+   },
+   {
+    "pattern": "([a-z]+)+x",
+    "totals": {
+     "match": 69548,
+     "matchWithoutTheUFlag": 69548,
+     "testLoop": 69548,
+     "execLoop": 69548
+    },
+    "times": {
+     "match": {
+      "microsecondsPerDocument": 21.135,
+      "samples": [
+       21.067,
+       21.135,
+       21.122,
+       21.208,
+       21.252
+      ]
+     },
+     "matchWithoutTheUFlag": {
+      "microsecondsPerDocument": 21.234,
+      "samples": [
+       21.234,
+       21.206,
+       21.29,
+       21.525,
+       20.734
+      ]
+     },
+     "testLoop": {
+      "microsecondsPerDocument": 21.514,
+      "samples": [
+       21.769,
+       21.755,
+       21.381,
+       21.514,
+       21.18
+      ]
+     },
+     "execLoop": {
+      "microsecondsPerDocument": 20.99,
+      "samples": [
+       20.99,
+       20.742,
+       20.974,
+       21.633,
+       22.22
+      ]
+     }
+    }
+   }
+  ],
+  "workers": [
+   {
+    "workers": 1,
+    "documents": 100000,
+    "sendingTheDocumentsMs": 18.825,
+    "jsonParse": {
+     "total": 90565,
+     "ms": {
+      "count": 15,
+      "median": 64.685,
+      "p10": 64.06,
+      "p90": 65.07,
+      "min": 63.835,
+      "max": 65.1
+     }
+    },
+    "regExp": [
+     {
+      "pattern": "(the|an?) [a-z]+",
+      "total": 42356,
+      "ms": {
+       "count": 15,
+       "median": 24.645,
+       "p10": 24.375,
+       "p90": 25.105,
+       "min": 24.255,
+       "max": 25.14
+      }
+     },
+     {
+      "pattern": "error",
+      "total": 12482,
+      "ms": {
+       "count": 15,
+       "median": 21.835,
+       "p10": 20.975,
+       "p90": 22.4,
+       "min": 20.63,
+       "max": 22.465
+      }
+     },
+     {
+      "pattern": "[a-z0-9.]+@[a-z.]+",
+      "total": 14555,
+      "ms": {
+       "count": 15,
+       "median": 42.45,
+       "p10": 40.69,
+       "p90": 43.62,
+       "min": 40.56,
+       "max": 43.65
+      }
+     },
+     {
+      "pattern": "\"[a-z]+\":",
+      "total": 1037641,
+      "ms": {
+       "count": 15,
+       "median": 31.515,
+       "p10": 31.175,
+       "p90": 32.115,
+       "min": 31.125,
+       "max": 32.29
+      }
+     },
+     {
+      "pattern": "[A-Z][a-z]+ [A-Z][a-z]+",
+      "total": 23862,
+      "ms": {
+       "count": 15,
+       "median": 12.58,
+       "p10": 12.435,
+       "p90": 12.97,
+       "min": 12.345,
+       "max": 12.98
+      }
+     },
+     {
+      "pattern": "\\d+\\.\\d+",
+      "total": 254601,
+      "ms": {
+       "count": 15,
+       "median": 17.44,
+       "p10": 17.295,
+       "p90": 17.98,
+       "min": 17.09,
+       "max": 18.105
+      }
+     },
+     {
+      "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+      "total": 27809,
+      "ms": {
+       "count": 15,
+       "median": 9.15,
+       "p10": 8.945,
+       "p90": 9.255,
+       "min": 8.945,
+       "max": 9.275
+      }
+     },
+     {
+      "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+      "total": 46068,
+      "ms": {
+       "count": 15,
+       "median": 29.055,
+       "p10": 28.575,
+       "p90": 29.44,
+       "min": 28.45,
+       "max": 29.48
+      }
+     },
+     {
+      "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+      "total": 40611,
+      "ms": {
+       "count": 15,
+       "median": 30.38,
+       "p10": 29.305,
+       "p90": 30.895,
+       "min": 29.2,
+       "max": 30.955
+      }
+     },
+     {
+      "pattern": "([a-z]+)+x",
+      "total": 69548,
+      "ms": {
+       "count": 3,
+       "median": 2227.055,
+       "p10": 2190.085,
+       "p90": 2228.74,
+       "min": 2190.085,
+       "max": 2228.74
+      }
+     }
+    ]
+   },
+   {
+    "workers": 2,
+    "documents": 100000,
+    "sendingTheDocumentsMs": 12.775,
+    "jsonParse": {
+     "total": 90565,
+     "ms": {
+      "count": 15,
+      "median": 31.67,
+      "p10": 31.325,
+      "p90": 31.98,
+      "min": 31.27,
+      "max": 32.05
+     }
+    },
+    "regExp": [
+     {
+      "pattern": "(the|an?) [a-z]+",
+      "total": 42356,
+      "ms": {
+       "count": 15,
+       "median": 12.27,
+       "p10": 12.14,
+       "p90": 12.445,
+       "min": 12.085,
+       "max": 12.46
+      }
+     },
+     {
+      "pattern": "error",
+      "total": 12482,
+      "ms": {
+       "count": 15,
+       "median": 10.96,
+       "p10": 10.785,
+       "p90": 11.185,
+       "min": 10.715,
+       "max": 12.16
+      }
+     },
+     {
+      "pattern": "[a-z0-9.]+@[a-z.]+",
+      "total": 14555,
+      "ms": {
+       "count": 15,
+       "median": 21.515,
+       "p10": 21.22,
+       "p90": 21.835,
+       "min": 21.175,
+       "max": 21.965
+      }
+     },
+     {
+      "pattern": "\"[a-z]+\":",
+      "total": 1037641,
+      "ms": {
+       "count": 15,
+       "median": 15.935,
+       "p10": 15.77,
+       "p90": 16.085,
+       "min": 15.74,
+       "max": 16.27
+      }
+     },
+     {
+      "pattern": "[A-Z][a-z]+ [A-Z][a-z]+",
+      "total": 23862,
+      "ms": {
+       "count": 15,
+       "median": 6.54,
+       "p10": 6.315,
+       "p90": 6.76,
+       "min": 6.28,
+       "max": 6.785
+      }
+     },
+     {
+      "pattern": "\\d+\\.\\d+",
+      "total": 254601,
+      "ms": {
+       "count": 15,
+       "median": 9.585,
+       "p10": 9.415,
+       "p90": 9.71,
+       "min": 9.385,
+       "max": 9.815
+      }
+     },
+     {
+      "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+      "total": 27809,
+      "ms": {
+       "count": 15,
+       "median": 4.795,
+       "p10": 4.68,
+       "p90": 4.895,
+       "min": 4.68,
+       "max": 4.9
+      }
+     },
+     {
+      "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+      "total": 46068,
+      "ms": {
+       "count": 15,
+       "median": 14.43,
+       "p10": 14.25,
+       "p90": 14.79,
+       "min": 14.215,
+       "max": 14.8
+      }
+     },
+     {
+      "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+      "total": 40611,
+      "ms": {
+       "count": 15,
+       "median": 15.395,
+       "p10": 15.21,
+       "p90": 15.625,
+       "min": 15.18,
+       "max": 15.685
+      }
+     },
+     {
+      "pattern": "([a-z]+)+x",
+      "total": 69548,
+      "ms": {
+       "count": 3,
+       "median": 1076.63,
+       "p10": 1072.285,
+       "p90": 1077.28,
+       "min": 1072.285,
+       "max": 1077.28
+      }
+     }
+    ]
+   },
+   {
+    "workers": 4,
+    "documents": 100000,
+    "sendingTheDocumentsMs": 10.855,
+    "jsonParse": {
+     "total": 90565,
+     "ms": {
+      "count": 15,
+      "median": 16.24,
+      "p10": 15.765,
+      "p90": 16.375,
+      "min": 15.645,
+      "max": 16.445
+     }
+    },
+    "regExp": [
+     {
+      "pattern": "(the|an?) [a-z]+",
+      "total": 42356,
+      "ms": {
+       "count": 15,
+       "median": 6.74,
+       "p10": 6.465,
+       "p90": 6.88,
+       "min": 6.435,
+       "max": 7.085
+      }
+     },
+     {
+      "pattern": "error",
+      "total": 12482,
+      "ms": {
+       "count": 15,
+       "median": 6.005,
+       "p10": 5.845,
+       "p90": 6.165,
+       "min": 5.84,
+       "max": 6.175
+      }
+     },
+     {
+      "pattern": "[a-z0-9.]+@[a-z.]+",
+      "total": 14555,
+      "ms": {
+       "count": 15,
+       "median": 11.245,
+       "p10": 11.04,
+       "p90": 11.435,
+       "min": 11.005,
+       "max": 11.55
+      }
+     },
+     {
+      "pattern": "\"[a-z]+\":",
+      "total": 1037641,
+      "ms": {
+       "count": 15,
+       "median": 8.3,
+       "p10": 8.18,
+       "p90": 8.55,
+       "min": 8.085,
+       "max": 8.89
+      }
+     },
+     {
+      "pattern": "[A-Z][a-z]+ [A-Z][a-z]+",
+      "total": 23862,
+      "ms": {
+       "count": 15,
+       "median": 3.63,
+       "p10": 3.45,
+       "p90": 3.69,
+       "min": 3.415,
+       "max": 3.745
+      }
+     },
+     {
+      "pattern": "\\d+\\.\\d+",
+      "total": 254601,
+      "ms": {
+       "count": 15,
+       "median": 4.795,
+       "p10": 4.68,
+       "p90": 4.985,
+       "min": 4.61,
+       "max": 6.165
+      }
+     },
+     {
+      "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+      "total": 27809,
+      "ms": {
+       "count": 15,
+       "median": 2.685,
+       "p10": 2.61,
+       "p90": 2.725,
+       "min": 2.555,
+       "max": 2.735
+      }
+     },
+     {
+      "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+      "total": 46068,
+      "ms": {
+       "count": 15,
+       "median": 7.675,
+       "p10": 7.495,
+       "p90": 7.78,
+       "min": 7.405,
+       "max": 7.995
+      }
+     },
+     {
+      "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+      "total": 40611,
+      "ms": {
+       "count": 15,
+       "median": 7.895,
+       "p10": 7.765,
+       "p90": 8.2,
+       "min": 7.645,
+       "max": 8.205
+      }
+     },
+     {
+      "pattern": "([a-z]+)+x",
+      "total": 69548,
+      "ms": {
+       "count": 4,
+       "median": 544.673,
+       "p10": 539.77,
+       "p90": 552.845,
+       "min": 539.77,
+       "max": 552.845
+      }
+     }
+    ]
+   },
+   {
+    "workers": 8,
+    "documents": 100000,
+    "sendingTheDocumentsMs": 11.405,
+    "jsonParse": {
+     "total": 90565,
+     "ms": {
+      "count": 15,
+      "median": 10.5,
+      "p10": 10.13,
+      "p90": 10.785,
+      "min": 10.03,
+      "max": 11.17
+     }
+    },
+    "regExp": [
+     {
+      "pattern": "(the|an?) [a-z]+",
+      "total": 42356,
+      "ms": {
+       "count": 15,
+       "median": 4.085,
+       "p10": 4.005,
+       "p90": 4.18,
+       "min": 4,
+       "max": 4.195
+      }
+     },
+     {
+      "pattern": "error",
+      "total": 12482,
+      "ms": {
+       "count": 15,
+       "median": 3.48,
+       "p10": 3.385,
+       "p90": 3.565,
+       "min": 3.365,
+       "max": 3.58
+      }
+     },
+     {
+      "pattern": "[a-z0-9.]+@[a-z.]+",
+      "total": 14555,
+      "ms": {
+       "count": 15,
+       "median": 6.285,
+       "p10": 6.235,
+       "p90": 6.42,
+       "min": 6.13,
+       "max": 6.505
+      }
+     },
+     {
+      "pattern": "\"[a-z]+\":",
+      "total": 1037641,
+      "ms": {
+       "count": 15,
+       "median": 4.89,
+       "p10": 4.75,
+       "p90": 5.105,
+       "min": 4.725,
+       "max": 5.125
+      }
+     },
+     {
+      "pattern": "[A-Z][a-z]+ [A-Z][a-z]+",
+      "total": 23862,
+      "ms": {
+       "count": 15,
+       "median": 2.36,
+       "p10": 2.275,
+       "p90": 2.46,
+       "min": 2.27,
+       "max": 2.495
+      }
+     },
+     {
+      "pattern": "\\d+\\.\\d+",
+      "total": 254601,
+      "ms": {
+       "count": 15,
+       "median": 3.085,
+       "p10": 2.98,
+       "p90": 3.185,
+       "min": 2.955,
+       "max": 3.225
+      }
+     },
+     {
+      "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+      "total": 27809,
+      "ms": {
+       "count": 15,
+       "median": 1.81,
+       "p10": 1.75,
+       "p90": 1.905,
+       "min": 1.715,
+       "max": 1.935
+      }
+     },
+     {
+      "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+      "total": 46068,
+      "ms": {
+       "count": 15,
+       "median": 4.78,
+       "p10": 4.61,
+       "p90": 5.035,
+       "min": 4.595,
+       "max": 5.93
+      }
+     },
+     {
+      "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+      "total": 40611,
+      "ms": {
+       "count": 15,
+       "median": 4.93,
+       "p10": 4.795,
+       "p90": 5.08,
+       "min": 4.795,
+       "max": 5.09
+      }
+     },
+     {
+      "pattern": "([a-z]+)+x",
+      "total": 69548,
+      "ms": {
+       "count": 8,
+       "median": 277.265,
+       "p10": 269.545,
+       "p90": 280.105,
+       "min": 269.545,
+       "max": 280.105
+      }
+     }
+    ]
+   },
+   {
+    "workers": 16,
+    "documents": 100000,
+    "sendingTheDocumentsMs": 11.595,
+    "jsonParse": {
+     "total": 90565,
+     "ms": {
+      "count": 15,
+      "median": 6.185,
+      "p10": 5.99,
+      "p90": 6.485,
+      "min": 5.955,
+      "max": 6.53
+     }
+    },
+    "regExp": [
+     {
+      "pattern": "(the|an?) [a-z]+",
+      "total": 42356,
+      "ms": {
+       "count": 15,
+       "median": 2.645,
+       "p10": 2.51,
+       "p90": 2.97,
+       "min": 2.5,
+       "max": 3.57
+      }
+     },
+     {
+      "pattern": "error",
+      "total": 12482,
+      "ms": {
+       "count": 15,
+       "median": 2.15,
+       "p10": 2.1,
+       "p90": 2.39,
+       "min": 2.1,
+       "max": 2.425
+      }
+     },
+     {
+      "pattern": "[a-z0-9.]+@[a-z.]+",
+      "total": 14555,
+      "ms": {
+       "count": 15,
+       "median": 4.01,
+       "p10": 3.87,
+       "p90": 4.335,
+       "min": 3.84,
+       "max": 4.955
+      }
+     },
+     {
+      "pattern": "\"[a-z]+\":",
+      "total": 1037641,
+      "ms": {
+       "count": 15,
+       "median": 3.12,
+       "p10": 2.995,
+       "p90": 3.47,
+       "min": 2.83,
+       "max": 3.485
+      }
+     },
+     {
+      "pattern": "[A-Z][a-z]+ [A-Z][a-z]+",
+      "total": 23862,
+      "ms": {
+       "count": 15,
+       "median": 1.64,
+       "p10": 1.565,
+       "p90": 1.715,
+       "min": 1.54,
+       "max": 1.74
+      }
+     },
+     {
+      "pattern": "\\d+\\.\\d+",
+      "total": 254601,
+      "ms": {
+       "count": 15,
+       "median": 2.08,
+       "p10": 1.97,
+       "p90": 2.845,
+       "min": 1.96,
+       "max": 3.32
+      }
+     },
+     {
+      "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+      "total": 27809,
+      "ms": {
+       "count": 15,
+       "median": 1.385,
+       "p10": 1.355,
+       "p90": 1.58,
+       "min": 1.325,
+       "max": 1.64
+      }
+     },
+     {
+      "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+      "total": 46068,
+      "ms": {
+       "count": 15,
+       "median": 3.32,
+       "p10": 3.08,
+       "p90": 4.305,
+       "min": 2.975,
+       "max": 4.385
+      }
+     },
+     {
+      "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+      "total": 40611,
+      "ms": {
+       "count": 15,
+       "median": 3.18,
+       "p10": 3.025,
+       "p90": 3.37,
+       "min": 2.995,
+       "max": 3.915
+      }
+     },
+     {
+      "pattern": "([a-z]+)+x",
+      "total": 69548,
+      "ms": {
+       "count": 15,
+       "median": 137.84,
+       "p10": 134.335,
+       "p90": 141.175,
+       "min": 133.895,
+       "max": 143.88
+      }
+     }
+    ]
+   }
+  ],
+  "sink": 372267678,
+  "finishedAt": "2026-10-13T18:57:00.516Z",
+  "logLines": [
+   "5040.85 ms: validate, µs per document: jsonParse 0.761, tableLoopIntoOneArrayOf512 1.232, tableLoopIntoEveryDocumentsKinds 1.224",
+   "10559.09 ms: RegExp (the|an?) [a-z]+: matches {\"match\":42356,\"matchWithoutTheUFlag\":42356,\"testLoop\":42356,\"execLoop\":42356}, µs per document match 0.234, matchWithoutTheUFlag 0.233, testLoop 0.223, execLoop 0.235",
+   "16003.145 ms: RegExp error: matches {\"match\":12482,\"matchWithoutTheUFlag\":12482,\"testLoop\":12482,\"execLoop\":12482}, µs per document match 0.21, matchWithoutTheUFlag 0.202, testLoop 0.2, execLoop 0.202",
+   "21795.225 ms: RegExp [a-z0-9.]+@[a-z.]+: matches {\"match\":14555,\"matchWithoutTheUFlag\":14555,\"testLoop\":14555,\"execLoop\":14555}, µs per document match 0.401, matchWithoutTheUFlag 0.372, testLoop 0.403, execLoop 0.4",
+   "27430.47 ms: RegExp \"[a-z]+\":: matches {\"match\":1037641,\"matchWithoutTheUFlag\":1037641,\"testLoop\":1037641,\"execLoop\":1037641}, µs per document match 0.299, matchWithoutTheUFlag 0.298, testLoop 0.309, execLoop 0.364",
+   "32830.545 ms: RegExp [A-Z][a-z]+ [A-Z][a-z]+: matches {\"match\":23862,\"matchWithoutTheUFlag\":23862,\"testLoop\":23862,\"execLoop\":23862}, µs per document match 0.118, matchWithoutTheUFlag 0.115, testLoop 0.116, execLoop 0.118",
+   "38233.57 ms: RegExp \\d+\\.\\d+: matches {\"match\":254601,\"matchWithoutTheUFlag\":254601,\"testLoop\":254601,\"execLoop\":254601}, µs per document match 0.168, matchWithoutTheUFlag 0.16, testLoop 0.156, execLoop 0.177",
+   "43568.975 ms: RegExp \\d\\d\\d\\d-\\d\\d-\\d\\d: matches {\"match\":27809,\"matchWithoutTheUFlag\":27809,\"testLoop\":27809,\"execLoop\":27809}, µs per document match 0.08, matchWithoutTheUFlag 0.073, testLoop 0.077, execLoop 0.082",
+   "49272.965 ms: RegExp (the|an?|some) [a-z]+(ing)?s?: matches {\"match\":46068,\"matchWithoutTheUFlag\":46068,\"testLoop\":46068,\"execLoop\":46068}, µs per document match 0.271, matchWithoutTheUFlag 0.273, testLoop 0.264, execLoop 0.274",
+   "55028.045 ms: RegExp (the|an?|some|this|that|these) [a-z]+(ing|ed|s)? : matches {\"match\":40611,\"matchWithoutTheUFlag\":40611,\"testLoop\":40611,\"execLoop\":40611}, µs per document match 0.28, matchWithoutTheUFlag 0.267, testLoop 0.271, execLoop 0.279",
+   "123086.825 ms: RegExp ([a-z]+)+x: matches {\"match\":69548,\"matchWithoutTheUFlag\":69548,\"testLoop\":69548,\"execLoop\":69548}, µs per document match 21.135, matchWithoutTheUFlag 21.234, testLoop 21.514, execLoop 20.99",
+   "137649.24 ms: 1 workers: documents sent in 18.825 ms, JSON.parse 64.685 ms, RegExp [{\"pattern\":\"(the|an?) [a-z]+\",\"total\":42356,\"ms\":{\"count\":15,\"median\":24.645,\"p10\":24.375,\"p90\":25.105,\"min\":24.255,\"max\":25.14}},{\"pattern\":\"error\",\"total\":12482,\"ms\":{\"count\":15,\"median\":21.835,\"p10\":20.975,\"p90\":22.4,\"min\":20.63,\"max\":22.465}},{\"pattern\":\"[a-z0-9.]+@[a-z.]+\",\"total\":14555,\"ms\":{\"count\":15,\"median\":42.45,\"p10\":40.69,\"p90\":43.62,\"min\":40.56,\"max\":43.65}},{\"pattern\":\"\\\"[a-z]+\\\":\",\"total\":1037641,\"ms\":{\"count\":15,\"median\":31.515,\"p10\":31.175,\"p90\":32.115,\"min\":31.125,\"max\":32.29}},{\"pattern\":\"[A-Z][a-z]+ [A-Z][a-z]+\",\"total\":23862,\"ms\":{\"count\":15,\"median\":12.58,\"p10\":12.435,\"p90\":12.97,\"min\":12.345,\"max\":12.98}},{\"pattern\":\"\\\\d+\\\\.\\\\d+\",\"total\":254601,\"ms\":{\"count\":15,\"median\":17.44,\"p10\":17.295,\"p90\":17.98,\"min\":17.09,\"max\":18.105}},{\"pattern\":\"\\\\d\\\\d\\\\d\\\\d-\\\\d\\\\d-\\\\d\\\\d\",\"total\":27809,\"ms\":{\"count\":15,\"median\":9.15,\"p10\":8.945,\"p90\":9.255,\"min\":8.945,\"max\":9.275}},{\"pattern\":\"(the|an?|some) [a-z]+(ing)?s?\",\"total\":46068,\"ms\":{\"count\":15,\"median\":29.055,\"p10\":28.575,\"p90\":29.44,\"min\":28.45,\"max\":29.48}},{\"pattern\":\"(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? \",\"total\":40611,\"ms\":{\"count\":15,\"median\":30.38,\"p10\":29.305,\"p90\":30.895,\"min\":29.2,\"max\":30.955}},{\"pattern\":\"([a-z]+)+x\",\"total\":69548,\"ms\":{\"count\":3,\"median\":2227.055,\"p10\":2190.085,\"p90\":2228.74,\"min\":2190.085,\"max\":2228.74}}]",
+   "144837.335 ms: 2 workers: documents sent in 12.775 ms, JSON.parse 31.67 ms, RegExp [{\"pattern\":\"(the|an?) [a-z]+\",\"total\":42356,\"ms\":{\"count\":15,\"median\":12.27,\"p10\":12.14,\"p90\":12.445,\"min\":12.085,\"max\":12.46}},{\"pattern\":\"error\",\"total\":12482,\"ms\":{\"count\":15,\"median\":10.96,\"p10\":10.785,\"p90\":11.185,\"min\":10.715,\"max\":12.16}},{\"pattern\":\"[a-z0-9.]+@[a-z.]+\",\"total\":14555,\"ms\":{\"count\":15,\"median\":21.515,\"p10\":21.22,\"p90\":21.835,\"min\":21.175,\"max\":21.965}},{\"pattern\":\"\\\"[a-z]+\\\":\",\"total\":1037641,\"ms\":{\"count\":15,\"median\":15.935,\"p10\":15.77,\"p90\":16.085,\"min\":15.74,\"max\":16.27}},{\"pattern\":\"[A-Z][a-z]+ [A-Z][a-z]+\",\"total\":23862,\"ms\":{\"count\":15,\"median\":6.54,\"p10\":6.315,\"p90\":6.76,\"min\":6.28,\"max\":6.785}},{\"pattern\":\"\\\\d+\\\\.\\\\d+\",\"total\":254601,\"ms\":{\"count\":15,\"median\":9.585,\"p10\":9.415,\"p90\":9.71,\"min\":9.385,\"max\":9.815}},{\"pattern\":\"\\\\d\\\\d\\\\d\\\\d-\\\\d\\\\d-\\\\d\\\\d\",\"total\":27809,\"ms\":{\"count\":15,\"median\":4.795,\"p10\":4.68,\"p90\":4.895,\"min\":4.68,\"max\":4.9}},{\"pattern\":\"(the|an?|some) [a-z]+(ing)?s?\",\"total\":46068,\"ms\":{\"count\":15,\"median\":14.43,\"p10\":14.25,\"p90\":14.79,\"min\":14.215,\"max\":14.8}},{\"pattern\":\"(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? \",\"total\":40611,\"ms\":{\"count\":15,\"median\":15.395,\"p10\":15.21,\"p90\":15.625,\"min\":15.18,\"max\":15.685}},{\"pattern\":\"([a-z]+)+x\",\"total\":69548,\"ms\":{\"count\":3,\"median\":1076.63,\"p10\":1072.285,\"p90\":1077.28,\"min\":1072.285,\"max\":1077.28}}]",
+   "149089.845 ms: 4 workers: documents sent in 10.855 ms, JSON.parse 16.24 ms, RegExp [{\"pattern\":\"(the|an?) [a-z]+\",\"total\":42356,\"ms\":{\"count\":15,\"median\":6.74,\"p10\":6.465,\"p90\":6.88,\"min\":6.435,\"max\":7.085}},{\"pattern\":\"error\",\"total\":12482,\"ms\":{\"count\":15,\"median\":6.005,\"p10\":5.845,\"p90\":6.165,\"min\":5.84,\"max\":6.175}},{\"pattern\":\"[a-z0-9.]+@[a-z.]+\",\"total\":14555,\"ms\":{\"count\":15,\"median\":11.245,\"p10\":11.04,\"p90\":11.435,\"min\":11.005,\"max\":11.55}},{\"pattern\":\"\\\"[a-z]+\\\":\",\"total\":1037641,\"ms\":{\"count\":15,\"median\":8.3,\"p10\":8.18,\"p90\":8.55,\"min\":8.085,\"max\":8.89}},{\"pattern\":\"[A-Z][a-z]+ [A-Z][a-z]+\",\"total\":23862,\"ms\":{\"count\":15,\"median\":3.63,\"p10\":3.45,\"p90\":3.69,\"min\":3.415,\"max\":3.745}},{\"pattern\":\"\\\\d+\\\\.\\\\d+\",\"total\":254601,\"ms\":{\"count\":15,\"median\":4.795,\"p10\":4.68,\"p90\":4.985,\"min\":4.61,\"max\":6.165}},{\"pattern\":\"\\\\d\\\\d\\\\d\\\\d-\\\\d\\\\d-\\\\d\\\\d\",\"total\":27809,\"ms\":{\"count\":15,\"median\":2.685,\"p10\":2.61,\"p90\":2.725,\"min\":2.555,\"max\":2.735}},{\"pattern\":\"(the|an?|some) [a-z]+(ing)?s?\",\"total\":46068,\"ms\":{\"count\":15,\"median\":7.675,\"p10\":7.495,\"p90\":7.78,\"min\":7.405,\"max\":7.995}},{\"pattern\":\"(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? \",\"total\":40611,\"ms\":{\"count\":15,\"median\":7.895,\"p10\":7.765,\"p90\":8.2,\"min\":7.645,\"max\":8.205}},{\"pattern\":\"([a-z]+)+x\",\"total\":69548,\"ms\":{\"count\":4,\"median\":544.673,\"p10\":539.77,\"p90\":552.845,\"min\":539.77,\"max\":552.845}}]",
+   "152790.37 ms: 8 workers: documents sent in 11.405 ms, JSON.parse 10.5 ms, RegExp [{\"pattern\":\"(the|an?) [a-z]+\",\"total\":42356,\"ms\":{\"count\":15,\"median\":4.085,\"p10\":4.005,\"p90\":4.18,\"min\":4,\"max\":4.195}},{\"pattern\":\"error\",\"total\":12482,\"ms\":{\"count\":15,\"median\":3.48,\"p10\":3.385,\"p90\":3.565,\"min\":3.365,\"max\":3.58}},{\"pattern\":\"[a-z0-9.]+@[a-z.]+\",\"total\":14555,\"ms\":{\"count\":15,\"median\":6.285,\"p10\":6.235,\"p90\":6.42,\"min\":6.13,\"max\":6.505}},{\"pattern\":\"\\\"[a-z]+\\\":\",\"total\":1037641,\"ms\":{\"count\":15,\"median\":4.89,\"p10\":4.75,\"p90\":5.105,\"min\":4.725,\"max\":5.125}},{\"pattern\":\"[A-Z][a-z]+ [A-Z][a-z]+\",\"total\":23862,\"ms\":{\"count\":15,\"median\":2.36,\"p10\":2.275,\"p90\":2.46,\"min\":2.27,\"max\":2.495}},{\"pattern\":\"\\\\d+\\\\.\\\\d+\",\"total\":254601,\"ms\":{\"count\":15,\"median\":3.085,\"p10\":2.98,\"p90\":3.185,\"min\":2.955,\"max\":3.225}},{\"pattern\":\"\\\\d\\\\d\\\\d\\\\d-\\\\d\\\\d-\\\\d\\\\d\",\"total\":27809,\"ms\":{\"count\":15,\"median\":1.81,\"p10\":1.75,\"p90\":1.905,\"min\":1.715,\"max\":1.935}},{\"pattern\":\"(the|an?|some) [a-z]+(ing)?s?\",\"total\":46068,\"ms\":{\"count\":15,\"median\":4.78,\"p10\":4.61,\"p90\":5.035,\"min\":4.595,\"max\":5.93}},{\"pattern\":\"(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? \",\"total\":40611,\"ms\":{\"count\":15,\"median\":4.93,\"p10\":4.795,\"p90\":5.08,\"min\":4.795,\"max\":5.09}},{\"pattern\":\"([a-z]+)+x\",\"total\":69548,\"ms\":{\"count\":8,\"median\":277.265,\"p10\":269.545,\"p90\":280.105,\"min\":269.545,\"max\":280.105}}]",
+   "156035.5 ms: 16 workers: documents sent in 11.595 ms, JSON.parse 6.185 ms, RegExp [{\"pattern\":\"(the|an?) [a-z]+\",\"total\":42356,\"ms\":{\"count\":15,\"median\":2.645,\"p10\":2.51,\"p90\":2.97,\"min\":2.5,\"max\":3.57}},{\"pattern\":\"error\",\"total\":12482,\"ms\":{\"count\":15,\"median\":2.15,\"p10\":2.1,\"p90\":2.39,\"min\":2.1,\"max\":2.425}},{\"pattern\":\"[a-z0-9.]+@[a-z.]+\",\"total\":14555,\"ms\":{\"count\":15,\"median\":4.01,\"p10\":3.87,\"p90\":4.335,\"min\":3.84,\"max\":4.955}},{\"pattern\":\"\\\"[a-z]+\\\":\",\"total\":1037641,\"ms\":{\"count\":15,\"median\":3.12,\"p10\":2.995,\"p90\":3.47,\"min\":2.83,\"max\":3.485}},{\"pattern\":\"[A-Z][a-z]+ [A-Z][a-z]+\",\"total\":23862,\"ms\":{\"count\":15,\"median\":1.64,\"p10\":1.565,\"p90\":1.715,\"min\":1.54,\"max\":1.74}},{\"pattern\":\"\\\\d+\\\\.\\\\d+\",\"total\":254601,\"ms\":{\"count\":15,\"median\":2.08,\"p10\":1.97,\"p90\":2.845,\"min\":1.96,\"max\":3.32}},{\"pattern\":\"\\\\d\\\\d\\\\d\\\\d-\\\\d\\\\d-\\\\d\\\\d\",\"total\":27809,\"ms\":{\"count\":15,\"median\":1.385,\"p10\":1.355,\"p90\":1.58,\"min\":1.325,\"max\":1.64}},{\"pattern\":\"(the|an?|some) [a-z]+(ing)?s?\",\"total\":46068,\"ms\":{\"count\":15,\"median\":3.32,\"p10\":3.08,\"p90\":4.305,\"min\":2.975,\"max\":4.385}},{\"pattern\":\"(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? \",\"total\":40611,\"ms\":{\"count\":15,\"median\":3.18,\"p10\":3.025,\"p90\":3.37,\"min\":2.995,\"max\":3.915}},{\"pattern\":\"([a-z]+)+x\",\"total\":69548,\"ms\":{\"count\":15,\"median\":137.84,\"p10\":134.335,\"p90\":141.175,\"min\":133.895,\"max\":143.88}}]"
+  ],
+  "done": true
+ }
+}
