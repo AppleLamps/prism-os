@@ -464,16 +464,17 @@ test('the note says which capacity its text passes, and writes the sentence only
   assert.deepEqual([notice.style['display'], notice.textContent, notice.textWrites], ['none', '', 2])
   // 200 words are 399 segments: the cells hold as many segments as there are cells, i.e. half as many words, and
   // the textarea keeps the whole text.
-  const long = Array.from({length: 200}, (_, index) => index % 2 === 0 ? 'word' : 'another').join(' ')
+  const long = Array.from({length: 200}, () => 'word').join(' ')
   type(long)
   frame()
   assert.deepEqual([notice.style['display'], notice.textContent], ['block', `This text has 399 words and spaces, and the note lays out the first ${notesCapacity}.`])
   assert.equal(shownWords().length, notesCapacity / 2)
   assert.equal(input.value, long)
-  // 60 one-letter words: two lines wrap at the walker's window.
-  type(Array.from({length: 60}, () => 'i').join(' '))
+  // 10 more one-letter words than a line's window holds segments: the first two lines wrap at the window, where
+  // the column would hold 41 such words and the spaces after them.
+  type(Array.from({length: notesOptions.window + 10}, () => 'i').join(' '))
   frame()
-  assert.equal(notice.textContent, 'A line holds 40 words and spaces at most, so 2 lines wrap early.')
+  assert.equal(notice.textContent, `A line holds ${notesOptions.window} words and spaces at most, so 2 lines wrap early.`)
   type('short again')
   frame()
   assert.deepEqual([notice.style['display'], notice.textContent], ['none', ''])

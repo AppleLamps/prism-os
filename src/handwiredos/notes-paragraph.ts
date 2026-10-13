@@ -71,18 +71,20 @@ export type NotesOptions = {
 }
 
 // How many segment cells the flow has. A segment is a word or the space after it,
-// so the starting paragraph's 45 words take 89 cells, and 160 cells hold 80 words.
+// so the starting paragraph's 45 words take 89 cells, and 256 cells hold 128 words.
 // A text with more segments is cut at the capacity, see the machine's notesText in
 // window-manager.ts. Every cell is paid on every evaluation, whether or not the
-// text uses it, and when the machine is built: at 160 cells and a window of 40 the
-// machine builds in about 0.2 s in Bun, and 192 cells with a window of 48 take
-// about 0.3 s, which the page would spend before it shows its windows.
-export const notesCapacity = 160
-// How many segments one line can hold, e.g. 20 words and the 20 spaces after them.
+// text uses it: about 28 operations per cell, and the checks and copies of its two
+// source cells. 256 is also the most cells whose widths the walker's prefix sums
+// hold exactly, see maximumSegmentWidth in notes-walker.ts.
+export const notesCapacity = 256
+// How many segments one line can hold, e.g. 32 words and the 32 spaces after them.
 // The starting paragraph's longest line in the widest column holds 25 segments at
-// the baked widths. A line with more segments wraps after 40, and the flow's
-// windowOverflow output counts such lines.
-export const notesWindow = 40
+// the baked widths, and a 440 px line of two-letter words about 53 in Georgia. A
+// line with more segments wraps after 64, e.g. a line of one-letter words, and the
+// flow's windowOverflow output counts such lines. Each segment of the window costs
+// about 7 operations per band.
+export const notesWindow = 64
 
 // The flow's structural constants, e.g. the walker window and the narrowest slot a
 // band may use. The circuit's size follows from them, and none depends on the text.

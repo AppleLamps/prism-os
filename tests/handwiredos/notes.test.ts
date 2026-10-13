@@ -7,10 +7,10 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {type PreparedTextWithSegments, layoutNextLineRange, prepareWithSegments} from '@chenglou/pretext'
-import {Circuit, validateGrids, validateOneHotGroups} from '../../src/runtime/numeric-ui-core.ts'
+import {Circuit, validateGrids, validateIndexReads, validateOneHotGroups} from '../../src/runtime/numeric-ui-core.ts'
 // The fake canvas is installed before the first prepare call of this file.
 import {testFont} from './fake-canvas.ts'
-import {type FastParagraph, attachFastCircuit, fastWindow, maximumSegmentWidth, segmentGeometry, walkGatheredLines} from '../../src/handwiredos/notes-walker.ts'
+import {type FastParagraph, attachFastCircuit, fastWindow, maximumSegmentWidth, segmentGeometry, walkIndexedLines} from '../../src/handwiredos/notes-walker.ts'
 import {
   type NotesOptions,
   defaultLineFitEpsilon,
@@ -361,10 +361,12 @@ function compareWithReference(machine: Machine, table: Float32Array) {
   return {...comparison, reference: comparison.pretext, words: wordSegments.map(segment => comparison.segments[segment]!)}
 }
 
-// Checks, on the table of every evaluation, every declared and inferred grid, and
-// every declared one-hot group, e.g. the walker's one-hot of each band's line start.
-// The values come from the compiled program, which leaves the wires it removed at 0,
-// and every group's members are live there, since the gather reads read them.
+// Checks the program's declarations on the table of every evaluation: every declared
+// and inferred grid; every declared one-hot group, e.g. each band's one-hot of the
+// windows that block it; and every index read's index, which must be a whole number
+// within its declared range, e.g. the segment that a band's line starts at. The
+// values come from the compiled program, which leaves the wires it removed at 0, and
+// every group's members are live there, since the gather reads read them.
 function checkDeclarationsOnEveryEvaluation(machine: Machine) {
   const counts = {evaluations: 0}
   machine.observe({
@@ -372,6 +374,7 @@ function checkDeclarationsOnEveryEvaluation(machine: Machine) {
       const values = machine.circuit.evaluateTensor(table)
       validateGrids(machine.circuit, values)
       validateOneHotGroups(machine.circuit, values)
+      validateIndexReads(machine.circuit, values)
       counts.evaluations++
     },
   })
@@ -427,7 +430,7 @@ test('the fake canvas measurement reproduces the baked default paragraph, and th
   assert.equal(measured.prepared.segments.length, 89)
   assert.equal(notesWords.length, 45)
   assert.deepEqual(measured.prepared.segments.filter((_, index) => defaultNotesParagraph.breakAfter[index] === 0), notesWords)
-  assert.deepEqual([notesOptions.capacity, notesOptions.window, notesOptions.runLimit, notesOptions.minimumSlotWidth], [160, 40, 1, 80])
+  assert.deepEqual([notesOptions.capacity, notesOptions.window, notesOptions.runLimit, notesOptions.minimumSlotWidth], [256, 64, 1, 80])
   // The starting paragraph's longest line in the widest column holds 25 segments, so fastWindow asks for 26 comparisons.
   assert.equal(fastWindow(defaultNotesParagraph, notesOptions.maximumColumnWidth, epsilon), 26)
   // The fake widths lie on the 1/64 px grid, so the reference and the circuit see the same numbers.
@@ -861,26 +864,29 @@ test('a text with more segments than the cells is cut at the capacity, and the s
   assert.ok(comparison.segments.every(segment => segment.visible === 1))
 }, 60_000)
 
-test('a line with more segments than the window wraps after 40 segments, and windowOverflow counts such lines', () => {
+test('a line with more segments than the window wraps at the window, and windowOverflow counts such lines', () => {
   const machine = machineWithNotesInFront()
   checkDeclarationsOnEveryEvaluation(machine)
-  // 60 one-letter words are 119 segments of 6.34 and 4.375 px. The 440 px column fits 41 words and the 41 spaces after
-  // them, so pretext lays the text out in 2 lines, and the program in 3: two lines of 40 segments, then the other 39.
-  const text = measure(Array.from({length: 60}, () => 'i').join(' '))
-  assert.equal(text.paragraph.widths.length, 119)
+  const {window} = notesOptions
+  // One-letter words are 6.34 px wide and a space 4.375 px, so the 440 px column fits 41 words and the 41 spaces
+  // after them, 82 segments, more than the window. 10 more words than the window holds segments make 2 * window + 19
+  // segments: pretext lays them out in lines of 82 segments, and the program in two lines of `window` segments and
+  // a third with the other 19.
+  const text = measure(Array.from({length: window + 10}, () => 'i').join(' '))
+  assert.equal(text.paragraph.widths.length, 2 * window + 19)
+  assert.ok(window < 82 && 2 * window + 19 <= notesCapacity)
   const comparison = typeAndCompare(machine, text)
   assert.deepEqual(comparison.problems, [])
   assert.equal(comparison.matchesPretext, false)
-  assert.equal(comparison.pretext.lineCount, 2)
-  assert.deepEqual(comparison.pretext.bands.slice(0, 3).map(band => band.lineStart), [0, 82, null])
-  assert.deepEqual(readBands(machine, comparison.values).slice(0, 3).map(band => band.start), [0, 40, 80])
+  assert.deepEqual(comparison.pretext.bands.slice(0, 2).map(band => band.lineStart), [0, 82])
+  assert.deepEqual(readBands(machine, comparison.values).slice(0, 3).map(band => band.start), [0, window, 2 * window])
   assert.deepEqual(
     [comparison.values[machine.output.notes.lineCount], comparison.values[machine.output.notes.windowOverflow], comparison.values[machine.output.notes.truncated]],
     [3, 2, 0],
   )
   assert.ok(comparison.segments.every(segment => segment.visible === 1))
-  // 39 words are within the window, and windowOverflow is 0 again.
-  const shorter = measure(Array.from({length: 20}, () => 'i').join(' '))
+  // Half as many words as the window holds segments are within the window, and windowOverflow is 0 again.
+  const shorter = measure(Array.from({length: window / 2}, () => 'i').join(' '))
   const again = typeAndCompare(machine, shorter)
   assert.deepEqual(again.problems, [])
   assert.deepEqual([again.matchesPretext, again.values[machine.output.notes.windowOverflow], again.values[machine.output.notes.lineCount]], [true, 0, 1])
@@ -1093,7 +1099,7 @@ test('the walker breaks a line at a 1/64 px tie the way pretext does, at either 
     const fc = attachFastCircuit(circuit, unit, {startCursor, widthCells, breakAfterCells}, lineFitEpsilon, 1)
     const bands = 3
     const limit = circuit.constant(lineWidth)
-    const walk = walkGatheredLines(fc, fastWindow(paragraph, lineWidth, lineFitEpsilon), Array.from({length: bands}, () => limit), Array.from({length: bands}, () => unit), arrivedCount)
+    const walk = walkIndexedLines(fc, fastWindow(paragraph, lineWidth, lineFitEpsilon), Array.from({length: bands}, () => limit), Array.from({length: bands}, () => unit), arrivedCount)
     const geometry = segmentGeometry(fc, walk, Array.from({length: bands}, () => circuit.constant(0)), 0, 10)
     const roots = [...walk.starts, walk.lineCount, walk.windowOverflow, ...geometry.x, ...geometry.y, ...geometry.visible]
     const evaluate = circuit.createTensorEvaluator(roots)

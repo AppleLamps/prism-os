@@ -53,7 +53,7 @@
 //   would break such a word between two letters, so the host cuts a run of letters
 //   that is wider than the whole column into shorter segments before it writes them.
 import {type Circuit, type Terms, type Wire, emitMaximum, emitMinimum, emitMultiply, emitRelu, emitSelect, invariant} from '../runtime/numeric-ui-core.ts'
-import {type FastCircuit, attachFastCircuit, integerAtLeast, maximumSegmentWidth, segmentGeometry, walkGatheredLines} from './notes-walker.ts'
+import {type FastCircuit, attachFastCircuit, integerAtLeast, maximumSegmentWidth, segmentGeometry, walkIndexedLines} from './notes-walker.ts'
 import {type CellWires, type SourceTable, constant, input, inputBit, state} from '../runtime/cells.ts'
 import type {FastParagraph} from './notes-walker.ts'
 import type {NotesOptions} from './notes-paragraph.ts'
@@ -291,7 +291,7 @@ export function buildNotes(circuit: Circuit, table: SourceTable, cells: NotesCel
     options.epsilon,
     options.runLimit,
   )
-  const walk = walkGatheredLines(fc, options.window, bands.map(band => band.width), bands.map(band => band.usable), cells.arrivedCount)
+  const walk = walkIndexedLines(fc, options.window, bands.map(band => band.width), bands.map(band => band.usable), cells.arrivedCount)
   const geometry = segmentGeometry(fc, walk, bands.map(band => band.left), options.padding, options.lineHeight)
 
   // A press on the content adds 1 to the count, which starts again at 0 after 255,

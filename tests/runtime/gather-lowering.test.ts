@@ -1228,19 +1228,17 @@ describe('HandwiredOS', () => {
     // selection sums: 4 rank-hit reads over rows, 4 selected-window reads over
     // columns, 4 selected-rank reads over rows. The photo gallery's click
     // selection still gates on a product that is not a provably exact bit, so it
-    // declares nothing. Since September 16, 2026, the Notes flow (notes.ts and
-    // notes-walker.ts) declares 32 more groups, two per line band: the set of other windows that block the
-    // band, one of the 8 subsets of the 3 other windows, and the segment that the
-    // band's line starts at, one of the segment cells. Reads over those groups
-    // brought the total from 12 to 908 while Notes had 89 segment cells and a walker
-    // window of 26. Since October 13, 2026, Notes takes typed text in 160 segment
-    // cells with a window of 40. Each band then has 84 reads: 3 for its slot, 2 at
-    // its line's start, 2 for each of the 39 segments after the start, and 1 for the
-    // comparison that reports a line past the window. 16 bands and the 12 stacking
-    // reads make 1,356.
-    expect(circuit.oneHotGroups.length).toBe(40)
-    expect(statistics.readCount).toBe(1356)
-    expect(statistics.slotCount).toBe(40)
+    // declares nothing. Since September 16, 2026, the Notes flow (notes.ts)
+    // declares one more group per line band: the set of other windows that block the
+    // band, one of the 8 subsets of the 3 other windows, which the band's slot is
+    // read through, 3 reads per band. Until October 13, 2026, notes-walker.ts
+    // declared a second group per band, the segment that the band's line starts at,
+    // and read its tables through it, 908 gather reads in all with 89 segment cells
+    // and a walker window of 26. Now the walker reads its tables with index reads,
+    // so the 16 bands' slot reads and the 12 stacking reads make 60.
+    expect(circuit.oneHotGroups.length).toBe(24)
+    expect(statistics.readCount).toBe(60)
+    expect(statistics.slotCount).toBe(24)
     expect(statistics.storedWeightCount).toBeLessThan(baseline.storedWeightCount)
     console.log(
       `[survey] window-manager: groups=${circuit.oneHotGroups.length}`

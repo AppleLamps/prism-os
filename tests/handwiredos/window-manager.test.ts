@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {type WriteBack, quantizeTimeMs} from '../../src/runtime/host-timing.ts'
-import {validateGrids} from '../../src/runtime/numeric-ui-core.ts'
+import {validateGrids, validateIndexReads} from '../../src/runtime/numeric-ui-core.ts'
 import {defaultLineFitEpsilon, defaultNotesParagraph, notesCapacity, notesOptionsFor} from '../../src/handwiredos/notes-paragraph.ts'
 import type {FastParagraph} from '../../src/handwiredos/notes-walker.ts'
 import {
@@ -353,15 +353,16 @@ function createRandomAction(
 
 // Checks every declared and inferred grid on every evaluation's table, e.g. that
 // stored window geometry stays on the 1/64 px grid, which the hit tests' integer
-// bits rely on. The values come from the compiled program, which leaves the wires
-// it removed at 0: the reference evaluator would also run the masked products
-// that gather lowering replaces, about 100,000 operations for the Notes flow's
-// line walker, on every evaluation.
+// bits rely on, and that every index read's index is a whole number within its
+// declared range, e.g. the segment that a Notes line starts at. The values come
+// from the compiled program, which leaves the wires it removed at 0.
 function checkGridsOnEveryEvaluation(machine: Machine) {
   const counts = {evaluations: 0}
   machine.observe({
     beforeEvaluate(table) {
-      validateGrids(machine.circuit, machine.circuit.evaluateTensor(table))
+      const values = machine.circuit.evaluateTensor(table)
+      validateGrids(machine.circuit, values)
+      validateIndexReads(machine.circuit, values)
       counts.evaluations++
     },
   })
@@ -805,9 +806,11 @@ test('next state is a direct numeric view and runtime atoms remain fixed', () =>
   // below; here we pin the window-manager-specific output wiring and atoms.
   assert.equal(machine.output.windows.length, windowCount * windowOutputField.size)
   assert.equal(machine.output.dockItems.length, windowCount * dockOutputField.size)
+  // Index reads since October 13, 2026: the Notes flow's line walker reads its tables at each line's start with
+  // circuit.indexRead, and each segment reads its line's offset.
   assert.deepEqual(
     [...new Set(machine.circuit.operations.map(operation => operation.kind))].sort(),
-    ['affine', 'boolean', 'reglu'],
+    ['affine', 'boolean', 'index', 'reglu'],
   )
   assert.equal(machine.source[sourceField.downActive], 0)
   assert.equal(machine.source[windowSourceField(0, windowStateField.left)], 54)

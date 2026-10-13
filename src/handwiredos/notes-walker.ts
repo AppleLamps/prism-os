@@ -5,12 +5,19 @@
 // keeps laying out: a segment wider than its line is placed whole, where pretext
 // would break it between two letters, and a line of more segments than the window
 // wraps early. The file also holds the circuit
-// helpers it builds on: exact integer comparisons, integer one-hots and masked
-// reads. Ported from lab/ui-exploration/text-walker's fast-walker.ts and its helpers,
-// through indirect-os-2's trimmed copies, fast-walker.ts and text-kit.ts, which were
+// helpers it builds on: exact integer comparisons and integer steps. Ported from
+// lab/ui-exploration/text-walker's fast-walker.ts and its helpers, through
+// indirect-os-2's trimmed copies, fast-walker.ts and text-kit.ts, which were
 // validated line for line against pretext's layoutNextLineRange; notes.ts builds the
 // Notes flow on it. indirect-os-2 was removed on September 16, 2026, and stays at
 // https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2
+//
+// Each line slot reads the shared tables at its line's start with index reads
+// (circuit.indexRead), the formulation of lab/ui-exploration/text-walker/batch/programs.ts.
+// Until October 13, 2026, each slot built an integer one-hot of its start and read
+// through masked sums, which the compiler lowered to gather reads: the same values,
+// but every masked sum appended one product per segment cell while the machine was
+// built, so the build time grew with cells times window.
 //
 // Shared tables, all computed in the circuit:
 //   S[j]         inclusive prefix sum of widths, a Brent-Kung network (exact for widths on a 1/64 px grid)
@@ -73,8 +80,8 @@ export const maximumSegmentWidth = 512
 const maximumLineWidth = 4096
 // FP32 bound for the comparison score: 64 * span must stay within 2^23.
 const maximumParagraphWidth = 2 ** 17
-// Added to thresholds read for an exhausted start, so nothing fits and the start stays at the end.
-const exhaustedThresholdOffset = 8192
+// Added to the threshold that a slot reads past the end of the cells, so no segment fits there.
+const neverFitsOffset = 8192
 
 function relu(circuit: Circuit, terms: Terms, bias = 0): Wire {
   return circuit.reglu([], 1, terms, bias)
@@ -110,22 +117,18 @@ export function integerAtLeast(circuit: Circuit, terms: Terms, bias: number, thr
   return bit
 }
 
-type OneHot = {
-  // members[p] = [x == low + p]
-  members: Wire[]
-  // [x >= j] as an affine form over the shared relus, for j in low..low + count.
+type IntegerSteps = {
+  // [x >= j] as an affine form over the shared relus, for j from 1 on.
   atLeast: (j: number) => Terms
 }
 
-// One-hot of an integer wire x over positions low..low+count-1. x must lie in low..low+count-1, or
-// equal low+count when allowAllZero is set, which gives all zeros. Uses the hat function
-// relu(x-p+1) - 2 relu(x-p) + relu(x-p-1), so neighboring members share relus: count relus plus
-// count members, about 2 atoms per position.
-function integerOneHot(circuit: Circuit, unit: Wire, x: Wire, low: number, count: number, allowAllZero: boolean): OneHot {
-  // r(j) = relu(x - j) as terms. For j <= low it is x - j itself, because x >= low.
+// [x >= j] for an integer wire x that is at least 0, over the relus relu(x - j). Neighboring
+// thresholds share a relu, so the thresholds 1..count cost about one relu each.
+function integerSteps(circuit: Circuit, x: Wire): IntegerSteps {
   const relus = new Map<number, Wire>()
+  // r(j) = relu(x - j) as terms. r(0) is x itself, because x >= 0.
   const r = (j: number): Terms => {
-    if (j <= low) return j === 0 ? [[x, 1]] : [[x, 1], [unit, -j]]
+    if (j === 0) return [[x, 1]]
     let wire = relus.get(j)
     if (wire === undefined) {
       wire = relu(circuit, [[x, 1]], -j)
@@ -133,28 +136,9 @@ function integerOneHot(circuit: Circuit, unit: Wire, x: Wire, low: number, count
     }
     return [[wire, 1]]
   }
-  const scale = (terms: Terms, coefficient: number): [Wire, number][] =>
-    terms.map(([wire, value]) => [wire, value * coefficient])
-  const members: Wire[] = []
-  for (let position = low; position < low + count; position++) {
-    const member = circuit.roundAffine([
-      ...scale(r(position - 1), 1),
-      ...scale(r(position), -2),
-      ...scale(r(position + 1), 1),
-    ])
-    circuit.assumeRange(member, 0, 1)
-    members.push(member)
-  }
-  circuit.assumeOneHot(members, allowAllZero)
   return {
-    members,
-    atLeast: j => [...scale(r(j - 1), 1), ...scale(r(j), -1)],
+    atLeast: j => [...r(j - 1), ...r(j).map(([wire, coefficient]) => [wire, -coefficient] as const)],
   }
-}
-
-// Sum of bit * value over a declared one-hot group. The compiler lowers it to a gather read.
-function maskedRead(circuit: Circuit, members: readonly Wire[], values: readonly Wire[]): Wire {
-  return circuit.roundAffine(members.map((bit, position) => [circuit.multiply(values[position]!, bit), 1] as const))
 }
 
 function brentKungPrefix(circuit: Circuit, values: readonly Wire[]): Wire[] {
@@ -266,10 +250,11 @@ function anyBit(fc: FastCircuit, bits: readonly Wire[]): Wire {
   return bits.length === 0 ? fc.zero : fc.circuit.roundAffine(bits.map(bit => [bit, 1] as const))
 }
 
-type GatheredWalk = {
+type IndexedWalk = {
   starts: Wire[]
   startPrefixes: Wire[]
-  oneHots: OneHot[]
+  // Per slot: [start >= j] over shared relus, which segmentGeometry reads.
+  steps: IntegerSteps[]
   finalStart: Wire
   // How many slots hold a line of the text.
   lineCount: Wire
@@ -279,8 +264,14 @@ type GatheredWalk = {
   moreLinesThanSlots: Wire
 }
 
-// The line walker with one integer one-hot per line slot and comparisons against that slot's own
-// width. A band whose usable gate is 0 lays out nothing and the start stays put.
+// The line walker: each line slot reads its start's tables with index reads and compares against
+// that slot's own width. A band whose usable gate is 0 lays out nothing and the start stays put.
+//   startPrefix = prefix(start)                        +0 for an exhausted start (start = segmentCount)
+//   fits(o)     = [threshold[start + o] - startPrefix <= lineWidth + epsilon]
+//   next        = nextHead(start) + sum over o of fits(o) * (1 + deltaSkip(start + o)) + segmentCount
+// A position past the last cell reads a threshold of the whole paragraph's width plus 8192 px, so
+// nothing fits there, also for an exhausted start, whose prefix reads +0. An exhausted start reads
+// nextHead = +0 and no fits, so it stays at the end.
 //
 // `arrivedCount` is how many of the segment cells hold text, like the cell of the same name in
 // lab/ui-exploration/streaming-words/stream-walker.ts. The cells after the text hold width 0 and
@@ -292,55 +283,46 @@ type GatheredWalk = {
 // after the last slot comes before the count.
 //
 // The walk doesn't compute each line's painted width, which lab/ui-exploration/text-walker's
-// fast-walker.ts does with one more masked read per window position: Notes has no output for it,
-// since the segments' positions already say where each line ends, and the reads were a third of
-// what the builder appended for the walk.
-export function walkGatheredLines(fc: FastCircuit, window: number, lineWidths: readonly Wire[], usable: readonly Wire[], arrivedCount: Wire): GatheredWalk {
+// fast-walker.ts does with one more read per window position: Notes has no output for it, since
+// the segments' positions already say where each line ends.
+export function walkIndexedLines(fc: FastCircuit, window: number, lineWidths: readonly Wire[], usable: readonly Wire[], arrivedCount: Wire): IndexedWalk {
   const {circuit, unit, segmentCount} = fc
   invariant(Number.isInteger(window) && window >= 2, 'the walker window must be at least 2 segments')
   invariant(usable.length === lineWidths.length, 'one usable bit per line slot')
-  const thresholdMinusOffset = fc.threshold.map(wire => {
-    const shifted = circuit.roundAffine([[wire, 1]], -exhaustedThresholdOffset)
-    circuit.assumeRange(shifted, -exhaustedThresholdOffset, maximumParagraphWidth - exhaustedThresholdOffset)
-    return shifted
-  })
-  const pastEnd = fc.inclusivePrefix[segmentCount - 1]!
-  const shiftedThreshold: Wire[][] = []
-  const shiftedDeltaSkip: Wire[][] = []
-  for (let offset = 1; offset <= window; offset++) {
-    const positions = Array.from({length: segmentCount}, (_, s) => s + offset)
-    shiftedThreshold.push(positions.map(j => j < segmentCount ? thresholdMinusOffset[j]! : pastEnd))
-    shiftedDeltaSkip.push(positions.map(j => j < segmentCount ? fc.deltaSkip(j) : fc.zero))
-  }
-  const nextHead = Array.from({length: segmentCount}, (_, s) => {
+  // The tables, each read at a line's start or a fixed number of segments after it.
+  const prefixTable = Array.from({length: segmentCount}, (_, s) => fc.prefixWire(s))
+  const nextHeadTable = Array.from({length: segmentCount}, (_, s) => {
     const wire = circuit.roundAffine(fc.skipTerms(s + 1), s + 1 - segmentCount)
     circuit.assumeRange(wire, s + 1 - segmentCount, fc.runLimit)
     return wire
   })
-  const prefixAtStart = Array.from({length: segmentCount}, (_, s) => fc.prefixWire(s))
+  const neverFits = circuit.roundAffine([[fc.inclusivePrefix[segmentCount - 1]!, 1]], neverFitsOffset)
+  circuit.assumeRange(neverFits, neverFitsOffset, maximumParagraphWidth + neverFitsOffset)
+  const thresholdTable = [...fc.threshold, neverFits]
+  const deltaSkipTable = [...Array.from({length: segmentCount}, (_, j) => fc.deltaSkip(j)), fc.zero]
   let start: Wire = fc.startCursor
   const starts: Wire[] = []
   const startPrefixes: Wire[] = []
-  const oneHots: OneHot[] = []
+  const steps: IntegerSteps[] = []
   const countTerms: [Wire, number][] = []
   const overflowBits: Wire[] = []
   for (let line = 0; line < lineWidths.length; line++) {
-    const oneHot = integerOneHot(circuit, unit, start, 0, segmentCount, true)
-    oneHots.push(oneHot)
     starts.push(start)
-    const startPrefix = maskedRead(circuit, oneHot.members, prefixAtStart)
+    steps.push(integerSteps(circuit, start))
+    const startPrefix = circuit.indexRead(start, prefixTable, {outOfRange: 'zero'})
     startPrefixes.push(startPrefix)
-    const nextTerms: [Wire, number][] = [[maskedRead(circuit, oneHot.members, nextHead), 1]]
+    const nextTerms: [Wire, number][] = [[circuit.indexRead(start, nextHeadTable, {outOfRange: 'zero'}), 1]]
     for (let offset = 1; offset <= window; offset++) {
-      const threshold = maskedRead(circuit, oneHot.members, shiftedThreshold[offset - 1]!)
-      const fits = fitBit(circuit, unit, [[threshold, 1], [unit, exhaustedThresholdOffset], [startPrefix, -1]], lineWidths[line]!, fc.epsilon)
+      const threshold = circuit.indexReadAffine([[start, 1]], offset, thresholdTable, 'clamp', 'clamp')
+      const fits = fitBit(circuit, unit, [[threshold, 1], [startPrefix, -1]], lineWidths[line]!, fc.epsilon)
       if (offset === window) {
         // [arrivedCount - start >= window + 1]: the segment at start + window is part of the text.
         const arrivedPastWindow = integerAtLeast(circuit, [[arrivedCount, 1], [start, -1]], 0, window + 1)
         overflowBits.push(integerAtLeast(circuit, [[fits, 1], [usable[line]!, 1], [arrivedPastWindow, 1]], 0, 3))
         break
       }
-      nextTerms.push([fits, 1], [circuit.multiply(maskedRead(circuit, oneHot.members, shiftedDeltaSkip[offset - 1]!), fits), 1])
+      const deltaSkip = circuit.indexReadAffine([[start, 1]], offset, deltaSkipTable, 'clamp', 'clamp')
+      nextTerms.push([fits, 1], [circuit.multiply(deltaSkip, fits), 1])
     }
     // [arrivedCount - start >= 1]: the slot's line starts inside the text.
     const startsInText = integerAtLeast(circuit, [[arrivedCount, 1], [start, -1]], 0, 1)
@@ -354,7 +336,7 @@ export function walkGatheredLines(fc: FastCircuit, window: number, lineWidths: r
   return {
     starts,
     startPrefixes,
-    oneHots,
+    steps,
     finalStart: start,
     lineCount: circuit.roundAffine(countTerms),
     windowOverflow: anyBit(fc, overflowBits),
@@ -365,36 +347,33 @@ export function walkGatheredLines(fc: FastCircuit, window: number, lineWidths: r
 type SegmentGeometry = {x: Wire[], y: Wire[], visible: Wire[]}
 
 // Per segment: its x (its slot's left edge plus the width before it on its line), its y, and
-// whether any slot laid it out, from the integer one-hot relus the walker built:
-//   [start_k <= j] = 1 - [start_k >= j + 1]
+// whether any slot laid it out. A segment's line is the last slot that starts at or before it:
+//   [start_k <= j] = 1 - [start_k >= j + 1], over the relus that the walker's steps share
 //   lineIndex(j)  = sum over slots k >= 1 of [start_k <= j]
-//   x(j)          = prefix(j) + sum over k of [start_k <= j] * ((left_k - startPrefix_k) - (left_(k-1) - startPrefix_(k-1)))
-export function segmentGeometry(fc: FastCircuit, walk: GatheredWalk, lefts: readonly Wire[], top: number, lineHeight: number): SegmentGeometry {
+//   x(j)          = prefix(j) + (left - startPrefix) of slot lineIndex(j), one index read
+//   y(j)          = top + lineHeight * lineIndex(j)
+export function segmentGeometry(fc: FastCircuit, walk: IndexedWalk, lefts: readonly Wire[], top: number, lineHeight: number): SegmentGeometry {
   const {circuit, segmentCount} = fc
-  invariant(lefts.length === walk.oneHots.length, 'one left edge per line slot')
-  const offsets = walk.startPrefixes.map((prefix, line) => {
-    const terms: [Wire, number][] = [[prefix, -1], [lefts[line]!, 1]]
-    if (line > 0) terms.push([walk.startPrefixes[line - 1]!, 1], [lefts[line - 1]!, -1])
-    const step = circuit.roundAffine(terms)
-    circuit.assumeRange(step, -maximumParagraphWidth - maximumLineWidth, maximumParagraphWidth + maximumLineWidth)
-    return step
+  invariant(lefts.length === walk.steps.length, 'one left edge per line slot')
+  // Per slot: what its line adds to the prefix of each of its segments.
+  const offsetTable = walk.startPrefixes.map((prefix, line) => {
+    const offset = circuit.roundAffine([[lefts[line]!, 1], [prefix, -1]])
+    circuit.assumeRange(offset, -maximumParagraphWidth - maximumLineWidth, maximumParagraphWidth + maximumLineWidth)
+    return offset
   })
   const x: Wire[] = []
   const y: Wire[] = []
   const visible: Wire[] = []
-  const slotCount = walk.oneHots.length - 1
+  const lastSlot = walk.steps.length - 1
   for (let j = 0; j < segmentCount; j++) {
     const indexTerms: [Wire, number][] = []
-    const xTerms: (readonly [Wire, number])[] = [...fc.prefixTerms(j)]
-    for (let line = 0; line < walk.oneHots.length; line++) {
-      const atLeastNext = walk.oneHots[line]!.atLeast(j + 1)
-      if (line > 0) for (const [wire, coefficient] of atLeastNext) indexTerms.push([wire, -coefficient])
-      const reached = circuit.roundAffine(atLeastNext.map(([wire, coefficient]) => [wire, -coefficient] as const), 1)
-      circuit.assumeRange(reached, 0, 1)
-      xTerms.push([circuit.multiply(offsets[line]!, reached), 1])
+    for (let line = 1; line <= lastSlot; line++) {
+      for (const [wire, coefficient] of walk.steps[line]!.atLeast(j + 1)) indexTerms.push([wire, -coefficient])
     }
-    y.push(circuit.roundAffine(indexTerms.map(([wire, coefficient]) => [wire, coefficient * lineHeight] as const), top + slotCount * lineHeight))
-    x.push(circuit.roundAffine(xTerms))
+    const lineIndex = circuit.roundAffine(indexTerms, lastSlot)
+    circuit.assumeRange(lineIndex, 0, lastSlot)
+    x.push(circuit.roundAffine([...fc.prefixTerms(j), [circuit.indexRead(lineIndex, offsetTable), 1]]))
+    y.push(circuit.roundAffine([[lineIndex, lineHeight]], top))
     visible.push(integerAtLeast(circuit, [[walk.finalStart, 1]], 0, j + 1))
   }
   return {x, y, visible}
