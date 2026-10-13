@@ -349,6 +349,11 @@ export function buildFiles(circuit: Circuit, table: SourceTable, cells: FilesCel
   circuit.assumeGrid(withEnd, 1)
   // JS: afterKeys = keyActive ? clamp(withEnd, 0, rowCount - 1) : afterClick
   const afterKeys = emitSelect(circuit, keyActive, afterClick, emitClampExact(circuit, withEnd, zero, lastRow))
+  // The builder adds the ranges of a selection's two sides, while a selection
+  // returns one side. Each side is a row or -1: with a key, a row of the list, and
+  // otherwise afterClick, which is the stored selection or the row under a
+  // release, and a release selects only a row below rowCount.
+  circuit.assumeRange(afterKeys, -1, rowCapacity - 1)
   circuit.assumeGrid(afterKeys, 1)
   // A list that got shorter drops a selection past its end, and another location
   // starts with no selection, whatever else the evaluation's events did.
@@ -362,8 +367,11 @@ export function buildFiles(circuit: Circuit, table: SourceTable, cells: FilesCel
   circuit.assumeGrid(nextSelected, 1)
 
   // After a key, the nearest scroll position that shows the whole selected row.
-  // JS: revealed = Math.min(Math.max(scroll, (nextSelected + 1) * rowHeight - viewportFloor), nextSelected * rowHeight)
-  const selectedTop = circuit.roundAffine([[nextSelected, rowHeight]])
+  // The row is afterKeys, which is a row whenever a key applies. nextSelected is
+  // -1 instead when the same evaluation's release shows another location, and the
+  // position of row -1, -24 px, would lie outside keyTarget's range below.
+  // JS: revealed = Math.min(Math.max(scroll, (afterKeys + 1) * rowHeight - viewportFloor), afterKeys * rowHeight)
+  const selectedTop = circuit.roundAffine([[afterKeys, rowHeight]])
   const lowest = circuit.roundAffine([[selectedTop, 1], [viewportFloor, -1]], rowHeight)
   const atLeastLowest = emitMaximumExact(circuit, scroll, lowest)
   circuit.assumeGrid(atLeastLowest, scrollGrid)

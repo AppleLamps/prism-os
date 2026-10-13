@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {createEvaluator} from '../../src/runtime/cells.ts'
-import {validateGrids} from '../../src/runtime/numeric-ui-core.ts'
+import {type Circuit, validateGrids} from '../../src/runtime/numeric-ui-core.ts'
 import {
   createFilesCircuit,
   createFilesRenderer,
@@ -211,6 +211,16 @@ function differenceFromReference(output: StandaloneOutput, expected: Reference):
   return undefined
 }
 
+// Every one of `wires` holds a value within its range, declared or inferred. Only
+// this check tests the ranges that files.ts declares on the wires it computes, e.g.
+// 0..2,400,000 on the scroll position after a key.
+function validateRanges(circuit: Circuit, values: Float32Array, wires: Iterable<number> = values.keys()) {
+  for (const wire of wires) {
+    const {minimum, maximum} = circuit.ranges[wire]!
+    if (!(values[wire]! >= minimum && values[wire]! <= maximum)) throw new Error(`wire ${wire} holds ${values[wire]}, outside ${minimum}..${maximum}`)
+  }
+}
+
 const onScrollGrid = (value: number) => Math.floor(value / scrollGrid) * scrollGrid
 const onPixelGrid = (value: number) => Math.floor(value / pixelGrid) * pixelGrid
 
@@ -227,7 +237,7 @@ test('on 60,000 seeded random frames of scroll positions, viewport heights, rele
     clicks: 0, clicksThatChangedTheSelection: 0, clicksBelowTheLastRow: 0, keys: new Map<Key, number>(), keysFromNoSelection: 0,
     keysWhileNotFocused: 0, clickAndKey: 0, scrollRequests: 0, slotOverflows: 0, scrollAtARowEdge: 0, scrollPastTheEnd: 0,
     emptyLists: 0, selectionsPastTheEnd: 0, locationChanges: 0, locationChangesWhileScrolled: 0, clicksOnTheShownLocation: 0,
-    locationChangesWithAKeyOrARelease: 0, shownLocations: new Set<number>(), gridChecks: 0,
+    locationChangesWithAKeyOrARelease: 0, keysWithALocationChange: 0, shownLocations: new Set<number>(), gridChecks: 0,
   }
   const rowCounts = [rowCapacity, rowCapacity, rowCapacity]
   for (let frame = 0; frame < 60_000; frame++) {
@@ -305,12 +315,18 @@ test('on 60,000 seeded random frames of scroll positions, viewport heights, rele
     if (expected.scroll !== scrollTop) counts.scrollPastTheEnd++
     if (rowCount === 0) counts.emptyLists++
     if (stateBefore.selected > rowCount - 1) counts.selectionsPastTheEnd++
-    if (frame % 250 === 0) {
-      // Every declared and inferred grid holds on the evaluated values, and the
-      // compiled program returns the literal instruction evaluator's values.
+    // A key that applies while the same evaluation shows another location: the
+    // program computes the scroll position for the key's row, and then asks for
+    // the top instead.
+    const keyWithLocationChange = locationChanged && expected.keyActive
+    if (keyWithLocationChange) counts.keysWithALocationChange++
+    if (frame % 250 === 0 || keyWithLocationChange) {
+      // Every declared and inferred grid and range holds on the evaluated values,
+      // and the compiled program returns the literal instruction evaluator's values.
       const {circuit} = files.program
       const values = circuit.evaluateReference(table)
       validateGrids(circuit, values)
+      validateRanges(circuit, values)
       const tensorValues = circuit.evaluateTensor(table)
       for (let wire = 0; wire < values.length; wire++) assert.equal(tensorValues[wire], values[wire], `wire ${wire}`)
       counts.gridChecks++
@@ -324,7 +340,7 @@ test('on 60,000 seeded random frames of scroll positions, viewport heights, rele
     ['keysWhileNotFocused', 1_000], ['clickAndKey', 3_000], ['scrollRequests', 5_000], ['slotOverflows', 5_000],
     ['scrollAtARowEdge', 10_000], ['scrollPastTheEnd', 10_000], ['emptyLists', 1_000], ['selectionsPastTheEnd', 1_000],
     ['locationChanges', 2_000], ['locationChangesWhileScrolled', 1_500], ['clicksOnTheShownLocation', 1_000],
-    ['locationChangesWithAKeyOrARelease', 1_000], ['gridChecks', 240],
+    ['locationChangesWithAKeyOrARelease', 1_000], ['keysWithALocationChange', 500], ['gridChecks', 740],
   ] as const) {
     assert.ok(counts[name] >= least, `${counts[name]} ${name}, expected at least ${least}`)
   }
@@ -953,15 +969,18 @@ test('with more rows in view than DOM slots, 64 rows get a node and slotOverflow
   assert.deepEqual(rows.map(row => row.row), Array.from({length: slotCount}, (_, index) => 1200 / rowHeight - overscanRows + index))
 })
 
-test('HandwiredOS with Files builds no sign cascade, and every declared and inferred grid holds on each evaluation of a Files session', () => {
+test('HandwiredOS with Files builds no sign cascade, and every declared and inferred grid and range holds on each evaluation of a Files session', () => {
   const machine = createWindowManagerMachine()
   for (const cell of machine.cells.files.rowCounts) machine.source[cell] = rowCapacity
   assert.equal(machine.circuit.roundingPoints().filter(point => point.kind === 'sign cascade').length, 0)
   let evaluations = 0
-  // The compiled program's values, with 0 for the wires that the compiler removed.
+  // The compiled program's values, with 0 for the wires that the compiler removed,
+  // so the ranges are checked on the wires that the program kept.
   machine.observe({
     beforeEvaluate(table) {
-      validateGrids(machine.circuit, machine.circuit.evaluateTensor(table))
+      const values = machine.circuit.evaluateTensor(table)
+      validateGrids(machine.circuit, values)
+      validateRanges(machine.circuit, values, machine.tensorProgram.wireOrder)
       evaluations++
     },
   })
