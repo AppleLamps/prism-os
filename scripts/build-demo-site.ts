@@ -12,8 +12,8 @@
 // 4. Check the result, and fail when a page is missing, when a page loads a file or links to a page that isn't in
 //    site/, when a page loads anything from another host, or when a URL starts with "/". The site is served under
 //    a path prefix, e.g. https://example.com/handwired/, where a URL like "/os/" leaves the site. The check reads
-//    the HTML and CSS files. scripts/check-demo-site.ts loads the pages in a browser, which also covers what the
-//    scripts request while they run.
+//    the HTML and CSS files, and the CSS inside the HTML, e.g. a style attribute. scripts/check-demo-site.ts loads
+//    the pages in a browser, which also covers what the scripts request while they run.
 import {createHash} from 'node:crypto'
 import {existsSync} from 'node:fs'
 import {mkdir, readdir, readFile, rm, rmdir, stat, writeFile} from 'node:fs/promises'
@@ -107,20 +107,27 @@ async function movePage(source: string, sitePath: string) {
 
 // Every URL of a built HTML or CSS file, with the text around it for the report.
 type FoundUrl = {url: string, where: string, loadsAFile: boolean, hidden: boolean}
-function urlsOf(name: string, text: string): FoundUrl[] {
+function urlsOfCss(css: string): FoundUrl[] {
   const urls: FoundUrl[] = []
-  if (name.endsWith('.html')) {
-    for (const [tag, tagName] of text.replace(/<!--[\s\S]*?-->/g, '').matchAll(/<([a-z][a-z0-9]*)\b[^>]*>/gi)) {
-      for (const [, url] of tag.matchAll(/\b(?:src|href|action|poster)="([^"]*)"/g)) {
-        urls.push({url: url!, where: tag, loadsAFile: tagName!.toLowerCase() !== 'a', hidden: /\shidden(?=[\s>=])/.test(tag)})
-      }
+  // An inline image can hold a url() of its own, e.g. url(%23g) inside an inline SVG, so inline images go first.
+  const withoutInlineImages = css.replace(/url\(\s*(?:"data:[^"]*"|'data:[^']*'|data:[^)]*)\s*\)/g, '')
+  for (const [whole, url] of withoutInlineImages.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)) urls.push({url: url!, where: whole, loadsAFile: true, hidden: false})
+  for (const [whole, url] of withoutInlineImages.matchAll(/@import\s*["']([^"']+)["']/g)) urls.push({url: url!, where: whole, loadsAFile: true, hidden: false})
+  return urls
+}
+function urlsOf(name: string, text: string): FoundUrl[] {
+  if (!name.endsWith('.html')) return urlsOfCss(text)
+  const urls: FoundUrl[] = []
+  const html = text.replace(/<!--[\s\S]*?-->/g, '')
+  for (const [tag, tagName] of html.matchAll(/<([a-z][a-z0-9]*)\b[^>]*>/gi)) {
+    for (const [, url] of tag.matchAll(/\b(?:src|href|action|poster)="([^"]*)"/g)) {
+      urls.push({url: url!, where: tag, loadsAFile: tagName!.toLowerCase() !== 'a', hidden: /\shidden(?=[\s>=])/.test(tag)})
     }
-  } else {
-    // An inline image can hold a url() of its own, e.g. url(%23g) inside an inline SVG, so inline images go first.
-    const withoutInlineImages = text.replace(/url\(\s*(?:"data:[^"]*"|'data:[^']*'|data:[^)]*)\s*\)/g, '')
-    for (const [whole, url] of withoutInlineImages.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)) urls.push({url: url!, where: whole, loadsAFile: true, hidden: false})
-    for (const [whole, url] of withoutInlineImages.matchAll(/@import\s*["']([^"']+)["']/g)) urls.push({url: url!, where: whole, loadsAFile: true, hidden: false})
+    // The CSS that a tag carries, e.g. style="background: url(/photo.webp)".
+    for (const [, css] of tag.matchAll(/\sstyle="([^"]*)"/g)) urls.push(...urlsOfCss(css!))
   }
+  // The CSS that the page carries in <style> elements, which Bun leaves as written.
+  for (const [, css] of html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)) urls.push(...urlsOfCss(css!))
   return urls
 }
 
