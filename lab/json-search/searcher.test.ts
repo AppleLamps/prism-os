@@ -87,7 +87,7 @@ describe('the searcher on the CPU', () => {
     expect(searched(await searcher.search({pattern: 'example\\.com'})).states).toBe(16)
     expect(larger.matchCounts.length).toBe(texts.length)
     expect(await searcher.search({pattern: 'a'.repeat(32)})).toEqual({status: 'tooLarge', pattern: 'a'.repeat(32), messages: ['the pattern needs 33 states, and the program holds 32']})
-    expect(await searcher.search({pattern: '(a'})).toEqual({status: 'syntaxError', pattern: '(a', message: 'unterminated group', position: 0})
+    expect(await searcher.search({pattern: '(a'})).toEqual({status: 'syntaxError', pattern: '(a', message: 'this group is never closed', position: 0})
     expect(searcher.programs().map(program => [program.name, program.operations])).toEqual([
       ['JSON highlighter', [37, 17]], ['regex search, 8 states', [8, 151, 92]], ['regex search, 32 states', [32, 1159, 1124]], ['regex search, 16 states', [16, 359, 308]],
     ])
