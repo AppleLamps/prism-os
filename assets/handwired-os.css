@@ -109,12 +109,14 @@ body {
 
 /* Things to try, printed on the desk's lower right corner. Windows pass over it. The
    windows' first arrangement, see arrangement.ts, leaves this corner free on a viewport of
-   at least 1100 × 850 px. */
+   at least 1100 × 850 px: the list's five lines and its label are 124 px tall and end
+   12 px above the dock's strip, so at 850 px of height the label starts 22 px under
+   Photos. */
 .desk-legend {
   position: absolute;
   z-index: 0;
   right: 32px;
-  bottom: calc(var(--dock-height) + 28px);
+  bottom: calc(var(--dock-height) + 12px);
   /* As wide as its longest line, in whatever font the system has. */
   width: max-content;
   max-width: 440px;
@@ -138,11 +140,11 @@ body {
 
 /* Where the list is shown, the arcs behind it fade to a fifth, so no arc strikes through
    a word. The clearing is an ellipse around the list's middle, which lies 218 px from the
-   canvas's right edge and 151 px above its bottom. The two clearings multiply, which is
+   canvas's right edge and 144 px above its bottom. The two clearings multiply, which is
    what mask-composite: intersect does, and source-in is the same under its older name. */
 @media (min-width: 1100px) and (min-height: 850px) {
   .desk-wiring {
-    --legend-clearing: radial-gradient(330px 140px at calc(100% - 218px) calc(100% - 151px), rgb(0 0 0 / 0.2) 70%, #000);
+    --legend-clearing: radial-gradient(340px 160px at calc(100% - 218px) calc(100% - 144px), rgb(0 0 0 / 0.2) 70%, #000);
     -webkit-mask-image: var(--dock-clearing), var(--legend-clearing);
     mask-image: var(--dock-clearing), var(--legend-clearing);
     -webkit-mask-composite: source-in;
