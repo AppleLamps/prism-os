@@ -12,11 +12,11 @@ type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 // How many frames the chart shows.
 const frameCapacity = 60
 
-// The program's operations by kind, e.g. {affine: 5_605, gatherReads: 908, reglu:
-// 7_214, boolean: 740, indexReads: 0}. A gather read is an affine operation that sums
-// values masked by a one-hot selection, which the compiler turned into one read of
-// the selected value. So a count of affine operations in the program as it was
-// built is affine + gatherReads.
+// The program's operations by kind, e.g. {affine: 5_413, gatherReads: 908, reglu:
+// 7_022, boolean: 676, indexReads: 0} for HandwiredOS with the baked Notes paragraph.
+// A gather read is an affine operation that sums values masked by a one-hot
+// selection, which the compiler turned into one read of the selected value. So a
+// count of affine operations in the program as it was built is affine + gatherReads.
 type OperationKinds = {
   affine: number
   gatherReads: number

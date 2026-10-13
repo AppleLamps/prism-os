@@ -21,8 +21,11 @@ body {
   height: 100%;
 }
 
-/* The desk's color also shows where a touch pulls the page past its edge. */
-html {
+/* The desk's color also shows where a touch pulls the page past its edge. The selector is
+   :root, which outranks site.css's html rule in either order of the two stylesheets: Bun's
+   development server links a page's stylesheets in reverse, and bun build keeps the page's
+   order, so a rule here that replaces one of site.css needs the more specific selector. */
+:root {
   background: var(--desk);
 }
 
@@ -265,10 +268,12 @@ body {
   border-radius: calc(var(--radius-3) - var(--maximized) * 8px);
   /* --sheet with focus, a step toward --paper without. */
   background: color-mix(in srgb, var(--sheet) calc(86% + var(--focused) * 14%), var(--paper));
-  /* --shadow-2 without focus and --shadow-3 with it, written out so the two can mix. */
+  /* --shadow-2 without focus and --shadow-3 with it, written out so the two can mix.
+     --shadow-ink is the shadows' color as channels. The value after the comma is that
+     color again, for a site.css from before the token was added. */
   box-shadow:
-    0 calc(1px + var(--focused) * 1px) calc(2px + var(--focused) * 2px) rgb(60 42 22 / calc(0.08 + var(--focused) * 0.02)),
-    0 calc(10px + var(--focused) * 18px) calc(28px + var(--focused) * 36px) calc(-8px - var(--focused) * 8px) rgb(60 42 22 / calc(0.24 + var(--focused) * 0.14));
+    0 calc(1px + var(--focused) * 1px) calc(2px + var(--focused) * 2px) rgb(var(--shadow-ink, 60 42 22) / calc(0.08 + var(--focused) * 0.02)),
+    0 calc(10px + var(--focused) * 18px) calc(28px + var(--focused) * 36px) calc(-8px - var(--focused) * 8px) rgb(var(--shadow-ink, 60 42 22) / calc(0.24 + var(--focused) * 0.14));
   /* The program scales a window around its center while it flies to or from the dock. */
   transform-origin: 50% 50%;
 }
@@ -331,7 +336,9 @@ body {
   transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
 }
 
-/* The glyph is a mask, so it takes the button's color. */
+/* The glyph is a mask, so it takes the button's color. The line and the square are 1 px on
+   whole pixels. The cross is 1.25 px, because a diagonal 1 px stroke is antialiased and
+   would look lighter than the two glyphs beside it. */
 .window-button::before {
   content: "";
   position: absolute;
@@ -357,7 +364,7 @@ body {
 }
 
 .window-button.close {
-  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.75 4.75l8.5 8.5m0-8.5l-8.5 8.5' fill='none' stroke='%23000' stroke-linecap='round'/%3E%3C/svg%3E");
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.75 4.75l8.5 8.5m0-8.5l-8.5 8.5' fill='none' stroke='%23000' stroke-width='1.25' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 .window-button:hover {
@@ -391,9 +398,9 @@ body {
   overflow: hidden;
 }
 
-/* The grip is an arc around the corner's center, 3 px inside the frame's edge. The program's
-   grip is the frame's lower right 24 px square, border included, so the box starts 1 px
-   outside the padding box. A maximized window can't be resized, so its grip has no size. */
+/* The grip is an arc around the corner's center, 3 px inside the border. The program's grip
+   is the frame's lower right 24 px square, border included, so the box starts 1 px outside
+   the padding box. A maximized window can't be resized, so its grip has no size. */
 .resize-grip {
   position: absolute;
   right: -1px;
@@ -414,7 +421,7 @@ body {
   background: var(--ink-3);
   -webkit-mask: var(--glyph) center / 100% 100% no-repeat;
   mask: var(--glyph) center / 100% 100% no-repeat;
-  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M21 12A9 9 0 0 1 12 21' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 12A8 8 0 0 1 12 20' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 /* The kinds of the program's operations, in Monitor's bar and in Files' list. Copper,
@@ -913,14 +920,14 @@ body {
   pointer-events: none;
 }
 
-/* The hairline is inside the photo, so a pale photo keeps its edge on the sheet. The open
-   photo floats: --shadow-2, scaled by --focused. */
+/* A photo's corner is half the window's, 6 px. The hairline is inside the photo, so a pale
+   photo keeps its edge on the sheet. The open photo floats: --shadow-2, scaled by --focused. */
 .photos-photo {
-  border-radius: 6px;
+  border-radius: calc(var(--radius-3) / 2);
   box-shadow:
     inset 0 0 0 1px var(--edge),
-    0 calc(var(--focused) * 1px) calc(var(--focused) * 2px) rgb(60 42 22 / 0.08),
-    0 calc(var(--focused) * 10px) calc(var(--focused) * 28px) calc(var(--focused) * -8px) rgb(60 42 22 / 0.24);
+    0 calc(var(--focused) * 1px) calc(var(--focused) * 2px) rgb(var(--shadow-ink, 60 42 22) / 0.08),
+    0 calc(var(--focused) * 10px) calc(var(--focused) * 28px) calc(var(--focused) * -8px) rgb(var(--shadow-ink, 60 42 22) / 0.24);
 }
 
 /* The open photo's name, on a paper label. */
