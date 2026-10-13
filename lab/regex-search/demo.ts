@@ -49,12 +49,13 @@ const defaultChoice: Choice = {form: 'data', states: 12, textLength: 768}
 const classes = 16
 const boundaries = 32
 
-// Form (a)'s operations after compiling, within 0.1% at every choice above, e.g. 661,712 at 16 states and 1,024 code
-// points. README.md derives the formula.
-const dataOperations = ({states, textLength}: Choice) => textLength * (2 * states * states + 4 * states + 71)
-// The page refuses to build a larger form (a). Building takes about 1.8 µs and 0.5 KB of heap per operation in
-// Chrome, so 1 million operations hold the tab for about 2 s and 500 MB, and 32 states at 1,024 code points, 2.3
-// million operations, for 4.3 s and 1.3 GB.
+// Form (a)'s operations after compiling: 2S² + 4S + 71 per code point, which README.md derives, less 3S(S + 1) at the
+// ends of the text. The compiled programs have exactly this many at the 13 choices that the page builds, e.g. 312,108
+// at 12 states and 768 code points, and README.md's 2,297,760 at 32 states and 1,024.
+const dataOperations = ({states, textLength}: Choice) => textLength * (2 * states * states + 4 * states + 71) - 3 * states * (states + 1)
+// The page refuses to build a larger form (a). In Chrome 155 on an Apple M5 Max, a build held the main thread for about
+// 1.9 µs and left about 0.55 KB of heap per operation, e.g. 1.28 s and 364 MB at 661,712 operations, so 1 million
+// operations are about 2 s and 550 MB.
 const maximumOperations = 1_000_000
 
 function choiceOf(form: string | null, states: string | null, textLength: string | null): Choice {
@@ -444,7 +445,7 @@ function mountRegexSearch(document: Document, window: Window) {
       st.events.firstInputTime = null
       st.events.kind = null
       st.events.tryPattern = null
-      if (drawnInputs.width === width) return false
+      if (drawnInputs.width === width && pattern === typedPattern) return false
     }
     const searched = drawnInputs === null ? search(pattern, text, choice, choiceKey, frameStart) : null
     const view = searched?.view ?? drawnInputs?.view
@@ -516,7 +517,8 @@ function mountRegexSearch(document: Document, window: Window) {
     const afterDom = window.performance.now()
 
     if (searched === null) {
-      // The same inputs at another width: only the rectangles moved.
+      // The same inputs at another width, where only the rectangles moved, or an example put back into a field that
+      // was edited in the same frame.
       invariant(drawnInputs !== null, 'a frame that didn\'t search draws the last frame again')
       st.drawn = {...drawnInputs, width}
       return false
