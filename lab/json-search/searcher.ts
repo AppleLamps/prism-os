@@ -116,6 +116,9 @@ export type Searcher = {
   programs: () => ProgramDescription[]
   // What the device granted, and how many documents fit one buffer. Undefined on the CPU.
   limits: {maxStorageBufferBindingSize: number, maxBufferSize: number, maxDocuments: number, hasTimestamps: boolean} | undefined
+  // Runs the highlighter over every document again, e.g. to time it. The documents don't change, so the values are
+  // the ones `validation` already holds.
+  validate: (options?: {timestamps?: boolean}) => Promise<{validation: Validation, evaluateMs: number, passMs: number | undefined}>
   // The display kinds of a window's documents, 512 per document.
   kinds: (window: DocumentWindow) => Promise<Float32Array>
   // Resolves to undefined when a newer request replaced this one.
@@ -299,6 +302,11 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
       {name: 'JSON highlighter', operations: describeLoop(json.loop).map(stage => stage.operations), statements: undefined, compileMs: undefined},
       ...[...searches].map(([states, {built}]) => ({name: `regex search, ${states} states`, operations: describeLoop(built.loop).map(stage => stage.operations), statements: undefined, compileMs: undefined})),
     ],
+    validate() {
+      const validateStarted = performance.now()
+      for (let row = 0; row < documentCount; row++) jsonRunner.run([cells], row, [summary, kinds], row, row)
+      return Promise.resolve({validation: validationOf(summary, documentCount), evaluateMs: performance.now() - validateStarted, passMs: undefined})
+    },
     kinds: window => {
       checkWindow(window, documentCount, documentCount)
       return Promise.resolve(kinds.slice(window.firstDocument * positions, (window.firstDocument + window.documentCount) * positions))
@@ -437,6 +445,10 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
       {name: 'JSON highlighter', operations: describeLoop(json.loop).map(stage => stage.operations), statements: jsonShader.statementCount, compileMs: jsonRunner.compileMs},
       ...[...built].map(([states, search]) => ({name: `regex search, ${states} states`, operations: describeLoop(search.built.loop).map(stage => stage.operations), statements: search.statements, compileMs: search.runner.compileMs})),
     ],
+    async validate({timestamps = false} = {}) {
+      const evaluation = await jsonRunner.evaluate({count: documentCount, window: everyDocument, readbacks: [{group: 0, ...everyDocument}], ...(timestamps && jsonRunner.hasTimestamps ? {timestamps: true} : {})})
+      return {validation: validationOf(evaluation.outputs[0]!, documentCount), evaluateMs: evaluation.totalMs, passMs: evaluation.passMs}
+    },
     kinds: window => {
       checkWindow(window, documentCount, documentCount)
       return window.documentCount === 0 ? Promise.resolve(new Float32Array(0)) : jsonRunner.read({group: 1, ...window})

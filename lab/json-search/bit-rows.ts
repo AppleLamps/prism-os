@@ -48,9 +48,13 @@ export function bitRowTables(compiled: CompiledPattern, states: number) {
 
 export type BitRowTables = ReturnType<typeof bitRowTables>
 
+// The display kinds of one document, and which of them a search reads, for a search like search-step.ts's masked one.
+export type KindMask = {kinds: ArrayLike<number>, offset: number, searchable: ArrayLike<number>}
+
 // A plain JavaScript search over the tables: the class of every code point, the reverse pass, then the forward pass,
 // over the text's first `positions` code points. It returns the number of matches, and writes each position's mark
-// into `marks` when given: 0 outside a match, 1 inside one, 2 at a match's first code point.
+// into `marks` when given: 0 outside a match, 1 inside one, 2 at a match's first code point. With a mask, a code point
+// whose display kind isn't searchable gets the class that no step reads.
 export function createBitRowSearch({tables, states, regionsOffset, rowsOffset, columnsOffset, acceptingOffset}: BitRowTables, positions: number) {
   const reach = new Uint32Array(positions)
   const classes = new Uint8Array(positions)
@@ -62,11 +66,17 @@ export function createBitRowSearch({tables, states, regionsOffset, rowsOffset, c
   }
   // Most text is ASCII, so those classes are looked up.
   const asciiClasses = Uint8Array.from({length: 128}, (_, codePoint) => classOf(codePoint))
-  return (text: string, marks?: Uint8Array, marksOffset = 0) => {
+  return (text: string, marks?: Uint8Array, marksOffset = 0, mask?: KindMask) => {
     const unitCount = text.length
     let length = 0
     for (let unit = 0; unit < unitCount && length < positions; unit++) {
       const codeUnit = text.charCodeAt(unit)
+      if (mask !== undefined && mask.searchable[mask.kinds[mask.offset + length]!] !== 1) {
+        // A surrogate pair is one code point, with one kind.
+        if (codeUnit >= 0xd800 && codeUnit <= 0xdbff && unit + 1 < unitCount && (text.charCodeAt(unit + 1) & 0xfc00) === 0xdc00) unit++
+        classes[length++] = classCapacity
+        continue
+      }
       if (codeUnit < 128) {
         classes[length++] = asciiClasses[codeUnit]!
         continue
