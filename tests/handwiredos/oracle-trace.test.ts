@@ -158,7 +158,7 @@ describe('production circuits match the reference interpreter across scripted tr
 
     // Phase 3: window controls, including the boundary-offset edges that the
     // product test exercises (just inside the visible control rectangle).
-    for (const windowIndex of [3, 1, 2, 0]) {
+    for (const windowIndex of [2, 1, 0]) {
       for (const control of ['maximize', 'minimize', 'close'] as const) {
         const point = controlPoint(values, windowIndex, control)
         const edge = control === 'maximize' ? 0.5 : control === 'minimize' ? -0.4 : 0.3
@@ -299,24 +299,26 @@ describe('production circuits match the reference interpreter across scripted tr
         }
         expect(machine.source[windowSourceField(0, windowStateField.maximized)]).toBe(maximized ? 1 : 0)
         // The content box starts 1 px inside the frame and below the title bar. The
-        // list viewport starts right of the 132 px sidebar and below the 28 px header
-        // row, and the sidebar's 28 px locations start 8 px in and 40 px down. A
-        // maximized window's rectangle isn't stored: it is at 12,48.
+        // list viewport starts right of the 152 px sidebar and below the 28 px header
+        // row, and ends above the 32 px footer and left of the 16 px scrollbar strip.
+        // The sidebar's locations are 136×24, 8 px in and from 28 px down. A maximized
+        // window's rectangle isn't stored: it is at 12,48.
         const window = projectWindow(values, 0)
         const contentLeft = maximized ? 13 : machine.source[windowSourceField(0, windowStateField.left)]! + 1
         const contentTop = (maximized ? 48 : machine.source[windowSourceField(0, windowStateField.top)]!)
           + machine.source[windowSourceFieldTable.titleHeight]! + 1
-        const listLeft = contentLeft + 132
+        const listLeft = contentLeft + 152
         const listTop = contentTop + 28
-        const listHeight = window.contentHeight - 28
+        const listHeight = window.contentHeight - 28 - 32
         for (const [index, scrollTop] of scrollPositions.entries()) {
-          const location = {x: contentLeft + 8 + 58, y: contentTop + 40 + 28 * (index % 3) + 14}
+          const location = {x: contentLeft + 8 + 68, y: contentTop + 28 + 24 * (index % 3) + 12}
           machine.pointerDown(location.x, location.y)
           machine.pointerUp(location.x, location.y)
           values = advance(irregularFrameTime(random))
           expect(machine.source[filesSourceField.location[index % 3]!]).toBe(1)
           filesScrollTop = scrollTop
-          const x = listLeft + 20 + random() * 100
+          // The list of a window at its minimum size is 110 px wide and 84 px tall.
+          const x = listLeft + 10 + random() * 90
           const y = listTop + 0.5 + random() * (listHeight - 30)
           machine.pointerDown(x, y)
           values = advance(irregularFrameTime(random))

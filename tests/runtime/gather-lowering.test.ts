@@ -1216,31 +1216,32 @@ describe('seeded circuits', () => {
 // reports, and checks the lowered program against the reference evaluator on
 // every wire across an interaction trace.
 describe('HandwiredOS', () => {
-  test('window-manager lowers its 12 stacking reads and its Notes flow reads, and stays exact in use', () => {
+  test('window-manager lowers its Notes flow reads, and stays exact in use', () => {
     const machine = createWindowManagerMachine()
     const {circuit} = machine
     const statistics = gatherStatistics(machine.tensorProgram)
     const baseline = gatherStatistics(
       circuit.compileTensorProgram(Array.from(machine.tensorProgram.roots, asWire), false),
     )
-    // The source table declares the 4 stack rows and 4 stack columns as one-hot
-    // groups with cells.ts's permutation, which lowers the frontmost-window
-    // selection sums: 4 rank-hit reads over rows, 4 selected-window reads over
-    // columns, 4 selected-rank reads over rows. The photo gallery's click
-    // selection still gates on a product that is not a provably exact bit, so it
-    // declares nothing. Since September 16, 2026, the Notes flow (notes.ts)
-    // declares one more group per line band: the set of other windows that block the
-    // band, one of the 8 subsets of the 3 other windows, which the band's slot is
-    // read through, 3 reads per band. Until October 13, 2026, notes-walker.ts
-    // declared a second group per band, the segment that the band's line starts at,
-    // and read its tables through it, 908 gather reads in all with 89 segment cells
-    // and a walker window of 26. Now the walker reads its tables with index reads,
-    // so the 16 bands' slot reads and the 12 stacking reads make 60. The Files list
-    // (files.ts), also in the program since October 13, 2026, declares no group: only
-    // the table's validator checks its three location bits, so it adds no read.
-    expect(circuit.oneHotGroups.length).toBe(24)
-    expect(statistics.readCount).toBe(60)
-    expect(statistics.slotCount).toBe(24)
+    // The source table declares the 3 stack rows and 3 stack columns as one-hot
+    // groups with cells.ts's permutation. With four windows, until October 13, 2026,
+    // the frontmost-window selection sums over them lowered to 12 gather reads. A
+    // sum over a group of 3 has 3 terms, which the builder copies into each
+    // operation that reads the sum, so with three windows these sums stay dense
+    // (execution-model.md's "One-hot groups and gathers"). The photo gallery's click
+    // selection gates on a product that is not a provably exact bit, so it declares
+    // nothing. The Notes flow (notes.ts) declares one group per line band: the set of
+    // other windows that block the band, one of the 4 subsets of the 2 other
+    // windows, which the band's slot is read through, 3 reads per band. Until
+    // October 13, 2026, notes-walker.ts declared a second group per band, the segment
+    // that the band's line starts at, and read its tables through it. Now the
+    // walker reads its tables with index reads, so the 16 bands' slot reads are the
+    // program's 48 gather reads, through 16 of its 22 groups. The Files list
+    // (files.ts) declares no group: only the table's validator checks its three
+    // location bits, so it adds no read.
+    expect(circuit.oneHotGroups.length).toBe(22)
+    expect(statistics.readCount).toBe(48)
+    expect(statistics.slotCount).toBe(16)
     expect(statistics.storedWeightCount).toBeLessThan(baseline.storedWeightCount)
     console.log(
       `[survey] window-manager: groups=${circuit.oneHotGroups.length}`
@@ -1291,8 +1292,8 @@ describe('HandwiredOS', () => {
       compareStep(1280, 800)
     }
     // Dock sits at the bottom center; click item positions directly.
-    for (let item = 0; item < 4; item++) {
-      const x = 640 - 90 + item * 62
+    for (let item = 0; item < 3; item++) {
+      const x = 640 - 62 + item * 62
       machine.pointerDown(x, 800 - 38)
       compareStep(1280, 800)
       machine.pointerUp(x, 800 - 38)
@@ -1313,7 +1314,7 @@ describe('HandwiredOS', () => {
     }
     machine.photoClose()
     for (let settle = 0; settle < 10; settle++) compareStep(1280, 800)
-    // 84 steps, plus event and settle check evaluations between frames.
-    expect(evaluations).toBeGreaterThan(84)
+    // 82 steps, plus event and settle check evaluations between frames.
+    expect(evaluations).toBeGreaterThan(82)
   }, 60_000)
 })

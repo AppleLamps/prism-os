@@ -23,8 +23,9 @@
 // character reflows the text in its event's evaluation, like a moved window does.
 //
 // The carving depends on the band only through which obstacles block it, so the
-// slot is computed once for each subset of the obstacles (8 subsets of 3), and each
-// band reads its subset's slot through a one-hot of its 3 blocking bits.
+// slot is computed once for each subset of the obstacles (4 subsets of the 2 other
+// windows), and each band reads its subset's slot through a one-hot of its 2
+// blocking bits.
 //
 // Geometry comparisons are rounding comparisons: exact bits when a difference sits
 // on a 1/64 px grid, and either answer within 1/128 px of a tie. Destinations come

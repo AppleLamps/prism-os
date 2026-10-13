@@ -1,6 +1,6 @@
 // The Files window, in the same circuit as the window manager: a sidebar of three
 // locations, each a virtualized list of rows of one height, scrolled by a native
-// scroller.
+// scroller. Under both, the window has a footer, which monitor.ts fills.
 //
 // The program holds no row. JavaScript keeps each row's text in arrays, and the
 // program computes which row each of 64 DOM slots shows, from the scroll position
@@ -84,20 +84,26 @@ const initialLocation = 1
 // Files' layout inside its content box, in px. window-manager.ts builds the hit
 // rectangles from these numbers, and the renderer gives them to the DOM at mount.
 export const filesLayout = {
-  // The sidebar at the content box's left edge. The list takes the rest.
-  sidebarWidth: 132,
-  // Each location is a rectangle of locationHeight, locationInset from the sidebar's
-  // left and right edges, and the first one starts locationTop below the content
-  // box's top edge.
-  locationInset: 8,
-  locationTop: 40,
-  locationHeight: 28,
-  // The header row above the scroller.
+  // The sidebar at the content box's left edge. The list takes the rest. A sidebar
+  // item holds its location's name and row count, e.g. "Operations" and "21,229".
+  sidebarWidth: 152,
+  // The header row above the scroller, and the sidebar's heading beside it.
   headerHeight: 28,
   rowHeight,
+  // Each location is a rectangle of locationHeight, locationInset from the sidebar's
+  // left and right edges, and the first one starts locationTop below the content
+  // box's top edge. A location is as tall as a row and the first one starts beside
+  // the first row, so the sidebar's items and the list's rows share their lines.
+  locationInset: 8,
+  locationTop: 28,
+  locationHeight: rowHeight,
   // A strip at the list's right edge where the native scrollbar is drawn. A press
   // or a release there is on no row.
   scrollbarStrip: 16,
+  // The footer along the content box's bottom edge, under the sidebar and the
+  // list, where the page shows the program's sizes and the last frames' times. A
+  // press or a release there is on no row.
+  footerHeight: 32,
 } as const
 
 invariant(Number.isInteger(Math.log2(slotCount)), 'slotCount must be a power of two')
@@ -147,7 +153,7 @@ export function filesKeys(cells: FilesCells) {
 // The host's wires that Files reads.
 type FilesHost = {
   // The list viewport's height at the window's destination, i.e. the content box's
-  // height minus the header row, within 0..16,384 on the 1/64 px grid.
+  // height minus the header row and the footer, within 0..16,384 on the 1/64 px grid.
   viewportHeight: Wire
   // Whether Files is the focused window after this evaluation's events, which is
   // when Files takes keys.
@@ -458,13 +464,14 @@ const textColumnNames = ['name', 'kind', 'layer', 'weights'] as const
 const kindColumn = textColumnNames.indexOf('kind')
 type ColumnTexts = readonly [name: string, kind: string, layer: string, weights: string]
 export type FilesLocation = {
-  // The sidebar item's text, e.g. 'Operations'. The list's class name ends with it
-  // in lower case, e.g. files-list-operations, so the stylesheet can size the
-  // location's columns.
+  // The sidebar item's text, e.g. 'Operations', which the item shows beside the row
+  // count. The list's class name ends with it in lower case, e.g.
+  // files-list-operations, so the stylesheet can size the location's columns.
   label: string
-  // What the sidebar says under its items while the list shows this location: the
-  // row count, then what a row is, e.g. '21,229' and 'operations', and a sentence
-  // for a visitor who doesn't know the program's words.
+  // What a row is, e.g. 'operations', and a sentence for a visitor who doesn't know
+  // the program's words. The sidebar shows the sentence under its items while the
+  // list shows this location, and a pointer that rests on the item reads both, e.g.
+  // '21,229 operations. What the program computes: each number from earlier ones.'
   rowNoun: string
   description: string
   titles: ColumnTexts
@@ -473,6 +480,11 @@ export type FilesLocation = {
   // A class for the row's kind cell, e.g. 'kind-reglu', which the stylesheet draws a
   // color swatch from. A location without one gives its kind cells no such class.
   kindClass?: (row: number) => string
+  // The location's rows counted by kind, which the sidebar lists above the sentence,
+  // e.g. 11,779 ReGLU among Operations' rows: each kind's name, the class of its
+  // swatch, and what a pointer that rests on the entry reads. A kind that no row
+  // has is left out. A location without kinds to count leaves the list out.
+  kinds?: readonly {name: string, className: string, count: number, title: string}[]
   // The row's value in the last evaluation.
   value: (row: number) => number
 }
@@ -492,16 +504,19 @@ export function formatValue(value: number) {
 
 type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 
-// The four kinds of live operation that Files and the Monitor window both name,
-// each with the text that a row shows and the class that the row's kind cell gets:
-// a weighted sum, a ReGLU, a boolean atom and an index read. A sum that the
-// compiler lowered to a gather read is still a sum, so it is an affine operation
-// in both windows.
+// A count as the sidebar shows it, e.g. '21,229'.
+const formatCount = (count: number) => count.toLocaleString('en-US')
+
+// The four kinds of live operation, each with the text that a row shows, the class
+// that the row's kind cell gets, and what the kind computes, in words for a
+// visitor: a weighted sum, a ReGLU, a boolean atom and an index read. A sum that
+// the compiler lowered to a gather read is still a sum, so it is an affine
+// operation here.
 const operationKinds = [
-  {name: 'affine', className: 'kind-affine'},
-  {name: 'ReGLU', className: 'kind-reglu'},
-  {name: 'boolean', className: 'kind-boolean'},
-  {name: 'index read', className: 'kind-index'},
+  {name: 'affine', className: 'kind-affine', computes: 'a weighted sum of earlier values'},
+  {name: 'ReGLU', className: 'kind-reglu', computes: 'a weighted sum multiplied by another one while that one is positive'},
+  {name: 'boolean', className: 'kind-boolean', computes: 'a value between 0 and 1 rounded to 0 or 1'},
+  {name: 'index read', className: 'kind-index', computes: 'a copy of the table entry at a computed position'},
 ] as const
 
 // The rows of a compiled program's live operations, in the program's packed order,
@@ -540,12 +555,22 @@ export function describeOperations(program: TensorProgram, packedValues: Float32
     firstRow += layer.outputSize
   })
   invariant(firstRow === rowCount, 'the layers hold every live operation')
+  // How many rows each kind has, e.g. 0 index reads in a program that reads no table.
+  const kindCounts = operationKinds.map(() => 0)
+  for (let row = 0; row < rowCount; row++) kindCounts[kinds[row]!]!++
   return {
     label: 'Operations',
     rowNoun: 'operations',
     description: 'What the program computes: each number from earlier ones.',
     titles: ['wire', 'kind', 'layer', 'weights'],
     rowCount,
+    kinds: operationKinds
+      .map((kind, index) => {
+        const count = kindCounts[index]!
+        const name = `${kind.name[0]!.toUpperCase()}${kind.name.slice(1)}`
+        return {name: kind.name, className: kind.className, count, title: `${name}, ${kind.computes}: ${formatCount(count)} of the ${formatCount(rowCount)} operations.`}
+      })
+      .filter(kind => kind.count > 0),
     text: row => [
       String(program.wireOrder[program.sourceSize + row]),
       operationKinds[kinds[row]!]!.name,
@@ -588,10 +613,7 @@ export function describeOutputs(outputs: readonly {name: string, wire: Wire}[], 
   }
 }
 
-// A location's row count as the sidebar shows it, e.g. '21,229'.
-const formatRowCount = (location: FilesLocation) => location.rowCount.toLocaleString('en-US')
-
-// Creates the sidebar's items, the caption's three parts, the header's cells and the
+// Creates the sidebar's items, the caption's parts, the header's cells and the
 // slots' row nodes inside `root`, the Files content box, and returns a frame's DOM
 // read, DOM writes and side effect. `locations` holds one entry per location of the
 // program, in order.
@@ -616,6 +638,7 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
   root.style.setProperty('--files-header-height', `${filesLayout.headerHeight}px`)
   root.style.setProperty('--files-row-height', `${filesLayout.rowHeight}px`)
   root.style.setProperty('--files-scrollbar-strip', `${filesLayout.scrollbarStrip}px`)
+  root.style.setProperty('--files-footer-height', `${filesLayout.footerHeight}px`)
   const createCells = (parent: HTMLElement) => [...textColumnNames, 'value'].map(column => {
     const cell = document.createElement('span')
     cell.className = `files-cell files-cell-${column}`
@@ -623,32 +646,47 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
     return cell
   })
   overflow.textContent = `Only ${slotCount} rows are drawn at a time.`
-  // The caption's three parts: the row count, what a row is, and the location's
-  // sentence, e.g. '21,229', ' operations' and 'What the program computes: each
-  // number from earlier ones.'
-  const captionParts = ['b', 'span', 'span'].map(tagName => caption.appendChild(document.createElement(tagName)))
-  captionParts[2]!.className = 'files-caption-sentence'
+  const createPart = (parent: HTMLElement, tagName: string, className: string, text = '') => {
+    const part = parent.appendChild(document.createElement(tagName))
+    part.className = className
+    part.textContent = text
+    return part
+  }
+  // The caption's parts, from the top: for each location that counts its rows by
+  // kind, a list of the kinds, e.g. 'ReGLU' and '11,779', which is displayed while
+  // the list shows that location, and the shown location's sentence, e.g. 'What the
+  // program computes: each number from earlier ones.'
+  const captionKinds = locations.map(location => {
+    if (location.kinds === undefined || location.kinds.length === 0) return null
+    const kinds = createPart(caption, 'ul', 'files-caption-kinds')
+    for (const kind of location.kinds) {
+      const entry = createPart(kinds, 'li', kind.className)
+      entry.title = kind.title
+      createPart(entry, 'span', 'files-kind-name', kind.name)
+      createPart(entry, 'span', 'files-kind-count', formatCount(kind.count))
+    }
+    return kinds
+  })
+  const captionSentence = createPart(caption, 'p', 'files-caption-sentence')
   const domCache = {
     list, // mount lifetime
     scroller, // mount lifetime
     spacer, // mount lifetime
     overflow, // mount lifetime
-    captionCount: captionParts[0]!, // mount lifetime
-    captionNoun: captionParts[1]!, // mount lifetime
-    captionSentence: captionParts[2]!, // mount lifetime
+    captionKinds, // mount lifetime. null for a location without kinds.
+    captionSentence, // mount lifetime
     headerCells: createCells(header), // mount lifetime
     // mount lifetime. Each item sits on the rectangle that the program hit-tests.
     locationNodes: locations.map((location, index) => {
-      const node = document.createElement('div')
-      node.className = 'files-location'
-      node.textContent = location.label
+      const node = createPart(sidebar, 'div', 'files-location')
+      createPart(node, 'span', 'files-location-label', location.label)
+      createPart(node, 'span', 'files-location-count', formatCount(location.rowCount))
       node.style.left = `${filesLayout.locationInset}px`
       node.style.top = `${filesLayout.locationTop + index * filesLayout.locationHeight}px`
       node.style.width = `${filesLayout.sidebarWidth - 2 * filesLayout.locationInset}px`
       node.style.height = `${filesLayout.locationHeight}px`
-      // The caption's text for this location, for a pointer that rests on the item.
-      node.title = `${formatRowCount(location)} ${location.rowNoun}. ${location.description}`
-      sidebar.appendChild(node)
+      // For a pointer that rests on the item.
+      node.title = `${formatCount(location.rowCount)} ${location.rowNoun}. ${location.description}`
       return node
     }),
     // The location whose titles the header's cells hold, or -1 before the first
@@ -688,8 +726,9 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
         domCache.headerCells.forEach((cell, column) => {
           cell.textContent = location.titles[column] ?? 'value'
         })
-        domCache.captionCount.textContent = formatRowCount(location)
-        domCache.captionNoun.textContent = ` ${location.rowNoun}`
+        domCache.captionKinds.forEach((kinds, index) => {
+          if (kinds !== null) kinds.style.display = index === locationIndex ? 'grid' : 'none'
+        })
         domCache.captionSentence.textContent = location.description
         for (const slot of domCache.slots) slot.row = -1
         domCache.location = locationIndex

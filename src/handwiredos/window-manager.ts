@@ -95,7 +95,7 @@ import {mountWiring} from './wiring.ts'
 
 export {bandOutputField, notesWindowIndex, segmentOutputField}
 
-export const windowCount = 4
+export const windowCount = 3
 
 // translateX, translateY, width, height and scale are where a window's frame is
 // drawn while its springs animate. contentWidth and contentHeight are the content
@@ -159,9 +159,8 @@ const pixelConstant = (value: number) => constant(value, [0, 1024], {grid: pixel
 // bound.
 const matrixBound = springMatrixBound(springConstants)
 const initialGeometry = [
-  [54, 54, 520, 340],
+  [54, 54, 540, 340],
   [410, 104, 500, 366],
-  [174, 344, 470, 300],
   [650, 190, 560, 430],
 ] as const
 
@@ -247,13 +246,16 @@ const windowManagerCellsFor = (paragraph: FastParagraph) => ({
     filesLocation: list(locationCount, () => stateBit(0, {grid: 1})),
   },
   // The stacking state is a permutation matrix: exactly one window per rank
-  // and exactly one rank per window. Declared as one-hot groups, the
-  // frontmost-window selection sums lower to gather reads (gather-lowering.test.ts).
+  // and exactly one rank per window, declared as one-hot groups. With three
+  // windows, the frontmost-window selection sums over a group have three terms,
+  // too few for the compiler to lower to gather reads, which it did with four
+  // windows (gather-lowering.test.ts).
   stack: permutation(list(windowCount, windowIndex => windowIndex), {grid: 1}),
-  // The destinations written back are this evaluation's targets. A center can
-  // sit a little outside the viewport, e.g. a dock item in a 2 px wide viewport
-  // is centered at -4.8e-7 px after FP32 rounds a third, so centers get
-  // -16,384..32,768.
+  // The destinations written back are this evaluation's targets. The range of a
+  // center has room on both sides of the viewport, -16,384..32,768, for a layout
+  // whose FP32 rounding puts a center just outside. E.g. with four windows, the
+  // dock's gap in a 2 px wide viewport was a rounded third of the width, and a dock
+  // item was centered at -4.8e-7 px.
   springs: list(windowCount, windowIndex => {
     const [left, top, width, height] = initialGeometry[windowIndex]!
     return {
@@ -596,13 +598,14 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
     resizeHit.push(emitRectangleHit(circuit, cells.down.x, cells.down.y, gripRectangle))
     if (windowIndex === filesWindowIndex) {
       // The list viewport: the content box without the sidebar at its left, without
-      // the header row at its top, and without the strip at its right edge where the
-      // native scrollbar is drawn, so a press on the scrollbar is on no row.
+      // the header row at its top, without the footer at its bottom, and without the
+      // strip at its right edge where the native scrollbar is drawn, so a press on the
+      // scrollbar or on the footer is on no row.
       const listRectangle: Geometry = {
         left: circuit.affine([[geometry.left, 1], [unit, 1]], filesLayout.sidebarWidth),
         top: circuit.affine([[geometry.top, 1], [cells.titleHeight, 1], [unit, 1]], filesLayout.headerHeight),
         width: circuit.affine([[geometry.width, 1], [unit, -2]], -filesLayout.sidebarWidth - filesLayout.scrollbarStrip),
-        height: circuit.affine([[geometry.height, 1], [cells.titleHeight, -1], [unit, -2]], -filesLayout.headerHeight),
+        height: circuit.affine([[geometry.height, 1], [cells.titleHeight, -1], [unit, -2]], -filesLayout.headerHeight - filesLayout.footerHeight),
       }
       filesListHit = emitRectangleHit(circuit, cells.down.x, cells.down.y, listRectangle)
       filesListHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, listRectangle)
@@ -1340,12 +1343,13 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
   })
 
   // Files' list is computed for the list viewport's height at the window's
-  // destination, e.g. the maximized height from the release of the maximize button
-  // on, so the rows drawn change once per event, like Photos' layout. A release's y
-  // is relative to the list's top edge at the stored geometry, which the release
-  // was hit-tested against.
+  // destination, i.e. the content box without the header row and the footer, e.g.
+  // the maximized height from the release of the maximize button on, so the rows
+  // drawn change once per event, like Photos' layout. A release's y is relative to
+  // the list's top edge at the stored geometry, which the release was hit-tested
+  // against.
   const files = buildFiles(circuit, table, cells.files, {
-    viewportHeight: emitRelu(circuit, circuit.affine([[destinationContentHeight[filesWindowIndex]!, 1]], -filesLayout.headerHeight)),
+    viewportHeight: emitRelu(circuit, circuit.affine([[destinationContentHeight[filesWindowIndex]!, 1]], -filesLayout.headerHeight - filesLayout.footerHeight)),
     focused: focusedWindow[filesWindowIndex]!,
     listClick: {
       active: filesListClick,
@@ -1621,8 +1625,9 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     table[cells.files.scrollTop] = filesScrollTop
     for (const event of evaluation.events) event.apply(table)
     // Checks every declared range and grid. The window hit tests' integer bits rely
-    // on the grids: a press written straight into the table at x = 54.5 - 1/256 px
-    // put windows 0 and 3 each half in front, before the grids were checked.
+    // on the grids: a press written straight into the table at x = 54.5 - 1/256 px,
+    // near window 0's left edge, put window 0 and the frontmost window each half in
+    // front, before the grids were checked.
     validate(table)
     for (const observer of observers) observer.beforeEvaluate?.(table, evaluation)
     const rootValues = evaluateRoots(table)
@@ -1816,7 +1821,7 @@ function mountWindowManager(document: Document, window: Window) {
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
   const photosViewport = document.querySelector<HTMLElement>('.photos-content')
   const filesContent = document.querySelector<HTMLElement>('.files-content')
-  const monitorContent = document.querySelector<HTMLElement>('.monitor-content')
+  const filesFooter = document.querySelector<HTMLElement>('.files-footer')
   const systemStatistics = document.querySelector<HTMLElement>('.system-stats')
   const wiringCanvas = document.querySelector<HTMLCanvasElement>('.desk-wiring')
   invariant(desktop !== null, 'desktop is missing')
@@ -1824,7 +1829,7 @@ function mountWindowManager(document: Document, window: Window) {
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
   invariant(photosViewport !== null, 'Photos viewport is missing')
   invariant(filesContent !== null, 'Files content is missing')
-  invariant(monitorContent !== null, 'Monitor content is missing')
+  invariant(filesFooter !== null, 'Files footer is missing')
   invariant(systemStatistics !== null, 'system bar statistics are missing')
   invariant(wiringCanvas !== null, 'the desk\'s wiring canvas is missing')
   const windowContents = windows.map(element => {
@@ -1874,9 +1879,9 @@ function mountWindowManager(document: Document, window: Window) {
     describeOperations(machine.tensorProgram, machine.packedValues),
     describeOutputs(machine.namedOutputs, machine.values),
   ])
-  // Monitor's content and the system bar's counters, see monitor.ts. Its legend
-  // counts the operations by the four kinds that Files' Operations rows name.
-  const monitor = createMonitor({content: monitorContent, statistics: systemStatistics}, machine.tensorProgram)
+  // Files' footer and the system bar's counters, see monitor.ts: the program's
+  // sizes, and the program's time in each of the last frames.
+  const monitor = createMonitor({footer: filesFooter, statistics: systemStatistics}, machine.tensorProgram)
 
   domCache.desktop.style.setProperty('--title-height', `${machine.source[machine.cells.titleHeight]}px`)
   domCache.desktop.style.setProperty('--button-size', `${machine.source[machine.cells.buttonSize]}px`)
@@ -1899,16 +1904,16 @@ function mountWindowManager(document: Document, window: Window) {
   // was given. The machine gets the position at the next step.
   let filesScrollTop = 0
 
-  // How many more frames the page runs by itself after it loads. Monitor's chart
-  // shows the program's time in each of the last 60 frames, and a page that runs a
-  // frame only for an input would open with a chart of one dot: the first frame,
-  // which takes about 3.5 ms in Chrome where a later frame takes 0.3 ms, since the
-  // browser hasn't compiled the program's loops yet. So the page starts with as
-  // many frames as the chart holds, after 12 more for the slow ones, which is 1.2 s
-  // at 60 frames a second. Each is a real frame with no input: it steps the machine,
-  // writes the DOM and adds its time to the chart, so the chart is full of the
-  // times of frames that ran. After them, a frame runs only for an input or while a
-  // spring moves.
+  // How many more frames the page runs by itself after it loads. The chart in
+  // Files' footer shows the program's time in each of the last 60 frames, and a
+  // page that runs a frame only for an input would open with a chart of one dot:
+  // the first frame, which takes about 3.5 ms in Chrome where a later frame takes
+  // 0.3 ms, since the browser hasn't compiled the program's loops yet. So the page
+  // starts with as many frames as the chart holds, after 12 more for the slow ones,
+  // which is 1.2 s at 60 frames a second. Each is a real frame with no input: it
+  // steps the machine, writes the DOM and adds its time to the chart, so the chart
+  // is full of the times of frames that ran. After them, a frame runs only for an
+  // input or while a spring moves.
   let openingFramesLeft = monitorFrameCapacity + 12
 
   let scheduledRaf: number | null = null
@@ -1929,8 +1934,8 @@ function mountWindowManager(document: Document, window: Window) {
     const notesRead = notes.read()
     // Handle inputs. A changed text is measured into segments here and queued as one
     // event. The measuring is the host's own JavaScript, so it runs before the clock
-    // below starts: the Monitor's frame time is the time of machine.step alone, i.e.
-    // of the program's evaluations.
+    // below starts: the frame time that Files' footer shows is the time of
+    // machine.step alone, i.e. of the program's evaluations.
     notes.queueText(notesRead)
     const executionStart = window.performance.now()
     const values = machine.step(viewportWidth, viewportHeight, frameTime, filesScrollTop)
@@ -1963,8 +1968,8 @@ function mountWindowManager(document: Document, window: Window) {
     photos.render(values, machine.output.photos)
     notes.write(notesRead, values)
     files.render(values, machine.output.files)
-    // Monitor's chart and the system bar get the time that the program took in this
-    // frame, i.e. the time of machine.step.
+    // The chart in Files' footer and the system bar get the time that the program
+    // took in this frame, i.e. the time of machine.step.
     monitor.update(executionMs)
 
     // Side effects, after every DOM write. The note's textarea gets the selection
@@ -2226,8 +2231,8 @@ function emitRectangleHit(
 
 // The same rule as emitRectangleHit, as boolean(clamp01(min of the 4 edge
 // distances)), 16 operations in 9 layers per rectangle. The dock's layout divides
-// the viewport width by 3, which lies on no grid, so emitCompare would build a
-// sign cascade for each edge instead of an integer bit.
+// the width that its 3 items share by 3, which lies on no grid, so emitCompare
+// would build a sign cascade for each edge instead of an integer bit.
 function emitDockItemHit(
   circuit: Circuit,
   x: Wire,

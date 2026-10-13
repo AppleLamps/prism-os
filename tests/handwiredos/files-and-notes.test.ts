@@ -27,11 +27,11 @@ const viewportHeight = 800
 const frameDuration = 16
 const rowHeight = 24
 
-// The starting arrangement. Files is at 54,54 and 520x340, and its list's rows start
-// right of the 132 px sidebar and below the 28 px header row, at 187,127. Notes is
+// The starting arrangement. Files is at 54,54 and 540x340, and its list's rows start
+// right of the 152 px sidebar and below the 28 px header row, at 207,127. Notes is
 // at 410,104 and 500x366, stacked above Files, and its content box starts at
 // 411,149. So the list's rows from x 411 on and from y 149 on are under the note.
-const list = {left: 187, top: 127}
+const list = {left: 207, top: 127}
 const notesContent = {left: 411, top: 149}
 const filesTitleBar = {x: 100, y: 76}
 // On Notes' title bar, left of Photos, and on Photos' title bar, right of Notes.
@@ -39,7 +39,7 @@ const notesTitleBar = {x: 600, y: 126}
 const photosTitleBar = {x: 1000, y: 212}
 // On Files' list and on the note, where Notes covers the list: row 5 of the list.
 const onBoth = {x: 480, y: 250}
-// On the note only: right of Files, left of Photos and above Monitor.
+// On the note only: right of Files and left of Photos.
 const onNoteOnly = {x: 600, y: 250}
 // A point on a row of the list that Notes doesn't cover, 100 px from the list's left edge.
 const rowPoint = (row: number) => ({x: list.left + 100, y: list.top + row * rowHeight + rowHeight / 2})
@@ -85,7 +85,7 @@ const selectedRow = (machine: Machine) => machine.source[filesSourceField.select
 const notePress = (machine: Machine) => [machine.source[notesSourceField.pressCount], machine.source[notesSourceField.pressX], machine.source[notesSourceField.pressY]]
 const inNote = (point: {x: number, y: number}) => [point.x - notesContent.left, point.y - notesContent.top]
 const focusedWindow = (machine: Machine, values: Float32Array) =>
-  [0, 1, 2, 3].find(windowIndex => values[machine.output.windows[windowIndex * windowOutputField.size + windowOutputField.focused]!] === 1) ?? -1
+  [0, 1, 2].find(windowIndex => values[machine.output.windows[windowIndex * windowOutputField.size + windowOutputField.focused]!] === 1) ?? -1
 const openPhoto = (machine: Machine) => Array.from({length: photoCount}, (_, item) => machine.source[photoFocusSourceField(item)]!).indexOf(1)
 
 test('a press where the note covers the list places the caret and arms no row, and with Files in front the same point selects its row and counts no press on the note', () => {
@@ -157,10 +157,10 @@ test('a press on one of the two windows that is released over the other acts on 
 
 test("a press on Files' grip where the note covers the grip goes to the note, and with Files in front the grip resizes and the note counts nothing", () => {
   const machine = createMachine()
-  // Files' grip is the 24 px square at its bottom right corner, 550..574 by 370..394,
-  // which lies inside the note's content box, and under Monitor until a
-  // press on Notes' title bar raises Notes above both.
-  const grip = {x: 562, y: 382}
+  // Files' grip is the 24 px square at its bottom right corner, 570..594 by 370..394,
+  // which lies inside the note's content box. Notes starts above Files, and a press
+  // on Notes' title bar also gives it the focus.
+  const grip = {x: 582, y: 382}
   let values = click(machine, notesTitleBar)
   assert.equal(focusedWindow(machine, values), 1)
   assert.equal(notePress(machine)[0], 0)
@@ -183,7 +183,7 @@ test("a press on Files' grip where the note covers the grip goes to the note, an
   step(machine)
   assert.deepEqual(
     [machine.source[windowSourceField(0, windowStateField.width)], machine.source[windowSourceField(0, windowStateField.height)]],
-    [560, 360],
+    [580, 360],
   )
   assert.equal(selectedRow(machine), -1)
   assert.deepEqual(notePress(machine), [1, ...inNote(grip)])
@@ -320,7 +320,7 @@ test("Photos' arrows and Escape act only while Photos is focused, so with a phot
   machine.filesKey('down', eventTime(machine, 4))
   machine.photoClose(eventTime(machine, 8))
   values = step(machine)
-  assert.equal(focusedWindow(machine, values), 3)
+  assert.equal(focusedWindow(machine, values), 2)
   assert.equal(openPhoto(machine), -1)
   assert.equal(selectedRow(machine), 0)
 })

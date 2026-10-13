@@ -379,7 +379,7 @@ function applyRandomAction(machine: Machine, action: RandomAction) {
   }
 }
 
-test('the fixed table projects four bounded windows and one focused front window', () => {
+test('the fixed table projects three bounded windows and one focused front window', () => {
   const machine = createWindowManagerMachine()
   const values = step(machine)
   const windows = projectWindows(machine, values)
@@ -387,22 +387,22 @@ test('the fixed table projects four bounded windows and one focused front window
   assert.ok(machine.source instanceof Float32Array)
   assert.ok(values instanceof Float32Array)
   assert.equal(machine.source.length, sourceField.size)
-  assert.deepEqual(windows.map(window => window.stack), [1, 2, 3, 4])
-  assert.deepEqual(windows.map(window => window.opacity), [1, 1, 1, 1])
-  assertFocused(windows, 3)
+  assert.deepEqual(windows.map(window => window.stack), [1, 2, 3])
+  assert.deepEqual(windows.map(window => window.opacity), [1, 1, 1])
+  assertFocused(windows, 2)
   assert.deepEqual(windows[0], {
     left: 54,
     top: 54,
-    width: 520,
+    width: 540,
     height: 340,
     scale: 1,
     opacity: 1,
     focused: 0,
     stack: 1,
     maximized: 0,
-    contentWidth: 518,
+    contentWidth: 538,
     contentHeight: 294,
-    destinationWidth: 520,
+    destinationWidth: 540,
     destinationHeight: 340,
   })
   for (let rank = 0; rank < windowCount; rank++) {
@@ -417,12 +417,12 @@ test('pointer selection raises a window and topmost overlap remains deterministi
   values = click(machine, 100, 80)
   let windows = projectWindows(machine, values)
   assertFocused(windows, 0)
-  assert.deepEqual(windows.map(window => window.stack), [4, 1, 2, 3])
+  assert.deepEqual(windows.map(window => window.stack), [3, 1, 2])
 
   values = click(machine, 500, 200)
   windows = projectWindows(machine, values)
   assertFocused(windows, 0)
-  assert.deepEqual(windows.map(window => window.stack), [4, 1, 2, 3])
+  assert.deepEqual(windows.map(window => window.stack), [3, 1, 2])
 })
 
 test('title dragging updates numeric geometry and clamps the whole window to the workspace', () => {
@@ -455,7 +455,7 @@ test('title dragging updates numeric geometry and clamps the whole window to the
     left: initial.left + 100,
     top: initial.top + 70,
     focused: 1,
-    stack: 4,
+    stack: 3,
   })
 
   machine.pointerMove(-500, -500)
@@ -478,12 +478,14 @@ test('title dragging updates numeric geometry and clamps the whole window to the
   machine.pointerUp(2000, 2000)
   values = step(machine)
   assert.equal(machine.source[dragSourceField(0)], 0)
-  assert.equal(projectWindows(machine, values)[0]!.stack, 4)
+  assert.equal(projectWindows(machine, values)[0]!.stack, 3)
 })
 
 test('resize grip changes both dimensions and enforces numeric minimums', () => {
   const machine = createWindowManagerMachine()
   let values = step(machine)
+  // Photos, the frontmost window, at 650,190 and 560×430: no window covers its grip,
+  // and 60 px more of width still end inside the 1280 px viewport.
   const initial = projectWindows(machine, values)[2]!
   const grip = machine.source[sourceField.resizeGrip]!
   const downX = initial.left + initial.width - grip / 2
@@ -493,10 +495,11 @@ test('resize grip changes both dimensions and enforces numeric minimums', () => 
   values = step(machine)
   assert.equal(machine.source[resizeSourceField(2)], 1)
 
-  machine.pointerMove(downX + 120, downY + 80)
+  machine.pointerMove(downX + 60, downY + 80)
   values = step(machine)
   let resized = projectWindows(machine, values)[2]!
-  assert.equal(resized.width, initial.width + 120)
+  assert.equal(resized.left, initial.left)
+  assert.equal(resized.width, initial.width + 60)
   assert.equal(resized.height, initial.height + 80)
   assert.equal(animationActive(machine, values), 0)
 
@@ -539,7 +542,7 @@ test('a down and move received before one refresh still begin the correct drag',
 test('window control edges produce one complete maximize decision', () => {
   const machine = createWindowManagerMachine()
   let values = step(machine)
-  const projected = projectWindows(machine, values)[3]!
+  const projected = projectWindows(machine, values)[2]!
   const size = machine.source[sourceField.buttonSize]!
   const gap = machine.source[sourceField.buttonGap]!
   const closeLeft = projected.left + projected.width - gap - size
@@ -553,10 +556,10 @@ test('window control edges produce one complete maximize decision', () => {
   // (maximizeLeft + 0.5) is the easier interior of the same control.
   const expandedMaximizeLeft = maximizeLeft - gap / 2
   values = click(machine, expandedMaximizeLeft + 0.5031247387902, y)
-  assert.equal(machine.source[windowSourceField(3, windowStateField.maximized)], 1)
-  assert.equal(machine.source[windowSourceField(3, windowStateField.minimized)], 0)
+  assert.equal(machine.source[windowSourceField(2, windowStateField.maximized)], 1)
+  assert.equal(machine.source[windowSourceField(2, windowStateField.minimized)], 0)
   values = settle(machine)
-  const maximized = projectWindows(machine, values)[3]!
+  const maximized = projectWindows(machine, values)[2]!
   assert.deepEqual(
     {left: maximized.left, top: maximized.top, width: maximized.width, height: maximized.height},
     {left: 12, top: 48, width: 1256, height: 664},
@@ -567,13 +570,13 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   const machine = createWindowManagerMachine()
   let values = step(machine)
 
-  values = clickWindowControl(machine, values, 3, 'maximize')
-  let window = projectWindows(machine, values)[3]!
+  values = clickWindowControl(machine, values, 2, 'maximize')
+  let window = projectWindows(machine, values)[2]!
   assert.equal(window.maximized, 1)
   assert.equal(animationActive(machine, values), 1)
   assert.notEqual(window.left, 12)
   values = settle(machine)
-  window = projectWindows(machine, values)[3]!
+  window = projectWindows(machine, values)[2]!
   assert.deepEqual(
     {
       left: window.left,
@@ -591,9 +594,9 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
     },
   )
 
-  values = clickWindowControl(machine, values, 3, 'minimize')
-  window = projectWindows(machine, values)[3]!
-  const dock = projectDock(machine, values)[3]!
+  values = clickWindowControl(machine, values, 2, 'minimize')
+  window = projectWindows(machine, values)[2]!
+  const dock = projectDock(machine, values)[2]!
   assert.equal(window.opacity, 1)
   assert.equal(animationActive(machine, values), 1)
   assert.ok(window.stack > 30)
@@ -601,67 +604,67 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
   assert.equal(window.height, 664)
   assert.ok(window.scale > 0 && window.scale < 1)
   assert.equal(
-    machine.source[windowSourceField(3, windowStateField.minimized)],
+    machine.source[windowSourceField(2, windowStateField.minimized)],
     1,
   )
   assert.equal(dock.inactive, 1)
 
   values = settle(machine)
-  window = projectWindows(machine, values)[3]!
+  window = projectWindows(machine, values)[2]!
   assert.equal(window.opacity, 0)
-  assert.equal(window.stack, 4)
+  assert.equal(window.stack, 3)
   assert.equal(window.width, 1256)
   assert.equal(window.height, 664)
   assert.equal(window.scale, 0)
   assertCenteredOnDock(window, dock)
 
-  values = clickDock(machine, values, 3)
-  window = projectWindows(machine, values)[3]!
+  values = clickDock(machine, values, 2)
+  window = projectWindows(machine, values)[2]!
   assert.equal(window.opacity, 1)
   assert.equal(animationActive(machine, values), 1)
   assert.ok(window.stack > 30)
   assert.equal(window.width, 1256)
   assert.ok(window.scale > 0 && window.scale < 1)
   assert.equal(
-    machine.source[windowSourceField(3, windowStateField.minimized)],
+    machine.source[windowSourceField(2, windowStateField.minimized)],
     0,
   )
   assert.equal(window.maximized, 1)
-  assertFocused(projectWindows(machine, values), 3)
+  assertFocused(projectWindows(machine, values), 2)
   values = settle(machine)
-  window = projectWindows(machine, values)[3]!
+  window = projectWindows(machine, values)[2]!
   assert.deepEqual(
     {left: window.left, top: window.top, width: window.width, height: window.height},
     {left: 12, top: 48, width: 1256, height: 664},
   )
   assert.equal(window.scale, 1)
-  assert.equal(window.stack, 4)
+  assert.equal(window.stack, 3)
 
-  values = clickWindowControl(machine, values, 3, 'maximize')
+  values = clickWindowControl(machine, values, 2, 'maximize')
   values = settle(machine)
-  values = clickWindowControl(machine, values, 3, 'close')
-  window = projectWindows(machine, values)[3]!
+  values = clickWindowControl(machine, values, 2, 'close')
+  window = projectWindows(machine, values)[2]!
   assert.equal(window.opacity, 1)
   assert.equal(animationActive(machine, values), 1)
-  assert.equal(machine.source[windowSourceField(3, windowStateField.open)], 0)
+  assert.equal(machine.source[windowSourceField(2, windowStateField.open)], 0)
   assert.equal(window.maximized, 0)
   values = settle(machine)
-  window = projectWindows(machine, values)[3]!
+  window = projectWindows(machine, values)[2]!
   assert.equal(window.opacity, 0)
   assert.equal(window.width, 560)
   assert.equal(window.height, 430)
   assert.equal(window.scale, 0)
   assertCenteredOnDock(window, dock)
 
-  values = clickDock(machine, values, 3)
-  window = projectWindows(machine, values)[3]!
+  values = clickDock(machine, values, 2)
+  window = projectWindows(machine, values)[2]!
   assert.equal(window.opacity, 1)
   assert.equal(animationActive(machine, values), 1)
-  assert.equal(machine.source[windowSourceField(3, windowStateField.open)], 1)
-  assert.equal(machine.source[windowSourceField(3, windowStateField.minimized)], 0)
-  assertFocused(projectWindows(machine, values), 3)
+  assert.equal(machine.source[windowSourceField(2, windowStateField.open)], 1)
+  assert.equal(machine.source[windowSourceField(2, windowStateField.minimized)], 0)
+  assertFocused(projectWindows(machine, values), 2)
   values = settle(machine)
-  window = projectWindows(machine, values)[3]!
+  window = projectWindows(machine, values)[2]!
   assert.deepEqual(
     {left: window.left, top: window.top, width: window.width, height: window.height},
     {left: 650, top: 190, width: 560, height: 430},
@@ -672,11 +675,11 @@ test('maximize, minimize, close, and dock restore all update the same table', ()
 test('dock transitions settle within the faster spring budget', () => {
   const machine = createWindowManagerMachine()
   let values = step(machine)
-  values = clickWindowControl(machine, values, 3, 'minimize')
+  values = clickWindowControl(machine, values, 2, 'minimize')
 
   const settled = settleFrames(machine)
   assert.ok((settled.frames + 1) * frameDuration <= 600)
-  assert.equal(projectWindows(machine, settled.values)[3]!.scale, 0)
+  assert.equal(projectWindows(machine, settled.values)[2]!.scale, 0)
 })
 
 test('all geometry remains finite and bounded down to a zero-sized viewport', () => {
@@ -710,15 +713,15 @@ test('all geometry remains finite and bounded down to a zero-sized viewport', ()
 test('a hidden window tracks a resized dock without becoming visible', () => {
   const machine = createWindowManagerMachine()
   let values = step(machine)
-  values = clickWindowControl(machine, values, 3, 'minimize')
+  values = clickWindowControl(machine, values, 2, 'minimize')
   values = settle(machine)
-  assert.equal(projectWindows(machine, values)[3]!.opacity, 0)
+  assert.equal(projectWindows(machine, values)[2]!.opacity, 0)
 
   values = step(machine, 900, 600)
-  const window = projectWindows(machine, values)[3]!
-  const dock = projectDock(machine, values)[3]!
+  const window = projectWindows(machine, values)[2]!
+  const dock = projectDock(machine, values)[2]!
   assert.equal(window.opacity, 0)
-  assert.equal(machine.source[windowSourceField(3, windowStateField.present)], 0)
+  assert.equal(machine.source[windowSourceField(2, windowStateField.present)], 0)
   assert.equal(window.scale, 0)
   assertCenteredOnDock(window, dock)
 })
@@ -743,10 +746,10 @@ test('long mixed event sequences preserve Boolean state, stacking and grids', ()
 }, 60_000)
 
 test('a press hits a window when it is at least half a pixel inside, with pointer coordinates on a 1/64 px grid within ±32,768 px', () => {
-  // Window 0 spans x from 54 to 574, and no other window covers (54.5, 224).
-  // Window 3 starts in front.
+  // Window 0 spans x from 54 to 594, and no other window covers (54.5, 224).
+  // Window 2 starts in front.
   for (const {x, focused} of [
-    {x: 54.5 - 1 / 64, focused: 3},
+    {x: 54.5 - 1 / 64, focused: 2},
     {x: 54.5, focused: 0},
     // Rounds to 54.5.
     {x: 54.495, focused: 0},
@@ -780,7 +783,7 @@ test('a viewport past the 16,384 px that the program declares is clamped, so the
   values = settle(machine, 20_000.4, 500)
   assertWindowManagerInvariants(machine, values, 16_384, 500)
   // The windows were clamped into the 388 px between the system bar and the dock.
-  assert.deepEqual(projectWindows(machine, values).map(window => window.top + window.height <= 424), [true, true, true, true])
+  assert.deepEqual(projectWindows(machine, values).map(window => window.top + window.height <= 424), [true, true, true])
   // A first step past the range mounts the clamped viewport.
   const mounted = createWindowManagerMachine()
   step(mounted, 1e9, 1e9)
@@ -853,7 +856,7 @@ test('Photos state and behavior run inside the one window-manager program', () =
   // A press and a release on the first photo, in viewport coordinates. Photos rests at
   // its destination, so its content box starts 1 px inside the frame and below the
   // title bar.
-  const photosWindow = projectWindows(machine, values)[3]!
+  const photosWindow = projectWindows(machine, values)[2]!
   const photoX = photosWindow.left + 1 + firstPhoto.left + firstPhoto.width / 2
   const photoY = photosWindow.top + machine.source[sourceField.titleHeight]! + 1 + firstPhoto.top + firstPhoto.height / 2
   machine.pointerDown(photoX, photoY)
@@ -910,7 +913,7 @@ test('one click can focus Photos and select a photo in the same evaluation', () 
     + values[machine.output.photos.photos[outputStart + photoField.width]!]! / 2
   const localY = localTop
     + values[machine.output.photos.photos[outputStart + photoField.height]!]! / 2
-  const photosWindow = projectWindows(machine, values)[3]!
+  const photosWindow = projectWindows(machine, values)[2]!
   const globalX = photosWindow.left + 1 + localX
   const globalY =
     photosWindow.top + machine.source[sourceField.titleHeight]! + 1 + localY
@@ -919,7 +922,7 @@ test('one click can focus Photos and select a photo in the same evaluation', () 
   machine.pointerUp(globalX, globalY)
   values = step(machine)
 
-  assertFocused(projectWindows(machine, values), 3)
+  assertFocused(projectWindows(machine, values), 2)
   assert.equal(machine.source[photoFocusSourceField(item)], 1)
 })
 
@@ -954,14 +957,14 @@ function openPhotoOf(table: Float32Array) {
 
 // A photo's center in viewport coordinates, while Photos rests at its destination.
 function photoPoint(machine: Machine, values: Float32Array, item: number) {
-  const photos = projectWindows(machine, values)[3]!
+  const photos = projectWindows(machine, values)[2]!
   const center = photoCenter(machine, values, item)
   return {x: photos.left + 1 + center.x, y: photos.top + machine.source[sourceField.titleHeight]! + 1 + center.y}
 }
 
 // Whether a viewport point lies at least half a pixel inside a photo's rectangle.
 function pointOnPhoto(machine: Machine, values: Float32Array, item: number, point: {x: number, y: number}) {
-  const photos = projectWindows(machine, values)[3]!
+  const photos = projectWindows(machine, values)[2]!
   const start = item * photoField.size
   const read = (field: number) => values[machine.output.photos.photos[start + field]!]!
   const left = photos.left + 1 + read(photoField.left)
@@ -970,13 +973,13 @@ function pointOnPhoto(machine: Machine, values: Float32Array, item: number, poin
     && point.y - top >= 0.5 && top + read(photoField.height) - point.y >= 0.5
 }
 
-// At 1280×800: Files (window 0) is 54,54 520×340, and its close and maximize buttons
-// are centered at 555,76 and 527,76. A maximized window's close button is centered at
-// 1249,70, and the dock items at 547,762, 609,762, 671,762 and 733,762.
-const filesClose = {x: 555, y: 76}
-const filesMaximize = {x: 527, y: 76}
+// At 1280×800: Files (window 0) is 54,54 540×340, and its close and maximize buttons
+// are centered at 575,76 and 547,76. A maximized window's close button is centered at
+// 1249,70, and the dock items at 578,762, 640,762 and 702,762.
+const filesClose = {x: 575, y: 76}
+const filesMaximize = {x: 547, y: 76}
 const maximizedClose = {x: 1249, y: 70}
-const dockItemCenter = (windowIndex: number) => ({x: 547 + 62 * windowIndex, y: 762})
+const dockItemCenter = (windowIndex: number) => ({x: 578 + 62 * windowIndex, y: 762})
 
 test('a window button acts at a release over the button that the press armed, even after the pointer moved off the button and back', () => {
   const machine = createWindowManagerMachine()
@@ -1011,7 +1014,7 @@ test('a release off the pressed control, a release over another control, and a p
     ]},
     {label: 'a release over another button', press: filesClose, focused: 0, release: [{kind: 'up', ...filesMaximize, timeStamp: 1}]},
     {label: 'a pointercancel over the button', press: filesClose, focused: 0, release: [{kind: 'cancel', ...filesClose, timeStamp: 1}]},
-    {label: 'a release over another dock item', press: dockItemCenter(1), focused: 3, release: [{kind: 'up', ...dockItemCenter(3), timeStamp: 1}]},
+    {label: 'a release over another dock item', press: dockItemCenter(1), focused: 2, release: [{kind: 'up', ...dockItemCenter(2), timeStamp: 1}]},
   ]
   for (const {label, press, release, focused} of cases) {
     const machine = createWindowManagerMachine()
@@ -1046,7 +1049,7 @@ test('a pointercancel ends a drag at its point, like a release', () => {
 test('a dock item raises and focuses its window at the release, and a key between the press and the release goes to the window focused before', () => {
   const machine = createWindowManagerMachine()
   let values = step(machine)
-  // Open photo 5 while Photos (window 3) is focused, then focus Files with a press and
+  // Open photo 5 while Photos (window 2) is focused, then focus Files with a press and
   // a release on its content.
   values = click(machine, photoPoint(machine, values, 5).x, photoPoint(machine, values, 5).y)
   assert.equal(openPhotoOf(machine.source), 5)
@@ -1055,7 +1058,7 @@ test('a dock item raises and focuses its window at the release, and a key betwee
 
   // A press on Photos' dock item that moves off and releases elsewhere changes neither
   // the focus nor the stack.
-  const photosDockItem = dockItemCenter(3)
+  const photosDockItem = dockItemCenter(2)
   const beforePress = windowsAndStack(machine.source)
   machine.pointerDown(photosDockItem.x, photosDockItem.y, eventTime(machine, 1))
   machine.pointerMove(photosDockItem.x, photosDockItem.y - 200, eventTime(machine, 5))
@@ -1074,8 +1077,8 @@ test('a dock item raises and focuses its window at the release, and a key betwee
   // The release over the dock item raises and focuses Photos, and ArrowRight now opens photo 6.
   machine.pointerUp(photosDockItem.x, photosDockItem.y, eventTime(machine))
   values = step(machine)
-  assertFocused(projectWindows(machine, values), 3)
-  assert.equal(machine.source[stackSourceField(windowCount - 1, 3)], 1)
+  assertFocused(projectWindows(machine, values), 2)
+  assert.equal(machine.source[stackSourceField(windowCount - 1, 2)], 1)
   machine.photoNext(eventTime(machine))
   step(machine)
   assert.equal(openPhotoOf(machine.source), 6)
@@ -1104,7 +1107,7 @@ test('ArrowLeft, ArrowRight and Escape reach Photos only while Photos is the foc
   assert.equal(openPhotoOf(machine.source), 5)
   // A press and a release on Photos' title bar focus Photos, and the same keys change its state.
   values = click(machine, 900, 212)
-  assertFocused(projectWindows(machine, values), 3)
+  assertFocused(projectWindows(machine, values), 2)
   const openPhotos: number[] = []
   for (const sendKey of keys) {
     sendKey(eventTime(machine))
@@ -1141,7 +1144,7 @@ test('ArrowLeft, ArrowRight and Escape reach Photos only while Photos is the foc
     machine.pointerDown(20, 700, eventTime(machine, 1))
     sendKeyAndRelease()
     values = step(machine)
-    assertFocused(projectWindows(machine, values), 3)
+    assertFocused(projectWindows(machine, values), 2)
     openAfterKeyAndRelease.push(openPhotoOf(machine.source))
   }
   assert.deepEqual(openAfterKeyAndRelease, [6, 7, 8, 9])
@@ -1164,7 +1167,7 @@ test("Photos takes a release over its content after a press there as a click, an
   machine.pointerMove(cornerPoint.x - 90, cornerPoint.y - 60, eventTime(machine, 5))
   machine.pointerUp(cornerPoint.x - 90, cornerPoint.y - 60, eventTime(machine, 9))
   values = step(machine)
-  assert.deepEqual([machine.source[windowSourceField(3, windowStateField.width)], machine.source[windowSourceField(3, windowStateField.height)]], [470, 370])
+  assert.deepEqual([machine.source[windowSourceField(2, windowStateField.width)], machine.source[windowSourceField(2, windowStateField.height)]], [470, 370])
   assert.ok(pointOnPhoto(machine, values, 11, {x: cornerPoint.x - 90, y: cornerPoint.y - 60}))
   assert.equal(openPhotoOf(machine.source), -1)
   // A title bar drag that the workspace stops at the dock, released over photo 10,
@@ -1173,7 +1176,7 @@ test("Photos takes a release over its content after a press there as a click, an
   machine.pointerMove(900, 700, eventTime(machine, 5))
   machine.pointerUp(900, 700, eventTime(machine, 9))
   values = step(machine)
-  assert.equal(machine.source[windowSourceField(3, windowStateField.top)], 724 - 370)
+  assert.equal(machine.source[windowSourceField(2, windowStateField.top)], 724 - 370)
   assert.ok(pointOnPhoto(machine, values, 10, {x: 900, y: 700}))
   assert.equal(openPhotoOf(machine.source), -1)
   // A press on Files' content, released over photo 5, opens no photo.
@@ -1205,7 +1208,7 @@ test("Photos takes a release over its content after a press there as a click, an
   resized.pointerUp(700, 300, eventTime(resized, 1))
   values = step(resized)
   assert.deepEqual(
-    [windowStateField.left, windowStateField.top, windowStateField.width, windowStateField.height].map(field => resized.source[windowSourceField(3, field)]),
+    [windowStateField.left, windowStateField.top, windowStateField.width, windowStateField.height].map(field => resized.source[windowSourceField(2, field)]),
     [650, 190, 280, 190],
   )
   assert.ok(pointOnPhoto(resized, values, 4, {x: 700, y: 300}))
@@ -1213,9 +1216,9 @@ test("Photos takes a release over its content after a press there as a click, an
   // A maximized Photos has no grip, so a press and a release on photo 11 inside the
   // window's bottom-right 24 px open photo 11. The maximized window is 12,48 1256×664,
   // so those 24 px span 1244..1268 × 688..712.
-  clickWindowControl(resized, values, 3, 'maximize')
+  clickWindowControl(resized, values, 2, 'maximize')
   values = settle(resized)
-  assert.equal(projectWindows(resized, values)[3]!.maximized, 1)
+  assert.equal(projectWindows(resized, values)[2]!.maximized, 1)
   const maximizedCorner = {x: 1245, y: 689}
   assert.ok(pointOnPhoto(resized, values, 11, maximizedCorner))
   click(resized, maximizedCorner.x, maximizedCorner.y)
@@ -1279,13 +1282,13 @@ test('during a window animation, presses and releases hit-test where the windows
 function createPressReference(filesRowCounts: readonly number[]) {
   type Point = {x: number, y: number}
   type Rectangle = {left: number, top: number, width: number, height: number}
-  const normalRectangles: Rectangle[] = [[54, 54, 520, 340], [410, 104, 500, 366], [174, 344, 470, 300], [650, 190, 560, 430]]
+  const normalRectangles: Rectangle[] = [[54, 54, 540, 340], [410, 104, 500, 366], [650, 190, 560, 430]]
     .map(([left, top, width, height]) => ({left: left!, top: top!, width: width!, height: height!}))
   const state = {
     windows: normalRectangles.map(() => ({open: 1, minimized: 0, maximized: 0})),
     // Window indices from back to front.
-    order: [0, 1, 2, 3],
-    // e.g. 'close 0' for Files' close button, 'dock 3' for Photos' dock item, 'photos content', 'files list', or
+    order: [0, 1, 2],
+    // e.g. 'close 0' for Files' close button, 'dock 2' for Photos' dock item, 'photos content', 'files list', or
     // 'location 2' for Files' third sidebar location.
     armed: null as string | null,
     // The sidebar location that Files' list shows, and its selected row or -1.
@@ -1307,7 +1310,7 @@ function createPressReference(filesRowCounts: readonly number[]) {
   function hitAt(point: Point): {windowIndex: number | undefined, control: string | null} {
     const windowIndex = state.order.findLast(index => visible(index) && inside(point, rectangleOf(index)))
     if (windowIndex === undefined) {
-      const dockItem = [0, 1, 2, 3].find(index => inside(point, {left: 522 + 62 * index, top: 737, width: 50, height: 50}))
+      const dockItem = [0, 1, 2].find(index => inside(point, {left: 553 + 62 * index, top: 737, width: 50, height: 50}))
       return {windowIndex, control: dockItem === undefined ? null : `dock ${dockItem}`}
     }
     const {left, top, width, height} = rectangleOf(windowIndex)
@@ -1316,15 +1319,16 @@ function createPressReference(filesRowCounts: readonly number[]) {
       if (inside(point, {left: buttonLeft - 5, top: top + 8, width: 28, height: 28})) return {windowIndex, control: `${name} ${windowIndex}`}
     }
     const onGrip = state.windows[windowIndex]!.maximized === 0 && inside(point, {left: left + width - 24, top: top + height - 24, width: 24, height: 24})
-    if (windowIndex === 3 && !onGrip && inside(point, {left: left + 1, top: top + 45, width: width - 2, height: height - 46})) {
+    if (windowIndex === 2 && !onGrip && inside(point, {left: left + 1, top: top + 45, width: width - 2, height: height - 46})) {
       return {windowIndex, control: 'photos content'}
     }
-    // Files' list is the content box right of the 132 px sidebar, below the 28 px
-    // header row and left of the 16 px scrollbar strip. The sidebar's three locations
-    // are 116×28, 8 px from the content box's left edge, from 40 px below its top edge.
+    // Files' list is the content box right of the 152 px sidebar, below the 28 px
+    // header row, above the 32 px footer and left of the 16 px scrollbar strip. The
+    // sidebar's three locations are 136×24, 8 px from the content box's left edge,
+    // from 28 px below its top edge.
     if (windowIndex === 0 && !onGrip) {
-      if (inside(point, {left: left + 133, top: top + 73, width: width - 150, height: height - 74})) return {windowIndex, control: 'files list'}
-      const location = [0, 1, 2].find(index => inside(point, {left: left + 9, top: top + 85 + 28 * index, width: 116, height: 28}))
+      if (inside(point, {left: left + 153, top: top + 73, width: width - 170, height: height - 106})) return {windowIndex, control: 'files list'}
+      const location = [0, 1, 2].find(index => inside(point, {left: left + 9, top: top + 73 + 24 * index, width: 136, height: 24}))
       if (location !== undefined) return {windowIndex, control: `location ${location}`}
     }
     return {windowIndex, control: null}
@@ -1385,18 +1389,20 @@ test('random presses, moves, releases and cancels at distinct and shared timesta
   const reference = createPressReference(filesSourceField.rowCounts.map(cell => machine.source[cell]!))
   const random = createRandom(0x5eed5)
   // Button centers at each normal rectangle and at the maximized one, a point in each
-  // title bar just past the close button, content centers, a second row of Files'
-  // list, Files' three sidebar locations, which a maximized Files has under the same
-  // points, the dock items, a point between two dock items, and a point on the system
-  // bar. None of them lies in a normal window's title bar left of its buttons or on
-  // its grip, so no press drags or resizes.
+  // title bar just past the close button, points on each window's content, among
+  // them a row of Files' list, a point in Files' footer and one in its sidebar under
+  // the locations, a point on the desk under Notes, Files' three sidebar locations,
+  // which a maximized Files has under the same points, the dock items, a point
+  // between two dock items, and a point on the system bar. None of them lies in a
+  // normal window's title bar left of its buttons or on its grip, so no press drags
+  // or resizes.
   const targets = [
-    ...[[54, 54, 520], [410, 104, 500], [174, 344, 470], [650, 190, 560], [12, 48, 1256]]
+    ...[[54, 54, 540], [410, 104, 500], [650, 190, 560], [12, 48, 1256]]
       .flatMap(([left, top, width]) => [19, 47, 75, 3].map(inset => ({x: left! + width! - inset, y: top! + 22}))),
-    {x: 314, y: 246}, {x: 660, y: 309}, {x: 409, y: 516}, {x: 930, y: 427}, {x: 640, y: 402}, {x: 200, y: 330},
-    {x: 121, y: 153}, {x: 121, y: 181}, {x: 121, y: 209},
-    ...[0, 1, 2, 3].map(dockItemCenter),
-    {x: 640, y: 762}, {x: 640, y: 20},
+    {x: 314, y: 246}, {x: 660, y: 309}, {x: 409, y: 516}, {x: 930, y: 427}, {x: 640, y: 402}, {x: 300, y: 380}, {x: 120, y: 300},
+    {x: 131, y: 139}, {x: 131, y: 163}, {x: 131, y: 187},
+    ...[0, 1, 2].map(dockItemCenter),
+    {x: 609, y: 762}, {x: 640, y: 20},
   ]
   const at = () => targets[Math.floor(random() * targets.length)]!
   const events: PressEvent[] = []
@@ -1497,8 +1503,8 @@ test("while nothing animates and no press is held, a frame's pointer moves run a
   events.push({kind: 'down', x: 100, y: 76, timeStamp: 1203.3})
   for (let index = 1; index <= 20; index++) events.push({kind: 'move', x: 100 + 5 * index, y: 76 + 2 * index, timeStamp: 1203.3 + 4 * index})
   events.push({kind: 'up', x: 200, y: 116, timeStamp: 1287.3})
-  // Files is at 154,94 after the drag, and its maximize button is centered at 627,116.
-  events.push({kind: 'down', x: 627, y: 116, timeStamp: 1403.3}, {kind: 'up', x: 627, y: 116, timeStamp: 1451.7})
+  // Files is at 154,94 after the drag, and its maximize button is centered at 647,116.
+  events.push({kind: 'down', x: 647, y: 116, timeStamp: 1403.3}, {kind: 'up', x: 647, y: 116, timeStamp: 1451.7})
   for (let index = 0; index < 50; index++) events.push({kind: 'move', x: 900 - 2 * index, y: 600, timeStamp: 1455.3 + 4 * index})
   for (let index = 0; index < 100; index++) events.push({kind: 'move', x: 400 + index, y: 300, timeStamp: 2503.1 + 4 * index})
 
@@ -1618,10 +1624,10 @@ test('a Photos click during a maximize lands on the photo whose destination is u
   // the point in both layouts, so a click on photo 11 couldn't tell them apart.
   const settledMachine = createWindowManagerMachine()
   let settledValues = step(settledMachine)
-  const maximizePoint = windowControlPoint(settledMachine, settledValues, 3, 'maximize')
-  clickWindowControl(settledMachine, settledValues, 3, 'maximize')
+  const maximizePoint = windowControlPoint(settledMachine, settledValues, 2, 'maximize')
+  clickWindowControl(settledMachine, settledValues, 2, 'maximize')
   settledValues = settle(settledMachine)
-  const maximized = projectWindows(settledMachine, settledValues)[3]!
+  const maximized = projectWindows(settledMachine, settledValues)[2]!
   const localCenter = photoCenter(settledMachine, settledValues, 5)
   const titleHeight = settledMachine.source[sourceField.titleHeight]!
   const clickX = maximized.left + 1 + localCenter.x
@@ -1649,7 +1655,7 @@ test('a Photos click during a maximize lands on the photo whose destination is u
     // machine, and the program reads Photos' content at its destination, so photo 5
     // opens anyway. A DOM click listener on the drawn .photos-content would never see
     // this click.
-    const drawn = projectWindows(machine, lastFrameBeforeClick!)[3]!
+    const drawn = projectWindows(machine, lastFrameBeforeClick!)[2]!
     assert.equal(drawn.maximized, 1)
     assert.ok(drawn.width < maximized.width, `drawn width ${drawn.width} at ${hz} fps`)
     assert.ok(
@@ -1724,8 +1730,8 @@ function createSessionEvents() {
   }
   // Minimize Files, and restore it from its dock item while it flies to the dock.
   // Buttons and dock items act at the release.
-  press(499, 76, 203.3, 251.9)
-  press(547, 762, 331.1, 380.6)
+  press(519, 76, 203.3, 251.9)
+  press(578, 762, 331.1, 380.6)
   // Hover moves during that animation.
   for (let index = 0; index <= 20; index++) {
     events.push({kind: 'move', x: 900 + 4 * index, y: 700 + 2 * index, timeStamp: 400.2 + 4 * index})
@@ -1754,11 +1760,11 @@ function createSessionEvents() {
     events.push({kind: 'move', x: pointerX += 30, y: 126, timeStamp: time += 4})
   }
   events.push({kind: 'up', x: pointerX, y: 126, timeStamp: time + 4})
-  // Resize System Monitor with its grip past the minimum size and back, which
-  // ends at 480×350.
+  // Resize Notes, which the drag left at 300,104 and in front, with its grip past
+  // the minimum size and back, which ends at 480×350.
   time = 1603.3
-  let gripX = 632
-  let gripY = 632
+  let gripX = 792
+  let gripY = 462
   events.push({kind: 'down', x: gripX, y: gripY, timeStamp: time})
   for (let index = 0; index < 20; index++) {
     events.push({kind: 'move', x: gripX -= 20, y: gripY -= 15, timeStamp: time += 4})
@@ -1767,14 +1773,14 @@ function createSessionEvents() {
     events.push({kind: 'move', x: gripX += 25, y: gripY += 20, timeStamp: time += 4})
   }
   events.push({kind: 'up', x: gripX, y: gripY, timeStamp: time + 4})
-  // Close System Monitor with a press that moves off its close button and back, 4 ms
-  // apart, and releases over the button: System Monitor closes at the release.
-  events.push({kind: 'down', x: 635, y: 366, timeStamp: 2003.3})
+  // Close Files with a press that moves off its close button and back, 4 ms apart,
+  // and releases over the button: Files closes at the release.
+  events.push({kind: 'down', x: 575, y: 76, timeStamp: 2003.3})
   for (let index = 1; index <= 10; index++) {
-    events.push({kind: 'move', x: 635 + 8 * Math.min(index, 10 - index), y: 366, timeStamp: 2003.3 + 4 * index})
+    events.push({kind: 'move', x: 575 + 8 * Math.min(index, 10 - index), y: 76, timeStamp: 2003.3 + 4 * index})
   }
-  events.push({kind: 'up', x: 635, y: 366, timeStamp: 2051.7})
-  // The Notes text changes while System Monitor still shrinks.
+  events.push({kind: 'up', x: 575, y: 76, timeStamp: 2051.7})
+  // The Notes text changes while Files still flies to the dock.
   events.push({kind: 'notes text', paragraph: sessionTypedParagraph, timeStamp: sessionTypedMs})
   // A press on the note's content: Notes is at 300,104 since the drag, so its content box starts at 301,149.
   press(400, 300, 2153.3, 2161.7)
@@ -1786,15 +1792,16 @@ function createSessionEvents() {
   press(1163, 212, 2803.7, 2851.1)
   events.push({kind: 'photo next', timeStamp: 3003.3})
   // Keys reach Photos only while Photos is focused: ArrowRight opens photo 7. Files'
-  // dock item raises and focuses Files at its release, and ArrowLeft and Escape leave
-  // photo 7 open. Photos' dock item focuses Photos again, and ArrowLeft opens photo 6.
+  // dock item opens Files again, and raises and focuses it at its release, and
+  // ArrowLeft and Escape leave photo 7 open. Photos' dock item focuses Photos again,
+  // and ArrowLeft opens photo 6.
   events.push({kind: 'photo next', timeStamp: 3103.3})
-  press(547, 762, 3203.1, 3251.5)
+  press(578, 762, 3203.1, 3251.5)
   // While Files is focused, its list takes a press and a release on row 4 and the
   // keys: ArrowDown selects row 5, and End selects the last row and asks for the
   // list's last scroll position. The session runs without a scroller, so the list
   // stays at each requested position, and the next release, at the same point,
-  // selects the row there. PageUp then moves the selection 11 rows up, above the
+  // selects the row there. PageUp then moves the selection 9 rows up, above the
   // view, and the program asks for that row's top. A press and a release on the
   // sidebar's first location show State, with no selection and at the top, where
   // the same point is on row 4 again, and ArrowDown selects row 5.
@@ -1803,12 +1810,12 @@ function createSessionEvents() {
   events.push({kind: 'files key', key: 'end', timeStamp: sessionFilesEndMs})
   press(314, 246, 3274.1, sessionFilesClickAtEndMs)
   events.push({kind: 'files key', key: 'pageUp', timeStamp: 3281.9})
-  press(121, 153, 3285.3, sessionFilesLocationMs)
+  press(131, 139, 3285.3, sessionFilesLocationMs)
   press(314, 246, 3292.1, 3296.5)
   events.push({kind: 'files key', key: 'down', timeStamp: 3299.3})
   events.push({kind: 'photo previous', timeStamp: 3303.7})
   events.push({kind: 'photo close', timeStamp: 3353.3})
-  press(733, 762, 3403.3, 3451.9)
+  press(702, 762, 3403.3, 3451.9)
   events.push({kind: 'photo previous', timeStamp: 3503.1})
   events.push({kind: 'photo close', timeStamp: 3603.9})
   // Restore Photos, maximize it again, and open photo 5 with a press and a release
@@ -1824,7 +1831,7 @@ function createSessionEvents() {
   events.push({kind: 'photo close', timeStamp: 6103.1})
   // Restore Photos, minimize Files, and resize the viewport while Files is minimized.
   press(1221, 70, 6503.2, 6551.6)
-  press(499, 76, 7103.3, 7151.7)
+  press(519, 76, 7103.3, 7151.7)
   events.push({kind: 'resize', width: 1000, height: 700, timeStamp: 7803.6})
   events.push({kind: 'resize', width: 1280, height: 800, timeStamp: 8203.1})
   // The Notes text changes again, while Photos covers part of the paragraph.
@@ -2052,13 +2059,12 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   const bit = (table: Float32Array, windowIndex: number, field: number) => table[windowSourceField(windowIndex, field)]!
   // The session did what it says.
   const final = baseline.commits.at(-1)!.table
-  assert.equal(bit(final, 0, windowStateField.minimized), 1)
-  assert.equal(final[windowSourceField(1, windowStateField.left)], 300)
+  assert.deepEqual([bit(final, 0, windowStateField.open), bit(final, 0, windowStateField.minimized)], [1, 1])
   assert.deepEqual(
-    [bit(final, 2, windowStateField.open), final[windowSourceField(2, windowStateField.width)], final[windowSourceField(2, windowStateField.height)]],
-    [0, 480, 350],
+    [final[windowSourceField(1, windowStateField.left)], final[windowSourceField(1, windowStateField.width)], final[windowSourceField(1, windowStateField.height)]],
+    [300, 480, 350],
   )
-  assert.equal(final[windowSourceField(3, windowStateField.left)], 720)
+  assert.equal(final[windowSourceField(2, windowStateField.left)], 720)
   assert.equal(baseline.clockStops.length > 5, true)
   // The press on Notes' close button that moved off and released off the button
   // acted on nothing, while Files still animated: a settle check ran between its
@@ -2071,10 +2077,11 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   const afterCancel = commitAt(851.7, 'pointer cancel').table
   assert.equal(bit(afterCancel, 1, windowStateField.maximized), 0)
   assert.equal(armedMass(afterCancel), 0)
-  // The press that moved off System Monitor's close button and back closed the window
-  // at the release, and not before.
-  assert.ok(commitsBetween(2003.3, 2051.7).every(commit => bit(commit.table, 2, windowStateField.open) === 1))
-  assert.equal(bit(commitAt(2051.7, 'pointer up').table, 2, windowStateField.open), 0)
+  // The press that moved off Files' close button and back closed the window at the
+  // release, and not before. Files' dock item opened it again.
+  assert.ok(commitsBetween(2003.3, 2051.7).every(commit => bit(commit.table, 0, windowStateField.open) === 1))
+  assert.equal(bit(commitAt(2051.7, 'pointer up').table, 0, windowStateField.open), 0)
+  assert.equal(bit(commitAt(3251.5, 'pointer up').table, 0, windowStateField.open), 1)
   // Keys changed the open photo once per key while Photos was focused, and not while
   // Files was focused: ArrowLeft and Escape leave photo 7 open in the commits of those
   // keys.
@@ -2082,14 +2089,14 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   assert.equal(openPhoto(commitAt(2403.2, 'pointer up').table), 5)
   assert.equal(focusedWindowOf(commitAt(3251.5, 'pointer up').table), 0)
   assert.equal(focusedWindowOf(commitAt(3353.3, 'photo close').table), 0)
-  assert.equal(focusedWindowOf(commitAt(3451.9, 'pointer up').table), 3)
+  assert.equal(focusedWindowOf(commitAt(3451.9, 'pointer up').table), 2)
   const keyCommits = [
-    {timeStamp: 3003.3, kind: 'photo next', focusedWindow: 3, openPhoto: 6},
-    {timeStamp: 3103.3, kind: 'photo next', focusedWindow: 3, openPhoto: 7},
+    {timeStamp: 3003.3, kind: 'photo next', focusedWindow: 2, openPhoto: 6},
+    {timeStamp: 3103.3, kind: 'photo next', focusedWindow: 2, openPhoto: 7},
     {timeStamp: 3303.7, kind: 'photo previous', focusedWindow: 0, openPhoto: 7},
     {timeStamp: 3353.3, kind: 'photo close', focusedWindow: 0, openPhoto: 7},
-    {timeStamp: 3503.1, kind: 'photo previous', focusedWindow: 3, openPhoto: 6},
-    {timeStamp: 3603.9, kind: 'photo close', focusedWindow: 3, openPhoto: -1},
+    {timeStamp: 3503.1, kind: 'photo previous', focusedWindow: 2, openPhoto: 6},
+    {timeStamp: 3603.9, kind: 'photo close', focusedWindow: 2, openPhoto: -1},
   ]
   assert.deepEqual(
     keyCommits.map(key => {
@@ -2103,15 +2110,15 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   // The release during the second maximize opened photo 5.
   assert.equal(openPhoto(commitAt(sessionPhotoClickMs, 'pointer up').table), 5)
   // Files' list: the release selected row 4, ArrowDown row 5, and End the last row.
-  // The list is 266 px tall, so End asked for the position 266 px before the end of
+  // The list is 234 px tall, so End asked for the position 234 px before the end of
   // the rows, and the evaluations after it read the list there: the same point is on
-  // the row 119 px below that position, and PageUp selects 11 rows above that row,
+  // the row 119 px below that position, and PageUp selects 9 rows above that row,
   // which starts above the view, so the program asked for the position of its top.
   const filesSelected = (commit: SessionRun['commits'][number]) => commit.table[filesSourceField.selected]!
   const filesLocation = (commit: SessionRun['commits'][number]) => filesSourceField.location.findIndex(cell => commit.table[cell] === 1)
   const filesScrollTop = (commit: SessionRun['commits'][number]) => commit.table[filesSourceField.scrollTop]!
   const operationsRowCount = final[filesSourceField.rowCounts[1]!]!
-  const filesEnd = operationsRowCount * 24 - 266
+  const filesEnd = operationsRowCount * 24 - 234
   const filesRowAtEnd = Math.floor((filesEnd + 119) / 24)
   assert.equal(filesSelected(commitAt(sessionFilesClickMs, 'pointer up')), 4)
   assert.equal(filesSelected(commitAt(3266.3, 'files key')), 5)
@@ -2119,8 +2126,8 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   assert.equal(filesSelected(commitAt(sessionFilesEndMs, 'files key')), operationsRowCount - 1)
   assert.equal(filesScrollTop(commitAt(3274.1, 'pointer down')), filesEnd)
   assert.equal(filesSelected(commitAt(sessionFilesClickAtEndMs, 'pointer up')), filesRowAtEnd)
-  assert.equal(filesSelected(commitAt(3281.9, 'files key')), filesRowAtEnd - 11)
-  assert.equal(filesScrollTop(commitAt(3285.3, 'pointer down')), (filesRowAtEnd - 11) * 24)
+  assert.equal(filesSelected(commitAt(3281.9, 'files key')), filesRowAtEnd - 9)
+  assert.equal(filesScrollTop(commitAt(3285.3, 'pointer down')), (filesRowAtEnd - 9) * 24)
   // The release on the sidebar's first location showed State with no selection, and
   // asked for the top of the list, where the next release selected row 4.
   const locationRelease = commitAt(sessionFilesLocationMs, 'pointer up')
@@ -2136,7 +2143,7 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   assert.ok(segmentVisible(commitAt(2851.1, 'pointer up')).every(visible => visible === 0))
   assert.ok(segmentVisible(commitAt(4051.6, 'pointer up')).some(visible => visible === 1))
   // The two text changes applied at their own times, each in an evaluation of its own, and the words moved in those
-  // evaluations: the 6 typed words gave the paragraph another layout while System Monitor still shrank, and the cells
+  // evaluations: the 6 typed words gave the paragraph another layout while Files still flew to the dock, and the cells
   // hold the shortened text from the second change on.
   const typed = commitAt(sessionTypedMs, 'notes text')
   const shortened = commitAt(sessionShortenedMs, 'notes text')
@@ -2149,7 +2156,7 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   assert.equal(commitBefore(typed).table[notesSourceField.arrivedCount], 89)
   assert.ok(differingBits(typed.segments, commitBefore(typed).segments) > 0)
   assert.ok(differingBits(shortened.segments, commitBefore(shortened).segments) > 0)
-  assert.ok(baseline.clockStops.every(time => time < 2051.7 || time > sessionTypedMs), 'System Monitor still animated at the first text change')
+  assert.ok(baseline.clockStops.every(time => time < 2051.7 || time > sessionTypedMs), 'Files still animated at the first text change')
   // The press on the note was counted at its down, with its point in the content box, and no other press of the
   // session was on the note.
   const notePress = (table: Float32Array) => [table[notesSourceField.pressCount], table[notesSourceField.pressX], table[notesSourceField.pressY]]

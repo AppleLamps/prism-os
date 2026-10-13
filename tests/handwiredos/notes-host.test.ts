@@ -190,10 +190,9 @@ test('the textarea is created once with the starting text, and the first frame d
       ['block', `translate3d(${place.x}px,${place.y}px,0)`, `${place.visible}`],
     )
   })
-  // At the starting arrangement the last 12 words have no line, and Photos is the focused window: no caret, and
-  // the textarea isn't focused. The 7 free lines of 205 px hold 33 of the 45 words at the baked widths, up to
-  // "straight to their new places".
-  assert.equal(words().filter(node => node.style['opacity'] === '1').length, 33)
+  // At the starting arrangement every word has a line, beside Photos, and Photos is the focused window: no caret,
+  // and the textarea isn't focused.
+  assert.equal(words().filter(node => node.style['opacity'] === '1').length, 45)
   assert.equal(caret.style['display'], 'none')
   assert.deepEqual([input.focusCalls.length, input.blurCalls], [0, 0])
   // Later frames write no text again.
@@ -305,7 +304,7 @@ test('an empty note keeps its caret in the first usable band, and the textarea s
 test('a press on the note moves the textarea\'s caret to the character that is under the pointer after the press', () => {
   const {machine, input, caret, frame, press} = mount()
   frame()
-  // 520,209 is on the note, 109,60 in its content box, left of Photos and above System Monitor. The press raises
+  // 520,209 is on the note, 109,60 in its content box, left of Photos. The press raises
   // Notes, the paragraph reflows from lines of 205 px into the whole column, and the caret goes to the character at
   // 109,60 of the new layout: on the second line, whose band spans y 46 to 68, in the word that spans x 109 there.
   press(520, 209)
@@ -471,10 +470,14 @@ test('a run of letters wider than the column is drawn as pieces that wrap inside
 })
 
 test('the note says which capacity its text passes, and writes the sentence only when it changes', () => {
-  const {frame, type, press, notice, shownWords, input} = mount()
-  // At the start, Photos and System Monitor leave 7 lines, and the paragraph's last 12 words have none.
+  const {machine, frame, type, press, notice, shownWords, input} = mount()
+  // Photos starts above Notes, and a drag by its title bar moves it 100 px left, to 550,190. It then leaves 13
+  // lines of 105 px at its left, and the paragraph's last 13 words have none.
+  machine.pointerDown(900, 212, 4)
+  machine.pointerMove(800, 212, 8)
+  machine.pointerUp(800, 212, 12)
   frame()
-  assert.deepEqual([notice.style['display'], notice.textContent], ['-webkit-box', 'The last 12 words don\'t fit in the lines that are free.'])
+  assert.deepEqual([notice.style['display'], notice.textContent], ['-webkit-box', 'The last 13 words don\'t fit in the lines that are free.'])
   frame()
   assert.equal(notice.textWrites, 1)
   // With Notes in front, the paragraph fits, and the notice is hidden.

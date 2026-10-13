@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {Circuit, emitMultiply} from '../../src/runtime/numeric-ui-core.ts'
+import {Circuit} from '../../src/runtime/numeric-ui-core.ts'
 import {createWindowManagerMachine} from '../../src/handwiredos/window-manager.ts'
 import {describeOperations} from '../../src/handwiredos/files.ts'
-import {countOperationKinds, createMonitor, frameTimeScale, frameTimesPath, measureProgram} from '../../src/handwiredos/monitor.ts'
+import {createMonitor, frameTimeScale, frameTimesPath, measureProgram} from '../../src/handwiredos/monitor.ts'
 
 // The bytes of every typed array that a compiled program holds, each array once,
 // found by walking the program's own fields.
@@ -20,78 +20,61 @@ function bytesOfEveryArray(program: object) {
   return bytes
 }
 
-test('Monitor counts HandwiredOS\'s operations by kind as the circuit names them', () => {
+// A stand-in for an element that createMonitor writes into: the markup it is given,
+// and one part per selector that the monitor asks for, with the part's text and
+// attributes.
+function createFakeElement() {
+  const parts = new Map<string, {textContent: string, attributes: Record<string, string>, setAttribute: (name: string, value: string) => void}>()
+  const part = (selector: string) => {
+    let found = parts.get(selector)
+    if (found === undefined) {
+      const attributes: Record<string, string> = {}
+      found = {textContent: '', attributes, setAttribute: (name, value) => {
+        attributes[name] = value
+      }}
+      parts.set(selector, found)
+    }
+    return found
+  }
+  return {innerHTML: '', querySelector: part, part}
+}
+
+test('the footer shows the program\'s layers, stored weights and size, and draws each frame\'s time', () => {
   const machine = createWindowManagerMachine()
   const program = machine.tensorProgram
-  // The kind of every operation that the compiler kept, read from the circuit.
-  const built = {affine: 0, reglu: 0, boolean: 0, index: 0}
-  for (let packed = program.sourceSize; packed < program.valueCount; packed++) {
-    built[machine.circuit.operations[program.wireOrder[packed]! - program.sourceSize]!.kind]++
-  }
-  const kinds = countOperationKinds(program)
-  // A gather read is an affine operation that the compiler turned into a read.
-  assert.equal(kinds.affine + kinds.gatherReads, built.affine)
-  assert.equal(kinds.reglu, built.reglu)
-  assert.equal(kinds.boolean, built.boolean)
-  assert.equal(kinds.indexReads, built.index)
-  assert.ok(kinds.affine > 0 && kinds.gatherReads > 0 && kinds.reglu > 0 && kinds.boolean > 0)
-})
+  const [footer, statistics] = [createFakeElement(), createFakeElement()]
+  const monitor = createMonitor({footer: footer as unknown as HTMLElement, statistics: statistics as unknown as HTMLElement}, program)
+  const count = (value: number) => value.toLocaleString('en-US')
+  // The counts are the compiled program's, in the order in which a narrow footer keeps them.
+  const {weights, bytes} = measureProgram(program)
+  assert.deepEqual(
+    [...footer.innerHTML.matchAll(/<li title="[^"]+"><b>([^<]+)<\/b> ([^<]+)<\/li>/g)].map(([, shown, noun]) => [shown, noun]),
+    [[count(program.layers.length), 'layers'], [count(weights), 'weights'], [`${Math.round(bytes / 1000)}`, 'KB']],
+  )
+  assert.ok(bytes > 100_000 && bytes < 999_500, `${bytes} bytes`)
+  // The system bar counts the operations, as many as the list's Operations location has rows.
+  assert.equal(/<b>([\d,]+)<\/b> operations/.exec(statistics.innerHTML)![1], count(describeOperations(program, machine.packedValues).rowCount))
+  assert.equal(/<b>([\d,]+)<\/b> layers/.exec(statistics.innerHTML)![1], count(program.layers.length))
 
-test('Monitor counts index reads and gather reads apart from affine operations', () => {
-  // 4 bits declared one-hot, 4 values, one sum of bit × value, which the compiler
-  // turns into a gather read, one index read of the values, one boolean, and one
-  // sum of the three.
-  const circuit = new Circuit(10)
-  const bits = [0, 1, 2, 3].map(slot => circuit.source(slot))
-  const values = [4, 5, 6, 7].map(slot => circuit.source(slot))
-  circuit.assumeOneHot(bits)
-  for (const value of values) circuit.assumeRange(value, 0, 4096)
-  const selected = circuit.affine(bits.map((bit, slot) => [emitMultiply(circuit, bit, values[slot]!), 1]))
-  const index = circuit.source(8)
-  circuit.assumeRange(index, 0, 3)
-  const read = circuit.indexRead(index, values)
-  const score = circuit.source(9)
-  circuit.assumeRange(score, 0, 1)
-  const rounded = circuit.boolean(score)
-  const sum = circuit.roundAffine([[selected, 1], [read, 1], [rounded, 1]])
-  const program = circuit.compileTensorProgram([sum])
-  assert.deepEqual(countOperationKinds(program), {affine: 1, gatherReads: 1, reglu: 0, boolean: 1, indexReads: 1})
-
-  // Without gather lowering, the masked sum and its 4 products stay.
-  const dense = circuit.compileTensorProgram([sum], false)
-  const denseKinds = countOperationKinds(dense)
-  assert.equal(denseKinds.gatherReads, 0)
-  assert.equal(denseKinds.indexReads, 1)
-  assert.equal(denseKinds.boolean, 1)
-  assert.equal(denseKinds.affine + denseKinds.reglu, dense.valueCount - dense.sourceSize - 2)
-})
-
-test('Monitor\'s legend and the rows of Files\' Operations location count the same four kinds', () => {
-  const machine = createWindowManagerMachine()
-  const program = machine.tensorProgram
-  // What Files shows: one row per live operation, whose kind cell has the kind's class.
-  const operations = describeOperations(program, machine.packedValues)
-  const rowsByKind: Record<string, number> = {}
-  for (let row = 0; row < operations.rowCount; row++) {
-    const kindClass = operations.kindClass!(row)
-    rowsByKind[kindClass] = (rowsByKind[kindClass] ?? 0) + 1
-  }
-  // What Monitor shows: the markup that createMonitor writes into its two elements,
-  // which stand in for the Monitor window's content box and the system bar's counters.
-  const element = () => ({innerHTML: '', querySelector: () => ({})})
-  const [content, statistics] = [element(), element()]
-  createMonitor({content: content as unknown as HTMLElement, statistics: statistics as unknown as HTMLElement}, program)
-  const count = (text: string) => Number(text.replaceAll(',', ''))
-  const legend = [...content.innerHTML.matchAll(/<li class="(kind-[a-z]+)"[^>]*><b>([\d,]+)<\/b> ([^<]+)<\/li>/g)]
-    .map(([, kindClass, entryCount, name]) => ({kindClass: kindClass!, count: count(entryCount!), name: name!}))
-  assert.deepEqual(legend.map(entry => [entry.kindClass, entry.name]), [['kind-affine', 'affine'], ['kind-reglu', 'ReGLU'], ['kind-boolean', 'boolean'], ['kind-index', 'index']])
-  assert.deepEqual(Object.fromEntries(legend.map(entry => [entry.kindClass, entry.count])), rowsByKind)
-  // The bar's segments grow by the same counts, in the same order.
-  const segments = [...content.innerHTML.matchAll(/<i class="(kind-[a-z]+)" style="flex-grow: (\d+)"/g)].map(([, kindClass, grow]) => [kindClass, Number(grow)])
-  assert.deepEqual(segments, legend.map(entry => [entry.kindClass, entry.count]))
-  // The two totals, in Monitor's figures and in the system bar, are Files' row count.
-  assert.equal(count(/<dt>Operations<\/dt><dd>([\d,]+)<\/dd>/.exec(content.innerHTML)![1]!), operations.rowCount)
-  assert.equal(count(/<b>([\d,]+)<\/b> operations/.exec(statistics.innerHTML)![1]!), operations.rowCount)
+  // A frame's time: the figure beside the chart, the chart's line up to its right
+  // edge, and what a pointer that rests on the chart reads, which names the scale.
+  const caption = (scale: number) => `The program's time in each of the last 60 frames, from 0 at the chart's bottom to ${scale} ms at its top.`
+  monitor.update(0.3)
+  assert.equal(footer.part('.monitor-frame-time').textContent, '0.30')
+  assert.equal(statistics.part('.system-frame-time').textContent, '0.30')
+  assert.equal(footer.part('.monitor-chart .line').attributes['d'], 'M59 0.700')
+  assert.equal(footer.part('.monitor-chart .area').attributes['d'], 'M59 0.700V1H59Z')
+  assert.equal(footer.part('.monitor-chart .end').attributes['d'], 'M59 0.700h0')
+  assert.equal(footer.part('.monitor-frame').attributes['title'], caption(1))
+  // A longer frame moves the scale to 5 ms, and the earlier frame's point with it.
+  monitor.update(3.2)
+  assert.equal(footer.part('.monitor-frame-time').textContent, '3.20')
+  assert.equal(footer.part('.monitor-chart .line').attributes['d'], 'M58 0.940L59 0.360')
+  assert.equal(footer.part('.monitor-frame').attributes['title'], caption(5))
+  // The chart keeps the last 60 frames: once the long frame has left it, the scale is 1 ms again.
+  for (let frame = 0; frame < 60; frame++) monitor.update(0.5)
+  assert.equal(footer.part('.monitor-chart .line').attributes['d'], `M${Array.from({length: 60}, (_, index) => `${index} 0.500`).join('L')}`)
+  assert.equal(footer.part('.monitor-frame').attributes['title'], caption(1))
 })
 
 test('Monitor\'s size of the program counts every array once, also a table that many index reads share', () => {

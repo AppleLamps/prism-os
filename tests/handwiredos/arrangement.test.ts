@@ -9,9 +9,8 @@ const systemBarHeight = 36
 const dockHeight = 76
 const minimum = {width: 280, height: 190}
 const natural = [
-  {width: 520, height: 340},
+  {width: 540, height: 340},
   {width: 500, height: 366},
-  {width: 470, height: 300},
   {width: 560, height: 430},
 ]
 // What arrangeInitialWindows reads from the table of a machine that starts with the
@@ -66,13 +65,31 @@ function assertFits(rectangles: readonly Rectangle[], workspace: Rectangle, labe
   }
 }
 
-test('at 1440 × 900 the windows open at the design\'s rectangles', () => {
+test('at 1440 × 900 Files is a column as tall as Notes and Photos together, and Photos covers Notes\' lower right part', () => {
   assert.deepEqual(arrangeWindows(workspaceOf(1440, 900), minimum, natural, metrics), [
-    {left: 48, top: 60, width: 520, height: 340},
-    {left: 592, top: 60, width: 500, height: 366},
-    {left: 248, top: 440, width: 470, height: 300},
-    {left: 832, top: 186, width: 560, height: 430},
+    {left: 38, top: 84, width: 540, height: 556},
+    {left: 602, top: 84, width: 500, height: 366},
+    {left: 842, top: 210, width: 560, height: 430},
   ])
+  // The page prints the list of things to try on the desk's lower right, 124 px tall
+  // and ending 12 px above the dock: 48 px lie between Photos and the list, as many
+  // as between the system bar and the windows.
+  assert.equal(900 - dockHeight - 12 - 124 - (210 + 430), 84 - systemBarHeight)
+})
+
+test('a viewport 1280 px wide narrows Photos, and Files keeps the width that shows five columns', () => {
+  const rectangles = arrangeWindows(workspaceOf(1280, 800), minimum, natural, metrics)
+  assert.deepEqual(rectangles, [
+    {left: 24, top: 102, width: 534, height: 556},
+    {left: 582, top: 102, width: 500, height: 366},
+    {left: 822, top: 228, width: 434, height: 430},
+  ])
+  // The list is Files' content box without the 152 px sidebar, and Operations' five
+  // columns take 372 px, see handwired-os.css.
+  assert.ok(rectangles[0]!.width - 2 - 152 >= 372)
+  // 800 px of height show no list of things to try, so the group is centered between
+  // the system bar and the dock.
+  assert.equal(102 - systemBarHeight, 800 - dockHeight - (228 + 430))
 })
 
 test('a larger viewport centers the group, at the same sizes', () => {
@@ -104,8 +121,8 @@ test('every window opens inside the workspace, at least at the minimum size, on 
 })
 
 test('every window keeps part of its title bar in view', () => {
-  // In stacking order, Files, Notes, Monitor, Photos: a window is covered only by
-  // the windows after it. At least 44 × 44 px of each title bar, at its left end,
+  // In stacking order, Files, Notes, Photos: a window is covered only by the
+  // windows after it. At least 44 × 44 px of each title bar, at its left end,
   // lie under no later window.
   for (const [width, height] of viewports) {
     const rectangles = arrangeWindows(workspaceOf(width, height), minimum, natural, metrics)
@@ -123,26 +140,44 @@ test('in one column, each window is covered just under a part of its content', (
   const phone = arrangeWindows(workspaceOf(390, 844), minimum, natural, metrics)
   for (const rectangle of phone) assert.deepEqual([rectangle.left, rectangle.width], [8, 374])
   const shown = (rectangles: readonly Rectangle[]) => rectangles.slice(1).map((rectangle, index) => rectangle.top - rectangles[index]!.top)
-  // Files shows its title bar alone, since 10 px of its content would show half a
-  // line of letters. Notes shows its 7 lines of 22 px below the 69 px above the first
-  // line, and Monitor its sentence on two lines.
-  assert.deepEqual(shown(phone), [44, 69 + 7 * 22 + 4, 113])
-  // The column is centered in the 10 px that Files gave up: 13 px under the system
-  // bar, and Photos, in front, ends 13 px above the dock.
-  assert.equal(phone[0]!.top, systemBarHeight + 13)
-  assert.equal(phone[3]!.top + phone[3]!.height, 844 - dockHeight - 13)
+  // Files shows its title bar, the list's header and 3 whole rows: 45 px to its
+  // content box, 28 px of header and 24 px a row. The sidebar's heading is as tall
+  // as the header and its three locations as tall as the rows, so they are whole
+  // too. Notes shows its 7 lines of 22 px below the 69 px above the first line.
+  assert.deepEqual(shown(phone), [45 + 28 + 3 * 24, 69 + 7 * 22 + 4])
+  // The column is centered in the 22 px that were too few for a fourth row: 19 px
+  // under the system bar, and Photos, in front, ends 19 px above the dock.
+  assert.equal(phone[0]!.top, systemBarHeight + 19)
+  assert.equal(phone[2]!.top + phone[2]!.height, 844 - dockHeight - 19)
 
-  // A taller phone has 38 px for Files' content, which hold the list's 28 px header,
-  // so Files shows them, and the column starts 8 px under the system bar.
+  // A taller phone has room for 5 rows.
   const taller = arrangeWindows(workspaceOf(414, 896), minimum, natural, metrics)
-  assert.equal(shown(taller)[0], 44 + 38)
-  assert.equal(taller[0]!.top, systemBarHeight + 8)
+  assert.equal(shown(taller)[0], 45 + 28 + 5 * 24)
+  assert.equal(taller[0]!.top, systemBarHeight + 9)
 
-  // A wider and taller column has room for Monitor's three figures, under its
-  // sentence on one line, and for 5 lines of Notes.
+  // A small phone has 69 px left for Files, 4 px less than its header ends at, so
+  // Files shows its title bar alone.
+  const small = arrangeWindows(workspaceOf(375, 667), minimum, natural, metrics)
+  assert.deepEqual(shown(small), [44, 69 + 7 * 22 + 4])
+
+  // A wider and taller column has room for 9 rows, and for 5 lines of Notes.
   const tall = arrangeWindows(workspaceOf(600, 1000), minimum, natural, metrics)
-  for (const rectangle of tall) assert.deepEqual([rectangle.left, rectangle.width], [40, 520])
-  assert.deepEqual(shown(tall), [140, 69 + 5 * 22 + 4, 93 + 64])
+  for (const rectangle of tall) assert.deepEqual([rectangle.left, rectangle.width], [30, 540])
+  assert.deepEqual(shown(tall), [45 + 28 + 9 * 24, 69 + 5 * 22 + 4])
+})
+
+test('two columns from 640 px of width: Files at the left, as tall as Notes and Photos at the right', () => {
+  for (const [width, height] of [[999, 700], [820, 1180], [640, 800]] as const) {
+    const [files, notes, photos] = arrangeWindows(workspaceOf(width, height), minimum, natural, metrics) as [Rectangle, Rectangle, Rectangle]
+    const label = `${width} × ${height}`
+    assert.deepEqual([files.width, notes.width, photos.width], [notes.width, notes.width, notes.width], label)
+    assert.deepEqual([notes.left, photos.left], [files.left + files.width + 16, files.left + files.width + 16], label)
+    assert.deepEqual([files.top, files.top + files.height], [notes.top, photos.top + photos.height], label)
+    assert.equal(photos.top, notes.top + notes.height + 16, label)
+  }
+  // One px narrower, the windows are one column.
+  const column = arrangeWindows(workspaceOf(639, 800), minimum, natural, metrics)
+  assert.deepEqual(column.map(rectangle => rectangle.left), [50, 50, 50])
 })
 
 test('the arrangement reads the title bar, Photos\' gap and the length of Notes\' text from the table, and a longer text gets more lines', () => {
@@ -160,8 +195,8 @@ test('the arrangement reads the title bar, Photos\' gap and the length of Notes\
   // The same paragraph twice, with the space between the two, is 3,509.1875 px long
   // at those widths, i.e. 3,600 px for the arrangement. In the phone's column of
   // 324 px that is 12 lines and one to spare, where the default paragraph has 6 and
-  // one. So Notes shows 13 lines and not 7, Photos gives up 53 px of its 322, and
-  // Monitor is left with its title bar.
+  // one. So Notes shows 13 lines and not 7, Photos gives up 9 px of its 322, and
+  // Files is left with its title bar.
   const doubled = {
     widths: [...defaultNotesParagraph.widths, 4.375, ...defaultNotesParagraph.widths],
     breakAfter: [...defaultNotesParagraph.breakAfter, 1, ...defaultNotesParagraph.breakAfter],
@@ -169,9 +204,9 @@ test('the arrangement reads the title bar, Photos\' gap and the length of Notes\
   const longer = createWindowManagerMachine({notes: {paragraph: doubled}})
   const longerRectangles = arrangeInitialWindows(longer.source, longer.cells, 390, 844)
   assert.deepEqual(longerRectangles, arrangeWindows(workspaceOf(390, 844), minimum, natural, {...metrics, notesTextWidth: Math.ceil((2 * paragraphWidth + 4.375) / 100) * 100}))
-  assert.deepEqual(shown(arrangeWindows(workspaceOf(390, 844), minimum, natural, metrics)), [44, 69 + 7 * 22 + 4, 113])
-  assert.deepEqual(shown(longerRectangles), [44, 69 + 13 * 22 + 4, 44])
-  assert.deepEqual([arrangeWindows(workspaceOf(390, 844), minimum, natural, metrics)[3]!.height, longerRectangles[3]!.height], [322, 269])
+  assert.deepEqual(shown(arrangeWindows(workspaceOf(390, 844), minimum, natural, metrics)), [45 + 28 + 3 * 24, 69 + 7 * 22 + 4])
+  assert.deepEqual(shown(longerRectangles), [44, 69 + 13 * 22 + 4])
+  assert.deepEqual([arrangeWindows(workspaceOf(390, 844), minimum, natural, metrics)[2]!.height, longerRectangles[2]!.height], [322, 313])
 
   // A taller title bar and a smaller gap in the table move the column's parts by the
   // same amounts: with a 50 px title bar, Notes' first line starts 6 px lower.

@@ -523,26 +523,26 @@ test('words move straight to the new layout in the frame of the event, while the
   // A copy, since the settle below overwrites the machine's values, and the line
   // count at the end reads the frame of the press.
   const values = step(machine).slice()
-  assert.equal(machine.source[windowSourceField(3, windowStateField.minimized)], 1)
+  assert.equal(machine.source[windowSourceField(2, windowStateField.minimized)], 1)
   assert.equal(values[machine.output.animationActive], 1)
   const during = readWords(machine, values)
   assert.notDeepEqual(during, before)
   // In the frame of the press, the text already fills Photos' area, while Photos is
   // still drawn there at nearly full size on its way to the dock: the flow reads
   // which windows are visible after the event, not the drawn frames.
-  const photosOutput = (field: number) => values[machine.output.windows[3 * windowOutputField.size + field]!]!
+  const photosOutput = (field: number) => values[machine.output.windows[2 * windowOutputField.size + field]!]!
   assert.equal(photosOutput(windowOutputField.opacity), 1)
   assert.ok(photosOutput(windowOutputField.scale) > 0.9, `Photos drawn at scale ${photosOutput(windowOutputField.scale)}`)
-  // The obstacles are Files, System Monitor and Photos, in window order.
-  const photosArea = arrangementOf(machine.source).obstacles[2]!
+  // The obstacles are Files and Photos, in window order.
+  const photosArea = arrangementOf(machine.source).obstacles[1]!
   assert.equal(photosArea.active, false)
   assert.ok(during.some((word, wordIndex) => wordOverlaps(word, wordIndex, photosArea)), 'some word is laid out in Photos\' area')
   // The words don't move again while Photos flies to the dock.
   const settled = settle(machine)
   assert.deepEqual(readWords(machine, settled), during)
   assert.deepEqual(compareWithReference(machine, machine.source).problems, [])
-  // System Monitor is still above Notes, but it starts below the fifth line, and
-  // with Photos gone the paragraph fits in 5 lines.
+  // With Photos gone, no window is above Notes, and the paragraph fits in 5 lines
+  // of the whole column.
   assert.equal(values[machine.output.notes.lineCount], 5)
   assert.ok(during.every(word => word.visible === 1))
 })
@@ -569,10 +569,10 @@ test('a band below the content box is unusable, so no word is placed where the w
   const machine = createWindowManagerMachine()
   step(machine)
   settle(machine)
-  // Raise Notes above System Monitor and Photos, then drag Files (520×340) to
-  // 380,60: it covers the whole column of the default Notes window (content box
-  // 498×320) down to band 10, the paragraph continues in bands 11 and 12, and
-  // bands 13 to 15 end below the 320 px content box.
+  // Raise Notes above Photos, then drag Files (540×340) to 380,60: it covers the
+  // whole column of the default Notes window (content box 498×320) down to band 10,
+  // the paragraph continues in bands 11 and 12, and bands 13 to 15 end below the
+  // 320 px content box.
   let time = pressTime(machine)
   machine.pointerDown(450, 126, time)
   machine.pointerUp(450, 126, time)
@@ -620,8 +620,7 @@ test('a paragraph that needs more lines than the flow has bands stays finite, wi
   write(notesWindowIndex, [0, 36, 500, 500])
   write(0, [0, 36, 370, 500])
   table[windowSourceField(2, windowStateField.minimized)] = 1
-  table[windowSourceField(3, windowStateField.minimized)] = 1
-  const order = [2, 3, 1, 0]
+  const order = [2, 1, 0]
   for (let rank = 0; rank < windowCount; rank++) {
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       table[stackSourceField(rank, windowIndex)] = order[rank] === windowIndex ? 1 : 0
@@ -650,7 +649,7 @@ test('a paragraph that needs more lines than the flow has bands stays finite, wi
 })
 
 // A machine at rest in the starting arrangement, where Photos covers the right of the
-// Notes column and System Monitor its lower left.
+// Notes column.
 function machineAtStart() {
   const machine = createWindowManagerMachine()
   step(machine)
@@ -927,8 +926,7 @@ test('a word wider than its slot is laid out whole and reaches past the slot, wh
   write(notesWindowIndex, [0, 36, 500, 500])
   write(0, [0, 36, 370, 500])
   table[windowSourceField(2, windowStateField.minimized)] = 1
-  table[windowSourceField(3, windowStateField.minimized)] = 1
-  const order = [2, 3, 1, 0]
+  const order = [2, 1, 0]
   for (let rank = 0; rank < windowCount; rank++) {
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       table[stackSourceField(rank, windowIndex)] = order[rank] === windowIndex ? 1 : 0
@@ -1054,7 +1052,7 @@ test('a text change in the same evaluation as a drag move, and as a maximize rel
   machine.notesText(first.paragraph, time)
   let values = step(machine)
   assert.deepEqual(machine.evaluations.map(evaluation => [evaluation.kind, evaluation.events]), [['events', ['pointer move', 'notes text']], ['frame', []]])
-  assert.deepEqual([machine.source[windowSourceField(3, windowStateField.left)], machine.source[windowSourceField(3, windowStateField.top)]], [550, 238])
+  assert.deepEqual([machine.source[windowSourceField(2, windowStateField.left)], machine.source[windowSourceField(2, windowStateField.top)]], [550, 238])
   const dragged = compareWithReferences(machine, values, machine.source, first)
   assert.deepEqual(dragged.problems, [])
   assert.equal(dragged.matchesPretext, true)
@@ -1105,7 +1103,7 @@ test('a press on the note\'s content is counted with its point in the content bo
   assert.deepEqual(readPress(machine), {count: 0, x: 0, y: 0})
   // Notes is 410,104 500×366, so its content box starts at 411,149. Photos (650,190 560×430) is stacked above it:
   // a press on the part of the note that Photos covers goes to Photos.
-  assert.equal(focusedWindow(press(700, 300)), 3)
+  assert.equal(focusedWindow(press(700, 300)), 2)
   assert.equal(readPress(machine).count, 0)
   // A press on the part that no window covers is a press on the note, also while Notes isn't the focused window. It
   // raises Notes, and the outputs hold the count and the point in the frame of the press.
@@ -1124,7 +1122,7 @@ test('a press on the note\'s content is counted with its point in the content bo
   press(40, 700)
   assert.deepEqual(readPress(machine), {count: 2, x: 289, y: 151})
   // Two presses in one frame count twice, and the last one's point is stored. Files is in front now, and 600,420
-  // lies below it, on the note.
+  // lies right of it and below it, on the note.
   const time = pressTime(machine)
   machine.pointerDown(600, 420, time)
   machine.pointerUp(600, 420, time)
@@ -1236,18 +1234,23 @@ test('the walker breaks a line at a 1/64 px tie the way pretext does, at either 
   }
 })
 
-test('at the starting arrangement the paragraph gets 7 lines of 205 px, and its last 12 words have no line', () => {
+test('at the starting arrangement the paragraph is laid out whole, in 10 lines of 205 px beside Photos', () => {
   const machine = machineAtStart()
   const values = step(machine)
-  // Photos covers the right of the column and System Monitor the lower left. pretext
-  // alone breaks the starting text into these 7 lines at 205 px, which hold 33 of
-  // its 45 words: "Type anything here. The same", "program that runs the", "windows
-  // lays out this note.", "Drag Files or Photos over it,", "and every line narrows",
-  // "around them. Words move", "straight to their new places".
+  // Photos covers the right of the column, from above the first line to below the
+  // content box, which holds 13 lines. pretext alone breaks the starting text into
+  // these 10 lines at 205 px: "Type anything here. The same", "program that runs
+  // the", "windows lays out this note.", "Drag Files or Photos over it,", "and every
+  // line narrows", "around them. Words move", "straight to their new places", "in
+  // one frame, and the lines", "break where pretext would", "break them."
   const words = readWords(machine, values)
-  assert.equal(words.filter(word => word.visible === 1).length, 33)
-  assert.equal(values[machine.output.notes.lineCount], 7)
-  assert.equal(values[machine.output.notes.truncated], 1)
-  assert.ok(words.filter(word => word.visible === 1).every(word => word.x >= 24 && word.x < 24 + 205))
-  assert.deepEqual(readBands(machine, values).slice(0, 8).map(band => band.usable === 1 ? band.width : 'unusable'), [205, 205, 205, 205, 205, 205, 205, 'unusable'])
+  assert.equal(words.filter(word => word.visible === 1).length, 45)
+  assert.equal(values[machine.output.notes.lineCount], 10)
+  assert.equal(values[machine.output.notes.truncated], 0)
+  assert.ok(words.every(word => word.x >= 24 && word.x < 24 + 205))
+  assert.deepEqual(new Set(words.map(word => word.y)).size, 10)
+  assert.deepEqual(
+    readBands(machine, values).map(band => band.usable === 1 ? band.width : 'unusable'),
+    Array.from({length: 16}, (_, band) => band < 13 ? 205 : 'unusable'),
+  )
 })
