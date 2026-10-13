@@ -1928,6 +1928,18 @@ function mountWindowManager(document: Document, window: Window) {
     machine.pointerDown(event.clientX, event.clientY, event.timeStamp)
     scheduleRender()
   })
+  // A context menu takes the release of the press that opens it: the browser sends
+  // no pointerup after it. On macOS a control-click opens the menu with the primary
+  // button, whose press the listener above takes, so a control-click on a title bar
+  // would drag the window with no button held. The menu's event ends the press like
+  // a pointercancel. In Chrome the event names the kind of pointer that opened the
+  // menu, and a touch's long press ends no press: the finger stays down and can
+  // still drag.
+  window.addEventListener('contextmenu', (event: MouseEvent) => {
+    if ('pointerType' in event && event.pointerType !== 'mouse') return
+    machine.pointerCancel(event.clientX, event.clientY, event.timeStamp)
+    scheduleRender()
+  })
   window.addEventListener('pointermove', (event: PointerEvent) => {
     if (!event.isPrimary) return
     // Chrome dispatches about one pointermove per frame, while the coalesced
