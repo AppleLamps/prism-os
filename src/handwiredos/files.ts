@@ -462,6 +462,11 @@ export type FilesLocation = {
   // in lower case, e.g. files-list-operations, so the stylesheet can size the
   // location's columns.
   label: string
+  // What the sidebar says under its items while the list shows this location: the
+  // row count, then what a row is, e.g. '21,229' and 'operations', and a sentence
+  // for a visitor who doesn't know the program's words.
+  rowNoun: string
+  description: string
   titles: ColumnTexts
   rowCount: number
   text: (row: number) => ColumnTexts
@@ -537,6 +542,8 @@ export function describeOperations(program: TensorProgram, packedValues: Float32
   invariant(firstRow === rowCount, 'the layers hold every live operation')
   return {
     label: 'Operations',
+    rowNoun: 'operations',
+    description: 'What the program computes: each number from earlier ones.',
     titles: ['wire', 'kind', 'layer', 'weights'],
     rowCount,
     text: row => [
@@ -558,6 +565,8 @@ export function describeOperations(program: TensorProgram, packedValues: Float32
 export function describeState(cells: readonly {name: string, policy: string}[], packedValues: Float32Array): FilesLocation {
   return {
     label: 'State',
+    rowNoun: 'cells',
+    description: 'What the program reads: its input, its constants and the state it keeps.',
     titles: ['cell', 'kind', '', ''],
     rowCount: cells.length,
     text: row => [cells[row]!.name.replaceAll(/\[(\d+)\]/g, '.$1'), cells[row]!.policy, '', ''],
@@ -570,6 +579,8 @@ export function describeState(cells: readonly {name: string, policy: string}[], 
 export function describeOutputs(outputs: readonly {name: string, wire: Wire}[], values: Float32Array): FilesLocation {
   return {
     label: 'Outputs',
+    rowNoun: 'outputs',
+    description: 'What the page draws from, e.g. a window\'s position.',
     titles: ['output', '', '', ''],
     rowCount: outputs.length,
     text: row => [outputs[row]!.name, '', '', ''],
@@ -577,9 +588,13 @@ export function describeOutputs(outputs: readonly {name: string, wire: Wire}[], 
   }
 }
 
-// Creates the sidebar's items, the header's cells and the slots' row nodes inside
-// `root`, the Files content box, and returns a frame's DOM read, DOM writes and
-// side effect. `locations` holds one entry per location of the program, in order.
+// A location's row count as the sidebar shows it, e.g. '21,229'.
+const formatRowCount = (location: FilesLocation) => location.rowCount.toLocaleString('en-US')
+
+// Creates the sidebar's items, the caption's three parts, the header's cells and the
+// slots' row nodes inside `root`, the Files content box, and returns a frame's DOM
+// read, DOM writes and side effect. `locations` holds one entry per location of the
+// program, in order.
 export function createFilesRenderer(document: Document, root: HTMLElement, locations: readonly FilesLocation[]) {
   invariant(locations.length === locationCount, 'one entry per location')
   const sidebar = root.querySelector<HTMLElement>('.files-sidebar')
@@ -588,12 +603,14 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
   const scroller = root.querySelector<HTMLElement>('.files-scroller')
   const spacer = root.querySelector<HTMLElement>('.files-spacer')
   const overflow = root.querySelector<HTMLElement>('.files-overflow')
+  const caption = root.querySelector<HTMLElement>('.files-caption')
   invariant(sidebar !== null, 'Files sidebar is missing')
   invariant(list !== null, 'Files list is missing')
   invariant(header !== null, 'Files header is missing')
   invariant(scroller !== null, 'Files scroller is missing')
   invariant(spacer !== null, 'Files spacer is missing')
   invariant(overflow !== null, 'Files overflow notice is missing')
+  invariant(caption !== null, 'Files sidebar caption is missing')
   // The program's layout numbers, which the stylesheet reads, e.g. for a row's height.
   root.style.setProperty('--files-sidebar-width', `${filesLayout.sidebarWidth}px`)
   root.style.setProperty('--files-header-height', `${filesLayout.headerHeight}px`)
@@ -606,11 +623,19 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
     return cell
   })
   overflow.textContent = `Only ${slotCount} rows are drawn at a time.`
+  // The caption's three parts: the row count, what a row is, and the location's
+  // sentence, e.g. '21,229', ' operations' and 'What the program computes: each
+  // number from earlier ones.'
+  const captionParts = ['b', 'span', 'span'].map(tagName => caption.appendChild(document.createElement(tagName)))
+  captionParts[2]!.className = 'files-caption-sentence'
   const domCache = {
     list, // mount lifetime
     scroller, // mount lifetime
     spacer, // mount lifetime
     overflow, // mount lifetime
+    captionCount: captionParts[0]!, // mount lifetime
+    captionNoun: captionParts[1]!, // mount lifetime
+    captionSentence: captionParts[2]!, // mount lifetime
     headerCells: createCells(header), // mount lifetime
     // mount lifetime. Each item sits on the rectangle that the program hit-tests.
     locationNodes: locations.map((location, index) => {
@@ -621,6 +646,8 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
       node.style.top = `${filesLayout.locationTop + index * filesLayout.locationHeight}px`
       node.style.width = `${filesLayout.sidebarWidth - 2 * filesLayout.locationInset}px`
       node.style.height = `${filesLayout.locationHeight}px`
+      // The caption's text for this location, for a pointer that rests on the item.
+      node.title = `${formatRowCount(location)} ${location.rowNoun}. ${location.description}`
       sidebar.appendChild(node)
       return node
     }),
@@ -655,11 +682,15 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
       })
       if (domCache.location !== locationIndex) {
         // Another location: its column titles, its columns' sizes through the class
-        // name, and every slot's text, since a row index now means another row.
+        // name, the sidebar's caption, and every slot's text, since a row index now
+        // means another row.
         domCache.list.className = `files-list files-list-${location.label.toLowerCase()}`
         domCache.headerCells.forEach((cell, column) => {
           cell.textContent = location.titles[column] ?? 'value'
         })
+        domCache.captionCount.textContent = formatRowCount(location)
+        domCache.captionNoun.textContent = ` ${location.rowNoun}`
+        domCache.captionSentence.textContent = location.description
         for (const slot of domCache.slots) slot.row = -1
         domCache.location = locationIndex
       }

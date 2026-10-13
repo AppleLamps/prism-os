@@ -1206,12 +1206,13 @@ function createFakeDom() {
   // The static markup of assets/index.html inside .files-content.
   const root = createElement('window-content files-content')
   const sidebar = root.appendChild(createElement('files-sidebar'))
+  const caption = sidebar.appendChild(createElement('files-caption'))
   const list = root.appendChild(createElement('files-list'))
   const header = list.appendChild(createElement('files-header'))
   const scroller = list.appendChild(createElement('files-scroller'))
   const spacer = scroller.appendChild(createElement('files-spacer'))
   const overflow = list.appendChild(createElement('files-overflow'))
-  return {counts, document: {createElement: () => createElement()}, root, sidebar, list, header, scroller, spacer, overflow}
+  return {counts, document: {createElement: () => createElement()}, root, sidebar, caption, list, header, scroller, spacer, overflow}
 }
 
 test("the renderer writes a row's text only when a slot's row changes, its kind cell's class only when the kind changes, a value's text only when the value changes, and every slot's display and transform in every frame", () => {
@@ -1225,6 +1226,10 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   const renderer = createFilesRenderer(dom.document as unknown as Document, dom.root as unknown as HTMLElement, locations)
   const rowNodes = dom.spacer.children
   const rowTexts = (node: FakeElement) => node.children.map(cell => cell.textContent)
+  // The sidebar's items, which follow the caption of the static markup, and the
+  // caption's parts: the row count, what a row is, and the location's sentence.
+  const locationNodes = dom.sidebar.children.filter(node => node.className === 'files-location')
+  const captionTexts = () => dom.caption.children.map(part => part.textContent)
   const drawnNodes = () => rowNodes.filter(node => node.style['display'] === 'grid').sort((left, right) => Number.parseFloat(left.style['transform']!.slice(11)) - Number.parseFloat(right.style['transform']!.slice(11)))
   const expectedTexts = (location: number, row: number) => [...locations[location]!.text(row), formatValue(locations[location]!.value(row))]
   // The kind cell is a row node's second cell. In Operations its class ends with the
@@ -1257,9 +1262,12 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   assert.ok(rowNodes.every(node => node.className === 'files-row' && node.children.length === 5))
   assert.deepEqual(rowNodes[0]!.children.map(cell => cell.className), ['name', 'kind', 'layer', 'weights', 'value'].map(column => `files-cell files-cell-${column}`))
   assert.deepEqual(
-    dom.sidebar.children.map(node => [node.className, node.textContent, node.style['left'], node.style['top'], node.style['width'], node.style['height']]),
+    locationNodes.map(node => [node.className, node.textContent, node.style['left'], node.style['top'], node.style['width'], node.style['height']]),
     [['files-location', 'State', '8px', '40px', '116px', '28px'], ['files-location', 'Operations', '8px', '68px', '116px', '28px'], ['files-location', 'Outputs', '8px', '96px', '116px', '28px']],
   )
+  assert.equal(dom.sidebar.children.length, 4)
+  // The caption has its three parts, without text before the first frame.
+  assert.deepEqual(captionTexts(), ['', '', ''])
 
   // The first frame shows Operations from the top: 14 rows, each in the slot of its
   // index, with its text, its kind's class and its value. The frame also writes the
@@ -1270,7 +1278,10 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   assert.ok(kindClasses().slice(14).every(kindClass => kindClass === 'files-cell files-cell-kind'))
   assert.equal(dom.list.className, 'files-list files-list-operations')
   assert.deepEqual(dom.header.children.map(cell => cell.textContent), ['wire', 'kind', 'layer', 'weights', 'value'])
-  assert.deepEqual(dom.sidebar.children.map(node => node.style['--selected']), ['0', '1', '0'])
+  assert.deepEqual(locationNodes.map(node => node.style['--selected']), ['0', '1', '0'])
+  // The caption counts the location's rows, e.g. '21,229' and ' operations'.
+  assert.deepEqual(captionTexts(), [rowCountOf(machine).toLocaleString('en-US'), ' operations', 'What the program computes: each number from earlier ones.'])
+  assert.ok(/^\d\d,\d{3}$/.test(captionTexts()[0]!), captionTexts()[0])
   assert.equal(dom.spacer.style['height'], `${rowCountOf(machine) * rowHeight}px`)
   assert.equal(dom.overflow.style['display'], 'none')
   assert.deepEqual(rowNodes.map(node => node.style['display']), Array.from({length: slotCount}, (_, slot) => slot < 14 ? 'grid' : 'none'))
@@ -1313,9 +1324,10 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   renderer.render(values, machine.output.files)
   assert.deepEqual(rowNodes.filter(node => node.style['--selected'] === '1').map(node => rowNodes.indexOf(node)), [4170 % slotCount])
 
-  // Another location: the header's titles, the list's class name, and the text of
-  // every drawn row, which the program draws from the top. State's rows have no kind
-  // class, so each of its 14 drawn slots that held an operation's class loses it.
+  // Another location: the header's titles, the list's class name, the caption's
+  // three parts, and the text of every drawn row, which the program draws from the
+  // top. State's rows have no kind class, so each of its 14 drawn slots that held an
+  // operation's class loses it.
   textWrites = dom.counts.textWrites
   values = click(machine, locationPoint(stateLocation), undefined, 100_000)
   const slotsWithKind = kindClasses().slice(0, 14).filter(kindClass => kindClass !== 'files-cell files-cell-kind').length
@@ -1324,8 +1336,9 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   assert.ok(kindClasses().slice(0, 14).every(kindClass => kindClass === 'files-cell files-cell-kind'))
   assert.equal(dom.list.className, 'files-list files-list-state')
   assert.deepEqual(dom.header.children.map(cell => cell.textContent), ['cell', 'kind', '', '', 'value'])
-  assert.deepEqual(dom.sidebar.children.map(node => node.style['--selected']), ['1', '0', '0'])
-  assert.equal(dom.counts.textWrites, textWrites + 5 + 14 * 5)
+  assert.deepEqual(locationNodes.map(node => node.style['--selected']), ['1', '0', '0'])
+  assert.deepEqual(captionTexts(), [String(machine.sourceCells.length), ' cells', 'What the program reads: its input, its constants and the state it keeps.'])
+  assert.equal(dom.counts.textWrites, textWrites + 5 + 3 + 14 * 5)
   assert.deepEqual(rowTexts(rowNodes[0]!), ['viewportWidth', 'input', '', '', '1280'])
   // The program asked for the top, which the host gives the scroller after its DOM
   // writes, and the position read back is what the scroller kept.

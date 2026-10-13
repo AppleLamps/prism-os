@@ -483,6 +483,50 @@ body {
   white-space: nowrap;
 }
 
+/* Under the items, the sidebar says what the shown location holds: the row count with
+   what a row is, e.g. "21,229 operations", and one sentence under it. JavaScript writes
+   them when the list shows another location. The sentence takes up to 5 lines of 16 px
+   in the sidebar's 107 px, whatever the system's font. So a sidebar shows the sentence
+   from 252 px of height, the count alone from 168 px, and neither when it is shorter,
+   e.g. in a window at its minimum height, where the sidebar's 144 px end just under
+   the items. */
+.files-sidebar {
+  container: files-sidebar / size;
+}
+
+.files-caption {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-3);
+  left: var(--space-4);
+  margin: 0;
+  color: var(--ink-3);
+  font: var(--type-small);
+}
+
+.files-caption b {
+  color: var(--ink-2);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.files-caption-sentence {
+  display: block;
+  margin-top: 2px;
+}
+
+@container files-sidebar (max-height: 251px) {
+  .files-caption-sentence {
+    display: none;
+  }
+}
+
+@container files-sidebar (max-height: 167px) {
+  .files-caption {
+    display: none;
+  }
+}
+
 /* A selection is a copper wash in the window with focus, and a neutral one elsewhere. */
 .files-location,
 .files-row {
