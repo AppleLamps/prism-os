@@ -238,6 +238,12 @@ function mountRegexSearch(document: Document, window: Window) {
     }))
   }
 
+  // Gives the pattern field the focus, with the caret at the pattern's end, so the next keystroke edits the pattern.
+  function focusPattern() {
+    domCache.pattern.focus({preventScroll: true})
+    domCache.pattern.setSelectionRange(domCache.pattern.value.length, domCache.pattern.value.length)
+  }
+
   function createBox(className: string, left: number, top: number, width: number, height: number) {
     const box = document.createElement('i')
     box.className = className
@@ -433,6 +439,9 @@ function mountRegexSearch(document: Document, window: Window) {
     const {pathname, search: locationSearch, hash} = window.location
     // The width that the text wraps in. When it changes, e.g. while the window is resized, the matches move.
     const width = domCache.text.clientWidth
+    // A click on an example moves the focus to the pattern field where there is a mouse and a keyboard. On a phone
+    // the focus would open the keyboard over the matches that the click asked for.
+    const focusAfterExample = st.events.tryPattern !== null && window.matchMedia('(pointer: fine)').matches
 
     // Inputs.
     const pattern = st.events.tryPattern ?? typedPattern
@@ -445,7 +454,10 @@ function mountRegexSearch(document: Document, window: Window) {
       st.events.firstInputTime = null
       st.events.kind = null
       st.events.tryPattern = null
-      if (drawnInputs.width === width && pattern === typedPattern) return false
+      if (drawnInputs.width === width && pattern === typedPattern) {
+        if (focusAfterExample) focusPattern()
+        return false
+      }
     }
     const searched = drawnInputs === null ? search(pattern, text, choice, choiceKey, frameStart) : null
     const view = searched?.view ?? drawnInputs?.view
@@ -516,6 +528,8 @@ function mountRegexSearch(document: Document, window: Window) {
     domCache.veil.replaceChildren(...veil)
     const afterDom = window.performance.now()
 
+    // Side effects: the focus, and below, the address bar.
+    if (focusAfterExample) focusPattern()
     if (searched === null) {
       // The same inputs at another width, where only the rectangles moved, or an example put back into a field that
       // was edited in the same frame.
@@ -524,7 +538,7 @@ function mountRegexSearch(document: Document, window: Window) {
       return false
     }
 
-    // Side effects: the selects' choice goes into the address bar, so a reload or a copied link builds the same program.
+    // The selects' choice goes into the address bar, so a reload or a copied link builds the same program.
     const query = queryOf(locationSearch, choice)
     if (query !== st.query) window.history.replaceState(null, '', `${pathname}${query === '' ? '' : `?${query}`}${hash}`)
 
@@ -582,6 +596,8 @@ function mountRegexSearch(document: Document, window: Window) {
   domCache.textLength.value = String(initialChoice.textLength)
   // The page's HTML holds the starting text under the textarea, so the first paint shows it before this script runs.
   domCache.textarea.value = domCache.textNode.written
+  // Where there is a mouse and a keyboard, the page starts with the caret in the pattern field.
+  if (window.matchMedia('(pointer: fine)').matches) focusPattern()
   scheduleRender()
 }
 
