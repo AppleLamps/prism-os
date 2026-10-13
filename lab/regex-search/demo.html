@@ -3,46 +3,119 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Regex search</title>
-  <style>
-    :root {--background: #f6f6f3; --panel: #ffffff; --text: #1d1d1f; --muted: #6b6b70; --border: #d8d8dc; --even: #ffdf80; --odd: #a9dcff; --error: #b3261e}
-    @media (prefers-color-scheme: dark) {
-      :root {--background: #151517; --panel: #1f1f22; --text: #ececf0; --muted: #9b9ba3; --border: #3a3a40; --even: #806000; --odd: #1c5a82; --error: #ff8a80}
-    }
-    body {margin: 0; background: var(--background); color: var(--text); font: 15px/1.5 system-ui, sans-serif}
-    main {max-width: 900px; margin: 0 auto; padding: 24px 16px 48px}
-    h1 {font-size: 20px; margin: 0 0 4px}
-    p {margin: 0 0 12px; color: var(--muted)}
-    code {font-family: ui-monospace, monospace}
-    #pattern {box-sizing: border-box; width: 100%; padding: 8px 10px; font: 16px ui-monospace, monospace; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 8px}
-    .controls {display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 10px 0}
-    label {font-size: 13px; color: var(--muted)}
-    select {font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 6px}
-    #error {min-height: 20px; font-size: 13px; color: var(--error)}
-    #status {margin: 4px 0 10px; font-size: 13px; color: var(--muted)}
-    #matches {white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px 14px; font: 14px/1.6 ui-monospace, monospace; background: var(--panel); border: 1px solid var(--border); border-radius: 8px}
-    mark {color: inherit; border-radius: 2px}
-    mark.even {background: var(--even)}
-    mark.odd {background: var(--odd)}
-    .past-capacity {color: var(--muted)}
-    details {margin-top: 12px}
-    textarea {box-sizing: border-box; width: 100%; min-height: 180px; margin-top: 8px; padding: 8px 10px; font: 14px/1.5 ui-monospace, monospace; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 8px}
-  </style>
+  <title>Regex search · Handwired</title>
+  <meta name="description" content="Search a text as you type a pattern. The pattern becomes tables of numbers, and one fixed program of weighted sums and ReLU gates returns every match.">
+  <meta name="theme-color" content="#f3eee4">
+  <!-- One stylesheet, which imports assets/site.css and assets/tool.css in that order. Bun's development server puts
+       several stylesheet links in the reverse of their order here, while the build keeps the order. -->
+  <link rel="stylesheet" href="./demo.css">
 </head>
 <body>
-  <main>
-    <h1>Regex search as matrix products</h1>
-    <p>Type a pattern: literal characters, <code>.</code>, classes such as <code>[a-z]</code> or <code>[^0-9]</code>, <code>\d</code>, <code>\w</code>, <code>?</code>, <code>*</code>, <code>+</code>, <code>|</code> and groups. The program highlights every non-overlapping match, leftmost, then longest.</p>
-    <input id="pattern" autocomplete="off" spellcheck="false" aria-label="Pattern" value="(the|an?) [a-z]+">
-    <div class="controls">
-      <label>Form <select id="form"><option value="data">(a) pattern as data</option><option value="builtin">(b) pattern built into the program</option></select></label>
-      <label>States <select id="states"><option>8</option><option>16</option><option>32</option></select></label>
-      <label>Text capacity <select id="text-length"><option value="256">256</option><option value="1024">1,024</option></select></label>
+  <!-- The links between pages are written for the published site, where this page is at regex-search/: the index is
+       "../", and another demo is e.g. "../json-highlighter/". -->
+  <main class="page">
+    <header class="masthead">
+      <a class="brand" href="../">
+        <svg class="mark" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M1 4h3.5l3.4 4.2M1 10h5.6M1 16h3.5l3.4-4.2M13.4 10H19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle class="mark-eyelet" cx="10" cy="10" r="3" stroke-width="1.5"/>
+        </svg>
+        Handwired
+      </a>
+      <nav>
+        <a href="../">Demos</a>
+        <a href="https://github.com/chenglou/handwired/tree/main/lab/regex-search">Source</a>
+      </nav>
+    </header>
+
+    <h1 class="title">Regex search</h1>
+    <p class="deck">Each keystroke turns the pattern into tables of numbers, and one fixed program of weighted sums and ReLU gates returns every match; a new pattern changes the inputs, never the program.</p>
+
+    <div class="try">
+      <span class="label">Try</span>
+      <ul>
+        <li>Words that end in ing: <button class="try-pattern" type="button" data-pattern="[a-z]+ing" aria-label="Use the pattern [a-z]+ing"><code>[a-z]+ing</code></button></li>
+        <li>Two vowels in a row: <button class="try-pattern" type="button" data-pattern="[aeiou][aeiou]" aria-label="Use the pattern [aeiou][aeiou]"><code>[aeiou][aeiou]</code></button></li>
+        <li>Edit the text itself</li>
+        <li>Switch Program to &ldquo;built for each pattern&rdquo;</li>
+      </ul>
     </div>
-    <div id="error" role="alert"></div>
-    <div id="status">Building the program…</div>
-    <div id="matches"></div>
-    <details><summary>Edit the text</summary><textarea id="text" spellcheck="false" aria-label="Text"></textarea></details>
+
+    <div class="pattern">
+      <input id="pattern" class="input" value="(the|an?) [a-z]+" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Pattern">
+    </div>
+
+    <div class="controls">
+      <label class="field"><span class="label">Program</span>
+        <select id="form" class="select"><option value="data" selected>one for every pattern</option><option value="builtin">built for each pattern</option></select>
+      </label>
+      <label class="field"><span class="label">States</span>
+        <select id="states" class="select"><option value="8">8</option><option value="12" selected>12</option><option value="16">16</option><option value="32">32</option></select>
+      </label>
+      <label class="field"><span class="label">Text capacity</span>
+        <select id="text-length" class="select"><option value="256">256</option><option value="512">512</option><option value="768" selected>768</option><option value="1024">1,024</option></select>
+      </label>
+    </div>
+
+    <!-- The result line, the count of characters and the text. On a wide page the count is at the right end of the
+         result line, and on a phone it is the line under the result line. -->
+    <div class="results">
+      <p id="status" class="status busy" role="status"><span>Building the program&hellip;</span></p>
+      <span id="capacity" class="capacity"></span>
+
+      <!-- The text is in the page from the start, so the first paint shows it. The script copies it into the textarea,
+           and from then on the textarea holds the text, and the script writes the text under it and draws the matches
+           as rectangles behind it. #matches holds one text node and nothing else, not even a space around it. -->
+      <div class="surface text-editor">
+        <div id="marks" class="marks" aria-hidden="true"></div>
+        <div id="matches" class="matches" aria-hidden="true">Some mornings the harbor is quiet, and an old ferry waits at the pier while the gulls argue over something that washed up overnight. This is the hour when the bakers finish their first loaves and the fishing boats come back with their nets folded. A sailor in a yellow coat is painting the railing again, as he does every spring, and some children are racing along the seawall, shouting at the waves. These small scenes repeat with surprising regularity. The tide rises, the market opens, and an argument starts about the price of mussels. That argument ends, as it always ends, with laughter and a handshake. By noon the streets are crowded with visitors carrying maps they never read, asking for directions to the lighthouse or the museum.</div>
+        <div id="veil" class="veil" aria-hidden="true"></div>
+        <textarea id="text" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Text to search"></textarea>
+      </div>
+    </div>
+
+    <!-- Two sentences, each on a line of its own: what the program is, and how long it took. The space between the
+         two keeps them apart for a script that reads the paragraph's text, e.g. browser-frame.ts. -->
+    <p id="stats" class="stats"><span id="stats-program"></span> <span id="stats-times"></span></p>
+
+    <details class="disclosure">
+      <summary>How the pattern fits the program</summary>
+      <dl class="fit">
+        <div><dt>States</dt><dd id="fit-states" class="figure"></dd><dd class="note">A pattern needs one state for each character or set in the pattern, plus one.</dd></div>
+        <div><dt>Character classes</dt><dd id="fit-classes" class="figure"></dd><dd class="note">Characters that no part of the pattern tells apart share a class, e.g. b, c and d in <code>a|[a-d]</code>.</dd></div>
+        <div><dt>Class boundaries</dt><dd id="fit-boundaries" class="figure"></dd><dd class="note">The character codes where the class changes, e.g. before a and after z for <code>[a-z]</code>.</dd></div>
+        <div><dt>Numbers written</dt><dd id="fit-numbers" class="figure"></dd><dd id="fit-numbers-note" class="note"></dd></div>
+      </dl>
+    </details>
+
+    <section class="reference">
+      <div>
+        <h2 class="label">What a pattern can use</h2>
+        <table class="syntax">
+          <tr><td><code>a</code> <code>&eacute;</code> <code>7</code></td><td>That character. A character with a meaning of its own needs a backslash, e.g. <code>\.</code> or <code>\(</code>.</td></tr>
+          <tr><td><code>.</code></td><td>Any character except a line break.</td></tr>
+          <tr><td><code>[a-z_]</code> <code>[^0-9]</code></td><td>One character of the set, or with&nbsp;<code>^</code>, one outside the set.</td></tr>
+          <tr><td><code>\d</code></td><td>A digit, 0 to 9.</td></tr>
+          <tr><td><code>\w</code></td><td>A letter from a to z or A to Z, a digit or an underscore.</td></tr>
+          <tr><td><code>x?</code> <code>x*</code> <code>x+</code></td><td>At most one <code>x</code>, any number of them, and at least one.</td></tr>
+          <tr><td><code>the|an</code></td><td>One side or the other.</td></tr>
+          <tr><td><code>(ab)+</code></td><td>A group, here repeated.</td></tr>
+        </table>
+        <p>Not in this language: anchors such as <code>^</code>, counted repeats such as <code>{2}</code>, lazy repeats such as <code>*?</code>, and other escapes such as <code>\s</code>.</p>
+      </div>
+      <div>
+        <h2 class="label">What the search finds</h2>
+        <p>The search takes the longest match from the leftmost start, and never an empty one, which differs from JavaScript&rsquo;s RegExp: e.g. <code>a|ab</code> finds <code>ab</code> in <code>cab</code> here, and <code>a</code> in JavaScript.</p>
+        <h2 class="label">Limits</h2>
+        <p>The program has a fixed size. It holds a fixed number of states, and a pattern needs one state for each character or set in it, plus one, e.g. 8 for <code>(the|an?) [a-z]+</code>. A larger pattern gets a sentence instead of matches, e.g. &ldquo;This pattern needs 13 states, and the program holds 12.&rdquo; The program also reads a fixed number of characters, and text past that capacity is gray and isn&rsquo;t searched.</p>
+        <p>The one program for every pattern grows with the square of the number of states: 12 states and 768 characters are about 310,000 operations, and 32 states and 1,024 characters would be 2.3 million, which take seconds to build and more than a gigabyte of memory. So the page builds no program of more than 1 million operations. A program built for one pattern is much smaller, e.g. about 40,000 operations for the starting pattern, and every change of the pattern builds a new one.</p>
+      </div>
+    </section>
+
+    <footer class="colophon">
+      <span><a href="../json-highlighter/">Previous: JSON highlighter</a></span>
+      <span><a href="../learned-gallery/">Next: Learned gallery</a></span>
+    </footer>
   </main>
   <script type="module" src="./demo.ts"></script>
 </body>

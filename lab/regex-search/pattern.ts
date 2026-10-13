@@ -98,7 +98,7 @@ export function parsePattern(pattern: string): PatternNode {
     if (!(is('?') || is('*') || is('+'))) return body
     const quantifier = String.fromCodePoint(codePoints[position]!)
     position++
-    if (is('?')) fail(`${quantifier}? is a lazy quantifier, which this language doesn't have`)
+    if (is('?')) fail(`${quantifier}? is a lazy quantifier, which this language doesn’t have`)
     if (is('*') || is('+')) fail('nothing to repeat')
     return {kind: 'repeat', body, optional: quantifier !== '+', repeats: quantifier !== '?'}
   }
@@ -109,9 +109,9 @@ export function parsePattern(pattern: string): PatternNode {
     position++
     switch (character) {
       case '(': {
-        if (is('?')) fail('groups such as (?: aren\'t supported', at)
+        if (is('?')) fail('groups such as (?: aren’t supported', at)
         const inner = parseAlternation()
-        if (!is(')')) fail('unterminated group', at)
+        if (!is(')')) fail('this group is never closed', at)
         position++
         return inner
       }
@@ -127,11 +127,11 @@ export function parsePattern(pattern: string): PatternNode {
         return fail('nothing to repeat', at)
       case '^':
       case '$':
-        return fail('anchors aren\'t supported', at)
+        return fail('the anchors ^ and $ aren’t supported', at)
       case '{':
       case '}':
       case ']':
-        return fail(`${character} needs a backslash`, at)
+        return fail(`${character} needs a backslash before it`, at)
       default:
         return {kind: 'atom', set: [[code(character), code(character)]]}
     }
@@ -140,14 +140,14 @@ export function parsePattern(pattern: string): PatternNode {
   // After a backslash. codePoint is the escaped code point, or undefined for \d and \w, which can't end a range.
   function parseEscape(at: number, inClass: boolean): {set: CodePointSet, codePoint: number | undefined} {
     const escaped = codePoints[position]
-    if (escaped === undefined) return fail('a pattern can\'t end with a backslash', at)
+    if (escaped === undefined) return fail('a pattern can’t end with a backslash', at)
     position++
     if (escaped === code('d')) return {set: digitSet, codePoint: undefined}
     if (escaped === code('w')) return {set: wordSet, codePoint: undefined}
     if (syntaxCharacters.has(escaped) || escaped === code('/') || (inClass && escaped === code('-'))) {
       return {set: [[escaped, escaped]], codePoint: escaped}
     }
-    return fail(`\\${String.fromCodePoint(escaped)} isn't supported`, at)
+    return fail(`the escape \\${String.fromCodePoint(escaped)} isn’t supported`, at)
   }
 
   function parseClassAtom(): {set: CodePointSet, codePoint: number | undefined} {
@@ -163,15 +163,15 @@ export function parsePattern(pattern: string): PatternNode {
     if (negated) position++
     const intervals: Interval[] = []
     while (!is(']')) {
-      if (position >= codePoints.length) fail('unterminated character class', at)
+      if (position >= codePoints.length) fail('this set of characters is never closed', at)
       const low = parseClassAtom()
       const next = codePoints[position + 1]
       if (is('-') && next !== undefined && next !== code(']')) {
         const dash = position
         position++
         const high = parseClassAtom()
-        if (low.codePoint === undefined || high.codePoint === undefined) fail('a range needs one code point at each end', dash)
-        if (low.codePoint > high.codePoint) fail('range out of order', dash)
+        if (low.codePoint === undefined || high.codePoint === undefined) fail('a range needs one character at each end', dash)
+        if (low.codePoint > high.codePoint) fail('this range is out of order', dash)
         intervals.push([low.codePoint, high.codePoint])
       } else {
         intervals.push(...low.set)
@@ -183,7 +183,7 @@ export function parsePattern(pattern: string): PatternNode {
   }
 
   const node = parseAlternation()
-  if (position < codePoints.length) fail('unmatched )')
+  if (position < codePoints.length) fail('this ) closes no group')
   return node
 }
 
