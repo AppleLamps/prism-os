@@ -17,6 +17,7 @@ import {
 import {
   armedSourceField,
   createWindowManagerMachine,
+  resizeSourceField,
   windowOutputField,
   windowSourceField,
   windowStateField,
@@ -871,6 +872,22 @@ test("resizing Files with its grip changes the rows drawn, and the list's hit re
   // A release over the grip after a press on a row selects nothing either.
   click(machine, rowPoint(2), {x: 54 + 620 - 20, y: 54 + 260 - 4})
   assert.equal(selectedRow(machine), 15)
+  // The grip's 24 px square reaches 7 px into the list's rectangle. A press there
+  // starts a resize and doesn't arm the list. Dragged up and left until Files stops
+  // at its minimum size, 280×190, the release is over row 3 of the smaller list and
+  // off the grip, and it selects nothing.
+  const gripInsideList = {x: 54 + 620 - 21, y: 54 + 260 - 12}
+  machine.pointerDown(gripInsideList.x, gripInsideList.y, eventTime(machine, 4))
+  step(machine)
+  assert.deepEqual([machine.source[resizeSourceField(0)], machine.source[armedSourceField('filesList')]], [1, 0])
+  machine.pointerMove(rowPoint(3).x, rowPoint(3).y, eventTime(machine, 4))
+  machine.pointerUp(rowPoint(3).x, rowPoint(3).y, eventTime(machine, 8))
+  step(machine)
+  assert.deepEqual([machine.source[windowSourceField(0, windowStateField.width)], machine.source[windowSourceField(0, windowStateField.height)]], [280, 190])
+  assert.equal(selectedRow(machine), 15)
+  // The same point selects row 3 after a press on the list.
+  click(machine, rowPoint(3))
+  assert.equal(selectedRow(machine), 3)
 })
 
 test('while Files is minimized or closed, it takes no release and no key, and it keeps its selection for when it comes back', () => {
@@ -934,7 +951,7 @@ test("the machine floors the scroller's position onto the quarter pixel grid and
   // Browsers report positions before the start and past the end while a scroller
   // rubber-bands, and fractions of a device pixel.
   for (const [reported, cell, drawnAt] of [
-    [-30.2, 0, 0], [1000.6, 1000.5, 1000.5], [1000.26, 1000.25, 1000.25], [totalHeight + 40, totalHeight + 40, totalHeight - list.height],
+    [-30.2, 0, 0], [1000.6, 1000.5, 1000.5], [1000.26, 1000.25, 1000.25], [1000.74, 1000.5, 1000.5], [totalHeight + 40, totalHeight + 40, totalHeight - list.height],
     [5_000_000, maximumScrollTop, totalHeight - list.height], [0, 0, 0],
   ] as const) {
     let table: Float32Array | null = null
