@@ -173,7 +173,9 @@ type View = {
   matches: readonly Match[]
   statusState: 'busy' | 'bad' | 'ok'
   status: Line
+  // The text's length against the capacity, e.g. "741 of 768 characters", and whether the text is longer.
   capacity: Line
+  overCapacity: boolean
   // The statistics: what the program is, and how long building it and the last search took.
   statsProgram: Line
   statsTimes: Line
@@ -300,6 +302,7 @@ function mountRegexSearch(document: Document, window: Window) {
   // the program, the search, and what the page shows. Changes no state: render commits what this returns.
   function search(pattern: string, text: string, choice: Choice, choiceKey: string, frameStart: number) {
     const {codePoints, offsets, length} = readText(text, choice.textLength)
+    const overCapacity = length > choice.textLength
 
     // The pattern: its automaton, or the sentences that say why there is none or why it doesn't fit.
     let compiled: CompiledPattern | null = null
@@ -381,11 +384,9 @@ function mountRegexSearch(document: Document, window: Window) {
       invariant(found !== null, 'a pattern that fits is searched')
       statusState = 'ok'
       status = found.matches.length === 0 ? ['No matches'] : [strong(count(found.matches.length)), found.matches.length === 1 ? ' match' : ' matches']
+      // A text longer than the capacity is searched up to the capacity, and the result line says so.
+      if (overCapacity) status = [...status, ' in the first ', strong(count(choice.textLength)), ' characters']
     }
-
-    const capacity: Line = length > choice.textLength
-      ? ['The program reads the first ', strong(count(choice.textLength)), ' of ', strong(count(length)), ' characters.']
-      : [strong(count(length)), ` of ${count(choice.textLength)} characters`]
 
     // The statistics' two sentences. Without a program to describe, the first one says what the page does instead,
     // and there is no second one.
@@ -422,7 +423,8 @@ function mountRegexSearch(document: Document, window: Window) {
       matches,
       statusState,
       status,
-      capacity,
+      capacity: [strong(count(length)), ` of ${count(choice.textLength)} characters`],
+      overCapacity,
       statsProgram,
       statsTimes,
       fitStates: compiled === null ? none : of(compiled.automaton.stateCount, choice.states),
@@ -482,6 +484,7 @@ function mountRegexSearch(document: Document, window: Window) {
     if (domCache.textNode.written !== shownText) domCache.textNode.node.data = domCache.textNode.written = shownText
     domCache.status.className = `status ${view.statusState}`
     writeLine(domCache.statusLine, view.status)
+    domCache.capacity.node.className = view.overCapacity ? 'capacity over' : 'capacity'
     writeLine(domCache.capacity, view.capacity)
     writeLine(domCache.statsProgram, view.statsProgram)
     writeLine(domCache.statsTimes, view.statsTimes)

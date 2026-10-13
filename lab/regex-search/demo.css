@@ -44,6 +44,9 @@
 }
 .results .text-editor { grid-column: 1 / -1; }
 .results .capacity { font: var(--type-ui); }
+/* A text longer than the capacity: the count turns red, like a counter past its limit, e.g. "741 of 256 characters". */
+.results .capacity.over,
+.results .capacity.over b { color: var(--wire-red); }
 /* The statistics are two sentences, each on a line of its own, so a number that changes with every keystroke, e.g.
    the last search's time, never moves a word from one line to the other. The room for two lines is there from the
    start, so the lines under the statistics don't move when the first program is built. */
@@ -203,17 +206,17 @@
 }
 @media (max-width: 640px) {
   /* On a phone an error is as wide as the page and often takes two lines, e.g. "This pattern needs 13 states, and the
-     program holds 12." So the result line always has the room of two lines, and the text under it stays where it is
-     while a pattern is typed. The count goes under the text, where it takes no room from the result line. */
+     program holds 12." So the result takes two lines in every state, and the text under it stays where it is while a
+     pattern is typed: the count is the second line, under the result line's words, and an error takes both lines in
+     its place, since no text is searched while the pattern has an error. */
   .results { grid-template-columns: minmax(0, 1fr); }
-  .results .status { min-height: 40px; }
   .results .capacity {
-    grid-row: 3;
-    justify-self: end;
-    margin-top: var(--space-2);
-    text-align: right;
-    white-space: normal;
+    min-height: 20px;
+    /* The width of the result line's dot and the gap after it. */
+    padding-left: calc(7px + var(--space-2));
   }
+  .results .status.bad { min-height: 40px; }
+  .results .status.bad + .capacity { display: none; }
   .text-editor {
     --text-padding-x: var(--space-4);
     --text-padding-y: var(--space-4);
