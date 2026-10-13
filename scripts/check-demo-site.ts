@@ -104,8 +104,9 @@ if (debuggingPort !== undefined && await fetch(`http://127.0.0.1:${debuggingPort
   void server.stop(true)
   process.exit(1)
 }
+// --enable-unsafe-webgpu gives headless Chrome WebGPU, which the GPU search demo needs once it is on the site.
 const chrome = Bun.spawn([chromePath, '--headless=new', `--remote-debugging-port=${debuggingPort ?? '0'}`, `--user-data-dir=${profile}`,
-  '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--window-size=1440,900', 'about:blank'], {stdout: 'ignore', stderr: 'ignore'})
+  '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--enable-unsafe-webgpu', '--window-size=1440,900', 'about:blank'], {stdout: 'ignore', stderr: 'ignore'})
 const finish = (code: number) => {
   chrome.kill('SIGKILL')
   void server.stop(true)
