@@ -1703,6 +1703,8 @@ function createSessionEvents() {
   events.push({kind: 'up', x: 635, y: 366, timeStamp: 2051.7})
   // The Notes text changes while System Monitor still shrinks.
   events.push({kind: 'notes text', paragraph: sessionTypedParagraph, timeStamp: sessionTypedMs})
+  // A press on the note's content: Notes is at 300,104 since the drag, so its content box starts at 301,149.
+  press(400, 300, 2153.3, 2161.7)
   // Focus Photos, open photo 5 with a press and a release on it, and maximize Photos
   // while the photo is open. Pointer coordinates are viewport coordinates: Photos'
   // content box starts at (651, 235) at its normal size, and at (13, 93) maximized.
@@ -2021,6 +2023,12 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   assert.ok(differingBits(typed.segments, commitBefore(typed).segments) > 0)
   assert.ok(differingBits(shortened.segments, commitBefore(shortened).segments) > 0)
   assert.ok(baseline.clockStops.every(time => time < 2051.7 || time > sessionTypedMs), 'System Monitor still animated at the first text change')
+  // The press on the note was counted at its down, with its point in the content box, and no other press of the
+  // session was on the note.
+  const notePress = (table: Float32Array) => [table[notesSourceField.pressCount], table[notesSourceField.pressX], table[notesSourceField.pressY]]
+  assert.deepEqual(notePress(commitBefore(commitAt(2153.3, 'pointer down')).table), [0, 0, 0])
+  assert.deepEqual(notePress(commitAt(2153.3, 'pointer down').table), [1, 99, 151])
+  assert.deepEqual(notePress(final), [1, 99, 151])
   assert.equal(baseline.wordMovesWithoutEvent, 0)
   assert.ok(baseline.wordLayouts.size >= 12, `${baseline.wordLayouts.size} word layouts`)
   // No laid-out word overlaps a window that is visible and stacked above Notes.

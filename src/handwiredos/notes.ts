@@ -54,7 +54,7 @@
 //   that is wider than the whole column into shorter segments before it writes them.
 import {type Circuit, type Terms, type Wire, emitMaximum, emitMinimum, emitMultiply, emitRelu, emitSelect, invariant} from '../runtime/numeric-ui-core.ts'
 import {type FastCircuit, attachFastCircuit, integerAtLeast, maximumSegmentWidth, segmentGeometry, walkGatheredLines} from './notes-walker.ts'
-import {type CellWires, constant, input, inputBit} from '../runtime/cells.ts'
+import {type CellWires, type SourceTable, constant, input, inputBit, state} from '../runtime/cells.ts'
 import type {FastParagraph} from './notes-walker.ts'
 import type {NotesOptions} from './notes-paragraph.ts'
 
@@ -67,6 +67,8 @@ const localRange = [-32_768, 32_768] as const
 // The machine rounds each width to 1/64 px, which keeps the walker's prefix sums
 // exact in FP32.
 const widthGrid = 1 / 64
+// The count of presses on the note's content starts again at 0 after this many.
+const pressCountLimit = 256
 
 // A paragraph as the segment cells can hold it: at most `capacity` segments, each width
 // a multiple of 1/64 px within the cells' range, and each break-after bit exactly 0 or
@@ -91,6 +93,15 @@ export function fitNotesParagraph(paragraph: FastParagraph, capacity: number): F
 // rewrites the cells when the text changes, e.g. at every typed character, through
 // the machine's notesText in window-manager.ts. `paragraph` is the text the cells
 // start with. Segments carry no state.
+//
+// `press` is the one piece of state: how many presses landed on the note's content,
+// counted from 0 to 255 and then from 0 again, and the last such press's point in
+// the content box's coordinates. The page reads only a frame's last evaluation,
+// which applies no event, so a press must be stored to reach the page, e.g. a tap
+// whose press and release both apply before the frame's evaluation. The host places
+// the caret when the count differs from the count of the frame before. Pointer
+// coordinates are on the 1/64 px grid and a maximized window's left edge can be on
+// the 1/128 px grid, so the point is declared on the 1/128 px grid.
 export function notesCells(capacity: number, paragraph: FastParagraph) {
   invariant(paragraph.widths.length === paragraph.breakAfter.length, 'one break-after bit per segment')
   invariant(paragraph.widths.length <= capacity, 'the paragraph has more segments than the flow has segment cells')
@@ -99,6 +110,11 @@ export function notesCells(capacity: number, paragraph: FastParagraph) {
     breakAfter: Array.from({length: capacity}, (_, segment) => inputBit(paragraph.breakAfter[segment] ?? 0)),
     arrivedCount: input([0, capacity], {initial: paragraph.widths.length, grid: 1}),
     startCursor: constant(0, [0, capacity]),
+    press: {
+      count: state([0, pressCountLimit - 1], {grid: 1}),
+      x: state([-65_536, 65_536], {grid: 1 / 128}),
+      y: state([-65_536, 65_536], {grid: 1 / 128}),
+    },
   }
 }
 type NotesCells = CellWires<ReturnType<typeof notesCells>>
@@ -113,6 +129,9 @@ type NotesContext = {
   nextStack: readonly (readonly Wire[])[]
   // The Notes content box's height at the window's destination.
   contentHeight: Wire
+  // Whether this evaluation's down is a press on the note's content, and the down's
+  // point in the content box's coordinates.
+  press: {active: Wire, x: Wire, y: Wire}
 }
 
 // Per segment cell: x and y in the content box's coordinates, and whether a band laid
@@ -143,9 +162,14 @@ export type NotesOutputs = {
   // of them.
   windowOverflow: Wire
   runOverflow: Wire
+  // The press cells' next values, see notesCells: the count of presses on the note's
+  // content, and the last such press's point.
+  press: {count: Wire, x: Wire, y: Wire}
 }
 
-export function buildNotes(circuit: Circuit, cells: NotesCells, options: NotesOptions, context: NotesContext): NotesOutputs {
+// Builds the Notes flow into the host's circuit, pairs Notes' press cells with their
+// next values, and returns Notes' outputs.
+export function buildNotes(circuit: Circuit, table: SourceTable, cells: NotesCells, options: NotesOptions, context: NotesContext): NotesOutputs {
   const {unit, titleHeight, nextStack, contentHeight} = context
   invariant(cells.widths.length === options.capacity, 'the cells were declared for another capacity')
   invariant(context.windows.length > notesWindowIndex, 'the context needs the Notes window')
@@ -270,6 +294,16 @@ export function buildNotes(circuit: Circuit, cells: NotesCells, options: NotesOp
   const walk = walkGatheredLines(fc, options.window, bands.map(band => band.width), bands.map(band => band.usable), cells.arrivedCount)
   const geometry = segmentGeometry(fc, walk, bands.map(band => band.left), options.padding, options.lineHeight)
 
+  // A press on the content adds 1 to the count, which starts again at 0 after 255,
+  // and replaces the stored point.
+  const counted: Terms = [[cells.press.count, 1], [context.press.active, 1]]
+  const press = {
+    count: assume(affine([...counted, [atLeast(counted, pressCountLimit), -pressCountLimit]]), 0, pressCountLimit - 1),
+    x: emitSelect(circuit, context.press.active, cells.press.x, context.press.x),
+    y: emitSelect(circuit, context.press.active, cells.press.y, context.press.y),
+  }
+  table.next(cells.press, press)
+
   return {
     segments: cells.widths.flatMap((_, segment) => [geometry.x[segment]!, geometry.y[segment]!, geometry.visible[segment]!]),
     bands: bands.flatMap((band, index) => [band.usable, band.left, band.width, walk.starts[index]!]),
@@ -277,6 +311,7 @@ export function buildNotes(circuit: Circuit, cells: NotesCells, options: NotesOp
     truncated: walk.moreLinesThanSlots,
     windowOverflow: walk.windowOverflow,
     runOverflow: fc.runOverflow,
+    press,
   }
 }
 

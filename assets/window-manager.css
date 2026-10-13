@@ -403,6 +403,16 @@ body {
   font: 16px Georgia, "Times New Roman", serif;
 }
 
+/* The selected text of one line, drawn under the words. */
+.notes-selection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 22px;
+  background: rgb(255 200 87 / 26%);
+  pointer-events: none;
+}
+
 /* The caret, drawn where the program laid out the character after it. Its two
    animations have the same keyframes: notes-host.ts switches between them when the
    caret moves, which starts the blink again. */

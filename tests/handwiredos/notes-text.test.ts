@@ -4,7 +4,16 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {prepareWithSegments} from '@chenglou/pretext'
 import {fakeTextWidth, testFont} from './fake-canvas.ts'
-import {type NotesLayout, caretCell, caretPosition, normalizeNotesValue, prepareNotesText} from '../../src/handwiredos/notes-text.ts'
+import {
+  type NotesLayout,
+  caretCell,
+  caretPosition,
+  normalizeNotesValue,
+  offsetAfterLineMove,
+  offsetAtPoint,
+  prepareNotesText,
+  selectionSpans,
+} from '../../src/handwiredos/notes-text.ts'
 
 const measure = (text: string) => fakeTextWidth(text, testFont)
 const prepare = (value: string) => prepareNotesText(value, testFont, measure)
@@ -159,4 +168,97 @@ test('after trailing white space the caret sits one space further, up to the ban
   assert.equal(caretPosition(empty, 0, 0, bands, measure), null)
   const thirdBandUsable: NotesLayout = {...bands, band: band => ({usable: band === 2, left: 239, width: 205})}
   assert.deepEqual(caretPosition(empty, 0, 0, thirdBandUsable, measure), {x: 239, y: 68})
+})
+
+test('a point maps to the offset whose caret is nearest: the nearest line, the cell under the point, the nearest character boundary', () => {
+  const text = prepare('ab cd  ef gh')
+  assert.deepEqual(text.cellTexts, ['ab', ' ', 'cd', ' ', 'ef', ' ', 'gh'])
+  const widths = text.paragraph.widths
+  // 'ab cd ' on band 0 from x 24, where the last space hangs, and 'ef gh' on band 1 from x 100.
+  const layout = layoutOfLines(widths, [{firstCell: 0, left: 24, band: 0}, {firstCell: 4, left: 100, band: 1}])
+  const at = (x: number, y: number) => offsetAtPoint(text, 7, layout, measure, x, y)
+  const a = measure('a')
+  // Inside 'ab': left of the middle of a letter is before the letter, right of it is after.
+  assert.deepEqual([at(24 + a * 0.4, 30), at(24 + a * 0.6, 30), at(24 + a + 1, 30)], [0, 1, 1])
+  // Left of the line, and above the first line: the line's first offset.
+  assert.deepEqual([at(-50, 30), at(10, -200)], [0, 0])
+  // Inside 'cd', whose first character is offset 3 of the value.
+  assert.equal(at(24 + widths[0]! + widths[1]! + measure('c') * 0.9, 40), 4)
+  // Right of the first line: before the space that hangs at its end, i.e. after 'cd'.
+  assert.equal(at(400, 35), 5)
+  // The second line starts at 'ef', offset 7 of the value, after the two spaces.
+  assert.deepEqual([at(100, 50), at(0, 60), at(100 + measure('e') * 0.9, 60)], [7, 7, 8])
+  // Right of the last line: the end of the text. Far below the last line: the offset at that x on the last line,
+  // here after the space between 'ef' and 'gh'.
+  assert.deepEqual([at(900, 60), at(900, 900), at(120, 900)], [12, 12, 10])
+  // The line nearest to the point: 46 is the boundary between the two bands. At x 100, the first line has ended,
+  // and the second line starts.
+  assert.deepEqual([at(100, 45), at(100, 47)], [5, 7])
+  // Only the cells that the program holds and a band laid out count.
+  assert.equal(offsetAtPoint(text, 4, layout, measure, 900, 60), 5)
+  assert.equal(offsetAtPoint(prepare(''), 0, layoutOfLines([], []), measure, 50, 50), 0)
+  // A surrogate pair is one character: the caret never lands inside it.
+  const emoji = prepare('a\u{1F600}b')
+  const emojiLayout = layoutOfLines(emoji.paragraph.widths, [{firstCell: 0, left: 0, band: 0}])
+  const offsets = new Set(Array.from({length: 200}, (_, x) => offsetAtPoint(emoji, emoji.cellTexts.length, emojiLayout, measure, x / 4, 30)))
+  assert.deepEqual([...offsets].sort((left, right) => left - right), [0, 1, 3, 4])
+})
+
+test('a selection is one stretch per band, from its first selected character on the band\'s line to its last', () => {
+  const text = prepare('ab cd  ef gh')
+  const widths = text.paragraph.widths
+  const layout = layoutOfLines(widths, [{firstCell: 0, left: 24, band: 0}, {firstCell: 4, left: 100, band: 2}])
+  const spans = (start: number, end: number, laidOutCells = 7) => selectionSpans(text, laidOutCells, start, end, layout, measure)
+  const none = Array.from({length: 16}, () => null)
+  const withSpans = (...entries: [band: number, left: number, right: number][]) => {
+    const expected: ({left: number, right: number} | null)[] = [...none]
+    for (const [band, left, right] of entries) expected[band] = {left, right}
+    return expected
+  }
+  const cd = 24 + widths[0]! + widths[1]!
+  // No selection.
+  assert.deepEqual(spans(3, 3), none)
+  // 'b c': from the middle of 'ab' to the middle of 'cd'.
+  assert.deepEqual(spans(1, 4), withSpans([0, 24 + measure('a'), cd + measure('c')]))
+  // 'cd  ef': to the end of the first line with its hanging space, and the start of the second.
+  assert.deepEqual(spans(3, 9), withSpans([0, cd, cd + widths[2]! + widths[3]!], [2, 100, 100 + widths[4]!]))
+  // Everything.
+  assert.deepEqual(spans(0, 12), withSpans([0, 24, cd + widths[2]! + widths[3]!], [2, 100, 100 + widths[4]! + widths[5]! + widths[6]!]))
+  // Cells that the program doesn't hold have no stretch.
+  assert.deepEqual(spans(0, 12, 4), withSpans([0, 24, cd + widths[2]! + widths[3]!]))
+})
+
+test('line moves follow the laid-out lines: up and down keep their x through a short line, and line start and end stay on the caret\'s line', () => {
+  const text = prepare('abcdefgh ij klmnopqr')
+  assert.deepEqual(text.cellTexts, ['abcdefgh', ' ', 'ij', ' ', 'klmnopqr'])
+  // Three lines from x 24: 'abcdefgh ', the short 'ij ', and 'klmnopqr', on bands 0, 1 and 3. Band 2 has no line.
+  const layout = layoutOfLines(text.paragraph.widths, [{firstCell: 0, left: 24, band: 0}, {firstCell: 2, left: 24, band: 1}, {firstCell: 4, left: 24, band: 3}])
+  const move = (offset: number, direction: 'up' | 'down' | 'lineStart' | 'lineEnd', preferredX: number | null = null) =>
+    offsetAfterLineMove(text, 5, offset, direction, preferredX, layout, measure)
+  // From after 'abcdef' on the first line, down lands at the end of the short line, and keeps aiming for the x it
+  // started from: the next down lands after 'klmnop', the place nearest to that x, across the band without a line.
+  const startX = 24 + measure('abcdef')
+  const first = move(6, 'down')
+  assert.deepEqual(first, {offset: 11, x: startX})
+  const second = move(first.offset, 'down', first.x)
+  assert.deepEqual(second, {offset: 12 + 6, x: startX})
+  // Without the kept x, the second down would start from the short line's end, after 'ij'.
+  assert.equal(move(first.offset, 'down').offset, 12 + 2)
+  // Up the same way, back to where the run started.
+  assert.deepEqual(move(second.offset, 'up', second.x), {offset: 11, x: startX})
+  assert.deepEqual(move(11, 'up', startX), {offset: 6, x: startX})
+  // Up from the first line goes to the start of the text, and down from the last line to its end.
+  assert.deepEqual([move(6, 'up').offset, move(15, 'down').offset], [0, 20])
+  // Line start and line end stay on the caret's line: the end is before the space that hangs there.
+  assert.deepEqual([move(5, 'lineStart').offset, move(5, 'lineEnd').offset], [0, 8])
+  assert.deepEqual([move(10, 'lineStart').offset, move(10, 'lineEnd').offset], [9, 11])
+  assert.deepEqual([move(15, 'lineStart').offset, move(15, 'lineEnd').offset], [12, 20])
+  // A caret that isn't laid out, e.g. in a cell that the program doesn't hold: up and down go to the text's ends,
+  // and line start and line end stay.
+  const cut = (offset: number, direction: 'up' | 'down' | 'lineStart' | 'lineEnd') => offsetAfterLineMove(text, 2, offset, direction, null, layout, measure).offset
+  assert.deepEqual([cut(15, 'up'), cut(15, 'down'), cut(15, 'lineStart'), cut(15, 'lineEnd')], [0, 20, 15, 15])
+  // An empty note.
+  const empty = prepare('')
+  const emptyLayout: NotesLayout = {...layoutOfLines([], []), band: band => ({usable: band === 0, left: 24, width: 440})}
+  assert.deepEqual(offsetAfterLineMove(empty, 0, 0, 'down', null, emptyLayout, measure), {offset: 0, x: 24})
 })

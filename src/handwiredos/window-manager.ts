@@ -306,13 +306,17 @@ export const sourceField = {
 }
 
 // The positions of Notes' cells: the width cell and the break-after cell of the first
-// segment cell, each followed by the other segments' cells in order, and the count of
-// segment cells that hold text.
+// segment cell, each followed by the other segments' cells in order, the count of
+// segment cells that hold text, and the count and the point of the presses on the
+// note's content.
 /** @public */
 export const notesSourceField = {
   widthStart: positions.notes.widths[0]!,
   breakAfterStart: positions.notes.breakAfter[0]!,
   arrivedCount: positions.notes.arrivedCount,
+  pressCount: positions.notes.press.count,
+  pressX: positions.notes.press.x,
+  pressY: positions.notes.press.y,
 }
 
 // A list's element at a checked index, e.g. cellAt(positions.drag, 5, 'drag window
@@ -444,6 +448,8 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
   let photosContentHit = zero
   let photosContentHitAtUp = zero
   let photosGripHitAtUp = zero
+  // Notes' content box, at the down.
+  let notesContentHit = zero
 
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const current = cells.windows[windowIndex]!
@@ -543,6 +549,16 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
       photosContentHit = emitRectangleHit(circuit, cells.down.x, cells.down.y, contentRectangle)
       photosContentHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, contentRectangle)
       photosGripHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, gripRectangle)
+    }
+    if (windowIndex === notesWindowIndex) {
+      // The content box inside the 1 px border and below the title bar, where a press
+      // places the note's caret.
+      notesContentHit = emitRectangleHit(circuit, cells.down.x, cells.down.y, {
+        left: circuit.affine([[geometry.left, 1], [unit, 1]]),
+        top: circuit.affine([[geometry.top, 1], [cells.titleHeight, 1], [unit, 1]]),
+        width: circuit.affine([[geometry.width, 1], [unit, -2]]),
+        height: circuit.affine([[geometry.height, 1], [cells.titleHeight, -1], [unit, -2]]),
+      })
     }
   }
 
@@ -697,6 +713,17 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
     armedPhotosContent,
     photosContentHitAtUp,
     emitComplement(circuit, photosGripAtUp, unit),
+  ])
+  // A press on Notes' content places the note's caret, see notes.ts. Like Photos'
+  // content, the content is pressed when Notes is the frontmost window under the
+  // down's point, in the stored stacking, the point is in the content box at the
+  // window's destination, and no grip press starts a resize. So a press on a part of
+  // the note that another window covers goes to that window. The press acts at the
+  // down, like raising a window does, so it needs no armed bit.
+  const notesContentPress = emitAll(circuit, [
+    canvasPress[notesWindowIndex]!,
+    notesContentHit,
+    emitComplement(circuit, resizePress[notesWindowIndex]!, unit),
   ])
 
   const baselineX = emitSelect(
@@ -1156,12 +1183,30 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
   // The Notes paragraph flows around the other windows' destination rectangles
   // while they're visible and stacked above Notes after this evaluation's events,
   // so it reflows once per event, like Photos lays out at its destination size.
-  const notes = buildNotes(circuit, cells.notes, notesOptions, {
+  const notesDestination = effectiveGeometry[notesWindowIndex]!
+  const notes = buildNotes(circuit, table, cells.notes, notesOptions, {
     unit,
     titleHeight: cells.titleHeight,
     windows: effectiveGeometry.map((destination, windowIndex) => ({destination, visible: nextVisible[windowIndex]!})),
     nextStack,
     contentHeight: destinationContentHeight[notesWindowIndex]!,
+    // The press's point relative to the content box at the window's destination after
+    // this evaluation's events, the box that the segments' positions are local to,
+    // like Photos reads a click.
+    press: {
+      active: notesContentPress,
+      x: circuit.affine([
+        [cells.down.x, 1],
+        [notesDestination.left, -1],
+        [unit, -1],
+      ]),
+      y: circuit.affine([
+        [cells.down.y, 1],
+        [notesDestination.top, -1],
+        [cells.titleHeight, -1],
+        [unit, -1],
+      ]),
+    },
   })
 
   const {nextSource, initialSource, validate} = table.finish()
@@ -1243,6 +1288,9 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     output.notes.truncated,
     output.notes.windowOverflow,
     output.notes.runOverflow,
+    output.notes.press.count,
+    output.notes.press.x,
+    output.notes.press.y,
   ]
   const tensorProgram = circuit.tensorProgram = circuit.compileTensorProgram(roots)
   validateTensorProgram(circuit, tensorProgram)
@@ -1902,6 +1950,7 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
   validateWireView(output.notes.segments, notesCapacity * segmentOutputField.size, wireCount)
   validateWireView(output.notes.bands, notesOptionsFor(defaultLineFitEpsilon).bands * bandOutputField.size, wireCount)
   validateWireView([output.notes.lineCount, output.notes.truncated, output.notes.windowOverflow, output.notes.runOverflow], 4, wireCount)
+  validateWireView([output.notes.press.count, output.notes.press.x, output.notes.press.y], 3, wireCount)
 }
 
 function validateWindowManagerOutput(

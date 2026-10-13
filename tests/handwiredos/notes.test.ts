@@ -959,6 +959,78 @@ test('two break-after segments in a row are reported by runOverflow instead of s
   assert.equal(step(machine)[machine.output.notes.runOverflow], 0)
 })
 
+// The stored count of presses on the note's content, and the last such press's point in the content box.
+function readPress(machine: Machine) {
+  const {count, x, y} = machine.cells.notes.press
+  return {count: machine.source[count]!, x: machine.source[x]!, y: machine.source[y]!}
+}
+
+test('a press on the note\'s content is counted with its point in the content box, and a press elsewhere is not', () => {
+  const machine = machineAtStart()
+  checkDeclarationsOnEveryEvaluation(machine)
+  const press = (x: number, y: number) => {
+    const time = pressTime(machine)
+    machine.pointerDown(x, y, time)
+    machine.pointerUp(x, y, time)
+    return step(machine)
+  }
+  const focusedWindow = (values: Float32Array) =>
+    Array.from({length: windowCount}, (_, windowIndex) => values[machine.output.windows[windowIndex * windowOutputField.size + windowOutputField.focused]!]!).indexOf(1)
+  assert.deepEqual(readPress(machine), {count: 0, x: 0, y: 0})
+  // Notes is 410,104 500×366, so its content box starts at 411,149. Photos (650,190 560×430) is stacked above it:
+  // a press on the part of the note that Photos covers goes to Photos.
+  assert.equal(focusedWindow(press(700, 300)), 3)
+  assert.equal(readPress(machine).count, 0)
+  // A press on the part that no window covers is a press on the note, also while Notes isn't the focused window. It
+  // raises Notes, and the outputs hold the count and the point in the frame of the press.
+  let values = press(520, 300)
+  assert.equal(focusedWindow(values), notesWindowIndex)
+  assert.deepEqual(readPress(machine), {count: 1, x: 109, y: 151})
+  assert.deepEqual([machine.output.notes.press.count, machine.output.notes.press.x, machine.output.notes.press.y].map(wire => values[wire]), [1, 109, 151])
+  // Now nothing covers the note, and the press that went to Photos before is a press on the note.
+  press(700, 300)
+  assert.deepEqual(readPress(machine), {count: 2, x: 289, y: 151})
+  // Presses on Notes' title bar, on its resize grip, which lies over the content box's corner, on Files, and on
+  // the desktop are no presses on the note.
+  press(450, 126)
+  press(900, 460)
+  assert.equal(focusedWindow(press(100, 300)), 0)
+  press(40, 700)
+  assert.deepEqual(readPress(machine), {count: 2, x: 289, y: 151})
+  // Two presses in one frame count twice, and the last one's point is stored. Files is in front now, and 600,420
+  // lies below it, on the note.
+  const time = pressTime(machine)
+  machine.pointerDown(600, 420, time)
+  machine.pointerUp(600, 420, time)
+  machine.pointerDown(610.5, 430.25, time + 2)
+  machine.pointerUp(610.5, 430.25, time + 2)
+  values = step(machine)
+  assert.deepEqual(readPress(machine), {count: 4, x: 199.5, y: 281.25})
+  assert.equal(focusedWindow(values), notesWindowIndex)
+  // A press is tested against the window's destination: right after the release on Notes' maximize button, while
+  // the frame has barely grown, a press at 100,600 is on the maximized content box, which starts at 13,93.
+  press(863, 126)
+  assert.equal(machine.source[windowSourceField(notesWindowIndex, windowStateField.maximized)], 1)
+  values = press(100, 600)
+  assert.equal(values[machine.output.animationActive], 1)
+  assert.ok(values[machine.output.windows[notesWindowIndex * windowOutputField.size + windowOutputField.width]!]! < 800, 'the frame is still growing')
+  assert.deepEqual(readPress(machine), {count: 5, x: 87, y: 507})
+})
+
+test('the count of presses on the note starts again at 0 after 255', () => {
+  const machine = createWindowManagerMachine()
+  // Written before the first step, so the value commits with the mount.
+  machine.source[machine.cells.notes.press.count] = 254
+  step(machine)
+  for (const expected of [255, 0, 1]) {
+    const time = pressTime(machine)
+    machine.pointerDown(520, 300, time)
+    machine.pointerUp(520, 300, time)
+    step(machine)
+    assert.equal(readPress(machine).count, expected)
+  }
+})
+
 // The walker over a three-word paragraph whose first two words span exactly 1/64 px
 // more than the line: with Safari's epsilon of 1/64 they fit, as pretext's
 // `span > limit + epsilon` test says, and with 0.005 they don't. The reference is

@@ -29,6 +29,7 @@ class FakeElement {
   autocapitalize = ''
   focusCalls: unknown[] = []
   blurCalls = 0
+  selectionCalls: [start: number, end: number, direction?: string][] = []
   #text = ''
   #value = ''
   constructor(readonly tagName: string, readonly document: FakeDocument) {}
@@ -66,6 +67,12 @@ class FakeElement {
   blur() {
     this.blurCalls++
     this.document.activeElement = null
+  }
+  setSelectionRange(start: number, end: number, direction: 'none' | 'forward' | 'backward' = 'none') {
+    this.selectionCalls.push(direction === 'none' ? [start, end] : [start, end, direction])
+    this.selectionStart = start
+    this.selectionEnd = end
+    this.selectionDirection = direction
   }
 }
 
@@ -130,9 +137,29 @@ function mount() {
     machine.pointerDown(x, y, frameTime + 4)
     machine.pointerUp(x, y, frameTime + 4)
   }
+  // A keydown at the textarea, as the window's keydown listener passes it to the host. Returns whether the host
+  // prevented the browser's own handling of the key.
+  function key(name: string, modifiers: {shift?: boolean, meta?: boolean} = {}) {
+    let prevented = false
+    const event = {
+      target: input,
+      key: name,
+      shiftKey: modifiers.shift ?? false,
+      metaKey: modifiers.meta ?? false,
+      altKey: false,
+      ctrlKey: false,
+      isComposing: false,
+      preventDefault() {
+        prevented = true
+      },
+    }
+    assert.equal(host.takesKey(event as unknown as KeyboardEvent), true)
+    return prevented
+  }
   const words = () => nodesOf('notes-word')
   const shownWords = () => words().filter(node => node.style['display'] === 'block')
-  return {machine, document, content, host, input, caret, scheduled, frame, type, press, words, shownWords, lastRead: () => lastRead}
+  const selections = nodesOf('notes-selection')
+  return {machine, document, content, host, input, caret, selections, scheduled, frame, type, press, key, words, shownWords, lastRead: () => lastRead}
 }
 
 // The outputs of a segment cell in a frame's values.
@@ -148,7 +175,8 @@ test('the textarea is created once with the starting text, and the first frame d
   const values = frame()
   assert.deepEqual(machine.evaluations.map(evaluation => [evaluation.kind, evaluation.events]), [['events', ['mount', 'notes text']], ['frame', []]])
   assert.deepEqual(words().map(node => node.textContent), notesWords)
-  assert.equal(content.children.length, notesWords.length + 2)
+  // One rectangle per band for the selection, the caret, the textarea, and the words.
+  assert.equal(content.children.length, notesOptions.bands + 2 + notesWords.length)
   words().forEach((node, word) => {
     const place = placeOf(machine, values, 2 * word)
     assert.deepEqual(
@@ -256,4 +284,144 @@ test('an empty note keeps its caret in the first usable band, and the textarea s
   assert.ok(measure(run) > 498)
   assert.equal(caret.style['transform'], `translate3d(${24 + measure(run)}px,24px,0)`)
   assert.equal(input.style['transform'], 'translate3d(497px,24px,0)')
+})
+
+test('a press on the note moves the textarea\'s caret to the character that is under the pointer after the press', () => {
+  const {machine, input, caret, frame, press} = mount()
+  frame()
+  // 520,209 is on the note, 109,60 in its content box, left of Photos and above System Monitor. The press raises
+  // Notes, the paragraph reflows from lines of 205 px into the whole column, and the caret goes to the character at
+  // 109,60 of the new layout: on the second line, whose band spans y 46 to 68, in the word that spans x 109 there.
+  press(520, 209)
+  let values = frame()
+  assert.equal(values[machine.output.notes.lineCount], 5)
+  const secondLine = Array.from({length: 89}, (_, segment) => ({segment, ...placeOf(machine, values, segment)})).filter(place => place.y === 46)
+  const under = secondLine.filter(place => place.x <= 109).at(-1)!
+  assert.equal(under.segment % 2, 0, 'the point is over a word')
+  const word = {...under, text: notesWords[under.segment / 2]!}
+  assert.ok(109 < word.x + measure(word.text), `'${word.text}' starts at ${word.x}`)
+  // The boundary between two of the word's characters that is nearest to x 109.
+  let nearest = 0
+  for (let characters = 1; characters <= word.text.length; characters++) {
+    if (Math.abs(word.x + measure(word.text.slice(0, characters)) - 109) < Math.abs(word.x + measure(word.text.slice(0, nearest)) - 109)) nearest = characters
+  }
+  assert.ok(nearest > 0 && nearest < word.text.length, 'the caret lands inside the word')
+  const offset = notesWords.slice(0, under.segment / 2).join(' ').length + 1 + nearest
+  assert.deepEqual(input.selectionCalls, [[offset, offset]])
+  // The caret is drawn there in the frame of the press, and the textarea is focused in that frame too.
+  assert.deepEqual([caret.style['display'], caret.style['transform']], ['block', `translate3d(${word.x + measure(word.text.slice(0, nearest))}px,${word.y}px,0)`])
+  assert.equal(input.focusCalls.length, 1)
+  // Later frames move no caret.
+  frame()
+  frame()
+  assert.equal(input.selectionCalls.length, 1)
+  // A press right of the last line's end, at 300,120 in the content box, puts the caret at the end of the text.
+  press(711, 269)
+  values = frame()
+  const lastWord = placeOf(machine, values, 88)
+  assert.ok(lastWord.y === 112 && lastWord.x + measure('them.') < 300)
+  assert.deepEqual(input.selectionCalls, [[offset, offset], [notesText.length, notesText.length]])
+  assert.equal(caret.style['transform'], `translate3d(${lastWord.x + measure('them.')}px,112px,0)`)
+  // A press that isn't on the note moves no caret, e.g. on Photos' title bar, right of Notes.
+  press(1000, 212)
+  frame()
+  frame()
+  assert.equal(input.selectionCalls.length, 2)
+})
+
+test('the selection is drawn as one rectangle per line while Notes is focused, and the caret isn\'t drawn with it', () => {
+  const {machine, input, caret, selections, frame, press} = mount()
+  frame()
+  press(450, 126)
+  frame()
+  assert.ok(selections.every(selection => selection.style['display'] === 'none'))
+  // From the second character to the middle of the second line's first word, as Shift and the arrow keys select.
+  let values = frame()
+  const secondLineStart = Array.from({length: 89}, (_, segment) => segment).find(segment => placeOf(machine, values, segment).y === 46)!
+  const secondLineWord = notesWords[secondLineStart / 2]!
+  const selectionEnd = notesWords.slice(0, secondLineStart / 2).join(' ').length + 1 + 2
+  input.selectionStart = 1
+  input.selectionEnd = selectionEnd
+  input.selectionDirection = 'forward'
+  values = frame()
+  const firstLineSegments = Array.from({length: secondLineStart}, (_, segment) => segment)
+  const firstLineRight = placeOf(machine, values, secondLineStart - 1).x + measure(' ')
+  assert.deepEqual(firstLineSegments.map(segment => placeOf(machine, values, segment).y), firstLineSegments.map(() => 24))
+  assert.deepEqual(
+    selections.slice(0, 3).map(selection => [selection.style['display'], selection.style['transform'], selection.style['width']]),
+    [
+      ['block', `translate3d(${24 + measure('T')}px,24px,0)`, `${firstLineRight - 24 - measure('T')}px`],
+      ['block', 'translate3d(24px,46px,0)', `${measure(secondLineWord.slice(0, 2))}px`],
+      ['none', 'translate3d(0px,68px,0)', '0px'],
+    ],
+  )
+  assert.equal(caret.style['display'], 'none')
+  // A collapsed selection draws the caret again, and no rectangle.
+  input.selectionStart = input.selectionEnd = 5
+  frame()
+  assert.equal(caret.style['display'], 'block')
+  assert.ok(selections.every(selection => selection.style['display'] === 'none'))
+  // While another window is focused, a selection isn't drawn.
+  input.selectionStart = 1
+  input.selectionEnd = selectionEnd
+  press(1000, 212)
+  frame()
+  assert.ok(selections.every(selection => selection.style['display'] === 'none'))
+})
+
+test('the keys that move by lines move the textarea\'s caret along the lines that the program laid out, and other keys stay the browser\'s', () => {
+  const {machine, host, input, caret, selections, frame, press, key} = mount()
+  frame()
+  press(450, 126)
+  let values = frame()
+  // Notes is in front, and the paragraph has 5 lines. The caret starts at the end of the text, on the fifth.
+  const lineOf = (segment: number) => (placeOf(machine, values, segment).y - 24) / 22
+  const lineStarts = [0, 1, 2, 3, 4].map(line => Array.from({length: 45}, (_, word) => word).find(word => lineOf(2 * word) === line)!)
+  const offsetOfWord = (word: number) => notesWords.slice(0, word).join(' ').length + (word > 0 ? 1 : 0)
+  assert.deepEqual([input.selectionStart, lineOf(88)], [notesText.length, 4])
+  // The browser keeps the keys that it can handle in a text of one line.
+  assert.deepEqual(['ArrowLeft', 'ArrowRight', 'Backspace', 'a', 'Enter'].map(name => key(name)), [false, false, false, false, false])
+  // A key at another element isn't the note's.
+  assert.equal(host.takesKey({target: null, key: 'ArrowUp'} as unknown as KeyboardEvent), false)
+  // ArrowUp: the browser's move is prevented, and the frame moves the caret to the fourth line, at the place
+  // nearest to the caret's x.
+  const startX = placeOf(machine, values, 88).x + measure('them.')
+  assert.equal(key('ArrowUp'), true)
+  values = frame()
+  const afterUp = input.selectionStart
+  assert.deepEqual(input.selectionCalls, [[afterUp, afterUp]])
+  assert.ok(afterUp >= offsetOfWord(lineStarts[3]!) && afterUp < offsetOfWord(lineStarts[4]!), `offset ${afterUp} is on the fourth line`)
+  const caretX = () => Number(/translate3d\(([-\d.]+)px/.exec(caret.style['transform']!)![1])
+  assert.ok(Math.abs(caretX() - startX) < 5, `the caret is at x ${caretX()}, near ${startX}`)
+  // Two more ArrowUp keys in one frame, then ArrowUp twice more: the first line, then the start of the text.
+  key('ArrowUp')
+  key('ArrowUp')
+  values = frame()
+  assert.ok(input.selectionStart >= offsetOfWord(lineStarts[1]!) && input.selectionStart < offsetOfWord(lineStarts[2]!))
+  key('ArrowUp')
+  frame()
+  assert.ok(input.selectionStart > 0 && input.selectionStart < offsetOfWord(lineStarts[1]!))
+  assert.ok(Math.abs(caretX() - startX) < 5, 'the run of moves kept its x')
+  key('ArrowUp')
+  frame()
+  assert.equal(input.selectionStart, 0)
+  // End goes to the end of the first line, before the space that hangs there, and Home back to its start.
+  assert.equal(key('End'), true)
+  frame()
+  const firstLineEnd = offsetOfWord(lineStarts[1]!) - 1
+  assert.deepEqual([input.selectionStart, input.selectionEnd], [firstLineEnd, firstLineEnd])
+  // Shift with ArrowDown selects to the same x on the second line, and Shift with Home shrinks the selection to the
+  // second line's start: the first line's hanging space is all that stays selected.
+  key('ArrowDown', {shift: true})
+  frame()
+  assert.equal(input.selectionCalls.at(-1)![2], 'forward')
+  assert.deepEqual([input.selectionStart, selections[0]!.style['display'], selections[1]!.style['display'], caret.style['display']], [firstLineEnd, 'block', 'block', 'none'])
+  key('ArrowLeft', {shift: true, meta: true})
+  frame()
+  assert.deepEqual([input.selectionStart, input.selectionEnd], [firstLineEnd, offsetOfWord(lineStarts[1]!)])
+  // Command with ArrowRight, without Shift, collapses the selection at the second line's end.
+  key('ArrowRight', {meta: true})
+  frame()
+  const secondLineEnd = offsetOfWord(lineStarts[2]!) - 1
+  assert.deepEqual([input.selectionStart, input.selectionEnd, caret.style['display']], [secondLineEnd, secondLineEnd, 'block'])
 })
