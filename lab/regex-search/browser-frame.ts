@@ -1,6 +1,7 @@
 // Keystroke frames of demo.html in headless Chrome. Serves the page with Bun, starts Chrome with its own profile, types
 // a pattern or text one code point at a time with the DevTools Protocol, and reads the page's own timings.
 //   bun lab/regex-search/browser-frame.ts --profile <empty folder> [--chrome <path>] [--only <scenario index>]
+//     [--port <the server's port>] [--debugging-port <Chrome's DevTools port>]     both are picked freely when left out
 import {existsSync, mkdirSync, readFileSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
@@ -15,22 +16,27 @@ const argument = (name: string) => {
 const chromePath = argument('--chrome') ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const profile = argument('--profile') ?? join(tmpdir(), `regex-search-chrome-${process.pid}`)
 const only = argument('--only')
+const serverPort = Number(argument('--port') ?? 0)
+const debuggingPort = Number(argument('--debugging-port') ?? 0)
 mkdirSync(profile, {recursive: true})
 
 type Scenario = {query: string, field: 'pattern' | 'text', typed: string}
 const scenarios: Scenario[] = [
+  // The page's defaults: form (a), 12 states and 768 code points.
+  {query: '', field: 'pattern', typed: patternsByStates[8]!},
   {query: 'form=data&states=8&text=256', field: 'pattern', typed: patternsByStates[8]!},
   {query: 'form=data&states=16&text=1024', field: 'pattern', typed: patternsByStates[16]!},
-  // The page's text starts 24 code points below the capacity, so every typed code point is searched.
+  // The page's text has 741 code points, so at 1,024 every typed code point is searched.
   {query: 'form=data&states=16&text=1024', field: 'text', typed: ' and the lights went out'},
   {query: 'form=builtin&states=32&text=1024', field: 'pattern', typed: patternsByStates[32]!},
-  {query: 'form=data&states=32&text=1024', field: 'pattern', typed: patternsByStates[32]!},
+  // The largest form (a) with 32 states that the page builds. It refuses 32 states at 512 code points and more.
+  {query: 'form=data&states=32&text=256', field: 'pattern', typed: patternsByStates[32]!},
 ]
 
-const server = Bun.serve({port: 0, hostname: '127.0.0.1', development: false, routes: {'/': page}})
+const server = Bun.serve({port: serverPort, hostname: '127.0.0.1', development: false, routes: {'/': page}})
 // Chrome's own messages go next to the profile folder, e.g. when it exits before listening.
 const chrome = Bun.spawn([
-  chromePath, '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run',
+  chromePath, '--headless=new', `--remote-debugging-port=${debuggingPort}`, `--user-data-dir=${profile}`, '--no-first-run',
   '--no-default-browser-check', '--window-size=1200,900', 'about:blank',
 ], {stdout: 'ignore', stderr: Bun.file(`${profile}.log`)})
 const hardTimeout = setTimeout(() => {
@@ -45,16 +51,19 @@ const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolv
 async function devToolsPort() {
   const portPath = join(profile, 'DevToolsActivePort')
   for (let attempt = 0; attempt < 600; attempt++) {
-    // Checked with node:fs on every attempt. An earlier version that checked one BunFile created before Chrome started
-    // never saw the file, although Chrome had written it.
-    if (existsSync(portPath)) {
+    if (debuggingPort > 0) {
+      // Chrome writes DevToolsActivePort only when it picks the port itself, so a given port is asked for its version.
+      if (await fetch(`http://127.0.0.1:${debuggingPort}/json/version`).then(() => true, () => false)) return debuggingPort
+    } else if (existsSync(portPath)) {
+      // Checked with node:fs on every attempt. An earlier version that checked one BunFile created before Chrome started
+      // never saw the file, although Chrome had written it.
       const port = Number(readFileSync(portPath, 'utf8').split('\n')[0])
       if (port > 0) return port
     }
     if (chrome.exitCode !== null) throw new Error(`Chrome exited with ${chrome.exitCode}, see ${profile}.log`)
     await sleep(100)
   }
-  throw new Error(`Chrome didn't write DevToolsActivePort within 60 s, see ${profile}.log`)
+  throw new Error(`Chrome's DevTools port didn't open within 60 s, see ${profile}.log`)
 }
 
 async function openPage(port: number, url: string) {
@@ -113,7 +122,6 @@ async function measure(port: number, {query, field, typed}: Scenario) {
     const selector = field === 'pattern' ? '#pattern' : '#text'
     // Start from an empty pattern, or with the caret at the end of the text.
     await cdp.evaluate(`(() => {
-      document.querySelector('details').open = true
       const element = document.querySelector('${selector}')
       if (${field === 'pattern'}) { element.value = ''; element.dispatchEvent(new Event('input')) }
       element.focus()
@@ -134,11 +142,13 @@ async function measure(port: number, {query, field, typed}: Scenario) {
       const values = evaluated.map(frame => frame[name] as number)
       return {median: round(median(values)), max: round(Math.max(...values))}
     }
+    // The result line, e.g. "27 matches", and the statistics line with the program's size.
     const status = await cdp.evaluate<string>('document.querySelector("#status").textContent')
+    const statistics = await cdp.evaluate<string>('document.querySelector("#stats").textContent')
     return {
       query, field, typed, readyMs: round(readyMs), heapMegabytes: Math.round(heapMegabytes), keystrokes: frames.length, evaluatedFrames: evaluated.length,
       compilePatternMs: summary('compilePatternMs'), programMs: summary('programMs'), evaluateMs: summary('evaluateMs'),
-      domMs: summary('domMs'), callbackMs: summary('callbackMs'), inputToNextFrameMs: summary('inputToNextFrameMs'), status,
+      domMs: summary('domMs'), callbackMs: summary('callbackMs'), inputToNextFrameMs: summary('inputToNextFrameMs'), status, statistics,
     }
   } finally {
     await cdp.close()
