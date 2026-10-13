@@ -98,15 +98,32 @@
 
 /* The row under each stage: the sketch's controls under the sketch, and the training's chart,
    numbers and button under the photos. Both rows are as tall as the chart, so their buttons line
-   up when the stages are side by side. */
+   up when the stages are side by side. Each stage's column is a container, so a row is laid out
+   for the width of its column, which is about the same at a 1,000 px window with two columns
+   (464 px) as at a 480 px window with one (440 px). */
+.stages > div { container-type: inline-size; }
 .tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2) var(--space-4);
   min-height: 40px;
   margin-top: var(--space-2);
+}
+/* A row's button sits at the row's right end, also on a line of its own, where a row is too
+   narrow for the button, e.g. Delete at a 320 px window. */
+.tools .button { margin-left: auto; }
+/* The training's row: the chart takes the width that the numbers and the button leave it, which
+   is at least 104 px in a column of 440 px. In a narrower column the chart gets a line to itself,
+   and the numbers and the button share the next line. */
+.tools.training {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+@container (max-width: 439px) {
+  .tools.training { grid-template-columns: minmax(0, 1fr) auto; }
+  .tools.training .loss-chart { grid-column: 1 / -1; }
+  .tools.training .loss { min-width: 0; }
 }
 /* A button that can't act yet, e.g. Delete while no rectangle is selected. */
 .tools .button:disabled {
@@ -145,13 +162,11 @@
 .segments button:active { background: var(--paper); }
 .segments button[aria-pressed="true"] { background: var(--copper-wash); color: var(--copper); }
 
-/* The loss chart takes the width that the numbers and the button leave, with a hairline as its
-   base. Where that would be under 160 px, e.g. at phone width, the chart gets the row to itself
-   and the numbers and the button wrap to the next row. */
+/* The loss chart, with a hairline as its base. An svg without a width is 300 px wide, so the
+   chart takes its width from its grid cell. */
 .loss-chart {
   display: block;
-  flex: 1 1 160px;
-  min-width: 96px;
+  width: 100%;
   height: 40px;
   border-bottom: 1px solid var(--rule);
 }
@@ -159,14 +174,15 @@
 .loss-chart .marker { fill: var(--copper); stroke: var(--paper); stroke-width: 2; }
 .loss-chart .hairline { stroke: var(--rule-strong); }
 /* The loss now and the number of steps so far, or those of the sample under the mouse. The width
-   has room for a count of 5 digits, e.g. 12,500, so the button beside the numbers doesn't move
-   while the count grows. */
+   has room for a count of 5 digits, e.g. 12,500, which is 202 px wide, so the chart beside the
+   numbers keeps its width while the count grows. The line breaks only between its two halves,
+   e.g. in the 169 px that a 320 px window leaves beside the button. */
 .loss {
-  min-width: 28ch;
+  min-width: 16em;
   color: var(--ink-2);
   font: var(--type-ui);
-  white-space: nowrap;
 }
+.loss span { white-space: nowrap; }
 .loss b { color: var(--ink); font: 600 13px/20px var(--font-mono); }
 
 .stages + .stats {
@@ -174,8 +190,7 @@
   margin-top: var(--space-5);
 }
 
-/* minmax(0, 1fr) and not 1fr, which would keep the column as wide as its widest content, e.g. an
-   svg without a width is 300 px wide by default, more than a 320 px window leaves. */
+/* One column, with the sketch above the photos. */
 @media (max-width: 760px) {
   .stages { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
 }

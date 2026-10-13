@@ -56,7 +56,7 @@
       <div>
         <div class="stage-head"><span class="label">Learned</span><span>placed by the network</span></div>
         <div id="learning-result" class="surface stage learned" role="group" aria-label="The photos, where the network places them"></div>
-        <div class="tools">
+        <div class="tools training">
           <!-- The loss after each frame of training, for the latest 500 steps. learned-gallery.ts draws the line in
                CSS pixels, at whatever width this row leaves the chart. -->
           <svg id="learning-chart" class="loss-chart" role="img" aria-label="The loss over the latest 500 training steps, on a logarithmic scale">
@@ -64,7 +64,8 @@
             <polyline class="line"/>
             <circle class="marker" r="4"/>
           </svg>
-          <div class="loss">loss <b id="learning-loss"></b> after <b id="learning-step"></b> steps</div>
+          <!-- Two halves, so that a column too narrow for the whole line breaks it between them. -->
+          <div class="loss"><span>loss <b id="learning-loss"></b></span> <span>after <b id="learning-step"></b> steps</span></div>
           <button id="learning-train" class="button" type="button" title="Set the weights back to their starting values and train them again">Train again</button>
         </div>
       </div>
