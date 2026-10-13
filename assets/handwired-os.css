@@ -73,7 +73,12 @@ body {
    row look like more joints on the wire. The clearing is an ellipse around the tiles'
    middle, which lies 32 px above the canvas's bottom. On the wire's row, no arc is drawn
    up to 186 px to each side of the dock's middle, which is past the wire's terminals at
-   179 px, and the arcs are at full strength from 294 px. */
+   179 px, and the arcs are at full strength from 294 px.
+
+   The canvas is shown at 36% of its opacity, and wiring.ts draws each arc at 6%. One arc
+   alone is then at about 2.2%, a hairline, and a band where thousands of arcs lie on each
+   other stops at 36% of the arc's color, so the picture stays quiet behind the windows
+   and the list of things to try. */
 .desk-wiring {
   --dock-clearing: radial-gradient(310px 100px at 50% calc(100% - 32px), transparent 68%, #000);
   position: absolute;
@@ -83,21 +88,22 @@ body {
   width: calc(100% - 48px);
   height: calc(100% - var(--system-bar-height) - 18px);
   pointer-events: none;
+  opacity: 0.36;
   -webkit-mask-image: var(--dock-clearing);
   mask-image: var(--dock-clearing);
 }
 
 /* A narrower canvas holds the same arcs closer together, so the whole picture is fainter
-   there. */
+   there: 0.7 and 0.5 times the opacity above. */
 @media (max-width: 999px) {
   .desk-wiring {
-    opacity: 0.7;
+    opacity: 0.25;
   }
 }
 
 @media (max-width: 639px) {
   .desk-wiring {
-    opacity: 0.5;
+    opacity: 0.18;
   }
 }
 

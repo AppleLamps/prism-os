@@ -111,7 +111,7 @@ export function mountWiring(canvas: HTMLCanvasElement, program: TensorProgram, w
       width,
       height,
       // 2 canvas pixels per CSS px on every display, so a 0.5 px line covers whole
-      // canvas pixels. With 1 pixel per px, a line that covers half a pixel at 2.2%
+      // canvas pixels. With 1 pixel per px, a line that covers half a pixel at 6%
       // changes some color channels by less than one of their 255 steps, which
       // rounds, and where thousands of arcs overlap the picture came out olive
       // instead of copper. A canvas of more than 16 million pixels, 64 MB, gets
@@ -119,7 +119,12 @@ export function mountWiring(canvas: HTMLCanvasElement, program: TensorProgram, w
       pixelRatio: Math.min(2, Math.sqrt(16_000_000 / Math.max(width * height, 1))),
       adds: style.getPropertyValue('--copper').trim(),
       subtracts: style.getPropertyValue('--wire-indigo').trim(),
-      alpha: 0.022,
+      // The stylesheet shows the canvas at 36% of its opacity, so one arc alone is
+      // drawn at 6% × 36%, about 2.2%, and a place where thousands of arcs overlap
+      // reaches at most 36% of the arc's color. Drawn at 2.2% on a canvas shown in
+      // full, such places came out as dark as the color itself, e.g. the 16 bands
+      // of the weights that read the Notes text for its 16 line slots.
+      alpha: 0.06,
       lineWidth: 0.5,
     })
   }
