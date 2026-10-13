@@ -1,5 +1,6 @@
-// The demo site's pages, and its icon. Two scripts read this file, so a page has the same path in both:
-// build-demo-site.ts builds the pages into site/, and serve-demo-site.ts serves them while developing.
+// The demo site's pages, and its icon. Three scripts read this file, so a page has the same path in each:
+// build-demo-site.ts builds the pages into site/, serve-demo-site.ts serves them while developing, and
+// check-demo-site.ts loads the built site in headless Chrome.
 import {existsSync} from 'node:fs'
 import {resolve} from 'node:path'
 

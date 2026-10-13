@@ -12,7 +12,8 @@
 // 4. Check the result, and fail when a page is missing, when a page loads a file or links to a page that isn't in
 //    site/, when a page loads anything from another host, or when a URL starts with "/". The site is served under
 //    a path prefix, e.g. https://example.com/handwired/, where a URL like "/os/" leaves the site. The check reads
-//    the HTML and CSS files, and not what a script requests while it runs.
+//    the HTML and CSS files. scripts/check-demo-site.ts loads the pages in a browser, which also covers what the
+//    scripts request while they run.
 import {createHash} from 'node:crypto'
 import {existsSync} from 'node:fs'
 import {mkdir, readdir, readFile, rm, rmdir, stat, writeFile} from 'node:fs/promises'
