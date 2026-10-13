@@ -350,8 +350,8 @@ function mountJsonHighlighter(document: Document, window: Window) {
   let renderedText: string | null = null
   let renderedSelectionStart = -1
   let renderedSelectionEnd = -1
-  // The run that the statistics line and the details line describe: the first run until a key is pressed, and then
-  // the last keystroke. inputToFrameMs is null until the frame after the run.
+  // The run that the statistics line and the details line describe: the page's first frame until a key is pressed,
+  // and then the last keystroke. inputToFrameMs is null until the frame after the run.
   type Run = {keystroke: boolean, inputTime: number, evaluateMs: number, domMs: number, inputToFrameMs: number | null}
   let described: Run | null = null
   // The run whose DOM writes haven't reached the screen yet. The next frame completes its timing.
@@ -546,7 +546,7 @@ function mountJsonHighlighter(document: Document, window: Window) {
       if (typed || described === null) described = pending
     }
     if (described !== null) {
-      const name = described.keystroke ? 'The last keystroke' : 'The first run'
+      const name = described.keystroke ? 'The last keystroke' : 'The first frame'
       const statisticsText = `One program of <b>${formatCount(machine.operationCount)}</b> operations in <b>${formatCount(machine.layerCount)}</b> layers. `
         + `${name} took <b>${formatMs(described.evaluateMs + described.domMs)}</b>.`
       if (written.statistics !== statisticsText) domCache.statistics.innerHTML = written.statistics = statisticsText
@@ -608,6 +608,11 @@ function mountJsonHighlighter(document: Document, window: Window) {
   const firstCaret = sample.indexOf('[') + 1
   textarea.focus({preventScroll: true})
   textarea.setSelectionRange(firstCaret, firstCaret)
+  // A browser compiles the code that evaluates the program in steps, during the first runs. In Chrome 155 on an
+  // Apple M5 Max the first two runs take about 4 ms each, the third 1.5 ms, and each later run 0.8 ms. Three runs
+  // here, about 10 ms of the page's load, keep those steps out of the first frame's time and out of the first
+  // keystroke, which took 4 to 11 ms without them.
+  for (let run = 0; run < 3; run++) machine.run(sample, 0)
   // The first frame runs here and not in an animation frame, so the text is never painted without its colors.
   renderHighlighter()
 }
