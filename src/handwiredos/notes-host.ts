@@ -89,6 +89,11 @@ function lineMoveOf(event: KeyboardEvent): LineMove | null {
   }
 }
 
+// The most characters that the textarea holds, about 25 times what the program's 256 cells lay out. A frame measures
+// the whole value when it changed, so the length is limited to keep that within the frame, e.g. after a paste of a
+// whole book. The browser refuses typed and pasted characters past this length.
+const longestValue = 20_000
+
 // A function that measures a string in `font` with a canvas, for the caret's place inside a word.
 export function createCanvasMeasure(document: Document, font: string): MeasureText {
   const context = document.createElement('canvas').getContext('2d')
@@ -129,6 +134,7 @@ export function createNotesHost(
   input.setAttribute('autocomplete', 'off')
   input.setAttribute('autocorrect', 'off')
   input.setAttribute('aria-label', 'Note')
+  input.maxLength = longestValue
   // The value is assigned once, here, which also leaves the caret at the end of the
   // text. Every later change is the browser's own, e.g. a typed character, a paste
   // or an undo. Assigning the value again would discard the browser's undo history.

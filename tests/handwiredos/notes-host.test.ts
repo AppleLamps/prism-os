@@ -27,6 +27,7 @@ class FakeElement {
   selectionDirection: 'none' | 'forward' | 'backward' = 'none'
   spellcheck = true
   autocapitalize = ''
+  maxLength = -1
   focusCalls: unknown[] = []
   blurCalls = 0
   selectionCalls: [start: number, end: number, direction?: string][] = []
@@ -175,7 +176,7 @@ function placeOf(machine: ReturnType<typeof createWindowManagerMachine>, values:
 
 test('the textarea is created once with the starting text, and the first frame draws one span per word from the program\'s outputs', () => {
   const {machine, content, input, caret, frame, words} = mount()
-  assert.deepEqual([input.tagName, input.value, input.spellcheck, input.attributes['aria-label']], ['textarea', notesText, false, 'Note'])
+  assert.deepEqual([input.tagName, input.value, input.spellcheck, input.attributes['aria-label'], input.maxLength], ['textarea', notesText, false, 'Note', 20_000])
   // The measured text was queued before the first step, so it applies with the mount.
   const values = frame()
   assert.deepEqual(machine.evaluations.map(evaluation => [evaluation.kind, evaluation.events]), [['events', ['mount', 'notes text']], ['frame', []]])

@@ -80,10 +80,10 @@ export type NotesOptions = {
 export const notesCapacity = 256
 // How many segments one line can hold, e.g. 32 words and the 32 spaces after them.
 // The starting paragraph's longest line in the widest column holds 25 segments at
-// the baked widths, and a 440 px line of two-letter words about 53 in Georgia. A
-// line with more segments wraps after 64, e.g. a line of one-letter words, and the
-// flow's windowOverflow output counts such lines. Each segment of the window costs
-// about 7 operations per band.
+// the baked widths, and a 440 px line of words like "it", "we" and "of" about 50
+// in Georgia. A line with more segments wraps after 64, e.g. a line of the word
+// "i", which would hold 118, and the flow's windowOverflow output counts such
+// lines. Each segment of the window costs about 7 operations per band.
 export const notesWindow = 64
 
 // The flow's structural constants, e.g. the walker window and the narrowest slot a

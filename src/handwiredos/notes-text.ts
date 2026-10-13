@@ -410,7 +410,7 @@ export function offsetAfterLineMove(
 export function notesNotice(counts: {segments: number, capacity: number, hiddenWords: number, wrappedLines: number, window: number}) {
   const sentences: string[] = []
   if (counts.segments > counts.capacity) {
-    sentences.push(`This text has ${counts.segments} words and spaces, and the note lays out the first ${counts.capacity}.`)
+    sentences.push(`This text has ${counts.segments.toLocaleString('en-US')} words and spaces, and the note lays out the first ${counts.capacity}.`)
   }
   if (counts.hiddenWords > 0) {
     sentences.push(counts.hiddenWords === 1

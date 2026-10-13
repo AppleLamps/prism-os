@@ -308,6 +308,7 @@ test('the notice names each capacity that the text passes, in plain sentences', 
   assert.equal(notesNotice(within), '')
   assert.equal(notesNotice({...within, segments: 128}), '')
   assert.equal(notesNotice({...within, segments: 399}), 'This text has 399 words and spaces, and the note lays out the first 128.')
+  assert.equal(notesNotice({...within, segments: 9091}), 'This text has 9,091 words and spaces, and the note lays out the first 128.')
   assert.equal(notesNotice({...within, hiddenWords: 10}), 'The last 10 words don\'t fit in the lines that are free.')
   assert.equal(notesNotice({...within, hiddenWords: 1}), 'The last word doesn\'t fit in the lines that are free.')
   assert.equal(notesNotice({...within, wrappedLines: 2}), 'A line holds 40 words and spaces at most, so 2 lines wrap early.')
