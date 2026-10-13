@@ -15,30 +15,34 @@ type FrameTiming = {inputToFrameMs: number, evaluateMs: number, domMs: number}
 // about 25 µs per call in Chrome 155.
 const countFormat = new Intl.NumberFormat('en-US')
 const formatCount = (value: number) => countFormat.format(value)
+// A number and its unit stay on one line, e.g. 0.8 ms, so the space between them is a no-break space.
+const noBreakSpace = '\u00a0'
 // Chrome's clock reads in steps of 0.1 ms on a page like this one, so a shorter time is shown as that.
-const formatMs = (milliseconds: number) => milliseconds < 0.05 ? 'under 0.1 ms' : `${milliseconds.toFixed(1)} ms`
+const formatMs = (milliseconds: number) => milliseconds < 0.05 ? `under 0.1${noBreakSpace}ms` : `${milliseconds.toFixed(1)}${noBreakSpace}ms`
 
-// How each form computes the state after every character, for the details line.
+// How each form goes through the text, for the details line.
 const formDescriptions: {[Form in ScanForm]: string} = {
-  'loop': 'the loop form of the program, where each character&rsquo;s step reads the state that the step before it left, one layer after another',
-  'brent-kung': 'the Brent-Kung form of the program, where the characters&rsquo; steps are combined in a tree, which takes more operations in fewer layers than the loop form',
-  'sklansky': 'the Sklansky form of the program, where the characters&rsquo; steps are combined in a tree, which takes more operations in fewer layers than the loop form',
+  'loop': 'the loop form of the program, which reads the text one character after another: each character&rsquo;s layers use what the layers of the character before it computed',
+  'brent-kung': 'the Brent-Kung form of the program, which combines neighboring characters in a tree instead of reading them one after another, and takes more operations in fewer layers than the loop form',
+  'sklansky': 'the Sklansky form of the program, which combines neighboring characters in a tree instead of reading them one after another, and takes more operations in fewer layers than the loop form',
 }
 
 // The first error as a sentence. Each sentence is about the character at the error's position, which the page
 // underlines, e.g. the 2 of [1 2] for expectedCommaOrClose. kinds.ts has an example of every kind. Every sentence is
 // short enough to stay on one line beside the character count in a page 800 px wide, so the lines under the editor
-// don't move while errors come and go with the keystrokes.
+// don't move while errors come and go with the keystrokes. A sentence's own apostrophe is the typographic one, as in
+// the page's caption, and the quotes that stand for JSON's characters stay straight, e.g. "name".
 function errorSentences({maximumDepth}: Limits): {[Kind in typeof errorKinds[number]]: string} {
   return {
     none: 'Valid JSON.',
     unexpectedCharacter: 'Nothing in JSON starts with this character.',
     // For a tab or another control character. A line break has its own sentence, unclosedStringSentence.
     controlCharacterInString: 'This character needs an escape inside a string, e.g. \\t for a tab.',
-    badEscape: 'After a backslash come only " \\ / b f n r t or u.',
+    // The list of characters stays on one line where the sentence wraps.
+    badEscape: `After a backslash come only ${['"', '\\', '/', 'b', 'f', 'n', 'r', 't'].join(noBreakSpace)} or${noBreakSpace}u.`,
     badUnicodeEscape: '\\u needs four hexadecimal digits after it, e.g. \\u00e9.',
-    badNumber: 'This isn\'t a JSON number, just as 01, 1. and 1e aren\'t.',
-    badLiteral: 'This word isn\'t true, false or null.',
+    badNumber: 'This isn’t a JSON number, just as 01, 1. and 1e aren’t.',
+    badLiteral: 'This word isn’t true, false or null.',
     expectedValue: 'A value was expected here, e.g. a string or a number.',
     expectedKey: 'A key in double quotes was expected here, e.g. "name".',
     expectedColon: 'A colon was expected here, after the key.',
@@ -51,7 +55,7 @@ function errorSentences({maximumDepth}: Limits): {[Kind in typeof errorKinds[num
     tooLong: '',
   }
 }
-const unclosedStringSentence = 'This string isn\'t closed before the end of its line.'
+const unclosedStringSentence = 'This string isn’t closed before the end of its line.'
 
 // The characters before a lexer error that belong to the token it breaks, by display kind, e.g. the tru of trux for
 // badLiteral. The page underlines them together with the error's character, so "this word" has a word to point at.
@@ -321,10 +325,10 @@ function mountJsonHighlighter(document: Document, window: Window) {
   // The part of the details line that never changes: the form, the build's time, the numbers that go in, and the
   // two limits.
   const sourceSize = machine.built.circuit.sourceSize
-  const detailsStart = `The page runs ${formDescriptions[form]}. The program took <b>${formatCount(Math.round(buildMs))} ms</b> to build when the page loaded. `
-    + `It reads <b>${formatCount(sourceSize)}</b> numbers: <b>${formatCount(capacity + 2)}</b> that the page writes on every keystroke, `
-    + `for up to <b>${formatCount(capacity)}</b> characters, the text&rsquo;s length and the caret&rsquo;s position, `
-    + `and <b>${formatCount(sourceSize - capacity - 2)}</b> that hold JSON&rsquo;s rules as tables. It follows nesting up to <b>${limits.maximumDepth}</b> levels deep.`
+  const detailsStart = `The page runs ${formDescriptions[form]}. The program took <b>${formatCount(Math.round(buildMs))}${noBreakSpace}ms</b> to build when the page loaded. `
+    + `It reads <b>${formatCount(sourceSize)}</b> numbers: <b>${formatCount(capacity + 2)}</b> that the page writes on every keystroke `
+    + `(up to <b>${formatCount(capacity)}</b> characters, the text&rsquo;s length and the caret&rsquo;s position) `
+    + `and <b>${formatCount(sourceSize - capacity - 2)}</b> that hold JSON&rsquo;s rules as tables. It follows brackets nested up to <b>${limits.maximumDepth}</b> levels deep.`
 
   const frameTimings: FrameTiming[] = []
   ;(window as unknown as {jsonHighlighter: unknown}).jsonHighlighter = {form, limits, buildMs, frameTimings}
@@ -479,13 +483,14 @@ function mountJsonHighlighter(document: Document, window: Window) {
       let sentence = sentences.none
       if (output.valid === 0) {
         statusClass = 'status bad'
-        position = `Line ${formatCount(errorLine + 1)}, column ${formatCount(errorColumn)}.`
+        // "Line 12," and "column 18." each stay on one line where the sentence wraps, e.g. on a phone.
+        position = `Line${noBreakSpace}${formatCount(errorLine + 1)}, column${noBreakSpace}${formatCount(errorColumn)}.`
         const kind = errorKinds[output.firstErrorKind] ?? 'none'
         // A textarea's value has line feeds only, also for a text pasted with carriage returns.
         const unclosedString = kind === 'controlCharacterInString' && errorCharacter === lineFeed
         sentence = kind === 'tooLong'
           ? ` This text has ${formatCount(codePointCount)} characters, and the program reads the first ${formatCount(capacity)}.`
-          : ` ${unclosedString ? unclosedStringSentence : sentences[kind]}${output.truncated === 1 ? ` Past character ${formatCount(capacity)}, the text isn't read.` : ''}`
+          : ` ${unclosedString ? unclosedStringSentence : sentences[kind]}${output.truncated === 1 ? ` Past character ${formatCount(capacity)}, the text isn’t read.` : ''}`
       }
       const countClass = output.truncated === 1 ? 'capacity over' : 'capacity'
       const countUsedText = formatCount(codePointCount)
@@ -547,7 +552,7 @@ function mountJsonHighlighter(document: Document, window: Window) {
       if (written.statistics !== statisticsText) domCache.statistics.innerHTML = written.statistics = statisticsText
       if (!described.keystroke || described.inputToFrameMs !== null) {
         const detailsText = `${detailsStart} ${name} took <b>${formatMs(described.evaluateMs)}</b> to run the program and <b>${formatMs(described.domMs)}</b> to update the page`
-          + `${described.inputToFrameMs === null || !described.keystroke ? '.' : `, and its result reached the screen about <b>${Math.round(described.inputToFrameMs)} ms</b> after the key press.`}`
+          + `${described.inputToFrameMs === null || !described.keystroke ? '.' : `, and its result reached the screen about <b>${Math.round(described.inputToFrameMs)}${noBreakSpace}ms</b> after the key press.`}`
         if (written.details !== detailsText) domCache.details.innerHTML = written.details = detailsText
       }
     }

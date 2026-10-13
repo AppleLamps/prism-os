@@ -115,9 +115,10 @@
   -webkit-appearance: none;
 }
 /* The result line and the character count. The count keeps its place at the right also when the
-   result is too long for one line and wraps beside it. */
+   result is too long for one line and wraps beside it. A result of two lines doesn't end in a
+   lone word, e.g. on a phone. */
 .editor .surface-bar { grid-column: 1 / -1; flex-wrap: nowrap; }
-.editor .status { flex: 1 1 auto; }
+.editor .status { flex: 1 1 auto; text-wrap: pretty; }
 .editor .capacity { flex: none; }
 
 /* What a character is shown as: k0 to k8 in the order of src/json-highlighter/kinds.ts.
