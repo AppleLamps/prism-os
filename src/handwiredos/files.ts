@@ -602,10 +602,13 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
       sidebar.appendChild(node)
       return node
     }),
-    // The location whose titles the header shows, or -1 before the first frame.
+    // The location whose titles the header's cells hold, or -1 before the first
+    // frame. Lifetime: until the list shows another location.
     location: -1,
-    // mount lifetime. Each slot keeps the row whose text its cells hold, or -1, and
-    // the value whose text its last cell holds.
+    // The nodes have mount lifetime. Each slot also keeps the row whose text its
+    // cells hold, or -1, until the slot shows another row or the list another
+    // location, and the value whose text its last cell holds, until the row's
+    // value changes.
     slots: Array.from({length: slotCount}, () => {
       const node = document.createElement('div')
       node.className = 'files-row'

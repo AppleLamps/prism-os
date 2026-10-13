@@ -2043,9 +2043,9 @@ export function projectWindowElements(
     frame.style.zIndex = `${10 + read(windowOutputField.stack)}`
     frame.style.setProperty('--focused', `${read(windowOutputField.focused)}`)
     frame.style.setProperty('--maximized', `${read(windowOutputField.maximized)}`)
-    // window-manager.css anchors .window-content to all four sides of the frame,
-    // and the lab demos that share the stylesheet rely on that. With left and top
-    // set, the browser ignores right and bottom once width and height are set.
+    // window-manager.css anchors .window-content to all four sides of the frame.
+    // With left and top set, the browser ignores right and bottom once width and
+    // height are set.
     content.style.width = `${read(windowOutputField.contentWidth)}px`
     content.style.height = `${read(windowOutputField.contentHeight)}px`
   }
