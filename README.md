@@ -12,7 +12,7 @@ Handwired writes an interactive UI as one fixed numeric program. JavaScript writ
 - [JSON highlighter](#json-highlighter), at /json-highlighter/: a text box highlighted on every keystroke by one program that keeps no state.
 - [Regex search](lab/regex-search/README.md), at /regex-search/: one program finds every match of a pattern in a text as you type, and the same program runs every pattern, since a pattern reaches the program as tables of numbers.
 - [Learned gallery](lab/learned-gallery/README.md), at /learned-gallery/: a program whose 244 weights are trained instead of wired by hand, by backpropagation in the browser, until the photos match the rectangles you sketch.
-- [JSON search](lab/json-search/README.md), at /json-search/: the JSON highlighter's and the regex search's programs, run over 100,000 documents at once on WebGPU.
+- [JSON search](lab/json-search/README.md), at /json-search/: at each keystroke, the regex search's program runs once per document over 100,000 JSON documents, in one pass on WebGPU, after the JSON highlighter's program has validated them the same way.
 
 ## HandwiredOS
 
