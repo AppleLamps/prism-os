@@ -161,7 +161,7 @@ function limitSentence({reason, needed, capacity}: CapacityError): string {
     case 'classes':
       return `This pattern tells ${count(needed)} classes of characters apart, and the program holds ${capacity}.`
     case 'boundaries':
-      return `This pattern's classes of characters change at ${count(needed)} places, and the program holds ${capacity}.`
+      return `This pattern’s classes of characters change at ${count(needed)} places, and the program holds ${capacity}.`
   }
 }
 
@@ -376,7 +376,7 @@ function mountRegexSearch(document: Document, window: Window) {
       status = ['Building the program…']
     } else if (refused) {
       statusState = 'bad'
-      status = [`The page doesn't build this program: ${choice.states} states and ${count(choice.textLength)} characters need about ${(dataOperations(choice) / 1e6).toFixed(1)} million operations, and building them would freeze the tab for seconds and take more than half a gigabyte of memory.`]
+      status = [`The page doesn’t build this program: ${choice.states} states and ${count(choice.textLength)} characters need about ${(dataOperations(choice) / 1e6).toFixed(1)} million operations, and building them would freeze the tab for seconds and take more than half a gigabyte of memory.`]
     } else if (problem !== null) {
       statusState = 'bad'
       status = [problem]

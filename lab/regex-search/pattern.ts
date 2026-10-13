@@ -98,7 +98,7 @@ export function parsePattern(pattern: string): PatternNode {
     if (!(is('?') || is('*') || is('+'))) return body
     const quantifier = String.fromCodePoint(codePoints[position]!)
     position++
-    if (is('?')) fail(`${quantifier}? is a lazy quantifier, which this language doesn't have`)
+    if (is('?')) fail(`${quantifier}? is a lazy quantifier, which this language doesn’t have`)
     if (is('*') || is('+')) fail('nothing to repeat')
     return {kind: 'repeat', body, optional: quantifier !== '+', repeats: quantifier !== '?'}
   }
@@ -109,7 +109,7 @@ export function parsePattern(pattern: string): PatternNode {
     position++
     switch (character) {
       case '(': {
-        if (is('?')) fail('groups such as (?: aren\'t supported', at)
+        if (is('?')) fail('groups such as (?: aren’t supported', at)
         const inner = parseAlternation()
         if (!is(')')) fail('this group is never closed', at)
         position++
@@ -127,7 +127,7 @@ export function parsePattern(pattern: string): PatternNode {
         return fail('nothing to repeat', at)
       case '^':
       case '$':
-        return fail('the anchors ^ and $ aren\'t supported', at)
+        return fail('the anchors ^ and $ aren’t supported', at)
       case '{':
       case '}':
       case ']':
@@ -140,14 +140,14 @@ export function parsePattern(pattern: string): PatternNode {
   // After a backslash. codePoint is the escaped code point, or undefined for \d and \w, which can't end a range.
   function parseEscape(at: number, inClass: boolean): {set: CodePointSet, codePoint: number | undefined} {
     const escaped = codePoints[position]
-    if (escaped === undefined) return fail('a pattern can\'t end with a backslash', at)
+    if (escaped === undefined) return fail('a pattern can’t end with a backslash', at)
     position++
     if (escaped === code('d')) return {set: digitSet, codePoint: undefined}
     if (escaped === code('w')) return {set: wordSet, codePoint: undefined}
     if (syntaxCharacters.has(escaped) || escaped === code('/') || (inClass && escaped === code('-'))) {
       return {set: [[escaped, escaped]], codePoint: escaped}
     }
-    return fail(`the escape \\${String.fromCodePoint(escaped)} isn't supported`, at)
+    return fail(`the escape \\${String.fromCodePoint(escaped)} isn’t supported`, at)
   }
 
   function parseClassAtom(): {set: CodePointSet, codePoint: number | undefined} {
