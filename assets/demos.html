@@ -165,11 +165,14 @@
         </a>
 
         <!-- The GPU demo's card. The site build publishes lab/json-search/demo.html at json-search/. The card's numbers
-             are from lab/json-search/README.md, measured on an Apple M5 Max in headless Chrome 155 on October 13,
-             2026: a search of 100,000 documents takes 8 to 21 ms for a pattern of up to 8 states, which is a pattern
-             of up to 7 characters or sets, and RegExp on one thread takes 12 to 43 ms for the same searches. They
-             aren't marked with data-count, since the demo's page shows other numbers on another machine, e.g. 500
-             documents without WebGPU. -->
+             were measured on an Apple M5 Max in headless Chrome 155 on October 13, 2026. For lab/json-search/README.md,
+             a search of 100,000 documents with a pattern of up to 8 states, which is a pattern of up to 7 characters
+             or sets, took 17.6 to 20.8 ms after a pause of 200 ms or more, which is what a search per keystroke gets,
+             and 7.6 ms when one search followed another, and RegExp on one thread took 12 to 43 ms for the same
+             searches. The demo's page, with a key every 150 ms, measured 17 ms for the median search, 8 to 24 ms for
+             all of them, and 20 to 26 ms for its first search, the one it shows at rest. So the card says "about 20
+             ms". The numbers aren't marked with data-count, since the demo's page shows other numbers on another
+             machine, e.g. 500 documents without WebGPU. -->
         <a class="card demo" href="json-search/" aria-labelledby="json-search-title">
           <div class="demo-picture" aria-hidden="true">
             <!-- A piece of the demo's map: a small mark for each document, in a block for each kind of document. A
@@ -213,7 +216,7 @@
           <div class="demo-body">
             <h3 id="json-search-title">Search 100,000 JSON documents</h3>
             <p>Type a pattern, and regex search&rsquo;s program runs once per document on the GPU, over 100,000 JSON documents at each keystroke. No document reads another, so one pass runs them all, in about the time that RegExp takes on one thread for a pattern of up to 7 characters.</p>
-            <p class="meta facts">A search takes 8 to 21&nbsp;ms on an Apple M5 Max. Without WebGPU, the page searches 500 documents on the CPU.</p>
+            <p class="meta facts">A search takes about 20&nbsp;ms on an Apple M5 Max. Without WebGPU, the page searches 500 documents on the CPU.</p>
           </div>
         </a>
       </section>
