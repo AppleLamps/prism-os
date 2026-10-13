@@ -54,12 +54,13 @@ test('the wallpaper draws one arc per stored weight, from the value it reads to 
   // as wide as the canvas would be that tall.
   const heightOf = (width: number) => width / 2 * (99.75 / 150)
   assert.deepEqual(arcs, [
-    // The weights that add, layer by layer: 2 × cell 0 into a, then a and the gate's cell 0 into b.
+    // The weight that subtracts first: -1 × cell 1 into a.
+    {color: 'indigo', left: 50, right: 100, height: heightOf(50), baseline: 99.75},
+    // Then the weights that add, layer by layer, drawn on top: 2 × cell 0 into a,
+    // then a and the gate's cell 0 into b.
     {color: 'copper', left: 0, right: 100, height: heightOf(100), baseline: 99.75},
     {color: 'copper', left: 100, right: 200, height: heightOf(100), baseline: 99.75},
     {color: 'copper', left: 0, right: 200, height: heightOf(200), baseline: 99.75},
-    // Then the weight that subtracts: -1 × cell 1 into a.
-    {color: 'indigo', left: 50, right: 100, height: heightOf(50), baseline: 99.75},
   ])
 })
 

@@ -62,9 +62,12 @@ export function drawWiring(canvas: HTMLCanvasElement, program: TensorProgram, op
 
   const baseline = height - 0.5 / pixelRatio
   const heightPerRadius = Math.min(baseline / (width / 2), 1.25)
-  // All the arcs of one color, then all of the other, so the second stays visible
-  // where the two overlap.
-  for (const subtracts of [false, true]) {
+  // All the arcs of the weights that subtract, then all the arcs of the weights that
+  // add, so the second color lies on top where the two overlap. Many arcs between
+  // the same two layers add up to a band of both colors, and with copper on top a
+  // band comes out brown, like ink on the desk's paper. With indigo on top the bands
+  // came out gray.
+  for (const subtracts of [true, false]) {
     context.strokeStyle = subtracts ? options.subtracts : options.adds
     layerStart = program.sourceSize
     for (const layer of program.layers) {

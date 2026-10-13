@@ -64,9 +64,18 @@ body {
 }
 
 /* The wallpaper: the program's stored weights as arcs, one per weight, which wiring.ts
-   draws over the whole canvas when the page loads. The arcs stand on the dock's wire: the
-   canvas ends 6 px above the desktop's bottom, and the wire is the canvas's last row. */
+   draws over the whole canvas when the page loads. The arcs stand on the row of the dock's
+   wire: the canvas ends 6 px above the desktop's bottom, and the wire is the canvas's last
+   row.
+
+   Around the dock the arcs fade out, so the wire, its two terminals and the joints are
+   drawn on the plain desk. Without this clearing, the short arcs that end on the wire's
+   row look like more joints on the wire. The clearing is an ellipse around the tiles'
+   middle, which lies 32 px above the canvas's bottom. On the wire's row, no arc is drawn
+   up to 186 px to each side of the dock's middle, which is past the wire's terminals at
+   179 px, and the arcs are at full strength from 294 px. */
 .desk-wiring {
+  --dock-clearing: radial-gradient(310px 100px at 50% calc(100% - 32px), transparent 68%, #000);
   position: absolute;
   z-index: 0;
   top: calc(var(--system-bar-height) + 12px);
@@ -74,6 +83,8 @@ body {
   width: calc(100% - 48px);
   height: calc(100% - var(--system-bar-height) - 18px);
   pointer-events: none;
+  -webkit-mask-image: var(--dock-clearing);
+  mask-image: var(--dock-clearing);
 }
 
 /* A narrower canvas holds the same arcs closer together, so the whole picture is fainter
@@ -121,11 +132,15 @@ body {
 
 /* Where the list is shown, the arcs behind it fade to a fifth, so no arc strikes through
    a word. The clearing is an ellipse around the list's middle, which lies 218 px from the
-   canvas's right edge and 151 px above its bottom. */
+   canvas's right edge and 151 px above its bottom. The two clearings multiply, which is
+   what mask-composite: intersect does, and source-in is the same under its older name. */
 @media (min-width: 1100px) and (min-height: 850px) {
   .desk-wiring {
-    -webkit-mask-image: radial-gradient(330px 140px at calc(100% - 218px) calc(100% - 151px), rgb(0 0 0 / 0.2) 70%, #000);
-    mask-image: radial-gradient(330px 140px at calc(100% - 218px) calc(100% - 151px), rgb(0 0 0 / 0.2) 70%, #000);
+    --legend-clearing: radial-gradient(330px 140px at calc(100% - 218px) calc(100% - 151px), rgb(0 0 0 / 0.2) 70%, #000);
+    -webkit-mask-image: var(--dock-clearing), var(--legend-clearing);
+    mask-image: var(--dock-clearing), var(--legend-clearing);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
   }
 }
 
