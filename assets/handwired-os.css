@@ -391,12 +391,13 @@ body {
   overflow: hidden;
 }
 
-/* The grip is an arc around the corner's center. A maximized window can't be resized, so
-   its grip has no size. */
+/* The grip is an arc around the corner's center, 3 px inside the frame's edge. The program's
+   grip is the frame's lower right 24 px square, border included, so the box starts 1 px
+   outside the padding box. A maximized window can't be resized, so its grip has no size. */
 .resize-grip {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: -1px;
+  bottom: -1px;
   width: calc(var(--resize-grip) * (1 - var(--maximized)));
   height: calc(var(--resize-grip) * (1 - var(--maximized)));
   overflow: hidden;
@@ -495,8 +496,9 @@ body {
 
 .files-header,
 .files-row {
-  grid-template-columns: minmax(0, 1fr) 76px 44px 72px;
+  grid-template-columns: minmax(0, 1fr) 72px 48px 68px;
   align-items: center;
+  column-gap: var(--space-3);
   padding: 0 var(--files-scrollbar-strip) 0 var(--space-3);
 }
 
@@ -580,20 +582,20 @@ body {
   color: var(--ink-2);
 }
 
-/* The swatch carries the kind's color and the word stays in ink. Monitor's bar uses the
-   same colors. */
+/* A kind cell that also has one of the kind classes above, e.g. kind-reglu, gets a swatch
+   in the kind's color, and the word stays in ink. Monitor's bar uses the same colors. */
 .files-row .files-cell-kind {
   font-family: var(--font-sans);
 }
 
-.files-row .files-cell-kind::before {
+.files-row .files-cell-kind[class*=" kind-"]::before {
   content: "";
   display: inline-block;
   width: 6px;
   height: 6px;
   margin-right: 6px;
   border-radius: 1.5px;
-  background: var(--kind-color, var(--ink-3));
+  background: var(--kind-color);
   vertical-align: 1px;
 }
 
