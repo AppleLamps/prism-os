@@ -848,9 +848,12 @@ body {
   border-radius: 0 var(--radius-1) var(--radius-1) 0;
 }
 
+/* The entries wrap onto a second line when a window is too narrow for all of them, e.g.
+   four kinds at the default width. */
 .monitor-legend {
   display: flex;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
   margin: var(--space-2) 0 0;
   padding: 0;
   list-style: none;
@@ -890,7 +893,7 @@ body {
   }
 
   .monitor-legend {
-    gap: var(--space-3);
+    column-gap: var(--space-3);
   }
 }
 
