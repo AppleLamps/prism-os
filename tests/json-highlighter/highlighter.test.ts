@@ -2,25 +2,37 @@
 // Run from the repo root: bun test tests/json-highlighter
 import {describe, expect, test} from 'bun:test'
 import {validateGrids, validateIndexReads, validateNoNaN} from '../../src/runtime/numeric-ui-core.ts'
-import {createCorpus, createRandom, edgeCases} from './corpus.ts'
-import {type HighlighterOutput, type ScanForm, createHighlighterMachine, scanForms} from '../../src/json-highlighter/highlighter.ts'
-import {capacity, errorKind, errorKinds, maximumDepth} from '../../src/json-highlighter/kinds.ts'
+import {createCorpus, createRandom, edgeCases, edgeCasesFor} from './corpus.ts'
+import {type HighlighterOutput, type ScanForm, buildHighlighter, createHighlighterMachine, scanForms} from '../../src/json-highlighter/highlighter.ts'
+import {type Limits, capacity, defaultLimits, errorKind, errorKinds, maximumDepth} from '../../src/json-highlighter/kinds.ts'
 import {highlightReference} from './reference.ts'
 
 const corpus = createCorpus(20260917, {random: 700, mutated: 1600, long: 80})
 const codePointLength = (text: string) => Array.from(text).length
-const machines = new Map(scanForms.map(form => [form, createHighlighterMachine(form)]))
-const machineFor = (form: ScanForm) => machines.get(form)!
+// One machine per form and limits, built when a test first asks for it.
+const machines = new Map<string, ReturnType<typeof createHighlighterMachine>>()
+function machineFor(form: ScanForm, limits: Limits = defaultLimits) {
+  const key = `${form} ${limits.capacity} ${limits.maximumDepth}`
+  let machine = machines.get(key)
+  if (machine === undefined) machines.set(key, machine = createHighlighterMachine(form, limits))
+  return machine
+}
 
 // Runs one text at one caret through the program and the reference, and throws with the text when they differ.
-function expectAgreement(form: ScanForm, text: string, caret: number): HighlighterOutput {
-  const output = machineFor(form).run(text, caret)
-  const expected = highlightReference(text, caret)
+function expectAgreement(form: ScanForm, text: string, caret: number, limits: Limits = defaultLimits): HighlighterOutput {
+  const output = machineFor(form, limits).run(text, caret)
+  const expected = highlightReference(text, caret, limits)
   const actual = {...output, displayKinds: [...output.displayKinds]}
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-    expect({form, text, caret, ...actual}).toEqual({form, text, caret, ...expected})
+    expect({form, limits, text, caret, ...actual}).toEqual({form, limits, text, caret, ...expected})
   }
   return output
+}
+
+const roundingPointCounts = (form: ScanForm, limits: Limits) => {
+  const counts = new Map<string, number>()
+  for (const point of machineFor(form, limits).built.circuit.roundingPoints()) counts.set(point.kind, (counts.get(point.kind) ?? 0) + 1)
+  return Object.fromEntries(counts)
 }
 
 describe('the reference', () => {
@@ -137,11 +149,7 @@ describe('the program', () => {
   test('emitCompare builds integer bits everywhere except the container kind comparison at position 511', () => {
     // At position 511, the code minus the level weight can reach exactly 2^24, where emitCompare builds a sign cascade
     // of 17 operations instead of an integer bit.
-    for (const form of scanForms) {
-      const counts = new Map<string, number>()
-      for (const point of machineFor(form).built.circuit.roundingPoints()) counts.set(point.kind, (counts.get(point.kind) ?? 0) + 1)
-      expect(Object.fromEntries(counts)).toEqual({'integer bit': 5127, 'sign cascade': 17})
-    }
+    for (const form of scanForms) expect(roundingPointCounts(form, defaultLimits)).toEqual({'integer bit': 5127, 'sign cascade': 17})
   })
 
   test('the literal evaluator gives the compiled layers\' values, and every declared grid and index read holds', () => {
@@ -161,5 +169,113 @@ describe('the program', () => {
         validateNoNaN(circuit, values)
       }
     }
+  })
+})
+
+// buildHighlighter takes the capacity and the maximum depth as a parameter. The tests above run the defaults, 512 and
+// 16. These run 2,048 code points at depth 13, four times the default capacity at the largest depth where every
+// comparison of the container kinds is an integer bit, and limits that aren't powers of two.
+describe('the program at other limits', () => {
+  const larger: Limits = {capacity: 2048, maximumDepth: 13}
+  // Edge cases, chains of containers and long texts made for the larger limits, e.g. `[`, 2,046 spaces and `]`.
+  const largerCorpus = createCorpus(20261013, {random: 300, mutated: 600, long: 80}, larger)
+
+  test('the reference at 2,048 code points and depth 13 is valid exactly when JSON.parse succeeds, except past the limits', () => {
+    const counts = {valid: 0, invalid: 0, tooDeep: 0, tooLong: 0}
+    for (const text of [...corpus.all, ...largerCorpus.all]) {
+      let parses = true
+      try {
+        JSON.parse(text)
+      } catch {
+        parses = false
+      }
+      const result = highlightReference(text, 0, larger)
+      if (result.firstErrorKind === errorKind.tooLong) {
+        expect(codePointLength(text)).toBeGreaterThan(larger.capacity)
+        counts.tooLong++
+      } else if (result.firstErrorKind === errorKind.tooDeep) {
+        counts.tooDeep++
+      } else {
+        if (Boolean(result.valid) !== parses) throw new Error(`JSON.parse ${parses ? 'accepts' : 'rejects'} ${JSON.stringify(text)}, the reference says ${errorKinds[result.firstErrorKind]} at ${result.firstErrorPosition}`)
+        counts[parses ? 'valid' : 'invalid']++
+      }
+    }
+    expect(counts.valid).toBeGreaterThan(1000)
+    expect(counts.invalid).toBeGreaterThan(1700)
+    expect(counts.tooDeep).toBeGreaterThan(100)
+    expect(counts.tooLong).toBeGreaterThan(20)
+  })
+
+  test('loop at 2,048 code points and depth 13: matches the reference on the default corpus and on a corpus made for these limits, at random carets', () => {
+    const random = createRandom(5)
+    for (const text of [...corpus.all, ...largerCorpus.all]) expectAgreement('loop', text, Math.floor(random() * (codePointLength(text) + 2)), larger)
+  })
+
+  test('brent-kung and sklansky at 2,048 code points and depth 13: match the reference on the edge cases for these limits and some long texts', () => {
+    const random = createRandom(6)
+    const texts = [...edgeCasesFor(larger), ...largerCorpus.longTexts.slice(0, 30), ...largerCorpus.mutatedTexts.slice(0, 60)]
+    for (const form of ['brent-kung', 'sklansky'] as const) {
+      for (const text of texts) expectAgreement(form, text, Math.floor(random() * (codePointLength(text) + 2)), larger)
+    }
+  })
+
+  test('the named fallbacks at 2,048 code points and depth 13, and carets around the capacity', () => {
+    const longText = `[${'1,'.repeat(1200)}1]`
+    expect(expectAgreement('loop', longText, 0, larger)).toMatchObject({truncated: 1, valid: 0, firstErrorPosition: 2048, firstErrorKind: errorKind.tooLong})
+    // A text of 573 code points is too long for the default capacity and fits in this one.
+    const fits = `[${'1,'.repeat(285)}1]`
+    expect(expectAgreement('loop', fits, 0)).toMatchObject({truncated: 1, valid: 0, firstErrorKind: errorKind.tooLong})
+    expect(expectAgreement('loop', fits, 0, larger)).toMatchObject({truncated: 0, valid: 1})
+    expect(expectAgreement('loop', '['.repeat(14) + ']'.repeat(14), 0, larger)).toMatchObject({depthExceeded: 1, firstErrorPosition: 13, firstErrorKind: errorKind.tooDeep})
+    expect(expectAgreement('loop', '['.repeat(13) + ']'.repeat(13), 0, larger)).toMatchObject({depthExceeded: 0, valid: 1})
+    const exactFit = `[${' '.repeat(2046)}]`
+    expect(expectAgreement('loop', exactFit, 2048, larger)).toMatchObject({truncated: 0, valid: 1, caretBracket: 2047, matchingBracket: 0})
+    for (const caret of [0, 1]) expect(expectAgreement('loop', exactFit, caret, larger)).toMatchObject({caretBracket: 0, matchingBracket: 2047})
+    const pastCapacity = `${exactFit}${'x'.repeat(187)}`
+    for (const caret of [2047, 2048]) expect(expectAgreement('loop', pastCapacity, caret, larger)).toMatchObject({caretBracket: 2047, matchingBracket: 0})
+    for (const caret of [2049, 2050, 2100, codePointLength(pastCapacity), 10_000]) expect(expectAgreement('loop', pastCapacity, caret, larger)).toMatchObject({caretBracket: -1, matchingBracket: -1})
+  })
+
+  test('emitCompare builds integer bits only while the capacity times 2^(maximum depth − 1) is below 2^24', () => {
+    // 2,048 × 2^12 is 2^23. One more level reaches exactly 2^24 at position 2,047, like the defaults at position 511.
+    for (const form of scanForms) expect(roundingPointCounts(form, larger)).toEqual({'integer bit': 20489})
+    expect(roundingPointCounts('loop', {capacity: 2048, maximumDepth: 14})).toEqual({'integer bit': 20487, 'sign cascade': 17})
+  })
+
+  test('limits that aren\'t powers of two: 37 code points at depth 3, where most of the corpus is too long or too deep', () => {
+    const small: Limits = {capacity: 37, maximumDepth: 3}
+    const smallCorpus = createCorpus(20261014, {random: 100, mutated: 200, long: 40}, small)
+    const random = createRandom(7)
+    const kinds = new Map<number, number>()
+    for (const form of scanForms) {
+      for (const text of [...corpus.all.slice(0, form === 'loop' ? corpus.all.length : 600), ...smallCorpus.all]) {
+        const output = expectAgreement(form, text, Math.floor(random() * (codePointLength(text) + 2)), small)
+        if (form === 'loop') kinds.set(output.firstErrorKind, (kinds.get(output.firstErrorKind) ?? 0) + 1)
+      }
+    }
+    expect(kinds.get(errorKind.tooLong)).toBeGreaterThan(300)
+    expect(kinds.get(errorKind.tooDeep)).toBeGreaterThan(200)
+    expect(kinds.get(errorKind.none)).toBeGreaterThan(1000)
+  })
+
+  test('the largest maximum depth is 24, where the container kinds still fit in one FP32 integer', () => {
+    // An object at depth 1 and an object at the maximum depth, with arrays between them: the container kinds hold
+    // bit 0 and bit maximumDepth − 1 at once, e.g. 2^23 + 1. At depth 25 that would be 2^24 + 1, which FP32 rounds to
+    // 2^24, and the closing brace at depth 1 would be reported as an error.
+    for (const maximumDepth of [2, 3, 16, 23, 24]) {
+      const limits: Limits = {capacity: 128, maximumDepth}
+      const text = `{"k":${'['.repeat(maximumDepth - 2)}{"k":1}${']'.repeat(maximumDepth - 2)},"m":2}`
+      for (let caret = 0; caret <= codePointLength(text); caret += 7) expect(expectAgreement('loop', text, caret, limits)).toMatchObject({valid: 1})
+      expect(expectAgreement('loop', `[${text}]`, 0, limits)).toMatchObject({depthExceeded: 1, firstErrorKind: errorKind.tooDeep})
+    }
+  })
+
+  test('the builder refuses limits it can\'t build', () => {
+    for (const limits of [{capacity: 0, maximumDepth: 16}, {capacity: 512.5, maximumDepth: 16}, {capacity: 1_048_576, maximumDepth: 16}, {capacity: 512, maximumDepth: 1}, {capacity: 512, maximumDepth: 25}]) {
+      expect(() => buildHighlighter('loop', limits)).toThrow()
+    }
+    // The smallest limits build and run.
+    const smallest: Limits = {capacity: 1, maximumDepth: 2}
+    for (const text of ['', '1', '[', '[]', 'x', ' 1']) expectAgreement('loop', text, 1, smallest)
   })
 })

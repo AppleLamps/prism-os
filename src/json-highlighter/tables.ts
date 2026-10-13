@@ -3,12 +3,12 @@
 // Each table comes from a transition function written from JSON's grammar (RFC 8259) and the rules in kinds.ts, e.g.
 // lexerStep(state, characterClass). tests/json-highlighter/reference.ts implements the same rules as a hand-written
 // scanner and parser, without these tables, and highlighter.test.ts beside it compares the two.
-import {displayKind, errorKind, maximumDepth} from './kinds.ts'
+import {displayKind, errorKind, maximumDepth as defaultMaximumDepth} from './kinds.ts'
 
 // Character classes. Letters that matter to one or more tokens get their own class, e.g. `e` is a hex digit, an
 // exponent and a letter of true and false. Every code point from U+0080 up, and U+007F, is `other`, which is only
-// allowed inside strings. `end` marks a cell after the text, and `truncatedEnd` the position after the 512th code point
-// when the text is longer.
+// allowed inside strings. `end` marks a cell after the text, and `truncatedEnd` the position after the last cell when
+// the text is longer than the capacity, e.g. after the 512th code point.
 const characterClasses = [
   'end', 'truncatedEnd', 'space', 'tabOrCarriageReturn', 'lineFeed', 'control', 'quote', 'backslash', 'slash',
   'openBrace', 'closeBrace', 'openBracket', 'closeBracket', 'colon', 'comma', 'minus', 'plus', 'dot', 'zero', 'digit',
@@ -97,8 +97,9 @@ function startToken(characterClass: CharacterClass): Step {
   }
 }
 
-// Inside a token that isn't complete yet, e.g. after `-` or `tr`: the end of the text is unexpectedEnd, the 513th code
-// point is tooLong, and every other character that doesn't continue the token is an error of the given kind.
+// Inside a token that isn't complete yet, e.g. after `-` or `tr`: the end of the text is unexpectedEnd, the first code
+// point past the capacity is tooLong, and every other character that doesn't continue the token is an error of the
+// given kind.
 function continueOr(characterClass: CharacterClass, continued: Step | null, error: LexerEvent): Step {
   if (continued !== null) return continued
   if (characterClass === 'end') return ['between', 'endInsideToken']
@@ -216,23 +217,36 @@ export const openerTable: readonly number[] = lexerEvents.map(event => Number(ev
 export const closerTable: readonly number[] = lexerEvents.map(event => Number(event === 'closeObject' || event === 'closeArray'))
 export const bracketTable: readonly number[] = lexerEvents.map((_, index) => openerTable[index]! + closerTable[index]!)
 
-// The container kinds as one integer, before the first error: bit d − 1 is 1 when the container at depth d is an object.
-// An opening brace at depth d − 1 adds 2^(d − 1), and a closing brace at depth d subtracts it, so
-// objectWeight[depthBefore × eventCount + event] is 2^depthBefore for `{` and −2^(depthBefore − 1) for `}`. Depths
-// outside 0..16 read 0.
-export const objectWeightTable: readonly number[] = Array.from({length: (maximumDepth + 1) * eventCount}, (_, entry) => {
-  const depthBefore = Math.floor(entry / eventCount)
-  const event = lexerEvents[entry % eventCount]!
-  if (event === 'openObject' && depthBefore < maximumDepth) return 2 ** depthBefore
-  if (event === 'closeObject' && depthBefore >= 1) return -(2 ** (depthBefore - 1))
-  return 0
-})
-// levelWeight[depth − 1] is 2^(depth − 1), the bit of the container at that depth, e.g. 1 for a top-level container.
-export const levelWeightTable: readonly number[] = Array.from({length: maximumDepth}, (_, level) => 2 ** level)
-// depthClass[depth]: 0 at the top level, 1 inside a top-level container, 2 deeper, and 3 at the maximum depth, where an
-// opening bracket is tooDeep. Depths past the table clamp to its ends.
-export const depthClassTable: readonly number[] = Array.from({length: maximumDepth + 1}, (_, depth) =>
-  depth === 0 ? 0 : depth === 1 ? 1 : depth === maximumDepth ? 3 : 2)
+// The three tables that depend on the maximum depth, e.g. 16.
+export function depthTables(maximumDepth: number) {
+  // The container kinds as one integer, before the first error: bit d − 1 is 1 when the container at depth d is an
+  // object. An opening brace at depth d − 1 adds 2^(d − 1), and a closing brace at depth d subtracts it, so
+  // objectWeight[depthBefore × eventCount + event] is 2^depthBefore for `{` and −2^(depthBefore − 1) for `}`. Depths
+  // outside 0..maximumDepth read 0.
+  const objectWeight: readonly number[] = Array.from({length: (maximumDepth + 1) * eventCount}, (_, entry) => {
+    const depthBefore = Math.floor(entry / eventCount)
+    const event = lexerEvents[entry % eventCount]!
+    if (event === 'openObject' && depthBefore < maximumDepth) return 2 ** depthBefore
+    if (event === 'closeObject' && depthBefore >= 1) return -(2 ** (depthBefore - 1))
+    return 0
+  })
+  // levelWeight[depth − 1] is 2^(depth − 1), the bit of the container at that depth, e.g. 1 for a top-level container.
+  const levelWeight: readonly number[] = Array.from({length: maximumDepth}, (_, level) => 2 ** level)
+  // depthClass[depth]: 0 at the top level, 1 inside a top-level container, 2 deeper, and 3 at the maximum depth, where
+  // an opening bracket is tooDeep. Depths past the table clamp to its ends.
+  const depthClass: readonly number[] = Array.from({length: maximumDepth + 1}, (_, depth) =>
+    depth === 0 ? 0 : depth === 1 ? 1 : depth === maximumDepth ? 3 : 2)
+  return {objectWeight, levelWeight, depthClass}
+}
+// The same three tables at the default maximum depth, under the names they had before the depth became a parameter,
+// for code that reads the tables without building a program, e.g. a plain JavaScript loop over them in lab/.
+const defaultDepthTables = depthTables(defaultMaximumDepth)
+/** @public */
+export const objectWeightTable = defaultDepthTables.objectWeight
+/** @public */
+export const levelWeightTable = defaultDepthTables.levelWeight
+/** @public */
+export const depthClassTable = defaultDepthTables.depthClass
 const depthClassCount = 4
 // The grammar's context for a character: depthClass × 2 + [the container at the current depth is an object].
 export const contextCount = depthClassCount * 2

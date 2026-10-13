@@ -2,10 +2,12 @@
 //   bun scripts/measure-json-highlighter.ts              every measurement, with each timing in its own process
 //   bun scripts/measure-json-highlighter.ts sizes        source cells, live operations, layers, stored weights, per form and stage
 //   bun scripts/measure-json-highlighter.ts time loop    µs per evaluation of one form, in this process
+// A capacity and a maximum depth after any of the three measure other limits than the defaults, 512 and 16, e.g. the
+// page's: `all 2048 13`, `sizes 2048 13` or `time loop 2048 13`, where `all` stands for every measurement.
 import {type Wire, invariant} from '../src/runtime/numeric-ui-core.ts'
 import {createEvaluator} from '../src/runtime/cells.ts'
 import {type ScanForm, buildHighlighter, scanForms, writeText} from '../src/json-highlighter/highlighter.ts'
-import {capacity} from '../src/json-highlighter/kinds.ts'
+import {type Limits, defaultLimits} from '../src/json-highlighter/kinds.ts'
 import {timingText} from '../tests/json-highlighter/corpus.ts'
 import {highlightReference} from '../tests/json-highlighter/reference.ts'
 
@@ -23,15 +25,15 @@ function sizeOf(built: ReturnType<typeof buildHighlighter>, roots: readonly Wire
 const format = (size: ReturnType<typeof sizeOf>) =>
   `${size.operations} operations (${size.indexReads} index reads), ${size.layers} layers, ${size.storedWeights} stored weights`
 
-function sizes() {
+function sizes(limits: Limits) {
   for (const form of scanForms) {
     const start = performance.now()
-    const built = buildHighlighter(form)
+    const built = buildHighlighter(form, limits)
     const buildMs = performance.now() - start
     const {output} = built
     const withoutMatching = [...output.displayKinds, output.firstErrorPosition, output.firstErrorKind, output.valid, output.truncated, output.depthExceeded]
     const all = [...withoutMatching, output.caretBracket, output.matchingBracket]
-    console.log(`${form}: ${built.circuit.sourceSize} source cells (${capacity + 2} written per keystroke), built in ${buildMs.toFixed(0)} ms`)
+    console.log(`${form}: ${built.circuit.sourceSize} source cells (${limits.capacity + 2} written per keystroke), built in ${buildMs.toFixed(0)} ms`)
     console.log(`  every output: ${format(sizeOf(built, all))}`)
     console.log(`  without the matching bracket: ${format(sizeOf(built, withoutMatching))}`)
     console.log(`  the matching bracket alone, with the stages it reads: ${format(sizeOf(built, [output.caretBracket, output.matchingBracket]))}`)
@@ -54,14 +56,14 @@ function timeBatches(run: (iteration: number) => void, batches = 30, perBatch = 
   return {median: perEvaluation[Math.floor(batches / 2)]!, largest: perEvaluation.at(-1)!}
 }
 
-function time(form: ScanForm) {
-  const built = buildHighlighter(form)
+function time(form: ScanForm, limits: Limits) {
+  const built = buildHighlighter(form, limits)
   const {output} = built
   const roots = [...output.displayKinds, output.firstErrorPosition, output.firstErrorKind, output.valid, output.truncated, output.depthExceeded, output.caretBracket, output.matchingBracket]
   const evaluateCompiled = built.circuit.createTensorEvaluator(roots)
   const evaluateChecked = createEvaluator(built)
   const source = new Float32Array(built.initialSource)
-  const text = timingText()
+  const text = timingText(limits.capacity)
   // Iterations alternate between two valid texts that differ in one digit, like a keystroke that changes a number.
   const texts = [text, text.replace('12', '13')]
   const format = ({median, largest}: {median: number, largest: number}) => `median ${median.toFixed(0)} µs, largest batch ${largest.toFixed(0)} µs`
@@ -77,23 +79,28 @@ function time(form: ScanForm) {
   writeText(built.cells, source, '', 0)
   const empty = timeBatches(() => evaluateCompiled(source))
   console.log(`${form}: write ${format(writeOnly)}; write and evaluate ${format(compiled)}; with createEvaluator's checks ${format(checked)}; an empty text, evaluate only, ${format(empty)}`)
-  const reference = timeBatches(iteration => highlightReference(texts[iteration % 2]!, 100))
+  const reference = timeBatches(iteration => highlightReference(texts[iteration % 2]!, 100, limits))
   const parse = timeBatches(iteration => {
     JSON.parse(texts[iteration % 2]!)
   })
   console.log(`  in the same process, the plain JavaScript reference ${format(reference)}, JSON.parse ${format(parse)}`)
 }
 
-const [command, argument] = process.argv.slice(2)
+const [command, ...rest] = process.argv.slice(2)
+// `time` takes the form first. The limits are the last two arguments, when there are two.
+const form = command === 'time' ? rest.shift() : undefined
+const limits: Limits = rest.length === 2 ? {capacity: Number(rest[0]), maximumDepth: Number(rest[1])} : defaultLimits
+invariant(rest.length === 0 || rest.length === 2, 'the limits are a capacity and a maximum depth, e.g. 2048 13')
 if (command === 'sizes') {
-  sizes()
+  sizes(limits)
 } else if (command === 'time') {
-  invariant(scanForms.includes(argument as ScanForm), `time takes one of ${scanForms.join(', ')}`)
-  time(argument as ScanForm)
+  invariant(scanForms.includes(form as ScanForm), `time takes one of ${scanForms.join(', ')}`)
+  time(form as ScanForm, limits)
 } else {
-  sizes()
-  for (const form of scanForms) {
-    const result = Bun.spawnSync(['bun', import.meta.path, 'time', form], {stdout: 'pipe', stderr: 'inherit'})
+  invariant(command === undefined || command === 'all', 'the command is sizes, time or all')
+  sizes(limits)
+  for (const each of scanForms) {
+    const result = Bun.spawnSync(['bun', import.meta.path, 'time', each, ...rest], {stdout: 'pipe', stderr: 'inherit'})
     process.stdout.write(result.stdout.toString())
   }
 }

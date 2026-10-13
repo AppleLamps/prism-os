@@ -1,7 +1,8 @@
-// A JSON highlighter as one numeric program. JavaScript writes up to 512 code points, the text's length and the caret
-// into cells, and the program computes, for every code point, what it's shown as, then the first error's position and
-// kind, whether the text is too long, whether the first error is nesting past the maximum depth, and the bracket that
-// matches the bracket at the caret.
+// A JSON highlighter as one numeric program. JavaScript writes up to `capacity` code points, e.g. 512, the text's
+// length and the caret into cells, and the program computes, for every code point, what it's shown as, then the first
+// error's position and kind, whether the text is too long, whether the first error is nesting past the maximum depth,
+// and the bracket that matches the bracket at the caret. The capacity and the maximum depth are parameters of
+// buildHighlighter, and the numbers in the comments below are for the defaults, 512 and 16.
 //
 // The stages, each over 513 positions, where position 512 is the end of the text, or the 513th code point of a longer
 // text:
@@ -18,14 +19,14 @@
 // 6. Outputs: the first error as a count of positions before the grammar's error state (patterns.md, "findIndex when
 //    the test flips once along the items"), its kind as one read at that count, and the matching bracket as a first
 //    hit among depth comparisons (patterns.md, "findIndex when passing items can be anywhere").
-import {type Circuit, type Terms, type Wire, emitCompare} from '../runtime/numeric-ui-core.ts'
-import {type WireValues, constant, createEvaluator, createSourceTable, input, list} from '../runtime/cells.ts'
+import {type Circuit, type Terms, type Wire, emitCompare, invariant} from '../runtime/numeric-ui-core.ts'
+import {type WireValues, constant, createSourceTable, input, list} from '../runtime/cells.ts'
 import {brentKungPrefix, sklanskyPrefix} from '../runtime/prefix-networks.ts'
-import {capacity, errorKind} from './kinds.ts'
+import {type Limits, defaultLimits, errorKind} from './kinds.ts'
 import {
-  bracketTable, classCount, classTable, closerTable, contextCount, depthChangeTable, depthClassTable, displayTable, eventCount,
-  grammarErrorTable, grammarNextTable, grammarStateCount, grammarStates, grammarTokenTable, levelWeightTable, lexerErrorKindTable,
-  lexerEventTable, lexerNextTable, lexerStateCount, objectWeightTable, openerTable, symbolCount,
+  bracketTable, classCount, classTable, closerTable, contextCount, depthChangeTable, depthTables, displayTable, eventCount,
+  grammarErrorTable, grammarNextTable, grammarStateCount, grammarStates, grammarTokenTable, lexerErrorKindTable,
+  lexerEventTable, lexerNextTable, lexerStateCount, openerTable, symbolCount,
 } from './tables.ts'
 
 // The largest text length the host writes. A longer text writes this length, which still reads as too long.
@@ -37,32 +38,35 @@ const tableCells = (values: readonly number[]) => {
   return values.map(value => constant(value, range, {grid: 1}))
 }
 
-const highlighterCells = {
-  // A code point per cell, and -1 after the text.
-  codePoints: list(capacity, () => input([-1, 0x10ffff], {initial: -1, grid: 1})),
-  // The whole text's length in code points, up to lengthLimit. The program compares it with the capacity, so a text
-  // that doesn't fit is reported as truncated.
-  textLength: input([0, lengthLimit], {grid: 1}),
-  // The caret as a code point index, clamped to 0..513. A caret at 513 or further is past code point 512, so neither the
-  // code point before it nor the one at it is in the cells, and no bracket is at the caret.
-  caret: input([0, capacity + 1], {grid: 1}),
-  tables: {
-    classes: tableCells(classTable),
-    lexerNext: tableCells(lexerNextTable),
-    lexerEvent: tableCells(lexerEventTable),
-    grammarToken: tableCells(grammarTokenTable),
-    lexerErrorKind: tableCells(lexerErrorKindTable),
-    depthChange: tableCells(depthChangeTable),
-    opener: tableCells(openerTable),
-    closer: tableCells(closerTable),
-    bracket: tableCells(bracketTable),
-    objectWeight: tableCells(objectWeightTable),
-    levelWeight: tableCells(levelWeightTable),
-    depthClass: tableCells(depthClassTable),
-    grammarNext: tableCells(grammarNextTable),
-    grammarError: tableCells(grammarErrorTable),
-    display: tableCells(displayTable),
-  },
+function highlighterCells({capacity, maximumDepth}: Limits) {
+  const {objectWeight, levelWeight, depthClass} = depthTables(maximumDepth)
+  return {
+    // A code point per cell, and -1 after the text.
+    codePoints: list(capacity, () => input([-1, 0x10ffff], {initial: -1, grid: 1})),
+    // The whole text's length in code points, up to lengthLimit. The program compares it with the capacity, so a text
+    // that doesn't fit is reported as truncated.
+    textLength: input([0, lengthLimit], {grid: 1}),
+    // The caret as a code point index, clamped to 0..513. A caret at 513 or further is past code point 512, so neither
+    // the code point before it nor the one at it is in the cells, and no bracket is at the caret.
+    caret: input([0, capacity + 1], {grid: 1}),
+    tables: {
+      classes: tableCells(classTable),
+      lexerNext: tableCells(lexerNextTable),
+      lexerEvent: tableCells(lexerEventTable),
+      grammarToken: tableCells(grammarTokenTable),
+      lexerErrorKind: tableCells(lexerErrorKindTable),
+      depthChange: tableCells(depthChangeTable),
+      opener: tableCells(openerTable),
+      closer: tableCells(closerTable),
+      bracket: tableCells(bracketTable),
+      objectWeight: tableCells(objectWeight),
+      levelWeight: tableCells(levelWeight),
+      depthClass: tableCells(depthClass),
+      grammarNext: tableCells(grammarNextTable),
+      grammarError: tableCells(grammarErrorTable),
+      display: tableCells(displayTable),
+    },
+  }
 }
 
 // 'loop' carries each state machine's state and each running total from one position to the next. 'brent-kung' and
@@ -117,14 +121,19 @@ const onGrid = (circuit: Circuit, wire: Wire) => {
   return wire
 }
 
-export function buildHighlighter(form: ScanForm = 'loop') {
+export function buildHighlighter(form: ScanForm = 'loop', limits: Limits = defaultLimits) {
+  const {capacity, maximumDepth} = limits
+  invariant(Number.isInteger(capacity) && capacity >= 1 && capacity < lengthLimit, `the capacity must be an integer from 1 to ${lengthLimit - 1}, got ${capacity}`)
+  // At depth 1 the same table entry would have to mean both "inside a top-level container" and "at the maximum depth".
+  // Past depth 24 the container kinds no longer fit in one FP32 integer, e.g. 2^24 + 1 rounds to 2^24.
+  invariant(Number.isInteger(maximumDepth) && maximumDepth >= 2 && maximumDepth <= 24, `the maximum depth must be an integer from 2 to 24, got ${maximumDepth}`)
   const table = createSourceTable()
-  const cells = table.declare(highlighterCells)
+  const cells = table.declare(highlighterCells(limits))
   const circuit = table.createCircuit()
   const tables = cells.tables
   const positions = capacity + 1
-  // The positions whose states come out of the scan: a power of two, so the prefix networks have their usual shapes.
-  // Position 512 gets one more read after the scan.
+  // The positions whose states come out of the scan: a power of two by default, so the prefix networks have their
+  // usual shapes. Position 512 gets one more read after the scan.
   const scanned = capacity
 
   // Stage 1. JS: truncated = textLength > 512, then classOf(codePoint) per cell, and end or truncatedEnd at position 512.
@@ -154,7 +163,9 @@ export function buildHighlighter(form: ScanForm = 'loop') {
   // code stays within ±511 × 2^15. The difference with a level weight of up to 2^15 stays below 2^24 at positions 1 to
   // 510, where emitCompare builds integer bits, 2 operations each. At position 511 it can reach exactly 2^24, and
   // emitCompare builds a sign cascade of 17 operations, which is also exact. The tests count both constructions with
-  // circuit.roundingPoints().
+  // circuit.roundingPoints(). With other limits, every comparison is an integer bit while capacity × 2^(maximumDepth − 1)
+  // is below 2^24, e.g. 2,048 code points at depth 13. Past that, the positions from 2^(25 − maximumDepth) − 1 on get
+  // sign cascades, e.g. 1,537 of the 2,047 comparisons at 2,048 code points and depth 16, with the same outputs.
   const objectWeights = events.slice(0, scanned).map((event, position) =>
     onGrid(circuit, read(circuit, [[depthBefore[position]!, eventCount], [event, 1]], 0, tables.objectWeight, 'zero')))
   const codeBefore = runningTotalsBefore(circuit, form, objectWeights)
@@ -232,7 +243,7 @@ export function buildHighlighter(form: ScanForm = 'loop') {
   const output = {displayKinds, firstErrorPosition, firstErrorKind, valid, truncated, depthExceeded, caretBracket, matchingBracket}
   // Wires between stages, for measuring a stage on its own.
   const stages = {events, grammarAfter}
-  return {cells, output, stages, ...table.finish()}
+  return {cells, limits, output, stages, ...table.finish()}
 }
 
 type HighlighterProgram = ReturnType<typeof buildHighlighter>
@@ -241,6 +252,7 @@ export type HighlighterOutput = WireValues<HighlighterProgram['output']>
 // Writes the text's first 512 code points, -1 after them, the text's length and the caret, a code point index clamped to
 // 0..513.
 export function writeText(cells: HighlighterProgram['cells'], source: Float32Array, text: string, caret: number) {
+  const capacity = cells.codePoints.length
   let length = 0
   for (const character of text) {
     if (length < capacity) source[cells.codePoints[length]!] = character.codePointAt(0)!
@@ -251,17 +263,44 @@ export function writeText(cells: HighlighterProgram['cells'], source: Float32Arr
   source[cells.caret] = Math.min(Math.max(0, caret), capacity + 1)
 }
 
-// The host: writes the text and the caret, runs the program with every declaration checked, and returns the outputs.
-export function createHighlighterMachine(form: ScanForm = 'loop') {
-  const built = buildHighlighter(form)
-  const evaluate = createEvaluator(built)
+// The host: writes the text and the caret, checks every cell against its declaration, runs the program, and returns
+// the outputs. The program keeps no state, so it's compiled for its outputs only, once, and the page reads the compiled
+// program's size from the same compilation.
+export function createHighlighterMachine(form: ScanForm = 'loop', limits: Limits = defaultLimits) {
+  const built = buildHighlighter(form, limits)
+  const {capacity} = limits
+  const {output} = built
+  const program = built.circuit.compileTensorProgram([
+    ...output.displayKinds, output.firstErrorPosition, output.firstErrorKind, output.valid, output.truncated, output.depthExceeded,
+    output.caretBracket, output.matchingBracket,
+  ])
+  const evaluate = built.circuit.createTensorProgramEvaluator(program)
   const source = new Float32Array(built.initialSource)
   return {
     built,
     source,
+    // E.g. 15,928 operations in 1,043 layers for the loop form at the default limits.
+    operationCount: program.valueCount - program.sourceSize,
+    layerCount: program.layers.length,
     run(text: string, caret: number): HighlighterOutput {
       writeText(built.cells, source, text, caret)
-      return evaluate(source).output
+      built.validate(source)
+      // The values are in the order of the roots above, in an array that the next call overwrites.
+      const values = evaluate(source)
+      for (const value of values) {
+        // The message is built only when the check fails, not once per output.
+        if (!Number.isFinite(value)) invariant(false, `every output must be finite, got ${value}`)
+      }
+      return {
+        displayKinds: Array.from(values.subarray(0, capacity)),
+        firstErrorPosition: values[capacity]!,
+        firstErrorKind: values[capacity + 1]!,
+        valid: values[capacity + 2]!,
+        truncated: values[capacity + 3]!,
+        depthExceeded: values[capacity + 4]!,
+        caretBracket: values[capacity + 5]!,
+        matchingBracket: values[capacity + 6]!,
+      }
     },
   }
 }

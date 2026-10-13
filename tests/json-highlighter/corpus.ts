@@ -1,6 +1,7 @@
 // Texts for the tests and for the measurement scripts in scripts/: edge cases written by hand, random JSON, and random
-// edits of random JSON.
-import {capacity, maximumDepth} from '../../src/json-highlighter/kinds.ts'
+// edits of random JSON. The texts near a limit follow the limits they're made for, e.g. `[`, 510 spaces and `]` for a
+// capacity of 512, and without that argument they're made for the defaults.
+import {type Limits, defaultLimits} from '../../src/json-highlighter/kinds.ts'
 
 // mulberry32, so tests are repeatable.
 export function createRandom(seed: number): () => number {
@@ -17,13 +18,15 @@ export function createRandom(seed: number): () => number {
 const pick = <T>(random: () => number, items: readonly T[]): T => items[Math.floor(random() * items.length)]!
 const count = (random: () => number, minimum: number, maximum: number) => minimum + Math.floor(random() * (maximum - minimum + 1))
 const nested = (depth: number, inner = '') => '['.repeat(depth) + inner + ']'.repeat(depth)
+// A count that a small capacity makes negative or fractional repeats 0 times or rounds down, e.g. 16.5 to 16.
+const repeat = (text: string, times: number) => text.repeat(Math.max(0, Math.floor(times)))
 
-export const edgeCases: readonly string[] = [
+export const edgeCasesFor = ({capacity, maximumDepth}: Limits): readonly string[] => [
   // Valid texts.
   '0', '-0', '12', '-12.5', '1e5', '1E+5', '2.5e-3', '0.0', '-0.0e0', 'true', 'false', 'null', '""', '"abc"', '[]', '{}',
   ' [ ] ', '\t{\r\n}\n', '[1,2,3]', '{"a":1,"b":[true,false,null]}', '{"a":{"b":{"c":[{}]}}}', '[[],[[]],{}]',
   '"\\" \\\\ \\/ \\b \\f \\n \\r \\t"', '"\\u00e9\\uD83D\\uDE00\\uABCD\\uabcd"', '"é字😀\u2028\u007f"', '"\ud800"',
-  '{"":""}', '[-1,0.5,1e10,"x"]', nested(16), nested(16, '1'), `{"a":${nested(15)}}`,
+  '{"":""}', '[-1,0.5,1e10,"x"]', nested(maximumDepth), nested(maximumDepth, '1'), `{"a":${nested(maximumDepth - 1)}}`,
   // Numbers.
   '01', '-01', '00', '1.', '.5', '+1', '1e', '1e+', '1e-x', '-', '--1', '-a', '1.2.3', '1e5e', '0x10', '1_000', '1.e5',
   'NaN', 'Infinity', '-Infinity',
@@ -38,11 +41,12 @@ export const edgeCases: readonly string[] = [
   // Characters no token starts with, and the line feed that starts scanning again.
   '[x]', '/* */', '\ufeff1', '[1]\u00a0', '[x\n1]', '[x\n1, 2]', '{"a":\u0001}', '[1,\nx y z\n2]', '["ok"\n"a\\qb"\n]',
   // Nesting past the maximum depth.
-  nested(17), nested(maximumDepth + 1, '1'), `{"a":${nested(16)}}`, nested(40),
+  nested(maximumDepth + 1), nested(maximumDepth + 1, '1'), `{"a":${nested(maximumDepth)}}`, nested(maximumDepth + 24),
   // Capacity.
-  `[${'1,'.repeat(254)}1]`, `[${' '.repeat(capacity - 2)}]`, `[${' '.repeat(capacity - 1)}]`, `"${'a'.repeat(capacity)}"`,
-  `${' '.repeat(capacity)}1`, `[${'"é字",'.repeat(80)}1]`, `x${' '.repeat(capacity + 20)}`,
+  `[${repeat('1,', capacity / 2 - 2)}1]`, `[${repeat(' ', capacity - 2)}]`, `[${repeat(' ', capacity - 1)}]`, `"${'a'.repeat(capacity)}"`,
+  `${' '.repeat(capacity)}1`, `[${repeat('"é字",', capacity / 6 - 5)}1]`, `x${' '.repeat(capacity + 20)}`,
 ]
+export const edgeCases = edgeCasesFor(defaultLimits)
 
 function randomDigits(random: () => number, minimum: number, maximum: number) {
   return Array.from({length: count(random, minimum, maximum)}, () => String(Math.floor(random() * 10))).join('')
@@ -84,7 +88,7 @@ function randomValue(random: () => number, depth: number, maximumNesting: number
   return pick(random, ['true', 'false', 'null'])
 }
 
-export function randomJson(random: () => number): string {
+export function randomJson(random: () => number, maximumDepth = defaultLimits.maximumDepth): string {
   // Mostly shallow texts, and some chains of containers near the maximum depth.
   if (random() < 0.08) {
     const openers = Array.from({length: count(random, maximumDepth - 2, maximumDepth + 3)}, () => random() < 0.5)
@@ -115,7 +119,7 @@ export function mutate(random: () => number, text: string): string {
 }
 
 // Longer texts, from under the capacity to past it.
-export function randomLongJson(random: () => number): string {
+export function randomLongJson(random: () => number, capacity = defaultLimits.capacity): string {
   const items: string[] = []
   let length = 2
   const target = count(random, capacity - 40, capacity + 60)
@@ -127,16 +131,18 @@ export function randomLongJson(random: () => number): string {
   return `[${items.join(',')}]`
 }
 
-export function createCorpus(seed: number, sizes: {random: number, mutated: number, long: number}) {
+export function createCorpus(seed: number, sizes: {random: number, mutated: number, long: number}, limits: Limits = defaultLimits) {
+  const {capacity, maximumDepth} = limits
   const random = createRandom(seed)
-  const randomTexts = Array.from({length: sizes.random}, () => randomJson(random))
-  const mutatedTexts = Array.from({length: sizes.mutated}, () => mutate(random, randomJson(random)))
-  const longTexts = Array.from({length: sizes.long}, () => random() < 0.5 ? randomLongJson(random) : mutate(random, randomLongJson(random)))
-  return {randomTexts, mutatedTexts, longTexts, all: [...edgeCases, ...randomTexts, ...mutatedTexts, ...longTexts]}
+  const randomTexts = Array.from({length: sizes.random}, () => randomJson(random, maximumDepth))
+  const mutatedTexts = Array.from({length: sizes.mutated}, () => mutate(random, randomJson(random, maximumDepth)))
+  const longTexts = Array.from({length: sizes.long}, () => random() < 0.5 ? randomLongJson(random, capacity) : mutate(random, randomLongJson(random, capacity)))
+  return {randomTexts, mutatedTexts, longTexts, all: [...edgeCasesFor(limits), ...randomTexts, ...mutatedTexts, ...longTexts]}
 }
 
-// A valid JSON text of exactly 512 code points, with strings, numbers, literals, escapes and nesting, for timings.
-export function timingText() {
+// A valid JSON text that fills the capacity exactly, e.g. 512 code points, with strings, numbers, literals, escapes
+// and nesting, for timings.
+export function timingText(capacity = defaultLimits.capacity) {
   const item = '{"id": 12, "name": "caf\\u00e9 字 \\"q\\"", "tags": ["a", "b"], "ok": true, "score": -1.5e3, "next": null}'
   let text = '['
   while (Array.from(text).length + Array.from(item).length + 2 <= capacity) text += (text === '[' ? '' : ',') + item
