@@ -205,6 +205,9 @@ test('reset restores the initial coefficient tensor and optimizer', () => {
   const machine = createLearnedGalleryMachine()
   const initialSource = [...machine.source]
   machine.train(40)
+  // The wrapper once copied trainingStep when it was made, so it read 0 here, and the assertion after the reset
+  // couldn't fail.
+  assert.equal(machine.trainingStep, 40)
   machine.reset()
 
   assert.equal(machine.trainingStep, 0)

@@ -164,6 +164,10 @@ export function createLearnedGalleryMachine(
 
   return {
     ...machine,
+    // The spread above copies trainingStep's value at this moment, which is 0, so the wrapper has its own getter.
+    get trainingStep() {
+      return machine.trainingStep
+    },
     output: {
       geometries: machine.geometries,
     },
