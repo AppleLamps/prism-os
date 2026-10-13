@@ -23,6 +23,7 @@ import {iconLinkTag, repoRoot, siteFoldersNotBuilt, sitePages} from './demo-site
 const outdir = path.join(repoRoot, 'site')
 const problems: string[] = []
 const pagesWithSeveralStylesheets: string[] = []
+const pagesWithTheirOwnIcon: string[] = []
 
 // The tags whose URL names a file that the page loads. Bun points these URLs at the files it wrote.
 const loadingTags = /<(?:link|script|img)\b[^>]*>/g
@@ -85,8 +86,10 @@ async function movePage(source: string, sitePath: string) {
   }
   for (const [tag, rewritten] of rewrittenTags) html = html.replaceAll(tag, rewritten)
 
-  // Without an icon of its own, a page would request /favicon.ico from the host's root, outside the site.
-  if (!/<link\b[^>]*\brel="icon"/.test(html)) html = html.replace('</head>', `${iconLinkTag}\n</head>`)
+  // Without an icon, a page would request /favicon.ico from the host's root, outside the site. A page that names an
+  // icon itself keeps it.
+  if (/<link\b[^>]*\brel="icon"/.test(html)) pagesWithTheirOwnIcon.push(source)
+  else html = html.replace('</head>', `${iconLinkTag}\n</head>`)
 
   await mkdir(path.dirname(targetFile), {recursive: true})
   await writeFile(targetFile, html)
@@ -185,6 +188,9 @@ for (const name of await readdir(outdir)) {
   if (name.endsWith('.js') && (await stat(path.join(outdir, name))).size === 0) await rm(path.join(outdir, name))
 }
 const {fileCount, byteCount} = await checkSite()
+if (pagesWithTheirOwnIcon.length > 0) {
+  console.warn(`Note: these pages have an icon link of their own and keep it, so they don't get the site's icon from scripts/demo-site-pages.ts: ${pagesWithTheirOwnIcon.join(', ')}.`)
+}
 if (pagesWithSeveralStylesheets.length > 0) {
   console.warn(`Note: these pages link more than one stylesheet: ${pagesWithSeveralStylesheets.join(', ')}. Bun's development server writes several stylesheet links in the reverse of the page's order (seen in Bun 1.4.3), and this build keeps the page's order. So a rule that overrides a rule of an earlier stylesheet at the same specificity applies in the built site and loses while developing. A page that links one stylesheet, which starts with an @import of the others, looks the same in both.`)
 }
