@@ -424,7 +424,8 @@ describe('bit-emit.ts on small loop programs', () => {
 describe('bit-emit.ts on a third program over the documents', () => {
   test('the characters of the wanted sets: four tables of 128 bits are one word read, and both shaders give plain JavaScript\'s counts', () => {
     const textPositions = 512
-    const {loop, writeWanted} = buildCharacterSets(textPositions, cellsPerDocument)
+    const sets = buildCharacterSets(textPositions, cellsPerDocument)
+    const {loop} = sets
     const shader = emitBitLoopWgsl(loop)
     // 128 words of 4 bits, and a word of zeros on each side for a code point of -1 and for one from 128 on.
     expect([fired(shader.rules), shader.packedCells.length, shader.packedCells[0], shader.packedCells[129]]).toEqual([{sum: 2, gate: 1, packedRead: 4, packedWord: 1}, 130, [], []])
@@ -435,7 +436,7 @@ describe('bit-emit.ts on a third program over the documents', () => {
     const shared = new Float32Array(loop.sharedValues)
     let counted = 0
     for (const wanted of [[true, false, false, false], [false, true, true, false], [true, true, true, true], [false, false, false, false]]) {
-      writeWanted(shared, wanted)
+      sets.writeWanted(shared, wanted)
       const expected = texts.map(text => countCharacters(text, wanted, textPositions))
       counted += expected.reduce((total, count) => total + count, 0)
       const outputs = interpreters.map(interpret => {
@@ -444,7 +445,7 @@ describe('bit-emit.ts on a third program over the documents', () => {
         return groups
       })
       expect([[...outputs[0]![0]!], [...outputs[1]![0]!]]).toEqual([expected, expected])
-      expect(outputs[1]![1]).toEqual(outputs[0]![1]!)
+      expect(outputs[1]![1]).toEqual(outputs[0]![1])
     }
     expect([characterSets.length, counted > 5000]).toEqual([4, true])
   })
