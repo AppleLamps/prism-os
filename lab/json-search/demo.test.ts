@@ -5,7 +5,7 @@
 import {describe, expect, test} from 'bun:test'
 import {readFileSync} from 'node:fs'
 import {capacity, displayKind} from '../../src/json-highlighter/kinds.ts'
-import {type MapLayout, cellAt, cellCenterCss, mapLayout, nearestMatch, nextMatch, paintCells} from './demo-map.ts'
+import {type MapLayout, cellAt, cellCenterCss, mapLayout, nearestMatch, nextMatch, paintCells, pickedDocument} from './demo-map.ts'
 import {type Line, analyzePattern, count, documentRuns, documentText, documentsThatFit, duration, failureSentence, isScope, loadNotice, resultLine, runClassName} from './demo-text.ts'
 import type {WorkerAnswer, WorkerRequest} from './demo-worker.ts'
 import {codePointLength} from './documents.ts'
@@ -107,6 +107,30 @@ describe('the map of every document', () => {
     expect(nearestMatch(layout, counts, 100, center(at(19, 79)).x, center(at(19, 79)).y)).toBe(at(3, 2))
     expect(nearestMatch(layout, counts, 40, center(at(3, 2)).x, center(at(3, 2)).y)).toBe(-1)
     expect(nearestMatch(layout, new Float32Array(1600), 1600, 50, 50)).toBe(-1)
+  })
+
+  test('the pointer picks the document under it where the search hasn\'t been yet, and when no document has a match', () => {
+    const layout = mapLayout(100, 1, 1600)
+    const counts = new Float32Array(1600)
+    const at = (column: number, row: number) => row * layout.columns + column
+    counts[at(3, 2)] = 1
+    counts[at(15, 9)] = 4
+    const picked = (searched: number, index: number) => pickedDocument(layout, counts, searched, cellCenterCss(layout, index).x, cellCenterCss(layout, index).y)
+    // Every document is searched: the nearest one with a match, from anywhere.
+    expect(picked(1600, at(0, 0))).toBe(at(3, 2))
+    expect(picked(1600, at(19, 79))).toBe(at(15, 9))
+    // A search on the CPU that has answered for the first 100 documents, i.e. 5 rows. A point over those rows picks
+    // the nearest match among them, and a point further down picks the document under it, not one at the search's
+    // front.
+    expect(picked(100, at(10, 4))).toBe(at(3, 2))
+    expect(picked(100, at(0, 5))).toBe(at(0, 5))
+    expect(picked(100, at(19, 79))).toBe(at(19, 79))
+    // Before the first answer, and when no document has a match, the document under the point.
+    expect(picked(0, at(7, 3))).toBe(at(7, 3))
+    expect(pickedDocument(layout, new Float32Array(1600), 1600, cellCenterCss(layout, at(7, 3)).x, cellCenterCss(layout, at(7, 3)).y)).toBe(at(7, 3))
+    // A point over no cell picks the nearest match, or nothing without one.
+    expect(pickedDocument(layout, counts, 1600, -5, -5)).toBe(at(3, 2))
+    expect(pickedDocument(layout, new Float32Array(1600), 1600, -5, -5)).toBe(-1)
   })
 
   test('steps from one document with a match to the next and the previous, around the ends', () => {

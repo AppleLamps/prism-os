@@ -85,6 +85,17 @@ export function nearestMatch(layout: MapLayout, matchCounts: Float32Array, searc
   return nearest
 }
 
+// The document that a point picks, or -1 where there is none: the nearest one with a match. Where the search hasn't
+// reached the document under the point, the point picks that document, e.g. in the lower part of the map while a
+// search on the CPU fills the map in from the top: the nearest match would be a document at the search's front, far
+// from the point, and another one at each frame. And where no document has a match, the point picks the one under it.
+export function pickedDocument(layout: MapLayout, matchCounts: Float32Array, searched: number, xCss: number, yCss: number): number {
+  const under = cellAt(layout, xCss, yCss)
+  if (under >= searched) return under
+  const nearest = nearestMatch(layout, matchCounts, searched, xCss, yCss)
+  return nearest >= 0 ? nearest : under
+}
+
 // The next document with a match after `from` among the first `searched` documents, or the one before it with step
 // -1, going around the ends, as a browser's find bar does. -1 when none has a match. `from` itself is the answer only
 // when it is the one document with a match.

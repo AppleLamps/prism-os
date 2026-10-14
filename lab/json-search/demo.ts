@@ -12,7 +12,7 @@
 // One query parameter, for a state that few machines show: ?buffer=134217728 asks the GPU for buffers of at most
 // that many bytes, as a device with small limits would grant.
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
-import {type CellColors, type MapLayout, cellAt, cellCenterCss, mapLayout, nearestMatch, nextMatch, paintCells} from './demo-map.ts'
+import {type CellColors, type MapLayout, cellCenterCss, mapLayout, nextMatch, paintCells, pickedDocument} from './demo-map.ts'
 import {
   type Failure, type Line, type LoadReason, type PatternAnalysis, type RegExpTime, type Scope, type Where, analyzePattern, count, documentRuns, documentText,
   documentsThatFit, failureSentence, isScope, loadNotice, narrowDocumentCount, resultLine, runClassName, wideDocumentCount,
@@ -542,18 +542,21 @@ function mountJsonSearch(document: Document, window: Window) {
     const onMap = mapView.found
 
     // Inputs: the pointer over the map, a click on it, and the Enter key, each for the matches that the map shows.
-    // The pointer picks the nearest document with a match, and the document under it when no document has one.
+    // The pointer picks the nearest document with a match, or the document under it where the search hasn't been
+    // yet, and when no document has a match.
     const pick = (point: {x: number, y: number}, box: DOMRect) => {
-      const nearest = onMap === null ? -1 : nearestMatch(layout, onMap.matchCounts, onMap.searched, point.x - box.left, point.y - box.top)
-      const index = nearest >= 0 ? nearest : cellAt(layout, point.x - box.left, point.y - box.top)
+      const index = pickedDocument(layout, onMap?.matchCounts ?? noCounts, onMap?.searched ?? 0, point.x - box.left, point.y - box.top)
       return index >= 0 ? index : null
     }
     let hovered: number | null = null
     if (world !== null && mapBox !== null) {
       if (st.pointer !== null) hovered = pick(st.pointer, mapBox)
       if (st.events.click !== null) {
-        // A click keeps the document that it picks, and a click on the kept document lets it go.
-        const clicked = pick(st.events.click, mapBox)
+        // A click keeps the document that the pointer picks, and a click on the kept document lets it go. A finger
+        // has no pointer over the map, so its tap picks by its own place. A mouse's click doesn't: the browser
+        // reports a click's place in whole CSS px and a pointer's in fractions, and a cell of 100,000 is 1.5 px
+        // from the next, so the click could keep the neighbor of the document that the panel shows.
+        const clicked = st.pointer !== null ? hovered : pick(st.events.click, mapBox)
         if (clicked !== null) st.kept = st.kept === clicked ? null : clicked
       }
     }
