@@ -7,9 +7,9 @@
 // indigo. A gather read and an index read store no weights for the values they
 // copy, so they draw no arc.
 //
-// The picture depends only on the program and on the canvas's size, which the
-// stylesheet sets. It is drawn when the page loads and after the viewport's size
-// has changed, so it takes no time in a frame.
+// The picture depends only on the program and on the canvas's size, which follows
+// from the viewport's. The page's frame draws it: in the first frame, and again
+// after the viewport has changed its size, see createWiringRenderer.
 import type {Circuit} from '../runtime/numeric-ui-core.ts'
 
 type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
@@ -100,7 +100,7 @@ export function drawWiring(canvas: HTMLCanvasElement, program: TensorProgram, op
 
 // The opacity of one arc, for a program that stores `weightCount` weights. Every
 // program's picture gets the same amount of ink, that of 2,600 arcs at full
-// opacity, shared among its arcs: e.g. 29% an arc for 8,959 weights, and 6% for
+// opacity, shared among its arcs: e.g. 29% an arc for 8,965 weights, and 6% for
 // 43,180. So the desk looks about as dark whether the program grows or shrinks. A
 // program of fewer than 2,600 weights draws every arc in full.
 /** @public */
@@ -108,42 +108,78 @@ export function arcOpacity(weightCount: number) {
   return Math.min(1, 2_600 / weightCount)
 }
 
-// Draws the program's wiring on the canvas now, and again 150 ms after the last
-// resize event, at the size the stylesheet gives the canvas by then. Until it is
-// drawn again, the browser stretches the old picture. The colors are the
-// stylesheet's --copper and --wire-indigo.
-export function mountWiring(canvas: HTMLCanvasElement, program: TensorProgram, window: Window) {
-  const style = window.getComputedStyle(canvas)
+// The canvas's rectangle on the desktop, in CSS px, for a viewport and the height
+// of the system bar: 24 px in from the viewport's left and right edges, from 12 px
+// under the system bar down to 6 px above the viewport's bottom. The canvas's last
+// row is then the row of the dock's wire, see .dock-wire in handwired-os.css, so
+// the arcs stand on the wire's row.
+function wiringRectangle(viewportWidth: number, viewportHeight: number, systemBarHeight: number) {
+  return {
+    left: 24,
+    top: systemBarHeight + 12,
+    width: Math.max(0, viewportWidth - 48),
+    height: Math.max(0, viewportHeight - systemBarHeight - 18),
+  }
+}
+
+// How long the canvas keeps a new size before its picture is drawn again. While a
+// person resizes the browser's window, every frame has another viewport, and one
+// drawing of 8,965 arcs takes about 3 ms of script. So a frame only gives the
+// canvas its new rectangle, the browser stretches the old picture over it, and
+// the picture is drawn once the size has stayed the same for this long.
+const restBeforeDrawingMs = 150
+
+// The wallpaper's part of the page's frame. `colors` holds the stylesheet's
+// --copper and --wire-indigo, e.g. '#a64d1d'.
+export function createWiringRenderer(canvas: HTMLCanvasElement, program: TensorProgram, colors: {adds: string, subtracts: string}, systemBarHeight: number) {
   let weightCount = 0
   for (const layer of program.layers) weightCount += layer.weights.length
-  const draw = () => {
-    const width = canvas.clientWidth
-    const height = canvas.clientHeight
-    drawWiring(canvas, program, {
-      width,
-      height,
-      // 2 canvas pixels per CSS px on every display, so a 0.5 px line covers whole
-      // canvas pixels. With 1 pixel per px, a line that covers half a pixel at 6%
-      // changes some color channels by less than one of their 255 steps, which
-      // rounds, and where thousands of arcs overlap the picture came out olive
-      // instead of copper. A canvas of more than 16 million pixels, 64 MB, gets
-      // fewer pixels per px, e.g. 1.41 for a 3840 × 2160 px viewport.
-      pixelRatio: Math.min(2, Math.sqrt(16_000_000 / Math.max(width * height, 1))),
-      adds: style.getPropertyValue('--copper').trim(),
-      subtracts: style.getPropertyValue('--wire-indigo').trim(),
-      // The stylesheet shows the canvas at 36% of its opacity, so one arc alone of
-      // 8,959 is drawn at 29% × 36%, about 10%, and a place where many arcs overlap
-      // reaches at most 36% of the arc's color. On a canvas shown in full, with each
-      // arc at 36% of its opacity here, such places came out as dark as the color
-      // itself.
-      alpha: arcOpacity(weightCount),
-      lineWidth: 0.5,
-    })
+  // The size that the canvas's picture was drawn for, or null before the first
+  // drawing. Cache lifetime: until the canvas has had another size for
+  // restBeforeDrawingMs.
+  let drawn: {width: number, height: number} | null = null
+  // The canvas's size in the last frame, and the time of the first frame that had
+  // that size.
+  let size = {width: 0, height: 0, since: 0}
+  return {
+    // A frame's DOM writes for the wallpaper: the canvas's rectangle for the
+    // viewport, and the picture when the canvas has none yet, i.e. in the page's
+    // first frame, or when its size has changed and rested. Returns whether the
+    // picture is still to be drawn for the canvas's size, and the page then
+    // requests another frame.
+    render(viewportWidth: number, viewportHeight: number, frameTime: number) {
+      const {left, top, width, height} = wiringRectangle(viewportWidth, viewportHeight, systemBarHeight)
+      canvas.style.left = `${left}px`
+      canvas.style.top = `${top}px`
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
+      if (width !== size.width || height !== size.height) size = {width, height, since: frameTime}
+      if (drawn !== null) {
+        if (drawn.width === width && drawn.height === height) return false
+        if (frameTime - size.since < restBeforeDrawingMs) return true
+      }
+      drawWiring(canvas, program, {
+        width,
+        height,
+        // 2 canvas pixels per CSS px on every display, so a 0.5 px line covers whole
+        // canvas pixels. With 1 pixel per px, a line that covers half a pixel at 6%
+        // changes some color channels by less than one of their 255 steps, which
+        // rounds, and where thousands of arcs overlap the picture came out olive
+        // instead of copper. A canvas of more than 16 million pixels, 64 MB, gets
+        // fewer pixels per px, e.g. 1.41 for a 3840 × 2160 px viewport.
+        pixelRatio: Math.min(2, Math.sqrt(16_000_000 / Math.max(width * height, 1))),
+        adds: colors.adds,
+        subtracts: colors.subtracts,
+        // The stylesheet shows the canvas at 36% of its opacity, so one arc alone of
+        // 8,965 is drawn at 29% × 36%, about 10%, and a place where many arcs overlap
+        // reaches at most 36% of the arc's color. On a canvas shown in full, with each
+        // arc at 36% of its opacity here, such places came out as dark as the color
+        // itself.
+        alpha: arcOpacity(weightCount),
+        lineWidth: 0.5,
+      })
+      drawn = {width, height}
+      return false
+    },
   }
-  let timer: number | null = null
-  window.addEventListener('resize', () => {
-    if (timer !== null) window.clearTimeout(timer)
-    timer = window.setTimeout(draw, 150)
-  })
-  draw()
 }

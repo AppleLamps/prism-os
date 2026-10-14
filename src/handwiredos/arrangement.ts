@@ -26,11 +26,11 @@
 //
 // The arrangement looks at what the windows hold, so that a window is covered just
 // under a part of its content, e.g. Monitor under a whole row of its list. Each
-// number of that kind is read from the code that sets it: the title bar's height
-// and Photos' gap from the program's table, and the heights of the header and the
-// rows of Monitor's list from monitorLayout. The note's text is the browser's to
-// lay out, so the arrangement measures none of it: Notes keeps a fixed part of the
-// note in view, see noteShown.
+// number of that kind is read from the code that sets it: the title bar's height,
+// Photos' gap and the margin around a maximized window from the program's table,
+// and the heights of the header and the rows of Monitor's list from monitorLayout.
+// The note's text is the browser's to lay out, so the arrangement measures none of
+// it: Notes keeps a fixed part of the note in view, see noteShown.
 import {type Wire, invariant} from '../runtime/numeric-ui-core.ts'
 import {locationCount, monitorLayout} from './value-list.ts'
 
@@ -44,6 +44,9 @@ export type ArrangementMetrics = {
   titleHeight: number
   // The gap around and between Photos' photos, e.g. 18.
   photosGap: number
+  // The margin that the program keeps between a maximized window and the
+  // workspace's edges, e.g. 12.
+  maximizedMargin: number
 }
 
 // The cells of the window manager's table that the arrangement reads and writes.
@@ -53,6 +56,7 @@ type ArrangementCells = {
   minWidth: Wire
   minHeight: Wire
   titleHeight: Wire
+  margin: Wire
   windows: readonly Record<'left' | 'top' | 'width' | 'height', Wire>[]
   springs: readonly Record<'centerX' | 'centerY' | 'width' | 'height', {destination: Wire}>[]
   photos: {gap: Wire}
@@ -67,7 +71,8 @@ const border = 1
 // window covers Notes' lower part or Notes is short: 136 px. In the type that
 // handwired-os.css gives the note, those are the 24 px above the first line, four
 // lines of 22 px, and 24 px under them. The text that the page starts with takes
-// three lines in the narrowest column, a phone's 324 px.
+// three lines in a phone's column, e.g. in the 316 px that the note's lines have
+// on a phone 390 px wide, and four in a window at its minimum width.
 const noteShown = 136
 
 // How much of Monitor stays in view under its top edge in the one-column form,
@@ -88,7 +93,7 @@ function monitorShownFor(available: number, whole: number, metrics: ArrangementM
 // How tall Photos is at most at a width: its title bar, and 4 columns and 3 rows of
 // photos with its gap around and between them, where a photo is at most 1.25 times
 // as tall as wide. E.g. 319 px at 306 px of width, and more than the default 430 px
-// from 419 px of width, where the default height stays. At its default size, 560 px
+// from 425 px of width, where the default height stays. At its default size, 560 px
 // wide, a photo is 117 × 104 px.
 function photosTallestFor(width: number, metrics: ArrangementMetrics) {
   const photoWidth = (width - 2 * border - 5 * metrics.photosGap) / 4
@@ -106,7 +111,7 @@ export function arrangeWindows(workspace: Rectangle, minimum: Size, natural: rea
   // Two rows of the smallest windows, with the margins around and between them.
   const fitsTwoRows = workspace.height >= 2 * minimum.height + 48
   const rectangles = !fitsTwoRows
-    ? arrangeRow(workspace, minimum, sizes)
+    ? arrangeRow(workspace, minimum, sizes, metrics)
     : workspace.width >= 1000
       ? arrangeDesk(workspace, minimum, sizes, metrics)
       : workspace.width >= 640
@@ -197,8 +202,12 @@ function arrangeColumns(workspace: Rectangle, minimum: Size, [, notes, photos]: 
   ]
 }
 
+// In one column and in one row, the windows keep the margin of a maximized window
+// from the workspace's edges, 12 px. A maximized window then covers the windows
+// behind it. With a margin of 8 px, a window maximized on a phone left 4 px of the
+// other two in view on each side.
 function arrangeColumn(workspace: Rectangle, minimum: Size, [monitor, notes, photos]: readonly [Size, Size, Size], metrics: ArrangementMetrics): Rectangle[] {
-  const margin = 8
+  const margin = metrics.maximizedMargin
   const titleBar = metrics.titleHeight
   const width = Math.min(workspace.width - 2 * margin, monitor.width)
   const left = workspace.left + (workspace.width - width) / 2
@@ -233,8 +242,8 @@ function arrangeColumn(workspace: Rectangle, minimum: Size, [monitor, notes, pho
   ]
 }
 
-function arrangeRow(workspace: Rectangle, minimum: Size, [monitor, notes, photos]: readonly [Size, Size, Size]): Rectangle[] {
-  const margin = 8
+function arrangeRow(workspace: Rectangle, minimum: Size, [monitor, notes, photos]: readonly [Size, Size, Size], metrics: ArrangementMetrics): Rectangle[] {
+  const margin = metrics.maximizedMargin
   const available = workspace.width - 2 * margin
   const height = Math.min(workspace.height - 2 * margin, monitor.height)
   const top = workspace.top + (workspace.height - height) / 2
@@ -278,6 +287,7 @@ export function arrangeInitialWindows(source: Float32Array, cells: ArrangementCe
   const metrics = {
     titleHeight: source[cells.titleHeight]!,
     photosGap: source[cells.photos.gap]!,
+    maximizedMargin: source[cells.margin]!,
   }
   const rectangles = arrangeWindows(workspace, minimum, natural, metrics)
   rectangles.forEach((rectangle, windowIndex) => {

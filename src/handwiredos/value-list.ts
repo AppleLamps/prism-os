@@ -63,9 +63,6 @@ export const rowHeight = 24
 export const slotCount = 64
 // The most rows that the program accepts. The row count is a cell.
 export const rowCapacity = 100_000
-// Rows drawn above and below the rows in view, so that a scroll that the
-// compositor shows before the next frame runs still finds rows at the edges.
-const overscanRows = 2
 // The machine floors the scroller's position onto this grid, e.g. Chrome reports
 // 0.5 px steps at devicePixelRatio 2 and 0.25 px steps at 4.
 export const scrollGrid = 1 / 4
@@ -83,7 +80,7 @@ const initialLocation = 1
 // rectangles from these numbers, and the renderer gives them to the DOM at mount.
 export const monitorLayout = {
   // The sidebar at the content box's left edge. The list takes the rest. A sidebar
-  // item holds its location's name and row count, e.g. "Operations" and "4,251".
+  // item holds its location's name and row count, e.g. "Operations" and "4,254".
   sidebarWidth: 152,
   // The header row above the scroller, and the sidebar's heading beside it.
   headerHeight: 28,
@@ -303,13 +300,24 @@ export function buildValueList(circuit: Circuit, table: SourceTable, cells: Valu
   circuit.assumeRange(offsetInRow, 0, rowHeight - scrollGrid)
   circuit.assumeGrid(offsetInRow, scrollGrid)
   // One past the last row in view.
-  // JS: endVisible = Math.ceil((scroll + viewportCeil) / rowHeight)
+  // JS: endVisible = Math.min(Math.ceil((scroll + viewportCeil) / rowHeight), rowCount)
   const viewEnd = circuit.roundAffine([[scroll, 1], [viewportCeil, 1]], rowHeight - scrollGrid)
-  const endVisible = emitFloorDivide(circuit, viewEnd, rowHeight, maximumScrollTop + maximumViewportHeight + rowHeight)
-  // JS: firstDrawn = Math.max(0, firstVisible - overscanRows), endDrawn = Math.min(endVisible + overscanRows, rowCount)
-  const firstDrawn = circuit.reglu([], 1, [[firstVisible, 1]], -overscanRows)
-  const endDrawn = emitMinimumExact(circuit, circuit.roundAffine([[endVisible, 1]], overscanRows), rowCount)
-  circuit.assumeGrid(endDrawn, 1)
+  const endVisible = emitMinimumExact(circuit, emitFloorDivide(circuit, viewEnd, rowHeight, maximumScrollTop + maximumViewportHeight + rowHeight), rowCount)
+  circuit.assumeGrid(endVisible, 1)
+  // The list draws a row in every slot: the rows in view, and in the slots left over
+  // the rows above and below the view, half of them on each side. A browser scrolls
+  // the list before the next frame runs, and until then the scrolled view shows the
+  // rows that the last frame drew. E.g. a view of 19 rows has 22 rows drawn above it
+  // and 23 below, so a scroll of up to 528 px between two frames still finds rows.
+  // With 2 rows on each side, as the list drew until October 14, 2026, one step of a
+  // mouse wheel, 100 px, showed a band without rows at the list's edge.
+  // JS: spareSlots = Math.max(0, slotCount - (endVisible - firstVisible))
+  const spareSlots = circuit.reglu([], 1, [[firstVisible, 1], [endVisible, -1]], slotCount)
+  // The first row in view is at most the row count, since the scroll position is at
+  // most the rows' total height, so endVisible - firstVisible is 0 or more.
+  circuit.assumeRange(spareSlots, 0, slotCount)
+  // JS: firstDrawn = Math.max(0, firstVisible - Math.floor(spareSlots / 2))
+  const firstDrawn = circuit.reglu([], 1, [[firstVisible, 1], [emitFloorShift(circuit, spareSlots, 1, slotCount), -1]], 0)
 
   // The row under a release. A path that a 0 bit masks still computes, so the
   // release's y is clamped into the viewport's range before the division.
@@ -416,13 +424,13 @@ export function buildValueList(circuit: Circuit, table: SourceTable, cells: Valu
       row,
       // JS: top = row * rowHeight
       circuit.roundAffine([[row, rowHeight]]),
-      // JS: present = row < endDrawn
-      emitCompare(circuit, row, '<', endDrawn),
+      // JS: present = row < rowCount
+      emitCompare(circuit, row, '<', rowCount),
       emitCompare(circuit, row, '===', nextSelected),
     )
   }
-  // JS: slotOverflow = endDrawn - firstDrawn > slotCount
-  const slotOverflow = emitCompare(circuit, circuit.roundAffine([[endDrawn, 1], [firstDrawn, -1]]), '>', circuit.constant(slotCount))
+  // JS: slotOverflow = endVisible - firstVisible > slotCount
+  const slotOverflow = emitCompare(circuit, circuit.roundAffine([[endVisible, 1], [firstVisible, -1]]), '>', circuit.constant(slotCount))
 
   table.next(cells.selected, nextSelected)
   table.next(cells.location, nextLocation)
@@ -470,7 +478,7 @@ export type ValueListLocation = {
   // What a row is, e.g. 'operations', and a sentence for a visitor who doesn't know
   // the program's words. The sidebar shows the sentence under its items while the
   // list shows this location, and a pointer that rests on the item reads both, e.g.
-  // '4,251 operations. What the program computes: each number from earlier ones.'
+  // '4,254 operations. What the program computes: each number from earlier ones.'
   rowNoun: string
   description: string
   titles: ColumnTexts
@@ -480,7 +488,7 @@ export type ValueListLocation = {
   // color swatch from. A location without one gives its kind cells no such class.
   kindClass?: (row: number) => string
   // The location's rows counted by kind, which the sidebar lists above the sentence,
-  // e.g. 2,526 ReGLU among Operations' rows: each kind's name, the class of its
+  // e.g. 2,527 ReGLU among Operations' rows: each kind's name, the class of its
   // swatch, and what a pointer that rests on the entry reads. A kind that no row
   // has is left out. A location without kinds to count leaves the list out.
   kinds?: readonly {name: string, className: string, count: number, title: string}[]
@@ -503,7 +511,7 @@ export function formatValue(value: number) {
 
 type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 
-// A count as the sidebar shows it, e.g. '4,251'.
+// A count as the sidebar shows it, e.g. '4,254'.
 const formatCount = (count: number) => count.toLocaleString('en-US')
 
 // The four kinds of live operation, each with the text that a row shows, the class
@@ -604,7 +612,7 @@ export function describeOutputs(outputs: readonly {name: string, wire: Wire}[], 
   return {
     label: 'Outputs',
     rowNoun: 'outputs',
-    description: 'What the page draws from, e.g. a window\'s position.',
+    description: 'What the page draws from, e.g. a window’s position.',
     // The first column's title is 'name' and not 'output': in a window at its minimum
     // width, the list leaves 42 px for that title, and 'OUTPUT' takes 52 px.
     titles: ['name', '', '', ''],
@@ -640,11 +648,16 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
   root.style.setProperty('--monitor-row-height', `${monitorLayout.rowHeight}px`)
   root.style.setProperty('--monitor-scrollbar-strip', `${monitorLayout.scrollbarStrip}px`)
   root.style.setProperty('--monitor-footer-height', `${monitorLayout.footerHeight}px`)
-  const createCells = (parent: HTMLElement) => [...textColumnNames, 'value'].map(column => {
+  // One cell per column, for the header or for a row. Returns the elements that hold
+  // the columns' texts: the cells, except for a row's name, which is written into a
+  // <bdi> inside its cell. The stylesheet cuts a long name at its start by giving the
+  // cell a direction of right to left, and the <bdi> keeps the name itself left to
+  // right, e.g. '…ls.0.centerXDisplacement'.
+  const createCells = (parent: HTMLElement, kind: 'header' | 'row') => [...textColumnNames, 'value'].map(column => {
     const cell = document.createElement('span')
     cell.className = `monitor-cell monitor-cell-${column}`
     parent.appendChild(cell)
-    return cell
+    return kind === 'row' && column === 'name' ? cell.appendChild(document.createElement('bdi')) : cell
   })
   overflow.textContent = `Only ${slotCount} rows are drawn at a time.`
   const createPart = (parent: HTMLElement, tagName: string, className: string, text = '') => {
@@ -654,7 +667,7 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
     return part
   }
   // The caption's parts, from the top: for each location that counts its rows by
-  // kind, a list of the kinds, e.g. 'ReGLU' and '2,526', which is displayed while
+  // kind, a list of the kinds, e.g. 'ReGLU' and '2,527', which is displayed while
   // the list shows that location, and the shown location's sentence, e.g. 'What the
   // program computes: each number from earlier ones.'
   const captionKinds = locations.map(location => {
@@ -676,7 +689,7 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
     overflow, // mount lifetime
     captionKinds, // mount lifetime. null for a location without kinds.
     captionSentence, // mount lifetime
-    headerCells: createCells(header), // mount lifetime
+    headerCells: createCells(header, 'header'), // mount lifetime
     // mount lifetime. Each item sits on the rectangle that the program hit-tests.
     locationNodes: locations.map((location, index) => {
       const node = createPart(sidebar, 'div', 'monitor-location')
@@ -702,7 +715,7 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
       const node = document.createElement('div')
       node.className = 'monitor-row'
       spacer.appendChild(node)
-      return {node, cells: createCells(node), row: -1, kindClass: '', value: Number.NaN}
+      return {node, cells: createCells(node, 'row'), row: -1, kindClass: '', value: Number.NaN}
     }),
   }
 
@@ -771,11 +784,10 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
       })
     },
     // A side effect, for after every DOM write of a frame: scrolls the list to
-    // `position`, and returns the position read back, which the browser may have
-    // rounded or clamped.
+    // `position`. The browser may round or clamp the position, and the next frame's
+    // readScrollTop returns what the browser kept.
     scrollTo(position: number) {
       domCache.scroller.scrollTop = position
-      return domCache.scroller.scrollTop
     },
   }
 }

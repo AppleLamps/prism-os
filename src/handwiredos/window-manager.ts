@@ -77,7 +77,7 @@ import {
 } from '../runtime/cells.ts'
 import {arrangeInitialWindows} from './arrangement.ts'
 import {averagedFrames as monitorAveragedFrames, createMonitorFooter, frameCapacity as monitorFrameCapacity} from './monitor-footer.ts'
-import {mountWiring} from './wiring.ts'
+import {createWiringRenderer} from './wiring.ts'
 
 export const windowCount = 3
 
@@ -1749,9 +1749,15 @@ function mountWindowManager(document: Document, window: Window) {
     invariant(content !== null, 'window content is missing')
     return content
   })
+  const titleBars = windows.map(element => {
+    const titleBar = element.querySelector<HTMLElement>('.titlebar')
+    invariant(titleBar !== null, 'a title bar is missing')
+    return titleBar
+  })
   const domCache = {
     desktop, // mount lifetime
     windows, // mount lifetime
+    titleBars, // mount lifetime
     windowContents, // mount lifetime
     dockItems, // mount lifetime
     photosViewport, // mount lifetime
@@ -1784,9 +1790,16 @@ function mountWindowManager(document: Document, window: Window) {
     '--system-bar-height',
     `${machine.source[machine.cells.systemBarHeight]}px`,
   )
-  // The desk's wallpaper, the program's weights as arcs, see wiring.ts. The canvas's
-  // size follows from the system bar's height, which is set just above.
-  mountWiring(wiringCanvas, machine.tensorProgram, window)
+  // The desk's wallpaper, the program's weights as arcs, see wiring.ts. Its two
+  // colors are the stylesheet's. The frame gives the canvas its rectangle and draws
+  // the picture.
+  const wiringStyle = window.getComputedStyle(wiringCanvas)
+  const wiring = createWiringRenderer(
+    wiringCanvas,
+    machine.tensorProgram,
+    {adds: wiringStyle.getPropertyValue('--copper').trim(), subtracts: wiringStyle.getPropertyValue('--wire-indigo').trim()},
+    machine.source[machine.cells.systemBarHeight]!,
+  )
 
   // The focused window in the last frame's outputs, or -1, for the keydown listener.
   let focusedWindowAtLastFrame = -1
@@ -1798,11 +1811,6 @@ function mountWindowManager(document: Document, window: Window) {
   // whether a mouse made it, and whether it was outside every window, e.g. on the
   // desk, as the browser hit-tested it.
   let lastPress = {byMouse: false, outsideEveryWindow: true}
-  // The scroll position of Monitor's list as last read from the DOM: at the top of
-  // a frame with the other DOM reads, and once more after the host's own scroll at
-  // the end of a frame, since the browser may round or clamp the position that it
-  // was given. The machine gets the position at the next step.
-  let valueListScrollTop = 0
 
   // How many more frames the page runs by itself after it loads. The chart in
   // Monitor's footer shows the program's time per frame over the last 60 frames,
@@ -1831,7 +1839,7 @@ function mountWindowManager(document: Document, window: Window) {
     // browser state, which the frame reads like the viewport's size.
     const viewportWidth = document.documentElement.clientWidth
     const viewportHeight = document.documentElement.clientHeight
-    valueListScrollTop = valueList.readScrollTop()
+    const valueListScrollTop = valueList.readScrollTop()
     const noteHasKeyboardFocus = document.activeElement === domCache.note
     // Handle inputs. The pointer events are queued in the machine already. A press
     // since the last frame replaces what the note's keyboard focus knows of the last
@@ -1856,9 +1864,28 @@ function mountWindowManager(document: Document, window: Window) {
       if (values[machine.output.windows[windowIndex * windowOutputField.size + windowOutputField.focused]!] === 1) focusedWindowAtLastFrame = windowIndex
     }
     const notesIsFocusedWindow = focusedWindowAtLastFrame === notesWindowIndex
+    // The cursors, from what the press holds in the program's table after the step's
+    // events. While a title bar drags its window, the cursor is 'grabbing' on the
+    // title bar and everywhere else on the desktop, e.g. where the window has stopped
+    // at the workspace's edge and the pointer has gone on. While a grip resizes its
+    // window, the cursor is the grip's everywhere. A press that drags nothing changes
+    // no cursor, e.g. a press on a window button, or on the title bar of a maximized
+    // window, which can't be dragged and whose title bar shows the default cursor.
+    let draggedWindow = -1
+    let resizing = false
+    for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+      if (machine.source[machine.cells.drag[windowIndex]!] === 1) draggedWindow = windowIndex
+      if (machine.source[machine.cells.resize[windowIndex]!] === 1) resizing = true
+    }
 
     // DOM writes.
+    const wiringPending = wiring.render(viewportWidth, viewportHeight, frameTime)
+    domCache.desktop.style.cursor = draggedWindow !== -1 ? 'grabbing' : resizing ? 'nwse-resize' : 'auto'
     projectWindowElements(domCache.windows, domCache.windowContents, values, machine.output.windows)
+    for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+      const maximized = values[machine.output.windows[windowIndex * windowOutputField.size + windowOutputField.maximized]!] === 1
+      domCache.titleBars[windowIndex]!.style.cursor = maximized ? 'default' : windowIndex === draggedWindow ? 'grabbing' : 'grab'
+    }
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       const element = domCache.dockItems[windowIndex]!
       const outputStart = windowIndex * dockOutputField.size
@@ -1906,19 +1933,18 @@ function mountWindowManager(document: Document, window: Window) {
     // list out of view, and when the list shows another location. The scroll comes
     // after every DOM write, so the spacer already has its height and the browser
     // doesn't clamp the new position to an old height. The browser may still round
-    // or clamp the position, so the host reads it back once and keeps what the
-    // browser kept (chenguini's Scrolling.md, "Scroll Anchoring", steps 4 and 5). The
-    // read-back is the frame's last DOM call, after the note's focus change. The host
-    // scrolls at no other time: a position that the machine only clamped for its own
-    // cell, e.g. during a rubber-band, is never written back.
+    // or clamp the position that it is given, and the next frame reads what the
+    // browser kept, like any scroll. The host scrolls at no other time: a position
+    // that the machine only clamped for its own cell, e.g. during a rubber-band, is
+    // never written back.
     const valueListScrollTo = machine.valueListScrollTo
-    if (valueListScrollTo !== null) valueListScrollTop = valueList.scrollTo(valueListScrollTo)
+    if (valueListScrollTo !== null) valueList.scrollTo(valueListScrollTo)
 
     // Frames continue while springs are stepping, i.e. until an evaluation that
-    // writes state back finds nothing animating, and through the page's opening
-    // frames, see openingFramesLeft.
+    // writes state back finds nothing animating, through the page's opening
+    // frames, see openingFramesLeft, and while the wallpaper waits for its picture.
     if (openingFramesLeft > 0) openingFramesLeft--
-    if (machine.clock.animatedUntilMs !== null || openingFramesLeft > 0) scheduleRender()
+    if (machine.clock.animatedUntilMs !== null || openingFramesLeft > 0 || wiringPending) scheduleRender()
   }
 
   // Each event carries its own timestamp, which shares the time origin of
@@ -1937,13 +1963,19 @@ function mountWindowManager(document: Document, window: Window) {
   // window, the frame would take the keyboard focus away under the open menu. So
   // such a press reaches the program as a press and a cancel at one time: the
   // program raises and focuses the window, and nothing is held afterwards.
+  //
+  // The note's keyboard focus follows every press of the primary pointer, whatever
+  // the button: the browser moves the keyboard focus at a right button's press as
+  // at a left button's, e.g. away from the note at a press on Notes' title bar or on
+  // the desk. So the frame gets every press for noteFocusChange, also one that the
+  // program doesn't get.
   window.addEventListener('pointerdown', (event: PointerEvent) => {
     if (!event.isPrimary) return
+    events.press = event
+    scheduleRender()
     if (event.button !== 0 && event.target !== domCache.note) return
     machine.pointerDown(event.clientX, event.clientY, event.timeStamp)
     if (event.button !== 0) machine.pointerCancel(event.clientX, event.clientY, event.timeStamp)
-    events.press = event
-    scheduleRender()
   })
   // A context menu takes the release of the press that opens it: the browser sends
   // no pointerup after it. On macOS a control-click opens the menu with the primary
@@ -1993,6 +2025,11 @@ function mountWindowManager(document: Document, window: Window) {
     // ArrowDown moves the note's caret and never the selection of Monitor's list,
     // ArrowLeft never turns Photos' pages, and Escape closes no photo.
     if (event.target === domCache.note) return
+    // A key held with Command, Control or Alt is the browser's or the system's too,
+    // e.g. Command with ArrowLeft and Alt with ArrowLeft go back in the history.
+    // Taken as Photos' ArrowLeft, with its default prevented, such a key would turn
+    // a page of Photos instead.
+    if (event.metaKey || event.ctrlKey || event.altKey) return
     // Every other key is queued for the program, which gives a list key to Monitor
     // and an arrow or Escape to Photos only while that window is focused at the key's
     // time. E.g. after a press on Notes' title bar earlier in the same frame, the note
@@ -2079,7 +2116,13 @@ export function projectWindowElements(
     frame.style.transform =
       `translate3d(${read(windowOutputField.translateX)}px,${read(windowOutputField.translateY)}px,0)`
       + ` scale(${read(windowOutputField.scale)})`
-    frame.style.opacity = `${read(windowOutputField.opacity)}`
+    // The opacity output is 0 or 1: 0 once a closed or minimized window has landed
+    // in the dock. A window at opacity 0 also gets visibility: hidden, so that the Tab
+    // key skips what the window holds, e.g. the scroller of Monitor's list. At opacity
+    // 0 alone, the Tab key gave the keyboard focus to a scroller that nobody sees.
+    const opacity = read(windowOutputField.opacity)
+    frame.style.opacity = `${opacity}`
+    frame.style.visibility = opacity === 0 ? 'hidden' : 'visible'
     frame.style.zIndex = `${10 + read(windowOutputField.stack)}`
     frame.style.setProperty('--focused', `${read(windowOutputField.focused)}`)
     frame.style.setProperty('--maximized', `${read(windowOutputField.maximized)}`)

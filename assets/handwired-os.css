@@ -3,9 +3,11 @@
    components that every demo page shares.
 
    The program computes every position and size, and JavaScript writes them as inline
-   styles each frame: a window's width, height, transform, opacity and z-index, its content
-   box's width and height, a dock item's rectangle, each photo's position, and the numbers
-   --focused, --maximized, --inactive and --open, each 0 or 1.
+   styles each frame: a window's width, height, transform, opacity, visibility and z-index,
+   its content box's width and height, a dock item's rectangle, each photo's position, and
+   the numbers --focused, --maximized, --inactive and --open, each 0 or 1. JavaScript also
+   writes the cursor of the desktop and of each title bar, from what the program says the
+   press holds, and the rectangle of the wallpaper's canvas, from the viewport.
    So no rule here gives one of those properties a transition, an animation or a default.
    What depends on the four numbers is arithmetic on them, e.g. a shadow that grows with
    --focused, and has no transition either: focus changes in the frame of the press, and
@@ -39,19 +41,17 @@ body {
 /* While a press is held, only the pressed element and the elements that it lies in take
    the pointer. So nothing else shows a hover state or sets the cursor while the pointer
    passes over it with the button down, e.g. a dock item under a selection of the note's
-   text that is dragged out of the note. A drag of a title bar or of a grip keeps its
-   cursor wherever the pointer goes, e.g. over the note when a resize has stopped at a
-   window's smallest size. */
-#desktop:has(:active) :not(:active) {
+   text that is dragged out of the note. The pointer is then over the desktop wherever it
+   is over nothing pressed, so the cursor that JavaScript gives the desktop during a drag
+   of a title bar or of a grip shows wherever the pointer goes, e.g. over the note when a
+   resize has stopped at a window's smallest size.
+
+   The desktop is :active during a press on anything in it and on the bare desk, so the
+   rule needs no :has(). With "#desktop:has(:active) :not(:active)", Chrome computed the
+   style of every element of the desktop again in every frame that replaced a text, e.g.
+   the time in Monitor's footer: about 0.6 ms a frame, where this rule costs 0.02 ms. */
+#desktop:active :not(:active) {
   pointer-events: none;
-}
-
-#desktop:has(.titlebar:active) {
-  cursor: grabbing;
-}
-
-#desktop:has(.resize-grip:active) {
-  cursor: nwse-resize;
 }
 
 /* The desk: one warm surface with paper grain and a dot every 24 px, lit from the top left.
@@ -94,18 +94,18 @@ body {
    148 px, and the arcs are at full strength from 244 px.
 
    The canvas is shown at 36% of its opacity, and wiring.ts draws each arc the fainter the
-   more weights the program stores, e.g. at 29% for 8,959 weights. One arc alone is then
+   more weights the program stores, e.g. at 29% for 8,965 weights. One arc alone is then
    at about 10%, a hairline, and a band where many arcs lie on each other stops at 36% of
    the arc's color, so the picture stays quiet behind the windows and the list of things
-   to try. */
+   to try.
+
+   JavaScript writes the canvas's left, top, width and height each frame, see
+   wiringRectangle in wiring.ts: 24 px in from the desktop's left and right edges, from
+   12 px under the system bar to 6 px above the desktop's bottom. */
 .desk-wiring {
   --dock-clearing: radial-gradient(258px 100px at 50% calc(100% - 32px), transparent 68%, #000);
   position: absolute;
   z-index: 0;
-  top: calc(var(--system-bar-height) + 12px);
-  left: 24px;
-  width: calc(100% - 48px);
-  height: calc(100% - var(--system-bar-height) - 18px);
   pointer-events: none;
   opacity: 0.36;
   -webkit-mask-image: var(--dock-clearing);
@@ -128,9 +128,9 @@ body {
 
 /* Things to try, printed on the desk's lower right corner. Windows pass over it. The
    windows' first arrangement, see arrangement.ts, leaves this corner free on a viewport of
-   at least 1100 × 850 px: the list's five lines and its label are 124 px tall and end
-   12 px above the dock's strip, so at 850 px of height the label starts at least 22 px
-   under Photos. */
+   at least 1100 × 850 px: the list's five lines of 20 px and its label are 124 px tall
+   and end 12 px above the dock's strip, so at 850 px of height the label starts at least
+   22 px under Photos. */
 .desk-legend {
   position: absolute;
   z-index: 0;
@@ -147,9 +147,14 @@ body {
   color: var(--ink-2);
 }
 
+/* A key cap fits into its line's 20 px: 1 px of padding above and below its 11.3 px of
+   text and its borders, raised by 1 px. With 2 px of padding below and no raise, as on
+   the site's other pages, the cap made its line 21.3 px tall in the system font of macOS,
+   and the list 125.3 px. */
 .desk-legend kbd {
   margin: 0 1px;
-  padding: 1px 4px 2px;
+  padding: 1px 4px;
+  vertical-align: 1px;
 }
 
 @media (max-width: 1099px), (max-height: 849px) {
@@ -236,15 +241,36 @@ body {
   }
 }
 
+/* Under a finger, the mark and the two links are as tall as the bar, 36 px, where the
+   header links of the site's other pages are 40 px, see site.css. The mark's line is
+   20 px tall and a link's 16 px. The padding moves nothing, since the bar centers what it
+   holds, and it ends at the bar's edge, so it covers no window's title bar. */
+@media (pointer: coarse) {
+  .system-mark {
+    padding-block: 8px;
+  }
+
+  .system-links a {
+    padding-block: 10px;
+  }
+}
+
 /* Windows: sheets of paper. The window with focus is whiter, casts the larger shadow, and
-   has a faint copper wash on its title bar. */
+   has a faint copper wash on its title bar.
+
+   The frame cuts its content off with overflow: clip, and so does the content box below.
+   A browser scrolls a box with overflow: hidden to show what gets the keyboard focus
+   inside it, e.g. the caret of the note, or the scroller of Monitor's list at the Tab
+   key, and nothing scrolls the box back. The frame cuts the content box off while it
+   grows to a new size, e.g. during a maximize, so a key pressed then moved a window's
+   whole content for good. A box with overflow: clip can't be scrolled. */
 .window {
   position: absolute;
   top: 0;
   left: 0;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow: clip;
   /* The program's content box is the frame minus this 1 px border and the title bar. */
   border: 1px solid var(--edge);
   border-radius: calc(var(--radius-3) - var(--maximized) * 8px);
@@ -263,7 +289,8 @@ body {
    frame's outer edge. So the padding is 1 px less on the right than the program's gap, and
    1 px at the bottom: the buttons are then centered 22 px below the frame's top and end
    10 px before its right edge, exactly on the rectangles that the program tests presses
-   against.
+   against. JavaScript writes the title bar's cursor: grab, grabbing while the title bar
+   drags its window, and the default one on a maximized window, which can't be dragged.
 
    The bar of the window with focus has a faint copper wash, copper at 7%, and its hairline
    is copper at 24%, so the window that takes the keys can be told at a glance, e.g. among
@@ -277,11 +304,6 @@ body {
   padding: 0 calc(var(--button-gap) - 1px) 1px 14px;
   border-bottom: 1px solid color-mix(in srgb, var(--copper) calc(var(--focused) * 24%), var(--rule));
   background: color-mix(in srgb, var(--copper) calc(var(--focused) * 7%), transparent);
-  cursor: grab;
-}
-
-.titlebar:active {
-  cursor: grabbing;
 }
 
 .window-title {
@@ -368,14 +390,19 @@ body {
   }
 }
 
+/* The pressed states set the glyph's color too: where no pointer can hover, e.g. on a
+   phone, a pressed button never had the hovered button's colors, and the close button's
+   cross would be ink on ink. */
 .window-button:active {
   background-color: var(--rule);
   box-shadow: 0 0 0 4px var(--rule);
+  color: var(--ink);
 }
 
 .window-button.close:active {
   background-color: var(--ink);
   box-shadow: 0 0 0 4px var(--ink);
+  color: var(--sheet);
 }
 
 /* JavaScript sets the width and height to the size the window is heading to, and the frame
@@ -384,7 +411,7 @@ body {
   position: absolute;
   top: var(--title-height);
   left: 0;
-  overflow: hidden;
+  overflow: clip;
 }
 
 /* The grip is an arc around the corner's center, 3 px inside the border. The program's grip
@@ -413,8 +440,10 @@ body {
   --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 12A8 8 0 0 1 12 20' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
-/* The kinds of the program's operations, in Monitor's list and in its sidebar. Copper,
-   indigo, ochre and plum are the chart colors, in that order. */
+/* The kinds of a program's operations, in Monitor's list and in its sidebar: value-list.ts
+   gives a row's kind cell one of these four classes. Copper, indigo, ochre and plum are
+   the chart colors, in that order. HandwiredOS's program has no index read since October
+   13, 2026, so no element of the page has the fourth class today. */
 .kind-affine { --kind-color: var(--copper); }
 .kind-reglu { --kind-color: var(--wire-indigo); }
 .kind-boolean { --kind-color: var(--wire-ochre); }
@@ -426,13 +455,11 @@ body {
    parts, and places each sidebar item on the rectangle that the program tests presses
    against. Every frame it writes each row's transform, display and --selected, each
    sidebar item's --selected, the spacer's height, and the footer's chart. When the page
-   loads it copies the five sizes below from the program's numbers. */
+   loads it sets five sizes on this box from monitorLayout in value-list.ts, which the
+   program's hit tests use too: --monitor-sidebar-width (152 px), --monitor-header-height
+   (28 px), --monitor-row-height (24 px), --monitor-scrollbar-strip (16 px) and
+   --monitor-footer-height (32 px). No window is painted before that. */
 .monitor-content {
-  --monitor-sidebar-width: 152px;
-  --monitor-header-height: 28px;
-  --monitor-row-height: 24px;
-  --monitor-scrollbar-strip: 16px;
-  --monitor-footer-height: 32px;
   color: var(--ink);
 }
 
@@ -460,7 +487,7 @@ body {
 
 /* At its bottom, the sidebar says what the shown location holds: its rows by kind, which
    only Operations has, e.g. "ReGLU" beside the swatch that the list's kind column draws,
-   and "2,526", then one sentence. JavaScript writes them when the list shows another
+   and "2,527", then one sentence. JavaScript writes them when the list shows another
    location.
 
    The caption is the box between the items, which end 100 px below the sidebar's top,
@@ -554,7 +581,7 @@ body {
 /* A sidebar item: the location's name, and its number of rows at the right edge. Each of
    the two is a line as tall as the item, and the item wraps: in a system font too wide for
    both, the count moves to a second line, which the item cuts off, and the name stays
-   whole. In the system font of macOS, "Operations" and "4,251" leave 18 px between them. */
+   whole. In the system font of macOS, "Operations" and "4,254" leave 18 px between them. */
 .monitor-location {
   position: absolute;
   display: flex;
@@ -598,10 +625,10 @@ body {
 }
 
 /* Each location shows the columns that it has a title for, and the value last. The kind
-   column of Operations holds a swatch and the longest kind's name, "index read", in
-   76 px. A list too narrow for its columns drops columns whole, see below, since a column
-   that only shrinks ends up as an ellipsis, e.g. a kind cell that shows a swatch and
-   three dots. */
+   column of Operations holds a swatch and the longest name that value-list.ts gives a
+   kind, "index read", in 76 px. The longest name on the page today is "boolean". A list
+   too narrow for its columns drops columns whole, see below, since a column that only
+   shrinks ends up as an ellipsis, e.g. a kind cell that shows a swatch and three dots. */
 .monitor-list-state .monitor-header,
 .monitor-list-state .monitor-row {
   grid-template-columns: minmax(36px, 1fr) minmax(0, 60px) minmax(48px, 96px);
@@ -702,18 +729,25 @@ body {
   outline-offset: -2px;
 }
 
+/* The spacer is as tall as all the rows together, and ruled like a ledger: a hairline
+   at the bottom of every 24 px. The lines are the spacer's and not the rows', so the
+   list is ruled where no row is drawn too. The browser scrolls the list before the
+   next frame gives the rows their new places, so a scroll past every row that the last
+   frame drew shows a frame without rows, e.g. when the scrollbar's thumb is dragged by
+   2,000 px of the list in one frame. That frame shows ruled paper instead of a blank
+   sheet, as far as the browser has painted the spacer ahead of the view. */
 .monitor-spacer {
   position: relative;
+  background: linear-gradient(to top, color-mix(in srgb, var(--rule) 55%, transparent) 1px, transparent 1px) 0 0 / 100% var(--monitor-row-height);
 }
 
-/* Every row is 24 px tall, so the list draws only the rows in view. Ruled like a ledger. */
+/* Every row is 24 px tall, so the list draws only the rows in view and around it. */
 .monitor-row {
   position: absolute;
   top: 0;
   right: 0;
   left: 0;
   height: var(--monitor-row-height);
-  box-shadow: inset 0 -1px color-mix(in srgb, var(--rule) 55%, transparent);
 }
 
 .monitor-cell {
@@ -721,6 +755,26 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* A column's title is never cut. The columns' widths are for the system font of macOS,
+   where WEIGHTS takes 59 of its column's 60 px. In a wider font, or with larger type, a
+   title reaches into the 8 px gap after its column instead of ending in an ellipsis, e.g.
+   WEIGHTS is 66 px wide in Verdana. */
+.monitor-header .monitor-cell {
+  overflow: visible;
+}
+
+/* A row's name is cut at its start, since the names of neighboring rows differ at their
+   ends, e.g. photos.thumbnails.0.centerXDisplacement and photos.thumbnails.0.centerXVelocity
+   read …ls.0.centerXDisplacement and …bnails.0.centerXVelocity in a column of 186 px.
+   In a cell whose direction is right to left, the text that doesn't fit is cut at the
+   left, where the ellipsis then stands, and a name that fits still starts at the cell's
+   left edge. The name itself is in a <bdi>, so it reads left to right, whatever
+   characters it starts and ends with. */
+.monitor-row .monitor-cell-name {
+  direction: rtl;
+  text-align: left;
 }
 
 /* Numbers line up on their last digit. */
@@ -805,6 +859,15 @@ body {
   -webkit-user-select: text;
 }
 
+/* In Notes the grip's square is paper, in the window's own color, and not see-through.
+   Where scrollbars take room, e.g. on Windows, the scrollbar of a note taller than the
+   window then ends at the grip, as in a native window, instead of running under the
+   grip's arc to the window's corner. The square covers no text: the field keeps 24 px
+   of padding at its right. */
+.notes-content ~ .resize-grip {
+  background: inherit;
+}
+
 /* site.css draws an outline around whatever has the keyboard focus, and a text field has
    it at every focus, also after a click. Two classes outrank that rule in either order of
    the two stylesheets. */
@@ -819,15 +882,6 @@ body {
     font-size: 16px;
     line-height: 24px;
   }
-}
-
-/* A browser scrolls a box with overflow: hidden to show the caret of a focused text
-   field that the box cuts off, which would move the window's content for good. The frame
-   cuts the content box off while it grows to a new size, e.g. during a maximize. A box
-   with overflow: clip can't be scrolled, so neither the frame nor the content box is. */
-.window-notes,
-.notes-content {
-  overflow: clip;
 }
 
 /* Monitor's footer: the program's sizes at the left, and at the right the program's time
@@ -964,6 +1018,11 @@ body {
     0 calc(var(--focused) * 10px) calc(var(--focused) * 28px) calc(var(--focused) * -8px) rgb(var(--shadow-ink) / 0.24);
 }
 
+/* A photo is a container, so that its name can ask how tall the photo is. */
+.photos-photo {
+  container: photo / size;
+}
+
 /* The open photo's name, on a paper label. */
 .photos-photo span {
   position: absolute;
@@ -976,6 +1035,17 @@ body {
   font: italic 400 14px/20px var(--font-serif);
   box-shadow: var(--shadow-1);
   opacity: var(--focused);
+}
+
+/* A photo under 110 px tall shows no name. The previous control's round sheet is 36 px
+   tall around the photo's middle and the label ends 10 px above the photo's bottom, so
+   in a shorter photo the two meet, and in a narrow window the sheet lies on the label's
+   start, e.g. "avender Hour" in a window at its minimum size, where the open photo is
+   55 px tall. */
+@container photo (max-height: 109px) {
+  .photos-photo span {
+    display: none;
+  }
 }
 
 .photos-thumbnail {
@@ -1179,6 +1249,46 @@ body {
   border: 1.5px solid var(--copper);
   border-radius: var(--radius-1);
   background: color-mix(in srgb, var(--copper) calc(var(--open) * 100%), var(--desk));
+}
+
+/* Forced colors, e.g. a contrast theme on Windows: the browser replaces every color with
+   one of the system's and draws no background color and no shadow. What this page shows
+   with a background or a shadow alone gets a system color here: the glyphs of the window
+   buttons, of the grip and of the photo controls, which are masked backgrounds, the
+   dock's wire, the joint of the focused window and the joints of the open windows, by
+   their --focused and --open numbers, and a selected row, a selected sidebar item and
+   the open photo's thumbnail, as an outline in the system's highlight color. */
+@media (forced-colors: active) {
+  .window-button::before,
+  .resize-grip::after,
+  .photos-control::after,
+  .dock-wire {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+
+  .app-dot {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+    background: color-mix(in srgb, CanvasText calc(var(--focused) * 100%), transparent);
+  }
+
+  .dock-item i {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+    background: color-mix(in srgb, CanvasText calc(var(--open) * 100%), Canvas);
+  }
+
+  .monitor-location,
+  .monitor-row {
+    outline: calc(var(--selected) * 2px) solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .photos-thumbnail::after {
+    forced-color-adjust: none;
+    box-shadow: inset 0 0 0 3px Highlight;
+  }
 }
 
 /* First paint. index.html asks the browser to hold the first paint until the script has

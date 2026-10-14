@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {Circuit} from '../../src/runtime/numeric-ui-core.ts'
 import {createWindowManagerMachine} from '../../src/handwiredos/window-manager.ts'
-import {arcOpacity, drawWiring} from '../../src/handwiredos/wiring.ts'
+import {arcOpacity, createWiringRenderer, drawWiring} from '../../src/handwiredos/wiring.ts'
 
 type Arc = {color: string, left: number, right: number, height: number, baseline: number}
 
@@ -28,8 +28,8 @@ function recordingCanvas() {
       arcs.push({...pending, color: context.strokeStyle})
     },
   }
-  const canvas = {width: 0, height: 0, getContext: () => context}
-  return {canvas: canvas as unknown as HTMLCanvasElement, size: canvas, context, arcs}
+  const canvas = {width: 0, height: 0, style: {} as Record<string, string>, getContext: () => context}
+  return {canvas: canvas as unknown as HTMLCanvasElement, size: canvas, style: canvas.style, context, arcs}
 }
 
 const options = {width: 300, height: 100, pixelRatio: 2, adds: 'copper', subtracts: 'indigo', alpha: 0.5, lineWidth: 0.5}
@@ -93,10 +93,59 @@ test('on a tall canvas an arc is at most 1.25 times as tall as half its width', 
 })
 
 test('every program\'s wallpaper gets the same ink: an arc is the fainter the more weights the program stores', () => {
-  // 2,600 arcs' worth of ink: 29% an arc for 8,959 weights, and 6% for 43,180.
-  assert.equal(arcOpacity(8_959).toFixed(2), '0.29')
+  // 2,600 arcs' worth of ink: 29% an arc for 8,965 weights, and 6% for 43,180.
+  assert.equal(arcOpacity(8_965).toFixed(2), '0.29')
   assert.equal(arcOpacity(43_180).toFixed(2), '0.06')
-  for (const weightCount of [2_600, 8_959, 43_180, 1_000_000]) assert.ok(Math.abs(weightCount * arcOpacity(weightCount) - 2_600) < 1e-9)
+  for (const weightCount of [2_600, 8_965, 43_180, 1_000_000]) assert.ok(Math.abs(weightCount * arcOpacity(weightCount) - 2_600) < 1e-9)
   // A program of fewer weights than that draws every arc in full.
   assert.deepEqual([arcOpacity(2_599), arcOpacity(1), arcOpacity(0)], [1, 1, 1])
+})
+
+test('the frame draws the wallpaper at once in the first frame, and after a resize once the canvas has kept its new size for 150 ms', () => {
+  const circuit = new Circuit(2)
+  const program = circuit.compileTensorProgram([circuit.roundAffine([[circuit.source(0), 2], [circuit.source(1), -1]])])
+  const {canvas, size, style, context, arcs} = recordingCanvas()
+  // A system bar of 36 px, as in HandwiredOS.
+  const wiring = createWiringRenderer(canvas, program, {adds: 'copper', subtracts: 'indigo'}, 36)
+  const rectangle = () => [style['left'], style['top'], style['width'], style['height']]
+
+  // The first frame: the canvas's rectangle for a viewport of 1440 × 900, i.e. 24 px
+  // in from the left and the right, from 12 px under the system bar to 6 px above
+  // the bottom, and the picture, with 2 canvas pixels per px. Nothing is pending.
+  assert.equal(wiring.render(1440, 900, 1000), false)
+  assert.deepEqual(rectangle(), ['24px', '48px', '1392px', '846px'])
+  assert.deepEqual([size.width, size.height], [2784, 1692])
+  assert.equal(arcs.length, 2)
+  // 2 weights are fewer than 2,600, so each arc is drawn in full.
+  assert.equal(context.globalAlpha, 1)
+  // The same viewport again draws nothing.
+  assert.equal(wiring.render(1440, 900, 1016), false)
+  assert.equal(arcs.length, 2)
+
+  // A resize: every frame gives the canvas its new rectangle, and the picture waits
+  // until the size has stayed the same for 150 ms. Until then the canvas keeps the
+  // old picture, which the browser stretches, and the frame asks for another frame.
+  assert.equal(wiring.render(1300, 820, 2000), true)
+  assert.deepEqual(rectangle(), ['24px', '48px', '1252px', '766px'])
+  assert.equal(wiring.render(1200, 800, 2100), true)
+  assert.equal(wiring.render(1200, 800, 2249), true)
+  assert.deepEqual(rectangle(), ['24px', '48px', '1152px', '746px'])
+  assert.deepEqual([size.width, size.height, arcs.length], [2784, 1692, 2])
+  assert.equal(wiring.render(1200, 800, 2250), false)
+  assert.deepEqual([size.width, size.height, arcs.length], [2304, 1492, 4])
+  assert.equal(wiring.render(1200, 800, 2266), false)
+  assert.equal(arcs.length, 4)
+
+  // A viewport that returns to the drawn size within 150 ms needs no drawing.
+  assert.equal(wiring.render(1210, 800, 3000), true)
+  assert.equal(wiring.render(1200, 800, 3050), false)
+  assert.equal(arcs.length, 4)
+
+  // A canvas of more than 16 million pixels gets fewer pixels per px, and a viewport
+  // smaller than the canvas's insets gives a canvas of no size.
+  assert.equal(wiring.render(3840, 2160, 4000), true)
+  assert.equal(wiring.render(3840, 2160, 4150), false)
+  assert.ok(size.width * size.height <= 16_000_000 && size.width * size.height > 15_900_000, `${size.width} × ${size.height}`)
+  assert.equal(wiring.render(40, 40, 5000), true)
+  assert.deepEqual(rectangle(), ['24px', '48px', '0px', '0px'])
 })
