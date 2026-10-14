@@ -7,6 +7,7 @@ import {
   createWindowManagerMachine,
   dockOutputField,
   dragSourceField,
+  noteFocusChange,
   valueListSourceField,
   photoFocusSourceField,
   photoSourceField,
@@ -1601,6 +1602,38 @@ test('while a window frame animates its size, the content box already has the de
     assert.ok(inBetweenFrames > 5, `${inBetweenFrames} frames at in-between widths`)
     assert.equal(frames[notes]!.style.width, `${press.frameWidth}px`)
   }
+})
+
+test("the note's keyboard focus follows the focused window: a frame focuses the note after a mouse press that leaves Notes focused, and blurs it while Notes isn't", () => {
+  const mouseOnAWindow = {byMouse: true, outsideEveryWindow: false}
+  const frame = {notesIsFocusedWindow: true, noteHasKeyboardFocus: false, pressedOrReleased: true, lastPress: mouseOnAWindow}
+  // A press on Notes' title bar, or the release that opens Notes from the dock: Notes
+  // is the focused window, the note isn't focused yet, and a mouse did it.
+  assert.equal(noteFocusChange(frame), 'focus')
+  // A press in the text: the browser focused the note already, and the frame leaves
+  // it alone, so the caret stays where the press put it.
+  assert.equal(noteFocusChange({...frame, noteHasKeyboardFocus: true}), null)
+  // A press on the desk while Notes is the focused window: the browser took the
+  // keyboard focus away, and the frame doesn't give it back.
+  assert.equal(noteFocusChange({...frame, lastPress: {byMouse: true, outsideEveryWindow: true}}), null)
+  // A finger, e.g. one that drags Notes by its title bar: the frame never calls
+  // focus(), which could open the on-screen keyboard.
+  assert.equal(noteFocusChange({...frame, lastPress: {byMouse: false, outsideEveryWindow: false}}), null)
+  // The Tab key moved the keyboard focus away from the note: a frame without a
+  // press or a release doesn't take it back.
+  assert.equal(noteFocusChange({...frame, pressedOrReleased: false}), null)
+  // While Notes isn't the focused window, e.g. after a press on another window, or
+  // while Notes is minimized or closed, the note loses the keyboard focus, however
+  // it got it and whatever the last press was.
+  for (const pressedOrReleased of [true, false]) {
+    for (const lastPress of [mouseOnAWindow, {byMouse: false, outsideEveryWindow: true}]) {
+      assert.equal(noteFocusChange({notesIsFocusedWindow: false, noteHasKeyboardFocus: true, pressedOrReleased, lastPress}), 'blur')
+      assert.equal(noteFocusChange({notesIsFocusedWindow: false, noteHasKeyboardFocus: false, pressedOrReleased, lastPress}), null)
+    }
+  }
+  // The page's first frame: no press yet, so nothing is focused, also if Notes were
+  // the focused window at load.
+  assert.equal(noteFocusChange({notesIsFocusedWindow: true, noteHasKeyboardFocus: false, pressedOrReleased: false, lastPress: {byMouse: false, outsideEveryWindow: true}}), null)
 })
 
 function photoCenter(machine: Machine, values: Float32Array, item: number) {

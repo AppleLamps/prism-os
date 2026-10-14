@@ -1689,6 +1689,43 @@ const valueListKeyNames = new Map<string, ValueListKey>([
   ['End', 'end'],
 ])
 
+// What a frame does to the keyboard focus of the note, Notes' text field: 'focus'
+// gives it to the note, 'blur' takes it away, and null leaves it. The note's
+// keyboard focus follows the focused window, like a text field in a window of a
+// desktop:
+// - While Notes isn't the focused window, the note has no keyboard focus. The frame
+//   takes it away, e.g. after a press on another window, or after Notes was
+//   minimized or closed, and the Tab key skips the note, see its tabIndex in
+//   renderWindowManager.
+// - A press or a release that leaves Notes the focused window gives the note the
+//   keyboard focus, e.g. a press on Notes' title bar, the release that opens Notes
+//   from the dock, or the release that closes the window in front of Notes. A press
+//   in the text is the browser's own: it focuses the note and places the caret, and
+//   the frame finds the note focused and leaves it alone. Otherwise the frame calls
+//   focus(), which keeps the caret and the selection where they were.
+// - Except after a press outside every window, e.g. on the desk. The browser takes
+//   the keyboard focus away there, as at a press outside a text field on any page,
+//   and the frame leaves it so, while Notes stays the focused window.
+// - And the frame calls focus() only after a press with a mouse. On a phone, focus()
+//   from code can open the on-screen keyboard, e.g. while a finger drags Notes by its
+//   title bar. So after a touch or a pen, only the browser focuses the note, at a
+//   tap in the text.
+// A frame without a press or a release never calls focus(), so the Tab key can move
+// the keyboard focus away from the note.
+/** @public */
+export function noteFocusChange(frame: {
+  notesIsFocusedWindow: boolean
+  noteHasKeyboardFocus: boolean
+  // Whether a press or a release happened since the last frame.
+  pressedOrReleased: boolean
+  // The last press: whether a mouse made it, and whether it was outside every window,
+  // where Notes' dock item counts as a part of the Notes window.
+  lastPress: {byMouse: boolean, outsideEveryWindow: boolean}
+}): 'focus' | 'blur' | null {
+  if (!frame.notesIsFocusedWindow) return frame.noteHasKeyboardFocus ? 'blur' : null
+  return !frame.noteHasKeyboardFocus && frame.pressedOrReleased && frame.lastPress.byMouse && !frame.lastPress.outsideEveryWindow ? 'focus' : null
+}
+
 function mountWindowManager(document: Document, window: Window) {
   const machine = createWindowManagerMachine()
   const desktop = document.querySelector<HTMLElement>('#desktop')
@@ -1722,7 +1759,7 @@ function mountWindowManager(document: Document, window: Window) {
     // The note, Notes' whole content: the browser's own text field, which index.html
     // holds with its starting text. The browser edits, selects, wraps and scrolls
     // the text, and the program knows nothing of it. The page only moves the
-    // keyboard focus, see the side effects of renderWindowManager.
+    // keyboard focus, see noteFocusChange.
     note, // mount lifetime
   }
   const photos = createPhotoGalleryRenderer(document, domCache.photosViewport)
@@ -1757,9 +1794,9 @@ function mountWindowManager(document: Document, window: Window) {
   // the frame's last press, and whether a press was released. A press that the
   // browser cancels acts on no control, so it changes no window's focus.
   const events = {press: null as PointerEvent | null, released: false}
-  // What the note's keyboard focus keeps of the last press: whether a mouse made
-  // it, and whether it was outside every window, e.g. on the desk, as the browser
-  // hit-tested it. Notes' dock item counts as a part of the Notes window.
+  // What the note's keyboard focus keeps of the last press, see noteFocusChange:
+  // whether a mouse made it, and whether it was outside every window, e.g. on the
+  // desk, as the browser hit-tested it.
   let lastPress = {byMouse: false, outsideEveryWindow: true}
   // The scroll position of Monitor's list as last read from the DOM: at the top of
   // a frame with the other DOM reads, and once more after the host's own scroll at
@@ -1849,35 +1886,19 @@ function mountWindowManager(document: Document, window: Window) {
     // frame, i.e. the time of machine.step.
     footer.update(executionMs)
 
-    // Side effects, after every DOM write.
-    //
-    // The note's keyboard focus follows the focused window, like a text field in a
-    // window of a desktop:
-    // - While Notes isn't the focused window, the note has no keyboard focus. The
-    //   frame takes it away, e.g. after a press on another window, or after Notes was
-    //   minimized or closed, and the Tab key skips the note, see tabIndex above.
-    // - A press or a release that leaves Notes the focused window gives the note the
-    //   keyboard focus, e.g. a press on Notes' title bar, the release that opens
-    //   Notes from the dock, or the release that closes the window in front of Notes.
-    //   A press in the text is the browser's own: it focuses the note and places the
-    //   caret, and the frame finds the note focused and leaves it alone. Otherwise
-    //   the frame calls focus(), which keeps the caret and the selection where they
-    //   were.
-    // - Except after a press outside every window, e.g. on the desk. The browser
-    //   takes the keyboard focus away there, as at a press outside a text field on
-    //   any page, and the frame leaves it so, while Notes stays the focused window.
-    // - And the frame calls focus() only after a press with a mouse. On a phone,
-    //   focus() from code can open the on-screen keyboard, e.g. while a finger drags
-    //   Notes by its title bar. So after a touch or a pen, only the browser focuses
-    //   the note, at a tap in the text.
-    // A frame without a press or a release never calls focus(), so the Tab key can
-    // move the keyboard focus away from the note. The focus call can't scroll a box:
-    // it passes preventScroll, and the boxes around the note clip without a scroll
+    // Side effects, after every DOM write. The note's keyboard focus follows the
+    // focused window, see noteFocusChange. The focus call can't scroll a box: it
+    // passes preventScroll, and the boxes around the note clip without a scroll
     // position.
-    if (!notesIsFocusedWindow) {
-      if (noteHasKeyboardFocus) domCache.note.blur()
-    } else if (!noteHasKeyboardFocus && pressedOrReleased && lastPress.byMouse && !lastPress.outsideEveryWindow) {
-      domCache.note.focus({preventScroll: true})
+    switch (noteFocusChange({notesIsFocusedWindow, noteHasKeyboardFocus, pressedOrReleased, lastPress})) {
+      case 'focus':
+        domCache.note.focus({preventScroll: true})
+        break
+      case 'blur':
+        domCache.note.blur()
+        break
+      case null:
+        break
     }
     events.press = null
     events.released = false
