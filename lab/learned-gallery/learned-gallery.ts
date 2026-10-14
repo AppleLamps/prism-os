@@ -69,8 +69,8 @@ function createGridCells(
 // Each layout has fewer rectangles than there are photos and leaves its last cell empty, so a visitor has room to
 // add one. Edges of one kind, e.g. two left edges, are either equal or at least 0.09 of the stage's width apart.
 // The misalignment penalty pulls together photo edges of one kind that are within its reach, which is at most
-// 0.04 of the stage's width, half of maximumHoldDistance, so a preset is fitted as it is drawn wherever the slider
-// is.
+// 0.04 of the stage's width, half of the slider's largest value, so a preset is fitted as it is drawn wherever the
+// slider is.
 
 // 4 columns and 3 rows.
 function createContactLayout(): TrainableGeometry[] {
@@ -227,13 +227,13 @@ export function createLearnedGalleryMachine(
   }
 }
 
-// What the page's "Misalignment penalty" slider sets, as the page loads and at its top: how far a rectangle can
-// be dragged from its row or column before its photo lets go of the line, as a fraction of the stage's width.
-// The penalty's reach, i.e. how close two photo edges of one kind have to be for the penalty to pull them onto
-// one line, is that distance divided by penaltyStrength (trainable-geometry.ts), so half of it. The stage is 5
-// wide and 4 tall, so the same length is 5/4 as large a fraction of its height.
+// What the page's "Misalignment penalty" slider sets, here as the page loads: how far a rectangle can be dragged
+// from its row or column before its photo lets go of the line, as a fraction of the stage's width. The penalty's
+// reach, i.e. how close two photo edges of one kind have to be for the penalty to pull them onto one line, is that
+// distance divided by penaltyStrength (trainable-geometry.ts), so half of it. The stage is 5 wide and 4 tall, so
+// the same length is 5/4 as large a fraction of its height. The slider's largest value is in the page's markup,
+// 8% of the stage's width.
 export const defaultHoldDistance = 0.04
-export const maximumHoldDistance = 0.08
 
 // After the sketch or the slider changes, training runs at least this many more steps from the current weights.
 export const trainingStepsAfterChange = 500
@@ -386,12 +386,11 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
   let stepsSinceChange = 0
   let training = true
   // For the rule of when the photos are at rest: the edges of the photos as they were after the step restStep,
-  // left, top, right and bottom per output, and whether no edge has moved more than restDistance from them for
-  // restSteps steps. restStep is null after a change, until the next frame that trains.
+  // left, top, right and bottom per output. No edge has moved more than restDistance from them since. restStep is
+  // null after a change, until the next frame that trains.
   const restEdges = new Float32Array(learnedSlotCount * 4)
   const edgesNow = new Float32Array(learnedSlotCount * 4)
   let restStep: number | null = null
-  let atRest = false
   // The time that training has reached, like animatedUntilTime in ui.md's render loop. null while nothing trains.
   let trainedUntilTime: number | null = null
   let measuredMsPerStep = 0
@@ -415,6 +414,11 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
   machine.setPenaltyReach(holdDistance / penaltyStrength, holdDistance / penaltyStrength * 5 / 4)
   let result = machine.evaluate()
   let history: LossSample[] = [{step: result.step, fromSketch: result.fromTarget, misalignment: result.misalignment}]
+
+  // Whether the photos are at rest: no photo edge has moved more than restDistance for restSteps steps.
+  function atRest() {
+    return restStep !== null && result.step - restStep >= restSteps
+  }
 
   function readTargetGeometry(item: number): LearnedTargetGeometry {
     const start = item * learnedGeometryField.size
@@ -644,10 +648,9 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       }
       stepsSinceChange = 0
       restStep = null
-      atRest = false
     }
     // With no rectangle there is nothing to train, and no reason for another frame.
-    const stepsLeft = activeCount > 0 ? trainingStepsLeft(stepsSinceChange, atRest) : 0
+    const stepsLeft = activeCount > 0 ? trainingStepsLeft(stepsSinceChange, atRest()) : 0
 
     // Layout and cursor.
     let hovered: number | null = null
@@ -700,8 +703,8 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
     // Commit state.
     stepsSinceChange += stepsThisFrame
     if (stepsThisFrame > 0) {
-      // Whether the photos are at rest: how far the edge that moved most is from where it was at restStep. A move
-      // past restDistance starts the count of steps again from where the photos are now.
+      // For the rule of when the photos are at rest: how far the edge that moved most is from where it was at
+      // restStep. A move past restDistance starts the count of steps again from where the photos are now.
       let moved = 0
       for (let item = 0; item < learnedSlotCount; item++) {
         if (outputs[item] !== 1) continue
@@ -725,12 +728,9 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       if (restStep === null || moved > restDistance) {
         restEdges.set(edgesNow)
         restStep = result.step
-        atRest = false
-      } else {
-        atRest = result.step - restStep >= restSteps
       }
     }
-    training = activeCount > 0 && trainingStepsLeft(stepsSinceChange, atRest) > 0
+    training = activeCount > 0 && trainingStepsLeft(stepsSinceChange, atRest()) > 0
     trainedUntilTime = training ? newTrainedUntilTime : null
 
     const values = result.values

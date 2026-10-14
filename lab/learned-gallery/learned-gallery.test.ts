@@ -9,7 +9,6 @@ import {
   learnedGeometryField,
   learnedPhotoCount,
   learnedSlotCount,
-  maximumHoldDistance,
   maximumTrainingStepsAfterChange,
   maximumTrainingStepsPerFrame,
   minimumTrainingStepsPerFrame,
@@ -450,6 +449,11 @@ test('shared trainable coefficients fit an unseen sidebar grid', () => {
 // frame doesn't depend on how busy the machine is.
 const stageWidth = 500
 const stageHeight = 400
+// The largest value of the page's "Misalignment penalty" slider, as a fraction of the stage's width. The page's
+// markup has it, in percent.
+const sliderMarkup = /<input id="learning-penalty"[^>]* max="([0-9.]+)"/.exec(readFileSync(new URL('./learned-gallery.html', import.meta.url), 'utf8'))
+assert.ok(sliderMarkup !== null, 'the page has no slider')
+const maximumHoldDistance = Number(sliderMarkup[1]) / 100
 
 function createEditorDriver(frameMs = 1000 / 60, readClock?: () => number) {
   let readings = 0
@@ -667,8 +671,8 @@ test('the numbers in the page\'s text are the code\'s', () => {
   assert.ok(html.includes(`trains the network's ${parameterCount} weights`))
   assert.ok(html.includes(`empty space to add one, up to ${learnedPhotoCount}<`))
   // The slider is in percent of the stage's width: it starts where the editor starts, before the first frame
-  // reads it, and it ends at the editor's largest distance. Half of that, the penalty's largest reach, is below
-  // 0.09, the distance of a preset's closest edges of one kind that aren't equal.
+  // reads it. Half of its largest value, the penalty's largest reach, is below 0.09, the distance of a preset's
+  // closest edges of one kind that aren't equal.
   assert.ok(html.includes(`<input id="learning-penalty" class="range" type="range" min="0" max="${maximumHoldDistance * 100}" step="0.5" value="${defaultHoldDistance * 100}">`))
   assert.ok(html.includes('<label class="label" for="learning-penalty">Misalignment penalty</label>'))
   assert.ok(maximumHoldDistance / penaltyStrength < 0.09)

@@ -139,7 +139,7 @@ export function pairPull(gap: number, multiplier: number, reach: number) {
 // pairPull summed from a gap of 0 to `gap`, i.e. the function whose slope pairPull is. From a gap of one reach on
 // it stays what it is there. With a multiplier of 0 it is the charge of the loss: half the stiffness times the
 // squared gap for a small gap, and less than that from where the pull meets its limit. The multiplier is within
-// the reach, as startFrame and setPenaltyReach leave it, so the pull meets only its upper limit on the way up.
+// the reach, as startFrame leaves it, so the pull meets only its upper limit on the way up.
 export function pairCost(gap: number, multiplier: number, reach: number) {
   // The mirrored pair has the same sum.
   const end = Math.min(Math.abs(gap), reach)
@@ -624,9 +624,11 @@ export function createTrainableGeometryMachine(
     for (let kind = 0; kind < edgeKinds.length; kind++) {
       const reach = reachOfKind[kind]!
       readEdges(values, targetItems, outputByTarget, kind)
-      // Each pair's multiplier grows by a share of the gap's pull, within the pull's limit at this gap. While the
-      // penalty is off the limit is 0, and a pair with a rectangle that is gone has no multiplier, so a rectangle
-      // added later doesn't start with the pulls of the one that had its slot.
+      // Each pair's multiplier grows by a share of the gap's pull, within the pull's limit at this gap. The limit
+      // is at most the reach, also after setPenaltyReach made the reach smaller, and it is 0 while the penalty is
+      // off, e.g. in the first frames after a reset, so neither of the two has to change a multiplier. A pair with
+      // a rectangle that is gone has no multiplier, so a rectangle added later doesn't start with the pulls of the
+      // one that had its slot.
       for (let first = 0; first < slotCount; first++) {
         for (let second = first + 1; second < slotCount; second++) {
           const pair = (kind * slotCount + first) * slotCount + second
@@ -772,7 +774,7 @@ export function createTrainableGeometryMachine(
     initialSource.set(source)
     firstMoment.fill(0)
     secondMoment.fill(0)
-    multipliers.fill(0)
+    // The penalty is off again, and the next frame's start sets every multiplier to 0 with it.
     penaltyOnsetStep = null
     trainingStep = 0
     momentStep = 0
@@ -780,8 +782,10 @@ export function createTrainableGeometryMachine(
     framesTakenBackAtLowRate = 0
   }
 
-  // The outputs with their loss, for a caller that takes no step: the line counts and the penalty's weight are the
-  // ones that a frame would start with now.
+  // The outputs with their loss, for a caller that takes no step. It starts a frame of no steps: the line counts
+  // and the penalty's weight are the ones that a frame would start with now, the penalty comes on if the outputs
+  // are close enough to the target, and the multipliers are brought within their limits without growing, as the
+  // next frame of steps would do first too.
   function evaluate() {
     const values = circuit.evaluateTensor(source)
     assertFiniteValues(values, 'trainable geometry values')
@@ -877,17 +881,11 @@ export function createTrainableGeometryMachine(
     },
     // How close two output edges of one kind have to be for the penalty to pull them together: `across` for left
     // and right edges, as a fraction of the stage's width, and `down` for top and bottom edges, as a fraction of its
-    // height. 0 switches the penalty off. A multiplier stays within the new reach.
+    // height. 0 switches the penalty off. The next frame's start brings the multipliers within the new reach.
     setPenaltyReach(across: number, down: number) {
       invariant(across >= 0 && down >= 0, 'penalty reach must be nonnegative')
       reachOfKind[0] = reachOfKind[1] = across
       reachOfKind[2] = reachOfKind[3] = down
-      for (let kind = 0; kind < edgeKinds.length; kind++) {
-        const reach = reachOfKind[kind]!
-        for (let pair = kind * slotCount * slotCount; pair < (kind + 1) * slotCount * slotCount; pair++) {
-          multipliers[pair] = Math.max(-reach, Math.min(reach, multipliers[pair]!))
-        }
-      }
     },
     evaluate,
     match(values: Float32Array) {
