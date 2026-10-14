@@ -597,7 +597,7 @@ function mountJsonHighlighter(document: Document, window: Window) {
     "start": "bun demo.html",
     "test": "bun test"
   },
-  "apps": ["Files", "Notes"],
+  "apps": ["Notes","Photos"],
   "spring": [650, 45, 4e-3],
   "escaped": "\\"caf\\u00e9\\"",
   "trained": false,
