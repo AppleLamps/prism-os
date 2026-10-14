@@ -307,7 +307,9 @@
 .loss-chart .marker.misalignment { fill: var(--wire-indigo); }
 .loss-chart .hairline { stroke: var(--rule-strong); }
 /* The loss now and the number of steps so far, or those of the sample under the mouse. The line
-   breaks only between its two halves, e.g. beside the button in a narrow column. */
+   breaks only between its two halves. Each part of the loss has the width of its longest text,
+   8 characters, e.g. 1.04e−10, so the words after a number stay where they are while the
+   number changes, e.g. from 0 to 9.28e−8 when the penalty comes on. */
 .loss {
   color: var(--ink-2);
   font: var(--type-ui);
@@ -316,6 +318,13 @@
 .loss b { color: var(--ink); font: 600 13px/20px var(--font-mono); }
 /* The chart's legend: before each part of the loss, a dot in the color of that part's line, like
    the dot at the line's end. A short piece of the line would read as a minus sign there. */
+.loss .parts b { display: inline-block; min-width: 8ch; }
+/* In a column under 464 px, e.g. on a phone, the two parts leave no room for the steps beside
+   the button once both are 8 characters long, so the steps are always a line of their own
+   there, and the number of lines doesn't change while the page trains. */
+@container (max-width: 463px) {
+  .loss .steps { display: block; }
+}
 .loss .key {
   display: inline-block;
   width: 7px;

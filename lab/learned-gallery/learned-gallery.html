@@ -76,12 +76,12 @@
         <div class="stage-head"><span class="label">Learned</span></div>
         <div id="learning-result" class="surface stage learned" role="group" aria-label="The photos, where the network places them"></div>
         <div class="tools training">
-          <!-- Two halves, so that a column too narrow for the whole line breaks it between them. The first half is
-               the loss as the sum of its two parts, each with a dot in its line's color before it. learned-gallery.ts
-               hides the second part while the slider is at off. -->
+          <!-- Two halves: in a column too narrow for the whole line, the second half is a line of its own. The first
+               half is the loss as the sum of its two parts, each with a dot in its line's color before it.
+               learned-gallery.ts hides the second part while the slider is at off. -->
           <div class="loss">
-            <span>Loss <i class="key from-sketch"></i><b id="learning-loss-sketch" title="How far the photos are from the sketch"></b><span id="learning-loss-penalty-part"> + <i class="key misalignment"></i><b id="learning-loss-penalty" title="The misalignment penalty"></b></span></span>
-            <span>after <b id="learning-step"></b> steps</span>
+            <span class="parts">Loss <i class="key from-sketch"></i><b id="learning-loss-sketch" title="How far the photos are from the sketch"></b><span id="learning-loss-penalty-part"> + <i class="key misalignment"></i><b id="learning-loss-penalty" title="The misalignment penalty"></b></span></span>
+            <span class="steps">after <b id="learning-step"></b> steps</span>
           </div>
           <button id="learning-train" class="button" type="button" title="Set the weights back to their starting values and train them again">Retrain</button>
           <!-- The loss's two parts after each frame of training, for the latest 1,000 steps: how far the photos are
