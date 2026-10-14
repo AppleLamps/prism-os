@@ -477,7 +477,7 @@ test('the penalty pulls output edges within its reach onto one line, and leaves 
   assert.ok(Math.abs(apart.edges.get(1)!.top - apart.edges.get(0)!.top - 0.012) < 0.0005)
 }, 30_000)
 
-test('the multipliers grow by the training step: a look at the outputs between frames changes nothing', () => {
+test('the multipliers grow by the training step: an evaluation between two frames adds nothing to them', () => {
   // Two rectangles whose tops are 0.012 apart, within the penalty's reach of 0.02, so the pair's multiplier grows
   // while the gap closes, and a third one out of reach.
   const drawn: TrainableGeometry[] = [
@@ -501,6 +501,8 @@ test('the multipliers grow by the training step: a look at the outputs between f
   // The penalty came on, and the two tops are on one line.
   assert.ok(plain.result.misalignment > 0)
   assert.ok(Math.abs(plain.edges.get(0)!.top - plain.edges.get(1)!.top) < 0.0001)
+  // With three evaluations before every frame, training ends at the very same weights. An evaluation also limits
+  // each multiplier to the reach minus the pair's gap, which changes none here, where the gap only closes.
   assert.deepEqual(fit(3).source, plain.source)
 })
 
