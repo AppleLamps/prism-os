@@ -259,14 +259,11 @@ a.card:hover .go::after { transform: translateX(3px); }
 /* The outline is drawn over the photo's edge, as an inset shadow would be if an img could show one. */
 .pair .placed img { object-fit: cover; outline: 1px solid var(--edge); outline-offset: -1px; background: var(--wash); }
 
-/* Search 100,000 JSON documents: a small mark for each document, in the colors of the demo's map. A document with a
-   match is copper, a valid document without one is pale ink, and a document with an error is pale red. A hole is a
-   piece of the card's sheet over a mark, where a mark of another color stands. */
+/* Search 100,000 JSON documents: a small mark for each document, in the colors of the demo's map. A document without
+   a match is pale ink, and one with a match is copper. */
 .documents { display: block; width: 100%; height: 100%; }
 .documents .document { fill: var(--ink); fill-opacity: 0.3; }
 .documents .found { fill: var(--copper); }
-.documents .with-error { fill: var(--wire-red); fill-opacity: 0.42; }
-.documents .hole { fill: var(--sheet); }
 
 /* Below the page's full width, 1104 px. */
 @media (max-width: 1151px) {
