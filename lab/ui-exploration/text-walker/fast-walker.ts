@@ -120,7 +120,9 @@ function brentKungPrefix(circuit: Circuit, values: readonly Wire[]): Wire[] {
   return prefix
 }
 
-function longestBreakAfterRun(breakAfter: readonly number[]): number {
+// The longest run of segments that break after themselves, which is the run limit a paragraph needs, e.g. 3 for a space
+// followed by two zero-width spaces.
+export function longestBreakAfterRun(breakAfter: readonly number[]): number {
   let longest = 1
   let run = 0
   for (const bit of breakAfter) {
