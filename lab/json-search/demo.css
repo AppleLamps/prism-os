@@ -21,7 +21,7 @@
   .at-wide { display: none; }
   .at-narrow { display: inline; }
 }
-/* What to do with the map, in the Try list: for a mouse, and for a finger. */
+/* What to do with the map, in the line under it: for a mouse, and for a finger. */
 .with-touch { display: none; }
 @media (pointer: coarse) {
   .with-mouse { display: none; }
@@ -71,7 +71,7 @@
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--space-3);
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
 }
 .search .pattern { margin-top: 0; }
 
@@ -214,10 +214,18 @@
 .document-text .hit.even { background: var(--copper-wash); }
 .document-text .hit.odd { background: var(--copper-wash-deep); }
 
-.more {
-  margin: var(--space-4) 0 0;
+/* The line under the map and the document: how to use the map, and at the line's end the link. */
+.notes {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-5);
+  margin-top: var(--space-3);
+  color: var(--ink-2);
   font: var(--type-ui);
 }
+.notes p { margin: 0; }
+.notes a { flex: none; }
 
 /* Below the page's full width the map's height changes with its width, so this is a height from the middle of the
    range, which demo.ts replaces. */
@@ -240,4 +248,5 @@
   .map { height: 330px; }
   .surface pre.document-text { padding: var(--space-3); }
   .document-name { padding-left: var(--space-3); }
+  .notes { flex-direction: column; }
 }

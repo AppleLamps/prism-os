@@ -41,8 +41,7 @@
         <li>An email address: <button class="try-pattern" type="button" data-pattern="[a-z0-9.]+@[a-z.]+" data-scope="strings" aria-label="Search string values for the pattern [a-z0-9.]+@[a-z.]+"><code>[a-z0-9.]+@[a-z.]+</code></button></li>
         <li>Keys that end in Id: <button class="try-pattern" type="button" data-pattern="[a-z]+Id" data-scope="keys" aria-label="Search keys for the pattern [a-z]+Id"><code>[a-z]+Id</code></button></li>
         <li>A date: <button class="try-pattern" type="button" data-pattern="\d\d\d\d-\d\d-\d\d" data-scope="everything" aria-label="Search everything for the pattern \d\d\d\d-\d\d-\d\d"><code>\d\d\d\d-\d\d-\d\d</code></button></li>
-        <li>A pattern that makes JavaScript&rsquo;s RegExp backtrack: <button class="try-pattern" type="button" data-pattern="([a-z]+)+x" data-scope="everything" aria-label="Search everything for the pattern ([a-z]+)+x"><code>([a-z]+)+x</code></button></li>
-        <li><span class="with-mouse">Point at the map to read a document, click to keep it, and press <kbd>Enter</kbd> for the next match</span><span class="with-touch">Tap the map to read a document</span></li>
+        <li>One that makes RegExp backtrack: <button class="try-pattern" type="button" data-pattern="([a-z]+)+x" data-scope="everything" aria-label="Search everything for the pattern ([a-z]+)+x"><code>([a-z]+)+x</code></button></li>
       </ul>
     </div>
 
@@ -83,7 +82,11 @@
       </section>
     </div>
 
-    <p class="more"><a href="https://github.com/chenglou/handwired/blob/main/lab/json-search/README.md">How it works</a></p>
+    <!-- Under the map: what the pointer and the Enter key do there, and the one link to how the page works. -->
+    <div class="notes">
+      <p><span class="with-mouse">Point at the map to read a document, click to keep it, and press <kbd>Enter</kbd> for the next match.</span><span class="with-touch">Tap the map to read a document.</span></p>
+      <a href="https://github.com/chenglou/handwired/blob/main/lab/json-search/README.md">How it works</a>
+    </div>
 
     <footer class="colophon">
       <span><a href="../learned-gallery/">Previous: Learned gallery</a></span>
