@@ -199,6 +199,8 @@ test('reset restores the initial coefficient tensor and optimizer', () => {
   assert.deepEqual([...machine.source], initialSource)
 })
 
+// The tests that take over a second on a quiet machine have a limit of 30 s, which `bun run test` gives every test.
+// Bare `bun test` gives 5 s, and with every core busy a test of 2 s ran out of that.
 test('steps that raise the loss are taken back', () => {
   // Adam at a fixed learning rate doesn't come to rest: after Cinema's first 500 steps, a frame of 10 more steps
   // raises the loss 342 times at its worst, which the page showed as photos that jump and come back. The penalty
@@ -238,9 +240,9 @@ test('steps that raise the loss are taken back', () => {
   assert.equal(guarded.trainingStep, trainingStepsAfterChange + 1500)
   // The loss keeps falling without the jumps on the way. Measured: from 7.5e-8 to 1.6e-9.
   assert.ok(loss < lossAfterFirstSteps * 0.1, `${loss} against ${lossAfterFirstSteps} after the first steps`)
-})
+}, 30_000)
 
-test('after steps were taken back, the next steps are half as large', () => {
+test('after steps were taken back, the next steps are half as large, and after steps that were kept, 1.15 times as large', () => {
   // How far 10 steps move the weights, from the same weights and the same optimizer state.
   function createSettledMachine() {
     const machine = createLearnedGalleryMachine('cinema')
@@ -269,6 +271,53 @@ test('after steps were taken back, the next steps are half as large', () => {
   // Adam's step is proportional to the learning rate, so half the rate moves the weights about half as far.
   const ratio = distanceMoved(halved, sourceBefore) / distanceMoved(full, sourceBefore)
   assert.ok(ratio > 0.3 && ratio < 0.7, `the halved rate moved the weights ${ratio} times as far`)
+
+  // That frame was kept, which raises the rate by 15%, to 0.575 of the full rate. A third machine takes the same
+  // frames up to here, and then one plain step where the first takes one step of a frame. One step from the same
+  // weights and the same optimizer state moves the weights exactly as far as its rate says.
+  const plain = createSettledMachine()
+  for (let frame = 0; frame < frames + 2; frame++) plain.trainOrUndo(10)
+  assert.deepEqual([...plain.source], [...halved.source])
+  const sourceAfterKeptFrame = [...halved.source]
+  assert.equal(halved.trainOrUndo(1).undone, false)
+  plain.train(1)
+  const raisedRatio = distanceMoved(halved, sourceAfterKeptFrame) / distanceMoved(plain, sourceAfterKeptFrame)
+  assert.ok(Math.abs(raisedRatio - 0.5 * 1.15) < 0.005, `after the kept frame, a step moved the weights ${raisedRatio} times as far as a plain step`)
+})
+
+test('when frames at 1/64 of the learning rate keep being taken back, the steps get smaller still', () => {
+  const reach = defaultHoldDistance / penaltyStrength
+  function createMachine() {
+    const machine = createLearnedGalleryMachine('contact')
+    machine.setPenaltyReach(reach, reach * 5 / 4)
+    return machine
+  }
+  // Frames of one step are taken back in rows: a frame that is taken back puts Adam's momentum back too, so the
+  // next frame takes the same step at half the rate, and where the momentum points uphill, that is taken back as
+  // well, until the multipliers have changed the slopes. This waits for a row of 11 or more that ends with a kept
+  // frame. 6 frames halve the rate from 1 to 1/64, and from the 5th frame at 1/64 on the rate goes on halving, so
+  // the kept frame ran at 1/128 of the rate or less. Measured: the row is 25 frames long. With no rate below
+  // 1/64, the kept frame's step was 1/64 of a plain step.
+  const machine = createMachine()
+  let frames = 0
+  let takenBackInARow = 0
+  let sourceBefore: number[] = []
+  for (;;) {
+    sourceBefore = [...machine.source]
+    const result = machine.trainOrUndo(1)
+    frames++
+    if (!result.undone && takenBackInARow >= 11) break
+    takenBackInARow = result.undone ? takenBackInARow + 1 : 0
+    assert.ok(frames < 3000, 'no 11 frames in a row were taken back')
+  }
+  // A second machine takes the same frames, and then one plain step where the first took the kept frame's step.
+  const plain = createMachine()
+  for (let frame = 1; frame < frames; frame++) plain.trainOrUndo(1)
+  assert.deepEqual([...plain.source], sourceBefore)
+  plain.train(1)
+  const moved = (other: LearnedGalleryMachine) => Math.hypot(...sourceBefore.map((value, parameter) => other.source[parameter]! - value))
+  const ratio = moved(machine) / moved(plain)
+  assert.ok(ratio > 0 && ratio < 1 / 127, `the kept frame's step moved the weights ${ratio} times as far as a plain step`)
 })
 
 test('adding and deleting rectangles changes the fitted output count', () => {
@@ -426,7 +475,75 @@ test('the penalty pulls output edges within its reach onto one line, and leaves 
   assert.equal(penaltyStrength, 2)
   const apart = fit(0.005)
   assert.ok(Math.abs(apart.edges.get(1)!.top - apart.edges.get(0)!.top - 0.012) < 0.0005)
+}, 30_000)
+
+test('the multipliers grow by the training step: a look at the outputs between frames changes nothing', () => {
+  // Two rectangles whose tops are 0.012 apart, within the penalty's reach of 0.02, so the pair's multiplier grows
+  // while the gap closes, and a third one out of reach.
+  const drawn: TrainableGeometry[] = [
+    {left: 0.05, top: 0.1, width: 0.25, height: 0.2},
+    {left: 0.375, top: 0.112, width: 0.25, height: 0.4},
+    {left: 0.7, top: 0.15, width: 0.25, height: 0.75},
+  ]
+  function fit(evaluationsPerFrame: number) {
+    const machine = createTrainableGeometryMachine(createTrainableGeometryTarget(drawn))
+    machine.setPenaltyReach(0.02, 0.02)
+    let result = machine.evaluate()
+    for (let frame = 0; frame < 120; frame++) {
+      // The page evaluates in a frame that changes the sketch and trains no step, e.g. on a display so fast that
+      // a frame's time holds less than two steps. Such a frame is a frame of no steps, and grows no multiplier.
+      for (let evaluation = 0; evaluation < evaluationsPerFrame; evaluation++) machine.evaluate()
+      result = machine.trainOrUndo(10)
+    }
+    return {source: [...machine.source], result, edges: outputEdges(machine, result.values)}
+  }
+  const plain = fit(0)
+  // The penalty came on, and the two tops are on one line.
+  assert.ok(plain.result.misalignment > 0)
+  assert.ok(Math.abs(plain.edges.get(0)!.top - plain.edges.get(1)!.top) < 0.0001)
+  assert.deepEqual(fit(3).source, plain.source)
 })
+
+test('a rectangle added in the slot of a deleted one starts without the deleted one\'s multipliers', () => {
+  const reach = defaultHoldDistance / penaltyStrength
+  function run(clearBeforeDelete: boolean) {
+    const machine = createLearnedGalleryMachine('contact')
+    const outputs = new Uint8Array(learnedSlotCount)
+    outputs.fill(1, 0, machine.activeCount())
+    machine.target.outputs = outputs
+    machine.setPenaltyReach(reach, reach * 5 / 4)
+    // Off and on again with an evaluation between: with a reach of 0, the evaluation sets the multiplier of
+    // every pair of rectangles that the sketch has to 0, and it takes no step.
+    function clearMultipliers() {
+      machine.setPenaltyReach(0, 0)
+      machine.evaluate()
+      machine.setPenaltyReach(reach, reach * 5 / 4)
+    }
+    for (let frame = 0; frame < 100; frame++) machine.trainOrUndo(10)
+    // Rectangle 5, in the second row, goes 0.035 of the stage down, which is within the distance at which a
+    // photo lets go, 0.05 of the height. Its photo stays in the row, held by the multipliers of its pairs.
+    const held = targetGeometry(machine, 5)
+    machine.setTargetGeometry(5, {...held, top: held.top + 0.035})
+    let result = machine.trainOrUndo(10)
+    for (let frame = 1; frame < 60; frame++) result = machine.trainOrUndo(10)
+    assert.ok(lineSpread(machine, result.values, [4, 5, 6, 7], 'top') < 0.0001)
+    if (clearBeforeDelete) clearMultipliers()
+    // Delete it as the page does: the photo that it was paired with goes with it.
+    const {targetItems, outputByTarget} = machine.match(result.values)
+    const photo = outputByTarget[targetItems.indexOf(5)]!
+    machine.removeTargetGeometry(5)
+    outputs[photo] = 0
+    clearMultipliers()
+    // A rectangle in the same place takes the slot and the photo.
+    assert.equal(machine.addTargetGeometry({...held, top: held.top + 0.035}), 5)
+    outputs[photo] = 1
+    for (let frame = 0; frame < 30; frame++) machine.trainOrUndo(10)
+    return [...machine.source]
+  }
+  // In the first run the deleted rectangle's pairs still have their multipliers when it is deleted, and in the
+  // second they are 0 before. Both runs train the same from there, so the delete left no multiplier behind.
+  assert.deepEqual(run(false), run(true))
+}, 30_000)
 
 test('shared trainable coefficients fit an unseen sidebar grid', () => {
   const target = createTrainableGeometryTarget(createSidebarGrid())
@@ -597,6 +714,41 @@ test('each preset sketch is fitted closely, with its photos in line, and trainin
       const spread = lineSpread(page.machine, settled.values, line.slots, line.edge)
       assert.ok(spread < 0.0003, `${name}: the ${line.edge} edges of rectangles ${line.slots.join(', ')} are ${spread} apart`)
     }
+  }
+})
+
+test('a sketch that is fitted slowly still ends with its photos in line', () => {
+  // Story with a large rectangle of 0.475 by 0.4 of the stage, where the preset's is 0.6 by 0.52. Its fit from the
+  // seeded weights is slow: the photos are close enough to the sketch for the penalty after about 900 steps, where
+  // the presets take 150 to 180, and training uses all of its 2,000 steps. With a fixed wait of 200 steps before
+  // the penalty, this sketch ended with the tops of a row 2.5% of the stage apart after those 2,000 steps.
+  const page = createEditorDriver()
+  const {machine} = page
+  page.frame()
+  const heroWidth = 0.475
+  const heroHeight = 0.4
+  const marginX = 0.036
+  const marginY = 0.045
+  const cellWidth = (1 - marginX * 2 - 0.02 * 3) / 4
+  const railHeight = (heroHeight - 0.025) / 2
+  const rowHeight = (1 - marginY * 2 - heroHeight - 0.025 * 2) / 2
+  const sketch: LearnedTargetGeometry[] = [{left: marginX, top: marginY, width: heroWidth, height: heroHeight}]
+  for (let cell = 0; cell < 2; cell++) {
+    sketch.push({left: marginX + heroWidth + 0.02, top: marginY + cell * (railHeight + 0.025), width: 1 - marginX * 2 - heroWidth - 0.02, height: railHeight})
+  }
+  for (let cell = 0; cell < 7; cell++) {
+    sketch.push({left: marginX + cell % 4 * (cellWidth + 0.02), top: marginY + heroHeight + 0.025 + Math.floor(cell / 4) * (rowHeight + 0.025), width: cellWidth, height: rowHeight})
+  }
+  sketch.forEach((geometry, item) => machine.setTargetGeometry(item, geometry))
+  let frame = page.frame([{kind: 'retrain'}])
+  while (frame.step < 200) frame = page.frame()
+  // Measured: the penalty comes on at step 909, and the lines end within 0.004% of the stage.
+  assert.equal(frame.misalignment, 0)
+  const settled = page.settle()
+  assert.ok(settled.misalignment > 0)
+  for (const line of sketchLines(machine)) {
+    const spread = lineSpread(machine, settled.values, line.slots, line.edge)
+    assert.ok(spread < 0.0003, `the ${line.edge} edges of rectangles ${line.slots.join(', ')} are ${spread} apart`)
   }
 })
 
@@ -982,6 +1134,41 @@ test('training stops once no photo has moved for 100 steps', () => {
   }
   // Measured: the longest of the six trainings is 1,950 steps.
   assert.ok(longest > trainingStepsAfterChange + 50, `the longest training was ${longest} steps`)
+}, 30_000)
+
+test('photos that stood still for 100 steps and then move again are not at rest', () => {
+  const page = createEditorDriver()
+  const {machine} = page
+  page.settle()
+  // Story without its first small rectangle of the lower rows, and then a rectangle added in the lower left.
+  const point = pointOf(machine, 3)
+  page.frame([press(point.x, point.y), release])
+  page.frame([{kind: 'delete'}])
+  page.settle()
+  const stepBefore = machine.trainingStep
+  let frame = page.frame([press(136, 276), release])
+  assert.equal(frame.selected, 3)
+  // The rule for rest, replayed from the photos' edges after each frame: restStep is the step of the edges that
+  // no photo has moved more than restDistance from since.
+  let restEdges = photoEdges(machine, frame.values, frame.outputs)
+  let restStep = frame.step
+  let movedAfterEarlyRest = false
+  while (frame.training) {
+    frame = page.frame()
+    const edges = photoEdges(machine, frame.values, frame.outputs)
+    if (Math.max(...edges.map((edge, index) => Math.abs(edge - restEdges[index]!))) > restDistance) {
+      // A move after restSteps steps of rest, while the edit's first 500 steps are still running.
+      if (frame.step - restStep >= restSteps && frame.step - stepBefore < trainingStepsAfterChange) movedAfterEarlyRest = true
+      restEdges = edges
+      restStep = frame.step
+    }
+  }
+  // Measured: the photos stand still from step 239 to step 339 of the edit and from there to step 479, while
+  // frames are taken back, and training stops after 579 steps, 100 steps after the last move. With a rest that
+  // counted for good, it stopped after 509 steps, 30 steps after that move.
+  assert.ok(movedAfterEarlyRest, 'the photos did not stand still and move again within the first 500 steps')
+  assert.ok(frame.step - stepBefore < maximumTrainingStepsAfterChange)
+  assert.ok(frame.step - restStep >= restSteps, `training stopped ${frame.step - restStep} steps after a photo last moved`)
 })
 
 test('with the slider at off, the loss never rises in a frame where the sketch stays the same', () => {
@@ -1053,7 +1240,7 @@ test('a photo follows its rectangle from the first frames of a drag, also after 
     assert.ok(largestLag < 0.015, `${name}: the photo was ${largestLag} of the stage behind its rectangle`)
     assert.ok(largestOtherMove < 0.015, `${name}: another photo moved by ${largestOtherMove} of the stage`)
   }
-})
+}, 30_000)
 
 test('training takes as many steps per second at 120 Hz as at 60 Hz, and ends the same', () => {
   const stepsAfterHalfASecond: number[] = []
@@ -1076,8 +1263,8 @@ test('training takes as many steps per second at 120 Hz as at 60 Hz, and ends th
     }
     stepsAfterHalfASecond.push(frame.step)
     const loaded = page.settle()
-    // A rectangle nudged 6 px down, as in the test above: the multipliers that close the row's gap grow by the
-    // step, and training stops by the step, so both displays end with the row in line, at the same place.
+    // A rectangle nudged 6 px down, as in the test above: both displays end with the row in line, a quarter of
+    // the nudge down.
     const row = [4, 5, 6, 7]
     const stepBeforeLastMove = roughEdit(page, 5, false, 0, 6)
     const settled = page.settle()
@@ -1407,7 +1594,7 @@ test('a preset and "Retrain" start over from the seeded weights', () => {
   assert.equal(frame.stepsThisFrame, 0)
   assert.deepEqual(frame.history, [{step: 0, fromSketch: frame.loss, misalignment: 0}])
   assert.ok(page.settle().step >= trainingStepsAfterChange)
-})
+}, 30_000)
 
 test('the loss chart gets one sample per frame of training, with the loss\'s two parts, for the latest 1,000 steps', () => {
   const page = createEditorDriver()
