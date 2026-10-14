@@ -81,11 +81,11 @@
 
       <!-- A card's link is named by its title, so a list of the page's links reads as the demos' names. Under the
            title a card has one sentence, which for the learned gallery and for JSON search is the subtitle of the
-           demo's own page, word for word. The first card also has the numbers that change when its program
-           changes, written once each, rounded, e.g. "about 4,600", in an element with data-count. HandwiredOS's were
-           read on October 14, 2026, from its Monitor window in Chrome (4,639 operations in 130 layers, with three
-           windows and the list of the program's values in the program). `bun run site:check` prints what each
-           demo's page reports, and fails when a number here is more than 10% away from the page's. -->
+           demo's own page, word for word. The first card also has the two numbers that change when its program
+           changes, written once each, exactly, in an element with data-count. HandwiredOS's were read on October
+           14, 2026, from its Monitor window in Chrome (9,882 weights in 130 layers, with three windows and the list
+           of the program's values in the program). `bun run site:check` prints what each demo's page reports, and
+           fails when a number here isn't the page's. -->
       <section class="demos" aria-labelledby="demos">
         <a class="card demo is-first" href="os/" aria-labelledby="handwiredos-title">
           <div class="demo-picture">
@@ -99,9 +99,9 @@
             <h3 id="handwiredos-title">Mini OS</h3>
             <p>A small desktop written in JS, transformed with Handwired. Giant lists, animation, stacking, scrolling, drag, input, pictures, all rendering to regular DOM.</p>
             <dl class="figures facts">
-              <div><dt>operations</dt><dd><small>about</small> <span data-count="operations">4,600</span></dd></div>
-              <div><dt>layers</dt><dd><small>about</small> <span data-count="layers">130</span></dd></div>
-              <div><dt>trained weights</dt><dd>0</dd></div>
+              <div><dt>weights</dt><dd><span data-count="weights">9,882</span></dd></div>
+              <div><dt>layers</dt><dd><span data-count="layers">130</span></dd></div>
+              <div><dt>training</dt><dd>0</dd></div>
             </dl>
             <span class="go">Open the desktop</span>
           </div>
@@ -166,10 +166,6 @@
         </a>
       </section>
     </main>
-
-    <footer class="colophon">
-      <span><a href="https://github.com/chenglou/handwired#readme">README</a> &nbsp;&middot;&nbsp; <a href="https://github.com/chenglou/handwired/blob/main/docs/tutorial.md">Tutorial</a> &nbsp;&middot;&nbsp; <a href="https://github.com/chenglou/handwired">GitHub</a></span>
-    </footer>
   </div>
 </body>
 </html>

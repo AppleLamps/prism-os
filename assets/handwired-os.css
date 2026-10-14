@@ -124,8 +124,8 @@ body {
   }
 }
 
-/* System bar: this page's header, with the project's mark and "Back to demos", which link
-   to the index of the demos, and one link to the source. The program reads presses anywhere on the page, and no window can
+/* System bar: this page's header, with "Back to demos", which links to the index of the
+   demos, and one link to the source. The program reads presses anywhere on the page, and no window can
    be placed under the bar, so only the bar's links take the pointer. */
 #system-bar {
   position: absolute;
@@ -151,7 +151,7 @@ body {
   pointer-events: auto;
 }
 
-.system-mark {
+.system-back {
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -166,8 +166,8 @@ body {
    :hover on the last element tapped, e.g. a dock tile would keep its copper edge and a
    window button its ring until the next tap somewhere else. */
 @media (hover: hover) {
-  .system-mark:hover .mark-eyelet {
-    fill: var(--copper);
+  .system-back:hover {
+    color: var(--copper);
   }
 }
 
@@ -188,12 +188,12 @@ body {
   }
 }
 
-/* Under a finger, the mark and the link are as tall as the bar, 36 px, where the
-   header links of the site's other pages are 40 px, see site.css. The mark's line is
-   20 px tall and a link's 16 px. The padding moves nothing, since the bar centers what it
+/* Under a finger, "Back to demos" and the link are as tall as the bar, 36 px, where the
+   header links of the site's other pages are 40 px, see site.css. The line of "Back to
+   demos" is 20 px tall and the link's 16 px. The padding moves nothing, since the bar centers what it
    holds, and it ends at the bar's edge, so it covers no window's title bar. */
 @media (pointer: coarse) {
-  .system-mark {
+  .system-back {
     padding-block: 8px;
   }
 

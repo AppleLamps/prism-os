@@ -191,6 +191,8 @@ kbd {
 .mark { flex: none; color: var(--ink); }
 .mark-eyelet { fill: var(--paper); stroke: var(--copper); transition: fill var(--quick) var(--ease); }
 .brand:hover .mark-eyelet { fill: var(--copper); }
+/* On a demo's page the same place holds the link back to the index: a chevron and "Back to demos". */
+.brand.back:hover { color: var(--copper); }
 .masthead nav {
   display: flex;
   gap: var(--space-5);
@@ -371,28 +373,13 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
 }
 .input::placeholder { color: var(--ink-3); }
 
-/* Under a finger a button is 40 px tall, where a mouse gets 32 px. A link of the header or the footer is one 20 px
-   line of text, and padding above and below gives a finger 40 px of it without moving anything: the header is 40 px
-   tall and centers its links, and a link of the footer is inline, where padding above and below takes no room. */
+/* Under a finger a button is 40 px tall, where a mouse gets 32 px. A link of the header is one 20 px line of text,
+   and padding above and below gives a finger 40 px of it without moving anything: the header is 40 px tall and
+   centers its links. */
 @media (pointer: coarse) {
   .button { height: 40px; }
-  .brand, .masthead nav a, .colophon a { padding-block: 10px; }
+  .brand, .masthead nav a { padding-block: 10px; }
 }
-
-/* Footer: one hairline and one line. */
-.colophon {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-5);
-  margin-top: var(--space-8);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--rule);
-  font: var(--type-ui);
-  color: var(--ink-3);
-}
-.colophon a { color: var(--ink-2); }
-.colophon a:hover { color: var(--copper); }
 
 @media (max-width: 640px) {
   :root {

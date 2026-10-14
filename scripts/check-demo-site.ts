@@ -6,8 +6,8 @@
 // For each page of demo-site-pages.ts, the check fails when the page logs an error or a warning, throws, requests a
 // file that fails to load, or requests anything outside the site, and when a link on the page to another page of the
 // site doesn't resolve. It also waits for what each demo shows once its program has run, and prints it, e.g.
-// HandwiredOS's Monitor window with the program's sizes. The index's cards round those sizes, e.g. "about 4,300
-// operations", and the check fails when a rounded number is more than 10% away from what the demo's page reports.
+// HandwiredOS's Monitor window with the program's sizes. The index's first card states two of those sizes, e.g.
+// "9,882 weights", and the check fails when a number on the card isn't the number that the demo's page reports.
 // The server listens on a free port unless --port names one, and Chrome picks its debugging port unless
 // --debugging-port names one. CHROME_PATH overrides the Chrome binary, and CHROME_PROFILE_DIR the profile folder,
 // which defaults to a new folder in the system's temporary folder. --screenshots saves a PNG of each page.
@@ -28,8 +28,8 @@ function option(name: string): string | undefined {
 
 // What each demo shows once its program has run: `ready` is polled until it is true, and `report` is printed.
 // Both are JavaScript evaluated in the page. A page without an entry is loaded and given a moment. The reports
-// include each page's own counts, e.g. HandwiredOS's operations and layers, which is where the rounded numbers on the
-// index's cards come from.
+// include each page's own counts, e.g. HandwiredOS's weights and layers, which is where the numbers on the
+// index's first card come from.
 const textOf = (selector: string) => `[...document.querySelectorAll('${selector}')].map(element => element.textContent.trim().replace(/\\s+/g, ' ')).filter(text => text !== '').join('\\n')`
 const expectations: Record<string, {ready: string, report: string}> = {
   'os/': {
@@ -220,8 +220,8 @@ try {
 
   // Every page a link points to is requested once, however many pages link to it.
   const linkStatus = new Map<string, number>()
-  // The rounded counts on the index's cards, each in an element with data-count inside the card's link, e.g.
-  // <span data-count="operations">4,300</span> in the link to os/. And each page's printed report.
+  // The counts on the index's cards, each in an element with data-count inside the card's link, e.g.
+  // <span data-count="weights">9,882</span> in the link to os/. And each page's printed report.
   let indexCounts: {path: string, name: string, value: number}[] = []
   const reports = new Map<string, string>()
   for (const page of sitePages) {
@@ -291,9 +291,9 @@ try {
     if (pageProblems.length > 0) failed = true
   }
 
-  // A count on the index against the first "<number> <name>" of the demo's report, e.g. "4,254 operations". One
+  // A count on the index against the first "<number> <name>" of the demo's report, e.g. "9,882 weights". One
   // word may stand between the two, e.g. "244 trained weights".
-  if (indexCounts.length > 0) console.log(`\nThe index's rounded counts, each within 10% of what the demo's page reports:`)
+  if (indexCounts.length > 0) console.log(`\nThe index's counts, each the number that the demo's page reports:`)
   for (const count of indexCounts) {
     const found = new RegExp(`(\\d[\\d,]*) +(?:\\w+ +)?${count.name}\\b`).exec(reports.get(count.path) ?? '')
     const onTheIndex = `${prefix}${count.path} ${count.name}: ${count.value.toLocaleString('en-US')} on the index`
@@ -302,11 +302,11 @@ try {
       continue
     }
     const reported = Number(found[1]!.replaceAll(',', ''))
-    if (Math.abs(count.value - reported) <= 0.1 * reported) {
+    if (count.value === reported) {
       console.log(`ok    ${onTheIndex}, ${reported.toLocaleString('en-US')} on the page`)
     } else {
       failed = true
-      console.log(`FAIL  ${onTheIndex}, ${reported.toLocaleString('en-US')} on the page. Write ${Number(reported.toPrecision(2)).toLocaleString('en-US')} in the card's element with data-count="${count.name}" in assets/demos.html.`)
+      console.log(`FAIL  ${onTheIndex}, ${reported.toLocaleString('en-US')} on the page. Write ${reported.toLocaleString('en-US')} in the card's element with data-count="${count.name}" in assets/demos.html.`)
     }
   }
 
