@@ -218,7 +218,7 @@ body {
 }
 
 /* Windows: sheets of paper. The window with focus is whiter, casts the larger shadow, and
-   has a light copper wash on its title bar. */
+   has a faint copper wash on its title bar. */
 .window {
   position: absolute;
   top: 0;
@@ -246,17 +246,18 @@ body {
    10 px before its right edge, exactly on the rectangles that the program tests presses
    against.
 
-   The bar of the window with focus is washed lightly with copper, --copper-wash, and its
-   hairline is copper at 35%, so the window that takes the keys can be told at a glance,
-   e.g. among three windows that overlap. Without focus the bar is the sheet itself. */
+   The bar of the window with focus has a faint copper wash, copper at 7%, and its hairline
+   is copper at 24%, so the window that takes the keys can be told at a glance, e.g. among
+   three windows that overlap, without the bar standing out from the sheet. Without focus
+   the bar is the sheet itself. */
 .titlebar {
   height: var(--title-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 calc(var(--button-gap) - 1px) 1px 14px;
-  border-bottom: 1px solid color-mix(in srgb, var(--copper) calc(var(--focused) * 35%), var(--rule));
-  background: color-mix(in srgb, var(--copper-wash) calc(var(--focused) * 100%), transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--copper) calc(var(--focused) * 24%), var(--rule));
+  background: color-mix(in srgb, var(--copper) calc(var(--focused) * 7%), transparent);
   cursor: grab;
 }
 
