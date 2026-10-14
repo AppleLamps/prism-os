@@ -73,8 +73,9 @@ Measured on October 13, 2026 on an Apple M5 Max in headless Chrome 155, with the
 | Longest time that the page's thread was held: while loading, and while typing | 23 and 5 ms | 21 and 3 ms |
 
 - **A whole search on the CPU**, 100,000 documents, a pattern of up to 8 states: 14.3, 14.2 and 14.2 s as the line shows it, and 23.0, 14.3 and 14.3 s on the clock, the first one with the highlighter.
-- **Without WebGPU** the documents are ready after 0.36 s, the line's first numbers show within 0.67 s of the navigation, and the first search is done after 23.6 to 23.7 s, of which the search program takes 14.1 to 14.3 s.
-- **Typing while a search runs on the CPU** held the page's thread for at most 5.4 ms, and a key's own search showed its first numbers 18 to 67 ms after the key.
+- **The table and the search on the CPU, measured again** after the page got its two workers, at a load average of 5 to 17 while another session used the machine, so the ranges are wider: the medians of the first column were 582, 640, 21.9, 17.5, 1.3 and 34.4 ms, and of the second 186, 231, 15.2, 8.8, 0.7 and 23.6 ms. A whole search on the CPU took 14.1, 14.1 and 13.8 s as the line shows it, and 22.8, 14.2 and 13.9 s on the clock.
+- **Without WebGPU** the documents are ready after 0.36 s, the line's first numbers show within 0.49 to 0.53 s of the navigation, and the first search is done after 23.1 to 23.3 s, of which the search program takes 14.0 to 14.1 s.
+- **Typing while a search runs on the CPU** held the page's thread for at most 6.3 ms, and a key's own search showed its first numbers 15 to 34 ms after the key.
 - **Memory**, by Chrome's `performance.measureUserAgentSpecificMemory`: the page's JavaScript holds 134 MB at rest on the GPU, 43 MB of it on the page's thread, mostly the documents' texts, 88 MB in the worker that times RegExp, its own copy of the texts and the plain JavaScript highlighter's kinds, and 4 MB for the canvas. After a search on the CPU it holds 582 MB, 448 MB of them in the worker for the CPU: the CPU searcher keeps every document's cells and display kinds as f32 values, 205 MB each, next to that worker's copy of the texts.
 
 The page's files:
