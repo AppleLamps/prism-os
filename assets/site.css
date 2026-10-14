@@ -155,7 +155,8 @@ kbd {
   text-align: center;
 }
 
-/* Page frame: one column, 800 px for a tool and 1104 px for a page with two columns. */
+/* Page frame: one column, 1104 px with the class "wide", for a page whose content has two columns, e.g. the JSON
+   search's map and document. Without the class the column is 800 px, which no page uses today. */
 .page {
   width: min(100% - 48px, var(--page-width, 800px));
   margin: 0 auto;
