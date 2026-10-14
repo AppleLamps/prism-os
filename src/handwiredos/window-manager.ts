@@ -1771,7 +1771,7 @@ function mountWindowManager(document: Document, window: Window) {
   // Monitor's footer shows the program's time per frame over the last 60 frames,
   // each point an average of 10 frames, and a page that runs a frame only for an
   // input would open with a chart of one dot: the first frame, which takes about
-  // 2 ms in Chrome where a later frame takes about 0.2 ms, since the browser hasn't
+  // 1.5 ms in Chrome where a later frame takes about 0.1 ms, since the browser hasn't
   // compiled the program's loops yet. So the page starts with as many frames as the
   // chart's points average, 69, after 3 more for the slow ones, which is 1.2 s at 60
   // frames a second. Each is a real frame with no input: it steps the machine,

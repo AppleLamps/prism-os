@@ -8,7 +8,7 @@
 // time the program took in that frame.
 //
 // A browser's clock counts in steps, 0.1 ms in Chrome and 1 ms in Safari and
-// Firefox, and the program takes about 0.1 to 0.3 ms a frame. So one frame's time
+// Firefox, and the program takes about 0.1 to 0.2 ms a frame. So one frame's time
 // reads as 0, 0.1, 0.2 or 0.3 ms in Chrome, and a chart of single frames would show
 // those steps and little else. The reading is right on average, though, since a
 // frame starts anywhere within a step. So each point of the chart, and the number
