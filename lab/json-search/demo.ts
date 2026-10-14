@@ -642,8 +642,9 @@ function mountJsonSearch(document: Document, window: Window) {
     }
 
     // Side effects. The document's text scrolls to its first match when another document or another search's marks
-    // are shown: reading the match's place lays the text out, once, after every write above.
-    if (documentChanged) domCache.documentText.scrollTop = firstHit === null ? 0 : Math.max(0, firstHit.offsetTop - domCache.documentText.offsetTop - 72)
+    // are shown, so that the match stands three lines under the text's upper edge: reading the match's place, which
+    // is its distance from that edge, lays the text out, once, after every write above.
+    if (documentChanged) domCache.documentText.scrollTop = firstHit === null ? 0 : Math.max(0, firstHit.offsetTop - 72)
     if (focusAfterExample) {
       domCache.pattern.focus({preventScroll: true})
       domCache.pattern.setSelectionRange(pattern.length, pattern.length)
