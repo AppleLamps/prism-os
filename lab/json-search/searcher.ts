@@ -232,7 +232,11 @@ function writeCells(texts: readonly string[], written: Float32Array | undefined)
   return cells
 }
 
-const buildMaskedLoop = (states: number) => buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions, cellsPerDocument, masked: true, stopAtLength: false})
+// The search program for a state capacity. On the CPU its loops stop at the text's end, which saves the share of the
+// 512 positions that hold no text, 40% for documents of 300 code points, and gives the same values: a position past
+// the end holds -1, whose class has no steps. On the GPU the loops run every position, since stopping made a search
+// slower there, e.g. 9.4 ms against 7.0 ms for 100,000 documents at 8 states.
+const buildMaskedLoop = (states: number, stopAtLength: boolean) => buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions, cellsPerDocument, masked: true, stopAtLength})
 
 function checkWindow(window: DocumentWindow, documentCount: number, windowCapacity: number) {
   invariant(Number.isInteger(window.firstDocument) && Number.isInteger(window.documentCount) && window.firstDocument >= 0 && window.documentCount >= 0, 'a window is a range of documents')
@@ -252,8 +256,8 @@ type CpuOptions = SearcherOptions & {
 type EvaluateOnCpu = (compiled: CompiledPattern, states: number, request: SearchRequest, patternStarted: number) => SearchResult & {status: 'searched'}
 
 // The same programs on the CPU. `backend` is 'generated' unless given: generated JavaScript of each step, which takes
-// e.g. 0.25 ms per document and search at 8 states, so a page gives it hundreds of documents, or searches a few
-// documents at a time in a worker, with `documents: 'window'`.
+// e.g. 0.14 ms per search at 8 states for a document of 300 code points in Chrome, so a page gives it hundreds of
+// documents, or searches a few documents at a time in a worker, with `documents: 'window'`.
 export function createCpuSearcher(texts: readonly string[], options: CpuOptions = {}): Searcher {
   return buildCpuSearcher(texts, options).searcher
 }
@@ -293,7 +297,7 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
   const searchFor = (states: number) => {
     let entry = searches.get(states)
     if (entry === undefined) {
-      const built = buildMaskedLoop(states)
+      const built = buildMaskedLoop(states, true)
       entry = {built, runner: createLoopRunner(built.loop, backend), shared: new Float32Array(built.loop.sharedValues)}
       searches.set(states, entry)
     }
@@ -430,7 +434,7 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
     let entry = searches.get(states)
     if (entry === undefined) {
       entry = (async () => {
-        const loop = buildMaskedLoop(states)
+        const loop = buildMaskedLoop(states, false)
         const shader = emitLoopWgsl(loop.loop)
         const runner = await createProgramRunner(device, shader, loop.loop.sharedValues, store, options.shaderSalt, {inputs: [kindsBuffer], windowCapacity})
         const search = {built: loop, runner, shared: new Float32Array(loop.loop.sharedValues), statements: shader.statementCount}
