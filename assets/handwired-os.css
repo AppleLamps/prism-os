@@ -93,10 +93,11 @@ body {
    up to 155 px to each side of the dock's middle, which is past the wire's terminals at
    148 px, and the arcs are at full strength from 244 px.
 
-   The canvas is shown at 36% of its opacity, and wiring.ts draws each arc at 6%. One arc
-   alone is then at about 2.2%, a hairline, and a band where thousands of arcs lie on each
-   other stops at 36% of the arc's color, so the picture stays quiet behind the windows
-   and the list of things to try. */
+   The canvas is shown at 36% of its opacity, and wiring.ts draws each arc the fainter the
+   more weights the program stores, e.g. at 29% for 8,959 weights. One arc alone is then
+   at about 10%, a hairline, and a band where many arcs lie on each other stops at 36% of
+   the arc's color, so the picture stays quiet behind the windows and the list of things
+   to try. */
 .desk-wiring {
   --dock-clearing: radial-gradient(258px 100px at 50% calc(100% - 32px), transparent 68%, #000);
   position: absolute;
