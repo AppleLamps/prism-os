@@ -64,9 +64,10 @@
         <!-- How far a rectangle can be from its row or column before its photo lets go of the line, in percent of
              the stage's width. The penalty pulls photo edges together that are closer than half of that.
              learned-gallery.ts reads the slider in each frame, writes the words after it, e.g. "4%", and gives the
-             slider its aria-valuetext, e.g. "4% of the stage's width". The value and the largest value are the
-             code's, which learned-gallery.test.ts checks. -->
-        <div class="tools penalty">
+             slider its aria-valuetext, e.g. "4% of the stage's width". The row's title says the first two sentences
+             to a mouse that rests on the row. learned-gallery.test.ts checks the slider's value as the page loads
+             and its largest value against the code. -->
+        <div class="tools penalty" title="How far a rectangle can be from its row or column before its photo leaves the line, in percent of the stage&rsquo;s width. Photo edges closer than half of that distance end on one line.">
           <label class="label" for="learning-penalty">Misalignment penalty</label>
           <input id="learning-penalty" class="range" type="range" min="0" max="8" step="0.5" value="4">
           <span id="learning-penalty-value" class="range-value" aria-hidden="true"></span>
@@ -104,7 +105,20 @@
          learned-gallery.test.ts checks. -->
     <details class="disclosure">
       <summary>More detail</summary>
-      <p class="stats">The loss has two parts, and the chart draws both. The first, in copper, is how far each photo&rsquo;s four edges are from its rectangle&rsquo;s. The second, in indigo, is the misalignment penalty, which charges two photo edges of one kind, e.g. two tops, for the gap between them. The penalty reaches half as far as the slider says: at 4%, edges closer than 2% of the stage&rsquo;s width end on one line, between the places where their rectangles are drawn. Each training step changes the <b id="learning-coefficients"></b> weights a little to lower the loss. Ordinary code also keeps a pull for each such pair of edges that grows while their gap stays open, so a photo ends on its line and not beside it, and steps that raise the loss with those pulls counted in are taken back. A photo on a line stays there until its rectangle is about as far away as the slider says, twice as far as a photo joins a line, so the same sketch can end in two layouts. Each change gets at least <b id="learning-steps-after-change"></b> more steps, and training stops once no photo has moved for <b id="learning-rest-steps"></b> steps, or after <b id="learning-steps-at-most"></b>. Training runs at up to <b id="learning-steps-per-second"></b> steps a second<span id="learning-step-cost-clause" style="display: none">, and one step takes about <b id="learning-step-cost"></b> on this device</span>. The program is <b id="learning-operations"></b> operations in <b id="learning-layers"></b> layers, and the weights are its only input.</p>
+      <div class="detail">
+        <div>
+          <h2 class="label">What the slider sets</h2>
+          <p class="stats">The slider&rsquo;s number is a distance, in percent of the stage&rsquo;s width. Photo edges of one kind, e.g. two tops, that are closer than half of that distance end on one line, between the places where their rectangles are drawn: at 4%, edges closer than 2% of the stage&rsquo;s width end on one line. A photo on a line stays there until its rectangle is about the whole distance away. So the same sketch can end in two layouts, depending on where the photos were before.</p>
+        </div>
+        <div>
+          <h2 class="label">The loss</h2>
+          <p class="stats">The loss has two parts, and the chart draws both. The first part, in copper, is how far each photo&rsquo;s four edges are from its rectangle&rsquo;s. The second part, in indigo, is the misalignment penalty, which charges two photo edges of one kind for the gap between them while the gap is under half the slider&rsquo;s distance. Each training step changes the <b id="learning-coefficients"></b> weights a little to lower the loss. The loss alone leaves a photo a fraction of a pixel beside its line, so ordinary code, outside the network, also keeps one number for each pair of edges: the number grows while the pair&rsquo;s gap stays open, and it is added to how hard training pulls the pair together. A frame&rsquo;s steps are undone when they raise the loss with those numbers counted in.</p>
+        </div>
+        <div>
+          <h2 class="label">Training</h2>
+          <p class="stats">Each change of the sketch or the slider gets at least <b id="learning-steps-after-change"></b> more steps, and training stops once no photo has moved for <b id="learning-rest-steps"></b> steps, or after <b id="learning-steps-at-most"></b> steps. Training runs at <b id="learning-steps-per-second"></b> steps a second where the device keeps up, and faster for a moment after a pause, e.g. after the tab was in the background<span id="learning-step-cost-clause" style="display: none">. One step takes about <b id="learning-step-cost"></b> on this device</span>. The program is <b id="learning-operations"></b> operations in <b id="learning-layers"></b> layers, and the weights are its only input.</p>
+        </div>
+      </div>
     </details>
 
     <footer class="colophon">

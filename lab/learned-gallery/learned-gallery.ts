@@ -256,11 +256,13 @@ export function trainingStepsLeft(stepsSinceChange: number, atRest: boolean) {
 // Training steps are tied to time, as chenguini's ui.md ties animation steps: 600 a second is 10 steps in a frame
 // of a 60 Hz display and 5 in a frame of a 120 Hz display, so training lasts as long on both.
 export const msPerTrainingStep = 1000 / 600
-// The most steps one frame trains, e.g. in the first frame after the tab was in the background. A frame also trains
-// no more steps than fit in trainingMsPerFrame at the cost per step measured in the frame before, so a slow device
-// trains fewer steps per frame instead of dropping frames. One step took 0.26 ms in Bun and about 0.4 ms in Chrome
-// 155 on an M5 Max (October 13, 2026), where 6 ms is 15 steps. Before the first measurement a frame trains at most
-// unmeasuredTrainingStepsPerFrame steps, and the frames after it make up for the difference.
+// The most steps one frame trains. After a pause, e.g. while the tab was in the background, every frame trains
+// that many until training has caught up with the time or stops, so training is faster than 600 steps a second for
+// that while. A frame also trains no more steps than fit in trainingMsPerFrame at the cost per step measured in
+// the frame before, so a slow device trains fewer steps per frame instead of dropping frames. One step took 0.26 ms
+// in Bun and about 0.4 ms in Chrome 155 on an M5 Max (October 13, 2026), where 6 ms is 15 steps. Before the first
+// measurement a frame trains at most unmeasuredTrainingStepsPerFrame steps, and the frames after it make up for
+// the difference.
 export const maximumTrainingStepsPerFrame = 20
 export const trainingMsPerFrame = 6
 export const unmeasuredTrainingStepsPerFrame = 4
