@@ -227,6 +227,22 @@ export function createLearnedGalleryMachine(
 
 // After the sketch changes, training runs this many more steps from the current weights.
 export const trainingStepsAfterChange = 500
+// When those steps leave the loss above trainingLossGoal, training goes on until the loss is at the goal, and at
+// most until maximumTrainingStepsAfterChange steps have run since the change. 500 steps finish most fits, and
+// some fits are slow: in 48 simulated sessions of 40 small drags and resizes each, a line of photos ended more
+// than 1 px apart after 2.7% of the edits, and after 19% of the first ten edits of Cinema, where the largest was
+// 6.5 px at a loss of 2.7e-6. With the goal it is 0.1% and 0.6%, and 4% of the edits train past their 500 steps.
+// Where the loss ended between 1e-8 and 2e-8, the photos of a line were 0.4 px apart in the middle case
+// (October 13, 2026, px on a stage of 538 by 430).
+export const trainingLossGoal = 2e-8
+export const maximumTrainingStepsAfterChange = 2000
+
+// How many more steps training takes, after `stepsSinceChange` steps since the sketch last changed that left the
+// loss at `loss`.
+export function trainingStepsLeft(stepsSinceChange: number, loss: number) {
+  if (stepsSinceChange < trainingStepsAfterChange) return trainingStepsAfterChange - stepsSinceChange
+  return loss > trainingLossGoal ? Math.max(0, maximumTrainingStepsAfterChange - stepsSinceChange) : 0
+}
 // Training steps are tied to time, as chenguini's ui.md ties animation steps: 600 a second is 10 steps in a frame
 // of a 60 Hz display and 5 in a frame of a 120 Hz display, so training lasts as long on both.
 export const msPerTrainingStep = 1000 / 600
@@ -332,7 +348,9 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
   let pendingTap: {pointerId: number, x: number, y: number} | null = null
   // The mouse's last position over the stage, in fractions of the stage. null for a finger, and after a leave.
   let hover: {x: number, y: number} | null = null
-  let stepsRemaining = trainingStepsAfterChange
+  // The steps trained since the sketch last changed, and whether more are to come: see trainingStepsLeft.
+  let stepsSinceChange = 0
+  let training = true
   // The time that training has reached, like animatedUntilTime in ui.md's render loop. null while nothing trains.
   let trainedUntilTime: number | null = null
   let measuredMsPerStep = 0
@@ -596,13 +614,14 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       trainedUntilTime = null
     }
     if (sketchEdited || alignmentChanged || restarted) {
-      if (stepsRemaining === 0 || restarted) {
+      if (!training || restarted) {
         runSteps = 0
         runMs = 0
       }
-      // With no rectangle there is nothing to train, and no reason for another frame.
-      stepsRemaining = activeCount > 0 ? trainingStepsAfterChange : 0
+      stepsSinceChange = 0
     }
+    // With no rectangle there is nothing to train, and no reason for another frame.
+    const stepsLeft = activeCount > 0 ? trainingStepsLeft(stepsSinceChange, result.loss) : 0
 
     // Layout and cursor.
     let hovered: number | null = null
@@ -623,7 +642,7 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
     // Training: as many steps as the time since the last frame holds, within the caps.
     let newTrainedUntilTime = trainedUntilTime ?? frameTime
     const stepsThisFrame = Math.max(0, Math.min(
-      stepsRemaining,
+      stepsLeft,
       maximumTrainingStepsPerFrame,
       measuredMsPerStep > 0
         ? Math.max(1, Math.floor(trainingMsPerFrame / measuredMsPerStep))
@@ -651,8 +670,8 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
     }
 
     // Commit state.
-    stepsRemaining -= stepsThisFrame
-    const training = stepsRemaining > 0
+    stepsSinceChange += stepsThisFrame
+    training = activeCount > 0 && trainingStepsLeft(stepsSinceChange, result.loss) > 0
     trainedUntilTime = training ? newTrainedUntilTime : null
 
     const values = result.values
@@ -719,6 +738,11 @@ function requireElement<Found extends Element = HTMLElement>(document: Document,
   return element
 }
 
+// A number as toExponential writes it, with a minus sign, U+2212, instead of the hyphen in its exponent.
+function withMinusSign(exponential: string) {
+  return exponential.replace('-', '\u2212')
+}
+
 function projectGeometry(
   element: HTMLElement,
   left: number,
@@ -771,12 +795,15 @@ function createLearnedGalleryDomCache(document: Document, editor: LearnedGallery
   for (const [selector, value] of [
     ['#learning-coefficients', machine.parameterCount],
     ['#learning-steps-after-change', trainingStepsAfterChange],
+    ['#learning-steps-at-most', maximumTrainingStepsAfterChange],
     ['#learning-steps-per-second', Math.round(1000 / msPerTrainingStep)],
     ['#learning-operations', machine.circuit.operations.length],
     ['#learning-layers', machine.tensorProgram.layers.length],
   ] as const) {
     requireElement(document, selector, `${selector} is missing`).textContent = value.toLocaleString('en-US')
   }
+  // e.g. 2e−8, written like the loss beside the chart.
+  requireElement(document, '#learning-loss-goal', 'loss goal is missing').textContent = withMinusSign(trainingLossGoal.toExponential())
 
   return {
     sketchStage,
@@ -941,8 +968,8 @@ function mountLearnedGallery(document: Document, window: Window) {
     }
     const trainingStep = markedSample.step.toLocaleString('en-US')
     if (written.trainingStep !== trainingStep) domCache.trainingStep.textContent = written.trainingStep = trainingStep
-    // e.g. 3.04e-7 with a minus sign, U+2212, instead of toExponential's hyphen.
-    const trainingLoss = markedSample.loss === 0 ? '0' : markedSample.loss.toExponential(2).replace('-', '\u2212')
+    // e.g. 3.04e−7.
+    const trainingLoss = markedSample.loss === 0 ? '0' : withMinusSign(markedSample.loss.toExponential(2))
     if (written.trainingLoss !== trainingLoss) domCache.trainingLoss.textContent = written.trainingLoss = trainingLoss
     // The statistics line says what a step costs once a step has been timed, i.e. from the page's second frame on.
     // A no-break space, U+00A0, keeps the unit on the number's line.
