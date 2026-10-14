@@ -779,11 +779,10 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
       })
     },
     // A side effect, for after every DOM write of a frame: scrolls the list to
-    // `position`, and returns the position read back, which the browser may have
-    // rounded or clamped.
+    // `position`. The browser may round or clamp the position, and the next frame's
+    // readScrollTop returns what the browser kept.
     scrollTo(position: number) {
       domCache.scroller.scrollTop = position
-      return domCache.scroller.scrollTop
     },
   }
 }

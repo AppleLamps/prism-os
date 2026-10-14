@@ -1798,11 +1798,6 @@ function mountWindowManager(document: Document, window: Window) {
   // whether a mouse made it, and whether it was outside every window, e.g. on the
   // desk, as the browser hit-tested it.
   let lastPress = {byMouse: false, outsideEveryWindow: true}
-  // The scroll position of Monitor's list as last read from the DOM: at the top of
-  // a frame with the other DOM reads, and once more after the host's own scroll at
-  // the end of a frame, since the browser may round or clamp the position that it
-  // was given. The machine gets the position at the next step.
-  let valueListScrollTop = 0
 
   // How many more frames the page runs by itself after it loads. The chart in
   // Monitor's footer shows the program's time per frame over the last 60 frames,
@@ -1831,7 +1826,7 @@ function mountWindowManager(document: Document, window: Window) {
     // browser state, which the frame reads like the viewport's size.
     const viewportWidth = document.documentElement.clientWidth
     const viewportHeight = document.documentElement.clientHeight
-    valueListScrollTop = valueList.readScrollTop()
+    const valueListScrollTop = valueList.readScrollTop()
     const noteHasKeyboardFocus = document.activeElement === domCache.note
     // Handle inputs. The pointer events are queued in the machine already. A press
     // since the last frame replaces what the note's keyboard focus knows of the last
@@ -1906,13 +1901,12 @@ function mountWindowManager(document: Document, window: Window) {
     // list out of view, and when the list shows another location. The scroll comes
     // after every DOM write, so the spacer already has its height and the browser
     // doesn't clamp the new position to an old height. The browser may still round
-    // or clamp the position, so the host reads it back once and keeps what the
-    // browser kept (chenguini's Scrolling.md, "Scroll Anchoring", steps 4 and 5). The
-    // read-back is the frame's last DOM call, after the note's focus change. The host
-    // scrolls at no other time: a position that the machine only clamped for its own
-    // cell, e.g. during a rubber-band, is never written back.
+    // or clamp the position that it is given, and the next frame reads what the
+    // browser kept, like any scroll. The host scrolls at no other time: a position
+    // that the machine only clamped for its own cell, e.g. during a rubber-band, is
+    // never written back.
     const valueListScrollTo = machine.valueListScrollTo
-    if (valueListScrollTo !== null) valueListScrollTop = valueList.scrollTo(valueListScrollTo)
+    if (valueListScrollTo !== null) valueList.scrollTo(valueListScrollTo)
 
     // Frames continue while springs are stepping, i.e. until an evaluation that
     // writes state back finds nothing animating, and through the page's opening

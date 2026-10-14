@@ -1456,12 +1456,13 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   assert.equal(dom.counts.textWrites, textWrites + 5 + 1 + slotCount * 5)
   assert.deepEqual(rowTexts(rowNodes[0]!), ['viewportWidth', 'input', '', '', '1280'])
   // The program asked for the top, which the host gives the scroller after its DOM
-  // writes, and the position read back is what the scroller kept.
+  // writes, and the next frame reads the scroller's position again.
   assert.equal(machine.valueListScrollTo, 0)
   dom.scroller.scrollTop = 100_000
   assert.equal(renderer.readScrollTop(), 100_000)
-  assert.equal(renderer.scrollTo(0), 0)
+  renderer.scrollTo(0)
   assert.equal(dom.scroller.scrollTop, 0)
+  assert.equal(renderer.readScrollTop(), 0)
 
   // A value that changed: the viewport is 1 px wider, and only that cell's value is
   // written.
