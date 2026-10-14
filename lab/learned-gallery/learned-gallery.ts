@@ -352,9 +352,8 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
   }
   useFirstOutputs()
   // The order of the edits: a rectangle that is moved, resized or added gets the next number, and a preset's
-  // rectangles have 0. Where edges are close enough to share a line, the line is where the rectangles edited
-  // longest ago have their edge, so the photo of the rectangle that was just dragged moves onto the line, and no
-  // other photo moves.
+  // rectangles have 0. An edge that is close enough to a line of rectangles edited before it goes onto that line,
+  // so the photo of the rectangle that was just dragged moves onto the line, and no other photo moves.
   const editOrder = new Uint32Array(learnedSlotCount)
   machine.target.editOrder = editOrder
   let editCount = 0

@@ -356,17 +356,31 @@ test('edges that are nearly on one line are moved onto it', () => {
   // Inactive slots don't count, e.g. a slot whose rectangle was deleted and that still holds zeros.
   assert.deepEqual([...unordered.geometries.subarray(4 * trainableGeometryField.size)].every(value => value === 0), true)
 
-  // Edges that are each within reach of the next are one line: tops at 0.1, 0.12 and 0.14 all go to the top of
-  // the rectangle edited longest ago, although the last one is 0.04 from it.
+  // No edge moves farther than the reach: of tops at 0.1, 0.12 and 0.14, edited in that order, the second goes
+  // onto the first's line, and the third is 0.04 from that line, so it makes its own.
   const steps = createTrainableGeometryTarget([
     {left: 0.1, top: 0.1, width: 0.1, height: 0.3},
     {left: 0.4, top: 0.12, width: 0.1, height: 0.5},
     {left: 0.7, top: 0.14, width: 0.1, height: 0.7},
   ])
   steps.editOrder = Uint32Array.from({length: learnedSlotCount}, (_, item) => item)
-  assert.deepEqual(alignedGeometries(steps, 0.03, 3).map(geometry => geometry[1]), [0.1, 0.1, 0.1])
-  // Their bottoms are 0.2 apart, so they stay, and the two that moved up are taller by as much.
-  assert.deepEqual(alignedGeometries(steps, 0.03, 3).map(geometry => geometry[3]), [0.3, 0.52, 0.74])
+  assert.deepEqual(alignedGeometries(steps, 0.03, 3).map(geometry => geometry[1]), [0.1, 0.1, 0.14])
+  // Their bottoms are 0.2 apart, so they stay, and the one that moved up is taller by as much.
+  assert.deepEqual(alignedGeometries(steps, 0.03, 3).map(geometry => geometry[3]), [0.3, 0.52, 0.7])
+  // With no order of edits, the three are equally old and meet at their mean, each within reach of the next.
+  delete steps.editOrder
+  assert.deepEqual(alignedGeometries(steps, 0.03, 3).map(geometry => geometry[1]), [0.12, 0.12, 0.12])
+
+  // An edge between two lines goes onto the nearer one, and the lines stay apart: the newest rectangle's right
+  // edge at 0.5 is 0.03 from a line at 0.47 and 0.05 from one at 0.55, with a reach of 0.06.
+  const between = createTrainableGeometryTarget([
+    {left: 0.1, top: 0.1, width: 0.37, height: 0.2},
+    {left: 0.2, top: 0.4, width: 0.35, height: 0.2},
+    {left: 0.3, top: 0.7, width: 0.2, height: 0.2},
+  ])
+  between.editOrder = new Uint32Array(learnedSlotCount)
+  between.editOrder[2] = 1
+  assert.deepEqual(alignedGeometries(between, 0.06, 3).map(geometry => Math.round((geometry[0]! + geometry[2]!) * 1e6) / 1e6), [0.47, 0.55, 0.47])
 
   // A rectangle that the lines would close keeps its own edges: this one is 0.04 wide, and one older rectangle's
   // left is 0.02 inside its left edge while another's right is 0.01 inside its right edge, which would leave it

@@ -32,8 +32,8 @@ export type TrainableGeometryTarget = {
   // Without it they are the first outputs, e.g. outputs 0 to 9 for 10 targets.
   outputs?: Uint8Array
   // Per slot, a number that is larger the later the slot's rectangle was last edited, e.g. 0 for a rectangle as a
-  // preset drew it and a running count for the others. Edges that count as one line go where the rectangles edited
-  // longest ago have them (alignRectangles). Without it, no rectangle is older than another.
+  // preset drew it and a running count for the others. An edge goes onto a line that older rectangles made, and
+  // never the other way around (alignRectangles). Without it, no rectangle is older than another.
   editOrder?: Uint32Array
 }
 
@@ -88,12 +88,15 @@ const axes = [
 // which has the layout of `target.geometries`. The network is fitted to this result, so photos line up although
 // the sketch was drawn by hand.
 //
-// Left edges are compared with left edges, and likewise right, top and bottom edges. Sorted by position, an edge
-// within `reach` of the next one is on the same line as it, so a line can hold several edges, e.g. the tops of a
-// row of 4. The line goes where the rectangles edited longest ago have their edge, at the mean if there are
-// several: a rectangle that was just dragged back into its row moves onto the row's line, and the row stays where
-// it is. Positions are fractions of the stage, e.g. a reach of 0.03 is 3% of the stage's width for left and right
-// edges and 3% of its height for top and bottom edges.
+// Left edges are compared with left edges, and likewise right, top and bottom edges. The edges are taken from the
+// rectangle edited longest ago to the one edited last. An edge within `reach` of a line that older edges made
+// goes onto the nearest such line, and any other edge makes a line where it is. So a rectangle that was just
+// dragged back into its row moves onto the row's line, the row stays where it is, and no edge moves farther than
+// the reach. Rectangles that are equally old, e.g. the ones that a preset drew, make their lines together: sorted
+// by position, edges within the reach of the next one meet at their mean.
+//
+// Positions are fractions of the stage, e.g. a reach of 0.03 is 3% of the stage's width for left and right edges
+// and 3% of its height for top and bottom edges.
 //
 // A rectangle that the lines would leave less than half as wide or as tall as it was drawn keeps its own two
 // edges on that axis, e.g. a narrow rectangle between two lines that would otherwise close it.
@@ -104,34 +107,48 @@ export function alignRectangles(target: TrainableGeometryTarget, reach: number, 
   for (let item = 0; item < target.active.length; item++) {
     if (target.active[item] === 1) items.push(item)
   }
+  const ages = items.map(item => target.editOrder?.[item] ?? 0)
   // Each active rectangle's two edges on the current axis, after the move.
   const moved = [new Float64Array(items.length), new Float64Array(items.length)] as const
   const edges = new Float64Array(items.length)
   const order = items.map((_, index) => index)
+  const lines: number[] = []
+  // The edges of one age that are on no older line, by position.
+  const free: number[] = []
   for (const [positionField, sizeField] of axes) {
     for (let side = 0; side < 2; side++) {
       for (let index = 0; index < items.length; index++) {
         const start = items[index]! * outputFieldCount
         edges[index] = target.geometries[start + positionField]! + side * target.geometries[start + sizeField]!
       }
-      order.sort((a, b) => edges[a]! - edges[b]!)
-      let lineStart = 0
-      for (let lineEnd = 1; lineEnd <= order.length; lineEnd++) {
-        if (lineEnd < order.length && edges[order[lineEnd]!]! - edges[order[lineEnd - 1]!]! <= reach) continue
-        // order[lineStart] to order[lineEnd - 1] are one line.
-        let oldest = Infinity
-        for (let position = lineStart; position < lineEnd; position++) {
-          oldest = Math.min(oldest, target.editOrder?.[items[order[position]!]!] ?? 0)
+      // From the oldest rectangle to the newest, and by position among equally old ones.
+      order.sort((a, b) => ages[a]! - ages[b]! || edges[a]! - edges[b]!)
+      lines.length = 0
+      for (let groupStart = 0; groupStart < order.length;) {
+        let groupEnd = groupStart + 1
+        while (groupEnd < order.length && ages[order[groupEnd]!] === ages[order[groupStart]!]) groupEnd++
+        // lines holds the lines of the older rectangles here. This group's own lines are added after the loop.
+        free.length = 0
+        for (let position = groupStart; position < groupEnd; position++) {
+          const index = order[position]!
+          let nearest = -1
+          for (let line = 0; line < lines.length; line++) {
+            const distance = Math.abs(lines[line]! - edges[index]!)
+            if (distance <= reach && (nearest < 0 || distance < Math.abs(lines[nearest]! - edges[index]!))) nearest = line
+          }
+          if (nearest >= 0) moved[side]![index] = lines[nearest]!
+          else free.push(index)
         }
-        let sum = 0
-        let count = 0
-        for (let position = lineStart; position < lineEnd; position++) {
-          if ((target.editOrder?.[items[order[position]!]!] ?? 0) !== oldest) continue
-          sum += edges[order[position]!]!
-          count++
+        for (let runStart = 0; runStart < free.length;) {
+          let runEnd = runStart + 1
+          let sum = edges[free[runStart]!]!
+          while (runEnd < free.length && edges[free[runEnd]!]! - edges[free[runEnd - 1]!]! <= reach) sum += edges[free[runEnd++]!]!
+          const line = sum / (runEnd - runStart)
+          for (let position = runStart; position < runEnd; position++) moved[side]![free[position]!] = line
+          lines.push(line)
+          runStart = runEnd
         }
-        for (let position = lineStart; position < lineEnd; position++) moved[side]![order[position]!] = sum / count
-        lineStart = lineEnd
+        groupStart = groupEnd
       }
     }
     for (let index = 0; index < items.length; index++) {
