@@ -120,13 +120,29 @@ export function duration(ms: number): string {
   return ms < 0.05 ? 'under 0.1 ms' : `${ms.toFixed(1)} ms`
 }
 
+// RegExp's time for a search on one thread: measured, or that the page stopped RegExp after waiting this long for it,
+// e.g. after 10 s on a pattern that makes RegExp backtrack for minutes.
+export type RegExpTime =
+  | {kind: 'measured', ms: number}
+  | {kind: 'stopped', afterMs: number}
+
+function regExpPart(time: RegExpTime | null): Line {
+  if (time === null) return []
+  switch (time.kind) {
+    case 'measured':
+      return [' RegExp: ', strong(duration(time.ms)), '.']
+    case 'stopped':
+      return [' RegExp: ', strong(`more than ${duration(time.afterMs)}`), '.']
+  }
+}
+
 // The line of numbers for a search: how many documents have a match, how long the search program took where it ran,
 // and how long RegExp took for the same search on one thread, once the page has measured it. A search on the CPU
 // answers a few documents at a time, in the documents' order, and until it has answered for all of them the line says
 // how far it is, e.g. "1,304 of the first 12,400 documents match. 3.1 s on the CPU so far."
-export function resultLine(result: {withMatch: number, searched: number, ms: number}, documentCount: number, where: Where, regExpMs: number | null): Line {
+export function resultLine(result: {withMatch: number, searched: number, ms: number}, documentCount: number, where: Where, regExpTime: RegExpTime | null): Line {
   const place = where === 'gpu' ? 'on the GPU' : 'on the CPU'
-  const regExp: Line = regExpMs === null ? [] : [' RegExp: ', strong(duration(regExpMs)), '.']
+  const regExp = regExpPart(regExpTime)
   const verb = result.withMatch === 1 ? 'matches' : 'match'
   if (result.searched < documentCount) {
     return [strong(count(result.withMatch)), ` of the first ${count(result.searched)} documents ${verb}. `, strong(duration(result.ms)), ` ${place} so far.`, ...regExp]

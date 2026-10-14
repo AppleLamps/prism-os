@@ -34,12 +34,13 @@ What the page shows, from top to bottom, and how each number is measured:
 - **One line of numbers**, e.g. "10,559 of 100,000 documents match. 20 ms on the GPU. RegExp: 21 ms."
   - The count is the number of documents with at least one match.
   - The time on the GPU runs from before the pattern is compiled until every document's count is copied out of the GPU's buffer: compiling the pattern, uploading its cells, the pass and the readback, `timings.totalMs` of the searcher's result. The first search on a larger program, e.g. the one for 16 states that a date needs, also builds that program and compiles its shader, once. The page does both with `prepare` before it searches, so the time leaves them out.
-  - RegExp's time is measured in the page's worker, on one thread, for the same pattern and the same documents: plain-search.ts runs `RegExp` on each document, or on each key or each string value, and counts every match. A pass that takes under 100 ms is made twice, and the faster one counts. Finding the keys and the string values happens once, with table-loop.ts's plain JavaScript highlighter, and isn't part of the time.
+  - RegExp's time is measured in a worker, on one thread, for the same pattern and the same documents: plain-search.ts runs `RegExp` on each document, or on each key or each string value, and counts every match. A pass that takes under 100 ms is made twice, and the faster one counts. Finding the keys and the string values happens once, with table-loop.ts's plain JavaScript highlighter, and isn't part of the time.
+  - The page waits 10 s for RegExp's time, and then the line says "RegExp: more than 10 s." RegExp can backtrack for minutes, e.g. on `(([a-z]+)+)+x`, which has one pair of parentheses more than the Try list's pattern, and a `RegExp` call that is running can only be stopped by ending its worker. So this worker does nothing but time RegExp: the page ends it after those 10 s, or after 1 s when the timing is for a search that the page has left since, e.g. after another keystroke, and the next timing starts a new worker, which writes its documents again, about half a second.
   - A pattern with a syntax error, or one that needs more than the largest program's 32 states, gets a sentence in the line's place.
 - **The map**: one cell per document, in the documents' order, row after row. A document with a match is copper, and its mark is larger than its cell, about 2 CSS px wide among 100,000 documents, so that a single match can be seen. The pointer picks the nearest document with a match, a click keeps it, and Enter and Shift+Enter step to the next and the previous document with a match, as a browser's find bar does, with the focus in the field or anywhere else on the page except a link or a button.
 - **One document**, colored by the highlighter's display kinds, with the search's matches marked. On the GPU both are read back for that one document: the kinds from the highlighter's output buffer, and the marks from a pass over that document alone.
 
-With the toggle on CPU, or in a browser without WebGPU, both programs run in the page's worker as generated JavaScript, through `createCpuSearcher`:
+With the toggle on CPU, or in a browser without WebGPU, both programs run in a second worker as generated JavaScript, through `createCpuSearcher`. That worker starts when the page first needs it:
 
 - The worker searches the documents in their order, a piece of about 8 ms at a time, and posts each piece's counts. So the map fills in from the top while the line says how far the search is, e.g. "928 of the first 8,773 documents match. 2.2 s on the CPU so far.", and a keystroke replaces the search in progress within a piece's time.
 - The time in the line is the search program's own: the sum of the pieces' loops, `timings.evaluateMs`.
@@ -81,13 +82,13 @@ The page's files:
 | File | What it holds |
 | --- | --- |
 | `demo.html`, `demo.css` | The page and its styles, on top of assets/site.css and assets/tool.css |
-| `demo.ts` | The page's state and its frame: DOM reads, what arrived and the inputs, what the page shows, DOM and canvas writes, then the work that is due. Listeners and the worker's messages only record what arrived and schedule a frame |
+| `demo.ts` | The page's state and its frame: DOM reads, what arrived and the inputs, what the page shows, DOM and canvas writes, then the work that is due. Listeners and the workers' messages only record what arrived and schedule a frame |
 | `demo-map.ts` | The map without a DOM: how large a cell is, which document the pointer picks, the next document with a match, and the cells' pixels |
 | `demo-text.ts` | The page's documents, the line of numbers and the other sentences, and a document's text as runs of characters that look the same |
-| `demo-worker.ts` | The worker: RegExp's time, a search on the CPU in pieces, and one document's kinds and marks from the CPU |
+| `demo-worker.ts` | The workers' script, which the page starts twice: one worker times RegExp, and the other runs a search on the CPU in pieces and returns one document's kinds and marks |
 | `demo.test.ts` | 18 tests of the map, the documents, the sentences and the worker, without a browser. Bun runs the worker as a worker |
 
-scripts/demo-site-pages.ts lists the worker next to the page, since Bun's bundler doesn't follow `new Worker(...)`: the site's build writes it as one file, json-search/demo-worker.js, and the development server builds it at each request.
+scripts/demo-site-pages.ts lists the workers' script next to the page, since Bun's bundler doesn't follow `new Worker(...)`: the site's build writes it as one file, json-search/demo-worker.js, and the development server builds it at each request.
 
 ## Is the GPU clearly faster?
 
@@ -199,7 +200,7 @@ The review's reruns of the three measurement pages are results/review-rerun-gpu-
 | `searcher.ts` | The module for a demo page: validate every document once, search them per keystroke, on the GPU or on the CPU |
 | `demo.html`, `demo.css`, `demo.ts` | The demo page, its styles, and its state and frame: see [The demo page](#the-demo-page) |
 | `demo-map.ts`, `demo-text.ts` | The page's parts without a DOM: the map's cells and pixels, and the page's documents, sentences and numbers |
-| `demo-worker.ts` | The page's worker: RegExp's time for the search on screen, and both programs on the CPU, a few documents at a time |
+| `demo-worker.ts` | The page's two workers: RegExp's time for the search on screen in one, and both programs on the CPU in the other, a few documents at a time |
 | `plain-search.ts` | The same answers in plain JavaScript, as a baseline: the table loop, then RegExp |
 | `bit-rows.ts` | The same automaton with 32-bit rows, as comparisons: a plain JavaScript loop and a hand-written kernel |
 | `documents.ts` | The generated documents: 7 shapes, 16 labeled defects, a pure function of a seed and an index |

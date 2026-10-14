@@ -6,6 +6,10 @@
 //   and posts each piece's match counts, so the page fills its map in while the search runs. The JSON highlighter runs
 //   on a document when a search first reaches it, and its time isn't part of the search's.
 //
+// The page starts this script twice and gives each worker one of the two jobs. A RegExp that backtracks runs for
+// seconds or minutes in one call, which nothing interrupts, so the page stops it by ending its worker, and the search
+// on the CPU goes on in the other one.
+//
 // The worker writes the page's documents itself, from the same generator as the page. A message only records what the
 // page wants, and each turn does one piece of work, so a new search replaces the one in progress within a piece's
 // time, about 8 ms.

@@ -1,7 +1,8 @@
 // The page: a pattern field with two toggles, a line of numbers, a map with one cell per document, and one document
 // drawn as code. searcher.ts does the work on the GPU: the JSON highlighter once per document at load, and regex
-// search once per document at each keystroke. The page's worker (demo-worker.ts) times RegExp for the same search,
-// and runs both programs on the CPU when the toggle says CPU or the browser has no WebGPU.
+// search once per document at each keystroke. The page starts its worker script (demo-worker.ts) twice: one worker
+// times RegExp for the same search, and the other runs both programs on the CPU when the toggle says CPU or the
+// browser has no WebGPU.
 //
 // Listeners and the worker's messages only record what arrived and schedule a frame. A frame reads the DOM, takes in
 // what arrived since the last frame, e.g. a search's answer, decides what the page shows, writes the DOM and the
@@ -13,8 +14,8 @@
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {type CellColors, type MapLayout, cellAt, cellCenterCss, mapLayout, nearestMatch, nextMatch, paintCells} from './demo-map.ts'
 import {
-  type Failure, type Line, type LoadReason, type PatternAnalysis, type Scope, type Where, analyzePattern, count, documentRuns, documentText, documentsThatFit,
-  failureSentence, isScope, loadNotice, narrowDocumentCount, resultLine, runClassName, wideDocumentCount,
+  type Failure, type Line, type LoadReason, type PatternAnalysis, type RegExpTime, type Scope, type Where, analyzePattern, count, documentRuns, documentText,
+  documentsThatFit, failureSentence, isScope, loadNotice, narrowDocumentCount, resultLine, runClassName, wideDocumentCount,
 } from './demo-text.ts'
 import type {WorkerAnswer, WorkerRequest} from './demo-worker.ts'
 import {requestBatchDevice} from './gpu/host.ts'
@@ -101,6 +102,13 @@ type Arrival =
 // GPU takes up to 80 ms on the programs for 8 and 16 states, so it never shows the line, which would flash at each
 // key. A search on the program for 32 states takes about 0.9 s, and shows it.
 const longSearchMs = 250
+// How long the page waits for RegExp's time. RegExp can backtrack for minutes on a pattern, e.g. on (([a-z]+)+)+x,
+// which has one pair of parentheses more than the Try list's pattern, and nothing stops a RegExp that is running
+// except the end of its worker. For the search on screen the page waits 10 s, and then says "more than 10 s". For a
+// search that it has left since, e.g. after another keystroke, it waits 1 s. A pattern that doesn't backtrack takes
+// about 0.1 s or less on an Apple M5 Max, so a machine several times slower still finishes those.
+const regExpLimitMs = 10_000
+const leftRegExpLimitMs = 1000
 // For the map before a search's answer: no document's count is read.
 const noCounts = new Float32Array(0)
 
@@ -226,7 +234,9 @@ function mountJsonSearch(document: Document, window: Window) {
     // The last search's answer, which the page shows while its key is the wanted one, and RegExp's time for a
     // search, by what the search reads and its pattern.
     found: null as Found | null,
-    regExp: null as {key: string, ms: number} | null,
+    regExp: null as {key: string, time: RegExpTime} | null,
+    // The timing of RegExp that its worker is busy with, and since when. The page asks for one at a time.
+    timing: null as {key: string, since: number} | null,
     shown: null as Shown | null,
     // The document that a click or the Enter key keeps, and the pointer's place over the map, or null while the
     // pointer is elsewhere.
@@ -234,16 +244,17 @@ function mountJsonSearch(document: Document, window: Window) {
     pointer: null as {x: number, y: number} | null,
     // The GPU's piece of work in flight. Its promise's callback pushes an arrival with its id.
     job: null as number | null,
-    // What the worker was last asked for: RegExp's time, by its key, the search on the CPU, by its key and by the
-    // number that its answers carry, and whether a document's answer is still to come.
-    asked: {regExp: '', search: null as {id: number, key: string} | null, document: false},
+    // What the worker for the CPU was last asked for: the search, by its key and by the number that its answers
+    // carry, and whether a document's answer is still to come.
+    asked: {search: null as {id: number, key: string} | null, document: false},
     // The last line of numbers and the last answer on the map. Both stay on screen while a search is in flight, so
     // that nothing flashes between two keystrokes.
     lineView: {state: 'busy' as 'idle' | 'busy' | 'ok' | 'bad', line: [] as Line},
     mapView: {found: null as Found | null, rest: 'plain' as 'plain' | 'waiting'},
     // The last search's timing, which the next frame completes.
     openTiming: null as {timing: SearchTiming, inputTime: number | null} | null,
-    wakeAt: null as number | null,
+    // When the timer asks for the next frame, or infinity without one.
+    wakeAt: Number.POSITIVE_INFINITY,
     arrivals: [] as Arrival[],
     events: {
       firstInputTime: null as number | null,
@@ -262,25 +273,35 @@ function mountJsonSearch(document: Document, window: Window) {
       if (render()) scheduleRender()
     })
   }
-  // The timer for the frame that says that a search runs long.
+  // The timer for a frame that nothing else asks for, e.g. the one that says that a search runs long.
   let wakeTimer: number | undefined
   function wake() {
-    st.wakeAt = null
+    st.wakeAt = Number.POSITIVE_INFINITY
     scheduleRender()
   }
 
-  const worker = new Worker('./demo-worker.js')
-  const post = (request: WorkerRequest) => worker.postMessage(request)
-  worker.addEventListener('message', (event: MessageEvent<WorkerAnswer>) => {
-    st.arrivals.push({kind: 'worker', answer: event.data})
-    scheduleRender()
-  })
-  // An error that the worker throws arrives with its message. A script that didn't load arrives as a plain event,
-  // without one.
-  worker.addEventListener('error', (event: Event | ErrorEvent) => {
-    st.arrivals.push({kind: 'workerFailed', message: 'message' in event ? event.message : undefined})
-    scheduleRender()
-  })
+  // A worker, which first writes the page's documents on its own thread.
+  function startWorker(documentCount: number): Worker {
+    const worker = new Worker('./demo-worker.js')
+    worker.addEventListener('message', (event: MessageEvent<WorkerAnswer>) => {
+      st.arrivals.push({kind: 'worker', answer: event.data})
+      scheduleRender()
+    })
+    // An error that the worker throws arrives with its message. A script that didn't load arrives as a plain event,
+    // without one.
+    worker.addEventListener('error', (event: Event | ErrorEvent) => {
+      st.arrivals.push({kind: 'workerFailed', message: 'message' in event ? event.message : undefined})
+      scheduleRender()
+    })
+    worker.postMessage({kind: 'documents', documentCount} satisfies WorkerRequest)
+    return worker
+  }
+  // The page's two workers. One only times RegExp, so that the page can end it when RegExp takes too long without
+  // ending anything else. The other runs the programs on the CPU. The load starts the first one, and the second one
+  // where there is no GPU, so that their documents are written while the page writes its own. Otherwise a worker
+  // starts when the page first asks it for something.
+  let regExpWorker: Worker | null = null
+  let cpuWorker: Worker | null = null
 
   // The number of the next search on the CPU, which its answers carry.
   let nextSearchId = 1
@@ -329,8 +350,9 @@ function mountJsonSearch(document: Document, window: Window) {
         st.plan = {documentCount, reason: message.includes('no WebGPU adapter') ? {kind: 'noWebGpu'} : {kind: 'gpuFailed', message}}
       }
     }
-    // The worker writes the same documents on its own thread meanwhile.
-    post({kind: 'documents', documentCount})
+    // The workers write the same documents on their own threads meanwhile.
+    regExpWorker = startWorker(documentCount)
+    if (device === null) cpuWorker = startWorker(documentCount)
     scheduleRender()
 
     const texts: string[] = []
@@ -431,7 +453,10 @@ function mountJsonSearch(document: Document, window: Window) {
           const {answer} = arrival
           switch (answer.kind) {
             case 'regExp':
-              st.regExp = {key: answer.key, ms: answer.ms}
+              // The answer of a worker that the page has ended since is dropped.
+              if (st.timing?.key !== answer.key) break
+              st.timing = null
+              st.regExp = {key: answer.key, time: {kind: 'measured', ms: answer.ms}}
               break
             case 'searched': {
               // A piece of a search that the page has replaced or stopped since is dropped.
@@ -497,7 +522,15 @@ function mountJsonSearch(document: Document, window: Window) {
     const found = key !== '' && st.found !== null && st.found.key === key ? st.found : null
     const searchPending = key !== '' && found === null && st.failure === null
     const searchRunsLong = searchPending && frameStart - st.wantedSince >= longSearchMs
-    const regExpMs = regExpKey !== '' && st.regExp !== null && st.regExp.key === regExpKey ? st.regExp.ms : null
+    // A timing of RegExp that has run for too long is given up. When it is the one for the search on screen, its
+    // answer is that it took more than the page waits.
+    let timingGivenUp = false
+    if (st.timing !== null && frameStart - st.timing.since >= (st.timing.key === regExpKey ? regExpLimitMs : leftRegExpLimitMs)) {
+      if (st.timing.key === regExpKey) st.regExp = {key: regExpKey, time: {kind: 'stopped', afterMs: regExpLimitMs}}
+      st.timing = null
+      timingGivenUp = true
+    }
+    const regExpTime = regExpKey !== '' && st.regExp !== null && st.regExp.key === regExpKey ? st.regExp.time : null
 
     const layout = mapLayout(mapWidthCss, scale, documentCount)
     // The matches on the map: the answer for the pattern in the field, none for a pattern that isn't searched, and
@@ -557,7 +590,7 @@ function mountJsonSearch(document: Document, window: Window) {
         case 'fits':
           // Without the answer yet, the line stays as it is, except for a search that takes longer than a few
           // frames, e.g. on the program for 32 states, and for the first search.
-          if (found !== null) lineView = {state: found.searched < documentCount ? 'busy' : 'ok', line: resultLine(found, documentCount, where, regExpMs)}
+          if (found !== null) lineView = {state: found.searched < documentCount ? 'busy' : 'ok', line: resultLine(found, documentCount, where, regExpTime)}
           else if (searchRunsLong || st.found === null) lineView = {state: 'busy', line: [`Searching ${count(documentCount)} documents…`]}
           break
       }
@@ -674,42 +707,55 @@ function mountJsonSearch(document: Document, window: Window) {
       st.openTiming = {timing, inputTime: st.events.firstInputTime}
     }
 
-    // The work that is due. On the GPU, one piece at a time: the search for the pattern in the field, then the
-    // document that the panel should show.
+    // The work that is due. A timing of RegExp that was given up is stopped by ending its worker.
+    if (timingGivenUp && regExpWorker !== null) {
+      regExpWorker.terminate()
+      regExpWorker = null
+    }
     if (world !== null && st.failure === null) {
       const search = analysis.kind === 'fits' ? {pattern, scope} : null
+      // On the GPU, one piece at a time: the search for the pattern in the field, then the document that the panel
+      // should show.
       if (where === 'gpu' && world.gpu !== null && st.job === null) {
         if (searchPending && analysis.kind === 'fits') startOnGpu(searchOnGpu(world.gpu.searcher, key, pattern, scope, analysis.states))
         else if (wantedDocument !== null && !documentIsHere) startOnGpu(documentOnGpu(world.gpu.searcher, wantedDocument.index, key, search))
       }
-      // The worker: RegExp's time for the search, the search itself when it runs on the CPU, which replaces the
-      // one in progress, and the document, one request at a time.
-      if (search !== null && st.asked.regExp !== regExpKey) {
-        st.asked.regExp = regExpKey
-        post({kind: 'regExp', key: regExpKey, ...search})
+      // RegExp's time for the search, one timing at a time: the next one waits for the answer of the one in flight,
+      // or for the frame that gives it up.
+      if (search !== null && regExpTime === null && st.timing === null) {
+        st.timing = {key: regExpKey, since: frameStart}
+        regExpWorker ??= startWorker(documentCount)
+        regExpWorker.postMessage({kind: 'regExp', key: regExpKey, ...search} satisfies WorkerRequest)
       }
+      // The worker for the CPU: the search when it runs there, which replaces the one in progress, and the
+      // document, one request at a time.
       const cpuSearch = where === 'cpu' ? search : null
       if (cpuSearch === null) {
-        if (st.asked.search !== null) {
+        if (st.asked.search !== null && cpuWorker !== null) {
           st.asked.search = null
-          post({kind: 'search', search: null})
+          cpuWorker.postMessage({kind: 'search', search: null} satisfies WorkerRequest)
         }
       } else if (st.asked.search?.key !== key) {
         st.asked.search = {id: nextSearchId++, key}
-        post({kind: 'search', search: {id: st.asked.search.id, ...cpuSearch}})
+        cpuWorker ??= startWorker(documentCount)
+        cpuWorker.postMessage({kind: 'search', search: {id: st.asked.search.id, ...cpuSearch}} satisfies WorkerRequest)
       }
       if (where === 'cpu' && wantedDocument !== null && !documentIsHere && !st.asked.document) {
         st.asked.document = true
-        post({kind: 'document', key, index: wantedDocument.index, search})
+        cpuWorker ??= startWorker(documentCount)
+        cpuWorker.postMessage({kind: 'document', key, index: wantedDocument.index, search} satisfies WorkerRequest)
       }
     }
-    // The frame that says that a search runs long.
-    const wakeAt = searchPending && !searchRunsLong ? st.wantedSince + longSearchMs : null
+    // The next frame that nothing else asks for: the one that says that a search runs long, or the one that gives
+    // up the timing of RegExp in flight.
+    const searchRunsLongAt = searchPending && !searchRunsLong ? st.wantedSince + longSearchMs : Number.POSITIVE_INFINITY
+    const timingGivenUpAt = st.timing === null ? Number.POSITIVE_INFINITY : st.timing.since + (st.timing.key === regExpKey ? regExpLimitMs : leftRegExpLimitMs)
+    const wakeAt = Math.min(searchRunsLongAt, timingGivenUpAt)
     if (wakeAt !== st.wakeAt) {
       window.clearTimeout(wakeTimer)
-      // A timer may fire a fraction of a ms early, and its frame would then find the search not long yet. So the
-      // timer aims a ms late, and when it fires, the state forgets it, so that a frame that still waits sets a new one.
-      if (wakeAt !== null) wakeTimer = window.setTimeout(wake, Math.ceil(Math.max(0, wakeAt - window.performance.now())) + 1)
+      // A timer may fire a fraction of a ms early, and its frame would then find that it is too early. So the timer
+      // aims a ms late, and when it fires, the state forgets it, so that a frame that still waits sets a new one.
+      if (wakeAt !== Number.POSITIVE_INFINITY) wakeTimer = window.setTimeout(wake, Math.ceil(Math.max(0, wakeAt - window.performance.now())) + 1)
       st.wakeAt = wakeAt
     }
 
