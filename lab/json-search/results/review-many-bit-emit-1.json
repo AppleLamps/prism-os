@@ -1,0 +1,309 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T16:20:05.210Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 5.83 5.62 6.41 }",
+  "memoryBefore": "System-wide memory free percentage: 62%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "many",
+   "--profile",
+   "review-many-52404",
+   "--out",
+   "review-many-bit-emit-1.json",
+   "--port",
+   "4612",
+   "--devtools-port",
+   "9612",
+   "--chrome",
+   "chrome-for-testing"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T16:20:15.250Z",
+    "load": "{ 5.86 5.63 6.40 }"
+   },
+   {
+    "at": "2026-10-14T16:20:25.252Z",
+    "load": "{ 5.56 5.58 6.37 }"
+   },
+   {
+    "at": "2026-10-14T16:20:35.254Z",
+    "load": "{ 5.24 5.51 6.34 }"
+   },
+   {
+    "at": "2026-10-14T16:20:45.256Z",
+    "load": "{ 5.12 5.47 6.32 }"
+   },
+   {
+    "at": "2026-10-14T16:20:55.258Z",
+    "load": "{ 5.74 5.59 6.35 }"
+   },
+   {
+    "at": "2026-10-14T16:21:05.260Z",
+    "load": "{ 5.56 5.56 6.33 }"
+   },
+   {
+    "at": "2026-10-14T16:21:15.262Z",
+    "load": "{ 5.24 5.49 6.29 }"
+   },
+   {
+    "at": "2026-10-14T16:21:25.264Z",
+    "load": "{ 5.13 5.45 6.27 }"
+   },
+   {
+    "at": "2026-10-14T16:21:35.264Z",
+    "load": "{ 5.51 5.52 6.28 }"
+   },
+   {
+    "at": "2026-10-14T16:21:45.266Z",
+    "load": "{ 5.45 5.50 6.27 }"
+   },
+   {
+    "at": "2026-10-14T16:21:55.268Z",
+    "load": "{ 5.62 5.54 6.27 }"
+   },
+   {
+    "at": "2026-10-14T16:22:05.269Z",
+    "load": "{ 5.29 5.47 6.24 }"
+   },
+   {
+    "at": "2026-10-14T16:22:15.271Z",
+    "load": "{ 5.69 5.55 6.26 }"
+   },
+   {
+    "at": "2026-10-14T16:22:25.273Z",
+    "load": "{ 5.74 5.57 6.25 }"
+   },
+   {
+    "at": "2026-10-14T16:22:35.274Z",
+    "load": "{ 5.32 5.48 6.21 }"
+   },
+   {
+    "at": "2026-10-14T16:22:45.276Z",
+    "load": "{ 5.12 5.43 6.19 }"
+   },
+   {
+    "at": "2026-10-14T16:22:55.278Z",
+    "load": "{ 5.19 5.44 6.18 }"
+   },
+   {
+    "at": "2026-10-14T16:23:05.281Z",
+    "load": "{ 4.94 5.37 6.15 }"
+   },
+   {
+    "at": "2026-10-14T16:23:15.283Z",
+    "load": "{ 5.09 5.39 6.15 }"
+   },
+   {
+    "at": "2026-10-14T16:23:25.284Z",
+    "load": "{ 5.08 5.38 6.13 }"
+   },
+   {
+    "at": "2026-10-14T16:23:35.286Z",
+    "load": "{ 5.22 5.40 6.13 }"
+   },
+   {
+    "at": "2026-10-14T16:23:45.288Z",
+    "load": "{ 5.57 5.47 6.15 }"
+   },
+   {
+    "at": "2026-10-14T16:23:55.289Z",
+    "load": "{ 5.26 5.40 6.11 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9612",
+   "--user-data-dir=review-many-52404",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "chromePid": 53560,
+  "browser": "Chrome/155.0.8059.79",
+  "finishedAt": "2026-10-14T16:24:03.159Z",
+  "loadAfter": "{ 5.16 5.38 6.10 }",
+  "memoryAfter": "System-wide memory free percentage: 63%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T16:20:05.782Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "many",
+   "shaderSalt": 374118322,
+   "searchWriter": "bit-emit",
+   "seed": 20261013,
+   "invalidFraction": 0.1,
+   "edgeSizes": {
+    "broken": 400,
+    "generated": 200,
+    "random": 100,
+    "mutated": 300,
+    "long": 40
+   },
+   "windowDocuments": 64,
+   "documents": 100000,
+   "executorDocuments": 2000,
+   "generatedDocumentsAt32States": 10000,
+   "patterns": [
+    "(the|an?) [a-z]+",
+    "error",
+    "[a-z0-9.]+@[a-z.]+",
+    "\"[a-z]+\":",
+    "[A-Z][a-z]+ [A-Z][a-z]+",
+    "\\d+\\.\\d+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "(the|an?|some) [a-z]+(ing)?s?",
+    "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "([a-z]+)+x"
+   ],
+   "workerCounts": [
+    1,
+    2,
+    4,
+    8,
+    16
+   ],
+   "warmupMs": 200,
+   "sampleMs": 1000,
+   "minimumSamples": 15,
+   "maximumSamples": 200,
+   "cpuWarmupMs": 300,
+   "cpuSampleMs": 200,
+   "cpuSamples": 5
+  },
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeWorkgroupsPerDimension": 65535
+   },
+   "hasTimestamps": true,
+   "grantedBufferBytes": 205200000
+  },
+  "validationAgainstTheHighlighterOnTheExecutor": {
+   "documents": 100000,
+   "values": 51600000,
+   "mismatches": 0,
+   "expectedValidDocuments": 89943,
+   "expectedKindsThatAreNotWhitespace": 47024076,
+   "executorMs": 27968.81
+  },
+  "validateBackToBack": {
+   "fromCallToResolveMs": {
+    "count": 50,
+    "median": 2.413,
+    "p10": 2.36,
+    "p90": 2.615,
+    "min": 2.32,
+    "max": 2.855
+   },
+   "evaluateMs": {
+    "count": 50,
+    "median": 2.18,
+    "p10": 2.135,
+    "p90": 2.38,
+    "min": 2.08,
+    "max": 2.615
+   }
+  },
+  "againstGeneratedJavaScript": {
+   "documents": 100000,
+   "validationValues": 51600000,
+   "validationMismatches": 0,
+   "searches": 5,
+   "searchValues": 992160,
+   "searchMismatches": 0,
+   "expectedMatches": 2668777,
+   "referenceSearchMs": [
+    12968.3,
+    13318.97,
+    12935.21,
+    12720.44,
+    32032.05
+   ],
+   "examples": [],
+   "searchesRun": [
+    {
+     "pattern": "(the|an?) [a-z]+",
+     "scope": "strings"
+    },
+    {
+     "pattern": "\"[a-z]+\":",
+     "scope": "everything"
+    },
+    {
+     "pattern": "[a-z0-9.]+@[a-z.]+",
+     "scope": "stringsAndKeys"
+    },
+    {
+     "pattern": "[a-z]+",
+     "scope": "keys"
+    },
+    {
+     "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+     "scope": "strings"
+    }
+   ],
+   "validateMicrosecondsPerDocument": 80.463,
+   "totalMs": 146553.88
+  },
+  "at32StatesAgainstGeneratedJavaScript": {
+   "documents": 10000,
+   "validationValues": 5160000,
+   "validationMismatches": 0,
+   "searches": 2,
+   "searchValues": 85536,
+   "searchMismatches": 0,
+   "expectedMatches": 4114,
+   "referenceSearchMs": [
+    17803.13,
+    17330.96
+   ],
+   "examples": [],
+   "totalMs": 36604.13
+  },
+  "againstTheLoopProgramsOnTheExecutor": {
+   "documents": 2000,
+   "validationValues": 1032000,
+   "validationMismatches": 0,
+   "searches": 3,
+   "searchValues": 104304,
+   "searchMismatches": 0,
+   "expectedMatches": 22864,
+   "referenceSearchMs": [
+    3963.99,
+    4001.65,
+    12120.91
+   ],
+   "examples": [],
+   "validateMicrosecondsPerDocument": 2566.965,
+   "totalMs": 25376.515
+  },
+  "finishedAt": "2026-10-14T16:24:03.138Z",
+  "logLines": [
+   "628.395 ms: 100000 generated documents on the GPU, 89943 valid",
+   "28876.075 ms: validate back to back: {\"fromCallToResolveMs\":{\"count\":50,\"median\":2.413,\"p10\":2.36,\"p90\":2.615,\"min\":2.32,\"max\":2.855},\"evaluateMs\":{\"count\":50,\"median\":2.18,\"p10\":2.135,\"p90\":2.38,\"min\":2.08,\"max\":2.615}}",
+   "28876.14 ms: validation and kinds against the highlighter on the executor: {\"documents\":100000,\"values\":51600000,\"mismatches\":0,\"expectedValidDocuments\":89943,\"expectedKindsThatAreNotWhitespace\":47024076,\"executorMs\":27968.81}",
+   "175431.39 ms: against the loop programs as generated JavaScript: {\"documents\":100000,\"validationValues\":51600000,\"validationMismatches\":0,\"searches\":5,\"searchValues\":992160,\"searchMismatches\":0,\"expectedMatches\":2668777,\"referenceSearchMs\":[12968.3,13318.97,12935.21,12720.44,32032.05],\"examples\":[],\"searchesRun\":[{\"pattern\":\"(the|an?) [a-z]+\",\"scope\":\"strings\"},{\"pattern\":\"\\\"[a-z]+\\\":\",\"scope\":\"everything\"},{\"pattern\":\"[a-z0-9.]+@[a-z.]+\",\"scope\":\"stringsAndKeys\"},{\"pattern\":\"[a-z]+\",\"scope\":\"keys\"},{\"pattern\":\"(the|an?|some) [a-z]+(ing)?s?\",\"scope\":\"strings\"}],\"validateMicrosecondsPerDocument\":80.463,\"totalMs\":146553.88}",
+   "212036.815 ms: 32 states against generated JavaScript: {\"documents\":10000,\"validationValues\":5160000,\"validationMismatches\":0,\"searches\":2,\"searchValues\":85536,\"searchMismatches\":0,\"expectedMatches\":4114,\"referenceSearchMs\":[17803.13,17330.96],\"examples\":[],\"totalMs\":36604.13}",
+   "237415.45 ms: against the loop programs on the executor: {\"documents\":2000,\"validationValues\":1032000,\"validationMismatches\":0,\"searches\":3,\"searchValues\":104304,\"searchMismatches\":0,\"expectedMatches\":22864,\"referenceSearchMs\":[3963.99,4001.65,12120.91],\"examples\":[],\"validateMicrosecondsPerDocument\":2566.965,\"totalMs\":25376.515}"
+  ],
+  "done": true
+ }
+}

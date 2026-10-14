@@ -1,0 +1,2280 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T16:02:34.100Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 7.04 8.23 9.02 }",
+  "memoryBefore": "System-wide memory free percentage: 63%",
+  "busiestBefore": [],
+  "argv": [
+   "--profile",
+   "writers-2-41899",
+   "--out",
+   "writers-2.json",
+   "--port",
+   "4612",
+   "--devtools-port",
+   "9612",
+   "--chrome",
+   "chrome-for-testing"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T16:02:44.149Z",
+    "load": "{ 6.34 8.04 8.94 }"
+   },
+   {
+    "at": "2026-10-14T16:02:54.151Z",
+    "load": "{ 5.83 7.88 8.87 }"
+   },
+   {
+    "at": "2026-10-14T16:03:04.153Z",
+    "load": "{ 5.24 7.68 8.79 }"
+   },
+   {
+    "at": "2026-10-14T16:03:14.155Z",
+    "load": "{ 4.97 7.54 8.73 }"
+   },
+   {
+    "at": "2026-10-14T16:03:24.157Z",
+    "load": "{ 4.43 7.34 8.64 }"
+   },
+   {
+    "at": "2026-10-14T16:03:34.160Z",
+    "load": "{ 4.45 7.25 8.59 }"
+   },
+   {
+    "at": "2026-10-14T16:03:44.160Z",
+    "load": "{ 5.09 7.29 8.59 }"
+   },
+   {
+    "at": "2026-10-14T16:03:54.162Z",
+    "load": "{ 6.71 7.58 8.68 }"
+   },
+   {
+    "at": "2026-10-14T16:04:04.164Z",
+    "load": "{ 6.46 7.49 8.63 }"
+   },
+   {
+    "at": "2026-10-14T16:04:14.165Z",
+    "load": "{ 5.92 7.34 8.57 }"
+   },
+   {
+    "at": "2026-10-14T16:04:24.167Z",
+    "load": "{ 5.48 7.20 8.50 }"
+   },
+   {
+    "at": "2026-10-14T16:04:34.169Z",
+    "load": "{ 5.09 7.06 8.44 }"
+   },
+   {
+    "at": "2026-10-14T16:04:44.171Z",
+    "load": "{ 4.54 6.88 8.36 }"
+   },
+   {
+    "at": "2026-10-14T16:04:54.173Z",
+    "load": "{ 4.37 6.77 8.30 }"
+   },
+   {
+    "at": "2026-10-14T16:05:04.181Z",
+    "load": "{ 6.69 7.17 8.42 }"
+   },
+   {
+    "at": "2026-10-14T16:05:14.183Z",
+    "load": "{ 7.03 7.23 8.43 }"
+   },
+   {
+    "at": "2026-10-14T16:05:24.185Z",
+    "load": "{ 6.78 7.17 8.39 }"
+   },
+   {
+    "at": "2026-10-14T16:05:34.185Z",
+    "load": "{ 6.05 7.00 8.32 }"
+   },
+   {
+    "at": "2026-10-14T16:05:44.187Z",
+    "load": "{ 5.42 6.84 8.25 }"
+   },
+   {
+    "at": "2026-10-14T16:05:54.190Z",
+    "load": "{ 5.14 6.73 8.19 }"
+   },
+   {
+    "at": "2026-10-14T16:06:04.192Z",
+    "load": "{ 4.89 6.62 8.13 }"
+   },
+   {
+    "at": "2026-10-14T16:06:14.194Z",
+    "load": "{ 4.84 6.55 8.09 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9612",
+   "--user-data-dir=writers-2-41899",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "chromePid": 49463,
+  "browser": "Chrome/155.0.8059.79",
+  "finishedAt": "2026-10-14T16:06:18.817Z",
+  "loadAfter": "{ 4.53 6.46 8.05 }",
+  "memoryAfter": "System-wide memory free percentage: 58%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T16:02:34.591Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "count": 100000,
+   "shaderSalt": 236920496,
+   "rounds": 3,
+   "samples": 15,
+   "pauseMs": 200,
+   "pauseSamples": 9,
+   "patterns": [
+    {
+     "pattern": "error",
+     "scope": "everything"
+    },
+    {
+     "pattern": "[a-z0-9.]+@[a-z.]+",
+     "scope": "strings"
+    },
+    {
+     "pattern": "[a-z]+Id",
+     "scope": "keys"
+    },
+    {
+     "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+     "scope": "everything"
+    },
+    {
+     "pattern": "([a-z]+)+x",
+     "scope": "everything"
+    },
+    {
+     "pattern": "(the|an?) [a-z]+",
+     "scope": "strings"
+    },
+    {
+     "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+     "scope": "everything"
+    },
+    {
+     "pattern": "connection reset",
+     "scope": "everything"
+    },
+    {
+     "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+     "scope": "everything"
+    }
+   ],
+   "parts": [
+    "searchers",
+    "stop"
+   ]
+  },
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "hasTimestamps": true,
+   "grantedBufferBytes": 205200000
+  },
+  "created": [
+   {
+    "name": "loop-emit.ts's search shaders",
+    "createMs": 664.425,
+    "programs": [
+     {
+      "name": "JSON highlighter",
+      "statements": 107,
+      "compileMs": 75.105
+     },
+     {
+      "name": "regex search, 8 states",
+      "statements": 503,
+      "compileMs": 95.755
+     },
+     {
+      "name": "regex search, 16 states",
+      "statements": 1375,
+      "compileMs": 178.075
+     },
+     {
+      "name": "regex search, 32 states",
+      "statements": 4655,
+      "compileMs": 566.655
+     }
+    ]
+   },
+   {
+    "name": "bit-emit.ts's search shaders",
+    "createMs": 98.365,
+    "programs": [
+     {
+      "name": "JSON highlighter",
+      "statements": 107,
+      "compileMs": 51.005
+     },
+     {
+      "name": "regex search, 8 states",
+      "statements": 147,
+      "compileMs": 21.645
+     },
+     {
+      "name": "regex search, 16 states",
+      "statements": 171,
+      "compileMs": 23.5
+     },
+     {
+      "name": "regex search, 32 states",
+      "statements": 219,
+      "compileMs": 30.81
+     }
+    ]
+   },
+   {
+    "name": "bit-emit.ts's search shaders and highlighter shader",
+    "createMs": 83.605,
+    "programs": [
+     {
+      "name": "JSON highlighter",
+      "statements": 103,
+      "compileMs": 40.92
+     },
+     {
+      "name": "regex search, 8 states",
+      "statements": 147,
+      "compileMs": 21.75
+     },
+     {
+      "name": "regex search, 16 states",
+      "statements": 171,
+      "compileMs": 24
+     },
+     {
+      "name": "regex search, 32 states",
+      "statements": 219,
+      "compileMs": 30.915
+     }
+    ]
+   }
+  ],
+  "highlighterValues": {
+   "values": 51600000,
+   "different": 0,
+   "validDocuments": 100000
+  },
+  "validate": [
+   {
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 2.405,
+     "p10": 2.375,
+     "p90": 2.55,
+     "min": 2.345,
+     "max": 2.63
+    },
+    "passMs": {
+     "count": 15,
+     "median": 1.821,
+     "p10": 1.802,
+     "p90": 1.861,
+     "min": 1.799,
+     "max": 1.874
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 9.495,
+     "p10": 6.285,
+     "p90": 10.885,
+     "min": 6.285,
+     "max": 10.885
+    }
+   },
+   {
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 3.065,
+     "p10": 2.66,
+     "p90": 3.495,
+     "min": 2.635,
+     "max": 3.62
+    },
+    "passMs": {
+     "count": 15,
+     "median": 1.849,
+     "p10": 1.785,
+     "p90": 2.116,
+     "min": 1.765,
+     "max": 2.121
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.2,
+     "p10": 8.99,
+     "p90": 10.98,
+     "min": 8.99,
+     "max": 10.98
+    }
+   },
+   {
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 3.855,
+     "p10": 3.11,
+     "p90": 4.23,
+     "min": 2.89,
+     "max": 4.505
+    },
+    "passMs": {
+     "count": 15,
+     "median": 2.681,
+     "p10": 2.079,
+     "p90": 3.21,
+     "min": 2.036,
+     "max": 3.296
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.915,
+     "p10": 9.06,
+     "p90": 11.825,
+     "min": 9.06,
+     "max": 11.825
+    }
+   },
+   {
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.525,
+     "p10": 4,
+     "p90": 4.835,
+     "min": 3.86,
+     "max": 6.13
+    },
+    "passMs": {
+     "count": 15,
+     "median": 3.15,
+     "p10": 2.918,
+     "p90": 3.332,
+     "min": 2.849,
+     "max": 3.408
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.38,
+     "p10": 8.385,
+     "p90": 11.585,
+     "min": 8.385,
+     "max": 11.585
+    }
+   },
+   {
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 2.86,
+     "p10": 2.535,
+     "p90": 3.045,
+     "min": 2.32,
+     "max": 3.075
+    },
+    "passMs": {
+     "count": 15,
+     "median": 1.829,
+     "p10": 1.783,
+     "p90": 1.885,
+     "min": 1.783,
+     "max": 1.895
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 9.82,
+     "p10": 4.93,
+     "p90": 10.89,
+     "min": 4.93,
+     "max": 10.89
+    }
+   },
+   {
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 3.545,
+     "p10": 2.77,
+     "p90": 4.985,
+     "min": 2.675,
+     "max": 5.735
+    },
+    "passMs": {
+     "count": 15,
+     "median": 2.435,
+     "p10": 2.029,
+     "p90": 4.13,
+     "min": 1.944,
+     "max": 4.438
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.745,
+     "p10": 7.02,
+     "p90": 11.515,
+     "min": 7.02,
+     "max": 11.515
+    }
+   }
+  ],
+  "searches": [
+   {
+    "pattern": "error",
+    "scope": "everything",
+    "patternStates": 6,
+    "states": 8,
+    "documentsWithMatches": 10559,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.955,
+     "p10": 7.57,
+     "p90": 8.185,
+     "min": 7.435,
+     "max": 8.715
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 18.06,
+     "p10": 9.08,
+     "p90": 19.51,
+     "min": 9.08,
+     "max": 19.51
+    }
+   },
+   {
+    "pattern": "error",
+    "scope": "everything",
+    "patternStates": 6,
+    "states": 8,
+    "documentsWithMatches": 10559,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.595,
+     "p10": 4.445,
+     "p90": 7.065,
+     "min": 4.44,
+     "max": 8.46
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.4,
+     "p10": 4.985,
+     "p90": 13.295,
+     "min": 4.985,
+     "max": 13.295
+    }
+   },
+   {
+    "pattern": "error",
+    "scope": "everything",
+    "patternStates": 6,
+    "states": 8,
+    "documentsWithMatches": 10559,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.765,
+     "p10": 7.43,
+     "p90": 8.1,
+     "min": 7.39,
+     "max": 8.14
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 16.37,
+     "p10": 7.885,
+     "p90": 18.915,
+     "min": 7.885,
+     "max": 18.915
+    }
+   },
+   {
+    "pattern": "error",
+    "scope": "everything",
+    "patternStates": 6,
+    "states": 8,
+    "documentsWithMatches": 10559,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.41,
+     "p10": 4.29,
+     "p90": 4.525,
+     "min": 4.285,
+     "max": 4.62
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 12.515,
+     "p10": 4.915,
+     "p90": 14.905,
+     "min": 4.915,
+     "max": 14.905
+    }
+   },
+   {
+    "pattern": "error",
+    "scope": "everything",
+    "patternStates": 6,
+    "states": 8,
+    "documentsWithMatches": 10559,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 8.22,
+     "p10": 8.065,
+     "p90": 9.235,
+     "min": 8.055,
+     "max": 9.26
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 12.36,
+     "p10": 9.435,
+     "p90": 19.515,
+     "min": 9.435,
+     "max": 19.515
+    }
+   },
+   {
+    "pattern": "error",
+    "scope": "everything",
+    "patternStates": 6,
+    "states": 8,
+    "documentsWithMatches": 10559,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.68,
+     "p10": 4.485,
+     "p90": 4.905,
+     "min": 4.405,
+     "max": 5.275
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 12.77,
+     "p10": 7.685,
+     "p90": 13.475,
+     "min": 7.685,
+     "max": 13.475
+    }
+   },
+   {
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "scope": "strings",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 14481,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.76,
+     "p10": 7.495,
+     "p90": 8.04,
+     "min": 7.475,
+     "max": 8.125
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 16.595,
+     "p10": 8.88,
+     "p90": 19.08,
+     "min": 8.88,
+     "max": 19.08
+    }
+   },
+   {
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "scope": "strings",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 14481,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.43,
+     "p10": 4.265,
+     "p90": 4.63,
+     "min": 4.255,
+     "max": 4.805
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.88,
+     "p10": 5.07,
+     "p90": 12.045,
+     "min": 5.07,
+     "max": 12.045
+    }
+   },
+   {
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "scope": "strings",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 14481,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.63,
+     "p10": 7.47,
+     "p90": 7.78,
+     "min": 7.435,
+     "max": 8.345
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 17.895,
+     "p10": 8.49,
+     "p90": 23.31,
+     "min": 8.49,
+     "max": 23.31
+    }
+   },
+   {
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "scope": "strings",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 14481,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.39,
+     "p10": 4.32,
+     "p90": 4.7,
+     "min": 4.3,
+     "max": 4.775
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.315,
+     "p10": 4.59,
+     "p90": 11.91,
+     "min": 4.59,
+     "max": 11.91
+    }
+   },
+   {
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "scope": "strings",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 14481,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.73,
+     "p10": 7.52,
+     "p90": 8.56,
+     "min": 7.515,
+     "max": 8.65
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 16.61,
+     "p10": 7.635,
+     "p90": 18.21,
+     "min": 7.635,
+     "max": 18.21
+    }
+   },
+   {
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "scope": "strings",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 14481,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.6,
+     "p10": 4.355,
+     "p90": 4.885,
+     "min": 4.34,
+     "max": 5.755
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.355,
+     "p10": 4.615,
+     "p90": 12.025,
+     "min": 4.615,
+     "max": 12.025
+    }
+   },
+   {
+    "pattern": "[a-z]+Id",
+    "scope": "keys",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 23795,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.85,
+     "p10": 7.66,
+     "p90": 8.06,
+     "min": 7.63,
+     "max": 8.075
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 17.5,
+     "p10": 8.565,
+     "p90": 24.255,
+     "min": 8.565,
+     "max": 24.255
+    }
+   },
+   {
+    "pattern": "[a-z]+Id",
+    "scope": "keys",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 23795,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.6,
+     "p10": 4.44,
+     "p90": 5.17,
+     "min": 4.42,
+     "max": 5.64
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.77,
+     "p10": 5.25,
+     "p90": 12.07,
+     "min": 5.25,
+     "max": 12.07
+    }
+   },
+   {
+    "pattern": "[a-z]+Id",
+    "scope": "keys",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 23795,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.665,
+     "p10": 7.49,
+     "p90": 7.955,
+     "min": 7.425,
+     "max": 8.255
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 17.92,
+     "p10": 8.77,
+     "p90": 18.295,
+     "min": 8.77,
+     "max": 18.295
+    }
+   },
+   {
+    "pattern": "[a-z]+Id",
+    "scope": "keys",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 23795,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.605,
+     "p10": 4.245,
+     "p90": 5.375,
+     "min": 4.235,
+     "max": 5.61
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.625,
+     "p10": 4.42,
+     "p90": 12.035,
+     "min": 4.42,
+     "max": 12.035
+    }
+   },
+   {
+    "pattern": "[a-z]+Id",
+    "scope": "keys",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 23795,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.74,
+     "p10": 7.575,
+     "p90": 7.945,
+     "min": 7.39,
+     "max": 8.075
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 16.8,
+     "p10": 8.08,
+     "p90": 18.1,
+     "min": 8.08,
+     "max": 18.1
+    }
+   },
+   {
+    "pattern": "[a-z]+Id",
+    "scope": "keys",
+    "patternStates": 4,
+    "states": 8,
+    "documentsWithMatches": 23795,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.39,
+     "p10": 4.29,
+     "p90": 4.555,
+     "min": 4.2,
+     "max": 4.74
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.97,
+     "p10": 4.63,
+     "p90": 11.74,
+     "min": 4.63,
+     "max": 11.74
+    }
+   },
+   {
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "scope": "everything",
+    "patternStates": 11,
+    "states": 16,
+    "documentsWithMatches": 27803,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 67.735,
+     "p10": 66.385,
+     "p90": 70.61,
+     "min": 66.345,
+     "max": 72.27
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 68.515,
+     "p10": 65.125,
+     "p90": 70.485,
+     "min": 65.125,
+     "max": 70.485
+    }
+   },
+   {
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "scope": "everything",
+    "patternStates": 11,
+    "states": 16,
+    "documentsWithMatches": 27803,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.56,
+     "p10": 4.48,
+     "p90": 4.735,
+     "min": 4.445,
+     "max": 4.97
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 12.155,
+     "p10": 5.035,
+     "p90": 12.87,
+     "min": 5.035,
+     "max": 12.87
+    }
+   },
+   {
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "scope": "everything",
+    "patternStates": 11,
+    "states": 16,
+    "documentsWithMatches": 27803,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 68.255,
+     "p10": 65.175,
+     "p90": 69.715,
+     "min": 65.13,
+     "max": 70.045
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 67.005,
+     "p10": 65.37,
+     "p90": 70.615,
+     "min": 65.37,
+     "max": 70.615
+    }
+   },
+   {
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "scope": "everything",
+    "patternStates": 11,
+    "states": 16,
+    "documentsWithMatches": 27803,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.69,
+     "p10": 4.45,
+     "p90": 4.915,
+     "min": 4.39,
+     "max": 5.155
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.465,
+     "p10": 5.48,
+     "p90": 12.685,
+     "min": 5.48,
+     "max": 12.685
+    }
+   },
+   {
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "scope": "everything",
+    "patternStates": 11,
+    "states": 16,
+    "documentsWithMatches": 27803,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 66.865,
+     "p10": 64.865,
+     "p90": 69.62,
+     "min": 64.245,
+     "max": 74.265
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 68.43,
+     "p10": 65.275,
+     "p90": 71.67,
+     "min": 65.275,
+     "max": 71.67
+    }
+   },
+   {
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "scope": "everything",
+    "patternStates": 11,
+    "states": 16,
+    "documentsWithMatches": 27803,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.74,
+     "p10": 4.495,
+     "p90": 4.905,
+     "min": 4.46,
+     "max": 5.09
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 7.22,
+     "p10": 4.97,
+     "p90": 12.585,
+     "min": 4.97,
+     "max": 12.585
+    }
+   },
+   {
+    "pattern": "([a-z]+)+x",
+    "scope": "everything",
+    "patternStates": 3,
+    "states": 8,
+    "documentsWithMatches": 47577,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.88,
+     "p10": 7.64,
+     "p90": 8.095,
+     "min": 7.58,
+     "max": 8.15
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.22,
+     "p10": 8.495,
+     "p90": 20.59,
+     "min": 8.495,
+     "max": 20.59
+    }
+   },
+   {
+    "pattern": "([a-z]+)+x",
+    "scope": "everything",
+    "patternStates": 3,
+    "states": 8,
+    "documentsWithMatches": 47577,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.475,
+     "p10": 4.32,
+     "p90": 4.985,
+     "min": 4.3,
+     "max": 5.005
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.78,
+     "p10": 5.09,
+     "p90": 13.93,
+     "min": 5.09,
+     "max": 13.93
+    }
+   },
+   {
+    "pattern": "([a-z]+)+x",
+    "scope": "everything",
+    "patternStates": 3,
+    "states": 8,
+    "documentsWithMatches": 47577,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.64,
+     "p10": 7.485,
+     "p90": 8.055,
+     "min": 7.32,
+     "max": 8.685
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 17.595,
+     "p10": 8.48,
+     "p90": 24.15,
+     "min": 8.48,
+     "max": 24.15
+    }
+   },
+   {
+    "pattern": "([a-z]+)+x",
+    "scope": "everything",
+    "patternStates": 3,
+    "states": 8,
+    "documentsWithMatches": 47577,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.48,
+     "p10": 4.345,
+     "p90": 4.59,
+     "min": 4.315,
+     "max": 4.675
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.395,
+     "p10": 5.51,
+     "p90": 13.645,
+     "min": 5.51,
+     "max": 13.645
+    }
+   },
+   {
+    "pattern": "([a-z]+)+x",
+    "scope": "everything",
+    "patternStates": 3,
+    "states": 8,
+    "documentsWithMatches": 47577,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.79,
+     "p10": 7.58,
+     "p90": 8.155,
+     "min": 7.515,
+     "max": 8.29
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.605,
+     "p10": 7.62,
+     "p90": 25.27,
+     "min": 7.62,
+     "max": 25.27
+    }
+   },
+   {
+    "pattern": "([a-z]+)+x",
+    "scope": "everything",
+    "patternStates": 3,
+    "states": 8,
+    "documentsWithMatches": 47577,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.455,
+     "p10": 4.275,
+     "p90": 4.795,
+     "min": 4.155,
+     "max": 5.42
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.73,
+     "p10": 4.93,
+     "p90": 11.95,
+     "min": 4.93,
+     "max": 11.95
+    }
+   },
+   {
+    "pattern": "(the|an?) [a-z]+",
+    "scope": "strings",
+    "patternStates": 8,
+    "states": 8,
+    "documentsWithMatches": 27189,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.485,
+     "p10": 7.355,
+     "p90": 8.09,
+     "min": 7.35,
+     "max": 9.41
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 13.995,
+     "p10": 8.17,
+     "p90": 18.47,
+     "min": 8.17,
+     "max": 18.47
+    }
+   },
+   {
+    "pattern": "(the|an?) [a-z]+",
+    "scope": "strings",
+    "patternStates": 8,
+    "states": 8,
+    "documentsWithMatches": 27189,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.44,
+     "p10": 4.29,
+     "p90": 5.305,
+     "min": 4.13,
+     "max": 5.39
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 8.81,
+     "p10": 5.13,
+     "p90": 12.255,
+     "min": 5.13,
+     "max": 12.255
+    }
+   },
+   {
+    "pattern": "(the|an?) [a-z]+",
+    "scope": "strings",
+    "patternStates": 8,
+    "states": 8,
+    "documentsWithMatches": 27189,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.705,
+     "p10": 7.495,
+     "p90": 8.18,
+     "min": 7.41,
+     "max": 8.24
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 9.305,
+     "p10": 8,
+     "p90": 18.245,
+     "min": 8,
+     "max": 18.245
+    }
+   },
+   {
+    "pattern": "(the|an?) [a-z]+",
+    "scope": "strings",
+    "patternStates": 8,
+    "states": 8,
+    "documentsWithMatches": 27189,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.49,
+     "p10": 4.385,
+     "p90": 4.6,
+     "min": 4.27,
+     "max": 4.655
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.97,
+     "p10": 5.15,
+     "p90": 12.295,
+     "min": 5.15,
+     "max": 12.295
+    }
+   },
+   {
+    "pattern": "(the|an?) [a-z]+",
+    "scope": "strings",
+    "patternStates": 8,
+    "states": 8,
+    "documentsWithMatches": 27189,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 7.725,
+     "p10": 7.455,
+     "p90": 8.15,
+     "min": 7.415,
+     "max": 8.18
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 9.925,
+     "p10": 7.89,
+     "p90": 18.855,
+     "min": 7.89,
+     "max": 18.855
+    }
+   },
+   {
+    "pattern": "(the|an?) [a-z]+",
+    "scope": "strings",
+    "patternStates": 8,
+    "states": 8,
+    "documentsWithMatches": 27189,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.72,
+     "p10": 4.435,
+     "p90": 4.93,
+     "min": 4.41,
+     "max": 4.935
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.72,
+     "p10": 4.68,
+     "p90": 11.825,
+     "min": 4.68,
+     "max": 11.825
+    }
+   },
+   {
+    "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+    "scope": "everything",
+    "patternStates": 16,
+    "states": 16,
+    "documentsWithMatches": 28467,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 68.615,
+     "p10": 67.445,
+     "p90": 71.545,
+     "min": 65.31,
+     "max": 72.035
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 69.735,
+     "p10": 67.9,
+     "p90": 77.44,
+     "min": 67.9,
+     "max": 77.44
+    }
+   },
+   {
+    "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+    "scope": "everything",
+    "patternStates": 16,
+    "states": 16,
+    "documentsWithMatches": 28467,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.44,
+     "p10": 4.34,
+     "p90": 4.655,
+     "min": 4.315,
+     "max": 4.77
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 12.37,
+     "p10": 5.14,
+     "p90": 12.845,
+     "min": 5.14,
+     "max": 12.845
+    }
+   },
+   {
+    "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+    "scope": "everything",
+    "patternStates": 16,
+    "states": 16,
+    "documentsWithMatches": 28467,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 68.545,
+     "p10": 66.06,
+     "p90": 71.37,
+     "min": 65.535,
+     "max": 71.985
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 69.285,
+     "p10": 66.45,
+     "p90": 74.895,
+     "min": 66.45,
+     "max": 74.895
+    }
+   },
+   {
+    "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+    "scope": "everything",
+    "patternStates": 16,
+    "states": 16,
+    "documentsWithMatches": 28467,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.565,
+     "p10": 4.335,
+     "p90": 4.995,
+     "min": 4.33,
+     "max": 5.195
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 12.2,
+     "p10": 4.825,
+     "p90": 15.755,
+     "min": 4.825,
+     "max": 15.755
+    }
+   },
+   {
+    "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+    "scope": "everything",
+    "patternStates": 16,
+    "states": 16,
+    "documentsWithMatches": 28467,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 68.95,
+     "p10": 66.925,
+     "p90": 71.165,
+     "min": 66.18,
+     "max": 72.76
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 69.605,
+     "p10": 65.715,
+     "p90": 70.92,
+     "min": 65.715,
+     "max": 70.92
+    }
+   },
+   {
+    "pattern": "(the|an?|some) [a-z]+(ing)?s?",
+    "scope": "everything",
+    "patternStates": 16,
+    "states": 16,
+    "documentsWithMatches": 28467,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.605,
+     "p10": 4.465,
+     "p90": 5.03,
+     "min": 4.39,
+     "max": 5.205
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 8.545,
+     "p10": 5.27,
+     "p90": 12.86,
+     "min": 5.27,
+     "max": 12.86
+    }
+   },
+   {
+    "pattern": "connection reset",
+    "scope": "everything",
+    "patternStates": 17,
+    "states": 32,
+    "documentsWithMatches": 1440,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 5,
+     "median": 940.76,
+     "p10": 930.1,
+     "p90": 975.745,
+     "min": 930.1,
+     "max": 975.745
+    },
+    "afterPause": {
+     "count": 4,
+     "median": 935.34,
+     "p10": 929.955,
+     "p90": 945.45,
+     "min": 929.955,
+     "max": 945.45
+    }
+   },
+   {
+    "pattern": "connection reset",
+    "scope": "everything",
+    "patternStates": 17,
+    "states": 32,
+    "documentsWithMatches": 1440,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 5.135,
+     "p10": 4.955,
+     "p90": 6.075,
+     "min": 4.945,
+     "max": 6.125
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 13.435,
+     "p10": 5.715,
+     "p90": 14.52,
+     "min": 5.715,
+     "max": 14.52
+    }
+   },
+   {
+    "pattern": "connection reset",
+    "scope": "everything",
+    "patternStates": 17,
+    "states": 32,
+    "documentsWithMatches": 1440,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 5,
+     "median": 926.68,
+     "p10": 923.12,
+     "p90": 934.995,
+     "min": 923.12,
+     "max": 934.995
+    },
+    "afterPause": {
+     "count": 4,
+     "median": 938.067,
+     "p10": 932.135,
+     "p90": 943.015,
+     "min": 932.135,
+     "max": 943.015
+    }
+   },
+   {
+    "pattern": "connection reset",
+    "scope": "everything",
+    "patternStates": 17,
+    "states": 32,
+    "documentsWithMatches": 1440,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 4.995,
+     "p10": 4.76,
+     "p90": 5.28,
+     "min": 4.755,
+     "max": 5.89
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 9.285,
+     "p10": 5.565,
+     "p90": 14.58,
+     "min": 5.565,
+     "max": 14.58
+    }
+   },
+   {
+    "pattern": "connection reset",
+    "scope": "everything",
+    "patternStates": 17,
+    "states": 32,
+    "documentsWithMatches": 1440,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 5,
+     "median": 936.445,
+     "p10": 923.175,
+     "p90": 947.36,
+     "min": 923.175,
+     "max": 947.36
+    },
+    "afterPause": {
+     "count": 4,
+     "median": 945.435,
+     "p10": 891.525,
+     "p90": 962.495,
+     "min": 891.525,
+     "max": 962.495
+    }
+   },
+   {
+    "pattern": "connection reset",
+    "scope": "everything",
+    "patternStates": 17,
+    "states": 32,
+    "documentsWithMatches": 1440,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 5.31,
+     "p10": 5.03,
+     "p90": 6.135,
+     "min": 5.025,
+     "max": 6.3
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 14.21,
+     "p10": 5.335,
+     "p90": 18.365,
+     "min": 5.335,
+     "max": 18.365
+    }
+   },
+   {
+    "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "scope": "everything",
+    "patternStates": 32,
+    "states": 32,
+    "documentsWithMatches": 24845,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 5,
+     "median": 975.655,
+     "p10": 951.425,
+     "p90": 1011.875,
+     "min": 951.425,
+     "max": 1011.875
+    },
+    "afterPause": {
+     "count": 4,
+     "median": 982.133,
+     "p10": 960.28,
+     "p90": 991.425,
+     "min": 960.28,
+     "max": 991.425
+    }
+   },
+   {
+    "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "scope": "everything",
+    "patternStates": 32,
+    "states": 32,
+    "documentsWithMatches": 24845,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 5.955,
+     "p10": 5.64,
+     "p90": 6.2,
+     "min": 5.605,
+     "max": 6.205
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 10.175,
+     "p10": 6.42,
+     "p90": 15.3,
+     "min": 6.42,
+     "max": 15.3
+    }
+   },
+   {
+    "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "scope": "everything",
+    "patternStates": 32,
+    "states": 32,
+    "documentsWithMatches": 24845,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 5,
+     "median": 976.43,
+     "p10": 966.115,
+     "p90": 996.71,
+     "min": 966.115,
+     "max": 996.71
+    },
+    "afterPause": {
+     "count": 4,
+     "median": 951.08,
+     "p10": 941.34,
+     "p90": 968.415,
+     "min": 941.34,
+     "max": 968.415
+    }
+   },
+   {
+    "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "scope": "everything",
+    "patternStates": 32,
+    "states": 32,
+    "documentsWithMatches": 24845,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 5.29,
+     "p10": 4.97,
+     "p90": 5.575,
+     "min": 4.865,
+     "max": 5.965
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 14.49,
+     "p10": 5.93,
+     "p90": 14.93,
+     "min": 5.93,
+     "max": 14.93
+    }
+   },
+   {
+    "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "scope": "everything",
+    "patternStates": 32,
+    "states": 32,
+    "documentsWithMatches": 24845,
+    "writer": "loop-emit",
+    "backToBack": {
+     "count": 5,
+     "median": 942.21,
+     "p10": 930.115,
+     "p90": 951.105,
+     "min": 930.115,
+     "max": 951.105
+    },
+    "afterPause": {
+     "count": 4,
+     "median": 938.98,
+     "p10": 933.72,
+     "p90": 944.815,
+     "min": 933.72,
+     "max": 944.815
+    }
+   },
+   {
+    "pattern": "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "scope": "everything",
+    "patternStates": 32,
+    "states": 32,
+    "documentsWithMatches": 24845,
+    "writer": "bit-emit",
+    "backToBack": {
+     "count": 15,
+     "median": 5.205,
+     "p10": 4.855,
+     "p90": 5.465,
+     "min": 4.82,
+     "max": 5.68
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 14.69,
+     "p10": 5.69,
+     "p90": 14.74,
+     "min": 5.69,
+     "max": 14.74
+    }
+   }
+  ],
+  "searchValues": {
+   "searches": 9,
+   "values": 1194912,
+   "different": 0
+  },
+  "stopAtLength": [
+   {
+    "states": 8,
+    "pattern": "error",
+    "stopAtLength": false,
+    "statements": 147,
+    "compileMs": 19.545,
+    "backToBack": {
+     "count": 15,
+     "median": 4.605,
+     "p10": 4.2,
+     "p90": 5.19,
+     "min": 4.14,
+     "max": 5.195
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.46,
+     "p10": 4.915,
+     "p90": 11.78,
+     "min": 4.915,
+     "max": 11.78
+    }
+   },
+   {
+    "states": 8,
+    "pattern": "error",
+    "stopAtLength": true,
+    "statements": 153,
+    "compileMs": 19.455,
+    "backToBack": {
+     "count": 15,
+     "median": 13.39,
+     "p10": 12.395,
+     "p90": 13.575,
+     "min": 12.15,
+     "max": 13.865
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 18.7,
+     "p10": 12.74,
+     "p90": 25.605,
+     "min": 12.74,
+     "max": 25.605
+    }
+   },
+   {
+    "states": 8,
+    "pattern": "error",
+    "stopAtLength": false,
+    "statements": 147,
+    "compileMs": 19.545,
+    "backToBack": {
+     "count": 15,
+     "median": 4.35,
+     "p10": 4.195,
+     "p90": 4.565,
+     "min": 4.165,
+     "max": 4.99
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.36,
+     "p10": 4.655,
+     "p90": 11.775,
+     "min": 4.655,
+     "max": 11.775
+    }
+   },
+   {
+    "states": 8,
+    "pattern": "error",
+    "stopAtLength": true,
+    "statements": 153,
+    "compileMs": 19.455,
+    "backToBack": {
+     "count": 15,
+     "median": 13.585,
+     "p10": 12.935,
+     "p90": 14.27,
+     "min": 12.4,
+     "max": 14.685
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 17.185,
+     "p10": 13.21,
+     "p90": 23.35,
+     "min": 13.21,
+     "max": 23.35
+    }
+   },
+   {
+    "states": 8,
+    "pattern": "error",
+    "stopAtLength": false,
+    "statements": 147,
+    "compileMs": 19.545,
+    "backToBack": {
+     "count": 15,
+     "median": 4.42,
+     "p10": 4.275,
+     "p90": 4.58,
+     "min": 4.185,
+     "max": 4.885
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.07,
+     "p10": 7.06,
+     "p90": 11.85,
+     "min": 7.06,
+     "max": 11.85
+    }
+   },
+   {
+    "states": 8,
+    "pattern": "error",
+    "stopAtLength": true,
+    "statements": 153,
+    "compileMs": 19.455,
+    "backToBack": {
+     "count": 15,
+     "median": 13.535,
+     "p10": 12.97,
+     "p90": 14.095,
+     "min": 12.775,
+     "max": 14.535
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 14.605,
+     "p10": 13.08,
+     "p90": 26.955,
+     "min": 13.08,
+     "max": 26.955
+    }
+   },
+   {
+    "states": 8,
+    "pattern": "error",
+    "matchesWithEveryPosition": [
+     12507
+    ],
+    "matchesWithStopping": [
+     12507
+    ]
+   },
+   {
+    "states": 16,
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "stopAtLength": false,
+    "statements": 171,
+    "compileMs": 24.715,
+    "backToBack": {
+     "count": 15,
+     "median": 4.72,
+     "p10": 4.53,
+     "p90": 4.99,
+     "min": 4.385,
+     "max": 5.055
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.945,
+     "p10": 5.9,
+     "p90": 12.545,
+     "min": 5.9,
+     "max": 12.545
+    }
+   },
+   {
+    "states": 16,
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "stopAtLength": true,
+    "statements": 177,
+    "compileMs": 21.79,
+    "backToBack": {
+     "count": 15,
+     "median": 12.985,
+     "p10": 12.635,
+     "p90": 13.595,
+     "min": 12.335,
+     "max": 13.965
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 15.99,
+     "p10": 12.66,
+     "p90": 23.54,
+     "min": 12.66,
+     "max": 23.54
+    }
+   },
+   {
+    "states": 16,
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "stopAtLength": false,
+    "statements": 171,
+    "compileMs": 24.715,
+    "backToBack": {
+     "count": 15,
+     "median": 4.525,
+     "p10": 4.295,
+     "p90": 4.78,
+     "min": 4.225,
+     "max": 4.785
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 11.7,
+     "p10": 5.61,
+     "p90": 12.535,
+     "min": 5.61,
+     "max": 12.535
+    }
+   },
+   {
+    "states": 16,
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "stopAtLength": true,
+    "statements": 177,
+    "compileMs": 21.79,
+    "backToBack": {
+     "count": 15,
+     "median": 12.68,
+     "p10": 12.38,
+     "p90": 13.735,
+     "min": 12.265,
+     "max": 14.215
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 15.16,
+     "p10": 12.71,
+     "p90": 26.63,
+     "min": 12.71,
+     "max": 26.63
+    }
+   },
+   {
+    "states": 16,
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "stopAtLength": false,
+    "statements": 171,
+    "compileMs": 24.715,
+    "backToBack": {
+     "count": 15,
+     "median": 4.465,
+     "p10": 4.315,
+     "p90": 4.73,
+     "min": 4.295,
+     "max": 4.855
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 12.275,
+     "p10": 5.535,
+     "p90": 12.675,
+     "min": 5.535,
+     "max": 12.675
+    }
+   },
+   {
+    "states": 16,
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "stopAtLength": true,
+    "statements": 177,
+    "compileMs": 21.79,
+    "backToBack": {
+     "count": 15,
+     "median": 13.005,
+     "p10": 12.25,
+     "p90": 13.76,
+     "min": 12.22,
+     "max": 14.275
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 17.56,
+     "p10": 12.485,
+     "p90": 27.535,
+     "min": 12.485,
+     "max": 27.535
+    }
+   },
+   {
+    "states": 16,
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "matchesWithEveryPosition": [
+     27803
+    ],
+    "matchesWithStopping": [
+     27803
+    ]
+   },
+   {
+    "states": 32,
+    "pattern": "connection reset",
+    "stopAtLength": false,
+    "statements": 219,
+    "compileMs": 29.395,
+    "backToBack": {
+     "count": 15,
+     "median": 4.99,
+     "p10": 4.77,
+     "p90": 5.295,
+     "min": 4.67,
+     "max": 5.675
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 14.265,
+     "p10": 4.795,
+     "p90": 15.88,
+     "min": 4.795,
+     "max": 15.88
+    }
+   },
+   {
+    "states": 32,
+    "pattern": "connection reset",
+    "stopAtLength": true,
+    "statements": 225,
+    "compileMs": 28.82,
+    "backToBack": {
+     "count": 15,
+     "median": 12.62,
+     "p10": 12.17,
+     "p90": 13.195,
+     "min": 11.89,
+     "max": 14.27
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 14.25,
+     "p10": 12.335,
+     "p90": 22.91,
+     "min": 12.335,
+     "max": 22.91
+    }
+   },
+   {
+    "states": 32,
+    "pattern": "connection reset",
+    "stopAtLength": false,
+    "statements": 219,
+    "compileMs": 29.395,
+    "backToBack": {
+     "count": 15,
+     "median": 4.795,
+     "p10": 4.75,
+     "p90": 5.07,
+     "min": 4.7,
+     "max": 5.18
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 14.215,
+     "p10": 5.18,
+     "p90": 16.255,
+     "min": 5.18,
+     "max": 16.255
+    }
+   },
+   {
+    "states": 32,
+    "pattern": "connection reset",
+    "stopAtLength": true,
+    "statements": 225,
+    "compileMs": 28.82,
+    "backToBack": {
+     "count": 15,
+     "median": 12.675,
+     "p10": 12.26,
+     "p90": 13.085,
+     "min": 12.135,
+     "max": 13.345
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 19.82,
+     "p10": 13.155,
+     "p90": 26.805,
+     "min": 13.155,
+     "max": 26.805
+    }
+   },
+   {
+    "states": 32,
+    "pattern": "connection reset",
+    "stopAtLength": false,
+    "statements": 219,
+    "compileMs": 29.395,
+    "backToBack": {
+     "count": 15,
+     "median": 5.07,
+     "p10": 4.735,
+     "p90": 5.325,
+     "min": 4.605,
+     "max": 5.615
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 13.855,
+     "p10": 6.42,
+     "p90": 17.35,
+     "min": 6.42,
+     "max": 17.35
+    }
+   },
+   {
+    "states": 32,
+    "pattern": "connection reset",
+    "stopAtLength": true,
+    "statements": 225,
+    "compileMs": 28.82,
+    "backToBack": {
+     "count": 15,
+     "median": 12.535,
+     "p10": 12.105,
+     "p90": 13.23,
+     "min": 12.01,
+     "max": 13.265
+    },
+    "afterPause": {
+     "count": 9,
+     "median": 16.06,
+     "p10": 12.005,
+     "p90": 24,
+     "min": 12.005,
+     "max": 24
+    }
+   },
+   {
+    "states": 32,
+    "pattern": "connection reset",
+    "matchesWithEveryPosition": [
+     1440
+    ],
+    "matchesWithStopping": [
+     1440
+    ]
+   }
+  ],
+  "finishedAt": "2026-10-14T16:06:18.794Z",
+  "logLines": [
+   "1103.575 ms: loop-emit.ts's search shaders: created in 664.425 ms, [[107,75.105],[503,95.755],[1375,178.075],[4655,566.655]]",
+   "1202.26 ms: bit-emit.ts's search shaders: created in 98.365 ms, [[107,51.005],[147,21.645],[171,23.5],[219,30.81]]",
+   "1285.99 ms: bit-emit.ts's search shaders and highlighter shader: created in 83.605 ms, [[103,40.92],[147,21.75],[171,24],[219,30.915]]",
+   "1399.95 ms: the highlighter's values from either writer's shader: {\"values\":51600000,\"different\":0,\"validDocuments\":100000}",
+   "3397.575 ms: the highlighter's pass, loop-emit.ts's shader: back to back 2.405 ms, the pass alone 1.821 ms, after 200 ms 9.495 ms",
+   "5424.355 ms: the highlighter's pass, bit-emit.ts's shader: back to back 3.065 ms, the pass alone 1.849 ms, after 200 ms 10.2 ms",
+   "7481.81 ms: the highlighter's pass, loop-emit.ts's shader: back to back 3.855 ms, the pass alone 2.681 ms, after 200 ms 10.915 ms",
+   "9558.525 ms: the highlighter's pass, bit-emit.ts's shader: back to back 4.525 ms, the pass alone 3.15 ms, after 200 ms 10.38 ms",
+   "11568.935 ms: the highlighter's pass, loop-emit.ts's shader: back to back 2.86 ms, the pass alone 1.829 ms, after 200 ms 9.82 ms",
+   "13630.01 ms: the highlighter's pass, bit-emit.ts's shader: back to back 3.545 ms, the pass alone 2.435 ms, after 200 ms 10.745 ms",
+   "15775.915 ms: error in everything, 8 states, loop-emit.ts: back to back 7.955 ms (7.435 to 8.715), after 200 ms 18.06 ms (9.08 to 19.51)",
+   "17782.475 ms: error in everything, 8 states, bit-emit.ts: back to back 4.595 ms (4.44 to 8.46), after 200 ms 11.4 ms (4.985 to 13.295)",
+   "19872.795 ms: error in everything, 8 states, loop-emit.ts: back to back 7.765 ms (7.39 to 8.14), after 200 ms 16.37 ms (7.885 to 18.915)",
+   "21881.815 ms: error in everything, 8 states, bit-emit.ts: back to back 4.41 ms (4.285 to 4.62), after 200 ms 12.515 ms (4.915 to 14.905)",
+   "24002.465 ms: error in everything, 8 states, loop-emit.ts: back to back 8.22 ms (8.055 to 9.26), after 200 ms 12.36 ms (9.435 to 19.515)",
+   "26021.55 ms: error in everything, 8 states, bit-emit.ts: back to back 4.68 ms (4.405 to 5.275), after 200 ms 12.77 ms (7.685 to 13.475)",
+   "28147.895 ms: [a-z0-9.]+@[a-z.]+ in strings, 8 states, loop-emit.ts: back to back 7.76 ms (7.475 to 8.125), after 200 ms 16.595 ms (8.88 to 19.08)",
+   "30139.58 ms: [a-z0-9.]+@[a-z.]+ in strings, 8 states, bit-emit.ts: back to back 4.43 ms (4.255 to 4.805), after 200 ms 10.88 ms (5.07 to 12.045)",
+   "32251.54 ms: [a-z0-9.]+@[a-z.]+ in strings, 8 states, loop-emit.ts: back to back 7.63 ms (7.435 to 8.345), after 200 ms 17.895 ms (8.49 to 23.31)",
+   "34240.91 ms: [a-z0-9.]+@[a-z.]+ in strings, 8 states, bit-emit.ts: back to back 4.39 ms (4.3 to 4.775), after 200 ms 10.315 ms (4.59 to 11.91)",
+   "36345.59 ms: [a-z0-9.]+@[a-z.]+ in strings, 8 states, loop-emit.ts: back to back 7.73 ms (7.515 to 8.65), after 200 ms 16.61 ms (7.635 to 18.21)",
+   "38348.935 ms: [a-z0-9.]+@[a-z.]+ in strings, 8 states, bit-emit.ts: back to back 4.6 ms (4.34 to 5.755), after 200 ms 11.355 ms (4.615 to 12.025)",
+   "40489.285 ms: [a-z]+Id in keys, 8 states, loop-emit.ts: back to back 7.85 ms (7.63 to 8.075), after 200 ms 17.5 ms (8.565 to 24.255)",
+   "42493.085 ms: [a-z]+Id in keys, 8 states, bit-emit.ts: back to back 4.6 ms (4.42 to 5.64), after 200 ms 11.77 ms (5.25 to 12.07)",
+   "44605.425 ms: [a-z]+Id in keys, 8 states, loop-emit.ts: back to back 7.665 ms (7.425 to 8.255), after 200 ms 17.92 ms (8.77 to 18.295)",
+   "46613.3 ms: [a-z]+Id in keys, 8 states, bit-emit.ts: back to back 4.605 ms (4.235 to 5.61), after 200 ms 11.625 ms (4.42 to 12.035)",
+   "48709.185 ms: [a-z]+Id in keys, 8 states, loop-emit.ts: back to back 7.74 ms (7.39 to 8.075), after 200 ms 16.8 ms (8.08 to 18.1)",
+   "50698.515 ms: [a-z]+Id in keys, 8 states, bit-emit.ts: back to back 4.39 ms (4.2 to 4.74), after 200 ms 10.97 ms (4.63 to 11.74)",
+   "54437.53 ms: \\d\\d\\d\\d-\\d\\d-\\d\\d in everything, 16 states, loop-emit.ts: back to back 67.735 ms (66.345 to 72.27), after 200 ms 68.515 ms (65.125 to 70.485)",
+   "56438.485 ms: \\d\\d\\d\\d-\\d\\d-\\d\\d in everything, 16 states, bit-emit.ts: back to back 4.56 ms (4.445 to 4.97), after 200 ms 12.155 ms (5.035 to 12.87)",
+   "60093.14 ms: \\d\\d\\d\\d-\\d\\d-\\d\\d in everything, 16 states, loop-emit.ts: back to back 68.255 ms (65.13 to 70.045), after 200 ms 67.005 ms (65.37 to 70.615)",
+   "62088.16 ms: \\d\\d\\d\\d-\\d\\d-\\d\\d in everything, 16 states, bit-emit.ts: back to back 4.69 ms (4.39 to 5.155), after 200 ms 11.465 ms (5.48 to 12.685)",
+   "65744.085 ms: \\d\\d\\d\\d-\\d\\d-\\d\\d in everything, 16 states, loop-emit.ts: back to back 66.865 ms (64.245 to 74.265), after 200 ms 68.43 ms (65.275 to 71.67)",
+   "67731.36 ms: \\d\\d\\d\\d-\\d\\d-\\d\\d in everything, 16 states, bit-emit.ts: back to back 4.74 ms (4.46 to 5.09), after 200 ms 7.22 ms (4.97 to 12.585)",
+   "69835.66 ms: ([a-z]+)+x in everything, 8 states, loop-emit.ts: back to back 7.88 ms (7.58 to 8.15), after 200 ms 10.22 ms (8.495 to 20.59)",
+   "71842.87 ms: ([a-z]+)+x in everything, 8 states, bit-emit.ts: back to back 4.475 ms (4.3 to 5.005), after 200 ms 11.78 ms (5.09 to 13.93)",
+   "73944.445 ms: ([a-z]+)+x in everything, 8 states, loop-emit.ts: back to back 7.64 ms (7.32 to 8.685), after 200 ms 17.595 ms (8.48 to 24.15)",
+   "75939.725 ms: ([a-z]+)+x in everything, 8 states, bit-emit.ts: back to back 4.48 ms (4.315 to 4.675), after 200 ms 11.395 ms (5.51 to 13.645)",
+   "78045.945 ms: ([a-z]+)+x in everything, 8 states, loop-emit.ts: back to back 7.79 ms (7.515 to 8.29), after 200 ms 10.605 ms (7.62 to 25.27)",
+   "80031.7 ms: ([a-z]+)+x in everything, 8 states, bit-emit.ts: back to back 4.455 ms (4.155 to 5.42), after 200 ms 10.73 ms (4.93 to 11.95)",
+   "82131.415 ms: (the|an?) [a-z]+ in strings, 8 states, loop-emit.ts: back to back 7.485 ms (7.35 to 9.41), after 200 ms 13.995 ms (8.17 to 18.47)",
+   "84118.65 ms: (the|an?) [a-z]+ in strings, 8 states, bit-emit.ts: back to back 4.44 ms (4.13 to 5.39), after 200 ms 8.81 ms (5.13 to 12.255)",
+   "86208.13 ms: (the|an?) [a-z]+ in strings, 8 states, loop-emit.ts: back to back 7.705 ms (7.41 to 8.24), after 200 ms 9.305 ms (8 to 18.245)",
+   "88196.54 ms: (the|an?) [a-z]+ in strings, 8 states, bit-emit.ts: back to back 4.49 ms (4.27 to 4.655), after 200 ms 10.97 ms (5.15 to 12.295)",
+   "90279.99 ms: (the|an?) [a-z]+ in strings, 8 states, loop-emit.ts: back to back 7.725 ms (7.415 to 8.18), after 200 ms 9.925 ms (7.89 to 18.855)",
+   "92271.98 ms: (the|an?) [a-z]+ in strings, 8 states, bit-emit.ts: back to back 4.72 ms (4.41 to 4.935), after 200 ms 10.72 ms (4.68 to 11.825)",
+   "96056.49 ms: (the|an?|some) [a-z]+(ing)?s? in everything, 16 states, loop-emit.ts: back to back 68.615 ms (65.31 to 72.035), after 200 ms 69.735 ms (67.9 to 77.44)",
+   "98054.665 ms: (the|an?|some) [a-z]+(ing)?s? in everything, 16 states, bit-emit.ts: back to back 4.44 ms (4.315 to 4.77), after 200 ms 12.37 ms (5.14 to 12.845)",
+   "101742.69 ms: (the|an?|some) [a-z]+(ing)?s? in everything, 16 states, loop-emit.ts: back to back 68.545 ms (65.535 to 71.985), after 200 ms 69.285 ms (66.45 to 74.895)",
+   "103746.24 ms: (the|an?|some) [a-z]+(ing)?s? in everything, 16 states, bit-emit.ts: back to back 4.565 ms (4.33 to 5.195), after 200 ms 12.2 ms (4.825 to 15.755)",
+   "107436.365 ms: (the|an?|some) [a-z]+(ing)?s? in everything, 16 states, loop-emit.ts: back to back 68.95 ms (66.18 to 72.76), after 200 ms 69.605 ms (65.715 to 70.92)",
+   "109427.93 ms: (the|an?|some) [a-z]+(ing)?s? in everything, 16 states, bit-emit.ts: back to back 4.605 ms (4.39 to 5.205), after 200 ms 8.545 ms (5.27 to 12.86)",
+   "120615.285 ms: connection reset in everything, 32 states, loop-emit.ts: back to back 940.76 ms (930.1 to 975.745), after 200 ms 935.34 ms (929.955 to 945.45)",
+   "122632.415 ms: connection reset in everything, 32 states, bit-emit.ts: back to back 5.135 ms (4.945 to 6.125), after 200 ms 13.435 ms (5.715 to 14.52)",
+   "132778.775 ms: connection reset in everything, 32 states, loop-emit.ts: back to back 926.68 ms (923.12 to 934.995), after 200 ms 938.067 ms (932.135 to 943.015)",
+   "134785.61 ms: connection reset in everything, 32 states, bit-emit.ts: back to back 4.995 ms (4.755 to 5.89), after 200 ms 9.285 ms (5.565 to 14.58)",
+   "145010.05 ms: connection reset in everything, 32 states, loop-emit.ts: back to back 936.445 ms (923.175 to 947.36), after 200 ms 945.435 ms (891.525 to 962.495)",
+   "147042.445 ms: connection reset in everything, 32 states, bit-emit.ts: back to back 5.31 ms (5.025 to 6.3), after 200 ms 14.21 ms (5.335 to 18.365)",
+   "158672.305 ms: (the|an?|some|this|that|these) [a-z]+(ing|ed|s)?  in everything, 32 states, loop-emit.ts: back to back 975.655 ms (951.425 to 1011.875), after 200 ms 982.133 ms (960.28 to 991.425)",
+   "160772.415 ms: (the|an?|some|this|that|these) [a-z]+(ing|ed|s)?  in everything, 32 states, bit-emit.ts: back to back 5.955 ms (5.605 to 6.205), after 200 ms 10.175 ms (6.42 to 15.3)",
+   "171266.995 ms: (the|an?|some|this|that|these) [a-z]+(ing|ed|s)?  in everything, 32 states, loop-emit.ts: back to back 976.43 ms (966.115 to 996.71), after 200 ms 951.08 ms (941.34 to 968.415)",
+   "173303.72 ms: (the|an?|some|this|that|these) [a-z]+(ing|ed|s)?  in everything, 32 states, bit-emit.ts: back to back 5.29 ms (4.865 to 5.965), after 200 ms 14.49 ms (5.93 to 14.93)",
+   "183529.77 ms: (the|an?|some|this|that|these) [a-z]+(ing|ed|s)?  in everything, 32 states, loop-emit.ts: back to back 942.21 ms (930.115 to 951.105), after 200 ms 938.98 ms (933.72 to 944.815)",
+   "185565.315 ms: (the|an?|some|this|that|these) [a-z]+(ing|ed|s)?  in everything, 32 states, bit-emit.ts: back to back 5.205 ms (4.82 to 5.68), after 200 ms 14.69 ms (5.69 to 14.74)",
+   "185570.145 ms: the searches' values from either writer's shaders: {\"searches\":9,\"values\":1194912,\"different\":0}",
+   "187770.99 ms: 8 states, loops run every position: compiled in 19.545 ms, back to back 4.605 ms, after 200 ms 11.46 ms",
+   "190011.9 ms: 8 states, loops stop at the text's end: compiled in 19.455 ms, back to back 13.39 ms, after 200 ms 18.7 ms",
+   "192021.34 ms: 8 states, loops run every position: compiled in 19.545 ms, back to back 4.35 ms, after 200 ms 11.36 ms",
+   "194266.37 ms: 8 states, loops stop at the text's end: compiled in 19.455 ms, back to back 13.585 ms, after 200 ms 17.185 ms",
+   "196280.215 ms: 8 states, loops run every position: compiled in 19.545 ms, back to back 4.42 ms, after 200 ms 11.07 ms",
+   "198527.765 ms: 8 states, loops stop at the text's end: compiled in 19.455 ms, back to back 13.535 ms, after 200 ms 14.605 ms",
+   "200612.95 ms: 16 states, loops run every position: compiled in 24.715 ms, back to back 4.72 ms, after 200 ms 11.945 ms",
+   "202842.17 ms: 16 states, loops stop at the text's end: compiled in 21.79 ms, back to back 12.985 ms, after 200 ms 15.99 ms",
+   "204857.105 ms: 16 states, loops run every position: compiled in 24.715 ms, back to back 4.525 ms, after 200 ms 11.7 ms",
+   "207089.55 ms: 16 states, loops stop at the text's end: compiled in 21.79 ms, back to back 12.68 ms, after 200 ms 15.16 ms",
+   "209104.915 ms: 16 states, loops run every position: compiled in 24.715 ms, back to back 4.465 ms, after 200 ms 12.275 ms",
+   "211349.04 ms: 16 states, loops stop at the text's end: compiled in 21.79 ms, back to back 13.005 ms, after 200 ms 17.56 ms",
+   "213497.73 ms: 32 states, loops run every position: compiled in 29.395 ms, back to back 4.99 ms, after 200 ms 14.265 ms",
+   "215714.85 ms: 32 states, loops stop at the text's end: compiled in 28.82 ms, back to back 12.62 ms, after 200 ms 14.25 ms",
+   "217758.365 ms: 32 states, loops run every position: compiled in 29.395 ms, back to back 4.795 ms, after 200 ms 14.215 ms",
+   "220005.615 ms: 32 states, loops stop at the text's end: compiled in 28.82 ms, back to back 12.675 ms, after 200 ms 19.82 ms",
+   "222042.825 ms: 32 states, loops run every position: compiled in 29.395 ms, back to back 5.07 ms, after 200 ms 13.855 ms",
+   "224259.4 ms: 32 states, loops stop at the text's end: compiled in 28.82 ms, back to back 12.535 ms, after 200 ms 16.06 ms"
+  ],
+  "done": true
+ }
+}
