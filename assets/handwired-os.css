@@ -117,9 +117,10 @@ body {
   z-index: 0;
   right: 32px;
   bottom: calc(var(--dock-height) + 12px);
-  /* As wide as its longest line, in whatever font the system has. */
+  /* As wide as its longest line, in whatever font the system has: 482 px in the system
+     font of macOS. */
   width: max-content;
-  max-width: 440px;
+  max-width: 520px;
 }
 
 .desk-legend .label {
@@ -139,12 +140,12 @@ body {
 }
 
 /* Where the list is shown, the arcs behind it fade to a fifth, so no arc strikes through
-   a word. The clearing is an ellipse around the list's middle, which lies 218 px from the
+   a word. The clearing is an ellipse around the list's middle, which lies 249 px from the
    canvas's right edge and 144 px above its bottom. The two clearings multiply, which is
    what mask-composite: intersect does, and source-in is the same under its older name. */
 @media (min-width: 1100px) and (min-height: 850px) {
   .desk-wiring {
-    --legend-clearing: radial-gradient(340px 160px at calc(100% - 218px) calc(100% - 144px), rgb(0 0 0 / 0.2) 70%, #000);
+    --legend-clearing: radial-gradient(370px 160px at calc(100% - 249px) calc(100% - 144px), rgb(0 0 0 / 0.2) 70%, #000);
     -webkit-mask-image: var(--dock-clearing), var(--legend-clearing);
     mask-image: var(--dock-clearing), var(--legend-clearing);
     -webkit-mask-composite: source-in;
