@@ -60,7 +60,7 @@ import {
   invariant,
   validateCircuit,
 } from '../../../src/runtime/numeric-ui-core.ts'
-// Deterministic LCG, matching lab/learned-gallery/trainable-geometry.ts.
+// Deterministic LCG, matching src/learned-gallery/trainable-geometry.ts.
 export function createRandom(seed: number) {
   let state = seed >>> 0
   return () => {

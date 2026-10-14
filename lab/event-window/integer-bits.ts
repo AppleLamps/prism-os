@@ -65,7 +65,7 @@ import {
 
 export const slotCount = 6
 
-// Deterministic LCG, matching lab/learned-gallery/trainable-geometry.ts.
+// Deterministic LCG, matching src/learned-gallery/trainable-geometry.ts.
 export function createRandom(seed: number) {
   let state = seed >>> 0
   return () => {

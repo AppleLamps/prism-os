@@ -11,7 +11,7 @@ Handwired writes an interactive UI as one fixed numeric program. JavaScript writ
 - [HandwiredOS](#handwiredos), at /os/: a small desktop where one program computes the windows and their springs, the stacking order, which window a press lands on, and a list of the program's own numbers.
 - [JSON highlighter](#json-highlighter), at /json-highlighter/: a text box highlighted on every keystroke by one program that keeps no state.
 - [Regex search](lab/regex-search/README.md), at /regex-search/: one program finds every match of a pattern in a text as you type, and the same program runs every pattern, since a pattern reaches the program as tables of numbers.
-- [Learned gallery](lab/learned-gallery/README.md), at /learned-gallery/: a program whose 244 weights are trained instead of wired by hand, by backpropagation in the browser, until the photos match the rectangles you sketch.
+- [Learned gallery](src/learned-gallery/README.md), at /learned-gallery/: a program whose 244 weights are trained instead of wired by hand, by backpropagation in the browser, until the photos match the rectangles you sketch.
 - [Search 100,000 JSON documents](lab/json-search/README.md#the-demo-page), at /json-search/: at each keystroke, the regex search's program runs once per document over 100,000 JSON documents, or 20,000 in a window narrower than 720 px, in one pass on WebGPU, after the JSON highlighter's program has run over them the same way, for their colors and for a search of only keys or only string values. The page shows each search's time next to native RegExp's for the same search, and a toggle runs the same search on the CPU, where a pattern of up to 7 characters or classes, e.g. `error`, takes about 14 s on an Apple M5 Max.
 
 ## HandwiredOS

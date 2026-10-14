@@ -22,7 +22,7 @@ import {
   type LearnedGalleryInput,
   type LearnedLayoutName,
   type LearnedTargetGeometry,
-} from './learned-gallery.ts'
+} from '../../src/learned-gallery/learned-gallery.ts'
 import {
   createTrainableGeometryMachine,
   pairCost,
@@ -31,7 +31,7 @@ import {
   trainableGeometryField,
   type TrainableGeometry,
   type TrainableGeometryTarget,
-} from './trainable-geometry.ts'
+} from '../../src/learned-gallery/trainable-geometry.ts'
 
 type LearnedGalleryMachine = ReturnType<typeof createLearnedGalleryMachine>
 
@@ -570,7 +570,7 @@ const stageWidth = 500
 const stageHeight = 400
 // The largest value of the page's "Misalignment penalty" slider, as a fraction of the stage's width. The page's
 // markup has it, in percent.
-const sliderMarkup = /<input id="learning-penalty"[^>]* max="([0-9.]+)"/.exec(readFileSync(new URL('./learned-gallery.html', import.meta.url), 'utf8'))
+const sliderMarkup = /<input id="learning-penalty"[^>]* max="([0-9.]+)"/.exec(readFileSync(new URL('../../assets/learned-gallery.html', import.meta.url), 'utf8'))
 assert.ok(sliderMarkup !== null, 'the page has no slider')
 const maximumHoldDistance = Number(sliderMarkup[1]) / 100
 
@@ -820,7 +820,7 @@ test('the cost of a step is unknown only until the first step', () => {
 
 test('the numbers in the page\'s text are the code\'s', () => {
   // The description and the instructions are static text, so their numbers are written by hand.
-  const html = readFileSync(new URL('./learned-gallery.html', import.meta.url), 'utf8')
+  const html = readFileSync(new URL('../../assets/learned-gallery.html', import.meta.url), 'utf8')
   const {parameterCount} = createLearnedGalleryMachine()
   assert.ok(html.includes(`trains the network's ${parameterCount} weights`))
   assert.ok(html.includes(`empty space to add one, up to ${learnedPhotoCount}<`))

@@ -9,17 +9,22 @@ import {
   type TrainableGeometry,
   type TrainableGeometryTarget,
 } from './trainable-geometry.ts'
-import {invariant} from '../../src/runtime/numeric-ui-core.ts'
+import {invariant} from '../runtime/numeric-ui-core.ts'
 
+/** @public */
 export const learnedPhotoCount = 12
+/** @public */
 export const learnedSlotCount = 20
+/** @public */
 export const learnedGeometryField = trainableGeometryField
 
-export const learnedLayoutNames = ['Cinema', 'Contact', 'Story'] as const
+const learnedLayoutNames = ['Cinema', 'Contact', 'Story'] as const
 
+/** @public */
 export type LearnedLayoutName = Lowercase<(typeof learnedLayoutNames)[number]>
+/** @public */
 export type LearnedTargetGeometry = TrainableGeometry
-export type LearnedGalleryTarget = TrainableGeometryTarget
+type LearnedGalleryTarget = TrainableGeometryTarget
 
 const photoNames = [
   'Misty Lake',
@@ -125,7 +130,7 @@ const initialLayouts = {
   story: createStoryLayout(),
 } satisfies Record<LearnedLayoutName, TrainableGeometry[]>
 
-export function createLearnedGalleryTarget(
+function createLearnedGalleryTarget(
   name: LearnedLayoutName = 'story',
 ): LearnedGalleryTarget {
   const geometries = new Float32Array(
@@ -145,6 +150,7 @@ export function createLearnedGalleryTarget(
   return {geometries, active}
 }
 
+/** @public */
 export function createLearnedGalleryMachine(
   targetName: LearnedLayoutName = 'story',
 ) {
@@ -233,9 +239,11 @@ export function createLearnedGalleryMachine(
 // distance divided by penaltyStrength (trainable-geometry.ts), so half of it. The stage is 5 wide and 4 tall, so
 // the same length is 5/4 as large a fraction of its height. The slider's largest value is in the page's markup,
 // 8% of the stage's width.
+/** @public */
 export const defaultHoldDistance = 0.04
 
 // After the sketch or the slider changes, training runs at least this many more steps from the current weights.
+/** @public */
 export const trainingStepsAfterChange = 500
 // After those steps, training goes on until the photos have come to rest, and at most until
 // maximumTrainingStepsAfterChange steps have run since the change. With the penalty on, the loss has no value that
@@ -243,18 +251,23 @@ export const trainingStepsAfterChange = 500
 // stage of 620 px. So the rule reads the photos: they are at rest when no photo edge has moved more than
 // restDistance, a fraction of the stage, from where it was restSteps steps or more before. 0.0001 of the stage is
 // 0.06 px on that stage.
+/** @public */
 export const maximumTrainingStepsAfterChange = 2000
+/** @public */
 export const restSteps = 100
+/** @public */
 export const restDistance = 0.0001
 
 // How many more steps training may take, after `stepsSinceChange` steps since the last change: none once the
 // photos are at rest and the first steps are over, and otherwise the steps that are left of the most.
+/** @public */
 export function trainingStepsLeft(stepsSinceChange: number, atRest: boolean) {
   if (atRest && stepsSinceChange >= trainingStepsAfterChange) return 0
   return Math.max(0, maximumTrainingStepsAfterChange - stepsSinceChange)
 }
 // Training steps are tied to time, as chenguini's ui.md ties animation steps: 600 a second is 10 steps in a frame
 // of a 60 Hz display and 5 in a frame of a 120 Hz display, so training lasts as long on both.
+/** @public */
 export const msPerTrainingStep = 1000 / 600
 // The most steps one frame trains. After a pause, e.g. while the tab was in the background, every frame trains
 // that many until training has caught up with the time or stops, so training is faster than 600 steps a second for
@@ -263,8 +276,11 @@ export const msPerTrainingStep = 1000 / 600
 // in Bun and about 0.4 ms in Chrome 155 on an M5 Max (October 13, 2026), where 6 ms is 15 steps. Before the first
 // measurement a frame trains at most unmeasuredTrainingStepsPerFrame steps, and the frames after it make up for
 // the difference.
+/** @public */
 export const maximumTrainingStepsPerFrame = 20
+/** @public */
 export const trainingMsPerFrame = 6
+/** @public */
 export const unmeasuredTrainingStepsPerFrame = 4
 // The fewest steps one frame trains, unless fewer are left: a frame whose time or budget holds only one step
 // trains two or none. trainOrUndo takes a frame's steps back together with Adam's momentum, so after a frame of
@@ -280,10 +296,12 @@ export const unmeasuredTrainingStepsPerFrame = 4
 // frames of two. On a 500 Hz display, where a frame's time holds one step or two, 6.4% and 2.2%. With 10 steps a
 // frame it is 1.1%. The price is that a frame's training takes up to twice the budget where a step takes over
 // 3 ms, e.g. 10 ms at 5 ms a step.
+/** @public */
 export const minimumTrainingStepsPerFrame = 2
 // The loss chart shows this many of the latest steps, which holds Story's and Contact sheet's whole first fit,
 // 630 to 750 and 860 to 980 steps, and the later part of Cinema's, which takes 1,360 to 1,840 steps, depending on
 // which steps each frame holds.
+/** @public */
 export const chartStepCount = 1000
 
 const minimumRectangleSize = 0.04
@@ -299,6 +317,7 @@ const tapSlop = 10
 // What a pointer, a key or a button did since the last frame. Positions are CSS pixels from the top left corner of
 // the sketch's stage, inside its border. A move's `pressed` says whether a mouse button, a finger or a pen's tip
 // was down during the move.
+/** @public */
 export type LearnedGalleryInput =
   | {kind: 'pointer down', pointerId: number, x: number, y: number, touch: boolean}
   | {kind: 'pointer move', pointerId: number, x: number, y: number, touch: boolean, pressed: boolean}
@@ -307,7 +326,7 @@ export type LearnedGalleryInput =
   | {kind: 'layout', name: LearnedLayoutName}
   | {kind: 'retrain'}
 
-export type LossSample = {step: number, fromSketch: number, misalignment: number}
+type LossSample = {step: number, fromSketch: number, misalignment: number}
 
 type EditorDrag = {
   mode: 'move' | 'resize'
@@ -319,7 +338,7 @@ type EditorDrag = {
   geometry: LearnedTargetGeometry
 }
 
-export type LearnedGalleryFrame = {
+type LearnedGalleryFrame = {
   // The program's outputs, read through machine.geometries, with their loss and the number of optimizer steps since
   // the weights were last reset. The loss is the sum of its two parts: how far the photos are from the sketch,
   // and the misalignment penalty.
@@ -372,6 +391,7 @@ function stackByArea(areas: readonly number[]) {
 
 // The page's state, and what one frame does to it, without the DOM: the frame's inputs go in as numbers, and what
 // the page draws comes out. readClock times the training steps and returns milliseconds.
+/** @public */
 export function createLearnedGalleryEditor(readClock: () => number = () => performance.now()) {
   const machine = createLearnedGalleryMachine()
   let layout: LearnedLayoutName | null = 'story'
