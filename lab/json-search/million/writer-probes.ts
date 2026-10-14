@@ -86,14 +86,6 @@ export function compareProbe(probe: Probe, seed: number, rounds = 120): Comparis
     result.threw = `while writing or parsing: ${(error as Error).message}`
     return result
   }
-  // The interpreter reads a whole number literal of any size, and a GPU's shader compiler refuses one that its type
-  // doesn't hold, e.g. 2147483648i.
-  for (const [literal, digits, type] of bitShader.code.matchAll(/(?<![\w.])(\d+)([iu])\b/g)) {
-    if (Number(digits) > (type === 'i' ? 2 ** 31 - 1 : 2 ** 32 - 1)) {
-      result.threw = `the literal ${literal} doesn't fit ${type}32`
-      return result
-    }
-  }
   result.rules = Object.fromEntries(Object.entries(bitShader.rules).filter(([, count]) => count > 0))
   result.packedWords = bitShader.packedCells.length
   result.statements[1] = bitShader.statementCount
@@ -536,20 +528,62 @@ function buildMiniSearch(options: MiniSearchOptions): Probe {
 }
 const miniDefaults = {states: 8, classes: 16, readOrder: 'ascending', layout: 'byClass', form: 'movedIndex'} as const
 
-// A register whose cell is declared a whole number, into which the stage writes a number that isn't whole. JS:
-// level += step, with a step of e.g. 0.25. The cell's declaration is false for what the stage itself writes, which the
-// executor doesn't check (it checks ranges, not grids), so loop-emit.ts's shader and the executor agree on e.g. 0.5.
-function buildFractionRegister(): Probe {
+// A register whose cell is declared on a grid, into which the stage writes a number that isn't on that grid. JS:
+// level += step, with a step of e.g. 0.25 for a level that is declared a whole number. The cell's declaration is false
+// for what the stage itself writes, which the executor doesn't check (it checks ranges, not grids), so loop-emit.ts's
+// shader and the executor agree on e.g. 0.5. With a grid of 0.25 and a step of 0.125, the register is never a whole
+// number by its declaration, and 4 × level is one by the circuit's grid.
+function buildFractionRegister(grid: 1 | 0.25): Probe {
   const table = createSourceTable()
-  const cells = table.declare({row: input([0, 4], {grid: 1}), step: input([0, 1]), level: input([0, 40], {grid: 1})})
+  const cells = table.declare({row: input([0, 4], {grid: 1}), step: input([0, 1]), level: input([0, 40], {grid})})
   const circuit = table.createCircuit()
   const next = circuit.roundAffine([[cells.level, 1], [cells.step, 1]])
-  // What reads the register: twice its value as an operation of its own, and a gate over that, relu(7 - 2 × level).
-  const twice = circuit.roundAffine([[cells.level, 2]])
-  const left = circuit.reglu([], 1, [[twice, -1]], 7)
+  // What reads the register: a multiple of its value as an operation of its own, which the circuit puts on a grid of
+  // 2, and a gate over that, relu(7 - 2 × level).
+  const multiple = circuit.roundAffine([[cells.level, 2 / grid]])
+  const left = circuit.reglu([], 1, [[multiple, -1]], 7)
   const {initialSource} = table.finish()
   return {
     loop: rowsLoop({circuit, initialSource, row: cells.row, registers: [{cell: cells.level, initial: 0, next}], marks: [left]}),
+    sharedBits: [],
+    sharedNumbers: [{position: cells.step, values: [0, grid / 4, 1]}],
+    itemValues: range(0, 4),
+  }
+}
+
+// The same through a field: a first loop keeps row + step per position, in a field whose cell the second loop declares
+// a whole number, and the step is e.g. 0.25. The second loop marks relu(7 - 2 × kept) and counts the rows.
+function buildFractionField(): Probe {
+  const table = createSourceTable()
+  const cells = table.declare({row: input([0, 4], {grid: 1}), step: input([0, 1]), kept: input([0, 5], {grid: 1}), count: input([0, positions], {grid: 1})})
+  const circuit = table.createCircuit()
+  const keep = circuit.roundAffine([[cells.row, 1], [cells.step, 1]])
+  const twice = circuit.roundAffine([[cells.kept, 2]])
+  const left = circuit.reglu([], 1, [[twice, -1]], 7)
+  const nextCount = circuit.affine([[cells.count, 1]], 1)
+  const {initialSource} = table.finish()
+  return {
+    loop: {
+      positions,
+      buffers: [{name: 'rows', cellsPerDocument: positions}],
+      registers: [{name: 'count', initial: 0}],
+      fields: [{name: 'kept', width: 1, bits: false}],
+      outputGroups: [{name: 'count', kind: 'document', valuesPerDocument: 1, fill: 0}, {name: 'marks', kind: 'position', valuesPerDocument: positions, fill: 0}],
+      stages: [
+        createStage({
+          name: 'keep', repeat: 'forward', circuit, sharedOffset: 0, bindings: new Map<Wire, Binding>([[cells.row, {kind: 'item', buffer: 0}]]),
+          outputs: [{wire: keep, write: {kind: 'field', field: 0, component: 0}}],
+        }),
+        createStage({
+          name: 'mark', repeat: 'backward', circuit, sharedOffset: 0,
+          bindings: new Map<Wire, Binding>([[cells.kept, {kind: 'field', field: 0, component: 0}], [cells.count, {kind: 'register', register: 0}]]),
+          outputs: [{wire: left, write: {kind: 'position', group: 1}}, {wire: nextCount, write: {kind: 'register', register: 0}}],
+        }),
+      ],
+      results: [{group: 0, column: 0, register: 0}],
+      sharedValues: new Float32Array(initialSource),
+      lengthCell: undefined,
+    },
     sharedBits: [],
     sharedNumbers: [{position: cells.step, values: [0, 0.25, 1]}],
     itemValues: range(0, 4),
@@ -716,7 +750,9 @@ export const probes: Record<string, () => Probe> = {
     const [a, b, c] = bits as [Wire, Wire, Wire]
     return [circuit.reglu([], 1, [[circuit.reglu([], 1, [[a, 1], [b, -1]], -1), 2 ** 31], [c, 1]], 0)]
   }),
-  registerFractionWritten: buildFractionRegister,
+  registerFractionWritten: () => buildFractionRegister(1),
+  registerOffGridWritten: () => buildFractionRegister(0.25),
+  fieldFractionWritten: buildFractionField,
 
   // The search step's passes written again, then with one thing changed each.
   miniSearch: () => buildMiniSearch(miniDefaults),

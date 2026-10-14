@@ -1,44 +1,26 @@
 // A reviewer's check of bit-emit.ts, kept as tests: the programs of writer-probes.ts and a sample of writer-fuzz.ts's
 // random programs, each as both writers' shaders through the strict WGSL interpreter against the CPU executor.
-// A program of `knownDefects` is one where bit-emit.ts stops, writes a shader that a GPU refuses, or gives another
-// value than loop-emit.ts's shader, as found on October 14, 2026. Its test is marked as failing, so that it reports
-// when the writer is fixed, and the entry can go.
+// Eight of the programs found defects on October 14, 2026, which are fixed since: a gate over more than 32 bits
+// (noneOf33, noneOf40, noneOfNegations40, noneOfGates40), a weight that i32 doesn't hold (comparedZeros,
+// largeWeightOnZero), a field that two loops fill (splitField), and a register whose own stage breaks its declared grid
+// (registerFractionWritten), where bit-emit.ts's shader gave 7 for the executor's 6.5.
 // Run from the repo root: bun test lab/json-search/million/writer-probes.test.ts
 import {describe, expect, test} from 'bun:test'
 import {buildLanes, buildScalar} from './writer-fuzz.ts'
 import {compareProbe, probes} from './writer-probes.ts'
 
-const knownDefects: Record<string, string> = {
-  // A list of more than 32 shared cells, of their negations, or of gates of one form over them is written as one word:
-  // `(s34b << 32u)`, or a mask of 40 bits.
-  noneOf33: 'a shift by 32 bits',
-  noneOf40: 'a shift by 32 bits',
-  noneOfNegations40: 'a mask of 40 bits for a u32',
-  noneOfGates40: 'a mask of 40 bits for a u32',
-  // A weight that i32 doesn't hold on a value that is proven to be 0, e.g. a sign cascade's 2^127.
-  comparedZeros: 'the literal 1.7014118346046923e+38i',
-  largeWeightOnZero: 'the literal 2147483648i',
-  // A field that the loop program declares as plain numbers and two loops fill: the writer holds it as a word of bits
-  // and then wants one stage to write every bit.
-  splitField: 'bit-emit.ts stops with "a stage that writes a field of bits writes every bit of it"',
-  // The register is held as f32, and the operation that reads it is still taken for a whole number: i32(0.5).
-  registerFractionWritten: 'i32() of a number that isn\'t whole',
-}
-
 describe('bit-emit.ts on a reviewer\'s programs', () => {
   for (const [name, build] of Object.entries(probes)) {
-    const check = () => {
+    test(`${name}: both shaders give the executor's values`, () => {
       const result = compareProbe(build(), 20261014, 24)
       expect([result.threw, result.mismatches, result.values > 1000 && result.nonZero > 0]).toEqual([undefined, [0, 0], true])
-    }
-    const defect = knownDefects[name]
-    if (defect === undefined) test(`${name}: both shaders give the executor's values`, check)
-    else test.failing(`${name}: known defect, ${defect}`, check)
+    })
   }
 })
 
 describe('bit-emit.ts on random programs', () => {
-  for (const [kind, build] of [['scalar', buildScalar], ['lanes', buildLanes]] as const) {
+  // In a 'broken' program, two registers' own stage writes numbers that their cells' declarations rule out.
+  for (const [kind, build] of [['scalar', buildScalar], ['lanes', buildLanes], ['broken', (seed: number) => buildScalar(seed, true)]] as const) {
     test(`${kind}: 150 random programs give the executor's values from both shaders`, () => {
       const totals = {programs: 0, values: 0, stopped: [] as string[], different: [] as string[]}
       for (let seed = 1; seed <= 150; seed++) {

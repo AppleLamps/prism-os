@@ -15,7 +15,7 @@ import {
   state,
   stateBit,
 } from '../../src/runtime/cells.ts'
-import {type Circuit, type Wire, asWire, emitCompare, emitSelect} from '../../src/runtime/numeric-ui-core.ts'
+import {type Circuit, type Wire, asWire, emitCompare, emitSelect, inlineCircuit} from '../../src/runtime/numeric-ui-core.ts'
 
 // One cell of every kind, a one-hot group, a permutation, and a cell declared in a second call under a name.
 function smallTable() {
@@ -101,6 +101,31 @@ test('a program built over exact bits has the operations and the compiled layers
   expect(withBits.circuit.operations).toEqual(without.circuit.operations)
   expect(withBits.circuit.grids).toEqual(without.circuit.grids)
   expect(withBits.program).toEqual(without.program)
+})
+
+test('inlineCircuit repeats an exact bit on the wire that the bit lands on, and builds the operations that it builds without the declaration', () => {
+  // The same inner program twice, with its `enabled` cell declared with inputBit and as a cell within 0..1, inlined
+  // into an outer circuit whose own cells aren't bits: JS for the inner program, enabled ? width : 0.
+  const build = (bit: () => ReturnType<typeof inputBit>) => {
+    const innerTable = createSourceTable()
+    const inner = innerTable.declare({enabled: bit(), width: input([0, 100], {grid: 1})})
+    const innerCircuit = innerTable.createCircuit()
+    innerCircuit.multiply(inner.enabled, inner.width)
+    const outerTable = createSourceTable()
+    const outer = outerTable.declare({flag: input([0, 1]), size: input([0, 100], {grid: 1}), other: input([0, 1])})
+    const circuit = outerTable.createCircuit()
+    const wires = inlineCircuit(circuit, innerCircuit, [outer.flag, outer.size])
+    return {circuit, outer, program: circuit.compileTensorProgram([wires.at(-1)!])}
+  }
+  const withBit = build(() => inputBit())
+  const without = build(() => input([0, 1]))
+  // Only the cell that the inner bit was mapped to is an exact bit of the outer circuit.
+  expect(withBit.circuit.exactBits.flatMap((isBit, wire) => isBit ? [wire] : [])).toEqual([withBit.outer.flag])
+  expect(without.circuit.exactBits.includes(true)).toBe(false)
+  expect(withBit.circuit.operations.length).toBeGreaterThan(0)
+  expect(withBit.circuit.operations).toEqual(without.circuit.operations)
+  expect([withBit.circuit.ranges, withBit.circuit.grids]).toEqual([without.circuit.ranges, without.circuit.grids])
+  expect(withBit.program).toEqual(without.program)
 })
 
 test('a state cell without a next value, or with two, fails while building, and so does a call out of order', () => {

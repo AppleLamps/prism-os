@@ -3,12 +3,15 @@
 //
 //   bun lab/json-search/million/writer-fuzz.ts scalar 2000 [firstSeed]    random operations over bits, whole numbers and ordinary numbers
 //   bun lab/json-search/million/writer-fuzz.ts lanes 2000 [firstSeed]     the same operation for every bit of a list, over registers, fields, shared cells and table reads
+//   bun lab/json-search/million/writer-fuzz.ts broken 2000 [firstSeed]    'scalar' with two registers whose own stage breaks their declarations
 //   bun lab/json-search/million/writer-fuzz.ts scalar 1 <seed> show       one program, with bit-emit.ts's shader
 //
-// Every program keeps its declarations: a cell declared as a bit only ever holds 0 or 1, and a cell declared within a
-// range of whole numbers only holds such numbers. So a value that differs between the two shaders is the writer's
-// mistake and not the program's. The generator tracks what each value can hold: a bit, a whole number within a range,
-// or an ordinary number.
+// A 'scalar' or 'lanes' program keeps its declarations: a cell declared as a bit only ever holds 0 or 1, and a cell
+// declared within a range of whole numbers only holds such numbers. So a value that differs between the two shaders
+// is the writer's mistake and not the program's. The generator tracks what each value can hold: a bit, a whole number
+// within a range, or an ordinary number. A 'broken' program is built as if two of its registers kept their
+// declarations, and its stage writes e.g. 1.5 into a register that is declared a whole number. The executor accepts
+// that, since it checks a cell's range and not its grid, and bit-emit.ts has to find it and give loop-emit.ts's values.
 import {type Wire, emitCompare} from '../../../src/runtime/numeric-ui-core.ts'
 import {createSourceTable, input, inputBit, list} from '../../../src/runtime/cells.ts'
 import {emitBitLoopWgsl} from '../bit-emit.ts'
@@ -48,7 +51,7 @@ const wires = (terms: readonly (readonly [WholeValue, number])[]) => terms.map((
 // ---------------------------------------------------------------------------------------------------------------
 // 'scalar': random operations.
 
-export function buildScalar(seed: number): Probe {
+export function buildScalar(seed: number, breakDeclarations = false): Probe {
   const random = createRandom(seed)
   const rows = integer(random, 1, 6)
   const lowestRow = pick(random, [0, 0, -1, -2])
@@ -211,10 +214,12 @@ export function buildScalar(seed: number): Probe {
   // A stage's output is an operation, so a source cell is copied.
   const computed = (value: Value) => value.wire >= circuit.sourceSize ? value.wire : circuit.roundAffine([[value.wire, 1]])
   const bits = bitsOf()
-  const nextRegisters = cells.registers.map(() => computed(pick(random, bits)))
+  // JS for a broken register of bits: bit - fraction, e.g. 0.75, which is still within the cell's range of 0..1.
+  const nextRegisters = cells.registers.map((_, index) => breakDeclarations && index === 0 ? circuit.reglu([], 1, [[pick(random, bits).wire, 1], [cells.fraction, -1]], 0) : computed(pick(random, bits)))
   const nextCount = circuit.affine([[cells.count, 1], [pick(random, bits).wire, 1]])
   const levels = pool.filter(value => value.kind === 'bit' || (value.kind === 'whole' && value.minimum >= 0 && value.maximum <= 3))
-  const nextLevel = computed(pick(random, levels))
+  // JS for a broken level: half a whole number of 0 to 3, e.g. 1.5.
+  const nextLevel = breakDeclarations ? circuit.roundAffine([[pick(random, levels).wire, 0.5]]) : computed(pick(random, levels))
   const addends = pool.filter(value => value.wire !== cells.total && (value.kind !== 'whole' || (value.minimum >= -64 && value.maximum <= 64)) && circuit.ranges[value.wire]!.minimum >= -64 && circuit.ranges[value.wire]!.maximum <= 64)
   const nextTotal = circuit.roundAffine([[cells.total, 1], [pick(random, addends).wire, 1]])
   const marks = sample(random, pool.filter(value => value.wire !== cells.total), integer(random, 1, 4)).map(computed)
@@ -454,7 +459,7 @@ export function buildLanes(seed: number): Probe {
 
 if (import.meta.main) {
   const [kind, countText, seedText, show] = process.argv.slice(2)
-  const build = kind === 'lanes' ? buildLanes : buildScalar
+  const build = kind === 'lanes' ? buildLanes : kind === 'broken' ? (seed: number) => buildScalar(seed, true) : buildScalar
   const count = Number(countText ?? 200)
   const firstSeed = Number(seedText ?? 1)
   const totals = {programs: 0, refused: 0, threw: 0, different: 0, todayDiffers: 0, values: 0}

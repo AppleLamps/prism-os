@@ -135,7 +135,9 @@ function sumRange(proofs: readonly (Whole | undefined)[], terms: readonly Term[]
   let magnitude = Math.abs(bias)
   for (const {weight, position} of terms) {
     const operand = proofs[position]
-    if (operand === undefined || !Number.isInteger(weight)) return undefined
+    // A weight is written as an i32 literal, so it has to be a whole number that i32 holds, also where its product is
+    // small, e.g. a sign cascade's 2^127 times a value that is always 0.
+    if (operand === undefined || !Number.isInteger(weight) || Math.abs(weight) > wholeLimit) return undefined
     minimum += weight > 0 ? weight * operand.minimum : weight * operand.maximum
     maximum += weight > 0 ? weight * operand.maximum : weight * operand.minimum
     magnitude += Math.abs(weight) * Math.max(Math.abs(operand.minimum), Math.abs(operand.maximum))
@@ -152,24 +154,39 @@ type StageProof = {
   exact: boolean[]
 }
 
-function proveStage(stage: Stage, sourceProof: (position: number) => Whole | undefined): StageProof {
+// What a stage's proof starts from for one source cell: a whole number, undefined for any other number, and 'unproven'
+// for a register or a field whose cell is declared on a grid or as a bit while the writer holds it as f32, e.g. a
+// level declared a whole number into which a stage writes level + 0.25.
+type SourceProof = Whole | 'unproven' | undefined
+
+function proveStage(stage: Stage, sourceProof: (position: number) => SourceProof): StageProof {
   const {program, circuit} = stage
   const rows = flattenProgram(program)
   const proofs: (Whole | undefined)[] = []
   const exact: boolean[] = []
+  // By packed position: whether the circuit's grid for the value can be taken. The circuit infers the grid of a sum or
+  // a product from its operands' grids, so it holds when theirs do, and an 'unproven' cell's doesn't: for a level that
+  // holds 0.25, the circuit still says that 2 × level is a whole number. A boolean atom is 0 or 1 whatever it reads,
+  // and an index read's value is one of its candidates.
+  const gridHolds: boolean[] = []
   for (let position = 0; position < program.sourceSize; position++) {
-    proofs.push(sourceProof(position))
+    const proof = sourceProof(position)
+    proofs.push(proof === 'unproven' ? undefined : proof)
+    gridHolds.push(proof !== 'unproven')
     exact.push(false)
   }
   for (const row of rows) {
     let inferred: Whole | undefined
     let rowExact = false
+    let holds = true
     switch (row.kind) {
       case 'affine':
         inferred = sumRange(proofs, row.terms, row.bias)
         rowExact = inferred !== undefined
+        holds = row.terms.every(term => gridHolds[term.position]!)
         break
       case 'reglu': {
+        holds = row.terms.every(term => gridHolds[term.position]!) && row.gateTerms.every(term => gridHolds[term.position]!)
         const left = sumRange(proofs, row.terms, row.bias)
         const gate = sumRange(proofs, row.gateTerms, row.gateBias)
         if (left === undefined || gate === undefined) break
@@ -205,8 +222,11 @@ function proveStage(stage: Stage, sourceProof: (position: number) => Whole | und
       }
     }
     const wire = program.wireOrder[row.position]!
-    const proof = inferred === undefined ? declaredWhole(circuit, wire) : narrowed(inferred, circuit.ranges[wire]!)
+    // An operation that the range arithmetic above doesn't reach is whole when the circuit says so, e.g. the bit that
+    // emitCompare declares at the end of a sign cascade.
+    const proof = inferred !== undefined ? narrowed(inferred, circuit.ranges[wire]!) : holds ? declaredWhole(circuit, wire) : undefined
     proofs.push(proof)
+    gridHolds.push(holds)
     // An operation whose proof the circuit's own range contradicts is written as loop-emit.ts writes it. An index read
     // keeps its integer index when the value that it reads isn't whole.
     exact.push(rowExact && (row.kind === 'index' || proof !== undefined))
@@ -228,7 +248,8 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
 
   // How each register and field is held. It starts from the declarations of the cells bound to it, and a register or
   // field that some stage writes a value into that isn't proven to fit is held as f32 instead, until nothing changes:
-  // the stages are proven again, since a cell bound to an f32 register proves nothing.
+  // the stages are proven again, since a cell bound to an f32 register proves nothing, and neither does the circuit's
+  // grid for an operation that reads the cell.
   const boundWholes = (isBound: (binding: Binding) => boolean) => loop.stages.flatMap(stage =>
     [...stage.bindings].filter(([, binding]) => isBound(binding)).map(([wire]) => declaredWhole(stage.circuit, wire)))
   const registerStorage = loop.registers.map(({initial}, index): Storage => {
@@ -241,9 +262,9 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
   for (;;) {
     stageProofs = loop.stages.map(stage => proveStage(stage, position => {
       const binding = stage.bindings.get(position as Wire)
-      if (binding?.kind === 'register' && registerStorage[binding.register] === 'float') return undefined
-      if (binding?.kind === 'field' && fieldStorage[binding.field] === 'float') return undefined
-      return declaredWhole(stage.circuit, position)
+      const storage = binding?.kind === 'register' ? registerStorage[binding.register]! : binding?.kind === 'field' ? fieldStorage[binding.field]! : undefined
+      if (storage !== 'float') return declaredWhole(stage.circuit, position)
+      return stage.circuit.grids[position] !== undefined || stage.circuit.exactBits[position] === true ? 'unproven' : undefined
     }))
     let changed = false
     for (const [stageIndex, stage] of loop.stages.entries()) {
@@ -262,9 +283,14 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
     }
     if (!changed) break
   }
-  // A field of bits is one u32 word per position, as in loop-emit.ts: when the loop program says so, or when the bits
-  // are proven and fit a word.
-  const fieldWords = loop.fields.map((field, index) => field.bits || (fieldStorage[index] === 'bit' && field.width <= 32))
+  // A field of bits is one u32 word per position, as in loop-emit.ts, when the loop program says so. A field that the
+  // loop program declares as plain numbers is one too when its bits are proven and fit a word, and every stage that
+  // writes the field writes all of a position's bits, e.g. not when two loops fill two of four bits each.
+  const writesWholePositions = (field: number) => loop.stages.every(stage => {
+    const components = new Set(stage.outputs.flatMap(({write}) => write.kind === 'field' && write.field === field ? [write.component] : []))
+    return components.size === 0 || components.size === loop.fields[field]!.width
+  })
+  const fieldWords = loop.fields.map((field, index) => field.bits || (fieldStorage[index] === 'bit' && field.width <= 32 && writesWholePositions(index)))
 
   const bufferName = (buffer: number) => buffer === 0 ? 'instance_sources' : `instance_inputs_${buffer}`
   const baseName = (buffer: number) => buffer === 0 ? 'source_base' : `input_base_${buffer}`
@@ -545,10 +571,11 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
       const maximumGatingBits = 4
       function gatedRead(row: IndexRow): Gated | undefined {
         if (!exact[row.position]!) return undefined
-        // The words are packed from every candidate, so each one has to be a cell that the pattern's writer fills with 0 or 1.
+        // The words are packed from every candidate, also from one that the index never reaches, so each one has to be
+        // a shared cell that is declared to hold 0 or 1: an exact bit, a cell on a grid of 1 within 0..1, or a constant.
         for (let candidate = 0; candidate < row.candidateCount; candidate++) {
           const cell = row.candidateBase + candidate * row.candidateStride
-          if (stage.circuit.exactBits[cell] !== true || stage.bindings.has(cell as Wire)) return undefined
+          if (stage.bindings.has(cell as Wire) || proofs[cell] === undefined || !isBit(proofs[cell])) return undefined
         }
         const isGating = (term: Term) => isBit(proofs[term.position]!) && Math.abs(term.weight) >= row.candidateCount
         const gatingTerms = row.indexTerms.filter(isGating)
@@ -669,6 +696,7 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
         | {kind: 'gate', positions: readonly number[], all: WordSlot[], none: WordSlot[]}
       type WordSlot = WordPlan | {kind: 'lanes', positions: readonly number[]}
       function wordPlan(positions: readonly number[]): WordPlan | undefined {
+        invariant(positions.length <= 32, 'a word holds at most 32 bits')
         if (positions.length < 2 || !positions.every(position => proofs[position] !== undefined && isBit(proofs[position]))) return undefined
         const slot = (operands: readonly number[]): WordSlot => wordPlan(operands) ?? {kind: 'lanes', positions: operands}
         const lanes = positions.map(position => {
@@ -687,7 +715,7 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
         const rowsOf = positions.map(rowAt)
         const reads = rowsOf.filter(row => row?.kind === 'index')
         const gateds = reads.map(gatedRead).filter(gated => gated !== undefined)
-        if (gateds.length === positions.length && positions.length <= 32 && gateds.every(gated => gated.key === gateds[0]!.key)) return {kind: 'reads', positions, gated: gateds[0]!, reads}
+        if (gateds.length === positions.length && gateds.every(gated => gated.key === gateds[0]!.key)) return {kind: 'reads', positions, gated: gateds[0]!, reads}
         const negated = rowsOf.flatMap(row => row === undefined ? [] : [negatedBit(row)]).filter(operand => operand !== undefined)
         if (negated.length === positions.length) return {kind: 'not', positions, operand: slot(negated)}
         const gates = rowsOf.flatMap(row => row?.kind === 'reglu' ? [conjunction(row)] : []).filter(gate => gate !== undefined)
@@ -805,10 +833,14 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
           if (reads.length === 1) zeroBits.push(reads[0]!.position)
           else for (let from = 0; from < reads.length; from += 32) factors.push(`u32((${packedWord(gated, reads.slice(from, from + 32))}) == 0u)`)
         }
-        // "None of these bits is 1" is one comparison when the bits are a word without building it lane by lane.
-        const word = wordPlan(zeroBits)
-        if (word !== undefined && isWhole(word)) factors.push(`u32(${wordOf(word)} == 0u)`)
-        else if (zeroBits.length > 0) factors.push(`(${zeroBits.length === 1 ? bitText(zeroBits[0]!) : `(${zeroBits.map(bitText).join(' | ')})`} ^ 1u)`)
+        // "None of these bits is 1", 32 bits at a time: one comparison when the bits are a word without building it lane
+        // by lane, and an OR of the bits otherwise.
+        for (let from = 0; from < zeroBits.length; from += 32) {
+          const bits = zeroBits.slice(from, from + 32)
+          const word = wordPlan(bits)
+          if (word !== undefined && isWhole(word)) factors.push(`u32(${wordOf(word)} == 0u)`)
+          else factors.push(`(${bits.length === 1 ? bitText(bits[0]!) : `(${bits.map(bitText).join(' | ')})`} ^ 1u)`)
+        }
         return factors.join(' & ')
       }
 

@@ -195,7 +195,10 @@ function compileExpression(text: string, variables: ReadonlyMap<string, Variable
         return {type: 'f32', evaluate: () => value}
       }
       const value = Number(token.slice(0, -1))
-      return {type: token.endsWith('i') ? 'i32' : 'u32', evaluate: () => value}
+      const type = token.endsWith('i') ? 'i32' : 'u32'
+      // A GPU's shader compiler refuses a literal that its type doesn't hold, e.g. 2147483648i or 1099511627775u.
+      invariant(value <= (type === 'i32' ? 0x7fffffff : 0xffffffff), `the literal ${token} doesn't fit ${type}`)
+      return {type, evaluate: () => value}
     }
     if (peek() === '(') {
       switch (token) {

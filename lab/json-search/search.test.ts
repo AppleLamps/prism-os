@@ -331,6 +331,9 @@ describe('regex search as a loop, at the measured capacities', () => {
         }
         if (row % 6 === 0) {
           for (const interpret of interpreters) {
+            // Not the answer that the runner left in the arrays, so that a shader which wrote nothing fails.
+            count.fill(9)
+            marks.fill(9)
             interpret(variants[0]!.shared, cells.subarray(row * storeCells, (row + 1) * storeCells), 1, [count, marks], {window: {first: 0, count: 1}})
             if (count[0] !== wanted.count || mismatchCount(marks, wanted.marks) > 0) expect({pattern, text, count: count[0], marks: [...marks]}).toEqual(wanted)
           }
@@ -506,6 +509,9 @@ describe('searching only some kinds of characters', () => {
       if (count[0] !== entry.count || mismatchCount(marks, entry.marks) > 0) expect({...entry, count: count[0], marks: [...marks]}).toEqual(entry)
       if (index % 9 !== 0) continue
       for (const interpret of interpreters) {
+        // Not the answer that the runner left in the arrays, so that a shader which wrote nothing fails.
+        count.fill(9)
+        marks.fill(9)
         interpret(shared, cells.subarray(entry.row * storeCells, (entry.row + 1) * storeCells), 1, [count, marks], {inputs: [kinds.subarray(entry.row * kindsPerDocument, (entry.row + 1) * kindsPerDocument)], window: {first: 0, count: 1}})
         if (count[0] !== entry.count || mismatchCount(marks, entry.marks) > 0) expect({...entry, count: count[0], marks: [...marks]}).toEqual(entry)
       }
