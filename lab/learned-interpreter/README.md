@@ -109,7 +109,7 @@ The experiment still learns only one shared straight-line program of two instruc
 ## Reproduce
 
 - `bun test lab/learned-interpreter` runs focused semantic, gradient, optimizer-control, and regression checks. It no longer spends minutes asserting that a particular seed study must fail.
-- `bunx tsgo -p lab/learned-interpreter` and `bunx oxlint --type-aware lab/learned-interpreter` run the scoped static checks.
+- `bunx tsc -p lab/learned-interpreter` and `bunx oxlint --type-aware lab/learned-interpreter` run the scoped static checks.
 - `bun lab/learned-interpreter/report.ts --write` reruns the frozen and fresh hard-loss seed studies and writes `study-results.json`.
 - `bun lab/learned-interpreter/report.ts --soft --write` additionally runs the six old and fresh soft-output groups and writes `study-results-with-soft.json`.
 

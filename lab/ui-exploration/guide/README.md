@@ -225,5 +225,5 @@ Headless tests missed several problems that a Chrome check found ([browser check
 From the repo root:
 
 - `bun test lab/ui-exploration/guide/examples` runs every example's tests: 217 tests across 33 files in a few seconds, each checking circuits against plain JavaScript, or gradients against finite differences. `bun test lab/ui-exploration/guide/examples/patterns` runs only the pattern docs' 83 tests.
-- `bunx tsgo -p lab/ui-exploration/guide/examples/model` typechecks one folder. The other section folders are loops, springs, instancing, indexing, comparisons, chains, executor, differentiability and text, and the pattern folders are patterns/selection, patterns/combining-steps, patterns/every-item, patterns/candidates-and-tables and patterns/fewer-dependencies.
+- `bunx tsc -p lab/ui-exploration/guide/examples/model` typechecks one folder. The other section folders are loops, springs, instancing, indexing, comparisons, chains, executor, differentiability and text, and the pattern folders are patterns/selection, patterns/combining-steps, patterns/every-item, patterns/candidates-and-tables and patterns/fewer-dependencies.
 - Every section folder except model has a `report.ts` that prints the numbers its section quotes, e.g. `bun lab/ui-exploration/guide/examples/loops/report.ts`. The pattern folders pin the numbers their docs quote in their tests.

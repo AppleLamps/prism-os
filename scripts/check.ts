@@ -1,5 +1,6 @@
 import {existsSync, readdirSync} from 'node:fs'
 import {basename, dirname, resolve} from 'node:path'
+import {version as typescriptVersion} from 'typescript'
 
 const root = resolve(import.meta.dir, '..')
 const labs = readdirSync(resolve(root, 'lab'), {withFileTypes: true})
@@ -15,12 +16,22 @@ const prototypes = readdirSync(resolve(root, 'lab/ui-exploration'), {recursive: 
   .sort()
 const rootSources = readdirSync(root).filter(name => name.endsWith('.ts'))
 const commands = [
-  ['bunx', 'tsgo', '-p', '.'],
-  ...[...labs, ...prototypes].map(lab => ['bunx', 'tsgo', '-p', lab]),
+  ['bunx', 'tsc', '-p', '.'],
+  ...[...labs, ...prototypes].map(lab => ['bunx', 'tsc', '-p', lab]),
   ['bunx', 'oxlint', '--type-aware', ...rootSources, 'src', 'tests', 'scripts', 'template', ...labs],
 ]
 
-// Most of these commands are small tsgo processes, so the check runs 8 at a time: about 2.6 s
+// typescript6, the TypeScript 6 that lab/trace-compiler imports, has a `tsc` binary too. Bun 1.4.3
+// links node_modules/.bin/tsc to the typescript package because that name sorts first, see
+// knip.config.ts. A later Bun or another package manager may link typescript6's binary instead, and
+// the commands above would then type-check with TypeScript 6 without saying so. So the check stops
+// when `bunx tsc` isn't the compiler of the typescript package.
+const compilerVersion = Bun.spawnSync(['bunx', 'tsc', '--version'], {cwd: root}).stdout.toString().trim()
+if (compilerVersion !== `Version ${typescriptVersion}`) {
+  throw new Error(`\`bunx tsc --version\` printed "${compilerVersion}", and the typescript package is at ${typescriptVersion}. node_modules/.bin/tsc has to link to ../typescript/bin/tsc.`)
+}
+
+// Most of these commands are small tsc processes, so the check runs 8 at a time: about 2.6 s
 // instead of 11 s one at a time on an 18-core machine, with about 2.2 GB of memory at peak, where
 // all of them at once take about 12 GB. Every command runs even when another one fails, so one run
 // reports every failure. Each command's output is printed after all of them finish, in the order

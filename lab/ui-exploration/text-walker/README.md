@@ -10,7 +10,7 @@ From the repository root:
 
 ```sh
 bun test lab/ui-exploration/text-walker
-bunx tsgo -p lab/ui-exploration/text-walker
+bunx tsc -p lab/ui-exploration/text-walker
 bun lab/ui-exploration/text-walker/report.ts ladder flow springs
 bun lab/ui-exploration/text-walker/report.ts fast
 bun lab/ui-exploration/text-walker/demo.html
@@ -252,7 +252,7 @@ The first half of this section is the CPU half: one per-paragraph program for pr
 | `batch/results/` | `sizes.json`, `sweep.json`, one JSON line per timing process, and the GPU step's raw results |
 | `batch/gpu/` | The GPU step, see [The GPU step](#the-gpu-step) |
 
-**The paragraphs.** Word soup from the same word list as `makeParagraph`, with some hyphenated words, e.g. "state-of-the-art", which pretext splits into text segments that a line can break between, and some zero-width spaces, e.g. `" ​​"`, a space and two zero-width spaces, is a run of 3 break-after segments. Short paragraphs have 14 to 26 words, and long ones 170 to 230. Every paragraph is on pretext's fast path, and at 16 px the fake canvas measures every segment in multiples of 1/4 px, so prefix sums are exact in FP32. The reference is npm `@chenglou/pretext` 0.0.9, the package that HandwiredOS's Notes used until October 13, 2026, and not this folder's `pretext-src/` copy: `layout(prepared, maxWidth, lineHeight).lineCount`, with pretext's non-Safari line fit epsilon of 0.005 px.
+**The paragraphs.** Word soup from the same word list as `makeParagraph`, with some hyphenated words, e.g. "state-of-the-art", which pretext splits into text segments that a line can break between, and some zero-width spaces, e.g. `" ​​"`, a space and two zero-width spaces, is a run of 3 break-after segments. Short paragraphs have 14 to 26 words, and long ones 170 to 230. Every paragraph is on pretext's fast path, and at 16 px the fake canvas measures every segment in multiples of 1/4 px, so prefix sums are exact in FP32. The reference is npm `@chenglou/pretext`, and not this folder's `pretext-src/` copy: `layout(prepared, maxWidth, lineHeight).lineCount`, with pretext's non-Safari line fit epsilon of 0.005 px. Every number in this section was measured with pretext 0.0.9, the version that HandwiredOS's Notes used until October 13, 2026. Since October 14, 2026 the package is at 1.0.0, which gives the same segments, kinds, widths and line counts as 0.0.9 for the first 65,536 paragraphs of each size at 61 widths from 160 to 480 px.
 
 **The program.** One compiled program serves every paragraph of a size. Its cells, after the unit cell, are `maxWidth`, `startCursor`, K segment widths and K break-after bits. A paragraph of n segments is written at the end of the K cells, after zero-width text, with `startCursor = K - n`. For example, a 39-segment paragraph in a 68-segment program starts at cell 29. The walkers with line slots start the first line at `startCursor`, so they never read the padding, and the segment walker starts at segment 0, where the padding adds 0 px to the first line. The width is a cell too, so each paragraph of a batch can have its own width.
 

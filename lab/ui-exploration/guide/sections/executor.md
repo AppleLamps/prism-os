@@ -507,7 +507,7 @@ Some terms in the table: a parallel prefix network computes running totals as a 
 From the repo root:
 
 - `bun test lab/ui-exploration/guide/examples/executor` runs every check quoted above.
-- `bunx tsgo -p lab/ui-exploration/guide/examples/executor` typechecks the folder.
+- `bunx tsc -p lab/ui-exploration/guide/examples/executor` typechecks the folder.
 - `bun lab/ui-exploration/guide/examples/executor/report.ts` prints every size quoted above, including the close button's layers and matrices.
 
 | File | What it holds |

@@ -26,7 +26,7 @@
 
 import {readFileSync} from 'node:fs'
 import {resolve} from 'node:path'
-import ts from 'typescript'
+import ts from 'typescript6'
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {emptyFitAnnotations} from './annotations.ts'
 import {

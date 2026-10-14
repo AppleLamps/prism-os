@@ -11,7 +11,7 @@ Update, September 15, 2026: window-manager.ts and photo-gallery.ts moved to host
 From the repository root:
 
 - `bun test lab/ui-exploration/codegen` runs the 21 tests (about 4 to 6 seconds).
-- `bunx tsgo -p lab/ui-exploration/codegen` typechecks the folder.
+- `bunx tsc -p lab/ui-exploration/codegen` typechecks the folder.
 - `bun lab/ui-exploration/codegen/report.ts` runs the timing study and writes `results.json` (several minutes; it spawns fresh Bun processes for cold-start numbers).
 - `deno run --unstable-webgpu --allow-all lab/ui-exploration/codegen/gpu-headless.ts` runs every workload's shader on the GPU through Deno's WebGPU (wgpu, naga to Metal) and compares with the CPU. The saved output is `gpu-results-wgpu.json`.
 - `DAWN_WEBGPU=/path/to/node_modules/webgpu/index.js node lab/ui-exploration/codegen/gpu-headless.ts` does the same through Dawn, the WebGPU implementation in Chrome. The `webgpu` npm package can be installed in any folder outside the repo, e.g. `npm install webgpu@0.6.1` in a scratch folder. The saved output is `gpu-results-dawn.json`.

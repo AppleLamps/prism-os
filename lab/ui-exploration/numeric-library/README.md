@@ -15,7 +15,7 @@ Update, September 16, 2026: those copies, with their minimum and maximum modes a
 From the repo root:
 
 - `bun test lab/ui-exploration/numeric-library` runs 20 tests in about 1 to 3 seconds. That covers library sweeps with asserted bounds and the workload against float64.
-- `bunx tsgo -p lab/ui-exploration/numeric-library` typechecks.
+- `bunx tsc -p lab/ui-exploration/numeric-library` typechecks.
 - `bun lab/ui-exploration/numeric-library/report.ts [section...]` runs the heavy measurements and merges them into `report-output.json`. The sections are `macros` (about 27 s), `plans`, `minimum`, `rectangle-hit`, and `workload`. All numbers in this README come from that file, except the HandwiredOS modes, which come from the file's `indirect-os` section at the exploration-2026-09 tag. Timings are rough, because other agents share the machine.
 - `bun lab/ui-exploration/numeric-library/demo.html` serves the workload as a page: the dock magnifies around the pointer, and the ring spins and fills.
 

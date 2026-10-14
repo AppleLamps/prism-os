@@ -2,7 +2,7 @@
 
 ## Why
 
-Cheng asked: "technically our pretext layout, if there's lots of them, is faster than the regular cpu's, then?" The answer so far is a prediction: one paragraph on the GPU loses, since pretext's `layout()` is cheap float64 arithmetic that stops at the end of the text while a program pays for every line slot, and a GPU round trip has a fixed cost, while many paragraphs in one dispatch should win past some count. [text-walker's many paragraphs on the GPU](../ui-exploration/text-walker/README.md#many-paragraphs-on-the-gpu-september-17-2026) measures that for greedy line breaking. Cheng also pointed at pretext's Knuth-Plass demo, node_modules/@chenglou/pretext/pages/demos/justification-comparison.*: optimal line breaking is a shortest path over break points, so it fits min-plus matrix products combined in a tree, with one batched kernel per level of the tree, like [regex-search's matrix product tree on the GPU](../regex-search/README.md#matrix-product-tree-on-the-gpu-september-17-2026). Cheng approved both experiments: "yes to both".
+Cheng asked: "technically our pretext layout, if there's lots of them, is faster than the regular cpu's, then?" The answer so far is a prediction: one paragraph on the GPU loses, since pretext's `layout()` is cheap float64 arithmetic that stops at the end of the text while a program pays for every line slot, and a GPU round trip has a fixed cost, while many paragraphs in one dispatch should win past some count. [text-walker's many paragraphs on the GPU](../ui-exploration/text-walker/README.md#many-paragraphs-on-the-gpu-september-17-2026) measures that for greedy line breaking. Cheng also pointed at pretext's Knuth-Plass demo, pages/demos/justification-comparison.* in pretext's repository, which npm pretext had under node_modules/@chenglou/pretext/ up to 0.0.9: optimal line breaking is a shortest path over break points, so it fits min-plus matrix products combined in a tree, with one batched kernel per level of the tree, like [regex-search's matrix product tree on the GPU](../regex-search/README.md#matrix-product-tree-on-the-gpu-september-17-2026). Cheng approved both experiments: "yes to both".
 
 This folder holds the Knuth-Plass experiment: a plain JavaScript reference, two program forms that give the reference's costs and breaks, their CPU numbers, a page, an export of leaf matrices, and in `gpu/`, the tree on WebGPU, see [The min-plus tree on the GPU](#the-min-plus-tree-on-the-gpu-september-17-2026).
 
@@ -12,7 +12,7 @@ From the repo root:
 
 ```sh
 bun test lab/knuth-plass                                  # 17 tests in 2 files, about 1.4 seconds
-bunx tsgo -p lab/knuth-plass                              # type-check
+bunx tsc -p lab/knuth-plass                               # type-check
 bunx oxlint --type-aware lab/knuth-plass                  # lint
 bun lab/knuth-plass/demo.html                             # the page, e.g. ?form=tree&window=16, and ?check=1 compares every evaluation with the reference
 bun lab/knuth-plass/report.ts one sizes tree 256 16       # one variant's sizes, see the comment at the top of report.ts
@@ -31,6 +31,7 @@ bun lab/knuth-plass/gpu/summarize.ts --gpu <files> --checks <file> --cpu <files>
 | `reference.ts` | The dynamic programming reference, and the same costs as min-plus matrix products in plain JavaScript |
 | `program.ts` | The cells, both program forms, writing a paragraph into cells, and reading the output |
 | `hyphenation.ts` | Soft hyphens inserted like pretext's demo, from the demo's tables |
+| `pretext-demo/` | Two files of pretext's justification demo, copied from pages/demos/ of pretext's repository at 1.0.0 (commit 4a98f37), since npm pretext 1.0.0 no longer has the demos. Each file starts with an added comment that names its source and license. Below that comment, `justification-comparison.data.ts` is unchanged, and `justification-comparison.model.ts` has its import of `../../src/layout.ts` changed to `@chenglou/pretext` |
 | `knuth-plass.test.ts` | Differential tests |
 | `report.ts`, `results/` | Sizes and µs, one process per variant, and the raw results |
 | `export.ts` | Leaf matrices, cells and expected results |
@@ -123,7 +124,7 @@ The outputs are `totalCost`, `windowOverflowCount`, `chosen` for every break poi
 - Hand-written: boxes of 3, 2, 2 and 5 px with 1 px spaces at 6 px, where greedy filling costs 0 + 16 and the reference and both programs find 9 + 1 with breaks 1, 3 and 4, plus single line costs, e.g. a one-box line wider than the column costs 3,969.
 - The reference against every set of breaks: 400 random paragraphs of 1 to 11 break points, windows of 2 to 6 boxes, half of them with boxes of 1 to 4 px at widths of 0 to 15 px so that totals tie, e.g. 51 paragraphs have a step with two starts of the smallest total. The total and the breaks equal the brute force's, with the tie rule written as "largest breaks compared from the end".
 - pretext's demo: on the demo's 4 paragraphs, with a fake canvas under Bun, `breakPointsOfPrepared` gives the demo's candidates, 127 to 135 each, at the same segments with the same kinds and positions, and hyphenation.ts gives the same soft hyphens.
-- pretext's demo where the costs agree. The demo's own `buildDemoFrame`, loaded from node_modules, lays out 60 texts of 4 to 43 letters joined by soft hyphens, at 64 px, where the fake canvas gives whole-pixel widths, at widths of 62 to 113 px. Without spaces, the demo scores every line as ragged, and at these widths every line that fits has at most 63 px of slack, so each demo cost is 10 times this variant's. Its optimal breaks equal the reference's for all 60 texts, 1,139 lines over 1,470 boxes.
+- pretext's demo where the costs agree. The demo's own `buildDemoFrame`, from `pretext-demo/`, lays out 60 texts of 4 to 43 letters joined by soft hyphens, at 64 px, where the fake canvas gives whole-pixel widths, at widths of 62 to 113 px. Without spaces, the demo scores every line as ragged, and at these widths every line that fits has at most 63 px of slack, so each demo cost is 10 times this variant's. Its optimal breaks equal the reference's for all 60 texts, 1,139 lines over 1,470 boxes.
 - The product tree in plain JavaScript, `leafMatrices` and `statesByProductTree`, gives the reference's costs in every state, over 100 random paragraphs of 1 to 40 break points.
 - Both programs at 24 break points and a window of 6 against the reference: 500 random paragraphs of 1 to 24 break points, where 100 have ties, 92 have a box wider than the column, and 50 have lines of more than 6 boxes that fit. Costs, pointers, breaks, the total and `windowOverflowCount` are all equal.
 - Edges: programs of 2 break points with a window of 2, 5 with a window of 8, larger than the program, 17 with a window of 2, and 16 with a window of 16, over paragraphs of 1 break point, a full program, and random lengths.

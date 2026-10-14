@@ -10,7 +10,7 @@ Run from the repo root:
 - `bun lab/ui-exploration/layout-tree/report.ts` prints every table in this README and writes `report-results.json`. It takes a few seconds.
 - `bun lab/ui-exploration/layout-tree/demo.html` opens the app shell in a browser. Click the black menu button to toggle the sidebar, scroll the cards with the wheel, and resize the window to see the grid reflow and the text rewrap.
 - `PRETEXT_SRC=<folder holding pretext's src/ files> bun lab/ui-exploration/layout-tree/prepare-text.ts` regenerates `app-text-tables.ts` from that copy of pretext with a deterministic fake canvas, and checks the tables against pretext's own line counts. The session scratch copy it ran with isn't in the repo; `lab/ui-exploration/text-tabulated/pretext/` holds the same files.
-- `bunx tsgo -p lab/ui-exploration/layout-tree` type-checks the folder.
+- `bunx tsc -p lab/ui-exploration/layout-tree` type-checks the folder.
 
 numeric-ui-core.ts is unchanged. `TaggedCircuit` in circuit-tools.ts subclasses `Circuit` only to record which pass and tree level created each operation, so the report can split the compiled program.
 

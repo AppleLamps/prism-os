@@ -10,7 +10,7 @@ From the repository root:
 
 ```sh
 bun test lab/ui-exploration/streaming-words
-bunx tsgo -p lab/ui-exploration/streaming-words
+bunx tsc -p lab/ui-exploration/streaming-words
 bun lab/ui-exploration/streaming-words/report.ts
 bun lab/ui-exploration/streaming-words/demo.html
 ```

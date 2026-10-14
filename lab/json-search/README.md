@@ -163,7 +163,7 @@ From the repo root:
 ```sh
 bun start                                        # the demo site, with the demo page at /json-search/
 bun test lab/json-search                         # 65 tests in 5 files, about 40 seconds, no GPU
-bunx tsgo -p lab/json-search                     # type-check, including gpu/
+bunx tsc -p lab/json-search                      # type-check, including gpu/
 bunx oxlint --type-aware lab/json-search         # lint
 bun lab/json-search/report.ts sizes              # the first stage's two programs and their shaders, with and without guards
 bun lab/json-search/report.ts loops              # the loop programs' stages and their shaders

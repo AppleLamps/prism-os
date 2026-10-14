@@ -3,7 +3,7 @@
 // program once per paragraph. Query parameters: ?form=tree&window=16, and ?check=1 compares every evaluation with
 // reference.ts and counts differences in window.knuthPlassMismatches.
 import {type LayoutCursor, type LayoutLineRange, type PreparedTextWithSegments, layoutNextLineRange, materializeLineRange, prepareWithSegments} from '@chenglou/pretext'
-import {FONT, PARAGRAPHS} from '../../node_modules/@chenglou/pretext/pages/demos/justification-comparison.data.ts'
+import {FONT, PARAGRAPHS} from './pretext-demo/justification-comparison.data.ts'
 import {createEvaluator} from '../../src/runtime/cells.ts'
 import {hyphenateParagraphText} from './hyphenation.ts'
 import {type BreakCandidate, type Paragraph, breakPointsOfPrepared, naturalWidth, slackLimit, softHyphen} from './paragraph.ts'
@@ -89,7 +89,7 @@ function candidateAt(entry: Entry, cursor: LayoutCursor) {
 function greedyLines(entry: Entry, width: number): Line[] {
   const ranges: LayoutLineRange[] = []
   let cursor: LayoutCursor = {segmentIndex: 0, graphemeIndex: 0}
-  for (let range = layoutNextLineRange(entry.prepared, cursor, width); range !== null; range = layoutNextLineRange(entry.prepared, cursor, width)) {
+  for (let range = layoutNextLineRange(entry.prepared, width, cursor); range !== null; range = layoutNextLineRange(entry.prepared, width, cursor)) {
     ranges.push(range)
     cursor = range.end
   }

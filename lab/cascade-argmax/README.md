@@ -34,4 +34,4 @@ The cascade columns use this folder's own cascade. Since September 14, 2026, num
 
 ## Reproduce
 
-Run `bun test lab/cascade-argmax`, `bunx tsgo -p lab/cascade-argmax`, `bunx oxlint --type-aware lab/cascade-argmax`, and `bun lab/cascade-argmax/report.ts`.
+Run `bun test lab/cascade-argmax`, `bunx tsc -p lab/cascade-argmax`, `bunx oxlint --type-aware lab/cascade-argmax`, and `bun lab/cascade-argmax/report.ts`.

@@ -9,7 +9,7 @@ From the repository root:
 ```sh
 bun lab/user-effort/report.ts
 bun test lab/user-effort
-bunx --no-install tsgo -p lab/user-effort/tsconfig.json
+bunx --no-install tsc -p lab/user-effort/tsconfig.json
 bunx --no-install oxlint --type-aware lab/user-effort/*.ts
 ```
 

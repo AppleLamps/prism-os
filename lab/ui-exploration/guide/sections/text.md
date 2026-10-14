@@ -524,7 +524,7 @@ From the repo root:
 
 ```sh
 bun test lab/ui-exploration/guide/examples/text      # 11 tests in 2 files, about 0.2 s
-bunx tsgo -p lab/ui-exploration/guide/examples/text
+bunx tsc -p lab/ui-exploration/guide/examples/text
 bun lab/ui-exploration/guide/examples/text/report.ts # thresholds, candidates and circuit sizes
 ```
 

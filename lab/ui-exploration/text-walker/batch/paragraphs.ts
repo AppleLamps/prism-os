@@ -12,9 +12,12 @@ import {type FastParagraph, fastWindow, longestBreakAfterRun, maximumSegmentWidt
 // At 16 px the fake canvas measures every character in multiples of 1/4 px, so widths and prefix sums are exact in FP32.
 export const batchFont = '16px Test Sans'
 export const lineHeight = 20
-// pretext's line fit epsilon is 1/64 px on Safari and 0.005 px on every other engine. Bun's navigator isn't Safari's.
-// The tested widths are on a 1/8 px grid, so a span minus a width is a multiple of 1/8 px, and the two epsilons can't
-// give different lines even if another module set a Safari user agent first.
+// pretext's line fit epsilon is 1/64 px under Safari's rules and 0.005 px under Chrome's and Firefox's. pretext 1.0.0
+// picks the rules from navigator.userAgent at its first call: Bun's own user agent names no browser, which gives
+// Chrome's rules, and the fake canvases that other test files install set a Chrome or a Firefox user agent. Most tested
+// widths are on a 1/8 px grid, where a span minus a width is a multiple of 1/8 px, so the two epsilons can't give
+// different lines. batch.test.ts's widths on the 1/64 px grid can: if a module set a Safari user agent before pretext's
+// first call, that test would fail. pretext 0.0.9 also asked for Safari's navigator.vendor, which no fake navigator has.
 export const lineFitEpsilon = 0.005
 
 // pretext creates its measuring context at its first measurement, so this runs before the first prepare call. Under
@@ -82,10 +85,15 @@ export type BatchParagraph = {
 export function prepareBatchParagraph(text: string): BatchParagraph {
   installBatchCanvas()
   const prepared = prepareWithSegments(text, batchFont)
-  invariant(prepared.simpleLineWalkFastPath && prepared.letterSpacing === 0, 'a batch paragraph must be on pretext\'s fast path')
+  // The fast walker lays out text, spaces and zero-width spaces without letter spacing, where a line can break at every
+  // segment boundary. pretext 0.0.9's handle said so in its simpleLineWalkFastPath and letterSpacing fields. Since
+  // pretext 1.0.0, the handle's type shows only segments, kinds and widths, so this checks the kinds, and
+  // prepareWithSegments gets no letter spacing above. A boundary between two text segments where no line can break
+  // doesn't show in the kinds. The generated paragraphs have none, and the tests compare every line count with layout().
+  invariant(prepared.kinds.every(kind => kind === 'text' || kind === 'space' || kind === 'zero-width-break'), 'a batch paragraph must be on pretext\'s fast path')
   const breakAfter = prepared.kinds.map(kind => kind === 'space' || kind === 'zero-width-break' ? 1 : 0)
   invariant(breakAfter[0] === 0 && breakAfter[breakAfter.length - 1] === 0, 'a batch paragraph must start and end with text')
-  const widths = [...prepared.widths]
+  const widths = Array.from(prepared.widths)
   invariant(widths.every(width => width >= 0 && width <= maximumSegmentWidth && Math.round(width * 64) / 64 === width), 'segment widths must be on the 1/64 px grid')
   return {text, prepared, paragraph: {widths, breakAfter}}
 }

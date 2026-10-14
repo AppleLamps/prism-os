@@ -154,7 +154,7 @@ Update, September 16, 2026: bit provenance in [index-read](https://github.com/ch
 
 ```sh
 bun test lab/event-window
-bunx tsgo -p lab/event-window
+bunx tsc -p lab/event-window
 bunx oxlint --type-aware lab/event-window
 bun lab/event-window/training-sweep.ts
 bun lab/event-window/measure-cost.ts

@@ -8,7 +8,7 @@ How to run it, from the repo root:
 
 - Demo: `bun lab/ui-exploration/text-tabulated/demo.html`. The panel shows a live check of every frame against pretext's own `layoutWithLines`, `measureLineStats`, and the bubbles demo's tight-width search, using the browser's real fonts. It counts frames with a wrong decision (line count, tight width, cursor, or line text) separately from the widest width drift, because delta rows add up width deltas in FP32 and real advances don't add up exactly. I haven't run the demo myself. A later Chrome check ran the demo, see [Browser check](#browser-check). A verification run in Chrome, made before the check was split, showed `maxLineWidth 589.6193237304688 != 589.6194152832031` on the first frame, a drift of 9.2e-5px. That old check required bit-equal widths, so it counted all 7 frames as divergent and couldn't show whether any decision was wrong. Every headless check below uses a fake canvas.
 - Tests (about 0.4 seconds): `bun test lab/ui-exploration/text-tabulated`
-- Types: `bunx tsgo -p lab/ui-exploration/text-tabulated`
+- Types: `bunx tsc -p lab/ui-exploration/text-tabulated`
 - Measurements: `bun lab/ui-exploration/text-tabulated/report.ts [corpora] [hn] [oracle] [long] [rich] [prewrap] [notes] [edit] [scale] [nondyadic]`. With no arguments it runs everything, which takes a few minutes. `nondyadic` uses a different fake canvas, so it runs on its own or in a second process.
 - Monotonicity search, one engine profile per process: `bun lab/ui-exploration/text-tabulated/monotone-search.ts blink|webkit|gecko [--kerning] [--only text|rich] [--texts 400] [--seed 11] [--out file.json] [--no-shrink]`
 

@@ -14,7 +14,7 @@ From the repo root:
 
 ```sh
 bun test lab/ui-exploration/input               # 71 tests, about a second
-bunx tsgo -p lab/ui-exploration/input
+bunx tsc -p lab/ui-exploration/input
 bunx oxlint --type-aware lab/ui-exploration/input
 bun lab/ui-exploration/input/report.ts          # every table below, about 30 seconds (--quick for a short run)
 bun lab/ui-exploration/input/demo.html          # the combined demo

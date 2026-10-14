@@ -7,7 +7,7 @@ This prototype rebuilds the render path of Cheng's nicer-hacker-news thread (nic
 Commands, from the repo root:
 
 - `bun test lab/ui-exploration/hn-thread`: differential tests against the JS reference, about 3 seconds.
-- `bunx tsgo -p lab/ui-exploration/hn-thread`: typecheck.
+- `bunx tsc -p lab/ui-exploration/hn-thread`: typecheck.
 - `bun lab/ui-exploration/hn-thread/report.ts`: every measurement below, written to `results.json`. One section at a time: `report.ts scale`, `variants`, `breakpoints`, `differential`, `slots`, `codegen`. A one-section run replaces only that section's entries in `results.json`. The codegen section takes about 2 minutes.
 - `bun lab/ui-exploration/hn-thread/mutation.ts`: corrupts live operations one at a time and checks that the tests notice.
 - `bun lab/ui-exploration/hn-thread/demo.html`: the browser demo. It was checked in Chrome after this README was first written (see "Browser check" at the end).

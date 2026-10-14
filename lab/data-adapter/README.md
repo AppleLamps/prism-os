@@ -84,7 +84,7 @@ Every fitting program is checked, not just the first candidate. Each answer's pr
 ```sh
 bun lab/data-adapter/report.ts
 bun test lab/data-adapter
-bunx tsgo -p lab/data-adapter/tsconfig.json
+bunx tsc -p lab/data-adapter/tsconfig.json
 bunx oxlint --type-aware lab/data-adapter
 ```
 

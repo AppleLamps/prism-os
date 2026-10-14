@@ -1,6 +1,6 @@
 // Execute the selected source with the JS engine, not the numeric interpreter. Only reachable
 // declarations are included, so checking a gallery helper does not start its browser app.
-import ts from 'typescript'
+import ts from 'typescript6'
 import {compileFunction} from 'node:vm'
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {Scope, type RuntimeValue} from './twin.ts'

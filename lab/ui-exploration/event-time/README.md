@@ -9,7 +9,7 @@ Update, September 15, 2026: window-manager.ts now commits this way too. host-tim
 Run from the repo root:
 
 - `bun test lab/ui-exploration/event-time` runs 18 tests in about 6 s: 10 in `event-time.test.ts`, and 8 in `handwired-os.test.ts`, which moved here from spring-bank.
-- `bunx tsgo -p lab/ui-exploration/event-time` typechecks the folder.
+- `bunx tsc -p lab/ui-exploration/event-time` typechecks the folder.
 - `bun lab/ui-exploration/event-time/report.ts` prints every table below and writes `results.json`. It took 45 s, 106 s and 45 s in three runs on the shared machine.
 - `deno run --unstable-webgpu --allow-all lab/ui-exploration/event-time/gpu-prediction.ts` runs the per-sample shader through wgpu. `DAWN_WEBGPU=/path/to/node_modules/webgpu/index.js node lab/ui-exploration/event-time/gpu-prediction.ts` runs it through Dawn (install `webgpu@0.6.1` in any folder outside the repo, as codegen's README describes; I used phase 2's install in the scratchpad). The saved outputs are `gpu-results-wgpu.json` and `gpu-results-dawn.json`. This script needs Deno or Node, since Bun has no WebGPU, but it typechecks with the rest of the folder, so it stays in `tsconfig.json`.
 - `bun lab/ui-exploration/event-time/demo.html` serves the demo: HandwiredOS committed per event, with predicted keyframes (`?presenter=keyframes`, the default) or display evaluations in requestAnimationFrame (`?presenter=frames`), a button that blocks the main thread for 500 ms, and a button that blocks it for 500 ms once the next animation starts. I checked that `demo.ts` bundles with `bun build`, but I haven't opened the page in a browser. A later Chrome check opened the page, see [Browser check](#browser-check).

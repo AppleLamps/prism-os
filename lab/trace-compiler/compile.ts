@@ -12,7 +12,7 @@
 //   relu(d) - relu(d - 1). Continuous comparisons use the exact sign cascade, not the old
 //   boolean-atom margin policy. Exact forward decisions do not imply useful training gradients.
 
-import ts from 'typescript'
+import ts from 'typescript6'
 import {Circuit, type Wire, invariant, asWire} from '../../src/runtime/numeric-ui-core.ts'
 import {
   type FitAnnotations,

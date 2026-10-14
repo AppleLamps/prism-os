@@ -247,7 +247,7 @@ k is the number of repeated steps, S the number of possible values of the state 
 Run from the repo root:
 
 - `bun test lab/ui-exploration/guide/examples/chains` runs 10 tests in about a second.
-- `bunx tsgo -p lab/ui-exploration/guide/examples/chains` typechecks the folder.
+- `bunx tsc -p lab/ui-exploration/guide/examples/chains` typechecks the folder.
 - `bun lab/ui-exploration/guide/examples/chains/report.ts` prints the sizes of the button forms with W / D, both with the final state and clicks and with every state after every event as outputs, and the sizes of the line starts and of the 4-state machine.
 
 Files:

@@ -1,7 +1,7 @@
 // Soft hyphens inserted like pretext's justification demo, from the demo's own tables: exceptions, then prefixes, then
-// suffixes. A copy of hyphenateParagraphText and hyphenateWord in
-// node_modules/@chenglou/pretext/pages/demos/justification-comparison.model.ts, which doesn't export them.
-import {HYPHEN_EXCEPTIONS, PREFIXES, SUFFIXES} from '../../node_modules/@chenglou/pretext/pages/demos/justification-comparison.data.ts'
+// suffixes. A copy of hyphenateParagraphText and hyphenateWord in pretext-demo/justification-comparison.model.ts, which
+// doesn't export them. pretext-demo/ holds the demo's files from pretext's repository, see the README.
+import {HYPHEN_EXCEPTIONS, PREFIXES, SUFFIXES} from './pretext-demo/justification-comparison.data.ts'
 import {softHyphen} from './paragraph.ts'
 
 export function hyphenateParagraphText(paragraph: string): string {

@@ -354,7 +354,7 @@ On a chain of dependent decisions, these choices set the constant: 3 layers per 
 From the repo root:
 
 - `bun test lab/ui-exploration/guide/examples/comparisons` runs 24 tests in about 200 ms.
-- `bunx tsgo -p lab/ui-exploration/guide/examples/comparisons` typechecks the folder.
+- `bunx tsc -p lab/ui-exploration/guide/examples/comparisons` typechecks the folder.
 - `bun lab/ui-exploration/guide/examples/comparisons/report.ts` prints every table in this section, in about 0.6 s.
 - `deno run --unstable-webgpu --allow-all lab/ui-exploration/guide/examples/comparisons/gpu-probe.ts` runs the GPU probe. The probe isn't part of `bun test`, because the probe needs WebGPU.
 
