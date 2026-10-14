@@ -100,7 +100,7 @@ export function buildScalar(seed: number, breakDeclarations = false): Probe {
   // small whole number, or a whole number.
   type ReadForm = {baseTerms: (readonly [WholeValue, number])[], baseBias: number, below: 'clamp' | 'zero', above: 'clamp' | 'zero'}
   const readForm = (): ReadForm => {
-    const baseTerms: (readonly [WholeValue, number])[] = chance(random, 0.75) ? [[row as WholeValue, 1]] : [[pick(random, wholesOf()), pick(random, [1, 1, 2, -1])]]
+    const baseTerms: (readonly [WholeValue, number])[] = chance(random, 0.75) ? [[row, 1]] : [[pick(random, wholesOf()), pick(random, [1, 1, 2, -1])]]
     if (chance(random, 0.2)) baseTerms.push([pick(random, wholesOf()), pick(random, [1, -1])])
     return {baseTerms, baseBias: pick(random, [0, 0, 0, 1, -1]), below: pick(random, ['clamp', 'zero']), above: pick(random, ['clamp', 'zero', 'zero'])}
   }
@@ -112,10 +112,10 @@ export function buildScalar(seed: number, breakDeclarations = false): Probe {
       const magnitude = Math.max(1, candidates.length + pick(random, [4, 4, 4, 1, 0, 0, -1]))
       if (chance(random, 0.7)) {
         // JS: table[base] && bit, the read moves away while the bit is 0.
-        terms.push([gating as WholeValue, -magnitude])
+        terms.push([gating, -magnitude])
         bias += magnitude
       } else {
-        terms.push([gating as WholeValue, chance(random, 0.8) ? magnitude : -magnitude])
+        terms.push([gating, chance(random, 0.8) ? magnitude : -magnitude])
       }
     }
     return circuit.indexReadAffine(wires(terms), bias, candidates, form.below, form.above)
