@@ -225,7 +225,8 @@ function mountJsonSearch(document: Document, window: Window) {
     found: null as Found | null,
     regExp: null as {key: string, ms: number} | null,
     shown: null as Shown | null,
-    // The document that a click or the Enter key keeps, and the pointer's place over the map.
+    // The document that a click or the Enter key keeps, and the pointer's place over the map, or null while the
+    // pointer is elsewhere.
     kept: null as number | null,
     pointer: null as {x: number, y: number} | null,
     // The GPU's piece of work in flight. Its promise's callback pushes an arrival with its id.
@@ -245,7 +246,6 @@ function mountJsonSearch(document: Document, window: Window) {
       firstInputTime: null as number | null,
       example: null as {pattern: string, scope: Scope} | null,
       click: null as {x: number, y: number} | null,
-      pointerLeft: false,
       // Presses of Enter since the last frame, less the ones with Shift.
       steps: 0,
     },
@@ -702,8 +702,6 @@ function mountJsonSearch(document: Document, window: Window) {
     st.events.example = null
     st.events.click = null
     st.events.steps = 0
-    if (st.events.pointerLeft) st.pointer = null
-    st.events.pointerLeft = false
     // The time of an input is kept for as long as its search is in flight.
     if (!searchPending) st.events.firstInputTime = null
 
@@ -739,7 +737,7 @@ function mountJsonSearch(document: Document, window: Window) {
     scheduleRender()
   })
   domCache.map.addEventListener('pointerleave', () => {
-    st.events.pointerLeft = true
+    st.pointer = null
     scheduleRender()
   })
   domCache.map.addEventListener('click', event => {
