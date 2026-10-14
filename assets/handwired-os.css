@@ -128,9 +128,9 @@ body {
 
 /* Things to try, printed on the desk's lower right corner. Windows pass over it. The
    windows' first arrangement, see arrangement.ts, leaves this corner free on a viewport of
-   at least 1100 × 850 px: the list's five lines and its label are 124 px tall and end
-   12 px above the dock's strip, so at 850 px of height the label starts at least 22 px
-   under Photos. */
+   at least 1100 × 850 px: the list's five lines of 20 px and its label are 124 px tall
+   and end 12 px above the dock's strip, so at 850 px of height the label starts at least
+   22 px under Photos. */
 .desk-legend {
   position: absolute;
   z-index: 0;
@@ -147,9 +147,14 @@ body {
   color: var(--ink-2);
 }
 
+/* A key cap fits into its line's 20 px: 1 px of padding above and below its 11.3 px of
+   text and its borders, raised by 1 px. With 2 px of padding below and no raise, as on
+   the site's other pages, the cap made its line 21.3 px tall in the system font of macOS,
+   and the list 125.3 px. */
 .desk-legend kbd {
   margin: 0 1px;
-  padding: 1px 4px 2px;
+  padding: 1px 4px;
+  vertical-align: 1px;
 }
 
 @media (max-width: 1099px), (max-height: 849px) {
@@ -233,6 +238,20 @@ body {
   .system-links a:hover {
     color: var(--copper);
     text-decoration-color: currentColor;
+  }
+}
+
+/* Under a finger, the mark and the two links are as tall as the bar, 36 px, where the
+   header links of the site's other pages are 40 px, see site.css. The mark's line is
+   20 px tall and a link's 16 px. The padding moves nothing, since the bar centers what it
+   holds, and it ends at the bar's edge, so it covers no window's title bar. */
+@media (pointer: coarse) {
+  .system-mark {
+    padding-block: 8px;
+  }
+
+  .system-links a {
+    padding-block: 10px;
   }
 }
 
@@ -364,14 +383,19 @@ body {
   }
 }
 
+/* The pressed states set the glyph's color too: where no pointer can hover, e.g. on a
+   phone, a pressed button never had the hovered button's colors, and the close button's
+   cross would be ink on ink. */
 .window-button:active {
   background-color: var(--rule);
   box-shadow: 0 0 0 4px var(--rule);
+  color: var(--ink);
 }
 
 .window-button.close:active {
   background-color: var(--ink);
   box-shadow: 0 0 0 4px var(--ink);
+  color: var(--sheet);
 }
 
 /* JavaScript sets the width and height to the size the window is heading to, and the frame
@@ -828,6 +852,15 @@ body {
   -webkit-user-select: text;
 }
 
+/* In Notes the grip's square is paper, in the window's own color, and not see-through.
+   Where scrollbars take room, e.g. on Windows, the scrollbar of a note taller than the
+   window then ends at the grip, as in a native window, instead of running under the
+   grip's arc to the window's corner. The square covers no text: the field keeps 24 px
+   of padding at its right. */
+.notes-content ~ .resize-grip {
+  background: inherit;
+}
+
 /* site.css draws an outline around whatever has the keyboard focus, and a text field has
    it at every focus, also after a click. Two classes outrank that rule in either order of
    the two stylesheets. */
@@ -978,6 +1011,11 @@ body {
     0 calc(var(--focused) * 10px) calc(var(--focused) * 28px) calc(var(--focused) * -8px) rgb(var(--shadow-ink) / 0.24);
 }
 
+/* A photo is a container, so that its name can ask how tall the photo is. */
+.photos-photo {
+  container: photo / size;
+}
+
 /* The open photo's name, on a paper label. */
 .photos-photo span {
   position: absolute;
@@ -990,6 +1028,17 @@ body {
   font: italic 400 14px/20px var(--font-serif);
   box-shadow: var(--shadow-1);
   opacity: var(--focused);
+}
+
+/* A photo under 110 px tall shows no name. The previous control's round sheet is 36 px
+   tall around the photo's middle and the label ends 10 px above the photo's bottom, so
+   in a shorter photo the two meet, and in a narrow window the sheet lies on the label's
+   start, e.g. "avender Hour" in a window at its minimum size, where the open photo is
+   55 px tall. */
+@container photo (max-height: 109px) {
+  .photos-photo span {
+    display: none;
+  }
 }
 
 .photos-thumbnail {
