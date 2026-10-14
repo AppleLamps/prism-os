@@ -22,6 +22,7 @@ import {
   windowStateField,
 } from '../../src/handwiredos/window-manager.ts'
 import {itemCount as photoCount, photoField, thumbnailSpringField} from '../../src/handwiredos/photo-gallery.ts'
+import {arrangeInitialWindows} from '../../src/handwiredos/arrangement.ts'
 
 const viewportWidth = 1280
 const viewportHeight = 800
@@ -1757,24 +1758,176 @@ test('a Photos click during a maximize lands on the photo whose destination is u
   }
 })
 
-test('the first step mounts the viewport as an event, so a small viewport clamps the windows and animates them there', () => {
+test('the first step mounts the viewport as an event, so a small viewport fits the windows and animates them there', () => {
   const machine = createWindowManagerMachine()
+  const initial = storedRectangles(machine)
   step(machine, 400, 300)
   assert.deepEqual(machine.evaluations.map(evaluation => [evaluation.kind, evaluation.events]), [
     ['events', ['mount']],
     ['frame', []],
   ])
   assert.notEqual(machine.clock.animatedUntilMs, null)
+  // The viewport changes no stored rectangle, e.g. Monitor's 54, 54 and 540 × 340 px.
+  assert.deepEqual(storedRectangles(machine), initial)
+  // Each window comes to rest at its stored rectangle fitted into the workspace,
+  // which is 400 × 188 px under the system bar: as wide as the viewport and as tall
+  // as the workspace, since both are less than the stored size.
+  const settled = drawnRectangles(machine, settle(machine, 400, 300))
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    const left = machine.source[windowSourceField(windowIndex, windowStateField.left)]!
-    const width = machine.source[windowSourceField(windowIndex, windowStateField.width)]!
-    assert.ok(left + width <= 400)
+    assert.deepEqual(settled[windowIndex], {left: 0, top: 36, width: 400, height: 188})
   }
-  const settled = projectWindows(machine, settle(machine, 400, 300))
-  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-    assert.equal(settled[windowIndex]!.left, machine.source[windowSourceField(windowIndex, windowStateField.left)])
-    assert.equal(settled[windowIndex]!.width, machine.source[windowSourceField(windowIndex, windowStateField.width)])
+  assert.deepEqual(storedRectangles(machine), initial)
+})
+
+// Each window's stored rectangle, and the rectangle that each window is drawn at.
+function storedRectangles(machine: Machine) {
+  return Array.from({length: windowCount}, (_, windowIndex) => ({
+    left: machine.source[windowSourceField(windowIndex, windowStateField.left)]!,
+    top: machine.source[windowSourceField(windowIndex, windowStateField.top)]!,
+    width: machine.source[windowSourceField(windowIndex, windowStateField.width)]!,
+    height: machine.source[windowSourceField(windowIndex, windowStateField.height)]!,
+  }))
+}
+
+function drawnRectangles(machine: Machine, values: Float32Array) {
+  return projectWindows(machine, values).map(({left, top, width, height}) => ({left, top, width, height}))
+}
+
+test('a viewport that shrinks and grows back leaves every window where it was, e.g. a phone turned on its side and back', () => {
+  // A phone turned on its side, a desktop's browser window made smaller than a
+  // window's minimum size, and a viewport of no size at all. `fitted` is what the
+  // windows are drawn at in the smaller viewport, where the test names it.
+  const cases: readonly {viewport: readonly [number, number], smaller: readonly [number, number], fitted?: {left: number, top: number, width: number, height: number}[]}[] = [
+    // Sideways, the workspace is 844 × 278 px, less than each window's height, so the
+    // three windows of the phone's column lie on one rectangle.
+    {viewport: [390, 844], smaller: [844, 390], fitted: Array.from({length: windowCount}, () => ({left: 12, top: 36, width: 366, height: 278}))},
+    // The workspace is 300 × 188 px, less than the minimum size of 280 × 190 px in
+    // height, so each window takes the workspace's height.
+    {viewport: [1440, 900], smaller: [300, 300], fitted: Array.from({length: windowCount}, () => ({left: 0, top: 36, width: 300, height: 188}))},
+    {viewport: [1280, 800], smaller: [0, 0]},
+    {viewport: [1920, 1080], smaller: [1000, 1080]},
+  ]
+  for (const {viewport: [width, height], smaller: [smallerWidth, smallerHeight], fitted} of cases) {
+    const machine = createWindowManagerMachine()
+    const arranged = arrangeInitialWindows(machine.source, machine.cells, width, height)
+    const label = `${width} × ${height} to ${smallerWidth} × ${smallerHeight}`
+    assert.deepEqual(drawnRectangles(machine, step(machine, width, height)), arranged, label)
+    for (let round = 0; round < 2; round++) {
+      const inSmaller = drawnRectangles(machine, settle(machine, smallerWidth, smallerHeight))
+      if (fitted !== undefined) assert.deepEqual(inSmaller, fitted, label)
+      for (const rectangle of inSmaller) {
+        assert.ok(rectangle.left >= 0 && rectangle.left + rectangle.width <= smallerWidth, label)
+        assert.ok(rectangle.top + rectangle.height <= Math.max(0, smallerHeight - 76), label)
+      }
+      // The smaller viewport changed no stored rectangle.
+      assert.deepEqual(storedRectangles(machine), arranged, label)
+      assert.deepEqual(drawnRectangles(machine, settle(machine, width, height)), arranged, label)
+      assert.deepEqual(storedRectangles(machine), arranged, label)
+    }
   }
+})
+
+test('a drag or a resize starts from where the window is drawn, and a drag stores the position, a resize the position and the size', () => {
+  const start = () => {
+    const machine = createWindowManagerMachine()
+    const arranged = arrangeInitialWindows(machine.source, machine.cells, 1440, 900)
+    step(machine, 1440, 900)
+    const values = settle(machine, 900, 700)
+    return {machine, arranged, values}
+  }
+  // At 1440 × 900 Photos is stored at 842, 278 and 560 × 430 px. A viewport of
+  // 900 × 700 px, with a workspace of 900 × 588 px, draws Photos at 340, 194.
+  const fittedPhotos = {left: 340, top: 194, width: 560, height: 430}
+
+  // A title bar drag, whose press and first move share an evaluation: 60 px left
+  // and 40 px up from where Photos is drawn.
+  {
+    const {machine, arranged, values} = start()
+    assert.deepEqual(drawnRectangles(machine, values)[2], fittedPhotos)
+    assert.deepEqual(storedRectangles(machine), arranged)
+    machine.pointerDown(440, 216)
+    machine.pointerMove(380, 176)
+    const dragged = {left: 280, top: 154, width: 560, height: 430}
+    assert.deepEqual(drawnRectangles(machine, step(machine, 900, 700))[2], dragged)
+    assert.deepEqual(storedRectangles(machine), [arranged[0], arranged[1], dragged])
+    machine.pointerUp(380, 176)
+    step(machine, 900, 700)
+    // The larger viewport gives Monitor and Notes their rectangles back, and Photos
+    // stays where the drag put it.
+    assert.deepEqual(drawnRectangles(machine, settle(machine, 1440, 900)), [arranged[0], arranged[1], dragged])
+    assert.deepEqual(storedRectangles(machine), [arranged[0], arranged[1], dragged])
+  }
+
+  // A resize by the grip, 12 px inside Photos' lower right corner: 100 px narrower
+  // and 50 px shorter. The resize stores the position too, so Photos keeps its left
+  // edge at 340 px in the larger viewport, and doesn't go back to 842 px.
+  {
+    const {machine, arranged} = start()
+    machine.pointerDown(888, 612)
+    step(machine, 900, 700)
+    assert.deepEqual(storedRectangles(machine), [arranged[0], arranged[1], fittedPhotos])
+    machine.pointerMove(788, 562)
+    const resized = {left: 340, top: 194, width: 460, height: 380}
+    assert.deepEqual(drawnRectangles(machine, step(machine, 900, 700))[2], resized)
+    machine.pointerUp(788, 562)
+    step(machine, 900, 700)
+    assert.deepEqual(drawnRectangles(machine, settle(machine, 1440, 900)), [arranged[0], arranged[1], resized])
+    assert.deepEqual(storedRectangles(machine), [arranged[0], arranged[1], resized])
+  }
+
+  // A press is tested against the rectangles as they are drawn. Notes is stored at
+  // 602, 152 and drawn at 400, 152, so 420, 174 is on Notes' title bar, left of
+  // Notes' stored rectangle and above Photos. Monitor, behind Notes, is drawn there
+  // too.
+  {
+    const {machine, arranged} = start()
+    machine.pointerDown(420, 174)
+    const values = step(machine, 900, 700)
+    assert.deepEqual([0, 1, 2].map(windowIndex => machine.source[dragSourceField(windowIndex)]), [0, 1, 0])
+    assertFocused(projectWindows(machine, values), 1)
+    // The press alone stores the position that Notes is drawn at.
+    assert.deepEqual(storedRectangles(machine)[1], {...arranged[1]!, left: 400})
+  }
+
+  // A drag keeps the stored size. On a phone held sideways, Photos is drawn 278 px
+  // tall, the workspace's height, and stored 319 px tall. A drag of 300 px to the
+  // right there stores 312, 36, and back upright Photos is 319 px tall again, as far
+  // right as the viewport of 390 px lets it be.
+  {
+    const machine = createWindowManagerMachine()
+    const arranged = arrangeInitialWindows(machine.source, machine.cells, 390, 844)
+    assert.deepEqual(arranged[2], {left: 12, top: 437, width: 366, height: 319})
+    step(machine, 390, 844)
+    settle(machine, 844, 390)
+    machine.pointerDown(112, 58)
+    machine.pointerMove(412, 58)
+    assert.deepEqual(drawnRectangles(machine, step(machine, 844, 390))[2], {left: 312, top: 36, width: 366, height: 278})
+    machine.pointerUp(412, 58)
+    step(machine, 844, 390)
+    assert.deepEqual(storedRectangles(machine), [arranged[0], arranged[1], {left: 312, top: 36, width: 366, height: 319}])
+    assert.deepEqual(drawnRectangles(machine, settle(machine, 390, 844)), [arranged[0], arranged[1], {left: 24, top: 36, width: 366, height: 319}])
+  }
+})
+
+test('a maximized window follows the viewport, and its stored rectangle waits for the restore', () => {
+  const machine = createWindowManagerMachine()
+  const arranged = arrangeInitialWindows(machine.source, machine.cells, 1440, 900)
+  let values = step(machine, 1440, 900)
+  const maximize = windowControlPoint(machine, values, 2, 'maximize')
+  machine.pointerDown(maximize.x, maximize.y, pressTime(machine))
+  machine.pointerUp(maximize.x, maximize.y, pressTime(machine))
+  values = settle(machine, 1440, 900)
+  assert.deepEqual(drawnRectangles(machine, values)[2], {left: 12, top: 48, width: 1416, height: 764})
+  values = settle(machine, 800, 600)
+  assert.deepEqual(drawnRectangles(machine, values)[2], {left: 12, top: 48, width: 776, height: 464})
+  assert.deepEqual(storedRectangles(machine), arranged)
+  values = settle(machine, 1440, 900)
+  const restore = windowControlPoint(machine, values, 2, 'maximize')
+  machine.pointerDown(restore.x, restore.y, pressTime(machine))
+  machine.pointerUp(restore.x, restore.y, pressTime(machine))
+  values = settle(machine, 1440, 900)
+  assert.deepEqual(drawnRectangles(machine, values), arranged)
+  assert.deepEqual(storedRectangles(machine), arranged)
 })
 
 // A session of timestamped events off the frame grid, replayed at several frame

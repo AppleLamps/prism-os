@@ -194,10 +194,11 @@ const windowManagerCells = {
   ] as const,
   settleCheck: stateBit(),
   snap: stateBit(),
-  // Window geometry is clamped to the viewport every frame before writeback,
-  // so the viewport ceiling is honest for the stored state as well. Pointer
-  // deltas and clamps against the viewport and the constants keep it on the
-  // 1/64 px grid.
+  // A window's stored rectangle is where the starting arrangement, a drag or a
+  // resize put it, see nextStoredGeometry in buildWindowManager. Each of them
+  // writes values from inside the viewport of its time, so the viewport ceiling is
+  // honest for the stored state as well. Pointer deltas and clamps against the
+  // viewport and the constants keep it on the 1/64 px grid.
   windows: list(windowCount, windowIndex => {
     const [left, top, width, height] = initialGeometry[windowIndex]!
     return {
@@ -454,6 +455,47 @@ function buildWindowManager() {
       [maximumTopInset, -2],
     ])),
   }
+  // A window that isn't maximized is hit-tested and drawn at its stored rectangle
+  // fitted into the workspace, and its springs head there. The fitted rectangle has
+  // a size between the minimum size and the workspace's, where a workspace smaller
+  // than the minimum size gives its own size, and a position that keeps the whole
+  // window inside. E.g. Photos, stored at 842, 278 and 560 × 430 px, is fitted to
+  // 340, 194 and 560 × 430 px in a viewport of 900 × 700 px.
+  const minimumWidth = emitMinimum(circuit, cells.minWidth, cells.viewportWidth)
+  const minimumHeight = emitMinimum(circuit, cells.minHeight, workspaceHeight)
+  const fitIntoWorkspace = (rectangle: Geometry): Geometry => {
+    // A fitted value lies inside the viewport, so within the viewport cells' range,
+    // and on the 1/64 px grid of the cells that it is computed from. The builder
+    // infers less from the clamps' sums, e.g. no grid for the fitted left edge, and
+    // -417,792..415,744 px for the left edge after a drag. The hit tests' comparisons
+    // are integer bits only for operands on grids within 2^24 grid steps: without
+    // these declarations, the program had 5,221 live operations in 135 layers instead
+    // of 4,377 in 130.
+    const inViewport = (wire: Wire) => {
+      circuit.assumeRange(wire, pixel[0], pixel[1])
+      circuit.assumeGrid(wire, pixelGrid)
+      return wire
+    }
+    const width = inViewport(emitClampDynamic(circuit, rectangle.width, minimumWidth, cells.viewportWidth))
+    const height = inViewport(emitClampDynamic(circuit, rectangle.height, minimumHeight, workspaceHeight))
+    const maximumLeft = emitRelu(circuit, circuit.affine([
+      [cells.viewportWidth, 1],
+      [width, -1],
+    ]))
+    const maximumTop = emitRelu(circuit, circuit.affine([
+      [dockTop, 1],
+      [height, -1],
+    ]))
+    return {
+      left: inViewport(emitClampDynamic(circuit, rectangle.left, zero, maximumLeft)),
+      top: inViewport(emitClampDynamic(circuit, rectangle.top, workspaceTop, maximumTop)),
+      width,
+      height,
+    }
+  }
+  // Each window's stored rectangle, fitted into the workspace as it is now, before
+  // this evaluation's events.
+  const fittedGeometry: Geometry[] = []
   const windowHit: Wire[] = []
   const closeHit: Wire[] = []
   const minimizeHit: Wire[] = []
@@ -480,11 +522,13 @@ function buildWindowManager() {
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const current = cells.windows[windowIndex]!
     const visible = emitMultiply(circuit, current.open, emitComplement(circuit, current.minimized, unit))
+    const fitted = fitIntoWorkspace(current)
+    fittedGeometry.push(fitted)
     const geometry = {
-      left: emitSelect(circuit, current.maximized, current.left, maximumGeometry.left),
-      top: emitSelect(circuit, current.maximized, current.top, maximumGeometry.top),
-      width: emitSelect(circuit, current.maximized, current.width, maximumGeometry.width),
-      height: emitSelect(circuit, current.maximized, current.height, maximumGeometry.height),
+      left: emitSelect(circuit, current.maximized, fitted.left, maximumGeometry.left),
+      top: emitSelect(circuit, current.maximized, fitted.top, maximumGeometry.top),
+      width: emitSelect(circuit, current.maximized, fitted.width, maximumGeometry.width),
+      height: emitSelect(circuit, current.maximized, fitted.height, maximumGeometry.height),
     }
     windowHit.push(emitMultiply(
       circuit,
@@ -685,9 +729,11 @@ function buildWindowManager() {
   // exploration-2026-09 tag, where a press that moves more than 4 px away from where
   // it started turns into a drag, so a release back over the button doesn't click.
   //
-  // A release is tested against the stored geometry, like a press, e.g. the window's
-  // destination during an animation. The armed button's window is frontmost from the
-  // press on, so a release over that window's button is over no other window.
+  // A release is tested like a press, against each window's rectangle before this
+  // evaluation's events, i.e. its stored rectangle fitted into the workspace, or the
+  // maximized rectangle. During an animation that is the window's destination. The
+  // armed button's window is frontmost from the press on, so a release over that
+  // window's button is over no other window.
   const windowPressed = circuit.affine(selectedCanvas.map(wire => [wire, 1]))
   circuit.assumeRange(windowPressed, 0, 1)
   const release = emitRelu(circuit, circuit.affine([[cells.up.active, 1], [cells.cancel, -1]]))
@@ -821,7 +867,37 @@ function buildWindowManager() {
   const deltaX = circuit.affine([[pointerX, 1], [baselineX, -1]])
   const deltaY = circuit.affine([[pointerY, 1], [baselineY, -1]])
 
+  // A window's rectangle while it isn't maximized, after this evaluation's events,
+  // and the rectangle that the window stores.
+  //
+  // The stored rectangle is where the starting arrangement, a drag or a resize put
+  // the window, and the viewport never changes it. The rectangle that the window is
+  // drawn at is computed from it in every evaluation, see fitIntoWorkspace. So a
+  // viewport that shrinks and grows back leaves every window where it was, e.g. a
+  // phone turned on its side and back, or a browser window made small for a moment.
+  // When the fitted rectangle was written back instead, the phone's three windows
+  // ended on one rectangle, 12, 36 and 366 × 278 px, since the sideways workspace is
+  // 278 px tall, and a window kept the smallest size that a viewport had ever given
+  // it. chenguini's engineering.md, "Data Modeling", says to compute derived data
+  // and not to store it on the data that it came from, and ui.md's "Layout" counts
+  // the viewport's size among a frame's inputs.
+  //
+  // A drag or a resize starts from the fitted rectangle, where the window is drawn,
+  // and stores what it leaves: a drag the position, and a resize the position and
+  // the size. E.g. Photos, stored at 842, 278 px, is drawn at 340, 194 px in a
+  // viewport of 900 × 700 px. A title bar drag of 60 px to the left there moves
+  // Photos to 280 px and stores that, so Photos stays at 280 px in every viewport
+  // that is at least 840 px wide.
+  // - A drag keeps the stored size, so a window that was only moved while a small
+  //   viewport made it smaller gets its size back in a larger viewport. E.g. on a
+  //   phone held sideways, Photos is 278 px tall instead of 319 px, and after a drag
+  //   there and a turn back, Photos is 319 px tall again.
+  // - A resize stores the position too. If it stored the size alone, Photos above
+  //   would keep its stored left edge of 842 px, and its fitted left edge, which is
+  //   the viewport's width minus Photos' width, would move by as much as the grip
+  //   moves.
   const nextNormalGeometry: Geometry[] = []
+  const nextStoredGeometry: Geometry[] = []
   const nextOpen: Wire[] = []
   const nextMinimized: Wire[] = []
   const nextMaximized: Wire[] = []
@@ -850,53 +926,33 @@ function buildWindowManager() {
     ))
 
     const current = cells.windows[windowIndex]!
-    const widthCandidate = circuit.affine([
-      [current.width, 1],
-      [emitMultiply(circuit, resizeForMotion, deltaX), 1],
-    ])
-    const heightCandidate = circuit.affine([
-      [current.height, 1],
-      [emitMultiply(circuit, resizeForMotion, deltaY), 1],
-    ])
-    const width = emitClampDynamic(
-      circuit,
-      widthCandidate,
-      emitMinimum(circuit, cells.minWidth, cells.viewportWidth),
-      cells.viewportWidth,
-    )
-    const height = emitClampDynamic(
-      circuit,
-      heightCandidate,
-      emitMinimum(circuit, cells.minHeight, workspaceHeight),
-      workspaceHeight,
-    )
-    const maximumLeft = emitRelu(circuit, circuit.affine([
-      [cells.viewportWidth, 1],
-      [width, -1],
-    ]))
-    const maximumTop = emitRelu(circuit, circuit.affine([
-      [dockTop, 1],
-      [height, -1],
-    ]))
-    const left = emitClampDynamic(
-      circuit,
-      circuit.affine([
-        [current.left, 1],
+    const fitted = fittedGeometry[windowIndex]!
+    const normal = fitIntoWorkspace({
+      left: circuit.affine([
+        [fitted.left, 1],
         [emitMultiply(circuit, dragForMotion, deltaX), 1],
       ]),
-      zero,
-      maximumLeft,
-    )
-    const top = emitClampDynamic(
-      circuit,
-      circuit.affine([
-        [current.top, 1],
+      top: circuit.affine([
+        [fitted.top, 1],
         [emitMultiply(circuit, dragForMotion, deltaY), 1],
       ]),
-      workspaceTop,
-      maximumTop,
-    )
-    nextNormalGeometry.push({left, top, width, height})
+      width: circuit.affine([
+        [fitted.width, 1],
+        [emitMultiply(circuit, resizeForMotion, deltaX), 1],
+      ]),
+      height: circuit.affine([
+        [fitted.height, 1],
+        [emitMultiply(circuit, resizeForMotion, deltaY), 1],
+      ]),
+    })
+    nextNormalGeometry.push(normal)
+    const draggedOrResized = directManipulation[windowIndex]!
+    nextStoredGeometry.push({
+      left: emitSelect(circuit, draggedOrResized, current.left, normal.left),
+      top: emitSelect(circuit, draggedOrResized, current.top, normal.top),
+      width: emitSelect(circuit, resizeForMotion, current.width, normal.width),
+      height: emitSelect(circuit, resizeForMotion, current.height, normal.height),
+    })
 
     const afterClose = emitSelect(
       circuit,
@@ -1156,7 +1212,7 @@ function buildWindowManager() {
   )
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     table.next(cells.windows[windowIndex]!, {
-      ...nextNormalGeometry[windowIndex]!,
+      ...nextStoredGeometry[windowIndex]!,
       open: nextOpen[windowIndex]!,
       minimized: nextMinimized[windowIndex]!,
       maximized: nextMaximized[windowIndex]!,
@@ -1265,8 +1321,8 @@ function buildWindowManager() {
   // destination, i.e. the content box without the header row and the footer, e.g.
   // the maximized height from the release of the maximize button on, so the rows
   // drawn change once per event, like Photos' layout. A release's y is relative to
-  // the list's top edge at the stored geometry, which the release was hit-tested
-  // against.
+  // the list's top edge in the rectangle that the release was hit-tested against,
+  // Monitor's rectangle before this evaluation's events.
   const valueList = buildValueList(circuit, table, cells.valueList, {
     viewportHeight: emitRelu(circuit, circuit.affine([[destinationContentHeight[monitorWindowIndex]!, 1]], -monitorLayout.headerHeight - monitorLayout.footerHeight)),
     focused: focusedWindow[monitorWindowIndex]!,
