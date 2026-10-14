@@ -1,10 +1,9 @@
 const config = {
   entry: [
     'src/handwiredos/window-manager.ts',
-    'src/json-highlighter/main.ts',
-    // The JSON highlighter's measurements, which are run by hand.
+    // The JSON highlighter's measurement, which is run by hand. src/json-highlighter has no page of its own: this
+    // script and lab/json-search, which knip doesn't look at, are what import the program.
     'scripts/measure-json-highlighter.ts',
-    'scripts/measure-json-highlighter-browser.ts',
     'lab/candidate-gallery/candidate-gallery.ts',
     'template/main.ts',
     // The template's switch in plain JavaScript, which only template/toggle.test.ts imports.

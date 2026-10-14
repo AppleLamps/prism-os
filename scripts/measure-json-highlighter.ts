@@ -2,8 +2,8 @@
 //   bun scripts/measure-json-highlighter.ts              every measurement, with each timing in its own process
 //   bun scripts/measure-json-highlighter.ts sizes        source cells, live operations, layers, stored weights, per form and stage
 //   bun scripts/measure-json-highlighter.ts time loop    µs per evaluation of one form, in this process
-// A capacity and a maximum depth after any of the three measure other limits than the defaults, 512 and 16, e.g. the
-// page's: `all 2048 13`, `sizes 2048 13` or `time loop 2048 13`, where `all` stands for every measurement.
+// A capacity and a maximum depth after any of the three measure other limits than the defaults, 512 and 16, e.g.
+// `all 2048 13`, `sizes 2048 13` or `time loop 2048 13`, where `all` stands for every measurement.
 import {type Wire, invariant} from '../src/runtime/numeric-ui-core.ts'
 import {createEvaluator} from '../src/runtime/cells.ts'
 import {type ScanForm, buildHighlighter, scanForms, writeText} from '../src/json-highlighter/highlighter.ts'

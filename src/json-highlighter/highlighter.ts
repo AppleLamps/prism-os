@@ -264,8 +264,9 @@ export function writeText(cells: HighlighterProgram['cells'], source: Float32Arr
 }
 
 // The host: writes the text and the caret, checks every cell against its declaration, runs the program, and returns
-// the outputs. The program keeps no state, so it's compiled for its outputs only, once, and the page reads the compiled
-// program's size from the same compilation.
+// the outputs. The program keeps no state, so it's compiled for its outputs only, once. The tests in
+// tests/json-highlighter run every form of the program through this host.
+/** @public */
 export function createHighlighterMachine(form: ScanForm = 'loop', limits: Limits = defaultLimits) {
   const built = buildHighlighter(form, limits)
   const {capacity} = limits
@@ -279,9 +280,6 @@ export function createHighlighterMachine(form: ScanForm = 'loop', limits: Limits
   return {
     built,
     source,
-    // E.g. 15,928 operations in 1,043 layers for the loop form at the default limits.
-    operationCount: program.valueCount - program.sourceSize,
-    layerCount: program.layers.length,
     run(text: string, caret: number): HighlighterOutput {
       writeText(built.cells, source, text, caret)
       built.validate(source)

@@ -4,7 +4,7 @@ import {describe, expect, test} from 'bun:test'
 import {validateGrids, validateIndexReads, validateNoNaN} from '../../src/runtime/numeric-ui-core.ts'
 import {createCorpus, createRandom, edgeCases, edgeCasesFor} from './corpus.ts'
 import {type HighlighterOutput, type ScanForm, buildHighlighter, createHighlighterMachine, scanForms} from '../../src/json-highlighter/highlighter.ts'
-import {type Limits, capacity, defaultLimits, errorKind, errorKinds, maximumDepth, pageLimits} from '../../src/json-highlighter/kinds.ts'
+import {type Limits, capacity, defaultLimits, errorKind, errorKinds, maximumDepth} from '../../src/json-highlighter/kinds.ts'
 import {highlightReference} from './reference.ts'
 
 const corpus = createCorpus(20260917, {random: 700, mutated: 1600, long: 80})
@@ -173,13 +173,10 @@ describe('the program', () => {
 })
 
 // buildHighlighter takes the capacity and the maximum depth as a parameter. The tests above run the defaults, 512 and
-// 16. These run the page's limits, 2,048 code points at depth 13, the largest depth at that capacity where every
+// 16. These run larger limits, 2,048 code points at depth 13, the largest depth at that capacity where every
 // comparison of the container kinds is an integer bit, and limits that aren't powers of two.
 describe('the program at other limits', () => {
-  const larger = pageLimits
-  test('the page builds 2,048 code points at depth 13, which the tests below name in their texts', () => {
-    expect(larger).toEqual({capacity: 2048, maximumDepth: 13})
-  })
+  const larger: Limits = {capacity: 2048, maximumDepth: 13}
   // Edge cases, chains of containers and long texts made for the larger limits, e.g. `[`, 2,046 spaces and `]`.
   const largerCorpus = createCorpus(20261013, {random: 300, mutated: 600, long: 80}, larger)
 

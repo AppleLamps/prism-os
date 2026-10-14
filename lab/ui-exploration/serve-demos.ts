@@ -25,8 +25,6 @@ import hardAttend from '../hard-attend/hard-attend.html'
 import generativeFields from '../generative-fields/demo.html'
 import eventWindow from '../event-window/demo.html'
 import reusableLayout from '../reusable-layout/demo.html'
-import jsonHighlighter from '../../assets/json-highlighter.html'
-import regexSearch from '../regex-search/demo.html'
 import knuthPlass from '../knuth-plass/demo.html'
 
 import textWalker from './text-walker/demo.html'
@@ -58,8 +56,6 @@ const pages = {
   '/lab/generative-fields/demo.html': generativeFields,
   '/lab/event-window/demo.html': eventWindow,
   '/lab/reusable-layout/demo.html': reusableLayout,
-  '/assets/json-highlighter.html': jsonHighlighter,
-  '/lab/regex-search/demo.html': regexSearch,
   '/lab/knuth-plass/demo.html': knuthPlass,
   '/lab/ui-exploration/text-walker/demo.html': textWalker,
   '/lab/ui-exploration/text-tabulated/demo.html': textTabulated,
