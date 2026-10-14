@@ -1963,13 +1963,19 @@ function mountWindowManager(document: Document, window: Window) {
   // window, the frame would take the keyboard focus away under the open menu. So
   // such a press reaches the program as a press and a cancel at one time: the
   // program raises and focuses the window, and nothing is held afterwards.
+  //
+  // The note's keyboard focus follows every press of the primary pointer, whatever
+  // the button: the browser moves the keyboard focus at a right button's press as
+  // at a left button's, e.g. away from the note at a press on Notes' title bar or on
+  // the desk. So the frame gets every press for noteFocusChange, also one that the
+  // program doesn't get.
   window.addEventListener('pointerdown', (event: PointerEvent) => {
     if (!event.isPrimary) return
+    events.press = event
+    scheduleRender()
     if (event.button !== 0 && event.target !== domCache.note) return
     machine.pointerDown(event.clientX, event.clientY, event.timeStamp)
     if (event.button !== 0) machine.pointerCancel(event.clientX, event.clientY, event.timeStamp)
-    events.press = event
-    scheduleRender()
   })
   // A context menu takes the release of the press that opens it: the browser sends
   // no pointerup after it. On macOS a control-click opens the menu with the primary
