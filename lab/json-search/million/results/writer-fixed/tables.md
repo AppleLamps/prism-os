@@ -21,3 +21,19 @@ Every timed search was compared with the lab's plain JavaScript loop for every d
 From `writers-100000`, 100,000 documents, load average 8.2 to 14.4.  Every output of bit-emit.ts's shader against loop-emit.ts's on the GPU. The highlighter's summary and display kinds: 51,600,000 values, 0 mismatched. The count and the marks of character-sets.ts's program, for 5 choices of sets: 256,500,000 values, 0 mismatched, 48,340,424 characters counted, and 0 of 500,000 counts differ from plain JavaScript's. The search step's match count of every document and mark of every position, 60 searches (each pattern at each state capacity that holds it, without a scope and with each of three scopes): 3,078,000,000 values, 0 mismatched, and 1,254,405 matches in all. In total 3,386,100,000 values, 0 mismatched.
 
 
+### The five runs with a new and with a repeated salt, whose files are at commit 1bed1ea
+
+Five Chrome processes, each with a new profile folder, compiled the three shaders with a scope for 2,000 documents. Their JSON files were in salts/ until October 14, 2026, and `git show 1bed1ea:lab/json-search/million/results/writer-fixed/salts/new-salt-1.json` prints one. This table holds every compile time of them, in ms.
+
+| Run | Its salt | What runs on the GPU | Compile at 8 states | 16 states | 32 states | Load average |
+| --- | --- | --- | --- | --- | --- | --- |
+| new-salt-1 | a salt that no earlier process used, 918273601 | bit-emit.ts's shader, with a scope | 22.2 | 25.4 | 41.9 | 14.39 to 13.26 |
+| new-salt-1 | a salt that no earlier process used, 918273601 | loop-emit.ts's shader, with a scope | 48.0 | 153 | 616 | 14.39 to 13.26 |
+| new-salt-2 | a salt that no earlier process used, 918273602 | bit-emit.ts's shader, with a scope | 20.1 | 24.8 | 47.2 | 13.58 to 11.83 |
+| new-salt-2 | a salt that no earlier process used, 918273602 | loop-emit.ts's shader, with a scope | 48.3 | 152 | 657 | 13.58 to 11.83 |
+| new-salt-3 | a salt that no earlier process used, 918273603 | bit-emit.ts's shader, with a scope | 19.7 | 27.4 | 44.9 | 10.46 to 9.96 |
+| new-salt-3 | a salt that no earlier process used, 918273603 | loop-emit.ts's shader, with a scope | 48.9 | 148 | 662 | 10.46 to 9.96 |
+| same-salt-1 | the salt of new-salt-1, 918273601 | bit-emit.ts's shader, with a scope | 3.13 | 4.00 | 11.3 | 12.23 to 15.43 |
+| same-salt-1 | the salt of new-salt-1, 918273601 | loop-emit.ts's shader, with a scope | 9.71 | 32.2 | 202 | 12.23 to 15.43 |
+| same-salt-2 | the salt of new-salt-2, 918273602 | bit-emit.ts's shader, with a scope | 5.42 | 4.56 | 13.8 | 11.33 to 11.45 |
+| same-salt-2 | the salt of new-salt-2, 918273602 | loop-emit.ts's shader, with a scope | 10.6 | 41.6 | 175 | 11.33 to 11.45 |
