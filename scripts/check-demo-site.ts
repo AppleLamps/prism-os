@@ -35,8 +35,8 @@ const expectations: Record<string, {ready: string, report: string}> = {
   'os/': {
     // HandwiredOS reports its program in its Monitor window, which the page fills from the compiled program at
     // mount. Each item of the window's sidebar counts a location's rows, and a pointer that rests on the item reads
-    // the count with what a row is, e.g. "4,254 operations. What the program computes: ...". The window's footer
-    // counts the rest, e.g. "123 layers", "8,965 weights". The report is the sidebar's counts, then the footer's.
+    // the count with what a row is, e.g. "4,639 operations. What the program computes: ...". The window's footer
+    // counts the rest, e.g. "130 layers", "9,882 weights". The report is the sidebar's counts, then the footer's.
     ready: `/\\d/.test(document.querySelector('.monitor-counts')?.textContent ?? '')`,
     report: `[
       ...[...document.querySelectorAll('.monitor-location')].map(item => item.title.split('.')[0]),
@@ -110,7 +110,7 @@ if (debuggingPort !== undefined && await fetch(`http://127.0.0.1:${debuggingPort
   void server.stop(true)
   process.exit(1)
 }
-// --enable-unsafe-webgpu gives headless Chrome WebGPU, which the GPU search demo needs once it is on the site.
+// --enable-unsafe-webgpu gives headless Chrome WebGPU, which the GPU search demo, json-search/, needs.
 const chrome = Bun.spawn([chromePath, '--headless=new', `--remote-debugging-port=${debuggingPort ?? '0'}`, `--user-data-dir=${profile}`,
   '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--enable-unsafe-webgpu', '--window-size=1440,900', 'about:blank'], {stdout: 'ignore', stderr: 'ignore'})
 const finish = (code: number) => {
@@ -261,7 +261,8 @@ try {
         linksElsewhere++
         continue
       }
-      // A link that isn't shown is the switch of a demo that isn't published yet, e.g. the GPU search's card.
+      // A link that isn't shown is the switch of a demo that isn't published yet, e.g. a card with a hidden
+      // attribute, as the GPU search's card had while its page was being written.
       if (!link.visible) continue
       linksToThePage++
       const linked = link.href.split('#', 1)[0]!
