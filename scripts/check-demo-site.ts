@@ -34,8 +34,8 @@ const expectations: Record<string, {ready: string, report: string}> = {
   'os/': {
     // HandwiredOS reports its program in its Monitor window, which the page fills from the compiled program at
     // mount. Each item of the window's sidebar counts a location's rows, and a pointer that rests on the item reads
-    // the count with what a row is, e.g. "19,851 operations. What the program computes: ...". The window's footer
-    // counts the rest, e.g. "217 layers", "43,180 weights". The report is the sidebar's counts, then the footer's.
+    // the count with what a row is, e.g. "4,251 operations. What the program computes: ...". The window's footer
+    // counts the rest, e.g. "123 layers", "8,959 weights". The report is the sidebar's counts, then the footer's.
     ready: `/\\d/.test(document.querySelector('.monitor-counts')?.textContent ?? '')`,
     report: `[
       ...[...document.querySelectorAll('.monitor-location')].map(item => item.title.split('.')[0]),

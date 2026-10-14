@@ -453,7 +453,7 @@ body {
 
 /* At its bottom, the sidebar says what the shown location holds: its rows by kind, which
    only Operations has, e.g. "ReGLU" beside the swatch that the list's kind column draws,
-   and "10,940", then one sentence. JavaScript writes them when the list shows another
+   and "2,526", then one sentence. JavaScript writes them when the list shows another
    location.
 
    The caption is the box between the items, which end 100 px below the sidebar's top,
@@ -464,7 +464,7 @@ body {
    first part is an empty one, which takes back the gap after it, since a column keeps
    its first part even when the part doesn't fit. E.g. a window at its minimum height,
    where the sidebar is 112 px tall, shows neither part, and a window 340 px tall shows
-   Operations' four kinds and its sentence on four lines in the caption's 138 px. */
+   Operations' three kinds and its sentence on four lines in the caption's 138 px. */
 .monitor-caption {
   position: absolute;
   top: calc(var(--monitor-header-height) + 3 * var(--monitor-row-height) + var(--space-3));
@@ -547,7 +547,7 @@ body {
 /* A sidebar item: the location's name, and its number of rows at the right edge. Each of
    the two is a line as tall as the item, and the item wraps: in a system font too wide for
    both, the count moves to a second line, which the item cuts off, and the name stays
-   whole. In the system font of macOS, "Operations" and "19,851" leave 10 px between them. */
+   whole. In the system font of macOS, "Operations" and "4,251" leave 18 px between them. */
 .monitor-location {
   position: absolute;
   display: flex;
