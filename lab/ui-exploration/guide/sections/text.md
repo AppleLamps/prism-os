@@ -199,7 +199,7 @@ Measured:
 
 A paragraph flows around a window you drag, and every word moves to its new place, as in text-walker's demo, where each word springs there, and in HandwiredOS's Notes window until October 13, 2026. Every line gets its own width from the obstacle, every word needs its own x and line, and clicking a word makes it bold, which changes its width while the page runs.
 
-The familiar way is the greedy walker above, called once per line with that line's width, e.g. pretext's dynamic-layout demo calls `layoutNextLine(prepared, cursor, width)` for every band of the column, i.e. every horizontal strip one line tall, with the width left over by the obstacles in that band.
+The familiar way is the greedy walker above, called once per line with that line's width, e.g. pretext's dynamic-layout demo calls `layoutNextLine(prepared, cursor, width)`, or `layoutNextLine(prepared, width, cursor)` since pretext 1.0.0, for every band of the column, i.e. every horizontal strip one line tall, with the width left over by the obstacles in that band.
 
 ### A line's end is a count
 

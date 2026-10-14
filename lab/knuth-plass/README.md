@@ -191,7 +191,7 @@ Method:
 
 `bun lab/knuth-plass/demo.html` shows the paragraphs of pretext's justification demo, with the demo's soft hyphens and its font, 15 px Georgia, and a width slider from 200 to 600 px. Left: pretext's `layoutNextLineRange` on the hyphenated text, which fills each line as far as it goes. Right: the program's breaks. Both columns justify every line but the last with CSS. Each column shows its line count, its total cost in this variant, and the widest space a justified line gets. In each frame where the width changed, JavaScript writes each paragraph's cells and evaluates the program once per paragraph. The program holds 144 break points, for paragraphs of 126 to 134, and a window of 32 boxes, which no line of these paragraphs reaches within 200 to 600 px. `?window=16` shows the window message from 327 px.
 
-At 364 px, the demo's starting width, both columns have 41 lines, and the total cost is 12,639 for greedy against 10,058 for the program.
+At 364 px, the demo's starting width, both columns have 41 lines, and the total cost is 13,550 for greedy against 10,058 for the program, with pretext 1.0.0, which the repo has since October 14, 2026. With pretext 0.0.9 the greedy column's cost there was 12,639: 0.0.9 kept a line that ended at a soft hyphen even when the hyphen didn't fit, so some of the greedy column's lines were wider than their box, and 1.0.0 ends such a line at an earlier break. The program's column is the same with both versions at every width.
 
 In headless Chrome 153.0.8010.48, at load average 4.5 to 4.8, with `?check=1`, rendering every width from 200 to 600 px and then the starting width again, 403 frames:
 
@@ -200,7 +200,7 @@ In headless Chrome 153.0.8010.48, at load average 4.5 to 4.8, with `?check=1`, r
 | chain | 34,530 | 1,422 | 49 | 46 | 176 | 1.6 (4.6) |
 | tree | 218,108 | 154 | 272 | 173 | 600 | 9.0 (15.8) |
 
-The evaluation times include writing each paragraph's cells and `createEvaluator`'s checks. Compile ms is `createEvaluator`'s compile, and the time to the first frame also includes a second compile for the page's status line, and up to 100 ms of the check script's polling. pretext's greedy breaks for the 4 paragraphs took 0.1 ms or less, which is below the page's `performance.now()` steps of 0.1 ms. The check script isn't in the repo; it served demo.html with Bun, drove its own headless Chrome with a fresh profile over the DevTools Protocol, called `window.knuthPlassRender(width)` for every width, and read `window.knuthPlassFrames` and `window.knuthPlassMismatches`.
+The evaluation times include writing each paragraph's cells and `createEvaluator`'s checks. Compile ms is `createEvaluator`'s compile, and the time to the first frame also includes a second compile for the page's status line, and up to 100 ms of the check script's polling. pretext's greedy breaks for the 4 paragraphs, with pretext 0.0.9, took 0.1 ms or less, which is below the page's `performance.now()` steps of 0.1 ms. The check script isn't in the repo; it served demo.html with Bun, drove its own headless Chrome with a fresh profile over the DevTools Protocol, called `window.knuthPlassRender(width)` for every width, and read `window.knuthPlassFrames` and `window.knuthPlassMismatches`.
 
 ## Export for the GPU step
 

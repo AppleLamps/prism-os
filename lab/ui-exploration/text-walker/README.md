@@ -527,6 +527,29 @@ A workgroup of 16 made the long compute pass about 1.5 times slower at 100,000 p
 - Against the same program on the CPU, the GPU wins from about 40 to 50 long or 170 to 280 short paragraphs against generated JavaScript, and from 100 paragraphs or fewer against the executor.
 - The programs output only line counts. Per-line widths or word positions would multiply what the host reads back by the number of lines or segments, and the host would still have to turn them into DOM writes.
 
+### Update, October 14, 2026: pretext 1.0.0
+
+Every time of pretext's `layout()` in this section was measured with pretext 0.0.9. The repo has pretext 1.0.0 since October 14, 2026, whose `layout()` gives the same line counts and takes 3.2 to 4.8 times less time on these paragraphs. Measured that day with `cpu-time.ts all --variants pretext --counts 1,1024,16384,100000`, 3 processes per row, in Bun 1.4.3 at load average 4.3 to 5.5. The 0.0.9 column ran right after the 1.0.0 column, from a checkout that still had 0.0.9 installed. µs per paragraph at 320 px, the median of the 3 processes' medians:
+
+| Size | Paragraphs | 0.0.9 on September 17, as above | 0.0.9 on October 14 | 1.0.0 on October 14 |
+| --- | --- | --- | --- | --- |
+| short | 1 | 0.20 | 0.212 | 0.044 |
+| short | 1,024 | 0.262 | 0.288 | 0.0705 |
+| short | 16,384 | 0.359 | 0.580 | 0.139 |
+| short | 100,000 | 0.54 | 0.598 | 0.188 |
+| long | 1 | 1.96 | 1.93 | 0.435 |
+| long | 1,024 | 2.52 | 2.48 | 0.576 |
+| long | 16,384 | 2.65 | 2.84 | 0.758 |
+| long | 100,000 | 2.87 | 2.94 | 0.813 |
+
+A second run of the 1.0.0 column later that day, at load average 2.4, gave 0.043, 0.067, 0.091 and 0.164 µs for short paragraphs and 0.475, 0.559, 0.693 and 0.757 µs for long ones. Both versions give 349,142 lines for 100,000 short paragraphs and 3,102,600 for 100,000 long ones. Preparing 100,000 long paragraphs took 5.2 s with 1.0.0 against 16.2 s with 0.0.9 in the same processes. The programs' times on the CPU and on the GPU don't depend on pretext's speed, since pretext only gives the line counts that they are compared with, and the GPU wasn't timed again. So what follows puts this section's GPU times of September next to the 1.0.0 times of the table, and is an estimate:
+
+- When only the width changes, the GPU takes less time than pretext from about 700 to 800 long or 2,500 to 3,000 short paragraphs, where the section above says 160 to 170 and 800. At 100,000 paragraphs it takes 21 to 48 times less, e.g. 3.88 against 81.3 ms for long paragraphs, where the section says 74 to 139 times.
+- When the texts change, the GPU takes longer than pretext at every measured count up to 100,000, and 1.7 to 1.9 times as long there, e.g. 158 against 81.3 ms for long paragraphs. This answer reverses: against 0.0.9 the GPU took 1.7 to 1.8 times less there.
+- One long paragraph takes 0.39 ms on the GPU against 0.44 µs, about 900 times as long.
+
+The counts are interpolated between the table's four counts, so they are rough. A measured answer needs `cpu-time.ts` at this section's counts and the GPU's runs again.
+
 ### Not done
 
 - Widths off the 1/64 px grid: within float32 rounding of pretext's fit limit, they can give one more line than pretext, see [Correctness checks](#correctness-checks).
