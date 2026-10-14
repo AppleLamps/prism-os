@@ -310,7 +310,7 @@ One search of 100,000 documents as one f32 per code point, ms, as in table 6: ba
 
 ### The writer's size
 
-bit-emit.ts is 1,032 lines, 836 of code and 166 of comments, where loop-emit.ts is 242. About 75 of them write the shader around the stages a second time, as loop-emit.ts does, since loop-emit.ts stays as it is. Writing the search step's shader at 32 states takes the writer 14 to 18 ms in Bun, where loop-emit.ts takes 3 to 7 ms. bit-emit.test.ts is 490 lines. Outside the writer: 27 lines in gpu/host.ts for the packed words, 77 in wgsl-interpreter.ts for integer statements, 28 in src/runtime for the exact bit declaration, and the two modes of page.ts and the table of summarize.ts for the measurements.
+bit-emit.ts is 1,032 lines, 836 of code and 166 of comments, where loop-emit.ts is 242. About 75 of them write the shader around the stages a second time, as loop-emit.ts does, since loop-emit.ts stays as it is. Writing the search step's shader at 32 states takes the writer 14 to 18 ms in Bun, where loop-emit.ts takes 3 to 7 ms. bit-emit.test.ts is 491 lines. Outside the writer: 27 lines in gpu/host.ts for the packed words, 77 in wgsl-interpreter.ts for integer statements, 28 in src/runtime for the exact bit declaration, and the two modes of page.ts and the table of summarize.ts for the measurements.
 
 ## Not measured, and what went wrong
 
