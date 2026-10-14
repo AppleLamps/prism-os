@@ -83,7 +83,7 @@ const initialLocation = 1
 // rectangles from these numbers, and the renderer gives them to the DOM at mount.
 export const monitorLayout = {
   // The sidebar at the content box's left edge. The list takes the rest. A sidebar
-  // item holds its location's name and row count, e.g. "Operations" and "19,851".
+  // item holds its location's name and row count, e.g. "Operations" and "4,251".
   sidebarWidth: 152,
   // The header row above the scroller, and the sidebar's heading beside it.
   headerHeight: 28,
@@ -470,7 +470,7 @@ export type ValueListLocation = {
   // What a row is, e.g. 'operations', and a sentence for a visitor who doesn't know
   // the program's words. The sidebar shows the sentence under its items while the
   // list shows this location, and a pointer that rests on the item reads both, e.g.
-  // '19,851 operations. What the program computes: each number from earlier ones.'
+  // '4,251 operations. What the program computes: each number from earlier ones.'
   rowNoun: string
   description: string
   titles: ColumnTexts
@@ -480,7 +480,7 @@ export type ValueListLocation = {
   // color swatch from. A location without one gives its kind cells no such class.
   kindClass?: (row: number) => string
   // The location's rows counted by kind, which the sidebar lists above the sentence,
-  // e.g. 10,940 ReGLU among Operations' rows: each kind's name, the class of its
+  // e.g. 2,526 ReGLU among Operations' rows: each kind's name, the class of its
   // swatch, and what a pointer that rests on the entry reads. A kind that no row
   // has is left out. A location without kinds to count leaves the list out.
   kinds?: readonly {name: string, className: string, count: number, title: string}[]
@@ -503,7 +503,7 @@ export function formatValue(value: number) {
 
 type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 
-// A count as the sidebar shows it, e.g. '19,851'.
+// A count as the sidebar shows it, e.g. '4,251'.
 const formatCount = (count: number) => count.toLocaleString('en-US')
 
 // The four kinds of live operation, each with the text that a row shows, the class
@@ -654,7 +654,7 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
     return part
   }
   // The caption's parts, from the top: for each location that counts its rows by
-  // kind, a list of the kinds, e.g. 'ReGLU' and '10,940', which is displayed while
+  // kind, a list of the kinds, e.g. 'ReGLU' and '2,526', which is displayed while
   // the list shows that location, and the shown location's sentence, e.g. 'What the
   // program computes: each number from earlier ones.'
   const captionKinds = locations.map(location => {

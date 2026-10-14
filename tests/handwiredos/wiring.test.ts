@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {Circuit} from '../../src/runtime/numeric-ui-core.ts'
 import {createWindowManagerMachine} from '../../src/handwiredos/window-manager.ts'
-import {drawWiring} from '../../src/handwiredos/wiring.ts'
+import {arcOpacity, drawWiring} from '../../src/handwiredos/wiring.ts'
 
 type Arc = {color: string, left: number, right: number, height: number, baseline: number}
 
@@ -90,4 +90,13 @@ test('on a tall canvas an arc is at most 1.25 times as tall as half its width', 
   drawWiring(canvas, program, {...options, width: 200, height: 800, pixelRatio: 1})
   // Cell 0 at x 0, the operation at x 100.
   assert.deepEqual(arcs, [{color: 'copper', left: 0, right: 100, height: 62.5, baseline: 799.5}])
+})
+
+test('every program\'s wallpaper gets the same ink: an arc is the fainter the more weights the program stores', () => {
+  // 2,600 arcs' worth of ink: 29% an arc for 8,959 weights, and 6% for 43,180.
+  assert.equal(arcOpacity(8_959).toFixed(2), '0.29')
+  assert.equal(arcOpacity(43_180).toFixed(2), '0.06')
+  for (const weightCount of [2_600, 8_959, 43_180, 1_000_000]) assert.ok(Math.abs(weightCount * arcOpacity(weightCount) - 2_600) < 1e-9)
+  // A program of fewer weights than that draws every arc in full.
+  assert.deepEqual([arcOpacity(2_599), arcOpacity(1), arcOpacity(0)], [1, 1, 1])
 })

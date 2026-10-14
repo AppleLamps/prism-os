@@ -4,8 +4,8 @@
 
    The program computes every position and size, and JavaScript writes them as inline
    styles each frame: a window's width, height, transform, opacity and z-index, its content
-   box's width and height, a dock item's rectangle, each Notes word's and each photo's
-   position, and the numbers --focused, --maximized, --inactive and --open, each 0 or 1.
+   box's width and height, a dock item's rectangle, each photo's position, and the numbers
+   --focused, --maximized, --inactive and --open, each 0 or 1.
    So no rule here gives one of those properties a transition, an animation or a default.
    What depends on the four numbers is arithmetic on them, e.g. a shadow that grows with
    --focused, and has no transition either: focus changes in the frame of the press, and
@@ -34,6 +34,24 @@ body {
   background: var(--desk);
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* While a press is held, only the pressed element and the elements that it lies in take
+   the pointer. So nothing else shows a hover state or sets the cursor while the pointer
+   passes over it with the button down, e.g. a dock item under a selection of the note's
+   text that is dragged out of the note. A drag of a title bar or of a grip keeps its
+   cursor wherever the pointer goes, e.g. over the note when a resize has stopped at a
+   window's smallest size. */
+#desktop:has(:active) :not(:active) {
+  pointer-events: none;
+}
+
+#desktop:has(.titlebar:active) {
+  cursor: grabbing;
+}
+
+#desktop:has(.resize-grip:active) {
+  cursor: nwse-resize;
 }
 
 /* The desk: one warm surface with paper grain and a dot every 24 px, lit from the top left.
@@ -75,10 +93,11 @@ body {
    up to 155 px to each side of the dock's middle, which is past the wire's terminals at
    148 px, and the arcs are at full strength from 244 px.
 
-   The canvas is shown at 36% of its opacity, and wiring.ts draws each arc at 6%. One arc
-   alone is then at about 2.2%, a hairline, and a band where thousands of arcs lie on each
-   other stops at 36% of the arc's color, so the picture stays quiet behind the windows
-   and the list of things to try. */
+   The canvas is shown at 36% of its opacity, and wiring.ts draws each arc the fainter the
+   more weights the program stores, e.g. at 29% for 8,959 weights. One arc alone is then
+   at about 10%, a hairline, and a band where many arcs lie on each other stops at 36% of
+   the arc's color, so the picture stays quiet behind the windows and the list of things
+   to try. */
 .desk-wiring {
   --dock-clearing: radial-gradient(258px 100px at 50% calc(100% - 32px), transparent 68%, #000);
   position: absolute;
@@ -441,7 +460,7 @@ body {
 
 /* At its bottom, the sidebar says what the shown location holds: its rows by kind, which
    only Operations has, e.g. "ReGLU" beside the swatch that the list's kind column draws,
-   and "10,940", then one sentence. JavaScript writes them when the list shows another
+   and "2,526", then one sentence. JavaScript writes them when the list shows another
    location.
 
    The caption is the box between the items, which end 100 px below the sidebar's top,
@@ -452,7 +471,7 @@ body {
    first part is an empty one, which takes back the gap after it, since a column keeps
    its first part even when the part doesn't fit. E.g. a window at its minimum height,
    where the sidebar is 112 px tall, shows neither part, and a window 340 px tall shows
-   Operations' four kinds and its sentence on four lines in the caption's 138 px. */
+   Operations' three kinds and its sentence on four lines in the caption's 138 px. */
 .monitor-caption {
   position: absolute;
   top: calc(var(--monitor-header-height) + 3 * var(--monitor-row-height) + var(--space-3));
@@ -535,7 +554,7 @@ body {
 /* A sidebar item: the location's name, and its number of rows at the right edge. Each of
    the two is a line as tall as the item, and the item wraps: in a system font too wide for
    both, the count moves to a second line, which the item cuts off, and the name stays
-   whole. In the system font of macOS, "Operations" and "19,851" leave 10 px between them. */
+   whole. In the system font of macOS, "Operations" and "4,251" leave 18 px between them. */
 .monitor-location {
   position: absolute;
   display: flex;
@@ -752,122 +771,68 @@ body {
   pointer-events: none;
 }
 
-/* Notes: plain paper. JavaScript creates one span per word and places it in the content
-   box's coordinates. The program is built from a measurement of the paragraph in the font
-   that notesFont in notes-paragraph.ts names, so the three font lines below must name that
-   font, and the inherited kerning and legibility settings are set back to the defaults
-   that the measurement uses. */
-.notes-word {
-  position: absolute;
-  top: 0;
-  left: 0;
+/* Notes: plain paper, and on it the browser's own text field, as large as the window's
+   content box. The browser edits, selects, wraps and scrolls the text. The field has no
+   border, no background and no outline of its own: the window around it shows which
+   window has the focus, and the copper caret shows where the typing goes. Its selection
+   is site.css's ::selection, and its scrollbar is that of Monitor's list.
+
+   pan-y lets a finger scroll the text inside the desktop's touch-action: none, and
+   contain keeps the scrolling from reaching anything behind the note. The page's body
+   allows no selection, so the field allows its own, which Safari needs before it lets
+   anyone type. The window's grip lies over the field's lower right corner and takes the
+   presses there, and the field's own resize handle is off. */
+.notes-text {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: var(--space-5);
+  border: 0;
+  border-radius: 0;
+  background: none;
   color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 14px;
-  line-height: 22px;
-  font-kerning: auto;
-  text-rendering: auto;
-  white-space: pre;
-  pointer-events: none;
+  caret-color: var(--copper);
+  font: 400 14px/22px Georgia, "Times New Roman", serif;
+  resize: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--rule-strong) transparent;
+  scrollbar-width: thin;
+  touch-action: pan-y;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
-/* A browser scrolls a box with overflow: hidden to show the caret of a focused textarea
-   that the box cuts off, which would shift every word. A box with overflow: clip can't be
-   scrolled. The frame cuts the content box off while it grows to a new size, e.g. during
-   a maximize, so the frame can't be scrolled either. */
+/* site.css draws an outline around whatever has the keyboard focus, and a text field has
+   it at every focus, also after a click. Two classes outrank that rule in either order of
+   the two stylesheets. */
+.notes-text:focus-visible {
+  outline: none;
+}
+
+/* iOS zooms the page when a focused field's text is under 16 px, and only iOS knows
+   -webkit-touch-callout. */
+@supports (-webkit-touch-callout: none) {
+  .notes-text {
+    font-size: 16px;
+    line-height: 24px;
+  }
+}
+
+/* A browser scrolls a box with overflow: hidden to show the caret of a focused text
+   field that the box cuts off, which would move the window's content for good. The frame
+   cuts the content box off while it grows to a new size, e.g. during a maximize. A box
+   with overflow: clip can't be scrolled, so neither the frame nor the content box is. */
 .window-notes,
-.notes-flow {
+.notes-content {
   overflow: clip;
 }
 
-/* The note's text as the visitor types it. The textarea is never shown: it holds the
-   characters, the caret and the selection, and JavaScript moves it to the caret, so that
-   an input method opens its candidate window there. Its font is at least 16 px, so that
-   iOS Safari doesn't zoom the page when the textarea gets the focus. */
-.notes-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 22px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  outline: none;
-  opacity: 0;
-  resize: none;
-  overflow: hidden;
-  white-space: pre;
-  pointer-events: none;
-  user-select: text;
-  -webkit-user-select: text;
-  font: 16px Georgia, "Times New Roman", serif;
-}
-
-/* What the note says when its text passes one of the flow's capacities, e.g. "The last 5
-   words don't fit in the lines that are free." It sits in the 24 px above the first line,
-   where no text is laid out, and is centered there on one line or on two: the sentences
-   wrap, so that the narrowest Notes window, whose column is 230 px wide, shows a whole
-   sentence, and a 500 px window two of them. Two lines of 12 px are all that the 24 px
-   hold, so the type is 11 px, the size of the labels. Text past the second line ends in
-   an ellipsis. The line clamp needs display: -webkit-box, which JavaScript writes while
-   the notice has text. */
-.notes-notice {
-  position: absolute;
-  top: 12px;
-  left: var(--space-5);
-  max-width: calc(100% - 48px);
-  overflow: hidden;
-  color: var(--copper);
-  font: 500 11px/12px var(--font-sans);
-  pointer-events: none;
-  transform: translateY(-50%);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-}
-
-/* The selected text of one line, drawn under the words. */
-.notes-selection {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 22px;
-  background: color-mix(in srgb, var(--copper) 22%, transparent);
-  pointer-events: none;
-}
-
-/* The caret, drawn where the program laid out the character after it. Its two animations
-   have the same keyframes: JavaScript switches between them when the caret moves, which
-   starts the blink again. For a visitor who asked for less motion, site.css runs every
-   animation once in 0.01 ms, so the caret stays lit. */
-.notes-caret {
-  position: absolute;
-  top: 2px;
-  left: 0;
-  width: 2px;
-  height: 18px;
-  border-radius: 1px;
-  background: var(--copper);
-  pointer-events: none;
-  animation: notes-caret-blink-a 1.1s steps(1) infinite;
-}
-
-@keyframes notes-caret-blink-a {
-  50% {
-    opacity: 0;
-  }
-}
-
-@keyframes notes-caret-blink-b {
-  50% {
-    opacity: 0;
-  }
-}
-
 /* Monitor's footer: the program's sizes at the left, and at the right the program's time
-   in each of the last 60 frames as a small chart, with the last frame's time beside it.
-   monitor-footer.ts writes all of it. */
+   per frame over the last 60 frames as a small chart, with the time at the chart's last
+   point beside it. monitor-footer.ts writes all of it. */
 .monitor-footer {
   position: absolute;
   right: 0;
@@ -924,7 +889,7 @@ body {
 
 /* The chart is 100 by 24 px. The path's box is 59 units wide and 1 unit tall, stretched
    over the chart's inner 97 by 20 px, and the strokes keep their widths in px. So the
-   last frame's dot is 3 px from the chart's right edge, and a frame at the top or at the
+   last point's dot is 3 px from the chart's right edge, and a point at the top or at the
    bottom of the scale keeps its whole stroke. */
 .monitor-chart {
   width: 100px;
@@ -955,8 +920,8 @@ body {
   stroke-width: 5;
 }
 
-/* The last frame's time is tabular, and under 100 ms it is always three digits and a
-   point, e.g. 0.40 or 12.3, so the chart beside it doesn't move when the time changes. */
+/* The time is tabular, and under 100 ms it is always three digits and a point, e.g. 0.16
+   or 12.3, so the chart beside it doesn't move when the time changes. */
 .monitor-frame-figure {
   font-variant-numeric: tabular-nums;
 }

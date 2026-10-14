@@ -1,22 +1,31 @@
 // The footer of the Monitor window: how large the compiled program is, and how
-// long it ran in each of the last 60 frames. Everything here is JavaScript text and
-// SVG that the page computes from the compiled program and from the frame times.
-// None of it is an output of the program. The list above the footer is the
+// long it ran per frame over the last 60 frames. Everything here is JavaScript text
+// and SVG that the page computes from the compiled program and from the frame
+// times. None of it is an output of the program. The list above the footer is the
 // program's, see value-list.ts.
 //
 // The mount calls createMonitorFooter once, and update after each frame with the
 // time the program took in that frame.
+//
+// A browser's clock counts in steps, 0.1 ms in Chrome and 1 ms in Safari and
+// Firefox, and the program takes about 0.1 to 0.2 ms a frame. So one frame's time
+// reads as 0, 0.1, 0.2 or 0.3 ms in Chrome, and a chart of single frames would show
+// those steps and little else. The reading is right on average, though, since a
+// frame starts anywhere within a step. So each point of the chart, and the number
+// beside the chart, is the average of 10 frames: in Chrome a multiple of 0.01 ms.
 import {type Circuit, invariant} from '../runtime/numeric-ui-core.ts'
 
 type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 
-// How many frames the chart shows.
+// How many points the chart shows, one per frame, and how many frames a point
+// averages: the frame at the point and the 9 before it.
 export const frameCapacity = 60
+export const averagedFrames = 10
 
 // The stored weights, and the bytes of every array the program holds. The index
-// reads of one table share one array of the table's positions, e.g. HandwiredOS's
-// 2,320 index reads share 5 arrays of 1,572 bytes in all, so each array is counted
-// once, however many reads point at it.
+// reads of one table share one array of the table's positions, e.g. 200 reads of a
+// table of 32 values share one array of 128 bytes, so each array is counted once,
+// however many reads point at it.
 /** @public */
 export function measureProgram(program: TensorProgram) {
   let weights = 0
@@ -40,21 +49,37 @@ export function measureProgram(program: TensorProgram) {
   return {weights, bytes}
 }
 
-// The top of the chart's scale for the longest frame it shows: the smallest of 1,
-// 2, 5, 10, 20, 50 ms and so on that the frame fits under, e.g. 5 for 3.2 ms.
+// One point per frame for the last `pointCount` frames of `times`: the average of
+// the `window` frames up to the point's frame, or of the frames there are when the
+// list starts later. E.g. [0, 100, 200] with 2 points of 2 frames gives [50, 150].
 /** @public */
-export function frameTimeScale(longestMs: number) {
-  for (let magnitude = 1; ; magnitude *= 10) {
+export function averageFrameTimes(times: readonly number[], pointCount: number, window: number) {
+  const points: number[] = []
+  for (let last = Math.max(0, times.length - pointCount); last < times.length; last++) {
+    const first = Math.max(0, last - window + 1)
+    let sum = 0
+    for (let frame = first; frame <= last; frame++) sum += times[frame]!
+    points.push(sum / (last - first + 1))
+  }
+  return points
+}
+
+// The top of the chart's scale for the highest point it shows, both in µs: the
+// smallest of 100, 200, 500, 1,000, 2,000, 5,000 µs and so on that the point fits
+// under, e.g. 500 for 320 µs.
+/** @public */
+export function frameTimeScale(highestMicroseconds: number) {
+  for (let magnitude = 100; ; magnitude *= 10) {
     for (const step of [1, 2, 5]) {
-      if (step * magnitude >= longestMs) return step * magnitude
+      if (step * magnitude >= highestMicroseconds) return step * magnitude
     }
   }
 }
 
 // The chart's line as an SVG path in a box `capacity - 1` wide and 1 tall: one
-// point per frame, the last frame at the right edge, 0 ms at the bottom and `scale`
-// ms at the top. E.g. the times [0.5, 1] with capacity 60 and scale 1 give
-// 'M58 0.500L59 0.000'.
+// point per frame, the last frame at the right edge, 0 at the bottom and `scale` at
+// the top, in the unit of `times`. E.g. the times [0.5, 1] with capacity 60 and
+// scale 1 give 'M58 0.500L59 0.000'.
 /** @public */
 export function frameTimesPath(times: readonly number[], capacity: number, scale: number) {
   const first = capacity - times.length
@@ -64,7 +89,7 @@ export function frameTimesPath(times: readonly number[], capacity: number, scale
 const formatCount = (value: number) => value.toLocaleString('en-US')
 // 1 KB is 1,000 bytes, e.g. 386,312 bytes is ['386', 'KB'].
 const formatBytes = (bytes: number) => bytes < 999_500 ? [`${Math.round(bytes / 1_000)}`, 'KB'] : [(bytes / 1_000_000).toFixed(1), 'MB']
-// Browsers report times in steps of 0.1 ms or coarser, e.g. '0.40'.
+// A time in ms with three digits under 100 ms, e.g. '0.16' or '12.3'.
 const formatMilliseconds = (value: number) => value < 10 ? value.toFixed(2) : value < 100 ? value.toFixed(1) : formatCount(Math.round(value))
 
 export function createMonitorFooter(footer: HTMLElement, program: TensorProgram) {
@@ -102,7 +127,8 @@ export function createMonitorFooter(footer: HTMLElement, program: TensorProgram)
     end: query('.monitor-chart .end'), // mount lifetime
   }
 
-  // The last frames' times, oldest first.
+  // The last frames' times in whole µs, oldest first: as many as the chart's points
+  // average.
   const times: number[] = []
   // The text last written, and the scale that the chart's caption last named, so
   // that a frame writes only what changed.
@@ -111,31 +137,34 @@ export function createMonitorFooter(footer: HTMLElement, program: TensorProgram)
 
   return {
     // Records the time the program took in the frame that just ran, in ms, and
-    // draws it. A frame's DOM writes.
+    // draws the chart with it. A frame's DOM writes.
     update(frameMs: number) {
-      if (times.length === frameCapacity) times.shift()
-      times.push(frameMs)
+      if (times.length === frameCapacity + averagedFrames - 1) times.shift()
+      times.push(Math.round(frameMs * 1000))
+      const points = averageFrameTimes(times, frameCapacity, averagedFrames)
+      const lastPoint = points[points.length - 1]!
 
-      const nextFrameTimeText = formatMilliseconds(frameMs)
+      // The number beside the chart is the chart's last point.
+      const nextFrameTimeText = formatMilliseconds(lastPoint / 1000)
       if (nextFrameTimeText !== frameTimeText) {
         frameTimeText = nextFrameTimeText
         domCache.frameTime.textContent = frameTimeText
       }
       // The chart has no axis. The title of the chart and its figure, which a pointer
       // that rests on them reads and which names the group for a screen reader, says
-      // what the chart shows and names the scale. The scale changes only when a frame
-      // is longer than every frame the chart shows, or when such a frame leaves it.
-      const scale = frameTimeScale(Math.max(...times))
+      // what the chart shows and names the scale. The scale changes only when a point
+      // is higher than every point the chart shows, or when such a point leaves it.
+      const scale = frameTimeScale(Math.max(...points))
       if (scale !== captionScale) {
         captionScale = scale
-        domCache.frame.setAttribute('title', `The program's time in each of the last ${frameCapacity} frames, from 0 at the chart's bottom to ${formatCount(scale)} ms at its top.`)
+        domCache.frame.setAttribute('title', `The program's time per frame. A browser's clock counts in steps of 0.1 ms or more, so each of the chart's ${frameCapacity} points, and the number beside it, is the average of the ${averagedFrames} frames up to it. The chart goes from 0 at its bottom to ${formatCount(scale / 1000)} ms at its top.`)
       }
-      const line = frameTimesPath(times, frameCapacity, scale)
+      const line = frameTimesPath(points, frameCapacity, scale)
       domCache.line.setAttribute('d', line)
-      domCache.area.setAttribute('d', `${line}V1H${frameCapacity - times.length}Z`)
-      // The last frame's point again, as a line of no length, whose round caps draw
-      // the dot at the chart's right edge.
-      domCache.end.setAttribute('d', `${frameTimesPath([frameMs], frameCapacity, scale)}h0`)
+      domCache.area.setAttribute('d', `${line}V1H${frameCapacity - points.length}Z`)
+      // The last point again, as a line of no length, whose round caps draw the dot
+      // at the chart's right edge.
+      domCache.end.setAttribute('d', `${frameTimesPath([lastPoint], frameCapacity, scale)}h0`)
     },
   }
 }

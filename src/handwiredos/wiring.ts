@@ -98,12 +98,24 @@ export function drawWiring(canvas: HTMLCanvasElement, program: TensorProgram, op
   }
 }
 
+// The opacity of one arc, for a program that stores `weightCount` weights. Every
+// program's picture gets the same amount of ink, that of 2,600 arcs at full
+// opacity, shared among its arcs: e.g. 29% an arc for 8,959 weights, and 6% for
+// 43,180. So the desk looks about as dark whether the program grows or shrinks. A
+// program of fewer than 2,600 weights draws every arc in full.
+/** @public */
+export function arcOpacity(weightCount: number) {
+  return Math.min(1, 2_600 / weightCount)
+}
+
 // Draws the program's wiring on the canvas now, and again 150 ms after the last
 // resize event, at the size the stylesheet gives the canvas by then. Until it is
 // drawn again, the browser stretches the old picture. The colors are the
 // stylesheet's --copper and --wire-indigo.
 export function mountWiring(canvas: HTMLCanvasElement, program: TensorProgram, window: Window) {
   const style = window.getComputedStyle(canvas)
+  let weightCount = 0
+  for (const layer of program.layers) weightCount += layer.weights.length
   const draw = () => {
     const width = canvas.clientWidth
     const height = canvas.clientHeight
@@ -119,12 +131,12 @@ export function mountWiring(canvas: HTMLCanvasElement, program: TensorProgram, w
       pixelRatio: Math.min(2, Math.sqrt(16_000_000 / Math.max(width * height, 1))),
       adds: style.getPropertyValue('--copper').trim(),
       subtracts: style.getPropertyValue('--wire-indigo').trim(),
-      // The stylesheet shows the canvas at 36% of its opacity, so one arc alone is
-      // drawn at 6% × 36%, about 2.2%, and a place where thousands of arcs overlap
-      // reaches at most 36% of the arc's color. Drawn at 2.2% on a canvas shown in
-      // full, such places came out as dark as the color itself, e.g. the 16 bands
-      // of the weights that read the Notes text for its 16 line slots.
-      alpha: 0.06,
+      // The stylesheet shows the canvas at 36% of its opacity, so one arc alone of
+      // 8,959 is drawn at 29% × 36%, about 10%, and a place where many arcs overlap
+      // reaches at most 36% of the arc's color. On a canvas shown in full, with each
+      // arc at 36% of its opacity here, such places came out as dark as the color
+      // itself.
+      alpha: arcOpacity(weightCount),
       lineWidth: 0.5,
     })
   }

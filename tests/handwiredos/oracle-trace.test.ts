@@ -60,7 +60,7 @@ function verifyEvaluations(machine: Machine & {
 }
 
 describe('production circuits match the reference interpreter across scripted traces', () => {
-  test('window manager: drags, controls, photos, Notes texts, Monitor\'s list, and viewport resizes', () => {
+  test('window manager: drags, controls, photos, a press on the note, Monitor\'s list, and viewport resizes', () => {
     const machine = createWindowManagerMachine()
     // Monitor's list at its capacity, which a host writes before the first step, so
     // that the trace reaches scroll positions up to 2,400,000 px.
@@ -233,49 +233,31 @@ describe('production circuits match the reference interpreter across scripted tr
     values = advance(irregularFrameTime(random))
     for (let settle = 0; settle < 3; settle++) values = advance(irregularFrameTime(random))
 
-    // Phase 6: Notes texts, written the way typed text is: an empty text, one word,
-    // narrow segments that fill the line walker's window, a segment wider than any
-    // slot, more segments than Notes has cells, and random widths. Each text is laid
-    // out around the windows where the phases above left them, then again after a
-    // press on Notes' title bar raises Notes above them.
-    const randomParagraph = (segments: number, widestWord: number) => ({
-      widths: Array.from({length: segments}, (_, segment) => segment % 2 === 1 ? 4.375 : Math.round(random() * widestWord * 64) / 64),
-      breakAfter: Array.from({length: segments}, (_, segment) => segment % 2),
-    })
-    const paragraphs = [
-      {widths: [], breakAfter: []},
-      {widths: [31.5], breakAfter: [0]},
-      randomParagraph(119, 8),
-      {widths: [20, 4.375, 500, 4.375, 20], breakAfter: [0, 1, 0, 1, 0]},
-      randomParagraph(300, 60),
-      randomParagraph(77, 90),
-      randomParagraph(128, 200),
-    ]
-    let mostNotesLines = 0
-    let mostWindowOverflow = 0
-    let notesTruncations = 0
-    for (const raiseNotes of [false, true]) {
-      if (raiseNotes) {
-        const window = projectWindow(values, 1)
-        const x = window.left + 40
-        const y = window.top + machine.source[windowSourceFieldTable.titleHeight]! / 2
-        machine.pointerDown(x, y)
-        machine.pointerUp(x, y)
+    // Phase 6: Notes' dock item raises Notes, then a press on Notes' content, moves
+    // across the desk and a release away from the press, like a selection of the
+    // note's text that leaves the note. The press arms nothing: no window moves, and
+    // Notes stays the focused window.
+    {
+      const dock = projectDock(values, 1)
+      machine.pointerDown(dock.left + dock.width / 2, dock.top + dock.height / 2)
+      machine.pointerUp(dock.left + dock.width / 2, dock.top + dock.height / 2)
+      for (let settle = 0; settle < 4; settle++) values = advance(irregularFrameTime(random))
+      const storedRectangles = () => Array.from({length: windowCount}, (_, windowIndex) =>
+        [windowStateField.left, windowStateField.top, windowStateField.width, windowStateField.height].map(field => machine.source[windowSourceField(windowIndex, field)]))
+      const rectanglesBefore = storedRectangles()
+      const window = projectWindow(values, 1)
+      const titleHeight = machine.source[windowSourceFieldTable.titleHeight]!
+      machine.pointerDown(window.left + window.width / 2, window.top + (titleHeight + window.height) / 2)
+      values = advance(irregularFrameTime(random))
+      for (let move = 0; move < 6; move++) {
+        machine.pointerMove(random() * width, random() * height)
         values = advance(irregularFrameTime(random))
       }
-      for (const paragraph of paragraphs) {
-        machine.notesText(paragraph)
-        values = advance(irregularFrameTime(random))
-        mostNotesLines = Math.max(mostNotesLines, values[machine.output.notes.lineCount]!)
-        mostWindowOverflow = Math.max(mostWindowOverflow, values[machine.output.notes.windowOverflow]!)
-        notesTruncations += values[machine.output.notes.truncated]!
-      }
+      machine.pointerUp(random() * width, random() * height)
+      values = advance(irregularFrameTime(random))
+      expect(storedRectangles()).toEqual(rectanglesBefore)
+      expect(values[machine.output.windows[1 * windowOutputField.size + windowOutputField.focused]!]).toBe(1)
     }
-    // The texts reached the flow's limits: each of the 13 bands that Notes' content box fits held a line, a line
-    // wrapped at the walker's window, and the widest text left segments without a band, before and after the press.
-    expect(mostNotesLines).toBe(13)
-    expect(mostWindowOverflow).toBeGreaterThanOrEqual(1)
-    expect(notesTruncations).toBeGreaterThanOrEqual(2)
 
     // Phase 7: Monitor's list. Monitor's dock item raises and focuses Monitor, which
     // earlier phases left at its minimum size. Then, at scroll positions on the

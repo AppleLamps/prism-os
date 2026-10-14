@@ -509,7 +509,7 @@ test("the three locations' row counts are the program's own numbers of source ce
   assert.deepEqual(rowCountsOf(machine), [program.sourceSize, program.valueCount - program.sourceSize, program.roots.length - program.sourceSize])
   assert.deepEqual([machine.sourceCells.length, machine.namedOutputs.length], [rowCountsOf(machine)[stateLocation], rowCountsOf(machine)[outputsLocation]])
   assert.equal(shownLocation(machine), operationsLocation)
-  assert.ok(rowCountOf(machine) > 14_000)
+  assert.ok(rowCountOf(machine) > 4_000)
   assert.equal(values[machine.output.valueList.totalHeight], rowCountOf(machine) * rowHeight)
   // 234 px hold 10 rows, the last one partly, and 2 more are drawn below the view.
   assert.deepEqual(drawnRows(machine, values).map(row => row.row), Array.from({length: 12}, (_, row) => row))
@@ -1120,42 +1120,31 @@ test("after a step, the machine's packed values hold every source cell and live 
   }
   assert.equal(lastLayer, program.layers.length)
   assert.equal(weights, program.layers.reduce((sum, layer) => sum + layer.weights.length, 0))
-  // The counts of the four kinds are the compiled program's: its layers' ReGLU
-  // rows, boolean rows and index reads, and every other row is a sum. A sum that the
-  // compiler lowered to a gather read is an affine row with no stored weight. The
-  // Notes flow's line walker is what reads by index, 2,320 times on October 13, 2026.
+  // The counts of the kinds are the compiled program's: its layers' ReGLU rows and
+  // boolean rows, and every other row is a sum. HandwiredOS reads no table by index,
+  // and the compiler lowers none of its sums to a gather read: the test below has a
+  // program with both.
   const regluCount = program.layers.reduce((sum, layer) => sum + layer.gateRows.length, 0)
   const booleanCount = program.layers.reduce((sum, layer) => sum + layer.booleanRows.length, 0)
-  const indexReadCount = program.layers.reduce((sum, layer) => sum + layer.indexReads.length, 0)
   assert.deepEqual(
     [...kindCounts].sort(([left], [right]) => left < right ? -1 : 1),
-    [['ReGLU', regluCount], ['affine', operations.rowCount - regluCount - booleanCount - indexReadCount], ['boolean', booleanCount], ['index read', indexReadCount]],
+    [['ReGLU', regluCount], ['affine', operations.rowCount - regluCount - booleanCount], ['boolean', booleanCount]],
   )
-  assert.ok(regluCount > 0 && booleanCount > 0 && indexReadCount > 0, 'the program has operations of every kind')
+  assert.ok(regluCount > 0 && booleanCount > 0, 'the program has ReGLU and boolean operations')
+  assert.equal(program.layers.reduce((sum, layer) => sum + layer.indexReads.length + layer.gatherReads.length, 0), 0)
   // The sidebar lists the same counts, each with its kind's class, in the order
-  // affine, ReGLU, boolean, index read, and says what the kind computes to a pointer
-  // that rests on the entry.
+  // affine, ReGLU, boolean, without the index read, of which the program has none,
+  // and says what the kind computes to a pointer that rests on the entry.
   const listedKinds = operations.kinds ?? []
   assert.deepEqual(
     listedKinds.map(kind => [kind.name, kind.className, kind.count]),
-    Object.values(kindOf).map(kind => [kind.name, kind.className, kindCounts.get(kind.name)]),
+    [kindOf.affine, kindOf.reglu, kindOf.boolean].map(kind => [kind.name, kind.className, kindCounts.get(kind.name)]),
   )
   assert.equal(listedKinds.reduce((sum, kind) => sum + kind.count, 0), operations.rowCount)
   assert.equal(
     listedKinds[1]?.title,
     `ReGLU, a weighted sum multiplied by another one while that one is positive: ${regluCount.toLocaleString('en-US')} of the ${operations.rowCount.toLocaleString('en-US')} operations.`,
   )
-  // An index read's weights are its index's, here always one wire's value, and a
-  // gather read has none.
-  let rowsBefore = 0
-  let gatherReadCount = 0
-  for (const layer of program.layers) {
-    for (const read of layer.indexReads) assert.deepEqual(operations.text(rowsBefore + read.row).slice(1), ['index read', operations.text(rowsBefore + read.row)[2], '1'])
-    for (const read of layer.gatherReads) assert.deepEqual(operations.text(rowsBefore + read.row).slice(1), ['affine', operations.text(rowsBefore + read.row)[2], '0'])
-    gatherReadCount += layer.gatherReads.length
-    rowsBefore += layer.outputSize
-  }
-  assert.ok(gatherReadCount > 0, 'the program has gather reads')
   // The other two locations give their kind cells no class, and list no kinds.
   assert.equal(state.kindClass, undefined)
   assert.equal(state.kinds, undefined)
@@ -1172,8 +1161,7 @@ test("after a step, the machine's packed values hold every source cell and live 
   assert.deepEqual(outputs.text(0), ['windows.0.translateX', '', '', ''])
   assert.equal(outputs.value(0), 54)
   for (const name of ['windows.2.destinationHeight', 'dockItems.2.left', 'animationActive', 'photos.backdropOpacity', 'photos.photos.11.focused',
-    'photos.thumbnails.0.left', 'photos.nextControl.opacity', 'notes.segments.0.x', 'notes.segments.255.visible', 'notes.bands.15.start', 'notes.runOverflow',
-    'notes.press.count', 'notes.press.x', 'notes.press.y', 'valueList.totalHeight', 'valueList.locations.2', 'valueList.slots.63.selected']) {
+    'photos.thumbnails.0.left', 'photos.nextControl.opacity', 'valueList.totalHeight', 'valueList.locations.2', 'valueList.slots.63.selected']) {
     assert.ok(names.includes(name), name)
   }
   assert.equal(outputs.value(names.indexOf('valueList.totalHeight')), operations.rowCount * rowHeight)
@@ -1202,6 +1190,18 @@ test('Operations lists only the kinds that the program has an operation of, and 
   assert.equal(program.layers.reduce((count, layer) => count + layer.gatherReads.length, 0), 1)
   const kindsOf = (compiled: typeof program) => describeOperations(compiled, new Float32Array(compiled.valueCount)).kinds!.map(kind => [kind.name, kind.count])
   assert.deepEqual(kindsOf(program), [['affine', 2], ['boolean', 1], ['index read', 1]])
+  // A row's text is its wire, kind, layer and stored weights. The index read's
+  // weights are its index's, here one wire's value. The gather read has none, and
+  // keeps the layer of the sum that it replaces, the layer after the 4 products'.
+  const operations = describeOperations(program, new Float32Array(program.valueCount))
+  let rowsBefore = 0
+  const readRows: string[][] = []
+  for (const layer of program.layers) {
+    for (const indexRead of layer.indexReads) readRows.push(operations.text(rowsBefore + indexRead.row).slice(1))
+    for (const gatherRead of layer.gatherReads) readRows.push(operations.text(rowsBefore + gatherRead.row).slice(1))
+    rowsBefore += layer.outputSize
+  }
+  assert.deepEqual(readRows, [['index read', '1', '1'], ['affine', '2', '0']])
 
   // Without gather lowering, the masked sum's 4 products stay, each a ReGLU.
   const dense = circuit.compileTensorProgram([sum], false)
@@ -1353,13 +1353,13 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
     locationNodes.map(node => [node.style['left'], node.style['top'], node.style['width'], node.style['height']]),
     [['8px', '28px', '136px', '24px'], ['8px', '52px', '136px', '24px'], ['8px', '76px', '136px', '24px']],
   )
-  // An item holds its location's name and its row count, e.g. 'Operations' and '19,851'.
+  // An item holds its location's name and its row count, e.g. 'Operations' and '4,251'.
   assert.deepEqual(
     locationNodes.map(node => node.children.map(part => [part.className, part.textContent])),
     [['State', machine.sourceCells.length], ['Operations', rowCountOf(machine)], ['Outputs', machine.namedOutputs.length]]
       .map(([label, rowCount]) => [['monitor-location-label', label], ['monitor-location-count', count(Number(rowCount))]]),
   )
-  assert.ok(/^\d\d,\d{3}$/.test(locationNodes[operationsLocation]!.children[1]!.textContent))
+  assert.ok(/^\d,\d{3}$/.test(locationNodes[operationsLocation]!.children[1]!.textContent))
   assert.equal(dom.sidebar.children.length, 4)
   // The caption has one list of kinds, since only Operations counts its rows by
   // kind, and the sentence, which has no text before the first frame. The list has
@@ -1370,7 +1370,7 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
     operationKinds().children.map(entry => [entry.className, ...entry.children.map(part => part.textContent)]),
     locations[operationsLocation]!.kinds!.map(kind => [kind.className, kind.name, count(kind.count)]),
   )
-  assert.deepEqual(operationKinds().children.map(entry => entry.children[0]!.textContent), ['affine', 'ReGLU', 'boolean', 'index read'])
+  assert.deepEqual(operationKinds().children.map(entry => entry.children[0]!.textContent), ['affine', 'ReGLU', 'boolean'])
   assert.equal(captionSentence(), '')
 
   // The first frame shows Operations from the top: 12 rows, each in the slot of its

@@ -12,7 +12,6 @@ import {
   invariant,
   validateCircuit,
   validateOneHotGroups,
-  validateTensorEvaluation,
   validateTensorProgram,
 } from '../../src/runtime/numeric-ui-core.ts'
 import {createWindowManagerMachine} from '../../src/handwiredos/window-manager.ts'
@@ -1211,110 +1210,34 @@ describe('seeded circuits', () => {
   })
 })
 
-// HandwiredOS declares finite pixel ranges and one-hot groups, so recognition
-// engages on it. This test pins the gather read counts that lab/status.md
-// reports, and checks the lowered program against the reference evaluator on
-// every wire across an interaction trace.
+// HandwiredOS declares finite pixel ranges and one-hot groups, yet none of its sums
+// lowers to a gather read, which this test pins. The program of the repo whose
+// masked sums do lower is the candidate gallery:
+// lab/candidate-gallery/gather-lowering.test.ts pins its 26 gather reads and checks
+// the lowered program against the reference evaluator on every wire across an
+// interaction trace. tests/handwiredos/oracle-trace.test.ts does the latter for
+// HandwiredOS.
 describe('HandwiredOS', () => {
-  test('window-manager lowers its Notes flow reads, and stays exact in use', () => {
+  test('window-manager declares its stacking order as 6 one-hot groups, and none of its sums lowers', () => {
     const machine = createWindowManagerMachine()
     const {circuit} = machine
     const statistics = gatherStatistics(machine.tensorProgram)
-    const baseline = gatherStatistics(
-      circuit.compileTensorProgram(Array.from(machine.tensorProgram.roots, asWire), false),
-    )
+    const dense = circuit.compileTensorProgram(Array.from(machine.tensorProgram.roots, asWire), false)
     // The source table declares the 3 stack rows and 3 stack columns as one-hot
-    // groups with cells.ts's permutation. With four windows, until October 13, 2026,
-    // the frontmost-window selection sums over them lowered to 12 gather reads. A
-    // sum over a group of 3 has 3 terms, which the builder copies into each
-    // operation that reads the sum, so with three windows these sums stay dense
-    // (execution-model.md's "One-hot groups and gathers"). The photo gallery's click
-    // selection gates on a product that is not a provably exact bit, so it declares
-    // nothing. The Notes flow (notes.ts) declares one group per line band: the set of
-    // other windows that block the band, one of the 4 subsets of the 2 other
-    // windows, which the band's slot is read through, 3 reads per band. Until
-    // October 13, 2026, notes-walker.ts declared a second group per band, the segment
-    // that the band's line starts at, and read its tables through it. Now the
-    // walker reads its tables with index reads, so the 16 bands' slot reads are the
-    // program's 48 gather reads, through 16 of its 22 groups. Monitor's list
+    // groups with cells.ts's permutation. A sum over a group of 3 has 3 terms, which
+    // the builder copies into each operation that reads the sum, so the
+    // frontmost-window selection sums stay dense (execution-model.md's "One-hot
+    // groups and gathers"). With four windows, until October 13, 2026, they lowered
+    // to 12 gather reads. The photo gallery's click selection gates on a product
+    // that is not a provably exact bit, so it declares nothing. Monitor's list
     // (value-list.ts) declares no group: only the table's validator checks its three
-    // location bits, so it adds no read.
-    expect(circuit.oneHotGroups.length).toBe(22)
-    expect(statistics.readCount).toBe(48)
-    expect(statistics.slotCount).toBe(16)
-    expect(statistics.storedWeightCount).toBeLessThan(baseline.storedWeightCount)
-    console.log(
-      `[survey] window-manager: groups=${circuit.oneHotGroups.length}`
-        + ` gatherReads=${statistics.readCount} slots=${statistics.slotCount}`
-        + ` storedWeights=${statistics.storedWeightCount}`
-        + ` (dense compile of the same roots: ${baseline.storedWeightCount})`,
-    )
-
-    // A full interaction trace on the gathered program: window drags, title-bar
-    // clicks that restack, dock clicks that minimize and restore, and photo
-    // events, all compared wire-for-wire against the reference. A step runs one
-    // evaluation per event timestamp, settle checks and the frame, so the observer
-    // checks the table of every evaluation.
-    const random = createRandom(0x57ac)
-    let frameTime = 0
-    let evaluations = 0
-    machine.observe({
-      beforeEvaluate(table) {
-        const reference = circuit.evaluateReference(table)
-        validateOneHotGroups(circuit, reference)
-        const values = circuit.evaluateTensor(table)
-        validateTensorEvaluation(table, circuit, values)
-        evaluations++
-      },
-    })
-    const compareStep = (width: number, height: number) => {
-      frameTime += 16
-      machine.step(width, height, frameTime)
-    }
-
-    compareStep(1280, 800)
-    // Drag window 0 by its title bar.
-    machine.pointerDown(300, 70)
-    compareStep(1280, 800)
-    for (let move = 0; move < 6; move++) {
-      machine.pointerMove(300 + move * 25, 70 + move * 12)
-      compareStep(1280, 800)
-    }
-    machine.pointerUp(450, 142)
-    compareStep(1280, 800)
-    // Click around: window bodies, dock, and empty desktop, restacking windows.
-    for (let click = 0; click < 12; click++) {
-      const x = randomInteger(random, 1280)
-      const y = randomInteger(random, 800)
-      machine.pointerDown(x, y)
-      compareStep(1280, 800)
-      machine.pointerUp(x, y)
-      compareStep(1280, 800)
-    }
-    // Dock sits at the bottom center; click item positions directly.
-    for (let item = 0; item < 3; item++) {
-      const x = 640 - 62 + item * 62
-      machine.pointerDown(x, 800 - 38)
-      compareStep(1280, 800)
-      machine.pointerUp(x, 800 - 38)
-      compareStep(1280, 800)
-    }
-    // Photo gallery interactions and viewport churn while springs animate.
-    // A press and a release at viewport coordinates inside Photos' initial content box
-    // at (651, 235), which Photos takes as a click where Photos is frontmost.
-    machine.pointerDown(851, 385)
-    machine.pointerUp(851, 385)
-    compareStep(1280, 800)
-    machine.photoNext()
-    compareStep(1280, 800)
-    machine.photoPrevious()
-    compareStep(1280, 800)
-    for (let settle = 0; settle < 30; settle++) {
-      compareStep(settle % 2 === 0 ? 1280 : 1180, 800)
-    }
-    machine.photoClose()
-    for (let settle = 0; settle < 10; settle++) compareStep(1280, 800)
-    // 82 steps, plus event and settle check evaluations between frames.
-    expect(evaluations).toBeGreaterThan(82)
-  }, 60_000)
+    // location bits.
+    expect(circuit.oneHotGroups.length).toBe(6)
+    expect(statistics.readCount).toBe(0)
+    expect(statistics.slotCount).toBe(0)
+    // So the compiled program is the dense compile of the same roots.
+    expect(statistics.storedWeightCount).toBe(gatherStatistics(dense).storedWeightCount)
+    expect(machine.tensorProgram.valueCount).toBe(dense.valueCount)
+    expect(machine.tensorProgram.layers.length).toBe(dense.layers.length)
+  })
 })
