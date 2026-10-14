@@ -4,7 +4,7 @@
 // times RegExp for the same search, and the other runs both programs on the CPU when the toggle says CPU or the
 // browser has no WebGPU.
 //
-// Listeners and the worker's messages only record what arrived and schedule a frame. A frame reads the DOM, takes in
+// Listeners and the workers' messages only record what arrived and schedule a frame. A frame reads the DOM, takes in
 // what arrived since the last frame, e.g. a search's answer, decides what the page shows, writes the DOM and the
 // canvas, and last asks for the work that is due, e.g. a search for the pattern in the field. An answer arrives after
 // the frame that asked for it, is recorded, and is an input of the next frame.
@@ -62,7 +62,7 @@ declare global {
 type World = {
   documentCount: number
   texts: readonly string[]
-  // The searcher on the GPU and its device, or null where both programs run on the CPU, in the worker.
+  // The searcher on the GPU and its device, or null where both programs run on the CPU, in a worker.
   gpu: {searcher: Searcher, device: GPUDevice} | null
   loadMs: NonNullable<JsonSearchDebug['loadMs']>
 }
@@ -95,7 +95,7 @@ type Arrival =
   | {kind: 'gpu', job: number, answer: GpuAnswer}
   | {kind: 'gpuLost', message: string}
   | {kind: 'worker', answer: WorkerAnswer}
-  // Without a message when the worker's script didn't load.
+  // Without a message when the workers' script didn't load.
   | {kind: 'workerFailed', message: string | undefined}
 
 // A search that has been in flight this long gets a line that says so, and the map shows no matches. A search on the
@@ -225,8 +225,8 @@ function mountJsonSearch(document: Document, window: Window) {
     plan: firstPlan,
     loaded: 0,
     world: null as World | null,
-    // A failure with nothing to fall back on, e.g. of the worker. The page says so in the line's place and asks for
-    // no more work.
+    // A failure with nothing to fall back on, e.g. of a worker. The page says so in the line's place and asks for no
+    // more work.
     failure: null as Failure | null,
     // The search whose answer the page wants, as of the last frame, '' for none, and since when it has wanted it.
     wantedKey: '',

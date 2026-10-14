@@ -50,7 +50,7 @@ export function loadNotice(reason: LoadReason, documentCount: number): string | 
 }
 
 // A failure that leaves the page nothing to search with: the documents couldn't be written, e.g. for lack of memory, or
-// the page's worker failed. A worker whose script didn't load gives no message.
+// one of the page's workers failed. A worker whose script didn't load gives no message.
 export type Failure =
   | {kind: 'documents', message: string}
   | {kind: 'worker', message: string | undefined}
@@ -61,7 +61,7 @@ export function failureSentence(failure: Failure): string {
     case 'documents':
       return `The page couldn’t load its documents: ${failure.message}.`
     case 'worker':
-      return failure.message === undefined ? 'The page’s worker didn’t start, so the page can’t search.' : `The page’s worker stopped (${failure.message}), so the page can’t search.`
+      return failure.message === undefined ? 'The script of the page’s workers didn’t load, so the page can’t search.' : `One of the page’s workers stopped (${failure.message}), so the page can’t search.`
   }
 }
 

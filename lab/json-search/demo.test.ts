@@ -220,8 +220,8 @@ describe('the page\'s documents', () => {
   test('says in one sentence why the page can\'t search at all', () => {
     expect(failureSentence({kind: 'documents', message: 'Array buffer allocation failed'})).toBe('The page couldn’t load its documents: Array buffer allocation failed.')
     // A worker whose script didn't load gives no message, and one that throws gives the error's.
-    expect(failureSentence({kind: 'worker', message: undefined})).toBe('The page’s worker didn’t start, so the page can’t search.')
-    expect(failureSentence({kind: 'worker', message: 'Uncaught RangeError: Array buffer allocation failed'})).toBe('The page’s worker stopped (Uncaught RangeError: Array buffer allocation failed), so the page can’t search.')
+    expect(failureSentence({kind: 'worker', message: undefined})).toBe('The script of the page’s workers didn’t load, so the page can’t search.')
+    expect(failureSentence({kind: 'worker', message: 'Uncaught RangeError: Array buffer allocation failed'})).toBe('One of the page’s workers stopped (Uncaught RangeError: Array buffer allocation failed), so the page can’t search.')
   })
 })
 
