@@ -1,11 +1,12 @@
 // Compares both programs with the plain JavaScript reference, the reference with every set of breaks, and the reference
 // with pretext's justification demo where their costs agree. Hand-written expectations come first.
 import {expect, test} from 'bun:test'
-import {type PreparedTextWithSegments, prepareWithSegments} from '@chenglou/pretext'
+import {prepareWithSegments} from '@chenglou/pretext'
 import {type Circuit, validateGrids, validateIndexReads, validateNoNaN} from '../../src/runtime/numeric-ui-core.ts'
-import {PARAGRAPHS} from '../../node_modules/@chenglou/pretext/pages/demos/justification-comparison.data.ts'
 import {fakeTextWidth} from '../ui-exploration/text-walker/fake-canvas.ts'
 import {hyphenateParagraphText} from './hyphenation.ts'
+import {PARAGRAPHS} from './pretext-demo/justification-comparison.data.ts'
+import {buildDemoFrame, createDemoResources} from './pretext-demo/justification-comparison.model.ts'
 import {type Paragraph, breakPointsOfPrepared, createRandom, infeasible, lineCostCap, randomParagraph, softHyphen, timingParagraph, timingWidth} from './paragraph.ts'
 import {type KnuthPlass, createKnuthPlass, writeParagraph} from './program.ts'
 import {knuthPlass, leafMatrices, lineCost, statesByProductTree} from './reference.ts'
@@ -88,19 +89,12 @@ function hasTie(paragraph: Paragraph, maxWidth: number, window: number) {
   return false
 }
 
-// pretext's demo model, loaded by path so the type check doesn't include the demo's source. It imports pretext's own
-// src/layout.ts, a second copy of pretext with its own measuring context.
-type DemoCandidate = {segIndex: number, kind: string, wordWidthBefore: number, spacesBefore: number}
-type DemoParagraph = {plain: PreparedTextWithSegments, hyphenated: PreparedTextWithSegments, candidates: DemoCandidate[]}
-type DemoResources = {paragraphs: DemoParagraph[], normalSpaceWidth: number, hyphenWidth: number}
-type DemoModel = {
-  createDemoResources(): DemoResources
-  buildDemoFrame(resources: DemoResources, controls: {colWidth: number, showIndicators: boolean}): {optimal: {paragraphs: {segments: {kind: string, text?: string}[]}[][]}}
-}
-type DemoLayout = {prepareWithSegments(text: string, font: string): PreparedTextWithSegments}
+// pretext's demo model is pretext-demo/justification-comparison.model.ts, a copy from pretext's repository, see the README.
+// It imports npm pretext, like this file, so the model and the tests share one measuring context.
 const demoPadding = 12
 
-async function loadDemo() {
+// pretext creates its measuring context at its first measurement, so this runs before the first prepare call.
+function installFakeCanvas() {
   if (typeof Reflect.get(globalThis, 'OffscreenCanvas') !== 'function') {
     Reflect.set(globalThis, 'OffscreenCanvas', class {
       getContext() {
@@ -108,9 +102,6 @@ async function loadDemo() {
       }
     })
   }
-  const modelPath: string = new URL('../../node_modules/@chenglou/pretext/pages/demos/justification-comparison.model.ts', import.meta.url).pathname
-  const layoutPath: string = new URL('../../node_modules/@chenglou/pretext/src/layout.ts', import.meta.url).pathname
-  return {model: await import(modelPath) as DemoModel, layout: await import(layoutPath) as DemoLayout}
 }
 
 // createDemoResources measures the space and the hyphen with document.createElement('canvas').
@@ -126,9 +117,9 @@ function withFakeDocument<Result>(run: () => Result): Result {
   }
 }
 
-test('break points equal pretext demo\'s candidates on the demo\'s paragraphs', async () => {
-  const {model} = await loadDemo()
-  const resources = withFakeDocument(() => model.createDemoResources())
+test('break points equal pretext demo\'s candidates on the demo\'s paragraphs', () => {
+  installFakeCanvas()
+  const resources = withFakeDocument(() => createDemoResources())
   expect(resources.paragraphs.length).toBe(PARAGRAPHS.length)
   resources.paragraphs.forEach((demoParagraph, index) => {
     // The same soft hyphens as the demo's hyphenation.
@@ -142,30 +133,30 @@ test('break points equal pretext demo\'s candidates on the demo\'s paragraphs', 
   })
 })
 
-test('pretext demo\'s optimal breaks equal the reference\'s where the costs agree', async () => {
+test('pretext demo\'s optimal breaks equal the reference\'s where the costs agree', () => {
   // The demo scores a line with spaces by its justified space width, and every other line by 10 × slack², the last
   // line by 0, and a line that doesn't fit as infeasible. So on text without spaces, with whole-pixel widths, where
   // every line that fits has at most 63 px of slack and every box fits, each demo cost is 10 × this variant's.
   // Single letters joined by soft hyphens at 64 px give boxes of 28 to 40 px and a 22 px hyphen, so widths of 62 to
   // 113 px keep every slack within 63 px.
-  const {model, layout} = await loadDemo()
+  installFakeCanvas()
   const font = '64px Test Sans'
   const random = createRandom(5)
   let multiLine = 0
   for (let run = 0; run < 60; run++) {
     const letters = Array.from({length: 4 + Math.floor(random() * 40)}, () => String.fromCharCode(97 + Math.floor(random() * 26)))
     const text = letters.join(softHyphen)
-    const hyphenated = layout.prepareWithSegments(text, font)
+    const hyphenated = prepareWithSegments(text, font)
     const spaceWidth = fakeTextWidth(' ', font)
     const hyphenWidth = fakeTextWidth('-', font)
-    expect(hyphenated.widths.every(width => Number.isInteger(width))).toBe(true)
+    expect(Array.from(hyphenated.widths).every(width => Number.isInteger(width))).toBe(true)
     const {paragraph, candidates, positions} = breakPointsOfPrepared(hyphenated, spaceWidth, hyphenWidth)
     const demoCandidates = candidates.map(({segmentIndex, kind}, at) => ({segIndex: segmentIndex, kind, wordWidthBefore: positions[at]!, spacesBefore: 0}))
     const maxWidth = 62 + Math.floor(random() * 52)
     const resources = {paragraphs: [{plain: hyphenated, hyphenated, candidates: demoCandidates}], normalSpaceWidth: spaceWidth, hyphenWidth}
-    const frame = model.buildDemoFrame(resources, {colWidth: maxWidth + 2 * demoPadding, showIndicators: false})
+    const frame = buildDemoFrame(resources, {colWidth: maxWidth + 2 * demoPadding, showIndicators: false})
     let at = 0
-    const demoBreaks = frame.optimal.paragraphs[0]!.map(line => at += line.segments.filter(segment => segment.text !== '-').length)
+    const demoBreaks = frame.optimal.paragraphs[0]!.map(line => at += line.segments.filter(segment => segment.kind !== 'text' || segment.text !== '-').length)
     const solution = knuthPlass(paragraph, maxWidth, 8)
     expect(solution.windowOverflowCount).toBe(0)
     expect(solution.breaks).toEqual(demoBreaks)

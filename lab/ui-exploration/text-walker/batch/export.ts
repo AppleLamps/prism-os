@@ -103,7 +103,7 @@ export function exportBatch(options: ExportOptions) {
     capacity,
     font: batchFont,
     lineHeight,
-    pretext: '@chenglou/pretext 0.0.9 with lab/ui-exploration/text-walker/fake-canvas.ts\'s fakeTextWidth',
+    pretext: '@chenglou/pretext 1.0.0 with lab/ui-exploration/text-walker/fake-canvas.ts\'s fakeTextWidth',
     sourceSize: program.fc.circuit.sourceSize,
     cellLayout: 'source table: cell 0 is the constant 1, then one paragraph\'s instance cells. Instance cells: maxWidth, startCursor, widths[0..segments - 1], breakAfter[0..segments - 1]. A paragraph of n segments is written at the end of the widths and break-after cells, after zero-width padding, with startCursor = segments - n.',
     instanceSourceWires: program.instanceSourceWires,
