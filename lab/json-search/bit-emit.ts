@@ -46,13 +46,14 @@
 //   are an OR only when they are never both 1, which the writer proves by taking both as 1 and following what each gate
 //   then says about its own operands until one value would be both 0 and 1, e.g. a start bit that needs "no state
 //   continues" next to a bit that says "state 0 continues".
-// - Lanes. Bits that are stored together are one u32 word: a field of bits, and registers of bits that the same stages
-//   write, e.g. the 8 reached[s] bits. When the same gate or negation is computed for every bit of such a list, one
-//   word operation computes all of them, since AND, OR and XOR work on each bit of a word on its own, e.g.
-//   continuing[s] = relu(reached[s] - notReach[s]) for 8 states is `reached & (notReach ^ 255u)`. "None of these bits
-//   is 1" over such a word is `word == 0u`. A list of gated reads with the same base is the packed word itself, and a
-//   list of shared cells is packed into a word once per document. Any other list of bits is written into its lanes one
-//   by one, `b0 | (b1 << 1u) | ...`, as loop-emit.ts writes a field of bits.
+// - Lanes. Bits that are stored together are one u32 word, each bit at its own position in the word, its lane: a field
+//   of bits, and registers of bits that the same stages write, e.g. the 8 reached[s] bits. When the same gate or
+//   negation is computed for every bit of such a list, one word operation computes all of them, since AND, OR and XOR
+//   work on each bit of a word on its own, e.g. continuing[s] = relu(reached[s] - notReach[s]) for 8 states is
+//   `reached & (notReach ^ 255u)`. "None of these bits is 1" over such a word is `word == 0u`. A list of gated reads
+//   with the same base is the packed word itself, and a list of shared cells is packed into a word once per document.
+//   Any other list of bits is written into its lanes one by one, `b0 | (b1 << 1u) | ...`, as loop-emit.ts writes a
+//   field of bits.
 //
 // Statements are written when a later statement or an output first needs them, so an operation that only feeds a packed
 // read, a comparison or a word operation gets no statement of its own.
@@ -654,8 +655,9 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
       //   'shared'  the bits are shared cells, packed into a word once per document
       //   'reads'   the bits are gated reads with the same base, so the word is the Packed reads rule's word
       //   'not'     every bit is the negation of a bit, so the word is the operands' word with every lane flipped
-      //   'gate'    every bit is a gate with as many bits to AND and bits to refuse as the others, so the word is
-      //             the AND of the operands' words, e.g. reached & ~notReach for the 8 continuing[s] bits
+      //   'gate'    every bit is a gate of the Gate rule, each with as many bits that must be 1 and values that must
+      //             be 0 as the others, so the word is the AND of the operands' words, e.g. reached & ~notReach for
+      //             the 8 continuing[s] bits
       // A list that is none of these is built lane by lane, `b0 | (b1 << 1u) | ...`, which is the 'lanes' slot.
       type WordPlan =
         | {kind: 'stored', positions: readonly number[], word: () => string, first: number, width: number}
@@ -689,13 +691,14 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
         const gates = rowsOf.flatMap(row => row?.kind === 'reglu' ? [conjunction(row)] : []).filter(gate => gate !== undefined)
         const shape = gates[0]
         if (shape === undefined || gates.length !== positions.length) return undefined
-        // A comparison or a number among the refused values is tested on its own, so such gates stay one statement each.
+        // A comparison or a number among the values that must be 0 is tested on its own, so such gates stay one
+        // statement each.
         if (!gates.every(gate => gate.all.length === shape.all.length && gate.none.length === shape.none.length && gate.none.every(operand => zeroTest(operand) === 'bit' || zeroTest(operand) === 'read'))) return undefined
         const none = shape.none.map((_, index) => slot(gates.map(gate => gate.none[index]!)))
-        // Gated reads among the refused values are taken as lanes only when they are one packed word that needs no open
-        // bit written lane by lane. Otherwise each gate keeps its own reads, which the Packed reads rule packs per gate,
-        // e.g. the 8 reads of each notReach[s] gate.
-        const readsAreWords = none.every((refused, index) => zeroTest(shape.none[index]!) !== 'read' || (refused.kind === 'reads' && isWhole(refused)))
+        // Gated reads among the values that must be 0 are taken as lanes only when they are one packed word that needs
+        // no open bit written lane by lane. Otherwise each gate keeps its own reads, which the Packed reads rule packs
+        // per gate, e.g. the 8 reads of each notReach[s] gate.
+        const readsAreWords = none.every((zeros, index) => zeroTest(shape.none[index]!) !== 'read' || (zeros.kind === 'reads' && isWhole(zeros)))
         return readsAreWords ? {kind: 'gate', positions, all: shape.all.map((_, index) => slot(gates.map(gate => gate.all[index]!))), none} : undefined
       }
       const isWhole = (slot: WordSlot): boolean => {
@@ -753,8 +756,8 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
             break
           case 'gate': {
             rules.lane += positions.length
-            const refused = slot.none.map(wordOf)
-            text = sharedLet('u32', [...slot.all.map(wordOf), ...(refused.length === 0 ? [] : [`(${refused.length === 1 ? refused[0]! : `(${refused.join(' | ')})`} ^ ${mask})`])].join(' & '))
+            const zeros = slot.none.map(wordOf)
+            text = sharedLet('u32', [...slot.all.map(wordOf), ...(zeros.length === 0 ? [] : [`(${zeros.length === 1 ? zeros[0]! : `(${zeros.join(' | ')})`} ^ ${mask})`])].join(' & '))
             break
           }
         }

@@ -194,7 +194,8 @@ The review's reruns of the three measurement pages are results/review-rerun-gpu-
 | `emit.ts` | The emitter: a compiled tensor program as one WGSL compute shader, one invocation per document, with index reads |
 | `loop-program.ts` | A program as loops over a document's positions: stages, registers, fields and outputs, and its runner on the CPU |
 | `loop-emit.ts` | A loop program as one WGSL shader, with each stage's statements once inside a `for` loop |
-| `wgsl-interpreter.ts` | A strict interpreter for the WGSL that emit.ts and loop-emit.ts write, so the shader text is tested on the CPU |
+| `bit-emit.ts` | A second writer for the same loop programs, which holds proven whole numbers as integers, packs gated table reads into words, and writes the same gate over every bit of a word as one word operation. Not yet what the page runs, see [million/README.md](million/README.md#can-the-code-writer-do-it) |
+| `wgsl-interpreter.ts` | A strict interpreter for the WGSL that emit.ts, loop-emit.ts and bit-emit.ts write, so the shader text is tested on the CPU |
 | `program.ts` | The highlighter with every position written out, compiled for two sets of outputs, and a document's cells |
 | `json-step.ts` | The highlighter as a loop program |
 | `search-step.ts` | Regex search's form (a) as a loop program, which can read display kinds, and the same search with every position written out |
@@ -1177,6 +1178,7 @@ The same page timed four ways to count a pattern's matches on one thread, and th
 | Documents | `documentAt(seed, index)`, `generateDocuments(count)`, `describeDocuments(documents)`, `defaultSeed` in documents.ts |
 | Names for what the searcher returns | `errorKinds` and `displayKind` in src/json-highlighter/kinds.ts, and `searchScopes` and `searchableKinds(scope)` in search-step.ts |
 | A loop program | `LoopProgram`, `createStage`, `createLoopRunner(loop, backend)`, `describeLoop(loop)` in loop-program.ts, and `emitLoopWgsl(loop)` in loop-emit.ts |
+| The same loop program with integers and packed words | `emitBitLoopWgsl(loop)` in bit-emit.ts, which returns `emitLoopWgsl`'s module with `packedCells` and `rules`, and `packWords(packedCells, shared)` for the buffer `packed_words`, which `createProgramRunner` fills by itself |
 | The two loop programs | `buildJsonLoop()` in json-step.ts, and `buildSearchLoop(capacity, {positions, cellsPerDocument, masked, stopAtLength})` in search-step.ts, with `writePattern(shared, compiled)` and `writeScope(shared, scope)` |
 | The programs with every position written out | `buildBatchPrograms()` in program.ts, `buildDataSearch(capacity)` in lab/regex-search/data-program.ts, and `buildMaskedSearch(capacity)` in search-step.ts |
 | A shader from any compiled program without gathers | `emitWgsl(program, {instanceCells, outputGroups, guard, workgroupSize})` in emit.ts, and `packSharedValues(shader, source)` for its shared buffer |
