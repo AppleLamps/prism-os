@@ -229,27 +229,30 @@ test('steps that raise the loss are taken back', () => {
   assert.ok(loss < plain.evaluate().loss * 2, `${loss} against ${plain.evaluate().loss}`)
 })
 
-test('after steps were taken back, the next steps are smaller, until the learning rate is restored', () => {
+test('after steps were taken back, the next steps are half as large', () => {
   // How far 10 steps move the weights, from the same weights and the same optimizer state.
   function createSettledMachine() {
     const machine = createLearnedGalleryMachine('cinema')
     machine.train(trainingStepsAfterChange)
-    // Frames until one is undone, which halves the learning rate for the frames after it.
-    while (!machine.trainOrUndo(10).undone) { /* keep training */ }
     return machine
   }
   function distanceMoved(machine: LearnedGalleryMachine, sourceBefore: readonly number[]) {
     return Math.hypot(...sourceBefore.map((value, parameter) => machine.source[parameter]! - value))
   }
+  // Frames until one is undone, which halves the learning rate for the frame after it.
   const halved = createSettledMachine()
-  const restored = createSettledMachine()
-  assert.deepEqual([...restored.source], [...halved.source])
+  const full = createSettledMachine()
+  let frames = 0
+  while (!halved.trainOrUndo(10).undone) frames++
+  // The other machine takes the same kept frames with plain steps, and stands where the undone frame started.
+  full.train(frames * 10)
+  assert.deepEqual([...full.source], [...halved.source])
   const sourceBefore = [...halved.source]
-  halved.trainOrUndo(10)
-  restored.restoreLearningRate()
-  restored.train(10)
-  // Adam's step is proportional to the learning rate, so half the rate moves the weights half as far.
-  const ratio = distanceMoved(halved, sourceBefore) / distanceMoved(restored, sourceBefore)
+  const next = halved.trainOrUndo(10)
+  full.train(10)
+  assert.equal(next.undone, false)
+  // Adam's step is proportional to the learning rate, so half the rate moves the weights about half as far.
+  const ratio = distanceMoved(halved, sourceBefore) / distanceMoved(full, sourceBefore)
   assert.ok(ratio > 0.3 && ratio < 0.7, `the halved rate moved the weights ${ratio} times as far`)
 })
 
@@ -713,6 +716,47 @@ test('the loss never rises in a frame where the sketch stays the same', () => {
   }
   // Each drag's last move starts 500 steps, about 50 frames.
   assert.ok(framesWithoutChange >= 6 * 48, `${framesWithoutChange} frames`)
+})
+
+test('a photo follows its rectangle from the first frames of a drag, also after a rest', () => {
+  for (const name of ['story', 'cinema'] as const) {
+    const page = createEditorDriver()
+    const {machine} = page
+    page.frame([{kind: 'layout', name}])
+    // With no edges read as one line, a photo has only its rectangle to follow, and no line to stay on.
+    machine.setAlignmentReach(0)
+    page.settle()
+    // 3,000 more steps at rest, in the page's frames, e.g. after edits that changed little. By then frames have
+    // been taken back, and the learning rate is low.
+    for (let frameIndex = 0; frameIndex < 300; frameIndex++) machine.trainOrUndo(10)
+    const atRest = [...machine.evaluate().values]
+    // 30 frames, half a second: rectangle 4 goes 70 px to the right and 15 px up.
+    const start = pointOf(machine, 4)
+    let frame = page.frame([press(start.x, start.y)])
+    let largestLag = 0
+    let largestOtherMove = 0
+    const {targetItems, outputByTarget} = machine.match(frame.values)
+    const draggedOutput = outputByTarget[targetItems.indexOf(4)]!
+    for (let moveIndex = 1; moveIndex <= 30; moveIndex++) {
+      frame = page.frame([move(start.x + 70 * moveIndex / 30, start.y - 15 * moveIndex / 30)])
+      const sketch = targetGeometry(machine, 4)
+      const photo = outputGeometry(machine, frame.values, draggedOutput)
+      largestLag = Math.max(largestLag, Math.abs(photo.left - sketch.left), Math.abs(photo.top - sketch.top))
+      for (let output = 0; output < learnedSlotCount; output++) {
+        if (output === draggedOutput || frame.outputs[output] !== 1) continue
+        for (let field = 0; field < learnedGeometryField.size; field++) {
+          const wire = machine.geometries[output * learnedGeometryField.size + field]!
+          largestOtherMove = Math.max(largestOtherMove, Math.abs(frame.values[wire]! - atRest[wire]!))
+        }
+      }
+    }
+    // Measured: the photo is at most 0.7% of the stage behind, about 4 px, and no other photo moves by more than
+    // 0.6%. With the full learning rate at every change of the sketch, each frame's steps were taken back, and
+    // the photo stood still for the whole drag, 13% behind at its end. With plain steps in the frames of a change,
+    // the first one threw the other photos up to 48% of the stage off.
+    assert.ok(largestLag < 0.015, `${name}: the photo was ${largestLag} of the stage behind its rectangle`)
+    assert.ok(largestOtherMove < 0.015, `${name}: another photo moved by ${largestOtherMove} of the stage`)
+  }
 })
 
 test('training takes as many steps per second at 120 Hz as at 60 Hz', () => {

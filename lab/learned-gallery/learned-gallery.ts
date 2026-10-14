@@ -585,8 +585,6 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       }
       // With no rectangle there is nothing to train, and no reason for another frame.
       stepsRemaining = activeCount > 0 ? trainingStepsAfterChange : 0
-      // The weights have somewhere to go again, so the steps are full steps again (trainOrUndo).
-      machine.restoreLearningRate()
     }
 
     // Layout and cursor.

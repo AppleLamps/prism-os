@@ -667,8 +667,13 @@ export function createTrainableGeometryMachine(
     // gradients shrink, and every few hundred steps they overshoot: on the page, the loss rose up to 60 times within
     // 20 steps, the photos jumped up to 14 px and came back, and an edit's 500 steps could end in the middle of
     // such a jump (October 13, 2026). So after steps that were taken back, the steps that follow use half the
-    // learning rate, and after steps that were kept, a tenth more, up to the full rate. restoreLearningRate sets
-    // the full rate again, e.g. when the target changed and the weights have somewhere to go.
+    // learning rate, down to 1/64 of it, and after steps that were kept, half as much again, up to the full rate.
+    //
+    // The rate stays as it is when the target changes. While the weights are at rest it is low, and the first
+    // frames of a drag raise it again, from 1/64 to the full rate in 11 kept frames. Full steps from weights at
+    // rest are the same overshoot: with the rate set to full at every change of the target, each frame of a drag
+    // was taken back, and the photo stood still under a rectangle dragged 70 px away. With plain steps in those
+    // frames, the first one threw the other photos up to 256 px off.
     trainOrUndo(steps: number) {
       invariant(Number.isInteger(steps) && steps >= 0, 'training step count is invalid')
       const lossBefore = measure(circuit.evaluateTensor(source))
@@ -685,17 +690,14 @@ export function createTrainableGeometryMachine(
         firstMoment.set(savedFirstMoment)
         secondMoment.set(savedSecondMoment)
         momentStep = savedMomentStep
-        learningRateScale *= 0.5
+        learningRateScale = Math.max(1 / 64, learningRateScale * 0.5)
         values = circuit.evaluateTensor(source)
         loss = lossBefore
       } else {
-        learningRateScale = Math.min(1, learningRateScale * 1.1)
+        learningRateScale = Math.min(1, learningRateScale * 1.5)
       }
       assertFiniteValues(values, 'trainable geometry values')
       return {values, loss, step: trainingStep, undone}
-    },
-    restoreLearningRate() {
-      learningRateScale = 1
     },
     // How close two edges of the target have to be to count as one line. 0 fits the target as it is.
     setAlignmentReach(reach: number) {
