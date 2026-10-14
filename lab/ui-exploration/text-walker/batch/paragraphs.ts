@@ -18,8 +18,8 @@ export const lineHeight = 20
 export const lineFitEpsilon = 0.005
 
 // pretext creates its measuring context at its first measurement, so this runs before the first prepare call. Under
-// `bun test`, modules are shared between test files, e.g. tests/handwiredos/notes.test.ts sets its own fake canvas with
-// the same rule for letters, spaces and punctuation. Either way, the circuit and the reference read the same prepared
+// `bun test`, modules are shared between test files, e.g. lab/knuth-plass/knuth-plass.test.ts sets a fake canvas of its
+// own, which measures with the same fakeTextWidth. Either way, the circuit and the reference read the same prepared
 // widths, and prepareBatchParagraph checks that they are on the 1/64 px grid.
 export function installBatchCanvas() {
   if (Reflect.get(globalThis, 'OffscreenCanvas') !== undefined) return

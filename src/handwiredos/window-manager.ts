@@ -75,24 +75,9 @@ import {
   stateBit,
   unitInterval,
 } from '../runtime/cells.ts'
-import {type NotesOutputs, bandOutputField, buildNotes, fitNotesParagraph, notesCells, notesWindowIndex, segmentOutputField} from './notes.ts'
-import type {FastParagraph} from './notes-walker.ts'
-import {
-  type NotesOptions,
-  defaultLineFitEpsilon,
-  defaultNotesParagraph,
-  lineFitEpsilonFor,
-  notesCapacity,
-  notesFont,
-  notesOptionsFor,
-  notesText,
-} from './notes-paragraph.ts'
-import {createCanvasMeasure, createNotesHost} from './notes-host.ts'
 import {arrangeInitialWindows} from './arrangement.ts'
 import {createMonitorFooter, frameCapacity as monitorFrameCapacity} from './monitor-footer.ts'
 import {mountWiring} from './wiring.ts'
-
-export {bandOutputField, notesWindowIndex, segmentOutputField}
 
 export const windowCount = 3
 
@@ -173,9 +158,7 @@ const springCells = (destination: Range, initialDestination: number) => ({
   destination: state(destination, {initial: initialDestination}),
 })
 
-// The cells for a machine whose Notes text starts as `paragraph`. Notes' cells come
-// last, so every other cell keeps its position whatever Notes' capacity is.
-const windowManagerCellsFor = (paragraph: FastParagraph) => ({
+const windowManagerCells = {
   viewportWidth: input(pixel, {grid: pixelGrid}),
   viewportHeight: input(pixel, {grid: pixelGrid}),
   unit: constant(1, [1, 1], {grid: 1}),
@@ -267,14 +250,12 @@ const windowManagerCellsFor = (paragraph: FastParagraph) => ({
   }),
   valueList: valueListCells,
   photos: photoCells,
-  notes: notesCells(notesCapacity, paragraph),
-})
+}
 
 // The cell positions under their earlier names, e.g. sourceField.downX is the
 // position of down.x, and windowStateField.top is the index of top within one
-// window's cells. Every machine has the same cells, whatever text Notes starts
-// with, so the positions hold for every machine.
-const windowManagerCells = windowManagerCellsFor(defaultNotesParagraph)
+// window's cells. Every machine declares the same cells, so the positions hold for
+// every machine.
 const layout = createSourceTable()
 const positions = layout.declare(windowManagerCells)
 
@@ -340,22 +321,7 @@ export const sourceField = {
   stackStart: positions.stack[0]![0]!,
   springStart: positions.springs[0]!.centerX.displacement,
   photoStart: positions.photos.gap,
-  notesStart: positions.notes.widths[0]!,
   size: layout.size,
-}
-
-// The positions of Notes' cells: the width cell and the break-after cell of the first
-// segment cell, each followed by the other segments' cells in order, the count of
-// segment cells that hold text, and the count and the point of the presses on the
-// note's content.
-/** @public */
-export const notesSourceField = {
-  widthStart: positions.notes.widths[0]!,
-  breakAfterStart: positions.notes.breakAfter[0]!,
-  arrivedCount: positions.notes.arrivedCount,
-  pressCount: positions.notes.press.count,
-  pressX: positions.notes.press.x,
-  pressY: positions.notes.press.y,
 }
 
 // A list's element at a checked index, e.g. cellAt(positions.drag, 5, 'drag window
@@ -412,8 +378,10 @@ export function photoThumbnailSpringSourceField(item: number, field: number) {
 }
 
 // The windows by index: Monitor, whose content is the list of the program's values,
-// see value-list.ts, then Notes, see notesWindowIndex, then Photos.
+// see value-list.ts, then Notes, whose content is the browser's own text field, see
+// mountWindowManager, then Photos, see photo-gallery.ts.
 const monitorWindowIndex = 0
+const notesWindowIndex = 1
 const photosWindowIndex = windowCount - 1
 const geometryFields = ['left', 'top', 'width', 'height'] as const
 const transformFields = ['translateX', 'translateY', 'scale'] as const
@@ -432,13 +400,12 @@ type WindowManagerOutput = {
   dockItems: Wire[]
   animationActive: Wire
   photos: PhotoOutputs
-  notes: NotesOutputs
   valueList: ValueListOutputs
 }
 
-function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastParagraph) {
+function buildWindowManager() {
   const table = createSourceTable()
-  const cells = table.declare(windowManagerCellsFor(notesParagraph))
+  const cells = table.declare(windowManagerCells)
   table.atMostOne('photos events', photoEvents(cells.photos))
   table.atMostOne('value list keys', valueListKeys(cells.valueList))
   table.atMostOne('armed control', [
@@ -509,8 +476,6 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
   let valueListTop = zero
   const valueListLocationHit: Wire[] = []
   const valueListLocationHitAtUp: Wire[] = []
-  // Notes' content box, at the down.
-  let notesContentHit = zero
 
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const current = cells.windows[windowIndex]!
@@ -641,16 +606,6 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
       photosContentHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, contentRectangle)
       photosGripHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, gripRectangle)
     }
-    if (windowIndex === notesWindowIndex) {
-      // The content box inside the 1 px border and below the title bar, where a press
-      // places the note's caret.
-      notesContentHit = emitRectangleHit(circuit, cells.down.x, cells.down.y, {
-        left: circuit.affine([[geometry.left, 1], [unit, 1]]),
-        top: circuit.affine([[geometry.top, 1], [cells.titleHeight, 1], [unit, 1]]),
-        width: circuit.affine([[geometry.width, 1], [unit, -2]]),
-        height: circuit.affine([[geometry.height, 1], [cells.titleHeight, -1], [unit, -2]]),
-      })
-    }
   }
 
   const selectedCanvas = emitFrontmost(circuit, cells.stack, windowHit, unit)
@@ -718,7 +673,9 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
   // up with the cancel bit.
   //
   // A press raises and focuses the frontmost window under it, and dragging and
-  // resizing start at the press. The window buttons, the dock items and Photos'
+  // resizing start at the press. A press on Notes' content does nothing else: the
+  // note is the browser's own text field, and the browser places its caret and
+  // selects its text. The window buttons, the dock items and Photos'
   // content act on release, like native buttons: a press over a control arms it, a
   // release over the armed control acts, and a release anywhere else, or a
   // pointercancel, acts on nothing. The path between the press and the release
@@ -844,17 +801,6 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
     valueListLocationHitAtUp[location]!,
     emitComplement(circuit, monitorGripAtUp, unit),
   ]))
-  // A press on Notes' content places the note's caret, see notes.ts. Like Photos'
-  // content, the content is pressed when Notes is the frontmost window under the
-  // down's point, in the stored stacking, the point is in the content box at the
-  // window's destination, and no grip press starts a resize. So a press on a part of
-  // the note that another window covers goes to that window. The press acts at the
-  // down, like raising a window does, so it needs no armed bit.
-  const notesContentPress = emitAll(circuit, [
-    canvasPress[notesWindowIndex]!,
-    notesContentHit,
-    emitComplement(circuit, resizePress[notesWindowIndex]!, unit),
-  ])
 
   const baselineX = emitSelect(
     circuit,
@@ -1315,35 +1261,6 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
     unit,
   )
 
-  // The Notes paragraph flows around the other windows' destination rectangles
-  // while they're visible and stacked above Notes after this evaluation's events,
-  // so it reflows once per event, like Photos lays out at its destination size.
-  const notesDestination = effectiveGeometry[notesWindowIndex]!
-  const notes = buildNotes(circuit, table, cells.notes, notesOptions, {
-    unit,
-    titleHeight: cells.titleHeight,
-    windows: effectiveGeometry.map((destination, windowIndex) => ({destination, visible: nextVisible[windowIndex]!})),
-    nextStack,
-    contentHeight: destinationContentHeight[notesWindowIndex]!,
-    // The press's point relative to the content box at the window's destination after
-    // this evaluation's events, the box that the segments' positions are local to,
-    // like Photos reads a click.
-    press: {
-      active: notesContentPress,
-      x: circuit.affine([
-        [cells.down.x, 1],
-        [notesDestination.left, -1],
-        [unit, -1],
-      ]),
-      y: circuit.affine([
-        [cells.down.y, 1],
-        [notesDestination.top, -1],
-        [cells.titleHeight, -1],
-        [unit, -1],
-      ]),
-    },
-  })
-
   // Monitor's list is computed for the list viewport's height at the window's
   // destination, i.e. the content box without the header row and the footer, e.g.
   // the maximized height from the release of the maximize button on, so the rows
@@ -1361,7 +1278,7 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
   })
 
   const {nextSource, initialSource, validate} = table.finish()
-  const output: WindowManagerOutput = {nextSource, windows, dockItems, animationActive, photos, notes, valueList}
+  const output: WindowManagerOutput = {nextSource, windows, dockItems, animationActive, photos, valueList}
   // Each cell's name and what happens to the cell around an evaluation, in table
   // order, e.g. {name: 'windows[2].left', policy: 'state'}. Monitor lists them.
   const sourceCells = Array.from({length: table.size}, (_, index) => {
@@ -1393,7 +1310,7 @@ function nameOutputView(prefix: string, wires: readonly Wire[], fields: {readonl
 // Every output that the page draws from, with its name, in the order of the
 // compiled program's roots after the next-state values.
 function nameWindowManagerOutputs(output: WindowManagerOutput) {
-  const {photos, notes, valueList} = output
+  const {photos, valueList} = output
   return [
     ...nameOutputView('windows', output.windows, windowOutputField),
     ...nameOutputView('dockItems', output.dockItems, dockOutputField),
@@ -1403,15 +1320,6 @@ function nameWindowManagerOutputs(output: WindowManagerOutput) {
     ...nameOutputView('photos.thumbnails', photos.thumbnails, thumbnailField),
     ...nameOutputView('photos.previousControl', photos.previousControl, controlField),
     ...nameOutputView('photos.nextControl', photos.nextControl, controlField),
-    ...nameOutputView('notes.segments', notes.segments, segmentOutputField),
-    ...nameOutputView('notes.bands', notes.bands, bandOutputField),
-    {wire: notes.lineCount, name: 'notes.lineCount'},
-    {wire: notes.truncated, name: 'notes.truncated'},
-    {wire: notes.windowOverflow, name: 'notes.windowOverflow'},
-    {wire: notes.runOverflow, name: 'notes.runOverflow'},
-    {wire: notes.press.count, name: 'notes.press.count'},
-    {wire: notes.press.x, name: 'notes.press.x'},
-    {wire: notes.press.y, name: 'notes.press.y'},
     {wire: valueList.totalHeight, name: 'valueList.totalHeight'},
     {wire: valueList.scroll, name: 'valueList.scroll'},
     {wire: valueList.scrollTarget, name: 'valueList.scrollTarget'},
@@ -1435,7 +1343,6 @@ type WindowManagerEvent = {
     | 'photo next'
     | 'photo close'
     | 'value list key'
-    | 'notes text'
   // Shares the time origin of requestAnimationFrame timestamps, e.g. event.timeStamp.
   timeStamp: number
   // Writes the event into the table: latches, or the viewport for a mount or resize.
@@ -1466,19 +1373,9 @@ type WindowManagerObserver = {
 // With the default writeBack, 'events and settle checks', only evaluations that
 // apply events, check settling or snap write state back, and a frame evaluates a
 // copy of the table, so the stored table depends only on the timestamped events.
-//
-// `notes` is the measurement of the text that Notes starts with, and pretext's line
-// fit epsilon, e.g. the browser's at mount. The default paragraph is a baked
-// measurement of the starting paragraph, so every process starts from the same
-// table. The paragraph only sets the initial values of Notes' segment cells: the
-// program is the same for every paragraph, and notesText replaces the text later,
-// e.g. the page queues its own measurement before the first step. A paragraph with
-// more segments than the cells hold is cut, as in notesText.
-export function createWindowManagerMachine(options: {writeBack?: WriteBack, notes?: {paragraph?: FastParagraph, epsilon?: number}} = {}) {
+export function createWindowManagerMachine(options: {writeBack?: WriteBack} = {}) {
   const writeBack = options.writeBack ?? 'events and settle checks'
-  const notesOptions = notesOptionsFor(options.notes?.epsilon ?? defaultLineFitEpsilon)
-  const notesParagraph = fitNotesParagraph(options.notes?.paragraph ?? defaultNotesParagraph, notesOptions.capacity)
-  const {circuit, cells, output, sourceCells, initialSource, validate} = buildWindowManager(notesOptions, notesParagraph)
+  const {circuit, cells, output, sourceCells, initialSource, validate} = buildWindowManager()
   const source = new Float32Array(initialSource)
   const wireCount = validateCircuit(circuit)
   validateWindowManagerOutputWires(output, wireCount)
@@ -1779,25 +1676,6 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
         table[cells.valueList.keys[key]] = 1
       })
     },
-    // The Notes text changed, e.g. a character was typed. `paragraph` is the new
-    // text's measurement: one width and one break-after bit per segment, see
-    // prepareNotesText in notes-text.ts. The event rewrites every segment cell and the count of
-    // cells that hold text, so its evaluation lays the new text out, and the words
-    // move in that evaluation like at any other event. The paragraph first passes
-    // through fitNotesParagraph, which rounds and clamps the widths and leaves out
-    // the segments past the cells' capacity. Returns how many segments the cells
-    // hold after the event, e.g. 256 for a text of 300 segments.
-    notesText(paragraph: FastParagraph, timeStamp?: number) {
-      const {widths, breakAfter} = fitNotesParagraph(paragraph, notesOptions.capacity)
-      queue('notes text', timeStamp, table => {
-        for (let segment = 0; segment < notesOptions.capacity; segment++) {
-          table[cells.notes.widths[segment]!] = widths[segment] ?? 0
-          table[cells.notes.breakAfter[segment]!] = breakAfter[segment] ?? 0
-        }
-        table[cells.notes.arrivedCount] = widths.length
-      })
-      return widths.length
-    },
   }
 }
 
@@ -1812,18 +1690,14 @@ const valueListKeyNames = new Map<string, ValueListKey>([
 ])
 
 function mountWindowManager(document: Document, window: Window) {
-  // The program is built with the line fit epsilon that pretext uses in this
-  // browser, and is otherwise the same in every browser and for every font. Notes'
-  // cells start with the baked measurement of the starting paragraph, and the Notes
-  // host below queues the page's own measurement before the first step.
-  const notesOptions = notesOptionsFor(lineFitEpsilonFor(window.navigator))
-  const machine = createWindowManagerMachine({notes: {epsilon: notesOptions.epsilon}})
+  const machine = createWindowManagerMachine()
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
   const photosViewport = document.querySelector<HTMLElement>('.photos-content')
   const monitorContent = document.querySelector<HTMLElement>('.monitor-content')
   const monitorFooter = document.querySelector<HTMLElement>('.monitor-footer')
+  const note = document.querySelector<HTMLTextAreaElement>('.notes-text')
   const wiringCanvas = document.querySelector<HTMLCanvasElement>('.desk-wiring')
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
@@ -1831,6 +1705,7 @@ function mountWindowManager(document: Document, window: Window) {
   invariant(photosViewport !== null, 'Photos viewport is missing')
   invariant(monitorContent !== null, 'Monitor\'s content is missing')
   invariant(monitorFooter !== null, 'Monitor\'s footer is missing')
+  invariant(note !== null, 'the note\'s text field is missing')
   invariant(wiringCanvas !== null, 'the desk\'s wiring canvas is missing')
   const windowContents = windows.map(element => {
     const content = element.querySelector<HTMLElement>('.window-content')
@@ -1844,33 +1719,13 @@ function mountWindowManager(document: Document, window: Window) {
     dockItems, // mount lifetime
     photosViewport, // mount lifetime
     monitorContent, // mount lifetime
+    // The note, Notes' whole content: the browser's own text field, which index.html
+    // holds with its starting text. The browser edits, selects, wraps and scrolls
+    // the text, and the program knows nothing of it. The page only moves the
+    // keyboard focus, see the side effects of renderWindowManager.
+    note, // mount lifetime
   }
   const photos = createPhotoGalleryRenderer(document, domCache.photosViewport)
-  // The note's text: a textarea that the visitor types into, and the nodes that draw the text where the program lays
-  // it out, see notes-host.ts.
-  const notesWindowOutput = notesWindowIndex * windowOutputField.size
-  const notes = createNotesHost(
-    document,
-    windowContents[notesWindowIndex]!,
-    machine,
-    {
-      notes: machine.output.notes,
-      focused: machine.output.windows[notesWindowOutput + windowOutputField.focused]!,
-      contentWidth: machine.output.windows[notesWindowOutput + windowOutputField.contentWidth]!,
-      contentHeight: machine.output.windows[notesWindowOutput + windowOutputField.contentHeight]!,
-    },
-    notesOptions,
-    // A run of letters is cut into pieces of at most the narrowest slot's width once it is wider than the column of
-    // the narrowest Notes window: the minimum window width, less the 1 px border and the flow's padding on both
-    // sides, 230 px.
-    {
-      longestWholeSegment: machine.source[machine.cells.minWidth]! - 2 - 2 * notesOptions.padding,
-      pieceWidth: notesOptions.minimumSlotWidth,
-    },
-    notesText,
-    createCanvasMeasure(document, notesFont),
-    scheduleRender,
-  )
   // Monitor lists the program itself, one location per kind of number, each with
   // its value in the frame's evaluation. The rows' text stays in JavaScript, and
   // the program computes which rows the list's DOM slots show.
@@ -1898,6 +1753,14 @@ function mountWindowManager(document: Document, window: Window) {
 
   // The focused window in the last frame's outputs, or -1, for the keydown listener.
   let focusedWindowAtLastFrame = -1
+  // Transient input for the note's keyboard focus, reset at the end of every frame:
+  // the frame's last press, and whether a press was released. A press that the
+  // browser cancels acts on no control, so it changes no window's focus.
+  const events = {press: null as PointerEvent | null, released: false}
+  // What the note's keyboard focus keeps of the last press: whether a mouse made
+  // it, and whether it was outside every window, e.g. on the desk, as the browser
+  // hit-tested it. Notes' dock item counts as a part of the Notes window.
+  let lastPress = {byMouse: false, outsideEveryWindow: true}
   // The scroll position of Monitor's list as last read from the DOM: at the top of
   // a frame with the other DOM reads, and once more after the host's own scroll at
   // the end of a frame, since the browser may round or clamp the position that it
@@ -1926,17 +1789,27 @@ function mountWindowManager(document: Document, window: Window) {
   // writes, side effects, then scheduling the next frame.
   function renderWindowManager(frameTime: number) {
     scheduledRaf = null
-    // DOM reads. The scroll position of Monitor's list and the note's text and
-    // selection are browser state, which the frame reads like the viewport's size.
+    // DOM reads. The scroll position of Monitor's list and the keyboard focus are
+    // browser state, which the frame reads like the viewport's size.
     const viewportWidth = document.documentElement.clientWidth
     const viewportHeight = document.documentElement.clientHeight
     valueListScrollTop = valueList.readScrollTop()
-    const notesRead = notes.read()
-    // Handle inputs. A changed text is measured into segments here and queued as one
-    // event. The measuring is the host's own JavaScript, so it runs before the clock
-    // below starts: the frame time that Monitor's footer shows is the time of
+    const noteHasKeyboardFocus = document.activeElement === domCache.note
+    // Handle inputs. The pointer events are queued in the machine already. A press
+    // since the last frame replaces what the note's keyboard focus knows of the last
+    // one.
+    const pressedOrReleased = events.press !== null || events.released
+    if (events.press !== null) {
+      const {target} = events.press
+      lastPress = {
+        byMouse: events.press.pointerType === 'mouse',
+        outsideEveryWindow: !(target instanceof Node)
+          || !(domCache.dockItems[notesWindowIndex]!.contains(target) || domCache.windows.some(element => element.contains(target))),
+      }
+    }
+
+    // The machine's step. The frame time that Monitor's footer shows is the time of
     // machine.step alone, i.e. of the program's evaluations.
-    notes.queueText(notesRead)
     const executionStart = window.performance.now()
     const values = machine.step(viewportWidth, viewportHeight, frameTime, valueListScrollTop)
     const executionMs = window.performance.now() - executionStart
@@ -1944,6 +1817,7 @@ function mountWindowManager(document: Document, window: Window) {
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       if (values[machine.output.windows[windowIndex * windowOutputField.size + windowOutputField.focused]!] === 1) focusedWindowAtLastFrame = windowIndex
     }
+    const notesIsFocusedWindow = focusedWindowAtLastFrame === notesWindowIndex
 
     // DOM writes.
     projectWindowElements(domCache.windows, domCache.windowContents, values, machine.output.windows)
@@ -1966,18 +1840,46 @@ function mountWindowManager(document: Document, window: Window) {
     }
 
     photos.render(values, machine.output.photos)
-    notes.write(notesRead, values)
+    // The Tab key reaches the note only while Notes is the focused window, e.g. not
+    // while Notes is closed or minimized, or behind the window that has the focus.
+    domCache.note.tabIndex = notesIsFocusedWindow ? 0 : -1
     valueList.render(values, machine.output.valueList)
     // The chart in Monitor's footer gets the time that the program took in this
     // frame, i.e. the time of machine.step.
     footer.update(executionMs)
 
-    // Side effects, after every DOM write. The note's textarea gets the selection
-    // that a press or a line move placed, and the keyboard focus exactly while Notes
-    // is the focused window, see notes-host.ts. The focus call can't scroll a box:
-    // it passes preventScroll, and the boxes around the textarea clip without a
-    // scroll position.
-    notes.applySideEffects(notesRead, values)
+    // Side effects, after every DOM write.
+    //
+    // The note's keyboard focus follows the focused window, like a text field in a
+    // window of a desktop:
+    // - While Notes isn't the focused window, the note has no keyboard focus. The
+    //   frame takes it away, e.g. after a press on another window, or after Notes was
+    //   minimized or closed, and the Tab key skips the note, see tabIndex above.
+    // - A press or a release that leaves Notes the focused window gives the note the
+    //   keyboard focus, e.g. a press on Notes' title bar, the release that opens
+    //   Notes from the dock, or the release that closes the window in front of Notes.
+    //   A press in the text is the browser's own: it focuses the note and places the
+    //   caret, and the frame finds the note focused and leaves it alone. Otherwise
+    //   the frame calls focus(), which keeps the caret and the selection where they
+    //   were.
+    // - Except after a press outside every window, e.g. on the desk. The browser
+    //   takes the keyboard focus away there, as at a press outside a text field on
+    //   any page, and the frame leaves it so, while Notes stays the focused window.
+    // - And the frame calls focus() only after a press with a mouse. On a phone,
+    //   focus() from code can open the on-screen keyboard, e.g. while a finger drags
+    //   Notes by its title bar. So after a touch or a pen, only the browser focuses
+    //   the note, at a tap in the text.
+    // A frame without a press or a release never calls focus(), so the Tab key can
+    // move the keyboard focus away from the note. The focus call can't scroll a box:
+    // it passes preventScroll, and the boxes around the note clip without a scroll
+    // position.
+    if (!notesIsFocusedWindow) {
+      if (noteHasKeyboardFocus) domCache.note.blur()
+    } else if (!noteHasKeyboardFocus && pressedOrReleased && lastPress.byMouse && !lastPress.outsideEveryWindow) {
+      domCache.note.focus({preventScroll: true})
+    }
+    events.press = null
+    events.released = false
     // The program asks for a scroll after a key that moved the selection of Monitor's
     // list out of view, and when the list shows another location. The scroll comes
     // after every DOM write, so the spacer already has its height and the browser
@@ -2009,6 +1911,7 @@ function mountWindowManager(document: Document, window: Window) {
   window.addEventListener('pointerdown', (event: PointerEvent) => {
     if (!event.isPrimary || event.button !== 0) return
     machine.pointerDown(event.clientX, event.clientY, event.timeStamp)
+    events.press = event
     scheduleRender()
   })
   // A context menu takes the release of the press that opens it: the browser sends
@@ -2046,6 +1949,7 @@ function mountWindowManager(document: Document, window: Window) {
   window.addEventListener('pointerup', (event: PointerEvent) => {
     if (!event.isPrimary) return
     machine.pointerUp(event.clientX, event.clientY, event.timeStamp)
+    events.released = true
     scheduleRender()
   })
   window.addEventListener('pointercancel', (event: PointerEvent) => {
@@ -2054,20 +1958,13 @@ function mountWindowManager(document: Document, window: Window) {
     scheduleRender()
   })
   window.addEventListener('keydown', (event: KeyboardEvent) => {
-    // A key goes to one receiver. A key typed into the note is the textarea's, e.g.
-    // ArrowDown moves the note's caret and never the selection of Monitor's list, and
-    // ArrowLeft never turns Photos' pages. The frame after the key reads where the
-    // caret went. The textarea has the keyboard focus exactly while Notes is the
-    // focused window, as of the last frame's side effects.
-    if (notes.takesKey(event)) {
-      scheduleRender()
-      return
-    }
-    // A key typed into any other text field belongs to that field.
-    if (event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLInputElement) return
+    // A key goes to one receiver. A key typed into the note is the browser's, e.g.
+    // ArrowDown moves the note's caret and never the selection of Monitor's list,
+    // ArrowLeft never turns Photos' pages, and Escape closes no photo.
+    if (event.target === domCache.note) return
     // Every other key is queued for the program, which gives a list key to Monitor
     // and an arrow or Escape to Photos only while that window is focused at the key's
-    // time. E.g. after a press on the note earlier in the same frame, the textarea
+    // time. E.g. after a press on Notes' title bar earlier in the same frame, the note
     // doesn't have the keyboard focus yet, so ArrowDown arrives here, and the program
     // drops it, since Notes is the focused window at the key's time.
     let keyWindowIndex = photosWindowIndex
@@ -2099,8 +1996,12 @@ function mountWindowManager(document: Document, window: Window) {
   })
   // Scrolling Monitor's list moves its rows on the compositor. The frame reads the
   // new position and gives the DOM slots their rows. Scroll events don't bubble,
-  // so the listener captures.
-  window.addEventListener('scroll', () => scheduleRender(), true)
+  // so the listener captures. It listens on Monitor's content alone: the note's own
+  // scrolling needs no frame.
+  domCache.monitorContent.addEventListener('scroll', () => scheduleRender(), true)
+  // The keyboard focus can arrive at the note without a press, e.g. from a screen
+  // reader, and the frame decides whether the note keeps it.
+  window.addEventListener('focusin', () => scheduleRender())
   window.addEventListener('resize', (event: Event) => {
     // The viewport sets destinations, so a resize reaches the program as an event
     // at its own time.
@@ -2128,8 +2029,8 @@ function mountWindowManager(document: Document, window: Window) {
 // Writes each window's outputs into its frame element and its .window-content
 // element. The frame is drawn at the animated size, position and scale, and clips
 // the content box, which takes the window's destination size as soon as an event
-// changes the destination. So content such as Notes' text reflows once per
-// destination change, instead of at every in-between frame size.
+// changes the destination. So content that the browser lays out, e.g. the note's
+// text, wraps once per destination change, instead of at every in-between frame size.
 export function projectWindowElements(
   frames: readonly HTMLElement[],
   contents: readonly HTMLElement[],
@@ -2305,10 +2206,6 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
   validateWireView(output.dockItems, windowCount * dockOutputField.size, wireCount)
   validateWireView([output.animationActive], 1, wireCount)
   validatePhotoGalleryOutputWires(output.photos, wireCount)
-  validateWireView(output.notes.segments, notesCapacity * segmentOutputField.size, wireCount)
-  validateWireView(output.notes.bands, notesOptionsFor(defaultLineFitEpsilon).bands * bandOutputField.size, wireCount)
-  validateWireView([output.notes.lineCount, output.notes.truncated, output.notes.windowOverflow, output.notes.runOverflow], 4, wireCount)
-  validateWireView([output.notes.press.count, output.notes.press.x, output.notes.press.y], 3, wireCount)
   validateValueListOutputWires(output.valueList, wireCount)
 }
 
@@ -2320,14 +2217,6 @@ function validateWindowManagerOutput(
   validatePhotoGalleryOutput(values, output.photos, tolerance)
   validateValueListOutput(values, output.valueList)
   assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
-  for (let segment = 0; segment < notesCapacity; segment++) {
-    const visible = values[output.notes.segments[segment * segmentOutputField.size + segmentOutputField.visible]!]
-    invariant(visible === 0 || visible === 1, `Notes segment visibility must equal zero or one, got ${visible}`)
-  }
-  const truncated = values[output.notes.truncated]
-  invariant(truncated === 0 || truncated === 1, `Notes truncated must equal zero or one, got ${truncated}`)
-  // windowOverflow and runOverflow aren't checked: a typed text can reach either capacity, e.g. a line of 60 one-letter
-  // words, and a failed check here would stop the machine. They are outputs for the host to report, see NotesOutputs.
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const outputStart = windowIndex * windowOutputField.size
     for (const field of [

@@ -20,14 +20,12 @@
     "test": "bun test --timeout 30000 ./tests ./template ./lab"
   },
   "devDependencies": {
+    "@chenglou/pretext": "0.0.9",
     "@types/bun": "latest",
     "@typescript/native-preview": "latest",
     "knip": "^6.16.1",
     "oxlint": "latest",
     "oxlint-tsgolint": "latest",
     "typescript": "^6.0.2"
-  },
-  "dependencies": {
-    "@chenglou/pretext": "0.0.9"
   }
 }

@@ -72,48 +72,44 @@ test('the footer shows the program\'s layers, stored weights and size, and draws
 })
 
 test('Monitor\'s size of the program counts every array once, also a table that many index reads share', () => {
-  // HandwiredOS: on October 13, 2026 the Notes flow reads 5 tables with 2,320 index
-  // reads, and every read of a table points at the same array of the table's
-  // positions. Counted once per read, those arrays would add up to about 1.06 MB,
-  // twice the rest of the program.
   const program = createWindowManagerMachine().tensorProgram
   const {weights, bytes} = measureProgram(program)
   assert.equal(weights, program.layers.reduce((sum, layer) => sum + layer.weights.length, 0))
   assert.equal(bytes, bytesOfEveryArray(program))
-  const indexReads = program.layers.flatMap(layer => layer.indexReads)
-  const tables = new Set(indexReads.map(read => read.candidatePositions))
-  assert.ok(indexReads.length > 100 * tables.size, `${indexReads.length} index reads of ${tables.size} tables`)
-  // What the old sum added for the shared tables alone is more than the whole program.
-  const perRead = indexReads.reduce((sum, read) => sum + read.candidatePositions.byteLength, 0)
-  assert.ok(perRead > bytes, `${perRead} bytes counted per read, ${bytes} bytes in all`)
 
-  // Two reads of one table of 4 computed values, and one read of another table: the
-  // first table's positions are counted once. The values are listed out of the order
-  // in which the program computes them, since a table whose values lie at even steps
-  // in the program stores no positions.
-  const circuit = new Circuit(6)
-  const cells = [0, 1, 2, 3].map(slot => circuit.source(slot))
+  // HandwiredOS reads no table by index, so the shared tables are a program of this
+  // test's: 2 tables of 32 computed values, one read by index 200 times and the other
+  // once. Every read of a table points at the same array of the table's positions.
+  // Each table lists its values in pairs that are swapped against the order in which
+  // the program computes them, since a table whose values lie at even steps in the
+  // program stores no positions.
+  const circuit = new Circuit(34)
+  const cells = Array.from({length: 32}, (_, slot) => circuit.source(slot))
   for (const cell of cells) circuit.assumeRange(cell, 0, 4096)
   const doubled = cells.map(cell => circuit.affine([[cell, 2]]))
   const tripled = cells.map(cell => circuit.affine([[cell, 3]]))
-  const doubledTable = [doubled[0]!, doubled[2]!, doubled[1]!, doubled[3]!]
-  const tripledTable = [tripled[3]!, tripled[0]!, tripled[2]!, tripled[1]!]
-  const [first, second] = [4, 5].map(slot => {
+  const doubledTable = doubled.map((_, slot) => doubled[slot ^ 1]!)
+  const tripledTable = tripled.map((_, slot) => tripled[slot ^ 1]!)
+  const [first, second] = [32, 33].map(slot => {
     const index = circuit.source(slot)
-    circuit.assumeRange(index, 0, 3)
+    circuit.assumeRange(index, 0, 31)
     return index
   })
   const small = circuit.compileTensorProgram([
-    circuit.indexRead(first!, doubledTable),
-    circuit.indexRead(second!, doubledTable),
-    circuit.indexRead(first!, tripledTable),
+    ...Array.from({length: 200}, (_, offset) => circuit.indexReadAffine([[first!, 1]], offset, doubledTable, 'clamp', 'clamp')),
+    circuit.indexRead(second!, tripledTable),
   ])
   const smallReads = small.layers.flatMap(layer => layer.indexReads)
-  assert.equal(smallReads.length, 3)
-  assert.equal(smallReads[0]!.candidatePositions, smallReads[1]!.candidatePositions)
-  assert.notEqual(smallReads[0]!.candidatePositions, smallReads[2]!.candidatePositions)
-  assert.equal(smallReads[0]!.candidatePositions.length, 4)
-  assert.equal(measureProgram(small).bytes, bytesOfEveryArray(small))
+  assert.equal(smallReads.length, 201)
+  assert.equal(new Set(smallReads.map(read => read.candidatePositions)).size, 2)
+  assert.equal(smallReads[0]!.candidatePositions, smallReads[199]!.candidatePositions)
+  assert.notEqual(smallReads[0]!.candidatePositions, smallReads[200]!.candidatePositions)
+  assert.equal(smallReads[0]!.candidatePositions.length, 32)
+  const smallBytes = measureProgram(small).bytes
+  assert.equal(smallBytes, bytesOfEveryArray(small))
+  // Counted once per read, the tables' positions alone would be more than the whole program.
+  const perRead = smallReads.reduce((sum, read) => sum + read.candidatePositions.byteLength, 0)
+  assert.ok(perRead > smallBytes, `${perRead} bytes counted per read, ${smallBytes} bytes in all`)
 })
 
 test('the frame time chart\'s scale is the smallest of 1, 2, 5, 10 ms and so on that holds the longest frame', () => {

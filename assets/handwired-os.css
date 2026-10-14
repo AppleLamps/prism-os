@@ -4,8 +4,8 @@
 
    The program computes every position and size, and JavaScript writes them as inline
    styles each frame: a window's width, height, transform, opacity and z-index, its content
-   box's width and height, a dock item's rectangle, each Notes word's and each photo's
-   position, and the numbers --focused, --maximized, --inactive and --open, each 0 or 1.
+   box's width and height, a dock item's rectangle, each photo's position, and the numbers
+   --focused, --maximized, --inactive and --open, each 0 or 1.
    So no rule here gives one of those properties a transition, an animation or a default.
    What depends on the four numbers is arithmetic on them, e.g. a shadow that grows with
    --focused, and has no transition either: focus changes in the frame of the press, and
@@ -745,117 +745,63 @@ body {
   pointer-events: none;
 }
 
-/* Notes: plain paper. JavaScript creates one span per word and places it in the content
-   box's coordinates. The program is built from a measurement of the paragraph in the font
-   that notesFont in notes-paragraph.ts names, so the three font lines below must name that
-   font, and the inherited kerning and legibility settings are set back to the defaults
-   that the measurement uses. */
-.notes-word {
-  position: absolute;
-  top: 0;
-  left: 0;
-  color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 14px;
-  line-height: 22px;
-  font-kerning: auto;
-  text-rendering: auto;
-  white-space: pre;
-  pointer-events: none;
-}
+/* Notes: plain paper, and on it the browser's own text field, as large as the window's
+   content box. The browser edits, selects, wraps and scrolls the text. The field has no
+   border, no background and no outline of its own: the window around it shows which
+   window has the focus, and the copper caret shows where the typing goes. Its selection
+   is site.css's ::selection, and its scrollbar is that of Monitor's list.
 
-/* A browser scrolls a box with overflow: hidden to show the caret of a focused textarea
-   that the box cuts off, which would shift every word. A box with overflow: clip can't be
-   scrolled. The frame cuts the content box off while it grows to a new size, e.g. during
-   a maximize, so the frame can't be scrolled either. */
-.window-notes,
-.notes-flow {
-  overflow: clip;
-}
-
-/* The note's text as the visitor types it. The textarea is never shown: it holds the
-   characters, the caret and the selection, and JavaScript moves it to the caret, so that
-   an input method opens its candidate window there. Its font is at least 16 px, so that
-   iOS Safari doesn't zoom the page when the textarea gets the focus. */
-.notes-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 22px;
+   pan-y lets a finger scroll the text inside the desktop's touch-action: none, and
+   contain keeps the scrolling from reaching anything behind the note. The page's body
+   allows no selection, so the field allows its own, which Safari needs before it lets
+   anyone type. The window's grip lies over the field's lower right corner and takes the
+   presses there, and the field's own resize handle is off. */
+.notes-text {
+  display: block;
+  width: 100%;
+  height: 100%;
   margin: 0;
-  padding: 0;
+  padding: var(--space-5);
   border: 0;
-  outline: none;
-  opacity: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  caret-color: var(--copper);
+  font: 400 14px/22px Georgia, "Times New Roman", serif;
   resize: none;
-  overflow: hidden;
-  white-space: pre;
-  pointer-events: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--rule-strong) transparent;
+  scrollbar-width: thin;
+  touch-action: pan-y;
   user-select: text;
   -webkit-user-select: text;
-  font: 16px Georgia, "Times New Roman", serif;
 }
 
-/* What the note says when its text passes one of the flow's capacities, e.g. "The last 5
-   words don't fit in the lines that are free." It sits in the 24 px above the first line,
-   where no text is laid out, and is centered there on one line or on two: the sentences
-   wrap, so that the narrowest Notes window, whose column is 230 px wide, shows a whole
-   sentence, and a 500 px window two of them. Two lines of 12 px are all that the 24 px
-   hold, so the type is 11 px, the size of the labels. Text past the second line ends in
-   an ellipsis. The line clamp needs display: -webkit-box, which JavaScript writes while
-   the notice has text. */
-.notes-notice {
-  position: absolute;
-  top: 12px;
-  left: var(--space-5);
-  max-width: calc(100% - 48px);
-  overflow: hidden;
-  color: var(--copper);
-  font: 500 11px/12px var(--font-sans);
-  pointer-events: none;
-  transform: translateY(-50%);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+/* site.css draws an outline around whatever has the keyboard focus, and a text field has
+   it at every focus, also after a click. Two classes outrank that rule in either order of
+   the two stylesheets. */
+.notes-text:focus-visible {
+  outline: none;
 }
 
-/* The selected text of one line, drawn under the words. */
-.notes-selection {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 22px;
-  background: color-mix(in srgb, var(--copper) 22%, transparent);
-  pointer-events: none;
-}
-
-/* The caret, drawn where the program laid out the character after it. Its two animations
-   have the same keyframes: JavaScript switches between them when the caret moves, which
-   starts the blink again. For a visitor who asked for less motion, site.css runs every
-   animation once in 0.01 ms, so the caret stays lit. */
-.notes-caret {
-  position: absolute;
-  top: 2px;
-  left: 0;
-  width: 2px;
-  height: 18px;
-  border-radius: 1px;
-  background: var(--copper);
-  pointer-events: none;
-  animation: notes-caret-blink-a 1.1s steps(1) infinite;
-}
-
-@keyframes notes-caret-blink-a {
-  50% {
-    opacity: 0;
+/* iOS zooms the page when a focused field's text is under 16 px, and only iOS knows
+   -webkit-touch-callout. */
+@supports (-webkit-touch-callout: none) {
+  .notes-text {
+    font-size: 16px;
+    line-height: 24px;
   }
 }
 
-@keyframes notes-caret-blink-b {
-  50% {
-    opacity: 0;
-  }
+/* A browser scrolls a box with overflow: hidden to show the caret of a focused text
+   field that the box cuts off, which would move the window's content for good. The frame
+   cuts the content box off while it grows to a new size, e.g. during a maximize. A box
+   with overflow: clip can't be scrolled, so neither the frame nor the content box is. */
+.window-notes,
+.notes-content {
+  overflow: clip;
 }
 
 /* Monitor's footer: the program's sizes at the left, and at the right the program's time

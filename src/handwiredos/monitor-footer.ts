@@ -14,9 +14,9 @@ type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
 export const frameCapacity = 60
 
 // The stored weights, and the bytes of every array the program holds. The index
-// reads of one table share one array of the table's positions, e.g. HandwiredOS's
-// 2,320 index reads share 5 arrays of 1,572 bytes in all, so each array is counted
-// once, however many reads point at it.
+// reads of one table share one array of the table's positions, e.g. 200 reads of a
+// table of 32 values share one array of 128 bytes, so each array is counted once,
+// however many reads point at it.
 /** @public */
 export function measureProgram(program: TensorProgram) {
   let weights = 0
