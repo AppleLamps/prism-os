@@ -195,7 +195,7 @@ A wire is a number: the position of a value in the array that an evaluation fill
 
 Familiar code means something different in builder code:
 
-- A `for` loop runs while building and appends its body once per iteration, e.g. `for (let windowIndex = 0; windowIndex < windowCount; windowIndex++)` in window-manager.ts appends every window's hit tests 4 times. At runtime there's no loop.
+- A `for` loop runs while building and appends its body once per iteration, e.g. `for (let windowIndex = 0; windowIndex < windowCount; windowIndex++)` in window-manager.ts appends the hit tests once for each of the 3 windows. At runtime there's no loop.
 - A helper function appends its operations each time it's called, e.g. the toggle switch calls its `insideTrack` helper for the pointer, the press and the release, so the program holds three hit tests. At runtime there's no call stack and no call overhead.
 - An `if` chooses what to build, like a compile-time flag, e.g. `if (declareTimestepNonNegative) circuit.assumeRange(...)`. A decision on runtime values has to be built as arithmetic, e.g. a select.
 - Reassigning a variable that holds a wire points the name at a new wire, and the old wire stays readable, e.g. `emitSpring` reassigns `velocity` once per substep.
