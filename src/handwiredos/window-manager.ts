@@ -1789,6 +1789,16 @@ export function noteFocusChange(frame: {
   lastPress: {byMouse: boolean, outsideEveryWindow: boolean}
 }): 'focus' | 'focus with the caret at the end' | 'blur' | null {
   if (!frame.notesIsFocusedWindow) return frame.noteHasKeyboardFocus ? 'blur' : null
+//   "The note has had the keyboard focus" stands for "the visitor has placed a
+//   caret", since every way to place one gives the note the keyboard focus first.
+//   The two differ when the Tab key gives the note its first keyboard focus: the
+//   browser puts the caret before the first character then, and a later focus()
+//   keeps it there, although the visitor placed none. That takes a finger, a
+//   keyboard and a mouse, e.g. on a laptop with a touch screen: a tap on Notes'
+//   title bar, which makes Notes the focused window without a focus() call, see
+//   below, then the Tab key, a mouse press on another window, and a mouse press on
+//   Notes' title bar. Telling the two apart would take a record of every press in
+//   the text and every key typed in the note, so the case is left as it is.
   if (frame.noteHasKeyboardFocus || !frame.pressedOrReleased || !frame.lastPress.byMouse || frame.lastPress.outsideEveryWindow) return null
   return frame.noteHasHadKeyboardFocus ? 'focus' : 'focus with the caret at the end'
 }
