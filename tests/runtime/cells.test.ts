@@ -15,7 +15,7 @@ import {
   state,
   stateBit,
 } from '../../src/runtime/cells.ts'
-import {type Circuit, type Wire, asWire, emitSelect} from '../../src/runtime/numeric-ui-core.ts'
+import {type Circuit, type Wire, asWire, emitCompare, emitSelect} from '../../src/runtime/numeric-ui-core.ts'
 
 // One cell of every kind, a one-hot group, a permutation, and a cell declared in a second call under a name.
 function smallTable() {
@@ -79,6 +79,28 @@ test('createCircuit declares exact bits, and an operation that reads one is buil
   circuit.assumeBit(cells.margin)
   expect([circuit.ranges[cells.margin], circuit.exactBits[cells.margin]]).toEqual([{minimum: 0, maximum: 1}, true])
   expect(() => circuit.assumeBit(circuit.affine([[cells.count, 1]], 5))).toThrow('numeric range contradicts known bounds')
+})
+
+test('a program built over exact bits has the operations and the compiled layers of the same program built over cells within 0..1', () => {
+  // The same builder code twice: once with the three bits declared with inputBit, once as plain cells within 0..1.
+  const build = (bit: () => ReturnType<typeof inputBit>) => {
+    const table = createSourceTable()
+    const cells = table.declare({enabled: bit(), flags: list(4, bit), row: input([0, 3], {grid: 1}), width: input([0, 100], {grid: 1 / 64}), limit: input([0, 100])})
+    const circuit = table.createCircuit()
+    const flag = circuit.indexRead(cells.row, cells.flags)
+    // A comparison whose operand reads a bit: with a grid on the bit, the builder would write integer bits here.
+    const scaled = circuit.roundAffine([[cells.width, 1], [cells.enabled, 8]])
+    const over = emitCompare(circuit, scaled, '>', cells.limit)
+    const output = [circuit.reglu([[cells.width, 1]], 0, [[flag, 1], [cells.enabled, 1]], -1), over, circuit.multiply(cells.enabled, cells.width), emitSelect(circuit, flag, cells.width, cells.limit)]
+    return {circuit, program: circuit.compileTensorProgram(output)}
+  }
+  const withBits = build(() => inputBit())
+  const without = build(() => input([0, 1]) as ReturnType<typeof inputBit>)
+  expect([withBits.circuit.exactBits.filter(Boolean).length, without.circuit.exactBits.filter(Boolean).length]).toEqual([5, 0])
+  expect(withBits.circuit.operations.length).toBeGreaterThan(20)
+  expect(withBits.circuit.operations).toEqual(without.circuit.operations)
+  expect(withBits.circuit.grids).toEqual(without.circuit.grids)
+  expect(withBits.program).toEqual(without.program)
 })
 
 test('a state cell without a next value, or with two, fails while building, and so does a call out of order', () => {
