@@ -101,8 +101,7 @@ const zoomSpringCells = {
 // goes from 0 to 1, and 0.01 of a photo's way is 10 px for a photo that grows by
 // 1,000 px in a maximized Photos, which would show as a jump at the end. At 1/65,536
 // the same photo is within 0.02 px.
-/** @public */
-export const zoomSettleThreshold = 2 ** -16
+const zoomSettleThreshold = 2 ** -16
 // How fast the photos in their cells fade while another photo opens: their opacity is
 // 1 - gridFadeRate × the other photo's zoom, so it is 0 from 1/1,025 before the zoom's
 // end, which is under 1 px for a photo that grows by 1,000 px. With a rate of 1, the
@@ -222,8 +221,8 @@ export function focusField(item: number) {
 }
 
 // A photo's outputs. zoom is how far the photo is open, from 0 in its cell to 1 in
-// the open photo's rectangle, and stack is the photo's z-index, see "The zoom" in
-// buildPhotos.
+// the open photo's rectangle, and stack is the photo's z-index: photoStack.open,
+// photoStack.returning or 0, see "The zoom" in buildPhotos.
 export const photoField = {
   left: 0,
   top: 1,
@@ -235,7 +234,17 @@ export const photoField = {
   size: 7,
 }
 
-// A thumbnail's outputs. focused is 1 for the open photo's thumbnail.
+// The photos' z-indexes inside Photos' content box, where a photo in its cell has 0.
+// The stylesheet puts the thumbnails at 1, between the photos in their cells and a
+// photo on its way back, and the previous and next controls at 4, above all.
+/** @public */
+export const photoStack = {
+  returning: 2,
+  open: 3,
+}
+
+// A thumbnail's outputs. focused is how strongly the thumbnail's ring is drawn: its
+// photo's zoom, so 1 for the open photo's thumbnail at rest and 0 for the others.
 export const thumbnailField = {
   left: 0,
   top: 1,
@@ -273,7 +282,6 @@ type ThumbnailProjection = Geometry & {
 type ThumbnailTarget = {
   centerX: Wire
   scale: Wire
-  focused: Wire
 }
 
 // What buildPhotos returns, e.g. HandwiredOS's output.photos.
@@ -486,16 +494,12 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
         [emitMultiply(circuit, thumbnailBaseSize, spread), 1],
         [emitMultiply(circuit, thumbnailGap, offset), 1],
       ])
-      result.push({
-        centerX,
-        scale: falloff,
-        focused: focus[item]!,
-      })
+      result.push({centerX, scale: falloff})
     }
     return result
   }
 
-  function projectThumbnail(target: ThumbnailTarget): ThumbnailProjection {
+  function projectThumbnail(target: ThumbnailTarget): Geometry & {opacity: Wire} {
     const visibleScale = emitMultiply(circuit, present, target.scale)
     const size = emitMultiply(circuit, thumbnailBaseSize, visibleScale)
     return {
@@ -504,7 +508,6 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
       width: size,
       height: size,
       opacity: visibleScale,
-      focused: target.focused,
     }
   }
 
@@ -660,18 +663,24 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   //   looks like a sheet that fades in over the grid. With the open photo at its
   //   end, the others are at opacity 0 and their nodes leave the DOM, as before, see
   //   gridFadeRate. The photo on its way back fades only with a photo that opens
-  //   meanwhile.
-  // - stack is the z-index: 3 for the open photo, and 1 for the photo that was closed
-  //   last, so that it passes above the photos in their cells, which have 0. The
-  //   stylesheet puts the thumbnails at 2, between the two, and the controls above
-  //   all. The photo that was closed last keeps 1 in its cell, where it overlaps no
-  //   other photo.
+  //   meanwhile, and a photo that is opened while another returns starts at the
+  //   opacity that it had in its cell, see fadedByReturning.
+  // - stack is the z-index, see photoStack: 3 for the open photo, and 2 for the photo
+  //   that was closed last while its spring moves, so that it passes above the photos
+  //   in their cells, which have 0. The stylesheet puts the thumbnails at 1, so a photo
+  //   that opens or returns is above them all the way, e.g. a photo of the bottom row,
+  //   whose cell lies under the strip, and the controls above all. Once the returning
+  //   photo's spring is at rest, the photo has 0 like every photo in its cell, as a
+  //   window of HandwiredOS is raised only while its springs move. A z-index that
+  //   stayed until the next close would draw that one photo above the thumbnails of
+  //   the next photo that opens, and the other photos of its row below them.
   // - The picture's crop: a photo is one node in its cell and in the open rectangle,
   //   and the stylesheet's background-size: cover fits the picture to the node in
   //   every frame, so the crop changes with the rectangle's proportions and never
   //   jumps.
   // - The backdrop, the previous and next controls, and the open photo's shadow and
-  //   name fade with the zoom. The thumbnails have their own springs, see below.
+  //   name fade with the zoom, and so does the ring of the photo's thumbnail. The
+  //   thumbnails have their own springs, see below.
   //
   // A press acts on destinations, as in the rest of HandwiredOS. While a photo
   // opens, a click is tested against the open photo's rectangle, the controls and the
@@ -741,6 +750,14 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
     [emitMultiply(circuit, secondSpring.zoom, firstSpring.isOpenSpring), 1],
   ])
   circuit.assumeRange(returnZoom, 0, 1)
+  // 1 while the photo that was closed last is on its way back: the spring that isn't
+  // the open photo's still moves. That spring is at rest whenever the photo that was
+  // closed last is the open photo.
+  const returning = circuit.affine([
+    [emitBoth(circuit, firstSpring.active, secondSpring.isOpenSpring), 1],
+    [emitBoth(circuit, secondSpring.active, firstSpring.isOpenSpring), 1],
+  ])
+  circuit.assumeRange(returning, 0, 1)
   // A close makes the open photo the one that was closed last.
   const nextClosedLast = cells.zoom.closedLast.map((closedLast, item) => {
     const next = circuit.affine([
@@ -772,8 +789,9 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
     const closedLast = nextClosedLast[item]!
     // The open photo has the open photo's spring, and the photo that was closed last
     // has the other one, unless it is the open photo again.
+    const zoomAsOpenPhoto = emitMultiply(circuit, openZoom, focused)
     const zoom = circuit.affine([
-      [emitMultiply(circuit, openZoom, focused), 1],
+      [zoomAsOpenPhoto, 1],
       [circuit.reglu([[returnZoom, 1]], 0, [[closedLast, 1], [focused, -1]], 0), 1],
     ])
     circuit.assumeRange(zoom, 0, 1)
@@ -785,9 +803,14 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
       [emitMultiply(circuit, openValue, zoom), 1],
     ])
     // The zoom of the other photos: the open photo's unless this is the open photo,
-    // and the returning photo's unless this is the open or the returning photo.
+    // and the returning photo's unless this is the returning photo. The open photo
+    // has the returning photo's share minus its own zoom: a photo that is opened
+    // while another returns was faded in its cell by the returning photo, e.g. to an
+    // opacity of 0.2 when that photo was still 0.8 open, so its opacity starts there
+    // and reaches 1 when it is as far open as the returning photo still is. With 0
+    // for the open photo, that cell went from 0.2 to 1 in the frame of the click.
     const fadedByOpen = circuit.reglu([], 1, [[openZoom, 1], [focused, -1]], 0)
-    const fadedByReturning = circuit.reglu([], 1, [[returningShare, 1], [focused, -1], [closedLast, -1]], 0)
+    const fadedByReturning = circuit.reglu([], 1, [[returningShare, 1], [zoomAsOpenPhoto, -1], [closedLast, -1]], 0)
     photos.push({
       left: between(gridLeft[column]!, main.left),
       top: between(gridTop[row]!, main.top),
@@ -795,7 +818,10 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
       height: between(gridHeight, main.height),
       opacity: circuit.reglu([[present, 1]], 0, [[fadedByOpen, -gridFadeRate], [fadedByReturning, -gridFadeRate]], 1),
       zoom,
-      stack: circuit.affine([[focused, 3], [closedLast, 1]]),
+      stack: circuit.affine([
+        [focused, photoStack.open],
+        [circuit.reglu([], 1, [[closedLast, 1], [returning, 1], [focused, -1]], -1), photoStack.returning],
+      ]),
     })
   }
 
@@ -867,11 +893,11 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
       scaleVelocity: thumbnail.velocities[1]!,
       scaleDestination: target.scale,
     })
-    thumbnailProjections.push(projectThumbnail({
-      centerX,
-      scale,
-      focused: target.focused,
-    }))
+    // The ring of a thumbnail is as strong as its photo is open, so it fades in with
+    // the photo that opens and out with the photo that returns. With the focus bit, it
+    // was gone in the first frame of a close, on a thumbnail that was still at its
+    // full size.
+    thumbnailProjections.push({...projectThumbnail({centerX, scale}), focused: photos[item]!.zoom})
     activityTerms.push([thumbnail.active, 1])
   }
   const animationActive = emitClampZeroOne(
@@ -1207,6 +1233,17 @@ function flattenThumbnails(projections: readonly ThumbnailProjection[]) {
   return output
 }
 
+// The page draws no photo and no thumbnail that is under 1/64 px wide or tall. A box
+// that small changes no pixel: 1/64 px is the unit in which Chrome and Safari lay
+// boxes out, and a thumbnail's opacity is its share of its full size, e.g. 0.0002
+// for a thumbnail of 82 px that is 1/64 px wide. A thumbnail's spring passes size 0
+// on its way to a destination of 0, e.g. about 0.29 s after a close, and swings back
+// above 0 about 0.3 s later by a few millionths of a pixel, for up to 4 frames. With
+// every size above 0 drawn, the page took up to 9 thumbnails' nodes out of the DOM,
+// put them back for those frames and took them out again.
+/** @public */
+export const smallestDrawnSize = 1 / 64
+
 export function createPhotoGalleryRenderer(document: Document, root: HTMLElement) {
   const backdrop = root.querySelector<HTMLElement>('.photos-backdrop')
   const previousControl = root.querySelector<HTMLElement>('.photos-previous')
@@ -1244,9 +1281,10 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
   }
 
   // Keeps an item's node in the DOM only while the program draws the item, i.e. while
-  // its size and opacity outputs are positive, and writes the node's rectangle and
-  // opacity. photoField and thumbnailField hold these five outputs at the same
-  // places. Returns the node, or null for an item that isn't drawn.
+  // its opacity output is positive and its width and height outputs are at least
+  // smallestDrawnSize, and writes the node's rectangle and opacity. photoField and
+  // thumbnailField hold these five outputs at the same places. Returns the node, or
+  // null for an item that isn't drawn.
   function projectItem(
     elements: (HTMLElement | null)[],
     item: number,
@@ -1258,7 +1296,7 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
     const width = values[output[outputStart + photoField.width]!]!
     const height = values[output[outputStart + photoField.height]!]!
     const opacity = values[output[outputStart + photoField.opacity]!]!
-    const visible = width > 0 && height > 0 && opacity > 0
+    const visible = width >= smallestDrawnSize && height >= smallestDrawnSize && opacity > 0
     let element = elements[item] ?? null
     if (!visible) {
       if (element !== null) {
@@ -1283,7 +1321,8 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
         const photoStart = item * photoField.size
         const photo = projectItem(photoElements, item, values, output.photos, photoStart, false)
         if (photo !== null) {
-          // --zoom scales the photo's shadow and fades its name in, see handwired-os.css.
+          // --zoom scales the photo's shadow and fades its name in, and --focused is the
+          // opacity of a thumbnail's ring, see handwired-os.css.
           photo.style.setProperty('--zoom', `${values[output.photos[photoStart + photoField.zoom]!]}`)
           photo.style.zIndex = `${values[output.photos[photoStart + photoField.stack]!]}`
         }
@@ -1397,9 +1436,8 @@ export function validatePhotoGalleryOutput(
       'photo zoom',
       tolerance,
     )
-    // 3 for the open photo plus 1 for the photo that was closed last.
     const stack = values[output.photos[outputStart + photoField.stack]!]
-    invariant(stack === 0 || stack === 1 || stack === 3 || stack === 4, `photo stack must be 0, 1, 3 or 4, got ${stack}`)
+    invariant(stack === 0 || stack === photoStack.returning || stack === photoStack.open, `photo stack must be 0, 2 or 3, got ${stack}`)
   }
   for (let item = 0; item < itemCount; item++) {
     const outputStart = item * thumbnailField.size

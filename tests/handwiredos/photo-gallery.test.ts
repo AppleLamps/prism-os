@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
 import {test} from 'bun:test'
 import {Circuit, emitRelu} from '../../src/runtime/numeric-ui-core.ts'
 import {
   columnCount,
   controlField,
   createPhotoGalleryMachine,
+  createPhotoGalleryRenderer,
   focusField,
   gridFadeRate,
   itemCount,
@@ -13,11 +15,11 @@ import {
   maximumPhotoTallness,
   maximumPhotoWideness,
   photoField,
+  photoStack,
   rowCount,
+  smallestDrawnSize,
   sourceField,
-  springMatrixPowers,
   thumbnailField,
-  zoomSettleThreshold,
 } from '../../src/handwiredos/photo-gallery.ts'
 
 const viewportWidth = 1280
@@ -831,22 +833,27 @@ test("a click on a photo in the grid moves and grows it from its cell to the ope
   const closing = session.frames(45)
   assert.deepEqual(readFocus(session.machine), Array(itemCount).fill(0))
   zoomBefore = 1
+  let atRestFrom = -1
   closing.forEach((drawn, frame) => {
     const photo = drawn.photos[5]!
     const label = `closing, frame ${frame}`
     assert.ok(photo.zoom <= zoomBefore + 1e-6 && photo.zoom >= 0, `${label}: zoom ${photo.zoom} after ${zoomBefore}`)
     zoomBefore = photo.zoom
     assertBetween(photo, cell, open, label)
-    // The returning photo is whole, and above the photos in their cells, which come back.
-    assert.deepEqual([photo.opacity, photo.stack], [1, 1], label)
+    // The returning photo is whole. Until its spring is at rest, it is above the
+    // thumbnails and the photos in their cells, which come back.
+    if (atRestFrom === -1 && photo.stack === 0) atRestFrom = frame
+    assert.deepEqual([photo.opacity, photo.stack], [1, atRestFrom === -1 ? 2 : 0], label)
+    if (photo.zoom > 0) assert.equal(photo.stack, 2, label)
     const fading = Math.max(0, 1 - gridFadeRate * photo.zoom)
     drawn.photos.forEach((other, item) => {
       if (item !== 5) assert.ok(Math.abs(other.opacity - fading) < 1e-6 && other.stack === 0, `${label}: photo ${item}`)
     })
     assert.ok(Math.abs(drawn.backdrop - photo.zoom) < 1e-6, label)
   })
+  assert.ok(atRestFrom > 30, `the returning photo's spring was at rest from frame ${atRestFrom}`)
   const closed = session.rest()
-  assert.deepEqual(closed.photos[5], {...cell, opacity: 1, zoom: 0, stack: 1})
+  assert.deepEqual(closed.photos[5], {...cell, opacity: 1, zoom: 0, stack: 0})
   assert.equal(closed.backdrop, 0)
   closed.photos.forEach((photo, item) => {
     if (item !== 5) assert.deepEqual(photo, {...session.cells[item]!, opacity: 1, zoom: 0, stack: 0})
@@ -871,7 +878,7 @@ test('a close during the opening turns the photo around where it is, and a click
   for (let frame = 1; frame < zooms.length; frame++) {
     assert.ok(Math.abs(zooms[frame]! - zooms[frame - 1]!) < 0.2, `no jump between frames: ${zooms.join(', ')}`)
   }
-  assert.deepEqual(returning.map(drawn => drawn.photos[5]!.stack), [1, 1, 1, 1, 1])
+  assert.deepEqual(returning.map(drawn => drawn.photos[5]!.stack), [2, 2, 2, 2, 2])
   // A click on the middle of the returning photo's cell, where the photo is going,
   // opens it again, from where it is.
   const before = zooms.at(-1)!
@@ -887,14 +894,17 @@ test('a close during the opening turns the photo around where it is, and a click
   assert.equal(session.rest().photos[5]!.zoom, 1)
 })
 
-test('a photo opened while another returns: both move, the open one above, and a second close within the zoom puts the first photo in its cell at once', () => {
+test('a photo opened while another returns: both move, the open one above, its opacity goes on from what it was in its cell, and a second close within the zoom puts the first photo in its cell at once', () => {
   const session = createZoomSession()
   const open = openRectangle()
   session.clickCell(5)
   session.rest()
   session.clickBeside()
-  session.frames(3)
-  // 48 ms after the close, a click on photo 6's cell opens photo 6.
+  // 48 ms after the close, photo 5 is still two thirds open, and photo 6 is faded in
+  // its cell like every photo of the grid.
+  const inCell = session.frames(3).at(-1)!.photos[6]!
+  assert.ok(inCell.opacity > 0.25 && inCell.opacity < 0.45, `photo 6 has opacity ${inCell.opacity} in its cell`)
+  // A click on photo 6's cell opens photo 6.
   session.clickCell(6)
   const both = session.frames(4)
   assertOneFocus(session.machine, 6)
@@ -911,12 +921,23 @@ test('a photo opened while another returns: both move, the open one above, and a
     assertBetween(opening, session.cells[6]!, open, label)
     // The open photo is above the returning one, which fades with the open photo's
     // zoom alone. The photos in their cells fade with both.
-    assert.deepEqual([opening.stack, opening.opacity, returning.stack], [3, 1, 1], label)
+    assert.deepEqual([opening.stack, returning.stack], [3, 2], label)
     assert.ok(Math.abs(returning.opacity - (1 - gridFadeRate * opening.zoom)) < 1e-6, label)
     const together = Math.min(1, opening.zoom + returning.zoom)
     assert.ok(Math.abs(drawn.photos[0]!.opacity - Math.max(0, 1 - gridFadeRate * together)) < 1e-6, label)
     assert.ok(Math.abs(drawn.backdrop - together) < 1e-6, label)
+    // The open photo keeps the fade that the returning photo gave it in its cell, minus
+    // its own zoom.
+    const fadedBy = Math.max(0, returning.zoom - opening.zoom)
+    assert.ok(Math.abs(opening.opacity - (1 - gridFadeRate * fadedBy)) < 1e-6, `${label}: photo 6 has opacity ${opening.opacity}`)
   })
+  // So photo 6's opacity doesn't jump at the click, where it went from 0.36 to 1 in
+  // one frame, and it is whole once photo 6 is as far open as photo 5 still is.
+  const opacities = [inCell.opacity, ...both.map(drawn => drawn.photos[6]!.opacity)]
+  for (let frame = 1; frame < opacities.length; frame++) {
+    assert.ok(opacities[frame]! >= opacities[frame - 1]! && opacities[frame]! - opacities[frame - 1]! < 0.35, `photo 6's opacity: ${opacities.join(', ')}`)
+  }
+  assert.ok(opacities[1]! < 0.6 && opacities.at(-1) === 1, `photo 6's opacity: ${opacities.join(', ')}`)
   assert.ok(returningBefore > 0.05, `photo 5 is still ${returningBefore} open`)
   // Escape, 112 ms after the first close: photo 6's spring takes photo 6 back, and
   // photo 5, which the other spring was still taking back, is in its cell at once.
@@ -926,14 +947,14 @@ test('a photo opened while another returns: both move, the open one above, and a
     const {opacity, ...landed} = drawn.photos[5]!
     assert.deepEqual(landed, {...session.cells[5]!, zoom: 0, stack: 0}, `frame ${frame}`)
     assert.ok(Math.abs(opacity - (1 - gridFadeRate * drawn.photos[6]!.zoom)) < 1e-6, `frame ${frame}`)
-    assert.equal(drawn.photos[6]!.stack, 1)
+    assert.deepEqual([drawn.photos[6]!.stack, drawn.photos[6]!.opacity], [2, 1], `frame ${frame}`)
   })
   const turned = [openingBefore, ...after.map(drawn => drawn.photos[6]!.zoom)]
   for (let frame = 1; frame < turned.length; frame++) {
     assert.ok(Math.abs(turned[frame]! - turned[frame - 1]!) < 0.2, `photo 6 doesn't jump: ${turned.join(', ')}`)
   }
   const closed = session.rest()
-  assert.deepEqual(closed.photos[6], {...session.cells[6]!, opacity: 1, zoom: 0, stack: 1})
+  assert.deepEqual(closed.photos[6], {...session.cells[6]!, opacity: 1, zoom: 0, stack: 0})
   assert.deepEqual(closed.photos[5], {...session.cells[5]!, opacity: 1, zoom: 0, stack: 0})
 })
 
@@ -945,8 +966,9 @@ test('a step during the opening shows the next photo as far open as the old one 
   const twin = createZoomSession()
   stepped.clickCell(5)
   twin.clickCell(5)
-  stepped.frames(2)
+  const beforeStep = stepped.frames(2).at(-1)!.photos[5]!.zoom
   twin.frames(2)
+  assert.ok(beforeStep > 0.1 && beforeStep < 0.9, `the zoom is ${beforeStep} when the step comes`)
   stepped.machine.next(stepped.at())
   twin.machine.click(279, 142, twin.at())
   assertOneFocus(stepped.machine, 5)
@@ -956,6 +978,7 @@ test('a step during the opening shows the next photo as far open as the old one 
     // Photo 6 has the zoom that photo 5 has in the other machine, and photo 5 is
     // back in its cell, faded like every photo in its cell.
     assert.equal(withStep.photos[6]!.zoom, without.photos[5]!.zoom, label)
+    if (frame === 0) assert.ok(withStep.photos[6]!.zoom > beforeStep && withStep.photos[6]!.zoom < 0.9, `photo 6 is ${withStep.photos[6]!.zoom} open in the frame after the step`)
     assert.deepEqual([withStep.photos[6]!.stack, withStep.photos[6]!.opacity], [3, 1], label)
     assert.deepEqual(withStep.photos[5], {...stepped.cells[5]!, opacity: without.photos[0]!.opacity, zoom: 0, stack: 0}, label)
     assert.equal(withStep.backdrop, without.backdrop, label)
@@ -984,7 +1007,7 @@ test('a step onto the photo that is on its way back ends that return, and the ne
   const stepped = session.frame()
   assertOneFocus(session.machine, 5)
   assert.ok(stepped.photos[5]!.zoom > 0.2 && stepped.photos[5]!.zoom < 0.6, `photo 5 is ${stepped.photos[5]!.zoom} open`)
-  assert.deepEqual([stepped.photos[5]!.stack, stepped.photos[6]!.zoom, stepped.photos[6]!.stack], [4, 0, 0])
+  assert.deepEqual([stepped.photos[5]!.stack, stepped.photos[6]!.zoom, stepped.photos[6]!.stack], [3, 0, 0])
   // The spring that was taking photo 5 back is at rest.
   const {springs, openSpring} = session.machine.cells.zoom
   const other = springs[1 - session.machine.source[openSpring]!]!
@@ -1004,8 +1027,9 @@ test("a change of the box's size moves a zooming photo at once and leaves its zo
   const twin = createZoomSession()
   resized.clickCell(5)
   twin.clickCell(5)
-  resized.frames(2)
+  const beforeResize = resized.frames(2).at(-1)!.photos[5]!.zoom
   twin.frames(2)
+  assert.ok(beforeResize > 0.1 && beforeResize < 0.9, `the zoom is ${beforeResize} when the box's size changes`)
   resized.resize(900, 600)
   twin.resize(boxWidth, boxHeight)
   const largeCells = createZoomSession(900, 600).cells
@@ -1025,8 +1049,9 @@ test("a change of the box's size moves a zooming photo at once and leaves its zo
   // The same on the way back.
   resized.clickBeside()
   twin.clickBeside()
-  resized.frames(2)
+  const beforeResizeBack = resized.frames(2).at(-1)!.photos[5]!.zoom
   twin.frames(2)
+  assert.ok(beforeResizeBack > 0.1 && beforeResizeBack < 0.9, `the zoom is ${beforeResizeBack} when the box's size changes back`)
   resized.resize(boxWidth, boxHeight)
   twin.resize(boxWidth, boxHeight)
   const open = openRectangle()
@@ -1065,6 +1090,9 @@ test("the thumbnails grow out of the strip's middle at an open and shrink back i
   // of its middle and under 3 px wide.
   const drawnFirst = first.thumbnails.filter(thumbnail => thumbnail.width > 0)
   assert.equal(drawnFirst.length, 9)
+  // The ring of the open photo's thumbnail is as strong as the photo is open.
+  assert.ok(first.thumbnails[5]!.focused > 0.01 && first.thumbnails[5]!.focused < 0.05)
+  first.thumbnails.forEach((thumbnail, item) => assert.equal(thumbnail.focused, first.photos[item]!.zoom))
   for (const thumbnail of drawnFirst) {
     assert.ok(Math.abs(thumbnail.left + thumbnail.width / 2 - middle) < 10 && thumbnail.width < 3, `a thumbnail at ${thumbnail.left}, ${thumbnail.width} px wide`)
   }
@@ -1079,6 +1107,15 @@ test("the thumbnails grow out of the strip's middle at an open and shrink back i
   const closing = session.frames(6)
   const widths = closing.map(drawn => drawn.thumbnails[5]!.width)
   widths.forEach((width, frame) => assert.ok(width < (widths[frame - 1] ?? 82), `the open photo's thumbnail shrinks: ${widths.join(', ')}`))
+  // The ring fades with the returning photo's zoom. It isn't gone in the first frame
+  // of the close, in which the thumbnail is still 79.6 px wide.
+  const rings = closing.map(drawn => drawn.thumbnails[5]!.focused)
+  assert.ok(widths[0]! > 79 && rings[0]! > 0.95 && rings[0]! < 1, `in the first frame the thumbnail is ${widths[0]} px wide and its ring has ${rings[0]}`)
+  closing.forEach((drawn, frame) => {
+    const ring = drawn.thumbnails[5]!.focused
+    assert.ok(ring === drawn.photos[5]!.zoom && ring < (rings[frame - 1] ?? 1), `the ring fades with the photo: ${rings.join(', ')}`)
+    drawn.thumbnails.forEach((thumbnail, item) => { if (item !== 5) assert.equal(thumbnail.focused, 0) })
+  })
   assert.ok(closing.at(-1)!.thumbnails[1]!.left > 47 && closing.at(-1)!.thumbnails[9]!.left < 511 - 10)
   const closed = session.rest()
   assert.equal(closed.thumbnails.filter(thumbnail => thumbnail.width > 0).length, 0)
@@ -1097,6 +1134,154 @@ test("the thumbnails grow out of the strip's middle at an open and shrink back i
   }
 })
 
+test('a returning photo is above the thumbnails until its spring is at rest, and then it has the z-index of every photo in its cell', () => {
+  const session = createZoomSession()
+  // Photo 9 is in the bottom row, whose cells lie under the strip of thumbnails.
+  session.clickCell(9)
+  const opening = session.frames(5)
+  opening.forEach(drawn => assert.equal(drawn.photos[9]!.stack, 3))
+  // A close in the middle of the opening: the photo stays above the thumbnails, which
+  // have z-index 1 in the stylesheet, where it was below them from this frame on.
+  session.machine.close(session.at())
+  const returning = session.frames(60)
+  const stacks = returning.map(drawn => drawn.photos[9]!.stack)
+  const atRestFrom = stacks.indexOf(0)
+  assert.deepEqual(stacks, stacks.map((_, frame) => frame < atRestFrom ? 2 : 0))
+  // The photo is in its cell after about 0.3 s, and the spring is at rest about 0.3 s
+  // later, when its swing is under 1/65,536 of the way. By then no thumbnail is drawn.
+  const landedFrom = returning.findIndex(drawn => drawn.photos[9]!.zoom === 0)
+  assert.ok(landedFrom > 12 && landedFrom < atRestFrom && atRestFrom < 50, `in its cell from frame ${landedFrom}, at rest from frame ${atRestFrom}`)
+  assert.ok(returning[landedFrom]!.thumbnails.every(thumbnail => thumbnail.width < smallestDrawnSize))
+  const {springs} = session.machine.cells.zoom
+  for (const spring of springs) assert.ok(session.machine.source[spring.displacement] === 0 && session.machine.source[spring.velocity] === 0)
+  // Another photo opens: photo 9, the photo that was closed last, fades in its cell
+  // under the thumbnails like the photos beside it.
+  session.clickCell(5)
+  session.frames(12).forEach((drawn, frame) => {
+    assert.deepEqual([drawn.photos[9]!.stack, drawn.photos[9]!.opacity], [0, drawn.photos[10]!.opacity], `frame ${frame}`)
+    assert.equal(drawn.photos[5]!.stack, 3)
+  })
+  // Reopened while it returns, the photo is the open photo again.
+  session.rest()
+  session.machine.close(session.at())
+  session.frames(3)
+  session.clickCell(5)
+  assert.equal(session.frame().photos[5]!.stack, 3)
+})
+
+test('the stylesheet puts the thumbnails between the photos in their cells and a returning photo, and the controls above the open photo', () => {
+  const stylesheet = readFileSync(new URL('../../assets/handwired-os.css', import.meta.url), 'utf8')
+  // The z-index in the rule that starts with the selector, e.g. ".photos-thumbnail {".
+  const zIndexOf = (selector: string) => {
+    const rule = new RegExp(`^\\${selector} \\{[^}]*?z-index: (\\d+);`, 'm').exec(stylesheet)
+    assert.ok(rule !== null, `${selector} has no z-index`)
+    return Number(rule[1])
+  }
+  // A photo in its cell has the z-index 0.
+  const thumbnail = zIndexOf('.photos-thumbnail')
+  assert.ok(thumbnail > 0 && thumbnail < photoStack.returning && photoStack.returning < photoStack.open, `the thumbnails have the z-index ${thumbnail}`)
+  assert.ok(zIndexOf('.photos-control') > photoStack.open)
+})
+
+// A stand-in for the DOM under Photos' renderer: the content box with its backdrop
+// and its two controls, and a count of how often a node of each class name was put
+// into the content box.
+function createRecordingContent() {
+  type RecordingElement = {
+    className: string
+    textContent: string
+    style: Record<string, unknown>
+    children: RecordingElement[]
+    parent: RecordingElement | null
+    appendChild(child: RecordingElement): void
+    remove(): void
+    querySelector(selector: string): RecordingElement | null
+  }
+  const attached = new Map<string, number>()
+  function createElement(className = ''): RecordingElement {
+    const element: RecordingElement = {
+      className,
+      textContent: '',
+      style: {setProperty() {}},
+      children: [],
+      parent: null,
+      appendChild(child) {
+        child.parent = element
+        element.children.push(child)
+        if (element === content) attached.set(child.className, (attached.get(child.className) ?? 0) + 1)
+      },
+      remove() {
+        if (element.parent === null) return
+        element.parent.children.splice(element.parent.children.indexOf(element), 1)
+        element.parent = null
+      },
+      querySelector(selector) {
+        return element.children.find(child => child.className.split(' ').includes(selector.slice(1))) ?? null
+      },
+    }
+    return element
+  }
+  const content = createElement('photos-content')
+  for (const className of ['photos-backdrop', 'photos-control photos-previous', 'photos-control photos-next']) {
+    const child = createElement(className)
+    child.parent = content
+    content.children.push(child)
+  }
+  return {
+    document: {createElement: () => createElement()} as unknown as Document,
+    root: content as unknown as HTMLElement,
+    attached,
+    thumbnailsInContent: () => content.children.filter(child => child.className.startsWith('photos-thumbnail')).length,
+  }
+}
+
+test("after a close the thumbnails' nodes leave the DOM once, also when their springs swing back above size 0 by a millionth of a pixel", () => {
+  // A photo opens, and a close comes 20 to 700 ms later. In about 4 of 10 of these
+  // sessions the program draws thumbnails again 0.3 s after all of them reached size
+  // 0, for 1 to 3 frames and a few millionths of a pixel wide.
+  let sessionsWithASwingBack = 0
+  for (let delay = 20; delay <= 700; delay += 20) {
+    const machine = createPhotoGalleryMachine()
+    const page = createRecordingContent()
+    const renderer = createPhotoGalleryRenderer(page.document, page.root)
+    let time = 16
+    let values = machine.step(boxWidth, boxHeight, 1, 1, time)
+    renderer.render(values, machine.output)
+    const cell = projectPhotos(machine, values)[5]!
+    machine.click(cell.left + cell.width / 2, cell.top + cell.height / 2, time + 5)
+    const closeAt = time + 5 + delay
+    let closed = false
+    let goneAfterTheClose = false
+    let swungBack = false
+    while (time < closeAt + 1500) {
+      // The machine takes a queued event in its next step, so the close is queued
+      // before the first frame after its time.
+      if (!closed && time + 16 >= closeAt) {
+        machine.close(closeAt)
+        closed = true
+      }
+      time += 16
+      values = machine.step(boxWidth, boxHeight, 1, 1, time)
+      renderer.render(values, machine.output)
+      if (time < closeAt) continue
+      const widths = projectThumbnails(machine, values).map(thumbnail => thumbnail.width)
+      if (widths.every(width => width === 0)) goneAfterTheClose = true
+      else if (goneAfterTheClose) {
+        swungBack = true
+        for (const width of widths) assert.ok(width < 1e-4, `a thumbnail is ${width} px wide after the strip was gone`)
+      }
+      if (goneAfterTheClose) assert.equal(page.thumbnailsInContent(), 0, `${time - closeAt} ms after a close that came ${delay} ms after the open`)
+    }
+    assert.ok(goneAfterTheClose)
+    if (swungBack) sessionsWithASwingBack++
+    // 9 thumbnails are drawn while a photo is open, and each got its node once.
+    const thumbnailNodes = [...page.attached].filter(([className]) => className.startsWith('photos-thumbnail'))
+    assert.equal(thumbnailNodes.length, 9, `a close ${delay} ms after the open`)
+    for (const [className, count] of thumbnailNodes) assert.equal(count, 1, `${className}, a close ${delay} ms after the open`)
+  }
+  assert.ok(sessionsWithASwingBack >= 10, `the program drew thumbnails again in ${sessionsWithASwingBack} of 35 sessions`)
+})
+
 test('how visible Photos is only decides whether the photos are drawn: the zoom goes on, bit for bit', () => {
   // Two machines open photo 5. One of them isn't drawn from the third frame to the
   // eighth, like a Photos window that has landed in the dock and comes back.
@@ -1107,6 +1292,10 @@ test('how visible Photos is only decides whether the photos are drawn: the zoom 
   for (let frame = 0; frame < 45; frame++) {
     hidden.setPresent(frame >= 2 && frame < 8 ? 0 : 1)
     const [maybeHidden, shown] = [hidden.frame(), twin.frame()]
+    // The zoom is under way in the first frame in which Photos isn't drawn, and
+    // still in the last one.
+    if (frame === 2) assert.ok(shown.photos[5]!.zoom > 0.1 && shown.photos[5]!.zoom < 0.9, `the zoom is ${shown.photos[5]!.zoom} in frame 2`)
+    if (frame === 7) assert.ok(shown.photos[5]!.zoom > 0.5 && shown.photos[5]!.zoom < 1, `the zoom is ${shown.photos[5]!.zoom} in frame 7`)
     maybeHidden.photos.forEach((photo, item) => {
       const expected = shown.photos[item]!
       assert.deepEqual(photo, frame >= 2 && frame < 8 ? {...expected, opacity: 0} : expected, `frame ${frame}, photo ${item}`)
@@ -1115,99 +1304,137 @@ test('how visible Photos is only decides whether the photos are drawn: the zoom 
   }
 })
 
-// The zoom in plain JavaScript with float64 springs, see "The zoom" in buildPhotos:
-// two springs, openSpring, and the photo that was closed last. It gets each
-// evaluation's spring steps, settle check and snap as the host planned them, and
-// which photo was open before and after the evaluation's events, -1 for none.
-function createZoomReference() {
-  let springs = [{displacement: 0, velocity: 0}, {displacement: 0, velocity: 0}]
-  let openSpring = 0
-  let closedLast = -1
-  const counts = {closes: 0, closesDuringAnOpening: 0, opensDuringAReturn: 0, reopenings: 0, stepsDuringAnOpening: 0, photosPutInTheirCells: 0}
+// The zoom as plain JavaScript would have it, see "The zoom" in buildPhotos: a
+// float64 spring per photo, whose destination is 1 for the open photo and 0 for the
+// others, stepped 4 ms at a time. It has neither the program's two springs nor its
+// openSpring and closedLast cells, and it states its constants itself, so it reads
+// nothing from the module under test. The two cases in which two springs draw
+// something else than 12 springs are events here:
+// - A close puts every other photo in its cell, e.g. a photo that still returns.
+// - A step to another photo hands the open photo's position and velocity to that
+//   photo, and puts the photo that was open in its cell.
+// It gets each evaluation's spring steps, settle check and snap as the host planned
+// them, and which photo was open before and after the evaluation's events, -1 for none.
+function createPlainZoom() {
+  const stiffness = 650
+  const damping = 45
+  const stepSeconds = 0.004
+  const settleThreshold = 2 ** -16
+  const fadeRate = 1 + 2 ** -10
+  type PlainSpring = {position: number, velocity: number, destination: number}
+  const inItsCell = (): PlainSpring => ({position: 0, velocity: 0, destination: 0})
+  const moves = (spring: PlainSpring) => spring.position !== spring.destination || spring.velocity !== 0
+  let springs = Array.from({length: itemCount}, inItsCell)
   return {
-    counts,
+    // Whether a photo's spring moves, as of the last evaluation that wrote state back.
+    moves: (item: number) => moves(springs[item]!),
     evaluate(evaluation: {steps: number, settleCheck: boolean, snap: boolean, writesBack: boolean}, before: number, after: number) {
-      const matrix = springMatrixPowers[evaluation.steps]!
-      const closing = before !== -1 && after === -1
-      const reopening = before === -1 && after !== -1 && after === closedLast
-      const steppedOntoClosedLast = before !== -1 && after !== -1 && after === closedLast
-      const nextOpenSpring = closing || reopening ? 1 - openSpring : openSpring
-      const moving = springs.map(spring => spring.displacement !== 0 || spring.velocity !== 0)
-      const next = springs.map((spring, index) => {
-        let displacement = matrix[0] * spring.displacement + matrix[1] * spring.velocity
-        let velocity = matrix[2] * spring.displacement + matrix[3] * spring.velocity
-        const destination = Number(index === nextOpenSpring && after !== -1)
-        displacement += Number(index === openSpring && before !== -1) - destination
-        const settled = (displacement === 0 && velocity === 0)
-          || (evaluation.settleCheck && Math.abs(displacement) <= zoomSettleThreshold && Math.abs(velocity) <= zoomSettleThreshold)
-        const stopped = evaluation.snap || ((closing || steppedOntoClosedLast) && index !== openSpring)
-        if (settled || stopped) {
-          displacement = 0
-          velocity = 0
+      const next = springs.map(spring => ({...spring}))
+      for (const spring of next) {
+        for (let step = 0; step < evaluation.steps; step++) {
+          spring.velocity += (-stiffness * (spring.position - spring.destination) - damping * spring.velocity) * stepSeconds
+          spring.position += spring.velocity * stepSeconds
         }
-        return {displacement, velocity, zoom: Math.min(1, Math.max(0, destination + displacement))}
-      })
-      const nextClosedLast = closing ? before : closedLast
-      const openZoom = next[nextOpenSpring]!.zoom
-      const returnZoom = next[1 - nextOpenSpring]!.zoom
-      const lightbox = Math.min(1, openZoom + returnZoom)
-      const photos = Array.from({length: itemCount}, (_, item) => {
-        const isOpen = item === after
-        const isClosedLast = item === nextClosedLast
-        const fadedBy = (isOpen ? 0 : openZoom) + (isOpen || isClosedLast ? 0 : lightbox - openZoom)
-        return {
-          zoom: (isOpen ? openZoom : 0) + (isClosedLast && !isOpen ? returnZoom : 0),
-          opacity: Math.max(0, 1 - gridFadeRate * fadedBy),
-          stack: 3 * Number(isOpen) + Number(isClosedLast),
-        }
-      })
-      if (evaluation.writesBack) {
-        if (closing) counts.closes++
-        if (closing && moving[openSpring]) counts.closesDuringAnOpening++
-        if (closing && moving[1 - openSpring] && before !== closedLast) counts.photosPutInTheirCells++
-        if (before === -1 && after !== -1 && !reopening && moving[1 - openSpring]) counts.opensDuringAReturn++
-        if (reopening && moving[1 - openSpring]) counts.reopenings++
-        if (before !== -1 && after !== -1 && before !== after && moving[openSpring]) counts.stepsDuringAnOpening++
-        springs = next.map(({displacement, velocity}) => ({displacement, velocity}))
-        openSpring = nextOpenSpring
-        closedLast = nextClosedLast
       }
-      return {photos, lightbox, openSpring: nextOpenSpring, closedLast: nextClosedLast}
+      if (before === -1 && after !== -1) {
+        next[after]!.destination = 1
+      } else if (before !== -1 && after === -1) {
+        for (let item = 0; item < itemCount; item++) {
+          if (item !== before) next[item] = inItsCell()
+        }
+        next[before]!.destination = 0
+      } else if (before !== after) {
+        next[after] = next[before]!
+        next[before] = inItsCell()
+      }
+      for (const spring of next) {
+        const settles = evaluation.settleCheck
+          && Math.abs(spring.position - spring.destination) <= settleThreshold && Math.abs(spring.velocity) <= settleThreshold
+        if (evaluation.snap || settles) {
+          spring.position = spring.destination
+          spring.velocity = 0
+        }
+      }
+      const zooms = next.map(spring => Math.min(1, Math.max(0, spring.position)))
+      const zoomSum = zooms.reduce((sum, zoom) => sum + zoom, 0)
+      // How far the lightbox covers the grid: the backdrop's and the controls' opacity.
+      const cover = Math.min(1, zoomSum)
+      const photos = zooms.map((zoom, item) => {
+        // A photo is faded by the other photos' zoom. The open photo is faded by the
+        // other photos' part of the cover minus its own zoom.
+        const fadedBy = item === after ? Math.max(0, cover - zoom - zoom) : Math.min(1, zoomSum - zoom)
+        return {
+          zoom,
+          opacity: Math.max(0, 1 - fadeRate * fadedBy),
+          // The open photo, then a photo on its way back, then the photos in their cells.
+          stack: item === after ? 3 : moves(next[item]!) ? 2 : 0,
+          // Within 1/4,096 of its end and slow: where a float64 spring and an FP32
+          // spring can settle at different checks.
+          aboutAtRest: Math.abs(next[item]!.position - next[item]!.destination) < 2 ** -12 && Math.abs(next[item]!.velocity) < 2 ** -8,
+        }
+      })
+      if (evaluation.writesBack) springs = next
+      return {photos, cover}
     },
   }
 }
 
-test('over 4,000 random frames of opens, closes, steps and thumbnail clicks, most of them within the half second of a zoom, every evaluation draws what the plain JavaScript zoom draws', () => {
+test('over 4,000 random frames of opens, closes, steps and thumbnail clicks, most of them within the half second of a zoom and some after a stall, every evaluation draws what the plain JavaScript zoom draws', () => {
   const machine = createPhotoGalleryMachine()
-  const reference = createZoomReference()
+  const plain = createPlainZoom()
   const open = openRectangle()
   const openOf = (focus: ArrayLike<number>) => Array.from(focus).indexOf(1)
   const focusCells = machine.cells.focus
-  const closedLastCells = machine.cells.zoom.closedLast
   let cells: Rectangle[] = []
   let before = -1
   let evaluations = 0
+  let largestZoomDifference = 0
+  let settledAtDifferentChecks = 0
+  const counts = {closes: 0, closesDuringAnOpening: 0, opensDuringAReturn: 0, reopenings: 0, stepsDuringAnOpening: 0, stepsOntoAReturningPhoto: 0, photosPutInTheirCells: 0, snapsDuringAZoom: 0}
   machine.observe({
     beforeEvaluate(table) {
       before = openOf(focusCells.map(cell => table[cell]!))
     },
     afterEvaluate(values, _table, evaluation) {
       const after = openOf(focusCells.map(cell => values[machine.output.nextSource[cell]!]!))
-      const expected = reference.evaluate(evaluation, before, after)
+      if (evaluation.writesBack) {
+        const moving = Array.from({length: itemCount}, (_, item) => plain.moves(item))
+        const anotherMoves = (item: number) => moving.some((isMoving, other) => isMoving && other !== item)
+        if (evaluation.snap && moving.includes(true)) counts.snapsDuringAZoom++
+        if (before !== -1 && after === -1) {
+          counts.closes++
+          if (moving[before]) counts.closesDuringAnOpening++
+          if (anotherMoves(before)) counts.photosPutInTheirCells++
+        } else if (before === -1 && after !== -1) {
+          if (moving[after]) counts.reopenings++
+          else if (anotherMoves(after)) counts.opensDuringAReturn++
+        } else if (before !== after) {
+          if (moving[before]) counts.stepsDuringAnOpening++
+          if (moving[after]) counts.stepsOntoAReturningPhoto++
+        }
+      }
+      const expected = plain.evaluate(evaluation, before, after)
       const drawn = projectPhotos(machine, values)
+      const thumbnails = projectThumbnails(machine, values)
       const label = `evaluation ${evaluations++}, a ${evaluation.kind} at ${evaluation.timeMs} ms with photo ${before} open before and ${after} after`
       drawn.forEach((photo, item) => {
-        const {zoom, opacity, stack} = expected.photos[item]!
+        const {zoom, opacity, stack, aboutAtRest} = expected.photos[item]!
         // FP32 springs stay within 4e-5 of float64 ones, also where one of the two
-        // settles a check before the other. In this run the largest difference is 1.4e-7.
+        // settles a check before the other, which is the one case in which the stack
+        // may differ: a photo that is in its cell within a hundredth of a pixel has 2
+        // in one and 0 in the other.
+        largestZoomDifference = Math.max(largestZoomDifference, Math.abs(photo.zoom - zoom))
         assert.ok(Math.abs(photo.zoom - zoom) < 4e-5, `${label}: photo ${item} has zoom ${photo.zoom}, not ${zoom}`)
         assert.ok(Math.abs(photo.opacity - opacity) < 8e-5, `${label}: photo ${item} has opacity ${photo.opacity}, not ${opacity}`)
-        assert.equal(photo.stack, stack, `${label}: photo ${item}`)
+        if (photo.stack !== stack) {
+          assert.ok(aboutAtRest && item !== after && (photo.stack === 0 || photo.stack === 2), `${label}: photo ${item} has stack ${photo.stack}, not ${stack}`)
+          settledAtDifferentChecks++
+        }
         if (cells.length > 0) assertBetween(photo, cells[item]!, open, `${label}: photo ${item}`)
+        // The ring of a thumbnail is as strong as its photo is open.
+        assert.equal(thumbnails[item]!.focused, photo.zoom, `${label}: thumbnail ${item}`)
       })
-      assert.ok(Math.abs(values[machine.output.backdropOpacity]! - expected.lightbox) < 8e-5, label)
-      assert.equal(values[machine.output.nextSource[machine.cells.zoom.openSpring]!], expected.openSpring, label)
-      assert.equal(openOf(closedLastCells.map(cell => values[machine.output.nextSource[cell]!]!)), expected.closedLast, label)
+      assert.ok(Math.abs(values[machine.output.backdropOpacity]! - expected.cover) < 8e-5, label)
     },
   })
   let time = 16
@@ -1217,15 +1444,17 @@ test('over 4,000 random frames of opens, closes, steps and thumbnail clicks, mos
   // 364 for the next photo's.
   const thumbnailCenters = [47, 78, 127, 194, 279, 364, 431, 480, 511]
   let nextEventAt = time + 40
+  let lastClosed = -1
   for (let frame = 0; frame < 4000; frame++) {
-    time += 5 + Math.floor(random() * 28)
+    // Every 97th frame comes 1.3 s late, like a tab that stalled, so the host plans
+    // a snap for the springs that move.
+    time += frame % 97 === 96 ? 1300 : 5 + Math.floor(random() * 28)
     while (nextEventAt <= time) {
-      const isOpen = readFocus(machine).includes(1)
+      const openPhoto = openOf(readFocus(machine))
       const choice = random()
-      if (!isOpen) {
+      if (openPhoto === -1) {
         // Any photo, and the photo that was closed last more often than the others.
-        const closedLast = openOf(closedLastCells.map(cell => machine.source[cell]!))
-        const cell = cells[closedLast !== -1 && random() < 0.3 ? closedLast : Math.floor(random() * itemCount)]!
+        const cell = cells[lastClosed !== -1 && random() < 0.3 ? lastClosed : Math.floor(random() * itemCount)]!
         machine.click(cell.left + cell.width / 2, cell.top + cell.height / 2, nextEventAt)
       } else if (choice < 0.4) {
         if (random() < 0.5) machine.close(nextEventAt)
@@ -1243,14 +1472,18 @@ test('over 4,000 random frames of opens, closes, steps and thumbnail clicks, mos
       // Most events come within the half second of a zoom, some after it.
       nextEventAt += random() < 0.8 ? 5 + Math.floor(random() * 250) : 400 + Math.floor(random() * 400)
     }
+    const openBefore = openOf(readFocus(machine))
     machine.step(boxWidth, boxHeight, 1, 1, time)
+    if (openBefore !== -1 && openOf(readFocus(machine)) === -1) lastClosed = openBefore
   }
-  // The frames covered every rule many times.
-  const {counts} = reference
+  // The frames covered every rule many times, and a spring settled at different
+  // checks in the two at most a few times.
   assert.ok(evaluations > 5000, `${evaluations} evaluations`)
+  assert.ok(largestZoomDifference < 1e-6 || settledAtDifferentChecks > 0, `the largest difference of a zoom is ${largestZoomDifference}`)
+  assert.ok(settledAtDifferentChecks <= 20, `${settledAtDifferentChecks} stacks differed around a settle check`)
   assert.ok(
     counts.closes > 60 && counts.closesDuringAnOpening > 30 && counts.opensDuringAReturn > 30 && counts.reopenings > 10
-      && counts.stepsDuringAnOpening > 30 && counts.photosPutInTheirCells > 15,
+      && counts.stepsDuringAnOpening > 30 && counts.stepsOntoAReturningPhoto > 3 && counts.photosPutInTheirCells > 15 && counts.snapsDuringAZoom > 10,
     JSON.stringify(counts),
   )
 })

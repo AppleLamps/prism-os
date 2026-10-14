@@ -930,9 +930,9 @@ body {
 /* Photos: a grid and a lightbox, both laid out by the program. JavaScript creates a node
    for each photo and each thumbnail while the program draws it, and writes its size,
    position and opacity. A photo also gets --zoom, which goes from 0 in its cell to 1 in the
-   open photo's rectangle, and its z-index: 3 for the open photo, 1 for the photo that was
-   closed last, on its way back to its cell, and 0 for the others. A thumbnail gets
-   --focused, which is 1 for the open photo's thumbnail. */
+   open photo's rectangle, and its z-index: 3 for the open photo, 2 for a photo on its way
+   back to its cell, and 0 for the others. A thumbnail gets --focused, which is its photo's
+   --zoom: 1 for the open photo's thumbnail, and 0 for the others once nothing moves. */
 .photos-content {
   cursor: pointer;
   /* The previous and next controls look at the content box's width, see below. */
@@ -969,16 +969,29 @@ body {
     0 calc(var(--zoom) * 10px) calc(var(--zoom) * 28px) calc(var(--zoom) * -8px) rgb(var(--shadow-ink) / 0.24);
 }
 
-/* A photo is a container, so that its name can ask how tall the photo is. */
+/* A photo is a container, so that its name can ask how tall the photo is: 100cqh in the
+   name's rule is the photo's height. */
 .photos-photo {
   container: photo / size;
 }
 
-/* The open photo's name, on a paper label. It fades in over the last quarter of the zoom:
-   0 up to a --zoom of 0.75, since an opacity under 0 counts as 0, and 1 at 1. With the
-   opacity equal to --zoom, the name appeared in one frame at about half its opacity in
-   Photos on a phone, where the photo passes the 110 px below which it shows no name, see
-   the next rule, half way through its zoom. */
+/* The open photo's name, on a paper label. Its opacity is the smaller of two numbers, and
+   an opacity under 0 counts as 0:
+   - --zoom * 4 - 3, so the name fades in over the last quarter of the zoom, from a --zoom
+     of 0.75 to 1.
+   - (the photo's height - 110 px) / 8 px, so a photo under 110 px tall shows no name, and
+     the name is whole from 118 px. The previous control's round sheet is 36 px tall around
+     the photo's middle and the label ends 10 px above the photo's bottom, so in a shorter
+     photo the two meet, and in a narrow window the sheet lies on the label's start, e.g. in
+     a window of 280 × 240 px, where the open photo is 94 px tall and starts 22 px from the
+     content box's edge. CSS divides a length by a length as tan(atan2(length, length)).
+   While a photo opens, it grows through those 8 px over several frames, so the name fades
+   in. With a rule that hid the name of a photo under 110 px, the name appeared in one frame
+   where the open photo is only a little over 110 px tall, e.g. at an opacity of 0.9 in a
+   content box of 558 × 218 px, whose photo passes 110 px at a --zoom of 0.97. At rest, an
+   open photo between 110 and 118 px tall shows its name fainter, e.g. at 0.2 in that
+   content box, where the photo is 111.7 px tall, and the name fades while the window is
+   resized through those heights. */
 .photos-photo span {
   position: absolute;
   left: 10px;
@@ -989,24 +1002,13 @@ body {
   color: var(--ink);
   font: italic 400 14px/20px var(--font-serif);
   box-shadow: var(--shadow-1);
-  opacity: calc(var(--zoom) * 4 - 3);
+  opacity: min(var(--zoom) * 4 - 3, tan(atan2(100cqh - 110px, 8px)));
 }
 
-/* A photo under 110 px tall shows no name. The previous control's round sheet is 36 px
-   tall around the photo's middle and the label ends 10 px above the photo's bottom, so
-   in a shorter photo the two meet, and in a narrow window the sheet lies on the label's
-   start, e.g. in a window of 280 × 240 px, where the open photo is 94 px tall and starts
-   22 px from the content box's edge. */
-@container photo (max-height: 109px) {
-  .photos-photo span {
-    display: none;
-  }
-}
-
-/* The thumbnails are above the photos in their cells, and above the photo on its way back
-   to its cell, and below the open photo, see the z-indexes that JavaScript writes. */
+/* The thumbnails are above the photos in their cells, and below the open photo and a photo
+   on its way back to its cell, see the z-indexes that JavaScript writes. */
 .photos-thumbnail {
-  z-index: 2;
+  z-index: 1;
   border-radius: 10%;
   box-shadow: inset 0 0 0 1px var(--edge);
 }
@@ -1035,11 +1037,11 @@ body {
 
 /* Previous and next: a chevron in the program's 52 px box. In a window under 765 px wide
    the box can reach over the open photo's edge, so the controls are above the photos, whose
-   z-indexes go up to 4, and the disc under the pointer is a round sheet of paper and not a
+   z-indexes go up to 3, and the disc under the pointer is a round sheet of paper and not a
    wash. */
 .photos-control {
   position: absolute;
-  z-index: 5;
+  z-index: 4;
   top: 0;
   left: 0;
   display: grid;
