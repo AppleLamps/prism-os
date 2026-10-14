@@ -141,7 +141,7 @@ if (key === 'ArrowDown' && focusedWindow === monitor) selectedRow++ // then the 
 
 **Cost.** A fixed number of operations at any row count, most of them the four outputs of each of the 64 DOM slots, and one evaluation in every frame where the scroll position changed.
 
-**Why choose it.** The browser keeps the scrolling, e.g. its scrollbar and its wheel and touch handling, and the program gets one more input. Rows are positioned in the scroller's content coordinates, and the DOM slots that the view leaves over draw the rows above and below the view, half on each side, e.g. 22 above and 23 below a view of 19 rows, so a frame that arrives late still finds rows on screen. A release, unlike a press, is never the start of a scroll.
+**Why choose it.** The browser keeps the scrolling, e.g. its scrollbar and its wheel and touch handling, and the program gets one more input. Rows are positioned in the scroller's content coordinates, and the DOM slots that the view leaves over draw the rows above and below the view, half on each side, e.g. 22 above and 23 below a view of 19 rows in the middle of the list, so a frame that arrives late still finds rows on screen. A release, unlike a press, is never the start of a scroll.
 
 **Don't use it when.** Stored state must not depend on the frame rate while the user scrolls: a scroll position has no timestamp, so the row under a release depends on the position that the frame read. The rows above the view can change height: keep the row at the top of the view in place, as in the entry above this one.
 
