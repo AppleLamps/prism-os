@@ -61,7 +61,7 @@ The rules that go past JSON's grammar are written out at the top of [reference.t
 
 ## Results
 
-Every timing in this section was measured at the old path, lab/json-highlighter, on the date its paragraph gives, except the update of September 18, 2026. The move to src/ didn't change the programs: each form has the same source cells, live operations, layers, stored weights and compiled layers as before the move, and gives the same outputs on the 2,509 test texts, so the sizes below are current.
+Every timing in this section was measured at the old path, lab/json-highlighter, on the date its paragraph gives, except the updates of September 18 and October 13, 2026. The move to src/ didn't change the programs: each form has the same source cells, live operations, layers, stored weights and compiled layers as before the move, and gives the same outputs on the 2,509 test texts, so the sizes below are current.
 
 Measured on September 17, 2026 on an Apple M5 Max with macOS 27.0: Bun 1.4.0, and Chrome 153.0.8010.48 headless in a 900 × 800 window. µs in Bun are the median of 30 batches of 50 evaluations after 200 warm-up evaluations, each form in its own process, on a valid 512 code point text that alternates one digit. Chrome timings come from the page's `performance.now()`, which Chrome rounds to 0.1 ms, over 70 keystrokes that type a digit or a Backspace into the full text, after 10 warm-up keystrokes. Other work ran on the machine at the same time, with load averages from 3.3 to 5.1. Each Chrome number is the range over two runs per form, which differed by up to 2.5 times at this load, e.g. Brent-Kung's evaluate median was 0.6 ms in one run and 1.5 ms in the other.
 
