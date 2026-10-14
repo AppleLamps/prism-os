@@ -239,12 +239,21 @@ function checkWindow(window: DocumentWindow, documentCount: number, windowCapaci
   invariant(window.firstDocument + window.documentCount <= documentCount && window.documentCount <= windowCapacity, `a window holds at most ${windowCapacity} of the ${documentCount} documents`)
 }
 
-type CpuOptions = SearcherOptions & {backend?: 'generated' | 'executor'}
+type CpuOptions = SearcherOptions & {
+  backend?: 'generated' | 'executor'
+  // When the highlighter runs. 'atCreation' unless given: on every document when the searcher is created, which takes
+  // about 9 s for 100,000 documents as generated JavaScript. With 'whenFirstRead' it runs on a document when a search
+  // or `kinds` first reads that document, e.g. for a page that searches a few documents at a time in a worker and shows
+  // each piece's answer as it arrives. The highlighter's time is then in no search's timings, and reading `validation`
+  // runs the highlighter on every document that it hasn't run on yet.
+  highlight?: 'atCreation' | 'whenFirstRead'
+}
 // One search without the gate, for a self check.
 type EvaluateOnCpu = (compiled: CompiledPattern, states: number, request: SearchRequest, patternStarted: number) => SearchResult & {status: 'searched'}
 
 // The same programs on the CPU. `backend` is 'generated' unless given: generated JavaScript of each step, which takes
-// e.g. 0.25 ms per document and search at 8 states, so a page gives it hundreds of documents, not tens of thousands.
+// e.g. 0.25 ms per document and search at 8 states, so a page gives it hundreds of documents, or searches a few
+// documents at a time in a worker, with `documents: 'window'`.
 export function createCpuSearcher(texts: readonly string[], options: CpuOptions = {}): Searcher {
   return buildCpuSearcher(texts, options).searcher
 }
@@ -262,8 +271,23 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
   const jsonRunner = createLoopRunner(json.loop, backend)
   const summary = new Float32Array(documentCount * stepSummaryNames.length)
   const kinds = new Float32Array(documentCount * positions)
-  for (let row = 0; row < documentCount; row++) jsonRunner.run([cells], row, [summary, kinds], row, row)
-  const validation = validationOf(summary, documentCount)
+  // 1 for a document that the highlighter has run on.
+  const highlighted = new Uint8Array(documentCount)
+  const highlight = (firstDocument: number, count: number) => {
+    for (let row = firstDocument; row < firstDocument + count; row++) {
+      if (highlighted[row] === 1) continue
+      jsonRunner.run([cells], row, [summary, kinds], row, row)
+      highlighted[row] = 1
+    }
+  }
+  // What the highlighter says about every document, which runs it on the documents that it hasn't run on yet.
+  let validation: Validation | undefined
+  const validationOfEveryDocument = () => {
+    highlight(0, documentCount)
+    validation ??= validationOf(summary, documentCount)
+    return validation
+  }
+  if (options.highlight !== 'whenFirstRead') validationOfEveryDocument()
   const load = {cellsMs, validateMs: performance.now() - started - cellsMs, totalMs: performance.now() - started}
   const searches = new Map<number, {built: SearchLoop, runner: LoopRunner, shared: Float32Array}>()
   const searchFor = (states: number) => {
@@ -282,14 +306,19 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
     const window = request.window ?? {firstDocument: 0, documentCount: 0}
     checkWindow(window, documentCount, windowCapacity)
     const all = request.documents !== 'window'
+    const first = all ? 0 : window.firstDocument
+    const count = all ? documentCount : window.documentCount
+    // The search reads its documents' display kinds. With `highlight: 'whenFirstRead'`, the highlighter runs here on
+    // the ones that it hasn't run on yet, and the search's timings leave its time out.
+    const highlightStarted = performance.now()
+    highlight(first, count)
+    const highlightMs = performance.now() - highlightStarted
     const {built, runner, shared} = searchFor(states)
     shared.set(built.loop.sharedValues)
     built.writePattern(shared, compiled)
     built.writeScope(shared, scope)
     runner.setShared(shared)
     const evaluateStarted = performance.now()
-    const first = all ? 0 : window.firstDocument
-    const count = all ? documentCount : window.documentCount
     const matchCounts = new Float32Array(count)
     const marks = new Float32Array(window.documentCount * positions)
     for (let index = 0; index < count; index++) {
@@ -301,23 +330,28 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
     return {
       status: 'searched', pattern: request.pattern, scope, documents: all ? 'all' : 'window', states, patternStates: compiled.automaton.stateCount,
       matchCounts, ...summarize(matchCounts), window, marks,
-      timings: {patternMs: evaluateStarted - patternStarted, evaluateMs: finished - evaluateStarted, totalMs: finished - patternStarted, passMs: undefined},
+      timings: {patternMs: evaluateStarted - patternStarted - highlightMs, evaluateMs: finished - evaluateStarted, totalMs: finished - patternStarted - highlightMs, passMs: undefined},
     }
   }
 
   const searcher: Searcher = {
-    backend: 'cpu', documentCount, stateCapacities, validation, load, limits: undefined,
+    backend: 'cpu', documentCount, stateCapacities, load, limits: undefined,
+    get validation() {
+      return validationOfEveryDocument()
+    },
     programs: () => [
       {name: 'JSON highlighter', operations: describeLoop(json.loop).map(stage => stage.operations), statements: undefined, compileMs: undefined},
       ...[...searches].map(([states, {built}]) => ({name: `regex search, ${states} states`, operations: describeLoop(built.loop).map(stage => stage.operations), statements: undefined, compileMs: undefined})),
     ],
     validate() {
       const validateStarted = performance.now()
-      for (let row = 0; row < documentCount; row++) jsonRunner.run([cells], row, [summary, kinds], row, row)
+      highlighted.fill(0)
+      highlight(0, documentCount)
       return Promise.resolve({validation: validationOf(summary, documentCount), evaluateMs: performance.now() - validateStarted, passMs: undefined})
     },
     kinds: window => {
       checkWindow(window, documentCount, documentCount)
+      highlight(window.firstDocument, window.documentCount)
       return Promise.resolve(kinds.slice(window.firstDocument * positions, (window.firstDocument + window.documentCount) * positions))
     },
     search(request) {
@@ -344,7 +378,7 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
         result.values += length
         for (let index = 0; index < length; index++) if (actual[index] !== expected[index]) result.mismatches++
       }
-      for (const name of ['valid', 'firstErrorPosition', 'firstErrorKind', 'truncated'] as const) compare(validation[name], reference.searcher.validation[name], sample)
+      for (const name of ['valid', 'firstErrorPosition', 'firstErrorKind', 'truncated'] as const) compare(validationOfEveryDocument()[name], reference.searcher.validation[name], sample)
       for (const {pattern, scope} of checks) {
         const resolved = resolvePattern(pattern, stateCapacities)
         if ('status' in resolved) continue
