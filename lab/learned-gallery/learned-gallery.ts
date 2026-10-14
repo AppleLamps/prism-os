@@ -916,12 +916,16 @@ function mountLearnedGallery(document: Document, window: Window) {
 
   function renderLearnedGallery(frameTime: number) {
     scheduledRaf = null
-    // DOM reads.
+    // DOM reads. The rectangles are placed in percent of the stage's inside, i.e. the stage's box without its
+    // border, which is as wide on every side. The box's size isn't a whole number of pixels at every window, e.g.
+    // 622 by 497.6 px at a 1440 px window, where clientHeight says 496 for an inside of 495.6 px, and with that
+    // height a rectangle dragged 150 px down ended 0.12 px above the pointer.
     const stageBounds = domCache.sketchStage.getBoundingClientRect()
-    const stageLeft = stageBounds.left + domCache.sketchStage.clientLeft
-    const stageTop = stageBounds.top + domCache.sketchStage.clientTop
-    const stageWidth = domCache.sketchStage.clientWidth
-    const stageHeight = domCache.sketchStage.clientHeight
+    const stageBorder = domCache.sketchStage.clientLeft
+    const stageLeft = stageBounds.left + stageBorder
+    const stageTop = stageBounds.top + stageBorder
+    const stageWidth = stageBounds.width - stageBorder * 2
+    const stageHeight = stageBounds.height - stageBorder * 2
     // The chart takes the width that its row leaves, and its coordinates are CSS pixels.
     const chartBounds = domCache.chart.getBoundingClientRect()
     // Where the "Misalignment penalty" slider is, in percent of the stage's width.
