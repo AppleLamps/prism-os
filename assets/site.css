@@ -187,7 +187,9 @@ kbd {
   font: var(--type-title-xs);
   text-decoration: none;
 }
-/* The mark: three wires into one eyelet, and one wire out. */
+/* The mark: a lowercase h made of wires. The h's two legs are wires that rise into one eyelet, and one wire leaves
+   the eyelet at the top. Its lines are 2 px, where the site's other lines are 1.5 px, so that the mark holds up
+   beside the bold name, and every edge of a line is on a whole pixel. */
 .mark { flex: none; color: var(--ink); }
 .mark-eyelet { fill: var(--paper); stroke: var(--copper); transition: fill var(--quick) var(--ease); }
 .brand:hover .mark-eyelet { fill: var(--copper); }
