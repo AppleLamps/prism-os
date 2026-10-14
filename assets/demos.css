@@ -77,15 +77,6 @@
 }
 .demo h3 { margin: 0; font: var(--type-title-s); }
 .demo p { margin: var(--space-2) 0 0; color: var(--ink-2); font: var(--type-body); text-wrap: pretty; }
-/* The line of facts sits at the card's bottom edge, so the lines of neighboring cards align. */
-.demo .meta {
-  margin-top: auto;
-  padding-top: var(--space-3);
-  color: var(--ink-3);
-  font: var(--type-small);
-  font-variant-numeric: tabular-nums;
-}
-.demo .meta b { color: var(--ink-2); font-weight: 600; }
 
 /* HandwiredOS, the first and largest card: the screenshot on the left and the text on the right. */
 .demo.is-first {
