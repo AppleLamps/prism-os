@@ -27,9 +27,14 @@ export type RunOptions = {
   devToolsPort: number
   timeoutMs: number
   chromePath: string
+  // More routes of the page's server, e.g. a worker's script, which Bun's bundler doesn't follow from `new Worker(...)`,
+  // or a route that answers with the memory of this run's Chrome processes.
+  routes?: Record<string, (request: Request) => Response | Promise<Response>>
+  // More flags for Chrome, e.g. another window size.
+  flags?: readonly string[]
 }
 
-export async function runPage({page, config, label, profile, out, port, devToolsPort, timeoutMs, chromePath}: RunOptions) {
+export async function runPage({page, config, label, profile, out, port, devToolsPort, timeoutMs, chromePath, routes = {}, flags: moreFlags = []}: RunOptions) {
   const loadAverage = () => Bun.spawnSync(['sysctl', '-n', 'vm.loadavg']).stdout.toString().trim()
   const memoryFree = () => Bun.spawnSync(['memory_pressure']).stdout.toString().trim().split('\n').at(-1)
   // A path without its folders, e.g. a profile folder's name, so that a result file holds no path of the machine it
@@ -55,6 +60,7 @@ export async function runPage({page, config, label, profile, out, port, devTools
     hostname: '127.0.0.1',
     development: false,
     routes: {
+      ...routes,
       // Bun bundles the page at /bundled, and / serves the same HTML with cross-origin isolation headers, so that
       // performance.now() in the page reads in steps of 5 µs instead of 100 µs.
       '/bundled': page,
@@ -78,7 +84,7 @@ export async function runPage({page, config, label, profile, out, port, devTools
   const flags = [
     '--headless=new', '--enable-unsafe-webgpu', '--enable-webgpu-developer-features', `--remote-debugging-port=${devToolsPort}`,
     `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-background-timer-throttling',
-    '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--window-size=1200,900',
+    '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--window-size=1200,900', ...moreFlags,
   ]
   driver['flags'] = flags.map(withoutFolders)
   const occupied = await fetch(`http://127.0.0.1:${devToolsPort}/json/version`).then(() => true, () => false)

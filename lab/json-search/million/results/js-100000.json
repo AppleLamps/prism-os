@@ -1,0 +1,1441 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T06:41:48.893Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 7.30 5.18 4.44 }",
+  "memoryBefore": "System-wide memory free percentage: 76%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "js",
+   "--count",
+   "100000",
+   "--profile",
+   "js-100000-1791960108865",
+   "--out",
+   "js-100000.json"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T06:41:58.960Z",
+    "load": "{ 8.11 5.42 4.54 }"
+   },
+   {
+    "at": "2026-10-14T06:42:08.961Z",
+    "load": "{ 9.55 5.82 4.69 }"
+   },
+   {
+    "at": "2026-10-14T06:42:18.962Z",
+    "load": "{ 10.34 6.10 4.80 }"
+   },
+   {
+    "at": "2026-10-14T06:42:28.963Z",
+    "load": "{ 9.97 6.16 4.84 }"
+   },
+   {
+    "at": "2026-10-14T06:42:38.964Z",
+    "load": "{ 10.53 6.41 4.94 }"
+   },
+   {
+    "at": "2026-10-14T06:42:48.965Z",
+    "load": "{ 11.58 6.76 5.08 }"
+   },
+   {
+    "at": "2026-10-14T06:42:58.966Z",
+    "load": "{ 11.48 6.90 5.15 }"
+   },
+   {
+    "at": "2026-10-14T06:43:08.967Z",
+    "load": "{ 11.19 6.98 5.20 }"
+   },
+   {
+    "at": "2026-10-14T06:43:18.969Z",
+    "load": "{ 11.39 7.16 5.29 }"
+   },
+   {
+    "at": "2026-10-14T06:43:28.970Z",
+    "load": "{ 11.24 7.27 5.35 }"
+   },
+   {
+    "at": "2026-10-14T06:43:38.971Z",
+    "load": "{ 11.72 7.51 5.45 }"
+   },
+   {
+    "at": "2026-10-14T06:43:48.972Z",
+    "load": "{ 11.46 7.59 5.50 }"
+   },
+   {
+    "at": "2026-10-14T06:43:58.973Z",
+    "load": "{ 11.00 7.62 5.54 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9511",
+   "--user-data-dir=js-100000-1791960108865",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900",
+   "--js-flags=--expose-gc"
+  ],
+  "chromePid": 83364,
+  "browser": "Chrome/155.0.8059.80",
+  "finishedAt": "2026-10-14T06:44:00.130Z",
+  "loadAfter": "{ 11.00 7.62 5.54 }",
+  "memoryAfter": "System-wide memory free percentage: 79%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T06:41:49.534Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "js",
+   "count": 100000,
+   "patterns": [
+    "error",
+    "[a-z]+Id",
+    "[a-z0-9.]+@[a-z.]+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "([a-z]+)+x",
+    "connection reset"
+   ],
+   "capacities": [
+    8,
+    16,
+    32
+   ],
+   "shaderSalt": 624450394,
+   "pieceDocuments": 50000,
+   "engines": [
+    "f32-kernel",
+    "bytes-boundaries",
+    "bytes",
+    "bytes-scope",
+    "packed",
+    "packed-scope",
+    "bytes-bits",
+    "bytes-has",
+    "bytes-scope-has",
+    "packed-scope-has"
+   ],
+   "f32": true,
+   "pausesMs": [
+    200
+   ],
+   "longPausesMs": [
+    1000
+   ],
+   "longPauseEngines": [
+    "f32-kernel",
+    "bytes",
+    "bytes-scope-has"
+   ],
+   "pauseSamples": 9,
+   "restMs": 0,
+   "warmPauses": [],
+   "minimumSamples": 15,
+   "sampleMs": 1000,
+   "layout": "fixed",
+   "workers": 8,
+   "scopeBits": true,
+   "limits": "needed",
+   "keepTexts": false,
+   "jsSamples": 9,
+   "filterWorkers": 8,
+   "jsParts": [
+    "wholeText",
+    "parse",
+    "walk",
+    "collected",
+    "workers"
+   ]
+  },
+  "memory": {
+   "the texts": {
+    "javaScriptBytes": 34649610,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 34,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 34558302,
+    "processes": {
+     "processes": [
+      {
+       "pid": 83364,
+       "type": "browser",
+       "residentBytes": 268304384,
+       "footprintBytes": 88197016,
+       "footprintPeakBytes": 88344472
+      },
+      {
+       "pid": 83368,
+       "type": "gpu-process",
+       "residentBytes": 155844608,
+       "footprintBytes": 85476696,
+       "footprintPeakBytes": 404391256
+      },
+      {
+       "pid": 83372,
+       "type": "renderer",
+       "residentBytes": 197705728,
+       "footprintBytes": 65095264,
+       "footprintPeakBytes": 65177184
+      },
+      {
+       "pid": 83375,
+       "type": "renderer",
+       "residentBytes": 124076032,
+       "footprintBytes": 28886336,
+       "footprintPeakBytes": 30164288
+      },
+      {
+       "pid": 83377,
+       "type": "renderer",
+       "residentBytes": 128253952,
+       "footprintBytes": 30491992,
+       "footprintPeakBytes": 30524760
+      },
+      {
+       "pid": 83378,
+       "type": "renderer",
+       "residentBytes": 265486336,
+       "footprintBytes": 141690464,
+       "footprintPeakBytes": 147785312
+      },
+      {
+       "pid": 83383,
+       "type": "renderer",
+       "residentBytes": 124354560,
+       "footprintBytes": 31229296,
+       "footprintPeakBytes": 32064880
+      },
+      {
+       "pid": 83404,
+       "type": "renderer",
+       "residentBytes": 140115968,
+       "footprintBytes": 33785224,
+       "footprintPeakBytes": 36881752
+      },
+      {
+       "pid": 83406,
+       "type": "renderer",
+       "residentBytes": 107364352,
+       "footprintBytes": 28329160,
+       "footprintPeakBytes": 28705992
+      }
+     ],
+     "availableGigabytes": 14.2,
+     "swap": "total = 3072.00M  used = 2136.06M  free = 935.94M  (encrypted)"
+    }
+   },
+   "the texts and the parsed objects": {
+    "javaScriptBytes": 62203612,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 62,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 62111512,
+    "processes": {
+     "processes": [
+      {
+       "pid": 83364,
+       "type": "browser",
+       "residentBytes": 599605248,
+       "footprintBytes": 276072824,
+       "footprintPeakBytes": 411257208
+      },
+      {
+       "pid": 83368,
+       "type": "gpu-process",
+       "residentBytes": 156434432,
+       "footprintBytes": 58918232,
+       "footprintPeakBytes": 404391256
+      },
+      {
+       "pid": 83372,
+       "type": "renderer",
+       "residentBytes": 193544192,
+       "footprintBytes": 56149624,
+       "footprintPeakBytes": 69142136
+      },
+      {
+       "pid": 83375,
+       "type": "renderer",
+       "residentBytes": 124256256,
+       "footprintBytes": 28886336,
+       "footprintPeakBytes": 30164288
+      },
+      {
+       "pid": 83378,
+       "type": "renderer",
+       "residentBytes": 234045440,
+       "footprintBytes": 108660368,
+       "footprintPeakBytes": 147785312
+      },
+      {
+       "pid": 83406,
+       "type": "renderer",
+       "residentBytes": 107708416,
+       "footprintBytes": 27018440,
+       "footprintPeakBytes": 28705992
+      }
+     ],
+     "availableGigabytes": 16.1,
+     "swap": "total = 3072.00M  used = 2136.06M  free = 935.94M  (encrypted)"
+    }
+   },
+   "the texts, the parsed objects and the collected strings": {
+    "javaScriptBytes": 85418740,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 85,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 85330336,
+    "processes": {
+     "processes": [
+      {
+       "pid": 83364,
+       "type": "browser",
+       "residentBytes": 630685696,
+       "footprintBytes": 158943656,
+       "footprintPeakBytes": 476170736
+      },
+      {
+       "pid": 83368,
+       "type": "gpu-process",
+       "residentBytes": 156532736,
+       "footprintBytes": 56952152,
+       "footprintPeakBytes": 404391256
+      },
+      {
+       "pid": 83372,
+       "type": "renderer",
+       "residentBytes": 193593344,
+       "footprintBytes": 56166008,
+       "footprintPeakBytes": 69142136
+      },
+      {
+       "pid": 83375,
+       "type": "renderer",
+       "residentBytes": 126451712,
+       "footprintBytes": 29984088,
+       "footprintPeakBytes": 30164288
+      },
+      {
+       "pid": 83378,
+       "type": "renderer",
+       "residentBytes": 261636096,
+       "footprintBytes": 132564624,
+       "footprintPeakBytes": 154879632
+      },
+      {
+       "pid": 83406,
+       "type": "renderer",
+       "residentBytes": 107954176,
+       "footprintBytes": 27018440,
+       "footprintPeakBytes": 28705992
+      }
+     ],
+     "availableGigabytes": 16.4,
+     "swap": "total = 3072.00M  used = 2136.06M  free = 935.94M  (encrypted)"
+    }
+   },
+   "the texts in the page and in the workers": {
+    "javaScriptBytes": 103450120,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 5,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 62,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     },
+     {
+      "megabytes": 5,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 5,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 5,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 5,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 5,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 5,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 5,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     }
+    ],
+    "usedHeapBytes": 62970965,
+    "processes": {
+     "processes": [
+      {
+       "pid": 83364,
+       "type": "browser",
+       "residentBytes": 636796928,
+       "footprintBytes": 281004456,
+       "footprintPeakBytes": 476170736
+      },
+      {
+       "pid": 83368,
+       "type": "gpu-process",
+       "residentBytes": 156909568,
+       "footprintBytes": 61408600,
+       "footprintPeakBytes": 404391256
+      },
+      {
+       "pid": 83372,
+       "type": "renderer",
+       "residentBytes": 193642496,
+       "footprintBytes": 54675064,
+       "footprintPeakBytes": 69142136
+      },
+      {
+       "pid": 83375,
+       "type": "renderer",
+       "residentBytes": 126500864,
+       "footprintBytes": 29984088,
+       "footprintPeakBytes": 30164288
+      },
+      {
+       "pid": 83378,
+       "type": "renderer",
+       "residentBytes": 416137216,
+       "footprintBytes": 275253960,
+       "footprintPeakBytes": 312838856
+      },
+      {
+       "pid": 83406,
+       "type": "renderer",
+       "residentBytes": 107954176,
+       "footprintBytes": 27018440,
+       "footprintPeakBytes": 28705992
+      }
+     ],
+     "availableGigabytes": 16.8,
+     "swap": "total = 3072.00M  used = 2136.06M  free = 935.94M  (encrypted)"
+    }
+   }
+  },
+  "loadAtStart": 7.3,
+  "js": {
+   "load": [
+    7.3,
+    10.34,
+    10.34,
+    11.48,
+    11.86,
+    11
+   ],
+   "generateMs": 481.165,
+   "characters": 29940193,
+   "wholeText": [
+    {
+     "pattern": "error",
+     "documentsWithMatch": 10559,
+     "ms": {
+      "count": 9,
+      "median": 25.585,
+      "p10": 24.45,
+      "p90": 25.73,
+      "min": 24.45,
+      "max": 25.73
+     },
+     "times": [
+      25.73,
+      25.3,
+      25.63,
+      25.635,
+      25.585,
+      25.62,
+      24.45,
+      24.53,
+      25.42
+     ]
+    },
+    {
+     "pattern": "[a-z]+Id",
+     "documentsWithMatch": 23795,
+     "ms": {
+      "count": 9,
+      "median": 29.445,
+      "p10": 28.75,
+      "p90": 29.71,
+      "min": 28.75,
+      "max": 29.71
+     },
+     "times": [
+      29.54,
+      29.475,
+      29.385,
+      29.125,
+      29.445,
+      29.71,
+      29.475,
+      29.44,
+      28.75
+     ]
+    },
+    {
+     "pattern": "[a-z0-9.]+@[a-z.]+",
+     "documentsWithMatch": 14481,
+     "ms": {
+      "count": 9,
+      "median": 45.7,
+      "p10": 44.355,
+      "p90": 52.03,
+      "min": 44.355,
+      "max": 52.03
+     },
+     "times": [
+      45.7,
+      44.355,
+      44.895,
+      48.165,
+      52.03,
+      51.48,
+      49.53,
+      45.48,
+      45.05
+     ]
+    },
+    {
+     "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+     "documentsWithMatch": 27803,
+     "ms": {
+      "count": 9,
+      "median": 8.95,
+      "p10": 8.83,
+      "p90": 9.45,
+      "min": 8.83,
+      "max": 9.45
+     },
+     "times": [
+      9.45,
+      9.075,
+      8.95,
+      8.92,
+      8.85,
+      9.285,
+      9.055,
+      8.83,
+      8.945
+     ]
+    },
+    {
+     "pattern": "([a-z]+)+x",
+     "documentsWithMatch": 47577,
+     "ms": {
+      "count": 9,
+      "median": 1721.245,
+      "p10": 1696.13,
+      "p90": 1874.33,
+      "min": 1696.13,
+      "max": 1874.33
+     },
+     "times": [
+      1756.34,
+      1784.27,
+      1717.295,
+      1874.33,
+      1710.93,
+      1721.245,
+      1701.31,
+      1696.13,
+      1724.74
+     ]
+    },
+    {
+     "pattern": "connection reset",
+     "documentsWithMatch": 1440,
+     "ms": {
+      "count": 9,
+      "median": 9.13,
+      "p10": 9.06,
+      "p90": 9.37,
+      "min": 9.06,
+      "max": 9.37
+     },
+     "times": [
+      9.165,
+      9.13,
+      9.105,
+      9.115,
+      9.065,
+      9.06,
+      9.37,
+      9.295,
+      9.35
+     ]
+    }
+   ],
+   "jsonParse": {
+    "valid": 100000,
+    "ms": {
+     "count": 9,
+     "median": 82.47,
+     "p10": 78.04,
+     "p90": 87.01,
+     "min": 78.04,
+     "max": 87.01
+    },
+    "times": [
+     80.7,
+     81.56,
+     87.01,
+     82.47,
+     79.755,
+     83.385,
+     83.255,
+     78.04,
+     82.62
+    ]
+   },
+   "parseAndKeepMs": 97.185,
+   "walk": [
+    {
+     "pattern": "error",
+     "stringValues": {
+      "documentsWithMatch": 2939,
+      "ms": {
+       "count": 9,
+       "median": 31.7,
+       "p10": 30.98,
+       "p90": 32.5,
+       "min": 30.98,
+       "max": 32.5
+      },
+      "times": [
+       31.945,
+       31.135,
+       31.7,
+       31.58,
+       31.15,
+       30.98,
+       31.82,
+       32.11,
+       32.5
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 9568,
+      "ms": {
+       "count": 9,
+       "median": 30.84,
+       "p10": 30.495,
+       "p90": 31.495,
+       "min": 30.495,
+       "max": 31.495
+      },
+      "times": [
+       30.755,
+       31.33,
+       31.295,
+       31.495,
+       30.765,
+       30.495,
+       30.84,
+       30.76,
+       31.145
+      ]
+     }
+    },
+    {
+     "pattern": "[a-z]+Id",
+     "stringValues": {
+      "documentsWithMatch": 0,
+      "ms": {
+       "count": 9,
+       "median": 34.775,
+       "p10": 33.97,
+       "p90": 36.095,
+       "min": 33.97,
+       "max": 36.095
+      },
+      "times": [
+       33.97,
+       35.28,
+       34.965,
+       34.605,
+       34.775,
+       34.29,
+       34.73,
+       34.995,
+       36.095
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 23795,
+      "ms": {
+       "count": 9,
+       "median": 24.58,
+       "p10": 23.915,
+       "p90": 26.075,
+       "min": 23.915,
+       "max": 26.075
+      },
+      "times": [
+       26.075,
+       25.07,
+       24.58,
+       24.375,
+       24.29,
+       25.025,
+       24.81,
+       23.915,
+       24.56
+      ]
+     }
+    },
+    {
+     "pattern": "[a-z0-9.]+@[a-z.]+",
+     "stringValues": {
+      "documentsWithMatch": 14481,
+      "ms": {
+       "count": 9,
+       "median": 35.27,
+       "p10": 34.43,
+       "p90": 35.535,
+       "min": 34.43,
+       "max": 35.535
+      },
+      "times": [
+       35.535,
+       35.005,
+       35.465,
+       35.41,
+       35.45,
+       34.79,
+       34.83,
+       35.27,
+       34.43
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 0,
+      "ms": {
+       "count": 9,
+       "median": 34.72,
+       "p10": 32.945,
+       "p90": 36.76,
+       "min": 32.945,
+       "max": 36.76
+      },
+      "times": [
+       34.415,
+       34.775,
+       34.955,
+       34.185,
+       32.945,
+       34.72,
+       34.365,
+       36.76,
+       36.605
+      ]
+     }
+    },
+    {
+     "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+     "stringValues": {
+      "documentsWithMatch": 27803,
+      "ms": {
+       "count": 9,
+       "median": 27.345,
+       "p10": 26.03,
+       "p90": 28.445,
+       "min": 26.03,
+       "max": 28.445
+      },
+      "times": [
+       26.03,
+       27.345,
+       26.235,
+       27.145,
+       28.445,
+       27.545,
+       27.315,
+       27.87,
+       28.065
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 0,
+      "ms": {
+       "count": 9,
+       "median": 32.83,
+       "p10": 30.265,
+       "p90": 33.58,
+       "min": 30.265,
+       "max": 33.58
+      },
+      "times": [
+       33.27,
+       33.58,
+       33.01,
+       32.83,
+       33.08,
+       30.735,
+       30.555,
+       30.265,
+       30.91
+      ]
+     }
+    },
+    {
+     "pattern": "([a-z]+)+x",
+     "stringValues": {
+      "documentsWithMatch": 33324,
+      "ms": {
+       "count": 9,
+       "median": 536.35,
+       "p10": 518.17,
+       "p90": 608.605,
+       "min": 518.17,
+       "max": 608.605
+      },
+      "times": [
+       608.605,
+       578.74,
+       545.325,
+       528.56,
+       518.17,
+       536.35,
+       544.39,
+       529.955,
+       533.415
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 21474,
+      "ms": {
+       "count": 9,
+       "median": 2024.47,
+       "p10": 1948.005,
+       "p90": 2330.725,
+       "min": 1948.005,
+       "max": 2330.725
+      },
+      "times": [
+       1954.99,
+       1993.995,
+       2024.47,
+       1948.005,
+       2218.255,
+       2330.725,
+       2103.63,
+       2011.24,
+       2066.18
+      ]
+     }
+    },
+    {
+     "pattern": "connection reset",
+     "stringValues": {
+      "documentsWithMatch": 1440,
+      "ms": {
+       "count": 9,
+       "median": 26.955,
+       "p10": 26.565,
+       "p90": 27.135,
+       "min": 26.565,
+       "max": 27.135
+      },
+      "times": [
+       27.04,
+       26.955,
+       26.58,
+       26.565,
+       26.645,
+       27.135,
+       26.99,
+       26.765,
+       27.125
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 0,
+      "ms": {
+       "count": 9,
+       "median": 30.335,
+       "p10": 29.745,
+       "p90": 31.345,
+       "min": 29.745,
+       "max": 31.345
+      },
+      "times": [
+       29.99,
+       29.745,
+       31.02,
+       30.24,
+       30.41,
+       30.235,
+       30.335,
+       31.345,
+       30.38
+      ]
+     }
+    }
+   ],
+   "collectMs": 41.08,
+   "collectedStrings": {
+    "values": 713215,
+    "keys": 1281001
+   },
+   "collected": [
+    {
+     "pattern": "error",
+     "stringValues": {
+      "documentsWithMatch": 2939,
+      "ms": {
+       "count": 9,
+       "median": 17.425,
+       "p10": 17.025,
+       "p90": 18.145,
+       "min": 17.025,
+       "max": 18.145
+      },
+      "times": [
+       17.525,
+       17.59,
+       17.13,
+       17.295,
+       17.025,
+       17.18,
+       18.145,
+       17.67,
+       17.425
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 9568,
+      "ms": {
+       "count": 9,
+       "median": 16.845,
+       "p10": 16.695,
+       "p90": 17.37,
+       "min": 16.695,
+       "max": 17.37
+      },
+      "times": [
+       17.37,
+       16.845,
+       16.755,
+       16.78,
+       16.935,
+       16.96,
+       16.695,
+       17.1,
+       16.725
+      ]
+     }
+    },
+    {
+     "pattern": "[a-z]+Id",
+     "stringValues": {
+      "documentsWithMatch": 0,
+      "ms": {
+       "count": 9,
+       "median": 19.36,
+       "p10": 19.015,
+       "p90": 19.715,
+       "min": 19.015,
+       "max": 19.715
+      },
+      "times": [
+       19.715,
+       19.15,
+       19.145,
+       19.015,
+       19.385,
+       19.4,
+       19.36,
+       19.325,
+       19.4
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 23795,
+      "ms": {
+       "count": 9,
+       "median": 13.69,
+       "p10": 13.61,
+       "p90": 14.28,
+       "min": 13.61,
+       "max": 14.28
+      },
+      "times": [
+       14.28,
+       14.11,
+       13.61,
+       13.69,
+       13.63,
+       13.675,
+       13.68,
+       13.815,
+       13.765
+      ]
+     }
+    },
+    {
+     "pattern": "[a-z0-9.]+@[a-z.]+",
+     "stringValues": {
+      "documentsWithMatch": 14481,
+      "ms": {
+       "count": 9,
+       "median": 19.815,
+       "p10": 19.55,
+       "p90": 20.195,
+       "min": 19.55,
+       "max": 20.195
+      },
+      "times": [
+       19.83,
+       20.025,
+       19.815,
+       19.735,
+       19.55,
+       19.91,
+       20.195,
+       19.8,
+       19.76
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 0,
+      "ms": {
+       "count": 9,
+       "median": 20.525,
+       "p10": 19.445,
+       "p90": 21.17,
+       "min": 19.445,
+       "max": 21.17
+      },
+      "times": [
+       19.905,
+       19.445,
+       19.815,
+       20.525,
+       21.08,
+       21.17,
+       20.32,
+       20.85,
+       20.7
+      ]
+     }
+    },
+    {
+     "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+     "stringValues": {
+      "documentsWithMatch": 27803,
+      "ms": {
+       "count": 9,
+       "median": 10.195,
+       "p10": 9.61,
+       "p90": 10.56,
+       "min": 9.61,
+       "max": 10.56
+      },
+      "times": [
+       10.195,
+       9.61,
+       10.31,
+       10.335,
+       9.785,
+       10.02,
+       10.455,
+       9.925,
+       10.56
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 0,
+      "ms": {
+       "count": 9,
+       "median": 11.59,
+       "p10": 11.465,
+       "p90": 12.54,
+       "min": 11.465,
+       "max": 12.54
+      },
+      "times": [
+       12.54,
+       11.84,
+       11.58,
+       11.855,
+       11.875,
+       11.475,
+       11.465,
+       11.59,
+       11.575
+      ]
+     }
+    },
+    {
+     "pattern": "([a-z]+)+x",
+     "stringValues": {
+      "documentsWithMatch": 33324,
+      "ms": {
+       "count": 9,
+       "median": 558.07,
+       "p10": 512.99,
+       "p90": 614.95,
+       "min": 512.99,
+       "max": 614.95
+      },
+      "times": [
+       614.95,
+       541.85,
+       512.99,
+       542.005,
+       571.39,
+       558.07,
+       575.26,
+       575.465,
+       545.715
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 21474,
+      "ms": {
+       "count": 9,
+       "median": 2091.025,
+       "p10": 2022.45,
+       "p90": 2133.22,
+       "min": 2022.45,
+       "max": 2133.22
+      },
+      "times": [
+       2022.45,
+       2083.015,
+       2112.78,
+       2032.51,
+       2091.025,
+       2122.37,
+       2120.19,
+       2133.22,
+       2080.115
+      ]
+     }
+    },
+    {
+     "pattern": "connection reset",
+     "stringValues": {
+      "documentsWithMatch": 1440,
+      "ms": {
+       "count": 9,
+       "median": 11.7,
+       "p10": 11.45,
+       "p90": 11.905,
+       "min": 11.45,
+       "max": 11.905
+      },
+      "times": [
+       11.65,
+       11.845,
+       11.45,
+       11.645,
+       11.905,
+       11.61,
+       11.815,
+       11.7,
+       11.875
+      ]
+     },
+     "keys": {
+      "documentsWithMatch": 0,
+      "ms": {
+       "count": 9,
+       "median": 12.04,
+       "p10": 11.905,
+       "p90": 12.225,
+       "min": 11.905,
+       "max": 12.225
+      },
+      "times": [
+       12.025,
+       11.905,
+       12.115,
+       12.055,
+       12.06,
+       12.04,
+       12.005,
+       12.225,
+       11.96
+      ]
+     }
+    }
+   ],
+   "workers": {
+    "workers": 8,
+    "writingTheDocumentsMs": 76.56,
+    "patterns": [
+     {
+      "pattern": "error",
+      "documentsWithMatch": 10559,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 3.805,
+       "p10": 3.48,
+       "p90": 4.605,
+       "min": 3.48,
+       "max": 4.605
+      },
+      "times": [
+       4.605,
+       3.805,
+       3.81,
+       4.07,
+       3.48,
+       3.94,
+       3.72,
+       3.78,
+       3.805
+      ]
+     },
+     {
+      "pattern": "[a-z]+Id",
+      "documentsWithMatch": 23795,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 4.475,
+       "p10": 4.34,
+       "p90": 5.135,
+       "min": 4.34,
+       "max": 5.135
+      },
+      "times": [
+       5.135,
+       4.99,
+       4.36,
+       4.525,
+       4.47,
+       4.475,
+       4.34,
+       4.775,
+       4.38
+      ]
+     },
+     {
+      "pattern": "[a-z0-9.]+@[a-z.]+",
+      "documentsWithMatch": 14481,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 7.325,
+       "p10": 7.01,
+       "p90": 8.31,
+       "min": 7.01,
+       "max": 8.31
+      },
+      "times": [
+       7.01,
+       7.325,
+       7.47,
+       8.31,
+       7.315,
+       7.28,
+       8.055,
+       7.115,
+       7.405
+      ]
+     },
+     {
+      "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+      "documentsWithMatch": 27803,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 1.495,
+       "p10": 1.415,
+       "p90": 1.615,
+       "min": 1.415,
+       "max": 1.615
+      },
+      "times": [
+       1.55,
+       1.43,
+       1.565,
+       1.525,
+       1.49,
+       1.435,
+       1.615,
+       1.415,
+       1.495
+      ]
+     },
+     {
+      "pattern": "([a-z]+)+x",
+      "documentsWithMatch": 47577,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 259.905,
+       "p10": 222.4,
+       "p90": 281.975,
+       "min": 222.4,
+       "max": 281.975
+      },
+      "times": [
+       222.4,
+       253.535,
+       247.195,
+       256.3,
+       263.97,
+       272.195,
+       259.905,
+       273.935,
+       281.975
+      ]
+     },
+     {
+      "pattern": "connection reset",
+      "documentsWithMatch": 1440,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 1.655,
+       "p10": 1.61,
+       "p90": 1.82,
+       "min": 1.61,
+       "max": 1.82
+      },
+      "times": [
+       1.74,
+       1.82,
+       1.61,
+       1.63,
+       1.685,
+       1.655,
+       1.64,
+       1.64,
+       1.695
+      ]
+     }
+    ]
+   }
+  },
+  "loadAtEnd": 11,
+  "finishedAt": "2026-10-14T06:44:00.095Z",
+  "logLines": [
+   "11487.115 ms: memory, the texts: {\"javaScriptBytes\":34649610,\"javaScriptBreakdown\":[{\"megabytes\":34,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":34558302,\"processes\":{\"processes\":[{\"pid\":83364,\"type\":\"browser\",\"residentBytes\":268304384,\"footprintBytes\":88197016,\"footprintPeakBytes\":88344472},{\"pid\":83368,\"type\":\"gpu-process\",\"residentBytes\":155844608,\"footprintBytes\":85476696,\"footprintPeakBytes\":404391256},{\"pid\":83372,\"type\":\"renderer\",\"residentBytes\":197705728,\"footprintBytes\":65095264,\"footprintPeakBytes\":65177184},{\"pid\":83375,\"type\":\"renderer\",\"residentBytes\":124076032,\"footprintBytes\":28886336,\"footprintPeakBytes\":30164288},{\"pid\":83377,\"type\":\"renderer\",\"residentBytes\":128253952,\"footprintBytes\":30491992,\"footprintPeakBytes\":30524760},{\"pid\":83378,\"type\":\"renderer\",\"residentBytes\":265486336,\"footprintBytes\":141690464,\"footprintPeakBytes\":147785312},{\"pid\":83383,\"type\":\"renderer\",\"residentBytes\":124354560,\"footprintBytes\":31229296,\"footprintPeakBytes\":32064880},{\"pid\":83404,\"type\":\"renderer\",\"residentBytes\":140115968,\"footprintBytes\":33785224,\"footprintPeakBytes\":36881752},{\"pid\":83406,\"type\":\"renderer\",\"residentBytes\":107364352,\"footprintBytes\":28329160,\"footprintPeakBytes\":28705992}],\"availableGigabytes\":14.2,\"swap\":\"total = 3072.00M  used = 2136.06M  free = 935.94M  (encrypted)\"}}",
+   "11756.16 ms: whole text, error: 10559 documents, 25.585 ms",
+   "12067.06 ms: whole text, [a-z]+Id: 23795 documents, 29.445 ms",
+   "12554.13 ms: whole text, [a-z0-9.]+@[a-z.]+: 14481 documents, 45.7 ms",
+   "12660.69 ms: whole text, \\d\\d\\d\\d-\\d\\d-\\d\\d: 27803 documents, 8.95 ms",
+   "30357.195 ms: whole text, ([a-z]+)+x: 47577 documents, 1721.245 ms",
+   "30466.93 ms: whole text, connection reset: 1440 documents, 9.13 ms",
+   "31323.485 ms: JSON.parse of every document: 100000 valid, 82.47 ms",
+   "40065.59 ms: memory, the texts and the parsed objects: {\"javaScriptBytes\":62203612,\"javaScriptBreakdown\":[{\"megabytes\":62,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":62111512,\"processes\":{\"processes\":[{\"pid\":83364,\"type\":\"browser\",\"residentBytes\":599605248,\"footprintBytes\":276072824,\"footprintPeakBytes\":411257208},{\"pid\":83368,\"type\":\"gpu-process\",\"residentBytes\":156434432,\"footprintBytes\":58918232,\"footprintPeakBytes\":404391256},{\"pid\":83372,\"type\":\"renderer\",\"residentBytes\":193544192,\"footprintBytes\":56149624,\"footprintPeakBytes\":69142136},{\"pid\":83375,\"type\":\"renderer\",\"residentBytes\":124256256,\"footprintBytes\":28886336,\"footprintPeakBytes\":30164288},{\"pid\":83378,\"type\":\"renderer\",\"residentBytes\":234045440,\"footprintBytes\":108660368,\"footprintPeakBytes\":147785312},{\"pid\":83406,\"type\":\"renderer\",\"residentBytes\":107708416,\"footprintBytes\":27018440,\"footprintPeakBytes\":28705992}],\"availableGigabytes\":16.1,\"swap\":\"total = 3072.00M  used = 2136.06M  free = 935.94M  (encrypted)\"}}",
+   "40752.24 ms: walk, error: string values 2939 documents, 31.7 ms; keys 9568 documents, 30.84 ms",
+   "41405.975 ms: walk, [a-z]+Id: string values 0 documents, 34.775 ms; keys 23795 documents, 24.58 ms",
+   "42163.535 ms: walk, [a-z0-9.]+@[a-z.]+: string values 14481 documents, 35.27 ms; keys 0 documents, 34.72 ms",
+   "42812.27 ms: walk, \\d\\d\\d\\d-\\d\\d-\\d\\d: string values 27803 documents, 27.345 ms; keys 0 documents, 32.83 ms",
+   "68945.195 ms: walk, ([a-z]+)+x: string values 33324 documents, 536.35 ms; keys 21474 documents, 2024.47 ms",
+   "69575.115 ms: walk, connection reset: string values 1440 documents, 26.955 ms; keys 0 documents, 30.335 ms",
+   "78271.44 ms: memory, the texts, the parsed objects and the collected strings: {\"javaScriptBytes\":85418740,\"javaScriptBreakdown\":[{\"megabytes\":85,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":85330336,\"processes\":{\"processes\":[{\"pid\":83364,\"type\":\"browser\",\"residentBytes\":630685696,\"footprintBytes\":158943656,\"footprintPeakBytes\":476170736},{\"pid\":83368,\"type\":\"gpu-process\",\"residentBytes\":156532736,\"footprintBytes\":56952152,\"footprintPeakBytes\":404391256},{\"pid\":83372,\"type\":\"renderer\",\"residentBytes\":193593344,\"footprintBytes\":56166008,\"footprintPeakBytes\":69142136},{\"pid\":83375,\"type\":\"renderer\",\"residentBytes\":126451712,\"footprintBytes\":29984088,\"footprintPeakBytes\":30164288},{\"pid\":83378,\"type\":\"renderer\",\"residentBytes\":261636096,\"footprintBytes\":132564624,\"footprintPeakBytes\":154879632},{\"pid\":83406,\"type\":\"renderer\",\"residentBytes\":107954176,\"footprintBytes\":27018440,\"footprintPeakBytes\":28705992}],\"availableGigabytes\":16.4,\"swap\":\"total = 3072.00M  used = 2136.06M  free = 935.94M  (encrypted)\"}}",
+   "78673.665 ms: collected, error: string values 2939 documents, 17.425 ms; keys 9568 documents, 16.845 ms",
+   "79062.695 ms: collected, [a-z]+Id: string values 0 documents, 19.36 ms; keys 23795 documents, 13.69 ms",
+   "79522.06 ms: collected, [a-z0-9.]+@[a-z.]+: string values 14481 documents, 19.815 ms; keys 0 documents, 20.525 ms",
+   "79800.96 ms: collected, \\d\\d\\d\\d-\\d\\d-\\d\\d: string values 27803 documents, 10.195 ms; keys 0 documents, 11.59 ms",
+   "106330.755 ms: collected, ([a-z]+)+x: string values 33324 documents, 558.07 ms; keys 21474 documents, 2091.025 ms",
+   "106626.345 ms: collected, connection reset: string values 1440 documents, 11.7 ms; keys 0 documents, 12.04 ms",
+   "106779.93 ms: 8 workers, error: 10559 documents, 3.805 ms, 0 differ",
+   "106865.1 ms: 8 workers, [a-z]+Id: 23795 documents, 4.475 ms, 0 differ",
+   "106999.03 ms: 8 workers, [a-z0-9.]+@[a-z.]+: 14481 documents, 7.325 ms, 0 differ",
+   "107027.85 ms: 8 workers, \\d\\d\\d\\d-\\d\\d-\\d\\d: 27803 documents, 1.495 ms, 0 differ",
+   "112022.85 ms: 8 workers, ([a-z]+)+x: 47577 documents, 259.905 ms, 0 differ",
+   "112056.815 ms: 8 workers, connection reset: 1440 documents, 1.655 ms, 0 differ",
+   "130614.275 ms: memory, the texts in the page and in the workers: {\"javaScriptBytes\":103450120,\"javaScriptBreakdown\":[{\"megabytes\":5,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":62,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]},{\"megabytes\":5,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":5,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":5,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":5,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":5,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":5,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":5,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]}],\"usedHeapBytes\":62970965,\"processes\":{\"processes\":[{\"pid\":83364,\"type\":\"browser\",\"residentBytes\":636796928,\"footprintBytes\":281004456,\"footprintPeakBytes\":476170736},{\"pid\":83368,\"type\":\"gpu-process\",\"residentBytes\":156909568,\"footprintBytes\":61408600,\"footprintPeakBytes\":404391256},{\"pid\":83372,\"type\":\"renderer\",\"residentBytes\":193642496,\"footprintBytes\":54675064,\"footprintPeakBytes\":69142136},{\"pid\":83375,\"type\":\"renderer\",\"residentBytes\":126500864,\"footprintBytes\":29984088,\"footprintPeakBytes\":30164288},{\"pid\":83378,\"type\":\"renderer\",\"residentBytes\":416137216,\"footprintBytes\":275253960,\"footprintPeakBytes\":312838856},{\"pid\":83406,\"type\":\"renderer\",\"residentBytes\":107954176,\"footprintBytes\":27018440,\"footprintPeakBytes\":28705992}],\"availableGigabytes\":16.8,\"swap\":\"total = 3072.00M  used = 2136.06M  free = 935.94M  (encrypted)\"}}"
+  ],
+  "done": true
+ }
+}

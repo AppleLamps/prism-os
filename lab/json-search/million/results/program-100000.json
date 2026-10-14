@@ -1,0 +1,2562 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T06:38:53.731Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 5.17 3.80 3.90 }",
+  "memoryBefore": "System-wide memory free percentage: 68%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "program",
+   "--count",
+   "100000",
+   "--profile",
+   "program-100000-1791959933706",
+   "--out",
+   "program-100000.json"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T06:39:03.772Z",
+    "load": "{ 5.54 3.92 3.95 }"
+   },
+   {
+    "at": "2026-10-14T06:39:13.773Z",
+    "load": "{ 5.60 3.99 3.97 }"
+   },
+   {
+    "at": "2026-10-14T06:39:23.953Z",
+    "load": "{ 5.10 3.95 3.96 }"
+   },
+   {
+    "at": "2026-10-14T06:39:33.954Z",
+    "load": "{ 5.25 4.02 3.98 }"
+   },
+   {
+    "at": "2026-10-14T06:39:43.955Z",
+    "load": "{ 5.53 4.12 4.02 }"
+   },
+   {
+    "at": "2026-10-14T06:39:53.956Z",
+    "load": "{ 5.46 4.15 4.03 }"
+   },
+   {
+    "at": "2026-10-14T06:40:03.957Z",
+    "load": "{ 5.75 4.26 4.07 }"
+   },
+   {
+    "at": "2026-10-14T06:40:13.958Z",
+    "load": "{ 6.22 4.40 4.12 }"
+   },
+   {
+    "at": "2026-10-14T06:40:23.959Z",
+    "load": "{ 6.64 4.55 4.18 }"
+   },
+   {
+    "at": "2026-10-14T06:40:33.960Z",
+    "load": "{ 6.23 4.53 4.17 }"
+   },
+   {
+    "at": "2026-10-14T06:40:43.961Z",
+    "load": "{ 6.69 4.68 4.23 }"
+   },
+   {
+    "at": "2026-10-14T06:40:53.961Z",
+    "load": "{ 6.28 4.66 4.23 }"
+   },
+   {
+    "at": "2026-10-14T06:41:03.962Z",
+    "load": "{ 6.23 4.70 4.25 }"
+   },
+   {
+    "at": "2026-10-14T06:41:13.963Z",
+    "load": "{ 5.95 4.69 4.25 }"
+   },
+   {
+    "at": "2026-10-14T06:41:23.964Z",
+    "load": "{ 6.40 4.83 4.30 }"
+   },
+   {
+    "at": "2026-10-14T06:41:33.965Z",
+    "load": "{ 7.27 5.07 4.39 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9511",
+   "--user-data-dir=program-100000-1791959933706",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900",
+   "--js-flags=--expose-gc"
+  ],
+  "chromePid": 81851,
+  "browser": "Chrome/155.0.8059.80",
+  "finishedAt": "2026-10-14T06:41:35.895Z",
+  "loadAfter": "{ 7.27 5.07 4.39 }",
+  "memoryAfter": "System-wide memory free percentage: 74%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T06:38:54.319Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "program",
+   "count": 100000,
+   "patterns": [
+    "error",
+    "[a-z]+Id",
+    "[a-z0-9.]+@[a-z.]+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "([a-z]+)+x",
+    "connection reset"
+   ],
+   "capacities": [
+    8,
+    16,
+    32
+   ],
+   "shaderSalt": 392709498,
+   "pieceDocuments": 50000,
+   "engines": [
+    "f32-kernel",
+    "bytes-boundaries",
+    "bytes",
+    "bytes-scope",
+    "packed",
+    "packed-scope",
+    "bytes-bits",
+    "bytes-has",
+    "bytes-scope-has",
+    "packed-scope-has"
+   ],
+   "f32": true,
+   "pausesMs": [
+    200
+   ],
+   "longPausesMs": [
+    1000
+   ],
+   "longPauseEngines": [
+    "f32-kernel",
+    "bytes",
+    "bytes-scope-has"
+   ],
+   "pauseSamples": 9,
+   "restMs": 0,
+   "warmPauses": [],
+   "minimumSamples": 15,
+   "sampleMs": 1000,
+   "layout": "fixed",
+   "workers": 8,
+   "scopeBits": true,
+   "limits": "needed",
+   "keepTexts": false,
+   "jsSamples": 9,
+   "filterWorkers": 8,
+   "jsParts": [
+    "wholeText",
+    "parse",
+    "walk",
+    "collected",
+    "workers"
+   ]
+  },
+  "memory": {
+   "the texts in the page": {
+    "javaScriptBytes": 34708626,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 34,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 34617318,
+    "processes": {
+     "processes": [
+      {
+       "pid": 81851,
+       "type": "browser",
+       "residentBytes": 401670144,
+       "footprintBytes": 217155504,
+       "footprintPeakBytes": 230574000
+      },
+      {
+       "pid": 81857,
+       "type": "gpu-process",
+       "residentBytes": 156712960,
+       "footprintBytes": 87770384,
+       "footprintPeakBytes": 446661904
+      },
+      {
+       "pid": 81862,
+       "type": "renderer",
+       "residentBytes": 201834496,
+       "footprintBytes": 69224008,
+       "footprintPeakBytes": 69240392
+      },
+      {
+       "pid": 81865,
+       "type": "renderer",
+       "residentBytes": 124321792,
+       "footprintBytes": 28935464,
+       "footprintPeakBytes": 30098728
+      },
+      {
+       "pid": 81867,
+       "type": "renderer",
+       "residentBytes": 129630208,
+       "footprintBytes": 30459224,
+       "footprintPeakBytes": 30459224
+      },
+      {
+       "pid": 81868,
+       "type": "renderer",
+       "residentBytes": 265355264,
+       "footprintBytes": 140592736,
+       "footprintPeakBytes": 146458208
+      },
+      {
+       "pid": 81870,
+       "type": "renderer",
+       "residentBytes": 124567552,
+       "footprintBytes": 31393184,
+       "footprintPeakBytes": 32163232
+      },
+      {
+       "pid": 81902,
+       "type": "renderer",
+       "residentBytes": 141623296,
+       "footprintBytes": 33981784,
+       "footprintPeakBytes": 37111104
+      },
+      {
+       "pid": 81905,
+       "type": "renderer",
+       "residentBytes": 107708416,
+       "footprintBytes": 27018512,
+       "footprintPeakBytes": 28689680
+      }
+     ],
+     "availableGigabytes": 15.5,
+     "swap": "total = 7168.00M  used = 5704.00M  free = 1464.00M  (encrypted)"
+    }
+   },
+   "after creating the searcher": {
+    "javaScriptBytes": 38272099,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 38,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 38179987,
+    "processes": {
+     "processes": [
+      {
+       "pid": 81851,
+       "type": "browser",
+       "residentBytes": 596656128,
+       "footprintBytes": 119785704,
+       "footprintPeakBytes": 408389864
+      },
+      {
+       "pid": 81857,
+       "type": "gpu-process",
+       "residentBytes": 374996992,
+       "footprintBytes": 690456016,
+       "footprintPeakBytes": 1138329040
+      },
+      {
+       "pid": 81862,
+       "type": "renderer",
+       "residentBytes": 205357056,
+       "footprintBytes": 72844872,
+       "footprintPeakBytes": 72894024
+      },
+      {
+       "pid": 81865,
+       "type": "renderer",
+       "residentBytes": 124157952,
+       "footprintBytes": 28935464,
+       "footprintPeakBytes": 30098728
+      },
+      {
+       "pid": 81868,
+       "type": "renderer",
+       "residentBytes": 419954688,
+       "footprintBytes": 293373752,
+       "footprintPeakBytes": 559368112
+      },
+      {
+       "pid": 81870,
+       "type": "renderer",
+       "residentBytes": 124403712,
+       "footprintBytes": 31393184,
+       "footprintPeakBytes": 32163232
+      },
+      {
+       "pid": 81905,
+       "type": "renderer",
+       "residentBytes": 107544576,
+       "footprintBytes": 27018512,
+       "footprintPeakBytes": 28689680
+      }
+     ],
+     "availableGigabytes": 14.2,
+     "swap": "total = 7168.00M  used = 5704.00M  free = 1464.00M  (encrypted)"
+    }
+   },
+   "after the searches": {
+    "javaScriptBytes": 74691938,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 74,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 74600086,
+    "processes": {
+     "processes": [
+      {
+       "pid": 81851,
+       "type": "browser",
+       "residentBytes": 639713280,
+       "footprintBytes": 370641176,
+       "footprintPeakBytes": 438323480
+      },
+      {
+       "pid": 81857,
+       "type": "gpu-process",
+       "residentBytes": 488013824,
+       "footprintBytes": 685524624,
+       "footprintPeakBytes": 1756284560
+      },
+      {
+       "pid": 81862,
+       "type": "renderer",
+       "residentBytes": 194265088,
+       "footprintBytes": 55199304,
+       "footprintPeakBytes": 73254472
+      },
+      {
+       "pid": 81865,
+       "type": "renderer",
+       "residentBytes": 125861888,
+       "footprintBytes": 30033216,
+       "footprintPeakBytes": 30098728
+      },
+      {
+       "pid": 81868,
+       "type": "renderer",
+       "residentBytes": 483278848,
+       "footprintBytes": 323962776,
+       "footprintPeakBytes": 559368112
+      },
+      {
+       "pid": 81905,
+       "type": "renderer",
+       "residentBytes": 107200512,
+       "footprintBytes": 27018512,
+       "footprintPeakBytes": 28689680
+      }
+     ],
+     "availableGigabytes": 15.4,
+     "swap": "total = 3072.00M  used = 2144.06M  free = 927.94M  (encrypted)"
+    }
+   }
+  },
+  "loadAtStart": 5.24,
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeWorkgroupsPerDimension": 65535
+   },
+   "hasTimestamps": true,
+   "grantedBufferBytes": 205200000
+  },
+  "emptyPipelineMs": 34.6,
+  "searcher": {
+   "generateMs": 369.875,
+   "createMs": 184.165,
+   "load": {
+    "cellsMs": 42.4300000667572,
+    "validateMs": 92.375,
+    "totalMs": 184.00999999046326
+   },
+   "limits": {
+    "maxStorageBufferBindingSize": 205200000,
+    "maxBufferSize": 268435456,
+    "maxDocuments": 100000,
+    "hasTimestamps": true
+   },
+   "validCount": 100000,
+   "bufferBytes": {
+    "cells": 205200000,
+    "kinds": 204800000,
+    "summary": 1600000,
+    "matchCounts": 400000
+   }
+  },
+  "patterns": [
+   {
+    "pattern": "error",
+    "states": 6,
+    "capacity": 8,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 12507,
+     "keys": 9568,
+     "strings": 2939
+    },
+    "documentsWithMatch": {
+     "everything": 10559,
+     "keys": 9568,
+     "strings": 2939
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   },
+   {
+    "pattern": "[a-z]+Id",
+    "states": 4,
+    "capacity": 8,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 23795,
+     "keys": 23795,
+     "strings": 0
+    },
+    "documentsWithMatch": {
+     "everything": 23795,
+     "keys": 23795,
+     "strings": 0
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   },
+   {
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "states": 4,
+    "capacity": 8,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 14481,
+     "keys": 0,
+     "strings": 14481
+    },
+    "documentsWithMatch": {
+     "everything": 14481,
+     "keys": 0,
+     "strings": 14481
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   },
+   {
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "states": 11,
+    "capacity": 16,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 27803,
+     "keys": 0,
+     "strings": 27803
+    },
+    "documentsWithMatch": {
+     "everything": 27803,
+     "keys": 0,
+     "strings": 27803
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   },
+   {
+    "pattern": "([a-z]+)+x",
+    "states": 3,
+    "capacity": 8,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 69580,
+     "keys": 25495,
+     "strings": 44085
+    },
+    "documentsWithMatch": {
+     "everything": 47577,
+     "keys": 21474,
+     "strings": 33324
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   },
+   {
+    "pattern": "connection reset",
+    "states": 17,
+    "capacity": 32,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 1440,
+     "keys": 0,
+     "strings": 1440
+    },
+    "documentsWithMatch": {
+     "everything": 1440,
+     "keys": 0,
+     "strings": 1440
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   }
+  ],
+  "results": [
+   {
+    "states": 8,
+    "engine": "searcher",
+    "what": "searcher.ts on one f32 per code point, what the demo page runs today",
+    "scope": "everything",
+    "patterns": [
+     "error",
+     "[a-z]+Id",
+     "[a-z0-9.]+@[a-z.]+",
+     "([a-z]+)+x"
+    ],
+    "prepareMs": 0.005,
+    "at": "2026-10-14T06:39:36.171Z",
+    "load": 5.25,
+    "firstSearchMs": 31.315,
+    "backToBack": {
+     "patternMs": {
+      "count": 100,
+      "median": 0.045,
+      "p10": 0.035,
+      "p90": 0.065,
+      "min": 0.025,
+      "max": 0.085
+     },
+     "submitMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "waitMs": {
+      "count": 100,
+      "median": 7.335,
+      "p10": 7.205,
+      "p90": 7.61,
+      "min": 7.115,
+      "max": 8.155
+     },
+     "copyMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "totalMs": {
+      "count": 100,
+      "median": 7.385,
+      "p10": 7.245,
+      "p90": 7.645,
+      "min": 7.15,
+      "max": 8.2
+     },
+     "gapMs": {
+      "count": 100,
+      "median": 0.05,
+      "p10": 0.05,
+      "p90": 0.06,
+      "min": 0.045,
+      "max": 0.065
+     },
+     "totals": [
+      7.25,
+      7.36,
+      7.345,
+      7.27,
+      7.375,
+      7.7,
+      7.45,
+      7.64,
+      7.48,
+      7.575,
+      8.2,
+      7.565,
+      7.28,
+      7.28,
+      7.235,
+      7.31,
+      7.36,
+      7.32,
+      7.8,
+      7.285,
+      7.39,
+      7.21,
+      7.465,
+      7.23,
+      7.49,
+      7.17,
+      7.235,
+      7.39,
+      7.27,
+      7.575,
+      7.405,
+      7.64,
+      7.375,
+      7.645,
+      7.385,
+      7.535,
+      7.4,
+      7.53,
+      7.34,
+      7.365,
+      7.3,
+      7.36,
+      7.58,
+      7.32,
+      7.305,
+      7.365,
+      7.785,
+      7.325,
+      7.645,
+      7.185,
+      7.49,
+      7.38,
+      7.44,
+      7.385,
+      7.415,
+      7.34,
+      7.395,
+      7.945,
+      7.38,
+      7.535,
+      7.365,
+      7.58,
+      7.245,
+      7.56,
+      7.32,
+      7.265,
+      7.345,
+      7.43,
+      7.29,
+      7.375,
+      7.55,
+      7.28,
+      7.465,
+      7.23,
+      7.54,
+      7.37,
+      7.34,
+      7.355,
+      7.33,
+      7.33,
+      7.15,
+      7.915,
+      7.43,
+      7.485,
+      7.35,
+      7.575,
+      7.485,
+      7.595,
+      7.99,
+      7.735,
+      7.4,
+      7.525,
+      7.235,
+      7.235,
+      7.455,
+      7.4,
+      7.79,
+      7.375,
+      7.525,
+      7.405
+     ]
+    },
+    "withTimestamps": {
+     "patternMs": {
+      "count": 100,
+      "median": 0.045,
+      "p10": 0.04,
+      "p90": 0.065,
+      "min": 0.03,
+      "max": 0.09
+     },
+     "submitMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "waitMs": {
+      "count": 100,
+      "median": 7.603,
+      "p10": 7.485,
+      "p90": 7.78,
+      "min": 7.36,
+      "max": 8.23
+     },
+     "copyMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "totalMs": {
+      "count": 100,
+      "median": 7.648,
+      "p10": 7.53,
+      "p90": 7.845,
+      "min": 7.395,
+      "max": 8.295
+     },
+     "passMs": {
+      "count": 100,
+      "median": 6.951,
+      "p10": 6.851,
+      "p90": 7.147,
+      "min": 6.778,
+      "max": 7.557
+     },
+     "gapMs": {
+      "count": 100,
+      "median": 0.05,
+      "p10": 0.05,
+      "p90": 0.065,
+      "min": 0.045,
+      "max": 0.085
+     },
+     "totals": [
+      8.295,
+      7.785,
+      7.825,
+      7.65,
+      7.835,
+      7.71,
+      7.815,
+      7.53,
+      7.77,
+      7.465,
+      7.695,
+      7.47,
+      7.82,
+      7.395,
+      7.76,
+      7.525,
+      7.585,
+      7.63,
+      7.73,
+      7.69,
+      7.505,
+      7.86,
+      7.665,
+      8.065,
+      7.525,
+      7.75,
+      7.575,
+      7.955,
+      7.67,
+      8.135,
+      7.62,
+      7.795,
+      7.815,
+      7.9,
+      7.635,
+      7.76,
+      7.61,
+      7.635,
+      7.785,
+      7.59,
+      7.57,
+      7.56,
+      7.85,
+      7.67,
+      7.615,
+      7.595,
+      7.535,
+      7.605,
+      8.085,
+      7.57,
+      8.03,
+      7.685,
+      7.81,
+      7.67,
+      7.75,
+      7.57,
+      7.71,
+      7.61,
+      7.73,
+      7.545,
+      7.66,
+      7.69,
+      7.58,
+      7.565,
+      7.69,
+      7.595,
+      7.845,
+      7.595,
+      7.695,
+      7.615,
+      7.705,
+      7.7,
+      7.63,
+      7.805,
+      7.54,
+      7.695,
+      7.655,
+      7.595,
+      7.575,
+      7.61,
+      7.67,
+      7.52,
+      7.605,
+      7.645,
+      7.655,
+      7.635,
+      7.605,
+      7.635,
+      7.81,
+      7.565,
+      7.845,
+      7.505,
+      7.565,
+      7.595,
+      7.48,
+      7.535,
+      7.795,
+      7.605,
+      7.64,
+      7.52
+     ]
+    },
+    "afterPause": [
+     {
+      "pauseMs": 200,
+      "patternMs": {
+       "count": 9,
+       "median": 0.05,
+       "p10": 0.045,
+       "p90": 0.06,
+       "min": 0.045,
+       "max": 0.06
+      },
+      "submitMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "waitMs": {
+       "count": 9,
+       "median": 16.715,
+       "p10": 7.975,
+       "p90": 17.64,
+       "min": 7.975,
+       "max": 17.64
+      },
+      "copyMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "totalMs": {
+       "count": 9,
+       "median": 16.765,
+       "p10": 8.025,
+       "p90": 17.7,
+       "min": 8.025,
+       "max": 17.7
+      },
+      "gapMs": {
+       "count": 9,
+       "median": 201.05,
+       "p10": 200.725,
+       "p90": 201.95,
+       "min": 200.725,
+       "max": 201.95
+      },
+      "totals": [
+       8.025,
+       17.7,
+       10.905,
+       17.08,
+       14.84,
+       16.765,
+       12.54,
+       17.395,
+       17.135
+      ]
+     },
+     {
+      "pauseMs": 1000,
+      "patternMs": {
+       "count": 9,
+       "median": 0.07,
+       "p10": 0.05,
+       "p90": 0.12,
+       "min": 0.05,
+       "max": 0.12
+      },
+      "submitMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "waitMs": {
+       "count": 9,
+       "median": 17.38,
+       "p10": 16.765,
+       "p90": 18.12,
+       "min": 16.765,
+       "max": 18.12
+      },
+      "copyMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "totalMs": {
+       "count": 9,
+       "median": 17.465,
+       "p10": 16.82,
+       "p90": 18.24,
+       "min": 16.82,
+       "max": 18.24
+      },
+      "gapMs": {
+       "count": 9,
+       "median": 1001.065,
+       "p10": 1000.705,
+       "p90": 1001.935,
+       "min": 1000.705,
+       "max": 1001.935
+      },
+      "totals": [
+       16.82,
+       17.465,
+       17.53,
+       17.43,
+       18.135,
+       18.24,
+       17.365,
+       17.465,
+       17.255
+      ]
+     }
+    ],
+    "checks": {
+     "searches": 270,
+     "values": 27000000,
+     "mismatches": 0
+    },
+    "loadAfter": 5.32
+   },
+   {
+    "states": 8,
+    "engine": "searcher",
+    "what": "searcher.ts on one f32 per code point, what the demo page runs today",
+    "scope": "strings",
+    "patterns": [
+     "error",
+     "[a-z]+Id",
+     "[a-z0-9.]+@[a-z.]+",
+     "([a-z]+)+x"
+    ],
+    "prepareMs": 0.005,
+    "at": "2026-10-14T06:39:49.278Z",
+    "load": 5.32,
+    "firstSearchMs": 12.555,
+    "backToBack": {
+     "patternMs": {
+      "count": 100,
+      "median": 0.035,
+      "p10": 0.025,
+      "p90": 0.05,
+      "min": 0.015,
+      "max": 0.09
+     },
+     "submitMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "waitMs": {
+      "count": 100,
+      "median": 7.27,
+      "p10": 7.17,
+      "p90": 7.375,
+      "min": 7.12,
+      "max": 8.6
+     },
+     "copyMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "totalMs": {
+      "count": 100,
+      "median": 7.305,
+      "p10": 7.2,
+      "p90": 7.43,
+      "min": 7.145,
+      "max": 8.64
+     },
+     "gapMs": {
+      "count": 100,
+      "median": 0.05,
+      "p10": 0.045,
+      "p90": 0.055,
+      "min": 0.045,
+      "max": 0.065
+     },
+     "totals": [
+      7.345,
+      7.405,
+      7.41,
+      7.305,
+      7.43,
+      7.435,
+      7.395,
+      7.485,
+      7.415,
+      7.46,
+      7.255,
+      7.405,
+      7.355,
+      7.435,
+      7.44,
+      7.345,
+      7.3,
+      7.355,
+      7.305,
+      7.405,
+      7.36,
+      7.235,
+      7.31,
+      7.31,
+      7.275,
+      7.245,
+      7.34,
+      7.355,
+      7.42,
+      7.35,
+      7.335,
+      7.3,
+      7.25,
+      7.19,
+      7.325,
+      7.25,
+      7.265,
+      7.355,
+      7.325,
+      7.36,
+      7.305,
+      7.2,
+      7.325,
+      7.3,
+      7.305,
+      7.285,
+      7.235,
+      7.29,
+      7.205,
+      7.195,
+      7.2,
+      7.285,
+      7.245,
+      7.205,
+      7.185,
+      7.32,
+      7.32,
+      7.325,
+      7.335,
+      7.22,
+      7.305,
+      7.31,
+      7.185,
+      7.27,
+      7.28,
+      7.245,
+      7.22,
+      7.35,
+      7.325,
+      7.2,
+      7.28,
+      7.175,
+      7.145,
+      7.175,
+      7.29,
+      7.16,
+      7.16,
+      7.24,
+      7.155,
+      7.335,
+      7.335,
+      7.285,
+      7.315,
+      7.545,
+      7.235,
+      7.255,
+      7.37,
+      7.275,
+      7.305,
+      7.335,
+      7.395,
+      7.675,
+      7.36,
+      7.315,
+      7.705,
+      8.64,
+      7.275,
+      7.25,
+      7.28,
+      7.325
+     ]
+    },
+    "withTimestamps": {
+     "patternMs": {
+      "count": 100,
+      "median": 0.03,
+      "p10": 0.025,
+      "p90": 0.04,
+      "min": 0.02,
+      "max": 0.055
+     },
+     "submitMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "waitMs": {
+      "count": 100,
+      "median": 7.52,
+      "p10": 7.415,
+      "p90": 7.62,
+      "min": 7.325,
+      "max": 9.19
+     },
+     "copyMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "totalMs": {
+      "count": 100,
+      "median": 7.553,
+      "p10": 7.44,
+      "p90": 7.65,
+      "min": 7.345,
+      "max": 9.22
+     },
+     "passMs": {
+      "count": 100,
+      "median": 6.938,
+      "p10": 6.853,
+      "p90": 6.976,
+      "min": 6.815,
+      "max": 8.53
+     },
+     "gapMs": {
+      "count": 100,
+      "median": 0.05,
+      "p10": 0.045,
+      "p90": 0.055,
+      "min": 0.045,
+      "max": 0.07
+     },
+     "totals": [
+      7.555,
+      7.52,
+      7.535,
+      7.59,
+      7.48,
+      7.65,
+      7.575,
+      7.525,
+      7.68,
+      7.535,
+      7.455,
+      7.46,
+      7.525,
+      7.445,
+      7.54,
+      7.555,
+      7.525,
+      7.52,
+      7.53,
+      7.44,
+      7.485,
+      7.42,
+      7.545,
+      7.41,
+      7.465,
+      7.4,
+      7.345,
+      7.465,
+      7.445,
+      7.43,
+      7.53,
+      7.35,
+      7.505,
+      7.535,
+      7.485,
+      7.435,
+      7.43,
+      7.42,
+      7.65,
+      7.56,
+      7.605,
+      7.52,
+      7.545,
+      7.53,
+      7.585,
+      7.55,
+      7.565,
+      7.645,
+      7.575,
+      7.705,
+      7.6,
+      7.66,
+      7.65,
+      7.645,
+      7.615,
+      7.49,
+      7.47,
+      7.52,
+      7.665,
+      7.56,
+      7.41,
+      7.515,
+      7.645,
+      7.59,
+      7.57,
+      7.54,
+      7.455,
+      7.58,
+      7.635,
+      7.625,
+      7.555,
+      7.63,
+      7.55,
+      7.605,
+      7.61,
+      7.505,
+      7.55,
+      7.49,
+      7.565,
+      7.64,
+      7.61,
+      7.57,
+      7.64,
+      7.52,
+      7.75,
+      7.75,
+      7.59,
+      7.665,
+      7.545,
+      7.905,
+      7.645,
+      7.645,
+      7.6,
+      7.58,
+      7.63,
+      7.64,
+      7.65,
+      7.535,
+      9.22,
+      7.64
+     ]
+    },
+    "afterPause": [
+     {
+      "pauseMs": 200,
+      "patternMs": {
+       "count": 9,
+       "median": 0.05,
+       "p10": 0.04,
+       "p90": 0.06,
+       "min": 0.04,
+       "max": 0.06
+      },
+      "submitMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "waitMs": {
+       "count": 9,
+       "median": 17.32,
+       "p10": 17.205,
+       "p90": 17.945,
+       "min": 17.205,
+       "max": 17.945
+      },
+      "copyMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "totalMs": {
+       "count": 9,
+       "median": 17.375,
+       "p10": 17.25,
+       "p90": 18,
+       "min": 17.25,
+       "max": 18
+      },
+      "gapMs": {
+       "count": 9,
+       "median": 201.05,
+       "p10": 201.045,
+       "p90": 201.12,
+       "min": 201.045,
+       "max": 201.12
+      },
+      "totals": [
+       17.34,
+       17.36,
+       17.44,
+       18,
+       17.25,
+       17.375,
+       17.355,
+       17.375,
+       17.43
+      ]
+     },
+     {
+      "pauseMs": 1000,
+      "patternMs": {
+       "count": 9,
+       "median": 0.06,
+       "p10": 0.055,
+       "p90": 0.105,
+       "min": 0.055,
+       "max": 0.105
+      },
+      "submitMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "waitMs": {
+       "count": 9,
+       "median": 17.33,
+       "p10": 17.2,
+       "p90": 18.065,
+       "min": 17.2,
+       "max": 18.065
+      },
+      "copyMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "totalMs": {
+       "count": 9,
+       "median": 17.415,
+       "p10": 17.26,
+       "p90": 18.12,
+       "min": 17.26,
+       "max": 18.12
+      },
+      "gapMs": {
+       "count": 9,
+       "median": 1001.125,
+       "p10": 1000.4,
+       "p90": 1001.86,
+       "min": 1000.4,
+       "max": 1001.86
+      },
+      "totals": [
+       18.12,
+       17.26,
+       17.36,
+       17.435,
+       17.435,
+       17.415,
+       17.285,
+       17.415,
+       17.335
+      ]
+     }
+    ],
+    "checks": {
+     "searches": 273,
+     "values": 27300000,
+     "mismatches": 0
+    },
+    "loadAfter": 5.82
+   },
+   {
+    "states": 8,
+    "engine": "searcher",
+    "what": "searcher.ts on one f32 per code point, what the demo page runs today",
+    "scope": "keys",
+    "patterns": [
+     "error",
+     "[a-z]+Id",
+     "[a-z0-9.]+@[a-z.]+",
+     "([a-z]+)+x"
+    ],
+    "prepareMs": 0.005,
+    "at": "2026-10-14T06:40:02.373Z",
+    "load": 5.82,
+    "firstSearchMs": 13.05,
+    "backToBack": {
+     "patternMs": {
+      "count": 100,
+      "median": 0.04,
+      "p10": 0.035,
+      "p90": 0.045,
+      "min": 0.025,
+      "max": 0.055
+     },
+     "submitMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "waitMs": {
+      "count": 100,
+      "median": 7.415,
+      "p10": 7.32,
+      "p90": 7.58,
+      "min": 7.25,
+      "max": 7.73
+     },
+     "copyMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "totalMs": {
+      "count": 100,
+      "median": 7.455,
+      "p10": 7.36,
+      "p90": 7.62,
+      "min": 7.29,
+      "max": 7.785
+     },
+     "gapMs": {
+      "count": 100,
+      "median": 0.05,
+      "p10": 0.045,
+      "p90": 0.06,
+      "min": 0.045,
+      "max": 0.07
+     },
+     "totals": [
+      7.325,
+      7.44,
+      7.41,
+      7.42,
+      7.485,
+      7.32,
+      7.455,
+      7.4,
+      7.36,
+      7.42,
+      7.36,
+      7.295,
+      7.435,
+      7.365,
+      7.425,
+      7.4,
+      7.54,
+      7.52,
+      7.485,
+      7.46,
+      7.545,
+      7.435,
+      7.46,
+      7.365,
+      7.48,
+      7.58,
+      7.405,
+      7.29,
+      7.31,
+      7.445,
+      7.415,
+      7.51,
+      7.55,
+      7.545,
+      7.66,
+      7.725,
+      7.365,
+      7.455,
+      7.375,
+      7.42,
+      7.545,
+      7.48,
+      7.41,
+      7.64,
+      7.61,
+      7.68,
+      7.445,
+      7.415,
+      7.685,
+      7.655,
+      7.72,
+      7.58,
+      7.45,
+      7.38,
+      7.48,
+      7.44,
+      7.47,
+      7.53,
+      7.385,
+      7.575,
+      7.525,
+      7.6,
+      7.56,
+      7.635,
+      7.56,
+      7.46,
+      7.465,
+      7.315,
+      7.445,
+      7.445,
+      7.46,
+      7.365,
+      7.485,
+      7.505,
+      7.395,
+      7.505,
+      7.505,
+      7.49,
+      7.44,
+      7.45,
+      7.515,
+      7.62,
+      7.5,
+      7.785,
+      7.37,
+      7.46,
+      7.44,
+      7.415,
+      7.45,
+      7.365,
+      7.465,
+      7.345,
+      7.33,
+      7.4,
+      7.335,
+      7.36,
+      7.49,
+      7.46,
+      7.355,
+      7.465
+     ]
+    },
+    "withTimestamps": {
+     "patternMs": {
+      "count": 100,
+      "median": 0.035,
+      "p10": 0.025,
+      "p90": 0.045,
+      "min": 0.02,
+      "max": 0.045
+     },
+     "submitMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "waitMs": {
+      "count": 100,
+      "median": 7.597,
+      "p10": 7.5,
+      "p90": 7.685,
+      "min": 7.445,
+      "max": 9.505
+     },
+     "copyMs": {
+      "count": 100,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "totalMs": {
+      "count": 100,
+      "median": 7.628,
+      "p10": 7.535,
+      "p90": 7.725,
+      "min": 7.465,
+      "max": 9.545
+     },
+     "passMs": {
+      "count": 100,
+      "median": 6.889,
+      "p10": 6.85,
+      "p90": 6.968,
+      "min": 6.786,
+      "max": 8.798
+     },
+     "gapMs": {
+      "count": 100,
+      "median": 0.05,
+      "p10": 0.05,
+      "p90": 0.06,
+      "min": 0.045,
+      "max": 0.135
+     },
+     "totals": [
+      7.57,
+      7.705,
+      7.675,
+      7.555,
+      7.59,
+      7.58,
+      7.82,
+      7.7,
+      7.655,
+      7.61,
+      7.635,
+      7.585,
+      7.715,
+      7.555,
+      7.57,
+      7.525,
+      7.645,
+      7.66,
+      7.665,
+      7.605,
+      7.655,
+      7.61,
+      7.58,
+      7.575,
+      7.58,
+      7.665,
+      7.545,
+      7.655,
+      7.59,
+      7.7,
+      7.625,
+      7.79,
+      7.725,
+      7.78,
+      7.735,
+      7.595,
+      7.655,
+      7.535,
+      7.53,
+      7.575,
+      7.515,
+      7.505,
+      7.5,
+      7.52,
+      7.635,
+      7.59,
+      7.55,
+      7.62,
+      7.575,
+      7.675,
+      7.56,
+      7.63,
+      7.625,
+      7.635,
+      7.625,
+      7.695,
+      7.725,
+      7.685,
+      7.55,
+      7.58,
+      7.695,
+      7.535,
+      7.52,
+      7.59,
+      7.725,
+      7.675,
+      7.56,
+      7.69,
+      7.465,
+      7.72,
+      7.685,
+      7.635,
+      7.62,
+      7.68,
+      7.7,
+      7.71,
+      7.625,
+      7.73,
+      7.65,
+      7.7,
+      7.66,
+      7.535,
+      7.795,
+      7.685,
+      7.66,
+      7.625,
+      9.545,
+      7.61,
+      7.7,
+      7.65,
+      7.675,
+      7.515,
+      7.695,
+      7.5,
+      7.625,
+      7.64,
+      7.535,
+      7.565,
+      7.625,
+      7.775
+     ]
+    },
+    "afterPause": [
+     {
+      "pauseMs": 200,
+      "patternMs": {
+       "count": 9,
+       "median": 0.05,
+       "p10": 0.045,
+       "p90": 0.06,
+       "min": 0.045,
+       "max": 0.06
+      },
+      "submitMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "waitMs": {
+       "count": 9,
+       "median": 17.34,
+       "p10": 17.245,
+       "p90": 17.41,
+       "min": 17.245,
+       "max": 17.41
+      },
+      "copyMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "totalMs": {
+       "count": 9,
+       "median": 17.395,
+       "p10": 17.29,
+       "p90": 17.465,
+       "min": 17.29,
+       "max": 17.465
+      },
+      "gapMs": {
+       "count": 9,
+       "median": 201.055,
+       "p10": 200.375,
+       "p90": 201.14,
+       "min": 200.375,
+       "max": 201.14
+      },
+      "totals": [
+       17.385,
+       17.465,
+       17.43,
+       17.455,
+       17.43,
+       17.395,
+       17.31,
+       17.37,
+       17.29
+      ]
+     },
+     {
+      "pauseMs": 1000,
+      "patternMs": {
+       "count": 9,
+       "median": 0.05,
+       "p10": 0.04,
+       "p90": 0.06,
+       "min": 0.04,
+       "max": 0.06
+      },
+      "submitMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "waitMs": {
+       "count": 9,
+       "median": 17.63,
+       "p10": 16.075,
+       "p90": 19.355,
+       "min": 16.075,
+       "max": 19.355
+      },
+      "copyMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "totalMs": {
+       "count": 9,
+       "median": 17.675,
+       "p10": 16.125,
+       "p90": 19.395,
+       "min": 16.125,
+       "max": 19.395
+      },
+      "gapMs": {
+       "count": 9,
+       "median": 1001.065,
+       "p10": 1000.82,
+       "p90": 1001.11,
+       "min": 1000.82,
+       "max": 1001.11
+      },
+      "totals": [
+       17.415,
+       16.125,
+       18,
+       18.05,
+       17.745,
+       17.675,
+       19.395,
+       17.245,
+       17.29
+      ]
+     }
+    ],
+    "checks": {
+     "searches": 271,
+     "values": 27100000,
+     "mismatches": 0
+    },
+    "loadAfter": 6.22
+   },
+   {
+    "states": 16,
+    "engine": "searcher",
+    "what": "searcher.ts on one f32 per code point, what the demo page runs today",
+    "scope": "everything",
+    "patterns": [
+     "\\d\\d\\d\\d-\\d\\d-\\d\\d"
+    ],
+    "prepareMs": 143.585,
+    "at": "2026-10-14T06:40:15.680Z",
+    "load": 6.22,
+    "firstSearchMs": 65.375,
+    "backToBack": {
+     "patternMs": {
+      "count": 16,
+      "median": 0.07,
+      "p10": 0.055,
+      "p90": 0.085,
+      "min": 0.055,
+      "max": 0.13
+     },
+     "submitMs": {
+      "count": 16,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "waitMs": {
+      "count": 16,
+      "median": 65.59,
+      "p10": 63.805,
+      "p90": 68.88,
+      "min": 62.415,
+      "max": 69.4
+     },
+     "copyMs": {
+      "count": 16,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "totalMs": {
+      "count": 16,
+      "median": 65.657,
+      "p10": 63.87,
+      "p90": 69.01,
+      "min": 62.5,
+      "max": 69.465
+     },
+     "gapMs": {
+      "count": 16,
+      "median": 0.06,
+      "p10": 0.055,
+      "p90": 0.065,
+      "min": 0.05,
+      "max": 0.435
+     },
+     "totals": [
+      67.74,
+      65.465,
+      62.5,
+      64.17,
+      69.465,
+      63.95,
+      65.865,
+      65.4,
+      63.87,
+      66.315,
+      64.54,
+      65.69,
+      67.795,
+      67.47,
+      65.625,
+      69.01
+     ]
+    },
+    "withTimestamps": {
+     "patternMs": {
+      "count": 16,
+      "median": 0.065,
+      "p10": 0.06,
+      "p90": 0.08,
+      "min": 0.06,
+      "max": 0.1
+     },
+     "submitMs": {
+      "count": 16,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "waitMs": {
+      "count": 16,
+      "median": 65.908,
+      "p10": 62.96,
+      "p90": 67.13,
+      "min": 61.895,
+      "max": 69.13
+     },
+     "copyMs": {
+      "count": 16,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "totalMs": {
+      "count": 16,
+      "median": 65.975,
+      "p10": 63.04,
+      "p90": 67.19,
+      "min": 61.96,
+      "max": 69.19
+     },
+     "passMs": {
+      "count": 16,
+      "median": 65.215,
+      "p10": 62.123,
+      "p90": 66.422,
+      "min": 61.207,
+      "max": 68.403
+     },
+     "gapMs": {
+      "count": 16,
+      "median": 0.06,
+      "p10": 0.055,
+      "p90": 0.065,
+      "min": 0.05,
+      "max": 0.085
+     },
+     "totals": [
+      66.745,
+      65.605,
+      67.055,
+      66.075,
+      65.875,
+      65.56,
+      66.945,
+      63.04,
+      65.865,
+      65.015,
+      66.64,
+      65.715,
+      67.19,
+      61.96,
+      66.51,
+      69.19
+     ]
+    },
+    "afterPause": [
+     {
+      "pauseMs": 200,
+      "patternMs": {
+       "count": 9,
+       "median": 0.07,
+       "p10": 0.065,
+       "p90": 0.08,
+       "min": 0.065,
+       "max": 0.08
+      },
+      "submitMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "waitMs": {
+       "count": 9,
+       "median": 67.375,
+       "p10": 65.14,
+       "p90": 72.05,
+       "min": 65.14,
+       "max": 72.05
+      },
+      "copyMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "totalMs": {
+       "count": 9,
+       "median": 67.445,
+       "p10": 65.215,
+       "p90": 72.12,
+       "min": 65.215,
+       "max": 72.12
+      },
+      "gapMs": {
+       "count": 9,
+       "median": 201.05,
+       "p10": 200.205,
+       "p90": 201.085,
+       "min": 200.205,
+       "max": 201.085
+      },
+      "totals": [
+       67.91,
+       65.23,
+       68.51,
+       67.445,
+       72.12,
+       66.47,
+       66.865,
+       67.845,
+       65.215
+      ]
+     },
+     {
+      "pauseMs": 1000,
+      "patternMs": {
+       "count": 9,
+       "median": 0.105,
+       "p10": 0.08,
+       "p90": 0.17,
+       "min": 0.08,
+       "max": 0.17
+      },
+      "submitMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "waitMs": {
+       "count": 9,
+       "median": 75.985,
+       "p10": 73.42,
+       "p90": 86.58,
+       "min": 73.42,
+       "max": 86.58
+      },
+      "copyMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "totalMs": {
+       "count": 9,
+       "median": 76.095,
+       "p10": 73.5,
+       "p90": 86.69,
+       "min": 73.5,
+       "max": 86.69
+      },
+      "gapMs": {
+       "count": 9,
+       "median": 1001.075,
+       "p10": 1001.065,
+       "p90": 1002.135,
+       "min": 1001.065,
+       "max": 1002.135
+      },
+      "totals": [
+       73.5,
+       76.475,
+       76.315,
+       76.065,
+       77.38,
+       75.125,
+       86.69,
+       74.935,
+       76.095
+      ]
+     }
+    ],
+    "checks": {
+     "searches": 58,
+     "values": 5800000,
+     "mismatches": 0
+    },
+    "loadAfter": 6.51
+   },
+   {
+    "states": 32,
+    "engine": "searcher",
+    "what": "searcher.ts on one f32 per code point, what the demo page runs today",
+    "scope": "everything",
+    "patterns": [
+     "connection reset"
+    ],
+    "prepareMs": 593.275,
+    "at": "2026-10-14T06:40:31.877Z",
+    "load": 6.51,
+    "firstSearchMs": 885.79,
+    "backToBack": {
+     "patternMs": {
+      "count": 9,
+      "median": 0.13,
+      "p10": 0.12,
+      "p90": 0.36,
+      "min": 0.12,
+      "max": 0.36
+     },
+     "submitMs": {
+      "count": 9,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "waitMs": {
+      "count": 9,
+      "median": 886.915,
+      "p10": 875.285,
+      "p90": 899.13,
+      "min": 875.285,
+      "max": 899.13
+     },
+     "copyMs": {
+      "count": 9,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "totalMs": {
+      "count": 9,
+      "median": 887.04,
+      "p10": 875.415,
+      "p90": 899.445,
+      "min": 875.415,
+      "max": 899.445
+     },
+     "gapMs": {
+      "count": 9,
+      "median": 0.06,
+      "p10": 0.05,
+      "p90": 0.385,
+      "min": 0.05,
+      "max": 0.385
+     },
+     "totals": [
+      887.04,
+      884.82,
+      875.415,
+      887.265,
+      881.445,
+      899.445,
+      897.965,
+      895.265,
+      885.77
+     ]
+    },
+    "withTimestamps": {
+     "patternMs": {
+      "count": 9,
+      "median": 0.145,
+      "p10": 0.13,
+      "p90": 0.155,
+      "min": 0.13,
+      "max": 0.155
+     },
+     "submitMs": {
+      "count": 9,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "waitMs": {
+      "count": 9,
+      "median": 918.295,
+      "p10": 878.715,
+      "p90": 1008.08,
+      "min": 878.715,
+      "max": 1008.08
+     },
+     "copyMs": {
+      "count": 9,
+      "median": 0,
+      "p10": 0,
+      "p90": 0,
+      "min": 0,
+      "max": 0
+     },
+     "totalMs": {
+      "count": 9,
+      "median": 918.44,
+      "p10": 878.86,
+      "p90": 1008.21,
+      "min": 878.86,
+      "max": 1008.21
+     },
+     "passMs": {
+      "count": 9,
+      "median": 917.495,
+      "p10": 877.812,
+      "p90": 1007.285,
+      "min": 877.812,
+      "max": 1007.285
+     },
+     "gapMs": {
+      "count": 9,
+      "median": 0.06,
+      "p10": 0.05,
+      "p90": 0.07,
+      "min": 0.05,
+      "max": 0.07
+     },
+     "totals": [
+      968.91,
+      934.255,
+      896.245,
+      909.125,
+      918.44,
+      1008.21,
+      878.86,
+      879.47,
+      980.71
+     ]
+    },
+    "afterPause": [
+     {
+      "pauseMs": 200,
+      "patternMs": {
+       "count": 9,
+       "median": 0.145,
+       "p10": 0.135,
+       "p90": 0.165,
+       "min": 0.135,
+       "max": 0.165
+      },
+      "submitMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "waitMs": {
+       "count": 9,
+       "median": 915.55,
+       "p10": 896.145,
+       "p90": 1011.29,
+       "min": 896.145,
+       "max": 1011.29
+      },
+      "copyMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "totalMs": {
+       "count": 9,
+       "median": 915.69,
+       "p10": 896.285,
+       "p90": 1011.435,
+       "min": 896.285,
+       "max": 1011.435
+      },
+      "gapMs": {
+       "count": 9,
+       "median": 201.045,
+       "p10": 201.04,
+       "p90": 201.065,
+       "min": 201.04,
+       "max": 201.065
+      },
+      "totals": [
+       1011.435,
+       972.335,
+       902.055,
+       896.285,
+       901.395,
+       915.69,
+       907.57,
+       922.76,
+       947.815
+      ]
+     },
+     {
+      "pauseMs": 1000,
+      "patternMs": {
+       "count": 9,
+       "median": 0.14,
+       "p10": 0.13,
+       "p90": 0.16,
+       "min": 0.13,
+       "max": 0.16
+      },
+      "submitMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "waitMs": {
+       "count": 9,
+       "median": 929.38,
+       "p10": 896.075,
+       "p90": 1043.275,
+       "min": 896.075,
+       "max": 1043.275
+      },
+      "copyMs": {
+       "count": 9,
+       "median": 0,
+       "p10": 0,
+       "p90": 0,
+       "min": 0,
+       "max": 0
+      },
+      "totalMs": {
+       "count": 9,
+       "median": 929.51,
+       "p10": 896.205,
+       "p90": 1043.42,
+       "min": 896.205,
+       "max": 1043.42
+      },
+      "gapMs": {
+       "count": 9,
+       "median": 1001.07,
+       "p10": 1000.365,
+       "p90": 1001.095,
+       "min": 1000.365,
+       "max": 1001.095
+      },
+      "totals": [
+       943.07,
+       945.035,
+       1043.42,
+       919.485,
+       896.205,
+       919.975,
+       938.65,
+       927.95,
+       929.51
+      ]
+     }
+    ],
+    "checks": {
+     "searches": 43,
+     "values": 4300000,
+     "mismatches": 0
+    },
+    "loadAfter": 6.35
+   }
+  ],
+  "programs": [
+   {
+    "name": "JSON highlighter",
+    "operations": [
+     37,
+     17
+    ],
+    "statements": 107,
+    "compileMs": 45.57000017166138
+   },
+   {
+    "name": "regex search, 8 states",
+    "operations": [
+     8,
+     151,
+     92
+    ],
+    "statements": 503,
+    "compileMs": 45.079999923706055
+   },
+   {
+    "name": "regex search, 16 states",
+    "operations": [
+     16,
+     359,
+     308
+    ],
+    "statements": 1375,
+    "compileMs": 135.9850001335144
+   },
+   {
+    "name": "regex search, 32 states",
+    "operations": [
+     32,
+     1159,
+     1124
+    ],
+    "statements": 4655,
+    "compileMs": 572.2999999523163
+   }
+  ],
+  "loadAtEnd": 7.27,
+  "finishedAt": "2026-10-14T06:41:35.859Z",
+  "logLines": [
+   "443.355 ms: 100000 documents written in 369.875 ms",
+   "14002.325 ms: memory, the texts in the page: {\"javaScriptBytes\":34708626,\"javaScriptBreakdown\":[{\"megabytes\":34,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":34617318,\"processes\":{\"processes\":[{\"pid\":81851,\"type\":\"browser\",\"residentBytes\":401670144,\"footprintBytes\":217155504,\"footprintPeakBytes\":230574000},{\"pid\":81857,\"type\":\"gpu-process\",\"residentBytes\":156712960,\"footprintBytes\":87770384,\"footprintPeakBytes\":446661904},{\"pid\":81862,\"type\":\"renderer\",\"residentBytes\":201834496,\"footprintBytes\":69224008,\"footprintPeakBytes\":69240392},{\"pid\":81865,\"type\":\"renderer\",\"residentBytes\":124321792,\"footprintBytes\":28935464,\"footprintPeakBytes\":30098728},{\"pid\":81867,\"type\":\"renderer\",\"residentBytes\":129630208,\"footprintBytes\":30459224,\"footprintPeakBytes\":30459224},{\"pid\":81868,\"type\":\"renderer\",\"residentBytes\":265355264,\"footprintBytes\":140592736,\"footprintPeakBytes\":146458208},{\"pid\":81870,\"type\":\"renderer\",\"residentBytes\":124567552,\"footprintBytes\":31393184,\"footprintPeakBytes\":32163232},{\"pid\":81902,\"type\":\"renderer\",\"residentBytes\":141623296,\"footprintBytes\":33981784,\"footprintPeakBytes\":37111104},{\"pid\":81905,\"type\":\"renderer\",\"residentBytes\":107708416,\"footprintBytes\":27018512,\"footprintPeakBytes\":28689680}],\"availableGigabytes\":15.5,\"swap\":\"total = 7168.00M  used = 5704.00M  free = 1464.00M  (encrypted)\"}}",
+   "14223.35 ms: searcher: {\"generateMs\":369.875,\"createMs\":184.165,\"load\":{\"cellsMs\":42.4300000667572,\"validateMs\":92.375,\"totalMs\":184.00999999046326},\"limits\":{\"maxStorageBufferBindingSize\":205200000,\"maxBufferSize\":268435456,\"maxDocuments\":100000,\"hasTimestamps\":true},\"validCount\":100000,\"bufferBytes\":{\"cells\":205200000,\"kinds\":204800000,\"summary\":1600000,\"matchCounts\":400000}}",
+   "29700.52 ms: memory, after creating the searcher: {\"javaScriptBytes\":38272099,\"javaScriptBreakdown\":[{\"megabytes\":38,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":38179987,\"processes\":{\"processes\":[{\"pid\":81851,\"type\":\"browser\",\"residentBytes\":596656128,\"footprintBytes\":119785704,\"footprintPeakBytes\":408389864},{\"pid\":81857,\"type\":\"gpu-process\",\"residentBytes\":374996992,\"footprintBytes\":690456016,\"footprintPeakBytes\":1138329040},{\"pid\":81862,\"type\":\"renderer\",\"residentBytes\":205357056,\"footprintBytes\":72844872,\"footprintPeakBytes\":72894024},{\"pid\":81865,\"type\":\"renderer\",\"residentBytes\":124157952,\"footprintBytes\":28935464,\"footprintPeakBytes\":30098728},{\"pid\":81868,\"type\":\"renderer\",\"residentBytes\":419954688,\"footprintBytes\":293373752,\"footprintPeakBytes\":559368112},{\"pid\":81870,\"type\":\"renderer\",\"residentBytes\":124403712,\"footprintBytes\":31393184,\"footprintPeakBytes\":32163232},{\"pid\":81905,\"type\":\"renderer\",\"residentBytes\":107544576,\"footprintBytes\":27018512,\"footprintPeakBytes\":28689680}],\"availableGigabytes\":14.2,\"swap\":\"total = 7168.00M  used = 5704.00M  free = 1464.00M  (encrypted)\"}}",
+   "35797.23 ms: the expected answers of 50000 documents computed",
+   "41885.42 ms: the expected answers of 100000 documents computed",
+   "55010.59 ms: 8 states, searcher, everything, 100000 documents: back to back 7.385 ms, after a pause 200 ms: 16.765, 1000 ms: 17.465, checks {\"searches\":270,\"values\":27000000,\"mismatches\":0}",
+   "68104.91 ms: 8 states, searcher, strings, 100000 documents: back to back 7.305 ms, after a pause 200 ms: 17.375, 1000 ms: 17.415, checks {\"searches\":273,\"values\":27300000,\"mismatches\":0}",
+   "81215.165 ms: 8 states, searcher, keys, 100000 documents: back to back 7.455 ms, after a pause 200 ms: 17.395, 1000 ms: 17.675, checks {\"searches\":271,\"values\":27100000,\"mismatches\":0}",
+   "96142.11 ms: 16 states, searcher, everything, 100000 documents: back to back 65.657 ms, after a pause 200 ms: 67.445, 1000 ms: 76.095, checks {\"searches\":58,\"values\":5800000,\"mismatches\":0}",
+   "147009.57 ms: 32 states, searcher, everything, 100000 documents: back to back 887.04 ms, after a pause 200 ms: 915.69, 1000 ms: 929.51, checks {\"searches\":43,\"values\":4300000,\"mismatches\":0}",
+   "161601.62 ms: memory, after the searches: {\"javaScriptBytes\":74691938,\"javaScriptBreakdown\":[{\"megabytes\":74,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":74600086,\"processes\":{\"processes\":[{\"pid\":81851,\"type\":\"browser\",\"residentBytes\":639713280,\"footprintBytes\":370641176,\"footprintPeakBytes\":438323480},{\"pid\":81857,\"type\":\"gpu-process\",\"residentBytes\":488013824,\"footprintBytes\":685524624,\"footprintPeakBytes\":1756284560},{\"pid\":81862,\"type\":\"renderer\",\"residentBytes\":194265088,\"footprintBytes\":55199304,\"footprintPeakBytes\":73254472},{\"pid\":81865,\"type\":\"renderer\",\"residentBytes\":125861888,\"footprintBytes\":30033216,\"footprintPeakBytes\":30098728},{\"pid\":81868,\"type\":\"renderer\",\"residentBytes\":483278848,\"footprintBytes\":323962776,\"footprintPeakBytes\":559368112},{\"pid\":81905,\"type\":\"renderer\",\"residentBytes\":107200512,\"footprintBytes\":27018512,\"footprintPeakBytes\":28689680}],\"availableGigabytes\":15.4,\"swap\":\"total = 3072.00M  used = 2144.06M  free = 927.94M  (encrypted)\"}}"
+  ],
+  "done": true
+ }
+}
