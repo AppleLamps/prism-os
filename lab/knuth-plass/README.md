@@ -31,7 +31,7 @@ bun lab/knuth-plass/gpu/summarize.ts --gpu <files> --checks <file> --cpu <files>
 | `reference.ts` | The dynamic programming reference, and the same costs as min-plus matrix products in plain JavaScript |
 | `program.ts` | The cells, both program forms, writing a paragraph into cells, and reading the output |
 | `hyphenation.ts` | Soft hyphens inserted like pretext's demo, from the demo's tables |
-| `pretext-demo/` | Two files of pretext's justification demo, copied from pages/demos/ of pretext's repository at 1.0.0 (commit 4a98f37), since npm pretext 1.0.0 no longer has the demos: `justification-comparison.data.ts` unchanged, and `justification-comparison.model.ts` with its import of `../../src/layout.ts` changed to `@chenglou/pretext` |
+| `pretext-demo/` | Two files of pretext's justification demo, copied from pages/demos/ of pretext's repository at 1.0.0 (commit 4a98f37), since npm pretext 1.0.0 no longer has the demos. Each file starts with an added comment that names its source and license. Below that comment, `justification-comparison.data.ts` is unchanged, and `justification-comparison.model.ts` has its import of `../../src/layout.ts` changed to `@chenglou/pretext` |
 | `knuth-plass.test.ts` | Differential tests |
 | `report.ts`, `results/` | Sizes and µs, one process per variant, and the raw results |
 | `export.ts` | Leaf matrices, cells and expected results |

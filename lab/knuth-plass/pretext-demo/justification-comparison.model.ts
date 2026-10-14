@@ -1,3 +1,5 @@
+// Copied from pretext's pages/demos/justification-comparison.model.ts at 1.0.0, commit 4a98f37 (MIT License, Copyright
+// (c) 2026 Pretext contributors). This comment was added, and the import below named '../../src/layout.ts'.
 import {
   prepareWithSegments,
   layoutNextLine,
