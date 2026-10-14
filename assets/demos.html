@@ -33,12 +33,9 @@
 
     <main>
       <section class="opening">
-        <h1>One numeric program runs the whole interface.</h1>
+        <h1>Turn your regular JavaScript code into a neural net.</h1>
         <div class="opening-text">
-          <p class="deck">Handwired writes an interactive UI as one fixed numeric program with the form of a neural network: layers of weighted sums and ReLU gates, wired by hand with builder functions instead of trained. JavaScript writes inputs such as the pointer&rsquo;s position into a table of numbers, runs the program, and copies outputs such as each window&rsquo;s position and size to the page.</p>
-          <div class="opening-links">
-            <a class="button primary" href="os/">Open HandwiredOS</a>
-          </div>
+          <p class="deck">No training, exact yet also fully differentiable, runnable in a browser without GPU.</p>
         </div>
 
         <!-- Math.min(a, b) as emitMinimum in src/runtime/numeric-ui-core.ts builds it, a - relu(a - b): a weighted
@@ -73,7 +70,7 @@
             <text x="186" y="172" text-anchor="middle">relu</text>
             <text x="278" y="100" text-anchor="middle">a &minus; relu(a &minus; b)</text>
           </svg>
-          <figcaption><code>Math.min(a, b)</code>, wired by hand as a&nbsp;&minus;&nbsp;relu(a&nbsp;&minus;&nbsp;b): a weighted sum, a ReLU gate and a second weighted sum. The builder function <code>emitMinimum</code> emits these three, and HandwiredOS is thousands of operations like them.</figcaption>
+          <figcaption><code>Math.min(a, b)</code>, wired by hand as a&nbsp;&minus;&nbsp;relu(a&nbsp;&minus;&nbsp;b): a weighted sum, a ReLU gate and a second weighted sum. The builder function <code>emitMinimum</code> emits these three, and the Mini OS below is thousands of operations like them.</figcaption>
         </figure>
       </section>
 

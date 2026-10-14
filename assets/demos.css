@@ -2,8 +2,8 @@
    This file is the page's only stylesheet. It imports site.css first and uses only site.css's tokens. */
 @import "./site.css";
 
-/* The opening: the headline and what Handwired is on the left, the wiring figure on the right. The figure stands
-   beside both the headline and the text, and its last line is level with the button. */
+/* The opening: the headline and one sentence under it on the left, the wiring figure on the right. The figure
+   stands beside both, and its last line is level with the sentence's last line. */
 .opening {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 352px;
@@ -20,14 +20,6 @@
 }
 .opening-text { grid-column: 1; }
 .opening .deck { margin-top: var(--space-5); }
-.opening-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3) var(--space-5);
-  margin-top: var(--space-5);
-  font: var(--type-ui);
-}
 
 /* The wiring figure: Math.min(a, b) as the three operations that emitMinimum emits. Wires are copper, and each
    wire ends in an eyelet, a small ring, like the mark in the header. */

@@ -203,13 +203,13 @@ kbd {
 
 /* Title, and the one-sentence caption under it. */
 .title {
-  margin: var(--space-7) 0 0;
+  margin: var(--space-5) 0 0;
   font: var(--type-title-m);
   letter-spacing: -0.015em;
 }
 .deck {
   max-width: 31em;   /* about 66 characters */
-  margin: var(--space-3) 0 0;
+  margin: var(--space-1) 0 0;
   font: var(--type-deck);
   color: var(--ink-2);
   text-wrap: pretty;
@@ -221,7 +221,7 @@ kbd {
   display: flex;
   align-items: baseline;
   gap: var(--space-4);
-  margin: var(--space-5) 0 0;
+  margin: var(--space-4) 0 0;
 }
 .try ul {
   margin: 0;
@@ -389,7 +389,7 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
     --type-code: 400 12px/22px var(--font-mono);
   }
   .page { width: min(100% - 40px, var(--page-width, 800px)); padding-top: var(--space-3); }
-  .title { margin-top: var(--space-6); }
+  .title { margin-top: var(--space-4); }
   .try { flex-direction: column; gap: var(--space-2); }
   .try ul { flex-direction: column; gap: var(--space-1); }
 }
