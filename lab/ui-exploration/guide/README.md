@@ -143,7 +143,7 @@ The sections use each of these terms with the meaning given here.
 - **Segment**: pretext's unit of text, e.g. a word or a space, which pretext measures as one width. E.g. "The quick" is 3 segments: "The", " " and "quick".
 - **Tabulation**: finding in JavaScript the widths where a paragraph's layout result changes, so the circuit only compares the runtime width with those thresholds and adds constants. E.g. the Notes window's 10 text blocks are 1,041 operations in 4 layers.
 - **Line walker**: pretext's greedy line breaking, which adds segments to a line until the next segment doesn't fit. E.g. text-walker computes a line's end as a count of "the line through segment j fits" bits.
-- **Lookahead**: how many segments after a line's start the line walker compares, which caps how many segments one line can hold. E.g. 26 in HandwiredOS's Notes flow at the paragraph widths baked into notes-paragraph.ts, and 21 in text-walker's circuits for a 1,023-segment paragraph.
+- **Lookahead**: how many segments after a line's start the line walker compares, which caps how many segments one line can hold. E.g. 26 in HandwiredOS's Notes flow in September 2026, and 21 in text-walker's circuits for a 1,023-segment paragraph.
 
 ### Checking
 
