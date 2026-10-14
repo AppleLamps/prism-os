@@ -1,6 +1,7 @@
 // Prints the million-document check's tables as markdown from the JSON files that all.ts wrote.
 //
 //   bun lab/json-search/million/summarize.ts --from <folder> [--table fit,load,kernels,counts,program,rewrite,js,checks,paint]
+//   bun lab/json-search/million/summarize.ts --from lab/json-search/million/results/writer --table writer
 //
 // A cell of a timing is the median in ms, with the smallest and the largest sample in parentheses. Each table says
 // which runs it comes from and the 1-minute load average during them.
@@ -33,6 +34,8 @@ type Page = {
   load?: Record<string, unknown> & {bufferBytes: Record<string, number | number[]>, workerMs: Record<string, number>, firstAnswer: {documents: number, searchMs: number}, load: number},
   timeline?: Record<string, number>, deviceLimits?: Record<string, number>,
   js?: Record<string, unknown>, scopes?: Record<string, unknown>,
+  // The 'writers' mode: one entry per program, pattern and scope, and their totals.
+  comparisons?: {program: string, values: number, mismatches: number, total: number}[], compared?: {comparisons: number, values: number, mismatches: number},
 }
 // A run that is still in progress has no loadAfter yet.
 type Run = {name: string, driver: {loadBefore: string, loadAfter?: string, loadSamples: {load: string}[], timedOut?: string, error?: string, browser?: string, machine?: string}, page?: Page}
@@ -194,6 +197,9 @@ const engineNames: Record<string, string> = {
   'rewrite-1': 'rewrite 1: every 0-or-1 value as a bit, one table read per pair of states',
   'rewrite-2': 'rewrite 2: also the reads of one sum as one word',
   'program-step': 'the program\'s own step, as loop-emit.ts writes it',
+  'program-bits': 'the same step, as bit-emit.ts writes it',
+  'program-step-masked': 'the step with a scope, which the demo page runs, as loop-emit.ts writes it',
+  'program-bits-masked': 'the step with a scope, as bit-emit.ts writes it',
 }
 const scopeWords: Record<string, string> = {everything: 'everything', keys: 'keys', strings: 'string values'}
 
@@ -601,6 +607,55 @@ section('report', 'The report\'s tables', () => {
       return row
     })),
   )
+  return out.join('\n')
+})
+
+// The code writer's check: every run of the folder that timed bit-emit.ts's shader, and every 'writers' run.
+if (wanted?.includes('writer') === true) section('writer', 'The search step as each code writer writes it, 100,000 documents as one f32 per code point, ms', () => {
+  const out: string[] = []
+  const engines = ['program-step', 'program-bits', 'rewrite-2', 'program-step-masked', 'program-bits-masked']
+  for (const name of [...runs.keys()].filter(key => compactResults(key).some(result => result.engine === 'program-bits'))) {
+    const results = compactResults(name)
+    const rows: string[][] = []
+    const checked = {searches: 0, values: 0, mismatches: 0}
+    for (const engine of engines) {
+      const scopes = [...new Set(results.filter(result => result.engine === engine).flatMap(result => result.scopes?.map(scope => scope.scope) ?? []))]
+      for (const scope of scopes) {
+        const row = [engineNames[engine] ?? engine, scopeWords[scope] ?? scope]
+        for (const states of [8, 16, 32]) {
+          const found = results.find(result => result.engine === engine && result.states === states)?.scopes?.find(entry => entry.scope === scope)
+          row.push(found === undefined ? '' : `${cell(found.backToBack.totalMs)}; ${cell(pauseOf(found, 200))}`)
+        }
+        rows.push(row)
+      }
+    }
+    for (const result of results) {
+      checked.searches += result.checks?.searches ?? 0
+      checked.values += result.checks?.values ?? 0
+      checked.mismatches += result.checks?.mismatches ?? 0
+    }
+    const compile = engines.map(engine => `${engineNames[engine] ?? engine}: ${[8, 16, 32].map(states => digits(results.find(result => result.engine === engine && result.states === states)?.compileMs ?? Number.NaN)).join(', ')}`)
+    out.push(
+      `From \`${name}\`, load average ${loadOf([name])}. ${problems(name)} A cell is back to back; after a pause of 200 ms, each as the median with the smallest and the largest sample.`,
+      '',
+      table(['What runs on the GPU', 'The search reads', '8 states', '16 states', '32 states'], rows),
+      '',
+      `Compile ms at 8, 16 and 32 states, each shader with a salt that no earlier run used: ${compile.join('; ')}.`,
+      '',
+      `Every timed search was compared with the lab's plain JavaScript loop for every document: ${thousands(checked.searches)} searches, ${thousands(checked.values)} values, ${thousands(checked.mismatches)} mismatched.`,
+      '',
+    )
+  }
+  for (const [name, found] of runs) {
+    const page = found.page
+    if (page?.comparisons === undefined) continue
+    const search = page.comparisons.filter(entry => entry.program.startsWith('the search step'))
+    const sum = (entries: readonly {values: number, mismatches: number}[]) => `${thousands(entries.reduce((total, entry) => total + entry.values, 0))} values, ${thousands(entries.reduce((total, entry) => total + entry.mismatches, 0))} mismatched`
+    out.push(
+      `From \`${name}\`, ${thousands(page.config.count)} documents, load average ${loadOf([name])}. ${problems(name)} Every output of bit-emit.ts's shader against loop-emit.ts's on the GPU. The highlighter's summary and display kinds: ${sum(page.comparisons.filter(entry => !entry.program.startsWith('the search step')))}. The search step's match count of every document and mark of every position, ${search.length} searches (each pattern at each state capacity that holds it, without a scope and with each of three scopes): ${sum(search)}, and ${thousands(search.reduce((total, entry) => total + entry.total, 0))} matches in all. In total ${thousands(page.compared?.values ?? 0)} values, ${thousands(page.compared?.mismatches ?? 0)} mismatched.`,
+      '',
+    )
+  }
   return out.join('\n')
 })
 
