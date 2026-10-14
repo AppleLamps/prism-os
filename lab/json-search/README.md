@@ -54,7 +54,7 @@ What the page leaves out on purpose:
 Other states:
 
 - **A window narrower than 720 px**, e.g. a phone, gets 20,000 documents, and the title says so. 100,000 documents take 410 MB on the GPU, and on the CPU the worker holds 501 MB for them.
-- **A GPU whose buffers hold fewer documents** than the page wants gets the count that fits, and the page says so, e.g. "One buffer of this GPU holds 65,000 documents, so the page searches 65,000 instead of 100,000."
+- **A GPU whose buffers hold fewer documents** than the page wants gets the count that fits, and the page says so, e.g. "One buffer of this GPU holds 65,000 documents, so the page searches 65,000 instead of 100,000." `?buffer=134217728` in the page's address asks the GPU for buffers of at most that many bytes, which shows this state on a machine that grants more.
 - **A GPU that stops working** while the page is open: the page goes on with both programs on the CPU, and says why.
 
 Measured on October 13, 2026 on an Apple M5 Max in headless Chrome 155, with the built site served under a path prefix, at a 1-minute load average of 3.2 to 5.2, since other processes used the machine. A cell is the median, with the range in parentheses.
