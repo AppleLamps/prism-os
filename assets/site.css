@@ -221,23 +221,21 @@ kbd {
   gap: var(--space-4);
   margin: var(--space-5) 0 0;
 }
-.try ul, .eyelets {
+.try ul {
   margin: 0;
   padding: 0;
   list-style: none;
   font: var(--type-ui);
   color: var(--ink-2);
-}
-.try ul {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-5);
 }
-.try li, .eyelets li {
+.try li {
   position: relative;
   padding-left: 14px;
 }
-.try li::before, .eyelets li::before {
+.try li::before {
   content: "";
   position: absolute;
   left: 0;

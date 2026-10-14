@@ -50,6 +50,22 @@ import {
 export const itemCount = 12
 export const columnCount = 4
 export const rowCount = 3
+// The limits on a photo's proportions in the grid, see buildPhotos. The pictures are
+// square, and a photo shows the middle of its picture: at 1.25 times as tall as
+// wide, 80% of the picture's width, and at twice as wide as tall, half of its
+// height. Where HandwiredOS's starting arrangement chooses Photos' height for its
+// photos, it follows the first limit, see photosTallestFor in arrangement.ts. The
+// second limit is the proportion that the photos have in the smallest Photos
+// window, 47 × 24 px.
+export const maximumPhotoTallness = 1.25
+export const maximumPhotoWideness = 2
+// The limits on the open photo's proportions. They allow more than the grid's, so
+// that the open photo stays as it was in the windows that people see most: its box
+// is 1.9 times as wide as tall in HandwiredOS's Photos at its default size, up to
+// 2.4 times in a maximized Photos on a desk, e.g. at 1512 × 860 px, and 1.8 times
+// as tall as wide in a maximized Photos on a phone 390 × 844 px.
+export const maximumOpenPhotoTallness = 2
+export const maximumOpenPhotoWideness = 2.5
 
 // Thumbnails and HandwiredOS's windows share these constants, so one spring matrix
 // serves both.
@@ -268,25 +284,42 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   const {viewportWidth, viewportHeight, click, present, interactive, unit} = host
   const events = photoEvents(cells)
   const zero = circuit.constant(0)
-  const gridWidth = emitRelu(
+  // The grid: 4 columns and 3 rows of photos, with the gap around and between them.
+  // A slot is what the content box leaves for one photo, e.g. 117 × 104 px in
+  // HandwiredOS's Photos at its default size.
+  const slotWidth = emitRelu(
     circuit,
     circuit.affine([
       [viewportWidth, 1 / columnCount],
       [cells.gap, -(columnCount + 1) / columnCount],
     ]),
   )
-  const gridHeight = emitRelu(
+  const slotHeight = emitRelu(
     circuit,
     circuit.affine([
       [viewportHeight, 1 / rowCount],
       [cells.gap, -(rowCount + 1) / rowCount],
     ]),
   )
+  // A photo fills its slot up to a limit on its proportions: it is at most
+  // maximumPhotoTallness times as tall as wide, and at most maximumPhotoWideness
+  // times as wide as tall. Past a limit the photos stop growing in that direction,
+  // the gaps stay, and the grid is centered in the content box. E.g. in a content box
+  // of 364 × 662 px, a maximized Photos on a phone 390 × 844 px, a slot is
+  // 68.5 × 196.7 px and a photo 68.5 × 85.6 px, with 166.6 px free above and below
+  // the grid. Without the limit the photos were strips, each showing a third of its
+  // picture's width. A click in the free part hits no photo.
+  const slotExcess = emitProportionExcess(circuit, slotWidth, slotHeight, maximumPhotoWideness, maximumPhotoTallness)
+  const gridWidth = emitWithoutExcess(circuit, slotWidth, slotExcess.width)
+  const gridHeight = emitWithoutExcess(circuit, slotHeight, slotExcess.height)
+  // What a limit takes from every photo, added up over a row or a column and halved.
+  const gridOriginX = circuit.affine([[slotExcess.width, columnCount / 2]])
+  const gridOriginY = circuit.affine([[slotExcess.height, rowCount / 2]])
 
   const gridLeft = Array.from({length: columnCount}, (_, column) =>
-    circuit.affine([[cells.gap, 1 + column], [gridWidth, column]]))
+    circuit.affine([[gridOriginX, 1], [cells.gap, 1 + column], [gridWidth, column]]))
   const gridTop = Array.from({length: rowCount}, (_, row) =>
-    circuit.affine([[cells.gap, 1 + row], [gridHeight, row]]))
+    circuit.affine([[gridOriginY, 1], [cells.gap, 1 + row], [gridHeight, row]]))
   const gridColumnHit = gridLeft.map(left =>
     emitIntervalHit(circuit, click.x, left, gridWidth))
   const gridRowHit = gridTop.map(top =>
@@ -312,18 +345,29 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
     cells.mainInset,
     circuit.affine([[viewportWidth, 0.08]]),
   )
+  // The open photo's box: the content box without the insets at its sides, the gap
+  // above it, and the thumbnails with the gap above and below them. The open photo
+  // fills the box up to its own two limits, maximumOpenPhotoWideness and
+  // maximumOpenPhotoTallness, and past a limit it is centered in the box. E.g. in a
+  // maximized Photos on a phone held sideways, 844 × 390 px, the box is 687 × 104 px
+  // and the open photo 260 × 104 px, where it was a band of 687 × 104 px that showed
+  // 15% of its picture's height. A click in the free part of the box is a click
+  // beside the photo, which closes it.
+  const mainBoxWidth = emitRelu(circuit, circuit.affine([
+    [viewportWidth, 1],
+    [mainInset, -2],
+  ]))
+  const mainBoxHeight = emitRelu(circuit, circuit.affine([
+    [viewportHeight, 1],
+    [thumbnailBaseSize, -1],
+    [cells.gap, -3],
+  ]))
+  const mainExcess = emitProportionExcess(circuit, mainBoxWidth, mainBoxHeight, maximumOpenPhotoWideness, maximumOpenPhotoTallness)
   const main: Geometry = {
-    left: mainInset,
-    top: cells.gap,
-    width: emitRelu(circuit, circuit.affine([
-      [viewportWidth, 1],
-      [mainInset, -2],
-    ])),
-    height: emitRelu(circuit, circuit.affine([
-      [viewportHeight, 1],
-      [thumbnailBaseSize, -1],
-      [cells.gap, -3],
-    ])),
+    left: circuit.affine([[mainInset, 1], [mainExcess.width, 0.5]]),
+    top: circuit.affine([[cells.gap, 1], [mainExcess.height, 0.5]]),
+    width: emitWithoutExcess(circuit, mainBoxWidth, mainExcess.width),
+    height: emitWithoutExcess(circuit, mainBoxHeight, mainExcess.height),
   }
   const mainHit = emitRectangleHit(circuit, click, main)
 
@@ -414,9 +458,11 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
     thumbnailHit.push(emitRectangleHit(circuit, click, projectThumbnail(currentThumbnailTargets[item]!)))
   }
 
+  // The controls stand at the middle of the open photo's box, which is the middle
+  // of the open photo too.
   const controlTop = emitRelu(circuit, circuit.affine([
     [cells.gap, 1],
-    [main.height, 0.5],
+    [mainBoxHeight, 0.5],
     [cells.controlSize, -0.5],
   ]))
   const controlInset = circuit.affine([[cells.gap, 0.5]])
@@ -1005,6 +1051,30 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
         `${values[output.nextControl[controlField.opacity]!]}`
     },
   }
+}
+
+// What two limits on a photo's proportions take from a box's width and from its
+// height: the width past maximumWideness times the height, and the height past
+// maximumTallness times the width, e.g. 20 px of width from a box of 220 × 100 px
+// that may be twice as wide as tall. At most one of the two is more than 0, and a
+// box within both limits gets an exact 0 for each, so its photos are laid out with
+// the same FP32 values as without the limits.
+function emitProportionExcess(circuit: Circuit, width: Wire, height: Wire, maximumWideness: number, maximumTallness: number) {
+  return {
+    width: emitRelu(circuit, circuit.affine([[width, 1], [height, -maximumWideness]])),
+    height: emitRelu(circuit, circuit.affine([[height, 1], [width, -maximumTallness]])),
+  }
+}
+
+// A box's width or height without what a limit takes from it. The excess is at
+// most the size, so the result is between 0 and the size, and a size is at most
+// 16,384 px, see buildPhotos. The builder can't infer that from the difference, and
+// without the declared range each product with the result takes a second
+// operation, for negative values that never come.
+function emitWithoutExcess(circuit: Circuit, size: Wire, excess: Wire) {
+  const result = circuit.affine([[size, 1], [excess, -1]])
+  circuit.assumeRange(result, 0, 16_384)
+  return result
 }
 
 function emitRectangleHit(circuit: Circuit, click: {x: Wire, y: Wire}, geometry: Geometry): Wire {

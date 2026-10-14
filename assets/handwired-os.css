@@ -57,13 +57,12 @@ body {
 /* The desk: one warm surface with paper grain and a dot every 24 px, lit from the top left.
    Nothing on it moves, so the dots show how far a window has been dragged. */
 #desktop {
-  /* JavaScript copies these six from the program's table when the page loads. The values
-     here are for what is painted before that: the system bar and the list of things to try. */
+  /* JavaScript copies these five from the program's table when the page loads. The values
+     here are for what is painted before that: the system bar. */
   --title-height: 44px;
   --button-size: 18px;
   --button-gap: 10px;
   --resize-grip: 24px;
-  --dock-height: 76px;
   --system-bar-height: 36px;
   position: fixed;
   inset: 0;
@@ -96,8 +95,7 @@ body {
    The canvas is shown at 36% of its opacity, and wiring.ts draws each arc the fainter the
    more weights the program stores, e.g. at 29% for 8,965 weights. One arc alone is then
    at about 10%, a hairline, and a band where many arcs lie on each other stops at 36% of
-   the arc's color, so the picture stays quiet behind the windows and the list of things
-   to try.
+   the arc's color, so the picture stays quiet behind the windows.
 
    JavaScript writes the canvas's left, top, width and height each frame, see
    wiringRectangle in wiring.ts: 24 px in from the desktop's left and right edges, from
@@ -123,57 +121,6 @@ body {
 @media (max-width: 639px) {
   .desk-wiring {
     opacity: 0.18;
-  }
-}
-
-/* Things to try, printed on the desk's lower right corner. Windows pass over it. The
-   windows' first arrangement, see arrangement.ts, leaves this corner free on a viewport of
-   at least 1100 × 850 px: the list's five lines of 20 px and its label are 124 px tall
-   and end 12 px above the dock's strip, so at 850 px of height the label starts at least
-   22 px under Photos. */
-.desk-legend {
-  position: absolute;
-  z-index: 0;
-  right: 32px;
-  bottom: calc(var(--dock-height) + 12px);
-  /* As wide as its longest line, in whatever font the system has: 482 px in the system
-     font of macOS. */
-  width: max-content;
-  max-width: 520px;
-}
-
-.desk-legend .label {
-  margin: 0 0 var(--space-2);
-  color: var(--ink-2);
-}
-
-/* A key cap fits into its line's 20 px: 1 px of padding above and below its 11.3 px of
-   text and its borders, raised by 1 px. With 2 px of padding below and no raise, as on
-   the site's other pages, the cap made its line 21.3 px tall in the system font of macOS,
-   and the list 125.3 px. */
-.desk-legend kbd {
-  margin: 0 1px;
-  padding: 1px 4px;
-  vertical-align: 1px;
-}
-
-@media (max-width: 1099px), (max-height: 849px) {
-  .desk-legend {
-    display: none;
-  }
-}
-
-/* Where the list is shown, the arcs behind it fade to a fifth, so no arc strikes through
-   a word. The clearing is an ellipse around the list's middle, which lies 249 px from the
-   canvas's right edge and 144 px above its bottom. The two clearings multiply, which is
-   what mask-composite: intersect does, and source-in is the same under its older name. */
-@media (min-width: 1100px) and (min-height: 850px) {
-  .desk-wiring {
-    --legend-clearing: radial-gradient(370px 160px at calc(100% - 249px) calc(100% - 144px), rgb(0 0 0 / 0.2) 70%, #000);
-    -webkit-mask-image: var(--dock-clearing), var(--legend-clearing);
-    mask-image: var(--dock-clearing), var(--legend-clearing);
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
   }
 }
 
@@ -1040,8 +987,8 @@ body {
 /* A photo under 110 px tall shows no name. The previous control's round sheet is 36 px
    tall around the photo's middle and the label ends 10 px above the photo's bottom, so
    in a shorter photo the two meet, and in a narrow window the sheet lies on the label's
-   start, e.g. "avender Hour" in a window at its minimum size, where the open photo is
-   55 px tall. */
+   start, e.g. in a window of 280 × 240 px, where the open photo is 94 px tall and starts
+   22 px from the content box's edge. */
 @container photo (max-height: 109px) {
   .photos-photo span {
     display: none;
@@ -1076,7 +1023,7 @@ body {
 .image-11 { background-image: url("./photo-gallery-11.webp"); }
 
 /* Previous and next: a chevron in the program's 52 px box. In a window under 765 px wide
-   the box reaches over the open photo's edge, so the controls are above the photos, and
+   the box can reach over the open photo's edge, so the controls are above the photos, and
    the disc under the pointer is a round sheet of paper and not a wash. */
 .photos-control {
   position: absolute;
@@ -1130,11 +1077,12 @@ body {
   --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 16'%3E%3Cpath d='M1.5 1.5L7.5 8l-6 6.5' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
-/* The open photo starts 8% of the content box's width from the box's edge, and the chevron
-   ends 39.5 px from it. So in a content box under 519 px wide, e.g. on a phone, the chevron
-   lies on the photo or within 2 px of it, where its ink is hard to see. There the round
-   sheet is drawn at all times, as under the arrows of a carousel, and the pointer changes
-   its edge to copper. */
+/* The open photo starts 8% of the content box's width from the box's edge, or further in
+   where the program makes it narrower than its box, and the chevron ends 39.5 px from the
+   edge. So in a content box under 519 px wide, e.g. on a phone, the chevron can lie on the
+   photo or within 2 px of it, where its ink is hard to see. There the round sheet is drawn
+   at all times, as under the arrows of a carousel, and the pointer changes its edge to
+   copper. */
 @container (max-width: 518px) {
   .photos-control::before {
     background-color: var(--sheet);

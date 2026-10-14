@@ -194,10 +194,11 @@ const windowManagerCells = {
   ] as const,
   settleCheck: stateBit(),
   snap: stateBit(),
-  // Window geometry is clamped to the viewport every frame before writeback,
-  // so the viewport ceiling is honest for the stored state as well. Pointer
-  // deltas and clamps against the viewport and the constants keep it on the
-  // 1/64 px grid.
+  // A window's stored rectangle is where the starting arrangement, a drag or a
+  // resize put it, see nextStoredGeometry in buildWindowManager. Each of them
+  // writes values from inside the viewport of its time, so the viewport ceiling is
+  // honest for the stored state as well. Pointer deltas and clamps against the
+  // viewport and the constants keep it on the 1/64 px grid.
   windows: list(windowCount, windowIndex => {
     const [left, top, width, height] = initialGeometry[windowIndex]!
     return {
@@ -454,6 +455,47 @@ function buildWindowManager() {
       [maximumTopInset, -2],
     ])),
   }
+  // A window that isn't maximized is hit-tested and drawn at its stored rectangle
+  // fitted into the workspace, and its springs head there. The fitted rectangle has
+  // a size between the minimum size and the workspace's, where a workspace smaller
+  // than the minimum size gives its own size, and a position that keeps the whole
+  // window inside. E.g. Photos, stored at 842, 278 and 560 × 430 px, is fitted to
+  // 340, 194 and 560 × 430 px in a viewport of 900 × 700 px.
+  const minimumWidth = emitMinimum(circuit, cells.minWidth, cells.viewportWidth)
+  const minimumHeight = emitMinimum(circuit, cells.minHeight, workspaceHeight)
+  const fitIntoWorkspace = (rectangle: Geometry): Geometry => {
+    // A fitted value lies inside the viewport, so within the viewport cells' range,
+    // and on the 1/64 px grid of the cells that it is computed from. The builder
+    // infers less from the clamps' sums, e.g. no grid for the fitted left edge, and
+    // -414,720..412,672 px with no grid for the top edge after a drag. The hit
+    // tests' comparisons are integer bits only for operands on grids within 2^24
+    // grid steps: without these declarations they are sign cascades, and the program
+    // has 844 more live operations and 5 more layers, measured on October 14, 2026.
+    const inViewport = (wire: Wire) => {
+      circuit.assumeRange(wire, pixel[0], pixel[1])
+      circuit.assumeGrid(wire, pixelGrid)
+      return wire
+    }
+    const width = inViewport(emitClampDynamic(circuit, rectangle.width, minimumWidth, cells.viewportWidth))
+    const height = inViewport(emitClampDynamic(circuit, rectangle.height, minimumHeight, workspaceHeight))
+    const maximumLeft = emitRelu(circuit, circuit.affine([
+      [cells.viewportWidth, 1],
+      [width, -1],
+    ]))
+    const maximumTop = emitRelu(circuit, circuit.affine([
+      [dockTop, 1],
+      [height, -1],
+    ]))
+    return {
+      left: inViewport(emitClampDynamic(circuit, rectangle.left, zero, maximumLeft)),
+      top: inViewport(emitClampDynamic(circuit, rectangle.top, workspaceTop, maximumTop)),
+      width,
+      height,
+    }
+  }
+  // Each window's stored rectangle, fitted into the workspace as it is now, before
+  // this evaluation's events.
+  const fittedGeometry: Geometry[] = []
   const windowHit: Wire[] = []
   const closeHit: Wire[] = []
   const minimizeHit: Wire[] = []
@@ -480,11 +522,13 @@ function buildWindowManager() {
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     const current = cells.windows[windowIndex]!
     const visible = emitMultiply(circuit, current.open, emitComplement(circuit, current.minimized, unit))
+    const fitted = fitIntoWorkspace(current)
+    fittedGeometry.push(fitted)
     const geometry = {
-      left: emitSelect(circuit, current.maximized, current.left, maximumGeometry.left),
-      top: emitSelect(circuit, current.maximized, current.top, maximumGeometry.top),
-      width: emitSelect(circuit, current.maximized, current.width, maximumGeometry.width),
-      height: emitSelect(circuit, current.maximized, current.height, maximumGeometry.height),
+      left: emitSelect(circuit, current.maximized, fitted.left, maximumGeometry.left),
+      top: emitSelect(circuit, current.maximized, fitted.top, maximumGeometry.top),
+      width: emitSelect(circuit, current.maximized, fitted.width, maximumGeometry.width),
+      height: emitSelect(circuit, current.maximized, fitted.height, maximumGeometry.height),
     }
     windowHit.push(emitMultiply(
       circuit,
@@ -685,9 +729,11 @@ function buildWindowManager() {
   // exploration-2026-09 tag, where a press that moves more than 4 px away from where
   // it started turns into a drag, so a release back over the button doesn't click.
   //
-  // A release is tested against the stored geometry, like a press, e.g. the window's
-  // destination during an animation. The armed button's window is frontmost from the
-  // press on, so a release over that window's button is over no other window.
+  // A release is tested like a press, against each window's rectangle before this
+  // evaluation's events, i.e. its stored rectangle fitted into the workspace, or the
+  // maximized rectangle. During an animation that is the window's destination. The
+  // armed button's window is frontmost from the press on, so a release over that
+  // window's button is over no other window.
   const windowPressed = circuit.affine(selectedCanvas.map(wire => [wire, 1]))
   circuit.assumeRange(windowPressed, 0, 1)
   const release = emitRelu(circuit, circuit.affine([[cells.up.active, 1], [cells.cancel, -1]]))
@@ -821,7 +867,59 @@ function buildWindowManager() {
   const deltaX = circuit.affine([[pointerX, 1], [baselineX, -1]])
   const deltaY = circuit.affine([[pointerY, 1], [baselineY, -1]])
 
+  // A window's rectangle while it isn't maximized, after this evaluation's events,
+  // and the rectangle that the window stores.
+  //
+  // The stored rectangle is where the starting arrangement, a drag or a resize put
+  // the window, and the viewport never changes it. The rectangle that the window is
+  // drawn at is computed from it in every evaluation, see fitIntoWorkspace. So a
+  // viewport that shrinks and grows back leaves every window where it was, e.g. a
+  // phone turned on its side and back, or a browser window made small for a moment.
+  // When the fitted rectangle was written back instead, the phone's three windows
+  // ended on one rectangle, 12, 36 and 366 × 278 px, since the sideways workspace is
+  // 278 px tall, and a window kept the smallest size that a viewport had ever given
+  // it. chenguini's engineering.md, "Data Modeling", says to compute derived data
+  // and not to store it on the data that it came from, and ui.md's "Layout" counts
+  // the viewport's size among a frame's inputs.
+  //
+  // A drag or a resize starts from the fitted rectangle, where the window is drawn,
+  // and stores what it leaves: a drag the position, and a resize the position and
+  // the size. E.g. Photos, stored at 842, 278 px, is drawn at 340, 194 px in a
+  // viewport of 900 × 700 px. A title bar drag of 60 px to the left there moves
+  // Photos to 280 px and stores that, so Photos stays at 280 px in every viewport
+  // that is at least 840 px wide.
+  // - A drag keeps the stored size, so a window that was only moved while a small
+  //   viewport made it smaller gets its size back in a larger viewport. E.g. on a
+  //   phone held sideways, Photos is 278 px tall instead of 319 px, and after a drag
+  //   there and a turn back, Photos is 319 px tall again.
+  // - A resize stores the position too. If it stored the size alone, Photos above
+  //   would keep its stored left edge of 842 px, and its fitted left edge, which is
+  //   the viewport's width minus Photos' width, would move by as much as the grip
+  //   moves.
+  // - Only an evaluation in which the pointer moved stores, see pointerMoved. A
+  //   press and a release at one point didn't put the window anywhere, so the
+  //   stored rectangle stays, e.g. after a click on a title bar that only brings
+  //   its window to the front. When the press alone stored the drawn position, a
+  //   tap on Photos' title bar on a phone held sideways, where the three windows
+  //   lie on one rectangle, left Photos at 12, 36 px after the turn back, on top of
+  //   the other two, where it had been at 12, 437 px. A release at another point
+  //   than the press is a move, however small: a finger that slides by 1 px during
+  //   a tap drags the window by 1 px, and the window stores where that leaves it.
+  //
+  // Whether the pointer moved in this evaluation: 1 when the pointer is at another
+  // point than at the event before, or than at the press when this evaluation
+  // holds the press, and 0 otherwise. deltaX and deltaY are whole steps of the
+  // 1/64 px grid, so 64 times their absolute values is a whole number, at most
+  // 2^23, and its clamp is exactly 0 or 1.
+  const gridStepsPerPixel = 1 / pixelGrid
+  const pointerMoved = emitClampZeroOne(circuit, circuit.affine([
+    [emitRelu(circuit, deltaX), gridStepsPerPixel],
+    [emitRelu(circuit, circuit.affine([[deltaX, -1]])), gridStepsPerPixel],
+    [emitRelu(circuit, deltaY), gridStepsPerPixel],
+    [emitRelu(circuit, circuit.affine([[deltaY, -1]])), gridStepsPerPixel],
+  ]), unit)
   const nextNormalGeometry: Geometry[] = []
+  const nextStoredGeometry: Geometry[] = []
   const nextOpen: Wire[] = []
   const nextMinimized: Wire[] = []
   const nextMaximized: Wire[] = []
@@ -850,53 +948,34 @@ function buildWindowManager() {
     ))
 
     const current = cells.windows[windowIndex]!
-    const widthCandidate = circuit.affine([
-      [current.width, 1],
-      [emitMultiply(circuit, resizeForMotion, deltaX), 1],
-    ])
-    const heightCandidate = circuit.affine([
-      [current.height, 1],
-      [emitMultiply(circuit, resizeForMotion, deltaY), 1],
-    ])
-    const width = emitClampDynamic(
-      circuit,
-      widthCandidate,
-      emitMinimum(circuit, cells.minWidth, cells.viewportWidth),
-      cells.viewportWidth,
-    )
-    const height = emitClampDynamic(
-      circuit,
-      heightCandidate,
-      emitMinimum(circuit, cells.minHeight, workspaceHeight),
-      workspaceHeight,
-    )
-    const maximumLeft = emitRelu(circuit, circuit.affine([
-      [cells.viewportWidth, 1],
-      [width, -1],
-    ]))
-    const maximumTop = emitRelu(circuit, circuit.affine([
-      [dockTop, 1],
-      [height, -1],
-    ]))
-    const left = emitClampDynamic(
-      circuit,
-      circuit.affine([
-        [current.left, 1],
+    const fitted = fittedGeometry[windowIndex]!
+    const normal = fitIntoWorkspace({
+      left: circuit.affine([
+        [fitted.left, 1],
         [emitMultiply(circuit, dragForMotion, deltaX), 1],
       ]),
-      zero,
-      maximumLeft,
-    )
-    const top = emitClampDynamic(
-      circuit,
-      circuit.affine([
-        [current.top, 1],
+      top: circuit.affine([
+        [fitted.top, 1],
         [emitMultiply(circuit, dragForMotion, deltaY), 1],
       ]),
-      workspaceTop,
-      maximumTop,
-    )
-    nextNormalGeometry.push({left, top, width, height})
+      width: circuit.affine([
+        [fitted.width, 1],
+        [emitMultiply(circuit, resizeForMotion, deltaX), 1],
+      ]),
+      height: circuit.affine([
+        [fitted.height, 1],
+        [emitMultiply(circuit, resizeForMotion, deltaY), 1],
+      ]),
+    })
+    nextNormalGeometry.push(normal)
+    const storesPosition = emitMultiply(circuit, directManipulation[windowIndex]!, pointerMoved)
+    const storesSize = emitMultiply(circuit, resizeForMotion, pointerMoved)
+    nextStoredGeometry.push({
+      left: emitSelect(circuit, storesPosition, current.left, normal.left),
+      top: emitSelect(circuit, storesPosition, current.top, normal.top),
+      width: emitSelect(circuit, storesSize, current.width, normal.width),
+      height: emitSelect(circuit, storesSize, current.height, normal.height),
+    })
 
     const afterClose = emitSelect(
       circuit,
@@ -1156,7 +1235,7 @@ function buildWindowManager() {
   )
   for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
     table.next(cells.windows[windowIndex]!, {
-      ...nextNormalGeometry[windowIndex]!,
+      ...nextStoredGeometry[windowIndex]!,
       open: nextOpen[windowIndex]!,
       minimized: nextMinimized[windowIndex]!,
       maximized: nextMaximized[windowIndex]!,
@@ -1265,8 +1344,8 @@ function buildWindowManager() {
   // destination, i.e. the content box without the header row and the footer, e.g.
   // the maximized height from the release of the maximize button on, so the rows
   // drawn change once per event, like Photos' layout. A release's y is relative to
-  // the list's top edge at the stored geometry, which the release was hit-tested
-  // against.
+  // the list's top edge in the rectangle that the release was hit-tested against,
+  // Monitor's rectangle before this evaluation's events.
   const valueList = buildValueList(circuit, table, cells.valueList, {
     viewportHeight: emitRelu(circuit, circuit.affine([[destinationContentHeight[monitorWindowIndex]!, 1]], -monitorLayout.headerHeight - monitorLayout.footerHeight)),
     focused: focusedWindow[monitorWindowIndex]!,
@@ -1690,9 +1769,9 @@ const valueListKeyNames = new Map<string, ValueListKey>([
 ])
 
 // What a frame does to the keyboard focus of the note, Notes' text field: 'focus'
-// gives it to the note, 'blur' takes it away, and null leaves it. The note's
-// keyboard focus follows the focused window, like a text field in a window of a
-// desktop:
+// and 'focus with the caret at the end' give it to the note, 'blur' takes it away,
+// and null leaves it. The note's keyboard focus follows the focused window, like a
+// text field in a window of a desktop:
 // - While Notes isn't the focused window, the note has no keyboard focus. The frame
 //   takes it away, e.g. after a press on another window, or after Notes was
 //   minimized or closed, and the Tab key skips the note, see its tabIndex in
@@ -1703,6 +1782,23 @@ const valueListKeyNames = new Map<string, ValueListKey>([
 //   in the text is the browser's own: it focuses the note and places the caret, and
 //   the frame finds the note focused and leaves it alone. Otherwise the frame calls
 //   focus(), which keeps the caret and the selection where they were.
+// - The first keyboard focus that the note ever gets, when the frame gives it, comes
+//   with the caret at the end of the text, 'focus with the caret at the end'. A text
+//   field that never had the keyboard focus holds its caret before its first
+//   character, so a letter typed after a press on Notes' title bar landed before the
+//   note's first word, e.g. "xTODO: this week". Once the note has had the keyboard
+//   focus, the caret or the selection is the visitor's, e.g. placed by a press in
+//   the text or moved by an arrow key, and every later focus() keeps it.
+//   "The note has had the keyboard focus" stands for "the visitor has placed a
+//   caret", since every way to place one gives the note the keyboard focus first.
+//   The two differ when the Tab key gives the note its first keyboard focus: the
+//   browser puts the caret before the first character then, and a later focus()
+//   keeps it there, although the visitor placed none. That takes a finger, a
+//   keyboard and a mouse, e.g. on a laptop with a touch screen: a tap on Notes'
+//   title bar, which makes Notes the focused window without a focus() call, see
+//   below, then the Tab key, a mouse press on another window, and a mouse press on
+//   Notes' title bar. Telling the two apart would take a record of every press in
+//   the text and every key typed in the note, so the case is left as it is.
 // - Except after a press outside every window, e.g. on the desk. The browser takes
 //   the keyboard focus away there, as at a press outside a text field on any page,
 //   and the frame leaves it so, while Notes stays the focused window.
@@ -1716,14 +1812,18 @@ const valueListKeyNames = new Map<string, ValueListKey>([
 export function noteFocusChange(frame: {
   notesIsFocusedWindow: boolean
   noteHasKeyboardFocus: boolean
+  // Whether the note has had the keyboard focus at any time up to this frame, from
+  // the browser, e.g. at a press in the text, or from an earlier frame.
+  noteHasHadKeyboardFocus: boolean
   // Whether a press or a release happened since the last frame.
   pressedOrReleased: boolean
   // The last press: whether a mouse made it, and whether it was outside every window,
   // where Notes' dock item counts as a part of the Notes window.
   lastPress: {byMouse: boolean, outsideEveryWindow: boolean}
-}): 'focus' | 'blur' | null {
+}): 'focus' | 'focus with the caret at the end' | 'blur' | null {
   if (!frame.notesIsFocusedWindow) return frame.noteHasKeyboardFocus ? 'blur' : null
-  return !frame.noteHasKeyboardFocus && frame.pressedOrReleased && frame.lastPress.byMouse && !frame.lastPress.outsideEveryWindow ? 'focus' : null
+  if (frame.noteHasKeyboardFocus || !frame.pressedOrReleased || !frame.lastPress.byMouse || frame.lastPress.outsideEveryWindow) return null
+  return frame.noteHasHadKeyboardFocus ? 'focus' : 'focus with the caret at the end'
 }
 
 function mountWindowManager(document: Document, window: Window) {
@@ -1785,7 +1885,6 @@ function mountWindowManager(document: Document, window: Window) {
   domCache.desktop.style.setProperty('--button-size', `${machine.source[machine.cells.buttonSize]}px`)
   domCache.desktop.style.setProperty('--button-gap', `${machine.source[machine.cells.buttonGap]}px`)
   domCache.desktop.style.setProperty('--resize-grip', `${machine.source[machine.cells.resizeGrip]}px`)
-  domCache.desktop.style.setProperty('--dock-height', `${machine.source[machine.cells.dockHeight]}px`)
   domCache.desktop.style.setProperty(
     '--system-bar-height',
     `${machine.source[machine.cells.systemBarHeight]}px`,
@@ -1811,6 +1910,12 @@ function mountWindowManager(document: Document, window: Window) {
   // whether a mouse made it, and whether it was outside every window, e.g. on the
   // desk, as the browser hit-tested it.
   let lastPress = {byMouse: false, outsideEveryWindow: true}
+  // Whether the note has had the keyboard focus so far, see noteFocusChange. Each
+  // frame reads which element has the keyboard focus, and the focusin listener below
+  // requests a frame whenever the keyboard focus arrives at an element, so the frame
+  // after the browser gave the note the keyboard focus records it, e.g. after a
+  // press in the text.
+  let noteHasHadKeyboardFocus = false
 
   // How many more frames the page runs by itself after it loads. The chart in
   // Monitor's footer shows the program's time per frame over the last 60 frames,
@@ -1841,9 +1946,10 @@ function mountWindowManager(document: Document, window: Window) {
     const viewportHeight = document.documentElement.clientHeight
     const valueListScrollTop = valueList.readScrollTop()
     const noteHasKeyboardFocus = document.activeElement === domCache.note
-    // Handle inputs. The pointer events are queued in the machine already. A press
-    // since the last frame replaces what the note's keyboard focus knows of the last
-    // one.
+    // Handle inputs. The pointer events are queued in the machine already. A note
+    // that has the keyboard focus now has had it from now on, and a press since the
+    // last frame replaces what the note's keyboard focus knows of the last one.
+    if (noteHasKeyboardFocus) noteHasHadKeyboardFocus = true
     const pressedOrReleased = events.press !== null || events.released
     if (events.press !== null) {
       const {target} = events.press
@@ -1916,8 +2022,16 @@ function mountWindowManager(document: Document, window: Window) {
     // Side effects, after every DOM write. The note's keyboard focus follows the
     // focused window, see noteFocusChange. The focus call can't scroll a box: it
     // passes preventScroll, and the boxes around the note clip without a scroll
-    // position.
-    switch (noteFocusChange({notesIsFocusedWindow, noteHasKeyboardFocus, pressedOrReleased, lastPress})) {
+    // position. The caret is the browser's state like the keyboard focus, so the
+    // frame writes it here too, before the focus call, which keeps it. The frame
+    // that gives the note its first keyboard focus also records that the note has had
+    // it, so the record doesn't depend on a later frame finding the note focused.
+    switch (noteFocusChange({notesIsFocusedWindow, noteHasKeyboardFocus, noteHasHadKeyboardFocus, pressedOrReleased, lastPress})) {
+      case 'focus with the caret at the end':
+        domCache.note.setSelectionRange(domCache.note.textLength, domCache.note.textLength)
+        domCache.note.focus({preventScroll: true})
+        noteHasHadKeyboardFocus = true
+        break
       case 'focus':
         domCache.note.focus({preventScroll: true})
         break

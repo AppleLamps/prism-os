@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {createWindowManagerMachine, windowCount, windowOutputField} from '../../src/handwiredos/window-manager.ts'
 import {type ArrangementMetrics, type Rectangle, arrangeInitialWindows, arrangeWindows} from '../../src/handwiredos/arrangement.ts'
+import {itemCount as photoCount, maximumPhotoTallness, maximumPhotoWideness, photoField} from '../../src/handwiredos/photo-gallery.ts'
 
 // The program's numbers, see windowManagerCells in window-manager.ts.
 const systemBarHeight = 36
@@ -65,14 +66,14 @@ function assertFits(rectangles: readonly Rectangle[], workspace: Rectangle, labe
 
 test('at 1440 × 900 Monitor is a column as tall as Notes and Photos together, and Photos covers Notes\' lower right part', () => {
   assert.deepEqual(arrangeWindows(workspaceOf(1440, 900), minimum, natural, metrics), [
-    {left: 38, top: 84, width: 540, height: 556},
-    {left: 602, top: 84, width: 500, height: 366},
-    {left: 842, top: 210, width: 560, height: 430},
+    {left: 38, top: 152, width: 540, height: 556},
+    {left: 602, top: 152, width: 500, height: 366},
+    {left: 842, top: 278, width: 560, height: 430},
   ])
-  // The page prints the list of things to try on the desk's lower right, 124 px tall
-  // and ending 12 px above the dock: 48 px lie between Photos and the list, as many
-  // as between the system bar and the windows.
-  assert.equal(900 - dockHeight - 12 - 124 - (210 + 430), 84 - systemBarHeight)
+  // The group is centered: 116 px lie between the system bar and the windows, and as
+  // many between Photos and the dock, and 38 px at the left and at the right.
+  assert.equal(152 - systemBarHeight, 900 - dockHeight - (278 + 430))
+  assert.equal(38, 1440 - (842 + 560))
 })
 
 test('a viewport 1280 px wide narrows Photos, and Monitor keeps the width that shows five columns', () => {
@@ -85,8 +86,7 @@ test('a viewport 1280 px wide narrows Photos, and Monitor keeps the width that s
   // The list is Monitor's content box without the 152 px sidebar, and Operations' five
   // columns take 372 px, see handwired-os.css.
   assert.ok(rectangles[0]!.width - 2 - 152 >= 372)
-  // 800 px of height show no list of things to try, so the group is centered between
-  // the system bar and the dock.
+  // The group is centered between the system bar and the dock.
   assert.equal(102 - systemBarHeight, 800 - dockHeight - (228 + 430))
 })
 
@@ -285,6 +285,92 @@ test('in one column and in one row, a maximized window covers the other two wind
       assert.ok(rectangle.left >= maximized.left && rectangle.top >= maximized.top, label)
       assert.ok(rectangle.left + rectangle.width <= maximized.left + maximized.width && rectangle.top + rectangle.height <= maximized.top + maximized.height, label)
     }
+  }
+})
+
+test('at 390 × 844, 844 × 390 and 360 × 640 px, Photos opens with photos that fill their slots, and the photos of a maximized Photos keep their proportions', () => {
+  // A phone held upright and sideways, and a smaller one, with the content box of
+  // the maximized Photos: the workspace without the 12 px margin, the 1 px border
+  // and the 44 px title bar.
+  for (const [width, height, contentWidth, contentHeight] of [[390, 844, 364, 662], [844, 390, 818, 208], [360, 640, 334, 458]] as const) {
+    const machine = createWindowManagerMachine()
+    const photos = arrangeInitialWindows(machine.source, machine.cells, width, height)[2]!
+    let values = machine.step(width, height, 16)
+    const photoSizes = () => Array.from({length: photoCount}, (_, item) => ({
+      width: values[machine.output.photos.photos[item * photoField.size + photoField.width]!]!,
+      height: values[machine.output.photos.photos[item * photoField.size + photoField.height]!]!,
+    }))
+    const label = `${width} × ${height}`
+    // At load, Photos is as tall as its photos need, so every photo fills its slot:
+    // 4 columns and 3 rows with the 18 px gap around and between them.
+    const atLoad = photoSizes()[0]!
+    assert.equal(atLoad.width, (photos.width - 2 - 5 * 18) / 4, label)
+    assert.ok(Math.abs(atLoad.height - (photos.height - 44 - 2 - 4 * 18) / 3) < 1e-4, label)
+
+    machine.pointerDown(photos.left + photos.width - 47, photos.top + 22, 20)
+    machine.pointerUp(photos.left + photos.width - 47, photos.top + 22, 24)
+    values = machine.step(width, height, 32)
+    for (let frameTime = 48; machine.clock.animatedUntilMs !== null; frameTime += 16) values = machine.step(width, height, frameTime)
+    const slot = {width: (contentWidth - 5 * 18) / 4, height: (contentHeight - 4 * 18) / 3}
+    // Each of these boxes is far from the proportions that a slot may have: a slot
+    // on the upright phone is 68.5 × 196.7 px, and sideways 182 × 45.3 px.
+    assert.ok(slot.height > 2 * slot.width || slot.width > 4 * slot.height, label)
+    for (const photo of photoSizes()) {
+      assert.ok(photo.height <= maximumPhotoTallness * photo.width + 1e-3, `${label}: a photo is ${photo.width} × ${photo.height}`)
+      assert.ok(photo.width <= maximumPhotoWideness * photo.height + 1e-3, `${label}: a photo is ${photo.width} × ${photo.height}`)
+      assert.ok(Math.abs(photo.width - slot.width) < 1e-3 || Math.abs(photo.height - slot.height) < 1e-3, `${label}: a photo is ${photo.width} × ${photo.height}`)
+    }
+  }
+})
+
+test('Photos opens with photos that fill their slots, except in one row and where the viewport is too short for a Photos as wide as its column', () => {
+  // How much a limit on the photos' proportions leaves free around the grid in the
+  // Photos that the arrangement starts with: above and below it, or left and right.
+  const freeAt = (width: number, height: number) => {
+    const workspace = workspaceOf(width, height)
+    const photos = arrangeWindows(workspace, minimum, natural, metrics)[2]!
+    const slotWidth = (photos.width - 2 - 5 * metrics.photosGap) / 4
+    const slotHeight = (photos.height - metrics.titleHeight - 2 - 4 * metrics.photosGap) / 3
+    return {
+      inOneRow: workspace.height < 2 * minimum.height + 48,
+      aboveAndBelow: Math.max(0, slotHeight - maximumPhotoTallness * slotWidth) * 3 / 2,
+      leftAndRight: Math.max(0, slotWidth - maximumPhotoWideness * slotHeight) * 4 / 2,
+    }
+  }
+  const worst = {inOneRow: 0, shortViewport: 0}
+  for (let width = 320; width <= 2600; width += 7) {
+    for (let height = 320; height <= 1500; height += 3) {
+      const free = freeAt(width, height)
+      const label = `${width} × ${height}`
+      if (free.inOneRow) {
+        // One row: Photos is as tall as the row, up to 340 px at 280 px of width,
+        // where its photos need 294 px. That is on a viewport 431 to 539 px tall.
+        assert.equal(free.leftAndRight, 0, label)
+        assert.ok(free.aboveAndBelow <= 22.875, `${label}: ${free.aboveAndBelow} px free above and below`)
+        if (free.aboveAndBelow > 0) assert.ok(height >= 431 && height <= 539, label)
+        worst.inOneRow = Math.max(worst.inOneRow, free.aboveAndBelow)
+        continue
+      }
+      // Elsewhere Photos is never taller than its photos need, up to the quarter of a
+      // pixel that rounding the window to whole pixels adds.
+      assert.ok(free.aboveAndBelow < 0.26, `${label}: ${free.aboveAndBelow} px free above and below`)
+      // A viewport under 771 px tall can leave Photos less height than photos as wide
+      // as its column need, down to the minimum height of 190 px, and then the grid
+      // has free room at its sides. From 771 px of height the photos fill their slots,
+      // up to the pixel that rounding adds.
+      if (height >= 771) assert.ok(free.leftAndRight <= 1, `${label}: ${free.leftAndRight} px free left and right`)
+      else worst.shortViewport = Math.max(worst.shortViewport, free.leftAndRight)
+    }
+  }
+  assert.equal(worst.inOneRow, 22.875)
+  // The most is at 564 × 540 px, where Photos opens at 540 × 190 px with photos of
+  // 48 × 24 px in slots of 112 × 24 px.
+  assert.deepEqual(freeAt(564, 540), {inOneRow: false, aboveAndBelow: 0, leftAndRight: 128})
+  assert.ok(worst.shortViewport <= 128)
+  // Common viewports are none of these, e.g. phones with and without the browser's bars.
+  for (const [width, height] of [[1280, 800], [1440, 900], [1512, 860], [1920, 1080], [2560, 1440], [1366, 625], [1024, 768], [390, 844], [390, 664], [393, 659], [430, 739], [375, 667], [360, 640], [412, 760], [844, 390]] as const) {
+    const free = freeAt(width, height)
+    assert.ok(free.aboveAndBelow < 0.26 && free.leftAndRight === 0, `${width} × ${height}`)
   }
 })
 

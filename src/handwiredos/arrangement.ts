@@ -11,9 +11,9 @@
 //   beside it, and Photos over Notes' lower right part, under the note's first two
 //   lines. Monitor is as tall as the other two together, since a list is worth
 //   every row that it can show. At 1440 × 900 the rectangles are Monitor
-//   38, 84, 540 × 556, Notes 602, 84 and Photos 842, 210, both at the program's
-//   default sizes. A larger viewport centers that group, and a smaller one narrows
-//   Photos, then Monitor too, and shortens the group.
+//   38, 152, 540 × 556, Notes 602, 152 and Photos 842, 278, both at the program's
+//   default sizes. The group is centered in the workspace, and a smaller viewport
+//   narrows Photos, then Monitor too, and shortens the group.
 // - From 640 px wide, two columns: Monitor at the left, and Notes above Photos at
 //   the right.
 // - Below 640 px wide, e.g. a phone held upright, one column: each window covers the
@@ -32,6 +32,7 @@
 // The note's text is the browser's to lay out, so the arrangement measures none of
 // it: Notes keeps a fixed part of the note in view, see noteShown.
 import {type Wire, invariant} from '../runtime/numeric-ui-core.ts'
+import {maximumPhotoTallness} from './photo-gallery.ts'
 import {locationCount, monitorLayout} from './value-list.ts'
 
 export type Rectangle = {left: number, top: number, width: number, height: number}
@@ -92,12 +93,14 @@ function monitorShownFor(available: number, whole: number, metrics: ArrangementM
 
 // How tall Photos is at most at a width: its title bar, and 4 columns and 3 rows of
 // photos with its gap around and between them, where a photo is at most 1.25 times
-// as tall as wide. E.g. 319 px at 306 px of width, and more than the default 430 px
-// from 425 px of width, where the default height stays. At its default size, 560 px
-// wide, a photo is 117 × 104 px.
+// as tall as wide. The program draws no photo taller than that, see
+// maximumPhotoTallness in photo-gallery.ts, so a taller Photos would open with free
+// room above and below its photos. E.g. 319 px at 306 px of width, and more than the
+// default 430 px from 425 px of width, where the default height stays. At its
+// default size, 560 px wide, a photo is 117 × 104 px.
 function photosTallestFor(width: number, metrics: ArrangementMetrics) {
   const photoWidth = (width - 2 * border - 5 * metrics.photosGap) / 4
-  return metrics.titleHeight + 2 * border + 4 * metrics.photosGap + 3 * 1.25 * photoWidth
+  return metrics.titleHeight + 2 * border + 4 * metrics.photosGap + 3 * maximumPhotoTallness * photoWidth
 }
 
 function clamp(value: number, minimum: number, maximum: number) {
@@ -162,14 +165,9 @@ function arrangeDesk(workspace: Rectangle, minimum: Size, [monitor, notes, photo
   // 556 px at full size, and Monitor is as tall as the group.
   const height = Math.min(photosOffsetY + Math.min(photos.height, photosTallestFor(photosWidth, metrics)), workspace.height - 2 * margin)
   const photosHeight = clamp(height - photosOffsetY, minimum.height, photos.height)
-  // The page prints the list of things to try on the desk's lower right, on a
-  // workspace of at least 1100 × 738 px, i.e. a viewport of 1100 × 850 px, see
-  // .desk-legend in handwired-os.css. There, 160 px stay free under the group where
-  // the height allows: the list's 124 px, the 12 px under it, and 24 px above it.
-  // Space beyond that is split above and below.
-  const legendRoom = workspace.width >= 1100 && workspace.height >= 738 ? 160 - margin : 0
-  const spare = Math.max(0, workspace.height - 2 * margin - legendRoom - height)
-  const originY = workspace.top + margin + spare / 2
+  // The group is centered between the system bar and the dock, like it is centered
+  // between the workspace's left and right edges.
+  const originY = workspace.top + (workspace.height - height) / 2
 
   return [
     {left: originX, top: originY, width: monitorWidth, height},
@@ -252,6 +250,11 @@ function arrangeRow(workspace: Rectangle, minimum: Size, [monitor, notes, photos
   // as the room that Photos and a whole Monitor leave, between the minimum width and
   // its own. Monitor shows the rest left of Notes, at least 88 px of its title bar,
   // and where even that is too much, Photos covers the right part of Notes.
+  // Photos is as tall as the row, like the two windows that it stands beside or
+  // covers, also where that is more than photosTallestFor gives at this width,
+  // 294 px. So in a row taller than that, on a viewport 431 to 539 px tall, its
+  // photos leave up to 23 px free above and below them, e.g. at 800 × 480 px. A
+  // shorter Photos would show the lower right corner of the window behind it.
   const shownAtLeast = 88
   const photosWidth = Math.min(minimum.width, available)
   const notesWidth = clamp(available - photosWidth - (monitor.width + margin), minimum.width, notes.width)
