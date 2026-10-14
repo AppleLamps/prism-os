@@ -2,11 +2,11 @@
 // is the browser's own text field, so to the program a press on it is a press on a
 // window's content that has no control: it raises and focuses Notes, and nothing
 // else. These tests check that such a press arms nothing and moves nothing, also
-// where Notes covers Monitor's list or Monitor's grip, and whatever the pointer does
-// until the release, e.g. during a selection of the note's text that ends over a
-// photo. And a list key moves Monitor's selection only while Monitor is the focused
-// window at the key's time, e.g. not after a press on the note earlier in the same
-// frame.
+// where Notes covers Monitor's grip, and whatever the pointer does until the
+// release, e.g. during a selection of the note's text that ends over a photo. And a
+// key reaches Monitor's list or Photos only while that window is the focused window
+// at the key's time, e.g. not after a press on the note earlier in the same frame.
+// value-list.test.ts has the presses where Notes covers the list's rows.
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {validateGrids} from '../../src/runtime/numeric-ui-core.ts'
@@ -39,13 +39,10 @@ const monitorTitleBar = {x: 100, y: 76}
 // On Notes' title bar, left of Photos, and on Photos' title bar, right of Notes.
 const notesTitleBar = {x: 600, y: 126}
 const photosTitleBar = {x: 1000, y: 212}
-// On Monitor's list and on the note, where Notes covers the list: row 5 of the list.
-const onBoth = {x: 480, y: 250}
 // On the note only: right of Monitor and left of Photos.
 const onNoteOnly = {x: 600, y: 250}
 // A point on a row of the list that Notes doesn't cover, 100 px from the list's left edge.
 const rowPoint = (row: number) => ({x: list.left + 100, y: list.top + row * rowHeight + rowHeight / 2})
-const rowAt = (point: {y: number}) => Math.floor((point.y - list.top) / rowHeight)
 
 type Machine = ReturnType<typeof createWindowManagerMachine>
 const frameTimeByMachine = new WeakMap<Machine, number>()
@@ -204,64 +201,6 @@ test("a press and a cancel at one time, which is how the page sends the right bu
     assert.deepEqual(heldPress(machine), nothingHeld, label)
     afterwards(point, label)
   }
-})
-
-test('a press where Notes covers the list arms no row, and with Monitor in front the same point selects its row', () => {
-  const machine = createMachine()
-  // Notes starts above Monitor. The down raises Notes and arms nothing, so the
-  // release selects nothing.
-  machine.pointerDown(onBoth.x, onBoth.y, eventTime(machine, 4))
-  let values = step(machine)
-  assert.deepEqual(heldPress(machine), nothingHeld)
-  assert.equal(focusedWindow(machine, values), 1)
-  machine.pointerUp(onBoth.x, onBoth.y, eventTime(machine, 4))
-  step(machine)
-  assert.equal(selectedRow(machine), -1)
-
-  // Monitor in front: the down at the same point arms the list, and the release
-  // selects the row there.
-  values = click(machine, monitorTitleBar)
-  assert.equal(focusedWindow(machine, values), 0)
-  machine.pointerDown(onBoth.x, onBoth.y, eventTime(machine, 4))
-  step(machine)
-  assert.equal(machine.source[armedSourceField('valueList')], 1)
-  machine.pointerUp(onBoth.x, onBoth.y, eventTime(machine, 4))
-  values = step(machine)
-  assert.equal(selectedRow(machine), rowAt(onBoth))
-  assert.equal(rowAt(onBoth), 5)
-  assert.equal(focusedWindow(machine, values), 0)
-})
-
-test('a press on one of the two windows that is released over the other acts on no row', () => {
-  const machine = createMachine()
-  click(machine, monitorTitleBar)
-  click(machine, rowPoint(3))
-  assert.equal(selectedRow(machine), 3)
-
-  // A press on a row, released over the note right of Monitor: the release is off the
-  // list, so the selection stays, and Monitor stays in front.
-  let values = click(machine, rowPoint(8), onNoteOnly)
-  assert.equal(selectedRow(machine), 3)
-  assert.equal(focusedWindow(machine, values), 0)
-
-  // A press on the note, released over a row of the list: the down raises Notes, and
-  // the release selects nothing, since the press armed no row.
-  values = click(machine, onNoteOnly, rowPoint(8))
-  assert.equal(selectedRow(machine), 3)
-  assert.equal(machine.source[armedSourceField('valueList')], 0)
-  assert.equal(focusedWindow(machine, values), 1)
-
-  // The same with the down on the part of the note that covers the list.
-  click(machine, onBoth, rowPoint(8))
-  assert.equal(selectedRow(machine), 3)
-
-  // A press on a row that Notes doesn't cover raises Monitor, so the release over the
-  // part of the list that the note covered until that press selects the row there.
-  const release = {x: 480, y: 300}
-  values = click(machine, rowPoint(2), release)
-  assert.equal(selectedRow(machine), rowAt(release))
-  assert.equal(rowAt(release), 7)
-  assert.equal(focusedWindow(machine, values), 0)
 })
 
 test("a press on Monitor's grip where the note covers the grip resizes nothing, and with Monitor in front the grip resizes Monitor", () => {

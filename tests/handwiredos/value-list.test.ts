@@ -603,16 +603,26 @@ test('a release below the last row of a short list selects nothing', () => {
 test('a press reaches a row only when Monitor is the frontmost window at that point, so a row covered by another window is not selected', () => {
   const machine = createMachine()
   // (500, 300) is inside Monitor's list and inside Notes, which starts above Monitor.
+  // A press there is Notes': it doesn't arm the list, and its release selects nothing.
   const covered = {x: 500, y: 300}
-  let values = click(machine, covered)
+  machine.pointerDown(covered.x, covered.y, eventTime(machine, 4))
+  step(machine)
+  assert.equal(machine.source[armedSourceField('valueList')], 0)
+  machine.pointerUp(covered.x, covered.y, eventTime(machine, 4))
+  let values = step(machine)
   assert.equal(selectedRow(machine), -1)
   assert.equal(focusedWindow(machine, values), 1)
   // Row 4's point is inside Monitor only: the press raises Monitor, and the release selects.
   values = click(machine, rowPoint(4))
   assert.equal(selectedRow(machine), 4)
   assert.equal(focusedWindow(machine, values), 0)
-  // With Monitor in front, the same point is on row 7.
-  click(machine, covered)
+  // With Monitor in front, the same point is on row 7: the press arms the list, and
+  // the release selects the row.
+  machine.pointerDown(covered.x, covered.y, eventTime(machine, 4))
+  step(machine)
+  assert.equal(machine.source[armedSourceField('valueList')], 1)
+  machine.pointerUp(covered.x, covered.y, eventTime(machine, 4))
+  step(machine)
   assert.equal(selectedRow(machine), 7)
   // Notes in front again: the press and the release go to Notes.
   click(machine, notesTitleBar)
