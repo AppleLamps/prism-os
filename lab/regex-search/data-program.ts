@@ -108,7 +108,7 @@ export function buildDataSearch(capacity: DataCapacity) {
   return {cells, capacity, output, notReachAt, ...table.finish()}
 }
 
-export type DataSearch = ReturnType<typeof buildDataSearch>
+type DataSearch = ReturnType<typeof buildDataSearch>
 export type SearchOutput = WireValues<DataSearch['output']>
 
 // Writes a compiled pattern into the cells of form (a) or form (c). Throws when the pattern doesn't fit, which a caller
