@@ -178,6 +178,67 @@ function buildMixed() {
   }
 }
 
+// Six switches that stay on from one row to the next. JS for the first variant:
+//
+//   for (const row of rows) {
+//     for (let k = 0; k < 6; k++) on[k] = on[k] && !blocked[k][row] && !stuck[k]   // row 5 blocks nothing
+//     const any = on.some(isOn => isOn)
+//     marks.push(any)
+//     count += any
+//   }
+//
+// The six gates have the same form, over the six `on` registers, six tables read at the same row, and six shared
+// cells, so each of those is one word. In 'oneByOne', switch k instead reads two other switches, on[k + 1] && !on[k + 2],
+// which are no neighboring lanes of a word.
+function buildSwitches(variant: 'lanes' | 'oneByOne') {
+  const switchCount = 6
+  const table = createSourceTable()
+  const cells = table.declare({
+    row: input([0, rowCount], {initial: rowCount, grid: 1}),
+    blocked: list(switchCount, () => list(rowCount, () => inputBit())),
+    stuck: list(switchCount, () => inputBit()),
+    on: list(switchCount, () => inputBit(1)),
+    count: input([0, positions], {grid: 1}),
+  })
+  const circuit = table.createCircuit()
+  const nextOn = cells.on.map((isOn, index): Wire => {
+    if (variant === 'oneByOne') return andNot(circuit, cells.on[(index + 1) % switchCount]!, cells.on[(index + 2) % switchCount]!) as Wire
+    const blocked = circuit.indexReadAffine([[cells.row, 1]], 0, cells.blocked[index]!, 'clamp', 'zero')
+    // JS: on && !blocked && !stuck, as relu(on - blocked - stuck).
+    return circuit.reglu([], 1, [[isOn, 1], [blocked, -1], [cells.stuck[index]!, -1]], 0)
+  })
+  const none = circuit.reglu([], 1, nextOn.map(isOn => [isOn, -1] as const), 1)
+  const any = not(circuit, none) as Wire
+  const nextCount = circuit.affine([[cells.count, 1], [any, 1]])
+  const {initialSource} = table.finish()
+  const loop: LoopProgram = {
+    positions,
+    buffers: [{name: 'rows', cellsPerDocument: positions}],
+    registers: [...list(switchCount, index => ({name: `on[${index}]`, initial: 1})), {name: 'count', initial: 0}],
+    fields: [],
+    outputGroups: [{name: 'summary', kind: 'document', valuesPerDocument: 2, fill: 0}, {name: 'any', kind: 'position', valuesPerDocument: positions, fill: 0}],
+    stages: [createStage({
+      name: 'rows', repeat: 'forward', circuit, sharedOffset: 0,
+      bindings: new Map<Wire, Binding>([[cells.row, {kind: 'item', buffer: 0}], ...cells.on.map((wire, index): [Wire, Binding] => [wire, {kind: 'register', register: index}]), [cells.count, {kind: 'register', register: switchCount}]]),
+      outputs: [{wire: any, write: {kind: 'position', group: 1}}, ...nextOn.map((wire, index) => ({wire, write: {kind: 'register', register: index} as const})), {wire: nextCount, write: {kind: 'register', register: switchCount}}],
+    })],
+    // The count, and whether the last switch is still on.
+    results: [{group: 0, column: 0, register: switchCount}, {group: 0, column: 1, register: switchCount - 1}],
+    sharedValues: new Float32Array(initialSource),
+    lengthCell: undefined,
+  }
+  return {
+    loop,
+    writeShared(random: () => number, shared: Float32Array) {
+      for (const blockedOfSwitch of cells.blocked) for (const wire of blockedOfSwitch) shared[wire] = Number(random() < 0.1)
+      for (const wire of cells.stuck) shared[wire] = Number(random() < 0.15)
+    },
+    writeDocument(random: () => number, document: Float32Array) {
+      for (let position = 0; position < positions; position++) document[position] = Math.floor(random() * (rowCount + 1))
+    },
+  }
+}
+
 // Runs a loop program on the CPU executor and as both writers' shaders, for several shared tables and documents, and
 // counts the values that differ from the executor's.
 function compareWriters(program: {loop: LoopProgram, writeShared: (random: () => number, shared: Float32Array) => void, writeDocument: (random: () => number, document: Float32Array) => void}, seed: number) {
@@ -270,6 +331,31 @@ describe('bit-emit.ts on small loop programs', () => {
     }
   })
 
+  test('switches: six gates of one form are one word operation, over a word of registers, a packed word and a word of shared cells', () => {
+    const {loop} = buildSwitches('lanes')
+    const result = compareWriters(buildSwitches('lanes'), 3)
+    // The six gates are lanes, the six reads one packed word of six tables, and "no switch is on" one comparison of the word with 0.
+    expect([fired(result.rules), result.packedWords]).toEqual([{sum: 2, gate: 1, packedRead: 6, packedWord: 1, lane: 6}, 6])
+    expect([result.mismatches, result.values > 3000, result.nonZero > 500]).toEqual([[0, 0], true, true])
+    const lines = emitBitLoopWgsl(loop).code.split('\n')
+    expect(lines.filter(line => line.startsWith('var r'))).toEqual(['var r6: i32 = 0i;', 'var rw0: u32 = 63u;'])
+    expect(lines.filter(line => line.includes('rw0')).slice(1)).toEqual([
+      'let a_m1: u32 = rw0 & ((sw0 | a_m0) ^ 63u);',
+      'rw0 = a_m1;',
+      'instance_outputs_0[output_base_0 + 1u] = f32(((rw0 >> 5u) & 1u));',
+    ])
+    expect(lines.filter(line => line.includes('== 0u'))).toEqual(['let a_v56b: u32 = u32(a_m1 == 0u);'])
+  })
+
+  test('switches, \'oneByOne\': registers that are read one by one stay variables of their own', () => {
+    const {loop} = buildSwitches('oneByOne')
+    const result = compareWriters(buildSwitches('oneByOne'), 3)
+    expect([fired(result.rules), result.packedWords]).toEqual([{sum: 2, gate: 7}, 0])
+    expect(result.mismatches).toEqual([0, 0])
+    const lines = emitBitLoopWgsl(loop).code.split('\n')
+    expect(lines.filter(line => line.startsWith('var r'))).toEqual([...Array.from({length: 6}, (_, index) => `var r${index}: u32 = 1u;`), 'var r6: i32 = 0i;'])
+  })
+
   test('bits next to ordinary numbers: the sign cascade and the f32 total stay f32 statements, and the whole numbers around them are integers', () => {
     const result = compareWriters(buildMixed(), 7)
     expect(fired(result.rules)).toEqual({product: 1, read: 2, float: 18})
@@ -285,27 +371,36 @@ describe('bit-emit.ts on the search step and the highlighter\'s step', () => {
     const shaderOf = (states: number, masked: boolean) => emitBitLoopWgsl(buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions: 512, cellsPerDocument, masked, stopAtLength: false}).loop)
     const describeShader = (shader: ReturnType<typeof emitBitLoopWgsl>) => [fired(shader.rules), shader.packedCells.length, shader.statementCount]
     // Every table read of a transition is one bit of a packed word: 16 gates of 8 reads, 32 of 16 and 64 of 32, each
-    // one read of a word. A table of 16 classes is 17 words, with one of zeros for the class that no step reads.
+    // one read of a word. A table of 16 classes is 17 words, with one of zeros for the class that no step reads. Four
+    // operations per state are lanes of a word operation: the first notFinish, the next notFinish, continuing, and
+    // the next reached.
     expect([8, 16, 32].map(states => describeShader(shaderOf(states, false)))).toEqual([
-      [{sum: 19, gate: 67, comparison: 33, read: 1, packedRead: 128, packedWord: 16}, 272, 208],
-      [{sum: 35, gate: 99, comparison: 33, read: 1, packedRead: 512, packedWord: 32}, 544, 312],
-      [{sum: 67, gate: 163, comparison: 33, read: 1, packedRead: 2048, packedWord: 64}, 1088, 520],
+      [{sum: 3, gate: 51, comparison: 33, read: 1, packedRead: 128, packedWord: 16, lane: 32}, 272, 141],
+      [{sum: 3, gate: 67, comparison: 33, read: 1, packedRead: 512, packedWord: 32, lane: 64}, 544, 165],
+      [{sum: 3, gate: 99, comparison: 33, read: 1, packedRead: 2048, packedWord: 64, lane: 128}, 1088, 213],
     ])
     // With a scope: one more read, of whether the search reads the code point's kind, and the product that replaces
     // the code point with -1.
-    expect(describeShader(shaderOf(8, true))).toEqual([{sum: 20, gate: 67, comparison: 33, product: 1, read: 2, packedRead: 128, packedWord: 16}, 272, 214])
+    expect(describeShader(shaderOf(8, true))).toEqual([{sum: 4, gate: 51, comparison: 33, product: 1, read: 2, packedRead: 128, packedWord: 16, lane: 32}, 272, 147])
     // The highlighter has no gated reads. Its comparison of the container code is a sign cascade, 15 f32 statements
     // between integer ones.
     expect(describeShader(emitBitLoopWgsl(buildJsonLoop().loop))).toEqual([{sum: 12, gate: 1, comparison: 1, product: 7, read: 18, float: 15}, 0, 103])
   })
 
-  test('the search step\'s registers and fields are bits and whole numbers, and the forward step\'s open bits are an OR', () => {
+  test('the search step\'s registers and fields are words and whole numbers, and the forward step is a few word operations', () => {
     const {loop} = buildSearchLoop({states: 8, classes: classCapacity, boundaries: boundaryCapacity}, {positions: 512, cellsPerDocument, masked: false, stopAtLength: false})
-    const code = emitBitLoopWgsl(loop).code
-    // notFinish[0], reached[0], the match count, the class of every position, and the notReach bits of every position.
-    for (const line of ['var r0: u32 = 1u;', 'var r8: u32 = 0u;', 'var r16: i32 = 0i;', 'var field0: array<i32, 512>;', 'var field1: array<u32, 512>;']) expect(code).toContain(line)
-    // continuing[0] and start are never both 1, which the writer proves from the two gates, so live[0] is their OR.
-    expect(code).toMatch(/let c_m\d+: u32 = \(c_v\d+b \| c_v\d+b\) \| \(c_v\d+b << 1u\)/)
-    expect(code).not.toContain(': f32 = max(')
+    const lines = emitBitLoopWgsl(loop).code.split('\n')
+    // The match count, the 8 notFinish bits, the 8 reached bits, the class of every position, and the notReach bits of
+    // every position.
+    expect(lines.filter(line => line.startsWith('var '))).toEqual(['var r16: i32 = 0i;', 'var rw0: u32 = 255u;', 'var rw1: u32 = 0u;', 'var field0: array<i32, 512>;', 'var field1: array<u32, 512>;'])
+    const forward = lines.slice(lines.indexOf('for (var j: u32 = 0u; j < positions; j++) {'))
+    // JS: continuing = reached & ~notReach, and notContinuing = continuing === 0.
+    expect(forward.slice(1, 4)).toEqual(['let c_w1: u32 = field1[j];', 'let c_m0: u32 = rw1 & (c_w1 ^ 255u);', 'let c_v1133b: u32 = u32(c_m0 == 0u);'])
+    // continuing[0] and start are never both 1, which the writer proves from the two gates, so live[0] is their OR:
+    // the word of the 8 open bits is the continuing word with start in lane 0.
+    expect(forward).toContain('let c_m1: u32 = c_m0 | c_v1190b;')
+    // JS: reached = ~(the word of the 8 gates).
+    expect(forward.filter(line => line.includes('rw1 = ') || line.includes('c_m3'))).toEqual(['let c_m3: u32 = c_m2 ^ 255u;', 'rw1 = c_m3;'])
+    expect(lines.some(line => line.includes(': f32 = max('))).toBe(false)
   })
 })
