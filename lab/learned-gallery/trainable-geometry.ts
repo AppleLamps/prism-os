@@ -481,8 +481,9 @@ export function createTrainableGeometryMachine(
   // sets how closely the outputs can match the target: with 0.000_02, the value until October 13, 2026, the
   // presets were still 1.4 to 1.8 px off after 500 steps, and with this value 0.01 to 0.14 px (px on a stage of
   // 538 by 430). Without any decay, a unit whose gate has closed for every slot in use gets no gradient and can't
-  // open again: over 200 random edits in a row, 2 to 4 of the first layer's 6 units ended shut in 5 of 6 runs, and
-  // at most 1 with this decay, which still brings such a unit's weights back toward 0.
+  // open again: over 200 random edits in a row, 2 to 4 of the first layer's 6 units ended shut in 4 of 6 runs.
+  // This decay still brings such a unit's weights back toward 0: with it, 2 units ended shut in 1 of 12 runs, and
+  // 1 or none in the others.
   const weightDecay = options.weightDecay ?? 0.000_000_2
   const matching = options.matching ?? 'assignment'
   const positionalFrequencyCount = options.positionalFrequencyCount ?? 4
