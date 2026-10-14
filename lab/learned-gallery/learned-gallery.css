@@ -127,10 +127,12 @@
 
 /* The two rows under each stage, each 40 px tall. Under the sketch: the presets with the Delete
    button, and the slider. Under the photos: the loss's numbers with the Retrain button, and the
-   chart. So when the stages are side by side, the two buttons are on one line, and the slider
-   and the chart on the next. Each stage's column is a container, so a row is laid out for the
-   width of its column, which is the same at a 1,000 px window with two columns as at a 512 px
-   window with one: 464 px. */
+   chart. So from a 1,000 px window on, where the stages are side by side in columns of 464 px
+   and more, the two buttons are on one line, and the slider and the chart on the next. Each
+   stage's column is a container, so a row is laid out for the width of its column, which is the
+   same at a 1,000 px window with two columns as at a 504 px window with one: 464 px. With two
+   narrower columns, i.e. at windows 761 to 999 px wide, the rows under the sketch have their
+   labels above them, as below, and so are lower than the rows under the photos. */
 .stages > div { container-type: inline-size; }
 .tools {
   display: flex;
