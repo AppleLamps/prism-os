@@ -1195,6 +1195,46 @@ body {
   background: color-mix(in srgb, var(--copper) calc(var(--open) * 100%), var(--desk));
 }
 
+/* Forced colors, e.g. a contrast theme on Windows: the browser replaces every color with
+   one of the system's and draws no background color and no shadow. What this page shows
+   with a background or a shadow alone gets a system color here: the glyphs of the window
+   buttons, of the grip and of the photo controls, which are masked backgrounds, the
+   dock's wire, the joint of the focused window and the joints of the open windows, by
+   their --focused and --open numbers, and a selected row, a selected sidebar item and
+   the open photo's thumbnail, as an outline in the system's highlight color. */
+@media (forced-colors: active) {
+  .window-button::before,
+  .resize-grip::after,
+  .photos-control::after,
+  .dock-wire {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+
+  .app-dot {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+    background: color-mix(in srgb, CanvasText calc(var(--focused) * 100%), transparent);
+  }
+
+  .dock-item i {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+    background: color-mix(in srgb, CanvasText calc(var(--open) * 100%), Canvas);
+  }
+
+  .monitor-location,
+  .monitor-row {
+    outline: calc(var(--selected) * 2px) solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .photos-thumbnail::after {
+    forced-color-adjust: none;
+    box-shadow: inset 0 0 0 3px Highlight;
+  }
+}
+
 /* First paint. index.html asks the browser to hold the first paint until the script has
    run, and then the first paint is the program's first frame. A browser that paints
    earlier paints the desk alone: a window or a dock item has no rectangle until the first
