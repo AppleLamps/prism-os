@@ -12,10 +12,10 @@
 // automaton over bytes, e.g. `[^"]` becomes four alternatives of 1 to 4 bytes; a document of 512 code points can be up
 // to 2,048 bytes, so a fixed size per document wastes or cuts; and a position is no longer a code point, so the
 // highlighter has to run on bytes too. stats.ts counts how many generated documents each choice affects.
-import {capacity, displayKind} from '../../../src/json-highlighter/kinds.ts'
-import type {CompiledPattern} from '../../regex-search/pattern.ts'
-import type {BitRowTables} from '../bit-rows.ts'
-import {boundaryCapacity, classCapacity} from '../search-step.ts'
+import {capacity, displayKind} from '../../../src/json-search/highlighter/kinds.ts'
+import type {CompiledPattern} from '../../../src/json-search/regex/pattern.ts'
+import type {BitRowTables} from '../../../tests/json-search/bit-rows.ts'
+import {boundaryCapacity, classCapacity} from '../../../src/json-search/search-step.ts'
 
 export const positions = capacity
 export const bytesPerDocument = positions

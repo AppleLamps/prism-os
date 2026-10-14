@@ -3,10 +3,10 @@
 // takes, and which patterns find the same matches on bytes as on code points.
 //
 //   bun lab/json-search/million/stats.ts [--count 1000000]
-import {compilePattern} from '../../regex-search/pattern.ts'
-import {bitRowTables, createBitRowSearch} from '../bit-rows.ts'
-import {documentText} from '../demo-text.ts'
-import {cellsPerDocument} from '../program.ts'
+import {compilePattern} from '../../../src/json-search/regex/pattern.ts'
+import {bitRowTables, createBitRowSearch} from '../../../tests/json-search/bit-rows.ts'
+import {documentText} from '../../../src/json-search/demo-text.ts'
+import {cellsPerDocument} from '../../../src/json-search/program.ts'
 import {bytesPerDocument, packPacked, patternIsExactOnBytes, scopeWordsPerDocument} from './layouts.ts'
 
 const argument = (name: string) => {

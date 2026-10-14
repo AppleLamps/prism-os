@@ -2,11 +2,12 @@ const config = {
   entry: [
     'src/handwiredos/window-manager.ts',
     'src/learned-gallery/learned-gallery.ts',
-    // The JSON highlighter's measurement, which is run by hand. src/json-highlighter has no page of its own: this
-    // script and lab/json-search, which knip doesn't look at, are what import the program. So this entry is the only
-    // one that reaches src/json-highlighter and src/runtime/prefix-networks.ts: without it, knip reports
-    // highlighter.ts, kinds.ts, tables.ts and prefix-networks.ts as unused files. If the script is ever removed,
-    // another entry takes its place, e.g. 'src/json-highlighter/highlighter.ts'.
+    // JSON search's page loads demo.ts, and demo.ts starts demo-worker.ts as a worker from a URL, which is not an
+    // import, so no module imports either file. demo.ts reaches the two programs that the page runs, in
+    // src/json-search/regex and src/json-search/highlighter, and through the highlighter src/runtime/prefix-networks.ts.
+    'src/json-search/demo.ts',
+    'src/json-search/demo-worker.ts',
+    // The JSON highlighter's measurement, which is run by hand, so no module imports it.
     'scripts/measure-json-highlighter.ts',
     'lab/candidate-gallery/candidate-gallery.ts',
     'template/main.ts',

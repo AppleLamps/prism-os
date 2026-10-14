@@ -5,9 +5,9 @@
 // [a-z]+, the state for [a-z] is reached from the space or from itself, when the code point is within a..z.
 import {type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
 import {type WireValues, createEvaluator, createSourceTable, input, list} from '../../src/runtime/cells.ts'
-import {type Bit, and, andNot, bitWire, noneOf, not, orExclusive} from './bits.ts'
-import {writeText} from './host.ts'
-import {type CompiledPattern, codePointLimit, maxCodePoint} from './pattern.ts'
+import {type Bit, and, andNot, bitWire, noneOf, not, orExclusive} from '../../src/json-search/regex/bits.ts'
+import {writeText} from '../../src/json-search/regex/host.ts'
+import {type CompiledPattern, codePointLimit, maxCodePoint} from '../../src/json-search/regex/pattern.ts'
 
 export function buildBuiltInSearch({automaton}: CompiledPattern, textLength: number) {
   const {stateCount, targets, stateSets, accepting} = automaton

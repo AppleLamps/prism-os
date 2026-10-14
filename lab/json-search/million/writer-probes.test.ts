@@ -6,7 +6,7 @@
 // (registerFractionWritten), where bit-emit.ts's shader gave 7 for the executor's 6.5.
 // Run from the repo root: bun test lab/json-search/million/writer-probes.test.ts
 import {describe, expect, test} from 'bun:test'
-import {emitBitLoopWgsl} from '../bit-emit.ts'
+import {emitBitLoopWgsl} from '../../../src/json-search/bit-emit.ts'
 import {buildLanes, buildScalar} from './writer-fuzz.ts'
 import {compareProbe, probes} from './writer-probes.ts'
 

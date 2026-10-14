@@ -376,10 +376,10 @@
     <div class="cards">
       <article class="card">
         <h3>JSON highlighter</h3>
-        <p class="path">src/json-highlighter/README.md</p>
-        <p>A program that highlights a JSON text of up to 512 code points, or of another capacity chosen when the program is built. The tokenizer and the grammar are state machines read from tables in cells, and the program also returns the first error and the bracket that matches the bracket at the caret. Its code moved from lab/json-highlighter into src/json-highlighter on September 18, 2026.</p>
+        <p class="path">src/json-search/highlighter/README.md</p>
+        <p>A program that highlights a JSON text of up to 512 code points, or of another capacity chosen when the program is built. The tokenizer and the grammar are state machines read from tables in cells, and the program also returns the first error and the bracket that matches the bracket at the caret. Its code moved from lab/json-highlighter into src/json-highlighter on September 18, 2026, and from there into src/json-search/highlighter on October 14, 2026.</p>
         <p class="note">No demo page since October 14, 2026, when its own page was removed: the JSON search's page runs this program over every document. See the folder's README.</p>
-        <p class="links"><a href="/src/json-highlighter/README.md">README</a></p>
+        <p class="links"><a href="/src/json-search/highlighter/README.md">README</a></p>
       </article>
 
       <article class="card">
@@ -392,9 +392,9 @@
 
       <article class="card">
         <h3>Search 100,000 JSON documents</h3>
-        <p class="path">lab/json-search/demo.html</p>
+        <p class="path">assets/json-search.html</p>
         <p>From October 13, 2026: the JSON highlighter's and the regex search's programs, each written as one step that a shader loops over a document's positions, run over up to 100,000 JSON documents at once on WebGPU. The page searches them again at each keystroke, and shows the search's time next to native RegExp's.</p>
-        <p class="note">This server doesn't serve the page: run <code>bun start</code> and open /json-search/. Without WebGPU the page runs both programs on the CPU, in a worker. The measurements are in lab/json-search/README.md.</p>
+        <p class="note">This server doesn't serve the page: run <code>bun start</code> and open /json-search/. Without WebGPU the page runs both programs on the CPU, in a worker. The measurements are in src/json-search/README.md.</p>
       </article>
 
       <article class="card">

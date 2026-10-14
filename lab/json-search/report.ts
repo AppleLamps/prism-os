@@ -6,15 +6,15 @@
 //   bun lab/json-search/report.ts edge-cases            the searcher on the CPU against the programs with every position
 //                                                       written out, on the executor, over documents and patterns at the
 //                                                       limits, about 5 minutes
-import {createCorpus} from '../../tests/json-highlighter/corpus.ts'
-import {describeDocuments, generateDocuments} from './documents.ts'
-import {type Comparison, compareWithWrittenOutPrograms, edgeDocuments, edgeSearches} from './edge-cases.ts'
-import {buildJsonLoop} from './json-step.ts'
-import {emitLoopWgsl} from './loop-emit.ts'
-import {type LoopProgram, describeLoop, operationsPerDocument} from './loop-program.ts'
-import {buildBatchPrograms, cellsPerDocument} from './program.ts'
-import {boundaryCapacity, buildSearchLoop, classCapacity} from './search-step.ts'
-import {createCpuSearcher} from './searcher.ts'
+import {createCorpus} from '../../tests/json-search/highlighter/corpus.ts'
+import {describeDocuments, generateDocuments} from '../../src/json-search/documents.ts'
+import {type Comparison, compareWithWrittenOutPrograms, edgeDocuments, edgeSearches} from '../../tests/json-search/edge-cases.ts'
+import {buildJsonLoop} from '../../src/json-search/json-step.ts'
+import {emitLoopWgsl} from '../../src/json-search/loop-emit.ts'
+import {type LoopProgram, describeLoop, operationsPerDocument} from '../../src/json-search/loop-program.ts'
+import {buildBatchPrograms, cellsPerDocument} from '../../src/json-search/program.ts'
+import {boundaryCapacity, buildSearchLoop, classCapacity} from '../../src/json-search/search-step.ts'
+import {createCpuSearcher} from '../../src/json-search/searcher.ts'
 
 const [command = 'sizes', countText] = process.argv.slice(2)
 const format = (value: number) => value.toLocaleString('en-US')

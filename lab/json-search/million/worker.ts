@@ -5,8 +5,8 @@
 //           plain JavaScript highlighter.
 // 'hold'    writes a share of the documents and keeps their texts, and then answers 'filter' with
 //           texts.filter(text => pattern.test(text)).length, the whole-text search in several workers.
-import {documentText} from '../demo-text.ts'
-import {highlightWithTables} from '../table-loop.ts'
+import {documentText} from '../../../src/json-search/demo-text.ts'
+import {highlightWithTables} from '../../../src/json-search/table-loop.ts'
 import {packFixed, packPacked, packScopeBits, positions, scopeWordsPerDocument} from './layouts.ts'
 
 export type LoadRequest = {

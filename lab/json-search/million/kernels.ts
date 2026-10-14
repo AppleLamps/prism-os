@@ -12,7 +12,7 @@
 //   output    'count': both passes, and one u32 match count per document. 'has': the reverse pass alone, and one bit per
 //             document, 32 documents a word. A document has a match exactly when some position can start one, which the
 //             reverse pass knows, so the forward pass, which finds where each match ends, isn't needed for that answer
-import {boundaryCapacity, classCapacity} from '../search-step.ts'
+import {boundaryCapacity, classCapacity} from '../../../src/json-search/search-step.ts'
 import {byteAcceptingOffset, byteClassOffset, byteColumnsOffset, byteRowsOffset, positions, scopeWordsPerDocument, wordsPerDocument} from './layouts.ts'
 
 export type ByteKernelOptions = {

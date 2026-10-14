@@ -22,21 +22,21 @@
 //
 // The highlighter's step as bit-emit.ts writes it is compared twice. Its display kinds of the generated documents,
 // which the searches with a scope read, against this file's own reading of each text, which is valid JSON. And, since
-// no generated document is broken, its summary and display kinds of the texts of tests/json-highlighter/corpus.ts,
-// most of them broken JSON, against the repo's plain JavaScript highlighter, tests/json-highlighter/reference.ts.
+// no generated document is broken, its summary and display kinds of the texts of tests/json-search/highlighter/corpus.ts,
+// most of them broken JSON, against the repo's plain JavaScript highlighter, tests/json-search/highlighter/reference.ts.
 import {mkdirSync, writeFileSync} from 'node:fs'
 import {join} from 'node:path'
-import {createCorpus} from '../../../tests/json-highlighter/corpus.ts'
-import {highlightReference} from '../../../tests/json-highlighter/reference.ts'
+import {createCorpus} from '../../../tests/json-search/highlighter/corpus.ts'
+import {highlightReference} from '../../../tests/json-search/highlighter/reference.ts'
 import {argument, required, runPage} from '../gpu/chrome.ts'
-import {documentText} from '../demo-text.ts'
+import {documentText} from '../../../src/json-search/demo-text.ts'
 import page from './writer-answers-page.html'
 import type {SearchForm, WriterAnswersConfig, WriterSearch} from './writer-answers-page.ts'
 
 // The program reads a document's first 512 code points.
 const positions = 512
 const capacities = [8, 16, 32]
-// The display kinds as numbers, as src/json-highlighter/kinds.ts lists them.
+// The display kinds as numbers, as src/json-search/highlighter/kinds.ts lists them.
 const kind = {whitespace: 0, punctuation: 1, string: 2, escape: 3, number: 4, literal: 5, pastEnd: 7, key: 8} as const
 
 // `states` is the pattern's size in the lab's count, its characters and classes plus one, e.g. 8 for `example`. The

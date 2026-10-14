@@ -53,7 +53,7 @@ const expectations: Record<string, {ready: string, report: string}> = {
     // and takes 20 s or more, so there the first numbers are a part of the answer, e.g. "56 of the first 596
     // documents match.", and the page also shows a sentence that says why. The report is that line, then the
     // programs that the page compiled for the GPU with the size of each one's shader, e.g. "regex search, 8 states:
-    // 147 statements", which is the shader as lab/json-search/bit-emit.ts writes it.
+    // 147 statements", which is the shader as src/json-search/bit-emit.ts writes it.
     ready: `window.jsonSearch?.ready === true && / documents match/.test(document.querySelector('#status')?.textContent ?? '')`,
     report: `${textOf('#status, #notice')} + '\\n' + (window.jsonSearch.programs === null ? 'Both programs run on the CPU.' : window.jsonSearch.programs.map(program => program.name + ': ' + program.statements + ' statements').join(', '))`,
   },

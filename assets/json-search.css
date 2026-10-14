@@ -1,0 +1,251 @@
+/* The page that searches many JSON documents, assets/json-search.html. This file is the page's only stylesheet: it
+   imports site.css, the tokens and the parts every page shares, then tool.css, the pattern field and the display
+   kinds' colors, and adds what only this page needs. With several links in the page, Bun's development server
+   (1.4.3) serves the stylesheets in the reverse of the page's order, and `bun build` in the page's order. */
+@import "./site.css";
+@import "./tool.css";
+
+:root {
+  /* How strong a cell of the map is, as a share of the ink: a document without a match, and one that a search in
+     progress hasn't reached yet. A document with a match is plain copper. demo.ts reads these two numbers and the
+     two tokens for the canvas. */
+  --cell-plain-strength: 0.3;
+  --cell-waiting-strength: 0.12;
+}
+
+/* The count of documents in the title and in the first line under the field, until demo.ts writes both: 100,000, or
+   20,000 in a window narrower than 720 px. demo.ts picks the count by the same media query, when the page starts. */
+.at-narrow { display: none; }
+@media (max-width: 719px) {
+  .at-wide { display: none; }
+  .at-narrow { display: inline; }
+}
+/* What to do with the map, in the line under it: for a mouse, and for a finger. */
+.with-touch { display: none; }
+@media (pointer: coarse) {
+  .with-mouse { display: none; }
+  .with-touch { display: inline; }
+}
+
+/* The caption is three sentences, so it gets a wider column than site.css's one-sentence caption. */
+.deck { max-width: 47em; }
+
+/* What the page does instead of searching the wanted documents on the GPU, and why. */
+.notice {
+  max-width: 47em;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-2);
+  background: var(--sheet);
+  color: var(--ink);
+  font: var(--type-ui);
+  text-wrap: pretty;
+}
+
+/* The examples in the Try list are buttons: a click writes the example into the pattern field. */
+.try-pattern {
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-1);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.try-pattern code {
+  color: var(--copper);
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: background var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
+}
+.try-pattern:hover code {
+  background: var(--copper-wash);
+  box-shadow: inset 0 0 0 1px var(--copper-line);
+}
+.try-pattern:active code { background: var(--copper-wash-deep); }
+
+/* The pattern field, and to its right the two toggles. */
+.search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.search .pattern { margin-top: 0; }
+
+/* A toggle between two or three choices: radio buttons drawn as the segments of one control. The chosen segment is
+   a sheet on the control's wash. */
+.segments {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--wash);
+}
+.segments label { position: relative; }
+/* The radio button itself covers its segment, invisibly, so it takes the click and the keyboard's focus. */
+.segments input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.segments span {
+  display: block;
+  height: 26px;
+  padding: 0 var(--space-3);
+  /* The control's radius less the 3 px between the two edges. */
+  border-radius: calc(var(--radius-2) - 3px);
+  color: var(--ink-2);
+  font: 500 13px/26px var(--font-sans);
+  white-space: nowrap;
+  transition: background var(--quick) var(--ease), color var(--quick) var(--ease);
+}
+.segments input:hover:not(:checked):not(:disabled) + span { color: var(--ink); }
+.segments input:checked + span {
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+.segments input:focus-visible + span {
+  outline: 2px solid var(--copper);
+  outline-offset: 1px;
+}
+.segments input:disabled { cursor: default; }
+.segments input:disabled + span { color: var(--ink-3); opacity: 0.55; }
+@media (pointer: coarse) {
+  .segments span { height: 36px; line-height: 36px; }
+}
+
+/* The line of numbers, between the field and the map. */
+#status {
+  min-height: 20px;
+  margin-top: var(--space-3);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+#status b { color: var(--ink); }
+#status.bad { color: var(--wire-red); }
+/* A line without a result has no dot, e.g. for an empty field. */
+.status.idle::before { visibility: hidden; }
+
+/* The map, and to its right the document. */
+.finder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 416px;
+  gap: var(--space-5);
+  margin-top: var(--space-3);
+}
+
+.map-sheet { padding: var(--space-4); }
+/* demo.ts sets the map's height from its width, the screen's pixels and the count of documents. These are the
+   heights it computes for a page of full width, i.e. in a window of 1152 px or more, where the map is 630 px wide,
+   with 100,000 documents: with two device pixels per CSS px, and with one. demo.test.ts compares them with
+   demo-map.ts. */
+.map {
+  position: relative;
+  height: 358px;
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+@media (max-resolution: 1.49dppx) {
+  .map { height: 635px; }
+}
+.map canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+}
+/* A ring around the cell of the document that the panel shows. JavaScript moves it with a transform, to the cell's
+   center. It is heavier for a document that a click keeps. */
+.ring {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--sheet), inset 0 0 0 1.5px var(--sheet);
+  pointer-events: none;
+}
+.ring.kept { border-width: 2px; }
+
+/* The document: its name, and its text, which scrolls inside the room that the map's height leaves it. The text is
+   taken out of the flow, so a long document doesn't make the panel taller than the map. */
+.document {
+  position: relative;
+  min-width: 0;
+  min-height: 320px;
+}
+.document-name {
+  height: 36px;
+  margin: 0;
+  padding: 10px var(--space-4);
+  border-bottom: 1px solid var(--rule);
+  font-variant-numeric: tabular-nums;
+}
+.surface pre.document-text {
+  position: absolute;
+  inset: 36px 0 0;
+  padding: var(--space-3) var(--space-4);
+  overflow: auto;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 2;
+  scrollbar-width: thin;
+}
+.document-text:focus-visible { outline-offset: -2px; }
+/* A match: neighboring matches alternate between a light and a deep copper wash, each with a copper line under it,
+   so two matches in a row stay apart. A match that wraps keeps its look on each line. */
+.document-text .hit {
+  border-radius: 2px;
+  box-shadow: inset 0 -1px var(--copper);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.document-text .hit.even { background: var(--copper-wash); }
+.document-text .hit.odd { background: var(--copper-wash-deep); }
+
+/* The line under the map and the document: how to use the map, and at the line's end the link. */
+.notes {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-5);
+  margin-top: var(--space-3);
+  color: var(--ink-2);
+  font: var(--type-ui);
+}
+.notes p { margin: 0; }
+.notes a { flex: none; }
+
+/* Below the page's full width the map's height changes with its width, so this is a height from the middle of the
+   range, which demo.ts replaces. */
+@media (max-width: 1151px) {
+  .map { height: 420px; }
+}
+/* A narrower window has the document under the map. */
+@media (max-width: 959px) {
+  .finder { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+  .document { height: 380px; }
+}
+@media (max-width: 719px) {
+  /* The toggles go under the field, side by side, and the line of numbers keeps the room of two lines, so the map
+     stays where it is while a pattern is typed. */
+  .search { grid-template-columns: auto auto; justify-content: start; }
+  .search .pattern { grid-column: 1 / -1; }
+  #status { min-height: 40px; align-items: flex-start; }
+  #status::before { transform: translateY(6px); }
+  .map-sheet { padding: var(--space-3); }
+  .map { height: 330px; }
+  .surface pre.document-text { padding: var(--space-3); }
+  .document-name { padding-left: var(--space-3); }
+  .notes { flex-direction: column; }
+}

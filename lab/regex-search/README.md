@@ -4,9 +4,11 @@
 
 Search as you type over a text of fixed capacity, e.g. 256 or 1,024 code points, and the page offers 256, 512, 768 and 1,024. JavaScript parses a pattern and compiles it into an automaton with at most S states and 16 character classes. The program runs the automaton one step per code point, as products of a class's transition matrix with a 0/1 state vector, and returns one highlighted bit and one match start bit per code point. It finds every non-overlapping, non-empty match, leftmost, then longest. There are three forms of the program:
 
-- (a) The pattern as data, in data-program.ts. The transition matrix of every class, the accepting states and the class of every code point sit in cells, so a new pattern writes cells and changes no program.
+- (a) The pattern as data, in src/json-search/regex/data-program.ts. The transition matrix of every class, the accepting states and the class of every code point sit in cells, so a new pattern writes cells and changes no program.
 - (b) The pattern built into the program, in builtin-program.ts. The builder knows the automaton, so each step is a fixed sparse sum over the steps the pattern has, and a new pattern rebuilds and recompiles the program.
 - (c) The pattern as data in form (a)'s cells, with the steps over the text combined in a tree of matrix products instead of two loops, in tree-program.ts. It was added later the same day to test whether the program's matrix products can run as a few large batched products on the GPU, see [Matrix product tree on the GPU](#matrix-product-tree-on-the-gpu-september-17-2026). The page doesn't offer it.
+
+On October 14, 2026 the files that JSON search's page loads moved into [src/json-search/regex/](../../src/json-search/regex/): pattern.ts, data-program.ts, bits.ts and host.ts. reference.ts moved into tests/json-search/regex/. This folder keeps the other forms, the GPU measurement of form (c), report.ts and the tests.
 
 The pattern language is a subset of JavaScript's RegExp syntax with the `u` flag: literal code points, `.`, `\d`, `\w`, character classes with ranges and negation, e.g. `[a-z_]` or `[^0-9]`, `?`, `*`, `+`, `|` and groups. Everything else, e.g. `*?`, `{2}`, `^` or `(?:`, throws a `PatternSyntaxError` with its position.
 
@@ -18,10 +20,7 @@ From the repo root:
 bun test lab/regex-search                                   # 13 tests in 2 files, about 6 seconds
 bunx tsc -p lab/regex-search                                # type-check, including gpu/
 bunx oxlint --type-aware lab/regex-search                   # lint
-bun start                                                   # the page at /regex-search/, next to the other demos
-bun lab/regex-search/demo.html                              # the page alone, e.g. ?form=builtin&states=32&text=1024, where its links to the demo index don't resolve
 bun lab/regex-search/report.ts                              # every Bun measurement of forms (a) and (b) below, each variant in its own process, about 7 minutes
-bun lab/regex-search/browser-frame.ts --profile <folder>    # keystroke frames in headless Chrome, with a fresh Chrome profile folder, a few minutes; --port and --debugging-port fix the two ports
 bun lab/regex-search/report.ts sizes tree 8 1024            # one size of form (c), e.g. with Brent-Kung's network
 bun lab/regex-search/gpu/run.ts --mode check --profile <folder> --out <file.json>   # the GPU tree in headless Chrome over many patterns and texts, about 1 minute
 ```
@@ -32,20 +31,19 @@ The page, rewritten on October 13, 2026, has a pattern field and three selects: 
 
 | File | What it holds |
 | --- | --- |
-| `pattern.ts` | The parser, the position automaton (Glushkov's construction), the class partition, and the capacity check with its messages |
-| `data-program.ts` | Form (a): cells, builder code, writing a pattern into cells, and the machine the tests run |
+| `src/json-search/regex/pattern.ts` | The parser, the position automaton (Glushkov's construction), the class partition, and the capacity check with its messages |
+| `src/json-search/regex/data-program.ts` | Form (a): cells, builder code, writing a pattern into cells, and the machine the tests run |
 | `builtin-program.ts` | Form (b): builder code for one pattern, and the machine the tests run |
 | `tree-program.ts` | Form (c): builder code, with Brent-Kung's or Sklansky's prefix network from src/runtime/prefix-networks.ts |
 | `tree-inputs.ts` | Form (c) in plain JavaScript: a loop that computes what form (c) computes, the network's combines in levels, and the (S + 1) × (S + 1) matrices whose products give the reverse pass's bits |
 | `gpu/automaton-inputs.ts`, `gpu/kernels.ts` | The GPU tree: class matrices, leaf matrices, the plan of slots per level, the WGSL kernels and the host loop, plus two plain JavaScript loops to compare with |
 | `gpu/page.ts`, `gpu/run.ts`, `gpu/cpu-time.ts`, `gpu/summarize.ts`, `gpu/results/` | GPU measurements in headless Chrome, CPU measurements in Bun, the tables, and the raw results |
-| `bits.ts` | AND, AND NOT, NOT and "none of" on bits, folding bits that builder code already knows |
-| `host.ts` | Writing code points into text cells, and turning the output bits into matches |
-| `reference.ts` | The two plain JavaScript references |
+| `src/json-search/regex/bits.ts` | AND, AND NOT, NOT and "none of" on bits, folding bits that builder code already knows |
+| `src/json-search/regex/host.ts` | Writing code points into text cells, and turning the output bits into matches |
+| `tests/json-search/regex/reference.ts` | The two plain JavaScript references |
 | `regex-search.test.ts` | Differential tests |
-| `report.ts`, `browser-frame.ts` | Measurements in Bun and in headless Chrome |
-| `demo.html`, `demo.css`, `demo.ts` | The page. It compiles `buildDataSearch`'s or `buildBuiltInSearch`'s program itself, to show the compiled program's size. demo.css imports assets/site.css and assets/tool.css, which hold the look that the demo pages share |
-| `sample-text.ts` | The text of the measurements. The page starts with a text of its own, which is in demo.html |
+| `report.ts` | Measurements in Bun |
+| `sample-text.ts` | The text of the measurements |
 
 ## What the search finds
 
@@ -415,4 +413,4 @@ Separately, scripts/check.ts didn't find gpu/tsconfig.json, so the gpu folder's 
 
 ### Update, October 13, 2026: many documents instead of one long text
 
-Form (a)'s step also runs as a loop on the GPU, over many documents instead of one long text: [lab/json-search](../json-search/README.md#regex-searchs-step) builds one code point's work with this folder's `emitClasses` and `createStepAnd`, and a shader loops it over a document's 512 positions. The shader compiles in 0.05 to 0.11 s at 8 states, and one search of 100,000 documents takes 7 to 8 ms for a pattern of up to 8 states, 64 ms up to 16 states and 871 ms up to 32, when searches follow each other. In the same page, RegExp counts every match of ordinary patterns in 8 to 43 ms on one thread, and in 2 to 7 ms in 8 workers. A search after a pause of 200 ms or more takes longer, e.g. 17 to 21 ms at 8 states. The September timings above in this section sampled evaluations one after another and measured no pause, and their JavaScript loops ran on one thread.
+Form (a)'s step also runs as a loop on the GPU, over many documents instead of one long text: [lab/json-search](../../src/json-search/README.md#regex-searchs-step) builds one code point's work with this folder's `emitClasses` and `createStepAnd`, and a shader loops it over a document's 512 positions. The shader compiles in 0.05 to 0.11 s at 8 states, and one search of 100,000 documents takes 7 to 8 ms for a pattern of up to 8 states, 64 ms up to 16 states and 871 ms up to 32, when searches follow each other. In the same page, RegExp counts every match of ordinary patterns in 8 to 43 ms on one thread, and in 2 to 7 ms in 8 workers. A search after a pause of 200 ms or more takes longer, e.g. 17 to 21 ms at 8 states. The September timings above in this section sampled evaluations one after another and measured no pause, and their JavaScript loops ran on one thread.

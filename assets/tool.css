@@ -1,7 +1,7 @@
 /* The colors of highlighted JSON and the pattern field, for a page that shows them: the JSON search
-   page, lab/json-search/demo.css, imports this file after site.css. */
+   page, assets/json-search.css, imports this file after site.css. */
 
-/* What a character is shown as: k0 to k8 in the order of src/json-highlighter/kinds.ts.
+/* What a character is shown as: k0 to k8 in the order of src/json-search/highlighter/kinds.ts.
    Keys stay in ink, so the structure reads first and the values carry the color. */
 .k1 { color: var(--ink-3); }               /* punctuation */
 .k2 { color: var(--wire-green); }          /* string */

@@ -4,10 +4,10 @@
 // loop with table-loop.ts's display kinds as the mask, as the lab's runs do. RegExp and a walk over parsed objects
 // answer nearly the same questions, so this file also counts the documents where each of them disagrees with the loop
 // about whether the document has a match.
-import {displayKind} from '../../../src/json-highlighter/kinds.ts'
-import {type CompiledPattern, capacityErrors, compilePattern} from '../../regex-search/pattern.ts'
-import {type BitRowTables, bitRowTables, createBitRowSearch} from '../bit-rows.ts'
-import {boundaryCapacity, classCapacity, kindCount} from '../search-step.ts'
+import {displayKind} from '../../../src/json-search/highlighter/kinds.ts'
+import {type CompiledPattern, capacityErrors, compilePattern} from '../../../src/json-search/regex/pattern.ts'
+import {type BitRowTables, bitRowTables, createBitRowSearch} from '../../../tests/json-search/bit-rows.ts'
+import {boundaryCapacity, classCapacity, kindCount} from '../../../src/json-search/search-step.ts'
 import {type ScopeName, patternIsExactOnBytes, scopeNames} from './layouts.ts'
 
 export type Json = null | boolean | number | string | Json[] | {[key: string]: Json}

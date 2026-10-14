@@ -21,7 +21,7 @@ const publishedPages: SitePage[] = [
 // The GPU search demo is on the site only once its page exists. Its card in assets/demos.html has a hidden attribute
 // until then.
 const pagesBuiltWhenTheyExist: SitePage[] = [
-  {source: 'lab/json-search/demo.html', path: 'json-search/'},
+  {source: 'assets/json-search.html', path: 'json-search/'},
 ]
 export const sitePages: SitePage[] = [
   ...publishedPages,
@@ -36,7 +36,7 @@ export const siteFoldersNotBuilt: string[] = pagesBuiltWhenTheyExist
 // relative to the site's root, next to its page: the page at json-search/ starts its worker as "./demo-worker.js".
 export type SiteWorker = {source: string, path: string}
 export const siteWorkers: SiteWorker[] = [
-  {source: 'lab/json-search/demo-worker.ts', path: 'json-search/demo-worker.js'},
+  {source: 'src/json-search/demo-worker.ts', path: 'json-search/demo-worker.js'},
 ].filter(worker => existsSync(resolve(repoRoot, worker.source)))
 
 // The project's mark, three wires into one eyelet and one wire out, on a tile of the paper color, so the mark also

@@ -5,12 +5,12 @@
 // The kernels are the ones the report's table 3 is about: the reverse pass alone with and without scope bits, which
 // returns one bit per document, the two kernels that return a match count per document, and the count kernel over four
 // buffers of 128 MB.
-import {capacityErrors, compilePattern} from '../../regex-search/pattern.ts'
-import {bitRowTables} from '../bit-rows.ts'
-import {documentText} from '../demo-text.ts'
-import {requestBatchDevice} from '../gpu/host.ts'
-import {boundaryCapacity, classCapacity} from '../search-step.ts'
-import {highlightWithTables} from '../table-loop.ts'
+import {capacityErrors, compilePattern} from '../../../src/json-search/regex/pattern.ts'
+import {bitRowTables} from '../../../tests/json-search/bit-rows.ts'
+import {documentText} from '../../../src/json-search/demo-text.ts'
+import {requestBatchDevice} from '../../../src/json-search/gpu/host.ts'
+import {boundaryCapacity, classCapacity} from '../../../src/json-search/search-step.ts'
+import {highlightWithTables} from '../../../src/json-search/table-loop.ts'
 import {type DocumentPart, type Engine, checked, createEngine} from './engine.ts'
 import {byteKernel} from './kernels.ts'
 import {type ScopeName, byteTableLength, byteTables, bytesPerDocument, packFixed, packScopeBits, positions, scopeMasks, scopeWordsPerDocument} from './layouts.ts'

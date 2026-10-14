@@ -8,8 +8,8 @@
 // - 'frames': at one text length, when results arrive relative to requestAnimationFrame, with both inputs.
 // - 'check': many patterns and texts at each S and text length, with both inputs, compared with productTreeInputs run in
 //   this page. The other modes check one pattern and one text per size.
-import {codePointsOf} from '../host.ts'
-import {compilePattern} from '../pattern.ts'
+import {codePointsOf} from '../../../src/json-search/regex/host.ts'
+import {compilePattern} from '../../../src/json-search/regex/pattern.ts'
 import {productTreeInputs} from '../tree-inputs.ts'
 import {classInputs, createLeafWriter, denseReach, gpuPlan, packReach, textOf} from './automaton-inputs.ts'
 import {type Evaluation, type TimestampMode, createGpuTree, kernelChoices} from './kernels.ts'

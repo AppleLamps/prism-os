@@ -16,13 +16,13 @@
 // Each search is evaluated a window of documents at a time, with the marks of every document of the window. A search
 // with a scope is also evaluated once more as searcher.ts does it: every document in one pass, with the marks of 64
 // documents in the middle.
-import {capacityErrors, compilePattern} from '../../regex-search/pattern.ts'
-import {emitBitLoopWgsl} from '../bit-emit.ts'
-import {documentText} from '../demo-text.ts'
-import {type ProgramRunner, createDocumentStore, createProgramRunner, requestBatchDevice} from '../gpu/host.ts'
-import {buildJsonLoop} from '../json-step.ts'
-import {cellsPerDocument, writeDocumentCells} from '../program.ts'
-import {type SearchLoop, type SearchScope, boundaryCapacity, buildSearchLoop, classCapacity} from '../search-step.ts'
+import {capacityErrors, compilePattern} from '../../../src/json-search/regex/pattern.ts'
+import {emitBitLoopWgsl} from '../../../src/json-search/bit-emit.ts'
+import {documentText} from '../../../src/json-search/demo-text.ts'
+import {type ProgramRunner, createDocumentStore, createProgramRunner, requestBatchDevice} from '../../../src/json-search/gpu/host.ts'
+import {buildJsonLoop} from '../../../src/json-search/json-step.ts'
+import {cellsPerDocument, writeDocumentCells} from '../../../src/json-search/program.ts'
+import {type SearchLoop, type SearchScope, boundaryCapacity, buildSearchLoop, classCapacity} from '../../../src/json-search/search-step.ts'
 import {positions} from './layouts.ts'
 
 export type WriterAnswersConfig = {

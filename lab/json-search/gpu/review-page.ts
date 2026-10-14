@@ -11,12 +11,12 @@
 // - 'baselines': other ways to write the plain JavaScript baselines, timed in this page: four ways to count a
 //   pattern's matches with RegExp, the table loop with one array for every document's kinds or one array of 512, and
 //   JSON.parse and RegExp in several workers that each hold a share of the documents.
-import {type EdgeSearch, compareSearchers, compareWithWrittenOutPrograms, edgeDocuments, edgeSearches, highlighterOnTheExecutor} from '../edge-cases.ts'
-import {generateDocuments} from '../documents.ts'
-import {buildBatchPrograms, cellsPerDocument, kindCount, summaryCount, writeDocumentCells} from '../program.ts'
-import {type ShaderWriter, bufferBytesFor, createCpuSearcher, createGpuSearcher, positions} from '../searcher.ts'
-import {highlightWithTables, tableLoopResult} from '../table-loop.ts'
-import {createDocumentStore, createProgramRunner, requestBatchDevice, selfCheck} from './host.ts'
+import {type EdgeSearch, compareSearchers, compareWithWrittenOutPrograms, edgeDocuments, edgeSearches, highlighterOnTheExecutor} from '../../../tests/json-search/edge-cases.ts'
+import {generateDocuments} from '../../../src/json-search/documents.ts'
+import {buildBatchPrograms, cellsPerDocument, kindCount, summaryCount, writeDocumentCells} from '../../../src/json-search/program.ts'
+import {type ShaderWriter, bufferBytesFor, createCpuSearcher, createGpuSearcher, positions} from '../../../src/json-search/searcher.ts'
+import {highlightWithTables, tableLoopResult} from '../../../src/json-search/table-loop.ts'
+import {createDocumentStore, createProgramRunner, requestBatchDevice, selfCheck} from '../../../src/json-search/gpu/host.ts'
 import {type SamplingConfig, createReporter, round, summary, timeCpu} from './measure.ts'
 
 export type ReviewPageConfig = SamplingConfig & {

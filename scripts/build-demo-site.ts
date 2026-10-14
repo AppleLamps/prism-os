@@ -95,7 +95,7 @@ async function movePage(source: string, sitePath: string) {
   await mkdir(path.dirname(targetFile), {recursive: true})
   await writeFile(targetFile, html)
   if (builtFile !== targetFile) await rm(builtFile)
-  // The folders Bun made for the page's path in the repo, e.g. site/lab/json-search and then site/lab, once empty.
+  // The folders Bun made for the page's path in the repo, once empty, e.g. site/assets after its last page.
   for (let folder = path.dirname(builtFile); folder !== outdir && (await readdir(folder)).length === 0; folder = path.dirname(folder)) {
     await rmdir(folder)
   }

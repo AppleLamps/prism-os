@@ -14,8 +14,8 @@
 // that, since it checks a cell's range and not its grid, and bit-emit.ts has to find it and give loop-emit.ts's values.
 import {type Wire, emitCompare} from '../../../src/runtime/numeric-ui-core.ts'
 import {createSourceTable, input, inputBit, list} from '../../../src/runtime/cells.ts'
-import {emitBitLoopWgsl} from '../bit-emit.ts'
-import {type Binding, type LoopProgram, createStage} from '../loop-program.ts'
+import {emitBitLoopWgsl} from '../../../src/json-search/bit-emit.ts'
+import {type Binding, type LoopProgram, createStage} from '../../../src/json-search/loop-program.ts'
 import {type Probe, compareProbe, createRandom, pick, positions} from './writer-probes.ts'
 
 type Value =
