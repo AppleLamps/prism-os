@@ -488,11 +488,18 @@ function mountJsonSearch(document: Document, window: Window) {
     const regExpMs = regExpKey !== '' && st.regExp !== null && st.regExp.key === regExpKey ? st.regExp.ms : null
 
     const layout = mapLayout(mapWidthCss, scale, documentCount)
+    // The matches on the map: the answer for the pattern in the field, none for a pattern that isn't searched, and
+    // the last answer for as long as a search is in flight, until the search runs long.
+    let mapView = st.mapView
+    if (found !== null) mapView = {found, rest: 'waiting'}
+    else if (!searchPending) mapView = {found: null, rest: 'plain'}
+    else if (searchRunsLong) mapView = {found: null, rest: 'waiting'}
+    const onMap = mapView.found
 
-    // Inputs: the pointer over the map, a click on it, and the Enter key. The pointer picks the nearest document
-    // with a match, and the document under it when no document has one.
+    // Inputs: the pointer over the map, a click on it, and the Enter key, each for the matches that the map shows.
+    // The pointer picks the nearest document with a match, and the document under it when no document has one.
     const pick = (point: {x: number, y: number}, box: DOMRect) => {
-      const nearest = found === null ? -1 : nearestMatch(layout, found.matchCounts, found.searched, point.x - box.left, point.y - box.top)
+      const nearest = onMap === null ? -1 : nearestMatch(layout, onMap.matchCounts, onMap.searched, point.x - box.left, point.y - box.top)
       const index = nearest >= 0 ? nearest : cellAt(layout, point.x - box.left, point.y - box.top)
       return index >= 0 ? index : null
     }
@@ -505,14 +512,14 @@ function mountJsonSearch(document: Document, window: Window) {
         if (clicked !== null) st.kept = st.kept === clicked ? null : clicked
       }
     }
-    if (found !== null) {
+    if (onMap !== null) {
       for (let step = 0; step < Math.abs(st.events.steps); step++) {
-        const next = nextMatch(found.matchCounts, found.searched, st.kept ?? st.shown?.index ?? 0, st.events.steps > 0 ? 1 : -1)
+        const next = nextMatch(onMap.matchCounts, onMap.searched, st.kept ?? st.shown?.index ?? 0, st.events.steps > 0 ? 1 : -1)
         if (next >= 0) st.kept = next
       }
-      // A kept document that the search found nothing in is let go.
-      if (st.kept !== null && st.kept < found.searched && found.matchCounts[st.kept] === 0) st.kept = null
     }
+    // A kept document that the search found nothing in is let go.
+    if (found !== null && st.kept !== null && st.kept < found.searched && found.matchCounts[st.kept] === 0) st.kept = null
     // The document that the panel should show: the one that the pointer picks, else the kept one, else the first with
     // a match. While a search is in flight the panel stays as it is, and it shows another document once that
     // document's display kinds and marks are here.
@@ -524,25 +531,25 @@ function mountJsonSearch(document: Document, window: Window) {
     const notice = loadNotice(st.plan.reason, documentCount) ?? ''
     let lineView = st.lineView
     if (st.failure !== null) {
-      lineView = {state: 'bad', line: [`The search stopped: ${st.failure}.`]}
+      lineView = {state: 'bad', line: [world === null ? `The page couldn’t load its documents: ${st.failure}.` : `The search stopped: ${st.failure}.`]}
     } else if (world === null) {
       lineView = {state: 'busy', line: [`Loading ${count(documentCount)} documents…`]}
-    } else if (analysis.kind === 'empty') {
-      lineView = {state: 'idle', line: [`Type a pattern to search the ${count(documentCount)} documents.`]}
-    } else if (analysis.kind === 'refused') {
-      lineView = {state: 'bad', line: [analysis.sentence]}
-    } else if (found !== null) {
-      lineView = {state: found.searched < documentCount ? 'busy' : 'ok', line: resultLine(found, documentCount, where, regExpMs)}
-    } else if (searchRunsLong || st.found === null) {
-      // A search that takes longer than a few frames, e.g. on the program for 32 states, and the first search.
-      lineView = {state: 'busy', line: [`Searching ${count(documentCount)} documents…`]}
+    } else {
+      switch (analysis.kind) {
+        case 'empty':
+          lineView = {state: 'idle', line: [`Type a pattern to search the ${count(documentCount)} documents.`]}
+          break
+        case 'refused':
+          lineView = {state: 'bad', line: [analysis.sentence]}
+          break
+        case 'fits':
+          // Without the answer yet, the line stays as it is, except for a search that takes longer than a few
+          // frames, e.g. on the program for 32 states, and for the first search.
+          if (found !== null) lineView = {state: found.searched < documentCount ? 'busy' : 'ok', line: resultLine(found, documentCount, where, regExpMs)}
+          else if (searchRunsLong || st.found === null) lineView = {state: 'busy', line: [`Searching ${count(documentCount)} documents…`]}
+          break
+      }
     }
-    // The matches on the map: the answer for the pattern in the field, none for a pattern that isn't searched, and
-    // the last answer for as long as a search is in flight, until the search runs long.
-    let mapView = st.mapView
-    if (found !== null) mapView = {found, rest: 'waiting'}
-    else if (!searchPending) mapView = {found: null, rest: 'plain'}
-    else if (searchRunsLong) mapView = {found: null, rest: 'waiting'}
 
     // Commit what the frame decided.
     st.lineView = lineView
