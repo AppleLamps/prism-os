@@ -337,8 +337,8 @@
 .loss .key.from-sketch { background: var(--copper); }
 .loss .key.misalignment { background: var(--wire-indigo); }
 
-/* "More detail" under the stages: a line to open, as on the JSON highlighter's page, whose rules
-   in assets/tool.css these repeat. That stylesheet is the text tools' and has their editor. */
+/* "More detail" under the stages: a line to open, with a chevron before it that turns when the
+   text is open. No other page of the site has such a line, so its rules are here. */
 .disclosure {
   margin-top: var(--space-5);
   font: var(--type-ui);
@@ -374,7 +374,8 @@
 .detail h2 { margin: 0 0 var(--space-1); }
 .detail .stats { margin: 0; text-wrap: pretty; }
 
-/* The footer's one link, to the next demo, is at the right end, where the other pages have theirs. */
+/* The footer's one link, to the next demo, is at the right end, as the link that leads on: the
+   JSON search's footer has its link back to this page at the left end. */
 .colophon { justify-content: flex-end; }
 
 /* The detail text in one column, about 66 characters a line. */
