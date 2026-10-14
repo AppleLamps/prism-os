@@ -25,7 +25,7 @@ type SearchPage = {
     engines: EngineResult[],
   }[],
 }
-type CombinedSearch = {states: number, scope: string, patterns: string[], prepareMs: number, backToBack: Timings, withTimestamps?: Timings, afterIdle?: Idle[], windowOnly?: Timings}
+type CombinedSearch = {states: number, scope: string, patterns: string[], backToBack: Timings, withTimestamps?: Timings, afterIdle?: Idle[], windowOnly?: Timings}
 type CombinedPage = {
   crossOriginIsolated: boolean, error?: string, emptyPipelineMs: number,
   // Only the runs since October 14, 2026 say which writer wrote the shaders. The ones before are loop-emit.ts's.

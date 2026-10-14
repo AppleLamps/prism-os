@@ -228,7 +228,6 @@ async function run() {
     for (const states of [8, 16, 32]) {
       const patterns = patternsOf(states)
       if (patterns.length === 0 || (states === 32 && count > config.largestCountFor32States)) continue
-      const prepareMs = await searcher.prepare(states)
       for (const scope of config.scopes) {
         let turn = 0
         previousEnd = performance.now()
@@ -244,7 +243,7 @@ async function run() {
           else compare(pattern, scope, result.matchCounts, result.marks, 0, count)
           return {totalMs, patternMs: result.timings.patternMs, evaluateMs: result.timings.evaluateMs, passMs: result.timings.passMs, gapMs}
         }
-        const result: Record<string, unknown> = {states, scope, patterns, prepareMs: round(prepareMs)}
+        const result: Record<string, unknown> = {states, scope, patterns}
         result['backToBack'] = summarizeTimed(await sample(config, () => searchOnce({})))
         if (granted.hasTimestamps) result['withTimestamps'] = summarizeTimed(await sample(config, () => searchOnce({timestamps: true})))
         // After a pause, and the window's documents alone, for the first scope of each capacity.

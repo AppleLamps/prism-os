@@ -5,9 +5,10 @@
 //
 // What it doesn't say: what a GPU's compiler does with a shader, e.g. whether it fuses a product into a sum, and how
 // long anything takes. The runs in headless Chrome check the first, see gpu/combined-run.ts and gpu/review-run.ts.
-// What it leaves out: timestamp queries, and every error that a real device reports, e.g. a buffer that is too large.
-// A buffer here is plain memory, a submitted pass runs at once, one document after the other, and a mapped range is a
-// copy, as in WebGPU.
+// What it leaves out: timestamp queries, and the errors that a real device reports, e.g. a buffer that is too large,
+// except the one that a test asks for with `refusedBindGroup`. Its error scopes are WebGPU's: one stack per device,
+// an error goes to the nearest scope of its kind, and a pop takes the newest scope. A buffer here is plain memory, a
+// submitted pass runs at once, one document after the other, and a mapped range is a copy, as in WebGPU.
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {type WgslInterpreter, createWgslInterpreter} from './wgsl-interpreter.ts'
 
@@ -71,19 +72,38 @@ function runPass({interpret, bindings}: Pipeline, {buffers}: BindGroup) {
   })
 }
 
-export function createInterpretedDevice(): GPUDevice {
+// `refusedBindGroup` is the number of a bind group, counted from 0 in the order of their creation, that the device
+// refuses with a validation error, as a GPU refuses one that doesn't fit its shader's layout. Only an error scope
+// reports that.
+export function createInterpretedDevice(options: {refusedBindGroup?: number} = {}): GPUDevice {
+  const scopes: {filter: string, error: {message: string} | null}[] = []
+  let bindGroups = 0
   const device = {
     // WebGPU's default for a buffer, and what an Apple M5 Max's adapter allows for a binding.
     limits: {maxStorageBufferBindingSize: 4_294_967_292, maxBufferSize: 4_294_967_296, maxComputeWorkgroupsPerDimension: 65_535},
     features: new Set<string>(),
-    pushErrorScope() {},
-    popErrorScope: () => Promise.resolve(null),
+    pushErrorScope(filter: string) {
+      scopes.push({filter, error: null})
+    },
+    popErrorScope() {
+      const scope = scopes.pop()
+      return scope === undefined ? Promise.reject(new Error('popErrorScope on a device without an error scope')) : Promise.resolve(scope.error)
+    },
     createBuffer,
     createShaderModule: ({code}: {code: string}) => ({code, getCompilationInfo: () => Promise.resolve({messages: []})}),
     createComputePipelineAsync({compute}: {compute: {module: {code: string}}}): Promise<Pipeline> {
       return Promise.resolve({interpret: createWgslInterpreter(compute.module.code), bindings: bindingsOf(compute.module.code), getBindGroupLayout: () => ({})})
     },
-    createBindGroup: ({entries}: {entries: {binding: number, resource: {buffer: FakeBuffer}}[]}): BindGroup => ({buffers: new Map(entries.map(entry => [entry.binding, entry.resource.buffer]))}),
+    createBindGroup({entries}: {entries: {binding: number, resource: {buffer: FakeBuffer}}[]}): BindGroup {
+      const number = bindGroups++
+      if (number === options.refusedBindGroup) {
+        // The newest validation scope keeps its first error. Without such a scope, a GPU fires `uncapturederror`.
+        const scope = scopes.findLast(candidate => candidate.filter === 'validation')
+        invariant(scope !== undefined, 'a refused bind group is created inside a validation scope')
+        scope.error ??= {message: `bind group ${number} doesn't fit its shader's layout`}
+      }
+      return {buffers: new Map(entries.map(entry => [entry.binding, entry.resource.buffer]))}
+    },
     createCommandEncoder() {
       const commands: Command[] = []
       return {

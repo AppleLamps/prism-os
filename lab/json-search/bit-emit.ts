@@ -50,7 +50,8 @@
 //   in the buffer packed_words, which the runner fills from the shared cells with packWords. Two bits in one gate form
 //   are an OR only when they are never both 1, which the writer proves by taking both as 1 and following what each gate
 //   then says about its own operands until one value would be both 0 and 1, e.g. a start bit that needs "no state
-//   continues" next to a bit that says "state 0 continues".
+//   continues" next to a bit that says "state 0 continues". A read with more than 4 gating bits isn't taken as a gated
+//   read and is read on its own, see maximumGatingBits.
 // - Lanes. Bits that are stored together are one u32 word, each bit at its own position in the word, its lane: a field
 //   of bits, and registers of bits that the same stages write, e.g. the 8 reached[s] bits. When the same gate or
 //   negation is computed for every bit of such a list, one word operation computes all of them, since AND, OR and XOR
@@ -599,6 +600,12 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
         // Two reads with the same key read their tables at the same index, under the same out-of-range rules.
         key: string
       }
+      // A read with more gating bits than this isn't taken as a gated read, and is read on its own, as the Read rule
+      // writes it, e.g. a read of table[row - 5 × (wanted + a + b + c + d)], which has five. Two reasons. The rule
+      // goes through every combination of the gating bits, 16 for 4 bits. And `open` holds one bit per combination,
+      // set with `1 << combination` and written into the shader as a u32 literal: with 5 bits that is 32 combinations,
+      // and JavaScript's `1 << 31` is negative, so a read that is open with all five bits at 1 would get the literal
+      // `-2147483648u`, which isn't WGSL.
       const maximumGatingBits = 4
       function gatedRead(row: IndexRow): Gated | undefined {
         if (!exact[row.position]!) return undefined

@@ -137,8 +137,9 @@ describe('documents and searches at the limits', () => {
   }, 180_000)
 
   test('what a self check expects is mostly not zero, so a GPU that returned zeros would fail it', async () => {
-    // The first 300 generated documents, which a page's self check runs: 268 are valid, 91% of their display kinds
-    // aren't 0, and each of the self check's nine searches finds matches, e.g. `東京` 6 and the one of 32 states 32.
+    // The first 300 generated documents, which the measurement pages' self check runs: 268 are valid, 91% of their
+    // display kinds aren't 0, and each of the self check's eleven searches finds matches, e.g. `東京` 6 and the one of
+    // 32 states 32.
     const searcher = createCpuSearcher(generateDocuments(300).map(document => document.text))
     const kinds = await searcher.kinds({firstDocument: 0, documentCount: 300})
     const found: [matches: number, documentsWithMatches: number][] = []
@@ -147,6 +148,6 @@ describe('documents and searches at the limits', () => {
       if (result?.status !== 'searched') throw new Error(`the self check's pattern ${pattern} wasn't searched`)
       found.push([result.matches, result.documentsWithMatches])
     }
-    expect([searcher.validation.validCount, kinds.filter(kind => kind !== 0).length, kinds.length, found]).toEqual([268, 140_525, 300 * capacity, [[8705, 300], [133, 78], [2868, 251], [1482, 224], [57, 55], [4, 4], [32, 31], [6, 6], [1178, 300]]])
+    expect([searcher.validation.validCount, kinds.filter(kind => kind !== 0).length, kinds.length, found]).toEqual([268, 140_525, 300 * capacity, [[8705, 300], [133, 78], [2868, 251], [1482, 224], [57, 55], [4, 4], [32, 31], [6, 6], [1178, 300], [3723, 300], [2301, 295]]])
   }, 60_000)
 })

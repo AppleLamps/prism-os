@@ -51,12 +51,26 @@ export async function requestBatchDevice(largestBufferBytes: number) {
   }
 }
 
+// Runs `build` inside two error scopes, and throws what the GPU reports into them. A device has one stack of scopes,
+// and two calls can overlap, e.g. the three search runners that searcher.ts creates at the same time: the scopes that
+// one call pops may then be the ones that another call pushed. So both scopes are pushed in one step and both are
+// popped in one step, without an await in between. The stack then holds whole pairs at every await, each pop takes
+// the scope of the kind that its message names, and every error is thrown by one of the overlapping calls, though
+// maybe not by the one whose `build` caused it. With an await between the two pops, a call could pop another call's
+// validation scope where it expects its own out-of-memory scope, and name a validation error "out of memory".
 async function checked<Result>(device: GPUDevice, build: () => Promise<Result> | Result): Promise<Result> {
   device.pushErrorScope('validation')
   device.pushErrorScope('out-of-memory')
-  const result = await build()
-  const outOfMemory = await device.popErrorScope()
-  const validation = await device.popErrorScope()
+  const popBoth = () => Promise.all([device.popErrorScope(), device.popErrorScope()])
+  let result: Result
+  try {
+    result = await build()
+  } catch (error) {
+    // What `build` throws says more than a scope would, e.g. a WGSL error's line. The pair still comes off the stack.
+    void popBoth().catch(() => {})
+    throw error
+  }
+  const [outOfMemory, validation] = await popBoth()
   if (outOfMemory !== null) throw new Error(`WebGPU out of memory: ${outOfMemory.message}`)
   if (validation !== null) throw new Error(`WebGPU validation error: ${validation.message}`)
   return result
@@ -278,8 +292,8 @@ export async function createProgramRunner(device: GPUDevice, shader: RunnableSha
   }
 
   // New shared values from `offset` on, e.g. another pattern's cells in a search program. With a plan of packed words,
-  // the words are packed again from every shared value and uploaded too, e.g. 34,816 cells into 1,088 words for regex
-  // search at 32 states.
+  // the words are packed again from every shared value and uploaded too, e.g. for regex search at 32 states the
+  // 16,384 transition cells, each one into two bits, of 1,088 words.
   function writeShared(values: Float32Array, offset = 0) {
     invariant(offset + values.length <= shader.sharedLength, 'the values lie within the shared buffer')
     device.queue.writeBuffer(shared, offset * 4, values.buffer, values.byteOffset, values.byteLength)

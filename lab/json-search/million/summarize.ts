@@ -21,12 +21,14 @@ type Series = {totalMs?: Summary, passMs?: Summary, waitMs?: Summary, copyMs?: S
 type Scope = {scope: string, load: number, loadAfter: number, firstSearchMs: number, backToBack: Series, withTimestamps?: Series, afterPause: (Series & {pauseMs: number, everyMs?: number})[]}
 type Checks = {searches: number, values: number, mismatches: number}
 type CompactResult = {states: number, engine: string, what: string, patterns: string[], compileMs?: number, error?: string, scopes?: Scope[], checks?: Checks}
-type ProgramResult = Scope & {states: number, engine: string, patterns: string[], prepareMs: number, checks: Checks}
+type ProgramResult = Scope & {states: number, engine: string, patterns: string[], checks: Checks}
 type Process = {pid: number, type: string, residentBytes: number, footprintBytes: number, footprintPeakBytes: number}
 type Memory = {javaScriptBytes?: number, usedHeapBytes?: number, processes: {processes: Process[], availableGigabytes: number, swap: string}}
 type PatternInfo = {pattern: string, states: number, capacity: number, exactOnBytes: boolean, matches: Record<string, number>, documentsWithMatch: Record<string, number>, regExpDiffers: number, walkDiffers: {keys: number, strings: number}}
 type Page = {
-  config: {count: number, mode: string, layout: string, limits: string, keepTexts: boolean},
+  // Only the runs since October 14, 2026 have `searchWriter`. Their searcher compiles every search program when it is
+  // created, where the one before compiled the program of 8 states and the others at their first search.
+  config: {count: number, mode: string, layout: string, limits: string, keepTexts: boolean, searchWriter?: string},
   error?: string, finishedAt?: string, loadAtStart?: number, loadAtEnd?: number, deviceLost?: string, uncapturedError?: string, f32Error?: string,
   results?: (CompactResult | ProgramResult)[], patterns?: PatternInfo[], memory?: Record<string, Memory>, prepare?: Record<string, number>, buffers?: Record<string, number>,
   paint?: Record<string, {width: number, height: number, fillMs: Summary, putImageDataMs: Summary, fillAndPutMs: Summary, toSecondFrameMs: Summary} & Summary>,
@@ -319,8 +321,14 @@ section('program', 'The program\'s own kernel, searcher.ts, as the demo page ran
     if (page?.results === undefined || page.results.length === 0) rows.push([thousands(count), '', '', '', problems(`program-${count}`), '', '', '', '', ''])
   }
   const created = counts.flatMap(count => {
-    const searcher = run(`program-${count}`)?.page?.searcher
-    return searcher === undefined ? [] : [`${thousands(count)}: the texts ${digits(searcher.generateMs)} ms, their cells ${digits(searcher.load.cellsMs)} ms, the upload, the highlighter's compile and its pass ${digits(searcher.load.validateMs)} ms, in all with the search shader ${digits(searcher.createMs)} ms`]
+    const page = run(`program-${count}`)?.page
+    const searcher = page?.searcher
+    if (page === undefined || searcher === undefined) return []
+    // What `load.validateMs` holds follows from when the searcher compiles its search programs.
+    const rest = page.config.searchWriter === undefined
+      ? `the upload, the highlighter's compile and its pass ${digits(searcher.load.validateMs)} ms, in all with the search shader ${digits(searcher.createMs)} ms`
+      : `the upload, the highlighter's shader and pass, and every search program built and compiled, as ${page.config.searchWriter}.ts writes its shader, ${digits(searcher.load.validateMs)} ms, in all ${digits(searcher.createMs)} ms`
+    return [`${thousands(count)}: the texts ${digits(searcher.generateMs)} ms, their cells ${digits(searcher.load.cellsMs)} ms, ${rest}`]
   })
   return [
     'From the `program` runs. The time is `timings.totalMs` of the searcher\'s result, which the demo page\'s line shows. A search of more than 1.5 s has no pause series.',

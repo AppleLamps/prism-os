@@ -66,7 +66,6 @@ async function runEdge() {
   const count = texts.length
   const device = await requestDevice(bufferBytesFor(count))
   const searcher = await createGpuSearcher(device, texts, {windowCapacity: config.windowDocuments, shaderSalt: config.shaderSalt, writers: {search: config.searchWriter}})
-  for (const states of [16, 32]) await searcher.prepare(states)
   report['documents'] = {count, valid: searcher.validation.validCount, codePointLengths: summary(texts.map(text => Array.from(text).length))}
   report['programs'] = searcher.programs()
   log(`${count} edge documents, ${searcher.validation.validCount} valid by the GPU, programs ${JSON.stringify(searcher.programs().map(program => [program.name, program.statements, round(program.compileMs ?? 0)]))}`)
@@ -94,7 +93,6 @@ async function runEdge() {
   started = performance.now()
   const sampleTexts = documents.filter(document => !document.name.startsWith('one code point')).filter((_, index) => index % 5 === 0).slice(0, 32).map(document => document.text)
   const sampleSearcher = await createGpuSearcher(device, sampleTexts, {windowCapacity: sampleTexts.length, shaderSalt: config.shaderSalt, writers: {search: config.searchWriter}})
-  await sampleSearcher.prepare(32)
   const at32OnTheExecutor = await compareSearchers(sampleSearcher, createCpuSearcher(sampleTexts, {windowCapacity: sampleTexts.length, backend: 'executor'}), edgeSearches(32), [{firstDocument: 0, documentCount: sampleTexts.length}])
   sampleSearcher.destroy()
   report['at32StatesAgainstTheLoopProgramOnTheExecutor'] = {...at32OnTheExecutor, totalMs: round(performance.now() - started)}
@@ -154,7 +152,6 @@ async function runMany() {
   const texts = generateDocuments(count, config.seed, config.invalidFraction).map(document => document.text)
   const device = await requestDevice(bufferBytesFor(count))
   const searcher = await createGpuSearcher(device, texts, {windowCapacity: config.windowDocuments, shaderSalt: config.shaderSalt, writers: {search: config.searchWriter}})
-  for (const states of [16, 32]) await searcher.prepare(states)
   log(`${count} generated documents on the GPU, ${searcher.validation.validCount} valid`)
 
   // The highlighter on the CPU executor, every position written out, for every document. Its 410 MB of expected values

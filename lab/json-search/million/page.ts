@@ -640,7 +640,6 @@ async function runProgram() {
   for (const states of config.capacities) {
     const fitting = expected.entries.filter(entry => entry.capacity === states)
     if (fitting.length === 0) continue
-    const prepareMs = await searcher.prepare(states)
     for (const scope of states === config.capacities[0] ? ['everything', 'strings', 'keys'] as const : ['everything'] as const) {
       const checks = {searches: 0, values: 0, mismatches: 0}
       let turn = 0
@@ -658,7 +657,7 @@ async function runProgram() {
         return {patternMs: result.timings.patternMs, totalMs: result.timings.totalMs, submitMs: 0, waitMs: result.timings.evaluateMs, copyMs: 0, passMs: result.timings.passMs, gapMs}
       }
       const first = await searchOnce({})
-      const entry: Record<string, unknown> = {states, engine: 'searcher', what: `searcher.ts on one f32 per code point, with ${config.searchWriter}.ts's search shaders`, scope, patterns: fitting.map(pattern => pattern.pattern), prepareMs: round(prepareMs), at: new Date().toISOString(), load: await loadAverage(), firstSearchMs: round(first.totalMs)}
+      const entry: Record<string, unknown> = {states, engine: 'searcher', what: `searcher.ts on one f32 per code point, with ${config.searchWriter}.ts's search shaders`, scope, patterns: fitting.map(pattern => pattern.pattern), at: new Date().toISOString(), load: await loadAverage(), firstSearchMs: round(first.totalMs)}
       results.push(entry)
       entry['backToBack'] = summarizeTimed(await sampleSearches(() => searchOnce({}), 9))
       const slow = (entry['backToBack'] as ReturnType<typeof summarizeTimed>).totalMs!.median > 1500

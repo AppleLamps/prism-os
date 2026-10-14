@@ -103,7 +103,10 @@ export type ProgramDescription = {
   name: string
   // The operations of each stage, e.g. [8, 151, 92] for a search's start, reverse step and forward step.
   operations: number[]
-  // Only on the GPU: the shader's size, and the time to compile it.
+  // Only on the GPU: the shader's size, and the ms from createShaderModule until JavaScript has its pipeline. That
+  // is more than the GPU's compile: JavaScript builds the search programs while the highlighter's shader compiles,
+  // and the search programs' shaders compile at the same time as each other. E.g. the highlighter's shader shows 31
+  // to 38 ms for 1,000 and 10,000 documents, where it showed 14 to 16 ms when nothing else was built meanwhile.
   statements: number | undefined
   compileMs: number | undefined
 }
@@ -118,7 +121,7 @@ export type Searcher = {
   // search program, which overlap, so `validateMs` holds all of them and the total is the sum of the two.
   load: {cellsMs: number, validateMs: number, totalMs: number}
   // The programs built so far: on the GPU every one, and on the CPU the highlighter and each search program that a
-  // search or `prepare` has asked for.
+  // search has run on.
   programs: () => ProgramDescription[]
   // What the device granted, and how many documents fit one buffer. Undefined on the CPU.
   limits: {maxStorageBufferBindingSize: number, maxBufferSize: number, maxDocuments: number, hasTimestamps: boolean} | undefined
@@ -129,9 +132,6 @@ export type Searcher = {
   kinds: (window: DocumentWindow) => Promise<Float32Array>
   // Resolves to undefined when a newer request replaced this one.
   search: (request: SearchRequest) => Promise<SearchResult | undefined>
-  // On the CPU, builds the program for a state capacity ahead of its first search, and resolves to the ms it took. On
-  // the GPU every program is compiled when the searcher is created, and this resolves to 0.
-  prepare: (states: number) => Promise<number>
   // Compares the first `documents` documents with the same programs on the other backend: on the GPU with generated
   // JavaScript, and on the CPU with the CPU executor. A page that gets mismatches from a GPU searcher uses the CPU one.
   selfCheck: (documents: number, searches?: readonly {pattern: string, scope: SearchScope}[]) => Promise<SelfCheck>
@@ -160,9 +160,14 @@ export type SearcherOptions = {
   cells?: Float32Array
 }
 
-// What a self check searches for. The last five are there for what the first four leave out: a pattern that has
-// exactly as many states as a program holds, for each of the three programs, e.g. bit 31 of a word at 32 states, a
-// pattern of characters above U+00FF, and one that matches at every document's last character.
+// What a self check searches for. The last seven are there for what the first four leave out:
+// - A pattern that has exactly as many states as a program holds, for each of the three programs, e.g. bit 31 of a
+//   word at 32 states.
+// - A pattern of characters above U+00FF.
+// - One that matches at every document's last character.
+// - A class that holds every character but one, twice, so a match stops only where the searched characters stop: at
+//   the text's end, and with 'strings' at each string value's closing quote. The step reads -1 past either, and a
+//   shader that took that -1 for a character, e.g. for U+0000, would let these matches run on.
 export const defaultSelfCheckSearches: readonly {pattern: string, scope: SearchScope}[] = [
   {pattern: '[a-z]+', scope: 'everything'},
   {pattern: '(the|an?) [a-z]+', scope: 'strings'},
@@ -173,6 +178,8 @@ export const defaultSelfCheckSearches: readonly {pattern: string, scope: SearchS
   {pattern: 'tLogin": ?"\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ"', scope: 'everything'},
   {pattern: '東京', scope: 'strings'},
   {pattern: '[}\\]]', scope: 'everything'},
+  {pattern: '[^,]+', scope: 'everything'},
+  {pattern: '[^,]+', scope: 'strings'},
 ]
 
 // One evaluation at a time, and only the newest request gets a result.
@@ -400,11 +407,6 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
       }
       return gate.run(() => Promise.resolve(evaluate(resolved.compiled, resolved.states, request, patternStarted)))
     },
-    prepare(states) {
-      const prepareStarted = performance.now()
-      searchFor(states)
-      return Promise.resolve(performance.now() - prepareStarted)
-    },
     // The other backend here is the CPU executor, the repo's definition of a program's values.
     selfCheck(documents, checks = defaultSelfCheckSearches) {
       const sample = Math.min(documents, documentCount)
@@ -437,10 +439,12 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
 
 // The searcher on the GPU. Creating it writes and uploads every document's cells, validates every document with the
 // highlighter's shader, and builds and compiles the search program of every state capacity, so that no search waits
-// for a compile. On an Apple M5 Max, creating it for 100,000 documents takes 89 ms after the cells are written. The
-// searcher before October 14, 2026, which compiled only the smallest program's shader at creation, as loop-emit.ts
-// writes it, took 86 ms: the three programs are built and compiled while the GPU compiles the highlighter's shader
-// and runs its pass. For 20,000 documents, where that wait is shorter, it takes 70 ms where the one before took 39 ms.
+// for a compile. On an Apple M5 Max, creating it for 100,000 documents takes 86 to 93 ms after the cells are written,
+// as the medians of five sets of loads of the demo page. The searcher before October 14, 2026, which compiled only
+// the smallest program's shader at creation, as loop-emit.ts writes it, took 75 to 86 ms, 3 to 14 ms less in each
+// set: the three programs are built and compiled while the GPU compiles the highlighter's shader and runs its pass.
+// For 20,000 documents, where that wait is shorter than JavaScript's 50 ms for the three programs, it takes 64 to
+// 72 ms where the one before took 26 to 39 ms.
 //
 // Which writer writes which shader, unless `writers` says otherwise:
 // - The search programs' shaders are bit-emit.ts's. One search of 100,000 documents takes 4.6, 4.7 and 5.2 ms at 8, 16
@@ -486,8 +490,9 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
   const jsonRunner = await jsonRunnerCreated
   const everyDocument = {firstDocument: 0, documentCount}
   // The pass over every document and the search shaders' compiles, all at the same time. gpu/host.ts's error scopes
-  // of the three runners then overlap, so a shader that the GPU refuses may be reported by another runner's promise.
-  // Creating the searcher fails with the GPU's message either way.
+  // of the three runners then overlap, so what the GPU refuses for one runner, e.g. a bind group that doesn't fit its
+  // shader, may be thrown by another runner's promise. Creating the searcher fails with the GPU's message and its
+  // kind of error either way, see `checked` there.
   const [validated, ...runners] = await Promise.all([
     jsonRunner.evaluate({count: documentCount, window: everyDocument, readbacks: [{group: 0, ...everyDocument}]}),
     ...sources.map(({built, shader}) => createProgramRunner(device, shader, built.loop.sharedValues, store, shaderSalt, {inputs: [jsonRunner.outputBuffers[1]!], windowCapacity})),
@@ -561,11 +566,6 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
         return Promise.resolve(resolved)
       }
       return gate.run(() => evaluate(resolved.compiled, resolved.states, request, patternStarted))
-    },
-    // Every program is compiled already, so there is nothing to wait for.
-    prepare(states) {
-      searchFor(states)
-      return Promise.resolve(0)
     },
     // Runs when no search is in flight, e.g. right after creating the searcher: it doesn't go through the gate. It
     // checks the highlighter, and each search program with every one of the searches that the program holds.
