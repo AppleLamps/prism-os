@@ -4,6 +4,7 @@
 // preset sketches, the editor, which is the page's state and what one frame does to that state, and the page.
 import {
   createTrainableGeometryMachine,
+  penaltyStrength,
   trainableGeometryField,
   type TrainableGeometry,
   type TrainableGeometryTarget,
@@ -66,10 +67,10 @@ function createGridCells(
 }
 
 // Each layout has fewer rectangles than there are photos and leaves its last cell empty, so a visitor has room to
-// add one. Edges of different rectangles are either equal or at least 0.09 apart: the loss pulls edges that are
-// within about 0.05 of each other toward a shared value (relationSigma in trainable-geometry.ts), so the network
-// doesn't fit such edges closely, e.g. a row of 4 cells above a row of 5 stayed 1.3% of the stage off after
-// 1,500 steps.
+// add one. Edges of one kind, e.g. two left edges, are either equal or at least 0.09 of the stage's width apart.
+// The misalignment penalty pulls together photo edges of one kind that are within its reach, which is at most
+// 0.04 of the stage's width, half of the slider's largest value, so a preset is fitted as it is drawn wherever the
+// slider is.
 
 // 4 columns and 3 rows.
 function createContactLayout(): TrainableGeometry[] {
@@ -87,9 +88,11 @@ function createCinemaLayout(): TrainableGeometry[] {
   ]
 }
 
-// A large rectangle, two beside it, and 2 rows of 4 below. Among 200 variants of these proportions, the network's
-// fit after 500 steps from its seeded start left a largest error from 0.13% to 2.9% of the stage, with a median of
-// 1.2%. These proportions are one of the closest fits, 0.15%, and a test keeps it under 0.3%.
+// A large rectangle, two beside it, and 2 rows of 4 below. From the seeded weights, training stops after about
+// 680 steps with every line of photos within 0.01 px, and with the photos within 0.2% of the stage of the sketch,
+// which a test keeps under 0.3%. Among 200 variants of these proportions, every line of photos is within 0.15 px
+// when training stops, and within 0.01 px in the middle case, and 26 of them train for all 2,000 steps (October
+// 14, 2026, px on a stage of 538 by 430).
 function createStoryLayout(): TrainableGeometry[] {
   const heroWidth = 0.6
   const heroHeight = 0.52
@@ -224,21 +227,64 @@ export function createLearnedGalleryMachine(
   }
 }
 
-// After the sketch changes, training runs this many more steps from the current weights.
+// What the page's "Misalignment penalty" slider sets, here as the page loads: how far a rectangle can be dragged
+// from its row or column before its photo lets go of the line, as a fraction of the stage's width. The penalty's
+// reach, i.e. how close two photo edges of one kind have to be for the penalty to pull them onto one line, is that
+// distance divided by penaltyStrength (trainable-geometry.ts), so half of it. The stage is 5 wide and 4 tall, so
+// the same length is 5/4 as large a fraction of its height. The slider's largest value is in the page's markup,
+// 8% of the stage's width.
+export const defaultHoldDistance = 0.04
+
+// After the sketch or the slider changes, training runs at least this many more steps from the current weights.
 export const trainingStepsAfterChange = 500
+// After those steps, training goes on until the photos have come to rest, and at most until
+// maximumTrainingStepsAfterChange steps have run since the change. With the penalty on, the loss has no value that
+// says "done": it rests where its two parts balance, e.g. at 1e-5 with a photo held 9 px from its rectangle on a
+// stage of 620 px. So the rule reads the photos: they are at rest when no photo edge has moved more than
+// restDistance, a fraction of the stage, from where it was restSteps steps or more before. 0.0001 of the stage is
+// 0.06 px on that stage.
+export const maximumTrainingStepsAfterChange = 2000
+export const restSteps = 100
+export const restDistance = 0.0001
+
+// How many more steps training may take, after `stepsSinceChange` steps since the last change: none once the
+// photos are at rest and the first steps are over, and otherwise the steps that are left of the most.
+export function trainingStepsLeft(stepsSinceChange: number, atRest: boolean) {
+  if (atRest && stepsSinceChange >= trainingStepsAfterChange) return 0
+  return Math.max(0, maximumTrainingStepsAfterChange - stepsSinceChange)
+}
 // Training steps are tied to time, as chenguini's ui.md ties animation steps: 600 a second is 10 steps in a frame
 // of a 60 Hz display and 5 in a frame of a 120 Hz display, so training lasts as long on both.
 export const msPerTrainingStep = 1000 / 600
-// The most steps one frame trains, e.g. in the first frame after the tab was in the background. A frame also trains
-// no more steps than fit in trainingMsPerFrame at the cost per step measured in the frame before, so a slow device
-// trains fewer steps per frame instead of dropping frames. One step took 0.26 ms in Bun and about 0.4 ms in Chrome
-// 155 on an M5 Max (October 13, 2026), where 6 ms is 15 steps. Before the first measurement a frame trains at most
-// unmeasuredTrainingStepsPerFrame steps, and the frames after it make up for the difference.
+// The most steps one frame trains. After a pause, e.g. while the tab was in the background, every frame trains
+// that many until training has caught up with the time or stops, so training is faster than 600 steps a second for
+// that while. A frame also trains no more steps than fit in trainingMsPerFrame at the cost per step measured in
+// the frame before, so a slow device trains fewer steps per frame instead of dropping frames. One step took 0.26 ms
+// in Bun and about 0.4 ms in Chrome 155 on an M5 Max (October 13, 2026), where 6 ms is 15 steps. Before the first
+// measurement a frame trains at most unmeasuredTrainingStepsPerFrame steps, and the frames after it make up for
+// the difference.
 export const maximumTrainingStepsPerFrame = 20
 export const trainingMsPerFrame = 6
 export const unmeasuredTrainingStepsPerFrame = 4
-// The loss chart shows this many of the latest steps.
-export const chartStepCount = trainingStepsAfterChange
+// The fewest steps one frame trains, unless fewer are left: a frame whose time or budget holds only one step
+// trains two or none. trainOrUndo takes a frame's steps back together with Adam's momentum, so after a frame of
+// one step that was taken back, the next frame takes the same step again at half the learning rate. Where that
+// momentum points uphill, the step raises what it follows at any rate, and every frame is taken back until the
+// multipliers have changed the slopes enough. The photos stand still meanwhile, and after 100 steps they count as
+// at rest: at 5 ms a step, Contact sheet's first fit had 100 frames in a row taken back and stopped after 529
+// steps with a line of photos 0.47 px apart on a stage of 500 by 400 px. With frames of two steps, whose second
+// step has more of the slope in its momentum, the longest such row in that fit is 2 frames, and the fit stops
+// after 874 steps with every line within 0.03 px. Measured in 24 sessions of 40 small drags and resizes, as the
+// share of the 960 edits that end with two photo edges 0.5 to 10 px apart on that stage (October 14, 2026): on a
+// device where a step takes 5 ms, so that the budget holds one step, 46% with frames of one step and 1.0% with
+// frames of two. On a 500 Hz display, where a frame's time holds one step or two, 6.4% and 2.2%. With 10 steps a
+// frame it is 1.1%. The price is that a frame's training takes up to twice the budget where a step takes over
+// 3 ms, e.g. 10 ms at 5 ms a step.
+export const minimumTrainingStepsPerFrame = 2
+// The loss chart shows this many of the latest steps, which holds Story's and Contact sheet's whole first fit,
+// 630 to 750 and 860 to 980 steps, and the later part of Cinema's, which takes 1,360 to 1,840 steps, depending on
+// which steps each frame holds.
+export const chartStepCount = 1000
 
 const minimumRectangleSize = 0.04
 const addedRectangleWidth = 0.2
@@ -259,7 +305,9 @@ export type LearnedGalleryInput =
   | {kind: 'pointer up' | 'pointer cancel' | 'pointer leave', pointerId: number}
   | {kind: 'delete'}
   | {kind: 'layout', name: LearnedLayoutName}
-  | {kind: 'train again'}
+  | {kind: 'retrain'}
+
+export type LossSample = {step: number, fromSketch: number, misalignment: number}
 
 type EditorDrag = {
   mode: 'move' | 'resize'
@@ -273,15 +321,18 @@ type EditorDrag = {
 
 export type LearnedGalleryFrame = {
   // The program's outputs, read through machine.geometries, with their loss and the number of optimizer steps since
-  // the weights were last reset.
+  // the weights were last reset. The loss is the sum of its two parts: how far the photos are from the sketch,
+  // and the misalignment penalty.
   values: Float32Array
   loss: number
+  fromSketch: number
+  misalignment: number
   step: number
   // Whether steps remain, i.e. whether the page needs another frame.
   training: boolean
   stepsThisFrame: number
   // The average cost of a step over the latest training that took a step, or null before the first step, e.g. in
-  // the page's first frame. A training that takes no step, e.g. "Train again" with an empty sketch, keeps the number.
+  // the page's first frame. A training that takes no step, e.g. "Retrain" with an empty sketch, keeps the number.
   msPerStep: number | null
   activeCount: number
   // The preset that the sketch still equals, or null after an edit.
@@ -297,8 +348,8 @@ export type LearnedGalleryFrame = {
   // so no rectangle is hidden under another.
   sketchStack: number[]
   outputStack: number[]
-  // The loss after each frame's steps, for the latest chartStepCount steps.
-  history: readonly {step: number, loss: number}[]
+  // The loss's two parts after each frame's steps, for the latest chartStepCount steps.
+  history: readonly LossSample[]
   // Side effects for the page: a press focuses the stage, and a drag that started in this frame and is still held
   // captures its pointer.
   pressed: boolean
@@ -331,7 +382,16 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
   let pendingTap: {pointerId: number, x: number, y: number} | null = null
   // The mouse's last position over the stage, in fractions of the stage. null for a finger, and after a leave.
   let hover: {x: number, y: number} | null = null
-  let stepsRemaining = trainingStepsAfterChange
+  // The steps trained since the sketch or the slider last changed, and whether more are to come: see
+  // trainingStepsLeft.
+  let stepsSinceChange = 0
+  let training = true
+  // For the rule of when the photos are at rest: the edges of the photos as they were after the step restStep,
+  // left, top, right and bottom per output. No edge has moved more than restDistance from them since. restStep is
+  // null after a change, until the next frame that trains.
+  const restEdges = new Float32Array(learnedSlotCount * 4)
+  const edgesNow = new Float32Array(learnedSlotCount * 4)
+  let restStep: number | null = null
   // The time that training has reached, like animatedUntilTime in ui.md's render loop. null while nothing trains.
   let trainedUntilTime: number | null = null
   let measuredMsPerStep = 0
@@ -350,8 +410,16 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
     outputs.fill(1, 0, machine.activeCount())
   }
   useFirstOutputs()
+  // Where the page's "Misalignment penalty" slider is, as a fraction of the stage's width.
+  let holdDistance = defaultHoldDistance
+  machine.setPenaltyReach(holdDistance / penaltyStrength, holdDistance / penaltyStrength * 5 / 4)
   let result = machine.evaluate()
-  let history = [{step: result.step, loss: result.loss}]
+  let history: LossSample[] = [{step: result.step, fromSketch: result.fromTarget, misalignment: result.misalignment}]
+
+  // Whether the photos are at rest: no photo edge has moved more than restDistance for restSteps steps.
+  function atRest() {
+    return restStep !== null && result.step - restStep >= restSteps
+  }
 
   function readTargetGeometry(item: number): LearnedTargetGeometry {
     const start = item * learnedGeometryField.size
@@ -406,10 +474,12 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
     return outputByTarget[targetItems.indexOf(item)] ?? null
   }
 
+  // newHoldDistance is where the "Misalignment penalty" slider is now, as a fraction of the stage's width.
   function frame(
     frameTime: number,
     stageWidth: number,
     stageHeight: number,
+    newHoldDistance: number,
     inputs: readonly LearnedGalleryInput[],
   ): LearnedGalleryFrame {
     // Handle inputs.
@@ -552,28 +622,36 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
           sketchEdited = false
           restarted = true
           break
-        case 'train again':
+        case 'retrain':
           restarted = true
           break
       }
     }
     const activeCount = machine.activeCount()
     if (sketchEdited) layout = null
-    // A preset and "Train again" start from the seeded weights, and their frame draws those weights' output before
+    // A move of the slider changes the loss, so training continues from the current weights, as after an edit.
+    const penaltyChanged = newHoldDistance !== holdDistance
+    if (penaltyChanged) {
+      holdDistance = newHoldDistance
+      machine.setPenaltyReach(holdDistance / penaltyStrength, holdDistance / penaltyStrength * 5 / 4)
+    }
+    // A preset and "Retrain" start from the seeded weights, and their frame draws those weights' output before
     // any step, as the page's first frame does. Every other change continues from the current weights and the
     // optimizer's current state, so the photos follow a drag instead of forming again from a pile.
     if (restarted) {
       machine.reset()
       trainedUntilTime = null
     }
-    if (sketchEdited || restarted) {
-      if (stepsRemaining === 0 || restarted) {
+    if (sketchEdited || penaltyChanged || restarted) {
+      if (!training || restarted) {
         runSteps = 0
         runMs = 0
       }
-      // With no rectangle there is nothing to train, and no reason for another frame.
-      stepsRemaining = activeCount > 0 ? trainingStepsAfterChange : 0
+      stepsSinceChange = 0
+      restStep = null
     }
+    // With no rectangle there is nothing to train, and no reason for another frame.
+    const stepsLeft = activeCount > 0 ? trainingStepsLeft(stepsSinceChange, atRest()) : 0
 
     // Layout and cursor.
     let hovered: number | null = null
@@ -591,44 +669,77 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       }
     }
 
-    // Training: as many steps as the time since the last frame holds, within the caps.
+    // Training: as many steps as the time since the last frame holds, within the caps. A frame whose time holds
+    // fewer steps than the minimum trains none, and the next frame has the time of both.
     let newTrainedUntilTime = trainedUntilTime ?? frameTime
-    const stepsThisFrame = Math.max(0, Math.min(
-      stepsRemaining,
+    const stepsHeld = Math.min(
+      stepsLeft,
       maximumTrainingStepsPerFrame,
       measuredMsPerStep > 0
-        ? Math.max(1, Math.floor(trainingMsPerFrame / measuredMsPerStep))
+        ? Math.max(minimumTrainingStepsPerFrame, Math.floor(trainingMsPerFrame / measuredMsPerStep))
         : unmeasuredTrainingStepsPerFrame,
       Math.floor((frameTime - newTrainedUntilTime) / msPerTrainingStep),
-    ))
+    )
+    const stepsThisFrame = stepsHeld >= Math.min(minimumTrainingStepsPerFrame, stepsLeft) ? stepsHeld : 0
     newTrainedUntilTime += stepsThisFrame * msPerTrainingStep
     if (stepsThisFrame > 0) {
       const trainingStart = readClock()
-      result = machine.train(stepsThisFrame)
+      // Steps that leave the photos worse off are taken back, so a photo never jumps away from where it has settled.
+      result = machine.trainOrUndo(stepsThisFrame)
       const trainingMs = readClock() - trainingStart
       measuredMsPerStep = trainingMs / stepsThisFrame
       runSteps += stepsThisFrame
       runMs += trainingMs
       averageMsPerStep = runMs / runSteps
-    } else if (sketchEdited || restarted) {
+    } else if (sketchEdited || penaltyChanged || restarted) {
       result = machine.evaluate()
     }
     if (restarted) history = []
-    if (stepsThisFrame > 0 || sketchEdited || restarted) {
-      history.push({step: result.step, loss: result.loss})
+    if (stepsThisFrame > 0 || sketchEdited || penaltyChanged || restarted) {
+      history.push({step: result.step, fromSketch: result.fromTarget, misalignment: result.misalignment})
       // One sample before the chart's first step stays, so the line starts at the chart's left edge.
       while (history.length > 2 && history[1]!.step <= result.step - chartStepCount) history.shift()
     }
 
     // Commit state.
-    stepsRemaining -= stepsThisFrame
-    const training = stepsRemaining > 0
+    stepsSinceChange += stepsThisFrame
+    if (stepsThisFrame > 0) {
+      // For the rule of when the photos are at rest: how far the edge that moved most is from where it was at
+      // restStep. A move past restDistance starts the count of steps again from where the photos are now.
+      let moved = 0
+      for (let item = 0; item < learnedSlotCount; item++) {
+        if (outputs[item] !== 1) continue
+        const start = item * learnedGeometryField.size
+        const left = result.values[machine.geometries[start + learnedGeometryField.left]!]!
+        const top = result.values[machine.geometries[start + learnedGeometryField.top]!]!
+        const right = left + result.values[machine.geometries[start + learnedGeometryField.width]!]!
+        const bottom = top + result.values[machine.geometries[start + learnedGeometryField.height]!]!
+        moved = Math.max(
+          moved,
+          Math.abs(left - restEdges[item * 4]!),
+          Math.abs(top - restEdges[item * 4 + 1]!),
+          Math.abs(right - restEdges[item * 4 + 2]!),
+          Math.abs(bottom - restEdges[item * 4 + 3]!),
+        )
+        edgesNow[item * 4] = left
+        edgesNow[item * 4 + 1] = top
+        edgesNow[item * 4 + 2] = right
+        edgesNow[item * 4 + 3] = bottom
+      }
+      if (restStep === null || moved > restDistance) {
+        restEdges.set(edgesNow)
+        restStep = result.step
+      }
+    }
+    training = activeCount > 0 && trainingStepsLeft(stepsSinceChange, atRest()) > 0
     trainedUntilTime = training ? newTrainedUntilTime : null
 
     const values = result.values
     return {
       values,
       loss: result.loss,
+      fromSketch: result.fromTarget,
+      misalignment: result.misalignment,
       step: result.step,
       training,
       stepsThisFrame,
@@ -668,14 +779,24 @@ type LearnedGalleryDomCache = {
   rectangleCount: HTMLElement // mount lifetime
   layoutButtons: {name: LearnedLayoutName, button: HTMLButtonElement}[] // mount lifetime
   deleteButton: HTMLButtonElement // mount lifetime
+  // The "Misalignment penalty" slider, in percent of the stage's width, and the words after it. The browser keeps
+  // the slider's value.
+  penalty: HTMLInputElement // mount lifetime
+  penaltyValue: HTMLElement // mount lifetime
   trainButton: HTMLButtonElement // mount lifetime
   chart: SVGSVGElement // mount lifetime
+  // The chart's two lines, with the wash under the first: how far the photos are from the sketch, and the
+  // misalignment penalty.
   chartArea: SVGPolygonElement // mount lifetime
-  chartLine: SVGPolylineElement // mount lifetime
-  chartMarker: SVGCircleElement // mount lifetime
+  chartFromSketch: SVGPolylineElement // mount lifetime
+  chartMisalignment: SVGPathElement // mount lifetime
+  chartFromSketchMarker: SVGCircleElement // mount lifetime
+  chartMisalignmentMarker: SVGCircleElement // mount lifetime
   chartHairline: SVGLineElement // mount lifetime
   trainingStep: HTMLElement // mount lifetime
-  trainingLoss: HTMLElement // mount lifetime
+  lossFromSketch: HTMLElement // mount lifetime
+  lossMisalignment: HTMLElement // mount lifetime
+  lossMisalignmentPart: HTMLElement // mount lifetime
   stepCostClause: HTMLElement // mount lifetime
   stepCost: HTMLElement // mount lifetime
 }
@@ -684,6 +805,11 @@ function requireElement<Found extends Element = HTMLElement>(document: Document,
   const element = document.querySelector<Found>(selector)
   invariant(element !== null, message)
   return element
+}
+
+// A number as toExponential writes it, with a minus sign, U+2212, instead of the hyphen in its exponent.
+function withMinusSign(exponential: string) {
+  return exponential.replace('-', '\u2212')
 }
 
 function projectGeometry(
@@ -738,13 +864,14 @@ function createLearnedGalleryDomCache(document: Document, editor: LearnedGallery
   for (const [selector, value] of [
     ['#learning-coefficients', machine.parameterCount],
     ['#learning-steps-after-change', trainingStepsAfterChange],
+    ['#learning-steps-at-most', maximumTrainingStepsAfterChange],
+    ['#learning-rest-steps', restSteps],
     ['#learning-steps-per-second', Math.round(1000 / msPerTrainingStep)],
     ['#learning-operations', machine.circuit.operations.length],
     ['#learning-layers', machine.tensorProgram.layers.length],
   ] as const) {
     requireElement(document, selector, `${selector} is missing`).textContent = value.toLocaleString('en-US')
   }
-
   return {
     sketchStage,
     sketchRectangles,
@@ -753,27 +880,37 @@ function createLearnedGalleryDomCache(document: Document, editor: LearnedGallery
     rectangleCount: requireElement(document, '#learning-count', 'rectangle count is missing'),
     layoutButtons,
     deleteButton: requireElement<HTMLButtonElement>(document, '#learning-delete', 'delete button is missing'),
+    penalty: requireElement<HTMLInputElement>(document, '#learning-penalty', 'penalty slider is missing'),
+    penaltyValue: requireElement(document, '#learning-penalty-value', 'penalty value is missing'),
     trainButton: requireElement<HTMLButtonElement>(document, '#learning-train', 'train button is missing'),
     chart: requireElement<SVGSVGElement>(document, '#learning-chart', 'loss chart is missing'),
-    chartArea: requireElement<SVGPolygonElement>(document, '#learning-chart polygon', 'loss area is missing'),
-    chartLine: requireElement<SVGPolylineElement>(document, '#learning-chart polyline', 'loss line is missing'),
-    chartMarker: requireElement<SVGCircleElement>(document, '#learning-chart circle', 'loss marker is missing'),
-    chartHairline: requireElement<SVGLineElement>(document, '#learning-chart line', 'loss hairline is missing'),
+    chartArea: requireElement<SVGPolygonElement>(document, '#learning-chart .area', 'loss area is missing'),
+    chartFromSketch: requireElement<SVGPolylineElement>(document, '#learning-chart .line.from-sketch', 'the line of the distance from the sketch is missing'),
+    chartMisalignment: requireElement<SVGPathElement>(document, '#learning-chart .line.misalignment', 'the line of the misalignment penalty is missing'),
+    chartFromSketchMarker: requireElement<SVGCircleElement>(document, '#learning-chart .marker.from-sketch', 'the marker of the distance from the sketch is missing'),
+    chartMisalignmentMarker: requireElement<SVGCircleElement>(document, '#learning-chart .marker.misalignment', 'the marker of the misalignment penalty is missing'),
+    chartHairline: requireElement<SVGLineElement>(document, '#learning-chart .hairline', 'loss hairline is missing'),
     trainingStep: requireElement(document, '#learning-step', 'training step is missing'),
-    trainingLoss: requireElement(
-      document,
-      '#learning-loss',
-      'training loss is missing',
-    ),
+    lossFromSketch: requireElement(document, '#learning-loss-sketch', 'the distance from the sketch is missing'),
+    lossMisalignment: requireElement(document, '#learning-loss-penalty', 'the misalignment penalty is missing'),
+    lossMisalignmentPart: requireElement(document, '#learning-loss-penalty-part', 'the misalignment penalty\'s part of the loss line is missing'),
     stepCostClause: requireElement(document, '#learning-step-cost-clause', 'step cost clause is missing'),
     stepCost: requireElement(document, '#learning-step-cost', 'step cost is missing'),
   }
 }
 
-// The chart's vertical axis is logarithmic, from a loss of 1 at the top to 1e-8 at the bottom: the loss falls from
-// about 0.2 to about 1e-7 while training, which a linear axis would show as one drop followed by a flat line.
-const chartLogTop = 0
-const chartLogBottom = -8
+// The chart's vertical axis is logarithmic, from 0.1 at the top to 1e-11 at the bottom. With the slider at off,
+// the loss falls from about 0.01 to between 1e-8 and 1e-11 while training, which a linear axis would show as one
+// drop followed by a flat line. With the penalty on, the distance from the sketch rests where the two parts
+// balance, e.g. at 1e-5 with a photo held 9 px from its rectangle, and the penalty falls to 1e-11 and below while
+// the photos' edges close their gaps.
+const chartLogTop = -1
+const chartLogBottom = -11
+
+// A part of the loss as the page writes it, e.g. 3.04e−7.
+function lossText(loss: number) {
+  return loss === 0 ? '0' : withMinusSign(loss.toExponential(2))
+}
 // Room around the line for its marker, a dot of 4 px radius with a 1 px ring, in CSS pixels.
 const chartPadding = 5
 
@@ -788,7 +925,9 @@ function mountLearnedGallery(document: Document, window: Window) {
   const domCache = createLearnedGalleryDomCache(document, editor)
   // What the text nodes and the chart hold now. A frame writes one only when it changes, since writing a text node
   // again collapses a selection inside it.
-  const written = {rectangleCount: '', trainingStep: '', trainingLoss: '', stepCost: '', chartLine: ''}
+  const written = {rectangleCount: '', trainingStep: '', lossFromSketch: '', lossMisalignment: '', stepCost: '', chartFromSketch: '', chartMisalignment: '', penaltyValue: ''}
+  // The slider's largest value, in percent of the stage's width, which the page's markup sets.
+  const penaltyPercentMax = Number(domCache.penalty.max)
   let rawInputs: RawInput[] = []
   // The mouse's clientX while it is over the chart, where the chart then reads out the nearest sample.
   let chartPointerX: number | null = null
@@ -800,14 +939,20 @@ function mountLearnedGallery(document: Document, window: Window) {
 
   function renderLearnedGallery(frameTime: number) {
     scheduledRaf = null
-    // DOM reads.
+    // DOM reads. The rectangles are placed in percent of the stage's inside, i.e. the stage's box without its
+    // border, which is as wide on every side. The box's size isn't a whole number of pixels at every window, e.g.
+    // 622 by 497.6 px at a 1440 px window, where clientHeight says 496 for an inside of 495.6 px, and with that
+    // height a rectangle dragged 150 px down ended 0.12 px above the pointer.
     const stageBounds = domCache.sketchStage.getBoundingClientRect()
-    const stageLeft = stageBounds.left + domCache.sketchStage.clientLeft
-    const stageTop = stageBounds.top + domCache.sketchStage.clientTop
-    const stageWidth = domCache.sketchStage.clientWidth
-    const stageHeight = domCache.sketchStage.clientHeight
+    const stageBorder = domCache.sketchStage.clientLeft
+    const stageLeft = stageBounds.left + stageBorder
+    const stageTop = stageBounds.top + stageBorder
+    const stageWidth = stageBounds.width - stageBorder * 2
+    const stageHeight = stageBounds.height - stageBorder * 2
     // The chart takes the width that its row leaves, and its coordinates are CSS pixels.
     const chartBounds = domCache.chart.getBoundingClientRect()
+    // Where the "Misalignment penalty" slider is, in percent of the stage's width.
+    const penaltyPercent = domCache.penalty.valueAsNumber
 
     // Inputs, cursor and training.
     const inputs: LearnedGalleryInput[] = []
@@ -831,9 +976,9 @@ function mountLearnedGallery(document: Document, window: Window) {
       }
     }
     rawInputs = []
-    const frame = editor.frame(frameTime, stageWidth, stageHeight, inputs)
+    const frame = editor.frame(frameTime, stageWidth, stageHeight, penaltyPercent / 100, inputs)
 
-    // The chart: steps from left to right, with the latest sample at the right end once 500 steps have run.
+    // The chart: steps from left to right, with the latest sample at the right end once 1,000 steps have run.
     const latestSample = frame.history.at(-1)!
     const firstChartStep = Math.max(0, latestSample.step - chartStepCount)
     const chartLeft = 1
@@ -843,7 +988,7 @@ function mountLearnedGallery(document: Document, window: Window) {
       chartPadding
       + clamp((chartLogTop - Math.log10(loss)) / (chartLogTop - chartLogBottom), 0, 1)
         * Math.max(0, chartBounds.height - chartPadding * 2)
-    // Under the mouse, the chart marks the sample nearest to the mouse, and the two numbers beside it show that
+    // Under the mouse, the chart marks the sample nearest to the mouse, and the numbers beside it show that
     // sample instead of the latest one.
     let markedSample = latestSample
     if (chartPointerX !== null) {
@@ -886,6 +1031,14 @@ function mountLearnedGallery(document: Document, window: Window) {
       button.setAttribute('aria-pressed', frame.layout === name ? 'true' : 'false')
     }
     domCache.deleteButton.disabled = frame.selected === null
+    // The slider's track is copper up to its eyelet (learned-gallery.css), and the words after the slider say its
+    // value, also to a screen reader.
+    const penaltyValue = penaltyPercent === 0 ? 'off' : `${penaltyPercent}%`
+    if (written.penaltyValue !== penaltyValue) {
+      domCache.penaltyValue.textContent = written.penaltyValue = penaltyValue
+      domCache.penalty.setAttribute('aria-valuetext', penaltyPercent === 0 ? 'off' : `${penaltyPercent}% of the stage's width`)
+      domCache.penalty.style.setProperty('--filled', `${penaltyPercent / penaltyPercentMax}`)
+    }
 
     const rectangleCount = `${frame.activeCount} of ${learnedPhotoCount} rectangles`
     if (written.rectangleCount !== rectangleCount) {
@@ -893,34 +1046,49 @@ function mountLearnedGallery(document: Document, window: Window) {
     }
     const trainingStep = markedSample.step.toLocaleString('en-US')
     if (written.trainingStep !== trainingStep) domCache.trainingStep.textContent = written.trainingStep = trainingStep
-    // e.g. 3.04e-7 with a minus sign, U+2212, instead of toExponential's hyphen.
-    const trainingLoss = markedSample.loss === 0 ? '0' : markedSample.loss.toExponential(2).replace('-', '\u2212')
-    if (written.trainingLoss !== trainingLoss) domCache.trainingLoss.textContent = written.trainingLoss = trainingLoss
+    const lossFromSketch = lossText(markedSample.fromSketch)
+    if (written.lossFromSketch !== lossFromSketch) domCache.lossFromSketch.textContent = written.lossFromSketch = lossFromSketch
+    const lossMisalignment = lossText(markedSample.misalignment)
+    if (written.lossMisalignment !== lossMisalignment) domCache.lossMisalignment.textContent = written.lossMisalignment = lossMisalignment
+    // With the slider at off the loss is its first part alone, unless the marked sample is from before that.
+    domCache.lossMisalignmentPart.style.display = penaltyPercent === 0 && markedSample.misalignment === 0 ? 'none' : 'inline'
     // The statistics line says what a step costs once a step has been timed, i.e. from the page's second frame on.
     // A no-break space, U+00A0, keeps the unit on the number's line.
     const stepCost = frame.msPerStep === null ? '' : `${frame.msPerStep.toFixed(2)}\u00a0ms`
     if (written.stepCost !== stepCost) domCache.stepCost.textContent = written.stepCost = stepCost
     domCache.stepCostClause.style.display = frame.msPerStep === null ? 'none' : 'inline'
 
-    const chartLine = frame.history.map(sample => `${chartX(sample.step).toFixed(1)},${chartY(sample.loss).toFixed(1)}`).join(' ')
-    if (written.chartLine !== chartLine) {
-      domCache.chartLine.setAttribute('points', written.chartLine = chartLine)
+    const chartFromSketch = frame.history.map(sample => `${chartX(sample.step).toFixed(1)},${chartY(sample.fromSketch).toFixed(1)}`).join(' ')
+    if (written.chartFromSketch !== chartFromSketch) {
+      domCache.chartFromSketch.setAttribute('points', written.chartFromSketch = chartFromSketch)
       // The wash under the line: the line's points, closed along the chart's bottom edge.
       domCache.chartArea.setAttribute(
         'points',
-        `${chartLine} ${chartX(latestSample.step).toFixed(1)},${chartBounds.height} ${chartX(frame.history[0]!.step).toFixed(1)},${chartBounds.height}`,
+        `${chartFromSketch} ${chartX(latestSample.step).toFixed(1)},${chartBounds.height} ${chartX(frame.history[0]!.step).toFixed(1)},${chartBounds.height}`,
       )
     }
+    // The penalty's line has a gap wherever the penalty is 0, e.g. with the slider at off and in the first steps
+    // after a preset: M starts a piece of the line and L continues one.
+    let chartMisalignment = ''
+    let pieceOpen = false
+    for (const sample of frame.history) {
+      if (sample.misalignment > 0) chartMisalignment += `${pieceOpen ? 'L' : 'M'}${chartX(sample.step).toFixed(1)},${chartY(sample.misalignment).toFixed(1)}`
+      pieceOpen = sample.misalignment > 0
+    }
+    if (written.chartMisalignment !== chartMisalignment) domCache.chartMisalignment.setAttribute('d', written.chartMisalignment = chartMisalignment)
     const markerX = chartX(markedSample.step).toFixed(1)
-    domCache.chartMarker.setAttribute('cx', markerX)
-    domCache.chartMarker.setAttribute('cy', chartY(markedSample.loss).toFixed(1))
+    domCache.chartFromSketchMarker.setAttribute('cx', markerX)
+    domCache.chartFromSketchMarker.setAttribute('cy', chartY(markedSample.fromSketch).toFixed(1))
+    domCache.chartMisalignmentMarker.setAttribute('cx', markerX)
+    domCache.chartMisalignmentMarker.setAttribute('cy', chartY(markedSample.misalignment).toFixed(1))
+    domCache.chartMisalignmentMarker.style.display = markedSample.misalignment > 0 ? 'inline' : 'none'
     domCache.chartHairline.setAttribute('x1', markerX)
     domCache.chartHairline.setAttribute('x2', markerX)
     domCache.chartHairline.setAttribute('y2', `${chartBounds.height}`)
     domCache.chartHairline.style.display = chartPointerX === null ? 'none' : 'inline'
 
-    // Side effects. The stage takes focus at a press so that the Delete key reaches it, and captures the pointer
-    // of a drag so that the drag continues outside the stage.
+    // Side effects. The stage takes focus at a press, so its outline turns copper and the focus leaves e.g. the
+    // slider, and it captures the pointer of a drag so that the drag continues outside the stage.
     if (frame.pressed) domCache.sketchStage.focus({preventScroll: true})
     if (frame.capturedPointer !== null) domCache.sketchStage.setPointerCapture(frame.capturedPointer)
     if (frame.training) scheduleRender()
@@ -949,13 +1117,18 @@ function mountLearnedGallery(document: Document, window: Window) {
   domCache.sketchStage.addEventListener('pointerup', event => record({kind: 'pointer up', pointerId: event.pointerId}))
   domCache.sketchStage.addEventListener('pointercancel', event => record({kind: 'pointer cancel', pointerId: event.pointerId}))
   domCache.sketchStage.addEventListener('pointerleave', event => record({kind: 'pointer leave', pointerId: event.pointerId}))
-  domCache.sketchStage.addEventListener('keydown', event => {
+  // The Delete key removes the selected rectangle wherever the keyboard's focus is, e.g. on the slider after the
+  // visitor moved it, since the rectangle stays drawn as selected there. The page has no text field that the key
+  // could edit instead.
+  document.addEventListener('keydown', event => {
     if (event.key !== 'Backspace' && event.key !== 'Delete') return
     event.preventDefault()
     record({kind: 'delete'})
   })
   domCache.deleteButton.addEventListener('click', () => record({kind: 'delete'}))
-  domCache.trainButton.addEventListener('click', () => record({kind: 'train again'}))
+  // The frame reads the slider.
+  domCache.penalty.addEventListener('input', scheduleRender)
+  domCache.trainButton.addEventListener('click', () => record({kind: 'retrain'}))
   for (const {name, button} of domCache.layoutButtons) {
     button.addEventListener('click', () => record({kind: 'layout', name}))
   }

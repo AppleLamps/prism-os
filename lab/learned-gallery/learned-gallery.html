@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Learned gallery · Handwired</title>
-  <meta name="description" content="A small network places photos. Edit a sketch of rectangles, and the page trains the network's 244 weights with backpropagation until the photos match the sketch.">
+  <!-- 244 is the network's weight count, which learned-gallery.test.ts pins. -->
+  <meta name="description" content="A small network places photos. Edit a sketch of rectangles, and the page trains the network's 244 weights with backpropagation in real time, until the photos match the sketch and their edges line up.">
   <!-- learned-gallery.css imports assets/site.css, the tokens and components that every demo page shares. -->
   <link rel="stylesheet" href="./learned-gallery.css">
 </head>
@@ -26,8 +27,8 @@
     </header>
 
     <h1 class="title">Learned gallery</h1>
-    <!-- 244 is the network's weight count, which learned-gallery.test.ts pins. -->
-    <p class="deck">The other demos&rsquo; programs are wired by hand. This one is the same kind of program, but its 244 weights are trained instead: backpropagation adjusts them until the photos match the sketch.</p>
+    <!-- The weights start from seeded random numbers. What is compiled is the program that they are the inputs of. -->
+    <p class="deck">Unfreeze a compiled program&rsquo;s weights &amp; train them in <em>real time</em>.</p>
 
     <div class="try">
       <span class="label">Try</span>
@@ -43,48 +44,85 @@
 
     <section class="stages">
       <div>
-        <div class="stage-head"><span class="label">Sketch</span><span id="learning-count"></span></div>
+        <div class="stage-head"><span class="label">Sketch</span><span id="learning-count" class="stage-note"></span></div>
         <!-- learned-gallery.ts adds the rectangles, which are positioned in percent of this box. The sketch takes
-             focus at a press, so that the Delete key reaches it. It isn't a stop of the Tab key, since no key
-             selects or moves a rectangle. -->
+             focus at a press, which turns its outline copper. It isn't a stop of the Tab key, since no key selects
+             or moves a rectangle. The Delete key removes the selected rectangle wherever the focus is. -->
         <div id="learning-target" class="surface stage sketch" tabindex="-1" role="group" aria-label="Sketch: rectangles to drag, resize, add and delete">
           <!-- learned-gallery.ts shows this line while the sketch has no rectangle. -->
           <p id="learning-empty" class="stage-hint" style="display: none"><span class="for-mouse">Click</span><span class="for-finger">Tap</span> to add a rectangle</p>
         </div>
         <div class="tools">
-          <div id="learning-layouts" class="segments" role="group" aria-label="Start from a sketch">
+          <span id="learning-layouts-label" class="label">Choose preset</span>
+          <div id="learning-layouts" class="segments" role="group" aria-labelledby="learning-layouts-label">
             <button type="button" data-layout="story">Story</button>
             <button type="button" data-layout="cinema">Cinema</button>
             <button type="button" data-layout="contact">Contact sheet</button>
           </div>
           <button id="learning-delete" class="button" type="button" title="Delete the selected rectangle">Delete</button>
         </div>
+        <!-- How far a rectangle can be from its row or column before its photo lets go of the line, in percent of
+             the stage's width. The penalty pulls photo edges together that are closer than half of that.
+             learned-gallery.ts reads the slider in each frame, writes the words after it, e.g. "4%", and gives the
+             slider its aria-valuetext, e.g. "4% of the stage's width". The row's title says the first two sentences
+             to a mouse that rests on the row. learned-gallery.test.ts checks the slider's value as the page loads
+             and its largest value against the code. -->
+        <div class="tools penalty" title="How far a rectangle can be from its row or column before its photo leaves the line, in percent of the stage&rsquo;s width. Photo edges closer than half of that distance end on one line.">
+          <label class="label" for="learning-penalty">Misalignment penalty</label>
+          <input id="learning-penalty" class="range" type="range" min="0" max="8" step="0.5" value="4">
+          <span id="learning-penalty-value" class="range-value" aria-hidden="true"></span>
+        </div>
       </div>
       <div>
-        <div class="stage-head"><span class="label">Learned</span><span>placed by the network</span></div>
+        <div class="stage-head"><span class="label">Learned</span></div>
         <div id="learning-result" class="surface stage learned" role="group" aria-label="The photos, where the network places them"></div>
         <div class="tools training">
-          <!-- The loss after each frame of training, for the latest 500 steps. learned-gallery.ts draws the line in
-               CSS pixels, at whatever width this row leaves the chart. -->
-          <svg id="learning-chart" class="loss-chart" role="img" aria-label="The loss over the latest 500 training steps, on a logarithmic scale">
+          <!-- Two halves: in a column too narrow for the whole line, the second half is a line of its own. The first
+               half is the loss as the sum of its two parts, each with a dot in its line's color before it.
+               learned-gallery.ts hides the second part while the slider is at off. -->
+          <div class="loss">
+            <span class="parts">Loss <i class="key from-sketch"></i><b id="learning-loss-sketch" title="How far the photos are from the sketch"></b><span id="learning-loss-penalty-part"> + <i class="key misalignment"></i><b id="learning-loss-penalty" title="The misalignment penalty"></b></span></span>
+            <span class="steps">after <b id="learning-step"></b> steps</span>
+          </div>
+          <button id="learning-train" class="button" type="button" title="Set the weights back to their starting values and train them again">Retrain</button>
+          <!-- The loss's two parts after each frame of training, for the latest 1,000 steps: how far the photos are
+               from the sketch, and the misalignment penalty, which has no line while it is 0. learned-gallery.ts
+               draws the lines in CSS pixels, at the width of this column. -->
+          <svg id="learning-chart" class="loss-chart" role="img" aria-label="The two parts of the loss over the latest 1,000 training steps, on a logarithmic scale: the distance from the sketch, and the misalignment penalty">
             <polygon class="area"/>
             <line class="hairline" y1="0"/>
-            <polyline class="line"/>
-            <circle class="marker" r="4"/>
+            <polyline class="line from-sketch"/>
+            <path class="line misalignment"/>
+            <circle class="marker from-sketch" r="4"/>
+            <circle class="marker misalignment" r="4"/>
           </svg>
-          <!-- Two halves, so that a column too narrow for the whole line breaks it between them. -->
-          <div class="loss"><span>Loss <b id="learning-loss"></b></span> <span>after <b id="learning-step"></b> steps</span></div>
-          <button id="learning-train" class="button" type="button" title="Set the weights back to their starting values and train them again">Train again</button>
         </div>
       </div>
     </section>
 
-    <!-- learned-gallery.ts fills the numbers, and shows the part about one step's cost once it has timed a step. -->
-    <p class="stats">The loss measures how far the photos are from the sketch, and each training step changes the <b id="learning-coefficients"></b> weights a little to lower the loss. Each change of the sketch gets <b id="learning-steps-after-change"></b> more steps, at up to <b id="learning-steps-per-second"></b> steps a second<span id="learning-step-cost-clause" style="display: none">, and one step takes about <b id="learning-step-cost"></b> on this device</span>. The program is <b id="learning-operations"></b> operations in <b id="learning-layers"></b> layers, and the weights are its only input.</p>
+    <!-- learned-gallery.ts fills the numbers, and shows the part about one step's cost once it has timed a step.
+         The example's 4% is the slider's value as the page loads and 2% the penalty's reach there, which
+         learned-gallery.test.ts checks. -->
+    <details class="disclosure">
+      <summary>More detail</summary>
+      <div class="detail">
+        <div>
+          <h2 class="label">What the slider sets</h2>
+          <p class="stats">The slider&rsquo;s number is a distance, in percent of the stage&rsquo;s width. Photo edges of one kind, e.g. two tops, that are closer than half of that distance end on one line, between the places where their rectangles are drawn: at 4%, edges closer than 2% of the stage&rsquo;s width end on one line. A photo on a line stays there until its rectangle is about the whole distance away. So the same sketch can end in two layouts, depending on where the photos were before.</p>
+        </div>
+        <div>
+          <h2 class="label">The loss</h2>
+          <p class="stats">The loss has two parts, and the chart draws both. The first part, in copper, is how far each photo&rsquo;s four edges are from its rectangle&rsquo;s. The second part, in indigo, is the misalignment penalty, which charges two photo edges of one kind for the gap between them while the gap is under half the slider&rsquo;s distance. Each training step changes the <b id="learning-coefficients"></b> weights a little to lower the loss. The loss alone leaves a photo a fraction of a pixel beside its line, so ordinary code, outside the network, also keeps one number for each pair of edges: the number grows while the pair&rsquo;s gap stays open, and it is added to how hard training pulls the pair together. A frame&rsquo;s steps are undone when they raise the loss with those numbers counted in.</p>
+        </div>
+        <div>
+          <h2 class="label">Training</h2>
+          <p class="stats">Each change of the sketch or the slider gets at least <b id="learning-steps-after-change"></b> more steps, and training stops once no photo has moved for <b id="learning-rest-steps"></b> steps, or after <b id="learning-steps-at-most"></b> steps. Training runs at <b id="learning-steps-per-second"></b> steps a second where the device keeps up, and faster for a moment after a pause, e.g. after the tab was in the background<span id="learning-step-cost-clause" style="display: none">. One step takes about <b id="learning-step-cost"></b> on this device</span>. The program is <b id="learning-operations"></b> operations in <b id="learning-layers"></b> layers, and the weights are its only input.</p>
+        </div>
+      </div>
+    </details>
 
     <footer class="colophon">
-      <span>The network learns the rectangles&rsquo; positions and sizes, not the photos.</span>
-      <span><a href="../">All demos</a> &nbsp;&middot;&nbsp; <a href="../json-search/">Next: Search 100,000 JSON documents</a></span>
+      <a href="../json-search/">Next: Search 100,000 JSON documents</a>
     </footer>
   </main>
   <script type="module" src="./learned-gallery.ts"></script>

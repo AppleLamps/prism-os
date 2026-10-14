@@ -5,6 +5,21 @@
    the stylesheets in the reverse of the page's order, and bun build in the page's order. */
 @import "../../assets/site.css";
 
+/* This page is wider than the other pages with two columns, so that the stages are larger: up to
+   1268 px, where a stage is 620 px wide inside its border, instead of 1104 px and 538 px.
+   Between the two, the page is as wide as lets a stage and the two rows of controls under it
+   fit in the window's height. A stage starts 298 px down the page and the two rows under it
+   take 96 px, so a stage that is 400 px less tall than the window leaves 6 px under the rows.
+   The page is two stages and a gap of 24 px wide, and a stage is 5 wide and 4 tall, so the
+   page's width is 2.5 times a stage's height plus 24 px. A window 900 px tall has room for the
+   widest page. A window 832 px tall or less gets the 1104 px that the other pages have, and
+   there the second row is partly below the window's edge, e.g. at 1280 by 800. */
+.page.wide { --page-width: clamp(1104px, (100vh - 400px) * 2.5 + 24px, 1268px); }
+
+/* The caption is one line, with its last words in ink and italic. */
+.deck { max-width: none; }
+.deck em { color: var(--ink); }
+
 .stages {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -18,7 +33,8 @@
   gap: var(--space-4);
   margin-bottom: var(--space-2);
 }
-.stage-head span:last-child {
+/* The words at the right end of a stage's head, e.g. "10 of 12 rectangles". */
+.stage-note {
   color: var(--ink-3);
   font: var(--type-small);
   font-variant-numeric: tabular-nums;
@@ -109,11 +125,14 @@
 .image-10 { background-image: url("../../assets/photo-gallery-10.webp"); }
 .image-11 { background-image: url("../../assets/photo-gallery-11.webp"); }
 
-/* The row under each stage: the sketch's controls under the sketch, and the training's chart,
-   numbers and button under the photos. Both rows are as tall as the chart, so their buttons line
-   up when the stages are side by side. Each stage's column is a container, so a row is laid out
-   for the width of its column, which is about the same at a 1,000 px window with two columns
-   (464 px) as at a 480 px window with one (440 px). */
+/* The two rows under each stage, each 40 px tall. Under the sketch: the presets with the Delete
+   button, and the slider. Under the photos: the loss's numbers with the Retrain button, and the
+   chart. So from a 1,000 px window on, where the stages are side by side in columns of 464 px
+   and more, the two buttons are on one line, and the slider and the chart on the next. Each
+   stage's column is a container, so a row is laid out for the width of its column, which is the
+   same at a 1,000 px window with two columns as at a 504 px window with one: 464 px. With two
+   narrower columns, i.e. at windows 761 to 999 px wide, the rows under the sketch have their
+   labels above them, as below, and so are lower than the rows under the photos. */
 .stages > div { container-type: inline-size; }
 .tools {
   display: flex;
@@ -126,22 +145,24 @@
 /* A row's button sits at the row's right end, also on a line of its own, where a row is too
    narrow for the button, e.g. Delete at a 320 px window. */
 .tools .button { margin-left: auto; }
-/* The training's row: the chart has a line to itself, and the numbers and the button share the
-   next line. In a column of 440 px or more the three are on one line, where the chart takes the
-   width that the numbers and the button leave it, at least 104 px. There the numbers' width has
-   room for a count of 5 digits, e.g. 12,500, which is 202 px wide, so the chart keeps its width
-   while the count grows. The two lines are the form without the query, so a browser without
-   container queries, e.g. Safari 15, shows them at every width. */
+/* In a column under 464 px, e.g. on a phone, a row's label is a line of its own above the row's
+   controls, like the label above a stage, so the slider is as long as the column allows. The
+   second row is then farther from the first, so that its label reads as its own. On one line,
+   "Choose preset", the three presets and the Delete button need 452 px: with the label beside
+   the presets from 440 px on, Delete went to a line of its own in columns of 440 to 451 px,
+   e.g. at a 960 px window. */
+@container (max-width: 463px) {
+  .tools > .label { flex-basis: 100%; }
+  .tools + .tools { margin-top: var(--space-4); }
+}
+/* The rows under the photos: the numbers and the button share the first, and the chart has the
+   second to itself, as wide as the column. */
 .tools.training {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  grid-auto-rows: minmax(40px, auto);
 }
 .tools.training .loss-chart { grid-column: 1 / -1; }
-@container (min-width: 440px) {
-  .tools.training { grid-template-columns: minmax(0, 1fr) auto auto; }
-  .tools.training .loss-chart { grid-column: auto; }
-  .tools.training .loss { min-width: 16em; }
-}
 /* A button that can't act yet, e.g. Delete while no rectangle is selected. */
 .tools .button:disabled {
   border-color: var(--rule);
@@ -183,37 +204,201 @@
    2 px outside would lie over the neighboring buttons. */
 .segments button:focus-visible { outline-offset: -2px; }
 
+/* The "Misalignment penalty" row under the sketch's controls: a label, a slider and the
+   slider's value, e.g. "4%". The value has a fixed width, so the slider keeps its length while
+   the value changes, e.g. to "4.5%" or to "off". */
+@container (min-width: 464px) {
+  .tools.penalty { flex-wrap: nowrap; }
+}
+.range-value {
+  flex: none;
+  min-width: 2.75em;
+  color: var(--ink-2);
+  font: var(--type-ui);
+  font-variant-numeric: tabular-nums;
+}
+/* The slider: a wire with an eyelet on it, like the mark in the page's header. The wire is
+   copper from its left end to the eyelet, which learned-gallery.ts says through --filled, a
+   number from 0 to 1. The eyelet's box is --eyelet wide, and its center travels from half a box
+   inside the left end to half a box inside the right end, so the copper's end follows the same
+   rule. --inset is how far the wire's ends are inside the input's, for an eyelet that is
+   smaller than its box. The input is 32 px tall, as tall as a button, so the pointer has that
+   much to grab. */
+.range {
+  --eyelet: 16px;
+  --inset: 0px;
+  --wire: linear-gradient(to right,
+    transparent var(--inset),
+    var(--copper) 0 calc(var(--eyelet) / 2 + (100% - var(--eyelet)) * var(--filled, 0.5)),
+    var(--rule-strong) 0 calc(100% - var(--inset)),
+    transparent 0);
+  flex: 1 1 0;
+  min-width: 0;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.range::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--wire);
+}
+.range::-moz-range-track {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--wire);
+}
+.range::-webkit-slider-thumb {
+  width: var(--eyelet);
+  height: var(--eyelet);
+  /* Centers the eyelet on the 2 px wire. */
+  margin-top: calc(1px - var(--eyelet) / 2);
+  border: 1.5px solid var(--copper);
+  border-radius: 50%;
+  background: var(--sheet);
+  box-shadow: var(--shadow-1);
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
+}
+.range::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--eyelet);
+  height: var(--eyelet);
+  border: 1.5px solid var(--copper);
+  border-radius: 50%;
+  background: var(--sheet);
+  box-shadow: var(--shadow-1);
+  transition: background var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
+}
+/* Under a mouse pointer the eyelet gets the ring of a focused field, and while it is held it is
+   filled, like the header's eyelet under the pointer. */
+@media (hover: hover) {
+  .range:hover::-webkit-slider-thumb { box-shadow: var(--shadow-1), 0 0 0 3px var(--copper-wash); }
+  .range:hover::-moz-range-thumb { box-shadow: var(--shadow-1), 0 0 0 3px var(--copper-wash); }
+}
+.range:active::-webkit-slider-thumb { background-color: var(--copper); }
+.range:active::-moz-range-thumb { background-color: var(--copper); }
+/* The keyboard's focus is drawn around the eyelet, where site.css's outline would be around
+   the whole row of the slider. */
+.range:focus-visible { outline: none; }
+.range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--copper); }
+.range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--copper); }
+
 /* The loss chart, with a hairline as its base. An svg without a width is 300 px wide, so the
-   chart takes its width from its grid cell. */
+   chart takes its width from its grid cell. Its two lines are the two parts of the loss, in the
+   first two chart colors of site.css: copper for the distance from the sketch, and indigo for
+   the misalignment penalty. */
 .loss-chart {
   display: block;
   width: 100%;
   height: 40px;
   border-bottom: 1px solid var(--rule);
 }
-/* A wash from the line down to the base, as under the line of HandwiredOS's frame time chart. */
+/* A wash from the first line down to the base, as under the line of HandwiredOS's frame time chart. */
 .loss-chart .area { fill: var(--copper); fill-opacity: 0.1; }
-.loss-chart .line { fill: none; stroke: var(--copper); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.loss-chart .marker { fill: var(--copper); stroke: var(--paper); stroke-width: 2; }
+.loss-chart .line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.loss-chart .marker { stroke: var(--paper); stroke-width: 2; }
+.loss-chart .line.from-sketch { stroke: var(--copper); }
+.loss-chart .marker.from-sketch { fill: var(--copper); }
+.loss-chart .line.misalignment { stroke: var(--wire-indigo); }
+.loss-chart .marker.misalignment { fill: var(--wire-indigo); }
 .loss-chart .hairline { stroke: var(--rule-strong); }
 /* The loss now and the number of steps so far, or those of the sample under the mouse. The line
-   breaks only between its two halves, e.g. in the 169 px that a 320 px window leaves beside the
-   button. */
+   breaks only between its two halves. Each part of the loss has the width of its longest text,
+   8 characters, e.g. 1.04e−10, so the words after a number stay where they are while the
+   number changes, e.g. from 0 to 9.28e−8 when the penalty comes on. */
 .loss {
   color: var(--ink-2);
   font: var(--type-ui);
 }
 .loss span { white-space: nowrap; }
 .loss b { color: var(--ink); font: 600 13px/20px var(--font-mono); }
+.loss .parts b { display: inline-block; min-width: 8ch; }
+/* In a column under 464 px, e.g. on a phone, the two parts leave no room for the steps beside
+   the button once both are 8 characters long, so the steps are always a line of their own
+   there, and the number of lines doesn't change while the page trains. */
+@container (max-width: 463px) {
+  .loss .steps { display: block; }
+}
+/* The chart's legend: before each part of the loss, a dot in the color of that part's line, like
+   the dot at the line's end. A short piece of the line would read as a minus sign there. */
+.loss .key {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  border-radius: 50%;
+}
+.loss .key.from-sketch { background: var(--copper); }
+.loss .key.misalignment { background: var(--wire-indigo); }
 
-.stages + .stats {
-  max-width: 50em;
+/* "More detail" under the stages: a line to open, with a chevron before it that turns when the
+   text is open. No other page of the site has such a line, so its rules are here. */
+.disclosure {
   margin-top: var(--space-5);
+  font: var(--type-ui);
+  color: var(--ink-2);
+}
+.disclosure summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  list-style: none;
+}
+.disclosure summary::-webkit-details-marker { display: none; }
+.disclosure summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--ink-3);
+  border-bottom: 1.5px solid var(--ink-3);
+  transform: rotate(-45deg);
+  transition: transform var(--quick) var(--ease);
+}
+.disclosure[open] summary::before { transform: rotate(45deg); }
+.disclosure summary:hover { color: var(--copper); }
+/* The detail text: three short paragraphs, each under a label. They are side by side from a
+   1,000 px window on, where a column is 296 px and more, about 48 characters a line. */
+.detail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
+  margin-top: var(--space-3);
+}
+.detail h2 { margin: 0 0 var(--space-1); }
+.detail .stats { margin: 0; text-wrap: pretty; }
+
+/* The footer's one link, to the next demo, is at the right end, as the link that leads on: the
+   JSON search's footer has its link back to this page at the left end. */
+.colophon { justify-content: flex-end; }
+
+/* The detail text in one column, about 66 characters a line. */
+@media (max-width: 999px) {
+  .detail { grid-template-columns: minmax(0, 32em); }
 }
 
 /* One column, with the sketch above the photos. */
 @media (max-width: 760px) {
   .stages { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+}
+
+/* With forced colors, e.g. a high contrast theme of Windows, the browser draws no gradient and
+   no shadow and replaces every background color. So the slider's wire gets the text's color,
+   the pressed preset and the selected rectangle with its photo get an outline in the theme's
+   color for a selection, and the legend's dots keep their own colors, which the chart's lines
+   keep too. */
+@media (forced-colors: active) {
+  .range::-webkit-slider-runnable-track { background: CanvasText; }
+  .range::-moz-range-track { background: CanvasText; }
+  .segments button[aria-pressed="true"] { outline: 2px solid Highlight; outline-offset: -2px; }
+  .target-rectangle.is-selected, .learned-rectangle.is-selected { outline: 2px solid Highlight; }
+  .loss .key { forced-color-adjust: none; }
 }
 
 /* The instructions name what the main pointer does: a mouse clicks, a finger taps. */
@@ -223,6 +408,26 @@
 @media (pointer: coarse) {
   .tools .button { height: 40px; }
   .segments button { height: 38px; }
+  /* The eyelet is 24 px in a box of 40 px, and the box is the only part of the slider that takes
+     a touch: Chrome moves a slider's eyelet to wherever its row is touched, also by a swipe
+     that goes on to scroll the page, and this row lies where a thumb scrolls. The box's border
+     is the room around the eyelet, and the eyelet's ring is drawn inside it. */
+  .range { --eyelet: 40px; --inset: 8px; height: 40px; pointer-events: none; }
+  .range::-webkit-slider-thumb {
+    border: 8px solid transparent;
+    background-clip: padding-box;
+    box-shadow: inset 0 0 0 1.5px var(--copper);
+    pointer-events: auto;
+  }
+  .range::-moz-range-thumb {
+    border: 8px solid transparent;
+    background-clip: padding-box;
+    box-shadow: inset 0 0 0 1.5px var(--copper);
+    pointer-events: auto;
+  }
+  .range:focus-visible::-webkit-slider-thumb { box-shadow: inset 0 0 0 3px var(--copper); }
+  .range:focus-visible::-moz-range-thumb { box-shadow: inset 0 0 0 3px var(--copper); }
+  .disclosure summary { min-height: 40px; }
   .for-mouse { display: none; }
   .for-finger { display: inline; }
 }
