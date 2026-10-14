@@ -250,6 +250,11 @@ function arrangeRow(workspace: Rectangle, minimum: Size, [monitor, notes, photos
   // as the room that Photos and a whole Monitor leave, between the minimum width and
   // its own. Monitor shows the rest left of Notes, at least 88 px of its title bar,
   // and where even that is too much, Photos covers the right part of Notes.
+  // Photos is as tall as the row, like the two windows that it stands beside or
+  // covers, also where that is more than photosTallestFor gives at this width,
+  // 294 px. So in a row taller than that, on a viewport 431 to 539 px tall, its
+  // photos leave up to 23 px free above and below them, e.g. at 800 × 480 px. A
+  // shorter Photos would show the lower right corner of the window behind it.
   const shownAtLeast = 88
   const photosWidth = Math.min(minimum.width, available)
   const notesWidth = clamp(available - photosWidth - (monitor.width + margin), minimum.width, notes.width)

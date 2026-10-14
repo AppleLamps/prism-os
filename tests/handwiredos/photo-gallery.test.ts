@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
+import {Circuit, emitRelu} from '../../src/runtime/numeric-ui-core.ts'
 import {
   columnCount,
   controlField,
   createPhotoGalleryMachine,
   focusField,
   itemCount,
+  maximumOpenPhotoTallness,
+  maximumOpenPhotoWideness,
   maximumPhotoTallness,
   maximumPhotoWideness,
   photoField,
@@ -247,6 +250,144 @@ test('at every box size the photos keep their proportions within the two limits,
   }
   // The sizes cover all three cases.
   assert.ok(limitedInHeight > 20 && limitedInWidth > 20 && unlimited > 20, `${limitedInHeight} limited in height, ${limitedInWidth} in width, ${unlimited} not limited`)
+})
+
+test('in a box within both limits, the grid has the same FP32 values as a grid built without the limits', () => {
+  // The grid without the limits, built here from the same sums: a slot is what the
+  // box leaves for one photo, and photo c of a row starts at (1 + c) gaps and c slots.
+  const circuit = new Circuit(3)
+  const [boxWidth, boxHeight, gapCell] = [circuit.source(0), circuit.source(1), circuit.source(2)]
+  const slotWidth = emitRelu(circuit, circuit.affine([[boxWidth, 1 / columnCount], [gapCell, -(columnCount + 1) / columnCount]]))
+  const slotHeight = emitRelu(circuit, circuit.affine([[boxHeight, 1 / rowCount], [gapCell, -(rowCount + 1) / rowCount]]))
+  const lefts = Array.from({length: columnCount}, (_, column) => circuit.affine([[gapCell, 1 + column], [slotWidth, column]]))
+  const tops = Array.from({length: rowCount}, (_, row) => circuit.affine([[gapCell, 1 + row], [slotHeight, row]]))
+  const program = circuit.compileTensorProgram([slotWidth, slotHeight, ...lefts, ...tops])
+
+  const machine = createPhotoGalleryMachine()
+  let boxes = 0
+  // Window sizes from the smallest Photos window to 1600 × 1000 px, as content boxes,
+  // in steps that reach slots of every third and every quarter of a pixel, e.g.
+  // 215.33 px tall in the box of a maximized Photos at 1440 × 900 px, 1414 × 718 px.
+  for (let width = 278; width <= 1598; width += 11) {
+    for (let height = 144; height <= 954; height += 7) {
+      const unlimited = circuit.evaluateTensor(Float32Array.of(width, height, gap), program)
+      if (unlimited[slotHeight]! > maximumPhotoTallness * unlimited[slotWidth]! || unlimited[slotWidth]! > maximumPhotoWideness * unlimited[slotHeight]!) continue
+      boxes++
+      const grid = projectPhotos(machine, machine.step(width, height))
+      grid.forEach((photo, item) => {
+        const label = `photo ${item} in ${width} × ${height}`
+        assert.equal(photo.width, unlimited[slotWidth], label)
+        assert.equal(photo.height, unlimited[slotHeight], label)
+        assert.equal(photo.left, unlimited[lefts[item % columnCount]!], label)
+        assert.equal(photo.top, unlimited[tops[Math.floor(item / columnCount)]!], label)
+      })
+    }
+  }
+  assert.ok(boxes > 5000 && boxes < 14_000, `${boxes} boxes within both limits`)
+})
+
+// Opens a photo of the grid and returns its rectangle as the open photo.
+function openPhoto(machine: ReturnType<typeof createPhotoGalleryMachine>, width: number, height: number, item: number) {
+  const target = projectPhotos(machine, machine.step(width, height))[item]!
+  machine.click(target.left + target.width / 2, target.top + target.height / 2)
+  const values = machine.step(width, height)
+  assertOneFocus(machine, item)
+  return {values, photo: projectPhotos(machine, values)[item]!}
+}
+
+// The open photo's box: the content box without the insets at its sides, the gap
+// above it, and the thumbnails with the gap above and below them.
+function openPhotoBox(width: number, height: number) {
+  const inset = Math.min(92, 0.08 * width)
+  const thumbnail = Math.min(82, width / 6, 0.24 * height)
+  return {left: inset, top: gap, width: Math.max(0, width - 2 * inset), height: Math.max(0, height - thumbnail - 3 * gap)}
+}
+
+test('the open photo has limits too: in a wide and short box it is 2.5 times as wide as tall, in a tall box twice as tall as wide, centered, and a click beside it closes it', () => {
+  // The content box of a maximized Photos on a phone held sideways, 844 × 390 px.
+  // The open photo's box is 687.12 × 104.08 px, and the photo 260.2 × 104.08 px,
+  // with 213.46 px free at each side.
+  const wide = createPhotoGalleryMachine()
+  let {values, photo} = openPhoto(wide, 818, 208, 5)
+  let box = openPhotoBox(818, 208)
+  assertNear(box.width, 687.12, 'the box\'s width')
+  assertNear(box.height, 104.08, 'the box\'s height')
+  assertNear(photo.height, box.height, 'the open photo\'s height')
+  assertNear(photo.width, maximumOpenPhotoWideness * box.height, 'the open photo\'s width')
+  assertNear(photo.left, box.left + (box.width - photo.width) / 2, 'the open photo\'s left')
+  assertNear(photo.left - box.left, 213.46, 'the free part left of the open photo')
+  assert.equal(photo.top, gap)
+  // The controls stay at the box's sides, at the middle of its height.
+  assertNear(values[wide.output.previousControl[controlField.top]!]!, gap + box.height / 2 - 26, 'the controls\' top')
+  assert.equal(values[wide.output.previousControl[controlField.left]!], 9)
+  assert.equal(values[wide.output.nextControl[controlField.left]!], 818 - 9 - 52)
+  // A click on the open photo keeps it open, and a click in the free part of the
+  // box, 100 px left of the photo and right of the previous control, closes it.
+  wide.click(photo.left + 10, photo.top + photo.height / 2)
+  wide.step(818, 208)
+  assertOneFocus(wide, 5)
+  wide.click(photo.left - 100, photo.top + photo.height / 2)
+  wide.step(818, 208)
+  assert.deepEqual(readFocus(wide), Array(itemCount).fill(0))
+
+  // The content box of a Photos window 280 px wide and 788 px tall, the narrowest
+  // and tallest on a desk of 1440 × 900 px. The box is 233.52 × 641.67 px, and the
+  // photo 233.52 × 467.04 px, with 87.31 px free above and below.
+  const tall = createPhotoGalleryMachine()
+  ;({values, photo} = openPhoto(tall, 278, 742, 5))
+  box = openPhotoBox(278, 742)
+  assertNear(photo.width, box.width, 'the open photo\'s width')
+  assertNear(photo.height, maximumOpenPhotoTallness * box.width, 'the open photo\'s height')
+  assertNear(photo.left, box.left, 'the open photo\'s left')
+  assertNear(photo.top, box.top + (box.height - photo.height) / 2, 'the open photo\'s top')
+  assertNear(photo.top - box.top, (742 - 278 / 6 - 54 - 467.04) / 2, 'the free part above the open photo')
+  tall.click(photo.left + photo.width / 2, photo.top + 10)
+  tall.step(278, 742)
+  assertOneFocus(tall, 5)
+  tall.click(photo.left + photo.width / 2, photo.top - 40)
+  tall.step(278, 742)
+  assert.deepEqual(readFocus(tall), Array(itemCount).fill(0))
+
+  // The boxes that people see most are within both limits, and the open photo fills
+  // them: HandwiredOS's Photos at its default size, a maximized Photos at
+  // 1512 × 860 px, and a maximized Photos on a phone 390 × 844 px.
+  for (const [width, height, photoWidth, photoHeight] of [[558, 384, 468.72, 248], [1486, 678, 1302, 542], [364, 662, 305.76, 662 - 364 / 6 - 54]] as const) {
+    const filled = createPhotoGalleryMachine()
+    ;({photo} = openPhoto(filled, width, height, 5))
+    box = openPhotoBox(width, height)
+    assertNear(photo.left, box.left, `the open photo's left in ${width} × ${height}`)
+    assert.equal(photo.top, gap)
+    assertNear(photo.width, photoWidth, `the open photo's width in ${width} × ${height}`)
+    assertNear(photo.height, photoHeight, `the open photo's height in ${width} × ${height}`)
+  }
+})
+
+test('at every box size the open photo keeps its proportions within its two limits, fills its box in one direction at least, and lies centered in the box', () => {
+  let limitedInHeight = 0
+  let limitedInWidth = 0
+  let unlimited = 0
+  // From the content box of the smallest Photos window, 278 × 144 px, to a box larger
+  // than a maximized window on a 2560 × 1440 px display, in steps that reach odd sizes.
+  for (let width = 278; width <= 2600; width += 129) {
+    for (let height = 144; height <= 1400; height += 97) {
+      const machine = createPhotoGalleryMachine()
+      const {photo} = openPhoto(machine, width, height, 0)
+      const box = openPhotoBox(width, height)
+      const label = `${width} × ${height}: the open photo is ${photo.width} × ${photo.height}`
+      assert.ok(photo.height <= maximumOpenPhotoTallness * photo.width + 1e-3, label)
+      assert.ok(photo.width <= maximumOpenPhotoWideness * photo.height + 1e-3, label)
+      assert.ok(photo.width <= box.width + 1e-3 && photo.height <= box.height + 1e-3, label)
+      assert.ok(Math.abs(photo.width - box.width) < 1e-3 || Math.abs(photo.height - box.height) < 1e-3, `${label}, and fills its box in neither direction`)
+      if (photo.height < box.height - 1e-3) limitedInHeight++
+      else if (photo.width < box.width - 1e-3) limitedInWidth++
+      else unlimited++
+      // As much free at the left as at the right of the box, and above as below.
+      assert.ok(Math.abs((photo.left - box.left) - (box.left + box.width - photo.left - photo.width)) < 1e-3, label)
+      assert.ok(Math.abs((photo.top - box.top) - (box.top + box.height - photo.top - photo.height)) < 1e-3, label)
+    }
+  }
+  // The sizes cover all three cases.
+  assert.ok(limitedInHeight > 5 && limitedInWidth > 20 && unlimited > 20, `${limitedInHeight} limited in height, ${limitedInWidth} in width, ${unlimited} not limited`)
 })
 
 test('the gallery keeps focus decisions exact across representative items', () => {

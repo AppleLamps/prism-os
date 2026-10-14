@@ -987,8 +987,8 @@ body {
 /* A photo under 110 px tall shows no name. The previous control's round sheet is 36 px
    tall around the photo's middle and the label ends 10 px above the photo's bottom, so
    in a shorter photo the two meet, and in a narrow window the sheet lies on the label's
-   start, e.g. "avender Hour" in a window at its minimum size, where the open photo is
-   55 px tall. */
+   start, e.g. in a window of 280 × 240 px, where the open photo is 94 px tall and starts
+   22 px from the content box's edge. */
 @container photo (max-height: 109px) {
   .photos-photo span {
     display: none;
@@ -1023,7 +1023,7 @@ body {
 .image-11 { background-image: url("./photo-gallery-11.webp"); }
 
 /* Previous and next: a chevron in the program's 52 px box. In a window under 765 px wide
-   the box reaches over the open photo's edge, so the controls are above the photos, and
+   the box can reach over the open photo's edge, so the controls are above the photos, and
    the disc under the pointer is a round sheet of paper and not a wash. */
 .photos-control {
   position: absolute;
@@ -1077,11 +1077,12 @@ body {
   --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 16'%3E%3Cpath d='M1.5 1.5L7.5 8l-6 6.5' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
-/* The open photo starts 8% of the content box's width from the box's edge, and the chevron
-   ends 39.5 px from it. So in a content box under 519 px wide, e.g. on a phone, the chevron
-   lies on the photo or within 2 px of it, where its ink is hard to see. There the round
-   sheet is drawn at all times, as under the arrows of a carousel, and the pointer changes
-   its edge to copper. */
+/* The open photo starts 8% of the content box's width from the box's edge, or further in
+   where the program makes it narrower than its box, and the chevron ends 39.5 px from the
+   edge. So in a content box under 519 px wide, e.g. on a phone, the chevron can lie on the
+   photo or within 2 px of it, where its ink is hard to see. There the round sheet is drawn
+   at all times, as under the arrows of a carousel, and the pointer changes its edge to
+   copper. */
 @container (max-width: 518px) {
   .photos-control::before {
     background-color: var(--sheet);

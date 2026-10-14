@@ -288,7 +288,7 @@ test('in one column and in one row, a maximized window covers the other two wind
   }
 })
 
-test('on a phone, the photos of a maximized Photos keep their proportions, and Photos opens with photos that fill their slots', () => {
+test('at 390 × 844, 844 × 390 and 360 × 640 px, Photos opens with photos that fill their slots, and the photos of a maximized Photos keep their proportions', () => {
   // A phone held upright and sideways, and a smaller one, with the content box of
   // the maximized Photos: the workspace without the 12 px margin, the 1 px border
   // and the 44 px title bar.
@@ -320,6 +320,57 @@ test('on a phone, the photos of a maximized Photos keep their proportions, and P
       assert.ok(photo.width <= maximumPhotoWideness * photo.height + 1e-3, `${label}: a photo is ${photo.width} × ${photo.height}`)
       assert.ok(Math.abs(photo.width - slot.width) < 1e-3 || Math.abs(photo.height - slot.height) < 1e-3, `${label}: a photo is ${photo.width} × ${photo.height}`)
     }
+  }
+})
+
+test('Photos opens with photos that fill their slots, except in one row and where the viewport is too short for a Photos as wide as its column', () => {
+  // How much a limit on the photos' proportions leaves free around the grid in the
+  // Photos that the arrangement starts with: above and below it, or left and right.
+  const freeAt = (width: number, height: number) => {
+    const workspace = workspaceOf(width, height)
+    const photos = arrangeWindows(workspace, minimum, natural, metrics)[2]!
+    const slotWidth = (photos.width - 2 - 5 * metrics.photosGap) / 4
+    const slotHeight = (photos.height - metrics.titleHeight - 2 - 4 * metrics.photosGap) / 3
+    return {
+      inOneRow: workspace.height < 2 * minimum.height + 48,
+      aboveAndBelow: Math.max(0, slotHeight - maximumPhotoTallness * slotWidth) * 3 / 2,
+      leftAndRight: Math.max(0, slotWidth - maximumPhotoWideness * slotHeight) * 4 / 2,
+    }
+  }
+  const worst = {inOneRow: 0, shortViewport: 0}
+  for (let width = 320; width <= 2600; width += 7) {
+    for (let height = 320; height <= 1500; height += 3) {
+      const free = freeAt(width, height)
+      const label = `${width} × ${height}`
+      if (free.inOneRow) {
+        // One row: Photos is as tall as the row, up to 340 px at 280 px of width,
+        // where its photos need 294 px. That is on a viewport 431 to 539 px tall.
+        assert.equal(free.leftAndRight, 0, label)
+        assert.ok(free.aboveAndBelow <= 22.875, `${label}: ${free.aboveAndBelow} px free above and below`)
+        if (free.aboveAndBelow > 0) assert.ok(height >= 431 && height <= 539, label)
+        worst.inOneRow = Math.max(worst.inOneRow, free.aboveAndBelow)
+        continue
+      }
+      // Elsewhere Photos is never taller than its photos need, up to the quarter of a
+      // pixel that rounding the window to whole pixels adds.
+      assert.ok(free.aboveAndBelow < 0.26, `${label}: ${free.aboveAndBelow} px free above and below`)
+      // A viewport under 771 px tall can leave Photos less height than photos as wide
+      // as its column need, down to the minimum height of 190 px, and then the grid
+      // has free room at its sides. From 771 px of height the photos fill their slots,
+      // up to the pixel that rounding adds.
+      if (height >= 771) assert.ok(free.leftAndRight <= 1, `${label}: ${free.leftAndRight} px free left and right`)
+      else worst.shortViewport = Math.max(worst.shortViewport, free.leftAndRight)
+    }
+  }
+  assert.equal(worst.inOneRow, 22.875)
+  // The most is at 564 × 540 px, where Photos opens at 540 × 190 px with photos of
+  // 48 × 24 px in slots of 112 × 24 px.
+  assert.deepEqual(freeAt(564, 540), {inOneRow: false, aboveAndBelow: 0, leftAndRight: 128})
+  assert.ok(worst.shortViewport <= 128)
+  // Common viewports are none of these, e.g. phones with and without the browser's bars.
+  for (const [width, height] of [[1280, 800], [1440, 900], [1512, 860], [1920, 1080], [2560, 1440], [1366, 625], [1024, 768], [390, 844], [390, 664], [393, 659], [430, 739], [375, 667], [360, 640], [412, 760], [844, 390]] as const) {
+    const free = freeAt(width, height)
+    assert.ok(free.aboveAndBelow < 0.26 && free.leftAndRight === 0, `${width} × ${height}`)
   }
 })
 
