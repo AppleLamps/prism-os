@@ -12,7 +12,7 @@ Handwired writes an interactive UI as one fixed numeric program. JavaScript writ
 - [JSON highlighter](#json-highlighter), at /json-highlighter/: a text box highlighted on every keystroke by one program that keeps no state.
 - [Regex search](lab/regex-search/README.md), at /regex-search/: one program finds every match of a pattern in a text as you type, and the same program runs every pattern, since a pattern reaches the program as tables of numbers.
 - [Learned gallery](lab/learned-gallery/README.md), at /learned-gallery/: a program whose 244 weights are trained instead of wired by hand, by backpropagation in the browser, until the photos match the rectangles you sketch.
-- [JSON search](lab/json-search/README.md), at /json-search/: at each keystroke, the regex search's program runs once per document over 100,000 JSON documents, in one pass on WebGPU, after the JSON highlighter's program has validated them the same way.
+- [Search 100,000 JSON documents](lab/json-search/README.md#the-demo-page), at /json-search/: at each keystroke, the regex search's program runs once per document over 100,000 JSON documents, or 20,000 in a window narrower than 720 px, in one pass on WebGPU, after the JSON highlighter's program has run over them the same way, for their colors and for a search of only keys or only string values. The page shows each search's time next to native RegExp's for the same search, and a toggle runs the same search on the CPU, where it takes about 14 s on an Apple M5 Max.
 
 ## HandwiredOS
 
@@ -38,7 +38,7 @@ bun run test
 bun run check
 bun run site:build                        # the demo site as static files in site/
 bun run site:check                        # builds the site and loads every page in headless Chrome
-bun lab/ui-exploration/serve-demos.ts     # every demo, history included, at http://127.0.0.1:4321/
+bun lab/ui-exploration/serve-demos.ts     # every demo except the JSON search, history included, at http://127.0.0.1:4321/
 ```
 
 `bun start` takes `--port` for another port, and `bun run site:check` needs Chrome, with `CHROME_PATH` for a binary that isn't at the macOS default path.
