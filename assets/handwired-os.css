@@ -433,8 +433,10 @@ body {
   --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 12A8 8 0 0 1 12 20' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
-/* The kinds of the program's operations, in Monitor's list and in its sidebar. Copper,
-   indigo, ochre and plum are the chart colors, in that order. */
+/* The kinds of a program's operations, in Monitor's list and in its sidebar: value-list.ts
+   gives a row's kind cell one of these four classes. Copper, indigo, ochre and plum are
+   the chart colors, in that order. HandwiredOS's program has no index read since October
+   13, 2026, so no element of the page has the fourth class today. */
 .kind-affine { --kind-color: var(--copper); }
 .kind-reglu { --kind-color: var(--wire-indigo); }
 .kind-boolean { --kind-color: var(--wire-ochre); }
@@ -446,13 +448,11 @@ body {
    parts, and places each sidebar item on the rectangle that the program tests presses
    against. Every frame it writes each row's transform, display and --selected, each
    sidebar item's --selected, the spacer's height, and the footer's chart. When the page
-   loads it copies the five sizes below from the program's numbers. */
+   loads it sets five sizes on this box from monitorLayout in value-list.ts, which the
+   program's hit tests use too: --monitor-sidebar-width (152 px), --monitor-header-height
+   (28 px), --monitor-row-height (24 px), --monitor-scrollbar-strip (16 px) and
+   --monitor-footer-height (32 px). No window is painted before that. */
 .monitor-content {
-  --monitor-sidebar-width: 152px;
-  --monitor-header-height: 28px;
-  --monitor-row-height: 24px;
-  --monitor-scrollbar-strip: 16px;
-  --monitor-footer-height: 32px;
   color: var(--ink);
 }
 
@@ -618,10 +618,10 @@ body {
 }
 
 /* Each location shows the columns that it has a title for, and the value last. The kind
-   column of Operations holds a swatch and the longest kind's name, "index read", in
-   76 px. A list too narrow for its columns drops columns whole, see below, since a column
-   that only shrinks ends up as an ellipsis, e.g. a kind cell that shows a swatch and
-   three dots. */
+   column of Operations holds a swatch and the longest name that value-list.ts gives a
+   kind, "index read", in 76 px. The longest name on the page today is "boolean". A list
+   too narrow for its columns drops columns whole, see below, since a column that only
+   shrinks ends up as an ellipsis, e.g. a kind cell that shows a swatch and three dots. */
 .monitor-list-state .monitor-header,
 .monitor-list-state .monitor-row {
   grid-template-columns: minmax(36px, 1fr) minmax(0, 60px) minmax(48px, 96px);

@@ -93,7 +93,7 @@ function monitorShownFor(available: number, whole: number, metrics: ArrangementM
 // How tall Photos is at most at a width: its title bar, and 4 columns and 3 rows of
 // photos with its gap around and between them, where a photo is at most 1.25 times
 // as tall as wide. E.g. 319 px at 306 px of width, and more than the default 430 px
-// from 419 px of width, where the default height stays. At its default size, 560 px
+// from 425 px of width, where the default height stays. At its default size, 560 px
 // wide, a photo is 117 × 104 px.
 function photosTallestFor(width: number, metrics: ArrangementMetrics) {
   const photoWidth = (width - 2 * border - 5 * metrics.photosGap) / 4

@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HandwiredOS</title>
+  <meta name="description" content="A small desktop: drag, resize and stack three windows, open a photo, and read the program&rsquo;s own numbers in a list. One fixed numeric program computes all of that, e.g. the springs, the stacking order and which window a press lands on.">
+  <meta name="theme-color" content="#f3eee4">
   <!-- The first paint should be the program's first frame, so the page's script has to block
        rendering until it has run, which is what blocking="render" on its tag asks for. Bun's
        bundler writes that tag itself, at the end of the head, and drops the attributes written
@@ -34,7 +36,7 @@
       </a>
       <nav class="system-links">
         <a href="../">Demos</a>
-        <a href="https://github.com/chenglou/handwired">Source</a>
+        <a href="https://github.com/chenglou/handwired/tree/main/src/handwiredos">Source</a>
       </nav>
     </header>
 
@@ -53,9 +55,9 @@
       </ul>
     </aside>
 
-    <section class="window window-monitor">
+    <section class="window">
       <div class="titlebar">
-        <div class="window-title"><span class="app-dot dot-monitor"></span>Monitor</div>
+        <div class="window-title"><span class="app-dot"></span>Monitor</div>
         <div class="window-controls">
           <span class="window-button minimize"></span>
           <span class="window-button maximize"></span>
@@ -82,9 +84,9 @@
       <div class="resize-grip"></div>
     </section>
 
-    <section class="window window-notes">
+    <section class="window">
       <div class="titlebar">
-        <div class="window-title"><span class="app-dot dot-notes"></span>Notes</div>
+        <div class="window-title"><span class="app-dot"></span>Notes</div>
         <div class="window-controls">
           <span class="window-button minimize"></span>
           <span class="window-button maximize"></span>
@@ -94,15 +96,15 @@
       <!-- The note is the browser's own text field. The browser edits, selects, wraps and scrolls its text, and
            the program computes the window around it. -->
       <div class="window-content notes-content">
-        <textarea class="notes-text" aria-label="Note">Type anything here. This note is the browser's own text field. The program computes the window around it.</textarea>
+        <textarea class="notes-text" aria-label="Note">Type anything here. This note is the browser&rsquo;s own text field. The program computes the window around it.</textarea>
       </div>
       <div class="resize-grip"></div>
     </section>
 
-    <section class="window window-photos">
+    <section class="window">
       <div class="titlebar">
         <div class="window-title">
-          <span class="app-dot dot-photos"></span>Photos
+          <span class="app-dot"></span>Photos
         </div>
         <div class="window-controls">
           <span class="window-button minimize"></span>
@@ -122,14 +124,14 @@
          while it is open, and a bar while it has focus. -->
     <nav id="dock">
       <span class="dock-wire"></span>
-      <div class="dock-item dock-monitor" title="Monitor">
+      <div class="dock-item" title="Monitor">
         <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="4" y="6" width="20" height="16" rx="2.5"/>
           <path class="accent" d="M7.5 15.5h3l2-4.5 3 7 2-4.5h3"/>
         </svg>
         <i></i>
       </div>
-      <div class="dock-item dock-notes" title="Notes">
+      <div class="dock-item" title="Notes">
         <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M8.5 4.5h8l4.5 4.5v12.5a2 2 0 0 1-2 2h-10.5a2 2 0 0 1-2-2v-15a2 2 0 0 1 2-2z"/>
           <path d="M16.5 4.5v4.5h4.5"/>
@@ -138,7 +140,7 @@
         </svg>
         <i></i>
       </div>
-      <div class="dock-item dock-photos" title="Photos">
+      <div class="dock-item" title="Photos">
         <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="4" y="6" width="20" height="16" rx="2.5"/>
           <path d="M4.5 18.5l4.6-4.8a1.2 1.2 0 0 1 1.7 0l3.2 3.3 1.9-1.9a1.2 1.2 0 0 1 1.7 0l5.9 6"/>
