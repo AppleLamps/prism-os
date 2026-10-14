@@ -244,7 +244,11 @@ test('after steps were taken back, the next steps are half as large', () => {
   const halved = createSettledMachine()
   const full = createSettledMachine()
   let frames = 0
-  while (!halved.trainOrUndo(10).undone) frames++
+  while (!halved.trainOrUndo(10).undone) {
+    frames++
+    // Measured: 3 frames. Without the limit, this loop would never end if no frame were taken back.
+    assert.ok(frames < 200, 'no frame was taken back')
+  }
   // The other machine takes the same kept frames with plain steps, and stands where the undone frame started.
   full.train(frames * 10)
   assert.deepEqual([...full.source], [...halved.source])
@@ -381,7 +385,11 @@ test('edges that are nearly on one line are moved onto it', () => {
   ])
   between.editOrder = new Uint32Array(learnedSlotCount)
   between.editOrder[2] = 1
-  assert.deepEqual(alignedGeometries(between, 0.06, 3).map(geometry => Math.round((geometry[0]! + geometry[2]!) * 1e6) / 1e6), [0.47, 0.55, 0.47])
+  const rightEdges = () => alignedGeometries(between, 0.06, 3).map(geometry => Math.round((geometry[0]! + geometry[2]!) * 1e6) / 1e6)
+  assert.deepEqual(rightEdges(), [0.47, 0.55, 0.47])
+  // With its right edge at 0.52, which is 0.05 from the first line and 0.03 from the second, it goes onto the second.
+  between.geometries[2 * trainableGeometryField.size + trainableGeometryField.width] = 0.22
+  assert.deepEqual(rightEdges(), [0.47, 0.55, 0.55])
 
   // A rectangle that the lines would close keeps its own edges: this one is 0.04 wide, and one older rectangle's
   // left is 0.02 inside its left edge while another's right is 0.01 inside its right edge, which would leave it
@@ -424,7 +432,11 @@ function createEditorDriver(frameMs = 1000 / 60, readClock?: () => number) {
   let time = 0
   // Where the page's "Line up" slider is, as a fraction of the stage. A frame reads it like the stage's size.
   let alignmentReach = defaultAlignmentReach
+  let frameCount = 0
   function frame(inputs: LearnedGalleryInput[] = []) {
+    // No test takes more than about 600 frames. The limit makes training that never stops fail a test, where
+    // a loop that waits for training to stop would otherwise never return.
+    assert.ok(++frameCount <= 3000, 'more than 3,000 frames: training did not stop')
     time += frameMs
     return editor.frame(time, stageWidth, stageHeight, alignmentReach, inputs)
   }
@@ -1103,6 +1115,8 @@ test('a preset and "Train again" start over from the seeded weights', () => {
   assert.equal(frame.step, 0)
   assert.equal(frame.layout, 'story')
   assert.equal(frame.selected, null)
+  // No rectangle of a preset is older than another, whatever was edited before.
+  assert.ok(machine.target.editOrder!.every(order => order === 0))
   const story = page.settle()
   assert.equal(story.loss, first.loss)
 
