@@ -1,173 +1,179 @@
-// The demo page's parts that need no browser: the map's geometry and pixels (demo-map.ts), the page's sentences and
-// the choice of the document count (demo-text.ts), and the comparison's baselines (demo-baselines.ts).
+// The demo page's parts that need no browser: the map's geometry and pixels (demo-map.ts), the page's documents,
+// sentences and numbers (demo-text.ts), and the worker that runs both programs on the CPU and times RegExp
+// (demo-worker.ts), which Bun runs as a worker here.
 // Run from the repo root: bun test lab/json-search/demo.test.ts
 import {describe, expect, test} from 'bun:test'
 import {readFileSync} from 'node:fs'
-import {capacity, displayKind, errorKind} from '../../src/json-highlighter/kinds.ts'
-import {createBaselines} from './demo-baselines.ts'
-import {
-  type MapLayout, blockGapCss, groupDocuments, labelBandCss, mapGrid, mapLayout, markCenterCss, markOffsets, matchesByGroup, nextDocumentWithMatch,
-  nominalGroupSizes, paintMarks, positionAt,
-} from './demo-map.ts'
-import {
-  type ComparisonNumbers, type Line, analyzePattern, checkLine, comparisonCells, comparisonVerdict, count, cpuDocumentCount, documentLine, documentRuns,
-  documentsThatFit, duration, groupNames, loadNotice, notValidLine, perDocument, programLines, resultLine, roughDuration, runClassName, scopeChoiceOf, validitySentence,
-  wantedDocumentCount,
-} from './demo-text.ts'
-import {generateDocuments, shapes} from './documents.ts'
+import {capacity, displayKind} from '../../src/json-highlighter/kinds.ts'
+import {type MapLayout, cellAt, cellCenterCss, mapLayout, nearestMatch, nextMatch, paintCells} from './demo-map.ts'
+import {type Line, analyzePattern, count, documentRuns, documentText, documentsThatFit, duration, isScope, loadNotice, resultLine, runClassName} from './demo-text.ts'
+import type {WorkerAnswer, WorkerRequest} from './demo-worker.ts'
+import {codePointLength} from './documents.ts'
 import {createPlainSearch} from './plain-search.ts'
-import {cellsPerDocument, writeDocumentCells} from './program.ts'
-import {bufferBytesFor, createCpuSearcher} from './searcher.ts'
+import {bufferBytesFor, createCpuSearcher, defaultStateCapacities} from './searcher.ts'
 
-// A line as plain text, with a small part in brackets.
-const text = (line: Line) => line.map(part => typeof part === 'string' ? part : 'strong' in part ? part.strong : ` [${part.small}]`).join('')
-const layoutFor = (widthCss: number, scale: number, groupSizes: readonly number[], nominalSizes: readonly number[] = groupSizes) =>
-  mapLayout(mapGrid(widthCss, scale, nominalSizes), groupSizes, nominalSizes)
-
-// The generated documents' groups at 100,000 documents are within 1% of these.
-const sizesAt100000 = [12_790, 12_950, 12_843, 12_880, 12_760, 12_900, 12_820, 10_057]
+// A line as plain text.
+const text = (line: Line) => line.map(part => typeof part === 'string' ? part : part.strong).join('')
+const page = (name: string) => readFileSync(new URL(name, import.meta.url), 'utf8')
 
 describe('the map of every document', () => {
-  test('groups valid documents by their shape and puts the documents with an error last, each group in the documents\' order', () => {
-    const shapeOf = Uint8Array.from([2, 0, 1, 0, 2, 1, 0])
-    const valid = Uint8Array.from([1, 1, 0, 1, 0, 1, 1])
-    const {order, positionOf, groupOf, groupSizes} = groupDocuments(shapeOf, valid, 3)
-    expect(groupSizes).toEqual([3, 1, 1, 2])
-    expect([...order]).toEqual([1, 3, 6, 5, 0, 2, 4])
-    expect([...groupOf]).toEqual([2, 0, 3, 0, 3, 1, 0])
-    order.forEach((index, position) => expect(positionOf[index]).toBe(position))
-  })
-
-  test('gives every document its own mark inside the map, at every width and screen', () => {
-    for (const [widthCss, scale, groupSizes] of [[1070, 2, sizesAt100000], [1070, 1, sizesAt100000], [1070, 3, sizesAt100000], [942, 2, sizesAt100000], [640, 1, sizesAt100000], [324, 3, [2580, 2590, 2560, 2600, 2570, 2550, 2540, 2010]], [324, 2, [70, 55, 66, 71, 60, 64, 62, 52]], [1070, 2, [70, 55, 66, 71, 60, 64, 62, 52]], [200, 1, [0, 3, 0, 1, 0, 0, 2, 0]]] as const) {
-      const layout = layoutFor(widthCss, scale, groupSizes)
-      const documentCount = groupSizes.reduce((total, size) => total + size, 0)
-      const offsets = markOffsets(layout)
-      expect(offsets.length).toBe(documentCount)
+  test('gives every document its own cell inside the canvas, at every width and screen', () => {
+    for (const [widthCss, scale, documentCount] of [[630, 2, 100_000], [630, 1, 100_000], [630, 3, 100_000], [900, 2, 65_000], [324, 3, 20_000], [324, 2, 20_000], [630, 2, 500], [200, 1, 7]] as const) {
+      const layout = mapLayout(widthCss, scale, documentCount)
       expect(layout.width).toBe(widthCss * scale)
-      // Every mark lies inside the canvas, no two marks share a pixel, and a mark's first pixel is the mark's own.
+      expect(layout.columns * layout.rows).toBeGreaterThanOrEqual(documentCount)
+      expect(layout.columns * (layout.rows - 1)).toBeLessThan(documentCount)
+      // Every cell lies inside the canvas, no two cells share a pixel, and a cell's first pixel is the cell's own.
       const owner = new Int32Array(layout.width * layout.height).fill(-1)
-      for (let position = 0; position < documentCount; position++) {
-        const offset = offsets[position]!
-        const x = offset % layout.width
-        const y = Math.floor(offset / layout.width)
-        expect(x + layout.mark).toBeLessThanOrEqual(layout.width)
-        expect(y + layout.mark).toBeLessThanOrEqual(layout.height)
-        for (let row = 0; row < layout.mark; row++) {
-          for (let column = 0; column < layout.mark; column++) {
-            const pixel = offset + row * layout.width + column
-            if (owner[pixel] !== -1) throw new Error(`positions ${owner[pixel]} and ${position} share a pixel at width ${widthCss}`)
-            owner[pixel] = position
+      for (let index = 0; index < documentCount; index++) {
+        const x = (index % layout.columns) * layout.pitch
+        const y = Math.floor(index / layout.columns) * layout.pitch
+        expect(x + layout.cell).toBeLessThanOrEqual(layout.width)
+        expect(y + layout.cell).toBeLessThanOrEqual(layout.height)
+        for (let row = 0; row < layout.cell; row++) {
+          for (let column = 0; column < layout.cell; column++) {
+            const pixel = (y + row) * layout.width + x + column
+            if (owner[pixel] !== -1) throw new Error(`documents ${owner[pixel]} and ${index} share a pixel at width ${widthCss}`)
+            owner[pixel] = index
           }
         }
-        // The point in a mark's middle is over that mark, and so is the mark's own corner.
-        const center = markCenterCss(layout, position)
-        expect(positionAt(layout, center.x, center.y)).toBe(position)
-        expect(positionAt(layout, x / scale, y / scale)).toBe(position)
+        // The point in a cell's middle is over that cell, and so is the cell's own corner.
+        const center = cellCenterCss(layout, index)
+        expect(cellAt(layout, center.x, center.y)).toBe(index)
+        expect(cellAt(layout, x / scale, y / scale)).toBe(index)
       }
-      // A mark is at least as large as its gap, and blocks of one row don't touch.
-      expect(layout.mark).toBeGreaterThanOrEqual(layout.pitch - layout.mark)
-      expect(layout.blockStride - layout.columns * layout.pitch + (layout.pitch - layout.mark)).toBeGreaterThanOrEqual(blockGapCss * scale - layout.pitch)
+      // A cell is at least as large as its gap.
+      expect(layout.cell).toBeGreaterThanOrEqual(layout.pitch - layout.cell)
     }
   })
 
-  test('answers -1 for a point over no mark: a label, the room between two blocks, and the empty end of a block\'s last row', () => {
-    const layout = layoutFor(1070, 2, sizesAt100000)
-    const first = layout.blocks[0]!
-    expect(positionAt(layout, 5, labelBandCss - 2)).toBe(-1)
-    expect(positionAt(layout, (first.x + layout.columns * layout.pitch + 4) / 2, labelBandCss + 20)).toBe(-1)
-    const lastRowCount = first.count % layout.columns
+  test('answers -1 for a point over no cell: outside the map, and the empty end of the last row', () => {
+    const layout = mapLayout(630, 2, 100_000)
+    const lastRowCount = 100_000 - layout.columns * (layout.rows - 1)
     expect(lastRowCount).toBeGreaterThan(0)
-    const lastRowY = (first.y + (first.rows - 1) * layout.pitch) / 2 + 0.25
-    expect(positionAt(layout, (first.x + (lastRowCount - 1) * layout.pitch) / 2 + 0.25, lastRowY)).toBe(first.count - 1)
-    expect(positionAt(layout, (first.x + lastRowCount * layout.pitch) / 2 + 0.25, lastRowY)).toBe(-1)
-    expect(positionAt(layout, -3, 40)).toBe(-1)
-    expect(positionAt(layout, 40, layout.height)).toBe(-1)
+    expect(lastRowCount).toBeLessThan(layout.columns)
+    const lastRowY = (layout.rows - 1) * layout.pitch / 2 + 0.25
+    expect(cellAt(layout, (lastRowCount - 1) * layout.pitch / 2 + 0.25, lastRowY)).toBe(99_999)
+    expect(cellAt(layout, lastRowCount * layout.pitch / 2 + 0.25, lastRowY)).toBe(-1)
+    expect(cellAt(layout, -3, 40)).toBe(-1)
+    expect(cellAt(layout, 40, -3)).toBe(-1)
+    expect(cellAt(layout, 40, layout.height / 2 + 4)).toBe(-1)
   })
 
-  test('uses the smallest mark with a gap for 100,000 documents, and larger marks for fewer documents', () => {
-    const pitchAndMark = (widthCss: number, scale: number, documentCount: number) => {
-      const {pitch, mark, blocksPerRow} = mapGrid(widthCss, scale, nominalGroupSizes(documentCount, 7))
-      return [pitch, mark, blocksPerRow]
+  test('uses the smallest cell with a gap for 100,000 documents, and larger cells for fewer documents', () => {
+    const pitchAndCell = (widthCss: number, scale: number, documentCount: number) => {
+      const {pitch, cell} = mapLayout(widthCss, scale, documentCount)
+      return [pitch, cell]
     }
-    expect(pitchAndMark(1070, 1, 100_000)).toEqual([2, 1, 8])
-    expect(pitchAndMark(1070, 2, 100_000)).toEqual([3, 2, 8])
-    expect(pitchAndMark(1070, 3, 100_000)).toEqual([4, 3, 8])
-    expect(pitchAndMark(942, 2, 100_000)).toEqual([3, 2, 4])
-    expect(pitchAndMark(1070, 2, 20_000)).toEqual([6, 5, 8])
-    expect(pitchAndMark(324, 3, 20_000)).toEqual([6, 5, 2])
-    // 500 documents get the largest mark, 12 CSS px from one to the next.
-    expect(pitchAndMark(1070, 2, cpuDocumentCount)).toEqual([24, 19, 8])
+    expect(pitchAndCell(630, 1, 100_000)).toEqual([2, 1])
+    expect(pitchAndCell(630, 2, 100_000)).toEqual([3, 2])
+    expect(pitchAndCell(630, 3, 100_000)).toEqual([4, 3])
+    // What one buffer of every WebGPU device holds, and a phone's 20,000 documents.
+    expect(pitchAndCell(630, 2, 65_000)).toEqual([4, 3])
+    expect(pitchAndCell(324, 3, 20_000)).toEqual([7, 6])
+    // A few documents get the largest cell, 12 CSS px from one to the next.
+    expect(pitchAndCell(630, 2, 500)).toEqual([24, 19])
   })
 
-  test('is as tall before the documents exist as after, and as tall as demo.css says for a page of full width', () => {
-    const nominal = nominalGroupSizes(100_000, 7)
-    expect(nominal.length).toBe(groupNames.length)
-    sizesAt100000.forEach((size, group) => expect(size).toBeLessThanOrEqual(nominal[group]!))
-    const css = readFileSync(new URL('./demo.css', import.meta.url), 'utf8')
+  test('is as tall as demo.css says for a page of full width, so the first paint has the map\'s room', () => {
+    const css = page('./demo.css')
     const mapHeight = /\n\.map \{[^}]*?height: (\d+)px/.exec(css)?.[1]
     const mapHeightAtOneDevicePixel = /max-resolution: 1\.49dppx\) \{\s*\.map \{ height: (\d+)px/.exec(css)?.[1]
+    // The page is 1104 px wide, the document's panel 416 px and the gap between the two 24 px. The map is what is
+    // left, less its sheet's two borders of 1 px and its padding of 16 px on each side.
+    const mapWidthCss = 1104 - 416 - 24 - 2 - 32
     for (const [scale, cssHeight] of [[2, mapHeight], [1, mapHeightAtOneDevicePixel]] as const) {
-      // The page's map is 1104 px less the sheet's two borders of 1 px and its padding of 16 px on each side.
-      const before = layoutFor(1070, scale, nominal)
-      const after = layoutFor(1070, scale, sizesAt100000, nominal)
-      expect(after.height).toBe(before.height)
-      expect(after.pitch).toBe(before.pitch)
-      expect(Number(cssHeight)).toBe(Math.ceil(before.height / scale))
-    }
-    // A group larger than its nominal size makes its row of blocks taller, and nothing else changes.
-    const larger = layoutFor(1070, 2, sizesAt100000.map((size, group) => group === 3 ? 14_000 : size), nominal)
-    expect(larger.height).toBeGreaterThan(layoutFor(1070, 2, nominal).height)
-    expect(larger.columns).toBe(layoutFor(1070, 2, nominal).columns)
-  })
-
-  test('paints a match in one color, a valid document without one in a second, and an error without one in a third', () => {
-    const shapeOf = Uint8Array.from([0, 1, 0, 1, 0, 1])
-    const valid = Uint8Array.from([1, 1, 0, 1, 1, 0])
-    const map = groupDocuments(shapeOf, valid, 2)
-    for (const scale of [1, 2, 3]) {
-      const layout: MapLayout = layoutFor(120, scale, map.groupSizes)
-      const offsets = markOffsets(layout)
-      const pixels = new Uint32Array(layout.width * layout.height)
-      const colors = {valid: 11, match: 22, error: 33}
-      paintMarks(pixels, layout, offsets, map.order, valid, Float32Array.from([0, 2, 1, 0, 0, 0]), colors)
-      const colorOf = (index: number) => pixels[offsets[map.positionOf[index]!]!]
-      expect([0, 1, 2, 3, 4, 5].map(colorOf)).toEqual([11, 22, 22, 11, 11, 33])
-      // Each mark is a square of `mark` pixels, and nothing else is painted.
-      expect(pixels.filter(pixel => pixel !== 0).length).toBe(6 * layout.mark * layout.mark)
-      const last = offsets[map.positionOf[5]!]! + (layout.mark - 1) * (layout.width + 1)
-      expect(pixels[last]).toBe(33)
-      // Without a search, i.e. with a count of 0 for every document, every mark has one of the two quiet colors.
-      paintMarks(pixels, layout, offsets, map.order, valid, new Float32Array(6), colors)
-      expect([0, 1, 2, 3, 4, 5].map(colorOf)).toEqual([11, 11, 33, 11, 11, 33])
+      expect(Number(cssHeight)).toBe(Math.ceil(mapLayout(mapWidthCss, scale, 100_000).height / scale))
     }
   })
 
-  test('counts the documents with a match per group, and steps from one document with a match to the next', () => {
+  test('the pointer picks the nearest document with a match among the documents searched so far', () => {
+    const layout = mapLayout(100, 1, 1600)
+    expect([layout.pitch, layout.columns]).toEqual([5, 20])
+    const counts = new Float32Array(1600)
+    const at = (column: number, row: number) => row * layout.columns + column
+    counts[at(3, 2)] = 1
+    counts[at(15, 9)] = 4
+    counts[at(16, 9)] = 1
+    const center = (index: number) => cellCenterCss(layout, index)
+    // A point over a cell with a match picks it, and a point over another cell picks the nearest one with a match.
+    expect(nearestMatch(layout, counts, 1600, center(at(3, 2)).x, center(at(3, 2)).y)).toBe(at(3, 2))
+    expect(nearestMatch(layout, counts, 1600, center(at(0, 0)).x, center(at(0, 0)).y)).toBe(at(3, 2))
+    expect(nearestMatch(layout, counts, 1600, center(at(19, 79)).x, center(at(19, 79)).y)).toBe(at(16, 9))
+    expect(nearestMatch(layout, counts, 1600, center(at(14, 12)).x, center(at(14, 12)).y)).toBe(at(15, 9))
+    // Between two cells that are as near, the first one.
+    expect(nearestMatch(layout, counts, 1600, (center(at(15, 9)).x + center(at(16, 9)).x) / 2, center(at(15, 9)).y)).toBe(at(15, 9))
+    // A search on the CPU that has answered for the first 100 documents: only those are picked.
+    expect(nearestMatch(layout, counts, 100, center(at(19, 79)).x, center(at(19, 79)).y)).toBe(at(3, 2))
+    expect(nearestMatch(layout, counts, 40, center(at(3, 2)).x, center(at(3, 2)).y)).toBe(-1)
+    expect(nearestMatch(layout, new Float32Array(1600), 1600, 50, 50)).toBe(-1)
+  })
+
+  test('steps from one document with a match to the next and the previous, around the ends', () => {
     const counts = Float32Array.from([0, 2, 0, 1, 0, 0, 3])
-    expect(matchesByGroup(counts, Uint8Array.from([0, 1, 1, 1, 2, 2, 0]), 3)).toEqual([1, 2, 0])
-    expect(nextDocumentWithMatch(counts, 1, 1)).toBe(3)
-    expect(nextDocumentWithMatch(counts, 3, 1)).toBe(6)
-    expect(nextDocumentWithMatch(counts, 6, 1)).toBe(1)
-    expect(nextDocumentWithMatch(counts, 1, -1)).toBe(6)
-    expect(nextDocumentWithMatch(counts, 0, -1)).toBe(6)
-    expect(nextDocumentWithMatch(counts, 4, -1)).toBe(3)
-    expect(nextDocumentWithMatch(Float32Array.from([0, 0, 4]), 2, 1)).toBe(2)
-    expect(nextDocumentWithMatch(new Float32Array(5), 2, 1)).toBe(-1)
+    expect(nextMatch(counts, 7, 1, 1)).toBe(3)
+    expect(nextMatch(counts, 7, 3, 1)).toBe(6)
+    expect(nextMatch(counts, 7, 6, 1)).toBe(1)
+    expect(nextMatch(counts, 7, 1, -1)).toBe(6)
+    expect(nextMatch(counts, 7, 0, -1)).toBe(6)
+    expect(nextMatch(counts, 7, 4, -1)).toBe(3)
+    expect(nextMatch(Float32Array.from([0, 0, 4]), 3, 2, 1)).toBe(2)
+    expect(nextMatch(new Float32Array(5), 5, 2, 1)).toBe(-1)
+    // A search on the CPU that has answered for the first 4 documents: the steps stay among those, also from a
+    // document that it hasn't reached.
+    expect(nextMatch(counts, 4, 3, 1)).toBe(1)
+    expect(nextMatch(counts, 4, 6, 1)).toBe(3)
+    expect(nextMatch(counts, 0, 2, 1)).toBe(-1)
+  })
+
+  test('paints a document with a match in one color, one without in a second, one not searched yet in a third, and no cell for a document that isn\'t loaded', () => {
+    const colors = {match: 22, plain: 11, waiting: 5}
+    for (const scale of [1, 2, 3]) {
+      const layout: MapLayout = mapLayout(30, scale, 9)
+      const pixels = new Uint32Array(layout.width * layout.height)
+      const colorOf = (index: number) => pixels[Math.floor(index / layout.columns) * layout.pitch * layout.width + (index % layout.columns) * layout.pitch]
+      const every = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      // 7 of the 9 documents are loaded, and a search has answered for the first 4.
+      paintCells(pixels, layout, 7, 4, Float32Array.from([0, 2, 1, 0]), colors, colors.waiting)
+      expect(every.map(colorOf)).toEqual([11, 22, 22, 11, 5, 5, 5, 0, 0])
+      // Each cell is a square of `cell` pixels, and nothing else is painted.
+      expect(pixels.filter(pixel => pixel !== 0).length).toBe(7 * layout.cell * layout.cell)
+      const lastPixelOfCell = (index: number) => Math.floor(index / layout.columns) * layout.pitch * layout.width + (index % layout.columns) * layout.pitch + (layout.cell - 1) * (layout.width + 1)
+      expect([pixels[lastPixelOfCell(1)], pixels[lastPixelOfCell(6)]]).toEqual([22, 5])
+      // Without a search, every loaded document has the plain color.
+      paintCells(pixels, layout, 9, 0, new Float32Array(0), colors, colors.plain)
+      expect(every.map(colorOf)).toEqual([11, 11, 11, 11, 11, 11, 11, 11, 11])
+    }
   })
 })
 
-describe('how many documents the page loads', () => {
-  test('asks for 100,000 documents, for 20,000 in a narrow window, and for the count that the address names', () => {
-    expect(wantedDocumentCount(null, false)).toEqual({documentCount: 100_000, reason: {kind: 'none'}})
-    expect(wantedDocumentCount(null, true)).toEqual({documentCount: 20_000, reason: {kind: 'narrowWindow'}})
-    expect(wantedDocumentCount(5000, true)).toEqual({documentCount: 5000, reason: {kind: 'asked'}})
-    expect(wantedDocumentCount(100_000, false)).toEqual({documentCount: 100_000, reason: {kind: 'none'}})
-    // An address that names no usable count gets the window's count.
-    for (const asked of [0, -4, 2.5, Number.NaN, 5_000_000]) expect(wantedDocumentCount(asked, false).documentCount).toBe(100_000)
+describe('the page\'s documents', () => {
+  const texts = Array.from({length: 3000}, (_, index) => documentText(index))
+
+  test('every document is valid JSON that both programs hold: at most 512 code points, and valid to the highlighter', () => {
+    for (const document of texts) {
+      expect(codePointLength(document)).toBeLessThanOrEqual(capacity)
+      expect(() => JSON.parse(document) as unknown).not.toThrow()
+    }
+    const searcher = createCpuSearcher(texts.slice(0, 300))
+    expect(searcher.validation.validCount).toBe(300)
+    // The same document every time, since the page and its worker each write the documents.
+    expect(documentText(73_512)).toBe(documentText(73_512))
+    expect(documentText(73_512)).not.toBe(documentText(73_513))
   })
 
-  test('keeps the wanted count when one buffer holds it, and otherwise the largest round count that fits', () => {
+  test('every example of the page\'s Try list fits a search program and finds something in what it reads', () => {
+    const plain = createPlainSearch(texts)
+    const examples = [...page('./demo.html').matchAll(/data-pattern="([^"]*)" data-scope="([^"]*)"/g)].map(([, pattern, scope]) => ({pattern: pattern!, scope}))
+    expect(examples.length).toBe(4)
+    for (const {pattern, scope} of examples) {
+      if (!isScope(scope)) throw new Error(`${scope} isn't one of the page's scopes`)
+      expect([pattern, analyzePattern(pattern, defaultStateCapacities).kind]).toEqual([pattern, 'fits'])
+      expect(plain.search(pattern, scope).matches).toBeGreaterThan(100)
+    }
+  })
+
+  test('keeps the wanted count when one buffer of the GPU holds it, and otherwise the largest round count that fits', () => {
     const bytesPerDocument = bufferBytesFor(1)
     expect(bytesPerDocument).toBe(2052)
     expect(documentsThatFit(100_000, bufferBytesFor(100_000), bytesPerDocument)).toBe(100_000)
@@ -180,286 +186,146 @@ describe('how many documents the page loads', () => {
     expect(documentsThatFit(100_000, 100, bytesPerDocument)).toBe(1)
   })
 
-  test('says in one sentence what the page shows instead of 100,000 documents on the GPU, and why', () => {
+  test('says in one sentence what the page does instead of searching the wanted documents on the GPU, and why', () => {
     expect(loadNotice({kind: 'none'}, 100_000)).toBeNull()
-    expect(loadNotice({kind: 'noWebGpu'}, 500)).toBe('WebGPU isn’t available in this browser, so the same programs run on the CPU here, on 500 documents.')
-    expect(loadNotice({kind: 'cpuAsked'}, 500)).toBe('This page’s address asks for the CPU, so the same programs run on the CPU here, on 500 documents.')
-    expect(loadNotice({kind: 'bufferLimit', wanted: 100_000}, 65_000)).toBe('One buffer of this device’s GPU holds 65,000 documents, so the page searches 65,000 instead of 100,000.')
-    expect(loadNotice({kind: 'checkFailed', mismatches: 12, asked: false}, 500)).toBe('This GPU returned 12 values that differ from the CPU’s, so the same programs run on the CPU here, on 500 documents.')
-    expect(loadNotice({kind: 'checkFailed', mismatches: 1, asked: false}, 500)).toContain('1 value that differs from the CPU’s')
-    expect(loadNotice({kind: 'checkFailed', mismatches: 0, asked: true}, 500)).toBe('This page’s address asks it to treat the check of the GPU’s values as failed, so the same programs run on the CPU here, on 500 documents.')
-    expect(loadNotice({kind: 'gpuFailed', message: 'WebGPU out of memory'}, 500)).toBe('The GPU didn’t run the programs (WebGPU out of memory), so the same programs run on the CPU here, on 500 documents.')
-    expect(loadNotice({kind: 'narrowWindow'}, 20_000)).toBe('A window this narrow gets 20,000 documents, and one of 720 px or more gets 100,000.')
-    expect(loadNotice({kind: 'asked'}, 5000)).toBe('This page’s address asks for 5,000 documents.')
+    expect(loadNotice({kind: 'noWebGpu'}, 100_000)).toBe('This browser has no WebGPU, so both programs run on the CPU here, as JavaScript in a worker.')
+    expect(loadNotice({kind: 'bufferLimit', wanted: 100_000}, 65_000)).toBe('One buffer of this GPU holds 65,000 documents, so the page searches 65,000 instead of 100,000.')
+    expect(loadNotice({kind: 'gpuFailed', message: 'WebGPU out of memory'}, 100_000)).toBe('The GPU didn’t run the programs (WebGPU out of memory), so they run on the CPU here, as JavaScript in a worker.')
   })
 })
 
 describe('the page\'s sentences', () => {
   test('writes numbers with separators and times with a unit that fits their size', () => {
     expect(count(1_203_712)).toBe('1,203,712')
-    expect([0.02, 0.84, 8.14, 17.6, 64.9, 994, 996, 2154, 12_300].map(duration)).toEqual(['under 0.1\u00a0ms', '0.8\u00a0ms', '8.1\u00a0ms', '18\u00a0ms', '65\u00a0ms', '994\u00a0ms', '1.0\u00a0s', '2.2\u00a0s', '12\u00a0s'])
-    expect([820, 1040, 8400, 24_500, 59_400, 59_600, 61_000, 354_000, 3_600_000 * 1.24].map(roughDuration)).toEqual(['820\u00a0ms', '1.0\u00a0s', '8.4\u00a0s', '25\u00a0s', '59\u00a0s', '1.0\u00a0minutes', '1.0\u00a0minutes', '5.9\u00a0minutes', '1.2\u00a0hours'])
-    expect([0.00146, 0.0841, 0.245, 0.9994, 3.61].map(perDocument)).toEqual(['1.5\u00a0µs', '84\u00a0µs', '245\u00a0µs', '999\u00a0µs', '3.6\u00a0ms'])
+    expect([0.02, 0.84, 8.14, 17.6, 64.9, 994, 996, 2154, 12_300].map(duration)).toEqual(['under 0.1 ms', '0.8 ms', '8.1 ms', '18 ms', '65 ms', '994 ms', '1.0 s', '2.2 s', '12 s'])
   })
 
-  test('says the result of a search with the real count of documents', () => {
-    expect(text(resultLine(4812, 9113, 100_000))).toBe('4,812 of 100,000 documents have a match, 9,113 matches in all.')
-    expect(text(resultLine(1, 1, 500))).toBe('1 of 500 documents has a match, 1 match in all.')
-    expect(text(resultLine(1, 3, 20_000))).toBe('1 of 20,000 documents has a match, 3 matches in all.')
-    expect(text(resultLine(0, 0, 65_000))).toBe('None of the 65,000 documents has a match.')
+  test('says how many documents match, how long the search took where it ran, and RegExp\'s time once it is measured', () => {
+    expect(text(resultLine({withMatch: 10_541, searched: 100_000, ms: 22.6}, 100_000, 'gpu', 23.4))).toBe('10,541 of 100,000 documents match. 23 ms on the GPU. RegExp: 23 ms.')
+    expect(text(resultLine({withMatch: 10_541, searched: 100_000, ms: 22.6}, 100_000, 'gpu', null))).toBe('10,541 of 100,000 documents match. 23 ms on the GPU.')
+    expect(text(resultLine({withMatch: 1, searched: 20_000, ms: 8.14}, 20_000, 'gpu', 2143))).toBe('1 of 20,000 documents matches. 8.1 ms on the GPU. RegExp: 2.1 s.')
+    expect(text(resultLine({withMatch: 0, searched: 65_000, ms: 871}, 65_000, 'gpu', 28.9))).toBe('None of the 65,000 documents matches. 871 ms on the GPU. RegExp: 29 ms.')
+    expect(text(resultLine({withMatch: 10_541, searched: 100_000, ms: 15_820}, 100_000, 'cpu', 23.4))).toBe('10,541 of 100,000 documents match. 16 s on the CPU. RegExp: 23 ms.')
+    // A search on the CPU that hasn't answered for every document yet says how far it is.
+    expect(text(resultLine({withMatch: 1304, searched: 12_400, ms: 3120}, 100_000, 'cpu', 23.4))).toBe('1,304 of the first 12,400 documents match. 3.1 s on the CPU so far. RegExp: 23 ms.')
+    expect(text(resultLine({withMatch: 0, searched: 2, ms: 0.4}, 100_000, 'cpu', null))).toBe('0 of the first 2 documents match. 0.4 ms on the CPU so far.')
+    expect(resultLine({withMatch: 10_541, searched: 100_000, ms: 22.6}, 100_000, 'gpu', 23.4)[0]).toEqual({strong: '10,541'})
   })
 
   test('refuses a pattern with a syntax error or one that no search program holds, in a sentence, and names the program for the others', () => {
     const capacities = [8, 16, 32]
     expect(analyzePattern('', capacities)).toEqual({kind: 'empty'})
-    expect(analyzePattern('error', capacities)).toEqual({kind: 'fits', patternStates: 6, states: 8})
-    expect(analyzePattern('(the|an?) [a-z]+', capacities)).toEqual({kind: 'fits', patternStates: 8, states: 8})
-    expect(analyzePattern('\\d\\d\\d\\d-\\d\\d-\\d\\d', capacities)).toEqual({kind: 'fits', patternStates: 11, states: 16})
-    expect(analyzePattern('connection reset', capacities)).toEqual({kind: 'fits', patternStates: 17, states: 32})
+    expect(analyzePattern('error', capacities)).toEqual({kind: 'fits', states: 8})
+    expect(analyzePattern('(the|an?) [a-z]+', capacities)).toEqual({kind: 'fits', states: 8})
+    expect(analyzePattern('\\d\\d\\d\\d-\\d\\d-\\d\\d', capacities)).toEqual({kind: 'fits', states: 16})
+    expect(analyzePattern('connection reset', capacities)).toEqual({kind: 'fits', states: 32})
     expect(analyzePattern('(the', capacities)).toEqual({kind: 'refused', sentence: 'Character 1 of the pattern: this group is never closed.'})
     expect(analyzePattern('ab**', capacities)).toEqual({kind: 'refused', sentence: 'Character 4 of the pattern: nothing to repeat.'})
     expect(analyzePattern('a'.repeat(32), capacities)).toEqual({kind: 'refused', sentence: 'This pattern needs 33 states, and the largest search program holds 32.'})
-    // The CPU version holds programs of up to 16 states.
-    expect(analyzePattern('connection reset', [8, 16])).toEqual({kind: 'refused', sentence: 'This pattern needs 17 states, and the largest search program holds 16.'})
-    expect(scopeChoiceOf('keys')).toBe('keys')
-    expect(scopeChoiceOf('stringsAndKeys')).toBe('everything')
-    expect(scopeChoiceOf(null)).toBe('everything')
+    expect([isScope('keys'), isScope('stringsAndKeys'), isScope(undefined)]).toEqual([true, false, false])
   })
 
-  test('says where a document\'s first error is and what it is', () => {
-    expect(validitySentence('{"a": 1}', -1, errorKind.none, capacity)).toBe('Valid JSON.')
-    expect(validitySentence('{\n  "a": 1,\n  "b" 2\n}', 18, errorKind.expectedColon, capacity)).toBe('Line 3, column 7. A colon was expected here, after the key.')
-    expect(validitySentence('[1, 2', 5, errorKind.unexpectedEnd, capacity)).toBe('Line 1, column 6. The text ends before the value is complete.')
-    expect(validitySentence('["a\nb"]', 3, errorKind.controlCharacterInString, capacity)).toBe('Line 1, column 4. This string isn’t closed before the end of its line.')
-    expect(validitySentence('["a\tb"]', 3, errorKind.controlCharacterInString, capacity)).toBe('Line 1, column 4. This character needs an escape inside a string, e.g. \\t for a tab.')
-    expect(validitySentence(`[${'1, '.repeat(200)}1]`, capacity, errorKind.tooLong, capacity)).toBe('This text has 603 characters, and the program reads the first 512.')
-    expect(validitySentence(`${'['.repeat(17)}${']'.repeat(17)}`, 16, errorKind.tooDeep, capacity)).toBe('Line 1, column 17. This bracket opens nesting level 17, and the program follows 16.')
-    // A character past U+FFFF is one column.
-    expect(validitySentence('["😀", x]', 6, errorKind.unexpectedCharacter, capacity)).toBe('Line 1, column 7. Nothing in JSON starts with this character.')
-  })
-
-  test('splits a document into runs by display kind, match and first error, with a mark where an error has no character', () => {
-    const {punctuation, key, string, number, whitespace, error, pastEnd} = displayKind
-    // {"id": 12, "the tide"} with a search for "the|id" over everything: two matches, in turn.
+  test('splits a document into runs by display kind and match', () => {
+    const {punctuation, key, string, number} = displayKind
+    // {"id":12,"the"} with a search for "the|id" over everything: two matches, in turn.
     const sample = '{"id":12,"the"}'
     const kinds = [punctuation, key, key, key, key, punctuation, number, number, punctuation, string, string, string, string, string, punctuation]
     const marks = [0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 2, 1, 1, 0, 0]
-    const {runs, marker} = documentRuns(sample, kinds, marks, -1, capacity)
-    expect(marker).toBe(-1)
+    const runs = documentRuns(sample, kinds, marks)
     expect(runs.map(run => run.text).join('')).toBe(sample)
     expect(runs.map(run => [run.text, runClassName(run)])).toEqual([
       ['{', 'k1'], ['"', 'k8'], ['id', 'k8 hit even'], ['"', 'k8'], [':', 'k1'], ['12', 'k4'], [',', 'k1'], ['"', 'k2'], ['the', 'k2 hit odd'], ['"', 'k2'], ['}', 'k1'],
     ])
     // Two matches that touch are two runs, since each starts with a 2.
-    expect(documentRuns('abab', [string, string, string, string], [2, 1, 2, 1], -1, capacity).runs.map(run => [run.text, run.match])).toEqual([['ab', 1], ['ab', 2]])
+    expect(documentRuns('abab', [string, string, string, string], [2, 1, 2, 1]).map(run => [run.text, run.match])).toEqual([['ab', 1], ['ab', 2]])
     // Without a search, the runs follow the kinds alone.
-    expect(documentRuns(sample, kinds, null, -1, capacity).runs.map(run => run.text)).toEqual(['{', '"id"', ':', '12', ',', '"the"', '}'])
-
-    // The first error's character is a run of its own.
-    const broken = documentRuns('[1 x]', [punctuation, number, whitespace, error, error], null, 3, capacity)
-    expect(broken.runs.map(run => [run.text, runClassName(run)])).toEqual([['[', 'k1'], ['1', 'k4'], [' ', 'k0'], ['x', 'k6 first-error'], [']', 'k6']])
-    expect(broken.marker).toBe(-1)
-    // An error at the end of the text, and one at a line feed, have a mark instead: after the last run, and before
-    // the line feed's run.
-    expect(documentRuns('[1,', [punctuation, number, punctuation], null, 3, capacity).marker).toBe(3)
-    const unclosed = documentRuns('"a\nb"', [string, string, error, error, error], null, 2, capacity)
-    expect(unclosed.runs.map(run => run.text)).toEqual(['"a', '\nb"'])
-    expect(unclosed.marker).toBe(1)
-    // A text longer than the capacity: the mark stands where the programs stop reading, and the rest is one gray run.
-    const long = documentRuns('abcdef', [string, string, string, string, pastEnd, pastEnd], null, 4, 4)
-    expect(long.runs.map(run => [run.text, runClassName(run)])).toEqual([['abcd', 'k2'], ['ef', 'past-capacity']])
-    expect(long.marker).toBe(1)
+    expect(documentRuns(sample, kinds, null).map(run => run.text)).toEqual(['{', '"id"', ':', '12', ',', '"the"', '}'])
     // A character past U+FFFF is one position.
-    expect(documentRuns('"😀a"', [string, string, string, string], [0, 0, 2, 0], -1, capacity).runs.map(run => [run.text, run.match])).toEqual([['"😀', 0], ['a', 1], ['"', 0]])
-  })
-
-  test('says how many documents aren\'t valid, and which of them only pass the highlighter\'s limits', () => {
-    const {none, expectedColon, unexpectedEnd, tooLong, tooDeep} = errorKind
-    const kinds = Uint8Array.from([none, expectedColon, tooLong, none, tooDeep, unexpectedEnd, tooLong, none])
-    const valid = Uint8Array.from([1, 0, 0, 1, 0, 0, 0, 1])
-    expect(text(notValidLine(kinds, valid, capacity))).toBe('5 documents aren’t valid: 2 have an error, 2 are longer than the 512 characters that the highlighter reads and 1 nests deeper than its 16 levels.')
-    expect(text(notValidLine(Uint8Array.from([none, tooLong]), Uint8Array.from([1, 0]), capacity))).toBe('1 document isn’t valid: 1 is longer than the 512 characters that the highlighter reads.')
-    expect(text(notValidLine(Uint8Array.from([expectedColon, tooDeep, unexpectedEnd]), Uint8Array.from([0, 0, 0]), capacity))).toBe('3 documents aren’t valid: 2 have an error and 1 nests deeper than its 16 levels.')
-    expect(text(notValidLine(Uint8Array.from([none, none]), Uint8Array.from([1, 1]), capacity))).toBe('Every document is valid JSON.')
-    // The 100,000 documents of the page: README.md counts 10,057 that aren't valid, 601 of them too long and 622 too deep.
-    const few = generateDocuments(3000).map(document => document.text)
-    const searcher = createCpuSearcher(few.slice(0, 300))
-    expect(text(notValidLine(searcher.validation.firstErrorKind, searcher.validation.valid, capacity))).toMatch(/^\d+ documents aren’t valid: \d+ have an error, \d+ (is|are) longer than the 512 characters that the highlighter reads and \d+ nests? deeper than its 16 levels\.$/)
-  })
-
-  test('names the selected document', () => {
-    expect(text(documentLine(7, 100_000, 2, true, 1, true))).toBe('Document 8 of 100,000, a log event, the first with a match')
-    expect(text(documentLine(73_511, 100_000, 0, false, 3, false))).toBe('Document 73,512 of 100,000, a package manifest, not valid, with 3 matches')
-    expect(text(documentLine(0, 500, 6, true, 0, false))).toBe('Document 1 of 500, sensor readings')
-    expect(text(documentLine(0, 500, 4, true, null, false))).toBe('Document 1 of 500, an order')
-    expect<number>(groupNames.length).toBe(shapes.length + 1)
-  })
-
-  test('says each program\'s size from the searcher\'s description', () => {
-    const lines = programLines([
-      {name: 'JSON highlighter', operations: [37, 17], statements: 107, compileMs: 41.6},
-      {name: 'regex search, 8 states', operations: [8, 151, 92], statements: 503, compileMs: 99.7},
-      {name: 'regex search, 16 states', operations: [16, 359, 308], statements: undefined, compileMs: undefined},
-    ], 512).map(text)
-    expect(lines).toEqual([
-      'The JSON highlighter is 37 operations at each of a document’s 512 positions, a shader of 107 statements that compiled in 42\u00a0ms.',
-      'Regex search for a pattern of up to 8 states is 243 operations at each of a document’s 512 positions, a shader of 503 statements that compiled in 100\u00a0ms.',
-      'Regex search for a pattern of up to 16 states is 667 operations at each of a document’s 512 positions.',
-    ])
-  })
-
-  test('says what the self check found', () => {
-    expect(checkLine({state: 'done', values: 164_352, mismatches: 0, documents: 64}, 'gpu')).toEqual({state: 'ok', line: ['Checked against the same programs on the CPU: ', {strong: '164,352'}, ' values of the first 64 documents, none different.']})
-    expect(checkLine({state: 'done', values: 164_352, mismatches: 3, documents: 64}, 'gpu').state).toBe('bad')
-    expect(text(checkLine({state: 'done', values: 164_352, mismatches: 3, documents: 64}, 'gpu').line)).toBe('Checked against the same programs on the CPU: 3 of 164,352 values differ.')
-    expect(checkLine({state: 'checking'}, 'gpu').state).toBe('busy')
-    expect(checkLine({state: 'waiting'}, 'gpu').state).toBe('idle')
-  })
-
-  test('fills the comparison only with measured numbers, and says no more than README.md allows a page to say', () => {
-    const numbers: ComparisonNumbers = {
-      backend: 'gpu', documentCount: 100_000, scope: 'strings', highlightMs: 131, secondPassMs: 8.3, plainHighlightMsPerDocument: 0.00146, plainSampleDocuments: 4000,
-      cpuHighlightMsPerDocument: 0.108, searchMs: 17.5, searchAfterPause: true, plainSearch: {state: 'done', ms: 22.6, matches: 41_347, differing: 0}, plainRunsMs: 94.5,
-      cpuSearchMsPerDocument: 0.245, cpuHighlightDocuments: 32, cpuSearchDocuments: 32,
-    }
-    const program = {patternStates: 8, states: 8, smallestStates: 8, operations: 243, smallestOperations: 243}
-    const cells = comparisonCells(numbers)
-    expect(Object.fromEntries(Object.entries(cells).map(([name, line]) => [name, text(line)]))).toEqual({
-      // The GPU's time to validate is the time from the texts, and the pass alone is said to be a second pass.
-      programHighlight: '131\u00a0ms from the texts [A second pass, over the documents that are already on the GPU, took 8.3\u00a0ms.]',
-      programSearch: '18\u00a0ms after a pause',
-      plainHighlight: 'about 146\u00a0ms [from 4,000 documents at 1.5\u00a0µs each]',
-      plainSearch: '23\u00a0ms [after 95\u00a0ms once to find the string values]',
-      cpuHighlight: 'about 11\u00a0s [from 32 documents at 108\u00a0µs each]',
-      cpuSearch: 'about 25\u00a0s [from 32 documents at 245\u00a0µs each]',
-    })
-    expect(text(comparisonCells({...numbers, secondPassMs: null}).programHighlight)).toBe('131\u00a0ms from the texts')
-    expect(text(comparisonCells({...numbers, searchAfterPause: false}).programSearch)).toBe('18\u00a0ms')
-    // 22.6 ms against 17.5 ms: the verdict gives RegExp's time and says the two are in the same range, as it does
-    // from a third of the GPU's time to 3 times it.
-    // 131 ms from the texts against about 146 ms for the loop in JavaScript: about the same, and the verdict says so.
-    const cpuSentence = ' On the CPU, the same search program would take about 1,400\u00a0times as long as on the GPU. Validating and highlighting every document from its text took the GPU about what the loop in JavaScript takes.'
-    expect(text(comparisonVerdict(numbers, program))).toBe(`RegExp on one thread took 23\u00a0ms for the same search: the two are in the same range.${cpuSentence}`)
-    for (const ms of [6.1, 12, 43, 52]) {
-      expect(text(comparisonVerdict({...numbers, plainSearch: {state: 'done', ms, matches: 41_347, differing: 0}}, program))).toContain('the two are in the same range')
-    }
-    expect(text(comparisonVerdict({...numbers, plainSearch: {state: 'done', ms: 60, matches: 41_347, differing: 0}}, program))).toStartWith('RegExp on one thread took 60\u00a0ms for the same search, 3.4\u00a0times as long.')
-    // A pattern that makes RegExp backtrack: the one case where the verdict says how many times as long RegExp took in bold.
-    const slow = {...numbers, plainSearch: {state: 'done', ms: 567, matches: 44_399, differing: 0}} as const
-    expect(text(comparisonVerdict(slow, program))).toBe(`RegExp on one thread took 567\u00a0ms for the same search, 32\u00a0times as long. A search program takes the same time for every pattern of up to 8 states, and RegExp’s time depends on the pattern.${cpuSentence}`)
-    // A pattern on the larger program, where RegExp takes less time: the page says both. Its time on the CPU is from
-    // fewer documents than the highlighter's, and each cell names its own count.
-    const larger = {...numbers, searchMs: 65.3, searchAfterPause: false, plainSearch: {state: 'done', ms: 12.7, matches: 27_415, differing: 0}, cpuSearchMsPerDocument: 0.61, cpuSearchDocuments: 12} as const
-    expect([text(comparisonCells(larger).cpuHighlight), text(comparisonCells(larger).cpuSearch)]).toEqual(['about 11\u00a0s [from 32 documents at 108\u00a0µs each]', 'about 1.0\u00a0minutes [from 12 documents at 610\u00a0µs each]'])
-    expect(text(comparisonVerdict(larger, {patternStates: 11, states: 16, smallestStates: 8, operations: 667, smallestOperations: 243}))).toStartWith(
-      'This pattern has 11 states, more than the 8 that the smallest search program holds, so it ran on the program for 16, which does 667 operations at each character instead of 243. RegExp on one thread took 13\u00a0ms for the same search: 5.1\u00a0times as fast.')
-    // The larger program is named before RegExp's time is measured.
-    expect(text(comparisonVerdict({...larger, plainSearch: {state: 'none'}, cpuSearchMsPerDocument: null, plainHighlightMsPerDocument: null}, {patternStates: 17, states: 32, smallestStates: 8, operations: 2283, smallestOperations: 243}))).toBe(
-      'This pattern has 17 states, more than the 8 that the smallest search program holds, so it ran on the program for 32, which does 2,283 operations at each character instead of 243.')
-    // RegExp counts differently on some patterns, and the page says in how many documents.
-    const differing = {...numbers, plainSearch: {state: 'done', ms: 22.6, matches: 120, differing: 7}} as const
-    expect(text(comparisonVerdict(differing, program))).toContain('RegExp counts 120 matches, and its count differs from the program’s in 7 documents')
-    // Before anything is measured, the cells say so and the verdict is empty.
-    const unmeasured: ComparisonNumbers = {...numbers, highlightMs: null, secondPassMs: null, plainHighlightMsPerDocument: null, cpuHighlightMsPerDocument: null, searchMs: null, searchAfterPause: false, plainSearch: {state: 'none'}, plainRunsMs: null, cpuSearchMsPerDocument: null}
-    expect(text(comparisonCells(unmeasured).plainSearch)).toBe(' [measured once the page is idle]')
-    expect(text(comparisonCells(unmeasured).programSearch)).toBe(' [no search yet]')
-    expect(comparisonVerdict(unmeasured, program)).toEqual([])
-    expect(text(comparisonCells({...numbers, plainSearch: {state: 'running', ms: 1234, documents: 55_000}}).plainSearch)).toBe('1.2\u00a0s so far [for 55,000 of the documents]')
-    // A time that was measured on every document isn't said to be from a sample, e.g. the table loop's on the CPU
-    // version's 500 documents.
-    expect(text(comparisonCells({...numbers, documentCount: 500, plainSampleDocuments: 500}).plainHighlight)).toBe('0.7\u00a0ms')
-    // The CPU version: its own time has no "from the texts", and there is no third row to compare with.
-    const onTheCpu = {...numbers, backend: 'cpu', highlightMs: 46, secondPassMs: null, searchMs: 126, searchAfterPause: false, plainSearch: {state: 'done', ms: 0.2, matches: 203, differing: 0}} as const
-    expect(text(comparisonCells(onTheCpu).programHighlight)).toBe('46\u00a0ms')
-    expect(text(comparisonVerdict({...onTheCpu, plainHighlightMsPerDocument: null}, program))).toBe('RegExp on one thread took 0.2\u00a0ms for the same search: 630\u00a0times as fast.')
-    // On the CPU the programs take many times what the loop in JavaScript takes, and the verdict says how many.
-    expect(text(comparisonVerdict({...onTheCpu, documentCount: 500, plainHighlightMsPerDocument: 0.0014, plainSampleDocuments: 500}, program))).toEndWith('Validating and highlighting every document took the programs on the CPU 66\u00a0times as long as the loop in JavaScript.')
-    // A GPU that validated in a small part of the loop's time would have that said in numbers too.
-    expect(text(comparisonVerdict({...numbers, highlightMs: 20}, program))).toEndWith('Validating and highlighting every document took the loop in JavaScript 7.3\u00a0times as long as the GPU.')
+    expect(documentRuns('"😀a"', [string, string, string, string], [0, 0, 2, 0]).map(run => [run.text, run.match])).toEqual([['"😀', 0], ['a', 1], ['"', 0]])
   })
 })
 
-describe('the comparison\'s baselines', () => {
-  const texts = generateDocuments(620).map(document => document.text)
+describe('the page\'s worker', () => {
+  const documentCount = 300
+  const texts = Array.from({length: documentCount}, (_, index) => documentText(index))
 
-  test('a searcher that is handed the documents\' cells answers as one that writes them from the texts', async () => {
-    // The page writes the cells a few documents at a time while it loads, and hands them to the searcher.
-    const few = texts.slice(0, 40)
-    const cells = new Float32Array(few.length * cellsPerDocument)
-    few.forEach((document, row) => writeDocumentCells(cells, row * cellsPerDocument, document))
-    const [own, handed] = [createCpuSearcher(few), createCpuSearcher(few, {cells})]
-    expect(handed.validation).toEqual(own.validation)
-    expect(own.validation.validCount).toBeLessThan(few.length)
-    const request = {pattern: '(the|an?) [a-z]+', scope: 'strings', window: {firstDocument: 0, documentCount: few.length}} as const
-    const [ownResult, handedResult] = [await own.search(request), await handed.search(request)]
-    if (ownResult?.status !== 'searched' || handedResult?.status !== 'searched') throw new Error('a searcher didn\'t search')
-    expect(ownResult.matches).toBeGreaterThan(0)
-    expect([...handedResult.matchCounts]).toEqual([...ownResult.matchCounts])
-    expect([...handedResult.marks]).toEqual([...ownResult.marks])
-    expect(() => createCpuSearcher(few, {cells: cells.subarray(0, 100)})).toThrow('the cells of 40 documents are 20520 numbers, got 100')
-  })
-
-  // Runs the pieces until the comparison of one search is complete, as the page does from its frames.
-  async function measure(baselines: ReturnType<typeof createBaselines>, request: Parameters<ReturnType<typeof createBaselines>['step']>[0], budgetMs: number) {
-    let steps = 0
-    while (baselines.step(request, budgetMs)) {
-      steps++
-      // A CPU searcher answers through a promise.
-      await Promise.resolve()
-      if (steps > 20_000) throw new Error('the comparison never finished')
+  // The worker with the page's first message sent, its answers so far, and a wait for an answer.
+  function startWorker() {
+    const worker = new Worker(new URL('./demo-worker.ts', import.meta.url).href)
+    const answers: WorkerAnswer[] = []
+    let arrived = () => {}
+    worker.onmessage = (event: MessageEvent<WorkerAnswer>) => {
+      answers.push(event.data)
+      arrived()
     }
-    return steps
+    const failed = new Promise<never>((_, reject) => {
+      worker.onerror = event => reject(new Error(event.message))
+    })
+    const post = (request: WorkerRequest) => worker.postMessage(request)
+    post({kind: 'documents', documentCount})
+    const until = async (done: () => boolean) => {
+      while (!done()) await Promise.race([failed, new Promise<void>(resolve => { arrived = resolve })])
+    }
+    return {worker, answers, post, until}
   }
+  const searchedOf = (answers: readonly WorkerAnswer[], key: string) => answers.filter((answer): answer is Extract<WorkerAnswer, {kind: 'searched'}> => answer.kind === 'searched' && answer.key === key)
 
-  test('adds up the same RegExp counts in pieces as plain-search.ts does in one call, and says where they differ from the program\'s', async () => {
-    const plain = createPlainSearch(texts)
-    const searcher = createCpuSearcher(texts)
-    const baselines = createBaselines(texts, {withCpu: false})
-    expect(baselines.numbers(null)).toEqual({plainHighlightMsPerDocument: null, plainSampleDocuments: texts.length, plainRunsMs: null, plainSearch: {state: 'none'}, cpuHighlightMsPerDocument: null, cpuHighlightDocuments: 32, cpuSearchMsPerDocument: null, cpuSearchDocuments: 32})
-    for (const [pattern, scope] of [['error', 'everything'], ['(the|an?) [a-z]+', 'strings'], ['[a-z]+Id', 'keys'], ['a|ab|b', 'everything'], ['a*', 'everything']] as const) {
-      const result = await searcher.search({pattern, scope})
-      if (result?.status !== 'searched') throw new Error(`the searcher didn't search ${pattern}`)
-      const request = {pattern, scope, states: result.states, programCounts: result.matchCounts}
-      // A budget of 0 ms does one piece per call, i.e. one chunk of 250 documents, and a search this short is timed
-      // twice, so a search of 620 documents is at least 6 pieces.
-      const steps = await measure(baselines, request, 0)
-      expect(steps).toBeGreaterThanOrEqual(5)
-      const expected = plain.search(pattern, scope)
-      let differing = 0
-      for (let row = 0; row < texts.length; row++) if (expected.matchCounts[row] !== result.matchCounts[row]) differing++
-      const numbers = baselines.numbers(request)
-      const {plainSearch} = numbers
-      if (plainSearch.state !== 'done') throw new Error(`the plain search of ${pattern} isn't done: ${plainSearch.state}`)
-      expect([plainSearch.matches, plainSearch.differing]).toEqual([expected.matches, differing])
-      expect(plainSearch.ms).toBeGreaterThanOrEqual(0)
-      expect(numbers.plainHighlightMsPerDocument).toBeGreaterThan(0)
-      expect(numbers.plainRunsMs).toBeGreaterThanOrEqual(0)
-      // RegExp takes the first alternative that matches, e.g. a and then b in "tab" where the program takes ab, and it
-      // counts empty matches, so these two patterns' counts differ from the program's.
-      if (pattern === 'a|ab|b' || pattern === 'a*') expect(differing).toBeGreaterThan(0)
-      else expect(differing).toBe(0)
-      // The numbers are the request's: another search has none yet.
-      expect(baselines.numbers({...request, pattern: `${pattern}x`}).plainSearch).toEqual({state: 'none'})
+  test('a search on the CPU answers in pieces, in the documents\' order, which add up to the CPU searcher\'s counts', async () => {
+    const {worker, answers, post, until} = startWorker()
+    const pattern = '(the|an?) [a-z]+'
+    post({kind: 'search', search: {key: 'first', pattern, scope: 'strings'}})
+    const reached = (key: string) => searchedOf(answers, key).reduce((total, piece) => total + piece.matchCounts.length, 0)
+    await until(() => reached('first') === documentCount)
+    const pieces = searchedOf(answers, 'first')
+    expect(pieces.length).toBeGreaterThan(2)
+    const counts: number[] = []
+    for (const piece of pieces) {
+      expect(piece.firstDocument).toBe(counts.length)
+      expect(piece.ms).toBeGreaterThanOrEqual(0)
+      counts.push(...piece.matchCounts)
     }
-  })
+    const expected = await createCpuSearcher(texts).search({pattern, scope: 'strings'})
+    if (expected?.status !== 'searched') throw new Error('the searcher didn\'t search')
+    expect(expected.matches).toBeGreaterThan(100)
+    expect(counts).toEqual([...expected.matchCounts])
 
-  test('times the same programs on the CPU on the first documents', async () => {
-    const searcher = createCpuSearcher(texts.slice(0, 40))
-    const baselines = createBaselines(texts, {withCpu: true})
-    const result = await searcher.search({pattern: 'error', scope: 'everything'})
-    if (result?.status !== 'searched') throw new Error('the searcher didn\'t search')
-    const request: Parameters<typeof baselines.step>[0] = {pattern: 'error', scope: 'everything', states: 8, programCounts: new Float32Array(texts.length)}
-    await measure(baselines, request, 2)
-    const numbers = baselines.numbers(request)
-    expect([numbers.cpuHighlightDocuments, numbers.cpuSearchDocuments]).toEqual([32, 32])
-    expect(numbers.cpuHighlightMsPerDocument).toBeGreaterThan(0)
-    expect(numbers.cpuSearchMsPerDocument).toBeGreaterThan(0)
-    expect(numbers.cpuSearchMsPerDocument).toBeLessThan(50)
-    // A search on the program of 16 states is timed on 12 documents.
-    const longer = {...request, pattern: '\\d\\d\\d\\d-\\d\\d-\\d\\d', states: 16}
-    await measure(baselines, longer, 2)
-    // The highlighter's time is still the one of 32 documents.
-    expect([baselines.numbers(longer).cpuHighlightDocuments, baselines.numbers(longer).cpuSearchDocuments]).toEqual([32, 12])
-    expect(baselines.numbers(longer).cpuSearchMsPerDocument).toBeGreaterThan(0)
-  })
+    // A second search replaces one in progress: the first one's pieces stop, and the second one answers for every document.
+    post({kind: 'search', search: {key: 'replaced', pattern: 'error', scope: 'everything'}})
+    post({kind: 'search', search: {key: 'second', pattern: '[a-z]+Id', scope: 'keys'}})
+    await until(() => reached('second') === documentCount)
+    expect(reached('replaced')).toBeLessThan(documentCount)
+    const second = await createCpuSearcher(texts).search({pattern: '[a-z]+Id', scope: 'keys'})
+    if (second?.status !== 'searched') throw new Error('the searcher didn\'t search')
+    expect(searchedOf(answers, 'second').flatMap(piece => [...piece.matchCounts])).toEqual([...second.matchCounts])
+    // And a search that is stopped answers no more.
+    post({kind: 'search', search: {key: 'stopped', pattern: 'error', scope: 'everything'}})
+    post({kind: 'search', search: null})
+    post({kind: 'regExp', key: 'after the stop', pattern: 'error', scope: 'everything'})
+    await until(() => answers.some(answer => answer.kind === 'regExp' && answer.key === 'after the stop'))
+    expect(reached('stopped')).toBe(0)
+    worker.terminate()
+  }, 30_000)
+
+  test('answers with one document\'s display kinds and marks, and with RegExp\'s time for a search', async () => {
+    const {worker, answers, post, until} = startWorker()
+    const searcher = createCpuSearcher(texts)
+    const index = 41
+    const window = {firstDocument: index, documentCount: 1}
+    post({kind: 'document', key: 'with a search', index, search: {pattern: '[a-z]+', scope: 'keys'}})
+    await until(() => answers.length === 1)
+    post({kind: 'document', key: 'without', index, search: null})
+    post({kind: 'regExp', key: 'time', pattern: '[a-z]+', scope: 'keys'})
+    await until(() => answers.length === 3)
+    const expected = await searcher.search({pattern: '[a-z]+', scope: 'keys', window, documents: 'window'})
+    if (expected?.status !== 'searched') throw new Error('the searcher didn\'t search')
+    expect(expected.matches).toBeGreaterThan(0)
+    const kinds = [...await searcher.kinds(window)]
+    const [withSearch, without, time] = answers
+    if (withSearch?.kind !== 'document' || without?.kind !== 'document' || time?.kind !== 'regExp') throw new Error(`unexpected answers: ${answers.map(answer => answer.kind).join(', ')}`)
+    expect([withSearch.key, withSearch.index, [...withSearch.kinds], [...withSearch.marks ?? []]]).toEqual(['with a search', index, kinds, [...expected.marks]])
+    expect([without.key, without.index, [...without.kinds], without.marks]).toEqual(['without', index, kinds, null])
+    expect(time.key).toBe('time')
+    expect(time.ms).toBeGreaterThanOrEqual(0)
+    worker.terminate()
+  }, 30_000)
 })
