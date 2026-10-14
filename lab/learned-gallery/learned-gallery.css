@@ -5,6 +5,18 @@
    the stylesheets in the reverse of the page's order, and bun build in the page's order. */
 @import "../../assets/site.css";
 
+/* This page is wider than the other pages with two columns, so that the stages are larger: up to
+   1268 px, where a stage is 620 px wide and 496 px tall, instead of 1104 px and 538 px. Between
+   the two, the page is as wide as lets a stage and the two rows of controls under it fit in the
+   window's height: above a stage are 296 px, and under it 96 px for the two rows, so a window
+   900 px tall has room for a stage 508 px tall, and a window 800 px tall gets the 1104 px that
+   the other pages have. */
+.page.wide { --page-width: clamp(1104px, (100vh - 392px) * 2.5 + 24px, 1268px); }
+
+/* The caption is one line, with its last words in ink and italic. */
+.deck { max-width: none; }
+.deck em { color: var(--ink); }
+
 .stages {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -18,7 +30,8 @@
   gap: var(--space-4);
   margin-bottom: var(--space-2);
 }
-.stage-head span:last-child {
+/* The words at the right end of a stage's head, e.g. "10 of 12 rectangles". */
+.stage-note {
   color: var(--ink-3);
   font: var(--type-small);
   font-variant-numeric: tabular-nums;
@@ -109,11 +122,12 @@
 .image-10 { background-image: url("../../assets/photo-gallery-10.webp"); }
 .image-11 { background-image: url("../../assets/photo-gallery-11.webp"); }
 
-/* The row under each stage: the sketch's controls under the sketch, and the training's chart,
-   numbers and button under the photos. Both rows are as tall as the chart, so their buttons line
-   up when the stages are side by side. Each stage's column is a container, so a row is laid out
-   for the width of its column, which is about the same at a 1,000 px window with two columns
-   (464 px) as at a 480 px window with one (440 px). */
+/* The two rows under each stage, each 40 px tall. Under the sketch: the presets with the Delete
+   button, and the slider. Under the photos: the loss's numbers with the Retrain button, and the
+   chart. So when the stages are side by side, the two buttons are on one line, and the slider
+   and the chart on the next. Each stage's column is a container, so a row is laid out for the
+   width of its column, which is about the same at a 1,000 px window with two columns (464 px)
+   as at a 480 px window with one (440 px). */
 .stages > div { container-type: inline-size; }
 .tools {
   display: flex;
@@ -126,22 +140,19 @@
 /* A row's button sits at the row's right end, also on a line of its own, where a row is too
    narrow for the button, e.g. Delete at a 320 px window. */
 .tools .button { margin-left: auto; }
-/* The training's row: the chart has a line to itself, and the numbers and the button share the
-   next line. In a column of 440 px or more the three are on one line, where the chart takes the
-   width that the numbers and the button leave it, at least 104 px. There the numbers' width has
-   room for a count of 5 digits, e.g. 12,500, which is 202 px wide, so the chart keeps its width
-   while the count grows. The two lines are the form without the query, so a browser without
-   container queries, e.g. Safari 15, shows them at every width. */
+/* In a column under 440 px, e.g. on a phone, a row's label is a line of its own above the row's
+   controls, like the label above a stage, so the slider is as long as the column allows. */
+@container (max-width: 439px) {
+  .tools > .label { flex-basis: 100%; }
+}
+/* The rows under the photos: the numbers and the button share the first, and the chart has the
+   second to itself, as wide as the column. */
 .tools.training {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  grid-auto-rows: minmax(40px, auto);
 }
 .tools.training .loss-chart { grid-column: 1 / -1; }
-@container (min-width: 440px) {
-  .tools.training { grid-template-columns: minmax(0, 1fr) auto auto; }
-  .tools.training .loss-chart { grid-column: auto; }
-  .tools.training .loss { min-width: 16em; }
-}
 /* A button that can't act yet, e.g. Delete while no rectangle is selected. */
 .tools .button:disabled {
   border-color: var(--rule);
@@ -183,13 +194,15 @@
    2 px outside would lie over the neighboring buttons. */
 .segments button:focus-visible { outline-offset: -2px; }
 
-/* The "Line up edges" row under the sketch's controls: a label, a slider and the distance in
-   words, e.g. "within 3%". The words have a fixed width, so the slider keeps its length while
-   they change, e.g. to "within 3.5%" or to "off". */
-.tools.line-up { flex-wrap: nowrap; }
+/* The "Misalignment penalty" row under the sketch's controls: a label, a slider and the
+   slider's value, e.g. "4%". The value has a fixed width, so the slider keeps its length while
+   the value changes, e.g. to "4.5%" or to "off". */
+@container (min-width: 440px) {
+  .tools.penalty { flex-wrap: nowrap; }
+}
 .range-value {
   flex: none;
-  min-width: 6.5em;
+  min-width: 2.75em;
   color: var(--ink-2);
   font: var(--type-ui);
   font-variant-numeric: tabular-nums;
@@ -267,32 +280,78 @@
 .range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--copper); }
 
 /* The loss chart, with a hairline as its base. An svg without a width is 300 px wide, so the
-   chart takes its width from its grid cell. */
+   chart takes its width from its grid cell. Its two lines are the two parts of the loss, in the
+   first two chart colors of site.css: copper for the distance from the sketch, and indigo for
+   the misalignment penalty. */
 .loss-chart {
   display: block;
   width: 100%;
   height: 40px;
   border-bottom: 1px solid var(--rule);
 }
-/* A wash from the line down to the base, as under the line of HandwiredOS's frame time chart. */
+/* A wash from the first line down to the base, as under the line of HandwiredOS's frame time chart. */
 .loss-chart .area { fill: var(--copper); fill-opacity: 0.1; }
-.loss-chart .line { fill: none; stroke: var(--copper); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.loss-chart .marker { fill: var(--copper); stroke: var(--paper); stroke-width: 2; }
+.loss-chart .line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.loss-chart .marker { stroke: var(--paper); stroke-width: 2; }
+.loss-chart .line.from-sketch { stroke: var(--copper); }
+.loss-chart .marker.from-sketch { fill: var(--copper); }
+.loss-chart .line.misalignment { stroke: var(--wire-indigo); }
+.loss-chart .marker.misalignment { fill: var(--wire-indigo); }
 .loss-chart .hairline { stroke: var(--rule-strong); }
 /* The loss now and the number of steps so far, or those of the sample under the mouse. The line
-   breaks only between its two halves, e.g. in the 169 px that a 320 px window leaves beside the
-   button. */
+   breaks only between its two halves, e.g. beside the button in a narrow column. */
 .loss {
   color: var(--ink-2);
   font: var(--type-ui);
 }
 .loss span { white-space: nowrap; }
 .loss b { color: var(--ink); font: 600 13px/20px var(--font-mono); }
-
-.stages + .stats {
-  max-width: 50em;
-  margin-top: var(--space-5);
+/* The chart's legend: before each part of the loss, a dot in the color of that part's line, like
+   the dot at the line's end. A short piece of the line would read as a minus sign there. */
+.loss .key {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  border-radius: 50%;
 }
+.loss .key.from-sketch { background: var(--copper); }
+.loss .key.misalignment { background: var(--wire-indigo); }
+
+/* "More detail" under the stages: a line to open, as on the JSON highlighter's page, whose rules
+   in assets/tool.css these repeat. That stylesheet is the text tools' and has their editor. */
+.disclosure {
+  margin-top: var(--space-5);
+  font: var(--type-ui);
+  color: var(--ink-2);
+}
+.disclosure summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  list-style: none;
+}
+.disclosure summary::-webkit-details-marker { display: none; }
+.disclosure summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--ink-3);
+  border-bottom: 1.5px solid var(--ink-3);
+  transform: rotate(-45deg);
+  transition: transform var(--quick) var(--ease);
+}
+.disclosure[open] summary::before { transform: rotate(45deg); }
+.disclosure summary:hover { color: var(--copper); }
+.disclosure .stats {
+  max-width: 50em;
+  margin-top: var(--space-2);
+  text-wrap: pretty;
+}
+
+/* The footer's one link, to the next demo, is at the right end, where the other pages have theirs. */
+.colophon { justify-content: flex-end; }
 
 /* One column, with the sketch above the photos. */
 @media (max-width: 760px) {
@@ -325,6 +384,7 @@
   }
   .range:focus-visible::-webkit-slider-thumb { box-shadow: inset 0 0 0 3px var(--copper); }
   .range:focus-visible::-moz-range-thumb { box-shadow: inset 0 0 0 3px var(--copper); }
+  .disclosure summary { min-height: 40px; }
   .for-mouse { display: none; }
   .for-finger { display: inline; }
 }

@@ -2,15 +2,19 @@ import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import {test} from 'bun:test'
 import {
+  chartStepCount,
   createLearnedGalleryEditor,
   createLearnedGalleryMachine,
+  defaultHoldDistance,
   learnedGeometryField,
   learnedPhotoCount,
   learnedSlotCount,
+  maximumHoldDistance,
   maximumTrainingStepsAfterChange,
   maximumTrainingStepsPerFrame,
   msPerTrainingStep,
-  trainingLossGoal,
+  restDistance,
+  restSteps,
   trainingMsPerFrame,
   trainingStepsAfterChange,
   trainingStepsLeft,
@@ -20,9 +24,10 @@ import {
   type LearnedTargetGeometry,
 } from './learned-gallery.ts'
 import {
-  alignRectangles,
   createTrainableGeometryMachine,
-  defaultAlignmentReach,
+  pairCost,
+  pairPull,
+  penaltyStrength,
   trainableGeometryField,
   type TrainableGeometry,
   type TrainableGeometryTarget,
@@ -196,9 +201,11 @@ test('reset restores the initial coefficient tensor and optimizer', () => {
 
 test('steps that raise the loss are taken back', () => {
   // Adam at a fixed learning rate doesn't come to rest: after Cinema's first 500 steps, a frame of 10 more steps
-  // raises the loss 679 times at its worst, which the page showed as photos that jump and come back.
+  // raises the loss 342 times at its worst, which the page showed as photos that jump and come back. The penalty
+  // is off here, as it is for a machine until setPenaltyReach, so the loss is the distance from the target alone.
   const plain = createLearnedGalleryMachine('cinema')
   let loss = plain.train(trainingStepsAfterChange).loss
+  const lossAfterFirstSteps = loss
   let largestRise = 1
   for (let frame = 0; frame < 150; frame++) {
     const next = plain.train(10).loss
@@ -225,12 +232,12 @@ test('steps that raise the loss are taken back', () => {
     }
     loss = result.loss
   }
-  // Measured: 54 of the 150 frames. Once the loss is as low as it gets, about every third frame is undone.
+  // Measured: 24 of the 150 frames.
   assert.ok(undoneFrames >= 5 && undoneFrames <= 100, `${undoneFrames} frames were undone`)
   // The steps that were taken back still count as steps taken.
   assert.equal(guarded.trainingStep, trainingStepsAfterChange + 1500)
-  // The loss ends about where plain training leaves it, without the jumps on the way.
-  assert.ok(loss < plain.evaluate().loss * 2, `${loss} against ${plain.evaluate().loss}`)
+  // The loss keeps falling without the jumps on the way. Measured: from 7.5e-8 to 1.6e-9.
+  assert.ok(loss < lossAfterFirstSteps * 0.1, `${loss} against ${lossAfterFirstSteps} after the first steps`)
 })
 
 test('after steps were taken back, the next steps are half as large', () => {
@@ -316,95 +323,109 @@ function createTrainableGeometryTarget(
   return target
 }
 
-function alignedGeometries(target: TrainableGeometryTarget, reach: number, count: number) {
-  const aligned = new Float32Array(target.geometries.length)
-  alignRectangles(target, reach, aligned)
-  return Array.from({length: count}, (_, item) => {
-    const start = item * trainableGeometryField.size
-    // Rounded to 6 decimals, since the target's numbers are 32-bit floats.
-    return geometryFields.map(field => Math.round(aligned[start + trainableGeometryField[field]]! * 1e6) / 1e6)
-  })
+test('the penalty\'s pull is the slope of its cost', () => {
+  const reach = 0.02
+  // A pair's multiplier is within the reach either way. 0 is the loss's own charge.
+  for (const multiplier of [0, 0.004, -0.004, 0.019, -0.019]) {
+    for (let index = -60; index <= 60; index++) {
+      const gap = index * 0.0005 + 0.0001
+      // The cost's change over a small step of the gap, against the pull in the step's middle. The pull has
+      // corners, e.g. where it meets its limit, so the two differ by up to the step times the pull's steepest
+      // change, which is the stiffness of 5 plus the limit's 1.
+      const step = 1e-6
+      const slope = (pairCost(gap + step, multiplier, reach) - pairCost(gap - step, multiplier, reach)) / (2 * step)
+      assert.ok(Math.abs(slope - pairPull(gap, multiplier, reach)) < 1e-5, `multiplier ${multiplier}, gap ${gap}: slope ${slope}, pull ${pairPull(gap, multiplier, reach)}`)
+    }
+    // The mirrored pair is charged the same and pulled the other way.
+    assert.equal(pairCost(-0.003, -multiplier, reach), pairCost(0.003, multiplier, reach))
+    assert.equal(pairPull(-0.003, -multiplier, reach), -pairPull(0.003, multiplier, reach))
+  }
+  // Without a multiplier, the pull is 5 times a small gap, and the reach minus the gap from where the two meet.
+  assert.ok(Math.abs(pairPull(0.001, 0, reach) - 0.005) < 1e-12)
+  assert.ok(Math.abs(pairPull(0.015, 0, reach) - 0.005) < 1e-12)
+  assert.ok(Math.abs(pairPull(-0.015, 0, reach) + 0.005) < 1e-12)
+  // A multiplier adds to the pull, within the same limit.
+  assert.ok(Math.abs(pairPull(0.001, 0.004, reach) - 0.009) < 1e-12)
+  assert.ok(Math.abs(pairPull(0.001, 0.019, reach) - 0.019) < 1e-12)
+  // Edges a reach or more apart aren't pulled, whatever the multiplier, and their cost stays what it is at the
+  // reach. An aligned pair costs nothing.
+  for (const gap of [0.02, 0.03, -0.02, -0.5]) {
+    // Math.abs, since the pull of such a pair with a negative gap is -0.
+    assert.equal(Math.abs(pairPull(gap, 0, reach)), 0)
+    assert.equal(Math.abs(pairPull(gap, 0.01, reach)), 0)
+    assert.equal(pairCost(gap, 0, reach), pairCost(reach, 0, reach))
+  }
+  assert.equal(pairCost(0, 0, reach), 0)
+  // The cost rises with the gap up to the reach: half the stiffness times the squared gap at first.
+  assert.ok(Math.abs(pairCost(0.001, 0, reach) - 0.5 * 5 * 0.001 ** 2) < 1e-15)
+  assert.ok(pairCost(0.01, 0, reach) > pairCost(0.005, 0, reach))
+  assert.ok(pairCost(0.02, 0, reach) > pairCost(0.015, 0, reach))
+  // With a reach of 0, the penalty is off.
+  assert.equal(Math.abs(pairPull(0.001, 0, 0)), 0)
+  assert.equal(pairCost(0.001, 0, 0), 0)
+})
+
+// The top, the bottom and the two sides of each output rectangle, by the slot of the target that it is paired with.
+function outputEdges(machine: ReturnType<typeof createTrainableGeometryMachine>, values: Float32Array) {
+  const {targetItems, outputByTarget} = machine.match(values)
+  const edges = new Map<number, {left: number, top: number, right: number, bottom: number}>()
+  for (let index = 0; index < targetItems.length; index++) {
+    const start = outputByTarget[index]! * trainableGeometryField.size
+    const read = (field: number) => values[machine.geometries[start + field]!]!
+    const left = read(trainableGeometryField.left)
+    const top = read(trainableGeometryField.top)
+    edges.set(targetItems[index]!, {left, top, right: left + read(trainableGeometryField.width), bottom: top + read(trainableGeometryField.height)})
+  }
+  return edges
 }
 
-test('edges that are nearly on one line are moved onto it', () => {
-  // A row of three rectangles and one below the row's middle, as left, top, width and height in fractions of the
-  // stage. The middle one of the row was dragged last: its top is 0.012 below the row's, and its left is 0.02
-  // right of the lower rectangle's.
-  const row: TrainableGeometry[] = [
-    {left: 0.1, top: 0.1, width: 0.2, height: 0.2},
-    {left: 0.36, top: 0.112, width: 0.2, height: 0.2},
-    {left: 0.58, top: 0.1, width: 0.2, height: 0.2},
-    {left: 0.34, top: 0.4, width: 0.2, height: 0.3},
+test('the penalty pulls output edges within its reach onto one line, and leaves the others', () => {
+  // Three rectangles side by side. The tops of the first two are 0.012 apart, and the third's is 0.05 below the
+  // first's. All three bottoms are 0.6 or more apart.
+  const drawn: TrainableGeometry[] = [
+    {left: 0.05, top: 0.1, width: 0.25, height: 0.2},
+    {left: 0.375, top: 0.112, width: 0.25, height: 0.4},
+    {left: 0.7, top: 0.15, width: 0.25, height: 0.75},
   ]
-  const target = createTrainableGeometryTarget(row)
-  target.editOrder = new Uint32Array(learnedSlotCount)
-  target.editOrder[1] = 1
-  // With a reach of 0.03, its top and bottom are on the row's lines and its left and right on the lower
-  // rectangle's, and no other rectangle moved.
-  assert.deepEqual(alignedGeometries(target, 0.03, 4), [
-    [0.1, 0.1, 0.2, 0.2],
-    [0.34, 0.1, 0.2, 0.2],
-    [0.58, 0.1, 0.2, 0.2],
-    [0.34, 0.4, 0.2, 0.3],
-  ])
-  // A reach shorter than both distances, and a reach of 0, leave the rectangles as they are drawn.
-  const drawn = row.map(geometry => geometryFields.map(field => geometry[field]))
-  assert.deepEqual(alignedGeometries(target, 0.01, 4), drawn)
-  assert.deepEqual(alignedGeometries(target, 0, 4), drawn)
-  // A reach between the two distances moves only the nearer edges, the top and the bottom.
-  assert.deepEqual(alignedGeometries(target, 0.015, 4)[1], [0.36, 0.1, 0.2, 0.2])
-  // When no rectangle is older than another, the edges meet at their mean, e.g. the three tops at 0.104.
-  const unordered = createTrainableGeometryTarget(row)
-  assert.deepEqual(alignedGeometries(unordered, 0.03, 4), [
-    [0.1, 0.104, 0.2, 0.2],
-    [0.35, 0.104, 0.2, 0.2],
-    [0.58, 0.104, 0.2, 0.2],
-    [0.35, 0.4, 0.2, 0.3],
-  ])
-  // Inactive slots don't count, e.g. a slot whose rectangle was deleted and that still holds zeros.
-  assert.deepEqual([...unordered.geometries.subarray(4 * trainableGeometryField.size)].every(value => value === 0), true)
-
-  // No edge moves farther than the reach: of tops at 0.1, 0.12 and 0.14, edited in that order, the second goes
-  // onto the first's line, and the third is 0.04 from that line, so it makes its own.
-  const steps = createTrainableGeometryTarget([
-    {left: 0.1, top: 0.1, width: 0.1, height: 0.3},
-    {left: 0.4, top: 0.12, width: 0.1, height: 0.5},
-    {left: 0.7, top: 0.14, width: 0.1, height: 0.7},
-  ])
-  steps.editOrder = Uint32Array.from({length: learnedSlotCount}, (_, item) => item)
-  assert.deepEqual(alignedGeometries(steps, 0.03, 3).map(geometry => geometry[1]), [0.1, 0.1, 0.14])
-  // Their bottoms are 0.2 apart, so they stay, and the one that moved up is taller by as much.
-  assert.deepEqual(alignedGeometries(steps, 0.03, 3).map(geometry => geometry[3]), [0.3, 0.52, 0.7])
-  // With no order of edits, the three are equally old and meet at their mean, each within reach of the next.
-  delete steps.editOrder
-  assert.deepEqual(alignedGeometries(steps, 0.03, 3).map(geometry => geometry[1]), [0.12, 0.12, 0.12])
-
-  // An edge between two lines goes onto the nearer one, and the lines stay apart: the newest rectangle's right
-  // edge at 0.5 is 0.03 from a line at 0.47 and 0.05 from one at 0.55, with a reach of 0.06.
-  const between = createTrainableGeometryTarget([
-    {left: 0.1, top: 0.1, width: 0.37, height: 0.2},
-    {left: 0.2, top: 0.4, width: 0.35, height: 0.2},
-    {left: 0.3, top: 0.7, width: 0.2, height: 0.2},
-  ])
-  between.editOrder = new Uint32Array(learnedSlotCount)
-  between.editOrder[2] = 1
-  const rightEdges = () => alignedGeometries(between, 0.06, 3).map(geometry => Math.round((geometry[0]! + geometry[2]!) * 1e6) / 1e6)
-  assert.deepEqual(rightEdges(), [0.47, 0.55, 0.47])
-  // With its right edge at 0.52, which is 0.05 from the first line and 0.03 from the second, it goes onto the second.
-  between.geometries[2 * trainableGeometryField.size + trainableGeometryField.width] = 0.22
-  assert.deepEqual(rightEdges(), [0.47, 0.55, 0.55])
-
-  // A rectangle that the lines would close keeps its own edges: this one is 0.04 wide, and one older rectangle's
-  // left is 0.02 inside its left edge while another's right is 0.01 inside its right edge, which would leave it
-  // 0.01 wide.
-  const narrow = createTrainableGeometryTarget([
-    {left: 0.5, top: 0.1, width: 0.04, height: 0.2},
-    {left: 0.52, top: 0.5, width: 0.3, height: 0.2},
-    {left: 0.2, top: 0.75, width: 0.33, height: 0.2},
-  ])
-  narrow.editOrder = new Uint32Array(learnedSlotCount)
-  narrow.editOrder[0] = 1
-  assert.deepEqual(alignedGeometries(narrow, 0.03, 3)[0], [0.5, 0.1, 0.04, 0.2])
+  function fit(reach: number) {
+    const machine = createTrainableGeometryMachine(createTrainableGeometryTarget(drawn))
+    machine.setPenaltyReach(reach, reach)
+    // The page's frames of 10 steps, for 2,000 steps.
+    let result = machine.trainOrUndo(10)
+    for (let frame = 1; frame < 200; frame++) result = machine.trainOrUndo(10)
+    return {result, edges: outputEdges(machine, result.values)}
+  }
+  // Without the penalty the outputs are where the target is: the loss is its first part alone and near 0.
+  const plain = fit(0)
+  assert.equal(plain.result.misalignment, 0)
+  assert.equal(plain.result.loss, plain.result.fromTarget)
+  assert.ok(plain.result.loss < 1e-8, `loss ${plain.result.loss}`)
+  assert.ok(Math.abs(plain.edges.get(1)!.top - plain.edges.get(0)!.top - 0.012) < 0.0005)
+  // With a reach of 0.02 the first two tops are on one line, at the mean of where they are drawn, since the
+  // penalty reads only the outputs and pulls both edges equally. The third top is beyond the reach and stays.
+  const pulled = fit(0.02)
+  const tops = [0, 1, 2].map(slot => pulled.edges.get(slot)!.top)
+  assert.ok(Math.abs(tops[0]! - tops[1]!) < 0.0001, `the two tops are ${Math.abs(tops[0]! - tops[1]!)} apart`)
+  assert.ok(Math.abs(tops[0]! - 0.106) < 0.0005, `the line is at ${tops[0]}`)
+  assert.ok(Math.abs(tops[2]! - 0.15) < 0.0005, `the third top is at ${tops[2]}`)
+  // No other edge moved: lefts and rights are 0.3 apart, and the bottoms 0.2 and more.
+  for (const slot of [0, 1, 2]) {
+    const edges = pulled.edges.get(slot)!
+    const geometry = drawn[slot]!
+    assert.ok(Math.abs(edges.left - geometry.left) < 0.0005)
+    assert.ok(Math.abs(edges.right - geometry.left - geometry.width) < 0.0005)
+    assert.ok(Math.abs(edges.bottom - geometry.top - geometry.height) < 0.0005)
+  }
+  // The loss rests where its two parts balance: the first part is what the two held edges cost, each 0.006 from
+  // where it is drawn, as a mean over the 12 edges, and the second part is near 0, since the gap is closed.
+  assert.ok(Math.abs(pulled.result.fromTarget - 2 * 0.5 * 0.006 ** 2 / 12) < 5e-7, `distance from the target ${pulled.result.fromTarget}`)
+  assert.ok(pulled.result.misalignment < 1e-8, `penalty ${pulled.result.misalignment}`)
+  assert.equal(pulled.result.loss, pulled.result.fromTarget + pulled.result.misalignment)
+  // The penalty's strength of 2 sets how far a target can be from its line before the edge lets go: 2 reaches.
+  // With a reach of 0.005 the two tops, 0.012 apart, are left as drawn.
+  assert.equal(penaltyStrength, 2)
+  const apart = fit(0.005)
+  assert.ok(Math.abs(apart.edges.get(1)!.top - apart.edges.get(0)!.top - 0.012) < 0.0005)
 })
 
 test('shared trainable coefficients fit an unseen sidebar grid', () => {
@@ -433,23 +454,24 @@ function createEditorDriver(frameMs = 1000 / 60, readClock?: () => number) {
   let readings = 0
   const editor = createLearnedGalleryEditor(readClock ?? (() => readings++ * 0.01))
   let time = 0
-  // Where the page's "Line up" slider is, as a fraction of the stage. A frame reads it like the stage's size.
-  let alignmentReach = defaultAlignmentReach
+  // Where the page's "Misalignment penalty" slider is, as a fraction of the stage's width. A frame reads it like
+  // the stage's size.
+  let holdDistance = defaultHoldDistance
   let frameCount = 0
   function frame(inputs: LearnedGalleryInput[] = []) {
-    // No test takes more than about 600 frames. The limit makes training that never stops fail a test, where
+    // No test takes more than about 1,500 frames. The limit makes training that never stops fail a test, where
     // a loop that waits for training to stop would otherwise never return.
-    assert.ok(++frameCount <= 3000, 'more than 3,000 frames: training did not stop')
+    assert.ok(++frameCount <= 6000, 'more than 6,000 frames: training did not stop')
     time += frameMs
-    return editor.frame(time, stageWidth, stageHeight, alignmentReach, inputs)
+    return editor.frame(time, stageWidth, stageHeight, holdDistance, inputs)
   }
   return {
     editor,
     machine: editor.machine,
     frame,
     // Moves the slider. The next frame reads it.
-    setAlignmentReach(reach: number) {
-      alignmentReach = reach
+    setHoldDistance(distance: number) {
+      holdDistance = distance
     },
     // Frames until training stops, which is when the page stops requesting them.
     settle() {
@@ -516,22 +538,6 @@ function largestError(machine: LearnedGalleryMachine, values: Float32Array, only
   return largest
 }
 
-// The largest difference between a photo's four numbers and the ones that the loss fits it to, i.e. its sketch
-// rectangle's with the edges that are nearly on one line moved onto the line, in fractions of the stage.
-function largestErrorFromFitted(machine: LearnedGalleryMachine, values: Float32Array) {
-  const {targetItems, outputByTarget} = machine.match(values)
-  const fitted = machine.alignedTarget()
-  let largest = 0
-  for (let index = 0; index < targetItems.length; index++) {
-    const actual = outputGeometry(machine, values, outputByTarget[index]!)
-    const start = targetItems[index]! * learnedGeometryField.size
-    for (const field of geometryFields) {
-      largest = Math.max(largest, Math.abs(actual[field] - fitted[start + learnedGeometryField[field]]!))
-    }
-  }
-  return largest
-}
-
 // A rough drag or resize as a visitor makes it: a press in the rectangle's middle, or 5 px inside its bottom right
 // corner, then 12 moves and a release. Returns the step count before the last move, which is the change that the
 // edit's training starts from.
@@ -549,7 +555,7 @@ function roughEdit(page: ReturnType<typeof createEditorDriver>, item: number, by
   return stepBeforeLastMove
 }
 
-test('each preset sketch is fitted closely by the first 500 steps', () => {
+test('each preset sketch is fitted closely, with its photos in line, and training stops by itself', () => {
   for (const [name, count] of [['story', 10], ['cinema', 9], ['contact', 11]] as [LearnedLayoutName, number][]) {
     const page = createEditorDriver()
     const first = page.frame([{kind: 'layout', name}])
@@ -558,17 +564,33 @@ test('each preset sketch is fitted closely by the first 500 steps', () => {
     // The first frame draws the seeded weights' output, before any step.
     assert.equal(first.step, 0)
     assert.ok(first.loss > 0.005, `${name} starts at loss ${first.loss}`)
+    // The penalty is off while the photos leave the pile that the seeded weights put them in.
+    assert.equal(first.misalignment, 0)
+    let frame = page.frame()
+    while (frame.step < 100) frame = page.frame()
+    assert.equal(frame.misalignment, 0)
+    assert.equal(frame.loss, frame.fromSketch)
+    // It comes on once the photos are close to the sketch. Measured: after 140 to 190 steps.
+    while (frame.misalignment === 0) frame = page.frame()
+    assert.ok(frame.step > 100 && frame.step < 400, `${name}: the penalty came on at step ${frame.step}`)
+    assert.ok(frame.fromSketch < 2e-6, `${name}: the distance from the sketch was ${frame.fromSketch}`)
     const settled = page.settle()
-    assert.equal(settled.step, trainingStepsAfterChange)
-    // Story ends at 9.55e-9 with a largest error of 0.029% of the stage, and the other two closer.
-    assert.ok(settled.loss < 0.000_000_03, `${name} loss ${settled.loss}`)
-    assert.ok(largestError(page.machine, settled.values) < 0.0006, `${name} error ${largestError(page.machine, settled.values)}`)
-    // A preset's edges are equal or far apart, so it reads as drawn at every reach that the page's slider has.
-    const drawn = page.machine.target.geometries
-    for (const reach of [0, defaultAlignmentReach, 0.06]) {
-      page.machine.setAlignmentReach(reach)
-      const aligned = page.machine.alignedTarget()
-      assert.ok(aligned.every((value, field) => Math.abs(value - drawn[field]!) < 1e-6), `${name} at a reach of ${reach}`)
+    assert.equal(settled.training, false)
+    // Measured: 679, 1,389 and 879 steps.
+    assert.ok(settled.step >= trainingStepsAfterChange && settled.step < maximumTrainingStepsAfterChange, `${name} trained ${settled.step} steps`)
+    // Story ends at a loss of 9.9e-8 with a largest error of 0.20% of the stage: the top of its second rectangle
+    // rests 0.15% from where it is drawn, and its height takes that error with it. The other two end closer.
+    assert.equal(settled.loss, settled.fromSketch + settled.misalignment)
+    assert.ok(settled.loss < 0.000_000_3, `${name} loss ${settled.loss}`)
+    assert.ok(largestError(page.machine, settled.values) < 0.003, `${name} error ${largestError(page.machine, settled.values)}`)
+    // A preset's edges of one kind are equal or at least 0.09 apart, which is more than the penalty's largest
+    // reach, so the penalty has nothing to move, and it is small at the end. Measured: 1.5e-8 for Cinema.
+    assert.ok(settled.misalignment < 1e-7, `${name} penalty ${settled.misalignment}`)
+    // Every line of the preset is a line of photos, within 0.03% of the stage, which is 0.2 px on a stage of
+    // 620 px. Measured: 0.001% for Story, 0.020% for Cinema and 0.008% for Contact sheet.
+    for (const line of sketchLines(page.machine)) {
+      const spread = lineSpread(page.machine, settled.values, line.slots, line.edge)
+      assert.ok(spread < 0.0003, `${name}: the ${line.edge} edges of rectangles ${line.slots.join(', ')} are ${spread} apart`)
     }
   }
 })
@@ -576,14 +598,13 @@ test('each preset sketch is fitted closely by the first 500 steps', () => {
 test('pointer moves over the sketch train nothing once training has settled', () => {
   const page = createEditorDriver()
   const settled = page.settle()
-  assert.equal(settled.step, trainingStepsAfterChange)
   for (let frameIndex = 0; frameIndex < 40; frameIndex++) {
     const frame = page.frame([move(40 + frameIndex * 5, 60 + frameIndex * 2, false, false)])
     assert.equal(frame.stepsThisFrame, 0)
     assert.equal(frame.training, false)
   }
   // The page before trained 10 steps at each of these moves.
-  assert.equal(page.machine.trainingStep, trainingStepsAfterChange)
+  assert.equal(page.machine.trainingStep, settled.step)
   assert.equal(page.frame().loss, settled.loss)
 })
 
@@ -602,7 +623,7 @@ test('a sketch without rectangles asks for no more frames', () => {
   assert.equal(frame.training, false)
   assert.equal(frame.loss, 0)
   assert.equal(frame.selected, null)
-  // Later frames train nothing either, e.g. at pointer moves, and "Train again" has nothing to train.
+  // Later frames train nothing either, e.g. at pointer moves, and "Retrain" has nothing to train.
   const stepsBefore = page.machine.trainingStep
   for (let frameIndex = 0; frameIndex < 10; frameIndex++) {
     frame = page.frame([move(100 + frameIndex, 100, false, false)])
@@ -611,7 +632,7 @@ test('a sketch without rectangles asks for no more frames', () => {
   }
   assert.equal(page.machine.trainingStep, stepsBefore)
   const costBefore = frame.msPerStep
-  frame = page.frame([{kind: 'train again'}])
+  frame = page.frame([{kind: 'retrain'}])
   assert.equal(frame.training, false)
   assert.equal(frame.step, 0)
   // This training takes no step, so the page's sentence "one step takes about 0.38 ms on this device" keeps the
@@ -630,28 +651,35 @@ test('the cost of a step is unknown only until the first step', () => {
   frame = page.frame()
   assert.equal(frame.stepsThisFrame, unmeasuredTrainingStepsPerFrame)
   assert.ok(Math.abs(frame.msPerStep! - 0.01 / unmeasuredTrainingStepsPerFrame) < 1e-9)
-  // The number is the average over the latest training: "Train again" starts a new average at its first step.
+  // The number is the average over the latest training: "Retrain" starts a new average at its first step.
   const settled = page.settle()
-  frame = page.frame([{kind: 'train again'}])
+  frame = page.frame([{kind: 'retrain'}])
   assert.equal(frame.msPerStep, settled.msPerStep)
   frame = page.frame()
   assert.ok(Math.abs(frame.msPerStep! - 0.01 / frame.stepsThisFrame) < 1e-9)
 })
 
 test('the numbers in the page\'s text are the code\'s', () => {
-  // The caption, the description and the instructions are static text, so their numbers are written by hand.
+  // The description and the instructions are static text, so their numbers are written by hand.
   const html = readFileSync(new URL('./learned-gallery.html', import.meta.url), 'utf8')
   const {parameterCount} = createLearnedGalleryMachine()
-  assert.ok(html.includes(`but its ${parameterCount} weights are trained`))
   assert.ok(html.includes(`trains the network's ${parameterCount} weights`))
   assert.ok(html.includes(`empty space to add one, up to ${learnedPhotoCount}<`))
-  // The slider is in percent of the stage: it starts at the reach that the network is fitted with before the
-  // first frame reads it, and it ends below 9, the distance of a preset's closest edges that aren't equal.
-  assert.ok(html.includes(`<input id="learning-align" class="range" type="range" min="0" max="6" step="0.5" value="${defaultAlignmentReach * 100}">`))
-  // The numbers of the statistics line are written by the page's script, into these elements.
-  for (const id of ['learning-coefficients', 'learning-steps-after-change', 'learning-loss-goal', 'learning-steps-at-most', 'learning-steps-per-second', 'learning-operations', 'learning-layers']) {
+  // The slider is in percent of the stage's width: it starts where the editor starts, before the first frame
+  // reads it, and it ends at the editor's largest distance. Half of that, the penalty's largest reach, is below
+  // 0.09, the distance of a preset's closest edges of one kind that aren't equal.
+  assert.ok(html.includes(`<input id="learning-penalty" class="range" type="range" min="0" max="${maximumHoldDistance * 100}" step="0.5" value="${defaultHoldDistance * 100}">`))
+  assert.ok(html.includes('<label class="label" for="learning-penalty">Misalignment penalty</label>'))
+  assert.ok(maximumHoldDistance / penaltyStrength < 0.09)
+  // The chart's label names its window of steps.
+  assert.ok(html.includes(`over the latest ${chartStepCount.toLocaleString('en-US')} training steps`))
+  // The numbers of the detail text are written by the page's script, into these elements.
+  for (const id of ['learning-coefficients', 'learning-steps-after-change', 'learning-rest-steps', 'learning-steps-at-most', 'learning-steps-per-second', 'learning-operations', 'learning-layers']) {
     assert.ok(html.includes(`<b id="${id}"></b>`), `${id} is missing`)
   }
+  // The detail text is closed as the page loads.
+  assert.ok(html.includes('<details class="disclosure">'))
+  assert.ok(html.includes('<summary>More detail</summary>'))
 })
 
 test('training continues from the current weights while a rectangle is dragged', () => {
@@ -686,24 +714,58 @@ test('training continues from the current weights while a rectangle is dragged',
     worstError = Math.max(worstError, largestError(machine, frame.values, item))
     assert.equal(pairing(machine, frame.values), pairingBefore)
   }
-  assert.ok(worstError < 0.06, `the dragged rectangle's photo was ${worstError} of the stage away`)
+  // Measured: 6.3% of the stage at most. The photo stays in its row until the rectangle is about 5% of the
+  // stage's height away, the slider's 4% of the width, and then follows.
+  assert.ok(worstError < 0.09, `the dragged rectangle's photo was ${worstError} of the stage away`)
 
   frame = page.frame([release])
   assert.equal(frame.cursor, 'grab')
   // A reset at the release would put the loss back near 0.2, where the seeded weights start.
   assert.ok(frame.loss < 0.001, `loss at the release ${frame.loss}`)
   const final = page.settle()
-  assert.equal(final.step, stepBeforeLastMove + trainingStepsAfterChange)
+  const steps = final.step - stepBeforeLastMove
+  assert.ok(steps >= trainingStepsAfterChange && steps < maximumTrainingStepsAfterChange, `${steps} steps after the last move`)
   assert.equal(pairing(machine, final.values), pairingBefore)
-
-  // The same sketch fitted from the seeded weights, as the page before did at each release.
-  const fromSeed = createLearnedGalleryMachine()
-  fromSeed.target.geometries.set(machine.target.geometries)
-  fromSeed.target.active.set(machine.target.active)
-  fromSeed.target.editOrder = machine.target.editOrder!
-  const fromSeedLoss = fromSeed.train(trainingStepsAfterChange)
-  assert.ok(final.loss < fromSeedLoss.loss * 2, `loss ${final.loss} against ${fromSeedLoss.loss} from the seeded weights`)
+  // The rectangle is far from every line now, so its photo is on it, and so is every other photo on its own.
+  // Measured: the largest error is 0.27% of the stage, which is 1.3 px here.
+  assert.ok(largestError(machine, final.values) < 0.005, `the largest error is ${largestError(machine, final.values)}`)
 })
+
+// The lines of the sketch: groups of two or more rectangles that have one edge at the same place, e.g. the tops of
+// a row.
+function sketchLines(machine: LearnedGalleryMachine) {
+  const lines: {edge: 'left' | 'top' | 'right' | 'bottom', slots: number[]}[] = []
+  const slots: number[] = []
+  for (let slot = 0; slot < learnedSlotCount; slot++) {
+    if (machine.target.active[slot] === 1) slots.push(slot)
+  }
+  for (const edge of ['left', 'top', 'right', 'bottom'] as const) {
+    const position = (slot: number) => {
+      const geometry = targetGeometry(machine, slot)
+      return edge === 'left' ? geometry.left : edge === 'top' ? geometry.top : edge === 'right' ? geometry.left + geometry.width : geometry.top + geometry.height
+    }
+    const sorted = slots.toSorted((a, b) => position(a) - position(b))
+    for (let lineStart = 0; lineStart < sorted.length;) {
+      let lineEnd = lineStart + 1
+      // The sketch's numbers are 32-bit floats, so two sums that are equal as drawn can differ in their last digits.
+      while (lineEnd < sorted.length && position(sorted[lineEnd]!) - position(sorted[lineEnd - 1]!) < 1e-6) lineEnd++
+      if (lineEnd - lineStart >= 2) lines.push({edge, slots: sorted.slice(lineStart, lineEnd)})
+      lineStart = lineEnd
+    }
+  }
+  return lines
+}
+
+// The left, top, right and bottom edges of the photos in use, in fractions of the stage.
+function photoEdges(machine: LearnedGalleryMachine, values: Float32Array, outputs: Uint8Array) {
+  const edges: number[] = []
+  for (let output = 0; output < learnedSlotCount; output++) {
+    if (outputs[output] !== 1) continue
+    const geometry = outputGeometry(machine, values, output)
+    edges.push(geometry.left, geometry.top, geometry.left + geometry.width, geometry.top + geometry.height)
+  }
+  return edges
+}
 
 // How far apart the photos of the given sketch rectangles are at one edge, in fractions of the stage: 0 when the
 // photos are on one line.
@@ -716,180 +778,213 @@ function lineSpread(machine: LearnedGalleryMachine, values: Float32Array, slots:
   return Math.max(...positions) - Math.min(...positions)
 }
 
-test('a rectangle dragged roughly within its row gets a photo that is in the row', () => {
+// The mean of the photos' positions at one edge, for the given sketch rectangles.
+function lineMean(machine: LearnedGalleryMachine, values: Float32Array, slots: readonly number[], edge: 'left' | 'top' | 'right' | 'bottom') {
+  const {targetItems, outputByTarget} = machine.match(values)
+  let sum = 0
+  for (const slot of slots) {
+    const geometry = outputGeometry(machine, values, outputByTarget[targetItems.indexOf(slot)]!)
+    sum += edge === 'left' ? geometry.left : edge === 'top' ? geometry.top : edge === 'right' ? geometry.left + geometry.width : geometry.top + geometry.height
+  }
+  return sum / slots.length
+}
+
+test('a rectangle nudged within its row gets a photo that is in the row, and the row meets it', () => {
   const page = createEditorDriver()
   const {machine} = page
   page.frame([{kind: 'layout', name: 'contact'}])
   const loaded = page.settle()
-  const loadedPhotos = [...loaded.values]
   // Contact sheet is 4 columns and 3 rows. Rectangle 5 is in the second row and the second column.
   const row = [4, 5, 6, 7]
   const column = [1, 5, 9]
-  const cell = pointOf(machine, 5)
-  // 10 px right and 10 px down on a stage of 500 by 400, i.e. 0.02 and 0.025 of the stage, which is within the
-  // reach of 0.03 that the page starts with.
-  let frame = page.frame([press(cell.x, cell.y)])
-  for (let moveIndex = 1; moveIndex <= 12; moveIndex++) {
-    frame = page.frame([move(cell.x + 10 * moveIndex / 12, cell.y + 10 * moveIndex / 12)])
-  }
-  frame = page.frame([release])
-  assert.equal(frame.layout, null)
+  const rowTop = lineMean(machine, loaded.values, row, 'top')
+  const columnLeft = lineMean(machine, loaded.values, column, 'left')
+  // 6 px right and 6 px down on a stage of 500 by 400, i.e. 0.012 and 0.015 of the stage. The slider's 4% of the
+  // width is 20 px, both ways.
+  roughEdit(page, 5, false, 6, 6)
   let settled = page.settle()
-  // The photo is on the lines of its row and its column, within 0.1 px, and so 10 px from its rectangle.
-  // Measured: 0.004% of the stage. Before the loss read such edges as one line, the photo ended 0.2% off its
-  // row, about 1 px, and the row's other photos had moved 0.6% toward it.
+  assert.equal(settled.layout, null)
+  // The photo is on the lines of its row and its column, within 0.01% of the stage. Measured: 0.001%.
   for (const edge of ['top', 'bottom'] as const) {
-    assert.ok(lineSpread(machine, settled.values, row, edge) < 0.0002, `the row's ${edge}s are ${lineSpread(machine, settled.values, row, edge)} apart`)
+    assert.ok(lineSpread(machine, settled.values, row, edge) < 0.0001, `the row's ${edge}s are ${lineSpread(machine, settled.values, row, edge)} apart`)
   }
   for (const edge of ['left', 'right'] as const) {
-    assert.ok(lineSpread(machine, settled.values, column, edge) < 0.0002, `the column's ${edge}s are ${lineSpread(machine, settled.values, column, edge)} apart`)
+    assert.ok(lineSpread(machine, settled.values, column, edge) < 0.0001, `the column's ${edge}s are ${lineSpread(machine, settled.values, column, edge)} apart`)
   }
-  assert.ok(Math.abs(largestError(machine, settled.values, 5) - 0.025) < 0.0005)
-  // No photo moved: the rectangles that weren't dragged are the older ones, so the lines are where they were.
-  const largestMove = Math.max(...loadedPhotos.map((value, wire) => Math.abs(value - settled.values[wire]!)))
-  assert.ok(largestMove < 0.0002, `a photo moved by ${largestMove} of the stage`)
+  // The lines moved toward the rectangle: the penalty reads only the photos' edges, so it pulls every edge of a
+  // line equally, and the line rests at the mean of where its rectangles are drawn. The row of 4 moved down by a
+  // quarter of 0.015, and the column of 3 moved right by a third of 0.012.
+  assert.ok(Math.abs(lineMean(machine, settled.values, row, 'top') - rowTop - 0.015 / 4) < 0.0003)
+  assert.ok(Math.abs(lineMean(machine, settled.values, column, 'left') - columnLeft - 0.012 / 3) < 0.0003)
+  // So the loss doesn't fall to 0: it rests where the cost of the photos' distance from the sketch balances the
+  // penalty, whose own part is near 0 once the lines are closed. Measured: 6.6e-6 and 2e-11.
+  assert.ok(settled.fromSketch > 1e-6, `the distance from the sketch is ${settled.fromSketch}`)
+  assert.ok(settled.misalignment < 1e-8, `the penalty is ${settled.misalignment}`)
 
-  // With the slider at 0, the photos follow the sketch as it is drawn: training continues from the current
-  // weights, and the photo ends on its rectangle, 0.025 of the stage below its row.
-  page.setAlignmentReach(0)
-  frame = page.frame()
+  // With the slider at off, the photos follow the sketch as it is drawn: training continues from the current
+  // weights, and the photo ends on its rectangle, 0.015 of the stage below its row.
+  page.setHoldDistance(0)
+  let frame = page.frame()
   assert.equal(frame.training, true)
   assert.equal(frame.stepsThisFrame, 0)
-  const stepsBefore = frame.step
+  assert.equal(frame.layout, null)
   settled = page.settle()
-  assert.equal(settled.step, stepsBefore + trainingStepsAfterChange)
-  assert.ok(largestError(machine, settled.values) < 0.0006, `the largest error is ${largestError(machine, settled.values)}`)
-  assert.ok(Math.abs(lineSpread(machine, settled.values, row, 'top') - 0.025) < 0.0006)
-  assert.ok(Math.abs(lineSpread(machine, settled.values, column, 'left') - 0.02) < 0.0006)
+  assert.equal(settled.misalignment, 0)
+  assert.ok(settled.loss < 0.000_000_1, `the loss is ${settled.loss}`)
+  assert.ok(largestError(machine, settled.values) < 0.001, `the largest error is ${largestError(machine, settled.values)}`)
+  assert.ok(Math.abs(lineSpread(machine, settled.values, row, 'top') - 0.015) < 0.001)
+  assert.ok(Math.abs(lineSpread(machine, settled.values, column, 'left') - 0.012) < 0.001)
 
-  // A reach shorter than the vertical distance and longer than the horizontal one lines up the column only.
-  page.setAlignmentReach(0.022)
+  // Back at 4%, the penalty's reach is 2% of the width, i.e. 10 px here, so the photo's edges, 6 px from their
+  // lines, are pulled back onto them.
+  page.setHoldDistance(defaultHoldDistance)
   page.frame()
   settled = page.settle()
-  assert.ok(lineSpread(machine, settled.values, column, 'left') < 0.0006)
-  assert.ok(Math.abs(lineSpread(machine, settled.values, row, 'top') - 0.025) < 0.0006)
+  assert.ok(lineSpread(machine, settled.values, row, 'top') < 0.0001)
+  assert.ok(lineSpread(machine, settled.values, column, 'left') < 0.0001)
 
-  // Back at the reach of 0.03, the photo is in its row again.
-  page.setAlignmentReach(defaultAlignmentReach)
+  // At 1%, the reach is 2.5 px: the photo was on its lines, and its rectangle is 6 px from them, which is more
+  // than the 5 px at which a photo lets go, so it ends on its rectangle.
+  page.setHoldDistance(0.01)
   page.frame()
   settled = page.settle()
-  assert.ok(lineSpread(machine, settled.values, row, 'top') < 0.0006)
-  assert.ok(lineSpread(machine, settled.values, column, 'left') < 0.0006)
+  assert.ok(largestError(machine, settled.values) < 0.001, `the largest error is ${largestError(machine, settled.values)}`)
+  assert.ok(Math.abs(lineSpread(machine, settled.values, row, 'top') - 0.015) < 0.001)
 })
 
-test('a rectangle dragged farther than the reach keeps its photo', () => {
+test('a photo joins a line at half the distance at which it lets go of one', () => {
   const page = createEditorDriver()
   const {machine} = page
   page.frame([{kind: 'layout', name: 'contact'}])
   page.settle()
-  const cell = pointOf(machine, 5)
-  // 20 px right and 16 px down, i.e. 0.04 of the stage both ways, past the reach of 0.03.
-  page.frame([press(cell.x, cell.y)])
-  for (let moveIndex = 1; moveIndex <= 12; moveIndex++) {
-    page.frame([move(cell.x + 20 * moveIndex / 12, cell.y + 16 * moveIndex / 12)])
-  }
-  page.frame([release])
-  const settled = page.settle()
-  assert.ok(largestError(machine, settled.values) < 0.0006, `the largest error is ${largestError(machine, settled.values)}`)
-  assert.ok(Math.abs(lineSpread(machine, settled.values, [4, 5, 6, 7], 'top') - 0.04) < 0.0006)
+  const row = [4, 5, 6, 7]
+  // 14 px down, i.e. 0.035 of the stage's height. The photo was in its row, and it lets go of the row when its
+  // rectangle is the slider's distance away, 4% of the width or 20 px, so it stays.
+  roughEdit(page, 5, false, 0, 14)
+  let settled = page.settle()
+  assert.ok(lineSpread(machine, settled.values, row, 'top') < 0.0001, `the row's tops are ${lineSpread(machine, settled.values, row, 'top')} apart`)
+  // Off and on again: the photo starts on its rectangle now, 14 px from the row, and the penalty reaches 10 px,
+  // half the slider's distance. So the same sketch at the same slider ends as drawn.
+  page.setHoldDistance(0)
+  page.frame()
+  page.settle()
+  page.setHoldDistance(defaultHoldDistance)
+  page.frame()
+  settled = page.settle()
+  assert.ok(Math.abs(lineSpread(machine, settled.values, row, 'top') - 0.035) < 0.001, `the row's tops are ${lineSpread(machine, settled.values, row, 'top')} apart`)
+  assert.ok(largestError(machine, settled.values) < 0.001)
+  // "Retrain" fits the sketch from the seeded weights with the penalty off at first, so it ends as drawn too.
+  page.frame([{kind: 'retrain'}])
+  settled = page.settle()
+  assert.ok(Math.abs(lineSpread(machine, settled.values, row, 'top') - 0.035) < 0.001)
 })
 
-test('a move of the slider that changes no line starts no training', () => {
+test('a rectangle dragged far lets go of its line', () => {
+  const page = createEditorDriver()
+  const {machine} = page
+  page.frame([{kind: 'layout', name: 'contact'}])
+  const loaded = page.settle()
+  const row = [4, 5, 6, 7]
+  const others = [4, 6, 7]
+  const rowTop = lineMean(machine, loaded.values, row, 'top')
+  // 30 px right and 30 px down, i.e. 0.06 and 0.075 of the stage, past the slider's 4% of the width, 20 px.
+  roughEdit(page, 5, false, 30, 30)
+  const settled = page.settle()
+  // The photo is on its rectangle, and the row's other photos are in line where they were.
+  assert.ok(largestError(machine, settled.values) < 0.001, `the largest error is ${largestError(machine, settled.values)}`)
+  assert.ok(Math.abs(lineSpread(machine, settled.values, row, 'top') - 0.075) < 0.001)
+  assert.ok(lineSpread(machine, settled.values, others, 'top') < 0.0001)
+  assert.ok(Math.abs(lineMean(machine, settled.values, others, 'top') - rowTop) < 0.0005)
+  // The loss is near 0 again, since no photo is held off its rectangle.
+  assert.ok(settled.loss < 0.000_000_1, `the loss is ${settled.loss}`)
+})
+
+test('a move of the slider continues training, and a preset stays as it is drawn', () => {
   const page = createEditorDriver()
   const loaded = page.settle()
   assert.equal(loaded.layout, 'story')
-  // Story's edges are equal or at least 0.09 apart, so every reach up to the slider's 0.06 reads it the same.
-  for (const reach of [0.06, 0, 0.045, defaultAlignmentReach]) {
-    page.setAlignmentReach(reach)
-    const frame = page.frame()
-    assert.equal(frame.training, false)
+  const loadedPhotos = [...loaded.values]
+  // Story's edges of one kind are equal or at least 0.09 apart, and the penalty reaches 0.04 at most.
+  for (const distance of [maximumHoldDistance, 0, 0.025, defaultHoldDistance]) {
+    page.setHoldDistance(distance)
+    let frame = page.frame()
+    // The loss changed, so training continues from the current weights.
+    assert.equal(frame.training, true)
     assert.equal(frame.stepsThisFrame, 0)
-    assert.equal(frame.step, trainingStepsAfterChange)
     // The slider doesn't edit the sketch, so the preset stays marked.
     assert.equal(frame.layout, 'story')
+    const stepsBefore = frame.step
+    frame = page.settle()
+    assert.ok(frame.step - stepsBefore >= trainingStepsAfterChange)
+    assert.equal(frame.layout, 'story')
+    // No photo moves by more than 0.2% of the stage. Measured: 0.10% at off, where Story's fit is closer: its
+    // largest edge error is 0.07% of the stage there, against 0.15% with the penalty on.
+    const largestMove = Math.max(...page.machine.geometries.slice(0, 10 * learnedGeometryField.size).map(wire => Math.abs(frame.values[wire]! - loadedPhotos[wire]!)))
+    assert.ok(largestMove < 0.002, `at ${distance}, a photo moved by ${largestMove} of the stage`)
   }
 })
 
-test('a change gets 500 steps, and up to 2,000 while the loss is above the goal', () => {
-  // Until the 500 steps are over, the loss doesn't matter.
-  assert.equal(trainingStepsLeft(0, 0), trainingStepsAfterChange)
-  assert.equal(trainingStepsLeft(trainingStepsAfterChange - 1, 1), 1)
-  // After them, a loss at the goal ends training, and a loss above the goal gets the steps that are left of 2,000.
-  assert.equal(trainingStepsLeft(trainingStepsAfterChange, trainingLossGoal), 0)
-  assert.equal(trainingStepsLeft(trainingStepsAfterChange, trainingLossGoal * 2), maximumTrainingStepsAfterChange - trainingStepsAfterChange)
-  assert.equal(trainingStepsLeft(maximumTrainingStepsAfterChange - 10, 1), 10)
-  assert.equal(trainingStepsLeft(maximumTrainingStepsAfterChange, 1), 0)
-  // A frame may take the count past the limit by less than its own steps.
-  assert.equal(trainingStepsLeft(maximumTrainingStepsAfterChange + 7, 1), 0)
+test('a change gets 500 steps, and more until the photos rest, up to 2,000', () => {
+  // Until the 500 steps are over, photos at rest don't end training: the steps left are the ones up to 2,000.
+  assert.equal(trainingStepsLeft(0, true), maximumTrainingStepsAfterChange)
+  assert.equal(trainingStepsLeft(trainingStepsAfterChange - 1, true), maximumTrainingStepsAfterChange - trainingStepsAfterChange + 1)
+  // After them, photos at rest end training, and photos that still move get the steps that are left of 2,000.
+  assert.equal(trainingStepsLeft(trainingStepsAfterChange, true), 0)
+  assert.equal(trainingStepsLeft(trainingStepsAfterChange, false), maximumTrainingStepsAfterChange - trainingStepsAfterChange)
+  assert.equal(trainingStepsLeft(maximumTrainingStepsAfterChange - 10, false), 10)
+  assert.equal(trainingStepsLeft(maximumTrainingStepsAfterChange, false), 0)
+  assert.equal(trainingStepsLeft(maximumTrainingStepsAfterChange + 7, false), 0)
 })
 
-test('training goes on past its 500 steps until the photos are close to the sketch', () => {
+test('training stops once no photo has moved for 100 steps', () => {
   const page = createEditorDriver()
   const {machine} = page
   page.frame([{kind: 'layout', name: 'cinema'}])
   page.settle()
-  // Five rough edits of Cinema's small rectangles, as [rectangle, by its corner, px right, px down]. Each is
-  // fitted within its 500 steps.
-  const edits = [[2, false, -9.9, 8.2], [6, false, 11.7, 4.6], [2, false, 2.0, -9.1], [4, false, -6.7, 12.6], [6, true, -8.4, -9.4]] as const
+  // Rough edits of Cinema's small rectangles, as [rectangle, by its corner, px right, px down].
+  const edits = [[2, false, -9.9, 8.2], [6, false, 11.7, 4.6], [2, false, 2.0, -9.1], [4, false, -6.7, 12.6], [6, true, -8.4, -9.4], [6, false, 9.7, -9.3]] as const
+  let longest = 0
   for (const [item, byCorner, right, down] of edits) {
     const stepBeforeLastMove = roughEdit(page, item, byCorner, right, down)
-    const settled = page.settle()
-    assert.equal(settled.step, stepBeforeLastMove + trainingStepsAfterChange)
-    assert.ok(settled.loss <= trainingLossGoal, `loss ${settled.loss}`)
+    // The photos' edges after every frame of the edit's training, in fractions of the stage.
+    const edgesByStep: {step: number, edges: number[]}[] = []
+    let frame = page.frame()
+    while (frame.training) {
+      frame = page.frame()
+      edgesByStep.push({step: frame.step, edges: [...photoEdges(machine, frame.values, frame.outputs)]})
+    }
+    const steps = frame.step - stepBeforeLastMove
+    longest = Math.max(longest, steps)
+    assert.ok(steps >= trainingStepsAfterChange && steps <= maximumTrainingStepsAfterChange + maximumTrainingStepsPerFrame, `${steps} steps`)
+    // Unless the edit used all of its steps, no photo edge moved more than restDistance over the last restSteps.
+    if (steps < maximumTrainingStepsAfterChange) {
+      const last = edgesByStep.at(-1)!
+      for (const earlier of edgesByStep) {
+        if (earlier.step < last.step - restSteps) continue
+        const moved = Math.max(...earlier.edges.map((edge, index) => Math.abs(edge - last.edges[index]!)))
+        assert.ok(moved <= restDistance + 1e-7, `a photo edge moved ${moved} of the stage in the last ${last.step - earlier.step} steps`)
+      }
+      // One frame earlier, the photos hadn't rested for that long yet.
+      assert.ok(edgesByStep.length >= restSteps / 10)
+    }
+    // Later frames train nothing, e.g. at pointer moves.
+    frame = page.frame([move(40, 60, false, false)])
+    assert.equal(frame.stepsThisFrame, 0)
+    assert.equal(frame.training, false)
+    assert.equal(machine.trainingStep, frame.step)
   }
-  // The sixth takes rectangle 6's left and bottom edges past the reach of their lines, so those two edges of its
-  // photo have to follow. The fit is slow here: after the 500 steps the photo is still 0.84% of the stage from
-  // its place, which is 4 px, at a loss of 2.8e-6. The page stopped there until October 13, 2026.
-  const stepBeforeLastMove = roughEdit(page, 6, false, 9.7, -9.3)
-  let frame = page.frame()
-  while (frame.step < stepBeforeLastMove + trainingStepsAfterChange) frame = page.frame()
-  assert.equal(frame.step, stepBeforeLastMove + trainingStepsAfterChange)
-  assert.ok(frame.loss > trainingLossGoal * 10, `loss after 500 steps ${frame.loss}`)
-  assert.ok(largestErrorFromFitted(machine, frame.values) > 0.004)
-  assert.equal(frame.training, true)
-  // Training goes on until the loss is at the goal. Measured: 1,579 steps in all, and the photo ends 0.04% of the
-  // stage from its place, which is 0.2 px.
-  const settled = page.settle()
-  const steps = settled.step - stepBeforeLastMove
-  assert.ok(steps > trainingStepsAfterChange && steps < maximumTrainingStepsAfterChange, `${steps} steps`)
-  assert.ok(settled.loss <= trainingLossGoal, `loss ${settled.loss}`)
-  assert.ok(largestErrorFromFitted(machine, settled.values) < 0.001, `error ${largestErrorFromFitted(machine, settled.values)}`)
-  // Later frames train nothing, e.g. at pointer moves.
-  frame = page.frame([move(40, 60, false, false)])
-  assert.equal(frame.stepsThisFrame, 0)
-  assert.equal(frame.training, false)
+  // Measured: the six edits train 600 to 1,010 steps.
+  assert.ok(longest > trainingStepsAfterChange + 50, `the longest training was ${longest} steps`)
 })
 
-test('training stops after 2,000 steps although the loss is still above the goal', () => {
+test('with the slider at off, the loss never rises in a frame where the sketch stays the same', () => {
   const page = createEditorDriver()
   const {machine} = page
   page.frame([{kind: 'layout', name: 'cinema'}])
+  // With the penalty off, what a frame's steps follow is the loss itself.
+  page.setHoldDistance(0)
   page.settle()
-  // Two small resizes of the two rectangles of one row. After the second, both are shorter, so the row's bottom
-  // line moves up by 6 px, and this fit is one of the slowest found: the loss is 1.0e-6 after 500 steps and
-  // 2.9e-7 after 2,000. If a change to the training makes this fit reach the goal, this test needs another sketch.
-  let stepBeforeLastMove = roughEdit(page, 5, true, -7.4, -6.3)
-  let settled = page.settle()
-  assert.equal(settled.step, stepBeforeLastMove + trainingStepsAfterChange)
-  stepBeforeLastMove = roughEdit(page, 6, true, -2.9, -4.3)
-  settled = page.settle()
-  assert.equal(settled.step, stepBeforeLastMove + maximumTrainingStepsAfterChange)
-  assert.ok(settled.loss > trainingLossGoal, `loss ${settled.loss}`)
-  // The steps weren't wasted: the photos are closer than after the 500 steps, where the largest error was 0.47%
-  // of the stage.
-  assert.ok(largestErrorFromFitted(machine, settled.values) < 0.003, `error ${largestErrorFromFitted(machine, settled.values)}`)
-  const frame = page.frame([move(40, 60, false, false)])
-  assert.equal(frame.stepsThisFrame, 0)
-  assert.equal(frame.training, false)
-  assert.equal(machine.trainingStep, settled.step)
-})
-
-test('the loss never rises in a frame where the sketch stays the same', () => {
-  const page = createEditorDriver()
-  const {machine} = page
-  page.frame([{kind: 'layout', name: 'cinema'}])
-  page.settle()
-  // Six rough drags in a row, each followed by its 500 steps, as a visitor who rearranges the sketch makes them.
+  // Six rough drags in a row, each followed by its training, as a visitor who rearranges the sketch makes them.
   // The page before trained with plain steps, and its photos jumped by up to 14 px in the frames after such drags.
   const offsets = [[7, -5], [-6, 8], [9, 6], [-8, -7], [5, 9], [-9, 4]] as const
   let framesWithoutChange = 0
@@ -904,10 +999,11 @@ test('the loss never rises in a frame where the sketch stays the same', () => {
       const lossBefore = frame.loss
       frame = page.frame()
       framesWithoutChange++
+      assert.equal(frame.misalignment, 0)
       assert.ok(frame.loss <= lossBefore, `after drag ${index + 1}, a frame raised the loss from ${lossBefore} to ${frame.loss}`)
     }
   }
-  // Each drag's last move starts 500 steps, about 50 frames.
+  // Each drag's last move starts 500 steps or more, about 50 frames.
   assert.ok(framesWithoutChange >= 6 * 48, `${framesWithoutChange} frames`)
 })
 
@@ -916,8 +1012,8 @@ test('a photo follows its rectangle from the first frames of a drag, also after 
     const page = createEditorDriver()
     const {machine} = page
     page.frame([{kind: 'layout', name}])
-    // With "Line up" off, a photo has only its rectangle to follow, and no line to stay on.
-    page.setAlignmentReach(0)
+    // With the slider at off, a photo has only its rectangle to follow, and no line to stay on.
+    page.setHoldDistance(0)
     page.settle()
     // 3,000 more steps at rest, in the page's frames, e.g. after edits that changed little. By then frames have
     // been taken back, and the learning rate is low.
@@ -952,14 +1048,16 @@ test('a photo follows its rectangle from the first frames of a drag, also after 
   }
 })
 
-test('training takes as many steps per second at 120 Hz as at 60 Hz', () => {
+test('training takes as many steps per second at 120 Hz as at 60 Hz, and ends the same', () => {
   const stepsAfterHalfASecond: number[] = []
-  const frameCounts: number[] = []
+  const stepsAtTheEnd: number[] = []
+  const rowTops: number[] = []
   for (const framesPerSecond of [60, 120]) {
     const page = createEditorDriver(1000 / framesPerSecond)
+    const {machine} = page
     // The first frame starts the training's clock, the second measures the cost of a step with at most 4 steps, and
     // the third makes up for the second.
-    assert.equal(page.frame().stepsThisFrame, 0)
+    assert.equal(page.frame([{kind: 'layout', name: 'contact'}]).stepsThisFrame, 0)
     assert.equal(page.frame().stepsThisFrame, unmeasuredTrainingStepsPerFrame)
     let frame = page.frame()
     let frameCount = 3
@@ -970,19 +1068,23 @@ test('training takes as many steps per second at 120 Hz as at 60 Hz', () => {
       assert.ok(Math.abs(frame.stepsThisFrame - 1000 / framesPerSecond / msPerTrainingStep) <= 1)
     }
     stepsAfterHalfASecond.push(frame.step)
-    while (frame.training) {
-      frame = page.frame()
-      frameCount++
-    }
-    assert.equal(frame.step, trainingStepsAfterChange)
-    frameCounts.push(frameCount)
+    const loaded = page.settle()
+    // A rectangle nudged 6 px down, as in the test above: the multipliers that close the row's gap grow by the
+    // step, and training stops by the step, so both displays end with the row in line, at the same place.
+    const row = [4, 5, 6, 7]
+    const stepBeforeLastMove = roughEdit(page, 5, false, 0, 6)
+    const settled = page.settle()
+    assert.ok(lineSpread(machine, settled.values, row, 'top') < 0.0001, `at ${framesPerSecond} Hz the row's tops are ${lineSpread(machine, settled.values, row, 'top')} apart`)
+    rowTops.push(lineMean(machine, settled.values, row, 'top') - lineMean(machine, loaded.values, row, 'top'))
+    stepsAtTheEnd.push(settled.step - stepBeforeLastMove)
   }
   // The first frame takes no step, so half a second holds 600 / 2 steps minus one frame's.
   assert.ok(Math.abs(stepsAfterHalfASecond[0]! - 290) <= 1)
   assert.ok(Math.abs(stepsAfterHalfASecond[1]! - 295) <= 1)
-  // 500 steps last 0.83 s on both displays: 50 frames after the first at 60 Hz, 100 at 120 Hz.
-  assert.ok(Math.abs(frameCounts[0]! - 51) <= 1)
-  assert.ok(Math.abs(frameCounts[1]! - 101) <= 1)
+  // The row moved down by a quarter of the nudge on both, 0.015 / 4 of the stage.
+  assert.ok(Math.abs(rowTops[0]! - 0.015 / 4) < 0.0003 && Math.abs(rowTops[1]! - 0.015 / 4) < 0.0003, `the row moved by ${rowTops[0]} and ${rowTops[1]}`)
+  // Training lasts about as long on both. Measured: 600 and 595 steps.
+  assert.ok(Math.abs(stepsAtTheEnd[0]! - stepsAtTheEnd[1]!) <= 200, `${stepsAtTheEnd[0]} steps at 60 Hz and ${stepsAtTheEnd[1]} at 120 Hz`)
 })
 
 test('a frame trains a capped number of steps after a pause', () => {
@@ -999,9 +1101,9 @@ test('a frame trains a capped number of steps after a pause', () => {
     frameCount++
     assert.ok(frame.stepsThisFrame === maximumTrainingStepsPerFrame || !frame.training)
   }
-  // The frames after the pause catch up at the cap, and training still stops at its 500 steps.
-  assert.equal(frame.step, trainingStepsAfterChange)
-  assert.equal(frameCount, Math.ceil((trainingStepsAfterChange - stepsBeforePause) / maximumTrainingStepsPerFrame))
+  // The frames after the pause catch up at the cap, and training still stops by itself.
+  assert.ok(frame.step >= trainingStepsAfterChange && frame.step < maximumTrainingStepsAfterChange, `${frame.step} steps`)
+  assert.equal(frameCount, Math.ceil((frame.step - stepsBeforePause) / maximumTrainingStepsPerFrame))
 })
 
 test('a slow device trains as many steps per frame as fit in the budget', () => {
@@ -1022,9 +1124,10 @@ test('a slow device trains as many steps per frame as fit in the budget', () => 
     assert.equal(frame.stepsThisFrame, Math.floor(trainingMsPerFrame / msPerStep))
     assert.ok(frame.stepsThisFrame * msPerStep <= trainingMsPerFrame)
   }
-  assert.equal(frame.step, trainingStepsAfterChange)
-  // Training takes more frames instead of longer frames: 2 steps per frame for the 496 steps after the first 4.
-  assert.equal(frameCount, 2 + 496 / 2)
+  // Training takes more frames instead of longer frames: 2 steps per frame after the first 4, and it stops by
+  // itself, as with 10 steps per frame.
+  assert.ok(frame.step >= trainingStepsAfterChange && frame.step < maximumTrainingStepsAfterChange, `${frame.step} steps`)
+  assert.equal(frameCount, 2 + (frame.step - unmeasuredTrainingStepsPerFrame) / 2)
 })
 
 test('a press on empty space adds a rectangle until every photo has one', () => {
@@ -1190,22 +1293,25 @@ test('a finger adds a rectangle with a tap, and has a larger corner to grab', ()
   assert.equal(frame.cursor, 'default')
 })
 
-test('a preset and "Train again" start over from the seeded weights', () => {
+test('a preset and "Retrain" start over from the seeded weights', () => {
   const page = createEditorDriver()
   const {machine} = page
   const first = page.settle()
+  const firstPhotos = [...first.values]
   const cell = pointOf(machine, 3)
   page.frame([press(cell.x, cell.y), move(cell.x + 60, cell.y - 90), release])
   const edited = page.settle()
   assert.equal(edited.layout, null)
-  assert.ok(edited.step > trainingStepsAfterChange)
+  assert.ok(edited.step > first.step)
 
-  // "Train again" keeps the edited sketch and fits it from the seeded weights.
-  let frame = page.frame([{kind: 'train again'}])
+  // "Retrain" keeps the edited sketch and fits it from the seeded weights.
+  let frame = page.frame([{kind: 'retrain'}])
   assert.equal(frame.step, 0)
   assert.deepEqual([...machine.source], [...machine.initialSource])
   assert.equal(frame.history.length, 1)
   assert.equal(frame.layout, null)
+  // The penalty is off again until the photos are close to the sketch.
+  assert.equal(frame.misalignment, 0)
   // The steps of each frame until training stops, e.g. 10, 10, 9, 10.
   const stepsPerFrame: number[] = []
   while (frame.training) {
@@ -1213,56 +1319,66 @@ test('a preset and "Train again" start over from the seeded weights', () => {
     stepsPerFrame.push(frame.stepsThisFrame)
   }
   const again = frame
-  assert.equal(again.step, trainingStepsAfterChange)
-  // The same sketch from the same weights, trained in the same frames, ends at the same loss.
+  assert.ok(again.step >= trainingStepsAfterChange && again.step < maximumTrainingStepsAfterChange)
+  // The same sketch from the same weights, trained in the same frames with the same penalty, ends at the same loss.
   const fromSeed = createLearnedGalleryMachine()
   fromSeed.target.geometries.set(machine.target.geometries)
   fromSeed.target.active.set(machine.target.active)
-  fromSeed.target.editOrder = machine.target.editOrder!
   fromSeed.target.outputs = machine.target.outputs!
+  fromSeed.setPenaltyReach(defaultHoldDistance / penaltyStrength, defaultHoldDistance / penaltyStrength * 5 / 4)
   let fromSeedLoss = fromSeed.evaluate().loss
   for (const steps of stepsPerFrame) fromSeedLoss = fromSeed.trainOrUndo(steps).loss
   assert.equal(again.loss, fromSeedLoss)
 
-  // A preset replaces the sketch, and the same sketch from the same weights trains to the same result.
+  // A preset replaces the sketch and starts over too. Its frames hold other steps than the page's first frames
+  // did, e.g. 10 where the first frame after the page loads holds 4, so the photos end within 0.05% of the stage
+  // of where the first fit put them, and not at the very same numbers.
   frame = page.frame([{kind: 'layout', name: 'story'}])
   assert.equal(frame.step, 0)
   assert.equal(frame.layout, 'story')
   assert.equal(frame.selected, null)
-  // No rectangle of a preset is older than another, whatever was edited before.
-  assert.ok(machine.target.editOrder!.every(order => order === 0))
   const story = page.settle()
-  assert.equal(story.loss, first.loss)
+  const largestDifference = Math.max(...machine.geometries.slice(0, 10 * learnedGeometryField.size).map(wire => Math.abs(story.values[wire]! - firstPhotos[wire]!)))
+  assert.ok(largestDifference < 0.0005, `a photo is ${largestDifference} of the stage from where the first fit put it`)
 
   // In the middle of training too, the frame of the restart shows the seeded weights' output, at step 0.
   page.frame([{kind: 'layout', name: 'cinema'}])
   for (let frameIndex = 0; frameIndex < 10; frameIndex++) page.frame()
-  frame = page.frame([{kind: 'train again'}])
+  frame = page.frame([{kind: 'retrain'}])
   assert.equal(frame.step, 0)
   assert.equal(frame.stepsThisFrame, 0)
-  assert.deepEqual(frame.history, [{step: 0, loss: frame.loss}])
-  assert.equal(page.settle().step, trainingStepsAfterChange)
+  assert.deepEqual(frame.history, [{step: 0, fromSketch: frame.loss, misalignment: 0}])
+  assert.ok(page.settle().step >= trainingStepsAfterChange)
 })
 
-test('the loss chart gets one sample per frame of training, for the latest 500 steps', () => {
+test('the loss chart gets one sample per frame of training, with the loss\'s two parts, for the latest 1,000 steps', () => {
   const page = createEditorDriver()
   let frame = page.frame()
-  assert.deepEqual(frame.history, [{step: 0, loss: frame.loss}])
+  assert.deepEqual(frame.history, [{step: 0, fromSketch: frame.loss, misalignment: 0}])
   frame = page.settle()
   assert.equal(frame.history[0]!.step, 0)
-  assert.equal(frame.history.at(-1)!.step, trainingStepsAfterChange)
-  assert.equal(frame.history.at(-1)!.loss, frame.loss)
-  assert.ok(frame.history.length >= 50 && frame.history.length <= 53)
+  assert.equal(frame.history.at(-1)!.step, frame.step)
+  assert.equal(frame.history.at(-1)!.fromSketch, frame.fromSketch)
+  assert.equal(frame.history.at(-1)!.misalignment, frame.misalignment)
+  // About one sample per 10 steps.
+  assert.ok(Math.abs(frame.history.length - frame.step / 10) <= 3, `${frame.history.length} samples for ${frame.step} steps`)
   assert.ok(frame.history.every((sample, index) => index === 0 || sample.step > frame.history[index - 1]!.step))
-  // The loss falls by more than five powers of ten, which is why the chart's axis is logarithmic.
-  assert.ok(frame.history[0]!.loss / frame.loss > 100_000)
+  // The distance from the sketch falls by more than four powers of ten, which is why the chart's axis is
+  // logarithmic.
+  assert.ok(frame.history[0]!.fromSketch / frame.fromSketch > 10_000)
+  // The penalty is 0 in the first samples, where the chart draws no line for it, and positive later.
+  assert.equal(frame.history[5]!.misalignment, 0)
+  assert.ok(frame.history.some(sample => sample.misalignment > 0))
 
-  // After an edit and its 500 steps, the samples start where the chart starts: one sample at or before the first
-  // of the latest 500 steps, and the others after it.
+  // After edits whose training takes the count past 1,000 steps, the samples start where the chart starts: one
+  // sample at or before the first of the latest 1,000 steps, and the others after it.
   const cell = pointOf(page.machine, 3)
   page.frame([press(cell.x, cell.y), move(cell.x + 60, cell.y - 90), release])
+  page.settle()
+  page.frame([press(cell.x + 60, cell.y - 90), move(cell.x, cell.y), release])
   frame = page.settle()
-  const firstChartStep = frame.step - trainingStepsAfterChange
+  assert.ok(frame.step > chartStepCount + 500)
+  const firstChartStep = frame.step - chartStepCount
   assert.ok(frame.history[0]!.step <= firstChartStep)
   assert.ok(frame.history[1]!.step > firstChartStep)
 })
