@@ -9,8 +9,9 @@
 // Each page is a Bun HTML import, as with `bun ./assets/index.html`: Bun bundles a page the first time it's requested
 // and reloads open pages when their files change. A page's path without the "/" at its end, e.g. /os, redirects to
 // /os/, as GitHub Pages does, so a page's relative links resolve the same way however the page was reached.
+// A script that a page starts as a worker is built at each request for it, so reloading the page picks up its changes.
 import {resolve} from 'node:path'
-import {iconSvg, repoRoot, sitePages} from './demo-site-pages.ts'
+import {iconSvg, repoRoot, sitePages, siteWorkers} from './demo-site-pages.ts'
 
 function option(name: string): string | undefined {
   const flag = `--${name}`
@@ -23,7 +24,7 @@ function option(name: string): string | undefined {
   return undefined
 }
 
-const routes: Record<string, Bun.HTMLBundle | Response | ((request: Request) => Response)> = {
+const routes: Record<string, Bun.HTMLBundle | Response | ((request: Request) => Response | Promise<Response>)> = {
   // The built pages carry the icon inline. Here the browser's request for /favicon.ico gets the same image.
   '/favicon.ico': new Response(iconSvg, {headers: {'content-type': 'image/svg+xml'}}),
 }
@@ -33,6 +34,14 @@ for (const page of sitePages) {
   routes[`/${page.path}`] = module.default
   // The redirect keeps the query, e.g. /regex-search?states=8 goes to /regex-search/?states=8.
   if (page.path !== '') routes[`/${page.path.slice(0, -1)}`] = request => new Response(null, {status: 302, headers: {location: `/${page.path}${new URL(request.url).search}`}})
+}
+for (const worker of siteWorkers) {
+  routes[`/${worker.path}`] = async () => {
+    const built = await Bun.build({entrypoints: [resolve(repoRoot, worker.source)], target: 'browser', format: 'iife', throw: false})
+    const script = built.outputs[0]
+    if (!built.success || script === undefined) return new Response(built.logs.map(log => log.message).join('\n'), {status: 500})
+    return new Response(script, {headers: {'content-type': 'text/javascript;charset=utf-8'}})
+  }
 }
 
 const portText = option('port') ?? process.env['PORT'] ?? '3000'

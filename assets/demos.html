@@ -85,8 +85,8 @@
            October 13, 2026: HandwiredOS's from its Monitor window in Chrome (14,467 operations in 275 layers), the
            JSON highlighter's from `bun scripts/measure-json-highlighter.ts` (15,928 operations in 1,043 layers for
            the loop form, which the page runs), and the regex search's from the page's own status line at its
-           default settings (697,070 operations in 8,192 layers). `bun run site:check` prints what each demo's page
-           reports, and fails when a number here is more than 10% away from the page's. -->
+           default settings, 12 states and 768 code points (312,108 operations in 6,142 layers). `bun run site:check`
+           prints what each demo's page reports, and fails when a number here is more than 10% away from the page's. -->
       <section class="demos" aria-labelledby="demos">
         <a class="card demo is-first" href="os/" aria-labelledby="handwiredos-title">
           <div class="demo-picture">
@@ -135,7 +135,7 @@
           <div class="demo-body">
             <h3 id="regex-search-title">Regex search</h3>
             <p>Type a pattern, and one program finds every match in a text as you type. The pattern reaches the program as tables of numbers, so every pattern runs on the same program.</p>
-            <p class="meta facts">About <b data-count="operations">700,000</b> operations in about <b data-count="layers">8,000</b> layers</p>
+            <p class="meta facts">About <b data-count="operations">310,000</b> operations in about <b data-count="layers">6,100</b> layers</p>
           </div>
         </a>
 
@@ -164,32 +164,45 @@
           </div>
         </a>
 
-        <!-- The GPU demo's card, hidden until the demo ships. To show it, remove the hidden attribute on the next
-             line. The site build publishes lab/json-search/demo.html at json-search/ when that file exists, and
-             fails when this card is shown without it. -->
-        <a class="card demo" href="json-search/" aria-labelledby="json-search-title" hidden>
+        <!-- The GPU demo's card. The site build publishes lab/json-search/demo.html at json-search/. The card's numbers
+             were measured on an Apple M5 Max in headless Chrome 155 on October 13, 2026. For lab/json-search/README.md,
+             a search of 100,000 documents with a pattern of up to 8 states, which is a pattern of up to 7 characters
+             or sets, took 17.6 to 20.8 ms after a pause of 200 ms or more, which is what a search per keystroke gets,
+             and 7.6 ms when one search followed another, and RegExp on one thread took 12 to 43 ms for the same
+             searches. The demo's page, on the built site, showed 18.5 to 23.1 ms for its first search, the one it
+             shows at rest, in 8 loads. So the card says "about 20 ms". With the page's toggle on CPU, the same
+             search took 14.2 to 14.3 s in three runs. The numbers aren't marked with data-count, since the demo's
+             page shows other numbers on another machine. -->
+        <a class="card demo" href="json-search/" aria-labelledby="json-search-title">
           <div class="demo-picture" aria-hidden="true">
-            <svg class="documents" viewBox="0 0 540 208" preserveAspectRatio="xMidYMid slice">
+            <!-- A piece of the demo's map: a small mark for each document, and a larger copper one for each document
+                 with a match. The copper marks are three tiles of different sizes, one over the other, so that
+                 together they repeat only far outside the picture. The picture keeps its shape at every width. -->
+            <svg class="documents" viewBox="0 0 540 208" preserveAspectRatio="xMidYMid meet">
               <defs>
-                <pattern id="every-document" width="18" height="8" patternUnits="userSpaceOnUse">
-                  <rect class="document" x="2" y="2.5" width="14" height="3" rx="1.5"/>
+                <pattern id="every-document" width="4" height="4" patternUnits="userSpaceOnUse">
+                  <rect class="document" width="3" height="3"/>
+                </pattern>
+                <pattern id="found-a" width="124" height="52" patternUnits="userSpaceOnUse">
+                  <rect class="found" x="3" y="3" width="5" height="5"/><rect class="found" x="55" y="23" width="5" height="5"/><rect class="found" x="51" y="27" width="5" height="5"/><rect class="found" x="39" y="47" width="5" height="5"/><rect class="found" x="3" y="15" width="5" height="5"/><rect class="found" x="79" y="47" width="5" height="5"/><rect class="found" x="19" y="7" width="5" height="5"/><rect class="found" x="67" y="39" width="5" height="5"/><rect class="found" x="55" y="11" width="5" height="5"/><rect class="found" x="51" y="23" width="5" height="5"/><rect class="found" x="35" y="7" width="5" height="5"/><rect class="found" x="11" y="19" width="5" height="5"/><rect class="found" x="43" y="3" width="5" height="5"/><rect class="found" x="19" y="23" width="5" height="5"/>
+                </pattern>
+                <pattern id="found-b" width="148" height="68" patternUnits="userSpaceOnUse">
+                  <rect class="found" x="127" y="63" width="5" height="5"/><rect class="found" x="135" y="23" width="5" height="5"/><rect class="found" x="119" y="51" width="5" height="5"/><rect class="found" x="75" y="3" width="5" height="5"/><rect class="found" x="123" y="63" width="5" height="5"/><rect class="found" x="43" y="7" width="5" height="5"/><rect class="found" x="95" y="31" width="5" height="5"/><rect class="found" x="107" y="27" width="5" height="5"/><rect class="found" x="23" y="55" width="5" height="5"/><rect class="found" x="87" y="31" width="5" height="5"/><rect class="found" x="47" y="43" width="5" height="5"/><rect class="found" x="63" y="35" width="5" height="5"/><rect class="found" x="131" y="11" width="5" height="5"/><rect class="found" x="31" y="27" width="5" height="5"/><rect class="found" x="47" y="19" width="5" height="5"/><rect class="found" x="23" y="15" width="5" height="5"/><rect class="found" x="83" y="51" width="5" height="5"/><rect class="found" x="79" y="3" width="5" height="5"/><rect class="found" x="35" y="3" width="5" height="5"/><rect class="found" x="135" y="39" width="5" height="5"/>
+                </pattern>
+                <pattern id="found-c" width="172" height="76" patternUnits="userSpaceOnUse">
+                  <rect class="found" x="107" y="39" width="5" height="5"/><rect class="found" x="111" y="19" width="5" height="5"/><rect class="found" x="15" y="63" width="5" height="5"/><rect class="found" x="95" y="19" width="5" height="5"/><rect class="found" x="127" y="43" width="5" height="5"/><rect class="found" x="127" y="19" width="5" height="5"/><rect class="found" x="79" y="27" width="5" height="5"/><rect class="found" x="23" y="63" width="5" height="5"/><rect class="found" x="135" y="55" width="5" height="5"/><rect class="found" x="31" y="11" width="5" height="5"/><rect class="found" x="79" y="43" width="5" height="5"/><rect class="found" x="39" y="7" width="5" height="5"/><rect class="found" x="155" y="23" width="5" height="5"/><rect class="found" x="103" y="67" width="5" height="5"/><rect class="found" x="47" y="35" width="5" height="5"/><rect class="found" x="11" y="43" width="5" height="5"/><rect class="found" x="163" y="15" width="5" height="5"/><rect class="found" x="115" y="67" width="5" height="5"/><rect class="found" x="151" y="35" width="5" height="5"/><rect class="found" x="27" y="51" width="5" height="5"/><rect class="found" x="63" y="71" width="5" height="5"/><rect class="found" x="23" y="15" width="5" height="5"/><rect class="found" x="99" y="23" width="5" height="5"/><rect class="found" x="123" y="71" width="5" height="5"/><rect class="found" x="155" y="43" width="5" height="5"/><rect class="found" x="111" y="67" width="5" height="5"/>
                 </pattern>
               </defs>
-              <rect width="540" height="208" fill="url(#every-document)"/>
-              <g class="found">
-                <rect x="38" y="18.5" width="14" height="3" rx="1.5"/><rect x="164" y="10.5" width="14" height="3" rx="1.5"/><rect x="290" y="26.5" width="14" height="3" rx="1.5"/><rect x="452" y="18.5" width="14" height="3" rx="1.5"/>
-                <rect x="110" y="42.5" width="14" height="3" rx="1.5"/><rect x="236" y="50.5" width="14" height="3" rx="1.5"/><rect x="380" y="42.5" width="14" height="3" rx="1.5"/><rect x="506" y="58.5" width="14" height="3" rx="1.5"/>
-                <rect x="20" y="74.5" width="14" height="3" rx="1.5"/><rect x="182" y="82.5" width="14" height="3" rx="1.5"/><rect x="326" y="74.5" width="14" height="3" rx="1.5"/><rect x="434" y="90.5" width="14" height="3" rx="1.5"/>
-                <rect x="74" y="106.5" width="14" height="3" rx="1.5"/><rect x="254" y="114.5" width="14" height="3" rx="1.5"/><rect x="362" y="122.5" width="14" height="3" rx="1.5"/><rect x="488" y="106.5" width="14" height="3" rx="1.5"/>
-                <rect x="146" y="138.5" width="14" height="3" rx="1.5"/><rect x="218" y="154.5" width="14" height="3" rx="1.5"/><rect x="308" y="146.5" width="14" height="3" rx="1.5"/><rect x="416" y="162.5" width="14" height="3" rx="1.5"/>
-                <rect x="56" y="170.5" width="14" height="3" rx="1.5"/><rect x="128" y="186.5" width="14" height="3" rx="1.5"/><rect x="344" y="178.5" width="14" height="3" rx="1.5"/><rect x="470" y="194.5" width="14" height="3" rx="1.5"/>
-              </g>
+              <rect x="28" y="28" width="483" height="151" fill="url(#every-document)"/>
+              <rect x="28" y="28" width="483" height="151" fill="url(#found-a)"/>
+              <rect x="28" y="28" width="483" height="151" fill="url(#found-b)"/>
+              <rect x="28" y="28" width="483" height="151" fill="url(#found-c)"/>
             </svg>
           </div>
           <div class="demo-body">
             <h3 id="json-search-title">Search 100,000 JSON documents</h3>
-            <p>The JSON highlighter&rsquo;s program, run on 100,000 documents at once. Every document runs the same operations and reads no other document, so one pass on the GPU computes all of them in parallel.</p>
-            <p class="meta facts">Needs a browser with WebGPU</p>
+            <p>Type a pattern, and regex search&rsquo;s program runs once per document on the GPU, over 100,000 JSON documents at each keystroke. No document reads another, so one pass runs them all, in about the time that RegExp takes on one thread for a pattern of up to 7 characters.</p>
+            <p class="meta facts">A search takes about 20&nbsp;ms on an Apple M5 Max&rsquo;s GPU. The page can also run the same program on the CPU, where a search takes about 14&nbsp;s.</p>
           </div>
         </a>
       </section>

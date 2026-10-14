@@ -80,6 +80,26 @@ describe('the searcher on the CPU', () => {
     expect(all.matches).toBeGreaterThan(0)
   })
 
+  test('a searcher that runs the highlighter when a document is first read answers as one that runs it at creation', async () => {
+    const everyDocument = {firstDocument: 0, documentCount: texts.length}
+    const pattern = '(the|an?) [a-z]+'
+    const atCreation = searched(await searcher.search({pattern, scope: 'strings', window: everyDocument}))
+    expect(atCreation.matches).toBeGreaterThan(0)
+    // A few documents at a time, as a page does in a worker: the search of a piece runs the highlighter on it first.
+    const whenFirstRead = createCpuSearcher(texts, {highlight: 'whenFirstRead'})
+    for (let first = 0; first < texts.length; first += 24) {
+      const window = {firstDocument: first, documentCount: Math.min(24, texts.length - first)}
+      const piece = searched(await whenFirstRead.search({pattern, scope: 'strings', window, documents: 'window'}))
+      expect([...piece.matchCounts]).toEqual([...atCreation.matchCounts.subarray(first, first + window.documentCount)])
+      expect([...piece.marks]).toEqual([...atCreation.marks.subarray(first * capacity, (first + window.documentCount) * capacity)])
+    }
+    // Reading the kinds or the validation before any search runs the highlighter too.
+    const unread = createCpuSearcher(texts, {highlight: 'whenFirstRead'})
+    expect([...await unread.kinds({firstDocument: 3, documentCount: 20})]).toEqual([...await searcher.kinds({firstDocument: 3, documentCount: 20})])
+    expect(unread.validation).toEqual(searcher.validation)
+    expect(whenFirstRead.validation).toEqual(searcher.validation)
+  })
+
   test('a pattern runs on the smallest state capacity that holds it, and one that fits none says what it needs', async () => {
     expect(searched(await searcher.search({pattern: 'abcdefg'})).states).toBe(8)
     const larger = searched(await searcher.search({pattern: 'connection reset'}))

@@ -9,7 +9,8 @@
 // 3. Move each page's HTML to its folder on the site. The URLs in its <link>, <script> and <img> tags are relative
 //    to the HTML file, so they are rewritten for the new folder. Links between pages stay as written, since the
 //    pages write them for the site's layout already, e.g. "../regex-search/". Every page gets the site's icon.
-// 4. Check the result, and fail when a page is missing, when a page loads a file or links to a page that isn't in
+// 4. Build each script that a page starts as a worker, as one file next to its page, e.g. site/json-search/demo-worker.js.
+// 5. Check the result, and fail when a page is missing, when a page loads a file or links to a page that isn't in
 //    site/, when a page loads anything from another host, or when a URL starts with "/". The site is served under
 //    a path prefix, e.g. https://example.com/handwired/, where a URL like "/os/" leaves the site. The check reads
 //    the HTML and CSS files, and the CSS inside the HTML, e.g. a style attribute. scripts/check-demo-site.ts loads
@@ -18,7 +19,7 @@ import {createHash} from 'node:crypto'
 import {existsSync} from 'node:fs'
 import {mkdir, readdir, readFile, rm, rmdir, stat, writeFile} from 'node:fs/promises'
 import path from 'node:path'
-import {iconLinkTag, repoRoot, siteFoldersNotBuilt, sitePages} from './demo-site-pages.ts'
+import {iconLinkTag, repoRoot, siteFoldersNotBuilt, sitePages, siteWorkers} from './demo-site-pages.ts'
 
 const outdir = path.join(repoRoot, 'site')
 const problems: string[] = []
@@ -190,6 +191,12 @@ const build = Bun.spawnSync(
 if (build.exitCode !== 0) process.exit(build.exitCode)
 
 for (const page of sitePages) await movePage(page.source, page.path)
+for (const worker of siteWorkers) {
+  const built = await Bun.build({entrypoints: [path.join(repoRoot, worker.source)], target: 'browser', format: 'iife', minify: true, throw: false})
+  const script = built.outputs[0]
+  if (!built.success || script === undefined) problems.push(`${worker.source}: ${built.logs.map(log => log.message).join('; ')}`)
+  else await Bun.write(path.join(outdir, worker.path), script)
+}
 // The empty scripts of the pages without a script, and the empty chunks Bun splits off them.
 for (const name of await readdir(outdir)) {
   if (name.endsWith('.js') && (await stat(path.join(outdir, name))).size === 0) await rm(path.join(outdir, name))
