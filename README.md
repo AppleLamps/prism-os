@@ -1,6 +1,39 @@
 # Handwired
 
-Handwired writes an interactive UI as one fixed numeric program. JavaScript writes browser inputs, e.g. the viewport size and pointer events, into a `Float32Array` source table and runs the program on it. The program's next-state values are written back into the table, and its other outputs, e.g. each window's position and size, go to the DOM. Every step is FP32 arithmetic over four kinds of instructions, and the compiler groups independent instructions into layers, each run as one sparse matrix multiplication. Layers of weighted sums and ReLU gates are the form of a neural network, and the name says where this network's weights come from: they're wired by hand, with builder functions, instead of trained. Behavior lives as numbers in one compiled program, so the same numbers can be edited by hand or adjusted by gradients; [lab/status.md's "What learns"](lab/status.md#what-learns) records how far that got. This is research code: today's executor is serial JavaScript on the CPU, there's no GPU backend, and there's no package to install, since package.json is private.
+Turn your regular JavaScript code into a neural net; no training & fully differentiable!
+
+## How It Works
+
+A program's made of if-else, loops, and state. Handwired transform them into matrix multiplication + reglu over floats. For example:
+
+```ts
+const a = 5
+const result = (a > 4) ? 10 : 12
+```
+
+The above can be expressed as basic arithmetic:
+
+```ts
+const a = 5
+// Math.max(0, x) is ReLU. For an integer a, isAbove4 is 1 if a > 4, and 0 otherwise
+const isAbove4 = Math.max(0, a - 4) - Math.max(0, a - 5)
+// Both branches compute, and isAbove4 picks one
+const result = isAbove4 * 10 + (1 - isAbove4) * 12
+```
+
+You can calculate that by hand and see that both arrive at the same result.
+
+We then collect the + and * and relu into a giant matmul, and either run it on JS or WebGPU, for fun.
+
+Because we basically only use these 2 promitives:
+- the full program stays differentiable
+- the weights don't need training since they're written manually
+- existing gpu techniques, such as fusion, sparsity, reordering, have a great time optimizing such minimal primitives
+
+This unlocks lots of funny use-cases, like:
+- unfreezing the weights and train them (what does that even do? Let's find out!)
+- attaching a specific frozen program to a generic neural net and train end-to-end (now a nanoGPT can do both shakespare and your particular UI?)
+- achieving GPU-level of parallelism with JS code that was written in a traditional single-threaded way (see the JSON research demo that runs in miliseconds over 100k documents)
 
 ## HandwiredOS
 
