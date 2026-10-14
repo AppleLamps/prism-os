@@ -13,8 +13,8 @@
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {type CellColors, type MapLayout, cellAt, cellCenterCss, mapLayout, nearestMatch, nextMatch, paintCells} from './demo-map.ts'
 import {
-  type Line, type LoadReason, type PatternAnalysis, type Scope, type Where, analyzePattern, count, documentRuns, documentText, documentsThatFit, isScope,
-  loadNotice, narrowDocumentCount, resultLine, runClassName, wideDocumentCount,
+  type Failure, type Line, type LoadReason, type PatternAnalysis, type Scope, type Where, analyzePattern, count, documentRuns, documentText, documentsThatFit,
+  failureSentence, isScope, loadNotice, narrowDocumentCount, resultLine, runClassName, wideDocumentCount,
 } from './demo-text.ts'
 import type {WorkerAnswer, WorkerRequest} from './demo-worker.ts'
 import {requestBatchDevice} from './gpu/host.ts'
@@ -94,7 +94,8 @@ type Arrival =
   | {kind: 'gpu', job: number, answer: GpuAnswer}
   | {kind: 'gpuLost', message: string}
   | {kind: 'worker', answer: WorkerAnswer}
-  | {kind: 'workerFailed', message: string}
+  // Without a message when the worker's script didn't load.
+  | {kind: 'workerFailed', message: string | undefined}
 
 // A search that has been in flight this long gets a line that says so, and the map shows no matches. A search on the
 // GPU takes up to 80 ms on the programs for 8 and 16 states, so it never shows the line, which would flash at each
@@ -215,8 +216,9 @@ function mountJsonSearch(document: Document, window: Window) {
     plan: firstPlan,
     loaded: 0,
     world: null as World | null,
-    // A failure with nothing to fall back on, e.g. of the worker. The page shows it and asks for no more work.
-    failure: null as string | null,
+    // A failure with nothing to fall back on, e.g. of the worker. The page says so in the line's place and asks for
+    // no more work.
+    failure: null as Failure | null,
     // The search whose answer the page wants, as of the last frame, '' for none, and since when it has wanted it.
     wantedKey: '',
     wantedSince: 0,
@@ -272,8 +274,10 @@ function mountJsonSearch(document: Document, window: Window) {
     st.arrivals.push({kind: 'worker', answer: event.data})
     scheduleRender()
   })
-  worker.addEventListener('error', event => {
-    st.arrivals.push({kind: 'workerFailed', message: event.message})
+  // An error that the worker throws arrives with its message. A script that didn't load arrives as a plain event,
+  // without one.
+  worker.addEventListener('error', (event: Event | ErrorEvent) => {
+    st.arrivals.push({kind: 'workerFailed', message: 'message' in event ? event.message : undefined})
     scheduleRender()
   })
 
@@ -402,7 +406,7 @@ function mountJsonSearch(document: Document, window: Window) {
           gpuFailure ??= arrival.message
           break
         case 'workerFailed':
-          st.failure = `the page’s worker failed (${arrival.message})`
+          st.failure = {kind: 'worker', message: arrival.message}
           break
         case 'gpu': {
           // The answer of a piece of work that the page gave up, e.g. after the GPU stopped working, is dropped.
@@ -538,7 +542,7 @@ function mountJsonSearch(document: Document, window: Window) {
     const notice = loadNotice(st.plan.reason, documentCount) ?? ''
     let lineView = st.lineView
     if (st.failure !== null) {
-      lineView = {state: 'bad', line: [world === null ? `The page couldn’t load its documents: ${st.failure}.` : `The search stopped: ${st.failure}.`]}
+      lineView = {state: 'bad', line: [failureSentence(st.failure)]}
     } else if (world === null) {
       lineView = {state: 'busy', line: [`Loading ${count(documentCount)} documents…`]}
     } else {
@@ -773,7 +777,7 @@ function mountJsonSearch(document: Document, window: Window) {
       st.arrivals.push({kind: 'loaded', world})
       scheduleRender()
     }, (error: unknown) => {
-      st.failure = error instanceof Error ? error.message : String(error)
+      st.failure = {kind: 'documents', message: error instanceof Error ? error.message : String(error)}
       scheduleRender()
     })
   })

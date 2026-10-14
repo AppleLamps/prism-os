@@ -6,7 +6,7 @@ import {describe, expect, test} from 'bun:test'
 import {readFileSync} from 'node:fs'
 import {capacity, displayKind} from '../../src/json-highlighter/kinds.ts'
 import {type MapLayout, cellAt, cellCenterCss, mapLayout, nearestMatch, nextMatch, paintCells} from './demo-map.ts'
-import {type Line, analyzePattern, count, documentRuns, documentText, documentsThatFit, duration, isScope, loadNotice, resultLine, runClassName} from './demo-text.ts'
+import {type Line, analyzePattern, count, documentRuns, documentText, documentsThatFit, duration, failureSentence, isScope, loadNotice, resultLine, runClassName} from './demo-text.ts'
 import type {WorkerAnswer, WorkerRequest} from './demo-worker.ts'
 import {codePointLength} from './documents.ts'
 import {createPlainSearch} from './plain-search.ts'
@@ -215,6 +215,13 @@ describe('the page\'s documents', () => {
     expect(loadNotice({kind: 'noWebGpu'}, 100_000)).toBe('This browser has no WebGPU, so both programs run on the CPU here, as JavaScript in a worker.')
     expect(loadNotice({kind: 'bufferLimit', wanted: 100_000}, 65_000)).toBe('One buffer of this GPU holds 65,000 documents, so the page searches 65,000 instead of 100,000.')
     expect(loadNotice({kind: 'gpuFailed', message: 'WebGPU out of memory'}, 100_000)).toBe('The GPU didn’t run the programs (WebGPU out of memory), so they run on the CPU here, as JavaScript in a worker.')
+  })
+
+  test('says in one sentence why the page can\'t search at all', () => {
+    expect(failureSentence({kind: 'documents', message: 'Array buffer allocation failed'})).toBe('The page couldn’t load its documents: Array buffer allocation failed.')
+    // A worker whose script didn't load gives no message, and one that throws gives the error's.
+    expect(failureSentence({kind: 'worker', message: undefined})).toBe('The page’s worker didn’t start, so the page can’t search.')
+    expect(failureSentence({kind: 'worker', message: 'Uncaught RangeError: Array buffer allocation failed'})).toBe('The page’s worker stopped (Uncaught RangeError: Array buffer allocation failed), so the page can’t search.')
   })
 })
 

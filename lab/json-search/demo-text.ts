@@ -49,6 +49,22 @@ export function loadNotice(reason: LoadReason, documentCount: number): string | 
   }
 }
 
+// A failure that leaves the page nothing to search with: the documents couldn't be written, e.g. for lack of memory, or
+// the page's worker failed. A worker whose script didn't load gives no message.
+export type Failure =
+  | {kind: 'documents', message: string}
+  | {kind: 'worker', message: string | undefined}
+
+// The sentence that the page shows in the place of the line of numbers.
+export function failureSentence(failure: Failure): string {
+  switch (failure.kind) {
+    case 'documents':
+      return `The page couldn’t load its documents: ${failure.message}.`
+    case 'worker':
+      return failure.message === undefined ? 'The page’s worker didn’t start, so the page can’t search.' : `The page’s worker stopped (${failure.message}), so the page can’t search.`
+  }
+}
+
 // What a search reads: every character, or only the ones that the highlighter shows as keys or as string values.
 export const scopes = ['everything', 'keys', 'strings'] as const
 export type Scope = typeof scopes[number]
