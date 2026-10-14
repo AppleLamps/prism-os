@@ -2,13 +2,15 @@
 
 ## What it is
 
-Search as you type over a text of fixed capacity, e.g. 256 or 1,024 code points, and the page offers 256, 512, 768 and 1,024. JavaScript parses a pattern and compiles it into an automaton with at most S states and 16 character classes. The program runs the automaton one step per code point, as products of a class's transition matrix with a 0/1 state vector, and returns one highlighted bit and one match start bit per code point. It finds every non-overlapping, non-empty match, leftmost, then longest. The program has two forms, (a) and (c). A third, (b), was removed on October 14, 2026:
+A search for a pattern in a text of fixed capacity, e.g. 256 or 1,024 code points. JavaScript parses a pattern and compiles it into an automaton with at most S states and 16 character classes. The program runs the automaton one step per code point, as products of a class's transition matrix with a 0/1 state vector, and returns one highlighted bit and one match start bit per code point. It finds every non-overlapping, non-empty match, leftmost, then longest. The program has two forms, (a) and (c). A third, (b), was removed on October 14, 2026:
 
 - (a) The pattern as data, in src/json-search/regex/data-program.ts. The transition matrix of every class, the accepting states and the class of every code point sit in cells, so a new pattern writes cells and changes no program.
 - (b) The pattern built into the program, in builtin-program.ts, from September 17 to October 14, 2026. The builder knew the automaton, so each step was a fixed sparse sum over the steps the pattern has, and a new pattern rebuilt and recompiled the program. At 32 states and 1,024 code points, the program built for one pattern had 133,529 live operations where form (a)'s has 2,297,760, about 17 times fewer, and rebuilding and recompiling it at each keystroke that changed the pattern took 0.40 to 0.48 s in Bun and 0.24 to 0.31 s in headless Chrome. Form (b) was removed after the standalone page that offered it, and aff4603 is the last commit that has builtin-program.ts, its tests, its measurements in report.ts, and this README's sections and table rows about it.
-- (c) The pattern as data in form (a)'s cells, with the steps over the text combined in a tree of matrix products instead of two loops, in tree-program.ts. It was added later the same day to test whether the program's matrix products can run as a few large batched products on the GPU, see [Matrix product tree on the GPU](#matrix-product-tree-on-the-gpu-september-17-2026). The page doesn't offer it.
+- (c) The pattern as data in form (a)'s cells, with the steps over the text combined in a tree of matrix products instead of two loops, in tree-program.ts. It was added later the same day to test whether the program's matrix products can run as a few large batched products on the GPU, see [Matrix product tree on the GPU](#matrix-product-tree-on-the-gpu-september-17-2026).
 
 On October 14, 2026 the files that JSON search's page loads moved into [src/json-search/regex/](../../src/json-search/regex/): pattern.ts, data-program.ts, bits.ts and host.ts. reference.ts moved into tests/json-search/regex/, and so did the tests of the moved files, which were in this folder's regex-search.test.ts. This folder keeps form (c) with its tests, the GPU measurement of form (c) and report.ts.
+
+From September 17 to October 14, 2026 this folder also had a page, which searched one text as you typed, with form (a) or form (b). It was removed because JSON search's page runs form (a) over 100,000 documents at each keystroke, and c274a64 is the last commit that has the page, demo.html with demo.css and demo.ts, and browser-frame.ts, the script that measured its keystroke frames in headless Chrome. This README's section on those frames went with them. Other paragraphs still quote its numbers, e.g. 30 ms in Chrome for one evaluation of form (a) at 32 states and 1,024 code points, and paragraphs that are dated before October 14, 2026 speak of that page in the present tense.
 
 The pattern language is a subset of JavaScript's RegExp syntax with the `u` flag: literal code points, `.`, `\d`, `\w`, character classes with ranges and negation, e.g. `[a-z_]` or `[^0-9]`, `?`, `*`, `+`, `|` and groups. Everything else, e.g. `*?`, `{2}`, `^` or `(?:`, throws a `PatternSyntaxError` with its position.
 
@@ -27,8 +29,6 @@ bun lab/regex-search/gpu/run.ts --mode check --profile <folder> --out <file.json
 ```
 
 The GPU measurements need reference bits from the CPU first, see the comments at the top of gpu/cpu-time.ts, gpu/run.ts and gpu/summarize.ts. The raw results are in gpu/results/, and summarize.ts prints every table in [Matrix product tree on the GPU](#matrix-product-tree-on-the-gpu-september-17-2026) from them, with `--gpu` gpu-main-1.json to gpu-main-4.json, `--frames gpu-frames-1.json`, `--checks gpu-check-1.json` and `--cpu cpu-programs.jsonl,cpu-programs-2.jsonl,cpu-js.jsonl`, in that order, so the second batch of form (a)'s timings replaces the first, which ran at load average 12 to 14.
-
-The page, rewritten on October 13, 2026, has a pattern field and three selects: Program, with form (a) as "one for every pattern" and form (b) as "built for each pattern", States, with 8, 12, 16 and 32, and Text capacity, with 256, 512, 768 and 1,024 code points. It starts with form (a) at 12 states and 768 code points. A change of a select builds the program in place, after a frame that shows "Building the program…", and keeps the choice in the query string. The page refuses to build form (a) above 1 million operations, i.e. 32 states at 512 code points or more, and says why. The text is edited in place, in a transparent textarea over the text, and the matches are rectangles behind the text in two copper washes that alternate, so neighboring matches stay apart. The page evaluates once in each frame where the pattern, the text or the program changed. The result line shows the count of matches, or one sentence per problem when the pattern has a syntax error or doesn't fit, and then no match is drawn. A text longer than the capacity is searched up to the capacity: the result line then reads e.g. "7 matches in the first 256 characters", the count of characters turns red, and the text after a bar is gray. The statistics show the compiled program's operations and layers, e.g. 312,108 operations in 6,142 layers at the starting choice, the time to build the program, and the time of the last search, and "How the pattern fits the program" shows the automaton's size against the capacity. [Keystroke frames in headless Chrome](#keystroke-frames-in-headless-chrome) has the page's times since the rewrite.
 
 | File | What it holds |
 | --- | --- |
@@ -77,7 +77,7 @@ Form (a)'s cells, at S states, C = 16 classes, K = 32 class boundaries and N tex
 | `transitions` | C × S × S bits, `transitions[c][s][t]` | the pattern changes |
 | `accepting` | S bits | the pattern changes |
 
-A pattern that needs more states, classes or boundaries gets a named message instead of a program, e.g. `the pattern needs 33 states, and the program holds 32`, and the page shows a sentence for it, e.g. "This pattern needs 33 states, and the program holds 32.", highlights nothing, and shows the automaton's size under "How the pattern fits the program". A text longer than N is searched only up to N code points, and the page says so and draws the rest in gray.
+A pattern that needs more states, classes or boundaries gets a named message instead of a program, e.g. `the pattern needs 33 states, and the program holds 32`, and JSON search's page shows a sentence for it, e.g. "This pattern needs 40 states, and the largest search program holds 32.", and marks no document. A text longer than N is searched only up to N code points.
 
 Form (a)'s operations for one code point:
 
@@ -127,53 +127,13 @@ Each variant ran in its own process, 3 times per column. A process builds and co
 
 The cost follows the live operations, 8 to 13 µs per 1,000. createEvaluator's checks of 17,506 cells don't show against a 28 ms evaluation. A new pattern in form (a) costs compiling the pattern and writing its cells before the evaluation: 30 µs at S = 8 and 256 code points, 59 µs at S = 16 and 1,024, and 144 µs at S = 32 and 256, each timed over 100 repetitions in the sizes process.
 
-### Keystroke frames in headless Chrome
-
-`browser-frame.ts` serves the page with Bun, opens it in headless Chrome with a fresh profile, types with the DevTools Protocol's `Input.insertText`, one code point per keystroke, waits for each frame, and reads the page's own timings. Pattern scenarios start from an empty pattern field and type the S-state pattern above. Only keystrokes where the pattern compiles and fits evaluate, e.g. `(the|an?` is an unterminated group, so that frame shows the syntax message and no matches, and the table's times cover the evaluated frames. Ready is from opening the page to the first highlighted frame, including form (a)'s build and compile. The callback is the `requestAnimationFrame` callback: compiling the pattern, writing cells or building the program, the evaluation and the DOM writes, 0.2 to 0.9 ms of DOM writes at 1,024 code points. "Input to next frame" runs from the first input event since the previous frame to the next frame's callback after the DOM writes, so it includes waiting for 2 frames, e.g. 26 ms at S = 8 where the callback takes 1.2 ms. The page's `performance.now()` reads in steps of about 0.1 ms.
-
-| Scenario | Ready ms | JS heap MB | Keystrokes, evaluated | Evaluation ms, median (max) | Callback ms, median (max) | Input to next frame ms, median (max) |
-| --- | --- | --- | --- | --- | --- | --- |
-| (a) S = 8, N = 256, typing the pattern | 230 | 113 | 16, 4 | 1.1 (1.6) | 1.2 (1.8) | 25.6 (26.4) |
-| (a) S = 16, N = 1,024, typing the pattern | 2,630 | 485 | 29, 8 | 10.6 (10.8) | 10.9 (11.1) | 27.3 (32.7) |
-| (a) S = 16, N = 1,024, typing 24 code points at the end of the text | 2,543 | 462 | 24, 24 | 9.8 (12.2) | 10.1 (12.4) | 27.4 (28.5) |
-| (b) S = 32, N = 1,024, typing the pattern | 253 | 117 | 49, 7 | 2.2 (4.8) | 309.0 (365.2), of which building and compiling 306.2 (361.9) | 312.6 (366.2) |
-| (a) S = 32, N = 1,024, typing the pattern | 9,722 | 1,468 | 49, 7 | 30.3 (32.4) | 30.7 (32.6) | 33.3 (39.0) |
-
-This table was measured after the page fixes, later the same day, on the same machine with other agents' work running. Chrome evaluated the same programs more slowly than Bun, e.g. 30 ms against 28.7 ms for form (a) at S = 32 and 1,024 code points, and 2.2 ms against 1.1 ms for form (b), and built and compiled form (b) faster, about 306 ms against 451 ms. The S = 8 scenario has only 4 evaluated frames.
-
-Update, October 13, 2026: the table above is for the page as it was until that day. The rewritten page was measured with the same script on the same machine, with Bun 1.4.3 and headless Chrome 155.0.8059.40, in one run at load average 4.0 to 5.0. The script's first scenario is now the page's starting choice, and its last one form (a) at S = 32 and 256 code points, since the page refuses S = 32 at 1,024. Ready now includes one frame that draws "Building the program…", and the DOM writes, 0.4 to 0.5 ms at the median here, include the layout that the matches' rectangles are read from. The heap is `performance.memory.usedJSHeapSize` without a collection.
-
-| Scenario | Ready ms | JS heap MB | Keystrokes, evaluated | Evaluation ms, median (max) | Callback ms, median (max) | Input to next frame ms, median (max) |
-| --- | --- | --- | --- | --- | --- | --- |
-| (a) S = 12, N = 768, the page's starting choice, typing the 8-state pattern | 590 | 225 | 16, 4 | 4.3 (4.9) | 5.0 (5.8) | 30.8 (30.9) |
-| (a) S = 8, N = 256, typing the pattern | 142 | 47 | 16, 4 | 0.9 (1.0) | 1.5 (1.5) | 28.3 (31.0) |
-| (a) S = 16, N = 1,024, typing the pattern | 1,261 | 407 | 29, 8 | 9.5 (9.8) | 10.1 (10.6) | 26.2 (26.7) |
-| (a) S = 16, N = 1,024, typing 24 code points at the end of the text | 1,352 | 401 | 24, 24 | 8.9 (12.6) | 9.6 (13.5) | 27.2 (30.0) |
-| (b) S = 32, N = 1,024, typing the pattern | 199 | 65 | 49, 7 | 2.3 (4.9) | 245.7 (287.2), of which building and compiling 243.1 at the median | 249.1 (288.8) |
-| (a) S = 32, N = 256, typing the pattern | 899 | 431 | 49, 7 | 7.7 (10.4) | 8.1 (11.3) | 27.5 (31.0) |
-
-On Bun's development server, which `bun start` also runs, the starting choice was ready 0.58 to 0.68 s after the navigation started, over three sets of 5 loads at load averages from 4 to 11, and held 169 MB of JavaScript heap after a forced collection in each set. Ready is the page's `performance.now()` when `window.regexSearchReady` becomes true. Other choices, with 2 loads each on the same server, the same day:
-
-| Form | States | Code points | Operations | Layers | Ready ms | Heap MB after a collection |
-| --- | ---: | ---: | ---: | ---: | --- | ---: |
-| (a) | 8 | 256 | 58,920 | 2,046 | 156 to 160 | 32 |
-| (a) | 8 | 1,024 | 236,328 | 8,190 | 517 to 548 | 123 |
-| (a) | 12 | 256 | 103,724 | 2,046 | 238 to 245 | 57 |
-| (a) | 12 | 1,024 | 416,300 | 8,190 | 802 to 895 | 226 |
-| (a) | 16 | 256 | 164,816 | 2,046 | 314 to 326 | 93 |
-| (a) | 16 | 1,024 | 661,712 | 8,190 | 1,276 to 1,277 | 364 |
-| (a) | 32 | 256 | 572,064 | 2,046 | 997 to 1,061 | 321 |
-| (a) | 32 | 512, 768 or 1,024 | refused by the page | | 42 to 53 | 1 |
-| (b), the starting pattern | 12 | 768 | 40,549 | 3,074 | 165 to 178 | 25 |
-| (b), the starting pattern | 32 | 1,024 | 54,117 | 4,098 | 218 to 221 | 33 |
-
 ## What fit well
 
 - Every value in both programs is an exact bit or a small integer, so the tests compare matches exactly, with no tolerance: 26 hand-written cases, and 400 random patterns with 6 texts each. 4 of the texts are random, over an alphabet with line terminators including U+2028 and U+2029, an emoji, U+10FFFF, escaped syntax characters, and the code points where `\d` and `\w` start or stop, e.g. `9`, `Z` and `_`. The other 2 are made of the code points just below, at and above the pattern's class boundaries. A last test puts a pattern at the largest capacity whose last match ends on the last cell. At every variant in the Bun tables, report.ts also checks the match count against the automaton simulator, including at 1,024 code points.
 - The index read turns a table entry AND a bit into one operation: `circuit.indexReadAffine([[class, 1], [bit, -C]], C, table, 'clamp', 'zero')` reads `table[class]` when the bit is 1, and +0 past the table when it's 0. That removed a product per matrix entry, i.e. half of form (a)'s operations.
 - Declaring code points and boundaries on a grid of 1 in cells.ts made every class comparison 2 operations, with no hand-written comparison code.
 - A new pattern in form (a) is JavaScript work only: compiling the pattern and writing its cells took 144 µs at S = 32, and the program, its size and its cost per evaluation don't depend on the pattern. That's the fixed worst case from chenguini's engineering.md: any pattern within capacity costs what the largest one costs.
-- The capacity check fits behavior-choices.md's "A fixed maximum with a named fallback": one message per exceeded capacity, and the page highlights nothing and says why, instead of highlighting the wrong code points.
+- The capacity check fits behavior-choices.md's "A fixed maximum with a named fallback": one message per exceeded capacity, and the page that shows the search highlights nothing and says why, instead of highlighting the wrong code points.
 - bits.ts folds bits that builder code already knows, e.g. the initial state has no predecessors, so form (b) built operations only for the steps the pattern had, without special cases in the passes.
 
 ## What got awkward
@@ -373,8 +333,9 @@ Separately, scripts/check.ts didn't find gpu/tsconfig.json, so the gpu folder's 
 - Leaves are f32, 4 bytes per 0/1 entry, with no bit packing. The main runs used only the row-16x16 kernel and Brent-Kung's network, so Sklansky's network wasn't measured on the GPU.
 - The programs' times past 1,024 code points are extrapolations, and form (c) at S = 32 has only 256 code points.
 - Only one frames run.
-- The demo page doesn't offer form (c).
 
 ### Update, October 13, 2026: many documents instead of one long text
 
 Form (a)'s step also runs as a loop on the GPU, over many documents instead of one long text: [lab/json-search](../../src/json-search/README.md#regex-searchs-step) builds one code point's work with this folder's `emitClasses` and `createStepAnd`, and a shader loops it over a document's 512 positions. The shader compiles in 0.05 to 0.11 s at 8 states, and one search of 100,000 documents takes 7 to 8 ms for a pattern of up to 8 states, 64 ms up to 16 states and 871 ms up to 32, when searches follow each other. In the same page, RegExp counts every match of ordinary patterns in 8 to 43 ms on one thread, and in 2 to 7 ms in 8 workers. A search after a pause of 200 ms or more takes longer, e.g. 17 to 21 ms at 8 states. The September timings above in this section sampled evaluations one after another and measured no pause, and their JavaScript loops ran on one thread.
+
+Update, October 14, 2026: `emitClasses` and `createStepAnd` are in src/json-search/regex/data-program.ts, and a second code writer, [src/json-search's bit-emit.ts](../../src/json-search/README.md#the-second-code-writer-bit-emitts), writes the search's shaders from the same step. They compile in 0.02 to 0.03 s at each of the three sizes, and one search of 100,000 documents takes 4.6, 4.7 and 5.2 ms for a pattern of up to 8, 16 and 32 states when searches follow each other, and 11 to 16 ms after a pause of 200 ms or more, at any of the three sizes. RegExp's times are the ones above.
