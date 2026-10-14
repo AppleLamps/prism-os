@@ -787,8 +787,7 @@ export function createTrainableGeometryMachine(
 
   // The outputs with their loss, for a caller that takes no step. It starts a frame of no steps: the line counts
   // and the penalty's weight are the ones that a frame would start with now, the penalty comes on if the outputs
-  // are close enough to the target, and the multipliers are brought within their limits without growing, as the
-  // next frame of steps would do first too.
+  // are close enough to the target, and the multipliers are brought within their limits without growing.
   function evaluate() {
     const values = circuit.evaluateTensor(source)
     assertFiniteValues(values, 'trainable geometry values')
