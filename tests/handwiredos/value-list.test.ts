@@ -1313,7 +1313,8 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   ]
   const renderer = createValueListRenderer(dom.document as unknown as Document, dom.root as unknown as HTMLElement, locations)
   const rowNodes = dom.spacer.children
-  const rowTexts = (node: FakeElement) => node.children.map(cell => cell.textContent)
+  // A row's name is in the <bdi> inside its first cell, and every other text in its cell.
+  const rowTexts = (node: FakeElement) => node.children.map((cell, column) => column === 0 ? cell.children[0]!.textContent : cell.textContent)
   // The sidebar's items, which follow the caption of the static markup, each with
   // its location's name and row count. The caption's parts: Operations' list of
   // kinds, which is displayed while the list shows Operations, and the shown

@@ -726,6 +726,26 @@ body {
   white-space: nowrap;
 }
 
+/* A column's title is never cut. The columns' widths are for the system font of macOS,
+   where WEIGHTS takes 59 of its column's 60 px. In a wider font, or with larger type, a
+   title reaches into the 8 px gap after its column instead of ending in an ellipsis, e.g.
+   WEIGHTS is 66 px wide in Verdana. */
+.monitor-header .monitor-cell {
+  overflow: visible;
+}
+
+/* A row's name is cut at its start, since the names of neighboring rows differ at their
+   ends, e.g. photos.thumbnails.0.centerXDisplacement and photos.thumbnails.0.centerXVelocity
+   read …ls.0.centerXDisplacement and …bnails.0.centerXVelocity in a column of 186 px.
+   In a cell whose direction is right to left, the text that doesn't fit is cut at the
+   left, where the ellipsis then stands, and a name that fits still starts at the cell's
+   left edge. The name itself is in a <bdi>, so it reads left to right, whatever
+   characters it starts and ends with. */
+.monitor-row .monitor-cell-name {
+  direction: rtl;
+  text-align: left;
+}
+
 /* Numbers line up on their last digit. */
 .monitor-cell-layer,
 .monitor-cell-weights,

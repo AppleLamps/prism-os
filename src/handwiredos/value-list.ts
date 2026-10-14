@@ -648,11 +648,16 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
   root.style.setProperty('--monitor-row-height', `${monitorLayout.rowHeight}px`)
   root.style.setProperty('--monitor-scrollbar-strip', `${monitorLayout.scrollbarStrip}px`)
   root.style.setProperty('--monitor-footer-height', `${monitorLayout.footerHeight}px`)
-  const createCells = (parent: HTMLElement) => [...textColumnNames, 'value'].map(column => {
+  // One cell per column, for the header or for a row. Returns the elements that hold
+  // the columns' texts: the cells, except for a row's name, which is written into a
+  // <bdi> inside its cell. The stylesheet cuts a long name at its start by giving the
+  // cell a direction of right to left, and the <bdi> keeps the name itself left to
+  // right, e.g. '…ls.0.centerXDisplacement'.
+  const createCells = (parent: HTMLElement, kind: 'header' | 'row') => [...textColumnNames, 'value'].map(column => {
     const cell = document.createElement('span')
     cell.className = `monitor-cell monitor-cell-${column}`
     parent.appendChild(cell)
-    return cell
+    return kind === 'row' && column === 'name' ? cell.appendChild(document.createElement('bdi')) : cell
   })
   overflow.textContent = `Only ${slotCount} rows are drawn at a time.`
   const createPart = (parent: HTMLElement, tagName: string, className: string, text = '') => {
@@ -684,7 +689,7 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
     overflow, // mount lifetime
     captionKinds, // mount lifetime. null for a location without kinds.
     captionSentence, // mount lifetime
-    headerCells: createCells(header), // mount lifetime
+    headerCells: createCells(header, 'header'), // mount lifetime
     // mount lifetime. Each item sits on the rectangle that the program hit-tests.
     locationNodes: locations.map((location, index) => {
       const node = createPart(sidebar, 'div', 'monitor-location')
@@ -710,7 +715,7 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
       const node = document.createElement('div')
       node.className = 'monitor-row'
       spacer.appendChild(node)
-      return {node, cells: createCells(node), row: -1, kindClass: '', value: Number.NaN}
+      return {node, cells: createCells(node, 'row'), row: -1, kindClass: '', value: Number.NaN}
     }),
   }
 
