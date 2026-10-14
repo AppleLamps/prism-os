@@ -605,7 +605,9 @@ export function describeOutputs(outputs: readonly {name: string, wire: Wire}[], 
     label: 'Outputs',
     rowNoun: 'outputs',
     description: 'What the page draws from, e.g. a window\'s position.',
-    titles: ['output', '', '', ''],
+    // The first column's title is 'name' and not 'output': in a window at its minimum
+    // width, the list leaves 42 px for that title, and 'OUTPUT' takes 52 px.
+    titles: ['name', '', '', ''],
     rowCount: outputs.length,
     text: row => [outputs[row]!.name, '', '', ''],
     value: row => values[outputs[row]!.wire]!,
