@@ -4,10 +4,8 @@
   "workspaces": {
     "": {
       "name": "handwired",
-      "dependencies": {
-        "@chenglou/pretext": "0.0.9",
-      },
       "devDependencies": {
+        "@chenglou/pretext": "0.0.9",
         "@types/bun": "latest",
         "@typescript/native-preview": "latest",
         "knip": "^6.16.1",
