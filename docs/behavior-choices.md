@@ -1,6 +1,6 @@
 # Behavior choices
 
-These choices change what the user sees, to shorten dependency chains, to make stored state independent of the frame rate, or to keep each frame's work under a fixed maximum. Constructions that replace one familiar expression are in [expressions.md](expressions.md), and loops rewritten without changing what the user sees are in [patterns.md](patterns.md). Contracts stay in [execution-model.md](execution-model.md), and each entry links the sections it depends on.
+These choices change what the user sees, to shorten dependency chains, to make stored state independent of the frame rate or of the sizes that the viewport had, or to keep each frame's work under a fixed maximum. Constructions that replace one familiar expression are in [expressions.md](expressions.md), and loops rewritten without changing what the user sees are in [patterns.md](patterns.md). Contracts stay in [execution-model.md](execution-model.md), and each entry links the sections it depends on.
 
 HandwiredOS's render loop follows chenguini's `ui.md` ([doctrine notes](https://github.com/chenglou/handwired/blob/exploration-2026-09/lab/ui-exploration/notes/doctrine.md)), except that since September 15, 2026, HandwiredOS uses the second choice below, and snaps where ui.md carries leftover steps into later frames. ui.md already documents the first choice in its "Hit Testing" section, one case of the fourth, a cap of 300 spring steps per frame, in its "Render Loop" section, and the first half of the last, reading the scroll position as an input, in its "State The Browser Keeps" section. The other choices come from this repo's measurements. ui.md's "Render Loop" handles a frame's inputs before its animation tick and commits state on every render, and in a float64 copy of that order, stored state depends on the frame rate when an event changes a destination between frames. ui.md mentions last frame's value only as "needing to see prev layout", in a TODO under "State Management".
 
@@ -66,7 +66,7 @@ previousContainerWidth = containerWidth.pos // stored with the rest of the state
 
 **Circuit version.** The copy is one more source cell with a declared range, whose next value is this evaluation's value, e.g. `nextSource[previousWidth] = drawnWidth`, written back with the other next-state values. The longest chain through the value becomes the longer of the part that computes the value and the part that reads it, instead of the two added together.
 
-**Cost.** No more operations, one more source cell, and one more copy per evaluation that writes back. The drawer is 144 operations in 17 layers instead of 30.
+**Cost.** No more operations, one more source cell, and one more copy per evaluation that writes back. The drawer is 144 operations in 17 layers instead of 30. In HandwiredOS's Photos, the thumbnails read whether a photo's zoom is under way from a state bit that the evaluation before stored, `underWay` in photo-gallery.ts, and the program is 130 layers deep, where it was 137 with the zoom springs' settle bits of the same evaluation, counted on October 14, 2026. The stored bit delays the thumbnails' snap by at most one settle check, at a time when no thumbnail is drawn.
 
 **Why choose it.** Fewer layers with no more operations. Fewer layers only save time on an executor that runs a layer's operations at the same time, while today's CPU executor pays per operation.
 
@@ -84,7 +84,7 @@ st.events.keydowns.push(event) // every key event before the next render
 const visibleRows = rows.filter(isVisible) // one DOM node per visible row
 ```
 
-**What the user sees differently.** Only at the maximum, where the named fallback runs. E.g. past 300 steps, every animated object snaps onto its destination, which shows after a stall of about 1.2 s while something still moves. A text field's lines past 12 aren't laid out, and the demo in [code-points](../lab/ui-exploration/code-points/README.md) says why. The list in HandwiredOS's Monitor window says "Only 64 rows are drawn at a time." when the window shows more rows than the list has DOM slots. Extra events in a frame go to another evaluation, which the user never sees.
+**What the user sees differently.** Only at the maximum, where the named fallback runs. E.g. past 300 steps, every animated object snaps onto its destination, which shows after a stall of about 1.2 s while something still moves. A text field's lines past 12 aren't laid out, and the demo in [code-points](../lab/ui-exploration/code-points/README.md) says why. The list in HandwiredOS's Monitor window says "Only 64 rows are drawn at a time." when the window shows more rows than the list has DOM slots. HandwiredOS's Photos has two springs for the zoom of its 12 photos, where plain JavaScript would give every photo its own: one for the open photo and one for the photo that was closed last, about 300 operations fewer than 12 springs. A photo that is still on its way back is in its cell at once when a second photo is closed meanwhile, which takes a close, an open of another photo and a second close within about half a second. Extra events in a frame go to another evaluation, which the user never sees.
 
 **Circuit version.** Give each quantity a maximum and one of these fallbacks: snap, e.g. `advanceFrame` runs a snap evaluation when a frame would need more than `maxStepsPerFrame` steps; carry, e.g. ui.md's backlog of steps; split, e.g. input's JavaScript splits a frame's events into several evaluations; report, e.g. the `slotOverflow` output of hn-thread and of the list in HandwiredOS's Monitor window; drop, e.g. rows past the last of that list's 64 DOM slots get no node; clamp, e.g. lists' release velocity at ±2^16 px/s; or throw, e.g. the range check on every source cell.
 
@@ -95,6 +95,31 @@ const visibleRows = rows.filter(isVisible) // one DOM node per visible row
 **Choosing the maximum.** Pick it from the quantity's measured distribution, so normal use doesn't reach it, e.g. 300 steps against about 4 per frame at 60 fps, or hn-thread's 48 DOM slots against at most 32 needed in its measured states. Give every maximum an output or a check: before `runOverflow` existed, a paragraph with longer runs of break opportunities than text-walker was built for started lines at the wrong segment, and no output showed the problem.
 
 **Contract, long form, tests.** execution-model.md's [Static bounds](execution-model.md#static-bounds); differentiability.md's [Static bounds with named fallbacks](../lab/ui-exploration/guide/sections/differentiability.md#static-bounds-with-named-fallbacks), and executor.md's [Fixed capacities](../lab/ui-exploration/guide/sections/executor.md#fixed-capacities) and [How a frame's events are handled](../lab/ui-exploration/guide/sections/executor.md#how-a-frames-events-are-handled); tested by [spring-matrix.test.ts](../tests/runtime/spring-matrix.test.ts), e.g. "a 3 s stall snaps every object onto its destination once, no frame runs more than 300 steps, and the committed tables stay bit-identical across frame rates".
+
+## Store what the user placed, and fit it to the viewport in every evaluation
+
+When the viewport can get too small for an element's stored rectangle, e.g. a window near the right edge of a browser window that shrinks, keep the stored rectangle as the user placed it, and compute the rectangle that fits the viewport from it in every evaluation. HandwiredOS's windows do this since October 14, 2026. chenguini's engineering.md, "Data Modeling", says to compute derived data and not to store it on the data that it came from, and ui.md's "Layout" counts the viewport's size among a frame's inputs.
+
+```js
+// familiar: clamp the stored rectangle in every frame, so every viewport the page ever had is part of the state
+windowRect = clampIntoViewport(windowRect, viewport)
+// the choice: the stored rectangle is what the user placed, and the fitted one is computed and not stored
+const fittedRect = clampIntoViewport(windowRect, viewport)
+// a drag starts from where the window is drawn, and stores only in an evaluation in which the pointer moved
+if (dragging && (deltaX !== 0 || deltaY !== 0)) windowRect.left = fittedRect.left + deltaX
+```
+
+**What the user sees differently.** A viewport that shrinks and grows back leaves every window where it was, e.g. a phone turned on its side and back. With the fitted rectangle written back, HandwiredOS's three windows ended on one rectangle there, 12, 36 and 366 × 278 px, and a window kept the smallest size that a viewport had ever given it. A window that is only dragged while a small viewport makes it smaller keeps its stored size, and has that size again in a larger viewport. A press and a release at one point store nothing, e.g. a tap on a title bar that only brings its window to the front.
+
+**Circuit version.** The fitted rectangle is a clamp of each stored cell against the viewport's cells, `fitIntoWorkspace` in window-manager.ts. Each window is fitted once before the hit tests and once after the drag or the resize, and the hit tests, the drawing and the springs read the fitted rectangle. A drag stores the position, a resize the position and the size, and one bit, whether the pointer moved in this evaluation, selects between the stored value and the new one. The builder infers no grid for a value that comes out of `emitMinimum` and `emitMaximum` clamps, and after a drag a range of hundreds of thousands of px, so the fitted rectangle declares its range and its 1/64 px grid with `assumeRange` and `assumeGrid`. Without the two declarations, the hit tests' comparisons are sign cascades instead of integer bits.
+
+**Cost.** In HandwiredOS, with three windows, 125 live operations and 7 layers, from 4,266 operations in 123 layers to 4,391 in 130, on October 14, 2026. Without the two declarations, 844 more live operations and 5 more layers.
+
+**Why choose it.** The stored rectangle depends only on what the user did, so the same drags and resizes give the same windows whatever sizes the viewport had in between, and a test can compare stored and drawn rectangles with a plain JavaScript reference over random viewports.
+
+**Don't use it when.** A press whose release is a few pixels away should count as a click. This program has no drag threshold, so a release 1 px from its press drags the window by 1 px and stores where that leaves it.
+
+**Contract, long form, tests.** execution-model.md's [Comparisons](execution-model.md#comparisons) and [Grids](execution-model.md#grids); the comment "A window's rectangle while it isn't maximized" in window-manager.ts's `buildWindowManager`; tested by [window-manager.test.ts](../tests/handwiredos/window-manager.test.ts), e.g. "a viewport that shrinks and grows back leaves every window where it was, e.g. a phone turned on its side and back", "a press and a release that move nothing store nothing, e.g. a tap on a title bar on a phone held sideways, and the smallest move stores" and "stored and drawn rectangles equal a plain JavaScript reference over random viewports, drags and resizes, with viewports on the thresholds".
 
 ## Anchor the scroll position to the row at the top of the view
 
