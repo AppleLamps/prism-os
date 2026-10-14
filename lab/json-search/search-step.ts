@@ -25,7 +25,7 @@ import type {CompiledPattern, SearchCapacity} from '../regex-search/pattern.ts'
 import {type Binding, type LoopProgram, createStage} from './loop-program.ts'
 
 export const kindCount = Object.keys(displayKind).length
-// The capacities lab/regex-search's page uses for the classes and their boundaries.
+// The capacities for the classes and their boundaries, the same as in lab/regex-search's measurements (report.ts).
 export const classCapacity = 16
 export const boundaryCapacity = 32
 

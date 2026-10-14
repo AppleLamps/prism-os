@@ -1,8 +1,7 @@
 /* The page that searches many JSON documents, lab/json-search/demo.html. This file is the page's only stylesheet: it
    imports site.css, the tokens and the parts every page shares, then tool.css, the pattern field and the display
-   kinds' colors that the text tools share, and adds what only this page needs. With several links in the page, Bun's
-   development server (1.4.3) serves the stylesheets in the reverse of the page's order, and `bun build` in the page's
-   order. */
+   kinds' colors, and adds what only this page needs. With several links in the page, Bun's development server
+   (1.4.3) serves the stylesheets in the reverse of the page's order, and `bun build` in the page's order. */
 @import "../../assets/site.css";
 @import "../../assets/tool.css";
 
@@ -28,7 +27,7 @@
   .with-touch { display: inline; }
 }
 
-/* The caption is two sentences, so it gets a wider column than site.css's one-sentence caption. */
+/* The caption is three sentences, so it gets a wider column than site.css's one-sentence caption. */
 .deck { max-width: 47em; }
 
 /* What the page does instead of searching the wanted documents on the GPU, and why. */
@@ -204,7 +203,7 @@
 }
 .document-text:focus-visible { outline-offset: -2px; }
 /* A match: neighboring matches alternate between a light and a deep copper wash, each with a copper line under it,
-   so two matches in a row stay apart, as on the regex search's page. A match that wraps keeps its look on each line. */
+   so two matches in a row stay apart. A match that wraps keeps its look on each line. */
 .document-text .hit {
   border-radius: 2px;
   box-shadow: inset 0 -1px var(--copper);

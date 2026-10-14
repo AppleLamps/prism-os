@@ -58,7 +58,7 @@
 
 .section-label { margin: var(--space-8) 0 var(--space-4); }
 
-/* The demos: HandwiredOS across the full width, then the smaller cards, two to a row. */
+/* The demos: HandwiredOS across the full width, then the two smaller cards, side by side. */
 .demos {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -136,112 +136,6 @@
 .go::after { content: " \2192"; display: inline-block; margin-left: var(--space-1); transition: transform var(--quick) var(--ease); }
 a.card:hover .go::after { transform: translateX(3px); }
 
-/* The fifth card is hidden until its demo ships, which leaves three small cards after HandwiredOS. The three sit
-   in one row where the page has its full width, 1104 px, i.e. in a window of 1152 px or more. Below that width
-   the third takes a whole row, with its picture on the left. Once the fifth card is shown, the four small cards
-   sit two to a row at every width above 719 px. */
-@media (min-width: 1152px) {
-  .demos:not(:has(> .demo:nth-child(5):not([hidden]))) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-@media (min-width: 720px) and (max-width: 1151px) {
-  .demos:not(:has(> .demo:nth-child(5):not([hidden]))) > .demo:nth-child(4) { grid-column: 1 / -1; flex-direction: row; }
-  /* The picture is as wide as a card of the row above, so its right edge continues that card's right edge. */
-  .demos:not(:has(> .demo:nth-child(5):not([hidden]))) > .demo:nth-child(4) .demo-picture {
-    flex: none;
-    width: calc(50% - var(--space-5) / 2);
-    height: auto;
-    min-height: 200px;
-    border-right: 1px solid var(--rule);
-    border-bottom: 0;
-  }
-}
-
-/* The pictures of the two text demos show a few of their own lines. A line too many for the card fades out at the
-   picture's bottom edge. */
-.peek {
-  --fade-at-the-bottom: linear-gradient(to bottom, #000 calc(100% - 16px), transparent);
-  --fade-at-the-right: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  -webkit-mask-image: var(--fade-at-the-bottom);
-  mask-image: var(--fade-at-the-bottom);
-}
-
-/* JSON highlighter: the colors its page gives each kind of character. Keys stay in ink, so the structure reads
-   first and the values carry the color. Lines of code don't wrap, so a line too long for the card also fades out,
-   at the picture's right edge. */
-.peek-json {
-  padding: var(--space-4) var(--space-5);
-  color: var(--ink);
-  font: var(--type-code);
-  white-space: pre;
-  -webkit-mask-image: var(--fade-at-the-bottom), var(--fade-at-the-right);
-  mask-image: var(--fade-at-the-bottom), var(--fade-at-the-right);
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-}
-.peek-json .punctuation { color: var(--ink-3); }
-.peek-json .string { color: var(--wire-green); }
-.peek-json .escape { color: var(--wire-ochre); }
-.peek-json .number { color: var(--wire-indigo); }
-.peek-json .literal { color: var(--wire-plum); }
-.peek-json .error { color: var(--wire-red); }
-/* The program returns the position of the first error, and the page underlines the character there. */
-.peek-json .first-error {
-  text-decoration: underline wavy var(--wire-red);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-  text-decoration-skip-ink: none;
-}
-/* Copper marks what the program points at: the bracket at the caret and the bracket that matches it. */
-.peek-json .match {
-  border-radius: var(--radius-1);
-  background: var(--copper-wash);
-  box-shadow: 0 0 0 1px var(--copper-line);
-  color: var(--copper);
-}
-.peek-json .caret {
-  display: inline-block;
-  width: 2px;
-  height: 18px;
-  margin: 0 -1px;
-  vertical-align: -4px;
-  border-radius: 1px;
-  background: var(--copper);
-}
-
-/* Regex search: the pattern field, drawn as it looks with focus, and the text with its matches. */
-.peek-regex { padding: var(--space-5) var(--space-5) 0; }
-.peek-pattern {
-  padding: 0 var(--space-3);
-  border: 1px solid var(--copper-line);
-  border-radius: var(--radius-2);
-  background: var(--sheet);
-  box-shadow: 0 0 0 3px var(--copper-wash);
-  color: var(--ink);
-  font: 400 13px/32px var(--font-mono);
-  white-space: nowrap;
-  overflow: hidden;
-}
-.peek-pattern i { color: var(--ink-3); font-style: normal; }
-.peek-pattern i:first-child { margin-right: 6px; }
-.peek-pattern i:last-child { margin-left: 6px; }
-.demo .peek-regex p { margin: var(--space-4) 0 0; color: var(--ink); font: var(--type-notes); }
-/* Neighboring matches alternate between two washes of copper, as on the demo's page, each with a line under it,
-   so two matches in a row stay apart. A mark has no padding above or below: its box is as tall as the font's
-   letters with their ascenders and descenders, 21 px in Iowan Old Style, and the lines are 22 px apart, so with
-   padding the mark of one line would cover the line under the mark above it. */
-.peek-regex mark {
-  border-radius: 2px;
-  box-shadow: inset 0 -1px var(--copper);
-  color: inherit;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-}
-.peek-regex mark.even { background: var(--copper-wash); }
-.peek-regex mark.odd { background: var(--copper-wash-deep); }
-
 /* Learned gallery: the sketch of rectangles on the left, and where the network puts the photos on the right. The
    photos have the sketch's rectangles exactly: once trained, the network is within a pixel of the sketch on the
    demo's page, which is less than this small picture can show. */
@@ -284,16 +178,13 @@ a.card:hover .go::after { transform: translateX(3px); }
   .wiring { grid-column: 1; grid-row: auto; max-width: 400px; margin-top: var(--space-6); }
   .demo.is-first .demo-body { padding: var(--space-5); }
 }
-/* One card to a row, below the width where two cards side by side still fit a line of the JSON picture's code.
-   No neighbor's picture needs to line up, so each picture is as tall as what it shows. */
+/* One card to a row in a window narrower than 720 px, where each of two cards side by side would be less than
+   324 px wide. No neighbor's picture needs to line up, so each picture is as tall as what it shows. */
 @media (max-width: 719px) {
   .demos { grid-template-columns: 1fr; gap: var(--space-4); }
   .demo-body { padding: var(--space-4) 20px 20px; }
   .demo.is-first .demo-body { padding: 20px; }
   .demo-picture { height: auto; }
-  .peek { height: auto; -webkit-mask-image: none; mask-image: none; }
-  .peek-json { padding: var(--space-4) 20px; -webkit-mask-image: var(--fade-at-the-right); mask-image: var(--fade-at-the-right); }
-  .peek-regex { padding: 20px; }
   .pair { position: relative; inset: auto; height: 144px; margin: 20px; grid-template-columns: 1fr 28px 1fr; }
   .documents { height: 176px; }
 }

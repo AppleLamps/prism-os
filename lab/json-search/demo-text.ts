@@ -179,7 +179,7 @@ export function documentRuns(text: string, kinds: ArrayLike<number>, marks: Arra
   return runs
 }
 
-// The class names of a run's span: the display kind as the two text tools name it, e.g. k2, and the match's wash.
+// The class names of a run's span: the display kind as assets/tool.css names it, e.g. k2, and the match's wash.
 export function runClassName(run: Run): string {
   switch (run.match) {
     case 0: return `k${run.kind}`

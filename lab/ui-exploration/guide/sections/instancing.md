@@ -448,7 +448,7 @@ For a handful of items whose constants sit in lookup tables, the duplicated circ
 
 ## Why staging HandwiredOS made it bigger
 
-HandwiredOS has 4 windows, 4 dock items and 12 photos. instanced-items/handwired-os-staged.ts writes those as three arrays of items, with 7 shared stages, 8 map stages and 17 reductions. Over a 220-frame session of dragging, resizing, closing and reopening windows and opening photos, it made 0 decision mismatches against window-manager.ts in 94,380 values, and 98.8% of the values were bit-identical; only thumbnail centers and their velocities differed, by up to 0.0012 px and 0.013 px/s. But expanded into one circuit, the staged version is larger:
+In September 2026, HandwiredOS had 4 windows, 4 dock items and 12 photos. instanced-items/handwired-os-staged.ts writes those as three arrays of items, with 7 shared stages, 8 map stages and 17 reductions. Over a 220-frame session of dragging, resizing, closing and reopening windows and opening photos, it made 0 decision mismatches against window-manager.ts in 94,380 values, and 98.8% of the values were bit-identical; only thumbnail centers and their velocities differed, by up to 0.0012 px and 0.013 px/s. But expanded into one circuit, the staged version is larger:
 
 | Circuit | Live operations | Layers | Stored weights |
 | --- | ---: | ---: | ---: |
