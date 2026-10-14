@@ -309,7 +309,7 @@ section('counts', 'One search by document count, 8 states, ms', () => {
   ].join('\n')
 })
 
-section('program', 'The program\'s own kernel, searcher.ts, what the demo page runs today, ms', () => {
+section('program', 'The program\'s own kernel, searcher.ts, as the demo page ran it when this check was made, ms', () => {
   const rows: string[][] = []
   for (const count of counts) {
     const page = run(`program-${count}`)?.page
@@ -509,7 +509,7 @@ section('report', 'The report\'s tables', () => {
     }
     return row
   }
-  const programRow = ['searcher.ts, the program as the page runs it today, one f32 per code point, a count per document']
+  const programRow = ['searcher.ts with loop-emit.ts\'s shaders, the program as the page ran it when this check was made, one f32 per code point, a count per document']
   for (const states of [8, 16, 32]) {
     const result = ((today?.results ?? []) as ProgramResult[]).find(entry => entry.states === states && entry.scope === 'everything')
     programRow.push(result === undefined ? '' : `${cell(result.backToBack.totalMs)}; ${cell(pauseOf(result, 200))}`)

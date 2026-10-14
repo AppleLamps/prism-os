@@ -208,7 +208,7 @@ From the `compact` runs, load average 100,000: 2.0 to 5.5, 250,000: not run, 500
 | the reverse pass alone with scope bits, one bit per document | string values | 16 | 0.99 (0.95 to 1.16); 4.49 (2.15 to 4.66) |  |  | 7.75 (7.71 to 7.98); 17.7 (17.3 to 17.9) |
 | the reverse pass alone with scope bits, one bit per document | string values | 32 | 1.76 (1.74 to 1.96); 8.04 (7.98 to 8.89) |  |  | 14.5 (14.4 to 15.1); 24.5 (20.3 to 26.1) |
 
-### The program's own kernel, searcher.ts, what the demo page runs today, ms
+### The program's own kernel, searcher.ts, as the demo page ran it when this check was made, ms
 
 From the `program` runs. The time is `timings.totalMs` of the searcher's result, which the demo page's line shows. A search of more than 1.5 s has no pause series.
 
@@ -348,7 +348,7 @@ Counting the documents with a match: 0.28 (0.10 to 0.55) ms from 100,000 counts,
 | hand-written kernel on bytes: a match count per document, with a scope (string values) | 16.7 (16.6 to 17.2); 25.6 (25.5 to 25.7) | 21.0 (20.9 to 21.1); 30.7 (29.5 to 30.9) | 30.8 (30.7 to 39.5); 40.7 (40.6 to 40.9) |
 | the same without a scope | 15.2 (15.2 to 16.0); 24.3 (22.9 to 24.8) | 20.1 (20.1 to 20.5); 29.9 (29.8 to 30.0) | 30.1 (29.7 to 38.4); 39.7 (39.6 to 43.8) |
 | the lab's `bitRowKernel` as it is, one f32 per code point, a count per document | 27.8 (27.6 to 28.0); 36.5 (35.1 to 36.8) | 32.8 (28.9 to 42.4); 38.5 (38.4 to 39.3) | 51.4 (40.2 to 66.8); 50.1 (49.8 to 51.2) |
-| searcher.ts, the program as the page runs it today, one f32 per code point, a count per document | 99.2 (64.9 to 111); 74.0 (64.8 to 90.4) | 594 (590 to 597); 635 (597 to 672) | 8870 (8759 to 9097);  |
+| searcher.ts with loop-emit.ts's shaders, the program as the page ran it when this check was made, one f32 per code point, a count per document | 99.2 (64.9 to 111); 74.0 (64.8 to 90.4) | 594 (590 to 597); 635 (597 to 672) | 8870 (8759 to 9097);  |
 
 The same searches in `compact-1000000`, where a series is at least 15 searches and 1 s, with no rest before it (load average 3.6 to 6.1), again back to back; after a pause of 200 ms. Which documents match, with a scope: 4.64 (4.59 to 5.24); 14.1 (8.40 to 14.3) at 8 states, 7.75 (7.71 to 7.98); 17.7 (17.3 to 17.9) at 16, and 14.5 (14.4 to 15.1); 24.5 (20.3 to 26.1) at 32. Without a scope: 4.38 (4.33 to 4.68); 13.5 (8.63 to 13.8) at 8 states, 7.14 (7.07 to 7.50); 17.2 (17.0 to 17.3) at 16, and 18.8 (15.3 to 21.1); 24.2 (22.6 to 25.1) at 32. A count per document, with a scope: 17.4 (16.8 to 17.9); 25.9 (25.7 to 26.0) at 8 states, 21.1 (21.0 to 21.6); 30.7 (21.4 to 32.0) at 16, and 46.3 (34.3 to 56.4); 44.3 (41.0 to 52.3) at 32. Without a scope: 15.3 (15.2 to 15.9); 24.3 (24.2 to 24.4) at 8 states, 20.2 (20.1 to 20.7); 30.0 (29.8 to 30.3) at 16, and 29.9 (29.5 to 31.1); 39.6 (39.5 to 39.8) at 32. `bitRowKernel`: 28.1 (27.8 to 28.9); 36.9 (36.8 to 37.0) at 8 states, 29.8 (29.5 to 30.7); 39.0 (38.7 to 39.4) at 16, and 40.5 (40.1 to 41.7); 50.1 (49.9 to 51.7) at 32.
 
