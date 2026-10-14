@@ -533,7 +533,7 @@ test('words move straight to the new layout in the frame of the event, while the
   const photosOutput = (field: number) => values[machine.output.windows[2 * windowOutputField.size + field]!]!
   assert.equal(photosOutput(windowOutputField.opacity), 1)
   assert.ok(photosOutput(windowOutputField.scale) > 0.9, `Photos drawn at scale ${photosOutput(windowOutputField.scale)}`)
-  // The obstacles are Files and Photos, in window order.
+  // The obstacles are Monitor and Photos, in window order.
   const photosArea = arrangementOf(machine.source).obstacles[1]!
   assert.equal(photosArea.active, false)
   assert.ok(during.some((word, wordIndex) => wordOverlaps(word, wordIndex, photosArea)), 'some word is laid out in Photos\' area')
@@ -547,11 +547,11 @@ test('words move straight to the new layout in the frame of the event, while the
   assert.ok(during.every(word => word.visible === 1))
 })
 
-test('dragging Files over Notes reflows the paragraph, and the settled words match pretext', () => {
+test('dragging Monitor over Notes reflows the paragraph, and the settled words match pretext', () => {
   const machine = createWindowManagerMachine()
   step(machine)
   const before = readWords(machine, settle(machine)).map(word => word.y)
-  // Files' title bar at 100,70; drag it right by 400 and down by 100, over the Notes window.
+  // Monitor's title bar at 100,70; drag it right by 400 and down by 100, over the Notes window.
   let time = pressTime(machine)
   machine.pointerDown(100, 70, time)
   machine.pointerMove(300, 120, time += 4)
@@ -569,7 +569,7 @@ test('a band below the content box is unusable, so no word is placed where the w
   const machine = createWindowManagerMachine()
   step(machine)
   settle(machine)
-  // Raise Notes above Photos, then drag Files (540×340) to 380,60: it covers the
+  // Raise Notes above Photos, then drag Monitor (540×340) to 380,60: it covers the
   // whole column of the default Notes window (content box 498×320) down to band 10,
   // the paragraph continues in bands 11 and 12, and bands 13 to 15 end below the
   // 320 px content box.
@@ -608,7 +608,7 @@ test('a paragraph that needs more lines than the flow has bands stays finite, wi
   const machine = createWindowManagerMachine()
   step(machine)
   const table = Float32Array.from(machine.source)
-  // Notes at the left edge, and Files above it covering the column except an 85 px
+  // Notes at the left edge, and Monitor above it covering the column except an 85 px
   // slot at the right, so every band holds one or two words.
   const write = (windowIndex: number, geometry: [left: number, top: number, width: number, height: number]) => {
     const [left, top, width, height] = geometry
@@ -668,9 +668,9 @@ function machineWithNotesInFront() {
   return machine
 }
 
-// A machine with Notes raised, then Files dragged over it to 380,60, which leaves
-// the two bands below Files, see the test of the band below the content box.
-function machineWithFilesOverNotes() {
+// A machine with Notes raised, then Monitor dragged over it to 380,60, which leaves
+// the two bands below Monitor, see the test of the band below the content box.
+function machineWithMonitorOverNotes() {
   const machine = machineWithNotesInFront()
   let time = pressTime(machine)
   machine.pointerDown(100, 70, time)
@@ -749,7 +749,7 @@ test('typing a sentence one character at a time, then deleting it, lays out ever
   const machines = {
     'Notes in front': machineWithNotesInFront(),
     'starting arrangement': machineAtStart(),
-    'Files over Notes': machineWithFilesOverNotes(),
+    'Monitor over Notes': machineWithMonitorOverNotes(),
   }
   const declarationChecks = Object.values(machines).map(checkDeclarationsOnEveryEvaluation)
   const random = createRandom(5)
@@ -914,7 +914,7 @@ test('a word wider than its slot is laid out whole and reaches past the slot, wh
   const fitting = typeAndCompare(machine, text)
   assert.deepEqual(fitting.problems, [])
   assert.equal(fitting.matchesPretext, true)
-  // Notes at the left edge, and Files above it covering the column except an 85 px slot from 379 to 464.
+  // Notes at the left edge, and Monitor above it covering the column except an 85 px slot from 379 to 464.
   const table = Float32Array.from(machine.source)
   const write = (windowIndex: number, geometry: [left: number, top: number, width: number, height: number]) => {
     const [left, top, width, height] = geometry
@@ -1114,14 +1114,14 @@ test('a press on the note\'s content is counted with its point in the content bo
   // Now nothing covers the note, and the press that went to Photos before is a press on the note.
   press(700, 300)
   assert.deepEqual(readPress(machine), {count: 2, x: 289, y: 151})
-  // Presses on Notes' title bar, on its resize grip, which lies over the content box's corner, on Files, and on
+  // Presses on Notes' title bar, on its resize grip, which lies over the content box's corner, on Monitor, and on
   // the desktop are no presses on the note.
   press(450, 126)
   press(900, 460)
   assert.equal(focusedWindow(press(100, 300)), 0)
   press(40, 700)
   assert.deepEqual(readPress(machine), {count: 2, x: 289, y: 151})
-  // Two presses in one frame count twice, and the last one's point is stored. Files is in front now, and 600,420
+  // Two presses in one frame count twice, and the last one's point is stored. Monitor is in front now, and 600,420
   // lies right of it and below it, on the note.
   const time = pressTime(machine)
   machine.pointerDown(600, 420, time)
@@ -1240,9 +1240,9 @@ test('at the starting arrangement the paragraph is laid out whole, in 10 lines o
   // Photos covers the right of the column, from above the first line to below the
   // content box, which holds 13 lines. pretext alone breaks the starting text into
   // these 10 lines at 205 px: "Type anything here. The same", "program that runs
-  // the", "windows lays out this note.", "Drag Files or Photos over it,", "and every
-  // line narrows", "around them. Words move", "straight to their new places", "in
-  // one frame, and the lines", "break where pretext would", "break them."
+  // the", "windows lays out this note.", "Drag Monitor or Photos over", "it, and
+  // every line narrows", "around them. Words move", "straight to their new places",
+  // "in one frame, and the lines", "break where pretext would", "break them."
   const words = readWords(machine, values)
   assert.equal(words.filter(word => word.visible === 1).length, 45)
   assert.equal(values[machine.output.notes.lineCount], 10)

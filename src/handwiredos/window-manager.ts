@@ -27,25 +27,24 @@ import {
   stoppedSpringClock,
 } from '../runtime/host-timing.ts'
 import {
-  type FilesKey,
-  type FilesOutputs,
-  buildFiles,
-  createFilesRenderer,
+  type ValueListKey,
+  type ValueListOutputs,
+  buildValueList,
+  createValueListRenderer,
   describeOperations,
   describeOutputs,
   describeState,
-  filesCells,
-  filesKeys,
-  filesLayout,
-  filesWindowIndex,
   locationCount,
   maximumScrollTop,
+  monitorLayout,
   rowCapacity,
   scrollGrid,
   slotField,
-  validateFilesOutput,
-  validateFilesOutputWires,
-} from './files.ts'
+  validateValueListOutput,
+  validateValueListOutputWires,
+  valueListCells,
+  valueListKeys,
+} from './value-list.ts'
 import {
   type PhotoOutputs,
   buildPhotos,
@@ -90,7 +89,7 @@ import {
 } from './notes-paragraph.ts'
 import {createCanvasMeasure, createNotesHost} from './notes-host.ts'
 import {arrangeInitialWindows} from './arrangement.ts'
-import {createMonitor, frameCapacity as monitorFrameCapacity} from './monitor.ts'
+import {createMonitorFooter, frameCapacity as monitorFrameCapacity} from './monitor-footer.ts'
 import {mountWiring} from './wiring.ts'
 
 export {bandOutputField, notesWindowIndex, segmentOutputField}
@@ -234,16 +233,16 @@ const windowManagerCellsFor = (paragraph: FastParagraph) => ({
   drag: oneHot(list(windowCount, () => stateBit(0, {grid: 1})), {allowAllZero: true, declareToCircuit: false}),
   resize: oneHot(list(windowCount, () => stateBit(0, {grid: 1})), {allowAllZero: true, declareToCircuit: false}),
   // The control that the press being held armed, if any: a window's close, minimize
-  // or maximize button, a window's dock item, Photos' content, Files' list, or one
-  // of Files' sidebar locations. At most one is 1, see buildWindowManager.
+  // or maximize button, a window's dock item, Photos' content, Monitor's list, or one
+  // of Monitor's sidebar locations. At most one is 1, see buildWindowManager.
   armed: {
     close: list(windowCount, () => stateBit(0, {grid: 1})),
     minimize: list(windowCount, () => stateBit(0, {grid: 1})),
     maximize: list(windowCount, () => stateBit(0, {grid: 1})),
     dockItem: list(windowCount, () => stateBit(0, {grid: 1})),
     photosContent: stateBit(0, {grid: 1}),
-    filesList: stateBit(0, {grid: 1}),
-    filesLocation: list(locationCount, () => stateBit(0, {grid: 1})),
+    valueList: stateBit(0, {grid: 1}),
+    valueListLocation: list(locationCount, () => stateBit(0, {grid: 1})),
   },
   // The stacking state is a permutation matrix: exactly one window per rank
   // and exactly one rank per window, declared as one-hot groups. With three
@@ -266,7 +265,7 @@ const windowManagerCellsFor = (paragraph: FastParagraph) => ({
       scale: springCells(unitInterval, 1),
     }
   }),
-  files: filesCells,
+  valueList: valueListCells,
   photos: photoCells,
   notes: notesCells(notesCapacity, paragraph),
 })
@@ -299,11 +298,11 @@ export const photoSourceField = {
 
 // rowCounts and location hold one position per sidebar location, in the sidebar's
 // order: State, Operations, Outputs.
-export const filesSourceField = {
-  scrollTop: positions.files.scrollTop,
-  rowCounts: positions.files.rowCounts,
-  location: positions.files.location,
-  selected: positions.files.selected,
+export const valueListSourceField = {
+  scrollTop: positions.valueList.scrollTop,
+  rowCounts: positions.valueList.rowCounts,
+  location: positions.valueList.location,
+  selected: positions.valueList.selected,
 }
 
 export const sourceField = {
@@ -379,18 +378,18 @@ export function resizeSourceField(windowIndex: number) {
 }
 
 // The position of an armed control's bit, e.g. armedSourceField('close', 0) holds 1
-// while a press on Files' close button is held, armedSourceField('photosContent')
-// holds 1 while a press on Photos' content is held, armedSourceField('filesList')
-// while a press on Files' list is held, and armedSourceField('filesLocation', 2)
-// while a press on Files' third sidebar location is held.
-export function armedSourceField(control: 'close' | 'minimize' | 'maximize' | 'dockItem' | 'photosContent' | 'filesList' | 'filesLocation', windowIndex?: number) {
+// while a press on Monitor's close button is held, armedSourceField('photosContent')
+// holds 1 while a press on Photos' content is held, armedSourceField('valueList')
+// while a press on Monitor's list is held, and armedSourceField('valueListLocation', 2)
+// while a press on Monitor's third sidebar location is held.
+export function armedSourceField(control: 'close' | 'minimize' | 'maximize' | 'dockItem' | 'photosContent' | 'valueList' | 'valueListLocation', windowIndex?: number) {
   if (control === 'photosContent') {
     invariant(windowIndex === undefined || windowIndex === photosWindowIndex, 'only Photos has an armed content bit')
     return positions.armed.photosContent
   }
-  if (control === 'filesList') {
-    invariant(windowIndex === undefined || windowIndex === filesWindowIndex, 'only Files has an armed list bit')
-    return positions.armed.filesList
+  if (control === 'valueList') {
+    invariant(windowIndex === undefined || windowIndex === monitorWindowIndex, 'only Monitor has an armed list bit')
+    return positions.armed.valueList
   }
   invariant(windowIndex !== undefined, `${control} needs an index`)
   return cellAt(positions.armed[control], windowIndex, `${control} index`)
@@ -412,6 +411,9 @@ export function photoThumbnailSpringSourceField(item: number, field: number) {
   )
 }
 
+// The windows by index: Monitor, whose content is the list of the program's values,
+// see value-list.ts, then Notes, see notesWindowIndex, then Photos.
+const monitorWindowIndex = 0
 const photosWindowIndex = windowCount - 1
 const geometryFields = ['left', 'top', 'width', 'height'] as const
 const transformFields = ['translateX', 'translateY', 'scale'] as const
@@ -431,22 +433,22 @@ type WindowManagerOutput = {
   animationActive: Wire
   photos: PhotoOutputs
   notes: NotesOutputs
-  files: FilesOutputs
+  valueList: ValueListOutputs
 }
 
 function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastParagraph) {
   const table = createSourceTable()
   const cells = table.declare(windowManagerCellsFor(notesParagraph))
   table.atMostOne('photos events', photoEvents(cells.photos))
-  table.atMostOne('files keys', filesKeys(cells.files))
+  table.atMostOne('value list keys', valueListKeys(cells.valueList))
   table.atMostOne('armed control', [
     ...cells.armed.close,
     ...cells.armed.minimize,
     ...cells.armed.maximize,
     ...cells.armed.dockItem,
     cells.armed.photosContent,
-    cells.armed.filesList,
-    ...cells.armed.filesLocation,
+    cells.armed.valueList,
+    ...cells.armed.valueListLocation,
   ])
   const circuit = table.createCircuit()
 
@@ -499,14 +501,14 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
   let photosContentHit = zero
   let photosContentHitAtUp = zero
   let photosGripHitAtUp = zero
-  // Files' list viewport, sidebar locations and grip, at the down and at the up, and
-  // the list's top edge.
-  let filesListHit = zero
-  let filesListHitAtUp = zero
-  let filesGripHitAtUp = zero
-  let filesListTop = zero
-  const filesLocationHit: Wire[] = []
-  const filesLocationHitAtUp: Wire[] = []
+  // Monitor's list viewport, sidebar locations and grip, at the down and at the up,
+  // and the list's top edge.
+  let valueListHit = zero
+  let valueListHitAtUp = zero
+  let monitorGripHitAtUp = zero
+  let valueListTop = zero
+  const valueListLocationHit: Wire[] = []
+  const valueListLocationHitAtUp: Wire[] = []
   // Notes' content box, at the down.
   let notesContentHit = zero
 
@@ -596,34 +598,34 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
       height: cells.resizeGrip,
     }
     resizeHit.push(emitRectangleHit(circuit, cells.down.x, cells.down.y, gripRectangle))
-    if (windowIndex === filesWindowIndex) {
+    if (windowIndex === monitorWindowIndex) {
       // The list viewport: the content box without the sidebar at its left, without
       // the header row at its top, without the footer at its bottom, and without the
       // strip at its right edge where the native scrollbar is drawn, so a press on the
       // scrollbar or on the footer is on no row.
       const listRectangle: Geometry = {
-        left: circuit.affine([[geometry.left, 1], [unit, 1]], filesLayout.sidebarWidth),
-        top: circuit.affine([[geometry.top, 1], [cells.titleHeight, 1], [unit, 1]], filesLayout.headerHeight),
-        width: circuit.affine([[geometry.width, 1], [unit, -2]], -filesLayout.sidebarWidth - filesLayout.scrollbarStrip),
-        height: circuit.affine([[geometry.height, 1], [cells.titleHeight, -1], [unit, -2]], -filesLayout.headerHeight - filesLayout.footerHeight),
+        left: circuit.affine([[geometry.left, 1], [unit, 1]], monitorLayout.sidebarWidth),
+        top: circuit.affine([[geometry.top, 1], [cells.titleHeight, 1], [unit, 1]], monitorLayout.headerHeight),
+        width: circuit.affine([[geometry.width, 1], [unit, -2]], -monitorLayout.sidebarWidth - monitorLayout.scrollbarStrip),
+        height: circuit.affine([[geometry.height, 1], [cells.titleHeight, -1], [unit, -2]], -monitorLayout.headerHeight - monitorLayout.footerHeight),
       }
-      filesListHit = emitRectangleHit(circuit, cells.down.x, cells.down.y, listRectangle)
-      filesListHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, listRectangle)
-      filesGripHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, gripRectangle)
-      filesListTop = listRectangle.top
+      valueListHit = emitRectangleHit(circuit, cells.down.x, cells.down.y, listRectangle)
+      valueListHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, listRectangle)
+      monitorGripHitAtUp = emitRectangleHit(circuit, cells.up.x, cells.up.y, gripRectangle)
+      valueListTop = listRectangle.top
       // The sidebar's locations, one below the other.
       for (let location = 0; location < locationCount; location++) {
         const locationRectangle: Geometry = {
-          left: circuit.affine([[geometry.left, 1], [unit, 1]], filesLayout.locationInset),
+          left: circuit.affine([[geometry.left, 1], [unit, 1]], monitorLayout.locationInset),
           top: circuit.affine(
             [[geometry.top, 1], [cells.titleHeight, 1], [unit, 1]],
-            filesLayout.locationTop + location * filesLayout.locationHeight,
+            monitorLayout.locationTop + location * monitorLayout.locationHeight,
           ),
-          width: circuit.constant(filesLayout.sidebarWidth - 2 * filesLayout.locationInset),
-          height: circuit.constant(filesLayout.locationHeight),
+          width: circuit.constant(monitorLayout.sidebarWidth - 2 * monitorLayout.locationInset),
+          height: circuit.constant(monitorLayout.locationHeight),
         }
-        filesLocationHit.push(emitRectangleHit(circuit, cells.down.x, cells.down.y, locationRectangle))
-        filesLocationHitAtUp.push(emitRectangleHit(circuit, cells.up.x, cells.up.y, locationRectangle))
+        valueListLocationHit.push(emitRectangleHit(circuit, cells.down.x, cells.down.y, locationRectangle))
+        valueListLocationHitAtUp.push(emitRectangleHit(circuit, cells.up.x, cells.up.y, locationRectangle))
       }
     }
     if (windowIndex === photosWindowIndex) {
@@ -720,8 +722,8 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
   // content act on release, like native buttons: a press over a control arms it, a
   // release over the armed control acts, and a release anywhere else, or a
   // pointercancel, acts on nothing. The path between the press and the release
-  // doesn't matter, e.g. a press on Files' close button that moves off the button and
-  // back, then releases over the button, closes Files. This differs from
+  // doesn't matter, e.g. a press on Monitor's close button that moves off the button
+  // and back, then releases over the button, closes Monitor. This differs from
   // lab/ui-exploration/input's window circuit, and from indirect-os-2 at the
   // exploration-2026-09 tag, where a press that moves more than 4 px away from where
   // it started turns into a drag, so a release back over the button doesn't click.
@@ -803,44 +805,44 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
     photosContentHitAtUp,
     emitComplement(circuit, photosGripAtUp, unit),
   ])
-  // Files' list is pressed and released like Photos' content. The release selects
-  // the row under it, see buildFiles. A press alone selects nothing, so a touch
+  // Monitor's list is pressed and released like Photos' content. The release selects
+  // the row under it, see buildValueList. A press alone selects nothing, so a touch
   // that the browser takes over to scroll the list, which ends in a pointercancel,
   // selects nothing.
-  const armedFilesList = emitSelect(
+  const armedValueList = emitSelect(
     circuit,
     cells.down.active,
-    cells.armed.filesList,
+    cells.armed.valueList,
     emitAll(circuit, [
-      canvasPress[filesWindowIndex]!,
-      filesListHit,
-      emitComplement(circuit, resizePress[filesWindowIndex]!, unit),
+      canvasPress[monitorWindowIndex]!,
+      valueListHit,
+      emitComplement(circuit, resizePress[monitorWindowIndex]!, unit),
     ]),
   )
-  const filesGripAtUp = emitAll(circuit, [filesGripHitAtUp, emitComplement(circuit, cells.windows[filesWindowIndex]!.maximized, unit)])
-  const filesListClick = emitAll(circuit, [
+  const monitorGripAtUp = emitAll(circuit, [monitorGripHitAtUp, emitComplement(circuit, cells.windows[monitorWindowIndex]!.maximized, unit)])
+  const valueListClick = emitAll(circuit, [
     release,
-    armedFilesList,
-    filesListHitAtUp,
-    emitComplement(circuit, filesGripAtUp, unit),
+    armedValueList,
+    valueListHitAtUp,
+    emitComplement(circuit, monitorGripAtUp, unit),
   ])
   // A sidebar location is pressed and released like a dock item: the press arms the
   // location, and a release over the same location shows it.
-  const armedFilesLocation = filesLocationHit.map((hit, location) => emitSelect(
+  const armedValueListLocation = valueListLocationHit.map((hit, location) => emitSelect(
     circuit,
     cells.down.active,
-    cells.armed.filesLocation[location]!,
+    cells.armed.valueListLocation[location]!,
     emitAll(circuit, [
-      canvasPress[filesWindowIndex]!,
+      canvasPress[monitorWindowIndex]!,
       hit,
-      emitComplement(circuit, resizePress[filesWindowIndex]!, unit),
+      emitComplement(circuit, resizePress[monitorWindowIndex]!, unit),
     ]),
   ))
-  const filesLocationClick = armedFilesLocation.map((armed, location) => emitAll(circuit, [
+  const valueListLocationClick = armedValueListLocation.map((armed, location) => emitAll(circuit, [
     release,
     armed,
-    filesLocationHitAtUp[location]!,
-    emitComplement(circuit, filesGripAtUp, unit),
+    valueListLocationHitAtUp[location]!,
+    emitComplement(circuit, monitorGripAtUp, unit),
   ]))
   // A press on Notes' content places the note's caret, see notes.ts. Like Photos'
   // content, the content is pressed when Notes is the frontmost window under the
@@ -1220,8 +1222,8 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
   table.next(cells.armed, {
     ...nextArmed,
     photosContent: nextArmedFor(armedPhotosContent),
-    filesList: nextArmedFor(armedFilesList),
-    filesLocation: armedFilesLocation.map(nextArmedFor),
+    valueList: nextArmedFor(armedValueList),
+    valueListLocation: armedValueListLocation.map(nextArmedFor),
   })
   table.next(cells.stack, nextStack)
 
@@ -1342,26 +1344,26 @@ function buildWindowManager(notesOptions: NotesOptions, notesParagraph: FastPara
     },
   })
 
-  // Files' list is computed for the list viewport's height at the window's
+  // Monitor's list is computed for the list viewport's height at the window's
   // destination, i.e. the content box without the header row and the footer, e.g.
   // the maximized height from the release of the maximize button on, so the rows
   // drawn change once per event, like Photos' layout. A release's y is relative to
   // the list's top edge at the stored geometry, which the release was hit-tested
   // against.
-  const files = buildFiles(circuit, table, cells.files, {
-    viewportHeight: emitRelu(circuit, circuit.affine([[destinationContentHeight[filesWindowIndex]!, 1]], -filesLayout.headerHeight - filesLayout.footerHeight)),
-    focused: focusedWindow[filesWindowIndex]!,
+  const valueList = buildValueList(circuit, table, cells.valueList, {
+    viewportHeight: emitRelu(circuit, circuit.affine([[destinationContentHeight[monitorWindowIndex]!, 1]], -monitorLayout.headerHeight - monitorLayout.footerHeight)),
+    focused: focusedWindow[monitorWindowIndex]!,
     listClick: {
-      active: filesListClick,
-      y: circuit.affine([[cells.up.y, 1], [filesListTop, -1]]),
+      active: valueListClick,
+      y: circuit.affine([[cells.up.y, 1], [valueListTop, -1]]),
     },
-    locationClicks: filesLocationClick,
+    locationClicks: valueListLocationClick,
   })
 
   const {nextSource, initialSource, validate} = table.finish()
-  const output: WindowManagerOutput = {nextSource, windows, dockItems, animationActive, photos, notes, files}
+  const output: WindowManagerOutput = {nextSource, windows, dockItems, animationActive, photos, notes, valueList}
   // Each cell's name and what happens to the cell around an evaluation, in table
-  // order, e.g. {name: 'windows[3].left', policy: 'state'}. Files lists them.
+  // order, e.g. {name: 'windows[2].left', policy: 'state'}. Monitor lists them.
   const sourceCells = Array.from({length: table.size}, (_, index) => {
     const cell = circuit.source(index)
     const policy = table.policyOf(cell)
@@ -1391,7 +1393,7 @@ function nameOutputView(prefix: string, wires: readonly Wire[], fields: {readonl
 // Every output that the page draws from, with its name, in the order of the
 // compiled program's roots after the next-state values.
 function nameWindowManagerOutputs(output: WindowManagerOutput) {
-  const {photos, notes, files} = output
+  const {photos, notes, valueList} = output
   return [
     ...nameOutputView('windows', output.windows, windowOutputField),
     ...nameOutputView('dockItems', output.dockItems, dockOutputField),
@@ -1410,14 +1412,14 @@ function nameWindowManagerOutputs(output: WindowManagerOutput) {
     {wire: notes.press.count, name: 'notes.press.count'},
     {wire: notes.press.x, name: 'notes.press.x'},
     {wire: notes.press.y, name: 'notes.press.y'},
-    {wire: files.totalHeight, name: 'files.totalHeight'},
-    {wire: files.scroll, name: 'files.scroll'},
-    {wire: files.scrollTarget, name: 'files.scrollTarget'},
-    {wire: files.scrollRequest, name: 'files.scrollRequest'},
-    {wire: files.slotOverflow, name: 'files.slotOverflow'},
-    {wire: files.selected, name: 'files.selected'},
-    ...files.locations.map((wire, location) => ({wire, name: `files.locations.${location}`})),
-    ...nameOutputView('files.slots', files.slots, slotField),
+    {wire: valueList.totalHeight, name: 'valueList.totalHeight'},
+    {wire: valueList.scroll, name: 'valueList.scroll'},
+    {wire: valueList.scrollTarget, name: 'valueList.scrollTarget'},
+    {wire: valueList.scrollRequest, name: 'valueList.scrollRequest'},
+    {wire: valueList.slotOverflow, name: 'valueList.slotOverflow'},
+    {wire: valueList.selected, name: 'valueList.selected'},
+    ...valueList.locations.map((wire, location) => ({wire, name: `valueList.locations.${location}`})),
+    ...nameOutputView('valueList.slots', valueList.slots, slotField),
   ]
 }
 
@@ -1432,7 +1434,7 @@ type WindowManagerEvent = {
     | 'photo previous'
     | 'photo next'
     | 'photo close'
-    | 'files key'
+    | 'value list key'
     | 'notes text'
   // Shares the time origin of requestAnimationFrame timestamps, e.g. event.timeStamp.
   timeStamp: number
@@ -1483,12 +1485,12 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
   const namedOutputs = nameWindowManagerOutputs(output)
   const roots = [...output.nextSource, ...namedOutputs.map(({wire}) => wire)]
   const tensorProgram = circuit.tensorProgram = circuit.compileTensorProgram(roots)
-  // Files lists the program itself, so its three locations' row counts are the
+  // Monitor lists the program itself, so its three locations' row counts are the
   // program's own sizes: the source cells, the live operations and the outputs.
   // Values written before the first step commit with the mount.
-  const filesRowCounts = [tensorProgram.sourceSize, tensorProgram.valueCount - tensorProgram.sourceSize, namedOutputs.length]
-  filesRowCounts.forEach((rowCount, location) => {
-    source[cells.files.rowCounts[location]!] = Math.min(rowCapacity, rowCount)
+  const valueListRowCounts = [tensorProgram.sourceSize, tensorProgram.valueCount - tensorProgram.sourceSize, namedOutputs.length]
+  valueListRowCounts.forEach((rowCount, location) => {
+    source[cells.valueList.rowCounts[location]!] = Math.min(rowCapacity, rowCount)
   })
   validateTensorProgram(circuit, tensorProgram)
   // Reuses its buffers across evaluations. Each evaluation copies the roots into
@@ -1501,13 +1503,13 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
   let queued: (Omit<WindowManagerEvent, 'timeStamp'> & {timeStamp: number | undefined})[] = []
   let mounted = false
   let queuedViewport: readonly [width: number, height: number] = [0, 0]
-  // The Files scroller's scroll position on the scroll grid, which evaluate() writes
+  // The scroll position of Monitor's list on the scroll grid, which evaluate() writes
   // into the table before every evaluation, like the spring matrix: the position
   // passed to the last step, or the position that an evaluation asked for since.
-  let filesScrollTop = 0
-  // The position that the last step's evaluations asked the host to scroll the
-  // Files list to, if any.
-  let filesScrollTo: number | null = null
+  let valueListScrollTop = 0
+  // The position that the last step's evaluations asked the host to scroll
+  // Monitor's list to, if any.
+  let valueListScrollTo: number | null = null
   const observers: WindowManagerObserver[] = []
   const evaluations: WindowManagerEvaluation[] = []
   // The stored table as the last step left it. Only step() writes the stored table,
@@ -1589,8 +1591,8 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     ...cells.armed.maximize,
     ...cells.armed.dockItem,
     cells.armed.photosContent,
-    cells.armed.filesList,
-    ...cells.armed.filesLocation,
+    cells.armed.valueList,
+    ...cells.armed.valueListLocation,
   ]
 
   // While nothing animates and no press is held, a pointer move changes only the
@@ -1622,7 +1624,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     // The scroll position has no timestamp: every evaluation reads the position
     // that the step was given, like a frame of ui.md's render loop reads scrollTop
     // once.
-    table[cells.files.scrollTop] = filesScrollTop
+    table[cells.valueList.scrollTop] = valueListScrollTop
     for (const event of evaluation.events) event.apply(table)
     // Checks every declared range and grid. The window hit tests' integer bits rely
     // on the grids: a press written straight into the table at x = 54.5 - 1/256 px,
@@ -1644,9 +1646,9 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     // event. So the request is taken here: the step's later evaluations compute the
     // list at the requested position, and the host scrolls there after its DOM
     // writes.
-    if (values[output.files.scrollRequest] === 1) {
-      filesScrollTop = values[output.files.scrollTarget]!
-      filesScrollTo = filesScrollTop
+    if (values[output.valueList.scrollRequest] === 1) {
+      valueListScrollTop = values[output.valueList.scrollTarget]!
+      valueListScrollTo = valueListScrollTop
     }
     evaluations.push({
       kind: evaluation.kind,
@@ -1665,7 +1667,7 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     output,
     source,
     tensorProgram,
-    // What Files lists. sourceCells holds each source cell's name and policy in
+    // What Monitor lists. sourceCells holds each source cell's name and policy in
     // table order, and namedOutputs each output's wire and name in the order of the
     // program's roots after the next-state values, e.g. 'windows.0.translateX'.
     // After a step, `values` holds every root's value in the frame's evaluation,
@@ -1682,10 +1684,10 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     },
     // The evaluations of the last step, in order.
     evaluations: evaluations as readonly WindowManagerEvaluation[],
-    // The scroll position that the last step asks the host to give the Files
-    // scroller, or null, e.g. after a key that moved the selection out of view.
-    get filesScrollTo() {
-      return filesScrollTo
+    // The scroll position that the last step asks the host to give the scroller of
+    // Monitor's list, or null, e.g. after a key that moved the selection out of view.
+    get valueListScrollTo() {
+      return valueListScrollTo
     },
     observe(observer: WindowManagerObserver) {
       observers.push(observer)
@@ -1694,23 +1696,23 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     // returns the values of its 'frame' evaluation. The first step mounts the
     // viewport, and a later step whose viewport differs from the last queued one
     // queues a resize at frameTime. An event without a timestamp applies at this
-    // frame's time. filesScrollTop is the Files scroller's scrollTop as the DOM
-    // reports it now, which the step floors onto the 1/4 px grid and clamps to
-    // 0..2,400,000, e.g. a rubber-band's -12.3 becomes 0. Without it, the list stays
-    // where the last step left it, at the position that the step was given or that
-    // the step asked for, like a scroller that takes every requested position. The
-    // returned values, indexed by wire, are the machine's own array, which the next
-    // step overwrites, so a caller that keeps a frame's values across steps copies
-    // them, e.g. with values.slice().
+    // frame's time. valueListScrollTopNow is the scrollTop of the scroller of
+    // Monitor's list as the DOM reports it now, which the step floors onto the 1/4 px
+    // grid and clamps to 0..2,400,000, e.g. a rubber-band's -12.3 becomes 0. Without
+    // it, the list stays where the last step left it, at the position that the step
+    // was given or that the step asked for, like a scroller that takes every
+    // requested position. The returned values, indexed by wire, are the machine's own
+    // array, which the next step overwrites, so a caller that keeps a frame's values
+    // across steps copies them, e.g. with values.slice().
     step(
       viewportWidth: number,
       viewportHeight: number,
       frameTime: number,
-      filesScrollTopNow?: number,
+      valueListScrollTopNow?: number,
     ) {
       invariant(Number.isFinite(frameTime) && frameTime >= 0, 'frame time must be nonnegative')
-      if (filesScrollTopNow !== undefined) filesScrollTop = quantizeScrollTop(filesScrollTopNow)
-      filesScrollTo = null
+      if (valueListScrollTopNow !== undefined) valueListScrollTop = quantizeScrollTop(valueListScrollTopNow)
+      valueListScrollTo = null
       // A value written straight into `source` between steps, e.g. a latch, would
       // apply only in 'frame' evaluations, which run on a copy, so it would never
       // commit, and a latch would apply again in every later frame. Values written
@@ -1768,13 +1770,13 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
     photoClose(timeStamp?: number) {
       receivePhotoEvent('photo close', cells.photos.close, timeStamp)
     },
-    // A key for Files' list, e.g. 'down' for ArrowDown, which the program takes only
-    // while Files is the focused window. Among keys at one timestamp, the last one
-    // delivered applies.
-    filesKey(key: FilesKey, timeStamp?: number) {
-      queue('files key', timeStamp, table => {
-        for (const cell of filesKeys(cells.files)) table[cell] = 0
-        table[cells.files.keys[key]] = 1
+    // A key for Monitor's list, e.g. 'down' for ArrowDown, which the program takes
+    // only while Monitor is the focused window. Among keys at one timestamp, the last
+    // one delivered applies.
+    valueListKey(key: ValueListKey, timeStamp?: number) {
+      queue('value list key', timeStamp, table => {
+        for (const cell of valueListKeys(cells.valueList)) table[cell] = 0
+        table[cells.valueList.keys[key]] = 1
       })
     },
     // The Notes text changed, e.g. a character was typed. `paragraph` is the new
@@ -1799,8 +1801,8 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack, note
   }
 }
 
-// The keys that Files' list takes, by KeyboardEvent.key.
-const filesKeyNames = new Map<string, FilesKey>([
+// The keys that Monitor's list takes, by KeyboardEvent.key.
+const valueListKeyNames = new Map<string, ValueListKey>([
   ['ArrowUp', 'up'],
   ['ArrowDown', 'down'],
   ['PageUp', 'pageUp'],
@@ -1820,16 +1822,16 @@ function mountWindowManager(document: Document, window: Window) {
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
   const dockItems = [...document.querySelectorAll<HTMLElement>('.dock-item')]
   const photosViewport = document.querySelector<HTMLElement>('.photos-content')
-  const filesContent = document.querySelector<HTMLElement>('.files-content')
-  const filesFooter = document.querySelector<HTMLElement>('.files-footer')
+  const monitorContent = document.querySelector<HTMLElement>('.monitor-content')
+  const monitorFooter = document.querySelector<HTMLElement>('.monitor-footer')
   const systemStatistics = document.querySelector<HTMLElement>('.system-stats')
   const wiringCanvas = document.querySelector<HTMLCanvasElement>('.desk-wiring')
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
   invariant(dockItems.length === windowCount, 'dock item count mismatch')
   invariant(photosViewport !== null, 'Photos viewport is missing')
-  invariant(filesContent !== null, 'Files content is missing')
-  invariant(filesFooter !== null, 'Files footer is missing')
+  invariant(monitorContent !== null, 'Monitor\'s content is missing')
+  invariant(monitorFooter !== null, 'Monitor\'s footer is missing')
   invariant(systemStatistics !== null, 'system bar statistics are missing')
   invariant(wiringCanvas !== null, 'the desk\'s wiring canvas is missing')
   const windowContents = windows.map(element => {
@@ -1843,7 +1845,7 @@ function mountWindowManager(document: Document, window: Window) {
     windowContents, // mount lifetime
     dockItems, // mount lifetime
     photosViewport, // mount lifetime
-    filesContent, // mount lifetime
+    monitorContent, // mount lifetime
   }
   const photos = createPhotoGalleryRenderer(document, domCache.photosViewport)
   // The note's text: a textarea that the visitor types into, and the nodes that draw the text where the program lays
@@ -1871,17 +1873,17 @@ function mountWindowManager(document: Document, window: Window) {
     createCanvasMeasure(document, notesFont),
     scheduleRender,
   )
-  // Files lists the program itself, one location per kind of number, each with
+  // Monitor lists the program itself, one location per kind of number, each with
   // its value in the frame's evaluation. The rows' text stays in JavaScript, and
   // the program computes which rows the list's DOM slots show.
-  const files = createFilesRenderer(document, domCache.filesContent, [
+  const valueList = createValueListRenderer(document, domCache.monitorContent, [
     describeState(machine.sourceCells, machine.packedValues),
     describeOperations(machine.tensorProgram, machine.packedValues),
     describeOutputs(machine.namedOutputs, machine.values),
   ])
-  // Files' footer and the system bar's counters, see monitor.ts: the program's
-  // sizes, and the program's time in each of the last frames.
-  const monitor = createMonitor({footer: filesFooter, statistics: systemStatistics}, machine.tensorProgram)
+  // Monitor's footer and the system bar's counters, see monitor-footer.ts: the
+  // program's sizes, and the program's time in each of the last frames.
+  const footer = createMonitorFooter({footer: monitorFooter, statistics: systemStatistics}, machine.tensorProgram)
 
   domCache.desktop.style.setProperty('--title-height', `${machine.source[machine.cells.titleHeight]}px`)
   domCache.desktop.style.setProperty('--button-size', `${machine.source[machine.cells.buttonSize]}px`)
@@ -1898,14 +1900,14 @@ function mountWindowManager(document: Document, window: Window) {
 
   // The focused window in the last frame's outputs, or -1, for the keydown listener.
   let focusedWindowAtLastFrame = -1
-  // The Files scroller's scroll position as last read from the DOM: at the top of
+  // The scroll position of Monitor's list as last read from the DOM: at the top of
   // a frame with the other DOM reads, and once more after the host's own scroll at
   // the end of a frame, since the browser may round or clamp the position that it
   // was given. The machine gets the position at the next step.
-  let filesScrollTop = 0
+  let valueListScrollTop = 0
 
   // How many more frames the page runs by itself after it loads. The chart in
-  // Files' footer shows the program's time in each of the last 60 frames, and a
+  // Monitor's footer shows the program's time in each of the last 60 frames, and a
   // page that runs a frame only for an input would open with a chart of one dot:
   // the first frame, which takes about 3.5 ms in Chrome where a later frame takes
   // 0.3 ms, since the browser hasn't compiled the program's loops yet. So the page
@@ -1926,19 +1928,19 @@ function mountWindowManager(document: Document, window: Window) {
   // writes, side effects, then scheduling the next frame.
   function renderWindowManager(frameTime: number) {
     scheduledRaf = null
-    // DOM reads. The Files list's scroll position and the note's text and selection
-    // are browser state, which the frame reads like the viewport's size.
+    // DOM reads. The scroll position of Monitor's list and the note's text and
+    // selection are browser state, which the frame reads like the viewport's size.
     const viewportWidth = document.documentElement.clientWidth
     const viewportHeight = document.documentElement.clientHeight
-    filesScrollTop = files.readScrollTop()
+    valueListScrollTop = valueList.readScrollTop()
     const notesRead = notes.read()
     // Handle inputs. A changed text is measured into segments here and queued as one
     // event. The measuring is the host's own JavaScript, so it runs before the clock
-    // below starts: the frame time that Files' footer shows is the time of
+    // below starts: the frame time that Monitor's footer shows is the time of
     // machine.step alone, i.e. of the program's evaluations.
     notes.queueText(notesRead)
     const executionStart = window.performance.now()
-    const values = machine.step(viewportWidth, viewportHeight, frameTime, filesScrollTop)
+    const values = machine.step(viewportWidth, viewportHeight, frameTime, valueListScrollTop)
     const executionMs = window.performance.now() - executionStart
     focusedWindowAtLastFrame = -1
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
@@ -1967,10 +1969,10 @@ function mountWindowManager(document: Document, window: Window) {
 
     photos.render(values, machine.output.photos)
     notes.write(notesRead, values)
-    files.render(values, machine.output.files)
-    // The chart in Files' footer and the system bar get the time that the program
+    valueList.render(values, machine.output.valueList)
+    // The chart in Monitor's footer and the system bar get the time that the program
     // took in this frame, i.e. the time of machine.step.
-    monitor.update(executionMs)
+    footer.update(executionMs)
 
     // Side effects, after every DOM write. The note's textarea gets the selection
     // that a press or a line move placed, and the keyboard focus exactly while Notes
@@ -1978,17 +1980,17 @@ function mountWindowManager(document: Document, window: Window) {
     // it passes preventScroll, and the boxes around the textarea clip without a
     // scroll position.
     notes.applySideEffects(notesRead, values)
-    // The program asks for a scroll after a key that moved Files' selection out of
-    // view, and when the list shows another location. The scroll comes after every
-    // DOM write, so the spacer already has its height and the browser doesn't clamp
-    // the new position to an old height. The browser may still round or clamp the
-    // position, so the host reads it back once and keeps what the browser kept
-    // (chenguini's Scrolling.md, "Scroll Anchoring", steps 4 and 5). The read-back
-    // is the frame's last DOM call, after the note's focus change. The host scrolls
-    // at no other time: a position that the machine only clamped for its own cell,
-    // e.g. during a rubber-band, is never written back.
-    const filesScrollTo = machine.filesScrollTo
-    if (filesScrollTo !== null) filesScrollTop = files.scrollTo(filesScrollTo)
+    // The program asks for a scroll after a key that moved the selection of Monitor's
+    // list out of view, and when the list shows another location. The scroll comes
+    // after every DOM write, so the spacer already has its height and the browser
+    // doesn't clamp the new position to an old height. The browser may still round
+    // or clamp the position, so the host reads it back once and keeps what the
+    // browser kept (chenguini's Scrolling.md, "Scroll Anchoring", steps 4 and 5). The
+    // read-back is the frame's last DOM call, after the note's focus change. The host
+    // scrolls at no other time: a position that the machine only clamped for its own
+    // cell, e.g. during a rubber-band, is never written back.
+    const valueListScrollTo = machine.valueListScrollTo
+    if (valueListScrollTo !== null) valueListScrollTop = valueList.scrollTo(valueListScrollTo)
 
     // Frames continue while springs are stepping, i.e. until an evaluation that
     // writes state back finds nothing animating, and through the page's opening
@@ -2055,26 +2057,26 @@ function mountWindowManager(document: Document, window: Window) {
   })
   window.addEventListener('keydown', (event: KeyboardEvent) => {
     // A key goes to one receiver. A key typed into the note is the textarea's, e.g.
-    // ArrowDown moves the note's caret and never Files' selection, and ArrowLeft never
-    // turns Photos' pages. The frame after the key reads where the caret went. The
-    // textarea has the keyboard focus exactly while Notes is the focused window, as of
-    // the last frame's side effects.
+    // ArrowDown moves the note's caret and never the selection of Monitor's list, and
+    // ArrowLeft never turns Photos' pages. The frame after the key reads where the
+    // caret went. The textarea has the keyboard focus exactly while Notes is the
+    // focused window, as of the last frame's side effects.
     if (notes.takesKey(event)) {
       scheduleRender()
       return
     }
     // A key typed into any other text field belongs to that field.
     if (event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLInputElement) return
-    // Every other key is queued for the program, which gives a list key to Files and
-    // an arrow or Escape to Photos only while that window is focused at the key's
+    // Every other key is queued for the program, which gives a list key to Monitor
+    // and an arrow or Escape to Photos only while that window is focused at the key's
     // time. E.g. after a press on the note earlier in the same frame, the textarea
     // doesn't have the keyboard focus yet, so ArrowDown arrives here, and the program
     // drops it, since Notes is the focused window at the key's time.
     let keyWindowIndex = photosWindowIndex
-    const filesKey = filesKeyNames.get(event.key)
-    if (filesKey !== undefined) {
-      machine.filesKey(filesKey, event.timeStamp)
-      keyWindowIndex = filesWindowIndex
+    const valueListKey = valueListKeyNames.get(event.key)
+    if (valueListKey !== undefined) {
+      machine.valueListKey(valueListKey, event.timeStamp)
+      keyWindowIndex = monitorWindowIndex
     } else {
       switch (event.key) {
         case 'ArrowLeft':
@@ -2097,7 +2099,7 @@ function mountWindowManager(document: Document, window: Window) {
     if (focusedWindowAtLastFrame === keyWindowIndex) event.preventDefault()
     scheduleRender()
   })
-  // Scrolling the Files list moves its rows on the compositor. The frame reads the
+  // Scrolling Monitor's list moves its rows on the compositor. The frame reads the
   // new position and gives the DOM slots their rows. Scroll events don't bubble,
   // so the listener captures.
   window.addEventListener('scroll', () => scheduleRender(), true)
@@ -2309,7 +2311,7 @@ function validateWindowManagerOutputWires(output: WindowManagerOutput, wireCount
   validateWireView(output.notes.bands, notesOptionsFor(defaultLineFitEpsilon).bands * bandOutputField.size, wireCount)
   validateWireView([output.notes.lineCount, output.notes.truncated, output.notes.windowOverflow, output.notes.runOverflow], 4, wireCount)
   validateWireView([output.notes.press.count, output.notes.press.x, output.notes.press.y], 3, wireCount)
-  validateFilesOutputWires(output.files, wireCount)
+  validateValueListOutputWires(output.valueList, wireCount)
 }
 
 function validateWindowManagerOutput(
@@ -2318,7 +2320,7 @@ function validateWindowManagerOutput(
   tolerance = 1e-9,
 ) {
   validatePhotoGalleryOutput(values, output.photos, tolerance)
-  validateFilesOutput(values, output.files)
+  validateValueListOutput(values, output.valueList)
   assertUnitInterval(values[output.animationActive], 'animation active', tolerance)
   for (let segment = 0; segment < notesCapacity; segment++) {
     const visible = values[output.notes.segments[segment * segmentOutputField.size + segmentOutputField.visible]!]

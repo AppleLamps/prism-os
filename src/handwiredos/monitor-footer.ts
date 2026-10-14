@@ -1,10 +1,11 @@
-// The footer of the Files window, and the system bar's counters: how large the
+// The footer of the Monitor window, and the system bar's counters: how large the
 // compiled program is, and how long it ran in each of the last 60 frames.
 // Everything here is JavaScript text and SVG that the page computes from the
-// compiled program and from the frame times. None of it is an output of the program.
+// compiled program and from the frame times. None of it is an output of the
+// program. The list above the footer is the program's, see value-list.ts.
 //
-// The mount calls createMonitor once, and update after each frame with the time the
-// program took in that frame.
+// The mount calls createMonitorFooter once, and update after each frame with the
+// time the program took in that frame.
 import {type Circuit, invariant} from '../runtime/numeric-ui-core.ts'
 
 type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
@@ -66,7 +67,7 @@ const formatBytes = (bytes: number) => bytes < 999_500 ? [`${Math.round(bytes / 
 // Browsers report times in steps of 0.1 ms or coarser, e.g. '0.40'.
 const formatMilliseconds = (value: number) => value < 10 ? value.toFixed(2) : value < 100 ? value.toFixed(1) : formatCount(Math.round(value))
 
-export function createMonitor(elements: {footer: HTMLElement, statistics: HTMLElement}, program: TensorProgram) {
+export function createMonitorFooter(elements: {footer: HTMLElement, statistics: HTMLElement}, program: TensorProgram) {
   const operations = program.valueCount - program.sourceSize
   const {weights, bytes} = measureProgram(program)
   const [size, sizeUnit] = formatBytes(bytes)

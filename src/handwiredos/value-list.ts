@@ -1,6 +1,7 @@
-// The Files window, in the same circuit as the window manager: a sidebar of three
-// locations, each a virtualized list of rows of one height, scrolled by a native
-// scroller. Under both, the window has a footer, which monitor.ts fills.
+// The list of the program's own values, which fills HandwiredOS's Monitor window,
+// in the same circuit as the window manager: a sidebar of three locations, each a
+// virtualized list of rows of one height, scrolled by a native scroller. Under
+// both, the window has a footer, which monitor-footer.ts fills.
 //
 // The program holds no row. JavaScript keeps each row's text in arrays, and the
 // program computes which row each of 64 DOM slots shows, from the scroll position
@@ -56,9 +57,6 @@ import {
   stateBit,
 } from '../runtime/cells.ts'
 
-// The Files window's index among HandwiredOS's windows.
-export const filesWindowIndex = 0
-
 // Whole pixels, built into weights.
 export const rowHeight = 24
 // DOM slots, a power of two, so that a row's slot is the row's lowest 6 bits.
@@ -81,9 +79,9 @@ const maximumViewportHeight = 16_384
 export const locationCount = 3
 const initialLocation = 1
 
-// Files' layout inside its content box, in px. window-manager.ts builds the hit
+// Monitor's layout inside its content box, in px. window-manager.ts builds the hit
 // rectangles from these numbers, and the renderer gives them to the DOM at mount.
-export const filesLayout = {
+export const monitorLayout = {
   // The sidebar at the content box's left edge. The list takes the rest. A sidebar
   // item holds its location's name and row count, e.g. "Operations" and "21,229".
   sidebarWidth: 152,
@@ -115,12 +113,12 @@ invariant(
 )
 
 const keyNames = ['up', 'down', 'pageUp', 'pageDown', 'home', 'end'] as const
-export type FilesKey = (typeof keyNames)[number]
+export type ValueListKey = (typeof keyNames)[number]
 
-// Files' own cells. A host declares them once, e.g. nested as {files: filesCells}
-// in HandwiredOS, adds the rule for filesKeys, and passes the cells' wires to
-// buildFiles.
-export const filesCells = {
+// The list's own cells. A host declares them once, e.g. nested as
+// {valueList: valueListCells} in HandwiredOS, adds the rule for valueListKeys, and
+// passes the cells' wires to buildValueList.
+export const valueListCells = {
   // The scroller's scrollTop as the DOM reported it at the top of the frame, floored
   // onto the scroll grid and clamped into this range by the machine. The machine
   // writes it before every evaluation, like the spring matrix.
@@ -142,21 +140,22 @@ export const filesCells = {
   // The selected row of that location, or -1 for none.
   selected: state([-1, rowCapacity - 1], {initial: -1, grid: 1}),
 }
-type FilesCells = CellWires<typeof filesCells>
+type ValueListCells = CellWires<typeof valueListCells>
 
-// Files' key cells. A later key within one evaluation replaces an earlier one, so
-// at most one of them is 1, e.g. table.atMostOne('files keys', filesKeys(cells.files)).
-export function filesKeys(cells: FilesCells) {
+// The list's key cells. A later key within one evaluation replaces an earlier one, so
+// at most one of them is 1, e.g. table.atMostOne('value list keys',
+// valueListKeys(cells.valueList)).
+export function valueListKeys(cells: ValueListCells) {
   return keyNames.map(name => cells.keys[name])
 }
 
-// The host's wires that Files reads.
-type FilesHost = {
+// The host's wires that the list reads.
+type ValueListHost = {
   // The list viewport's height at the window's destination, i.e. the content box's
   // height minus the header row and the footer, within 0..16,384 on the 1/64 px grid.
   viewportHeight: Wire
-  // Whether Files is the focused window after this evaluation's events, which is
-  // when Files takes keys.
+  // Whether the list's window is the focused window after this evaluation's events,
+  // which is when the list takes keys.
   focused: Wire
   // A release over the list after a press on the list, and the release's y relative
   // to the list viewport's top edge, on a grid of 1/64 px or finer.
@@ -170,8 +169,8 @@ type FilesHost = {
 // content coordinates, whether the slot is drawn, and whether its row is selected.
 export const slotField = {row: 0, top: 1, present: 2, selected: 3, size: 4} as const
 
-// What buildFiles returns, e.g. HandwiredOS's output.files.
-export type FilesOutputs = {
+// What buildValueList returns, e.g. HandwiredOS's output.valueList.
+export type ValueListOutputs = {
   // The height of every row together, which the host gives the scroller's spacer.
   totalHeight: Wire
   // The scroll position that the slots are computed for: the scrollTop cell, or
@@ -245,10 +244,10 @@ function emitAll(circuit: Circuit, bits: readonly Wire[]): Wire {
   return all
 }
 
-// Builds Files into the host's circuit, pairs Files' state cells with their next
-// values, and returns Files' outputs.
-export function buildFiles(circuit: Circuit, table: SourceTable, cells: FilesCells, host: FilesHost): FilesOutputs {
-  // What Files assumes of the host's wires. In HandwiredOS, the viewport height
+// Builds the list into the host's circuit, pairs the list's state cells with their
+// next values, and returns the list's outputs.
+export function buildValueList(circuit: Circuit, table: SourceTable, cells: ValueListCells, host: ValueListHost): ValueListOutputs {
+  // What the list assumes of the host's wires. In HandwiredOS, the viewport height
   // comes from window geometry that the table check keeps on the 1/64 px grid
   // within the viewport, and the bits are sums and products of exact bits. The
   // builder infers none of that for them, and without declared grids emitCompare
@@ -327,7 +326,7 @@ export function buildFiles(circuit: Circuit, table: SourceTable, cells: FilesCel
   const afterClick = emitSelect(circuit, clickSelects, cells.selected, clickedRow)
   circuit.assumeGrid(afterClick, 1)
 
-  // Keys move the selection while Files is focused and has rows. A release in the
+  // Keys move the selection while the list's window is focused and the list has rows. A release in the
   // same evaluation applies first. From no selection, ArrowUp, ArrowDown, PageUp
   // and PageDown select the row at the top of the view.
   // JS: pageRows = Math.max(1, Math.floor(viewportFloor / rowHeight))
@@ -430,30 +429,30 @@ export function buildFiles(circuit: Circuit, table: SourceTable, cells: FilesCel
   return {totalHeight, scroll, scrollTarget, scrollRequest, slotOverflow, selected: nextSelected, locations: nextLocation, slots}
 }
 
-// Files on its own, in a table that also holds the cells that a host otherwise
-// provides: the list viewport's height, whether Files is focused, a release over
+// The list on its own, in a table that also holds the cells that a host otherwise
+// provides: the list viewport's height, whether its window is focused, a release over
 // the list with its y, and a release on each location.
 /** @public */
-export function createFilesCircuit() {
+export function createValueListCircuit() {
   const table = createSourceTable()
   const cells = table.declare({
     viewportHeight: input([0, maximumViewportHeight], {initial: 266, grid: pixelGrid}),
     focused: inputBit(1),
     listClick: {active: event({grid: 1}), y: input([-49_152, 49_152], {grid: pixelGrid})},
     locationClicks: list(locationCount, () => event({grid: 1})),
-    files: filesCells,
+    valueList: valueListCells,
   })
-  table.atMostOne('files keys', filesKeys(cells.files))
+  table.atMostOne('value list keys', valueListKeys(cells.valueList))
   table.atMostOne('location clicks', cells.locationClicks)
   const circuit = table.createCircuit()
-  const files = buildFiles(circuit, table, cells.files, {
+  const valueList = buildValueList(circuit, table, cells.valueList, {
     viewportHeight: cells.viewportHeight,
     focused: cells.focused,
     listClick: cells.listClick,
     locationClicks: cells.locationClicks,
   })
   const {nextSource, initialSource, validate} = table.finish()
-  return {circuit, cells, output: files, nextSource, initialSource, validate}
+  return {circuit, cells, output: valueList, nextSource, initialSource, validate}
 }
 
 // What the host shows in the list: a title per text column for the header, each
@@ -463,10 +462,10 @@ export function createFilesCircuit() {
 const textColumnNames = ['name', 'kind', 'layer', 'weights'] as const
 const kindColumn = textColumnNames.indexOf('kind')
 type ColumnTexts = readonly [name: string, kind: string, layer: string, weights: string]
-export type FilesLocation = {
+export type ValueListLocation = {
   // The sidebar item's text, e.g. 'Operations', which the item shows beside the row
   // count. The list's class name ends with it in lower case, e.g.
-  // files-list-operations, so the stylesheet can size the location's columns.
+  // monitor-list-operations, so the stylesheet can size the location's columns.
   label: string
   // What a row is, e.g. 'operations', and a sentence for a visitor who doesn't know
   // the program's words. The sidebar shows the sentence under its items while the
@@ -527,7 +526,7 @@ const operationKinds = [
 // entries. A gather read stores no weights. The numbers are kept in typed arrays,
 // and a row's text is formatted when a slot shows the row. `packedValues` is the
 // array that the program's evaluator computes in, see createTensorProgramEvaluator.
-export function describeOperations(program: TensorProgram, packedValues: Float32Array): FilesLocation {
+export function describeOperations(program: TensorProgram, packedValues: Float32Array): ValueListLocation {
   const rowCount = program.valueCount - program.sourceSize
   const kinds = new Uint8Array(rowCount)
   const layers = new Uint16Array(rowCount)
@@ -587,7 +586,7 @@ export function describeOperations(program: TensorProgram, packedValues: Float32
 // 'windows[3].left', and what happens to the cell around an evaluation, e.g. 'state'.
 // The source cells are the first packed values, so a cell's value is the one that
 // the last evaluation read, e.g. the spring matrix that the host wrote for it.
-export function describeState(cells: readonly {name: string, policy: string}[], packedValues: Float32Array): FilesLocation {
+export function describeState(cells: readonly {name: string, policy: string}[], packedValues: Float32Array): ValueListLocation {
   return {
     label: 'State',
     rowNoun: 'cells',
@@ -601,7 +600,7 @@ export function describeState(cells: readonly {name: string, policy: string}[], 
 
 // The rows of the outputs that a page draws from, by name, e.g. 'windows.0.translateX'.
 // `values` is the machine's array of root values, indexed by wire.
-export function describeOutputs(outputs: readonly {name: string, wire: Wire}[], values: Float32Array): FilesLocation {
+export function describeOutputs(outputs: readonly {name: string, wire: Wire}[], values: Float32Array): ValueListLocation {
   return {
     label: 'Outputs',
     rowNoun: 'outputs',
@@ -614,34 +613,34 @@ export function describeOutputs(outputs: readonly {name: string, wire: Wire}[], 
 }
 
 // Creates the sidebar's items, the caption's parts, the header's cells and the
-// slots' row nodes inside `root`, the Files content box, and returns a frame's DOM
-// read, DOM writes and side effect. `locations` holds one entry per location of the
-// program, in order.
-export function createFilesRenderer(document: Document, root: HTMLElement, locations: readonly FilesLocation[]) {
+// slots' row nodes inside `root`, the Monitor window's content box, and returns a
+// frame's DOM read, DOM writes and side effect. `locations` holds one entry per
+// location of the program, in order.
+export function createValueListRenderer(document: Document, root: HTMLElement, locations: readonly ValueListLocation[]) {
   invariant(locations.length === locationCount, 'one entry per location')
-  const sidebar = root.querySelector<HTMLElement>('.files-sidebar')
-  const list = root.querySelector<HTMLElement>('.files-list')
-  const header = root.querySelector<HTMLElement>('.files-header')
-  const scroller = root.querySelector<HTMLElement>('.files-scroller')
-  const spacer = root.querySelector<HTMLElement>('.files-spacer')
-  const overflow = root.querySelector<HTMLElement>('.files-overflow')
-  const caption = root.querySelector<HTMLElement>('.files-caption')
-  invariant(sidebar !== null, 'Files sidebar is missing')
-  invariant(list !== null, 'Files list is missing')
-  invariant(header !== null, 'Files header is missing')
-  invariant(scroller !== null, 'Files scroller is missing')
-  invariant(spacer !== null, 'Files spacer is missing')
-  invariant(overflow !== null, 'Files overflow notice is missing')
-  invariant(caption !== null, 'Files sidebar caption is missing')
+  const sidebar = root.querySelector<HTMLElement>('.monitor-sidebar')
+  const list = root.querySelector<HTMLElement>('.monitor-list')
+  const header = root.querySelector<HTMLElement>('.monitor-header')
+  const scroller = root.querySelector<HTMLElement>('.monitor-scroller')
+  const spacer = root.querySelector<HTMLElement>('.monitor-spacer')
+  const overflow = root.querySelector<HTMLElement>('.monitor-overflow')
+  const caption = root.querySelector<HTMLElement>('.monitor-caption')
+  invariant(sidebar !== null, 'Monitor\'s sidebar is missing')
+  invariant(list !== null, 'Monitor\'s list is missing')
+  invariant(header !== null, 'Monitor\'s header is missing')
+  invariant(scroller !== null, 'Monitor\'s scroller is missing')
+  invariant(spacer !== null, 'Monitor\'s spacer is missing')
+  invariant(overflow !== null, 'Monitor\'s overflow notice is missing')
+  invariant(caption !== null, 'the caption of Monitor\'s sidebar is missing')
   // The program's layout numbers, which the stylesheet reads, e.g. for a row's height.
-  root.style.setProperty('--files-sidebar-width', `${filesLayout.sidebarWidth}px`)
-  root.style.setProperty('--files-header-height', `${filesLayout.headerHeight}px`)
-  root.style.setProperty('--files-row-height', `${filesLayout.rowHeight}px`)
-  root.style.setProperty('--files-scrollbar-strip', `${filesLayout.scrollbarStrip}px`)
-  root.style.setProperty('--files-footer-height', `${filesLayout.footerHeight}px`)
+  root.style.setProperty('--monitor-sidebar-width', `${monitorLayout.sidebarWidth}px`)
+  root.style.setProperty('--monitor-header-height', `${monitorLayout.headerHeight}px`)
+  root.style.setProperty('--monitor-row-height', `${monitorLayout.rowHeight}px`)
+  root.style.setProperty('--monitor-scrollbar-strip', `${monitorLayout.scrollbarStrip}px`)
+  root.style.setProperty('--monitor-footer-height', `${monitorLayout.footerHeight}px`)
   const createCells = (parent: HTMLElement) => [...textColumnNames, 'value'].map(column => {
     const cell = document.createElement('span')
-    cell.className = `files-cell files-cell-${column}`
+    cell.className = `monitor-cell monitor-cell-${column}`
     parent.appendChild(cell)
     return cell
   })
@@ -658,16 +657,16 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
   // program computes: each number from earlier ones.'
   const captionKinds = locations.map(location => {
     if (location.kinds === undefined || location.kinds.length === 0) return null
-    const kinds = createPart(caption, 'ul', 'files-caption-kinds')
+    const kinds = createPart(caption, 'ul', 'monitor-caption-kinds')
     for (const kind of location.kinds) {
       const entry = createPart(kinds, 'li', kind.className)
       entry.title = kind.title
-      createPart(entry, 'span', 'files-kind-name', kind.name)
-      createPart(entry, 'span', 'files-kind-count', formatCount(kind.count))
+      createPart(entry, 'span', 'monitor-kind-name', kind.name)
+      createPart(entry, 'span', 'monitor-kind-count', formatCount(kind.count))
     }
     return kinds
   })
-  const captionSentence = createPart(caption, 'p', 'files-caption-sentence')
+  const captionSentence = createPart(caption, 'p', 'monitor-caption-sentence')
   const domCache = {
     list, // mount lifetime
     scroller, // mount lifetime
@@ -678,13 +677,13 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
     headerCells: createCells(header), // mount lifetime
     // mount lifetime. Each item sits on the rectangle that the program hit-tests.
     locationNodes: locations.map((location, index) => {
-      const node = createPart(sidebar, 'div', 'files-location')
-      createPart(node, 'span', 'files-location-label', location.label)
-      createPart(node, 'span', 'files-location-count', formatCount(location.rowCount))
-      node.style.left = `${filesLayout.locationInset}px`
-      node.style.top = `${filesLayout.locationTop + index * filesLayout.locationHeight}px`
-      node.style.width = `${filesLayout.sidebarWidth - 2 * filesLayout.locationInset}px`
-      node.style.height = `${filesLayout.locationHeight}px`
+      const node = createPart(sidebar, 'div', 'monitor-location')
+      createPart(node, 'span', 'monitor-location-label', location.label)
+      createPart(node, 'span', 'monitor-location-count', formatCount(location.rowCount))
+      node.style.left = `${monitorLayout.locationInset}px`
+      node.style.top = `${monitorLayout.locationTop + index * monitorLayout.locationHeight}px`
+      node.style.width = `${monitorLayout.sidebarWidth - 2 * monitorLayout.locationInset}px`
+      node.style.height = `${monitorLayout.locationHeight}px`
       // For a pointer that rests on the item.
       node.title = `${formatCount(location.rowCount)} ${location.rowNoun}. ${location.description}`
       return node
@@ -699,7 +698,7 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
     // cell holds, until the row's value changes.
     slots: Array.from({length: slotCount}, () => {
       const node = document.createElement('div')
-      node.className = 'files-row'
+      node.className = 'monitor-row'
       spacer.appendChild(node)
       return {node, cells: createCells(node), row: -1, kindClass: '', value: Number.NaN}
     }),
@@ -711,10 +710,10 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
       return domCache.scroller.scrollTop
     },
     // A frame's DOM writes.
-    render(values: Float32Array, output: FilesOutputs) {
+    render(values: Float32Array, output: ValueListOutputs) {
       const locationIndex = output.locations.findIndex(wire => values[wire] === 1)
       const location = locations[locationIndex]
-      invariant(location !== undefined, 'Files shows one location')
+      invariant(location !== undefined, 'the list shows one location')
       domCache.locationNodes.forEach((node, index) => {
         node.style.setProperty('--selected', `${values[output.locations[index]!]}`)
       })
@@ -722,7 +721,7 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
         // Another location: its column titles, its columns' sizes through the class
         // name, the sidebar's caption, and every slot's text, since a row index now
         // means another row.
-        domCache.list.className = `files-list files-list-${location.label.toLowerCase()}`
+        domCache.list.className = `monitor-list monitor-list-${location.label.toLowerCase()}`
         domCache.headerCells.forEach((cell, column) => {
           cell.textContent = location.titles[column] ?? 'value'
         })
@@ -757,7 +756,7 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
           // another kind than the row before it, e.g. when a ReGLU follows a sum.
           const kindClass = location.kindClass?.(row) ?? ''
           if (kindClass !== slot.kindClass) {
-            slot.cells[kindColumn]!.className = kindClass === '' ? 'files-cell files-cell-kind' : `files-cell files-cell-kind ${kindClass}`
+            slot.cells[kindColumn]!.className = kindClass === '' ? 'monitor-cell monitor-cell-kind' : `monitor-cell monitor-cell-kind ${kindClass}`
             slot.kindClass = kindClass
           }
           slot.row = row
@@ -779,7 +778,7 @@ export function createFilesRenderer(document: Document, root: HTMLElement, locat
   }
 }
 
-export function validateFilesOutputWires(output: FilesOutputs, wireCount: number) {
+export function validateValueListOutputWires(output: ValueListOutputs, wireCount: number) {
   for (const wire of [output.totalHeight, output.scroll, output.scrollTarget, output.scrollRequest, output.slotOverflow, output.selected]) {
     assertWire(wire, wireCount)
   }
@@ -788,30 +787,30 @@ export function validateFilesOutputWires(output: FilesOutputs, wireCount: number
 }
 
 // The machine checks that every root value is finite before calling this.
-export function validateFilesOutput(values: Float32Array, output: FilesOutputs) {
+export function validateValueListOutput(values: Float32Array, output: ValueListOutputs) {
   const isBit = (value: number | undefined) => value === 0 || value === 1
   const totalHeight = values[output.totalHeight]!
-  invariant(totalHeight >= 0 && Number.isInteger(totalHeight / rowHeight), `Files total height must be a whole number of rows, got ${totalHeight}`)
+  invariant(totalHeight >= 0 && Number.isInteger(totalHeight / rowHeight), `the list's total height must be a whole number of rows, got ${totalHeight}`)
   for (const wire of [output.scroll, output.scrollTarget]) {
-    invariant(values[wire]! >= 0 && values[wire]! <= maximumScrollTop, `a Files scroll position must be within 0..${maximumScrollTop}, got ${values[wire]}`)
+    invariant(values[wire]! >= 0 && values[wire]! <= maximumScrollTop, `a scroll position of the list must be within 0..${maximumScrollTop}, got ${values[wire]}`)
   }
-  invariant(isBit(values[output.scrollRequest]), `Files scroll request must equal zero or one, got ${values[output.scrollRequest]}`)
-  invariant(isBit(values[output.slotOverflow]), `Files slot overflow must equal zero or one, got ${values[output.slotOverflow]}`)
+  invariant(isBit(values[output.scrollRequest]), `the list's scroll request must equal zero or one, got ${values[output.scrollRequest]}`)
+  invariant(isBit(values[output.slotOverflow]), `the list's slot overflow must equal zero or one, got ${values[output.slotOverflow]}`)
   const selected = values[output.selected]!
-  invariant(Number.isInteger(selected) && selected >= -1, `Files selected row must be a row or -1, got ${selected}`)
+  invariant(Number.isInteger(selected) && selected >= -1, `the list's selected row must be a row or -1, got ${selected}`)
   let locationMass = 0
   for (const wire of output.locations) {
     const bit = values[wire]
-    invariant(bit === 0 || bit === 1, `a Files location bit must equal zero or one, got ${bit}`)
+    invariant(bit === 0 || bit === 1, `a location bit of the list must equal zero or one, got ${bit}`)
     locationMass += bit
   }
-  invariant(locationMass === 1, `Files must show exactly one location, got ${locationMass}`)
+  invariant(locationMass === 1, `the list must show exactly one location, got ${locationMass}`)
   for (let slot = 0; slot < slotCount; slot++) {
     const outputStart = slot * slotField.size
     const row = values[output.slots[outputStart + slotField.row]!]!
-    invariant(Number.isInteger(row) && row >= 0 && row % slotCount === slot, `Files slot ${slot} must show a row whose index % ${slotCount} is ${slot}, got ${row}`)
-    invariant(values[output.slots[outputStart + slotField.top]!] === row * rowHeight, `Files slot ${slot} must be at its row's top`)
-    invariant(isBit(values[output.slots[outputStart + slotField.present]!]), `Files slot ${slot} present must equal zero or one`)
-    invariant(isBit(values[output.slots[outputStart + slotField.selected]!]), `Files slot ${slot} selected must equal zero or one`)
+    invariant(Number.isInteger(row) && row >= 0 && row % slotCount === slot, `slot ${slot} of the list must show a row whose index % ${slotCount} is ${slot}, got ${row}`)
+    invariant(values[output.slots[outputStart + slotField.top]!] === row * rowHeight, `slot ${slot} of the list must be at its row's top`)
+    invariant(isBit(values[output.slots[outputStart + slotField.present]!]), `slot ${slot} of the list: present must equal zero or one`)
+    invariant(isBit(values[output.slots[outputStart + slotField.selected]!]), `slot ${slot} of the list: selected must equal zero or one`)
   }
 }

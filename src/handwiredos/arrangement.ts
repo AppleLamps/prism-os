@@ -7,15 +7,15 @@
 // springs' destinations are written together, so the windows start at rest.
 //
 // The arrangement has four forms, by the workspace's size:
-// - From 1000 px wide, the desk: Files in a column of its own at the left, Notes
+// - From 1000 px wide, the desk: Monitor in a column of its own at the left, Notes
 //   beside it, and Photos over Notes' right part, so the paragraph starts out flowing
-//   around Photos. Files is as tall as the other two together, since a list is worth
-//   every row that it can show. At 1440 × 900 the rectangles are Files 38, 84,
-//   540 × 556, Notes 602, 84 and Photos 842, 210, both at the program's default
-//   sizes. A larger viewport centers that group, and a smaller one narrows Photos,
-//   then Files too, and shortens the group.
-// - From 640 px wide, two columns: Files at the left, and Notes above Photos at the
-//   right.
+//   around Photos. Monitor is as tall as the other two together, since a list is
+//   worth every row that it can show. At 1440 × 900 the rectangles are Monitor
+//   38, 84, 540 × 556, Notes 602, 84 and Photos 842, 210, both at the program's
+//   default sizes. A larger viewport centers that group, and a smaller one narrows
+//   Photos, then Monitor too, and shortens the group.
+// - From 640 px wide, two columns: Monitor at the left, and Notes above Photos at
+//   the right.
 // - Below 640 px wide, e.g. a phone held upright, one column: each window covers the
 //   lower part of the window before it, and leaves that window's title bar and Notes'
 //   whole paragraph in view.
@@ -28,10 +28,10 @@
 // takes in a column, so that a window is covered just under a part of its content.
 // Each number of that kind is read from the code that sets it: the title bar's
 // height, Photos' gap and the length of Notes' text from the program's table, the
-// flow's line height and paddings from notesOptionsFor, and the heights of the Files
-// list's header and rows from filesLayout.
+// flow's line height and paddings from notesOptionsFor, and the heights of the
+// header and the rows of Monitor's list from monitorLayout.
 import {type Wire, invariant} from '../runtime/numeric-ui-core.ts'
-import {filesLayout} from './files.ts'
+import {monitorLayout} from './value-list.ts'
 import {defaultLineFitEpsilon, notesOptionsFor} from './notes-paragraph.ts'
 
 export type Rectangle = {left: number, top: number, width: number, height: number}
@@ -63,7 +63,7 @@ type ArrangementCells = {
   notes: {widths: readonly Wire[]}
 }
 
-// Window order, as everywhere in HandwiredOS: Files, Notes, Photos.
+// Window order, as everywhere in HandwiredOS: Monitor, Notes, Photos.
 const windowCount = 3
 // A window's content box starts inside the frame's border, which the program builds
 // in as 1 px.
@@ -107,15 +107,15 @@ function notesHeightFor(lines: number, metrics: ArrangementMetrics) {
   return notesFirstLineTop(metrics) + lines * notesFlow.lineHeight + notesFlow.verticalPadding
 }
 
-// How much of Files stays in view under its top edge in the one-column form, when
-// `available` px are left for it: its title bar, the list's header, and as many whole
-// rows as fit. The sidebar's heading is as tall as the list's header, and each of
+// How much of Monitor stays in view under its top edge in the one-column form,
+// when `available` px are left for it: its title bar, the list's header, and as many
+// whole rows as fit. The sidebar's heading is as tall as the list's header, and each of
 // its locations as tall as a row, so the sidebar is cut between two locations too.
-// With less room than the header takes, Files shows its title bar alone.
-function filesShownFor(available: number, metrics: ArrangementMetrics) {
-  const header = border + metrics.titleHeight + filesLayout.headerHeight
+// With less room than the header takes, Monitor shows its title bar alone.
+function monitorShownFor(available: number, metrics: ArrangementMetrics) {
+  const header = border + metrics.titleHeight + monitorLayout.headerHeight
   if (available < header) return metrics.titleHeight
-  return header + Math.floor((available - header) / filesLayout.rowHeight) * filesLayout.rowHeight
+  return header + Math.floor((available - header) / monitorLayout.rowHeight) * monitorLayout.rowHeight
 }
 
 function clamp(value: number, minimum: number, maximum: number) {
@@ -152,7 +152,7 @@ function fitInto(rectangle: Rectangle, workspace: Rectangle, minimum: Size): Rec
   }
 }
 
-function arrangeDesk(workspace: Rectangle, minimum: Size, [files, notes, photos]: readonly [Size, Size, Size]): Rectangle[] {
+function arrangeDesk(workspace: Rectangle, minimum: Size, [monitor, notes, photos]: readonly [Size, Size, Size]): Rectangle[] {
   const gap = 24
   const margin = 24
   // Photos starts 240 px right of Notes' left edge and 126 px below Notes' top: two
@@ -160,7 +160,7 @@ function arrangeDesk(workspace: Rectangle, minimum: Size, [files, notes, photos]
   const photosOffsetX = 240
   const photosOffsetY = 126
   // The group at full size: 1364 × 556 px, down to Photos' bottom edge.
-  const fullWidth = files.width + gap + photosOffsetX + photos.width
+  const fullWidth = monitor.width + gap + photosOffsetX + photos.width
   const fullHeight = photosOffsetY + photos.height
   const width = Math.min(fullWidth, workspace.width - 2 * margin)
   const height = Math.min(fullHeight, workspace.height - 2 * margin)
@@ -175,18 +175,18 @@ function arrangeDesk(workspace: Rectangle, minimum: Size, [files, notes, photos]
   const originY = workspace.top + margin + spare / 2
 
   // A narrower group takes the first 120 px of the missing width from Photos, whose
-  // photos are still 87 px wide then, so that Files keeps the width that shows the
-  // five columns of Operations, e.g. on a viewport 1280 px wide. Past that, half of
-  // the missing width comes from Files and half from Photos.
+  // photos are still 87 px wide then, so that Monitor keeps the width that shows
+  // the five columns of Operations, e.g. on a viewport 1280 px wide. Past that, half
+  // of the missing width comes from Monitor and half from Photos.
   const missing = Math.max(0, fullWidth - width - 120)
-  const filesWidth = Math.max(minimum.width, files.width - Math.ceil(missing / 2))
-  const notesLeft = filesWidth + gap
+  const monitorWidth = Math.max(minimum.width, monitor.width - Math.ceil(missing / 2))
+  const notesLeft = monitorWidth + gap
   const photosLeft = notesLeft + photosOffsetX
   const photosWidth = clamp(width - photosLeft, minimum.width, photos.width)
   const photosHeight = clamp(height - photosOffsetY, minimum.height, photos.height)
 
   return [
-    {left: originX, top: originY, width: filesWidth, height},
+    {left: originX, top: originY, width: monitorWidth, height},
     {left: originX + notesLeft, top: originY, width: notes.width, height: Math.min(notes.height, height)},
     {left: originX + photosLeft, top: originY + Math.min(photosOffsetY, height - photosHeight), width: photosWidth, height: photosHeight},
   ]
@@ -202,8 +202,8 @@ function arrangeColumns(workspace: Rectangle, minimum: Size, [, notes, photos]: 
   const notesNeeds = Math.max(minimum.height, notesHeightFor(notesLinesFor(columnWidth - notesHorizontalInset, metrics), metrics) + 20)
   const photosHeight = clamp(available - notesNeeds - gap, minimum.height, photos.height)
   const notesHeight = clamp(available - photosHeight - gap, minimum.height, notes.height)
-  // The left column: Files, as tall as both. The two columns are centered when the
-  // workspace is taller than they are.
+  // The left column: Monitor, as tall as both. The two columns are centered when
+  // the workspace is taller than they are.
   const height = notesHeight + gap + photosHeight
   const originY = workspace.top + margin + (available - height) / 2
   const leftColumn = workspace.left + margin
@@ -215,17 +215,17 @@ function arrangeColumns(workspace: Rectangle, minimum: Size, [, notes, photos]: 
   ]
 }
 
-function arrangeColumn(workspace: Rectangle, minimum: Size, [files, notes, photos]: readonly [Size, Size, Size], metrics: ArrangementMetrics): Rectangle[] {
+function arrangeColumn(workspace: Rectangle, minimum: Size, [monitor, notes, photos]: readonly [Size, Size, Size], metrics: ArrangementMetrics): Rectangle[] {
   const margin = 8
   const titleBar = metrics.titleHeight
-  const width = Math.min(workspace.width - 2 * margin, files.width)
+  const width = Math.min(workspace.width - 2 * margin, monitor.width)
   const left = workspace.left + (workspace.width - width) / 2
   const available = workspace.height - 2 * margin
   // What stays in view of each window above the next one. Photos, in front, takes up
   // to 45% of the height, with square photos when that fits: 4 columns and 3 rows of
   // photos with Photos' gap around and between them, under the title bar. Notes shows
-  // its whole text where the height allows. Files shows the rest: its title bar, the
-  // list's header and whole rows, see filesShownFor.
+  // its whole text where the height allows. Monitor shows the rest: its title bar,
+  // the list's header and whole rows, see monitorShownFor.
   const notesNeeds = notesHeightFor(notesLinesFor(width - notesHorizontalInset, metrics), metrics)
   const photoSize = (width - 2 * border - 5 * metrics.photosGap) / 4
   const photosHeight = clamp(
@@ -234,29 +234,29 @@ function arrangeColumn(workspace: Rectangle, minimum: Size, [files, notes, photo
     photos.height,
   )
   const notesShown = Math.max(titleBar, Math.min(notesNeeds, available - photosHeight - titleBar))
-  const filesShown = Math.min(filesShownFor(available - photosHeight - notesShown, metrics), files.height + margin)
-  // The column is centered in the height that Files' whole rows leave over.
-  const height = filesShown + notesShown + photosHeight
-  const filesTop = workspace.top + margin + Math.max(0, (available - height) / 2)
-  const notesTop = filesTop + filesShown
+  const monitorShown = Math.min(monitorShownFor(available - photosHeight - notesShown, metrics), monitor.height + margin)
+  // The column is centered in the height that Monitor's whole rows leave over.
+  const height = monitorShown + notesShown + photosHeight
+  const monitorTop = workspace.top + margin + Math.max(0, (available - height) / 2)
+  const notesTop = monitorTop + monitorShown
   const photosTop = notesTop + notesShown
   const bottom = photosTop + photosHeight
   return [
-    {left, top: filesTop, width, height: Math.min(files.height, bottom - filesTop)},
+    {left, top: monitorTop, width, height: Math.min(monitor.height, bottom - monitorTop)},
     {left, top: notesTop, width, height: Math.min(notes.height, bottom - notesTop)},
     {left, top: photosTop, width, height: photosHeight},
   ]
 }
 
-function arrangeRow(workspace: Rectangle, minimum: Size, [files, notes, photos]: readonly [Size, Size, Size], metrics: ArrangementMetrics): Rectangle[] {
+function arrangeRow(workspace: Rectangle, minimum: Size, [monitor, notes, photos]: readonly [Size, Size, Size], metrics: ArrangementMetrics): Rectangle[] {
   const margin = 8
   const available = workspace.width - 2 * margin
-  const height = Math.min(workspace.height - 2 * margin, files.height)
+  const height = Math.min(workspace.height - 2 * margin, monitor.height)
   const top = workspace.top + (workspace.height - height) / 2
   // What stays in view of each window left of the next one. Photos, in front, is as
   // narrow as a window gets. Notes shows a column wide enough for its paragraph in
-  // the lines that fit this height, where the width allows. Files shows the rest,
-  // at least 88 px of its title bar.
+  // the lines that fit this height, where the width allows. Monitor shows the
+  // rest, at least 88 px of its title bar.
   const shownAtLeast = 88
   const photosWidth = Math.min(minimum.width, available)
   const lines = Math.max(2, Math.floor((height - notesFirstLineTop(metrics) - border) / notesFlow.lineHeight))
@@ -264,14 +264,14 @@ function arrangeRow(workspace: Rectangle, minimum: Size, [files, notes, photos]:
   // line keeps from Photos.
   const notesNeeds = Math.ceil(metrics.notesTextWidth / (lines - 1)) + border + notesFlow.padding + notesFlow.horizontalPadding
   const notesShown = Math.max(shownAtLeast, Math.min(notesNeeds, available - photosWidth - shownAtLeast))
-  const filesShown = clamp(available - photosWidth - notesShown, shownAtLeast, files.width + margin)
-  const width = filesShown + notesShown + photosWidth
-  const filesLeft = workspace.left + margin + Math.max(0, (available - width) / 2)
-  const notesLeft = filesLeft + filesShown
+  const monitorShown = clamp(available - photosWidth - notesShown, shownAtLeast, monitor.width + margin)
+  const width = monitorShown + notesShown + photosWidth
+  const monitorLeft = workspace.left + margin + Math.max(0, (available - width) / 2)
+  const notesLeft = monitorLeft + monitorShown
   const photosLeft = notesLeft + notesShown
   const right = photosLeft + photosWidth
   return [
-    {left: filesLeft, top, width: Math.min(files.width, right - filesLeft), height},
+    {left: monitorLeft, top, width: Math.min(monitor.width, right - monitorLeft), height},
     {left: notesLeft, top, width: Math.min(notes.width, right - notesLeft), height},
     {left: photosLeft, top, width: Math.min(photos.width, photosWidth), height},
   ]
@@ -282,8 +282,8 @@ function arrangeRow(workspace: Rectangle, minimum: Size, [files, notes, photos]:
 // center, width and height springs. Call it before the machine's first step, with
 // the viewport's size as that step gets it. The sizes that the table holds, e.g.
 // 560 × 430 for Photos, are the windows' sizes on a viewport with room for them,
-// except for Files' height, which follows the other two windows on a viewport wide
-// enough for two columns. The text that Notes' cells hold is the text that the
+// except for Monitor's height, which follows the other two windows on a viewport
+// wide enough for two columns. The text that Notes' cells hold is the text that the
 // windows are arranged for.
 export function arrangeInitialWindows(source: Float32Array, cells: ArrangementCells, viewportWidth: number, viewportHeight: number) {
   invariant(cells.windows.length === windowCount && cells.springs.length === windowCount, 'the arrangement needs the cells of every window')

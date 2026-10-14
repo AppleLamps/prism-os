@@ -39,7 +39,7 @@
 //   on its way to the dock.
 // - The flow has a fixed number of bands, 16 by default. Lines past the last usable
 //   band aren't laid out: their words get visible = 0, and `truncated` is 1. E.g.
-//   when Files covers all but an 85 px slot of the column, each band holds one or
+//   when Monitor covers all but an 85 px slot of the column, each band holds one or
 //   two words, and the paragraph's last words aren't laid out.
 // - A band whose bottom lies below the content box is unusable, so no word is
 //   placed where the window would clip it. The content height is the destination

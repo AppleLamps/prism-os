@@ -452,41 +452,41 @@ body {
   --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 12A8 8 0 0 1 12 20' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
-/* The kinds of the program's operations, in Files' list and in its sidebar. Copper,
+/* The kinds of the program's operations, in Monitor's list and in its sidebar. Copper,
    indigo, ochre and plum are the chart colors, in that order. */
 .kind-affine { --kind-color: var(--copper); }
 .kind-reglu { --kind-color: var(--wire-indigo); }
 .kind-boolean { --kind-color: var(--wire-ochre); }
 .kind-index { --kind-color: var(--wire-plum); }
 
-/* Files: a sidebar of locations, a list of the program's own numbers in a native
+/* Monitor: a sidebar of locations, a list of the program's own numbers in a native
    scroller, and a footer with the program's sizes and the last frames' times.
    JavaScript creates the sidebar's items, the header's cells, the rows and the footer's
    parts, and places each sidebar item on the rectangle that the program tests presses
    against. Every frame it writes each row's transform, display and --selected, each
    sidebar item's --selected, the spacer's height, and the footer's chart. When the page
    loads it copies the five sizes below from the program's numbers. */
-.files-content {
-  --files-sidebar-width: 152px;
-  --files-header-height: 28px;
-  --files-row-height: 24px;
-  --files-scrollbar-strip: 16px;
-  --files-footer-height: 32px;
+.monitor-content {
+  --monitor-sidebar-width: 152px;
+  --monitor-header-height: 28px;
+  --monitor-row-height: 24px;
+  --monitor-scrollbar-strip: 16px;
+  --monitor-footer-height: 32px;
   color: var(--ink);
 }
 
-.files-sidebar {
+.monitor-sidebar {
   position: absolute;
   top: 0;
-  bottom: var(--files-footer-height);
+  bottom: var(--monitor-footer-height);
   left: 0;
-  width: var(--files-sidebar-width);
+  width: var(--monitor-sidebar-width);
   border-right: 1px solid var(--rule);
 }
 
 /* The sidebar's heading, in the label style, in the 28 px beside the list's header, whose
    titles it shares a line with. The program puts the first item right under it, 8 px in. */
-.files-sidebar strong {
+.monitor-sidebar strong {
   position: absolute;
   top: 6px;
   left: var(--space-4);
@@ -510,9 +510,9 @@ body {
    first part is an empty one, since a column keeps its first part even when the part
    doesn't fit. E.g. a window at its minimum height, where the sidebar is 112 px tall,
    shows neither part. */
-.files-caption {
+.monitor-caption {
   position: absolute;
-  top: calc(var(--files-header-height) + 3 * var(--files-row-height) + var(--space-3));
+  top: calc(var(--monitor-header-height) + 3 * var(--monitor-row-height) + var(--space-3));
   right: var(--space-4);
   bottom: var(--space-3);
   left: var(--space-4);
@@ -520,17 +520,17 @@ body {
   flex-flow: column wrap;
   justify-content: flex-end;
   align-content: flex-start;
-  gap: var(--space-2) var(--files-sidebar-width);
+  gap: var(--space-2) var(--monitor-sidebar-width);
   overflow: hidden;
   color: var(--ink-3);
   font: var(--type-small);
 }
 
-.files-caption::before {
+.monitor-caption::before {
   content: "";
 }
 
-.files-caption > * {
+.monitor-caption > * {
   flex: none;
   width: 100%;
   margin: 0;
@@ -541,20 +541,20 @@ body {
 /* One line per kind: the swatch, the name, and the count at the right edge, under the
    counts of the items above. JavaScript writes display: grid on the list while the list
    of rows shows the kinds' location, and display: none otherwise. */
-.files-caption-kinds {
+.monitor-caption-kinds {
   grid-template-columns: max-content minmax(0, 1fr) max-content;
   column-gap: 6px;
   white-space: nowrap;
 }
 
-.files-caption-kinds li {
+.monitor-caption-kinds li {
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   align-items: center;
 }
 
-.files-caption-kinds li::before {
+.monitor-caption-kinds li::before {
   content: "";
   width: 6px;
   height: 6px;
@@ -562,34 +562,34 @@ body {
   background: var(--kind-color);
 }
 
-.files-kind-name {
+.monitor-kind-name {
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.files-kind-count {
+.monitor-kind-count {
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
 /* A selection is a copper wash in the window with focus, and a neutral one elsewhere. */
-.files-location,
-.files-row {
+.monitor-location,
+.monitor-row {
   --selection: color-mix(in srgb, var(--copper-wash) calc(var(--focused) * 100%), color-mix(in srgb, var(--rule) 55%, transparent));
   background-color: color-mix(in srgb, var(--selection) calc(var(--selected) * 100%), transparent);
 }
 
 /* The pointer's wash is a second layer, over the selection's. */
 @media (hover: hover) {
-  .files-location:hover,
-  .files-row:hover {
+  .monitor-location:hover,
+  .monitor-row:hover {
     background-image: linear-gradient(var(--wash), var(--wash));
   }
 }
 
 /* A sidebar item: the location's name, and its number of rows at the right edge. */
-.files-location {
+.monitor-location {
   position: absolute;
   display: flex;
   align-items: center;
@@ -604,27 +604,27 @@ body {
   cursor: pointer;
 }
 
-.files-location-count {
+.monitor-location-count {
   color: color-mix(in srgb, var(--ink-2) calc(var(--selected) * 100%), var(--ink-3));
   font: var(--type-small);
   font-variant-numeric: tabular-nums;
 }
 
-.files-list {
+.monitor-list {
   position: absolute;
   top: 0;
   right: 0;
-  bottom: var(--files-footer-height);
-  left: var(--files-sidebar-width);
+  bottom: var(--monitor-footer-height);
+  left: var(--monitor-sidebar-width);
   font: 400 12px/24px var(--font-mono);
   container-type: inline-size;
 }
 
-.files-header,
-.files-row {
+.monitor-header,
+.monitor-row {
   align-items: center;
   column-gap: var(--space-2);
-  padding: 0 var(--files-scrollbar-strip) 0 var(--space-3);
+  padding: 0 var(--monitor-scrollbar-strip) 0 var(--space-3);
 }
 
 /* Each location shows the columns that it has a title for, and the value last. The kind
@@ -632,26 +632,26 @@ body {
    76 px. A list too narrow for its columns drops columns whole, see below, since a column
    that only shrinks ends up as an ellipsis, e.g. a kind cell that shows a swatch and
    three dots. */
-.files-list-state .files-header,
-.files-list-state .files-row {
+.monitor-list-state .monitor-header,
+.monitor-list-state .monitor-row {
   grid-template-columns: minmax(36px, 1fr) minmax(0, 60px) minmax(48px, 96px);
 }
 
-.files-list-operations .files-header,
-.files-list-operations .files-row {
+.monitor-list-operations .monitor-header,
+.monitor-list-operations .monitor-row {
   grid-template-columns: minmax(36px, 1fr) minmax(0, 76px) minmax(0, 44px) minmax(0, 60px) minmax(48px, 96px);
 }
 
-.files-list-outputs .files-header,
-.files-list-outputs .files-row {
+.monitor-list-outputs .monitor-header,
+.monitor-list-outputs .monitor-row {
   grid-template-columns: minmax(36px, 1fr) minmax(48px, 96px);
 }
 
-.files-list-state .files-cell-layer,
-.files-list-state .files-cell-weights,
-.files-list-outputs .files-cell-kind,
-.files-list-outputs .files-cell-layer,
-.files-list-outputs .files-cell-weights {
+.monitor-list-state .monitor-cell-layer,
+.monitor-list-state .monitor-cell-weights,
+.monitor-list-outputs .monitor-cell-kind,
+.monitor-list-outputs .monitor-cell-layer,
+.monitor-list-outputs .monitor-cell-weights {
   display: none;
 }
 
@@ -659,12 +659,12 @@ body {
    for the wire's digits, and 76, 44, 60 and 96 px. A list under 376 px, e.g. the 338 px of
    a window 492 px wide, leaves the weights out. The other four columns take 304 px. */
 @container (max-width: 375px) {
-  .files-list-operations .files-header,
-  .files-list-operations .files-row {
+  .monitor-list-operations .monitor-header,
+  .monitor-list-operations .monitor-row {
     grid-template-columns: minmax(36px, 1fr) minmax(0, 76px) minmax(0, 44px) minmax(48px, 96px);
   }
 
-  .files-list-operations .files-cell-weights {
+  .monitor-list-operations .monitor-cell-weights {
     display: none;
   }
 }
@@ -673,27 +673,27 @@ body {
    its minimum width, a list shows the name and the value only, and the value takes no
    more room than its digits, so a cell's name in State keeps most of the width. */
 @container (max-width: 307px) {
-  .files-list .files-header,
-  .files-list .files-row {
+  .monitor-list .monitor-header,
+  .monitor-list .monitor-row {
     grid-template-columns: minmax(36px, 1fr) minmax(48px, max-content);
   }
 
-  .files-list .files-cell-kind,
-  .files-list .files-cell-layer,
-  .files-list .files-cell-weights {
+  .monitor-list .monitor-cell-kind,
+  .monitor-list .monitor-cell-layer,
+  .monitor-list .monitor-cell-weights {
     display: none;
   }
 }
 
 /* The header keeps the room of the scroller's scrollbar, so its cells line up with the
    rows' cells where scrollbars take room. */
-.files-header {
+.monitor-header {
   position: absolute;
   top: 0;
   right: 0;
   left: 0;
   display: grid;
-  height: var(--files-header-height);
+  height: var(--monitor-header-height);
   overflow: hidden;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
@@ -708,9 +708,9 @@ body {
    scroll the list inside the desktop's touch-action: none, and contain keeps the list's
    rubber band from scrolling anything behind it. The program moves the view itself after
    a key, so the browser's own scroll anchoring is off. */
-.files-scroller {
+.monitor-scroller {
   position: absolute;
-  top: var(--files-header-height);
+  top: var(--monitor-header-height);
   right: 0;
   bottom: 0;
   left: 0;
@@ -724,21 +724,21 @@ body {
   touch-action: pan-y;
 }
 
-.files-spacer {
+.monitor-spacer {
   position: relative;
 }
 
 /* Every row is 24 px tall, so the list draws only the rows in view. Ruled like a ledger. */
-.files-row {
+.monitor-row {
   position: absolute;
   top: 0;
   right: 0;
   left: 0;
-  height: var(--files-row-height);
+  height: var(--monitor-row-height);
   box-shadow: inset 0 -1px color-mix(in srgb, var(--rule) 55%, transparent);
 }
 
-.files-cell {
+.monitor-cell {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -746,28 +746,28 @@ body {
 }
 
 /* Numbers line up on their last digit. */
-.files-cell-layer,
-.files-cell-weights,
-.files-cell-value {
+.monitor-cell-layer,
+.monitor-cell-weights,
+.monitor-cell-value {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
 /* A row's name and its value are in ink, and what lies between them is quieter. */
-.files-row .files-cell-kind,
-.files-row .files-cell-layer,
-.files-row .files-cell-weights {
+.monitor-row .monitor-cell-kind,
+.monitor-row .monitor-cell-layer,
+.monitor-row .monitor-cell-weights {
   color: var(--ink-2);
 }
 
 /* A kind cell that also has one of the kind classes above, e.g. kind-reglu, gets a swatch
    in the kind's color, and the word stays in ink. The sidebar's list of kinds draws the
    same swatches. */
-.files-row .files-cell-kind {
+.monitor-row .monitor-cell-kind {
   font-family: var(--font-sans);
 }
 
-.files-row .files-cell-kind[class*=" kind-"]::before {
+.monitor-row .monitor-cell-kind[class*=" kind-"]::before {
   content: "";
   display: inline-block;
   width: 6px;
@@ -779,9 +779,9 @@ body {
 }
 
 /* Shown while the list's viewport holds more rows than there are row nodes. */
-.files-overflow {
+.monitor-overflow {
   position: absolute;
-  right: var(--files-scrollbar-strip);
+  right: var(--monitor-scrollbar-strip);
   bottom: 6px;
   padding: 3px var(--space-2);
   border: 1px solid var(--rule);
@@ -906,10 +906,10 @@ body {
   }
 }
 
-/* Files' footer: the program's sizes at the left, and at the right the program's time in
-   each of the last 60 frames as a small chart, with the last frame's time beside it.
-   monitor.ts writes all of it. */
-.files-footer {
+/* Monitor's footer: the program's sizes at the left, and at the right the program's time
+   in each of the last 60 frames as a small chart, with the last frame's time beside it.
+   monitor-footer.ts writes all of it. */
+.monitor-footer {
   position: absolute;
   right: 0;
   bottom: 0;
@@ -917,7 +917,7 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  height: var(--files-footer-height);
+  height: var(--monitor-footer-height);
   /* The right 20 px stay clear of the grip's arc. */
   padding: 0 20px 0 var(--space-4);
   border-top: 1px solid var(--rule);

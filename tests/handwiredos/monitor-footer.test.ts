@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {Circuit} from '../../src/runtime/numeric-ui-core.ts'
 import {createWindowManagerMachine} from '../../src/handwiredos/window-manager.ts'
-import {describeOperations} from '../../src/handwiredos/files.ts'
-import {createMonitor, frameTimeScale, frameTimesPath, measureProgram} from '../../src/handwiredos/monitor.ts'
+import {describeOperations} from '../../src/handwiredos/value-list.ts'
+import {createMonitorFooter, frameTimeScale, frameTimesPath, measureProgram} from '../../src/handwiredos/monitor-footer.ts'
 
 // The bytes of every typed array that a compiled program holds, each array once,
 // found by walking the program's own fields.
@@ -20,7 +20,7 @@ function bytesOfEveryArray(program: object) {
   return bytes
 }
 
-// A stand-in for an element that createMonitor writes into: the markup it is given,
+// A stand-in for an element that createMonitorFooter writes into: the markup it is given,
 // and one part per selector that the monitor asks for, with the part's text and
 // attributes.
 function createFakeElement() {
@@ -43,7 +43,7 @@ test('the footer shows the program\'s layers, stored weights and size, and draws
   const machine = createWindowManagerMachine()
   const program = machine.tensorProgram
   const [footer, statistics] = [createFakeElement(), createFakeElement()]
-  const monitor = createMonitor({footer: footer as unknown as HTMLElement, statistics: statistics as unknown as HTMLElement}, program)
+  const monitor = createMonitorFooter({footer: footer as unknown as HTMLElement, statistics: statistics as unknown as HTMLElement}, program)
   const count = (value: number) => value.toLocaleString('en-US')
   // The counts are the compiled program's, in the order in which a narrow footer keeps them.
   const {weights, bytes} = measureProgram(program)

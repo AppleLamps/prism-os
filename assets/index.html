@@ -36,7 +36,7 @@
         <span class="system-caption">Every window, spring and line break here is computed by one fixed numeric program.</span>
       </div>
       <div class="system-right">
-        <!-- monitor.ts writes the program's size and the last frame's time here. -->
+        <!-- monitor-footer.ts writes the program's size and the last frame's time here. -->
         <div class="system-stats"></div>
         <nav class="system-links">
           <a href="../">Demos</a>
@@ -53,37 +53,38 @@
       <div class="label">Try</div>
       <ul class="eyelets">
         <li>Drag a window by its title bar, or resize it from its lower right corner</li>
-        <li>Type in Notes, then drag Files or Photos over it and watch the lines</li>
-        <li>Pick Outputs in Files, then drag Files and watch its first rows</li>
+        <li>Type in Notes, then drag Monitor or Photos over it and watch the lines</li>
+        <li>Pick Outputs in Monitor, then drag Monitor and watch its first rows</li>
         <li>Click a photo, then press <kbd>&larr;</kbd> and <kbd>&rarr;</kbd></li>
         <li>Close a window, then open it again from the dock</li>
       </ul>
     </aside>
 
-    <section class="window window-files">
+    <section class="window window-monitor">
       <div class="titlebar">
-        <div class="window-title"><span class="app-dot dot-files"></span>Files</div>
+        <div class="window-title"><span class="app-dot dot-monitor"></span>Monitor</div>
         <div class="window-controls">
           <span class="window-button minimize"></span>
           <span class="window-button maximize"></span>
           <span class="window-button close"></span>
         </div>
       </div>
-      <!-- The program's own numbers, in three locations. files.ts creates the sidebar's
-           items, each with its location's number of rows, the header's cells and one
-           row node per DOM slot, and the program gives each slot its row. The sidebar's
-           caption says what the shown location holds, in words for a visitor.
-           monitor.ts writes the footer: the program's sizes and the last frames' times. -->
-      <div class="window-content files-content">
-        <nav class="files-sidebar"><strong>This program</strong><div class="files-caption"></div></nav>
-        <div class="files-list">
-          <div class="files-header"></div>
-          <div class="files-scroller">
-            <div class="files-spacer"></div>
+      <!-- The program's own numbers, in three locations. value-list.ts creates the
+           sidebar's items, each with its location's number of rows, the header's cells
+           and one row node per DOM slot, and the program gives each slot its row. The
+           sidebar's caption says what the shown location holds, in words for a visitor.
+           monitor-footer.ts writes the footer: the program's sizes and the last frames'
+           times. -->
+      <div class="window-content monitor-content">
+        <nav class="monitor-sidebar"><strong>This program</strong><div class="monitor-caption"></div></nav>
+        <div class="monitor-list">
+          <div class="monitor-header"></div>
+          <div class="monitor-scroller">
+            <div class="monitor-spacer"></div>
           </div>
-          <div class="files-overflow"></div>
+          <div class="monitor-overflow"></div>
         </div>
-        <footer class="files-footer"></footer>
+        <footer class="monitor-footer"></footer>
       </div>
       <div class="resize-grip"></div>
     </section>
@@ -125,10 +126,10 @@
          while it is open, and a bar while it has focus. -->
     <nav id="dock">
       <span class="dock-wire"></span>
-      <div class="dock-item dock-files" title="Files">
+      <div class="dock-item dock-monitor" title="Monitor">
         <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 9.5a2 2 0 0 1 2-2h4.4a2 2 0 0 1 1.5.6l1.2 1.3a2 2 0 0 0 1.5.6H22a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
-          <path class="accent" d="M8 14.5h6M8 18h9"/>
+          <rect x="4" y="6" width="20" height="16" rx="2.5"/>
+          <path class="accent" d="M7.5 15.5h3l2-4.5 3 7 2-4.5h3"/>
         </svg>
         <i></i>
       </div>

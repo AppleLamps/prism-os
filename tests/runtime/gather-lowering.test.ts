@@ -1236,8 +1236,8 @@ describe('HandwiredOS', () => {
     // October 13, 2026, notes-walker.ts declared a second group per band, the segment
     // that the band's line starts at, and read its tables through it. Now the
     // walker reads its tables with index reads, so the 16 bands' slot reads are the
-    // program's 48 gather reads, through 16 of its 22 groups. The Files list
-    // (files.ts) declares no group: only the table's validator checks its three
+    // program's 48 gather reads, through 16 of its 22 groups. Monitor's list
+    // (value-list.ts) declares no group: only the table's validator checks its three
     // location bits, so it adds no read.
     expect(circuit.oneHotGroups.length).toBe(22)
     expect(statistics.readCount).toBe(48)

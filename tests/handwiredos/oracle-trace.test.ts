@@ -3,7 +3,7 @@ import {validateTensorEvaluation} from '../../src/runtime/numeric-ui-core.ts'
 import {
   createWindowManagerMachine,
   dockOutputField,
-  filesSourceField,
+  valueListSourceField,
   photoSourceField,
   sourceField as windowSourceFieldTable,
   windowCount,
@@ -11,7 +11,7 @@ import {
   windowSourceField,
   windowStateField,
 } from '../../src/handwiredos/window-manager.ts'
-import {rowCapacity as filesRowCapacity} from '../../src/handwiredos/files.ts'
+import {rowCapacity as valueListRowCapacity} from '../../src/handwiredos/value-list.ts'
 import {
   controlField,
   createPhotoGalleryMachine,
@@ -60,26 +60,26 @@ function verifyEvaluations(machine: Machine & {
 }
 
 describe('production circuits match the reference interpreter across scripted traces', () => {
-  test('window manager: drags, controls, photos, Notes texts, the Files list, and viewport resizes', () => {
+  test('window manager: drags, controls, photos, Notes texts, Monitor\'s list, and viewport resizes', () => {
     const machine = createWindowManagerMachine()
-    // Files' list at its capacity, which a host writes before the first step, so that
-    // the trace reaches scroll positions up to 2,400,000 px.
-    for (const rowCount of filesSourceField.rowCounts) machine.source[rowCount] = filesRowCapacity
+    // Monitor's list at its capacity, which a host writes before the first step, so
+    // that the trace reaches scroll positions up to 2,400,000 px.
+    for (const rowCount of valueListSourceField.rowCounts) machine.source[rowCount] = valueListRowCapacity
     const checked = verifyEvaluations(machine)
     const random = createRandom(0x0c1a5e)
     let frameClock = 0
     let steps = 0
     let width = 1280
     let height = 800
-    // The Files scroller's position, as a host reads it at the top of a frame.
+    // The scroll position of Monitor's list, as a host reads it at the top of a frame.
     // While undefined, the list stays where the machine's last step left it.
-    let filesScrollTop: number | undefined
+    let valueListScrollTop: number | undefined
 
     // Drive one frame. The observer checks every evaluation the step runs.
     function advance(elapsed: number) {
       frameClock += elapsed
       steps++
-      return machine.step(width, height, frameClock, filesScrollTop)
+      return machine.step(width, height, frameClock, valueListScrollTop)
     }
 
     function projectWindow(values: Float32Array, windowIndex: number) {
@@ -277,19 +277,19 @@ describe('production circuits match the reference interpreter across scripted tr
     expect(mostWindowOverflow).toBeGreaterThanOrEqual(1)
     expect(notesTruncations).toBeGreaterThanOrEqual(2)
 
-    // Phase 7: Files' list. Files' dock item raises and focuses Files, which earlier
-    // phases left at its minimum size. Then, at scroll positions on the quarter pixel
-    // grid from the top of the list to its end, a press and a release on the list and
-    // each of the six keys, at Files' normal size and maximized, each time in another
-    // of the sidebar's three locations. A key's scroll request moves the list for the
-    // frames until the next position is set.
+    // Phase 7: Monitor's list. Monitor's dock item raises and focuses Monitor, which
+    // earlier phases left at its minimum size. Then, at scroll positions on the
+    // quarter pixel grid from the top of the list to its end, a press and a release
+    // on the list and each of the six keys, at Monitor's normal size and maximized,
+    // each time in another of the sidebar's three locations. A key's scroll request
+    // moves the list for the frames until the next position is set.
     {
       const dock = projectDock(values, 0)
       machine.pointerDown(dock.left + dock.width / 2, dock.top + dock.height / 2)
       machine.pointerUp(dock.left + dock.width / 2, dock.top + dock.height / 2)
       values = advance(irregularFrameTime(random))
-      const filesKeys = ['down', 'pageDown', 'end', 'up', 'pageUp', 'home'] as const
-      const scrollPositions = [0, 1000.25, 123_456.5, 2_399_000, 2_399_999.75, filesRowCapacity * 24]
+      const valueListKeys = ['down', 'pageDown', 'end', 'up', 'pageUp', 'home'] as const
+      const scrollPositions = [0, 1000.25, 123_456.5, 2_399_000, 2_399_999.75, valueListRowCapacity * 24]
       for (const maximized of [false, true]) {
         if (maximized) {
           const point = controlPoint(values, 0, 'maximize')
@@ -315,8 +315,8 @@ describe('production circuits match the reference interpreter across scripted tr
           machine.pointerDown(location.x, location.y)
           machine.pointerUp(location.x, location.y)
           values = advance(irregularFrameTime(random))
-          expect(machine.source[filesSourceField.location[index % 3]!]).toBe(1)
-          filesScrollTop = scrollTop
+          expect(machine.source[valueListSourceField.location[index % 3]!]).toBe(1)
+          valueListScrollTop = scrollTop
           // The list of a window at its minimum size is 110 px wide and 84 px tall.
           const x = listLeft + 10 + random() * 90
           const y = listTop + 0.5 + random() * (listHeight - 30)
@@ -324,17 +324,17 @@ describe('production circuits match the reference interpreter across scripted tr
           values = advance(irregularFrameTime(random))
           machine.pointerUp(x, y)
           values = advance(irregularFrameTime(random))
-          filesScrollTop = undefined
-          for (const key of filesKeys) {
-            machine.filesKey(key)
+          valueListScrollTop = undefined
+          for (const key of valueListKeys) {
+            machine.valueListKey(key)
             values = advance(irregularFrameTime(random))
           }
         }
       }
       // Home was the last key, so row 0 is selected and the list is at the top.
-      expect(machine.source[filesSourceField.selected]).toBe(0)
-      expect(values[machine.output.files.scroll]).toBe(0)
-      // Restore Files.
+      expect(machine.source[valueListSourceField.selected]).toBe(0)
+      expect(values[machine.output.valueList.scroll]).toBe(0)
+      // Restore Monitor.
       const point = controlPoint(values, 0, 'maximize')
       machine.pointerDown(point.x, point.y)
       machine.pointerUp(point.x, point.y)

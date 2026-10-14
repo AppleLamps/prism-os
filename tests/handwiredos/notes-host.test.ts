@@ -472,12 +472,12 @@ test('a run of letters wider than the column is drawn as pieces that wrap inside
 test('the note says which capacity its text passes, and writes the sentence only when it changes', () => {
   const {machine, frame, type, press, notice, shownWords, input} = mount()
   // Photos starts above Notes, and a drag by its title bar moves it 100 px left, to 550,190. It then leaves 13
-  // lines of 105 px at its left, and the paragraph's last 13 words have none.
+  // lines of 105 px at its left, and the paragraph's last 15 words have none.
   machine.pointerDown(900, 212, 4)
   machine.pointerMove(800, 212, 8)
   machine.pointerUp(800, 212, 12)
   frame()
-  assert.deepEqual([notice.style['display'], notice.textContent], ['-webkit-box', 'The last 13 words don\'t fit in the lines that are free.'])
+  assert.deepEqual([notice.style['display'], notice.textContent], ['-webkit-box', 'The last 15 words don\'t fit in the lines that are free.'])
   frame()
   assert.equal(notice.textWrites, 1)
   // With Notes in front, the paragraph fits, and the notice is hidden.
