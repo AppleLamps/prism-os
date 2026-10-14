@@ -1,7 +1,8 @@
-/* The page that searches many JSON documents, assets/json-search.html. This file is the page's only stylesheet: it
-   imports site.css, the tokens and the parts every page shares, then tool.css, the pattern field and the display
-   kinds' colors, and adds what only this page needs. With several links in the page, Bun's development server
-   (1.4.3) serves the stylesheets in the reverse of the page's order, and `bun build` in the page's order. */
+/* The page that searches many JSON documents, assets/json-search.html, whose script is src/json-search/demo.ts, the
+   demo.ts of the comments below. This file is the page's only stylesheet: it imports site.css, the tokens and the
+   parts every page shares, then tool.css, the pattern field and the display kinds' colors, and adds what only this
+   page needs. With several links in the page, Bun's development server (1.4.3) serves the stylesheets in the reverse
+   of the page's order, and `bun build` in the page's order. */
 @import "./site.css";
 @import "./tool.css";
 
@@ -144,8 +145,8 @@
 .map-sheet { padding: var(--space-4); }
 /* demo.ts sets the map's height from its width, the screen's pixels and the count of documents. These are the
    heights it computes for a page of full width, i.e. in a window of 1152 px or more, where the map is 630 px wide,
-   with 100,000 documents: with two device pixels per CSS px, and with one. demo.test.ts compares them with
-   demo-map.ts. */
+   with 100,000 documents: with two device pixels per CSS px, and with one. tests/json-search/demo.test.ts compares
+   them with src/json-search/demo-map.ts. */
 .map {
   position: relative;
   height: 358px;
