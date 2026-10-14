@@ -16,7 +16,7 @@ From the repo root:
 
 ```sh
 bun test lab/regex-search                                   # 13 tests in 2 files, about 6 seconds
-bunx tsgo -p lab/regex-search                               # type-check, including gpu/
+bunx tsc -p lab/regex-search                                # type-check, including gpu/
 bunx oxlint --type-aware lab/regex-search                   # lint
 bun start                                                   # the page at /regex-search/, next to the other demos
 bun lab/regex-search/demo.html                              # the page alone, e.g. ?form=builtin&states=32&text=1024, where its links to the demo index don't resolve

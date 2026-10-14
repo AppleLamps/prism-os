@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import ts from 'typescript'
+import ts from 'typescript6'
 import {compileFunctionFromSource, parseSource} from './compile.ts'
 import {functionTrialRunner, runEquivalence} from './harness.ts'
 import {NativeExecutor} from './native.ts'

@@ -10,7 +10,7 @@ From the repository root:
 
 ```sh
 bun test lab/ui-exploration/streaming-words
-bunx tsgo -p lab/ui-exploration/streaming-words
+bunx tsc -p lab/ui-exploration/streaming-words
 bun lab/ui-exploration/streaming-words/report.ts
 bun lab/ui-exploration/streaming-words/demo.html
 ```
@@ -301,5 +301,5 @@ The talk asks what the unit of a chat UI is, answers "a bubble", and then makes 
 - The Stop wrote 2 cells and kept 186 of 194 segments, as described above for a Stop inside a word. "Words fading out after the last Stop" was 0, since a real click follows its press within milliseconds and no chunk arrived in between.
 - Fixed in `demo.ts`: once the words settled, the page stopped requesting frames, while the session kept the time its springs had been stepped to. So the first frame after an input stepped the springs through the whole idle time, up to 255 steps (1,020 ms), and words jumped to their new places in one frame, e.g. after a width change the word "I" went from (203.2, 319) to (503.2, 199) in 1 frame. When an input starts a new render loop, `demo.ts` now moves `session.animatedUntil` forward to the input's time, since the springs were at rest. After the fix, a width change 2 s after the words settled moved "I" from (353.2, 247) to (228.2, 295) over 51 frames.
 - Fixed in `demo.ts`: the panel only refreshed on every 10th frame, so after a change that settled within a few frames, the width label and the stats stayed stale, e.g. the label said 360px with the slider at 240. The panel now also refreshes on the frame that ends a render loop.
-- 10 tests and tsgo pass. `session.ts`, `chat-demo.ts` and the tests didn't change.
+- 10 tests and tsc pass. `session.ts`, `chat-demo.ts` and the tests didn't change.
 - GIF: `~/Downloads/ui-exploration-streaming-words-demo.gif`, which isn't in the repo (the recorder kept 5 frames).

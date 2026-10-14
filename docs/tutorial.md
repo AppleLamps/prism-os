@@ -1,6 +1,6 @@
 # Tutorial
 
-This tutorial walks through [template/](../template/), a toggle switch written as one numeric program. Like a native switch, it acts on release: a press on the track arms it, and a release on the track while it's armed flips it. The thumb springs to its new side. Run it with `bun run start:template`, run its test with `bun test template`, and type-check it with `bunx tsgo -p .`, since `bun` strips types without checking them; tsgo prints nothing when the check passes. `bun run check` runs the same type-check on every lab folder and then lints, so it takes longer.
+This tutorial walks through [template/](../template/), a toggle switch written as one numeric program. Like a native switch, it acts on release: a press on the track arms it, and a release on the track while it's armed flips it. The thumb springs to its new side. Run it with `bun run start:template`, run its test with `bun test template`, and type-check it with `bunx tsc -p .`, since `bun` strips types without checking them; tsc prints nothing when the check passes. `bun run check` runs the same type-check on every lab folder and then lints, so it takes longer.
 
 JavaScript writes browser inputs into a `Float32Array`, the source table, and runs the program on it. The program's next-state values are written back into the table, and its other outputs go to the DOM. Builder code is ordinary JavaScript that runs once and appends operations to a `Circuit`, so nothing in the program branches or loops at runtime. `toggle.ts` holds the cells, the builder code, the host loop and the DOM writes, `toggle-reference.ts` is the same switch in plain JavaScript, `toggle.test.ts` compares the two, and `index.html` with `main.ts` is the page.
 
@@ -190,11 +190,11 @@ Both thumbs read the same `springMatrix`, since they have the same stiffness and
 
 To start another app, copy template/ to a new folder next to it at the repo root, e.g. counter/, so that its imports from `../src/runtime/` still resolve, and add the folder in three places, since `bun run check` and `bun run test` only see the folders they list:
 
-- tsconfig.json's `include` list, e.g. `"counter/*.ts"`, so tsgo type-checks the folder. `bun` strips types without checking them, so without this entry, e.g. a plain number where a wire is expected runs without an error.
+- tsconfig.json's `include` list, e.g. `"counter/*.ts"`, so tsc type-checks the folder. `bun` strips types without checking them, so without this entry, e.g. a plain number where a wire is expected runs without an error.
 - scripts/check.ts's oxlint command, e.g. `'counter'` next to `'template'`.
 - package.json's `test` script, e.g. `bun test --timeout 30000 ./tests ./template ./counter ./lab`. A script that serves the page goes next to `start:template`, e.g. `"start:counter": "bun ./counter/index.html"`.
 
-After the tsconfig.json entry, `bunx tsgo -p .` type-checks the root project with the new folder in under a second, while `bun run check` also type-checks every lab folder and lints, in about 2.5 s on an 18-core machine. `bun run knip`, which reports unused exports, only looks at src/, scripts/ and template/, per knip.config.ts's `entry` and `project` lists, so it isn't a check a new folder needs; to have it cover the folder, add the page script and the plain JavaScript reference, e.g. `counter/main.ts` and `counter/toggle-reference.ts`, to `entry`, and `counter/*.ts` to `project`. Only the folder's test imports the reference, so without its `entry` item knip reports `counter/toggle-reference.ts` as an unused file.
+After the tsconfig.json entry, `bunx tsc -p .` type-checks the root project with the new folder in under a second, while `bun run check` also type-checks every lab folder and lints, in about 2.5 s on an 18-core machine. `bun run knip`, which reports unused exports, only looks at src/, scripts/ and template/, per knip.config.ts's `entry` and `project` lists, so it isn't a check a new folder needs; to have it cover the folder, add the page script and the plain JavaScript reference, e.g. `counter/main.ts` and `counter/toggle-reference.ts`, to `entry`, and `counter/*.ts` to `project`. Only the folder's test imports the reference, so without its `entry` item knip reports `counter/toggle-reference.ts` as an unused file.
 
 ## More
 

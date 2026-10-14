@@ -12,7 +12,7 @@ From the repo root:
 
 ```sh
 bun test lab/ui-exploration/user-population            # 12 tests, about 2 seconds
-bunx tsgo -p lab/ui-exploration/user-population
+bunx tsc -p lab/ui-exploration/user-population
 bun lab/ui-exploration/user-population/report.ts        # every table below, several minutes, writes results.json (--quick for a short run)
 DAWN_WEBGPU=/path/to/node_modules/webgpu/index.js node lab/ui-exploration/user-population/gpu-population.ts 256 600 max
 deno run --unstable-webgpu --allow-all lab/ui-exploration/user-population/gpu-population.ts 256 600 none

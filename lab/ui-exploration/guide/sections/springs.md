@@ -6,7 +6,7 @@ The first question: HandwiredOS's springs move differently at different frame ra
 
 The second question: how well does behavior compose? index.ts writes one spring step as a loop body, wraps the loop in `stepSpringTo`, which runs as many steps as it takes to catch up with the clock, and calls `stepSpringTo` from `render()` for every animated value. Can a circuit be written in the same three levels, and which parts of that structure are forced in a circuit, where in index.ts they're only a choice?
 
-The runnable examples are in [examples/springs](../examples/springs/). From the repo root, `bun test lab/ui-exploration/guide/examples/springs` runs the 11 tests in [springs.test.ts](../examples/springs/springs.test.ts) and the 5 tests in [shared-runtime-springs.test.ts](../examples/springs/shared-runtime-springs.test.ts) in about 0.3 s, `bunx tsgo -p lab/ui-exploration/guide/examples/springs` typechecks the folder, and `bun lab/ui-exploration/guide/examples/springs/report.ts` ([report.ts](../examples/springs/report.ts)) prints every number this section attributes to the examples.
+The runnable examples are in [examples/springs](../examples/springs/). From the repo root, `bun test lab/ui-exploration/guide/examples/springs` runs the 11 tests in [springs.test.ts](../examples/springs/springs.test.ts) and the 5 tests in [shared-runtime-springs.test.ts](../examples/springs/shared-runtime-springs.test.ts) in about 0.3 s, `bunx tsc -p lab/ui-exploration/guide/examples/springs` typechecks the folder, and `bun lab/ui-exploration/guide/examples/springs/report.ts` ([report.ts](../examples/springs/report.ts)) prints every number this section attributes to the examples.
 
 ## Short answers
 

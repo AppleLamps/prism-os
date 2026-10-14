@@ -10,7 +10,7 @@ From the repository root:
 
 ```sh
 bun test lab/ui-exploration/text-walker
-bunx tsgo -p lab/ui-exploration/text-walker
+bunx tsc -p lab/ui-exploration/text-walker
 bun lab/ui-exploration/text-walker/report.ts ladder flow springs
 bun lab/ui-exploration/text-walker/report.ts fast
 bun lab/ui-exploration/text-walker/demo.html
@@ -227,7 +227,7 @@ Springs: the shared step matrix for 8 step bits (0..255 steps) is 208 live opera
 - Mismatch counter: 0 mismatches over 236 states checked against pretext. 6 states came from real drags, clicks and slider moves. The other 230 came from a script that set random column widths between 280 and 600 px and toggled bold on random words, with 36 words bold at the end.
 - The panel's median evaluation time was 4,700 µs right after load, then between 600 and 1,600 µs. Headless runs in Bun with fake widths measured about 230 µs. Other agents were using the machine during both measurements. Chrome gives this page `performance.now()` in steps of 0.1 ms, so the panel's median is always a multiple of 100 µs.
 - Small problem in the first check: dragging the title bar selected the "Drag me" text, because the title bar didn't set `user-select: none`.
-- Fixed later in `demo.css`: `.window .title` now sets `user-select: none`. `bun test lab/ui-exploration/text-walker` (18 tests) and `bunx tsgo -p lab/ui-exploration/text-walker` pass.
+- Fixed later in `demo.css`: `.window .title` now sets `user-select: none`. `bun test lab/ui-exploration/text-walker` (18 tests) and `bunx tsc -p lab/ui-exploration/text-walker` pass.
 - Recheck in Chrome: a real mouse drag from the "Drag me" label moved the window, e.g. from (206, 197) to (130, 306) in viewport px, the paragraph reflowed around it, and no text was selected afterwards (`getSelection().type` was "None"). No errors.
 
 ## Many paragraphs on the GPU, September 17, 2026

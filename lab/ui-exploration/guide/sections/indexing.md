@@ -469,4 +469,4 @@ The training circuit reads a table of per-page losses, 0 at the target page and 
 - [indexing.test.ts](../examples/indexing/indexing.test.ts): every check quoted above.
 - [report.ts](../examples/indexing/report.ts): every count and toy result quoted above.
 
-Run from the repo root: `bun test lab/ui-exploration/guide/examples/indexing`, `bunx tsgo -p lab/ui-exploration/guide/examples/indexing`, and `bun lab/ui-exploration/guide/examples/indexing/report.ts`.
+Run from the repo root: `bun test lab/ui-exploration/guide/examples/indexing`, `bunx tsc -p lab/ui-exploration/guide/examples/indexing`, and `bun lab/ui-exploration/guide/examples/indexing/report.ts`.

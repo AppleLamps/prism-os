@@ -9,7 +9,7 @@ The thread circuit is hn-thread's, built with no slot section and with two more 
 Commands, from the repo root:
 
 - `bun test lab/ui-exploration/pixel-output`: 8 tests, about 2 to 3 seconds.
-- `bunx tsgo -p lab/ui-exploration/pixel-output`: typecheck.
+- `bunx tsc -p lab/ui-exploration/pixel-output`: typecheck.
 - `bun lab/ui-exploration/pixel-output/report.ts`: counts, CPU times, random states, the scripted session, and the WGSL interpreter check, written to `results.json`, about 2 minutes. One section at a time: `report.ts counts`, `cpu`, `random [frames]`, `session`, `wgsl`.
 - GPU, three steps with a directory of your choice:
   - `bun lab/ui-exploration/pixel-output/report.ts gpu-export <directory>` writes shaders and shared buffers.

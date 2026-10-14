@@ -15,12 +15,12 @@ const prototypes = readdirSync(resolve(root, 'lab/ui-exploration'), {recursive: 
   .sort()
 const rootSources = readdirSync(root).filter(name => name.endsWith('.ts'))
 const commands = [
-  ['bunx', 'tsgo', '-p', '.'],
-  ...[...labs, ...prototypes].map(lab => ['bunx', 'tsgo', '-p', lab]),
+  ['bunx', 'tsc', '-p', '.'],
+  ...[...labs, ...prototypes].map(lab => ['bunx', 'tsc', '-p', lab]),
   ['bunx', 'oxlint', '--type-aware', ...rootSources, 'src', 'tests', 'scripts', 'template', ...labs],
 ]
 
-// Most of these commands are small tsgo processes, so the check runs 8 at a time: about 2.6 s
+// Most of these commands are small tsc processes, so the check runs 8 at a time: about 2.6 s
 // instead of 11 s one at a time on an 18-core machine, with about 2.2 GB of memory at peak, where
 // all of them at once take about 12 GB. Every command runs even when another one fails, so one run
 // reports every failure. Each command's output is printed after all of them finish, in the order

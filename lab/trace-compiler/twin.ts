@@ -9,7 +9,7 @@
 // compiler lowered with a margin, the twin checks whether the difference fell inside that
 // unresolved margin. Current sign-cascade comparisons have no margin to check.
 
-import ts from 'typescript'
+import ts from 'typescript6'
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import type {FunctionLike} from './compile.ts'
 

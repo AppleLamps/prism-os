@@ -22,7 +22,7 @@ The [translation table](#translation-table) sorts familiar JavaScript by how muc
 
 ## Examples in this section
 
-The examples live in [examples/model](../examples/model/). From the repo root, `bun test lab/ui-exploration/guide/examples/model` runs 19 tests in about 0.1 s, and `bunx tsgo -p lab/ui-exploration/guide/examples/model` typechecks them. Every size this section quotes from these files is pinned by a test.
+The examples live in [examples/model](../examples/model/). From the repo root, `bun test lab/ui-exploration/guide/examples/model` runs 19 tests in about 0.1 s, and `bunx tsc -p lab/ui-exploration/guide/examples/model` typechecks them. Every size this section quotes from these files is pinned by a test.
 
 | File | What it holds |
 | --- | --- |

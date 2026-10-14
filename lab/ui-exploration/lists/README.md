@@ -7,7 +7,7 @@ This prototype asks whether lists with many items, or with an order that changes
 From the repo root:
 
 - `bun test lab/ui-exploration/lists`: 24 tests, about 4 s, 9 of them for the text rows.
-- `bunx tsgo -p lab/ui-exploration/lists`: typecheck.
+- `bunx tsc -p lab/ui-exploration/lists`: typecheck.
 - `bun lab/ui-exploration/lists/report.ts [list] [routing] [cards] [cards-seeds] [flick] [hazard] [pieces]`: the heavy measurements (several minutes for all sections). It prints one JSON line per row and merges the selected sections into `results.json`.
 - The text rows, added on September 17, 2026, whose heights come from pretext: see [How to run the text rows](#how-to-run-the-text-rows).
 - `bun lab/ui-exploration/lists/list.html` and `bun lab/ui-exploration/lists/cards.html`: demo pages. Both bundle with `bun build`, but I haven't opened either in a browser, since nobody was awake to allow browser automation. A later Chrome check opened both pages, see [Browser check](#browser-check).

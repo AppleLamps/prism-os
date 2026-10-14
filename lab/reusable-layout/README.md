@@ -4,7 +4,7 @@ This experiment learns one small function that proposes a photo's width from cha
 
 In familiar UI terms, this is learned responsive sizing. It predicts preferred widths from the available space and content; ordinary code still wraps rows and measures text. It does not invent a different page structure or choose new controls.
 
-Run the demo with `bun lab/reusable-layout/demo.html`. Run the deterministic three-seed study with `bun lab/reusable-layout/study.ts`; add `--write` to regenerate `model.json` and `results.json`. Run focused checks with `bun test lab/reusable-layout`, `bunx tsgo -p lab/reusable-layout/tsconfig.json`, and `bunx oxlint --type-aware lab/reusable-layout/*.ts`.
+Run the demo with `bun lab/reusable-layout/demo.html`. Run the deterministic three-seed study with `bun lab/reusable-layout/study.ts`; add `--write` to regenerate `model.json` and `results.json`. Run focused checks with `bun test lab/reusable-layout`, `bunx tsc -p lab/reusable-layout/tsconfig.json`, and `bunx oxlint --type-aware lab/reusable-layout/*.ts`.
 
 ## What is learned
 

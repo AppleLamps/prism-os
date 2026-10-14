@@ -4,7 +4,7 @@
 // The classification rules are syntactic (marker sets over the unit's source text plus a few
 // AST checks); the output table was reviewed line by line against the file.
 
-import ts from 'typescript'
+import ts from 'typescript6'
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import type {RealTarget, SliceResult} from './real-slice.ts'
 

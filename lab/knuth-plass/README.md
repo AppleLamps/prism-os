@@ -12,7 +12,7 @@ From the repo root:
 
 ```sh
 bun test lab/knuth-plass                                  # 17 tests in 2 files, about 1.4 seconds
-bunx tsgo -p lab/knuth-plass                              # type-check
+bunx tsc -p lab/knuth-plass                               # type-check
 bunx oxlint --type-aware lab/knuth-plass                  # lint
 bun lab/knuth-plass/demo.html                             # the page, e.g. ?form=tree&window=16, and ?check=1 compares every evaluation with the reference
 bun lab/knuth-plass/report.ts one sizes tree 256 16       # one variant's sizes, see the comment at the top of report.ts

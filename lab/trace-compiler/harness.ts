@@ -9,7 +9,7 @@
 // circuit. Precision drift is measured between 3 and 5, not treated as a compiler failure.
 
 import {invariant, validateTensorEvaluation} from '../../src/runtime/numeric-ui-core.ts'
-import ts from 'typescript'
+import ts from 'typescript6'
 import type {FitRelation} from './annotations.ts'
 import type {CompiledProgram, FunctionLike} from './compile.ts'
 import {Interpreter, type MarginInfo, type RuntimeValue, runtimeObject} from './twin.ts'

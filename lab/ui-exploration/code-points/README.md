@@ -10,7 +10,7 @@ Run from the repo root:
 
 ```sh
 bun test lab/ui-exploration/code-points                            # 38 tests, under a second
-bunx tsgo -p lab/ui-exploration/code-points                        # typecheck
+bunx tsc -p lab/ui-exploration/code-points                         # typecheck
 bun lab/ui-exploration/code-points/pretext-agreement.ts census     # agreement with pretext, causes of the remaining mismatches, boundary census, about 6 seconds
 bun lab/ui-exploration/code-points/report.ts                       # every measurement, about 10 seconds
 bun lab/ui-exploration/code-points/report.ts decode exhaustive     # chosen sections: sizes variants phases decode tables exhaustive typing font

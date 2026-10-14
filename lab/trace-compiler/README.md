@@ -7,7 +7,7 @@ The September 2026 reassessment found bugs in block returns, nullable equality, 
 ## Reproducing
 
 - `bun test lab/trace-compiler`
-- `bunx tsgo -p lab/trace-compiler`
+- `bunx tsc -p lab/trace-compiler`
 - `bunx oxlint --type-aware lab/trace-compiler`
 - `bun lab/trace-compiler/report.ts` prints the measurements and coverage classification.
 - `bun lab/trace-compiler/report.ts --live` optionally checks the current external gallery files. Changes to the external source may cause rejection; this is separate from the repeatable fixture tests.
