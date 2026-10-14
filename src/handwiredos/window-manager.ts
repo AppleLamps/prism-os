@@ -276,7 +276,6 @@ export const photoSourceField = {
   focusStart: positions.photos.focus[0]!,
   thumbnailSpringStart: positions.photos.thumbnails[0]!.centerXDisplacement,
   zoomOpenSpring: positions.photos.zoom.openSpring,
-  zoomUnderWay: positions.photos.zoom.underWay,
   size: layout.size,
 }
 
@@ -1307,9 +1306,9 @@ function buildWindowManager() {
   const photosInteractive = emitRelu(circuit, circuit.affine([[photosFocused, 1], [photosClickBlocked, -1]]))
   // Photos lays out, hit-tests and draws at the window's destination content size,
   // e.g. the maximized size from the press on, and not at the animated size. So
-  // which photo a click lands on doesn't depend on spring timing, and the
-  // thumbnail destinations change only at events, which keeps stored state
-  // independent of frame times.
+  // which photo a click lands on doesn't depend on spring timing, and neither does
+  // how far a change of the open photo moves a thumbnail's spring, which keeps
+  // stored state independent of frame times.
   const photos = buildPhotos(circuit, table, cells.photos, {
     viewportWidth: destinationContentWidth[photosWindowIndex]!,
     viewportHeight: destinationContentHeight[photosWindowIndex]!,

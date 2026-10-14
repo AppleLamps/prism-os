@@ -22,7 +22,7 @@ import {
   windowSourceField,
   windowStateField,
 } from '../../src/handwiredos/window-manager.ts'
-import {itemCount as photoCount, photoField, thumbnailSpringField} from '../../src/handwiredos/photo-gallery.ts'
+import {itemCount as photoCount, photoField, thumbnailField, thumbnailSpringField} from '../../src/handwiredos/photo-gallery.ts'
 import {arrangeInitialWindows} from '../../src/handwiredos/arrangement.ts'
 
 const viewportWidth = 1280
@@ -1804,6 +1804,84 @@ test('a photo zooms inside HandwiredOS, the zoom goes on while Photos flies to t
   assert.equal(photo(0).opacity, 0)
 })
 
+test("while the Photos window's corner is dragged with a photo open, and from the frame of a maximize on, every thumbnail is at its place in the window's content box and none of its springs moves", () => {
+  const photosWindow = 2
+  const thumbnailsOf = (machine: Machine, values: Float32Array) => Array.from({length: photoCount}, (_, item) => {
+    const read = (field: number) => values[machine.output.photos.thumbnails[item * thumbnailField.size + field]!]!
+    return {left: read(thumbnailField.left), top: read(thumbnailField.top), width: read(thumbnailField.width), height: read(thumbnailField.height), opacity: read(thumbnailField.opacity)}
+  })
+  // Every thumbnail's stored springs: 2 displacements and 2 velocities. + 0 turns -0 into 0.
+  const {centerXDisplacement, centerXVelocity, scaleDisplacement, scaleVelocity} = thumbnailSpringField
+  const thumbnailSprings = (machine: Machine) => Array.from({length: photoCount}, (_, item) =>
+    [centerXDisplacement, centerXVelocity, scaleDisplacement, scaleVelocity].map(field => machine.source[photoThumbnailSpringSourceField(item, field)]! + 0)).flat()
+  const openPhoto5 = (machine: Machine, values: Float32Array) => {
+    const point = photoPoint(machine, values, 5)
+    click(machine, point.x, point.y)
+    return settle(machine)
+  }
+  // Presses the grip of Photos and moves it 8 times by -15, -10 px, a frame apart.
+  // `afterMove` sees each move's frame.
+  const dragGrip = (machine: Machine, values: Float32Array, afterMove: (values: Float32Array, move: number) => void) => {
+    const frame = projectWindows(machine, values)[photosWindow]!
+    const grip = machine.source[sourceField.resizeGrip]!
+    const [downX, downY] = [frame.left + frame.width - grip / 2, frame.top + frame.height - grip / 2]
+    machine.pointerDown(downX, downY)
+    step(machine)
+    for (let move = 1; move <= 8; move++) {
+      machine.pointerMove(downX - 15 * move, downY - 10 * move)
+      afterMove(step(machine), move)
+    }
+    machine.pointerUp(downX - 120, downY - 80)
+    return step(machine)
+  }
+
+  // One machine opens photo 5 and then gets its corner dragged. The other gets the
+  // same drag with the grid in view and opens photo 5 afterwards, so its thumbnails at
+  // rest are the places in the smaller window.
+  const opened = createWindowManagerMachine()
+  let values = openPhoto5(opened, step(opened))
+  assert.deepEqual(thumbnailsOf(opened, values)[5], {left: 238, top: 284, width: 82, height: 82, opacity: 1})
+  values = dragGrip(opened, values, (moved, move) => {
+    const label = `move ${move}`
+    // In the frame of every move: the window has its new size, nothing animates, and
+    // no thumbnail spring has left its rest. The open photo's thumbnail is in the
+    // middle of the content box. With each destination kept in a cell, it was behind
+    // the corner here: 7.5 px off the middle in the first move's frame, and 33 px in
+    // the last one's.
+    const {width, contentWidth} = projectWindows(opened, moved)[photosWindow]!
+    assert.deepEqual([width, contentWidth], [560 - 15 * move, 558 - 15 * move], label)
+    assert.equal(animationActive(opened, moved), 0, label)
+    assert.deepEqual(thumbnailSprings(opened), Array(4 * photoCount).fill(0), label)
+    const thumbnail = thumbnailsOf(opened, moved)[5]!
+    assertClose(thumbnail.left + thumbnail.width / 2, contentWidth / 2)
+  })
+  const resizedFirst = createWindowManagerMachine()
+  const smaller = openPhoto5(resizedFirst, dragGrip(resizedFirst, step(resizedFirst), () => {}))
+  assert.deepEqual(projectWindows(opened, values)[photosWindow], projectWindows(resizedFirst, smaller)[photosWindow])
+  assert.deepEqual(thumbnailsOf(opened, values), thumbnailsOf(resizedFirst, smaller))
+  // A full thumbnail is smaller in the smaller window: the content box is 438 × 304 px.
+  assert.ok(thumbnailsOf(opened, values)[5]!.width < 74)
+
+  // Maximize: the window's frame animates for about half a second, and from the
+  // first frame on the thumbnails are where they are in the maximized window at rest.
+  values = clickWindowControl(opened, values, photosWindow, 'maximize')
+  const firstFrame = thumbnailsOf(opened, values)
+  let frames = 0
+  while (animationActive(opened, values) === 1) {
+    assert.deepEqual(thumbnailsOf(opened, values), firstFrame, `frame ${frames}`)
+    assert.deepEqual(thumbnailSprings(opened), Array(4 * photoCount).fill(0), `frame ${frames}`)
+    frames++
+    assert.ok(frames < 240, 'the maximize did not settle')
+    values = step(opened)
+  }
+  assert.ok(frames > 20, `the window's frame animated for ${frames} frames`)
+  assert.deepEqual(thumbnailsOf(opened, values), firstFrame)
+  const {contentWidth} = projectWindows(opened, values)[photosWindow]!
+  assert.equal(contentWidth, 1254)
+  assertClose(firstFrame[5]!.left + firstFrame[5]!.width / 2, contentWidth / 2)
+  assert.equal(firstFrame[5]!.width, 82)
+})
+
 test('the first step mounts the viewport as an event, so a small viewport fits the windows and animates them there', () => {
   const machine = createWindowManagerMachine()
   const initial = storedRectangles(machine)
@@ -2432,16 +2510,15 @@ function runSession(frameTimes: readonly number[], writeBack: WriteBack): Sessio
     ...machine.output.valueList.locations,
     ...machine.output.valueList.slots,
   ]
-  // Each window stores 5 springs as displacement, velocity and destination, and
-  // each thumbnail stores 2 destinations. A zoom spring stores none: its destination
-  // follows from the open photo and from the bit that says which of the two springs
-  // is the open photo's, and the other spring draws the photo that was closed last,
-  // so these cells are checked like destinations.
+  // Each window stores 5 springs as displacement, velocity and destination. A
+  // thumbnail's springs and a zoom spring store no destination. A thumbnail's follows
+  // from the open photo and the layout. A zoom spring's follows from the open photo
+  // and from the bit that says which of the two springs is the open photo's, and the
+  // other spring draws the photo that was closed last. So these cells are checked
+  // like destinations.
   const destinationCells = [
     ...Array.from({length: windowCount * 5}, (_, spring) => sourceField.springStart + 3 * spring + 2),
     ...Array.from({length: photoCount}, (_, item) => [
-      photoThumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination),
-      photoThumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination),
       photoFocusSourceField(item),
       photoClosedLastSourceField(item),
     ]).flat(),
@@ -2600,7 +2677,6 @@ test("with 'events and settle checks', the session commits bit-identical tables 
       openPhoto: openPhoto(table),
       closedLast: Array.from({length: photoCount}, (_, item) => table[photoClosedLastSourceField(item)]!).indexOf(1),
       openSpring: table[photoSourceField.zoomOpenSpring]!,
-      underWay: table[photoSourceField.zoomUnderWay]!,
     }
   }
   const {openSpring} = zoomCells(sessionZoomOpenMs, 'pointer up')
@@ -2615,17 +2691,16 @@ test("with 'events and settle checks', the session commits bit-identical tables 
       zoomCells(sessionZoomLastCloseMs, 'photo close'),
     ],
     [
-      {openPhoto: 5, closedLast: 6, openSpring, underWay: 1},
-      {openPhoto: -1, closedLast: 5, openSpring: 1 - openSpring, underWay: 1},
-      {openPhoto: 6, closedLast: 5, openSpring: 1 - openSpring, underWay: 1},
-      {openPhoto: 7, closedLast: 5, openSpring: 1 - openSpring, underWay: 1},
-      {openPhoto: -1, closedLast: 7, openSpring, underWay: 1},
-      {openPhoto: 7, closedLast: 7, openSpring: 1 - openSpring, underWay: 1},
-      {openPhoto: -1, closedLast: 7, openSpring, underWay: 1},
+      {openPhoto: 5, closedLast: 6, openSpring},
+      {openPhoto: -1, closedLast: 5, openSpring: 1 - openSpring},
+      {openPhoto: 6, closedLast: 5, openSpring: 1 - openSpring},
+      {openPhoto: 7, closedLast: 5, openSpring: 1 - openSpring},
+      {openPhoto: -1, closedLast: 7, openSpring},
+      {openPhoto: 7, closedLast: 7, openSpring: 1 - openSpring},
+      {openPhoto: -1, closedLast: 7, openSpring},
     ],
   )
   // The last close's zoom came to rest, which stopped the clock a last time.
-  assert.equal(final[photoSourceField.zoomUnderWay], 0)
   assert.ok(baseline.clockStops.at(-1)! > sessionZoomLastCloseMs + 300 && baseline.clockStops.at(-1)! < sessionZoomLastCloseMs + 900)
   // Monitor's list: the release selected row 4, ArrowDown row 5, and End the last row.
   // The list is 234 px tall, so End asked for the position 234 px before the end of

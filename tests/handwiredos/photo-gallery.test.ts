@@ -538,7 +538,7 @@ test('the machine checks the table against its rules before an evaluation, and t
     machine.source[machine.cells.focus[1]!] = 1
   }), /focus breaks its oneHot rule with mass 2/)
   // Written after the table check, just before the frame's own evaluation, e.g. by an observer with a bug. With two
-  // photos focused, the thumbnails' scale destinations add up past their range. The frame's evaluation runs on a copy
+  // photos focused and no event, the next state has two photos focused too. The frame's evaluation runs on a copy
   // of the table, so no later table check sees the focus bits, and the next-state check is what throws.
   const machine = createPhotoGalleryMachine()
   machine.observe({
@@ -548,7 +548,7 @@ test('the machine checks the table against its rules before an evaluation, and t
       table[machine.cells.focus[1]!] = 1
     },
   })
-  assert.throws(() => machine.step(viewportWidth, viewportHeight), /thumbnails\[0\]\.scaleDestination must be finite and within 0\.\.1, got 1\.77/)
+  assert.throws(() => machine.step(viewportWidth, viewportHeight), /focus breaks its oneHot rule with mass 2/)
 })
 
 test('clicking the main image preserves it and tiny viewports remain finite', () => {
@@ -1062,6 +1062,96 @@ test("a change of the box's size moves a zooming photo at once and leaves its zo
   }
 })
 
+// What a thumbnail keeps in the table: for its center's x and for its scale, the
+// spring's displacement from its destination, and its velocity.
+function readThumbnailSprings(machine: ReturnType<typeof createPhotoGalleryMachine>) {
+  return machine.cells.thumbnails.map(thumbnail =>
+    [thumbnail.centerXDisplacement, thumbnail.centerXVelocity, thumbnail.scaleDisplacement, thumbnail.scaleVelocity].map(cell => machine.source[cell]!))
+}
+
+// The thumbnails' places in a box while a photo is open, from a machine that opened
+// the photo there and came to rest, or with no photo open: the box's middle at size 0.
+function thumbnailPlaces(width: number, height: number, item: number | null) {
+  if (item === null) return Array.from({length: itemCount}, () => ({centerX: width / 2, width: 0}))
+  const machine = createPhotoGalleryMachine()
+  return projectThumbnails(machine, openPhoto(machine, width, height, item).values)
+    .map(thumbnail => ({centerX: thumbnail.left + thumbnail.width / 2, width: thumbnail.width}))
+}
+
+test("a change of the box's size moves the thumbnails at once and leaves their springs alone, bit for bit", () => {
+  // At rest: photo 5 is open, and the box shrinks from 558 × 384 to 300 × 250 px, like
+  // a window whose corner is dragged. The next frame draws every thumbnail where a
+  // machine that opened photo 5 in the small box has it at rest, and nothing moves.
+  // With each destination kept in a cell from the evaluation before, the thumbnails
+  // started from their old places here and took a quarter of a second to arrive.
+  const atRest = createZoomSession()
+  atRest.clickCell(5)
+  atRest.rest()
+  atRest.resize(300, 250)
+  const afterResize = atRest.frame()
+  const smallBox = createPhotoGalleryMachine()
+  assert.deepEqual(afterResize.thumbnails, projectThumbnails(smallBox, openPhoto(smallBox, 300, 250, 5).values))
+  // A full thumbnail is 50 px in the small box, where it was 82 px.
+  assert.deepEqual([afterResize.thumbnails[5]!.width, afterResize.thumbnails[5]!.left], [50, 125])
+  assert.equal(afterResize.moving, 0)
+  for (const springs of readThumbnailSprings(atRest.machine)) assert.deepEqual(springs.map(value => value + 0), [0, 0, 0, 0])
+
+  // With the thumbnails on their way: two machines get the same events, and 32 ms
+  // after the last one the box of one shrinks to 300 × 250 px, while the other gets a
+  // resize to the size that it has, so that both run the same evaluations.
+  const cases = [
+    {during: 'an opening', openAfter: 5},
+    {during: 'a step', openAfter: 6},
+    {during: 'a closing', openAfter: null},
+  ] as const
+  for (const {during, openAfter} of cases) {
+    const resized = createZoomSession()
+    const twin = createZoomSession()
+    for (const session of [resized, twin]) {
+      session.clickCell(5)
+      if (during !== 'an opening') session.rest()
+      if (during === 'a step') session.machine.next(session.at())
+      if (during === 'a closing') session.clickBeside()
+      session.frames(2)
+    }
+    const farthest = Math.max(...readThumbnailSprings(resized.machine).map(springs => Math.abs(springs[0]!)))
+    assert.ok(farthest > 30, `during ${during}, a thumbnail is ${farthest} px from its place when the box's size changes`)
+    resized.resize(300, 250)
+    twin.resize(boxWidth, boxHeight)
+    const smallPlaces = thumbnailPlaces(300, 250, openAfter)
+    const places = thumbnailPlaces(boxWidth, boxHeight, openAfter)
+    let comparedCenters = 0
+    for (let frame = 0; frame < 45; frame++) {
+      const [small, first] = [resized.frame(), twin.frame()]
+      const label = `during ${during}, frame ${frame}`
+      // The springs hold the same numbers in both machines, bit for bit: the change
+      // of the box's size moved none of them and stopped none of them.
+      assert.deepEqual(readThumbnailSprings(resized.machine), readThumbnailSprings(twin.machine), label)
+      assert.equal(small.moving, first.moving, label)
+      small.thumbnails.forEach((thumbnail, item) => {
+        const other = first.thumbnails[item]!
+        // A thumbnail has the same share of its full size in both boxes, 50 px in the
+        // small one and 82 px in the first.
+        assert.ok(Math.abs(thumbnail.width / 50 - other.width / 82) < 1e-6, `${label}: thumbnail ${item} is ${thumbnail.width} px wide, and ${other.width} px in the first box`)
+        // And it is as many px from its place in the small box as its twin is from its
+        // place in the first box. A center is drawn inside its box, so a thumbnail
+        // within a thousandth of a pixel of an edge of its box isn't compared.
+        const [center, otherCenter] = [thumbnail.left + thumbnail.width / 2, other.left + other.width / 2]
+        if (center < 1e-3 || center > 300 - 1e-3 || otherCenter < 1e-3 || otherCenter > boxWidth - 1e-3) return
+        comparedCenters++
+        const [fromPlace, otherFromPlace] = [center - smallPlaces[item]!.centerX, otherCenter - places[item]!.centerX]
+        assert.ok(Math.abs(fromPlace - otherFromPlace) < 1e-3, `${label}: thumbnail ${item} is ${fromPlace} px from its place, and ${otherFromPlace} px in the first box`)
+      })
+    }
+    assert.ok(comparedCenters > 400, `during ${during}, ${comparedCenters} centers were compared`)
+    // At rest every thumbnail is at its place in the small box.
+    const rest = resized.rest()
+    rest.thumbnails.forEach((thumbnail, item) => {
+      assert.deepEqual({centerX: thumbnail.left + thumbnail.width / 2, width: thumbnail.width}, smallPlaces[item], `during ${during}, thumbnail ${item} at rest`)
+    })
+  }
+})
+
 test('while a photo opens, a click acts on the lightbox, also where a photo of the grid is still drawn', () => {
   const session = createZoomSession()
   session.clickCell(5)
@@ -1081,7 +1171,7 @@ test('while a photo opens, a click acts on the lightbox, also where a photo of t
   assert.deepEqual(readFocus(session.machine), Array(itemCount).fill(0))
 })
 
-test("the thumbnails grow out of the strip's middle at an open and shrink back into it at a close, and with no photo open and no zoom under way they snap", () => {
+test("the thumbnails grow out of the strip's middle at an open and shrink back into it at a close, and with the grid in view a change of the box's size moves none of their springs", () => {
   const session = createZoomSession()
   const middle = boxWidth / 2
   session.clickCell(5)
@@ -1119,19 +1209,14 @@ test("the thumbnails grow out of the strip's middle at an open and shrink back i
   assert.ok(closing.at(-1)!.thumbnails[1]!.left > 47 && closing.at(-1)!.thumbnails[9]!.left < 511 - 10)
   const closed = session.rest()
   assert.equal(closed.thumbnails.filter(thumbnail => thumbnail.width > 0).length, 0)
-  // With the grid in view and nothing moving, a change of the box's size moves no
-  // thumbnail spring: the thumbnails snap onto the new middle.
-  const {thumbnails, zoom} = session.machine.cells
-  assert.equal(session.machine.source[zoom.underWay], 0)
+  // With the grid in view, a change of the box's size moves no thumbnail spring: every
+  // thumbnail's place is the new middle, at size 0, and its springs stay at rest.
   session.resize(900, 600)
-  assert.equal(session.frame().moving, 0)
-  for (const thumbnail of thumbnails) {
-    assert.deepEqual(
-      // + 0 turns a stored -0 into 0.
-      [thumbnail.centerXDestination, thumbnail.centerXDisplacement, thumbnail.centerXVelocity, thumbnail.scaleDisplacement].map(cell => session.machine.source[cell]! + 0),
-      [450, 0, 0, 0],
-    )
-  }
+  const resized = session.frame()
+  assert.equal(resized.moving, 0)
+  for (const thumbnail of resized.thumbnails) assert.deepEqual([thumbnail.left, thumbnail.width], [450, 0])
+  // + 0 turns a stored -0 into 0.
+  for (const springs of readThumbnailSprings(session.machine)) assert.deepEqual(springs.map(value => value + 0), [0, 0, 0, 0])
 })
 
 test('a returning photo is above the thumbnails until its spring is at rest, and then it has the z-index of every photo in its cell', () => {
@@ -1379,28 +1464,146 @@ function createPlainZoom() {
   }
 }
 
-test('over 4,000 random frames of opens, closes, steps and thumbnail clicks, most of them within the half second of a zoom and some after a stall, every evaluation draws what the plain JavaScript zoom draws', () => {
+// The strip of thumbnails as plain JavaScript would have it, see "The thumbnails" in
+// buildPhotos. Per thumbnail, two float64 springs that go to 0, stepped 4 ms at a
+// time: how far the thumbnail's center is from its place, in px, and how far its
+// scale is from its place's scale. A change of the open photo moves every
+// thumbnail's place, and adds the old place minus the new one to both numbers, so
+// the thumbnail is drawn where it was and goes to its new place from there. A change
+// of the box's size moves the places too, and adds nothing. The places are the
+// caller's: this reference states its springs' constants and no layout. Like the
+// plain zoom, it gets each evaluation's spring steps, settle check and snap as the
+// host planned them.
+type StripPlace = {centerX: number, scale: number}
+function createPlainStrip() {
+  const stiffness = 650
+  const damping = 45
+  const stepSeconds = 0.004
+  // A thumbnail is at rest once both of its springs are within 0.01 of 0 and slower
+  // than 0.01 per second, with 0.01 as FP32 holds it.
+  const settleThreshold = Math.fround(0.01)
+  const atItsPlace = () => ({centerX: 0, centerXVelocity: 0, scale: 0, scaleVelocity: 0})
+  let thumbnails = Array.from({length: itemCount}, atItsPlace)
+  return {
+    // Whether a thumbnail is on its way, as of the last evaluation that wrote state back.
+    moves: () => thumbnails.some(thumbnail => Object.values(thumbnail).some(value => value !== 0)),
+    // placesBefore holds every thumbnail's place in this evaluation's box for the
+    // photo that was open before the evaluation's events, and placesAfter for the
+    // photo that is open after them.
+    evaluate(evaluation: {steps: number, settleCheck: boolean, snap: boolean, writesBack: boolean}, placesBefore: readonly StripPlace[], placesAfter: readonly StripPlace[]) {
+      const next = thumbnails.map((thumbnail, item) => {
+        let {centerX, centerXVelocity, scale, scaleVelocity} = thumbnail
+        for (let step = 0; step < evaluation.steps; step++) {
+          centerXVelocity += (-stiffness * centerX - damping * centerXVelocity) * stepSeconds
+          centerX += centerXVelocity * stepSeconds
+          scaleVelocity += (-stiffness * scale - damping * scaleVelocity) * stepSeconds
+          scale += scaleVelocity * stepSeconds
+        }
+        centerX += placesBefore[item]!.centerX - placesAfter[item]!.centerX
+        scale += placesBefore[item]!.scale - placesAfter[item]!.scale
+        const settles = evaluation.settleCheck && [centerX, centerXVelocity, scale, scaleVelocity].every(value => Math.abs(value) <= settleThreshold)
+        return evaluation.snap || settles ? atItsPlace() : {centerX, centerXVelocity, scale, scaleVelocity}
+      })
+      if (evaluation.writesBack) thumbnails = next
+      return next.map((thumbnail, item) => ({centerX: placesAfter[item]!.centerX + thumbnail.centerX, scale: placesAfter[item]!.scale + thumbnail.scale}))
+    },
+  }
+}
+
+// A box's layout at rest, read off two machines that never show a spring on its way:
+// each of their frames comes 2 s after the one before, which is more than the 1.2 s
+// of spring steps that one frame runs, so the host plans a snap. One machine keeps
+// the grid in view, and its photos are the cells. The other keeps photo 0 open, and
+// gives the open photo's rectangle and the strip around photo 0. The strip is the
+// same around whichever photo is open, so the place of thumbnail 7 while photo 5 is
+// open is the place of thumbnail 2 while photo 0 is open. With no photo open, every
+// thumbnail's place is the box's middle at scale 0.
+function createLayoutAtRest() {
+  const grid = createPhotoGalleryMachine()
+  const lightbox = createPhotoGalleryMachine()
+  let time = 0
+  let lightboxIsOpen = false
+  // Two frames 2 s apart in the box. The first applies the box's size, and the
+  // second finds everything at rest in it.
+  const atRest = (machine: ReturnType<typeof createPhotoGalleryMachine>, width: number, height: number) => {
+    machine.step(width, height, 1, 1, time += 2000)
+    const values = machine.step(width, height, 1, 1, time += 2000)
+    assert.equal(values[machine.output.animationActive], 0)
+    return values
+  }
+  const read = (width: number, height: number) => {
+    const cells: Rectangle[] = projectPhotos(grid, atRest(grid, width, height)).map(({left, top, width, height}) => ({left, top, width, height}))
+    if (!lightboxIsOpen) {
+      lightbox.step(width, height, 1, 1, time)
+      lightbox.click(cells[0]!.left + cells[0]!.width / 2, cells[0]!.top + cells[0]!.height / 2, time)
+      lightboxIsOpen = true
+    }
+    const values = atRest(lightbox, width, height)
+    assertOneFocus(lightbox, 0)
+    const {left, top, width: openWidth, height: openHeight} = projectPhotos(lightbox, values)[0]!
+    const strip = projectThumbnails(lightbox, values)
+    const middle: StripPlace = {centerX: width / 2, scale: 0}
+    return {
+      cells,
+      open: {left, top, width: openWidth, height: openHeight},
+      // The open photo's thumbnail has the full size, and every thumbnail's middle
+      // is at the same height.
+      thumbnailSize: strip[0]!.width,
+      stripCenterY: strip[0]!.top + strip[0]!.height / 2,
+      // Every thumbnail's place while a photo is open, or with no photo open, -1.
+      placesFor: (openPhoto: number): StripPlace[] => Array.from({length: itemCount}, (_, item) => {
+        if (openPhoto === -1) return middle
+        const around = strip[(item - openPhoto + itemCount) % itemCount]!
+        return {centerX: around.left + around.width / 2, scale: around.opacity}
+      }),
+    }
+  }
+  const known = new Map<string, ReturnType<typeof read>>()
+  return (width: number, height: number) => {
+    const key = `${width} × ${height}`
+    let layout = known.get(key)
+    if (layout === undefined) known.set(key, layout = read(width, height))
+    return layout
+  }
+}
+
+test("over 4,000 random frames of opens, closes, steps, thumbnail clicks and changes of the box's size, most of them within the half second of a zoom and some after a stall, every evaluation draws what the plain JavaScript zoom and strip draw", () => {
   const machine = createPhotoGalleryMachine()
   const plain = createPlainZoom()
-  const open = openRectangle()
+  const plainStrip = createPlainStrip()
+  const layoutAtRest = createLayoutAtRest()
   const openOf = (focus: ArrayLike<number>) => Array.from(focus).indexOf(1)
   const focusCells = machine.cells.focus
-  let cells: Rectangle[] = []
   let before = -1
+  // The box of the evaluation, i.e. after its events.
+  let box = {width: 0, height: 0}
   let evaluations = 0
   let largestZoomDifference = 0
   let settledAtDifferentChecks = 0
-  const counts = {closes: 0, closesDuringAnOpening: 0, opensDuringAReturn: 0, reopenings: 0, stepsDuringAnOpening: 0, stepsOntoAReturningPhoto: 0, photosPutInTheirCells: 0, snapsDuringAZoom: 0}
+  const counts = {
+    closes: 0, closesDuringAnOpening: 0, opensDuringAReturn: 0, reopenings: 0, stepsDuringAnOpening: 0, stepsOntoAReturningPhoto: 0, photosPutInTheirCells: 0, snapsDuringAZoom: 0,
+    sizeChanges: 0, sizeChangesDuringAZoom: 0, sizeChangesWhileAThumbnailMoves: 0,
+  }
   machine.observe({
     beforeEvaluate(table) {
       before = openOf(focusCells.map(cell => table[cell]!))
+      box = {width: table[machine.cells.viewportWidth]!, height: table[machine.cells.viewportHeight]!}
     },
     afterEvaluate(values, _table, evaluation) {
       const after = openOf(focusCells.map(cell => values[machine.output.nextSource[cell]!]!))
+      const label = `evaluation ${evaluations++}, a ${evaluation.kind} at ${evaluation.timeMs} ms in a box of ${box.width} × ${box.height} px with photo ${before} open before and ${after} after`
+      // The session sends every event at its own time, so that a change of the box's
+      // size and a change of the open photo never share an evaluation.
+      assert.ok(evaluation.events.length <= 1, label)
       if (evaluation.writesBack) {
         const moving = Array.from({length: itemCount}, (_, item) => plain.moves(item))
         const anotherMoves = (item: number) => moving.some((isMoving, other) => isMoving && other !== item)
         if (evaluation.snap && moving.includes(true)) counts.snapsDuringAZoom++
+        if (evaluation.events.some(event => event.kind === 'resize')) {
+          counts.sizeChanges++
+          if (moving.includes(true)) counts.sizeChangesDuringAZoom++
+          if (plainStrip.moves()) counts.sizeChangesWhileAThumbnailMoves++
+        }
         if (before !== -1 && after === -1) {
           counts.closes++
           if (moving[before]) counts.closesDuringAnOpening++
@@ -1413,10 +1616,11 @@ test('over 4,000 random frames of opens, closes, steps and thumbnail clicks, mos
           if (moving[after]) counts.stepsOntoAReturningPhoto++
         }
       }
+      const layout = layoutAtRest(box.width, box.height)
       const expected = plain.evaluate(evaluation, before, after)
+      const expectedStrip = plainStrip.evaluate(evaluation, layout.placesFor(before), layout.placesFor(after))
       const drawn = projectPhotos(machine, values)
       const thumbnails = projectThumbnails(machine, values)
-      const label = `evaluation ${evaluations++}, a ${evaluation.kind} at ${evaluation.timeMs} ms with photo ${before} open before and ${after} after`
       drawn.forEach((photo, item) => {
         const {zoom, opacity, stack, aboutAtRest} = expected.photos[item]!
         // FP32 springs stay within 4e-5 of float64 ones, also where one of the two
@@ -1430,31 +1634,73 @@ test('over 4,000 random frames of opens, closes, steps and thumbnail clicks, mos
           assert.ok(aboutAtRest && item !== after && (photo.stack === 0 || photo.stack === 2), `${label}: photo ${item} has stack ${photo.stack}, not ${stack}`)
           settledAtDifferentChecks++
         }
-        if (cells.length > 0) assertBetween(photo, cells[item]!, open, `${label}: photo ${item}`)
+        // The photo is its zoom's share of the way from its cell to the open photo's
+        // rectangle, both as this evaluation's box has them at rest. FP32 keeps each
+        // number within a thousandth of a pixel in a box of up to 1,414 px.
+        const [cell, open] = [layout.cells[item]!, layout.open]
+        for (const field of rectangleFields) {
+          const between = (1 - photo.zoom) * cell[field] + photo.zoom * open[field]
+          assert.ok(Math.abs(photo[field] - between) < 1e-3, `${label}: photo ${item} has ${field} ${photo[field]}, not ${between}`)
+        }
         // The ring of a thumbnail is as strong as its photo is open.
         assert.equal(thumbnails[item]!.focused, photo.zoom, `${label}: thumbnail ${item}`)
       })
       assert.ok(Math.abs(values[machine.output.backdropOpacity]! - expected.cover) < 8e-5, label)
+      thumbnails.forEach((thumbnail, item) => {
+        // A thumbnail is drawn with its center inside the box and at a scale from 0
+        // to 1. Its opacity is its scale, and its size its scale's share of the full size.
+        const centerX = Math.min(box.width, Math.max(0, expectedStrip[item]!.centerX))
+        const scale = Math.min(1, Math.max(0, expectedStrip[item]!.scale))
+        // A float64 spring and an FP32 one can settle at different checks, where a
+        // thumbnail is within 0.01 px of its place. Otherwise the two stay within a
+        // thousandth of a pixel: in this session the largest difference is 0.0001 px.
+        assert.ok(Math.abs(thumbnail.left + thumbnail.width / 2 - centerX) < 0.02, `${label}: thumbnail ${item} has its center at ${thumbnail.left + thumbnail.width / 2}, not ${centerX}`)
+        assert.ok(Math.abs(thumbnail.opacity - scale) < 1e-4, `${label}: thumbnail ${item} has scale ${thumbnail.opacity}, not ${scale}`)
+        assert.ok(thumbnail.width === thumbnail.height && Math.abs(thumbnail.width - layout.thumbnailSize * thumbnail.opacity) < 1e-3, `${label}: thumbnail ${item} is ${thumbnail.width} × ${thumbnail.height} px at scale ${thumbnail.opacity}`)
+        assert.ok(Math.abs(thumbnail.top + thumbnail.height / 2 - layout.stripCenterY) < 1e-3, `${label}: thumbnail ${item} has its middle at ${thumbnail.top + thumbnail.height / 2}, not ${layout.stripCenterY}`)
+      })
     },
   })
   let time = 16
-  cells = projectPhotos(machine, machine.step(boxWidth, boxHeight, 1, 1, time)).map(({left, top, width, height}) => ({left, top, width, height}))
-  const random = createRandom(0x200f)
-  // The middles of the strip's 9 places, e.g. 279 for the open photo's thumbnail and
-  // 364 for the next photo's.
-  const thumbnailCenters = [47, 78, 127, 194, 279, 364, 431, 480, 511]
+  let size = {width: boxWidth, height: boxHeight}
+  machine.step(size.width, size.height, 1, 1, time)
+  const random = createRandom(0x2014)
+  // The content box of HandwiredOS's Photos at its default size, larger and smaller
+  // boxes, a maximized Photos on a desk, 1,414 × 718 px, and on a phone, 364 × 662 px.
+  const boxes = [[boxWidth, boxHeight], [900, 600], [408, 294], [1414, 718], [364, 662], [300, 250]] as const
+  // A change of the box's size that is under way: one move per frame, like a drag of
+  // the window's corner, or a single move, like a maximize.
+  let sizeChange: {from: typeof size, to: typeof size, move: number, moves: number} | null = null
   let nextEventAt = time + 40
   let lastClosed = -1
   for (let frame = 0; frame < 4000; frame++) {
+    const previousTime = time
     // Every 97th frame comes 1.3 s late, like a tab that stalled, so the host plans
     // a snap for the springs that move.
     time += frame % 97 === 96 ? 1300 : 5 + Math.floor(random() * 28)
+    if (sizeChange === null && random() < 0.04) {
+      const others = boxes.filter(([width, height]) => width !== size.width || height !== size.height)
+      const [width, height] = others[Math.floor(random() * others.length)]!
+      sizeChange = {from: size, to: {width, height}, move: 0, moves: random() < 0.3 ? 1 : 4 + Math.floor(random() * 12)}
+    }
+    if (sizeChange !== null) {
+      const {from, to, moves} = sizeChange
+      const share = ++sizeChange.move / moves
+      size = {width: Math.round(from.width + (to.width - from.width) * share), height: Math.round(from.height + (to.height - from.height) * share)}
+      // Half a millisecond after the frame before, which is before this frame's other
+      // events, whose times are whole milliseconds.
+      machine.resize(size.width, size.height, previousTime + 0.5)
+      if (sizeChange.move === moves) sizeChange = null
+    }
+    // Where this frame's clicks go: the cells, the open photo's rectangle and the
+    // strip's 9 places in the box as it is from this frame's move on.
+    const layout = layoutAtRest(size.width, size.height)
     while (nextEventAt <= time) {
       const openPhoto = openOf(readFocus(machine))
       const choice = random()
       if (openPhoto === -1) {
         // Any photo, and the photo that was closed last more often than the others.
-        const cell = cells[lastClosed !== -1 && random() < 0.3 ? lastClosed : Math.floor(random() * itemCount)]!
+        const cell = layout.cells[lastClosed !== -1 && random() < 0.3 ? lastClosed : Math.floor(random() * itemCount)]!
         machine.click(cell.left + cell.width / 2, cell.top + cell.height / 2, nextEventAt)
       } else if (choice < 0.4) {
         if (random() < 0.5) machine.close(nextEventAt)
@@ -1464,16 +1710,18 @@ test('over 4,000 random frames of opens, closes, steps and thumbnail clicks, mos
       } else if (choice < 0.8) {
         machine.previous(nextEventAt)
       } else if (choice < 0.95) {
-        machine.click(thumbnailCenters[Math.floor(random() * thumbnailCenters.length)]!, 325, nextEventAt)
+        // One of the 9 thumbnails that are drawn: the open photo's, or one up to 4 before or after it.
+        const place = layout.placesFor(openPhoto)[(openPhoto + Math.floor(random() * 9) - 4 + itemCount) % itemCount]!
+        machine.click(place.centerX, layout.stripCenterY, nextEventAt)
       } else {
         // A click on the open photo's rectangle, which changes nothing.
-        machine.click(279, 142, nextEventAt)
+        machine.click(layout.open.left + layout.open.width / 2, layout.open.top + layout.open.height / 2, nextEventAt)
       }
       // Most events come within the half second of a zoom, some after it.
       nextEventAt += random() < 0.8 ? 5 + Math.floor(random() * 250) : 400 + Math.floor(random() * 400)
     }
     const openBefore = openOf(readFocus(machine))
-    machine.step(boxWidth, boxHeight, 1, 1, time)
+    machine.step(size.width, size.height, 1, 1, time)
     if (openBefore !== -1 && openOf(readFocus(machine)) === -1) lastClosed = openBefore
   }
   // The frames covered every rule many times, and a spring settled at different
@@ -1483,7 +1731,8 @@ test('over 4,000 random frames of opens, closes, steps and thumbnail clicks, mos
   assert.ok(settledAtDifferentChecks <= 20, `${settledAtDifferentChecks} stacks differed around a settle check`)
   assert.ok(
     counts.closes > 60 && counts.closesDuringAnOpening > 30 && counts.opensDuringAReturn > 30 && counts.reopenings > 10
-      && counts.stepsDuringAnOpening > 30 && counts.stepsOntoAReturningPhoto > 3 && counts.photosPutInTheirCells > 15 && counts.snapsDuringAZoom > 10,
+      && counts.stepsDuringAnOpening > 30 && counts.stepsOntoAReturningPhoto > 3 && counts.photosPutInTheirCells > 15 && counts.snapsDuringAZoom > 10
+      && counts.sizeChanges > 500 && counts.sizeChangesDuringAZoom > 200 && counts.sizeChangesWhileAThumbnailMoves > 200,
     JSON.stringify(counts),
   )
 })

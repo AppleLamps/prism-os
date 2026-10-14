@@ -233,6 +233,46 @@ describe('production circuits match the reference interpreter across scripted tr
       machine.photoPrevious()
       values = advance(irregularFrameTime(random))
     }
+    // The window's size changes while the thumbnails are on their way, see "The
+    // thumbnails" in photo-gallery.ts: after a key, the window's corner is dragged by
+    // 80, 48 px and back, from the minimum size that the earlier phases left the
+    // window at, and after another key the window is maximized. It is restored with
+    // the thumbnails at rest. The two keys leave the same photo open.
+    {
+      const untilRest = () => {
+        for (let frame = 0; frame < 120 && values[machine.output.animationActive] !== 0; frame++) values = advance(irregularFrameTime(random))
+        expect(values[machine.output.animationActive]).toBe(0)
+      }
+      untilRest()
+      const window = projectWindow(values, photosWindowIndex)
+      const grip = machine.source[windowSourceFieldTable.resizeGrip]!
+      const gripX = window.left + window.width - grip / 2
+      const gripY = window.top + window.height - grip / 2
+      machine.photoNext()
+      values = advance(irregularFrameTime(random))
+      machine.pointerDown(gripX, gripY)
+      values = advance(irregularFrameTime(random))
+      for (const move of [1, 2, 3, 4, 3, 2, 1, 0]) {
+        machine.pointerMove(gripX + 20 * move, gripY + 12 * move)
+        values = advance(irregularFrameTime(random))
+      }
+      machine.pointerUp(gripX, gripY)
+      values = advance(irregularFrameTime(random))
+      expect(projectWindow(values, photosWindowIndex)).toEqual(window)
+      for (const key of ['previous', null] as const) {
+        untilRest()
+        const point = controlPoint(values, photosWindowIndex, 'maximize')
+        if (key !== null) {
+          machine.photoPrevious()
+          values = advance(irregularFrameTime(random))
+        }
+        machine.pointerDown(point.x, point.y)
+        machine.pointerUp(point.x, point.y)
+        values = advance(irregularFrameTime(random))
+      }
+      untilRest()
+      expect(projectWindow(values, photosWindowIndex)).toEqual(window)
+    }
     // Close the lightbox.
     machine.photoClose()
     values = advance(irregularFrameTime(random))
@@ -499,6 +539,25 @@ describe('production circuits match the reference interpreter across scripted tr
       machine.next()
       values = advance()
       machine.close()
+      for (let settle = 0; settle < 3; settle++) values = advance()
+    }
+
+    // The box's size changes while the thumbnails are on their way, see "The
+    // thumbnails" in photo-gallery.ts: during an opening, after a step, and during a
+    // return.
+    {
+      const cell = cells[5]!
+      machine.click(cell.left + cell.width / 2, cell.top + cell.height / 2)
+      values = advance()
+      for (const [resizeWidth, resizeHeight, event] of [[900, 600, 'next'], [408, 294, 'close'], [1280, 720, null]] as const) {
+        width = resizeWidth
+        height = resizeHeight
+        values = advance()
+        values = advance()
+        if (event === 'next') machine.next()
+        if (event === 'close') machine.close()
+        values = advance()
+      }
       for (let settle = 0; settle < 3; settle++) values = advance()
     }
 
