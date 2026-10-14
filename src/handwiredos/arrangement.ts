@@ -118,6 +118,16 @@ function monitorShownFor(available: number, metrics: ArrangementMetrics) {
   return header + Math.floor((available - header) / monitorLayout.rowHeight) * monitorLayout.rowHeight
 }
 
+// How tall Photos is at most at a width: its title bar, and 4 columns and 3 rows of
+// photos with its gap around and between them, where a photo is at most 1.25 times
+// as tall as wide. E.g. 319 px at 306 px of width, and more than the default 430 px
+// from 419 px of width, where the default height stays. At its default size, 560 px
+// wide, a photo is 117 × 104 px.
+function photosTallestFor(width: number, metrics: ArrangementMetrics) {
+  const photoWidth = (width - 2 * border - 5 * metrics.photosGap) / 4
+  return metrics.titleHeight + 2 * border + 4 * metrics.photosGap + 3 * 1.25 * photoWidth
+}
+
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(Math.max(value, minimum), maximum)
 }
@@ -174,15 +184,10 @@ function arrangeDesk(workspace: Rectangle, minimum: Size, [monitor, notes, photo
   const photosLeft = notesLeft + photosOffsetX
   const photosWidth = clamp(width - photosLeft, minimum.width, photos.width)
 
-  // Photos shows 4 columns and 3 rows of photos, with its gap around and between
-  // them, under the title bar. At its default size a photo is 117 × 104 px. A
-  // narrower Photos is shorter too, where its photos would otherwise be more than
-  // 1.25 times as tall as wide, e.g. 306 × 319 px instead of 306 × 430 px.
-  const photoWidth = (photosWidth - 2 * border - 5 * metrics.photosGap) / 4
-  const photosTallest = metrics.titleHeight + 2 * border + 4 * metrics.photosGap + 3 * 1.25 * photoWidth
-  // The group is as tall as Notes and Photos together, 556 px at full size, and
-  // Monitor is as tall as the group.
-  const height = Math.min(photosOffsetY + Math.min(photos.height, photosTallest), workspace.height - 2 * margin)
+  // A narrower Photos is shorter too, see photosTallestFor, e.g. 306 × 319 px
+  // instead of 306 × 430 px. The group is as tall as Notes and Photos together,
+  // 556 px at full size, and Monitor is as tall as the group.
+  const height = Math.min(photosOffsetY + Math.min(photos.height, photosTallestFor(photosWidth, metrics)), workspace.height - 2 * margin)
   const photosHeight = clamp(height - photosOffsetY, minimum.height, photos.height)
   // The page prints the list of things to try on the desk's lower right, on a
   // workspace of at least 1100 × 738 px, i.e. a viewport of 1100 × 850 px, see
@@ -206,9 +211,10 @@ function arrangeColumns(workspace: Rectangle, minimum: Size, [, notes, photos]: 
   const columnWidth = Math.floor((workspace.width - 2 * margin - gap) / 2)
   const available = workspace.height - 2 * margin
   // The right column: Notes, as tall as its paragraph needs in this column, with
-  // 20 px under the last line, if not taller, above Photos.
+  // 20 px under the last line, if not taller, above Photos, which is as tall as the
+  // rest allows, up to the height that keeps its photos from getting tall and thin.
   const notesNeeds = Math.max(minimum.height, notesHeightFor(notesLinesFor(columnWidth - notesHorizontalInset, metrics), metrics) + 20)
-  const photosHeight = clamp(available - notesNeeds - gap, minimum.height, photos.height)
+  const photosHeight = clamp(Math.min(available - notesNeeds - gap, photosTallestFor(columnWidth, metrics)), minimum.height, photos.height)
   const notesHeight = clamp(available - photosHeight - gap, minimum.height, notes.height)
   // The left column: Monitor, as tall as both. The two columns are centered when
   // the workspace is taller than they are.
