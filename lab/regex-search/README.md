@@ -2,13 +2,13 @@
 
 ## What it is
 
-Search as you type over a text of fixed capacity, e.g. 256 or 1,024 code points, and the page offers 256, 512, 768 and 1,024. JavaScript parses a pattern and compiles it into an automaton with at most S states and 16 character classes. The program runs the automaton one step per code point, as products of a class's transition matrix with a 0/1 state vector, and returns one highlighted bit and one match start bit per code point. It finds every non-overlapping, non-empty match, leftmost, then longest. There are three forms of the program:
+Search as you type over a text of fixed capacity, e.g. 256 or 1,024 code points, and the page offers 256, 512, 768 and 1,024. JavaScript parses a pattern and compiles it into an automaton with at most S states and 16 character classes. The program runs the automaton one step per code point, as products of a class's transition matrix with a 0/1 state vector, and returns one highlighted bit and one match start bit per code point. It finds every non-overlapping, non-empty match, leftmost, then longest. The program has two forms, (a) and (c). A third, (b), was removed on October 14, 2026:
 
 - (a) The pattern as data, in src/json-search/regex/data-program.ts. The transition matrix of every class, the accepting states and the class of every code point sit in cells, so a new pattern writes cells and changes no program.
-- (b) The pattern built into the program, in builtin-program.ts. The builder knows the automaton, so each step is a fixed sparse sum over the steps the pattern has, and a new pattern rebuilds and recompiles the program.
+- (b) The pattern built into the program, in builtin-program.ts, from September 17 to October 14, 2026. The builder knew the automaton, so each step was a fixed sparse sum over the steps the pattern has, and a new pattern rebuilt and recompiled the program. At 32 states and 1,024 code points, the program built for one pattern had 133,529 live operations where form (a)'s has 2,297,760, about 17 times fewer, and rebuilding and recompiling it at each keystroke that changed the pattern took 0.40 to 0.48 s in Bun and 0.24 to 0.31 s in headless Chrome. Form (b) was removed after the standalone page that offered it, and aff4603 is the last commit that has builtin-program.ts, its tests, its measurements in report.ts, and this README's sections and table rows about it.
 - (c) The pattern as data in form (a)'s cells, with the steps over the text combined in a tree of matrix products instead of two loops, in tree-program.ts. It was added later the same day to test whether the program's matrix products can run as a few large batched products on the GPU, see [Matrix product tree on the GPU](#matrix-product-tree-on-the-gpu-september-17-2026). The page doesn't offer it.
 
-On October 14, 2026 the files that JSON search's page loads moved into [src/json-search/regex/](../../src/json-search/regex/): pattern.ts, data-program.ts, bits.ts and host.ts. reference.ts moved into tests/json-search/regex/, and so did the tests of the moved files, which were in this folder's regex-search.test.ts. This folder keeps the other forms with their tests, the GPU measurement of form (c) and report.ts.
+On October 14, 2026 the files that JSON search's page loads moved into [src/json-search/regex/](../../src/json-search/regex/): pattern.ts, data-program.ts, bits.ts and host.ts. reference.ts moved into tests/json-search/regex/, and so did the tests of the moved files, which were in this folder's regex-search.test.ts. This folder keeps form (c) with its tests, the GPU measurement of form (c) and report.ts.
 
 The pattern language is a subset of JavaScript's RegExp syntax with the `u` flag: literal code points, `.`, `\d`, `\w`, character classes with ranges and negation, e.g. `[a-z_]` or `[^0-9]`, `?`, `*`, `+`, `|` and groups. Everything else, e.g. `*?`, `{2}`, `^` or `(?:`, throws a `PatternSyntaxError` with its position.
 
@@ -17,11 +17,11 @@ The pattern language is a subset of JavaScript's RegExp syntax with the `u` flag
 From the repo root:
 
 ```sh
-bun test lab/regex-search                                   # 10 tests in 2 files, of forms (b) and (c), about 6 seconds
+bun test lab/regex-search                                   # 9 tests in 2 files, of form (c), about 3 seconds
 bun test tests/json-search/regex                            # 8 tests of form (a) and of the pattern compiler, about 2 seconds
 bunx tsc -p lab/regex-search                                # type-check, including gpu/
 bunx oxlint --type-aware lab/regex-search                   # lint
-bun lab/regex-search/report.ts                              # every Bun measurement of forms (a) and (b) below, each variant in its own process, about 7 minutes
+bun lab/regex-search/report.ts                              # the sizes and the µs per evaluation in Bun of forms (a) and (c) below, each variant in its own process
 bun lab/regex-search/report.ts sizes tree 8 1024            # one size of form (c), e.g. with Brent-Kung's network
 bun lab/regex-search/gpu/run.ts --mode check --profile <folder> --out <file.json>   # the GPU tree in headless Chrome over many patterns and texts, about 1 minute
 ```
@@ -34,7 +34,6 @@ The page, rewritten on October 13, 2026, has a pattern field and three selects: 
 | --- | --- |
 | `src/json-search/regex/pattern.ts` | The parser, the position automaton (Glushkov's construction), the class partition, and the capacity check with its messages |
 | `src/json-search/regex/data-program.ts` | Form (a): cells, builder code, writing a pattern into cells, and the machine the tests run |
-| `builtin-program.ts` | Form (b): builder code for one pattern, and the machine the tests run |
 | `tree-program.ts` | Form (c): builder code, with Brent-Kung's or Sklansky's prefix network from src/runtime/prefix-networks.ts |
 | `tree-inputs.ts` | Form (c) in plain JavaScript: a loop that computes what form (c) computes, the network's combines in levels, and the (S + 1) × (S + 1) matrices whose products give the reverse pass's bits |
 | `gpu/automaton-inputs.ts`, `gpu/kernels.ts` | The GPU tree: class matrices, leaf matrices, the plan of slots per level, the WGSL kernels and the host loop, plus two plain JavaScript loops to compare with |
@@ -42,7 +41,7 @@ The page, rewritten on October 13, 2026, has a pattern field and three selects: 
 | `src/json-search/regex/bits.ts` | AND, AND NOT, NOT and "none of" on bits, folding bits that builder code already knows |
 | `src/json-search/regex/host.ts` | Writing code points into text cells, and turning the output bits into matches |
 | `tests/json-search/regex/reference.ts` | The two plain JavaScript references |
-| `regex-search.test.ts` | Differential tests of forms (b) and (c) |
+| `regex-search.test.ts` | Differential tests of form (c) |
 | `tests/json-search/regex/regex-search.test.ts`, `tests/json-search/regex/test-patterns.ts` | Differential tests of form (a) and of the pattern compiler, and the hand-written cases and seeded random patterns and texts that both test files draw |
 | `report.ts` | Measurements in Bun |
 | `sample-text.ts` | The text of the measurements |
@@ -78,15 +77,13 @@ Form (a)'s cells, at S states, C = 16 classes, K = 32 class boundaries and N tex
 | `transitions` | C × S × S bits, `transitions[c][s][t]` | the pattern changes |
 | `accepting` | S bits | the pattern changes |
 
-A pattern that needs more states, classes or boundaries gets a named message instead of a program, e.g. `the pattern needs 33 states, and the program holds 32`, and the page shows a sentence for it, e.g. "This pattern needs 33 states, and the program holds 32.", highlights nothing, and shows the automaton's size under "How the pattern fits the program". The page checks the same capacity in form (b), so form (b) never builds a program for a pattern with more than S states, 16 classes or 32 class boundaries, e.g. a pasted pattern of 400 literal characters. A text longer than N is searched only up to N code points, and the page says so and draws the rest in gray.
+A pattern that needs more states, classes or boundaries gets a named message instead of a program, e.g. `the pattern needs 33 states, and the program holds 32`, and the page shows a sentence for it, e.g. "This pattern needs 33 states, and the program holds 32.", highlights nothing, and shows the automaton's size under "How the pattern fits the program". A text longer than N is searched only up to N code points, and the page says so and draws the rest in gray.
 
 Form (a)'s operations for one code point:
 
 - **Its class.** K + 1 integer comparison bits, `[codePoint >= boundary]` and `[codePoint >= 0]`, 2 operations each, since code points and boundaries are declared on a grid of 1 ([expressions.md](../../docs/expressions.md), `a >= b`). Their sum is the region, and `circuit.indexRead(region, regionClasses)` is the class ([expressions.md](../../docs/expressions.md), `table[index]`). Regions that no step reads hold the class C, one past the last class.
 - **One matrix product.** `transitions[class][s][t] && bit` is one index read at `class + C × (1 - bit)` over the C cells of `transitions[·][s][t]`, with `outOfRange: 'zero'` above, so a bit of 0 reads +0 past the table. That's S² reads per product, and one ReLU per state for "none of the S reads is 1".
 - **Both passes** take one product each, plus an AND NOT per state and 2 more operations in the forward pass: 2S² + 4S + 3 operations, and 2K + 4 for the class. Every forward step reads the reverse pass at its position, so the forward pass starts after the whole reverse pass, and the program is about 8 layers per code point.
-
-Form (b) builds comparisons against the pattern's own class edges, as constants, and one membership sum per state, e.g. `[codePoint >= 97] - [codePoint >= 123]` for `[a-z]`. A step into state t reads the same membership bit from every state, so a product is that membership bit AND "some predecessor of t is live", 1 or 2 operations per state, instead of S reads per state.
 
 ## Measured results
 
@@ -100,8 +97,6 @@ Measured on September 17, 2026, on an Apple M5 Max with 18 cores, macOS 27.0, Bu
 
 The text is sample-text.ts's prose, cut to N code points. Form (a)'s program holds 16 classes and 32 class boundaries at every S, and is the same program for every pattern within capacity.
 
-Form (b)'s size depends on the pattern, even within the capacity, so the Bun tables also have rows for the most expensive pattern I found at S = 32, `expensivePattern` in report.ts: a chain of 31 different classes, each made of 14 or 15 of the 16 separate letters `acegikmoqsuwyACE`, i.e. `[cegikmoqsuwyACE]*[aegikmoqsuwyACE]*…[acegikmoqsuwyE]*[acegikmoqsuwyA]`, with 32 states, 16 classes and 32 class boundaries. Every state reads a different class and has different targets, and every membership sum has about 30 terms. Patterns where many states read the same class and have the same targets turned out cheaper, e.g. `(X|X|…|X)*` with 31 copies of one class, since the builder's deduplication map gives identical expressions one wire. I didn't prove that no pattern within the capacity costs more. These rows were measured later the same day, on the same machine, with the same scripts.
-
 ### Sizes
 
 Live operations, layers and stored weights are what `compileTensorProgram` keeps for the next-state values and the outputs. Build ms is the builder code, compile ms is `compileTensorProgram`, and RSS is the Bun process after both. Each row is one process, and RSS varies between processes, e.g. for form (a) at S = 32 and 1,024 code points, 5 processes gave 5,831 to 8,142 MB: the row below, 3 later reruns (5,831, 6,476 and 6,855 MB) and a rerun during review (8,142 MB). Cells, operations, layers, stored weights and index reads were the same in every rerun.
@@ -114,16 +109,8 @@ Live operations, layers and stored weights are what `compileTensorProgram` keeps
 | (a) data | 16 | 1,024 | 5,202 | 661,712 | 8,190 | 1,809,117 | 524,576 | 990 | 956 | 2,280 |
 | (a) data | 32 | 256 | 16,738 | 572,064 | 2,046 | 1,647,805 | 521,536 | 873 | 558 | 1,994 |
 | (a) data | 32 | 1,024 | 17,506 | 2,297,760 | 8,190 | 6,619,069 | 2,095,168 | 3,661 | 4,098 | 6,485 |
-| (b) built in | 8 | 256 | 256 | 13,413 | 1,026 | 26,053 | 0 | 36 | 18 | 120 |
-| (b) built in | 8 | 1,024 | 1,024 | 54,117 | 4,098 | 105,157 | 0 | 110 | 85 | 288 |
-| (b) built in | 16 | 256 | 256 | 20,973 | 1,027 | 45,158 | 0 | 51 | 27 | 154 |
-| (b) built in | 16 | 1,024 | 1,024 | 84,717 | 4,099 | 182,630 | 0 | 187 | 140 | 469 |
-| (b) built in | 32 | 256 | 256 | 32,921 | 1,529 | 82,024 | 0 | 81 | 46 | 177 |
-| (b) built in | 32 | 1,024 | 1,024 | 133,529 | 6,137 | 333,160 | 0 | 299 | 235 | 552 |
-| (b) built in, expensive pattern | 32 | 256 | 256 | 63,240 | 1,788 | 552,222 | 0 | 196 | 113 | 477 |
-| (b) built in, expensive pattern | 32 | 1,024 | 1,024 | 253,704 | 7,164 | 2,218,014 | 0 | 683 | 603 | 1,600 |
 
-Form (a) is 8N − 2 layers at every S, and about 2S² + 4S + 71 live operations per code point, e.g. 2,244 at S = 32, of which 2,046 are index reads. Form (b) is about 53, 83 and 130 live operations per code point at S = 8, 16 and 32, and 4 to 6 layers per code point. With the expensive pattern at S = 32, form (b) is about 248 live operations, 2,166 stored weights and 7 layers per code point, against about 130 live operations and 325 stored weights for the prose pattern, and it stays about 3 times smaller than form (a) in stored weights.
+Form (a) is 8N − 2 layers at every S, and about 2S² + 4S + 71 live operations per code point, e.g. 2,244 at S = 32, of which 2,046 are index reads.
 
 ### µs per evaluation in Bun
 
@@ -137,31 +124,8 @@ Each variant ran in its own process, 3 times per column. A process builds and co
 | (a) data | 16 | 1,024 | 8,811 (8,562 to 8,954) | 9,060 (8,195 to 9,227) | 13.3 |
 | (a) data | 32 | 256 | 6,351 (6,326 to 6,445) | 6,319 (6,266 to 6,597) | 11.1 |
 | (a) data | 32 | 1,024 | 28,669 (27,869 to 28,828) | 28,352 (27,593 to 28,686) | 12.5 |
-| (b) built in | 8 | 256 | 125 (125 to 126) | 129 (129 to 130) | 9.3 |
-| (b) built in | 8 | 1,024 | 442 (439 to 454) | 467 (461 to 470) | 8.2 |
-| (b) built in | 16 | 256 | 183 (179 to 184) | 191 (185 to 199) | 8.7 |
-| (b) built in | 16 | 1,024 | 738 (732 to 759) | 726 (723 to 731) | 8.7 |
-| (b) built in | 32 | 256 | 280 (277 to 281) | 285 (282 to 288) | 8.5 |
-| (b) built in | 32 | 1,024 | 1,145 (1,144 to 1,158) | 1,178 (1,167 to 1,185) | 8.6 |
-| (b) built in, expensive pattern | 32 | 256 | 834 (831 to 842) | 879 (869 to 881) | 13.2 |
-| (b) built in, expensive pattern | 32 | 1,024 | 3,618 (3,435 to 3,625) | 3,578 (3,521 to 3,969) | 14.3 |
 
-The cost follows the live operations, 8 to 13 µs per 1,000, except for form (b)'s expensive pattern, 13 to 14 µs per 1,000, where an operation reads about 9 stored weights instead of 2 to 3. createEvaluator's checks of 17,506 cells don't show against a 28 ms evaluation, and in form (b) the two columns differ by −12 to 33 µs for the prose patterns, within the spread between processes, and by 45 µs, about 5%, for the expensive pattern at 256 code points, where the ranges don't overlap. A new pattern in form (a) costs compiling the pattern and writing its cells before the evaluation: 30 µs at S = 8 and 256 code points, 59 µs at S = 16 and 1,024, and 144 µs at S = 32 and 256, each timed over 100 repetitions in the sizes process.
-
-### A new pattern in form (b)
-
-One process per row. From the pattern string to its first evaluation: `compilePattern`, the builder code, `createEvaluator`'s compile, and one evaluation. Median of 5 runs after 1 warm-up run.
-
-| S | N | Compile pattern ms | Build ms | Compile program ms | First evaluation ms | Total ms |
-| --- | --- | --- | --- | --- | --- | --- |
-| 8 | 256 | 0.08 | 21 | 14 | 0.3 | 36 |
-| 8 | 1,024 | 0.09 | 78 | 63 | 0.8 | 143 |
-| 16 | 256 | 0.10 | 38 | 22 | 0.5 | 60 |
-| 16 | 1,024 | 0.12 | 144 | 118 | 1.3 | 270 |
-| 32 | 256 | 0.13 | 61 | 35 | 0.6 | 93 |
-| 32 | 1,024 | 0.15 | 248 | 203 | 1.5 | 459 |
-| 32, expensive pattern | 256 | 0.31 | 144 | 84 | 1.1 | 238 |
-| 32, expensive pattern | 1,024 | 0.31 | 579 | 434 | 3.8 | 1,024 |
+The cost follows the live operations, 8 to 13 µs per 1,000. createEvaluator's checks of 17,506 cells don't show against a 28 ms evaluation. A new pattern in form (a) costs compiling the pattern and writing its cells before the evaluation: 30 µs at S = 8 and 256 code points, 59 µs at S = 16 and 1,024, and 144 µs at S = 32 and 256, each timed over 100 repetitions in the sizes process.
 
 ### Keystroke frames in headless Chrome
 
@@ -208,19 +172,17 @@ On Bun's development server, which `bun start` also runs, the starting choice wa
 - Every value in both programs is an exact bit or a small integer, so the tests compare matches exactly, with no tolerance: 26 hand-written cases, and 400 random patterns with 6 texts each. 4 of the texts are random, over an alphabet with line terminators including U+2028 and U+2029, an emoji, U+10FFFF, escaped syntax characters, and the code points where `\d` and `\w` start or stop, e.g. `9`, `Z` and `_`. The other 2 are made of the code points just below, at and above the pattern's class boundaries. A last test puts a pattern at the largest capacity whose last match ends on the last cell. At every variant in the Bun tables, report.ts also checks the match count against the automaton simulator, including at 1,024 code points.
 - The index read turns a table entry AND a bit into one operation: `circuit.indexReadAffine([[class, 1], [bit, -C]], C, table, 'clamp', 'zero')` reads `table[class]` when the bit is 1, and +0 past the table when it's 0. That removed a product per matrix entry, i.e. half of form (a)'s operations.
 - Declaring code points and boundaries on a grid of 1 in cells.ts made every class comparison 2 operations, with no hand-written comparison code.
-- A new pattern in form (a) is JavaScript work only: compiling the pattern and writing its cells took 144 µs at S = 32, and the program, its size and its cost per evaluation don't depend on the pattern. That's the fixed worst case from chenguini's engineering.md: any pattern within capacity costs what the largest one costs. Form (b) holds the same capacity on the page, so its cost has an upper bound too, but within that bound it depends on the pattern, e.g. 1,145 µs per evaluation for the S = 32 prose pattern and 3,618 µs for the expensive pattern, at 1,024 code points.
+- A new pattern in form (a) is JavaScript work only: compiling the pattern and writing its cells took 144 µs at S = 32, and the program, its size and its cost per evaluation don't depend on the pattern. That's the fixed worst case from chenguini's engineering.md: any pattern within capacity costs what the largest one costs.
 - The capacity check fits behavior-choices.md's "A fixed maximum with a named fallback": one message per exceeded capacity, and the page highlights nothing and says why, instead of highlighting the wrong code points.
-- bits.ts folds bits that builder code already knows, e.g. the initial state has no predecessors, so form (b) builds operations only for the steps the pattern has, without special cases in the passes.
+- bits.ts folds bits that builder code already knows, e.g. the initial state has no predecessors, so form (b) built operations only for the steps the pattern had, without special cases in the passes.
 
 ## What got awkward
 
-- A matrix whose entries are runtime values costs S² operations per product, so form (a) is about 2S² operations per code point, and one evaluation at S = 32 and 1,024 code points takes about 28 ms in Bun and 30 ms in Chrome, about two frames at 60 fps. The same pattern built into the program is 133,529 operations, 17 times fewer, and 1.2 ms in Bun.
+- A matrix whose entries are runtime values costs S² operations per product, so form (a) is about 2S² operations per code point, and one evaluation at S = 32 and 1,024 code points takes about 28 ms in Bun and 30 ms in Chrome, about two frames at 60 fps. The same pattern built into the program, form (b), was 133,529 operations, 17 times fewer, and 1.2 ms in Bun.
 - The lookahead doubles the work and the depth: every forward step reads the reverse pass at its position, so the forward pass comes after the whole reverse pass, and the program has about 8 layers per code point, 8,190 at 1,024 code points. Grouping the steps into a tree of matrix products ([patterns.md](../../docs/patterns.md), "Why a tree gives the loop's answer") gives O(log N) layers, but combining two S × S matrices of bits is S³ products, 32,768 at S = 32, for each of about N combines. Form (c) built that tree later the same day, see [Matrix product tree on the GPU](#matrix-product-tree-on-the-gpu-september-17-2026).
 - Building at this size is slow and uses a lot of memory. Form (a) at S = 32 and 1,024 code points appends 2,367,454 operations in 3.4 to 3.7 s and compiles them in 3.6 to 4.3 s, and the Bun process reaches 5.8 to 8.1 GB, depending on the run. In Chrome, the page takes 9.7 s before its first frame, with 1,468 MB of JS heap. `compileTensorProgram` allocates an `Int32Array` of the circuit's whole width for every layer, so compile time grows with layers × width, and `createTensorEvaluator` looks up each output root with `wireOrder.indexOf`. Update, later on September 17, 2026: since commit 351e5cd, `compileTensorProgram` allocates one such array per compile instead of one per layer, so compile time no longer grows with layers × width. `bun lab/regex-search/report.ts sizes data 32 1024` now takes 3.2 to 3.8 s to build and 1.3 to 1.5 s to compile, and the process peaks at 4.8 to 5.8 GB of RSS, over 6 processes at load average 1.8 to 3.0. A copy of the commit before, alternated with 3 of those processes, took 3.3 to 3.5 s to build and 3.0 to 3.7 s to compile, and peaked at 6.9 to 7.5 GB. Form (b)'s rebuild, `report.ts recompile 32 1024`, went from 461 to 482 ms to 400 to 402 ms in the same session, over 3 alternated processes each, all of the difference in the compile. Every other time and RSS in this README was measured before that change, including Chrome's 9.7 s. The `wireOrder.indexOf` lookup is unchanged. Update, October 13, 2026: a survey before the page's rewrite measured the page at this size again, in Chrome 155: ready after 4.3 s, with 1,295 MB of JavaScript heap after a collection. Since that day the page refuses to build form (a) above 1 million operations, so it no longer builds this program.
-- Form (b) rebuilds on every keystroke that changes the pattern: 459 ms in Bun and about 306 ms in Chrome at S = 32 and 1,024 code points, almost all of it building and compiling, and 1,024 ms in Bun for the expensive pattern. Before the page checked the capacity in form (b), a pasted pattern with 133 states took more than 1.5 s per keystroke in Chrome. Now that pattern gets the named message and builds nothing.
 - Form (a) stores the full C × S × S matrices. A position automaton only needs S × S bits for which steps exist and C × S bits for which classes each state reads, 1,536 cells instead of 16,384 at S = 32, but the operations would stay S² per product, since the step bits are runtime values either way. The full matrices keep the program an executor for any automaton within capacity, e.g. one with fewer states after minimization.
 - Classes are JavaScript's work: `partitionClasses` finds the code points where the class changes. The program then pays K + 1 comparisons per code point for the class, 68 of about 2,244 operations per code point at S = 32, but 68 of about 231 at S = 8.
-- Built operations and live operations differ in form (b): a sum of fewer than 4 terms is copied into the operations that read it and stays in `circuit.operations` without readers, e.g. 193,950 built against 133,529 live operations at S = 32 and 1,024 code points. Until October 13, 2026 the page showed built operations, which overstated form (b). It now shows the compiled program's operations and layers, e.g. 133,529 operations in 6,137 layers for that pattern.
 - The search never reports an empty match, e.g. `a*` finds nothing in `bcd`, while RegExp's `matchAll` with the `g` flag reports an empty match at positions 0, 1, 2 and 3. Reporting empty matches would need the definition to say how the scan moves past them.
 
 ## Where the docs were missing, wrong or confusing
@@ -243,7 +205,7 @@ The repo's WGSL executors, e.g. lab/ui-exploration/codegen/wgsl.ts, run one tabl
 
 ### What was built
 
-**Form (c), in tree-program.ts.** It reads form (a)'s cells, and each code point is a leaf: an S × S 0/1 matrix, S² index reads of `transitions[class][s][t]`, and a vector of ends. The forward pass of forms (a) and (b) restarts at state 0 when no match continues, which is a NOT of an OR, and a product of 0/1 matrices can't compute a NOT. So form (c) doesn't carry bits. For every position and state, it carries the end of the longest path that ends in an accepting state, or 0 when there's none. JS: `longestEnd[j][s] = Math.max(0, ...states.filter(t => step[j][s][t]).map(t => Math.max(accepting[t] ? j + 1 : 0, longestEnd[j + 1][t])))`. A block of neighboring code points has a map of the same kind, a 0/1 matrix and a vector of ends, and two blocks combine with one clamped matrix product, S³ ANDs and S² "none of" clamps, plus `ends[s] = Math.max(earlier.ends[s], ...states.map(u => earlier.matrix[s][u] ? later.ends[u] : 0))`. Both parts are associative, so a prefix network, Brent-Kung's or Sklansky's from [src/runtime/prefix-networks.ts](../../src/runtime/prefix-networks.ts), gives the longest ends at every position in O(log N) levels. The network runs from the end of the text, so a combine whose later block reaches the end of the text only multiplies a matrix with a vector.
+**Form (c), in tree-program.ts.** It reads form (a)'s cells, and each code point is a leaf: an S × S 0/1 matrix, S² index reads of `transitions[class][s][t]`, and a vector of ends. The forward pass of form (a) restarts at state 0 when no match continues, which is a NOT of an OR, and a product of 0/1 matrices can't compute a NOT. So form (c) doesn't carry bits. For every position and state, it carries the end of the longest path that ends in an accepting state, or 0 when there's none. JS: `longestEnd[j][s] = Math.max(0, ...states.filter(t => step[j][s][t]).map(t => Math.max(accepting[t] ? j + 1 : 0, longestEnd[j + 1][t])))`. A block of neighboring code points has a map of the same kind, a 0/1 matrix and a vector of ends, and two blocks combine with one clamped matrix product, S³ ANDs and S² "none of" clamps, plus `ends[s] = Math.max(earlier.ends[s], ...states.map(u => earlier.matrix[s][u] ? later.ends[u] : 0))`. Both parts are associative, so a prefix network, Brent-Kung's or Sklansky's from [src/runtime/prefix-networks.ts](../../src/runtime/prefix-networks.ts), gives the longest ends at every position in O(log N) levels. The network runs from the end of the text, so a combine whose later block reaches the end of the text only multiplies a matrix with a vector.
 
 Picking the matches: `longestEnd[p][0]` is the end of the longest match that starts at p, so the scan position after p is known for every p at once, `next[p] = Math.max(longestEnd[p][0], p + 1)`. ceil(log2 N) tables of repeated jumps, where `jumps[k][p]` is `next` applied 2^k times to p, come from index reads, and a binary descent over them finds the last scan position at or before each position, with 4 operations per level. A match starts at p when that scan position is p and a match starts there, and p is highlighted when the match at the scan position ends after p. That's about 4 log2 N + 8 operations per position, in O(log N) layers. Every operation that holds an end declares the range 0..N, since the builder's inferred range of a maximum doubles at every level otherwise.
 

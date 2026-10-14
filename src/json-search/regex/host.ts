@@ -1,4 +1,4 @@
-// JavaScript around both programs: text cells in, matches out.
+// JavaScript around the programs: text cells in, matches out.
 import {type Wire, invariant} from '../../runtime/numeric-ui-core.ts'
 
 /** @public */

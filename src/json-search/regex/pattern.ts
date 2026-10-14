@@ -1,5 +1,5 @@
-// The pattern language, and its compilation into an automaton with numbered states and character classes. Both programs
-// run the same automaton: data-program.ts reads it from cells, and lab/regex-search/builtin-program.ts builds it into the program.
+// The pattern language, and its compilation into an automaton with numbered states and character classes, which
+// data-program.ts writes into cells.
 //
 // The language is a subset of JavaScript's RegExp syntax with the u flag, so new RegExp(`^(?:${pattern})$`, 'u') accepts
 // every pattern that parsePattern accepts, and matches the same strings:

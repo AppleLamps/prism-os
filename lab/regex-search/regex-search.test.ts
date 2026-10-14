@@ -1,11 +1,10 @@
-// Compares the forms of the program that stay in this folder, forms (b) and (c), with the two plain JavaScript
-// references: the automaton simulator and the RegExp test of every substring. Hand-written expectations come first, so
-// a mistake shared by every version fails too. Form (a), which JSON search runs, has the same tests in
+// Compares the form of the program that stays in this folder, form (c), with the two plain JavaScript references: the
+// automaton simulator and the RegExp test of every substring. Hand-written expectations come first, so a mistake
+// shared by the program and the references fails too. Form (a), which JSON search runs, has the same tests in
 // tests/json-search/regex/regex-search.test.ts, and both files draw their cases, patterns and texts from
 // tests/json-search/regex/test-patterns.ts.
 import {expect, test} from 'bun:test'
 import {type Circuit, validateGrids, validateIndexReads, validateNoNaN} from '../../src/runtime/numeric-ui-core.ts'
-import {createBuiltInSearch} from './builtin-program.ts'
 import {type DataCapacity, buildDataSearch, writePattern} from '../../src/json-search/regex/data-program.ts'
 import {codePointsOf, matchesFromBits, writeText} from '../../src/json-search/regex/host.ts'
 import {capacityErrors, compilePattern} from '../../src/json-search/regex/pattern.ts'
@@ -16,27 +15,23 @@ import {buildTreeSearch, createTreeSearch} from './tree-program.ts'
 
 const smallCapacity: DataCapacity = {states: 8, classes: 6, boundaries: 12, textLength: 16}
 
-test('edge cases: forms (b) and (c) find the hand-written matches', () => {
+test('edge cases: form (c) finds the hand-written matches', () => {
   const trees = [createTreeSearch(smallCapacity), createTreeSearch(smallCapacity, 'sklansky')]
   for (const [pattern, text, expected] of handWrittenCases) {
     const compiled = compilePattern(pattern)
     const codePoints = codePointsOf(text)
     expect(capacityErrors(compiled, smallCapacity)).toEqual([])
-    const builtInOutput = createBuiltInSearch(compiled, smallCapacity.textLength).run(codePoints)
     const treeOutputs = trees.map(tree => {
       tree.setPattern(compiled)
       return tree.run(codePoints)
     })
-    // The built-in program, then the tree program with Brent-Kung and with Sklansky.
-    const versions = [
-      matchesFromBits(builtInOutput.highlighted, builtInOutput.starts),
-      ...treeOutputs.map(output => matchesFromBits(output.highlighted, output.starts)),
-    ].map(pairs)
+    // The tree program with Brent-Kung and with Sklansky.
+    const versions = treeOutputs.map(output => matchesFromBits(output.highlighted, output.starts)).map(pairs)
     for (const matches of versions) expect([pattern, text, matches]).toEqual([pattern, text, expected])
   }
 })
 
-test('random patterns and texts: forms (b) and (c) match RegExp', () => {
+test('random patterns and texts: form (c) matches RegExp', () => {
   const random = createRandom(20260917)
   const tree = createTreeSearch(smallCapacity)
   let fitting = 0
@@ -45,7 +40,6 @@ test('random patterns and texts: forms (b) and (c) match RegExp', () => {
   for (let patternIndex = 0; patternIndex < 400; patternIndex++) {
     const pattern = randomNode(random, 3).source
     const compiled = compilePattern(pattern)
-    const builtIn = createBuiltInSearch(compiled, smallCapacity.textLength)
     const fits = capacityErrors(compiled, smallCapacity).length === 0
     if (fits) {
       tree.setPattern(compiled)
@@ -57,8 +51,6 @@ test('random patterns and texts: forms (b) and (c) match RegExp', () => {
     ]
     for (const codePoints of patternTexts) {
       const expected = pairs(regexpMatches(pattern, codePoints))
-      const builtInOutput = builtIn.run(codePoints)
-      expect([pattern, codePoints, pairs(matchesFromBits(builtInOutput.highlighted, builtInOutput.starts))]).toEqual([pattern, codePoints, expected])
       if (fits) {
         const treeOutput = tree.run(codePoints)
         expect([pattern, codePoints, pairs(matchesFromBits(treeOutput.highlighted, treeOutput.starts))]).toEqual([pattern, codePoints, expected])
@@ -156,7 +148,7 @@ test('form (c)\'s longest ends equal the loop in tree-inputs.ts, both plans in J
   }
 })
 
-test('random patterns at capacity and full texts: form (c) with both networks and form (b) match RegExp', () => {
+test('random patterns at capacity and full texts: form (c) with both networks matches RegExp', () => {
   const random = createRandom(4242)
   // A text length that isn't a power of two, so both networks have incomplete blocks.
   const capacity: DataCapacity = {states: 16, classes: 8, boundaries: 16, textLength: 37}
@@ -168,10 +160,9 @@ test('random patterns at capacity and full texts: form (c) with both networks an
     const compiled = compilePattern(pattern)
     if (compiled.automaton.stateCount <= 8 || capacityErrors(compiled, capacity).length > 0) continue
     for (const tree of trees) tree.setPattern(compiled)
-    const builtIn = createBuiltInSearch(compiled, capacity.textLength)
     for (const codePoints of [fullText(random, capacity.textLength), fullText(random, capacity.textLength), boundaryText(random, compiled, capacity.textLength)]) {
       const expected = pairs(regexpMatches(pattern, codePoints))
-      for (const output of [builtIn.run(codePoints), ...trees.map(tree => tree.run(codePoints))]) {
+      for (const output of trees.map(tree => tree.run(codePoints))) {
         expect([pattern, codePoints, pairs(matchesFromBits(output.highlighted, output.starts))]).toEqual([pattern, codePoints, expected])
       }
       matches += expected.length
@@ -179,20 +170,6 @@ test('random patterns at capacity and full texts: form (c) with both networks an
     patterns++
   }
   expect(matches).toBeGreaterThan(90)
-}, 60_000)
-
-test('form (b) at the largest capacity at 256 code points: 32 states, 16 classes and 32 boundaries, with a match on the last cell', () => {
-  // 31 atoms and 13 classes.
-  const pattern = '(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? '
-  const compiled = compilePattern(pattern)
-  expect([compiled.automaton.stateCount, compiled.partition.classCount]).toEqual([32, 13])
-  const words = 'the cat sat on some mats, this dog barked at these cats and an owl hooted. that '
-  const codePoints = codePointsOf(words.repeat(4).slice(0, 256 - 'this word '.length) + 'this word ')
-  expect(codePoints.length).toBe(256)
-  const expected = pairs(regexpMatches(pattern, codePoints))
-  expect(expected.at(-1)).toEqual([246, 256])
-  const builtInOutput = createBuiltInSearch(compiled, 256).run(codePoints)
-  expect(pairs(matchesFromBits(builtInOutput.highlighted, builtInOutput.starts))).toEqual(expected)
 }, 60_000)
 
 test('form (c) at 32 states, 16 classes and 32 boundaries, over 16 code points, with a match on the last cell', () => {

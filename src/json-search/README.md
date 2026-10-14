@@ -1432,7 +1432,7 @@ The same page timed four ways to count a pattern's matches on one thread, and th
 - A CPU runner whose copies are generated statements too, see [Where the CPU's time goes](#where-the-cpus-time-goes).
 - The table loop in several workers, and workers after a pause. JSON.parse and RegExp in 1 to 16 workers are in [JavaScript in several workers](#javascript-in-several-workers).
 - Other workgroup sizes than 64.
-- Regex search's forms (b) and (c) as loops. Form (b) builds the pattern into the program, so every pattern would be a new shader.
+- Regex search's form (c) as a loop. Form (b), which built the pattern into the program and was removed on October 14, 2026, would have needed a new shader for every pattern.
 - Uploading only the documents that changed, e.g. one edited document of 2,052 bytes, which `store.write(cells, 1, index)` already allows. The searcher takes its documents once.
 - Whether a reload in the same Chrome process, or a page that stays open, compiles the same shader faster. A new Chrome process with a new profile folder does, when an earlier process compiled the same shader text: 3 to 5 ms instead of 20 to 22 ms for bit-emit.ts's search shader of 8 states ([lab/json-search/million/README.md](../../lab/json-search/million/README.md#the-timings)).
 - A second Chrome process for the review's checks at the limits and over 100,000 documents, which ran once each, and a device that grants less than the documents need, where `createGpuSearcher` throws with a message that no browser run has shown.
