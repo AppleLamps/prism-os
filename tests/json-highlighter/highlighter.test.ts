@@ -206,10 +206,13 @@ describe('the program at other limits', () => {
     expect(counts.tooLong).toBeGreaterThan(20)
   })
 
+  // This test and the next take 3 to 4 s each when this file runs alone. `bun run test` gives every test 30 s, and a
+  // bare `bun test` gives 5 s, which both tests exceeded in a run of every test file on a busy machine, so both name
+  // their own 30 s.
   test('loop at 2,048 code points and depth 13: matches the reference on the default corpus and on a corpus made for these limits, at random carets', () => {
     const random = createRandom(5)
     for (const text of [...corpus.all, ...largerCorpus.all]) expectAgreement('loop', text, Math.floor(random() * (codePointLength(text) + 2)), larger)
-  })
+  }, 30_000)
 
   test('brent-kung and sklansky at 2,048 code points and depth 13: match the reference on the edge cases for these limits and some long texts', () => {
     const random = createRandom(6)
@@ -217,7 +220,7 @@ describe('the program at other limits', () => {
     for (const form of ['brent-kung', 'sklansky'] as const) {
       for (const text of texts) expectAgreement(form, text, Math.floor(random() * (codePointLength(text) + 2)), larger)
     }
-  })
+  }, 30_000)
 
   test('the named fallbacks at 2,048 code points and depth 13, and carets around the capacity', () => {
     const longText = `[${'1,'.repeat(1200)}1]`
