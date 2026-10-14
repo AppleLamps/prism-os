@@ -703,6 +703,7 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       if (restStep === null || moved > restDistance) {
         restEdges.set(edgesNow)
         restStep = result.step
+        atRest = false
       } else {
         atRest = result.step - restStep >= restSteps
       }

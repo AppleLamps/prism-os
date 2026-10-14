@@ -497,8 +497,10 @@ export function createTrainableGeometryMachine(
   let trainingStep = 0
   // The step count of Adam's bias corrections, which trainOrUndo takes back with the moments.
   let momentStep = 0
-  // The part of the learning rate that trainOrUndo's steps use, from 0 to 1.
+  // The part of the learning rate that trainOrUndo's steps use, from 1/4096 to 1, and how many frames in a row
+  // were taken back at 1/64 of the rate or less.
   let learningRateScale = 1
+  let framesTakenBackAtLowRate = 0
   const savedSource = new Float32Array(parameters.size)
   const savedFirstMoment = new Float32Array(parameters.size)
   const savedSecondMoment = new Float32Array(parameters.size)
@@ -774,6 +776,7 @@ export function createTrainableGeometryMachine(
     trainingStep = 0
     momentStep = 0
     learningRateScale = 1
+    framesTakenBackAtLowRate = 0
   }
 
   // The outputs with their loss, for a caller that takes no step: the line counts and the penalty's weight are the
@@ -825,6 +828,16 @@ export function createTrainableGeometryMachine(
     // rest are the same overshoot: with the rate set to full at every change of the target, each frame of a drag
     // was taken back, and the photo stood still under a rectangle dragged 70 px away. With plain steps in those
     // frames, the first one threw the other photos up to 256 px off.
+    //
+    // When 5 frames in a row at 1/64 were taken back, the rate goes on halving, down to 1/4096, and each kept
+    // frame doubles it until it is at 1/64 again. Adam's steps are larger than its learning rate for a while
+    // after the gradients change, since its second moments follow more slowly than its first. So after a
+    // rectangle was added far from the photo that it got, every frame at 1/64 could be taken back, with the photo
+    // standing still 30 px from its rectangle: in 8 sessions of 200 random edits, 3 of 1,600 edits ended that way,
+    // and none with this rule. Halving below 1/64 after every frame that is taken back, without waiting for 5,
+    // slows the small moves near the end of a fit: 1.9% of 3,840 small session edits then ended with two photo
+    // edges neither in line nor a reach apart, where it is 1.1% with this rule and 1.2% with no rate below 1/64
+    // (October 14, 2026).
     trainOrUndo(steps: number) {
       invariant(Number.isInteger(steps) && steps >= 0, 'training step count is invalid')
       const valuesBefore = circuit.evaluateTensor(source)
@@ -843,11 +856,13 @@ export function createTrainableGeometryMachine(
         firstMoment.set(savedFirstMoment)
         secondMoment.set(savedSecondMoment)
         momentStep = savedMomentStep
-        learningRateScale = Math.max(1 / 64, learningRateScale * 0.5)
+        if (learningRateScale <= 1 / 64) framesTakenBackAtLowRate++
+        learningRateScale = Math.max(framesTakenBackAtLowRate >= 5 ? 1 / 4096 : 1 / 64, learningRateScale * 0.5)
         values = circuit.evaluateTensor(source)
         after = before
       } else {
-        learningRateScale = Math.min(1, learningRateScale * 1.15)
+        learningRateScale = Math.min(1, learningRateScale * (learningRateScale < 1 / 64 ? 2 : 1.15))
+        if (learningRateScale >= 1 / 64) framesTakenBackAtLowRate = 0
       }
       assertFiniteValues(values, 'trainable geometry values')
       return {

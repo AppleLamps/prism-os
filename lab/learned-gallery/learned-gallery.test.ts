@@ -256,7 +256,7 @@ test('after steps were taken back, the next steps are half as large', () => {
   let frames = 0
   while (!halved.trainOrUndo(10).undone) {
     frames++
-    // Measured: 3 frames. Without the limit, this loop would never end if no frame were taken back.
+    // Measured: 12 frames. Without the limit, this loop would never end if no frame were taken back.
     assert.ok(frames < 200, 'no frame was taken back')
   }
   // The other machine takes the same kept frames with plain steps, and stands where the undone frame started.
@@ -570,7 +570,7 @@ test('each preset sketch is fitted closely, with its photos in line, and trainin
     while (frame.step < 100) frame = page.frame()
     assert.equal(frame.misalignment, 0)
     assert.equal(frame.loss, frame.fromSketch)
-    // It comes on once the photos are close to the sketch. Measured: after 140 to 190 steps.
+    // It comes on once the photos are close to the sketch. Measured: it is positive from step 160, 150 and 180 on.
     while (frame.misalignment === 0) frame = page.frame()
     assert.ok(frame.step > 100 && frame.step < 400, `${name}: the penalty came on at step ${frame.step}`)
     assert.ok(frame.fromSketch < 2e-6, `${name}: the distance from the sketch was ${frame.fromSketch}`)
@@ -714,9 +714,9 @@ test('training continues from the current weights while a rectangle is dragged',
     worstError = Math.max(worstError, largestError(machine, frame.values, item))
     assert.equal(pairing(machine, frame.values), pairingBefore)
   }
-  // Measured: 6.3% of the stage at most. The photo stays in its row until the rectangle is about 5% of the
+  // Measured: 2.8% of the stage at most. The photo stays in its row until the rectangle is about 5% of the
   // stage's height away, the slider's 4% of the width, and then follows.
-  assert.ok(worstError < 0.09, `the dragged rectangle's photo was ${worstError} of the stage away`)
+  assert.ok(worstError < 0.06, `the dragged rectangle's photo was ${worstError} of the stage away`)
 
   frame = page.frame([release])
   assert.equal(frame.cursor, 'grab')
@@ -804,7 +804,7 @@ test('a rectangle nudged within its row gets a photo that is in the row, and the
   roughEdit(page, 5, false, 6, 6)
   let settled = page.settle()
   assert.equal(settled.layout, null)
-  // The photo is on the lines of its row and its column, within 0.01% of the stage. Measured: 0.001%.
+  // The photo is on the lines of its row and its column, within 0.01% of the stage. Measured: 0.0006%.
   for (const edge of ['top', 'bottom'] as const) {
     assert.ok(lineSpread(machine, settled.values, row, edge) < 0.0001, `the row's ${edge}s are ${lineSpread(machine, settled.values, row, edge)} apart`)
   }
@@ -817,7 +817,7 @@ test('a rectangle nudged within its row gets a photo that is in the row, and the
   assert.ok(Math.abs(lineMean(machine, settled.values, row, 'top') - rowTop - 0.015 / 4) < 0.0003)
   assert.ok(Math.abs(lineMean(machine, settled.values, column, 'left') - columnLeft - 0.012 / 3) < 0.0003)
   // So the loss doesn't fall to 0: it rests where the cost of the photos' distance from the sketch balances the
-  // penalty, whose own part is near 0 once the lines are closed. Measured: 6.6e-6 and 2e-11.
+  // penalty, whose own part is near 0 once the lines are closed. Measured: 6.0e-6 and 1.2e-11.
   assert.ok(settled.fromSketch > 1e-6, `the distance from the sketch is ${settled.fromSketch}`)
   assert.ok(settled.misalignment < 1e-8, `the penalty is ${settled.misalignment}`)
 
@@ -973,7 +973,7 @@ test('training stops once no photo has moved for 100 steps', () => {
     assert.equal(frame.training, false)
     assert.equal(machine.trainingStep, frame.step)
   }
-  // Measured: the six edits train 600 to 1,010 steps.
+  // Measured: the longest of the six trainings is 1,950 steps.
   assert.ok(longest > trainingStepsAfterChange + 50, `the longest training was ${longest} steps`)
 })
 
@@ -1039,8 +1039,8 @@ test('a photo follows its rectangle from the first frames of a drag, also after 
         }
       }
     }
-    // Measured: the photo is at most 0.7% of the stage behind, about 4 px, and no other photo moves by more than
-    // 0.6%. With the full learning rate at every change of the sketch, each frame's steps were taken back, and
+    // Measured: the photo is at most 0.6% of the stage behind, about 3 px, and no other photo moves by more than
+    // 0.3%. With the full learning rate at every change of the sketch, each frame's steps were taken back, and
     // the photo stood still for the whole drag, 13% behind at its end. With plain steps in the frames of a change,
     // the first one threw the other photos up to 48% of the stage off.
     assert.ok(largestLag < 0.015, `${name}: the photo was ${largestLag} of the stage behind its rectangle`)
@@ -1083,7 +1083,7 @@ test('training takes as many steps per second at 120 Hz as at 60 Hz, and ends th
   assert.ok(Math.abs(stepsAfterHalfASecond[1]! - 295) <= 1)
   // The row moved down by a quarter of the nudge on both, 0.015 / 4 of the stage.
   assert.ok(Math.abs(rowTops[0]! - 0.015 / 4) < 0.0003 && Math.abs(rowTops[1]! - 0.015 / 4) < 0.0003, `the row moved by ${rowTops[0]} and ${rowTops[1]}`)
-  // Training lasts about as long on both. Measured: 600 and 595 steps.
+  // Training lasts about as long on both. Measured: 509 and 501 steps.
   assert.ok(Math.abs(stepsAtTheEnd[0]! - stepsAtTheEnd[1]!) <= 200, `${stepsAtTheEnd[0]} steps at 60 Hz and ${stepsAtTheEnd[1]} at 120 Hz`)
 })
 
@@ -1165,7 +1165,9 @@ test('a press on empty space adds a rectangle until every photo has one', () => 
   assert.equal(frame.capturedPointer, null)
   page.frame([release])
   const settled = page.settle()
-  assert.ok(Number.isFinite(settled.loss))
+  // Both new photos went to their rectangles: each is within the slider's distance of it, 5% of the stage's
+  // height, where it may be held on a line with other photos. Measured: 0.7% at most.
+  assert.ok(largestError(page.machine, settled.values) < 0.05, `the largest error is ${largestError(page.machine, settled.values)}`)
 })
 
 test('deleting a rectangle removes its photo, and no other photo moves', () => {
