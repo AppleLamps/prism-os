@@ -82,7 +82,7 @@ export function createMonitorFooter(footer: HTMLElement, program: TensorProgram)
     <ul class="monitor-counts">
       ${counts.map(entry => `<li title="${entry.title}"><b>${entry.count}</b> ${entry.noun}</li>`).join('')}
     </ul>
-    <div class="monitor-frame">
+    <div class="monitor-frame" role="group">
       <svg class="monitor-chart" viewBox="0 0 ${frameCapacity - 1} 1" preserveAspectRatio="none" aria-hidden="true">
         <path class="area"/><path class="line"/><path class="end"/>
       </svg>
@@ -121,8 +121,10 @@ export function createMonitorFooter(footer: HTMLElement, program: TensorProgram)
         frameTimeText = nextFrameTimeText
         domCache.frameTime.textContent = frameTimeText
       }
-      // The chart has no axis. What a pointer that rests on it reads names the scale,
-      // which changes only when a frame is longer than every frame the chart shows.
+      // The chart has no axis. The title of the chart and its figure, which a pointer
+      // that rests on them reads and which names the group for a screen reader, says
+      // what the chart shows and names the scale. The scale changes only when a frame
+      // is longer than every frame the chart shows, or when such a frame leaves it.
       const scale = frameTimeScale(Math.max(...times))
       if (scale !== captionScale) {
         captionScale = scale

@@ -659,6 +659,14 @@ body {
   touch-action: pan-y;
 }
 
+/* A browser gives a scroller the keyboard focus, e.g. Chrome at the Tab key, so that the
+   arrow keys scroll it. The focus ring is drawn inside the scroller: outside it, the
+   window's frame would cut the ring off at the right, and the ring would cover the
+   sidebar's edge. */
+.monitor-scroller:focus-visible {
+  outline-offset: -2px;
+}
+
 .monitor-spacer {
   position: relative;
 }
