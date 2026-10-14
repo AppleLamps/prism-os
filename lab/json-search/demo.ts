@@ -714,9 +714,11 @@ function mountJsonSearch(document: Document, window: Window) {
     scheduleRender()
   }
   domCache.pattern.addEventListener('input', recordInput)
-  // Enter and Shift+Enter in the field step to the next and the previous document with a match.
-  domCache.pattern.addEventListener('keydown', event => {
-    if (event.key !== 'Enter') return
+  // Enter and Shift+Enter step to the next and the previous document with a match, as in a browser's find bar. They
+  // do so with the focus in the field and anywhere else on the page, since a click on the map or on a toggle takes
+  // the focus out of the field. On a link or a button, Enter is the click.
+  window.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || (event.target instanceof Element && event.target.closest('a, button') !== null)) return
     st.events.steps += event.shiftKey ? -1 : 1
     scheduleRender()
   })
