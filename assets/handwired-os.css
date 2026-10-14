@@ -434,7 +434,7 @@ body {
 
 /* At its bottom, the sidebar says what the shown location holds: its rows by kind, which
    only Operations has, e.g. "ReGLU" beside the swatch that the list's kind column draws,
-   and "11,779", then one sentence. JavaScript writes them when the list shows another
+   and "10,940", then one sentence. JavaScript writes them when the list shows another
    location.
 
    The caption is the box between the items, which end 100 px below the sidebar's top,

@@ -1353,7 +1353,7 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
     locationNodes.map(node => [node.style['left'], node.style['top'], node.style['width'], node.style['height']]),
     [['8px', '28px', '136px', '24px'], ['8px', '52px', '136px', '24px'], ['8px', '76px', '136px', '24px']],
   )
-  // An item holds its location's name and its row count, e.g. 'Operations' and '21,229'.
+  // An item holds its location's name and its row count, e.g. 'Operations' and '19,851'.
   assert.deepEqual(
     locationNodes.map(node => node.children.map(part => [part.className, part.textContent])),
     [['State', machine.sourceCells.length], ['Operations', rowCountOf(machine)], ['Outputs', machine.namedOutputs.length]]
