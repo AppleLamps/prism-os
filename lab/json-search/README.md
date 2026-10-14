@@ -15,13 +15,84 @@ Every value that came back from the GPU was compared with a value computed on th
 
 A review then ran everything again, compared the GPU with the programs that have every position written out, on the CPU executor, for documents and patterns at the limits and for all 100,000 documents, timed JavaScript in several workers, and corrected this README where it claimed more than the measurements show. [What the review found, and what changed](#what-the-review-found-and-what-changed) has the list.
 
-The answer comes first, then how to run everything, what was built, the checks and every measurement.
+The demo page comes first, then the answer, how to run everything, what was built, the checks and every measurement.
+
+## The demo page
+
+demo.html is the page that the answer below allows: `bun start` serves it at /json-search/, and the demo site publishes it there. It searches 100,000 generated JSON documents again at each keystroke, on the GPU, and shows the search's own time next to RegExp's for the same search.
+
+How it works:
+
+- **The documents.** The page writes them itself, with documents.ts's generator and none of the documents that it breaks on purpose. So every document is valid JSON of up to 512 code points: a package manifest, a user record, a log event, editor settings, an order, a map feature or sensor readings, about 300 characters each, and which of them a document is follows from a hash of its index. Each document's characters go to the GPU once, as numbers.
+- **The JSON highlighter** is one small step, built by hand from weighted sums, ReLU gates and table reads. It runs at each of a document's 512 positions, once when the page loads, and says what each character is, e.g. part of a key or of a string value. The page uses that answer twice: for the colors of the document that it shows, and to let a search read only keys or only string values.
+- **Regex search** is a second such step. A keystroke turns the pattern into tables of numbers, and the step runs over each document's positions, backward and then forward, and counts the matches. It reads the highlighter's answer for each character from the GPU's memory.
+- **One pass runs every document.** No document reads another document's numbers, so the GPU runs all of them at the same time. JavaScript gets back one match count per document, which it paints on the map, and a mark per character for the one document that it shows.
+
+What the page shows, from top to bottom, and how each number is measured:
+
+- **The pattern field with two toggles.** All, Keys or String values is what the search reads. GPU or CPU is where the search program runs.
+- **One line of numbers**, e.g. "10,559 of 100,000 documents match. 20 ms on the GPU. RegExp: 21 ms."
+  - The count is the number of documents with at least one match.
+  - The time on the GPU runs from before the pattern is compiled until every document's count is copied out of the GPU's buffer: compiling the pattern, uploading its cells, the pass and the readback, `timings.totalMs` of the searcher's result. The first search on a larger program, e.g. the one for 16 states that a date needs, also builds that program and compiles its shader, once. The page does both with `prepare` before it searches, so the time leaves them out.
+  - RegExp's time is measured in the page's worker, on one thread, for the same pattern and the same documents: plain-search.ts runs `RegExp` on each document, or on each key or each string value, and counts every match. A pass that takes under 100 ms is made twice, and the faster one counts. Finding the keys and the string values happens once, with table-loop.ts's plain JavaScript highlighter, and isn't part of the time.
+  - A pattern with a syntax error, or one that needs more than the largest program's 32 states, gets a sentence in the line's place.
+- **The map**: one cell per document, in the documents' order, row after row. A document with a match is copper, and its mark also takes the gap around its cell, so that one match among 100,000 can be seen. The pointer picks the nearest document with a match, a click keeps it, and Enter and Shift+Enter in the field step to the next and the previous document with a match, as a browser's find bar does.
+- **One document**, colored by the highlighter's display kinds, with the search's matches marked. On the GPU both are read back for that one document: the kinds from the highlighter's output buffer, and the marks from a pass over that document alone.
+
+With the toggle on CPU, or in a browser without WebGPU, both programs run in the page's worker as generated JavaScript, through `createCpuSearcher`:
+
+- The worker searches the documents in their order, a piece of about 8 ms at a time, and posts each piece's counts. So the map fills in from the top while the line says how far the search is, e.g. "928 of the first 8,773 documents match. 2.2 s on the CPU so far.", and a keystroke replaces the search in progress within a piece's time.
+- The time in the line is the search program's own: the sum of the pieces' loops, `timings.evaluateMs`.
+- The highlighter runs on a document when a search first reaches it, 93 µs per document, and its time isn't part of the search's, as it isn't on the GPU. So the first search on the CPU takes about 9 s longer on the clock than the line says, and every later one takes what the line says.
+
+What the page leaves out on purpose:
+
+- **It never says that the GPU beats RegExp or JavaScript.** The line gives both times for every pattern. For a pattern on a larger program RegExp's is the shorter one, e.g. 74 to 81 ms on the GPU against 8 to 9 ms for the date of the Try list, and for `([a-z]+)+x`, which makes RegExp backtrack, 17 ms against 2.1 to 2.2 s.
+- **It runs no self check when it loads.** Both programs hold only integers, which a GPU computes exactly in any order, and this folder's tests and its runs on the GPU compare the two backends, see [Correctness checks](#correctness-checks). `selfCheck` stays in searcher.ts for those.
+- **It shows no documents with errors.** The lab's measurements keep the generator's 1 broken document in 10.
+
+Other states:
+
+- **A window narrower than 720 px**, e.g. a phone, gets 20,000 documents, and the title says so. 100,000 documents take 410 MB on the GPU, and on the CPU the worker holds 501 MB for them.
+- **A GPU whose buffers hold fewer documents** than the page wants gets the count that fits, and the page says so, e.g. "One buffer of this GPU holds 65,000 documents, so the page searches 65,000 instead of 100,000."
+- **A GPU that stops working** while the page is open: the page goes on with both programs on the CPU, and says why.
+
+Measured on October 13, 2026 on an Apple M5 Max in headless Chrome 155, with the built site served under a path prefix, at a 1-minute load average of 3.2 to 5.2, since other processes used the machine. A cell is the median, with the range in parentheses.
+
+| | 1440 by 900 at two device pixels per CSS px, 100,000 documents, 8 loads | 390 by 844 at three, with touch, 20,000 documents, 4 loads |
+| --- | --- | --- |
+| The documents ready to search, from the navigation | 583 ms (554 to 603) | 165 ms (159 to 198) |
+| Of that: writing the documents, writing their characters as numbers, creating the GPU's searcher | 323, 67 and 87 ms | 68, 13 and 36 ms |
+| The first search's answer painted, from the navigation | 653 ms (633 to 668) | 220 ms (218 to 234) |
+| The first search, as the line shows it | 20.4 ms (18.5 to 23.1) | 13.5 ms (11.9 to 15.5) |
+| A search while typing, a key every 150 ms, 56 and 28 keys | 15.6 ms (7.3 to 24.2) | 8.8 ms (4.1 to 11.1) |
+| Painting the map for such a search | 1.3 ms (0.6 to 3.1) | 0.7 ms (0.5 to 1.5) |
+| From the key's event to the frame after the one that painted its answer | 31.9 ms (19.9 to 54.9) | 28.4 ms (19.8 to 35.6) |
+| Longest time that the page's thread was held: while loading, and while typing | 23 and 5 ms | 21 and 3 ms |
+
+- **A whole search on the CPU**, 100,000 documents, a pattern of up to 8 states: 14.3, 14.2 and 14.2 s as the line shows it, and 23.0, 14.3 and 14.3 s on the clock, the first one with the highlighter.
+- **Without WebGPU** the documents are ready after 0.36 s, the line's first numbers show within 0.67 s of the navigation, and the first search is done after 23.6 to 23.7 s, of which the search program takes 14.1 to 14.3 s.
+- **Typing while a search runs on the CPU** held the page's thread for at most 5.4 ms, and a key's own search showed its first numbers 18 to 67 ms after the key.
+- **Memory**, by Chrome's `performance.measureUserAgentSpecificMemory`: the page's JavaScript holds 134 MB at rest on the GPU, 43 MB of it on the page's thread, mostly the documents' texts, 87 MB in the worker, its own copy of the texts and the plain JavaScript highlighter's kinds, and 4 MB for the canvas. After a search on the CPU the worker holds 501 MB: the CPU searcher keeps every document's cells and display kinds as f32 values, 205 MB each.
+
+The page's files:
+
+| File | What it holds |
+| --- | --- |
+| `demo.html`, `demo.css` | The page and its styles, on top of assets/site.css and assets/tool.css |
+| `demo.ts` | The page's state and its frame: DOM reads, what arrived and the inputs, what the page shows, DOM and canvas writes, then the work that is due. Listeners and the worker's messages only record what arrived and schedule a frame |
+| `demo-map.ts` | The map without a DOM: how large a cell is, which document the pointer picks, the next document with a match, and the cells' pixels |
+| `demo-text.ts` | The page's documents, the line of numbers and the other sentences, and a document's text as runs of characters that look the same |
+| `demo-worker.ts` | The worker: RegExp's time, a search on the CPU in pieces, and one document's kinds and marks from the CPU |
+| `demo.test.ts` | 17 tests of the map, the documents, the sentences and the worker, without a browser. Bun runs the worker as a worker |
+
+scripts/demo-site-pages.ts lists the worker next to the page, since Bun's bundler doesn't follow `new Worker(...)`: the site's build writes it as one file, json-search/demo-worker.js, and the development server builds it at each request.
 
 ## Is the GPU clearly faster?
 
 The short answer to Cheng's question, for all of it. Every number is for one Apple M5 Max, headless Chrome 155, and the 100,000 generated documents, and a range is what the runs of this folder measured over about four hours.
 
-- **Against the same programs on the CPU: yes, by a wide margin, from about ten documents on.** For 100,000 documents that are already on the GPU, the highlighter's pass takes 2.2 ms and a search at 8 states 7 to 8 ms, when one evaluation follows the other. On the CPU, the highlighter as the repo ships it, with every position written out, takes 8.4 to 9.2 s on the executor and 2.1 s as generated JavaScript, and a search takes 24.5 s as generated JavaScript and 3.2 minutes on the executor.
+- **Against the same programs on the CPU: yes, by a wide margin, from about ten documents on.** For 100,000 documents that are already on the GPU, the highlighter's pass takes 2.2 ms and a search at 8 states 7 to 8 ms, when one evaluation follows the other. On the CPU, the highlighter as the repo ships it, with every position written out, takes 8.4 to 9.2 s on the executor and 2.1 s as generated JavaScript, and a search takes 24.5 s as generated JavaScript and 3.2 minutes on the executor. The 24.5 s are for loops that run all 512 positions of every document, as the GPU's do. The CPU searcher's loops now stop at the text's end, and a search takes 14 s.
 - **Against plain JavaScript on one thread, for the highlighter's pass alone: yes, from about 10,000 documents that are already on the GPU.** For 10,000 documents the pass takes 0.65 ms back to back and 2.6 to 3.4 ms after a pause, against 7 to 10 ms for JSON.parse and 12 to 17 ms for a JavaScript highlighter. For 100,000 documents it takes 2.2 ms and 8.3 to 9.3 ms, against 75 to 103 ms and 119 to 152 ms. Below about 1,000 documents JavaScript takes less time.
 - **But a page runs that pass once per set of documents, and from the texts the GPU isn't faster.** A document's display kinds and first error only change when its text changes. For 100,000 documents, JavaScript writes the cells in 44 ms, the upload of 205 MB and the pass take about 40 ms, and the shader compiles in about 40 ms: 0.13 s before the page has its answers, where the JavaScript highlighter takes 0.12 to 0.15 s.
 - **Against RegExp on one thread, for regex search: about even, not clearly faster.** With a pattern of up to 8 states the GPU takes 7 to 8 ms for 100,000 documents when searches follow each other, and 17 to 21 ms after a pause of 200 ms or more, which is what a page that searches per keystroke gets. RegExp takes 12 to 43 ms to count every match, and 5 to 35 ms to say only whether each document has one. With a longer pattern the program is slower than RegExp: 64 ms at up to 16 states and 0.87 s at up to 32. Only on a pattern that makes RegExp backtrack is the GPU clearly faster, 7 to 21 ms against 2.1 s.
@@ -39,7 +110,7 @@ The task: 100,000 generated JSON documents of up to 512 code points, 300 on aver
 | | Validate and highlight every document, once | One search inside string values, pattern of up to 8 states | The same search with `([a-z]+)+x`, which makes RegExp backtrack |
 | --- | --- | --- | --- |
 | Plain JavaScript on one thread: a table loop, then RegExp on each string value | 119 to 152 ms | 15 to 24 ms, after 82 to 117 ms once to find the string values | 546 to 617 ms |
-| The same programs on the CPU: as generated JavaScript, and on the executor | 2.1 s, extrapolated from 5,000 documents, and 8.4 to 9.2 s, with every position written out | 24.5 s as a loop, extrapolated from 200 documents, and 3.2 minutes with every position written out, extrapolated from 40 | the same |
+| The same programs on the CPU: as generated JavaScript, and on the executor | 2.1 s, extrapolated from 5,000 documents, and 8.4 to 9.2 s, with every position written out | 24.5 s as a loop over all 512 positions, extrapolated from 200 documents, 14 s for all 100,000 documents as a loop that stops at the text's end, and 3.2 minutes with every position written out, extrapolated from 40 | the same |
 | The same programs on the GPU | 0.13 s from the texts. The pass alone, with the documents already there: 2.2 ms back to back, and 8.3 to 9.3 ms after a pause of 1 s | 7.6 ms back to back, and 17.6 to 20.8 ms after a pause of 200 ms or more | the same |
 
 - The GPU's 0.13 s is 44 ms of JavaScript writing every document's cells, about 40 ms for the upload of 205 MB and the pass, and about 40 ms for the highlighter's shader compile. The search shader's compile adds 46 ms, so the page is ready after 0.17 to 0.18 s, and after 0.28 s in one of the six runs.
@@ -67,7 +138,7 @@ So the search that is as fast as RegExp holds patterns of up to 7 characters or 
 
 **What else the machine does.** In the three search runs and the review's run, at a 1-minute load average of 2.2 to 7.5, a search of 100,000 documents at 8 states took 6.9 to 7.3 ms. In two single runs at a load average of 6 to 15 it took 10.8 and 11.1 ms, and during two seconds of the review's first-stage run the highlighter took 13 to 20 ms where it otherwise took 4 ms. Other processes use the same GPU.
 
-**The documents.** These have a median of 300 code points. The program runs all 512 positions of every document, and RegExp reads only the text, so shorter documents favor RegExp and documents near 512 favor the GPU.
+**The documents.** These have a median of 300 code points. On the GPU the program runs all 512 positions of every document, and RegExp reads only the text, so shorter documents favor RegExp and documents near 512 favor the GPU.
 
 **The machine.** One Apple M5 Max, one browser, headless. The compile times, the pause behavior and the exactness without guards may all differ on another GPU, which is what the searcher's self check is for.
 
@@ -77,9 +148,9 @@ A page built on searcher.ts runs the repo's own programs: the highlighter's step
 
 - It loads in 0.17 to 0.18 s: 44 ms of JavaScript writing cells, 78 to 86 ms for the upload, the highlighter's compile and the validation, and 46 ms for the search shader's compile. That is about what plain JavaScript takes to validate and highlight the same documents, 0.12 to 0.15 s.
 - Every keystroke of a pattern of up to 8 states searches all 100,000 documents in 7.6 ms when searches follow each other and in 17.6 to 20.8 ms after a pause of 200 ms or more, in every document or only inside string values or keys, and returns the marks of the documents on screen. A scroll takes 1.1 to 2.5 ms, since it searches only those.
-- A pattern of 9 to 16 states takes 65 ms, and one of 17 to 32 states about 0.9 s, so a page should say which program ran, or hold fewer documents: at 10,000 documents they take 9 and 132 ms.
+- A pattern of 9 to 16 states takes 65 ms, and one of 17 to 32 states about 0.9 s, so a page should show that time next to RegExp's for the same pattern, as the demo page does, or say which program ran, or hold fewer documents: at 10,000 documents they take 9 and 132 ms.
 - A pattern like `([a-z]+)+x` takes the same 8 to 21 ms, where RegExp takes 0.57 to 2.1 s on one thread.
-- The same programs on the CPU, behind the same interface, take 0.25 ms per document as generated JavaScript, 24.5 s for 100,000 documents, for one search, which a page can show by running them on a few hundred documents.
+- The same programs on the CPU, behind the same interface, take 0.14 ms per document as generated JavaScript, 14 s for 100,000 documents, for one search, which a page can show by running them in a worker, a few documents at a time, as the demo page does.
 - RegExp on one thread answers the same searches in 15 to 24 ms, so the page's claim is the first one above and the last two, not a faster search.
 
 ## How to run it
@@ -87,7 +158,8 @@ A page built on searcher.ts runs the repo's own programs: the highlighter's step
 From the repo root:
 
 ```sh
-bun test lab/json-search                         # 45 tests in 4 files, about 40 seconds, no GPU
+bun start                                        # the demo site, with the demo page at /json-search/
+bun test lab/json-search                         # 63 tests in 5 files, about 40 seconds, no GPU
 bunx tsgo -p lab/json-search                     # type-check, including gpu/
 bunx oxlint --type-aware lab/json-search         # lint
 bun lab/json-search/report.ts sizes              # the first stage's two programs and their shaders, with and without guards
@@ -124,6 +196,9 @@ The review's reruns of the three measurement pages are results/review-rerun-gpu-
 | `json-step.ts` | The highlighter as a loop program |
 | `search-step.ts` | Regex search's form (a) as a loop program, which can read display kinds, and the same search with every position written out |
 | `searcher.ts` | The module for a demo page: validate every document once, search them per keystroke, on the GPU or on the CPU |
+| `demo.html`, `demo.css`, `demo.ts` | The demo page, its styles, and its state and frame: see [The demo page](#the-demo-page) |
+| `demo-map.ts`, `demo-text.ts` | The page's parts without a DOM: the map's cells and pixels, and the page's documents, sentences and numbers |
+| `demo-worker.ts` | The page's worker: RegExp's time for the search on screen, and both programs on the CPU, a few documents at a time |
 | `plain-search.ts` | The same answers in plain JavaScript, as a baseline: the table loop, then RegExp |
 | `bit-rows.ts` | The same automaton with 32-bit rows, as comparisons: a plain JavaScript loop and a hand-written kernel |
 | `documents.ts` | The generated documents: 7 shapes, 16 labeled defects, a pure function of a seed and an index |
@@ -140,7 +215,7 @@ The review's reruns of the three measurement pages are results/review-rerun-gpu-
 | `gpu/chrome.ts`, `gpu/measure.ts` | What the harnesses and the pages share: the headless Chrome driver, and the sampling helpers |
 | `results/` | The raw results |
 | `report.ts` | Sizes and the documents' distribution, without a GPU |
-| `json-search.test.ts`, `search.test.ts`, `searcher.test.ts`, `edge-cases.test.ts` | The tests |
+| `json-search.test.ts`, `search.test.ts`, `searcher.test.ts`, `edge-cases.test.ts`, `demo.test.ts` | The tests |
 
 ## What was built
 
@@ -247,7 +322,7 @@ The outputs are the match count of every document, and for the documents of the 
 
 A new pattern writes cells and changes no program, as in form (a): 1,097 cells at 8 states, 4,177 at 16 and 16,481 at 32. `built.writePattern(shared, compilePattern(pattern))` writes them with lab/regex-search's own `writePattern`, and the runner uploads them before the pass.
 
-`stopAtLength` makes both loops stop at the text's end. A cell past the end holds -1, whose class has no steps, so the reverse loop's bits stay what `start` wrote and the forward loop finds nothing there. It gives the same outputs, and it was slower on this GPU, so it's off by default.
+`stopAtLength` makes both loops stop at the text's end. A cell past the end holds -1, whose class has no steps, so the reverse loop's bits stay what `start` wrote and the forward loop finds nothing there. It gives the same outputs. It was slower on this GPU, so the GPU searcher leaves it off, and it saves the share of positions that hold no text on the CPU, 40% for these documents, so the CPU searcher turns it on.
 
 ### The highlighter's step
 
@@ -283,7 +358,7 @@ searcher.ts has no page globals:
 
 ```ts
 const {device} = await requestBatchDevice(bufferBytesFor(texts.length))
-const searcher = await createGpuSearcher(device, texts) // or createCpuSearcher(texts.slice(0, 500))
+const searcher = await createGpuSearcher(device, texts) // or createCpuSearcher(texts)
 searcher.validation.valid[7] // 1 when document 7 is valid JSON
 const result = await searcher.search({pattern: '(the|an?) [a-z]+', scope: 'strings', window: {firstDocument: 0, documentCount: 40}})
 if (result?.status === 'searched') result.matchCounts[7] // matches inside document 7's string values
@@ -294,9 +369,9 @@ if (result?.status === 'searched') result.matchCounts[7] // matches inside docum
 - **One program per state capacity**, 8, 16 and 32 by default. A pattern runs on the smallest one that holds it, since a step's cost grows with the square of the capacity. A larger program compiles on its first search, or ahead of time with `prepare(states)`.
 - **One evaluation in flight, and only the newest request gets a result.** A request waits for the one before it, and a request that a newer one replaced, before or while it ran, resolves to `undefined`. A result arrives after the frame that asked for it, so a page treats it as an input of a later frame.
 - **`kinds(window)`** copies the display kinds of some documents out of the GPU without a pass, e.g. the ones that scrolled into view.
-- **`selfCheck(documents)`** compares the first documents with the same programs on the other backend, for the highlighter and every search program compiled so far: the GPU with generated JavaScript, and the CPU version with the executor. A page that gets mismatches uses the CPU version.
+- **`selfCheck(documents)`** compares the first documents with the same programs on the other backend, for the highlighter and every search program compiled so far: the GPU with generated JavaScript, and the CPU version with the executor. The tests and the measurement pages run it. The demo page doesn't, see [The demo page](#the-demo-page).
 - **`limits`** is what the device granted and how many documents fit one buffer, and `programs()` lists each program's operations, statements and compile time.
-- **`createCpuSearcher(texts)`** has the same interface and runs the same loop programs as generated JavaScript. It takes 0.25 ms per document and search at 8 states, so a page gives it hundreds of documents.
+- **`createCpuSearcher(texts)`** has the same interface and runs the same loop programs as generated JavaScript. Its search loops stop at the text's end, and a search takes 0.14 ms per document of 300 code points at 8 states, so a page gives it hundreds of documents, or searches a few documents at a time in a worker, with `documents: 'window'`. For that, the option `highlight: 'whenFirstRead'` runs the highlighter on a document when a search or `kinds` first reads it, instead of on every document when the searcher is created, which takes about 9 s for 100,000 documents. A search's timings then leave the highlighter's time out, and reading `validation` runs the highlighter on every document that it hasn't run on yet.
 
 ### The comparisons that aren't the program
 
@@ -337,7 +412,7 @@ The interpreter rounds every f32 operation on its own, and says nothing about wh
 
 ### Regex search, the highlighter's loop and the searcher
 
-`bun test lab/json-search` runs 45 tests in 4 files without a GPU. The ones for the loops, in search.test.ts and searcher.test.ts:
+`bun test lab/json-search` runs 63 tests in 5 files without a GPU, 17 of them the demo page's, in demo.test.ts. The ones for the loops, in search.test.ts and searcher.test.ts:
 
 - **Regex search's loop against form (a).** For 274 patterns of up to 8 states with 8 texts each, at a capacity of 40 positions, the loop program gives the match count and the marks of lab/regex-search's `buildDataSearch` on the CPU executor: on the executor, as generated JavaScript, and through the WGSL interpreter. The interpreter also runs the shader in the compiled program's statement order, with the bits as f32 values, and stopping at the text's end, each on every third or fifth pattern. The patterns are lab/regex-search's edge cases, the measurement's patterns, random ones, and the capacities: patterns of exactly 8 states, and one with 16 classes and 32 class boundaries, `([aeimquyC]|[cekmsuAC]|…|a|c)+`. Every pattern gets an empty text, a text as long as the program holds, a longer one, and two that end with a match on the last position. The full program's outputs are compared with lab/regex-search's automaton simulator first, so a mistake shared by the loop and the full program fails too.
 - **16 and 32 states**, including patterns with exactly that many states: the loop as generated JavaScript and through the interpreter against form (a) at 24 positions.
@@ -345,7 +420,7 @@ The interpreter rounds every f32 operation on its own, and says nothing about wh
 - **The window and the first document**: a document outside the window writes no marks, a window past the documents writes nothing, and a run that starts at document 2 writes only that document's count and marks.
 - **The highlighter's loop**: on all 2,509 texts of the highlighter's own tests, `valid`, `firstErrorPosition`, `truncated`, `firstErrorKind` and the 512 display kinds equal the executor's for highlighter.ts, on the executor, as generated JavaScript and through the interpreter. The texts reach every error kind.
 - **The masked search**: over 103 texts, 6 patterns and 5 scopes, `buildMaskedSearch` finds what the automaton simulator finds in the code points of the searched kinds, with every kind searchable it gives form (a)'s outputs, and the masked loop gives `buildMaskedSearch`'s outputs as generated JavaScript and through the interpreter.
-- **The searcher on the CPU**: its validation and kinds against tests/json-highlighter/reference.ts on 64 texts, its counts and marks against the automaton simulator for 5 scopes and 4 patterns, a search of only the window's documents against the full one, the state capacity chosen per pattern, the results for a syntax error and for a pattern of 33 states, three requests of which only the newest gets a result, and the self check between generated JavaScript and the executor.
+- **The searcher on the CPU**: its validation and kinds against tests/json-highlighter/reference.ts on 64 texts, its counts and marks against the automaton simulator for 5 scopes and 4 patterns, a search of only the window's documents against the full one, the state capacity chosen per pattern, the results for a syntax error and for a pattern of 33 states, three requests of which only the newest gets a result, the self check between generated JavaScript and the executor, and a searcher that runs the highlighter when a document is first read against one that runs it at creation.
 - The hand-written kernel has no test under `bun test`. Its JavaScript twin, the loop over 32-bit rows, is tested, and the kernel itself is only checked on the GPU.
 
 In headless Chrome:
@@ -797,7 +872,7 @@ Method:
 - **One search** is `searcher.search({pattern, scope, window})` with a window of 64 documents in the middle of the batch: its time runs from the call until the promise resolves, with the copies of every document's match count and the window's marks. Consecutive searches use different patterns of the same capacity in turn: 6 patterns at 8 states, 2 at 16 and 2 at 32. The 32-state program is timed up to 10,000 documents.
 - Every match count of every search, and the marks, are compared with the plain JavaScript loop over 32-bit rows, masked by the table loop's kinds. The comparison takes about 0.75 ms, so a "back to back" search here starts that long after the one before it.
 - **Plain JavaScript** is plain-search.ts: the table loop, and per search RegExp on each run of searched characters. The first two runs used an earlier version of it that found the runs again in every search, 76 to 95 ms for 100,000 documents, which I replaced with one that keeps each scope's runs as strings. So the RegExp table comes from runs 3 to 5.
-- **The same programs on the CPU** are `createCpuSearcher` over the first 200 documents as generated JavaScript, and over the first 16 on the executor.
+- **The same programs on the CPU** are `createCpuSearcher` over the first 200 documents as generated JavaScript, and over the first 16 on the executor. Its search loops ran all 512 positions in these runs.
 - **The first stage's display shader**, every position written out, is compiled and timed at the end of each run, with the summary of every document and the kinds of 64 read back, as in that stage's display-window variant.
 
 ### Creating the searcher
@@ -896,6 +971,26 @@ Patterns, scopes and counts where RegExp's count differs from the program's for 
 | CPU executor | 16 | 2,910 (2,814 to 3,031) | 3,424 (3,264 to 3,633) | 10,648 (10,424 to 11,281) | 38,656 (37,333 to 41,148) |
 
 The Validate column is one run per process over the first documents, which includes building the program and the first, unoptimized calls. Warm and over all 100,000 documents, the highlighter's loop takes 90 µs per document as generated JavaScript, and 2.7 ms on the executor over 2,000 documents (results/review-many-1.json). These are the loop forms through this folder's CPU runner, which calls the executor once per position, and the executor checks every source cell's range on each call. The highlighter with every position written out takes 20.6 µs per document as generated JavaScript and 84 µs on the executor, see [The CPU baselines](#the-cpu-baselines), and form (a) with every position written out takes 1.9 ms per document on the executor at 8 states, see [The CPU, µs per document](#the-cpu-µs-per-document).
+
+Since these runs, the CPU searcher's search loops stop at the text's end, see [Where the CPU's time goes](#where-the-cpus-time-goes).
+
+### Where the CPU's time goes
+
+Cheng asked, before the demo page got its CPU toggle, whether the 24.5 s above are a horribly inefficient number, and whether the CPU version could be simplified to take less, without tuning it for one use. Measured in headless Chrome 155 on the same machine on October 13, 2026, on a page's thread with a clock of 5 µs, over 400 of the demo page's documents, 302 code points on average, best of 8 runs. The page that measured it was a scratch file and isn't in the repo:
+
+| | µs per document and search | Of that, the program's operations alone | The operations, ns each | The rest, ns per position |
+| --- | --- | --- | --- | --- |
+| 8 states, every position | 240 to 254 | 141 to 151 | 1.13 to 1.22 | 190 to 200 |
+| 8 states, stopping at the text's end | 143 to 147 | 83 to 88 | 1.13 to 1.20 | 194 to 198 |
+| 16 states, stopping at the text's end, 100 documents | 338 | 231 | 1.15 | 353 |
+| 32 states, stopping at the text's end, 20 documents | 1,832 | 1,662 | 2.41 | 560 |
+| The highlighter, every position | 93 | | | |
+
+- **About 60% of the time is the program's own arithmetic, and 40% is this folder's runner.** "The operations alone" calls each stage's generated functions as often as the runner does and nothing else. The rest is loop-program.ts's `run`: at every position it copies the item, the registers and the fields into the operations' array and the outputs back, 55 copies at 8 states, each through an object that says where the value comes from, with a `switch` on each write's kind.
+- **So the 24.5 s weren't horribly inefficient, and the operations cost about what generated JavaScript's arithmetic costs**: 1.15 ns each, a few float32 additions and products with their rounding. In Bun 1.4.3 the same operations take 0.81 to 0.92 ns each.
+- **The one cheap and general saving was the positions that hold no text.** The loops ran all 512 positions of documents that have 300 code points on average. `stopAtLength` already existed for the shader, with tests, and the CPU searcher now turns it on: 143 to 147 µs per document instead of 240 to 254. In the demo page's worker a search of all 100,000 documents took 24.2, 24.0 and 23.9 s before and 14.0, 14.1 and 13.9 s after, in the development build, and 14.2 to 14.3 s in the built site. The highlighter's loop has no such option: its step isn't written to be skipped past the text's end.
+- **Not done: a runner whose copies are generated statements too**, i.e. one generated function per stage that reads its item, registers and fields and writes its outputs itself. The operations alone are the floor for it: 83 to 88 µs per document, at most 1.7 times faster than the 143 to 147 µs. It would be a change to loop-program.ts for every loop program, not for this page. I stopped at the saving that was asked for.
+- **In Chrome the time didn't depend on which other programs had run**: the 8 states' times after the programs for 16 and 32 states had run in the same page are the upper ends of the ranges above, within 6% of the first ones. In Bun, where the lab's tests run, it did. With four runners for 8 states created one after the other in one process, a search that stops at the text's end took 137 µs per document on the first runner and 292 µs on the third, and one that runs every position 218 µs on the second and 444 µs on the fourth, while the operations alone stayed at 63 to 64 and 107 to 109 µs: the runner's copies got slower, not the program.
 
 ### What the searcher's tables say
 
@@ -1056,14 +1151,13 @@ The same page timed four ways to count a pattern's matches on one thread, and th
 
 ## Not done
 
-- The demo page itself. searcher.ts is the module for it.
 - **A cheaper step for 16 and 32 states.** Two ideas, neither tried: read a row by the bytes of the state word, `rowHits[class][from][byte][value]`, which takes one table read per state and byte instead of one per pair of states, 8 times fewer at 32 states, for tables of about a million cells per pattern; or write the reads of one sum as an inner loop in the shader instead of 32 statements.
 - The hand-written kernel as a searcher. It has no mask and no marks, and it isn't the repo's program.
 - The matching bracket on the GPU.
 - Any GPU other than an Apple M5 Max through Metal, any browser other than Chrome 155, and a page with a real display. Every run was headless.
 - Packing a document or its kinds into fewer bytes, e.g. 4 bits per display kind, which would cut the kinds from 205 MB to 26 MB for 100,000 documents.
 - More than 512 positions per document, and more than 100,000 documents. One dispatch holds 4,194,240 documents at a workgroup of 64.
-- The CPU searcher in a worker, or in slices between frames. It blocks for the whole search.
+- A CPU runner whose copies are generated statements too, see [Where the CPU's time goes](#where-the-cpus-time-goes).
 - The table loop in several workers, and workers after a pause. JSON.parse and RegExp in 1 to 16 workers are in [JavaScript in several workers](#javascript-in-several-workers).
 - Other workgroup sizes than 64.
 - Regex search's forms (b) and (c) as loops. Form (b) builds the pattern into the program, so every pattern would be a new shader.
@@ -1090,9 +1184,9 @@ The same page timed four ways to count a pattern's matches on one thread, and th
 What a page has to do with the searcher:
 
 - **Ask for a device that holds the documents.** `requestBatchDevice(bufferBytesFor(count))` asks for buffers of the size the batch needs, and `searcher.limits.maxDocuments` says how many fit. A device from `requestDevice()` without limits binds 128 MiB per buffer, 65,408 documents. 100,000 documents take 410 MB on the GPU, so 20,000 to 50,000 is a safer default.
-- **Run the self check once**, e.g. `await searcher.selfCheck(300)`, about 0.4 s, and use `createCpuSearcher` with a few hundred documents when it finds a mismatch or when the browser has no WebGPU.
+- **Without WebGPU, run `createCpuSearcher` in a worker**, with `highlight: 'whenFirstRead'` and a few documents per search, as demo-worker.ts does. `searcher.selfCheck(300)` compares a GPU's values with the CPU's in about 0.4 s. The demo page doesn't run it, since both programs hold only integers, see [The demo page](#the-demo-page).
 - **Derive the request from the page's state in each frame**: when the pattern or the scope differs from the result on screen, `search({pattern, scope, window})`, and when only the window moved, `search({pattern, scope, window, documents: 'window'})` and `kinds(window)`. A request that resolves to `undefined` was replaced by a newer one. A result is an input of a later frame, never of the frame that asked for it.
 - **Quote the time after a pause.** A page that searches once per keystroke gets the columns "after a pause" of the tables above, 2 to 3 times the back to back time.
-- **Show plain JavaScript's time next to the GPU's instead of claiming a faster search.** `createPlainSearch(texts)` gives the same answers on one thread, 15 to 24 ms per search of 100,000 documents on ordinary patterns. What the page can claim is that the repo's programs get there at all: the same programs take 24 s on the CPU.
-- **Say which program ran.** `result.states` is the capacity, 8, 16 or 32, and a search takes about 9 and 120 times as long at 16 and 32 as at 8. `searcher.prepare(16)` compiles a larger program before its first search, 0.13 to 0.27 s at 16 states and 0.6 to 1.0 s at 32.
+- **Show plain JavaScript's time next to the GPU's instead of claiming a faster search.** `createPlainSearch(texts)` gives the same answers on one thread, 15 to 24 ms per search of 100,000 documents on ordinary patterns. What the page can claim is that the repo's programs get there at all: the same search takes 14 s on the CPU.
+- **Show a larger program's time, or say which program ran.** `result.states` is the capacity, 8, 16 or 32, and a search takes about 9 and 120 times as long at 16 and 32 as at 8. The demo page shows each search's time next to RegExp's for the same pattern. `searcher.prepare(16)` compiles a larger program before its first search, 0.13 to 0.27 s at 16 states and 0.6 to 1.0 s at 32.
 - **A mark** is 0 outside a match, 1 inside one and 2 at a match's first code point, 512 per document of the window, indexed by code point, and so are the kinds. A character past U+FFFF is one code point and two UTF-16 units.
