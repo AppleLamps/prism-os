@@ -315,23 +315,10 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
   border-color: var(--copper-line);
   box-shadow: var(--shadow-1), 0 0 0 3px var(--copper-wash);
 }
-.surface pre, .surface textarea {
+.surface pre {
   margin: 0;
   font: var(--type-code);
   tab-size: 2;
-}
-/* A strip along a surface's bottom edge, for a result line. */
-.surface-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1) var(--space-4);
-  min-height: 40px;
-  padding: var(--space-2) var(--space-4);
-  border-top: 1px solid var(--rule);
-  font: var(--type-ui);
-  color: var(--ink-2);
 }
 
 /* Controls */
@@ -387,43 +374,11 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
 }
 .input::placeholder { color: var(--ink-3); }
 
-/* A select with its label to the left, in the label style. */
-.field {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-.select {
-  height: 28px;
-  padding: 0 28px 0 10px;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-2);
-  background: var(--sheet) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235f564d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 9px center;
-  color: var(--ink);
-  font: 500 13px/20px var(--font-sans);
-  font-variant-numeric: tabular-nums;
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  transition: border-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
-}
-.select:hover { border-color: var(--rule-strong); }
-.select:focus-visible {
-  outline: none;
-  border-color: var(--copper-line);
-  box-shadow: 0 0 0 3px var(--copper-wash);
-}
-/* iOS zooms the page when a focused control's text is under 16 px, and only iOS knows -webkit-touch-callout. */
-@supports (-webkit-touch-callout: none) {
-  .select { font-size: 16px; }
-}
-
-/* Under a finger a button and a select are 40 px tall, where a mouse gets 32 and 28 px. A link of the header or
-   the footer is one 20 px line of text, and padding above and below gives a finger 40 px of it without moving
-   anything: the header is 40 px tall and centers its links, and a link of the footer is inline, where padding
-   above and below takes no room. */
+/* Under a finger a button is 40 px tall, where a mouse gets 32 px. A link of the header or the footer is one 20 px
+   line of text, and padding above and below gives a finger 40 px of it without moving anything: the header is 40 px
+   tall and centers its links, and a link of the footer is inline, where padding above and below takes no room. */
 @media (pointer: coarse) {
-  .button, .select { height: 40px; }
+  .button { height: 40px; }
   .brand, .masthead nav a, .colophon a { padding-block: 10px; }
 }
 

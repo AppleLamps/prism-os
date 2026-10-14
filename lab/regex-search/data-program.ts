@@ -111,8 +111,8 @@ export function buildDataSearch(capacity: DataCapacity) {
 export type DataSearch = ReturnType<typeof buildDataSearch>
 export type SearchOutput = WireValues<DataSearch['output']>
 
-// Writes a compiled pattern into the cells of form (a) or form (c). Throws when the pattern doesn't fit, which the page
-// checks first with capacityErrors.
+// Writes a compiled pattern into the cells of form (a) or form (c). Throws when the pattern doesn't fit, which a caller
+// checks first with capacityErrors, e.g. lab/json-search's page.
 export function writePattern(values: Float32Array, {cells, capacity}: {cells: DataSearchCells, capacity: DataCapacity}, {automaton, partition}: CompiledPattern) {
   const errors = capacityErrors({pattern: '', automaton, partition}, capacity)
   if (errors.length > 0) throw new Error(errors.map(error => error.message).join('; '))

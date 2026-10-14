@@ -312,7 +312,8 @@ export type SearchCapacity = {states: number, classes: number, boundaries: numbe
 
 export type CapacityError = {reason: 'states' | 'classes' | 'boundaries', needed: number, capacity: number, message: string}
 
-// The named fallback for a pattern that doesn't fit: the page shows these messages and highlights nothing, in both forms.
+// The named fallback for a pattern that doesn't fit: a page shows a sentence per error and searches nothing, e.g.
+// lab/json-search's "This pattern needs 40 states, and the largest search program holds 32."
 export function capacityErrors(compiled: CompiledPattern, capacity: SearchCapacity): CapacityError[] {
   const needs = [
     {reason: 'states', needed: compiled.automaton.stateCount, capacity: capacity.states, noun: 'states'},
