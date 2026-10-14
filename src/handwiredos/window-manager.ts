@@ -1690,9 +1690,9 @@ const valueListKeyNames = new Map<string, ValueListKey>([
 ])
 
 // What a frame does to the keyboard focus of the note, Notes' text field: 'focus'
-// gives it to the note, 'blur' takes it away, and null leaves it. The note's
-// keyboard focus follows the focused window, like a text field in a window of a
-// desktop:
+// and 'focus with the caret at the end' give it to the note, 'blur' takes it away,
+// and null leaves it. The note's keyboard focus follows the focused window, like a
+// text field in a window of a desktop:
 // - While Notes isn't the focused window, the note has no keyboard focus. The frame
 //   takes it away, e.g. after a press on another window, or after Notes was
 //   minimized or closed, and the Tab key skips the note, see its tabIndex in
@@ -1703,6 +1703,13 @@ const valueListKeyNames = new Map<string, ValueListKey>([
 //   in the text is the browser's own: it focuses the note and places the caret, and
 //   the frame finds the note focused and leaves it alone. Otherwise the frame calls
 //   focus(), which keeps the caret and the selection where they were.
+// - The first keyboard focus that the note ever gets, when the frame gives it, comes
+//   with the caret at the end of the text, 'focus with the caret at the end'. A text
+//   field that never had the keyboard focus holds its caret before its first
+//   character, so a letter typed after a press on Notes' title bar landed before the
+//   note's first word, e.g. "xTODO: this week". Once the note has had the keyboard
+//   focus, the caret or the selection is the visitor's, e.g. placed by a press in
+//   the text or moved by an arrow key, and every later focus() keeps it.
 // - Except after a press outside every window, e.g. on the desk. The browser takes
 //   the keyboard focus away there, as at a press outside a text field on any page,
 //   and the frame leaves it so, while Notes stays the focused window.
@@ -1716,14 +1723,18 @@ const valueListKeyNames = new Map<string, ValueListKey>([
 export function noteFocusChange(frame: {
   notesIsFocusedWindow: boolean
   noteHasKeyboardFocus: boolean
+  // Whether the note has had the keyboard focus at any time up to this frame, from
+  // the browser, e.g. at a press in the text, or from an earlier frame.
+  noteHasHadKeyboardFocus: boolean
   // Whether a press or a release happened since the last frame.
   pressedOrReleased: boolean
   // The last press: whether a mouse made it, and whether it was outside every window,
   // where Notes' dock item counts as a part of the Notes window.
   lastPress: {byMouse: boolean, outsideEveryWindow: boolean}
-}): 'focus' | 'blur' | null {
+}): 'focus' | 'focus with the caret at the end' | 'blur' | null {
   if (!frame.notesIsFocusedWindow) return frame.noteHasKeyboardFocus ? 'blur' : null
-  return !frame.noteHasKeyboardFocus && frame.pressedOrReleased && frame.lastPress.byMouse && !frame.lastPress.outsideEveryWindow ? 'focus' : null
+  if (frame.noteHasKeyboardFocus || !frame.pressedOrReleased || !frame.lastPress.byMouse || frame.lastPress.outsideEveryWindow) return null
+  return frame.noteHasHadKeyboardFocus ? 'focus' : 'focus with the caret at the end'
 }
 
 function mountWindowManager(document: Document, window: Window) {
@@ -1811,6 +1822,12 @@ function mountWindowManager(document: Document, window: Window) {
   // whether a mouse made it, and whether it was outside every window, e.g. on the
   // desk, as the browser hit-tested it.
   let lastPress = {byMouse: false, outsideEveryWindow: true}
+  // Whether the note has had the keyboard focus so far, see noteFocusChange. Each
+  // frame reads which element has the keyboard focus, and the focusin listener below
+  // requests a frame whenever the keyboard focus arrives at an element, so the frame
+  // after the browser gave the note the keyboard focus records it, e.g. after a
+  // press in the text.
+  let noteHasHadKeyboardFocus = false
 
   // How many more frames the page runs by itself after it loads. The chart in
   // Monitor's footer shows the program's time per frame over the last 60 frames,
@@ -1841,9 +1858,10 @@ function mountWindowManager(document: Document, window: Window) {
     const viewportHeight = document.documentElement.clientHeight
     const valueListScrollTop = valueList.readScrollTop()
     const noteHasKeyboardFocus = document.activeElement === domCache.note
-    // Handle inputs. The pointer events are queued in the machine already. A press
-    // since the last frame replaces what the note's keyboard focus knows of the last
-    // one.
+    // Handle inputs. The pointer events are queued in the machine already. A note
+    // that has the keyboard focus now has had it from now on, and a press since the
+    // last frame replaces what the note's keyboard focus knows of the last one.
+    if (noteHasKeyboardFocus) noteHasHadKeyboardFocus = true
     const pressedOrReleased = events.press !== null || events.released
     if (events.press !== null) {
       const {target} = events.press
@@ -1916,8 +1934,16 @@ function mountWindowManager(document: Document, window: Window) {
     // Side effects, after every DOM write. The note's keyboard focus follows the
     // focused window, see noteFocusChange. The focus call can't scroll a box: it
     // passes preventScroll, and the boxes around the note clip without a scroll
-    // position.
-    switch (noteFocusChange({notesIsFocusedWindow, noteHasKeyboardFocus, pressedOrReleased, lastPress})) {
+    // position. The caret is the browser's state like the keyboard focus, so the
+    // frame writes it here too, before the focus call, which keeps it. The frame
+    // that gives the note its first keyboard focus also records that the note has had
+    // it, so the record doesn't depend on a later frame finding the note focused.
+    switch (noteFocusChange({notesIsFocusedWindow, noteHasKeyboardFocus, noteHasHadKeyboardFocus, pressedOrReleased, lastPress})) {
+      case 'focus with the caret at the end':
+        domCache.note.setSelectionRange(domCache.note.textLength, domCache.note.textLength)
+        domCache.note.focus({preventScroll: true})
+        noteHasHadKeyboardFocus = true
+        break
       case 'focus':
         domCache.note.focus({preventScroll: true})
         break

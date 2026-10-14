@@ -1641,7 +1641,8 @@ test('a window is visible while it is drawn, and hidden once it has landed in th
 
 test("the note's keyboard focus follows the focused window: a frame focuses the note after a mouse press that leaves Notes focused, and blurs it while Notes isn't", () => {
   const mouseOnAWindow = {byMouse: true, outsideEveryWindow: false}
-  const frame = {notesIsFocusedWindow: true, noteHasKeyboardFocus: false, pressedOrReleased: true, lastPress: mouseOnAWindow}
+  // The note has had the keyboard focus before, e.g. the visitor has typed in it.
+  const frame = {notesIsFocusedWindow: true, noteHasKeyboardFocus: false, noteHasHadKeyboardFocus: true, pressedOrReleased: true, lastPress: mouseOnAWindow}
   // A press on Notes' title bar, or the release that opens Notes from the dock: Notes
   // is the focused window, the note isn't focused yet, and a mouse did it.
   assert.equal(noteFocusChange(frame), 'focus')
@@ -1662,13 +1663,38 @@ test("the note's keyboard focus follows the focused window: a frame focuses the 
   // it got it and whatever the last press was.
   for (const pressedOrReleased of [true, false]) {
     for (const lastPress of [mouseOnAWindow, {byMouse: false, outsideEveryWindow: true}]) {
-      assert.equal(noteFocusChange({notesIsFocusedWindow: false, noteHasKeyboardFocus: true, pressedOrReleased, lastPress}), 'blur')
-      assert.equal(noteFocusChange({notesIsFocusedWindow: false, noteHasKeyboardFocus: false, pressedOrReleased, lastPress}), null)
+      assert.equal(noteFocusChange({notesIsFocusedWindow: false, noteHasKeyboardFocus: true, noteHasHadKeyboardFocus: true, pressedOrReleased, lastPress}), 'blur')
+      assert.equal(noteFocusChange({notesIsFocusedWindow: false, noteHasKeyboardFocus: false, noteHasHadKeyboardFocus: true, pressedOrReleased, lastPress}), null)
     }
   }
   // The page's first frame: no press yet, so nothing is focused, also if Notes were
   // the focused window at load.
-  assert.equal(noteFocusChange({notesIsFocusedWindow: true, noteHasKeyboardFocus: false, pressedOrReleased: false, lastPress: {byMouse: false, outsideEveryWindow: true}}), null)
+  assert.equal(noteFocusChange({notesIsFocusedWindow: true, noteHasKeyboardFocus: false, noteHasHadKeyboardFocus: false, pressedOrReleased: false, lastPress: {byMouse: false, outsideEveryWindow: true}}), null)
+})
+
+test("the first keyboard focus that a frame gives the note comes with the caret at the end of the text, and every later one keeps the visitor's caret", () => {
+  const mouseOnAWindow = {byMouse: true, outsideEveryWindow: false}
+  const frame = {notesIsFocusedWindow: true, noteHasKeyboardFocus: false, noteHasHadKeyboardFocus: false, pressedOrReleased: true, lastPress: mouseOnAWindow}
+  // The first press on Notes' title bar after the page loaded: the note never had
+  // the keyboard focus, so its caret is before its first character, and a typed
+  // letter would land before the note's first word.
+  assert.equal(noteFocusChange(frame), 'focus with the caret at the end')
+  // The note has had the keyboard focus, from an earlier frame or from the browser,
+  // e.g. at a press in the text: the caret or the selection is the visitor's, and
+  // the frame only gives the keyboard focus back.
+  assert.equal(noteFocusChange({...frame, noteHasHadKeyboardFocus: true}), 'focus')
+  // A press in the text as the note's first keyboard focus: the browser focused the
+  // note and placed the caret, and the frame leaves both alone.
+  assert.equal(noteFocusChange({...frame, noteHasKeyboardFocus: true, noteHasHadKeyboardFocus: true}), null)
+  // Whether the note has had the keyboard focus changes nothing where the frame
+  // gives none: after a finger, after a press on the desk, without a press, and
+  // while Notes isn't the focused window.
+  for (const noteHasHadKeyboardFocus of [false, true]) {
+    assert.equal(noteFocusChange({...frame, noteHasHadKeyboardFocus, lastPress: {byMouse: false, outsideEveryWindow: false}}), null)
+    assert.equal(noteFocusChange({...frame, noteHasHadKeyboardFocus, lastPress: {byMouse: true, outsideEveryWindow: true}}), null)
+    assert.equal(noteFocusChange({...frame, noteHasHadKeyboardFocus, pressedOrReleased: false}), null)
+    assert.equal(noteFocusChange({...frame, noteHasHadKeyboardFocus, notesIsFocusedWindow: false}), null)
+  }
 })
 
 function photoCenter(machine: Machine, values: Float32Array, item: number) {
