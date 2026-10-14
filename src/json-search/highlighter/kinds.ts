@@ -3,19 +3,11 @@
 // shown as, and the kinds of the first error. This file holds only names and numbers. The program's tables are in
 // tables.ts, which the reference doesn't read.
 
-// The program's two limits. Both are fixed while building, and buildHighlighter takes them as a parameter.
-export type Limits = {
-  // The program reads up to this many code points of a text. Past the capacity, it reads only the code points that
-  // fit and reports tooLong.
-  capacity: number
-  // Containers nest up to this depth. An opening bracket at the maximum depth is the error tooDeep.
-  maximumDepth: number
-}
-// The limits of a call without the parameter: 512 code points, and depth 16, where an opening bracket that would make
-// the depth 17 is tooDeep.
+// The program reads up to this many code points of a text. Past it, the program reads only the first 512 and reports
+// tooLong.
 export const capacity = 512
+// Containers nest up to this depth. An opening bracket that would make the depth 17 is the error tooDeep.
 export const maximumDepth = 16
-export const defaultLimits: Limits = {capacity, maximumDepth}
 
 // What a character is shown as. `key` is a string character in a key position, e.g. the "id" of {"id": 1}, found by the
 // grammar before the first error. `pastEnd` is a cell after the text.
@@ -50,12 +42,11 @@ export const errorKinds = [
   'mismatchedBracket',
   // Anything but whitespace after the top-level value, e.g. the second 1 of 1 1, or the ] of 1].
   'extraAfterValue',
-  // The named fallback for depth: an opening bracket at the maximum depth, e.g. at depth 16 with the default limits.
+  // The named fallback for depth: an opening bracket at depth 16.
   'tooDeep',
   // The text ends inside a token or before the value is complete, e.g. [1, or "abc.
   'unexpectedEnd',
-  // The named fallback for capacity: the text holds more code points than the capacity, e.g. more than 512, and no
-  // error came before the first code point that doesn't fit.
+  // The named fallback for capacity: the text holds more than 512 code points, and no error came before the 512th.
   'tooLong',
 ] as const
 type ErrorKind = typeof errorKinds[number]

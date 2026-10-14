@@ -1,8 +1,7 @@
-// A JSON highlighter as one numeric program. JavaScript writes up to `capacity` code points, e.g. 512, the text's
-// length and the caret into cells, and the program computes, for every code point, what it's shown as, then the first
-// error's position and kind, whether the text is too long, whether the first error is nesting past the maximum depth,
-// and the bracket that matches the bracket at the caret. The capacity and the maximum depth are parameters of
-// buildHighlighter, and the numbers in the comments below are for the defaults, 512 and 16.
+// A JSON highlighter as one numeric program. JavaScript writes up to 512 code points, the text's length and the caret
+// into cells, and the program computes, for every code point, what it's shown as, then the first error's position and
+// kind, whether the text is too long, whether the first error is nesting past the maximum depth, and the bracket that
+// matches the bracket at the caret.
 //
 // The stages, each over 513 positions, where position 512 is the end of the text, or the 513th code point of a longer
 // text:
@@ -22,11 +21,11 @@
 import {type Circuit, type Terms, type Wire, emitCompare, invariant} from '../../runtime/numeric-ui-core.ts'
 import {type WireValues, constant, createSourceTable, input, list} from '../../runtime/cells.ts'
 import {brentKungPrefix, sklanskyPrefix} from '../../runtime/prefix-networks.ts'
-import {type Limits, defaultLimits, errorKind} from './kinds.ts'
+import {capacity, errorKind} from './kinds.ts'
 import {
-  bracketTable, classCount, classTable, closerTable, contextCount, depthChangeTable, depthTables, displayTable, eventCount,
-  grammarErrorTable, grammarNextTable, grammarStateCount, grammarStates, grammarTokenTable, lexerErrorKindTable,
-  lexerEventTable, lexerNextTable, lexerStateCount, openerTable, symbolCount,
+  bracketTable, classCount, classTable, closerTable, contextCount, depthChangeTable, depthClassTable, displayTable, eventCount,
+  grammarErrorTable, grammarNextTable, grammarStateCount, grammarStates, grammarTokenTable, levelWeightTable, lexerErrorKindTable,
+  lexerEventTable, lexerNextTable, lexerStateCount, objectWeightTable, openerTable, symbolCount,
 } from './tables.ts'
 
 // The largest text length the host writes. A longer text writes this length, which still reads as too long.
@@ -38,8 +37,9 @@ const tableCells = (values: readonly number[]) => {
   return values.map(value => constant(value, range, {grid: 1}))
 }
 
-function highlighterCells({capacity, maximumDepth}: Limits) {
-  const {objectWeight, levelWeight, depthClass} = depthTables(maximumDepth)
+// The cells are made in a function, so that a module that imports this file and builds no program, e.g. JSON search's
+// page, makes none of them when it loads.
+function highlighterCells() {
   return {
     // A code point per cell, and -1 after the text.
     codePoints: list(capacity, () => input([-1, 0x10ffff], {initial: -1, grid: 1})),
@@ -59,9 +59,9 @@ function highlighterCells({capacity, maximumDepth}: Limits) {
       opener: tableCells(openerTable),
       closer: tableCells(closerTable),
       bracket: tableCells(bracketTable),
-      objectWeight: tableCells(objectWeight),
-      levelWeight: tableCells(levelWeight),
-      depthClass: tableCells(depthClass),
+      objectWeight: tableCells(objectWeightTable),
+      levelWeight: tableCells(levelWeightTable),
+      depthClass: tableCells(depthClassTable),
       grammarNext: tableCells(grammarNextTable),
       grammarError: tableCells(grammarErrorTable),
       display: tableCells(displayTable),
@@ -121,19 +121,14 @@ const onGrid = (circuit: Circuit, wire: Wire) => {
   return wire
 }
 
-export function buildHighlighter(form: ScanForm = 'loop', limits: Limits = defaultLimits) {
-  const {capacity, maximumDepth} = limits
-  invariant(Number.isInteger(capacity) && capacity >= 1 && capacity < lengthLimit, `the capacity must be an integer from 1 to ${lengthLimit - 1}, got ${capacity}`)
-  // At depth 1 the same table entry would have to mean both "inside a top-level container" and "at the maximum depth".
-  // Past depth 24 the container kinds no longer fit in one FP32 integer, e.g. 2^24 + 1 rounds to 2^24.
-  invariant(Number.isInteger(maximumDepth) && maximumDepth >= 2 && maximumDepth <= 24, `the maximum depth must be an integer from 2 to 24, got ${maximumDepth}`)
+export function buildHighlighter(form: ScanForm = 'loop') {
   const table = createSourceTable()
-  const cells = table.declare(highlighterCells(limits))
+  const cells = table.declare(highlighterCells())
   const circuit = table.createCircuit()
   const tables = cells.tables
   const positions = capacity + 1
-  // The positions whose states come out of the scan: a power of two by default, so the prefix networks have their
-  // usual shapes. Position 512 gets one more read after the scan.
+  // The positions whose states come out of the scan: a power of two, so the prefix networks have their usual shapes.
+  // Position 512 gets one more read after the scan.
   const scanned = capacity
 
   // Stage 1. JS: truncated = textLength > 512, then classOf(codePoint) per cell, and end or truncatedEnd at position 512.
@@ -163,9 +158,7 @@ export function buildHighlighter(form: ScanForm = 'loop', limits: Limits = defau
   // code stays within ±511 × 2^15. The difference with a level weight of up to 2^15 stays below 2^24 at positions 1 to
   // 510, where emitCompare builds integer bits, 2 operations each. At position 511 it can reach exactly 2^24, and
   // emitCompare builds a sign cascade of 17 operations, which is also exact. The tests count both constructions with
-  // circuit.roundingPoints(). With other limits, every comparison is an integer bit while capacity × 2^(maximumDepth − 1)
-  // is below 2^24, e.g. 2,048 code points at depth 13. Past that, the positions from 2^(25 − maximumDepth) − 1 on get
-  // sign cascades, e.g. 1,537 of the 2,047 comparisons at 2,048 code points and depth 16, with the same outputs.
+  // circuit.roundingPoints().
   const objectWeights = events.slice(0, scanned).map((event, position) =>
     onGrid(circuit, read(circuit, [[depthBefore[position]!, eventCount], [event, 1]], 0, tables.objectWeight, 'zero')))
   const codeBefore = runningTotalsBefore(circuit, form, objectWeights)
@@ -243,7 +236,7 @@ export function buildHighlighter(form: ScanForm = 'loop', limits: Limits = defau
   const output = {displayKinds, firstErrorPosition, firstErrorKind, valid, truncated, depthExceeded, caretBracket, matchingBracket}
   // Wires between stages, for measuring a stage on its own.
   const stages = {events, grammarAfter}
-  return {cells, limits, output, stages, ...table.finish()}
+  return {cells, output, stages, ...table.finish()}
 }
 
 type HighlighterProgram = ReturnType<typeof buildHighlighter>
@@ -253,7 +246,6 @@ export type HighlighterOutput = WireValues<HighlighterProgram['output']>
 // Writes the text's first 512 code points, -1 after them, the text's length and the caret, a code point index clamped to
 // 0..513.
 export function writeText(cells: HighlighterProgram['cells'], source: Float32Array, text: string, caret: number) {
-  const capacity = cells.codePoints.length
   let length = 0
   for (const character of text) {
     if (length < capacity) source[cells.codePoints[length]!] = character.codePointAt(0)!
@@ -268,9 +260,8 @@ export function writeText(cells: HighlighterProgram['cells'], source: Float32Arr
 // the outputs. The program keeps no state, so it's compiled for its outputs only, once. The tests in
 // tests/json-search/highlighter run every form of the program through this host.
 /** @public */
-export function createHighlighterMachine(form: ScanForm = 'loop', limits: Limits = defaultLimits) {
-  const built = buildHighlighter(form, limits)
-  const {capacity} = limits
+export function createHighlighterMachine(form: ScanForm = 'loop') {
+  const built = buildHighlighter(form)
   const {output} = built
   const program = built.circuit.compileTensorProgram([
     ...output.displayKinds, output.firstErrorPosition, output.firstErrorKind, output.valid, output.truncated, output.depthExceeded,

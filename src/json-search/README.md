@@ -4,7 +4,7 @@
 
 Cheng asked: "I was wondering if there's a point where regex search or json highlighter, or a combination of these into the same app, is clearly more performant from the gpu parallelism? Then we can make a demo where we search a ton of jsons or something". This folder answers that with measurements, and holds the pieces a demo page needs. It started as lab/json-search on October 13, 2026. On October 14, 2026 the page became one of the repo's apps, and what the page and its worker load moved here, into src/json-search: regex search's four modules are in regex/, and the JSON highlighter's three in highlighter/. The page and its stylesheet are assets/json-search.html and assets/json-search.css, and the tests, with the helpers that only tests and measurements load, are in tests/json-search. The measurement scripts, their pages and the raw results stayed in [lab/json-search](../../lab/json-search/README.md), so a path below that starts with lab/json-search names one of those.
 
-Both are fixed numeric programs. The JSON highlighter ([highlighter/](highlighter/README.md)), built with its default limits, reads up to 512 code points from cells and returns what each character is shown as, where the first error is, and whether the text is valid. Regex search ([lab/regex-search](../../lab/regex-search/README.md), with its code in regex/), in its form (a), reads a text and a pattern, both from cells, and returns the pattern's non-overlapping matches, leftmost and then longest. On the CPU executor one document takes 80 µs for the highlighter and 2 to 5 ms for a search of a pattern of up to 16 states, whatever the text, and a round trip to the GPU alone takes 0.6 ms or more, so one document is no case for a GPU. Many documents are: every document runs the same operations, and no document reads another one's values.
+Both are fixed numeric programs. The JSON highlighter ([highlighter/](highlighter/README.md)) reads up to 512 code points from cells and returns what each character is shown as, where the first error is, and whether the text is valid. Regex search ([lab/regex-search](../../lab/regex-search/README.md), with its code in regex/), in its form (a), reads a text and a pattern, both from cells, and returns the pattern's non-overlapping matches, leftmost and then longest. On the CPU executor one document takes 80 µs for the highlighter and 2 to 5 ms for a search of a pattern of up to 16 states, whatever the text, and a round trip to the GPU alone takes 0.6 ms or more, so one document is no case for a GPU. Many documents are: every document runs the same operations, and no document reads another one's values.
 
 The folder was built in three stages:
 
@@ -198,7 +198,7 @@ From the repo root:
 
 ```sh
 bun start                                        # the demo site, with the demo page at /json-search/
-bun test tests/json-search lab/json-search       # 203 tests in 9 files, about 1 minute, no GPU
+bun test tests/json-search lab/json-search       # 195 tests in 9 files, about 1 minute, no GPU
 bun run check                                    # type-check and lint, with the rest of the repo
 bunx tsc -p lab/json-search                      # type-check the measurement scripts alone, with what they import
 bun lab/json-search/report.ts sizes              # the first stage's two programs and their shaders, with and without guards
@@ -486,7 +486,7 @@ The interpreter rounds every f32 operation on its own, and says nothing about wh
 
 ### Regex search, the highlighter's loop and the searcher
 
-`bun test lab/json-search` runs 175 tests in 7 files without a GPU, 21 of them the demo page's, in demo.test.ts. The ones for the loops, in search.test.ts and searcher.test.ts:
+`bun test tests/json-search lab/json-search` runs 195 tests in 9 files without a GPU, 21 of them the demo page's, in demo.test.ts. The ones for the loops, in search.test.ts and searcher.test.ts:
 
 - **Regex search's loop against form (a).** For 274 patterns of up to 8 states with 8 texts each, at a capacity of 40 positions, the loop program gives the match count and the marks of regex/data-program.ts's `buildDataSearch` on the CPU executor: on the executor, as generated JavaScript, and through the WGSL interpreter. The interpreter also runs the shader in the compiled program's statement order, with the bits as f32 values, and stopping at the text's end, each on every third or fifth pattern. The patterns are regex search's edge cases, the measurement's patterns, random ones, and the capacities: patterns of exactly 8 states, and one with 16 classes and 32 class boundaries, `([aeimquyC]|[cekmsuAC]|…|a|c)+`. Every pattern gets an empty text, a text as long as the program holds, a longer one, and two that end with a match on the last position. The full program's outputs are compared with lab/regex-search's automaton simulator first, so a mistake shared by the loop and the full program fails too.
 - **16 and 32 states**, including patterns with exactly that many states: the loop as generated JavaScript and through the interpreter against form (a) at 24 positions.

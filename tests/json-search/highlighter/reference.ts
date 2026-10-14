@@ -10,10 +10,9 @@
 // - A string is shown as a key when the parser accepts it in a key position before the first error.
 // - Brackets pair up as with a stack of openers, whatever their kinds, and a closer with an empty stack pairs with nothing.
 // - The bracket at the caret is the code point before the caret when it's a bracket, otherwise the code point at the caret.
-// - Text past the capacity, e.g. past 512 code points, isn't read, and the error is tooLong unless an error comes
-//   first. An opening bracket at the maximum depth, e.g. at depth 16, is the error tooDeep, and depthExceeded is 1 only
-//   when tooDeep is the first error.
-import {type Limits, defaultLimits, displayKind, errorKind} from '../../../src/json-search/highlighter/kinds.ts'
+// - Text past 512 code points isn't read, and the error is tooLong unless an error comes first. An opening bracket at
+//   depth 16 is the error tooDeep, and depthExceeded is 1 only when tooDeep is the first error.
+import {capacity, displayKind, errorKind, maximumDepth} from '../../../src/json-search/highlighter/kinds.ts'
 
 export type HighlightResult = {
   displayKinds: number[]
@@ -63,7 +62,7 @@ function scanNumber(codePoints: readonly number[], start: number) {
   return stop(null)
 }
 
-function scan(codePoints: readonly number[], capacity: number) {
+function scan(codePoints: readonly number[]) {
   const length = codePoints.length
   const kinds = Array<number>(capacity).fill(displayKind.pastEnd)
   const tokens: Token[] = []
@@ -154,7 +153,7 @@ function scan(codePoints: readonly number[], capacity: number) {
 }
 
 // The grammar between tokens, up to the first lexer error. Returns the first grammar error and the key strings.
-function parse(tokens: readonly Token[], limit: number, maximumDepth: number) {
+function parse(tokens: readonly Token[], limit: number) {
   const stack: ('object' | 'array')[] = []
   let expected: 'value' | 'valueOrClose' | 'keyOrClose' | 'key' | 'colon' | 'commaOrClose' | 'end' = 'value'
   const keys: Token[] = []
@@ -214,13 +213,13 @@ function parse(tokens: readonly Token[], limit: number, maximumDepth: number) {
   return {error: null, keys, expected}
 }
 
-export function highlightReference(text: string, caret: number, {capacity, maximumDepth}: Limits = defaultLimits): HighlightResult {
+export function highlightReference(text: string, caret: number): HighlightResult {
   const allCodePoints = Array.from(text, character => character.codePointAt(0)!)
   const truncated = allCodePoints.length > capacity
   const codePoints = allCodePoints.slice(0, capacity)
   const length = codePoints.length
-  const {kinds, tokens, firstLexerError, endsInsideToken} = scan(codePoints, capacity)
-  const {error: grammarError, keys, expected} = parse(tokens, firstLexerError?.position ?? length, maximumDepth)
+  const {kinds, tokens, firstLexerError, endsInsideToken} = scan(codePoints)
+  const {error: grammarError, keys, expected} = parse(tokens, firstLexerError?.position ?? length)
 
   let firstError: Found | null = grammarError ?? firstLexerError
   if (firstError === null && truncated) firstError = {position: capacity, kind: errorKind.tooLong}
@@ -248,8 +247,7 @@ export function highlightReference(text: string, caret: number, {capacity, maxim
   }
   const isBracket = (position: number) =>
     position >= 0 && position < length && kinds[position] === displayKind.punctuation && is(codePoints[position], '{}[]')
-  // A caret past the capacity, e.g. past code point 512, has neither neighbor among the code points read, so no
-  // bracket is at the caret.
+  // A caret past code point 512 has neither neighbor among the 512 code points read, so no bracket is at the caret.
   const clampedCaret = Math.min(Math.max(0, caret), capacity + 1)
   const caretBracket = isBracket(clampedCaret - 1) ? clampedCaret - 1 : isBracket(clampedCaret) ? clampedCaret : -1
 
