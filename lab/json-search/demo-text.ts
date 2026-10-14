@@ -129,25 +129,26 @@ function regExpPart(time: RegExpTime | null): Line {
   if (time === null) return []
   switch (time.kind) {
     case 'measured':
-      return [' RegExp: ', strong(duration(time.ms)), '.']
+      return [' Native RegExp: ', strong(duration(time.ms)), '.']
     case 'stopped':
-      return [' RegExp: ', strong(`more than ${duration(time.afterMs)}`), '.']
+      return [' Native RegExp: ', strong(`more than ${duration(time.afterMs)}`), '.']
   }
 }
 
 // The line of numbers for a search: how many documents have a match, how long the search program took where it ran,
-// and how long RegExp took for the same search on one thread, once the page has measured it. A search on the CPU
-// answers a few documents at a time, in the documents' order, and until it has answered for all of them the line says
-// how far it is, e.g. "1,304 of the first 12,400 documents match. 3.1 s on the CPU so far."
+// and how long RegExp took for the same search on one thread, once the page has measured it. The line names both, "This
+// program" and "Native RegExp", because "16 s on the CPU" alone reads as the time of the browser's own RegExp. A search
+// on the CPU answers a few documents at a time, in the documents' order, and until it has answered for all of them the
+// line says how far it is, e.g. "1,304 of the first 12,400 documents match. This program: 3.1 s on the CPU so far."
 export function resultLine(result: {withMatch: number, searched: number, ms: number}, documentCount: number, where: Where, regExpTime: RegExpTime | null): Line {
   const place = where === 'gpu' ? 'on the GPU' : 'on the CPU'
   const regExp = regExpPart(regExpTime)
   const verb = result.withMatch === 1 ? 'matches' : 'match'
   if (result.searched < documentCount) {
-    return [strong(count(result.withMatch)), ` of the first ${count(result.searched)} documents ${verb}. `, strong(duration(result.ms)), ` ${place} so far.`, ...regExp]
+    return [strong(count(result.withMatch)), ` of the first ${count(result.searched)} documents ${verb}. This program: `, strong(duration(result.ms)), ` ${place} so far.`, ...regExp]
   }
-  if (result.withMatch === 0) return [`None of the ${count(documentCount)} documents matches. `, strong(duration(result.ms)), ` ${place}.`, ...regExp]
-  return [strong(count(result.withMatch)), ` of ${count(documentCount)} documents ${verb}. `, strong(duration(result.ms)), ` ${place}.`, ...regExp]
+  if (result.withMatch === 0) return [`None of the ${count(documentCount)} documents matches. This program: `, strong(duration(result.ms)), ` ${place}.`, ...regExp]
+  return [strong(count(result.withMatch)), ` of ${count(documentCount)} documents ${verb}. This program: `, strong(duration(result.ms)), ` ${place}.`, ...regExp]
 }
 
 // A run of a document's characters that are drawn the same way.

@@ -255,16 +255,16 @@ describe('the page\'s sentences', () => {
 
   test('says how many documents match, how long the search took where it ran, and RegExp\'s time once it is measured', () => {
     const measured = (ms: number) => ({kind: 'measured', ms}) as const
-    expect(text(resultLine({withMatch: 10_541, searched: 100_000, ms: 22.6}, 100_000, 'gpu', measured(23.4)))).toBe('10,541 of 100,000 documents match. 23 ms on the GPU. RegExp: 23 ms.')
-    expect(text(resultLine({withMatch: 10_541, searched: 100_000, ms: 22.6}, 100_000, 'gpu', null))).toBe('10,541 of 100,000 documents match. 23 ms on the GPU.')
-    expect(text(resultLine({withMatch: 1, searched: 20_000, ms: 8.14}, 20_000, 'gpu', measured(2143)))).toBe('1 of 20,000 documents matches. 8.1 ms on the GPU. RegExp: 2.1 s.')
-    expect(text(resultLine({withMatch: 0, searched: 65_000, ms: 871}, 65_000, 'gpu', measured(28.9)))).toBe('None of the 65,000 documents matches. 871 ms on the GPU. RegExp: 29 ms.')
-    expect(text(resultLine({withMatch: 10_541, searched: 100_000, ms: 15_820}, 100_000, 'cpu', measured(23.4)))).toBe('10,541 of 100,000 documents match. 16 s on the CPU. RegExp: 23 ms.')
+    expect(text(resultLine({withMatch: 10_541, searched: 100_000, ms: 22.6}, 100_000, 'gpu', measured(23.4)))).toBe('10,541 of 100,000 documents match. This program: 23 ms on the GPU. Native RegExp: 23 ms.')
+    expect(text(resultLine({withMatch: 10_541, searched: 100_000, ms: 22.6}, 100_000, 'gpu', null))).toBe('10,541 of 100,000 documents match. This program: 23 ms on the GPU.')
+    expect(text(resultLine({withMatch: 1, searched: 20_000, ms: 8.14}, 20_000, 'gpu', measured(2143)))).toBe('1 of 20,000 documents matches. This program: 8.1 ms on the GPU. Native RegExp: 2.1 s.')
+    expect(text(resultLine({withMatch: 0, searched: 65_000, ms: 871}, 65_000, 'gpu', measured(28.9)))).toBe('None of the 65,000 documents matches. This program: 871 ms on the GPU. Native RegExp: 29 ms.')
+    expect(text(resultLine({withMatch: 10_541, searched: 100_000, ms: 15_820}, 100_000, 'cpu', measured(23.4)))).toBe('10,541 of 100,000 documents match. This program: 16 s on the CPU. Native RegExp: 23 ms.')
     // A search on the CPU that hasn't answered for every document yet says how far it is.
-    expect(text(resultLine({withMatch: 1304, searched: 12_400, ms: 3120}, 100_000, 'cpu', measured(23.4)))).toBe('1,304 of the first 12,400 documents match. 3.1 s on the CPU so far. RegExp: 23 ms.')
-    expect(text(resultLine({withMatch: 0, searched: 2, ms: 0.4}, 100_000, 'cpu', null))).toBe('0 of the first 2 documents match. 0.4 ms on the CPU so far.')
+    expect(text(resultLine({withMatch: 1304, searched: 12_400, ms: 3120}, 100_000, 'cpu', measured(23.4)))).toBe('1,304 of the first 12,400 documents match. This program: 3.1 s on the CPU so far. Native RegExp: 23 ms.')
+    expect(text(resultLine({withMatch: 0, searched: 2, ms: 0.4}, 100_000, 'cpu', null))).toBe('0 of the first 2 documents match. This program: 0.4 ms on the CPU so far.')
     // A RegExp that the page stopped after 10 s, e.g. for (([a-z]+)+)+x.
-    expect(text(resultLine({withMatch: 47_577, searched: 100_000, ms: 17.2}, 100_000, 'gpu', {kind: 'stopped', afterMs: 10_000}))).toBe('47,577 of 100,000 documents match. 17 ms on the GPU. RegExp: more than 10 s.')
+    expect(text(resultLine({withMatch: 47_577, searched: 100_000, ms: 17.2}, 100_000, 'gpu', {kind: 'stopped', afterMs: 10_000}))).toBe('47,577 of 100,000 documents match. This program: 17 ms on the GPU. Native RegExp: more than 10 s.')
     expect(resultLine({withMatch: 10_541, searched: 100_000, ms: 22.6}, 100_000, 'gpu', measured(23.4))[0]).toEqual({strong: '10,541'})
   })
 
