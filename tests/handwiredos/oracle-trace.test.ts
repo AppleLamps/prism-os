@@ -202,18 +202,23 @@ describe('production circuits match the reference interpreter across scripted tr
         height: values[photos[start + photoField.height]!]!,
       }
     }
+    // The middle of every photo's cell in viewport coordinates, read below while the
+    // grid is at rest.
+    let photoCellPoints: {x: number, y: number}[] = []
     // Select a grid photo with a press and a release on it. Pointer coordinates are
     // viewport coordinates, and Photos reads a release relative to its content box at
     // the window's destination, which for a window that isn't maximized is its stored
     // left and top.
     {
-      const photo = photoLocal(values, 5)
       expect(machine.source[windowSourceField(photosWindowIndex, windowStateField.maximized)]).toBe(0)
       const contentLeft = machine.source[windowSourceField(photosWindowIndex, windowStateField.left)]! + 1
       const contentTop = machine.source[windowSourceField(photosWindowIndex, windowStateField.top)]!
         + machine.source[windowSourceFieldTable.titleHeight]! + 1
-      const photoX = contentLeft + photo.left + photo.width / 2
-      const photoY = contentTop + photo.top + photo.height / 2
+      photoCellPoints = Array.from({length: photoItemCount}, (_, item) => {
+        const photo = photoLocal(values, item)
+        return {x: contentLeft + photo.left + photo.width / 2, y: contentTop + photo.top + photo.height / 2}
+      })
+      const {x: photoX, y: photoY} = photoCellPoints[5]!
       machine.pointerDown(photoX, photoY)
       machine.pointerUp(photoX, photoY)
       values = advance(irregularFrameTime(random))
@@ -231,6 +236,23 @@ describe('production circuits match the reference interpreter across scripted tr
     // Close the lightbox.
     machine.photoClose()
     values = advance(irregularFrameTime(random))
+    for (let settle = 0; settle < 3; settle++) values = advance(irregularFrameTime(random))
+    // The zoom's rules with a spring still moving, see "The zoom" in photo-gallery.ts.
+    // The keys left photo 4 open, so photo 4 was closed last: a release on its cell
+    // opens it again from where it is, and Escape closes it during that opening. A
+    // release on photo 6's cell opens photo 6 while photo 4 returns, and Escape puts
+    // photo 4 in its cell.
+    for (const item of [4, 6]) {
+      const point = photoCellPoints[item]!
+      machine.pointerDown(point.x, point.y)
+      machine.pointerUp(point.x, point.y)
+      values = advance(irregularFrameTime(random))
+      expect(machine.source[photoSourceField.focusStart + item]).toBe(1)
+      values = advance(irregularFrameTime(random))
+      machine.photoClose()
+      values = advance(irregularFrameTime(random))
+      expect(machine.source[photoSourceField.focusStart + item]).toBe(0)
+    }
     for (let settle = 0; settle < 3; settle++) values = advance(irregularFrameTime(random))
 
     // Phase 6: Notes' dock item raises Notes, then a press on Notes' content, moves
@@ -389,6 +411,8 @@ describe('production circuits match the reference interpreter across scripted tr
     }
 
     let values = advance()
+    // Every photo's cell, while the grid is at rest.
+    const cells = Array.from({length: photoItemCount}, (_, item) => projectPhoto(values, item))
 
     // Select each grid photo in turn, closing between selections, so both the
     // grid layout and the open lightbox layout are exercised many times.
@@ -441,6 +465,42 @@ describe('production circuits match the reference interpreter across scripted tr
     // Close the lightbox.
     machine.close()
     values = advance()
+
+    // The zoom's rules with a spring still moving, see "The zoom" in photo-gallery.ts:
+    // a close during the opening, an open of another photo and a step during the
+    // return, a second close, which puts the first photo in its cell, an open of the
+    // photo that was closed last, and a step onto it while it returns.
+    for (const [first, second] of [[5, 6], [0, 11], [3, 3]] as const) {
+      const clickCell = (item: number) => {
+        const cell = cells[item]!
+        machine.click(cell.left + cell.width / 2, cell.top + cell.height / 2)
+      }
+      clickCell(first)
+      values = advance()
+      values = advance()
+      machine.click(2, 2)
+      values = advance()
+      clickCell(second)
+      values = advance()
+      machine.next()
+      values = advance()
+      machine.close()
+      values = advance()
+      // The step left the photo after `second` open, so that photo was closed last.
+      clickCell((second + 1) % photoItemCount)
+      values = advance()
+      machine.close()
+      values = advance()
+      clickCell(first)
+      values = advance()
+      // Two steps while that photo returns. With 5 and 6, the second one is onto it.
+      machine.next()
+      values = advance()
+      machine.next()
+      values = advance()
+      machine.close()
+      for (let settle = 0; settle < 3; settle++) values = advance()
+    }
 
     // Presence/interactivity toggles and tiny/zero viewports.
     for (const [resizeWidth, resizeHeight, nextPresent, nextInteractive] of [

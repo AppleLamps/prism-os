@@ -929,7 +929,10 @@ body {
 
 /* Photos: a grid and a lightbox, both laid out by the program. JavaScript creates a node
    for each photo and each thumbnail while the program draws it, and writes its size,
-   position, opacity and --focused, which is 1 for the open photo and its thumbnail. */
+   position and opacity. A photo also gets --zoom, which goes from 0 in its cell to 1 in the
+   open photo's rectangle, and its z-index: 3 for the open photo, 1 for the photo that was
+   closed last, on its way back to its cell, and 0 for the others. A thumbnail gets
+   --focused, which is 1 for the open photo's thumbnail. */
 .photos-content {
   cursor: pointer;
   /* The previous and next controls look at the content box's width, see below. */
@@ -956,13 +959,14 @@ body {
 }
 
 /* A photo's corner is half the window's, 6 px. The hairline is inside the photo, so a pale
-   photo keeps its edge on the sheet. The open photo floats: --shadow-2, scaled by --focused. */
+   photo keeps its edge on the sheet. The open photo floats: --shadow-2, scaled by --zoom, so
+   the shadow grows while the photo opens. */
 .photos-photo {
   border-radius: calc(var(--radius-3) / 2);
   box-shadow:
     inset 0 0 0 1px var(--edge),
-    0 calc(var(--focused) * 1px) calc(var(--focused) * 2px) rgb(var(--shadow-ink) / 0.08),
-    0 calc(var(--focused) * 10px) calc(var(--focused) * 28px) calc(var(--focused) * -8px) rgb(var(--shadow-ink) / 0.24);
+    0 calc(var(--zoom) * 1px) calc(var(--zoom) * 2px) rgb(var(--shadow-ink) / 0.08),
+    0 calc(var(--zoom) * 10px) calc(var(--zoom) * 28px) calc(var(--zoom) * -8px) rgb(var(--shadow-ink) / 0.24);
 }
 
 /* A photo is a container, so that its name can ask how tall the photo is. */
@@ -970,7 +974,11 @@ body {
   container: photo / size;
 }
 
-/* The open photo's name, on a paper label. */
+/* The open photo's name, on a paper label. It fades in over the last quarter of the zoom:
+   0 up to a --zoom of 0.75, since an opacity under 0 counts as 0, and 1 at 1. With the
+   opacity equal to --zoom, the name appeared in one frame at about half its opacity in
+   Photos on a phone, where the photo passes the 110 px below which it shows no name, see
+   the next rule, half way through its zoom. */
 .photos-photo span {
   position: absolute;
   left: 10px;
@@ -981,7 +989,7 @@ body {
   color: var(--ink);
   font: italic 400 14px/20px var(--font-serif);
   box-shadow: var(--shadow-1);
-  opacity: var(--focused);
+  opacity: calc(var(--zoom) * 4 - 3);
 }
 
 /* A photo under 110 px tall shows no name. The previous control's round sheet is 36 px
@@ -995,7 +1003,10 @@ body {
   }
 }
 
+/* The thumbnails are above the photos in their cells, and above the photo on its way back
+   to its cell, and below the open photo, see the z-indexes that JavaScript writes. */
 .photos-thumbnail {
+  z-index: 2;
   border-radius: 10%;
   box-shadow: inset 0 0 0 1px var(--edge);
 }
@@ -1023,11 +1034,12 @@ body {
 .image-11 { background-image: url("./photo-gallery-11.webp"); }
 
 /* Previous and next: a chevron in the program's 52 px box. In a window under 765 px wide
-   the box can reach over the open photo's edge, so the controls are above the photos, and
-   the disc under the pointer is a round sheet of paper and not a wash. */
+   the box can reach over the open photo's edge, so the controls are above the photos, whose
+   z-indexes go up to 4, and the disc under the pointer is a round sheet of paper and not a
+   wash. */
 .photos-control {
   position: absolute;
-  z-index: 1;
+  z-index: 5;
   top: 0;
   left: 0;
   display: grid;

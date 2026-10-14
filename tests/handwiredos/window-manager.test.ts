@@ -9,6 +9,7 @@ import {
   dragSourceField,
   noteFocusChange,
   valueListSourceField,
+  photoClosedLastSourceField,
   photoFocusSourceField,
   photoSourceField,
   photoThumbnailSpringSourceField,
@@ -1758,6 +1759,51 @@ test('a Photos click during a maximize lands on the photo whose destination is u
   }
 })
 
+test('a photo zooms inside HandwiredOS, the zoom goes on while Photos flies to the dock, where nothing of it is drawn, and Photos comes back with the photo open', () => {
+  const machine = createWindowManagerMachine()
+  const photosWindow = 2
+  let values = step(machine)
+  const photo = (item: number) => {
+    const read = (field: number) => values[machine.output.photos.photos[item * photoField.size + field]!]!
+    return {width: read(photoField.width), opacity: read(photoField.opacity), zoom: read(photoField.zoom), stack: read(photoField.stack)}
+  }
+  const cellWidth = photo(5).width
+  // A press and a release on photo 5 open it, and two frames later it is on its way:
+  // larger than its cell, above the other photos, which fade.
+  const point = photoPoint(machine, values, 5)
+  values = click(machine, point.x, point.y)
+  assert.equal(openPhotoOf(machine.source), 5)
+  values = step(machine)
+  values = step(machine)
+  const growing = photo(5)
+  assert.ok(growing.zoom > 0.2 && growing.zoom < 0.6 && growing.width > cellWidth + 50, `after 40 ms the zoom is ${growing.zoom} and the photo ${growing.width} px wide`)
+  assert.deepEqual([growing.opacity, growing.stack], [1, 3])
+  assert.ok(photo(0).opacity > 0.3 && photo(0).opacity < 0.8, `photo 0 has opacity ${photo(0).opacity}`)
+  // Minimized 48 ms into the zoom, Photos flies to the dock for about half a second,
+  // drawn, and the photo goes on growing in it.
+  values = clickWindowControl(machine, values, photosWindow, 'minimize')
+  let zoomBefore = growing.zoom
+  let flyingFrames = 0
+  while (projectWindows(machine, values)[photosWindow]!.opacity === 1) {
+    const flying = photo(5)
+    assert.ok(flying.zoom >= zoomBefore - 1e-6 && flying.opacity === 1, `flying frame ${flyingFrames}: zoom ${flying.zoom} after ${zoomBefore}`)
+    zoomBefore = flying.zoom
+    flyingFrames++
+    assert.ok(flyingFrames < 240, 'Photos did not land in the dock')
+    values = step(machine)
+  }
+  assert.ok(flyingFrames > 5 && zoomBefore > 0.99, `${flyingFrames} frames of flight, to a zoom of ${zoomBefore}`)
+  // Landed in the dock, Photos isn't drawn: every photo has opacity 0, so the page
+  // takes its node out of the DOM. Photo 5 stays the open photo.
+  for (let item = 0; item < photoCount; item++) assert.equal(photo(item).opacity, 0)
+  assert.equal(openPhotoOf(machine.source), 5)
+  // Photos' dock item brings the window back with photo 5 open, and the others hidden.
+  values = clickDock(machine, values, photosWindow)
+  assert.deepEqual(photo(5), {...photo(5), opacity: 1, zoom: 1, stack: 3})
+  assert.ok(photo(5).width > 4 * cellWidth - 1)
+  assert.equal(photo(0).opacity, 0)
+})
+
 test('the first step mounts the viewport as an event, so a small viewport fits the windows and animates them there', () => {
   const machine = createWindowManagerMachine()
   const initial = storedRectangles(machine)
@@ -2175,7 +2221,7 @@ type SessionEvent =
   | {kind: 'value list key', key: 'up' | 'down' | 'pageUp' | 'pageDown' | 'home' | 'end', timeStamp: number}
   | {kind: 'resize', width: number, height: number, timeStamp: number}
 
-const sessionEndMs = 9500
+const sessionEndMs = 10_500
 // The press on the note's content, while Monitor flies to the dock.
 const sessionNotePressMs = 2153.3
 // The release that opens photo 5 during the second maximize, 20.2 ms after the
@@ -2187,6 +2233,17 @@ const sessionValueListClickMs = 3262.9
 const sessionValueListEndMs = 3270.7
 const sessionValueListClickAtEndMs = 3278.5
 const sessionValueListLocationMs = 3289.7
+// The zoom's events at the end of the session, each while a zoom spring still moves:
+// the release that opens photo 5, the release beside it that closes it 80 ms later,
+// the release that opens photo 6, ArrowRight, Escape, the release that opens photo 7
+// again, and Escape.
+const sessionZoomOpenMs = 9051.7
+const sessionZoomCloseMs = 9131.5
+const sessionZoomSecondOpenMs = 9187.7
+const sessionZoomStepMs = 9203.9
+const sessionZoomSecondCloseMs = 9263.1
+const sessionZoomReopenMs = 9327.9
+const sessionZoomLastCloseMs = 9403.3
 
 function createSessionEvents() {
   const events: SessionEvent[] = []
@@ -2308,6 +2365,21 @@ function createSessionEvents() {
     events.push({kind: 'move', x: pointerX += 30, y: 212, timeStamp: time += 4})
   }
   events.push({kind: 'up', x: pointerX, y: 212, timeStamp: time + 4})
+  // The zoom, see "The zoom" in photo-gallery.ts. Photos is at 720,190 since the drag,
+  // so its content box starts at (721, 235), with the cells of photos 5, 6 and 7
+  // around (932.5, 427), (1067.5, 427) and (1202.5, 427). A release on photo 5 opens
+  // it, and a release beside the open photo's rectangle closes it during the opening.
+  // A release on photo 6's cell opens photo 6 while photo 5 returns, ArrowRight steps
+  // to photo 7 during that opening, and Escape closes photo 7 while photo 5 still
+  // returns, which puts photo 5 in its cell. A release on photo 7's cell opens it
+  // again from where it is, and Escape closes it.
+  press(932.5, 427, 9003.3, sessionZoomOpenMs)
+  press(725, 239, 9103.1, sessionZoomCloseMs)
+  press(1067.5, 427, 9163.3, sessionZoomSecondOpenMs)
+  events.push({kind: 'photo next', timeStamp: sessionZoomStepMs})
+  events.push({kind: 'photo close', timeStamp: sessionZoomSecondCloseMs})
+  press(1202.5, 427, 9303.5, sessionZoomReopenMs)
+  events.push({kind: 'photo close', timeStamp: sessionZoomLastCloseMs})
   return events
 }
 
@@ -2361,13 +2433,19 @@ function runSession(frameTimes: readonly number[], writeBack: WriteBack): Sessio
     ...machine.output.valueList.slots,
   ]
   // Each window stores 5 springs as displacement, velocity and destination, and
-  // each thumbnail stores 2 destinations.
+  // each thumbnail stores 2 destinations. A zoom spring stores none: its destination
+  // follows from the open photo and from the bit that says which of the two springs
+  // is the open photo's, and the other spring draws the photo that was closed last,
+  // so these cells are checked like destinations.
   const destinationCells = [
     ...Array.from({length: windowCount * 5}, (_, spring) => sourceField.springStart + 3 * spring + 2),
     ...Array.from({length: photoCount}, (_, item) => [
       photoThumbnailSpringSourceField(item, thumbnailSpringField.centerXDestination),
       photoThumbnailSpringSourceField(item, thumbnailSpringField.scaleDestination),
+      photoFocusSourceField(item),
+      photoClosedLastSourceField(item),
     ]).flat(),
+    photoSourceField.zoomOpenSpring,
   ]
   const run: SessionRun = {
     commits: [],
@@ -2513,6 +2591,42 @@ test("with 'events and settle checks', the session commits bit-identical tables 
   assert.deepEqual(openPhotos.filter((photo, index) => index === 0 || photo !== openPhotos[index - 1]), [5, 6, 7, 6, -1])
   // The release during the second maximize opened photo 5.
   assert.equal(openPhoto(commitAt(sessionPhotoClickMs, 'pointer up').table), 5)
+  // The zoom's events, each while a spring still moved: the open photo, the photo
+  // that was closed last, and which spring is the open photo's. A close swaps the two
+  // springs, and so does the open of the photo that was closed last.
+  const zoomCells = (timeStamp: number, kind: string) => {
+    const {table} = commitAt(timeStamp, kind)
+    return {
+      openPhoto: openPhoto(table),
+      closedLast: Array.from({length: photoCount}, (_, item) => table[photoClosedLastSourceField(item)]!).indexOf(1),
+      openSpring: table[photoSourceField.zoomOpenSpring]!,
+      underWay: table[photoSourceField.zoomUnderWay]!,
+    }
+  }
+  const {openSpring} = zoomCells(sessionZoomOpenMs, 'pointer up')
+  assert.deepEqual(
+    [
+      zoomCells(sessionZoomOpenMs, 'pointer up'),
+      zoomCells(sessionZoomCloseMs, 'pointer up'),
+      zoomCells(sessionZoomSecondOpenMs, 'pointer up'),
+      zoomCells(sessionZoomStepMs, 'photo next'),
+      zoomCells(sessionZoomSecondCloseMs, 'photo close'),
+      zoomCells(sessionZoomReopenMs, 'pointer up'),
+      zoomCells(sessionZoomLastCloseMs, 'photo close'),
+    ],
+    [
+      {openPhoto: 5, closedLast: 6, openSpring, underWay: 1},
+      {openPhoto: -1, closedLast: 5, openSpring: 1 - openSpring, underWay: 1},
+      {openPhoto: 6, closedLast: 5, openSpring: 1 - openSpring, underWay: 1},
+      {openPhoto: 7, closedLast: 5, openSpring: 1 - openSpring, underWay: 1},
+      {openPhoto: -1, closedLast: 7, openSpring, underWay: 1},
+      {openPhoto: 7, closedLast: 7, openSpring: 1 - openSpring, underWay: 1},
+      {openPhoto: -1, closedLast: 7, openSpring, underWay: 1},
+    ],
+  )
+  // The last close's zoom came to rest, which stopped the clock a last time.
+  assert.equal(final[photoSourceField.zoomUnderWay], 0)
+  assert.ok(baseline.clockStops.at(-1)! > sessionZoomLastCloseMs + 300 && baseline.clockStops.at(-1)! < sessionZoomLastCloseMs + 900)
   // Monitor's list: the release selected row 4, ArrowDown row 5, and End the last row.
   // The list is 234 px tall, so End asked for the position 234 px before the end of
   // the rows, and the evaluations after it read the list there: the same point is on

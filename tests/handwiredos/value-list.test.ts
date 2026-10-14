@@ -1174,7 +1174,7 @@ test("after a step, the machine's packed values hold every source cell and live 
   assert.equal(new Set(names).size, names.length)
   assert.deepEqual(outputs.text(0), ['windows.0.translateX', '', '', ''])
   assert.equal(outputs.value(0), 54)
-  for (const name of ['windows.2.destinationHeight', 'dockItems.2.left', 'animationActive', 'photos.backdropOpacity', 'photos.photos.11.focused',
+  for (const name of ['windows.2.destinationHeight', 'dockItems.2.left', 'animationActive', 'photos.backdropOpacity', 'photos.photos.11.zoom', 'photos.photos.11.stack', 'photos.thumbnails.11.focused',
     'photos.thumbnails.0.left', 'photos.nextControl.opacity', 'valueList.totalHeight', 'valueList.locations.2', 'valueList.slots.63.selected']) {
     assert.ok(names.includes(name), name)
   }
