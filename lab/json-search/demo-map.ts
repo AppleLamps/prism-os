@@ -100,37 +100,41 @@ export function nextMatch(matchCounts: Float32Array, searched: number, from: num
 // one that a search in progress hasn't reached yet.
 export type CellColors = {match: number, plain: number, waiting: number}
 
-// Writes the pixels of the first `loaded` documents' cells. Of those, the first `searched` are colored by their match
-// count, and the others have the color `rest`, e.g. the waiting color while a search on the CPU hasn't reached them.
-// `matchCounts` holds a count for each of the first `searched` documents. One call writes e.g. 400,000 pixels for
-// 100,000 cells of 2 by 2 pixels, in 0.2 to 0.6 ms in Chrome once the JavaScript engine has compiled the loop. The
-// colors are read before the loop and the counts are always an array, since the engine left the compiled loop when a
-// color was first read inside it, or when the counts were null for "no search".
+// Writes the canvas's pixels: the cells of the first `loaded` documents. Of those, the first `searched` are colored by
+// their match count, and the others have the color `rest`, e.g. the waiting color while a search on the CPU hasn't
+// reached them. `matchCounts` holds a count for each of the first `searched` documents.
+//
+// A document with a match also gets the gap around its cell, e.g. 4 by 4 pixels instead of 2 by 2, so that one match
+// among 100,000 documents can be seen. The gap belongs to no other cell, so every other document's cell stays as it
+// is, and where neighbors match their marks join.
+//
+// One call writes e.g. 900,000 pixels for 100,000 cells of 2 by 2 pixels, in under 1 ms in Chrome once the JavaScript
+// engine has compiled the loop. The colors are read before the loop and the counts are always an array, since the
+// engine left the compiled loop when a color was first read inside it, or when the counts were null for "no search".
 export function paintCells(pixels: Uint32Array, layout: MapLayout, loaded: number, searched: number, matchCounts: Float32Array, colors: CellColors, rest: number) {
-  const {cell, pitch, width, columns} = layout
+  const {cell, pitch, width, height, columns} = layout
   const {match, plain} = colors
-  // The index of the current cell's top left pixel, and of its row's first cell's.
-  let offset = 0
-  let rowOffset = 0
-  let column = 0
-  for (let index = 0; index < loaded; index++) {
-    const color = index >= searched ? rest : matchCounts[index]! > 0 ? match : plain
-    if (cell === 1) {
-      pixels[offset] = color
-    } else if (cell === 2) {
-      pixels[offset] = color
-      pixels[offset + 1] = color
-      pixels[offset + width] = color
-      pixels[offset + width + 1] = color
+  const gap = pitch - cell
+  // The last paint's marks, which may have reached into gaps that this paint leaves empty.
+  pixels.fill(0)
+  for (let index = 0, column = 0, row = 0; index < loaded; index++) {
+    const x = column * pitch
+    const y = row * pitch
+    if (index < searched && matchCounts[index]! > 0) {
+      const right = Math.min(width, x + cell + gap)
+      const bottom = Math.min(height, y + cell + gap)
+      for (let pixelY = Math.max(0, y - gap); pixelY < bottom; pixelY++) {
+        for (let pixelX = Math.max(0, x - gap), offset = pixelY * width + pixelX; pixelX < right; pixelX++, offset++) pixels[offset] = match
+      }
     } else {
-      for (let row = 0, start = offset; row < cell; row++, start += width) pixels.fill(color, start, start + cell)
+      const color = index < searched ? plain : rest
+      for (let pixelY = y; pixelY < y + cell; pixelY++) {
+        for (let pixelX = x, offset = pixelY * width + x; pixelX < x + cell; pixelX++, offset++) pixels[offset] = color
+      }
     }
     if (++column === columns) {
       column = 0
-      rowOffset += pitch * width
-      offset = rowOffset
-    } else {
-      offset += pitch
+      row++
     }
   }
 }

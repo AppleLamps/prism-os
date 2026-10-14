@@ -126,23 +126,35 @@ describe('the map of every document', () => {
     expect(nextMatch(counts, 0, 2, 1)).toBe(-1)
   })
 
-  test('paints a document with a match in one color, one without in a second, one not searched yet in a third, and no cell for a document that isn\'t loaded', () => {
+  test('paints a document without a match as its cell, one with a match as its cell and the gap around it, one not searched yet in a third color, and nothing for a document that isn\'t loaded', () => {
     const colors = {match: 22, plain: 11, waiting: 5}
     for (const scale of [1, 2, 3]) {
-      const layout: MapLayout = mapLayout(30, scale, 9)
+      const layout: MapLayout = mapLayout(36, scale, 9)
+      const gap = layout.pitch - layout.cell
+      expect([layout.columns, layout.rows]).toEqual([3, 3])
       const pixels = new Uint32Array(layout.width * layout.height)
+      // What the cell of a document holds, and the pixel diagonally before its first one, in the gap.
       const colorOf = (index: number) => pixels[Math.floor(index / layout.columns) * layout.pitch * layout.width + (index % layout.columns) * layout.pitch]
+      const cornerOf = (index: number) => pixels[(Math.floor(index / layout.columns) * layout.pitch - 1) * layout.width + (index % layout.columns) * layout.pitch - 1]
       const every = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-      // 7 of the 9 documents are loaded, and a search has answered for the first 4.
-      paintCells(pixels, layout, 7, 4, Float32Array.from([0, 2, 1, 0]), colors, colors.waiting)
-      expect(every.map(colorOf)).toEqual([11, 22, 22, 11, 5, 5, 5, 0, 0])
-      // Each cell is a square of `cell` pixels, and nothing else is painted.
-      expect(pixels.filter(pixel => pixel !== 0).length).toBe(7 * layout.cell * layout.cell)
-      const lastPixelOfCell = (index: number) => Math.floor(index / layout.columns) * layout.pitch * layout.width + (index % layout.columns) * layout.pitch + (layout.cell - 1) * (layout.width + 1)
-      expect([pixels[lastPixelOfCell(1)], pixels[lastPixelOfCell(6)]]).toEqual([22, 5])
-      // Without a search, every loaded document has the plain color.
+      // 7 of the 9 documents are loaded, and a search has answered for the first 5: documents 1 and 4 have a match.
+      paintCells(pixels, layout, 7, 5, Float32Array.from([0, 2, 0, 0, 1]), colors, colors.waiting)
+      expect(every.map(colorOf)).toEqual([11, 22, 11, 11, 22, 5, 5, 0, 0])
+      // Document 4 is in the middle of the map, so its mark is its cell and the whole gap around it. Document 1 is
+      // right above it, in the first row: the gap above it is outside the canvas, and the gap below it is the one
+      // above document 4, where the two marks join.
+      expect(cornerOf(4)).toBe(22)
+      const markSide = layout.cell + 2 * gap
+      const painted = (color: number) => pixels.filter(pixel => pixel === color).length
+      expect(painted(22)).toBe(markSide * markSide + markSide * layout.cell)
+      // Every other cell is a square of `cell` pixels in its own color, and nothing else is painted.
+      expect([painted(11), painted(5)]).toEqual([3 * layout.cell * layout.cell, 2 * layout.cell * layout.cell])
+      expect(painted(0)).toBe(pixels.length - painted(22) - painted(11) - painted(5))
+      // The next paint leaves nothing of the last one's marks: without a search, every loaded document's cell has
+      // the plain color, and the gaps are empty again.
       paintCells(pixels, layout, 9, 0, new Float32Array(0), colors, colors.plain)
       expect(every.map(colorOf)).toEqual([11, 11, 11, 11, 11, 11, 11, 11, 11])
+      expect([painted(11), painted(22), cornerOf(4)]).toEqual([9 * layout.cell * layout.cell, 0, 0])
     }
   })
 })
