@@ -91,11 +91,12 @@ const penaltyStiffness = 5
 // The penalty's weight against the distance from the target. The other edges of a line hold an edge with a pull
 // of at most one reach, and at a weight of 2 that holds the edge until its target is 2 reaches from the line. So
 // an edge joins a line within one reach of it and leaves the line at two reaches, and the same target can end in
-// two layouts, depending on where the outputs were before. Measured with 180 rough drags and resizes of each
-// size, at a reach of 2% of the stage: a photo that started on its rectangle joined its lines in all of the
-// edits of half a reach, in 63% of the edits of one reach and in 1% of the edits of one and a half. A photo that
-// started on its lines stayed on them in all of the edits of one reach, in 89% of the edits of one and a half,
-// in 59% of the edits of 1.8 reaches and in 4% of the edits of two (October 14, 2026).
+// two layouts, depending on where the outputs were before. Measured on the page's three presets with the 178
+// rough drags and resizes of each size that move an edge of a line, at a reach of 2% of the stage: a photo that
+// started on its rectangle joined its lines in all of the edits of half a reach, in 69% of the edits of one
+// reach and in none of the edits of one and a half. A photo that started on its lines stayed on them in all of
+// the edits of one reach, in 89% of the edits of one and a half, in 58% of the edits of 1.8 reaches, and at two
+// reaches only in the 5 edits whose rectangle the stage's edge stopped at 1.8 (October 14, 2026).
 export const penaltyStrength = 2
 // After a reset the penalty is off until the outputs are close to the target, i.e. until the distance from the
 // target is below penaltyOnsetDistance, and until penaltyOnsetSteps steps have run at the latest. Then it rises to
@@ -468,10 +469,10 @@ export function createTrainableGeometryMachine(
   // toward 0 about as hard as the loss pulls them wherever the loss's gradient is as small as the decay's. That
   // sets how closely the outputs can match the target: with 0.000_02, the value until October 13, 2026, the
   // presets were still 1.4 to 1.8 px off after 500 steps, and with this value 0.01 to 0.14 px (px on a stage of
-  // 538 by 430). Without any decay, a unit whose gate has closed for every slot in use gets no gradient and can't
-  // open again: over 200 random edits in a row, 2 to 4 of the first layer's 6 units ended shut in 4 of 6 runs.
-  // This decay still brings such a unit's weights back toward 0: with it, 2 units ended shut in 1 of 12 runs, and
-  // 1 or none in the others.
+  // 538 by 430, with that day's loss on left, top, width and height). Without any decay, a unit whose gate has
+  // closed for every slot in use gets no gradient and can't open again: over 200 random edits in a row, 2 to 4 of
+  // the first layer's 6 units ended shut in 4 of 6 runs. This decay still brings such a unit's weights back
+  // toward 0: with it, 2 units ended shut in 1 of 12 runs, and 1 or none in the others.
   const weightDecay = options.weightDecay ?? 0.000_000_2
   const matching = options.matching ?? 'assignment'
   const positionalFrequencyCount = options.positionalFrequencyCount ?? 4

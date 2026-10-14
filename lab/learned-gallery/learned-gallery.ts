@@ -69,7 +69,8 @@ function createGridCells(
 // Each layout has fewer rectangles than there are photos and leaves its last cell empty, so a visitor has room to
 // add one. Edges of one kind, e.g. two left edges, are either equal or at least 0.09 of the stage's width apart.
 // The misalignment penalty pulls together photo edges of one kind that are within its reach, which is at most
-// 0.04 of the stage's width (maximumHoldDistance), so a preset is fitted as it is drawn wherever the slider is.
+// 0.04 of the stage's width, half of maximumHoldDistance, so a preset is fitted as it is drawn wherever the slider
+// is.
 
 // 4 columns and 3 rows.
 function createContactLayout(): TrainableGeometry[] {
@@ -238,9 +239,10 @@ export const maximumHoldDistance = 0.08
 export const trainingStepsAfterChange = 500
 // After those steps, training goes on until the photos have come to rest, and at most until
 // maximumTrainingStepsAfterChange steps have run since the change. With the penalty on, the loss has no value that
-// says "done": it rests where its two parts balance, e.g. at 3e-5 with a photo held 4 px from its rectangle. So
-// the rule reads the photos: they are at rest when no photo edge has moved more than restDistance, a fraction of
-// the stage, over restSteps steps or more. 0.0001 of the stage is 0.05 px on a stage of 538 px.
+// says "done": it rests where its two parts balance, e.g. at 1e-5 with a photo held 9 px from its rectangle on a
+// stage of 620 px. So the rule reads the photos: they are at rest when no photo edge has moved more than
+// restDistance, a fraction of the stage, from where it was restSteps steps or more before. 0.0001 of the stage is
+// 0.06 px on that stage.
 export const maximumTrainingStepsAfterChange = 2000
 export const restSteps = 100
 export const restDistance = 0.0001
@@ -262,7 +264,8 @@ export const msPerTrainingStep = 1000 / 600
 export const maximumTrainingStepsPerFrame = 20
 export const trainingMsPerFrame = 6
 export const unmeasuredTrainingStepsPerFrame = 4
-// The loss chart shows this many of the latest steps, which is most of a first fit, e.g. Story's 800 steps.
+// The loss chart shows this many of the latest steps, which holds Story's and Contact sheet's whole first fit,
+// about 700 and 900 steps, and most of Cinema's 1,400.
 export const chartStepCount = 1000
 
 const minimumRectangleSize = 0.04
@@ -311,7 +314,7 @@ export type LearnedGalleryFrame = {
   training: boolean
   stepsThisFrame: number
   // The average cost of a step over the latest training that took a step, or null before the first step, e.g. in
-  // the page's first frame. A training that takes no step, e.g. "Train again" with an empty sketch, keeps the number.
+  // the page's first frame. A training that takes no step, e.g. "Retrain" with an empty sketch, keeps the number.
   msPerStep: number | null
   activeCount: number
   // The preset that the sketch still equals, or null after an edit.
@@ -610,7 +613,7 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       holdDistance = newHoldDistance
       machine.setPenaltyReach(holdDistance / penaltyStrength, holdDistance / penaltyStrength * 5 / 4)
     }
-    // A preset and "Train again" start from the seeded weights, and their frame draws those weights' output before
+    // A preset and "Retrain" start from the seeded weights, and their frame draws those weights' output before
     // any step, as the page's first frame does. Every other change continues from the current weights and the
     // optimizer's current state, so the photos follow a drag instead of forming again from a pile.
     if (restarted) {
@@ -879,7 +882,7 @@ function createLearnedGalleryDomCache(document: Document, editor: LearnedGallery
 // The chart's vertical axis is logarithmic, from 0.1 at the top to 1e-11 at the bottom. With the slider at off,
 // the loss falls from about 0.01 to between 1e-8 and 1e-11 while training, which a linear axis would show as one
 // drop followed by a flat line. With the penalty on, the distance from the sketch rests where the two parts
-// balance, e.g. at 3e-5 with a photo held 4 px from its rectangle, and the penalty falls to 1e-11 and below while
+// balance, e.g. at 1e-5 with a photo held 9 px from its rectangle, and the penalty falls to 1e-11 and below while
 // the photos' edges close their gaps.
 const chartLogTop = -1
 const chartLogBottom = -11
