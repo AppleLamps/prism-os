@@ -1852,7 +1852,6 @@ function mountWindowManager(document: Document, window: Window) {
   domCache.desktop.style.setProperty('--button-size', `${machine.source[machine.cells.buttonSize]}px`)
   domCache.desktop.style.setProperty('--button-gap', `${machine.source[machine.cells.buttonGap]}px`)
   domCache.desktop.style.setProperty('--resize-grip', `${machine.source[machine.cells.resizeGrip]}px`)
-  domCache.desktop.style.setProperty('--dock-height', `${machine.source[machine.cells.dockHeight]}px`)
   domCache.desktop.style.setProperty(
     '--system-bar-height',
     `${machine.source[machine.cells.systemBarHeight]}px`,

@@ -57,13 +57,12 @@ body {
 /* The desk: one warm surface with paper grain and a dot every 24 px, lit from the top left.
    Nothing on it moves, so the dots show how far a window has been dragged. */
 #desktop {
-  /* JavaScript copies these six from the program's table when the page loads. The values
+  /* JavaScript copies these five from the program's table when the page loads. The values
      here are for what is painted before that: the system bar. */
   --title-height: 44px;
   --button-size: 18px;
   --button-gap: 10px;
   --resize-grip: 24px;
-  --dock-height: 76px;
   --system-bar-height: 36px;
   position: fixed;
   inset: 0;
