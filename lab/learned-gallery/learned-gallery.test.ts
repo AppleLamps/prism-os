@@ -578,7 +578,7 @@ test('each preset sketch is fitted closely, with its photos in line, and trainin
     assert.equal(settled.training, false)
     // Measured: 679, 1,389 and 879 steps.
     assert.ok(settled.step >= trainingStepsAfterChange && settled.step < maximumTrainingStepsAfterChange, `${name} trained ${settled.step} steps`)
-    // Story ends at a loss of 9.9e-8 with a largest error of 0.20% of the stage: the top of its second rectangle
+    // Story ends at a loss of 9.7e-8 with a largest error of 0.20% of the stage: the top of its second rectangle
     // rests 0.15% from where it is drawn, and its height takes that error with it. The other two end closer.
     assert.equal(settled.loss, settled.fromSketch + settled.misalignment)
     assert.ok(settled.loss < 0.000_000_3, `${name} loss ${settled.loss}`)
@@ -671,6 +671,8 @@ test('the numbers in the page\'s text are the code\'s', () => {
   assert.ok(html.includes(`<input id="learning-penalty" class="range" type="range" min="0" max="${maximumHoldDistance * 100}" step="0.5" value="${defaultHoldDistance * 100}">`))
   assert.ok(html.includes('<label class="label" for="learning-penalty">Misalignment penalty</label>'))
   assert.ok(maximumHoldDistance / penaltyStrength < 0.09)
+  // The detail text's example is the slider as the page loads, and the penalty's reach there.
+  assert.ok(html.includes(`at ${defaultHoldDistance * 100}%, edges closer than ${defaultHoldDistance / penaltyStrength * 100}% of the stage&rsquo;s width end on one line`))
   // The chart's label names its window of steps.
   assert.ok(html.includes(`over the latest ${chartStepCount.toLocaleString('en-US')} training steps`))
   // The numbers of the detail text are written by the page's script, into these elements.
