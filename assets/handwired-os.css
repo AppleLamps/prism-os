@@ -152,9 +152,9 @@ body {
   }
 }
 
-/* System bar: this page's header, caption and statistics in one strip. The program reads
-   presses anywhere on the page, and no window can be placed under the bar, so only the
-   bar's links take the pointer. */
+/* System bar: this page's header, with the project's mark, which links to the index of the
+   demos, and two links. The program reads presses anywhere on the page, and no window can
+   be placed under the bar, so only the bar's links take the pointer. */
 #system-bar {
   position: absolute;
   z-index: 30;
@@ -179,22 +179,6 @@ body {
   pointer-events: auto;
 }
 
-.system-left,
-.system-right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-/* Only the caption gives way when the bar is short of room. */
-.system-left {
-  min-width: 0;
-}
-
-.system-right {
-  flex: none;
-}
-
 .system-mark {
   flex: none;
   display: inline-flex;
@@ -215,39 +199,9 @@ body {
   }
 }
 
-.system-caption {
-  min-width: 0;
-  padding-left: var(--space-4);
-  border-left: 1px solid var(--rule);
-  color: var(--ink-3);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.system-stats {
-  display: flex;
-  gap: var(--space-4);
-}
-
-/* The last frame's time changes while the page runs. Its digits are tabular, and under
-   100 ms it is always three digits and a point, e.g. 0.40 or 12.3, so it keeps one width
-   without a box of its own. */
-.system-stats b {
-  color: var(--ink);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
 .system-links {
   display: flex;
   gap: var(--space-4);
-  padding-left: var(--space-4);
-  border-left: 1px solid var(--rule);
-}
-
-.system-stats:empty + .system-links {
-  padding-left: 0;
-  border-left: 0;
 }
 
 .system-links a {
@@ -259,26 +213,6 @@ body {
   .system-links a:hover {
     color: var(--copper);
     text-decoration-color: currentColor;
-  }
-}
-
-/* A narrower bar drops the caption first, then the statistics, each before it would be cut
-   short: in the system font of macOS, everything takes 1178 px, and 666 px without the
-   caption. */
-@media (max-width: 1239px) {
-  .system-caption {
-    display: none;
-  }
-}
-
-@media (max-width: 719px) {
-  .system-stats {
-    display: none;
-  }
-
-  .system-links {
-    padding-left: 0;
-    border-left: 0;
   }
 }
 

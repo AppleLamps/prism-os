@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {Circuit} from '../../src/runtime/numeric-ui-core.ts'
 import {createWindowManagerMachine} from '../../src/handwiredos/window-manager.ts'
-import {describeOperations} from '../../src/handwiredos/value-list.ts'
 import {createMonitorFooter, frameTimeScale, frameTimesPath, measureProgram} from '../../src/handwiredos/monitor-footer.ts'
 
 // The bytes of every typed array that a compiled program holds, each array once,
@@ -40,10 +39,9 @@ function createFakeElement() {
 }
 
 test('the footer shows the program\'s layers, stored weights and size, and draws each frame\'s time', () => {
-  const machine = createWindowManagerMachine()
-  const program = machine.tensorProgram
-  const [footer, statistics] = [createFakeElement(), createFakeElement()]
-  const monitor = createMonitorFooter({footer: footer as unknown as HTMLElement, statistics: statistics as unknown as HTMLElement}, program)
+  const program = createWindowManagerMachine().tensorProgram
+  const footer = createFakeElement()
+  const monitor = createMonitorFooter(footer as unknown as HTMLElement, program)
   const count = (value: number) => value.toLocaleString('en-US')
   // The counts are the compiled program's, in the order in which a narrow footer keeps them.
   const {weights, bytes} = measureProgram(program)
@@ -52,16 +50,12 @@ test('the footer shows the program\'s layers, stored weights and size, and draws
     [[count(program.layers.length), 'layers'], [count(weights), 'weights'], [`${Math.round(bytes / 1000)}`, 'KB']],
   )
   assert.ok(bytes > 100_000 && bytes < 999_500, `${bytes} bytes`)
-  // The system bar counts the operations, as many as the list's Operations location has rows.
-  assert.equal(/<b>([\d,]+)<\/b> operations/.exec(statistics.innerHTML)![1], count(describeOperations(program, machine.packedValues).rowCount))
-  assert.equal(/<b>([\d,]+)<\/b> layers/.exec(statistics.innerHTML)![1], count(program.layers.length))
 
   // A frame's time: the figure beside the chart, the chart's line up to its right
   // edge, and what a pointer that rests on the chart reads, which names the scale.
   const caption = (scale: number) => `The program's time in each of the last 60 frames, from 0 at the chart's bottom to ${scale} ms at its top.`
   monitor.update(0.3)
   assert.equal(footer.part('.monitor-frame-time').textContent, '0.30')
-  assert.equal(statistics.part('.system-frame-time').textContent, '0.30')
   assert.equal(footer.part('.monitor-chart .line').attributes['d'], 'M59 0.700')
   assert.equal(footer.part('.monitor-chart .area').attributes['d'], 'M59 0.700V1H59Z')
   assert.equal(footer.part('.monitor-chart .end').attributes['d'], 'M59 0.700h0')

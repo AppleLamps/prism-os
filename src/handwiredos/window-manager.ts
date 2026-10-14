@@ -1824,7 +1824,6 @@ function mountWindowManager(document: Document, window: Window) {
   const photosViewport = document.querySelector<HTMLElement>('.photos-content')
   const monitorContent = document.querySelector<HTMLElement>('.monitor-content')
   const monitorFooter = document.querySelector<HTMLElement>('.monitor-footer')
-  const systemStatistics = document.querySelector<HTMLElement>('.system-stats')
   const wiringCanvas = document.querySelector<HTMLCanvasElement>('.desk-wiring')
   invariant(desktop !== null, 'desktop is missing')
   invariant(windows.length === windowCount, 'window node count mismatch')
@@ -1832,7 +1831,6 @@ function mountWindowManager(document: Document, window: Window) {
   invariant(photosViewport !== null, 'Photos viewport is missing')
   invariant(monitorContent !== null, 'Monitor\'s content is missing')
   invariant(monitorFooter !== null, 'Monitor\'s footer is missing')
-  invariant(systemStatistics !== null, 'system bar statistics are missing')
   invariant(wiringCanvas !== null, 'the desk\'s wiring canvas is missing')
   const windowContents = windows.map(element => {
     const content = element.querySelector<HTMLElement>('.window-content')
@@ -1881,9 +1879,9 @@ function mountWindowManager(document: Document, window: Window) {
     describeOperations(machine.tensorProgram, machine.packedValues),
     describeOutputs(machine.namedOutputs, machine.values),
   ])
-  // Monitor's footer and the system bar's counters, see monitor-footer.ts: the
-  // program's sizes, and the program's time in each of the last frames.
-  const footer = createMonitorFooter({footer: monitorFooter, statistics: systemStatistics}, machine.tensorProgram)
+  // Monitor's footer, see monitor-footer.ts: the program's sizes, and the program's
+  // time in each of the last frames.
+  const footer = createMonitorFooter(monitorFooter, machine.tensorProgram)
 
   domCache.desktop.style.setProperty('--title-height', `${machine.source[machine.cells.titleHeight]}px`)
   domCache.desktop.style.setProperty('--button-size', `${machine.source[machine.cells.buttonSize]}px`)
@@ -1970,8 +1968,8 @@ function mountWindowManager(document: Document, window: Window) {
     photos.render(values, machine.output.photos)
     notes.write(notesRead, values)
     valueList.render(values, machine.output.valueList)
-    // The chart in Monitor's footer and the system bar get the time that the program
-    // took in this frame, i.e. the time of machine.step.
+    // The chart in Monitor's footer gets the time that the program took in this
+    // frame, i.e. the time of machine.step.
     footer.update(executionMs)
 
     // Side effects, after every DOM write. The note's textarea gets the selection

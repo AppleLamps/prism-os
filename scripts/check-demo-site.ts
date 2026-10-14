@@ -32,13 +32,15 @@ function option(name: string): string | undefined {
 const textOf = (selector: string) => `[...document.querySelectorAll('${selector}')].map(element => element.textContent.trim().replace(/\\s+/g, ' ')).filter(text => text !== '').join('\\n')`
 const expectations: Record<string, {ready: string, report: string}> = {
   'os/': {
-    // HandwiredOS reports its program: the page fills the system bar's counters from the compiled program at
-    // mount, e.g. "14,467 operations", "275 layers". The page as it was before its restyle has no counters in the
-    // system bar, and fills the Monitor window's rows instead, e.g. "6,513 affine · 7,214 ReGLU · 740 boolean".
-    ready: `/\\d/.test((document.querySelector('.system-stats') ?? document.querySelector('#monitor-operations'))?.textContent ?? '')`,
-    report: `document.querySelector('.system-stats') !== null
-      ? [...document.querySelectorAll('.system-stats > *')].map(element => element.textContent.trim()).join(', ')
-      : [...document.querySelectorAll('[id^="monitor-"]')].map(element => element.id.slice('monitor-'.length) + ': ' + element.textContent.trim()).join('\\n')`,
+    // HandwiredOS reports its program in its Monitor window, which the page fills from the compiled program at
+    // mount. Each item of the window's sidebar counts a location's rows, and a pointer that rests on the item reads
+    // the count with what a row is, e.g. "19,851 operations. What the program computes: ...". The window's footer
+    // counts the rest, e.g. "217 layers", "43,180 weights". The report is the sidebar's counts, then the footer's.
+    ready: `/\\d/.test(document.querySelector('.monitor-counts')?.textContent ?? '')`,
+    report: `[
+      ...[...document.querySelectorAll('.monitor-location')].map(item => item.title.split('.')[0]),
+      ...[...document.querySelectorAll('.monitor-counts li')].map(item => item.textContent.trim()),
+    ].join(', ')`,
   },
   'json-highlighter/': {
     ready: `(window.jsonHighlighter?.frameTimings.length ?? 0) >= 1`,

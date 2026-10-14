@@ -1,8 +1,8 @@
-// The footer of the Monitor window, and the system bar's counters: how large the
-// compiled program is, and how long it ran in each of the last 60 frames.
-// Everything here is JavaScript text and SVG that the page computes from the
-// compiled program and from the frame times. None of it is an output of the
-// program. The list above the footer is the program's, see value-list.ts.
+// The footer of the Monitor window: how large the compiled program is, and how
+// long it ran in each of the last 60 frames. Everything here is JavaScript text and
+// SVG that the page computes from the compiled program and from the frame times.
+// None of it is an output of the program. The list above the footer is the
+// program's, see value-list.ts.
 //
 // The mount calls createMonitorFooter once, and update after each frame with the
 // time the program took in that frame.
@@ -67,8 +67,7 @@ const formatBytes = (bytes: number) => bytes < 999_500 ? [`${Math.round(bytes / 
 // Browsers report times in steps of 0.1 ms or coarser, e.g. '0.40'.
 const formatMilliseconds = (value: number) => value < 10 ? value.toFixed(2) : value < 100 ? value.toFixed(1) : formatCount(Math.round(value))
 
-export function createMonitorFooter(elements: {footer: HTMLElement, statistics: HTMLElement}, program: TensorProgram) {
-  const operations = program.valueCount - program.sourceSize
+export function createMonitorFooter(footer: HTMLElement, program: TensorProgram) {
   const {weights, bytes} = measureProgram(program)
   const [size, sizeUnit] = formatBytes(bytes)
   // The counts, the most important first: a footer too narrow for all of them shows
@@ -79,11 +78,7 @@ export function createMonitorFooter(elements: {footer: HTMLElement, statistics: 
     {count: size, noun: sizeUnit, title: 'The bytes of every array that the compiled program holds.'},
   ]
 
-  elements.statistics.innerHTML =
-    `<span><b>${formatCount(operations)}</b> operations</span>`
-    + `<span><b>${formatCount(program.layers.length)}</b> layers</span>`
-    + '<span><b class="system-frame-time"></b> ms in the last frame</span>'
-  elements.footer.innerHTML = `
+  footer.innerHTML = `
     <ul class="monitor-counts">
       ${counts.map(entry => `<li title="${entry.title}"><b>${entry.count}</b> ${entry.noun}</li>`).join('')}
     </ul>
@@ -94,18 +89,17 @@ export function createMonitorFooter(elements: {footer: HTMLElement, statistics: 
       <span class="monitor-frame-figure"><b class="monitor-frame-time"></b> ms</span>
     </div>`
 
-  const query = (root: HTMLElement, selector: string) => {
-    const element = root.querySelector<HTMLElement | SVGElement>(selector)
+  const query = (selector: string) => {
+    const element = footer.querySelector<HTMLElement | SVGElement>(selector)
     invariant(element !== null, `Monitor's ${selector} is missing`)
     return element
   }
   const domCache = {
-    barFrameTime: query(elements.statistics, '.system-frame-time'), // mount lifetime
-    frame: query(elements.footer, '.monitor-frame'), // mount lifetime
-    frameTime: query(elements.footer, '.monitor-frame-time'), // mount lifetime
-    area: query(elements.footer, '.monitor-chart .area'), // mount lifetime
-    line: query(elements.footer, '.monitor-chart .line'), // mount lifetime
-    end: query(elements.footer, '.monitor-chart .end'), // mount lifetime
+    frame: query('.monitor-frame'), // mount lifetime
+    frameTime: query('.monitor-frame-time'), // mount lifetime
+    area: query('.monitor-chart .area'), // mount lifetime
+    line: query('.monitor-chart .line'), // mount lifetime
+    end: query('.monitor-chart .end'), // mount lifetime
   }
 
   // The last frames' times, oldest first.
@@ -126,7 +120,6 @@ export function createMonitorFooter(elements: {footer: HTMLElement, statistics: 
       if (nextFrameTimeText !== frameTimeText) {
         frameTimeText = nextFrameTimeText
         domCache.frameTime.textContent = frameTimeText
-        domCache.barFrameTime.textContent = frameTimeText
       }
       // The chart has no axis. What a pointer that rests on it reads names the scale,
       // which changes only when a frame is longer than every frame the chart shows.
