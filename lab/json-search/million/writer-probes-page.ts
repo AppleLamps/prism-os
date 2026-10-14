@@ -1,4 +1,4 @@
-// The reviewer's programs of writer-probes.ts and writer-fuzz.ts on the GPU: each loop program as loop-emit.ts's shader
+// The reviewer's programs of tests/json-search/writer-probes.ts and writer-fuzz.ts on the GPU: each loop program as loop-emit.ts's shader
 // and as bit-emit.ts's, through src/json-search/gpu/host.ts's runner, which fills bit-emit.ts's packed words from the shader's plan,
 // with every output compared with the CPU executor's. A shader that the GPU's compiler refuses is reported with the
 // compiler's message. writer-probes-run.ts opens this page.
@@ -6,8 +6,8 @@ import {emitBitLoopWgsl} from '../../../src/json-search/bit-emit.ts'
 import {createDocumentStore, createProgramRunner, requestBatchDevice} from '../../../src/json-search/gpu/host.ts'
 import {emitLoopWgsl} from '../../../src/json-search/loop-emit.ts'
 import {createLoopRunner} from '../../../src/json-search/loop-program.ts'
-import {buildLanes, buildScalar} from './writer-fuzz.ts'
-import {type Probe, createRandom, fillRound, positions, probes} from './writer-probes.ts'
+import {buildLanes, buildScalar} from '../../../tests/json-search/writer-fuzz.ts'
+import {type Probe, createRandom, fillRound, positions, probes} from '../../../tests/json-search/writer-probes.ts'
 
 export type ProbesConfig = {fuzzPrograms: number, rounds: number, fuzzRounds: number, salt: number}
 type Entry = {

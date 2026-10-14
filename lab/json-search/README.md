@@ -12,6 +12,5 @@ This folder holds the measurement scripts, the measurement pages and the raw res
 From the repo root:
 
 ```sh
-bun test lab/json-search       # 82 tests of million/'s programs for the code writer, no GPU
 bunx tsc -p lab/json-search    # type-check this folder's scripts, with what they import from src/ and tests/
 ```

@@ -198,7 +198,7 @@ From the repo root:
 
 ```sh
 bun start                                        # the demo site, with the demo page at /json-search/
-bun test tests/json-search lab/json-search       # 195 tests in 9 files, about 1 minute, no GPU
+bun test tests/json-search                       # 195 tests in 9 files, about 1 minute, no GPU
 bun run check                                    # type-check and lint, with the rest of the repo
 bunx tsc -p lab/json-search                      # type-check the measurement scripts alone, with what they import
 bun lab/json-search/report.ts sizes              # the first stage's two programs and their shaders, with and without guards
@@ -270,7 +270,7 @@ The demo page's own times, in [The demo page](#the-demo-page), were measured wit
 | `lab/json-search/gpu/chrome.ts`, `lab/json-search/gpu/measure.ts` | What the harnesses and the pages share: the headless Chrome driver, and the sampling helpers |
 | `lab/json-search/results/` | The raw results |
 | `lab/json-search/report.ts` | Sizes and the documents' distribution, without a GPU |
-| `json-search.test.ts`, `search.test.ts`, `bit-emit.test.ts`, `searcher.test.ts`, `edge-cases.test.ts`, `demo.test.ts`, in tests/json-search/ | The tests |
+| `json-search.test.ts`, `search.test.ts`, `bit-emit.test.ts`, `writer-probes.test.ts`, `searcher.test.ts`, `edge-cases.test.ts`, `demo.test.ts`, in tests/json-search/ | The tests |
 | `tests/json-search/highlighter/`, `tests/json-search/regex/` | The highlighter's tests, corpus and reference in plain JavaScript, and the same for regex search's form (a) |
 | `lab/json-search/million/` | A check of a million documents with hand-written kernels, and the making and the reviews of bit-emit.ts, see [lab/json-search/million/README.md](../../lab/json-search/million/README.md) |
 
@@ -486,7 +486,7 @@ The interpreter rounds every f32 operation on its own, and says nothing about wh
 
 ### Regex search, the highlighter's loop and the searcher
 
-`bun test tests/json-search lab/json-search` runs 195 tests in 9 files without a GPU, 21 of them the demo page's, in demo.test.ts. The ones for the loops, in search.test.ts and searcher.test.ts:
+`bun test tests/json-search` runs 195 tests in 9 files without a GPU, 21 of them the demo page's, in demo.test.ts. The ones for the loops, in search.test.ts and searcher.test.ts:
 
 - **Regex search's loop against form (a).** For 274 patterns of up to 8 states with 8 texts each, at a capacity of 40 positions, the loop program gives the match count and the marks of regex/data-program.ts's `buildDataSearch` on the CPU executor: on the executor, as generated JavaScript, and through the WGSL interpreter. The interpreter also runs the shader in the compiled program's statement order, with the bits as f32 values, and stopping at the text's end, each on every third or fifth pattern. The patterns are regex search's edge cases, the measurement's patterns, random ones, and the capacities: patterns of exactly 8 states, and one with 16 classes and 32 class boundaries, `([aeimquyC]|[cekmsuAC]|…|a|c)+`. Every pattern gets an empty text, a text as long as the program holds, a longer one, and two that end with a match on the last position. The full program's outputs are compared with the automaton simulator of tests/json-search/regex/reference.ts first, so a mistake shared by the loop and the full program fails too.
 - **16 and 32 states**, including patterns with exactly that many states: the loop as generated JavaScript and through the interpreter against form (a) at 24 positions.
@@ -502,7 +502,7 @@ The interpreter rounds every f32 operation on its own, and says nothing about wh
   - The self check runs its 11 searches on every program that holds them, 30 in all, with 0 values different, over four documents in which each search has a match: the first one is written by hand, since `connection rese` and `東京` find nothing in the first four generated documents, and a search without a match compares only zeros.
   - With the bits of `packWords` put into other places on purpose, six tests fail, four of these, edge-cases.test.ts's test of the GPU searcher and the demo page's, so the tests do read the packed words. With bit 7, 15 or 31 of every word left out, with code points above U+00FF read as U+00FF, and with the -1 of a cell past the text's end read as U+0000, the self check's test fails.
 - **The demo page's own searches**, in demo.test.ts: for the pattern that the page starts with and each example of its Try list, read from assets/json-search.html, the GPU searcher over the interpreted device gives the counts of the page's first 40 documents, and the kinds and marks of the document that the page would show, that the CPU searcher of the page's worker gives.
-- **bit-emit.ts's rules**, in bit-emit.test.ts and lab/json-search/million/writer-probes.test.ts: which rules fire on the search step, the highlighter's step and 87 small programs, the programs where a rule must not fire, and both writers' shaders against the CPU executor through the interpreter, see [lab/json-search/million/README.md](../../lab/json-search/million/README.md#the-values-that-were-compared).
+- **bit-emit.ts's rules**, in bit-emit.test.ts and writer-probes.test.ts: which rules fire on the search step, the highlighter's step and 87 small programs, the programs where a rule must not fire, and both writers' shaders against the CPU executor through the interpreter, see [lab/json-search/million/README.md](../../lab/json-search/million/README.md#the-values-that-were-compared).
 - The hand-written kernel has no test under `bun test`. Its JavaScript twin, the loop over 32-bit rows, is tested, and the kernel itself is only checked on the GPU.
 
 In headless Chrome:

@@ -4,21 +4,21 @@
 // WGSL interpreter and on the CPU executor, for many shared tables and documents, with the lowest and the highest
 // value of every declared range.
 //
-//   bun lab/json-search/million/writer-probes.ts            every probe, one line each
-//   bun lab/json-search/million/writer-probes.ts <name>     one probe, with bit-emit.ts's shader printed first
-//   bun test lab/json-search/million/writer-probes.test.ts  the same as tests, with the probes that fail today marked
+//   bun tests/json-search/writer-probes.ts            every probe, one line each
+//   bun tests/json-search/writer-probes.ts <name>     one probe, with bit-emit.ts's shader printed first
+//   bun test tests/json-search/writer-probes.test.ts  the same as tests, with the probes that fail today marked
 //   bun lab/json-search/million/writer-probes-run.ts --profile <new folder> --out <file.json>   the same on the GPU
 //
 // A line says which rules fired, how many values were compared, and how many of them differ from the executor's in
 // loop-emit.ts's shader and in bit-emit.ts's. "THREW" marks a probe where bit-emit.ts stopped, or where its shader
 // holds something that a GPU's shader compiler refuses, e.g. a shift by 32 bits.
-import {type Circuit, type Wire, emitCompare} from '../../../src/runtime/numeric-ui-core.ts'
-import {constant, createSourceTable, input, inputBit, list} from '../../../src/runtime/cells.ts'
-import {and, andNot, not} from '../../../src/json-search/regex/bits.ts'
-import {emitBitLoopWgsl, packWords} from '../../../src/json-search/bit-emit.ts'
-import {emitLoopWgsl} from '../../../src/json-search/loop-emit.ts'
-import {type Binding, type LoopProgram, createLoopRunner, createStage} from '../../../src/json-search/loop-program.ts'
-import {createWgslInterpreter} from '../../../tests/json-search/wgsl-interpreter.ts'
+import {type Circuit, type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
+import {constant, createSourceTable, input, inputBit, list} from '../../src/runtime/cells.ts'
+import {and, andNot, not} from '../../src/json-search/regex/bits.ts'
+import {emitBitLoopWgsl, packWords} from '../../src/json-search/bit-emit.ts'
+import {emitLoopWgsl} from '../../src/json-search/loop-emit.ts'
+import {type Binding, type LoopProgram, createLoopRunner, createStage} from '../../src/json-search/loop-program.ts'
+import {createWgslInterpreter} from './wgsl-interpreter.ts'
 
 function lowbias32(n: number) {
   n = Math.imul((n >>> 16) ^ n, 0x21f0aaad)

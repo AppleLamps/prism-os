@@ -1,10 +1,10 @@
 // An independent check of bit-emit.ts by a reviewer: random loop programs, each run as both writers' shaders through
 // the strict WGSL interpreter and on the CPU executor, with writer-probes.ts's comparison.
 //
-//   bun lab/json-search/million/writer-fuzz.ts scalar 2000 [firstSeed]    random operations over bits, whole numbers and ordinary numbers
-//   bun lab/json-search/million/writer-fuzz.ts lanes 2000 [firstSeed]     the same operation for every bit of a list, over registers, fields, shared cells and table reads
-//   bun lab/json-search/million/writer-fuzz.ts broken 2000 [firstSeed]    'scalar' with two registers whose own stage breaks their declarations
-//   bun lab/json-search/million/writer-fuzz.ts scalar 1 <seed> show       one program, with bit-emit.ts's shader
+//   bun tests/json-search/writer-fuzz.ts scalar 2000 [firstSeed]    random operations over bits, whole numbers and ordinary numbers
+//   bun tests/json-search/writer-fuzz.ts lanes 2000 [firstSeed]     the same operation for every bit of a list, over registers, fields, shared cells and table reads
+//   bun tests/json-search/writer-fuzz.ts broken 2000 [firstSeed]    'scalar' with two registers whose own stage breaks their declarations
+//   bun tests/json-search/writer-fuzz.ts scalar 1 <seed> show       one program, with bit-emit.ts's shader
 //
 // A 'scalar' or 'lanes' program keeps its declarations: a cell declared as a bit only ever holds 0 or 1, and a cell
 // declared within a range of whole numbers only holds such numbers. So a value that differs between the two shaders
@@ -12,10 +12,10 @@
 // within a range, or an ordinary number. A 'broken' program is built as if two of its registers kept their
 // declarations, and its stage writes e.g. 1.5 into a register that is declared a whole number. The executor accepts
 // that, since it checks a cell's range and not its grid, and bit-emit.ts has to find it and give loop-emit.ts's values.
-import {type Wire, emitCompare} from '../../../src/runtime/numeric-ui-core.ts'
-import {createSourceTable, input, inputBit, list} from '../../../src/runtime/cells.ts'
-import {emitBitLoopWgsl} from '../../../src/json-search/bit-emit.ts'
-import {type Binding, type LoopProgram, createStage} from '../../../src/json-search/loop-program.ts'
+import {type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
+import {createSourceTable, input, inputBit, list} from '../../src/runtime/cells.ts'
+import {emitBitLoopWgsl} from '../../src/json-search/bit-emit.ts'
+import {type Binding, type LoopProgram, createStage} from '../../src/json-search/loop-program.ts'
 import {type Probe, compareProbe, createRandom, pick, positions} from './writer-probes.ts'
 
 type Value =
