@@ -316,8 +316,6 @@
 }
 .loss span { white-space: nowrap; }
 .loss b { color: var(--ink); font: 600 13px/20px var(--font-mono); }
-/* The chart's legend: before each part of the loss, a dot in the color of that part's line, like
-   the dot at the line's end. A short piece of the line would read as a minus sign there. */
 .loss .parts b { display: inline-block; min-width: 8ch; }
 /* In a column under 464 px, e.g. on a phone, the two parts leave no room for the steps beside
    the button once both are 8 characters long, so the steps are always a line of their own
@@ -325,6 +323,8 @@
 @container (max-width: 463px) {
   .loss .steps { display: block; }
 }
+/* The chart's legend: before each part of the loss, a dot in the color of that part's line, like
+   the dot at the line's end. A short piece of the line would read as a minus sign there. */
 .loss .key {
   display: inline-block;
   width: 7px;
@@ -369,19 +369,19 @@
   gap: var(--space-4) var(--space-6);
   margin-top: var(--space-3);
 }
-
-/* The footer's one link, to the next demo, is at the right end, where the other pages have theirs. */
 .detail h2 { margin: 0 0 var(--space-1); }
 .detail .stats { margin: 0; text-wrap: pretty; }
+
+/* The footer's one link, to the next demo, is at the right end, where the other pages have theirs. */
 .colophon { justify-content: flex-end; }
 
-/* One column, with the sketch above the photos. */
-@media (max-width: 760px) {
 /* The detail text in one column, about 66 characters a line. */
 @media (max-width: 999px) {
   .detail { grid-template-columns: minmax(0, 32em); }
 }
 
+/* One column, with the sketch above the photos. */
+@media (max-width: 760px) {
   .stages { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
 }
 
