@@ -138,6 +138,10 @@ export type SearcherOptions = {
   windowCapacity?: number
   // Goes into every shader's source, see gpu/host.ts. For measuring cold compiles.
   shaderSalt?: number
+  // Every document's cells, from a caller that has written them already with program.ts's writeDocumentCells, e.g. a
+  // page that writes them a few documents at a time between frames: writing the cells of 100,000 documents in one
+  // piece takes about 45 ms. Without it, the searcher writes them from the texts.
+  cells?: Float32Array
 }
 
 export const defaultSelfCheckSearches: readonly {pattern: string, scope: SearchScope}[] = [
@@ -218,25 +222,42 @@ function validationOf(summary: Float32Array, documentCount: number): Validation 
   return validation
 }
 
-function writeCells(texts: readonly string[]) {
+function writeCells(texts: readonly string[], written: Float32Array | undefined) {
+  if (written !== undefined) {
+    invariant(written.length === texts.length * cellsPerDocument, `the cells of ${texts.length} documents are ${texts.length * cellsPerDocument} numbers, got ${written.length}`)
+    return written
+  }
   const cells = new Float32Array(texts.length * cellsPerDocument)
   for (let row = 0; row < texts.length; row++) writeDocumentCells(cells, row * cellsPerDocument, texts[row]!)
   return cells
 }
 
-const buildMaskedLoop = (states: number) => buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions, cellsPerDocument, masked: true, stopAtLength: false})
+// The search program for a state capacity. On the CPU its loops stop at the text's end, which saves the share of the
+// 512 positions that hold no text, 40% for documents of 300 code points, and gives the same values: a position past
+// the end holds -1, whose class has no steps. On the GPU the loops run every position, since stopping made a search
+// slower there, e.g. 9.4 ms against 7.0 ms for 100,000 documents at 8 states.
+const buildMaskedLoop = (states: number, stopAtLength: boolean) => buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions, cellsPerDocument, masked: true, stopAtLength})
 
 function checkWindow(window: DocumentWindow, documentCount: number, windowCapacity: number) {
   invariant(Number.isInteger(window.firstDocument) && Number.isInteger(window.documentCount) && window.firstDocument >= 0 && window.documentCount >= 0, 'a window is a range of documents')
   invariant(window.firstDocument + window.documentCount <= documentCount && window.documentCount <= windowCapacity, `a window holds at most ${windowCapacity} of the ${documentCount} documents`)
 }
 
-type CpuOptions = SearcherOptions & {backend?: 'generated' | 'executor'}
+type CpuOptions = SearcherOptions & {
+  backend?: 'generated' | 'executor'
+  // When the highlighter runs. 'atCreation' unless given: on every document when the searcher is created, which takes
+  // about 9 s for 100,000 documents as generated JavaScript. With 'whenFirstRead' it runs on a document when a search
+  // or `kinds` first reads that document, e.g. for a page that searches a few documents at a time in a worker and shows
+  // each piece's answer as it arrives. The highlighter's time is then in no search's timings, and reading `validation`
+  // runs the highlighter on every document that it hasn't run on yet.
+  highlight?: 'atCreation' | 'whenFirstRead'
+}
 // One search without the gate, for a self check.
 type EvaluateOnCpu = (compiled: CompiledPattern, states: number, request: SearchRequest, patternStarted: number) => SearchResult & {status: 'searched'}
 
 // The same programs on the CPU. `backend` is 'generated' unless given: generated JavaScript of each step, which takes
-// e.g. 0.25 ms per document and search at 8 states, so a page gives it hundreds of documents, not tens of thousands.
+// e.g. 0.14 ms per search at 8 states for a document of 300 code points in Chrome, so a page gives it hundreds of
+// documents, or searches a few documents at a time in a worker, with `documents: 'window'`.
 export function createCpuSearcher(texts: readonly string[], options: CpuOptions = {}): Searcher {
   return buildCpuSearcher(texts, options).searcher
 }
@@ -248,20 +269,35 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
   const stateCapacities = [...(options.stateCapacities ?? defaultStateCapacities)].sort((left, right) => left - right)
   const windowCapacity = options.windowCapacity ?? 64
   const backend = options.backend ?? 'generated'
-  const cells = writeCells(texts)
+  const cells = writeCells(texts, options.cells)
   const cellsMs = performance.now() - started
   const json = buildJsonLoop(cellsPerDocument)
   const jsonRunner = createLoopRunner(json.loop, backend)
   const summary = new Float32Array(documentCount * stepSummaryNames.length)
   const kinds = new Float32Array(documentCount * positions)
-  for (let row = 0; row < documentCount; row++) jsonRunner.run([cells], row, [summary, kinds], row, row)
-  const validation = validationOf(summary, documentCount)
+  // 1 for a document that the highlighter has run on.
+  const highlighted = new Uint8Array(documentCount)
+  const highlight = (firstDocument: number, count: number) => {
+    for (let row = firstDocument; row < firstDocument + count; row++) {
+      if (highlighted[row] === 1) continue
+      jsonRunner.run([cells], row, [summary, kinds], row, row)
+      highlighted[row] = 1
+    }
+  }
+  // What the highlighter says about every document, which runs it on the documents that it hasn't run on yet.
+  let validation: Validation | undefined
+  const validationOfEveryDocument = () => {
+    highlight(0, documentCount)
+    validation ??= validationOf(summary, documentCount)
+    return validation
+  }
+  if (options.highlight !== 'whenFirstRead') validationOfEveryDocument()
   const load = {cellsMs, validateMs: performance.now() - started - cellsMs, totalMs: performance.now() - started}
   const searches = new Map<number, {built: SearchLoop, runner: LoopRunner, shared: Float32Array}>()
   const searchFor = (states: number) => {
     let entry = searches.get(states)
     if (entry === undefined) {
-      const built = buildMaskedLoop(states)
+      const built = buildMaskedLoop(states, true)
       entry = {built, runner: createLoopRunner(built.loop, backend), shared: new Float32Array(built.loop.sharedValues)}
       searches.set(states, entry)
     }
@@ -274,14 +310,19 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
     const window = request.window ?? {firstDocument: 0, documentCount: 0}
     checkWindow(window, documentCount, windowCapacity)
     const all = request.documents !== 'window'
+    const first = all ? 0 : window.firstDocument
+    const count = all ? documentCount : window.documentCount
+    // The search reads its documents' display kinds. With `highlight: 'whenFirstRead'`, the highlighter runs here on
+    // the ones that it hasn't run on yet, and the search's timings leave its time out.
+    const highlightStarted = performance.now()
+    highlight(first, count)
+    const highlightMs = performance.now() - highlightStarted
     const {built, runner, shared} = searchFor(states)
     shared.set(built.loop.sharedValues)
     built.writePattern(shared, compiled)
     built.writeScope(shared, scope)
     runner.setShared(shared)
     const evaluateStarted = performance.now()
-    const first = all ? 0 : window.firstDocument
-    const count = all ? documentCount : window.documentCount
     const matchCounts = new Float32Array(count)
     const marks = new Float32Array(window.documentCount * positions)
     for (let index = 0; index < count; index++) {
@@ -293,23 +334,28 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
     return {
       status: 'searched', pattern: request.pattern, scope, documents: all ? 'all' : 'window', states, patternStates: compiled.automaton.stateCount,
       matchCounts, ...summarize(matchCounts), window, marks,
-      timings: {patternMs: evaluateStarted - patternStarted, evaluateMs: finished - evaluateStarted, totalMs: finished - patternStarted, passMs: undefined},
+      timings: {patternMs: evaluateStarted - patternStarted - highlightMs, evaluateMs: finished - evaluateStarted, totalMs: finished - patternStarted - highlightMs, passMs: undefined},
     }
   }
 
   const searcher: Searcher = {
-    backend: 'cpu', documentCount, stateCapacities, validation, load, limits: undefined,
+    backend: 'cpu', documentCount, stateCapacities, load, limits: undefined,
+    get validation() {
+      return validationOfEveryDocument()
+    },
     programs: () => [
       {name: 'JSON highlighter', operations: describeLoop(json.loop).map(stage => stage.operations), statements: undefined, compileMs: undefined},
       ...[...searches].map(([states, {built}]) => ({name: `regex search, ${states} states`, operations: describeLoop(built.loop).map(stage => stage.operations), statements: undefined, compileMs: undefined})),
     ],
     validate() {
       const validateStarted = performance.now()
-      for (let row = 0; row < documentCount; row++) jsonRunner.run([cells], row, [summary, kinds], row, row)
+      highlighted.fill(0)
+      highlight(0, documentCount)
       return Promise.resolve({validation: validationOf(summary, documentCount), evaluateMs: performance.now() - validateStarted, passMs: undefined})
     },
     kinds: window => {
       checkWindow(window, documentCount, documentCount)
+      highlight(window.firstDocument, window.documentCount)
       return Promise.resolve(kinds.slice(window.firstDocument * positions, (window.firstDocument + window.documentCount) * positions))
     },
     search(request) {
@@ -336,7 +382,7 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
         result.values += length
         for (let index = 0; index < length; index++) if (actual[index] !== expected[index]) result.mismatches++
       }
-      for (const name of ['valid', 'firstErrorPosition', 'firstErrorKind', 'truncated'] as const) compare(validation[name], reference.searcher.validation[name], sample)
+      for (const name of ['valid', 'firstErrorPosition', 'firstErrorKind', 'truncated'] as const) compare(validationOfEveryDocument()[name], reference.searcher.validation[name], sample)
       for (const {pattern, scope} of checks) {
         const resolved = resolvePattern(pattern, stateCapacities)
         if ('status' in resolved) continue
@@ -365,9 +411,12 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
   invariant(documentCount >= 1, 'a searcher holds at least one document')
   const stateCapacities = [...(options.stateCapacities ?? defaultStateCapacities)].sort((left, right) => left - right)
   const windowCapacity = options.windowCapacity ?? 64
+  // Read here, so that the functions below don't keep `options`, and with it the caller's cells, 205 MB for 100,000
+  // documents, for as long as the searcher lives.
+  const {shaderSalt} = options
   const maxDocuments = Math.floor(Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) / (cellsPerDocument * 4))
   invariant(documentCount <= maxDocuments, `${documentCount} documents need a buffer of ${bufferBytesFor(documentCount)} bytes, and this device binds ${device.limits.maxStorageBufferBindingSize}. Ask for more with requestBatchDevice(bufferBytesFor(count)), or pass fewer documents.`)
-  const cells = writeCells(texts)
+  const cells = writeCells(texts, options.cells)
   const cellsMs = performance.now() - started
   const store = await createDocumentStore(device, cellsPerDocument, documentCount)
   store.write(cells, documentCount)
@@ -375,7 +424,7 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
   // The highlighter, once. Its display kinds stay in the runner's second output buffer, for every document.
   const json = buildJsonLoop(cellsPerDocument)
   const jsonShader = emitLoopWgsl(json.loop)
-  const jsonRunner = await createProgramRunner(device, jsonShader, json.loop.sharedValues, store, options.shaderSalt, {windowCapacity: documentCount})
+  const jsonRunner = await createProgramRunner(device, jsonShader, json.loop.sharedValues, store, shaderSalt, {windowCapacity: documentCount})
   const everyDocument = {firstDocument: 0, documentCount}
   const validated = await jsonRunner.evaluate({count: documentCount, window: everyDocument, readbacks: [{group: 0, ...everyDocument}]})
   const validation = validationOf(validated.outputs[0]!, documentCount)
@@ -388,9 +437,9 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
     let entry = searches.get(states)
     if (entry === undefined) {
       entry = (async () => {
-        const loop = buildMaskedLoop(states)
+        const loop = buildMaskedLoop(states, false)
         const shader = emitLoopWgsl(loop.loop)
-        const runner = await createProgramRunner(device, shader, loop.loop.sharedValues, store, options.shaderSalt, {inputs: [kindsBuffer], windowCapacity})
+        const runner = await createProgramRunner(device, shader, loop.loop.sharedValues, store, shaderSalt, {inputs: [kindsBuffer], windowCapacity})
         const search = {built: loop, runner, shared: new Float32Array(loop.loop.sharedValues), statements: shader.statementCount}
         built.set(states, search)
         return search

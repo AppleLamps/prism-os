@@ -52,6 +52,14 @@ const expectations: Record<string, {ready: string, report: string}> = {
     ready: `/\\d/.test(document.querySelector('#learning-coefficients')?.textContent ?? '')`,
     report: `document.querySelector('#learning-coefficients').textContent.trim() + ' trained weights'`,
   },
+  'json-search/': {
+    // The page is ready once its documents are loaded and its line of numbers holds the first search's, e.g.
+    // "10,559 of 100,000 documents match. This program: 20 ms on the GPU." In a browser without WebGPU the search runs on the CPU
+    // and takes 20 s or more, so there the first numbers are a part of the answer, e.g. "56 of the first 596
+    // documents match.", and the page also shows a sentence that says why.
+    ready: `window.jsonSearch?.ready === true && / documents match/.test(document.querySelector('#status')?.textContent ?? '')`,
+    report: textOf('#status, #notice'),
+  },
 }
 
 if (!process.argv.includes('--no-build')) {
