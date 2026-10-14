@@ -41,15 +41,13 @@
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 
   /* The scale. Serif for titles and for text to read, sans for the interface, mono for code
-     and for values. Every line height is a multiple of 4 px, except the 22 px of a note's
-     text. */
+     and for values. Every line height is a multiple of 4 px, except the 22 px of code in a
+     window of 640 px or narrower, which the end of this file sets. */
   --type-label: 600 11px/16px var(--font-sans);      /* uppercase and tracked: see .label */
   --type-small: 400 12px/16px var(--font-sans);
   --type-ui: 400 13px/20px var(--font-sans);
   --type-body: 400 15px/24px var(--font-sans);
   --type-code: 400 13px/24px var(--font-mono);
-  --type-notes: 400 15px/22px var(--font-serif);
-  --type-reading: 400 17px/28px var(--font-serif);
   --type-deck: 400 19px/28px var(--font-serif);
   --type-title-xs: 700 16px/20px var(--font-serif);  /* the project name, a window's title */
   --type-title-s: 700 20px/24px var(--font-serif);
@@ -155,7 +153,8 @@ kbd {
   text-align: center;
 }
 
-/* Page frame: one column, 800 px for a tool and 1104 px for a page with two columns. */
+/* Page frame: one column, 1104 px with the class "wide", for a page whose content has two columns, e.g. the JSON
+   search's map and document. Without the class the column is 800 px, which no page uses today. */
 .page {
   width: min(100% - 48px, var(--page-width, 800px));
   margin: 0 auto;
@@ -315,23 +314,10 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
   border-color: var(--copper-line);
   box-shadow: var(--shadow-1), 0 0 0 3px var(--copper-wash);
 }
-.surface pre, .surface textarea {
+.surface pre {
   margin: 0;
   font: var(--type-code);
   tab-size: 2;
-}
-/* A strip along a surface's bottom edge, for a result line. */
-.surface-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1) var(--space-4);
-  min-height: 40px;
-  padding: var(--space-2) var(--space-4);
-  border-top: 1px solid var(--rule);
-  font: var(--type-ui);
-  color: var(--ink-2);
 }
 
 /* Controls */
@@ -387,43 +373,11 @@ a.card:active { transform: translateY(0); box-shadow: var(--shadow-1); }
 }
 .input::placeholder { color: var(--ink-3); }
 
-/* A select with its label to the left, in the label style. */
-.field {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-.select {
-  height: 28px;
-  padding: 0 28px 0 10px;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-2);
-  background: var(--sheet) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235f564d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 9px center;
-  color: var(--ink);
-  font: 500 13px/20px var(--font-sans);
-  font-variant-numeric: tabular-nums;
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  transition: border-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
-}
-.select:hover { border-color: var(--rule-strong); }
-.select:focus-visible {
-  outline: none;
-  border-color: var(--copper-line);
-  box-shadow: 0 0 0 3px var(--copper-wash);
-}
-/* iOS zooms the page when a focused control's text is under 16 px, and only iOS knows -webkit-touch-callout. */
-@supports (-webkit-touch-callout: none) {
-  .select { font-size: 16px; }
-}
-
-/* Under a finger a button and a select are 40 px tall, where a mouse gets 32 and 28 px. A link of the header or
-   the footer is one 20 px line of text, and padding above and below gives a finger 40 px of it without moving
-   anything: the header is 40 px tall and centers its links, and a link of the footer is inline, where padding
-   above and below takes no room. */
+/* Under a finger a button is 40 px tall, where a mouse gets 32 px. A link of the header or the footer is one 20 px
+   line of text, and padding above and below gives a finger 40 px of it without moving anything: the header is 40 px
+   tall and centers its links, and a link of the footer is inline, where padding above and below takes no room. */
 @media (pointer: coarse) {
-  .button, .select { height: 40px; }
+  .button { height: 40px; }
   .brand, .masthead nav a, .colophon a { padding-block: 10px; }
 }
 

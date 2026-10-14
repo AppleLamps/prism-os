@@ -8,7 +8,7 @@
 //    page's HTML at its path in the repo, e.g. site/assets/index.html.
 // 3. Move each page's HTML to its folder on the site. The URLs in its <link>, <script> and <img> tags are relative
 //    to the HTML file, so they are rewritten for the new folder. Links between pages stay as written, since the
-//    pages write them for the site's layout already, e.g. "../regex-search/". Every page gets the site's icon.
+//    pages write them for the site's layout already, e.g. "../learned-gallery/". Every page gets the site's icon.
 // 4. Build each script that a page starts as a worker, as one file next to its page, e.g. site/json-search/demo-worker.js.
 // 5. Check the result, and fail when a page is missing, when a page loads a file or links to a page that isn't in
 //    site/, when a page loads anything from another host, or when a URL starts with "/". The site is served under
@@ -95,7 +95,7 @@ async function movePage(source: string, sitePath: string) {
   await mkdir(path.dirname(targetFile), {recursive: true})
   await writeFile(targetFile, html)
   if (builtFile !== targetFile) await rm(builtFile)
-  // The folders Bun made for the page's path in the repo, e.g. site/lab/regex-search and then site/lab, once empty.
+  // The folders Bun made for the page's path in the repo, e.g. site/lab/learned-gallery and then site/lab, once empty.
   for (let folder = path.dirname(builtFile); folder !== outdir && (await readdir(folder)).length === 0; folder = path.dirname(folder)) {
     await rmdir(folder)
   }

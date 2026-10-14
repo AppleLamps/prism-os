@@ -375,37 +375,19 @@
     <p class="section-note">Demos of tasks that are usually written in plain JavaScript, to see how one fixed program handles them. Each has a fixed capacity, named outputs for what doesn't fit, and a plain JavaScript reference that its tests compare with.</p>
     <div class="cards">
       <article class="card">
-        <h3><a href="/assets/json-highlighter.html">JSON highlighter</a></h3>
-        <p class="path">assets/json-highlighter.html</p>
-        <p>A JSON text box of up to 2,048 code points, highlighted on every keystroke. The tokenizer and the grammar are state machines read from tables in cells, and the program also returns the first error and the bracket that matches the bracket at the caret. Its code moved from lab/json-highlighter into src/json-highlighter on September 18, 2026.</p>
-        <p class="try-label">Try</p>
-        <ul>
-          <li>Delete a comma or a closing brace, and read the first error as a sentence below the text, e.g. "Line 4, column 3. A comma or a closing bracket was expected here."</li>
-          <li>Put the caret next to a bracket to highlight its match, or open 14 brackets to get the maximum depth error.</li>
-        </ul>
-        <p class="links">
-          <a href="/assets/json-highlighter.html?form=brent-kung"><code>?form=brent-kung</code></a> the state machines as prefix scans, which take about 0.5 s to build
-          <a href="/assets/json-highlighter.html?form=sklansky"><code>?form=sklansky</code></a> about 1 s
-          <a href="/assets/json-highlighter.html?capacity=512&amp;depth=16"><code>?capacity=512&amp;depth=16</code></a> the limits that the README measures
-          <a href="/src/json-highlighter/README.md">README</a>
-        </p>
+        <h3>JSON highlighter</h3>
+        <p class="path">src/json-highlighter/README.md</p>
+        <p>A program that highlights a JSON text of up to 512 code points, or of another capacity chosen when the program is built. The tokenizer and the grammar are state machines read from tables in cells, and the program also returns the first error and the bracket that matches the bracket at the caret. Its code moved from lab/json-highlighter into src/json-highlighter on September 18, 2026.</p>
+        <p class="note">No demo page since October 14, 2026, when its own page was removed: the JSON search's page runs this program over every document. See the folder's README.</p>
+        <p class="links"><a href="/src/json-highlighter/README.md">README</a></p>
       </article>
 
       <article class="card">
-        <h3><a href="/lab/regex-search/demo.html">Regex search</a></h3>
-        <p class="path">lab/regex-search/demo.html</p>
-        <p>Search as you type over up to 1,024 code points. JavaScript compiles the pattern into an automaton, and the program runs it one code point at a time as products of transition matrices with 0/1 state vectors, in a reverse pass and a forward pass, to find leftmost, then longest matches.</p>
-        <p class="try-label">Try</p>
-        <ul>
-          <li>Edit the pattern, e.g. add <code>(ing)?</code> after <code>[a-z]+</code>, and read the program's size and the last search's time under the text, and the automaton's size under "How the pattern fits the program".</li>
-          <li>Switch Program to "built for each pattern": each pattern change now rebuilds and recompiles the program. Paste a long pattern to get the sentence about the states.</li>
-        </ul>
-        <p class="note">The page starts with the pattern as data at 12 states and 768 code points, which takes about 0.6 s before its first search. 16 states at 1,024 code points take about 1.3 s, and the page refuses to build 32 states at 512 code points or more.</p>
-        <p class="links">
-          <a href="/lab/regex-search/demo.html?states=8"><code>?states=8</code></a> a faster start
-          <a href="/lab/regex-search/demo.html?form=builtin&amp;states=32&amp;text=1024"><code>?form=builtin&amp;states=32&amp;text=1024</code></a>
-          <a href="/lab/regex-search/README.md">README</a>
-        </p>
+        <h3>Regex search</h3>
+        <p class="path">lab/regex-search/README.md</p>
+        <p>A search for a pattern in a text of a fixed capacity, e.g. 1,024 code points. JavaScript compiles the pattern into an automaton, and the program runs it one code point at a time as products of transition matrices with 0/1 state vectors, in a reverse pass and a forward pass, to find leftmost, then longest matches.</p>
+        <p class="note">No demo page since October 14, 2026, when its own page was removed: the JSON search's page runs this program over every document. See the folder's README.</p>
+        <p class="links"><a href="/lab/regex-search/README.md">README</a></p>
       </article>
 
       <article class="card">

@@ -69,7 +69,7 @@ export function buildBuiltInSearch({automaton}: CompiledPattern, textLength: num
   return {cells, output, ...table.finish()}
 }
 
-export type BuiltInSearch = ReturnType<typeof buildBuiltInSearch>
+type BuiltInSearch = ReturnType<typeof buildBuiltInSearch>
 export type BuiltInOutput = WireValues<BuiltInSearch['output']>
 
 export function createBuiltInSearch(compiled: CompiledPattern, textLength: number) {
