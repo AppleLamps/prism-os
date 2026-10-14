@@ -1865,7 +1865,9 @@ test('a drag or a resize starts from where the window is drawn, and a drag store
     const {machine, arranged} = start()
     machine.pointerDown(888, 612)
     step(machine, 900, 700)
-    assert.deepEqual(storedRectangles(machine), [arranged[0], arranged[1], fittedPhotos])
+    assert.equal(machine.source[resizeSourceField(2)], 1)
+    // The press alone stores nothing.
+    assert.deepEqual(storedRectangles(machine), arranged)
     machine.pointerMove(788, 562)
     const resized = {left: 340, top: 194, width: 460, height: 380}
     assert.deepEqual(drawnRectangles(machine, step(machine, 900, 700))[2], resized)
@@ -1885,8 +1887,12 @@ test('a drag or a resize starts from where the window is drawn, and a drag store
     const values = step(machine, 900, 700)
     assert.deepEqual([0, 1, 2].map(windowIndex => machine.source[dragSourceField(windowIndex)]), [0, 1, 0])
     assertFocused(projectWindows(machine, values), 1)
-    // The press alone stores the position that Notes is drawn at.
-    assert.deepEqual(storedRectangles(machine)[1], {...arranged[1]!, left: 400})
+    // The press alone stores nothing, and the first move stores the position that
+    // it leaves: 1 px left of where Notes is drawn.
+    assert.deepEqual(storedRectangles(machine), arranged)
+    machine.pointerMove(419, 174)
+    assert.deepEqual(drawnRectangles(machine, step(machine, 900, 700))[1], {...arranged[1]!, left: 399})
+    assert.deepEqual(storedRectangles(machine), [arranged[0], {...arranged[1]!, left: 399}, arranged[2]])
   }
 
   // A drag keeps the stored size. On a phone held sideways, Photos is drawn 278 px
@@ -1928,6 +1934,235 @@ test('a maximized window follows the viewport, and its stored rectangle waits fo
   values = settle(machine, 1440, 900)
   assert.deepEqual(drawnRectangles(machine, values), arranged)
   assert.deepEqual(storedRectangles(machine), arranged)
+})
+
+test('a press and a release that move nothing store nothing, e.g. a tap on a title bar on a phone held sideways, and the smallest move stores', () => {
+  // A phone turned on its side, where the three windows lie on one rectangle,
+  // 12, 36 and 366 × 278 px. A tap on the title bar of the front window, then each
+  // of the other two brought to the front by its dock item and tapped on its title
+  // bar as well. Back upright, every window is where the arrangement put it.
+  {
+    const machine = createWindowManagerMachine()
+    const arranged = arrangeInitialWindows(machine.source, machine.cells, 390, 844)
+    step(machine, 390, 844)
+    let values = settle(machine, 844, 390)
+    for (const windowIndex of [2, 1, 0]) {
+      if (windowIndex !== 2) {
+        const dockItem = projectDock(machine, values)[windowIndex]!
+        machine.pointerDown(dockItem.left + dockItem.width / 2, dockItem.top + dockItem.height / 2, pressTime(machine))
+        machine.pointerUp(dockItem.left + dockItem.width / 2, dockItem.top + dockItem.height / 2, pressTime(machine))
+        values = settle(machine, 844, 390)
+      }
+      assertFocused(projectWindows(machine, values), windowIndex)
+      machine.pointerDown(72, 58, pressTime(machine))
+      step(machine, 844, 390)
+      assert.equal(machine.source[dragSourceField(windowIndex)], 1)
+      machine.pointerUp(72, 58, pressTime(machine))
+      values = settle(machine, 844, 390)
+      assert.deepEqual(storedRectangles(machine), arranged)
+    }
+    assert.deepEqual(drawnRectangles(machine, settle(machine, 390, 844)), arranged)
+  }
+
+  // A desktop's browser window made small for a moment: a click on Photos' grip,
+  // and a click on Notes' title bar, which brings Notes to the front.
+  for (const [smallerWidth, smallerHeight, windowIndex, part] of [[700, 500, 2, 'grip'], [900, 700, 1, 'title bar']] as const) {
+    const machine = createWindowManagerMachine()
+    const arranged = arrangeInitialWindows(machine.source, machine.cells, 1440, 900)
+    step(machine, 1440, 900)
+    const drawn = drawnRectangles(machine, settle(machine, smallerWidth, smallerHeight))[windowIndex]!
+    assert.notDeepEqual(drawn, arranged[windowIndex])
+    const point = part === 'grip'
+      ? {x: drawn.left + drawn.width - 12, y: drawn.top + drawn.height - 12}
+      : {x: drawn.left + 20, y: drawn.top + 22}
+    machine.pointerDown(point.x, point.y, pressTime(machine))
+    step(machine, smallerWidth, smallerHeight)
+    assert.equal(machine.source[part === 'grip' ? resizeSourceField(windowIndex) : dragSourceField(windowIndex)], 1)
+    machine.pointerUp(point.x, point.y, pressTime(machine))
+    settle(machine, smallerWidth, smallerHeight)
+    assert.deepEqual(storedRectangles(machine), arranged)
+    assert.deepEqual(drawnRectangles(machine, settle(machine, 1440, 900)), arranged)
+  }
+
+  // The smallest move, one step of the 1/64 px grid, stores: Photos, stored at
+  // 842, 278 px and drawn at 340, 194 px in a viewport of 900 × 700 px, is dragged
+  // 1/64 px to the left, and then stays there in the larger viewport. A release at
+  // another point than the last move is a move too, here 1/64 px further up.
+  {
+    const machine = createWindowManagerMachine()
+    const arranged = arrangeInitialWindows(machine.source, machine.cells, 1440, 900)
+    step(machine, 1440, 900)
+    settle(machine, 900, 700)
+    machine.pointerDown(440, 216)
+    step(machine, 900, 700)
+    assert.deepEqual(storedRectangles(machine), arranged)
+    machine.pointerMove(440 - 1 / 64, 216)
+    step(machine, 900, 700)
+    assert.deepEqual(storedRectangles(machine), [arranged[0], arranged[1], {left: 340 - 1 / 64, top: 194, width: 560, height: 430}])
+    machine.pointerUp(440 - 1 / 64, 216 - 1 / 64)
+    step(machine, 900, 700)
+    const dragged = {left: 340 - 1 / 64, top: 194 - 1 / 64, width: 560, height: 430}
+    assert.deepEqual(storedRectangles(machine), [arranged[0], arranged[1], dragged])
+    assert.deepEqual(drawnRectangles(machine, settle(machine, 1440, 900)), [arranged[0], arranged[1], dragged])
+  }
+})
+
+// The rule for a window's rectangle in plain JavaScript: the stored rectangle
+// fitted into the workspace, see fitIntoWorkspace in window-manager.ts, with the
+// program's constants: a dock of 76 px, a system bar of 36 px, a minimum size of
+// 280 × 190 px, and a margin of 12 px around a maximized window.
+type WindowRectangle = {left: number, top: number, width: number, height: number}
+
+function workspaceUnder(viewportHeight: number) {
+  const dockTop = viewportHeight - Math.min(76, viewportHeight)
+  const top = Math.min(36, dockTop)
+  return {top, dockTop, height: dockTop - top}
+}
+
+function fitReference(rectangle: WindowRectangle, viewportWidth: number, viewportHeight: number): WindowRectangle {
+  const clamp = (value: number, minimum: number, maximum: number) => Math.min(Math.max(value, minimum), maximum)
+  const workspace = workspaceUnder(viewportHeight)
+  const width = clamp(rectangle.width, Math.min(280, viewportWidth), viewportWidth)
+  const height = clamp(rectangle.height, Math.min(190, workspace.height), workspace.height)
+  return {
+    left: clamp(rectangle.left, 0, Math.max(0, viewportWidth - width)),
+    top: clamp(rectangle.top, workspace.top, Math.max(0, workspace.dockTop - height)),
+    width,
+    height,
+  }
+}
+
+function maximizedReference(viewportWidth: number, viewportHeight: number): WindowRectangle {
+  const workspace = workspaceUnder(viewportHeight)
+  const left = Math.min(12, viewportWidth / 2)
+  const inset = Math.min(12, workspace.height / 2)
+  return {left, top: workspace.top + inset, width: Math.max(0, viewportWidth - 2 * left), height: Math.max(0, workspace.height - 2 * inset)}
+}
+
+test('stored and drawn rectangles equal a plain JavaScript reference over random viewports, drags and resizes, with viewports on the thresholds', () => {
+  // Widths and heights on and next to the sizes where the fit changes: no size,
+  // the minimum width of 280 px, the dock's 76 px, the dock and the system bar
+  // together, 112 px, a workspace exactly as tall as the minimum height, 302 px of
+  // viewport, and the cells' ceiling of 16,384 px.
+  const widths = [0, 100, 279, 280, 281, 300, 360, 390, 560, 561, 640, 844, 900, 1000, 1280, 1440, 1920, 2560, 16_384]
+  const heights = [0, 50, 76, 112, 113, 300, 301, 302, 303, 390, 542, 543, 600, 700, 800, 844, 900, 1080, 1440, 16_384]
+  const onGrid = (value: number) => Math.round(value * 64) / 64
+  const counts = {evaluations: 0, storedComparisons: 0, drawnComparisons: 0, fittedDiffersFromStored: 0, drags: 0, resizes: 0, gesturesWithoutAMove: 0}
+
+  for (let session = 0; session < 40; session++) {
+    const random = createRandom(0xabc000 + session)
+    const pick = (values: readonly number[]) => values[Math.floor(random() * values.length)]!
+    const randomViewport = (): [number, number] => random() < 0.2
+      ? [onGrid(random() * 2000), onGrid(random() * 1400)]
+      : [pick(widths), pick(heights)]
+    const machine = createWindowManagerMachine()
+    // On the table of every evaluation that applies an event, e.g. a viewport change
+    // or a pointer move: every wire with a declared or inferred grid lies on it, and
+    // every live wire within its declared or inferred range, e.g. the fitted
+    // rectangle's 0..16,384 px on the 1/64 px grid, which the program declares and
+    // the builder can't infer. The evaluations between events only step springs.
+    machine.observe({
+      beforeEvaluate(table, evaluation) {
+        if (evaluation.events.length === 0) return
+        const values = machine.circuit.evaluateTensor(table)
+        validateGrids(machine.circuit, values)
+        for (const wire of machine.tensorProgram.wireOrder) {
+          const {minimum, maximum} = machine.circuit.ranges[wire]!
+          assert.ok(values[wire]! >= minimum && values[wire]! <= maximum, `wire ${wire} holds ${values[wire]}, outside ${minimum}..${maximum}`)
+        }
+        counts.evaluations++
+      },
+    })
+    let [width, height] = random() < 0.5 ? [1440, 900] : randomViewport()
+    if (random() < 0.7) arrangeInitialWindows(machine.source, machine.cells, width, height)
+    const reference: WindowRectangle[] = storedRectangles(machine)
+    const compare = (label: string, values: Float32Array | null) => {
+      const context = `session ${session}, ${label}, viewport ${width} × ${height}`
+      counts.storedComparisons += windowCount
+      assert.deepEqual(storedRectangles(machine), reference, context)
+      if (values === null) return
+      const drawn = drawnRectangles(machine, values)
+      for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+        const field = (name: number) => machine.source[windowSourceField(windowIndex, name)]!
+        if (field(windowStateField.open) !== 1 || field(windowStateField.minimized) !== 0) continue
+        const expected = field(windowStateField.maximized) === 1
+          ? maximizedReference(width, height)
+          : fitReference(reference[windowIndex]!, width, height)
+        if (expected.left !== reference[windowIndex]!.left || expected.top !== reference[windowIndex]!.top || expected.width !== reference[windowIndex]!.width || expected.height !== reference[windowIndex]!.height) counts.fittedDiffersFromStored++
+        counts.drawnComparisons++
+        assert.deepEqual(drawn[windowIndex], expected, `${context}, window ${windowIndex}`)
+      }
+    }
+
+    let values = settle(machine, width, height)
+    compare('at the mount', values)
+    for (let action = 0; action < 30; action++) {
+      const choice = random()
+      if (choice < 0.4) {
+        ;[width, height] = randomViewport()
+        values = settle(machine, width, height)
+        compare('after a viewport change', values)
+        continue
+      }
+      // A press on a window's title bar left of its buttons, or on its grip, where the
+      // window is drawn. Then up to two moves and a release, each at another point,
+      // at the same point, or far outside the viewport.
+      const windowIndex = Math.floor(random() * windowCount)
+      const drawn = drawnRectangles(machine, values)[windowIndex]!
+      const press = choice < 0.7
+        ? {x: onGrid(drawn.left + drawn.width - Math.min(12, drawn.width / 4)), y: onGrid(drawn.top + drawn.height - Math.min(12, drawn.height / 4))}
+        : {x: onGrid(drawn.left + Math.min(40, drawn.width / 4)), y: onGrid(drawn.top + Math.min(22, drawn.height / 4))}
+      machine.pointerDown(press.x, press.y)
+      step(machine, width, height)
+      // Which window the press drags or resizes, as the program decided, e.g. none
+      // when another window covers the point.
+      const dragged = [0, 1, 2].findIndex(index => machine.source[dragSourceField(index)] === 1)
+      const resized = [0, 1, 2].findIndex(index => machine.source[resizeSourceField(index)] === 1)
+      if (dragged !== -1) counts.drags++
+      if (resized !== -1) counts.resizes++
+      // The press alone stores nothing.
+      compare('after a press', null)
+      let pointer = press
+      let moved = false
+      const moveCount = Math.floor(random() * 3)
+      for (let move = 0; move <= moveCount; move++) {
+        const kind = random()
+        const reach = kind < 0.1 ? 80_000 : kind < 0.3 ? 0 : 900
+        const next = {
+          x: Math.min(32_768, Math.max(-32_768, onGrid(pointer.x + (random() - 0.5) * reach))),
+          y: Math.min(32_768, Math.max(-32_768, onGrid(pointer.y + (random() - 0.5) * reach * 0.8))),
+        }
+        const deltaX = next.x - pointer.x
+        const deltaY = next.y - pointer.y
+        if (move < moveCount) machine.pointerMove(next.x, next.y)
+        else machine.pointerUp(next.x, next.y)
+        step(machine, width, height)
+        // Only an evaluation in which the pointer moved stores: a drag the position,
+        // a resize the position and the size, each starting from the fitted rectangle.
+        if (deltaX !== 0 || deltaY !== 0) {
+          moved = true
+          if (dragged !== -1) {
+            const fitted = fitReference(reference[dragged]!, width, height)
+            const afterDrag = fitReference({...fitted, left: fitted.left + deltaX, top: fitted.top + deltaY}, width, height)
+            reference[dragged] = {...reference[dragged]!, left: afterDrag.left, top: afterDrag.top}
+          }
+          if (resized !== -1) {
+            const fitted = fitReference(reference[resized]!, width, height)
+            reference[resized] = fitReference({...fitted, width: fitted.width + deltaX, height: fitted.height + deltaY}, width, height)
+          }
+        }
+        pointer = next
+        compare(move < moveCount ? 'after a move' : 'after a release', null)
+      }
+      if (!moved && (dragged !== -1 || resized !== -1)) counts.gesturesWithoutAMove++
+      values = settle(machine, width, height)
+      compare('settled after a gesture', values)
+    }
+  }
+  // The sessions reach every case: drags, resizes, gestures that move nothing, and
+  // viewports where the fitted rectangle differs from the stored one.
+  assert.ok(counts.drags > 50 && counts.resizes > 50 && counts.gesturesWithoutAMove > 10, JSON.stringify(counts))
+  assert.ok(counts.fittedDiffersFromStored > 500 && counts.evaluations > 2_000, JSON.stringify(counts))
 })
 
 // A session of timestamped events off the frame grid, replayed at several frame

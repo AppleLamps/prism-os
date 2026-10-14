@@ -467,10 +467,10 @@ function buildWindowManager() {
     // A fitted value lies inside the viewport, so within the viewport cells' range,
     // and on the 1/64 px grid of the cells that it is computed from. The builder
     // infers less from the clamps' sums, e.g. no grid for the fitted left edge, and
-    // -417,792..415,744 px for the left edge after a drag. The hit tests' comparisons
-    // are integer bits only for operands on grids within 2^24 grid steps: without
-    // these declarations, the program had 5,221 live operations in 135 layers instead
-    // of 4,377 in 130.
+    // -414,720..412,672 px with no grid for the top edge after a drag. The hit
+    // tests' comparisons are integer bits only for operands on grids within 2^24
+    // grid steps: without these declarations they are sign cascades, and the program
+    // has 844 more live operations and 5 more layers, measured on October 14, 2026.
     const inViewport = (wire: Wire) => {
       circuit.assumeRange(wire, pixel[0], pixel[1])
       circuit.assumeGrid(wire, pixelGrid)
@@ -896,6 +896,28 @@ function buildWindowManager() {
   //   would keep its stored left edge of 842 px, and its fitted left edge, which is
   //   the viewport's width minus Photos' width, would move by as much as the grip
   //   moves.
+  // - Only an evaluation in which the pointer moved stores, see pointerMoved. A
+  //   press and a release at one point didn't put the window anywhere, so the
+  //   stored rectangle stays, e.g. after a click on a title bar that only brings
+  //   its window to the front. When the press alone stored the drawn position, a
+  //   tap on Photos' title bar on a phone held sideways, where the three windows
+  //   lie on one rectangle, left Photos at 12, 36 px after the turn back, on top of
+  //   the other two, where it had been at 12, 437 px. A release at another point
+  //   than the press is a move, however small: a finger that slides by 1 px during
+  //   a tap drags the window by 1 px, and the window stores where that leaves it.
+  //
+  // Whether the pointer moved in this evaluation: 1 when the pointer is at another
+  // point than at the event before, or than at the press when this evaluation
+  // holds the press, and 0 otherwise. deltaX and deltaY are whole steps of the
+  // 1/64 px grid, so 64 times their absolute values is a whole number, at most
+  // 2^23, and its clamp is exactly 0 or 1.
+  const gridStepsPerPixel = 1 / pixelGrid
+  const pointerMoved = emitClampZeroOne(circuit, circuit.affine([
+    [emitRelu(circuit, deltaX), gridStepsPerPixel],
+    [emitRelu(circuit, circuit.affine([[deltaX, -1]])), gridStepsPerPixel],
+    [emitRelu(circuit, deltaY), gridStepsPerPixel],
+    [emitRelu(circuit, circuit.affine([[deltaY, -1]])), gridStepsPerPixel],
+  ]), unit)
   const nextNormalGeometry: Geometry[] = []
   const nextStoredGeometry: Geometry[] = []
   const nextOpen: Wire[] = []
@@ -946,12 +968,13 @@ function buildWindowManager() {
       ]),
     })
     nextNormalGeometry.push(normal)
-    const draggedOrResized = directManipulation[windowIndex]!
+    const storesPosition = emitMultiply(circuit, directManipulation[windowIndex]!, pointerMoved)
+    const storesSize = emitMultiply(circuit, resizeForMotion, pointerMoved)
     nextStoredGeometry.push({
-      left: emitSelect(circuit, draggedOrResized, current.left, normal.left),
-      top: emitSelect(circuit, draggedOrResized, current.top, normal.top),
-      width: emitSelect(circuit, resizeForMotion, current.width, normal.width),
-      height: emitSelect(circuit, resizeForMotion, current.height, normal.height),
+      left: emitSelect(circuit, storesPosition, current.left, normal.left),
+      top: emitSelect(circuit, storesPosition, current.top, normal.top),
+      width: emitSelect(circuit, storesSize, current.width, normal.width),
+      height: emitSelect(circuit, storesSize, current.height, normal.height),
     })
 
     const afterClose = emitSelect(
@@ -1766,6 +1789,16 @@ const valueListKeyNames = new Map<string, ValueListKey>([
 //   note's first word, e.g. "xTODO: this week". Once the note has had the keyboard
 //   focus, the caret or the selection is the visitor's, e.g. placed by a press in
 //   the text or moved by an arrow key, and every later focus() keeps it.
+//   "The note has had the keyboard focus" stands for "the visitor has placed a
+//   caret", since every way to place one gives the note the keyboard focus first.
+//   The two differ when the Tab key gives the note its first keyboard focus: the
+//   browser puts the caret before the first character then, and a later focus()
+//   keeps it there, although the visitor placed none. That takes a finger, a
+//   keyboard and a mouse, e.g. on a laptop with a touch screen: a tap on Notes'
+//   title bar, which makes Notes the focused window without a focus() call, see
+//   below, then the Tab key, a mouse press on another window, and a mouse press on
+//   Notes' title bar. Telling the two apart would take a record of every press in
+//   the text and every key typed in the note, so the case is left as it is.
 // - Except after a press outside every window, e.g. on the desk. The browser takes
 //   the keyboard focus away there, as at a press outside a text field on any page,
 //   and the frame leaves it so, while Notes stays the focused window.
@@ -1789,16 +1822,6 @@ export function noteFocusChange(frame: {
   lastPress: {byMouse: boolean, outsideEveryWindow: boolean}
 }): 'focus' | 'focus with the caret at the end' | 'blur' | null {
   if (!frame.notesIsFocusedWindow) return frame.noteHasKeyboardFocus ? 'blur' : null
-//   "The note has had the keyboard focus" stands for "the visitor has placed a
-//   caret", since every way to place one gives the note the keyboard focus first.
-//   The two differ when the Tab key gives the note its first keyboard focus: the
-//   browser puts the caret before the first character then, and a later focus()
-//   keeps it there, although the visitor placed none. That takes a finger, a
-//   keyboard and a mouse, e.g. on a laptop with a touch screen: a tap on Notes'
-//   title bar, which makes Notes the focused window without a focus() call, see
-//   below, then the Tab key, a mouse press on another window, and a mouse press on
-//   Notes' title bar. Telling the two apart would take a record of every press in
-//   the text and every key typed in the note, so the case is left as it is.
   if (frame.noteHasKeyboardFocus || !frame.pressedOrReleased || !frame.lastPress.byMouse || frame.lastPress.outsideEveryWindow) return null
   return frame.noteHasHadKeyboardFocus ? 'focus' : 'focus with the caret at the end'
 }
