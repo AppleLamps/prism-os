@@ -239,6 +239,48 @@ function buildSwitches(variant: 'lanes' | 'oneByOne') {
   }
 }
 
+// Two loops over a document's 12 values, each 0 or 1: the first keeps, per position, the value and its opposite in a
+// field that the loop program declares as bits, and the second counts the values. The values come from a cell that is
+// declared within 0..1 and not as a bit, so nothing proves that the field holds bits.
+function buildDeclaredField() {
+  const table = createSourceTable()
+  const cells = table.declare({value: input([0, 1]), kept: list(2, () => inputBit()), count: input([0, positions], {grid: 1})})
+  const circuit = table.createCircuit()
+  const keptValue = circuit.reglu([], 1, [[cells.value, 1]], 0)
+  const opposite = circuit.roundAffine([[keptValue, -1]], 1)
+  const nextCount = circuit.affine([[cells.count, 1], [cells.kept[0]!, 1]])
+  const marked = circuit.roundAffine([[cells.kept[1]!, 1]])
+  const {initialSource} = table.finish()
+  const loop: LoopProgram = {
+    positions,
+    buffers: [{name: 'values', cellsPerDocument: positions}],
+    registers: [{name: 'count', initial: 0}],
+    fields: [{name: 'kept', width: 2, bits: true}],
+    outputGroups: [{name: 'summary', kind: 'document', valuesPerDocument: 1, fill: 0}, {name: 'opposite', kind: 'position', valuesPerDocument: positions, fill: 0}],
+    stages: [
+      createStage({
+        name: 'keep', repeat: 'forward', circuit, sharedOffset: 0, bindings: new Map<Wire, Binding>([[cells.value, {kind: 'item', buffer: 0}]]),
+        outputs: [{wire: keptValue, write: {kind: 'field', field: 0, component: 0}}, {wire: opposite, write: {kind: 'field', field: 0, component: 1}}],
+      }),
+      createStage({
+        name: 'count', repeat: 'backward', circuit, sharedOffset: 0,
+        bindings: new Map<Wire, Binding>([[cells.kept[0]!, {kind: 'field', field: 0, component: 0}], [cells.kept[1]!, {kind: 'field', field: 0, component: 1}], [cells.count, {kind: 'register', register: 0}]]),
+        outputs: [{wire: marked, write: {kind: 'position', group: 1}}, {wire: nextCount, write: {kind: 'register', register: 0}}],
+      }),
+    ],
+    results: [{group: 0, column: 0, register: 0}],
+    sharedValues: new Float32Array(initialSource),
+    lengthCell: undefined,
+  }
+  return {
+    loop,
+    writeShared() {},
+    writeDocument(random: () => number, document: Float32Array) {
+      for (let position = 0; position < positions; position++) document[position] = Number(random() < 0.5)
+    },
+  }
+}
+
 // Runs a loop program on the CPU executor and as both writers' shaders, for several shared tables and documents, and
 // counts the values that differ from the executor's.
 function compareWriters(program: {loop: LoopProgram, writeShared: (random: () => number, shared: Float32Array) => void, writeDocument: (random: () => number, document: Float32Array) => void}, seed: number) {
@@ -354,6 +396,17 @@ describe('bit-emit.ts on small loop programs', () => {
     expect(result.mismatches).toEqual([0, 0])
     const lines = emitBitLoopWgsl(loop).code.split('\n')
     expect(lines.filter(line => line.startsWith('var r'))).toEqual([...Array.from({length: 6}, (_, index) => `var r${index}: u32 = 1u;`), 'var r6: i32 = 0i;'])
+  })
+
+  test('a field that the loop program declares as bits without a proof is a word of f32 values\' bits, as loop-emit.ts writes it', () => {
+    const {loop} = buildDeclaredField()
+    const result = compareWriters(buildDeclaredField(), 11)
+    expect(fired(result.rules)).toEqual({float: 4})
+    expect(result.mismatches).toEqual([0, 0])
+    const lines = emitBitLoopWgsl(loop).code.split('\n')
+    // The count reads a value that nothing proves to be whole, so the count is an f32 register too.
+    expect(lines.filter(line => line.startsWith('var '))).toEqual(['var r0: f32 = 0.0f;', 'var field0: array<u32, 12>;'])
+    expect(lines.filter(line => line.includes('field0[j]'))).toEqual(['field0[j] = u32(a_v4) | (u32(a_v5) << 1u);', 'let b_w0: u32 = field0[j];'])
   })
 
   test('bits next to ordinary numbers: the sign cascade and the f32 total stay f32 statements, and the whole numbers around them are integers', () => {

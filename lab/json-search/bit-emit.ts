@@ -448,6 +448,8 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
       }
       // A sum as one factor of a product.
       const grouped = (sum: string) => sum.includes(' ') ? `(${sum})` : sum
+      // Bits written into the lanes of a word one by one, bit k into lane k.
+      const inLanes = (bits: readonly string[]) => bits.map((bit, lane) => lane === 0 ? bit : `(${bit} << ${lane}u)`).join(' | ')
       // A sum as one operand of a larger expression: a name as it is, anything else as a `let` that later statements
       // with the same sum read too.
       function sharedLet(type: 'i32' | 'u32', text: string) {
@@ -625,7 +627,7 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
             const further = opens.gateds.flatMap(({gating}, lane) => gating.slice(1).map(position => lane === 0 ? bitText(position) : `(${bitText(position)} << ${lane}u)`))
             return `${word} & ${sharedLet('u32', [wordOfBits(firstBits), ...further].join(' | '))}`
           }
-          case 'each': return `${word} & ${sharedLet('u32', opens.gateds.map((each, lane) => lane === 0 ? openText(each) : `(${openText(each)} << ${lane}u)`).join(' | '))}`
+          case 'each': return `${word} & ${sharedLet('u32', inLanes(opens.gateds.map(openText)))}`
         }
       }
       // How the word of some gated reads' open bits is built: no word when every read is always open ('always'), the
@@ -728,7 +730,7 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
         const mask = lanesMask(positions.length)
         switch (slot.kind) {
           case 'lanes':
-            text = sharedLet('u32', positions.map((position, lane) => lane === 0 ? bitText(position) : `(${bitText(position)} << ${lane}u)`).join(' | '))
+            text = sharedLet('u32', inLanes(positions.map(bitText)))
             break
           case 'stored': {
             const shifted = slot.first === 0 ? slot.word() : `(${slot.word()} >> ${slot.first}u)`
@@ -743,7 +745,7 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
             if (text === undefined) {
               text = `sw${sharedWords.size}`
               sharedWords.set(cells, text)
-              hoisted.set(text, `let ${text}: u32 = ${positions.map((position, lane) => lane === 0 ? bitText(position) : `(${bitText(position)} << ${lane}u)`).join(' | ')};`)
+              hoisted.set(text, `let ${text}: u32 = ${inLanes(positions.map(bitText))};`)
             }
             break
           }
@@ -910,7 +912,7 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
               lanesOfField.set(write.field, lanes)
             } else if (fieldWords[write.field]!) {
               const bits = bitsOfField.get(write.field) ?? Array<string>(field.width).fill('')
-              bits[write.component] = write.component === 0 ? `u32(${floatText(position)})` : `(u32(${floatText(position)}) << ${write.component}u)`
+              bits[write.component] = `u32(${floatText(position)})`
               bitsOfField.set(write.field, bits)
             } else {
               fieldWrites.push(`field${write.field}[j * ${field.width}u + ${write.component}u] = ${stored(position, storage === 'bit' ? 'whole' : storage)};`)
@@ -927,7 +929,7 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
       })
       for (const [field, bits] of bitsOfField) {
         invariant(bits.every(bit => bit !== ''), 'a stage that writes a field of bits writes every bit of it')
-        fieldWrites.push(`field${field}[j] = ${bits.join(' | ')};`)
+        fieldWrites.push(`field${field}[j] = ${inLanes(bits)};`)
       }
       for (const [field, lanes] of lanesOfField) {
         invariant(!lanes.includes(-1), 'a stage that writes a field of bits writes every bit of it')
