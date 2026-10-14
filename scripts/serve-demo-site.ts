@@ -32,7 +32,7 @@ for (const page of sitePages) {
   // The list of pages decides which files are imported, so the import's path is computed.
   const module = await import(resolve(repoRoot, page.source)) as {default: Bun.HTMLBundle}
   routes[`/${page.path}`] = module.default
-  // The redirect keeps the query, e.g. /regex-search?states=8 goes to /regex-search/?states=8.
+  // The redirect keeps the query, e.g. /json-search?buffer=134217728 goes to /json-search/?buffer=134217728.
   if (page.path !== '') routes[`/${page.path.slice(0, -1)}`] = request => new Response(null, {status: 302, headers: {location: `/${page.path}${new URL(request.url).search}`}})
 }
 for (const worker of siteWorkers) {

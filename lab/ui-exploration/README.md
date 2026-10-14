@@ -63,7 +63,7 @@ These constructions came up in prototype after prototype. They're the closest th
 
 ## Capability map
 
-Operations are live operations after compilation. For scale, HandwiredOS was 5,253 operations, 192 layers, and 11,598 stored weights during the exploration, and has been 3,654, 124 and 7,890 since September 15, 2026.
+Operations are live operations after compilation. For scale, HandwiredOS was 5,253 operations, 192 layers, and 11,598 stored weights during the exploration, and 3,654, 124 and 7,890 on September 15, 2026.
 
 | UI area | Prototype | Size (operations / layers) | Checked against | What stayed outside |
 | --- | --- | --- | --- | --- |
@@ -210,7 +210,7 @@ Removed or merged on September 16, 2026, since root HandwiredOS or a remaining f
 - [notation](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/notation): source table allocator, component scopes, struct helpers, and HandwiredOS rewritten with them. cells.ts took its declarations.
 - [text-editing](code-points/README.md#merged-from-text-editing-september-16-2026): a text field's editing model inside the circuit. Merged into code-points.
 - [gallery](instanced-items/README.md#merged-from-gallery-september-16-2026): chenglou.github.io's photo gallery as one circuit. Merged into instanced-items.
-- [indirect-os-2](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2): HandwiredOS with the notation, spring bank, event queue, generated JS, and text flowing around windows. Root HandwiredOS took its Notes flow, its queue is in [input](input/README.md#merged-from-indirect-os-2-september-16-2026), and its tiered execution in [codegen](codegen/README.md#merged-from-indirect-os-2-september-16-2026).
+- [indirect-os-2](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2): HandwiredOS with the notation, spring bank, event queue, generated JS, and text flowing around windows. Root HandwiredOS took its Notes flow and kept it until October 13, 2026, its queue is in [input](input/README.md#merged-from-indirect-os-2-september-16-2026), and its tiered execution in [codegen](codegen/README.md#merged-from-indirect-os-2-september-16-2026).
 - [exactness-budget](codegen/README.md#merged-from-exactness-budget-september-16-2026): perturbed executors over seven UIs, and GPU guards only at rounding points. Merged into codegen.
 - [retiming](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/retiming): one-frame delays chosen by search against a visible-error budget.
 

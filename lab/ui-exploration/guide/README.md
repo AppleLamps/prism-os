@@ -58,11 +58,11 @@ The sections use each of these terms with the meaning given here.
 
 ### Compiled cost
 
-- **Live operations**, or just operations: the operations a compiled program keeps because some root depends on them, all of which run on every evaluation. E.g. HandwiredOS builds 4,011 operations and keeps 3,654 live.
+- **Live operations**, or just operations: the operations a compiled program keeps because some root depends on them, all of which run on every evaluation. E.g. on September 15, 2026, HandwiredOS built 4,011 operations and kept 3,654 live.
 - **Layer**: a group of operations that don't read each other, which runs as one sparse matrix multiplication. E.g. a thousand hit tests against one pointer can share the same layers.
-- **Depth**: the number of layers, i.e. the longest chain of operations that must run one after another. E.g. HandwiredOS is 124 layers deep, and a loop that updates a button's state once per queued event takes at least one layer per event.
+- **Depth**: the number of layers, i.e. the longest chain of operations that must run one after another. E.g. HandwiredOS was 124 layers deep on September 15, 2026, and a loop that updates a button's state once per queued event takes at least one layer per event.
 - **Stored weights**: the nonzero coefficients the compiled layers keep, which measure memory and the work inside sums. E.g. one sum over 1,024 values is 1 operation but 1,024 stored weights, so O(n²) growth often shows only in stored weights.
-- **Layer width**: the number of operations in one layer, i.e. how much could run at the same time on hardware that runs a whole layer at once. E.g. HandwiredOS has a median of 23 operations per layer.
+- **Layer width**: the number of operations in one layer, i.e. how much could run at the same time on hardware that runs a whole layer at once. E.g. HandwiredOS had a median of 23 operations per layer on September 15, 2026.
 - **Executor**: the code that runs a program. `evaluateReference` runs operations one at a time and defines what a program means, while `evaluateTensor` and `createTensorEvaluator` run the compiled layers and must return the same bits. E.g. the toggle switch's test checks on every frame that both return the same bits.
 - **Generated JS**: plain JavaScript statements that the codegen prototype emits from a compiled program, with the same bits as the executor. E.g. before September 15, 2026, HandwiredOS ran in about 3 µs as generated JS once the engine had optimized it, against about 30 to 40 µs on the executor.
 
@@ -143,7 +143,7 @@ The sections use each of these terms with the meaning given here.
 - **Segment**: pretext's unit of text, e.g. a word or a space, which pretext measures as one width. E.g. "The quick" is 3 segments: "The", " " and "quick".
 - **Tabulation**: finding in JavaScript the widths where a paragraph's layout result changes, so the circuit only compares the runtime width with those thresholds and adds constants. E.g. the Notes window's 10 text blocks are 1,041 operations in 4 layers.
 - **Line walker**: pretext's greedy line breaking, which adds segments to a line until the next segment doesn't fit. E.g. text-walker computes a line's end as a count of "the line through segment j fits" bits.
-- **Lookahead**: how many segments after a line's start the line walker compares, which caps how many segments one line can hold. E.g. 26 in HandwiredOS's Notes flow at the paragraph widths baked into notes-paragraph.ts, and 21 in text-walker's circuits for a 1,023-segment paragraph.
+- **Lookahead**: how many segments after a line's start the line walker compares, which caps how many segments one line can hold. E.g. 26 in HandwiredOS's Notes flow in September 2026, and 21 in text-walker's circuits for a 1,023-segment paragraph.
 
 ### Checking
 

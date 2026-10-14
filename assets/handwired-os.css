@@ -1,0 +1,1301 @@
+/* HandwiredOS's desktop in the paper look: a desk, sheets of paper for windows, and one
+   copper wire under the dock. Loads after site.css, which holds the tokens and the
+   components that every demo page shares.
+
+   The program computes every position and size, and JavaScript writes them as inline
+   styles each frame: a window's width, height, transform, opacity, visibility and z-index,
+   its content box's width and height, a dock item's rectangle, each photo's position, and
+   the numbers --focused, --maximized, --inactive and --open, each 0 or 1. JavaScript also
+   writes the cursor of the desktop and of each title bar, from what the program says the
+   press holds, and the rectangle of the wallpaper's canvas, from the viewport.
+   So no rule here gives one of those properties a transition, an animation or a default.
+   What depends on the four numbers is arithmetic on them, e.g. a shadow that grows with
+   --focused, and has no transition either: focus changes in the frame of the press, and
+   the first frame paints every window as that frame computed it.
+
+   The sizes are the program's too: the 44 px title bar, the 18 px buttons 10 px apart, the
+   24 px grip, the 76 px dock, the 36 px system bar and the windows' 1 px border. The
+   program's hit tests use them, so a size changes in window-manager.ts, not here. */
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+/* The desk's color also shows where a touch pulls the page past its edge. The selector is
+   :root, which outranks site.css's html rule in either order of the two stylesheets: Bun's
+   development server links a page's stylesheets in reverse, and bun build keeps the page's
+   order, so a rule here that replaces one of site.css needs the more specific selector. */
+:root {
+  background: var(--desk);
+}
+
+body {
+  overflow: hidden;
+  background: var(--desk);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* While a press is held, only the pressed element and the elements that it lies in take
+   the pointer. So nothing else shows a hover state or sets the cursor while the pointer
+   passes over it with the button down, e.g. a dock item under a selection of the note's
+   text that is dragged out of the note. The pointer is then over the desktop wherever it
+   is over nothing pressed, so the cursor that JavaScript gives the desktop during a drag
+   of a title bar or of a grip shows wherever the pointer goes, e.g. over the note when a
+   resize has stopped at a window's smallest size.
+
+   The desktop is :active during a press on anything in it and on the bare desk, so the
+   rule needs no :has(). With "#desktop:has(:active) :not(:active)", Chrome computed the
+   style of every element of the desktop again in every frame that replaced a text, e.g.
+   the time in Monitor's footer: about 0.6 ms a frame, where this rule costs 0.02 ms. */
+#desktop:active :not(:active) {
+  pointer-events: none;
+}
+
+/* The desk: one warm surface with paper grain and a dot every 24 px, lit from the top left.
+   Nothing on it moves, so the dots show how far a window has been dragged. */
+#desktop {
+  /* JavaScript copies these six from the program's table when the page loads. The values
+     here are for what is painted before that: the system bar and the list of things to try. */
+  --title-height: 44px;
+  --button-size: 18px;
+  --button-gap: 10px;
+  --resize-grip: 24px;
+  --dock-height: 76px;
+  --system-bar-height: 36px;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font: var(--type-ui);
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  background:
+    radial-gradient(circle at 0.5px 0.5px, var(--edge) 0 0.75px, transparent 1.25px) 11px 11px / 24px 24px,
+    var(--grain),
+    radial-gradient(1100px 620px at 22% 4%, color-mix(in srgb, var(--sheet) 30%, transparent), transparent 72%),
+    radial-gradient(900px 560px at 100% 100%, color-mix(in srgb, var(--copper) 9%, transparent), transparent 70%),
+    var(--desk);
+  background-blend-mode: normal, soft-light, normal, normal, normal;
+}
+
+/* The wallpaper: the program's stored weights as arcs, one per weight, which wiring.ts
+   draws over the whole canvas when the page loads. The arcs stand on the row of the dock's
+   wire: the canvas ends 6 px above the desktop's bottom, and the wire is the canvas's last
+   row.
+
+   Around the dock the arcs fade out, so the wire, its two terminals and the joints are
+   drawn on the plain desk. Without this clearing, the short arcs that end on the wire's
+   row look like more joints on the wire. The clearing is an ellipse around the tiles'
+   middle, which lies 32 px above the canvas's bottom. On the wire's row, no arc is drawn
+   up to 155 px to each side of the dock's middle, which is past the wire's terminals at
+   148 px, and the arcs are at full strength from 244 px.
+
+   The canvas is shown at 36% of its opacity, and wiring.ts draws each arc the fainter the
+   more weights the program stores, e.g. at 29% for 8,965 weights. One arc alone is then
+   at about 10%, a hairline, and a band where many arcs lie on each other stops at 36% of
+   the arc's color, so the picture stays quiet behind the windows and the list of things
+   to try.
+
+   JavaScript writes the canvas's left, top, width and height each frame, see
+   wiringRectangle in wiring.ts: 24 px in from the desktop's left and right edges, from
+   12 px under the system bar to 6 px above the desktop's bottom. */
+.desk-wiring {
+  --dock-clearing: radial-gradient(258px 100px at 50% calc(100% - 32px), transparent 68%, #000);
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.36;
+  -webkit-mask-image: var(--dock-clearing);
+  mask-image: var(--dock-clearing);
+}
+
+/* A narrower canvas holds the same arcs closer together, so the whole picture is fainter
+   there: 0.7 and 0.5 times the opacity above. */
+@media (max-width: 999px) {
+  .desk-wiring {
+    opacity: 0.25;
+  }
+}
+
+@media (max-width: 639px) {
+  .desk-wiring {
+    opacity: 0.18;
+  }
+}
+
+/* Things to try, printed on the desk's lower right corner. Windows pass over it. The
+   windows' first arrangement, see arrangement.ts, leaves this corner free on a viewport of
+   at least 1100 × 850 px: the list's five lines of 20 px and its label are 124 px tall
+   and end 12 px above the dock's strip, so at 850 px of height the label starts at least
+   22 px under Photos. */
+.desk-legend {
+  position: absolute;
+  z-index: 0;
+  right: 32px;
+  bottom: calc(var(--dock-height) + 12px);
+  /* As wide as its longest line, in whatever font the system has: 482 px in the system
+     font of macOS. */
+  width: max-content;
+  max-width: 520px;
+}
+
+.desk-legend .label {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-2);
+}
+
+/* A key cap fits into its line's 20 px: 1 px of padding above and below its 11.3 px of
+   text and its borders, raised by 1 px. With 2 px of padding below and no raise, as on
+   the site's other pages, the cap made its line 21.3 px tall in the system font of macOS,
+   and the list 125.3 px. */
+.desk-legend kbd {
+  margin: 0 1px;
+  padding: 1px 4px;
+  vertical-align: 1px;
+}
+
+@media (max-width: 1099px), (max-height: 849px) {
+  .desk-legend {
+    display: none;
+  }
+}
+
+/* Where the list is shown, the arcs behind it fade to a fifth, so no arc strikes through
+   a word. The clearing is an ellipse around the list's middle, which lies 249 px from the
+   canvas's right edge and 144 px above its bottom. The two clearings multiply, which is
+   what mask-composite: intersect does, and source-in is the same under its older name. */
+@media (min-width: 1100px) and (min-height: 850px) {
+  .desk-wiring {
+    --legend-clearing: radial-gradient(370px 160px at calc(100% - 249px) calc(100% - 144px), rgb(0 0 0 / 0.2) 70%, #000);
+    -webkit-mask-image: var(--dock-clearing), var(--legend-clearing);
+    mask-image: var(--dock-clearing), var(--legend-clearing);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+}
+
+/* System bar: this page's header, with the project's mark, which links to the index of the
+   demos, and two links. The program reads presses anywhere on the page, and no window can
+   be placed under the bar, so only the bar's links take the pointer. */
+#system-bar {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--system-bar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--edge);
+  background: var(--paper);
+  color: var(--ink-2);
+  font: var(--type-small);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+#system-bar a {
+  pointer-events: auto;
+}
+
+.system-mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink);
+  font: var(--type-title-xs);
+  text-decoration: none;
+}
+
+/* Every :hover rule of this page is inside a (hover: hover) query, i.e. for a pointer
+   that can rest on something without pressing it. On a touch screen a browser keeps
+   :hover on the last element tapped, e.g. a dock tile would keep its copper edge and a
+   window button its ring until the next tap somewhere else. */
+@media (hover: hover) {
+  .system-mark:hover .mark-eyelet {
+    fill: var(--copper);
+  }
+}
+
+.system-links {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.system-links a {
+  color: var(--ink-2);
+  text-decoration-color: transparent;
+}
+
+@media (hover: hover) {
+  .system-links a:hover {
+    color: var(--copper);
+    text-decoration-color: currentColor;
+  }
+}
+
+/* Under a finger, the mark and the two links are as tall as the bar, 36 px, where the
+   header links of the site's other pages are 40 px, see site.css. The mark's line is
+   20 px tall and a link's 16 px. The padding moves nothing, since the bar centers what it
+   holds, and it ends at the bar's edge, so it covers no window's title bar. */
+@media (pointer: coarse) {
+  .system-mark {
+    padding-block: 8px;
+  }
+
+  .system-links a {
+    padding-block: 10px;
+  }
+}
+
+/* Windows: sheets of paper. The window with focus is whiter, casts the larger shadow, and
+   has a faint copper wash on its title bar.
+
+   The frame cuts its content off with overflow: clip, and so does the content box below.
+   A browser scrolls a box with overflow: hidden to show what gets the keyboard focus
+   inside it, e.g. the caret of the note, or the scroller of Monitor's list at the Tab
+   key, and nothing scrolls the box back. The frame cuts the content box off while it
+   grows to a new size, e.g. during a maximize, so a key pressed then moved a window's
+   whole content for good. A box with overflow: clip can't be scrolled. */
+.window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: clip;
+  /* The program's content box is the frame minus this 1 px border and the title bar. */
+  border: 1px solid var(--edge);
+  border-radius: calc(var(--radius-3) - var(--maximized) * 8px);
+  /* --sheet with focus, a step toward --paper without. */
+  background: color-mix(in srgb, var(--sheet) calc(86% + var(--focused) * 14%), var(--paper));
+  /* --shadow-2 without focus and --shadow-3 with it, written out so the two can mix.
+     --shadow-ink is the shadows' color as channels. */
+  box-shadow:
+    0 calc(1px + var(--focused) * 1px) calc(2px + var(--focused) * 2px) rgb(var(--shadow-ink) / calc(0.08 + var(--focused) * 0.02)),
+    0 calc(10px + var(--focused) * 18px) calc(28px + var(--focused) * 36px) calc(-8px - var(--focused) * 8px) rgb(var(--shadow-ink) / calc(0.24 + var(--focused) * 0.14));
+  /* The program scales a window around its center while it flies to or from the dock. */
+  transform-origin: 50% 50%;
+}
+
+/* The frame's border takes 1 px on each side, and the program's title bar starts at the
+   frame's outer edge. So the padding is 1 px less on the right than the program's gap, and
+   1 px at the bottom: the buttons are then centered 22 px below the frame's top and end
+   10 px before its right edge, exactly on the rectangles that the program tests presses
+   against. JavaScript writes the title bar's cursor: grab, grabbing while the title bar
+   drags its window, and the default one on a maximized window, which can't be dragged.
+
+   The bar of the window with focus has a faint copper wash, copper at 7%, and its hairline
+   is copper at 24%, so the window that takes the keys can be told at a glance, e.g. among
+   three windows that overlap, without the bar standing out from the sheet. Without focus
+   the bar is the sheet itself. */
+.titlebar {
+  height: var(--title-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 calc(var(--button-gap) - 1px) 1px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--copper) calc(var(--focused) * 24%), var(--rule));
+  background: color-mix(in srgb, var(--copper) calc(var(--focused) * 7%), transparent);
+}
+
+.window-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 9px;
+  color: color-mix(in srgb, var(--ink) calc(var(--focused) * 100%), var(--ink-2));
+  font: var(--type-title-xs);
+}
+
+/* The joint before a title: a hollow eyelet, filled with copper while the window has focus. */
+.app-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid color-mix(in srgb, var(--copper) calc(var(--focused) * 100%), var(--ink-3));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--copper) calc(var(--focused) * 100%), transparent);
+}
+
+.window-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--button-gap);
+}
+
+/* Minimize, maximize, close: three glyphs of 1 px ink in 18 px boxes. A ring appears under
+   the pointer, and close fills with copper. The states change colors only. The ring fades
+   in, and the glyph's color, which also follows the window's focus, changes at once. */
+.window-button {
+  position: relative;
+  flex: none;
+  width: var(--button-size);
+  height: var(--button-size);
+  border-radius: 50%;
+  color: color-mix(in srgb, var(--ink) calc(var(--focused) * 100%), var(--ink-3));
+  cursor: pointer;
+  transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
+}
+
+/* The glyph is a mask, so it takes the button's color. The line and the square are 1 px on
+   whole pixels. The cross is 1.25 px, because a diagonal 1 px stroke is antialiased and
+   would look lighter than the two glyphs beside it. */
+.window-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  -webkit-mask: var(--glyph) center / 100% 100% no-repeat;
+  mask: var(--glyph) center / 100% 100% no-repeat;
+}
+
+/* The program takes a press within half the gap around a button, so the pointer does too. */
+.window-button::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--button-gap) * -0.5);
+}
+
+.window-button.minimize {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4 9.5h10' stroke='%23000'/%3E%3C/svg%3E");
+}
+
+.window-button.maximize {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Crect x='4.5' y='4.5' width='9' height='9' rx='2' fill='none' stroke='%23000'/%3E%3C/svg%3E");
+}
+
+.window-button.close {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M4.75 4.75l8.5 8.5m0-8.5l-8.5 8.5' fill='none' stroke='%23000' stroke-width='1.25' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+@media (hover: hover) {
+  .window-button:hover {
+    background-color: var(--wash);
+    box-shadow: 0 0 0 4px var(--wash);
+    color: var(--ink);
+  }
+
+  .window-button.close:hover {
+    background-color: var(--copper);
+    box-shadow: 0 0 0 4px var(--copper);
+    color: var(--sheet);
+  }
+}
+
+/* The pressed states set the glyph's color too: where no pointer can hover, e.g. on a
+   phone, a pressed button never had the hovered button's colors, and the close button's
+   cross would be ink on ink. */
+.window-button:active {
+  background-color: var(--rule);
+  box-shadow: 0 0 0 4px var(--rule);
+  color: var(--ink);
+}
+
+.window-button.close:active {
+  background-color: var(--ink);
+  box-shadow: 0 0 0 4px var(--ink);
+  color: var(--sheet);
+}
+
+/* JavaScript sets the width and height to the size the window is heading to, and the frame
+   clips the box while the frame itself still animates. */
+.window-content {
+  position: absolute;
+  top: var(--title-height);
+  left: 0;
+  overflow: clip;
+}
+
+/* The grip is an arc around the corner's center, 3 px inside the border. The program's grip
+   is the frame's lower right 24 px square, border included, so the box starts 1 px outside
+   the padding box. A maximized window can't be resized, so its grip has no size. */
+.resize-grip {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: calc(var(--resize-grip) * (1 - var(--maximized)));
+  height: calc(var(--resize-grip) * (1 - var(--maximized)));
+  overflow: hidden;
+  cursor: nwse-resize;
+}
+
+.resize-grip::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--resize-grip);
+  height: var(--resize-grip);
+  background: var(--ink-3);
+  -webkit-mask: var(--glyph) center / 100% 100% no-repeat;
+  mask: var(--glyph) center / 100% 100% no-repeat;
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 12A8 8 0 0 1 12 20' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* The kinds of a program's operations, in Monitor's list and in its sidebar: value-list.ts
+   gives a row's kind cell one of these four classes. Copper, indigo, ochre and plum are
+   the chart colors, in that order. HandwiredOS's program has no index read since October
+   13, 2026, so no element of the page has the fourth class today. */
+.kind-affine { --kind-color: var(--copper); }
+.kind-reglu { --kind-color: var(--wire-indigo); }
+.kind-boolean { --kind-color: var(--wire-ochre); }
+.kind-index { --kind-color: var(--wire-plum); }
+
+/* Monitor: a sidebar of locations, a list of the program's own numbers in a native
+   scroller, and a footer with the program's sizes and the last frames' times.
+   JavaScript creates the sidebar's items, the header's cells, the rows and the footer's
+   parts, and places each sidebar item on the rectangle that the program tests presses
+   against. Every frame it writes each row's transform, display and --selected, each
+   sidebar item's --selected, the spacer's height, and the footer's chart. When the page
+   loads it sets five sizes on this box from monitorLayout in value-list.ts, which the
+   program's hit tests use too: --monitor-sidebar-width (152 px), --monitor-header-height
+   (28 px), --monitor-row-height (24 px), --monitor-scrollbar-strip (16 px) and
+   --monitor-footer-height (32 px). No window is painted before that. */
+.monitor-content {
+  color: var(--ink);
+}
+
+.monitor-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: var(--monitor-footer-height);
+  left: 0;
+  width: var(--monitor-sidebar-width);
+  border-right: 1px solid var(--rule);
+}
+
+/* The sidebar's heading, in the label style, in the 28 px beside the list's header, whose
+   titles it shares a line with. The program puts the first item right under it, 8 px in. */
+.monitor-sidebar strong {
+  position: absolute;
+  top: 6px;
+  left: var(--space-4);
+  color: var(--ink-3);
+  font: var(--type-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* At its bottom, the sidebar says what the shown location holds: its rows by kind, which
+   only Operations has, e.g. "ReGLU" beside the swatch that the list's kind column draws,
+   and "2,527", then one sentence. JavaScript writes them when the list shows another
+   location.
+
+   The caption is the box between the items, which end 100 px below the sidebar's top,
+   and the sidebar's bottom, 12 px from each. Its parts are a column that starts at the
+   bottom and wraps: a part that doesn't fit above the parts before it moves to a second
+   column, which starts outside the box and is cut off. So a shorter sidebar drops the
+   sentence, then the kinds, each of them whole, whatever the font's size. The column's
+   first part is an empty one, which takes back the gap after it, since a column keeps
+   its first part even when the part doesn't fit. E.g. a window at its minimum height,
+   where the sidebar is 112 px tall, shows neither part, and a window 340 px tall shows
+   Operations' three kinds and its sentence on four lines in the caption's 138 px. */
+.monitor-caption {
+  position: absolute;
+  top: calc(var(--monitor-header-height) + 3 * var(--monitor-row-height) + var(--space-3));
+  right: var(--space-4);
+  bottom: var(--space-3);
+  left: var(--space-4);
+  display: flex;
+  flex-flow: column wrap;
+  justify-content: flex-end;
+  align-content: flex-start;
+  gap: var(--space-2) var(--monitor-sidebar-width);
+  overflow: hidden;
+  color: var(--ink-3);
+  font: var(--type-small);
+}
+
+.monitor-caption::before {
+  content: "";
+  margin-bottom: calc(-1 * var(--space-2));
+}
+
+.monitor-caption > * {
+  flex: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One line per kind: the swatch, the name, and the count at the right edge, under the
+   counts of the items above. JavaScript writes display: grid on the list while the list
+   of rows shows the kinds' location, and display: none otherwise. */
+.monitor-caption-kinds {
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  column-gap: 6px;
+  white-space: nowrap;
+}
+
+.monitor-caption-kinds li {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+
+.monitor-caption-kinds li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 1.5px;
+  background: var(--kind-color);
+}
+
+.monitor-kind-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.monitor-kind-count {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* A selection is a copper wash in the window with focus, and a neutral one elsewhere. */
+.monitor-location,
+.monitor-row {
+  --selection: color-mix(in srgb, var(--copper-wash) calc(var(--focused) * 100%), color-mix(in srgb, var(--rule) 55%, transparent));
+  background-color: color-mix(in srgb, var(--selection) calc(var(--selected) * 100%), transparent);
+}
+
+/* The pointer's wash is a second layer, over the selection's. */
+@media (hover: hover) {
+  .monitor-location:hover,
+  .monitor-row:hover {
+    background-image: linear-gradient(var(--wash), var(--wash));
+  }
+}
+
+/* A sidebar item: the location's name, and its number of rows at the right edge. Each of
+   the two is a line as tall as the item, and the item wraps: in a system font too wide for
+   both, the count moves to a second line, which the item cuts off, and the name stays
+   whole. In the system font of macOS, "Operations" and "4,254" leave 18 px between them. */
+.monitor-location {
+  position: absolute;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-content: flex-start;
+  column-gap: var(--space-2);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  border-radius: var(--radius-1);
+  color: color-mix(in srgb, var(--ink) calc(var(--selected) * 100%), var(--ink-2));
+  font: var(--type-ui);
+  font-weight: calc(400 + var(--selected) * 100);
+  line-height: var(--monitor-row-height);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.monitor-location-count {
+  color: color-mix(in srgb, var(--ink-2) calc(var(--selected) * 100%), var(--ink-3));
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.monitor-list {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: var(--monitor-footer-height);
+  left: var(--monitor-sidebar-width);
+  font: 400 12px/24px var(--font-mono);
+  container-type: inline-size;
+}
+
+.monitor-header,
+.monitor-row {
+  align-items: center;
+  column-gap: var(--space-2);
+  padding: 0 var(--monitor-scrollbar-strip) 0 var(--space-3);
+}
+
+/* Each location shows the columns that it has a title for, and the value last. The kind
+   column of Operations holds a swatch and the longest name that value-list.ts gives a
+   kind, "index read", in 76 px. The longest name on the page today is "boolean". A list
+   too narrow for its columns drops columns whole, see below, since a column that only
+   shrinks ends up as an ellipsis, e.g. a kind cell that shows a swatch and three dots. */
+.monitor-list-state .monitor-header,
+.monitor-list-state .monitor-row {
+  grid-template-columns: minmax(36px, 1fr) minmax(0, 60px) minmax(48px, 96px);
+}
+
+.monitor-list-operations .monitor-header,
+.monitor-list-operations .monitor-row {
+  grid-template-columns: minmax(36px, 1fr) minmax(0, 76px) minmax(0, 44px) minmax(0, 60px) minmax(48px, 96px);
+}
+
+.monitor-list-outputs .monitor-header,
+.monitor-list-outputs .monitor-row {
+  grid-template-columns: minmax(36px, 1fr) minmax(48px, 96px);
+}
+
+.monitor-list-state .monitor-cell-layer,
+.monitor-list-state .monitor-cell-weights,
+.monitor-list-outputs .monitor-cell-kind,
+.monitor-list-outputs .monitor-cell-layer,
+.monitor-list-outputs .monitor-cell-weights {
+  display: none;
+}
+
+/* The five columns of Operations take 372 px: 28 px of padding, four gaps of 8 px, 36 px
+   for the wire's digits, and 76, 44, 60 and 96 px. A list under 376 px, e.g. the 338 px of
+   a window 492 px wide, leaves the weights out. The other four columns take 304 px. */
+@container (max-width: 375px) {
+  .monitor-list-operations .monitor-header,
+  .monitor-list-operations .monitor-row {
+    grid-template-columns: minmax(36px, 1fr) minmax(0, 76px) minmax(0, 44px) minmax(48px, 96px);
+  }
+
+  .monitor-list-operations .monitor-cell-weights {
+    display: none;
+  }
+}
+
+/* Under 308 px, e.g. the 220 px of a phone's 374 px window, or the 126 px of a window at
+   its minimum width, a list shows the name and the value only, and the value takes no
+   more room than its digits, so a cell's name in State keeps most of the width. */
+@container (max-width: 307px) {
+  .monitor-list .monitor-header,
+  .monitor-list .monitor-row {
+    grid-template-columns: minmax(36px, 1fr) minmax(48px, max-content);
+  }
+
+  .monitor-list .monitor-cell-kind,
+  .monitor-list .monitor-cell-layer,
+  .monitor-list .monitor-cell-weights {
+    display: none;
+  }
+}
+
+/* The header keeps the room of the scroller's scrollbar, so its cells line up with the
+   rows' cells where scrollbars take room. */
+.monitor-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: grid;
+  height: var(--monitor-header-height);
+  overflow: hidden;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-3);
+  font: var(--type-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The browser scrolls the list, and the program reads the position. pan-y lets a touch
+   scroll the list inside the desktop's touch-action: none, and contain keeps the list's
+   rubber band from scrolling anything behind it. The program moves the view itself after
+   a key, so the browser's own scroll anchoring is off. */
+.monitor-scroller {
+  position: absolute;
+  top: var(--monitor-header-height);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--rule-strong) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  touch-action: pan-y;
+}
+
+/* A browser gives a scroller the keyboard focus, e.g. Chrome at the Tab key, so that the
+   arrow keys scroll it. The focus ring is drawn inside the scroller: outside it, the
+   window's frame would cut the ring off at the right, and the ring would cover the
+   sidebar's edge. */
+.monitor-scroller:focus-visible {
+  outline-offset: -2px;
+}
+
+/* The spacer is as tall as all the rows together, and ruled like a ledger: a hairline
+   at the bottom of every 24 px. The lines are the spacer's and not the rows', so the
+   list is ruled where no row is drawn too. The browser scrolls the list before the
+   next frame gives the rows their new places, so a scroll past every row that the last
+   frame drew shows a frame without rows, e.g. when the scrollbar's thumb is dragged by
+   2,000 px of the list in one frame. That frame shows ruled paper instead of a blank
+   sheet, as far as the browser has painted the spacer ahead of the view. */
+.monitor-spacer {
+  position: relative;
+  background: linear-gradient(to top, color-mix(in srgb, var(--rule) 55%, transparent) 1px, transparent 1px) 0 0 / 100% var(--monitor-row-height);
+}
+
+/* Every row is 24 px tall, so the list draws only the rows in view and around it. */
+.monitor-row {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--monitor-row-height);
+}
+
+.monitor-cell {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A column's title is never cut. The columns' widths are for the system font of macOS,
+   where WEIGHTS takes 59 of its column's 60 px. In a wider font, or with larger type, a
+   title reaches into the 8 px gap after its column instead of ending in an ellipsis, e.g.
+   WEIGHTS is 66 px wide in Verdana. */
+.monitor-header .monitor-cell {
+  overflow: visible;
+}
+
+/* A row's name is cut at its start, since the names of neighboring rows differ at their
+   ends, e.g. photos.thumbnails.0.centerXDisplacement and photos.thumbnails.0.centerXVelocity
+   read …ls.0.centerXDisplacement and …bnails.0.centerXVelocity in a column of 186 px.
+   In a cell whose direction is right to left, the text that doesn't fit is cut at the
+   left, where the ellipsis then stands, and a name that fits still starts at the cell's
+   left edge. The name itself is in a <bdi>, so it reads left to right, whatever
+   characters it starts and ends with. */
+.monitor-row .monitor-cell-name {
+  direction: rtl;
+  text-align: left;
+}
+
+/* Numbers line up on their last digit. */
+.monitor-cell-layer,
+.monitor-cell-weights,
+.monitor-cell-value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* A row's name and its value are in ink, and what lies between them is quieter. */
+.monitor-row .monitor-cell-kind,
+.monitor-row .monitor-cell-layer,
+.monitor-row .monitor-cell-weights {
+  color: var(--ink-2);
+}
+
+/* A kind cell that also has one of the kind classes above, e.g. kind-reglu, gets a swatch
+   in the kind's color, and the word stays in ink. The sidebar's list of kinds draws the
+   same swatches. */
+.monitor-row .monitor-cell-kind {
+  font-family: var(--font-sans);
+}
+
+.monitor-row .monitor-cell-kind[class*=" kind-"]::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 1.5px;
+  background: var(--kind-color);
+  vertical-align: 1px;
+}
+
+/* Shown while the list's viewport holds more rows than there are row nodes. */
+.monitor-overflow {
+  position: absolute;
+  right: var(--monitor-scrollbar-strip);
+  bottom: 6px;
+  padding: 3px var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--sheet);
+  color: var(--ink-2);
+  font: var(--type-small);
+  box-shadow: var(--shadow-1);
+  pointer-events: none;
+}
+
+/* Notes: plain paper, and on it the browser's own text field, as large as the window's
+   content box. The browser edits, selects, wraps and scrolls the text. The field has no
+   border, no background and no outline of its own: the window around it shows which
+   window has the focus, and the copper caret shows where the typing goes. Its selection
+   is site.css's ::selection, and its scrollbar is that of Monitor's list.
+
+   pan-y lets a finger scroll the text inside the desktop's touch-action: none, and
+   contain keeps the scrolling from reaching anything behind the note. The page's body
+   allows no selection, so the field allows its own, which Safari needs before it lets
+   anyone type. The window's grip lies over the field's lower right corner and takes the
+   presses there, and the field's own resize handle is off. */
+.notes-text {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: var(--space-5);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  caret-color: var(--copper);
+  font: 400 14px/22px Georgia, "Times New Roman", serif;
+  resize: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--rule-strong) transparent;
+  scrollbar-width: thin;
+  touch-action: pan-y;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* In Notes the grip's square is paper, in the window's own color, and not see-through.
+   Where scrollbars take room, e.g. on Windows, the scrollbar of a note taller than the
+   window then ends at the grip, as in a native window, instead of running under the
+   grip's arc to the window's corner. The square covers no text: the field keeps 24 px
+   of padding at its right. */
+.notes-content ~ .resize-grip {
+  background: inherit;
+}
+
+/* site.css draws an outline around whatever has the keyboard focus, and a text field has
+   it at every focus, also after a click. Two classes outrank that rule in either order of
+   the two stylesheets. */
+.notes-text:focus-visible {
+  outline: none;
+}
+
+/* iOS zooms the page when a focused field's text is under 16 px, and only iOS knows
+   -webkit-touch-callout. */
+@supports (-webkit-touch-callout: none) {
+  .notes-text {
+    font-size: 16px;
+    line-height: 24px;
+  }
+}
+
+/* Monitor's footer: the program's sizes at the left, and at the right the program's time
+   per frame over the last 60 frames as a small chart, with the time at the chart's last
+   point beside it. monitor-footer.ts writes all of it. */
+.monitor-footer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--monitor-footer-height);
+  /* The right 20 px stay clear of the grip's arc. */
+  padding: 0 20px 0 var(--space-4);
+  border-top: 1px solid var(--rule);
+  color: var(--ink-3);
+  font: var(--type-small);
+  white-space: nowrap;
+}
+
+/* The counts are one line that wraps, in a box one line tall: a count that doesn't fit
+   beside the others moves to a second line, which the box cuts off. So a narrower window
+   drops the last counts first, each of them whole, whatever the font's width. The line's
+   first part is an empty one, which takes back the gap after it, since a line keeps its
+   first part even when the part doesn't fit. */
+.monitor-counts {
+  flex: 1 1 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-4);
+  min-width: 0;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+}
+
+.monitor-counts::before {
+  content: "";
+  margin-right: calc(-1 * var(--space-4));
+}
+
+.monitor-counts b,
+.monitor-frame b {
+  color: var(--ink-2);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.monitor-frame {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The chart is 100 by 24 px. The path's box is 59 units wide and 1 unit tall, stretched
+   over the chart's inner 97 by 20 px, and the strokes keep their widths in px. So the
+   last point's dot is 3 px from the chart's right edge, and a point at the top or at the
+   bottom of the scale keeps its whole stroke. */
+.monitor-chart {
+  width: 100px;
+  height: 24px;
+  padding: 2px 3px 2px 0;
+  overflow: visible;
+}
+
+.monitor-chart path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.monitor-chart .area {
+  fill: var(--copper);
+  fill-opacity: 0.1;
+}
+
+.monitor-chart .line {
+  stroke: var(--copper);
+  stroke-width: 1.5;
+}
+
+.monitor-chart .end {
+  stroke: var(--copper);
+  stroke-width: 5;
+}
+
+/* The time is tabular, and under 100 ms it is always three digits and a point, e.g. 0.16
+   or 12.3, so the chart beside it doesn't move when the time changes. */
+.monitor-frame-figure {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Photos: a grid and a lightbox, both laid out by the program. JavaScript creates a node
+   for each photo and each thumbnail while the program draws it, and writes its size,
+   position, opacity and --focused, which is 1 for the open photo and its thumbnail. */
+.photos-content {
+  cursor: pointer;
+  /* The previous and next controls look at the content box's width, see below. */
+  container-type: inline-size;
+}
+
+.photos-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--sheet);
+  pointer-events: none;
+}
+
+.photos-photo,
+.photos-thumbnail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  pointer-events: none;
+}
+
+/* A photo's corner is half the window's, 6 px. The hairline is inside the photo, so a pale
+   photo keeps its edge on the sheet. The open photo floats: --shadow-2, scaled by --focused. */
+.photos-photo {
+  border-radius: calc(var(--radius-3) / 2);
+  box-shadow:
+    inset 0 0 0 1px var(--edge),
+    0 calc(var(--focused) * 1px) calc(var(--focused) * 2px) rgb(var(--shadow-ink) / 0.08),
+    0 calc(var(--focused) * 10px) calc(var(--focused) * 28px) calc(var(--focused) * -8px) rgb(var(--shadow-ink) / 0.24);
+}
+
+/* A photo is a container, so that its name can ask how tall the photo is. */
+.photos-photo {
+  container: photo / size;
+}
+
+/* The open photo's name, on a paper label. */
+.photos-photo span {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 3px 10px 4px;
+  border-radius: var(--radius-1);
+  background: var(--sheet);
+  color: var(--ink);
+  font: italic 400 14px/20px var(--font-serif);
+  box-shadow: var(--shadow-1);
+  opacity: var(--focused);
+}
+
+/* A photo under 110 px tall shows no name. The previous control's round sheet is 36 px
+   tall around the photo's middle and the label ends 10 px above the photo's bottom, so
+   in a shorter photo the two meet, and in a narrow window the sheet lies on the label's
+   start, e.g. "avender Hour" in a window at its minimum size, where the open photo is
+   55 px tall. */
+@container photo (max-height: 109px) {
+  .photos-photo span {
+    display: none;
+  }
+}
+
+.photos-thumbnail {
+  border-radius: 10%;
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+
+.photos-thumbnail::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px var(--copper), inset 0 0 0 4px var(--sheet);
+  opacity: var(--focused);
+}
+
+.image-0 { background-image: url("./photo-gallery-00.webp"); }
+.image-1 { background-image: url("./photo-gallery-01.webp"); }
+.image-2 { background-image: url("./photo-gallery-02.webp"); }
+.image-3 { background-image: url("./photo-gallery-03.webp"); }
+.image-4 { background-image: url("./photo-gallery-04.webp"); }
+.image-5 { background-image: url("./photo-gallery-05.webp"); }
+.image-6 { background-image: url("./photo-gallery-06.webp"); }
+.image-7 { background-image: url("./photo-gallery-07.webp"); }
+.image-8 { background-image: url("./photo-gallery-08.webp"); }
+.image-9 { background-image: url("./photo-gallery-09.webp"); }
+.image-10 { background-image: url("./photo-gallery-10.webp"); }
+.image-11 { background-image: url("./photo-gallery-11.webp"); }
+
+/* Previous and next: a chevron in the program's 52 px box. In a window under 765 px wide
+   the box reaches over the open photo's edge, so the controls are above the photos, and
+   the disc under the pointer is a round sheet of paper and not a wash. */
+.photos-control {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+}
+
+.photos-control::before,
+.photos-control::after {
+  content: "";
+  grid-area: 1 / 1;
+}
+
+.photos-control::before {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  /* --sheet at no opacity, so the disc fades in without passing through gray. */
+  background-color: color-mix(in srgb, var(--sheet) 0%, transparent);
+  transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
+}
+
+@media (hover: hover) {
+  .photos-control:hover::before {
+    background-color: var(--sheet);
+    box-shadow: 0 0 0 1px var(--edge), var(--shadow-1);
+  }
+}
+
+.photos-control:active::before {
+  background-color: var(--paper);
+  box-shadow: 0 0 0 1px var(--edge);
+}
+
+.photos-control::after {
+  width: 9px;
+  height: 16px;
+  background: var(--ink-2);
+  -webkit-mask: var(--glyph) center / 100% 100% no-repeat;
+  mask: var(--glyph) center / 100% 100% no-repeat;
+}
+
+.photos-previous {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 16'%3E%3Cpath d='M7.5 1.5L1.5 8l6 6.5' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.photos-next {
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 16'%3E%3Cpath d='M1.5 1.5L7.5 8l-6 6.5' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* The open photo starts 8% of the content box's width from the box's edge, and the chevron
+   ends 39.5 px from it. So in a content box under 519 px wide, e.g. on a phone, the chevron
+   lies on the photo or within 2 px of it, where its ink is hard to see. There the round
+   sheet is drawn at all times, as under the arrows of a carousel, and the pointer changes
+   its edge to copper. */
+@container (max-width: 518px) {
+  .photos-control::before {
+    background-color: var(--sheet);
+    box-shadow: 0 0 0 1px var(--edge), var(--shadow-1);
+  }
+
+  @media (hover: hover) {
+    .photos-control:hover::before {
+      box-shadow: 0 0 0 1px var(--copper-line), var(--shadow-2);
+    }
+  }
+
+  .photos-control:active::before {
+    box-shadow: 0 0 0 1px var(--edge);
+  }
+}
+
+/* Dock: three tiles above one copper wire. Each tile's joint on the wire is hollow while
+   its window is closed, filled while it is open, and a bar while it has focus. */
+#dock {
+  position: absolute;
+  z-index: 9;
+  inset: 0;
+  pointer-events: none;
+}
+
+.dock-wire {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  width: min(282px, 100% - 48px);
+  height: 1px;
+  background: var(--copper-line);
+  translate: -50% 0;
+}
+
+/* The wire ends in two terminals. */
+.dock-wire::before,
+.dock-wire::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--copper);
+  border-radius: 50%;
+  background: var(--desk);
+}
+
+.dock-wire::before {
+  left: -7px;
+}
+
+.dock-wire::after {
+  right: -7px;
+}
+
+.dock-item {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-3);
+  background: var(--sheet);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: box-shadow var(--quick) var(--ease), border-color var(--quick) var(--ease), background-color var(--quick) var(--ease);
+}
+
+@media (hover: hover) {
+  .dock-item:hover {
+    border-color: var(--copper-line);
+    box-shadow: var(--shadow-2);
+  }
+}
+
+.dock-item:active {
+  background-color: var(--paper);
+  box-shadow: none;
+}
+
+/* The icon is two thirds of the tile's inner size, i.e. 32 px in a 50 px tile, where it
+   starts on a whole pixel, 8 px in. It fades while its window is closed or minimized. */
+.dock-item svg {
+  width: calc(100% * 2 / 3);
+  height: calc(100% * 2 / 3);
+  opacity: calc(1 - var(--inactive) * 0.55);
+  pointer-events: none;
+}
+
+.dock-item .accent {
+  stroke: var(--copper);
+}
+
+.dock-item .accent-fill {
+  fill: var(--copper);
+  stroke: none;
+}
+
+/* The joint is 7 px tall, and its middle row is the wire's row: a 50 px tile's padding box
+   ends 14 px above the desktop's bottom, the joint's box ends 11 px below that, and the
+   wire is the row from 7 to 6 px above the bottom. */
+.dock-item i {
+  position: absolute;
+  bottom: -11px;
+  left: 50%;
+  width: calc(7px + var(--focused) * 11px);
+  height: 7px;
+  margin-left: calc(-3.5px - var(--focused) * 5.5px);
+  border: 1.5px solid var(--copper);
+  border-radius: var(--radius-1);
+  background: color-mix(in srgb, var(--copper) calc(var(--open) * 100%), var(--desk));
+}
+
+/* Forced colors, e.g. a contrast theme on Windows: the browser replaces every color with
+   one of the system's and draws no background color and no shadow. What this page shows
+   with a background or a shadow alone gets a system color here: the glyphs of the window
+   buttons, of the grip and of the photo controls, which are masked backgrounds, the
+   dock's wire, the joint of the focused window and the joints of the open windows, by
+   their --focused and --open numbers, and a selected row, a selected sidebar item and
+   the open photo's thumbnail, as an outline in the system's highlight color. */
+@media (forced-colors: active) {
+  .window-button::before,
+  .resize-grip::after,
+  .photos-control::after,
+  .dock-wire {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+
+  .app-dot {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+    background: color-mix(in srgb, CanvasText calc(var(--focused) * 100%), transparent);
+  }
+
+  .dock-item i {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+    background: color-mix(in srgb, CanvasText calc(var(--open) * 100%), Canvas);
+  }
+
+  .monitor-location,
+  .monitor-row {
+    outline: calc(var(--selected) * 2px) solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .photos-thumbnail::after {
+    forced-color-adjust: none;
+    box-shadow: inset 0 0 0 3px Highlight;
+  }
+}
+
+/* First paint. index.html asks the browser to hold the first paint until the script has
+   run, and then the first paint is the program's first frame. A browser that paints
+   earlier paints the desk alone: a window or a dock item has no rectangle until the first
+   frame writes one into its style attribute, and it isn't painted before that. */
+.window:not([style]),
+.dock-item:not([style]) {
+  visibility: hidden;
+}

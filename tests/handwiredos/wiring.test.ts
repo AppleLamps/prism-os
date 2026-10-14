@@ -1,0 +1,151 @@
+import assert from 'node:assert/strict'
+import {test} from 'bun:test'
+import {Circuit} from '../../src/runtime/numeric-ui-core.ts'
+import {createWindowManagerMachine} from '../../src/handwiredos/window-manager.ts'
+import {arcOpacity, createWiringRenderer, drawWiring} from '../../src/handwiredos/wiring.ts'
+
+type Arc = {color: string, left: number, right: number, height: number, baseline: number}
+
+// A canvas that records each stroked arc: its color, the x of its two feet, its
+// height and the y it stands on.
+function recordingCanvas() {
+  const arcs: Arc[] = []
+  let pending: Omit<Arc, 'color'> | null = null
+  const context = {
+    lineWidth: 0,
+    globalAlpha: 0,
+    strokeStyle: '',
+    setTransform() {},
+    beginPath() {
+      pending = null
+    },
+    ellipse(centerX: number, centerY: number, radiusX: number, radiusY: number, rotation: number, startAngle: number, endAngle: number) {
+      assert.deepEqual([rotation, startAngle, endAngle], [0, Math.PI, 2 * Math.PI], 'an arc is the upper half of an ellipse')
+      pending = {left: centerX - radiusX, right: centerX + radiusX, height: radiusY, baseline: centerY}
+    },
+    stroke() {
+      assert.ok(pending !== null, 'every stroke draws one arc')
+      arcs.push({...pending, color: context.strokeStyle})
+    },
+  }
+  const canvas = {width: 0, height: 0, style: {} as Record<string, string>, getContext: () => context}
+  return {canvas: canvas as unknown as HTMLCanvasElement, size: canvas, style: canvas.style, context, arcs}
+}
+
+const options = {width: 300, height: 100, pixelRatio: 2, adds: 'copper', subtracts: 'indigo', alpha: 0.5, lineWidth: 0.5}
+
+test('the wallpaper draws one arc per stored weight, from the value it reads to the operation that reads it', () => {
+  // 2 cells, then a = 2 × cell 0 - cell 1 in layer 1, then b = a × max(0, cell 0) in layer 2.
+  const circuit = new Circuit(2)
+  const first = circuit.source(0)
+  const second = circuit.source(1)
+  const difference = circuit.roundAffine([[first, 2], [second, -1]])
+  const product = circuit.reglu([[difference, 1]], 0, [[first, 1]], 0)
+  const program = circuit.compileTensorProgram([product])
+  assert.equal(program.layers.length, 2)
+
+  const {canvas, size, context, arcs} = recordingCanvas()
+  drawWiring(canvas, program, options)
+  assert.deepEqual([size.width, size.height], [600, 200])
+  assert.equal(context.globalAlpha, 0.5)
+  assert.equal(context.lineWidth, 0.5)
+  // 3 columns of 100 px: the cells at x 0 and 50, a at x 100, b at x 200. Every arc
+  // stands on the middle of the canvas's last row of pixels, 99.75 px down, and one
+  // as wide as the canvas would be that tall.
+  const heightOf = (width: number) => width / 2 * (99.75 / 150)
+  assert.deepEqual(arcs, [
+    // The weight that subtracts first: -1 × cell 1 into a.
+    {color: 'indigo', left: 50, right: 100, height: heightOf(50), baseline: 99.75},
+    // Then the weights that add, layer by layer, drawn on top: 2 × cell 0 into a,
+    // then a and the gate's cell 0 into b.
+    {color: 'copper', left: 0, right: 100, height: heightOf(100), baseline: 99.75},
+    {color: 'copper', left: 100, right: 200, height: heightOf(100), baseline: 99.75},
+    {color: 'copper', left: 0, right: 200, height: heightOf(200), baseline: 99.75},
+  ])
+})
+
+test('HandwiredOS\'s wallpaper has one arc for each of the program\'s stored weights', () => {
+  const program = createWindowManagerMachine().tensorProgram
+  let weights = 0
+  let negative = 0
+  for (const layer of program.layers) {
+    weights += layer.weights.length
+    for (const weight of layer.weights) negative += weight < 0 ? 1 : 0
+  }
+  const {canvas, arcs} = recordingCanvas()
+  drawWiring(canvas, program, {...options, width: 1392, height: 846, pixelRatio: 1})
+  assert.equal(arcs.length, weights)
+  assert.equal(arcs.filter(arc => arc.color === 'indigo').length, negative)
+  for (const arc of arcs) {
+    assert.ok(arc.left >= 0 && arc.right <= 1392 && arc.left < arc.right, 'an arc reads an earlier value, inside the canvas')
+    assert.ok(arc.height <= 845.5 + 1e-9, 'no arc is taller than the canvas')
+  }
+})
+
+test('on a tall canvas an arc is at most 1.25 times as tall as half its width', () => {
+  const circuit = new Circuit(1)
+  const doubled = circuit.roundAffine([[circuit.source(0), 2]])
+  const program = circuit.compileTensorProgram([doubled])
+  const {canvas, arcs} = recordingCanvas()
+  drawWiring(canvas, program, {...options, width: 200, height: 800, pixelRatio: 1})
+  // Cell 0 at x 0, the operation at x 100.
+  assert.deepEqual(arcs, [{color: 'copper', left: 0, right: 100, height: 62.5, baseline: 799.5}])
+})
+
+test('every program\'s wallpaper gets the same ink: an arc is the fainter the more weights the program stores', () => {
+  // 2,600 arcs' worth of ink: 29% an arc for 8,965 weights, and 6% for 43,180.
+  assert.equal(arcOpacity(8_965).toFixed(2), '0.29')
+  assert.equal(arcOpacity(43_180).toFixed(2), '0.06')
+  for (const weightCount of [2_600, 8_965, 43_180, 1_000_000]) assert.ok(Math.abs(weightCount * arcOpacity(weightCount) - 2_600) < 1e-9)
+  // A program of fewer weights than that draws every arc in full.
+  assert.deepEqual([arcOpacity(2_599), arcOpacity(1), arcOpacity(0)], [1, 1, 1])
+})
+
+test('the frame draws the wallpaper at once in the first frame, and after a resize once the canvas has kept its new size for 150 ms', () => {
+  const circuit = new Circuit(2)
+  const program = circuit.compileTensorProgram([circuit.roundAffine([[circuit.source(0), 2], [circuit.source(1), -1]])])
+  const {canvas, size, style, context, arcs} = recordingCanvas()
+  // A system bar of 36 px, as in HandwiredOS.
+  const wiring = createWiringRenderer(canvas, program, {adds: 'copper', subtracts: 'indigo'}, 36)
+  const rectangle = () => [style['left'], style['top'], style['width'], style['height']]
+
+  // The first frame: the canvas's rectangle for a viewport of 1440 × 900, i.e. 24 px
+  // in from the left and the right, from 12 px under the system bar to 6 px above
+  // the bottom, and the picture, with 2 canvas pixels per px. Nothing is pending.
+  assert.equal(wiring.render(1440, 900, 1000), false)
+  assert.deepEqual(rectangle(), ['24px', '48px', '1392px', '846px'])
+  assert.deepEqual([size.width, size.height], [2784, 1692])
+  assert.equal(arcs.length, 2)
+  // 2 weights are fewer than 2,600, so each arc is drawn in full.
+  assert.equal(context.globalAlpha, 1)
+  // The same viewport again draws nothing.
+  assert.equal(wiring.render(1440, 900, 1016), false)
+  assert.equal(arcs.length, 2)
+
+  // A resize: every frame gives the canvas its new rectangle, and the picture waits
+  // until the size has stayed the same for 150 ms. Until then the canvas keeps the
+  // old picture, which the browser stretches, and the frame asks for another frame.
+  assert.equal(wiring.render(1300, 820, 2000), true)
+  assert.deepEqual(rectangle(), ['24px', '48px', '1252px', '766px'])
+  assert.equal(wiring.render(1200, 800, 2100), true)
+  assert.equal(wiring.render(1200, 800, 2249), true)
+  assert.deepEqual(rectangle(), ['24px', '48px', '1152px', '746px'])
+  assert.deepEqual([size.width, size.height, arcs.length], [2784, 1692, 2])
+  assert.equal(wiring.render(1200, 800, 2250), false)
+  assert.deepEqual([size.width, size.height, arcs.length], [2304, 1492, 4])
+  assert.equal(wiring.render(1200, 800, 2266), false)
+  assert.equal(arcs.length, 4)
+
+  // A viewport that returns to the drawn size within 150 ms needs no drawing.
+  assert.equal(wiring.render(1210, 800, 3000), true)
+  assert.equal(wiring.render(1200, 800, 3050), false)
+  assert.equal(arcs.length, 4)
+
+  // A canvas of more than 16 million pixels gets fewer pixels per px, and a viewport
+  // smaller than the canvas's insets gives a canvas of no size.
+  assert.equal(wiring.render(3840, 2160, 4000), true)
+  assert.equal(wiring.render(3840, 2160, 4150), false)
+  assert.ok(size.width * size.height <= 16_000_000 && size.width * size.height > 15_900_000, `${size.width} × ${size.height}`)
+  assert.equal(wiring.render(40, 40, 5000), true)
+  assert.deepEqual(rectangle(), ['24px', '48px', '0px', '0px'])
+})

@@ -18,7 +18,7 @@ The same theorem says how much such an executor could gain at most. With unlimit
 | the same button as a Sklansky prefix scan (this section) | 2,872 | 9 | 319 |
 | layout-tree's app shell | 2,806 | 115 | 24 |
 | HandwiredOS before September 15, 2026 | 5,253 | 192 | 27 |
-| HandwiredOS since September 15, 2026 | 3,654 | 124 | 29 |
+| HandwiredOS on September 15, 2026 | 3,654 | 124 | 29 |
 | input's window circuit, 16 queued events with at most 2 presses | 1,494 | 55 | 27 |
 | HandwiredOS with spring-bank's springs, Photos reading its window's springs right after this frame's steps | 3,583 | 91 | 39 |
 | [indirect-os-2](https://github.com/chenglou/handwired/tree/exploration-2026-09/lab/ui-exploration/indirect-os-2), the whole program with Notes and word springs, before September 15, 2026 | 19,854 | 343 | 58 |

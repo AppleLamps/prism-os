@@ -4,7 +4,7 @@ import {describe, expect, test} from 'bun:test'
 import {validateGrids, validateIndexReads, validateNoNaN} from '../../src/runtime/numeric-ui-core.ts'
 import {createCorpus, createRandom, edgeCases, edgeCasesFor} from './corpus.ts'
 import {type HighlighterOutput, type ScanForm, buildHighlighter, createHighlighterMachine, scanForms} from '../../src/json-highlighter/highlighter.ts'
-import {type Limits, capacity, defaultLimits, errorKind, errorKinds, maximumDepth, pageLimits} from '../../src/json-highlighter/kinds.ts'
+import {type Limits, capacity, defaultLimits, errorKind, errorKinds, maximumDepth} from '../../src/json-highlighter/kinds.ts'
 import {highlightReference} from './reference.ts'
 
 const corpus = createCorpus(20260917, {random: 700, mutated: 1600, long: 80})
@@ -173,13 +173,10 @@ describe('the program', () => {
 })
 
 // buildHighlighter takes the capacity and the maximum depth as a parameter. The tests above run the defaults, 512 and
-// 16. These run the page's limits, 2,048 code points at depth 13, the largest depth at that capacity where every
+// 16. These run larger limits, 2,048 code points at depth 13, the largest depth at that capacity where every
 // comparison of the container kinds is an integer bit, and limits that aren't powers of two.
 describe('the program at other limits', () => {
-  const larger = pageLimits
-  test('the page builds 2,048 code points at depth 13, which the tests below name in their texts', () => {
-    expect(larger).toEqual({capacity: 2048, maximumDepth: 13})
-  })
+  const larger: Limits = {capacity: 2048, maximumDepth: 13}
   // Edge cases, chains of containers and long texts made for the larger limits, e.g. `[`, 2,046 spaces and `]`.
   const largerCorpus = createCorpus(20261013, {random: 300, mutated: 600, long: 80}, larger)
 
@@ -209,10 +206,13 @@ describe('the program at other limits', () => {
     expect(counts.tooLong).toBeGreaterThan(20)
   })
 
+  // This test and the next take 3 to 4 s each when this file runs alone. `bun run test` gives every test 30 s, and a
+  // bare `bun test` gives 5 s, which both tests exceeded in a run of every test file on a busy machine, so both name
+  // their own 30 s.
   test('loop at 2,048 code points and depth 13: matches the reference on the default corpus and on a corpus made for these limits, at random carets', () => {
     const random = createRandom(5)
     for (const text of [...corpus.all, ...largerCorpus.all]) expectAgreement('loop', text, Math.floor(random() * (codePointLength(text) + 2)), larger)
-  })
+  }, 30_000)
 
   test('brent-kung and sklansky at 2,048 code points and depth 13: match the reference on the edge cases for these limits and some long texts', () => {
     const random = createRandom(6)
@@ -220,7 +220,7 @@ describe('the program at other limits', () => {
     for (const form of ['brent-kung', 'sklansky'] as const) {
       for (const text of texts) expectAgreement(form, text, Math.floor(random() * (codePointLength(text) + 2)), larger)
     }
-  })
+  }, 30_000)
 
   test('the named fallbacks at 2,048 code points and depth 13, and carets around the capacity', () => {
     const longText = `[${'1,'.repeat(1200)}1]`

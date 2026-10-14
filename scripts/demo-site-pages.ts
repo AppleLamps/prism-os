@@ -9,15 +9,13 @@ export const repoRoot = resolve(import.meta.dir, '..')
 // `source` is the page's file in the repo, and `path` is its folder on the site, relative to the site's root, e.g.
 // 'os/' is served at <site>/os/ and built as site/os/index.html. The site is served under a path prefix, e.g.
 // https://example.com/handwired/, so every link between pages is relative and written for these paths: the index
-// links to HandwiredOS as "os/", and HandwiredOS links to the index as "../" and to another demo as e.g.
-// "../regex-search/".
+// links to HandwiredOS as "os/", and a demo's page links to the index as "../" and to another demo as e.g.
+// "../learned-gallery/", which is the JSON search page's link to the learned gallery.
 export type SitePage = {source: string, path: string}
 
 const publishedPages: SitePage[] = [
   {source: 'assets/demos.html', path: ''},
   {source: 'assets/index.html', path: 'os/'},
-  {source: 'assets/json-highlighter.html', path: 'json-highlighter/'},
-  {source: 'lab/regex-search/demo.html', path: 'regex-search/'},
   {source: 'lab/learned-gallery/learned-gallery.html', path: 'learned-gallery/'},
 ]
 // The GPU search demo is on the site only once its page exists. Its card in assets/demos.html has a hidden attribute
