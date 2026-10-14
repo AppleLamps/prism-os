@@ -1987,6 +1987,11 @@ function mountWindowManager(document: Document, window: Window) {
     // ArrowDown moves the note's caret and never the selection of Monitor's list,
     // ArrowLeft never turns Photos' pages, and Escape closes no photo.
     if (event.target === domCache.note) return
+    // A key held with Command, Control or Alt is the browser's or the system's too,
+    // e.g. Command with ArrowLeft and Alt with ArrowLeft go back in the history.
+    // Taken as Photos' ArrowLeft, with its default prevented, such a key would turn
+    // a page of Photos instead.
+    if (event.metaKey || event.ctrlKey || event.altKey) return
     // Every other key is queued for the program, which gives a list key to Monitor
     // and an arrow or Escape to Photos only while that window is focused at the key's
     // time. E.g. after a press on Notes' title bar earlier in the same frame, the note
