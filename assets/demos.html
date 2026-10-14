@@ -132,14 +132,18 @@
         </a>
 
         <!-- The GPU demo's card. The site build publishes lab/json-search/demo.html at json-search/. The card's numbers
-             were measured on an Apple M5 Max in headless Chrome 155 on October 13, 2026. For lab/json-search/README.md,
-             a search of 100,000 documents with a pattern of up to 8 states, which is a pattern of up to 7 characters
-             or sets, took 17.6 to 20.8 ms after a pause of 200 ms or more, which is what a search per keystroke gets,
-             and 7.6 ms when one search followed another, and RegExp on one thread took 12 to 43 ms for the same
-             searches. The demo's page, on the built site, showed 18.5 to 23.1 ms for its first search, the one it
-             shows at rest, in 8 loads. So the card says "about 20 ms". With the page's toggle on CPU, the same
-             search took 14.2 to 14.3 s in three runs. The numbers aren't marked with data-count, since the demo's
-             page shows other numbers on another machine. -->
+             were measured on an Apple M5 Max in headless Chrome for Testing 155 on October 14, 2026, see
+             lab/json-search/README.md. The demo's page, on the built site, showed 11.9 to 13.1 ms for its first
+             search, the one it shows at rest, in 6 loads, and a search after a pause of 200 ms, which is what a
+             search per keystroke gets, took 11.5 ms on the program of 8 states, 12.4 ms on the one of 16 and 14.2 ms
+             on the one of 32, as medians of 108 to 246 searches. So the card says "about 12 ms", and that a long
+             pattern takes about as long as a short one. For the same searches the page's line showed 8.5 to 35 ms for
+             RegExp on one thread: 8.5 ms for the Try list's date, 9.6 ms for "error" and 11 ms for "connection reset",
+             which is less than the GPU took, and 21 to 35 ms for five other patterns, which is more, and 2.2 s for
+             the Try list's pattern that makes RegExp backtrack. So the card gives RegExp's range for ordinary
+             patterns and doesn't say which is faster. With the page's toggle on CPU, a whole search took 13 s in two runs on
+             October 14, and 14.2 to 14.3 s in three on October 13. The numbers aren't marked with data-count, since
+             the demo's page shows other numbers on another machine. -->
         <a class="card demo" href="json-search/" aria-labelledby="json-search-title">
           <div class="demo-picture" aria-hidden="true">
             <!-- A piece of the demo's map: a small mark for each document, and a larger copper one for each document
@@ -168,8 +172,8 @@
           </div>
           <div class="demo-body">
             <h3 id="json-search-title">Search 100,000 JSON documents</h3>
-            <p>Each keystroke turns your pattern into tables of numbers for a fixed program that the GPU runs on each of 100,000 JSON documents. No document reads another, so one pass runs them all, in about the time that RegExp takes on one thread for a pattern of up to 7 characters.</p>
-            <p class="meta facts">A search takes about 20&nbsp;ms on an Apple M5 Max&rsquo;s GPU. The page can also run the same program on the CPU, where a search takes about 14&nbsp;s.</p>
+            <p>Each keystroke turns your pattern into tables of numbers for a fixed program that the GPU runs on each of 100,000 JSON documents. No document reads another, so one pass runs them all, and a long pattern takes about as long as a short one.</p>
+            <p class="meta facts">A search takes about 12&nbsp;ms on an Apple M5 Max&rsquo;s GPU, where RegExp takes 9 to 35&nbsp;ms on one thread, depending on the pattern. The page can also run the same program on the CPU, where a search takes about 14&nbsp;s.</p>
           </div>
         </a>
       </section>
