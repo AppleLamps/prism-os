@@ -473,10 +473,13 @@ function mountJsonSearch(document: Document, window: Window) {
     debug.documentCount = documentCount
 
     // Inputs: the pattern, what the search reads and where it runs. An example of the Try list replaces the first two.
+    // Without a GPU the search runs on the CPU whatever the toggle says: from the first frame in a browser without
+    // WebGPU, and from the load's end or later for a GPU that failed.
     const example = st.events.example
     const pattern = example?.pattern ?? typedPattern
     const scope: Scope = example?.scope ?? (isScope(typedScope) ? typedScope : 'everything')
-    const where: Where = world !== null && world.gpu === null ? 'cpu' : typedWhere
+    const withoutGpu = world === null ? !hasWebGpu : world.gpu === null
+    const where: Where = withoutGpu ? 'cpu' : typedWhere
     debug.where = world === null ? null : where
     const analysis: PatternAnalysis = world === null ? {kind: 'empty'} : analyzePattern(pattern, defaultStateCapacities)
     const key = analysis.kind === 'fits' ? searchKeyOf(where, scope, pattern) : ''
@@ -579,10 +582,9 @@ function mountJsonSearch(document: Document, window: Window) {
       for (const input of domCache.scopes) input.checked = input.value === scope
     }
     // Without a GPU the toggle stays on CPU.
-    const gpuDisabled = world !== null && world.gpu === null
-    if (written.gpuDisabled !== gpuDisabled) {
-      domCache.whereGpu.disabled = written.gpuDisabled = gpuDisabled
-      if (gpuDisabled) domCache.whereCpu.checked = true
+    if (written.gpuDisabled !== withoutGpu) {
+      domCache.whereGpu.disabled = written.gpuDisabled = withoutGpu
+      if (withoutGpu) domCache.whereCpu.checked = true
     }
 
     // The map: its size and its cells.
