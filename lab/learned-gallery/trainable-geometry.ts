@@ -104,10 +104,13 @@ export const penaltyStrength = 2
 // within the reach of every other, so the penalty waits until the outputs are where the target has them: which
 // edges end on one line then depends on the target and not on the paths that the outputs took out of the pile.
 // A distance of 1e-6 is an error of 0.14% of the stage in the middle case, 0.8 px on a stage of 538 px. With a
-// fixed wait of 200 steps instead, 2 of 200 variants of the page's Story sketch ended with one photo 5 to 8 px
-// off its row after 2,000 steps: those fits are slow, the photo was still 9 px from its place and so out of the
-// row's reach of 8 px when the penalty came on, and the rest of the fit was slower with the penalty on. With
-// this rule every line of all 200 is within 0.15 px when training stops (October 14, 2026).
+// fixed wait of 200 steps instead, one of 200 variants of the page's Story sketch, the one with a large rectangle
+// of 0.475 by 0.4 of the stage, ended with the tops of a row 10.7 px apart after 2,000 steps, and 34 variants
+// trained all 2,000 steps, where 26 do with this rule: that fit is slow, the penalty came on while the photos
+// were still on their way, and the rest of the fit was slower with the penalty on. With this rule the penalty
+// comes on after 909 steps for that variant, and every line of all 200 is within 0.15 px when training stops
+// (October 14, 2026, at a reach of 2% of the stage. At a reach of 1.5%, where the wait was tried first, 2
+// variants ended with one photo 5 to 8 px off its row).
 const penaltyOnsetDistance = 1e-6
 const penaltyOnsetSteps = 1000
 const penaltyRiseSteps = 200
@@ -843,6 +846,20 @@ export function createTrainableGeometryMachine(
     // slows the small moves near the end of a fit: 1.9% of 3,840 small session edits then ended with two photo
     // edges neither in line nor a reach apart, where it is 1.1% with this rule and 1.2% with no rate below 1/64
     // (October 14, 2026).
+    //
+    // A frame that is taken back puts Adam's two moments back with the weights, so the next frame starts along the
+    // same momentum at half the rate. That repeats a frame in two cases:
+    // - Where the momentum itself points uphill, the steps raise what they follow at any rate. A frame of one step
+    //   is then taken back again and again, until the multipliers have changed the slopes, so the page's frames
+    //   train two steps or more: see minimumTrainingStepsPerFrame in learned-gallery.ts.
+    // - At rest. After the first fit of the page's Story sketch, 238 of the next 300 frames of 10 steps are taken
+    //   back, 185 of them at the lowest rate, and 203 start from the same weights, moments and rate as the frame
+    //   before them, up to 171 in a row, where it is 34 of 300 and none with the penalty off. A frame at the
+    //   lowest rate changes only 28 of the 244 weights there, since the other weights' steps are smaller than
+    //   their 32-bit floats resolve, and it changes what the steps follow by about 1e-12 of 1e-7, up or down.
+    //   So rounding decides whether the frame is kept, and a frame that was taken back is computed again
+    //   unchanged until the multipliers have changed. Dropping the first moment at such a frame leaves 189 of
+    //   those 300 frames repeated (October 14, 2026).
     trainOrUndo(steps: number) {
       invariant(Number.isInteger(steps) && steps >= 0, 'training step count is invalid')
       const valuesBefore = circuit.evaluateTensor(source)

@@ -282,7 +282,8 @@ export const unmeasuredTrainingStepsPerFrame = 4
 // 3 ms, e.g. 10 ms at 5 ms a step.
 export const minimumTrainingStepsPerFrame = 2
 // The loss chart shows this many of the latest steps, which holds Story's and Contact sheet's whole first fit,
-// about 700 and 900 steps, and most of Cinema's 1,400.
+// 650 to 750 and 860 to 980 steps, and the later part of Cinema's, which takes 1,370 to 1,840 steps, depending on
+// which steps each frame holds.
 export const chartStepCount = 1000
 
 const minimumRectangleSize = 0.04
