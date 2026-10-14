@@ -5,19 +5,22 @@
 // anything. It says nothing about what a real GPU compiler does; gpu/run.ts and gpu/search-run.ts check that. It
 // started as a copy of lab/ui-exploration/codegen/wgsl-interpreter.ts: this one has floor, min, u32(), f32(), the
 // comparisons > and <, &&, the bit operators | & << >>, `var`, assignments, `for`, `if`, several input and output
-// buffers, and has no switch statements.
+// buffers, and has no switch statements. For bit-emit.ts's shaders it also has i32 variables and arrays, the
+// comparisons <= and ==, the bit operator ^, max of two i32 values, conversions between u32, i32, f32 and bool, and the
+// buffer packed_words.
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 
 type ValueType = 'f32' | 'i32' | 'u32' | 'bool'
-type State = {slots: Float64Array, arrays: (Float32Array | Uint32Array)[], shared: Float32Array, inputs: Float32Array[], outputs: Float32Array[]}
+type ElementType = 'f32' | 'u32' | 'i32'
+type State = {slots: Float64Array, arrays: (Float32Array | Uint32Array | Int32Array)[], shared: Float32Array, packed: Uint32Array, inputs: Float32Array[], outputs: Float32Array[]}
 type Compiled = {type: ValueType, evaluate: (state: State) => number}
 type Variable =
   | {kind: 'scalar', slot: number, type: ValueType, mutable: boolean}
-  | {kind: 'array', index: number, elementType: 'f32' | 'u32', length: number}
+  | {kind: 'array', index: number, elementType: ElementType, length: number}
 type Statement = (state: State) => void
-type Scope = {variables: Map<string, Variable>, slotCount: number, arrays: {elementType: 'f32' | 'u32', length: number}[]}
+type Scope = {variables: Map<string, Variable>, slotCount: number, arrays: {elementType: ElementType, length: number}[]}
 
-const tokenPattern = /(0[xX][0-9a-fA-F]*\.[0-9a-fA-F]+[pP][+-]?[0-9]+f|[0-9]+\.[0-9]+f|[0-9]+[iu]|[A-Za-z_][A-Za-z0-9_.]*|>=|&&|<<|>>|[-+*()[\],&<>|])/y
+const tokenPattern = /(0[xX][0-9a-fA-F]*\.[0-9a-fA-F]+[pP][+-]?[0-9]+f|[0-9]+\.[0-9]+f|[0-9]+[iu]|[A-Za-z_][A-Za-z0-9_.]*|>=|<=|==|&&|<<|>>|[-+*()[\],&<>|^])/y
 
 function tokenize(text: string) {
   const tokens: string[] = []
@@ -102,25 +105,29 @@ function compileExpression(text: string, variables: ReadonlyMap<string, Variable
   function parseComparison(): Compiled {
     const left = parseBitwise()
     const operator = peek()
-    if (operator !== '>=' && operator !== '>' && operator !== '<') return left
+    if (operator !== '>=' && operator !== '>' && operator !== '<' && operator !== '<=' && operator !== '==') return left
     position++
     const right = parseBitwise()
     invariant(left.type === right.type && left.type !== 'bool', `mixed types in ${text}`)
     if (operator === '>=') return {type: 'bool', evaluate: state => left.evaluate(state) >= right.evaluate(state) ? 1 : 0}
+    if (operator === '<=') return {type: 'bool', evaluate: state => left.evaluate(state) <= right.evaluate(state) ? 1 : 0}
+    if (operator === '==') return {type: 'bool', evaluate: state => left.evaluate(state) === right.evaluate(state) ? 1 : 0}
     if (operator === '>') return {type: 'bool', evaluate: state => left.evaluate(state) > right.evaluate(state) ? 1 : 0}
     return {type: 'bool', evaluate: state => left.evaluate(state) < right.evaluate(state) ? 1 : 0}
   }
-  // WGSL wants parentheses where | or & meets another operator, and the emitters write them.
+  // WGSL wants parentheses where |, & or ^ meets another operator, and the emitters write them.
   function parseBitwise(): Compiled {
     let left = parseShift()
-    while (peek() === '|' || peek() === '&') {
+    const first = peek()
+    while (peek() === '|' || peek() === '&' || peek() === '^') {
       const operator = tokens[position++]!
+      invariant(operator === first, `${first} next to ${operator} without parentheses in ${text}`)
       const earlier = left
       const right = parseShift()
       invariant(earlier.type === 'u32' && right.type === 'u32', `${operator} of other types in ${text}`)
-      left = operator === '|'
-        ? {type: 'u32', evaluate: state => (earlier.evaluate(state) | right.evaluate(state)) >>> 0}
-        : {type: 'u32', evaluate: state => (earlier.evaluate(state) & right.evaluate(state)) >>> 0}
+      if (operator === '|') left = {type: 'u32', evaluate: state => (earlier.evaluate(state) | right.evaluate(state)) >>> 0}
+      else if (operator === '&') left = {type: 'u32', evaluate: state => (earlier.evaluate(state) & right.evaluate(state)) >>> 0}
+      else left = {type: 'u32', evaluate: state => (earlier.evaluate(state) ^ right.evaluate(state)) >>> 0}
     }
     return left
   }
@@ -188,14 +195,17 @@ function compileExpression(text: string, variables: ReadonlyMap<string, Variable
         return {type: 'f32', evaluate: () => value}
       }
       const value = Number(token.slice(0, -1))
-      return {type: token.endsWith('i') ? 'i32' : 'u32', evaluate: () => value}
+      const type = token.endsWith('i') ? 'i32' : 'u32'
+      // A GPU's shader compiler refuses a literal that its type doesn't hold, e.g. 2147483648i or 1099511627775u.
+      invariant(value <= (type === 'i32' ? 0x7fffffff : 0xffffffff), `the literal ${token} doesn't fit ${type}`)
+      return {type, evaluate: () => value}
     }
     if (peek() === '(') {
       switch (token) {
         case 'max': {
           const [left, right] = parseArguments(2) as [Compiled, Compiled]
-          invariant(left.type === 'f32' && right.type === 'f32', `max of other types in ${text}`)
-          return {type: 'f32', evaluate: state => Math.max(left.evaluate(state), right.evaluate(state))}
+          invariant(left.type === right.type && (left.type === 'f32' || left.type === 'i32'), `max of other types in ${text}`)
+          return {type: left.type, evaluate: state => Math.max(left.evaluate(state), right.evaluate(state))}
         }
         case 'min': {
           const [left, right] = parseArguments(2) as [Compiled, Compiled]
@@ -224,12 +234,25 @@ function compileExpression(text: string, variables: ReadonlyMap<string, Variable
         }
         case 'i32': {
           const [value] = parseArguments(1) as [Compiled]
-          invariant(value.type === 'f32', `i32() of another type in ${text}`)
-          return {type: 'i32', evaluate: state => toI32(value.evaluate(state))}
+          invariant(value.type === 'f32' || value.type === 'u32', `i32() of another type in ${text}`)
+          if (value.type === 'u32') {
+            return {type: 'i32', evaluate: state => {
+              const converted = value.evaluate(state)
+              // Stricter than WGSL, which reinterprets the bits: bit-emit.ts only converts bits.
+              invariant(converted <= 0x7fffffff, `i32() of ${converted} in ${text}`)
+              return converted
+            }}
+          }
+          return {type: 'i32', evaluate: state => {
+            const converted = value.evaluate(state)
+            // Stricter than WGSL, which truncates: the emitters only convert whole numbers.
+            invariant(!Number.isFinite(converted) || Number.isInteger(converted), `i32() of ${converted} in ${text}`)
+            return toI32(converted)
+          }}
         }
         case 'u32': {
           const [value] = parseArguments(1) as [Compiled]
-          invariant(value.type === 'i32' || value.type === 'f32', `u32() of another type in ${text}`)
+          invariant(value.type !== 'u32', `u32() of a u32 in ${text}`)
           return {type: 'u32', evaluate: state => {
             const converted = value.evaluate(state)
             // Stricter than WGSL, which clamps: the emitters only convert whole numbers that fit.
@@ -239,7 +262,7 @@ function compileExpression(text: string, variables: ReadonlyMap<string, Variable
         }
         case 'f32': {
           const [value] = parseArguments(1) as [Compiled]
-          invariant(value.type === 'u32', `f32() of another type in ${text}`)
+          invariant(value.type === 'u32' || value.type === 'i32', `f32() of another type in ${text}`)
           return {type: 'f32', evaluate: state => Math.fround(value.evaluate(state))}
         }
         default:
@@ -251,6 +274,13 @@ function compileExpression(text: string, variables: ReadonlyMap<string, Variable
       const index = parseLogical()
       expect(']')
       invariant(index.type === 'u32', `an array index of another type in ${text}`)
+      if (token === 'packed_words') {
+        return {type: 'u32', evaluate: state => {
+          const at = index.evaluate(state)
+          invariant(at < state.packed.length, `packed_words[${at}] is past the buffer's end`)
+          return state.packed[at]!
+        }}
+      }
       const buffer = inputBufferOf(token)
       if (buffer !== undefined) {
         return {type: 'f32', evaluate: state => {
@@ -313,9 +343,9 @@ function compileBlock(lines: readonly string[], start: number, scope: Scope, isM
       })
       continue
     }
-    match = /^var (\w+): array<(f32|u32), (\d+)>;$/.exec(line)
+    match = /^var (\w+): array<(f32|u32|i32), (\d+)>;$/.exec(line)
     if (match !== null) {
-      const elementType = match[2] as 'f32' | 'u32'
+      const elementType = match[2] as ElementType
       const length = Number(match[3])
       const arrayIndex = scope.arrays.length
       scope.arrays.push({elementType, length})
@@ -326,7 +356,7 @@ function compileBlock(lines: readonly string[], start: number, scope: Scope, isM
       })
       continue
     }
-    match = /^var (\w+): (f32|u32) = (.*);$/.exec(line)
+    match = /^var (\w+): (f32|u32|i32) = (.*);$/.exec(line)
     if (match !== null) {
       const expression = compileExpression(match[3]!, variables)
       invariant(expression.type === match[2], `type mismatch in ${line}`)
@@ -414,8 +444,9 @@ function compileBlock(lines: readonly string[], start: number, scope: Scope, isM
 
 // Runs the shader's statements for instances 0 to count - 1, writing each output group into its own array. `inputs`
 // are the per-document buffers after the first one, e.g. the display kinds a masked search reads, `window` the
-// documents that get per position outputs, and `first` the document that instance 0 runs in a loop shader.
-export type WgslInterpreter = (shared: Float32Array, sources: Float32Array, count: number, outputs: Float32Array[], options?: {inputs?: readonly Float32Array[], window?: {first: number, count: number}, first?: number}) => void
+// documents that get per position outputs, `first` the document that instance 0 runs in a loop shader, and `packed`
+// the words of bit-emit.ts's packed_words buffer.
+export type WgslInterpreter = (shared: Float32Array, sources: Float32Array, count: number, outputs: Float32Array[], options?: {inputs?: readonly Float32Array[], window?: {first: number, count: number}, first?: number, packed?: Uint32Array}) => void
 
 export function createWgslInterpreter(code: string): WgslInterpreter {
   const mainStart = code.indexOf('fn main(')
@@ -433,9 +464,10 @@ export function createWgslInterpreter(code: string): WgslInterpreter {
   const firstDocument = builtIn('params.first')
   const {statements} = compileBlock(lines, 0, scope, true)
   const slots = new Float64Array(scope.slotCount)
-  const arrays = scope.arrays.map(({elementType, length}) => elementType === 'f32' ? new Float32Array(length) : new Uint32Array(length))
+  const arrays = scope.arrays.map(({elementType, length}) => elementType === 'f32' ? new Float32Array(length) : elementType === 'u32' ? new Uint32Array(length) : new Int32Array(length))
+  const noWords = new Uint32Array(0)
   return (shared, sources, count, outputs, options = {}) => {
-    const state: State = {slots, arrays, shared, inputs: [sources, ...(options.inputs ?? [])], outputs}
+    const state: State = {slots, arrays, shared, packed: options.packed ?? noWords, inputs: [sources, ...(options.inputs ?? [])], outputs}
     slots[windowFirst] = options.window?.first ?? 0
     slots[windowCount] = options.window?.count ?? 0
     slots[firstDocument] = options.first ?? 0

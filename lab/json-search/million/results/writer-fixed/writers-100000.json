@@ -1,0 +1,2654 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T14:14:35.516Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 8.38 14.73 18.44 }",
+  "memoryBefore": "System-wide memory free percentage: 61%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "writers",
+   "--count",
+   "100000",
+   "--profile",
+   "chrome-profile",
+   "--out",
+   "labwriters-100000.json",
+   "--port",
+   "4554",
+   "--devtools-port",
+   "9554"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T14:14:45.566Z",
+    "load": "{ 8.24 14.49 18.32 }"
+   },
+   {
+    "at": "2026-10-14T14:14:55.567Z",
+    "load": "{ 8.94 14.44 18.25 }"
+   },
+   {
+    "at": "2026-10-14T14:15:05.570Z",
+    "load": "{ 8.57 14.18 18.11 }"
+   },
+   {
+    "at": "2026-10-14T14:15:15.572Z",
+    "load": "{ 14.39 15.20 18.43 }"
+   },
+   {
+    "at": "2026-10-14T14:15:25.574Z",
+    "load": "{ 13.70 15.03 18.33 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9554",
+   "--user-data-dir=chrome-profile",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900",
+   "--js-flags=--expose-gc"
+  ],
+  "chromePid": 93619,
+  "browser": "Chrome/155.0.8059.80",
+  "finishedAt": "2026-10-14T14:15:26.734Z",
+  "loadAfter": "{ 13.70 15.03 18.33 }",
+  "memoryAfter": "System-wide memory free percentage: 62%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T14:14:36.090Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "writers",
+   "count": 100000,
+   "patterns": [
+    "error",
+    "[a-z]+Id",
+    "[a-z0-9.]+@[a-z.]+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "([a-z]+)+x",
+    "connection reset"
+   ],
+   "capacities": [
+    8,
+    16,
+    32
+   ],
+   "shaderSalt": 282654863,
+   "pieceDocuments": 50000,
+   "engines": [
+    "f32-kernel",
+    "bytes-boundaries",
+    "bytes",
+    "bytes-scope",
+    "packed",
+    "packed-scope",
+    "bytes-bits",
+    "bytes-has",
+    "bytes-scope-has",
+    "packed-scope-has"
+   ],
+   "f32": true,
+   "pausesMs": [
+    200
+   ],
+   "longPausesMs": [
+    1000
+   ],
+   "longPauseEngines": [
+    "f32-kernel",
+    "bytes",
+    "bytes-scope-has"
+   ],
+   "pauseSamples": 9,
+   "restMs": 0,
+   "warmPauses": [],
+   "minimumSamples": 15,
+   "sampleMs": 1000,
+   "layout": "fixed",
+   "workers": 8,
+   "scopeBits": true,
+   "limits": "needed",
+   "keepTexts": false,
+   "regExpFlags": "",
+   "jsSamples": 9,
+   "jsPauseMs": 0,
+   "filterWorkers": 8,
+   "jsParts": [
+    "wholeText",
+    "parse",
+    "walk",
+    "collected",
+    "workers"
+   ]
+  },
+  "memory": {},
+  "loadAtStart": 8.38,
+  "emptyPipelineMs": 46.97,
+  "comparisons": [
+   {
+    "program": "the JSON highlighter's step",
+    "compileMs": {
+     "today": 0.695,
+     "bits": 15.045
+    },
+    "statements": 103,
+    "bytes": 5080,
+    "rules": {
+     "sum": 12,
+     "gate": 1,
+     "comparison": 1,
+     "product": 7,
+     "read": 18,
+     "packedRead": 0,
+     "packedWord": 0,
+     "lane": 0,
+     "float": 15
+    },
+    "rows": {
+     "affine": 19,
+     "reglu": 17,
+     "boolean": 0,
+     "index": 18
+    },
+    "packedWords": 0,
+    "values": 51600000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0
+   },
+   {
+    "program": "the characters of the wanted sets",
+    "wanted": [
+     true,
+     false,
+     false,
+     false
+    ],
+    "compileMs": {
+     "today": 31.235,
+     "bits": 18.89
+    },
+    "statements": 30,
+    "bytes": 1697,
+    "rules": {
+     "sum": 2,
+     "gate": 1,
+     "comparison": 0,
+     "product": 0,
+     "read": 0,
+     "packedRead": 4,
+     "packedWord": 1,
+     "lane": 0,
+     "float": 0
+    },
+    "rows": {
+     "affine": 2,
+     "reglu": 1,
+     "boolean": 0,
+     "index": 4
+    },
+    "packedWords": 130,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 3128957,
+    "differFromJavaScript": 0
+   },
+   {
+    "program": "the characters of the wanted sets",
+    "wanted": [
+     false,
+     true,
+     true,
+     false
+    ],
+    "compileMs": {
+     "today": 31.235,
+     "bits": 18.89
+    },
+    "statements": 30,
+    "bytes": 1697,
+    "rules": {
+     "sum": 2,
+     "gate": 1,
+     "comparison": 0,
+     "product": 0,
+     "read": 0,
+     "packedRead": 4,
+     "packedWord": 1,
+     "lane": 0,
+     "float": 0
+    },
+    "rows": {
+     "affine": 2,
+     "reglu": 1,
+     "boolean": 0,
+     "index": 4
+    },
+    "packedWords": 130,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 13742530,
+    "differFromJavaScript": 0
+   },
+   {
+    "program": "the characters of the wanted sets",
+    "wanted": [
+     false,
+     false,
+     false,
+     true
+    ],
+    "compileMs": {
+     "today": 31.235,
+     "bits": 18.89
+    },
+    "statements": 30,
+    "bytes": 1697,
+    "rules": {
+     "sum": 2,
+     "gate": 1,
+     "comparison": 0,
+     "product": 0,
+     "read": 0,
+     "packedRead": 4,
+     "packedWord": 1,
+     "lane": 0,
+     "float": 0
+    },
+    "rows": {
+     "affine": 2,
+     "reglu": 1,
+     "boolean": 0,
+     "index": 4
+    },
+    "packedWords": 130,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 7298725,
+    "differFromJavaScript": 0
+   },
+   {
+    "program": "the characters of the wanted sets",
+    "wanted": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "compileMs": {
+     "today": 31.235,
+     "bits": 18.89
+    },
+    "statements": 30,
+    "bytes": 1697,
+    "rules": {
+     "sum": 2,
+     "gate": 1,
+     "comparison": 0,
+     "product": 0,
+     "read": 0,
+     "packedRead": 4,
+     "packedWord": 1,
+     "lane": 0,
+     "float": 0
+    },
+    "rows": {
+     "affine": 2,
+     "reglu": 1,
+     "boolean": 0,
+     "index": 4
+    },
+    "packedWords": 130,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 24170212,
+    "differFromJavaScript": 0
+   },
+   {
+    "program": "the characters of the wanted sets",
+    "wanted": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "compileMs": {
+     "today": 31.235,
+     "bits": 18.89
+    },
+    "statements": 30,
+    "bytes": 1697,
+    "rules": {
+     "sum": 2,
+     "gate": 1,
+     "comparison": 0,
+     "product": 0,
+     "read": 0,
+     "packedRead": 4,
+     "packedWord": 1,
+     "lane": 0,
+     "float": 0
+    },
+    "rows": {
+     "affine": 2,
+     "reglu": 1,
+     "boolean": 0,
+     "index": 4
+    },
+    "packedWords": 130,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0
+   },
+   {
+    "program": "the search step, 8 states",
+    "states": 8,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "error",
+    "compileMs": {
+     "today": 51.455,
+     "bits": 19.075
+    },
+    "statements": 141,
+    "bytes": 7294,
+    "rules": {
+     "sum": 3,
+     "gate": 51,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 19,
+     "reglu": 100,
+     "boolean": 0,
+     "index": 129
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 12507,
+    "differFromJavaScript": 0,
+    "ms": 165.65,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states",
+    "states": 8,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 51.455,
+     "bits": 19.075
+    },
+    "statements": 141,
+    "bytes": 7294,
+    "rules": {
+     "sum": 3,
+     "gate": 51,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 19,
+     "reglu": 100,
+     "boolean": 0,
+     "index": 129
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 23795,
+    "differFromJavaScript": 0,
+    "ms": 158.4,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states",
+    "states": 8,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 51.455,
+     "bits": 19.075
+    },
+    "statements": 141,
+    "bytes": 7294,
+    "rules": {
+     "sum": 3,
+     "gate": 51,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 19,
+     "reglu": 100,
+     "boolean": 0,
+     "index": 129
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 14481,
+    "differFromJavaScript": 0,
+    "ms": 142.95,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states",
+    "states": 8,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 51.455,
+     "bits": 19.075
+    },
+    "statements": 141,
+    "bytes": 7294,
+    "rules": {
+     "sum": 3,
+     "gate": 51,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 19,
+     "reglu": 100,
+     "boolean": 0,
+     "index": 129
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 69580,
+    "differFromJavaScript": 0,
+    "ms": 148.425,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "error",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 12507,
+    "differFromJavaScript": 0,
+    "ms": 185.95,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "error",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 2939,
+    "differFromJavaScript": 0,
+    "ms": 168.095,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "error",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 9568,
+    "differFromJavaScript": 0,
+    "ms": 174.19,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 23795,
+    "differFromJavaScript": 0,
+    "ms": 163.455,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0,
+    "ms": 170.65,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 23795,
+    "differFromJavaScript": 0,
+    "ms": 169.93,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 14481,
+    "differFromJavaScript": 0,
+    "ms": 170.98,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 14481,
+    "differFromJavaScript": 0,
+    "ms": 168.26,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0,
+    "ms": 171.245,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 69580,
+    "differFromJavaScript": 0,
+    "ms": 160.255,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 44085,
+    "differFromJavaScript": 0,
+    "ms": 162.58,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 8 states, with a scope",
+    "states": 8,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 51.035,
+     "bits": 20.735
+    },
+    "statements": 147,
+    "bytes": 7748,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "rows": {
+     "affine": 20,
+     "reglu": 101,
+     "boolean": 0,
+     "index": 130
+    },
+    "packedWords": 272,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 25495,
+    "differFromJavaScript": 0,
+    "ms": 138.24,
+    "load": 8.35
+   },
+   {
+    "program": "the search step, 16 states",
+    "states": 16,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "error",
+    "compileMs": {
+     "today": 148.155,
+     "bits": 23.98
+    },
+    "statements": 165,
+    "bytes": 9340,
+    "rules": {
+     "sum": 3,
+     "gate": 67,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 35,
+     "reglu": 132,
+     "boolean": 0,
+     "index": 513
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 12507,
+    "differFromJavaScript": 0,
+    "ms": 223.995,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states",
+    "states": 16,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 148.155,
+     "bits": 23.98
+    },
+    "statements": 165,
+    "bytes": 9340,
+    "rules": {
+     "sum": 3,
+     "gate": 67,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 35,
+     "reglu": 132,
+     "boolean": 0,
+     "index": 513
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 23795,
+    "differFromJavaScript": 0,
+    "ms": 215.12,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states",
+    "states": 16,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 148.155,
+     "bits": 23.98
+    },
+    "statements": 165,
+    "bytes": 9340,
+    "rules": {
+     "sum": 3,
+     "gate": 67,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 35,
+     "reglu": 132,
+     "boolean": 0,
+     "index": 513
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 14481,
+    "differFromJavaScript": 0,
+    "ms": 213.28,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states",
+    "states": 16,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "compileMs": {
+     "today": 148.155,
+     "bits": 23.98
+    },
+    "statements": 165,
+    "bytes": 9340,
+    "rules": {
+     "sum": 3,
+     "gate": 67,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 35,
+     "reglu": 132,
+     "boolean": 0,
+     "index": 513
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 27803,
+    "differFromJavaScript": 0,
+    "ms": 211.865,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states",
+    "states": 16,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 148.155,
+     "bits": 23.98
+    },
+    "statements": 165,
+    "bytes": 9340,
+    "rules": {
+     "sum": 3,
+     "gate": 67,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 35,
+     "reglu": 132,
+     "boolean": 0,
+     "index": 513
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 69580,
+    "differFromJavaScript": 0,
+    "ms": 209.745,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "error",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 12507,
+    "differFromJavaScript": 0,
+    "ms": 225.58,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "error",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 2939,
+    "differFromJavaScript": 0,
+    "ms": 213.22,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "error",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 9568,
+    "differFromJavaScript": 0,
+    "ms": 214.855,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 23795,
+    "differFromJavaScript": 0,
+    "ms": 220.945,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0,
+    "ms": 220.235,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 23795,
+    "differFromJavaScript": 0,
+    "ms": 218.38,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 14481,
+    "differFromJavaScript": 0,
+    "ms": 217.9,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 14481,
+    "differFromJavaScript": 0,
+    "ms": 212.55,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0,
+    "ms": 220.89,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 27803,
+    "differFromJavaScript": 0,
+    "ms": 214.48,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 27803,
+    "differFromJavaScript": 0,
+    "ms": 216.52,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0,
+    "ms": 220.525,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 69580,
+    "differFromJavaScript": 0,
+    "ms": 220.51,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 44085,
+    "differFromJavaScript": 0,
+    "ms": 218.97,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 16 states, with a scope",
+    "states": 16,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 150.32,
+     "bits": 24.23
+    },
+    "statements": 171,
+    "bytes": 9794,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "rows": {
+     "affine": 36,
+     "reglu": 133,
+     "boolean": 0,
+     "index": 514
+    },
+    "packedWords": 544,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 25495,
+    "differFromJavaScript": 0,
+    "ms": 219.585,
+    "load": 8.24
+   },
+   {
+    "program": "the search step, 32 states",
+    "states": 32,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "error",
+    "compileMs": {
+     "today": 652.14,
+     "bits": 31.78
+    },
+    "statements": 213,
+    "bytes": 13829,
+    "rules": {
+     "sum": 3,
+     "gate": 99,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 67,
+     "reglu": 196,
+     "boolean": 0,
+     "index": 2049
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 12507,
+    "differFromJavaScript": 0,
+    "ms": 1482.19,
+    "load": 9.02
+   },
+   {
+    "program": "the search step, 32 states",
+    "states": 32,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 652.14,
+     "bits": 31.78
+    },
+    "statements": 213,
+    "bytes": 13829,
+    "rules": {
+     "sum": 3,
+     "gate": 99,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 67,
+     "reglu": 196,
+     "boolean": 0,
+     "index": 2049
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 23795,
+    "differFromJavaScript": 0,
+    "ms": 1466.6,
+    "load": 9.02
+   },
+   {
+    "program": "the search step, 32 states",
+    "states": 32,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 652.14,
+     "bits": 31.78
+    },
+    "statements": 213,
+    "bytes": 13829,
+    "rules": {
+     "sum": 3,
+     "gate": 99,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 67,
+     "reglu": 196,
+     "boolean": 0,
+     "index": 2049
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 14481,
+    "differFromJavaScript": 0,
+    "ms": 1464.855,
+    "load": 9.02
+   },
+   {
+    "program": "the search step, 32 states",
+    "states": 32,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "compileMs": {
+     "today": 652.14,
+     "bits": 31.78
+    },
+    "statements": 213,
+    "bytes": 13829,
+    "rules": {
+     "sum": 3,
+     "gate": 99,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 67,
+     "reglu": 196,
+     "boolean": 0,
+     "index": 2049
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 27803,
+    "differFromJavaScript": 0,
+    "ms": 1458.375,
+    "load": 8.94
+   },
+   {
+    "program": "the search step, 32 states",
+    "states": 32,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 652.14,
+     "bits": 31.78
+    },
+    "statements": 213,
+    "bytes": 13829,
+    "rules": {
+     "sum": 3,
+     "gate": 99,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 67,
+     "reglu": 196,
+     "boolean": 0,
+     "index": 2049
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 69580,
+    "differFromJavaScript": 0,
+    "ms": 1466.775,
+    "load": 8.94
+   },
+   {
+    "program": "the search step, 32 states",
+    "states": 32,
+    "masked": false,
+    "scope": "everything",
+    "pattern": "connection reset",
+    "compileMs": {
+     "today": 652.14,
+     "bits": 31.78
+    },
+    "statements": 213,
+    "bytes": 13829,
+    "rules": {
+     "sum": 3,
+     "gate": 99,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 67,
+     "reglu": 196,
+     "boolean": 0,
+     "index": 2049
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 1440,
+    "differFromJavaScript": 0,
+    "ms": 1459.535,
+    "load": 8.94
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "error",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 12507,
+    "differFromJavaScript": 0,
+    "ms": 1486.38,
+    "load": 8.62
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "error",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 2939,
+    "differFromJavaScript": 0,
+    "ms": 1511.865,
+    "load": 8.62
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "error",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 9568,
+    "differFromJavaScript": 0,
+    "ms": 1508.93,
+    "load": 8.62
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 23795,
+    "differFromJavaScript": 0,
+    "ms": 1498.255,
+    "load": 8.57
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0,
+    "ms": 1510.425,
+    "load": 8.57
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "[a-z]+Id",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 23795,
+    "differFromJavaScript": 0,
+    "ms": 1500.185,
+    "load": 8.57
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 14481,
+    "differFromJavaScript": 0,
+    "ms": 1488.735,
+    "load": 8.77
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 14481,
+    "differFromJavaScript": 0,
+    "ms": 1515.71,
+    "load": 8.77
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0,
+    "ms": 1502.345,
+    "load": 8.77
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 27803,
+    "differFromJavaScript": 0,
+    "ms": 1597.685,
+    "load": 8.77
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 27803,
+    "differFromJavaScript": 0,
+    "ms": 1609.045,
+    "load": 14.39
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0,
+    "ms": 1563.47,
+    "load": 14.39
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 69580,
+    "differFromJavaScript": 0,
+    "ms": 1544.12,
+    "load": 14.39
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 44085,
+    "differFromJavaScript": 0,
+    "ms": 1532.17,
+    "load": 14.28
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "([a-z]+)+x",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 25495,
+    "differFromJavaScript": 0,
+    "ms": 1590.085,
+    "load": 14.28
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "everything",
+    "pattern": "connection reset",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 1440,
+    "differFromJavaScript": 0,
+    "ms": 1556.845,
+    "load": 14.28
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "strings",
+    "pattern": "connection reset",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 1440,
+    "differFromJavaScript": 0,
+    "ms": 1498.275,
+    "load": 13.7
+   },
+   {
+    "program": "the search step, 32 states, with a scope",
+    "states": 32,
+    "masked": true,
+    "scope": "keys",
+    "pattern": "connection reset",
+    "compileMs": {
+     "today": 660.685,
+     "bits": 33.29
+    },
+    "statements": 219,
+    "bytes": 14324,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "rows": {
+     "affine": 68,
+     "reglu": 197,
+     "boolean": 0,
+     "index": 2050
+    },
+    "packedWords": 1088,
+    "values": 51300000,
+    "mismatches": 0,
+    "total": 0,
+    "differFromJavaScript": 0,
+    "ms": 1501.68,
+    "load": 13.7
+   }
+  ],
+  "compared": {
+   "comparisons": 66,
+   "values": 3386100000,
+   "mismatches": 0
+  },
+  "loadAtEnd": 13.7,
+  "finishedAt": "2026-10-14T14:15:26.697Z",
+  "logLines": [
+   "602.695 ms: 100000 documents written",
+   "772.91 ms: the highlighter: {\"program\":\"the JSON highlighter's step\",\"compileMs\":{\"today\":0.695,\"bits\":15.045},\"statements\":103,\"bytes\":5080,\"rules\":{\"sum\":12,\"gate\":1,\"comparison\":1,\"product\":7,\"read\":18,\"packedRead\":0,\"packedWord\":0,\"lane\":0,\"float\":15},\"rows\":{\"affine\":19,\"reglu\":17,\"boolean\":0,\"index\":18},\"packedWords\":0,\"values\":51600000,\"mismatches\":0,\"total\":0,\"differFromJavaScript\":0}",
+   "1446.385 ms: the characters of the wanted sets, [true,false,false,false]: {\"program\":\"the characters of the wanted sets\",\"wanted\":[true,false,false,false],\"compileMs\":{\"today\":31.235,\"bits\":18.89},\"statements\":30,\"bytes\":1697,\"rules\":{\"sum\":2,\"gate\":1,\"comparison\":0,\"product\":0,\"read\":0,\"packedRead\":4,\"packedWord\":1,\"lane\":0,\"float\":0},\"rows\":{\"affine\":2,\"reglu\":1,\"boolean\":0,\"index\":4},\"packedWords\":130,\"values\":51300000,\"mismatches\":0,\"total\":3128957,\"differFromJavaScript\":0}",
+   "2271.44 ms: the characters of the wanted sets, [false,true,true,false]: {\"program\":\"the characters of the wanted sets\",\"wanted\":[false,true,true,false],\"compileMs\":{\"today\":31.235,\"bits\":18.89},\"statements\":30,\"bytes\":1697,\"rules\":{\"sum\":2,\"gate\":1,\"comparison\":0,\"product\":0,\"read\":0,\"packedRead\":4,\"packedWord\":1,\"lane\":0,\"float\":0},\"rows\":{\"affine\":2,\"reglu\":1,\"boolean\":0,\"index\":4},\"packedWords\":130,\"values\":51300000,\"mismatches\":0,\"total\":13742530,\"differFromJavaScript\":0}",
+   "3286.665 ms: the characters of the wanted sets, [false,false,false,true]: {\"program\":\"the characters of the wanted sets\",\"wanted\":[false,false,false,true],\"compileMs\":{\"today\":31.235,\"bits\":18.89},\"statements\":30,\"bytes\":1697,\"rules\":{\"sum\":2,\"gate\":1,\"comparison\":0,\"product\":0,\"read\":0,\"packedRead\":4,\"packedWord\":1,\"lane\":0,\"float\":0},\"rows\":{\"affine\":2,\"reglu\":1,\"boolean\":0,\"index\":4},\"packedWords\":130,\"values\":51300000,\"mismatches\":0,\"total\":7298725,\"differFromJavaScript\":0}",
+   "4407.05 ms: the characters of the wanted sets, [true,true,true,true]: {\"program\":\"the characters of the wanted sets\",\"wanted\":[true,true,true,true],\"compileMs\":{\"today\":31.235,\"bits\":18.89},\"statements\":30,\"bytes\":1697,\"rules\":{\"sum\":2,\"gate\":1,\"comparison\":0,\"product\":0,\"read\":0,\"packedRead\":4,\"packedWord\":1,\"lane\":0,\"float\":0},\"rows\":{\"affine\":2,\"reglu\":1,\"boolean\":0,\"index\":4},\"packedWords\":130,\"values\":51300000,\"mismatches\":0,\"total\":24170212,\"differFromJavaScript\":0}",
+   "5176.14 ms: the characters of the wanted sets, [false,false,false,false]: {\"program\":\"the characters of the wanted sets\",\"wanted\":[false,false,false,false],\"compileMs\":{\"today\":31.235,\"bits\":18.89},\"statements\":30,\"bytes\":1697,\"rules\":{\"sum\":2,\"gate\":1,\"comparison\":0,\"product\":0,\"read\":0,\"packedRead\":4,\"packedWord\":1,\"lane\":0,\"float\":0},\"rows\":{\"affine\":2,\"reglu\":1,\"boolean\":0,\"index\":4},\"packedWords\":130,\"values\":51300000,\"mismatches\":0,\"total\":0,\"differFromJavaScript\":0}",
+   "5425.955 ms: 8 states, error, everything: 51300000 values, 0 mismatched, 12507 matches",
+   "5587.45 ms: 8 states, [a-z]+Id, everything: 51300000 values, 0 mismatched, 23795 matches",
+   "5733.32 ms: 8 states, [a-z0-9.]+@[a-z.]+, everything: 51300000 values, 0 mismatched, 14481 matches",
+   "5884.87 ms: 8 states, ([a-z]+)+x, everything: 51300000 values, 0 mismatched, 69580 matches",
+   "6152.265 ms: 8 states, with a scope, error, everything: 51300000 values, 0 mismatched, 12507 matches",
+   "6323.295 ms: 8 states, with a scope, error, strings: 51300000 values, 0 mismatched, 2939 matches",
+   "6500.47 ms: 8 states, with a scope, error, keys: 51300000 values, 0 mismatched, 9568 matches",
+   "6666.95 ms: 8 states, with a scope, [a-z]+Id, everything: 51300000 values, 0 mismatched, 23795 matches",
+   "6840.905 ms: 8 states, with a scope, [a-z]+Id, strings: 51300000 values, 0 mismatched, 0 matches",
+   "7013.925 ms: 8 states, with a scope, [a-z]+Id, keys: 51300000 values, 0 mismatched, 23795 matches",
+   "7188.17 ms: 8 states, with a scope, [a-z0-9.]+@[a-z.]+, everything: 51300000 values, 0 mismatched, 14481 matches",
+   "7359.345 ms: 8 states, with a scope, [a-z0-9.]+@[a-z.]+, strings: 51300000 values, 0 mismatched, 14481 matches",
+   "7533.415 ms: 8 states, with a scope, [a-z0-9.]+@[a-z.]+, keys: 51300000 values, 0 mismatched, 0 matches",
+   "7696.705 ms: 8 states, with a scope, ([a-z]+)+x, everything: 51300000 values, 0 mismatched, 69580 matches",
+   "7862.26 ms: 8 states, with a scope, ([a-z]+)+x, strings: 51300000 values, 0 mismatched, 44085 matches",
+   "8003.725 ms: 8 states, with a scope, ([a-z]+)+x, keys: 51300000 values, 0 mismatched, 25495 matches",
+   "8416.275 ms: 16 states, error, everything: 51300000 values, 0 mismatched, 12507 matches",
+   "8634.36 ms: 16 states, [a-z]+Id, everything: 51300000 values, 0 mismatched, 23795 matches",
+   "8850.53 ms: 16 states, [a-z0-9.]+@[a-z.]+, everything: 51300000 values, 0 mismatched, 14481 matches",
+   "9065.41 ms: 16 states, \\d\\d\\d\\d-\\d\\d-\\d\\d, everything: 51300000 values, 0 mismatched, 27803 matches",
+   "9278.03 ms: 16 states, ([a-z]+)+x, everything: 51300000 values, 0 mismatched, 69580 matches",
+   "9693.335 ms: 16 states, with a scope, error, everything: 51300000 values, 0 mismatched, 12507 matches",
+   "9909.655 ms: 16 states, with a scope, error, strings: 51300000 values, 0 mismatched, 2939 matches",
+   "10127.5 ms: 16 states, with a scope, error, keys: 51300000 values, 0 mismatched, 9568 matches",
+   "10351.305 ms: 16 states, with a scope, [a-z]+Id, everything: 51300000 values, 0 mismatched, 23795 matches",
+   "10574.425 ms: 16 states, with a scope, [a-z]+Id, strings: 51300000 values, 0 mismatched, 0 matches",
+   "10795.765 ms: 16 states, with a scope, [a-z]+Id, keys: 51300000 values, 0 mismatched, 23795 matches",
+   "11016.465 ms: 16 states, with a scope, [a-z0-9.]+@[a-z.]+, everything: 51300000 values, 0 mismatched, 14481 matches",
+   "11232.32 ms: 16 states, with a scope, [a-z0-9.]+@[a-z.]+, strings: 51300000 values, 0 mismatched, 14481 matches",
+   "11456.105 ms: 16 states, with a scope, [a-z0-9.]+@[a-z.]+, keys: 51300000 values, 0 mismatched, 0 matches",
+   "11673.665 ms: 16 states, with a scope, \\d\\d\\d\\d-\\d\\d-\\d\\d, everything: 51300000 values, 0 mismatched, 27803 matches",
+   "11893.28 ms: 16 states, with a scope, \\d\\d\\d\\d-\\d\\d-\\d\\d, strings: 51300000 values, 0 mismatched, 27803 matches",
+   "12116.695 ms: 16 states, with a scope, \\d\\d\\d\\d-\\d\\d-\\d\\d, keys: 51300000 values, 0 mismatched, 0 matches",
+   "12340.165 ms: 16 states, with a scope, ([a-z]+)+x, everything: 51300000 values, 0 mismatched, 69580 matches",
+   "12562.135 ms: 16 states, with a scope, ([a-z]+)+x, strings: 51300000 values, 0 mismatched, 44085 matches",
+   "12784.74 ms: 16 states, with a scope, ([a-z]+)+x, keys: 51300000 values, 0 mismatched, 25495 matches",
+   "15004.595 ms: 32 states, error, everything: 51300000 values, 0 mismatched, 12507 matches",
+   "16474.26 ms: 32 states, [a-z]+Id, everything: 51300000 values, 0 mismatched, 23795 matches",
+   "17942 ms: 32 states, [a-z0-9.]+@[a-z.]+, everything: 51300000 values, 0 mismatched, 14481 matches",
+   "19403.44 ms: 32 states, \\d\\d\\d\\d-\\d\\d-\\d\\d, everything: 51300000 values, 0 mismatched, 27803 matches",
+   "20873.14 ms: 32 states, ([a-z]+)+x, everything: 51300000 values, 0 mismatched, 69580 matches",
+   "22336.035 ms: 32 states, connection reset, everything: 51300000 values, 0 mismatched, 1440 matches",
+   "24552.41 ms: 32 states, with a scope, error, everything: 51300000 values, 0 mismatched, 12507 matches",
+   "26067.84 ms: 32 states, with a scope, error, strings: 51300000 values, 0 mismatched, 2939 matches",
+   "27580.495 ms: 32 states, with a scope, error, keys: 51300000 values, 0 mismatched, 9568 matches",
+   "29082.385 ms: 32 states, with a scope, [a-z]+Id, everything: 51300000 values, 0 mismatched, 23795 matches",
+   "30596.48 ms: 32 states, with a scope, [a-z]+Id, strings: 51300000 values, 0 mismatched, 0 matches",
+   "32100.525 ms: 32 states, with a scope, [a-z]+Id, keys: 51300000 values, 0 mismatched, 23795 matches",
+   "33593.025 ms: 32 states, with a scope, [a-z0-9.]+@[a-z.]+, everything: 51300000 values, 0 mismatched, 14481 matches",
+   "35112.465 ms: 32 states, with a scope, [a-z0-9.]+@[a-z.]+, strings: 51300000 values, 0 mismatched, 14481 matches",
+   "36629.105 ms: 32 states, with a scope, [a-z0-9.]+@[a-z.]+, keys: 51300000 values, 0 mismatched, 0 matches",
+   "38233.055 ms: 32 states, with a scope, \\d\\d\\d\\d-\\d\\d-\\d\\d, everything: 51300000 values, 0 mismatched, 27803 matches",
+   "39846.945 ms: 32 states, with a scope, \\d\\d\\d\\d-\\d\\d-\\d\\d, strings: 51300000 values, 0 mismatched, 27803 matches",
+   "41415.705 ms: 32 states, with a scope, \\d\\d\\d\\d-\\d\\d-\\d\\d, keys: 51300000 values, 0 mismatched, 0 matches",
+   "42963.715 ms: 32 states, with a scope, ([a-z]+)+x, everything: 51300000 values, 0 mismatched, 69580 matches",
+   "44499.66 ms: 32 states, with a scope, ([a-z]+)+x, strings: 51300000 values, 0 mismatched, 44085 matches",
+   "46093.265 ms: 32 states, with a scope, ([a-z]+)+x, keys: 51300000 values, 0 mismatched, 25495 matches",
+   "47653.82 ms: 32 states, with a scope, connection reset, everything: 51300000 values, 0 mismatched, 1440 matches",
+   "49155.415 ms: 32 states, with a scope, connection reset, strings: 51300000 values, 0 mismatched, 1440 matches",
+   "50660.71 ms: 32 states, with a scope, connection reset, keys: 51300000 values, 0 mismatched, 0 matches",
+   "50662.365 ms: compared: {\"comparisons\":66,\"values\":3386100000,\"mismatches\":0}"
+  ],
+  "done": true
+ }
+}

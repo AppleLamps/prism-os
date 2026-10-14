@@ -9,18 +9,22 @@
 // canvas, and last asks for the work that is due, e.g. a search for the pattern in the field. An answer arrives after
 // the frame that asked for it, is recorded, and is an input of the next frame.
 //
-// One query parameter, for a state that few machines show: ?buffer=134217728 asks the GPU for buffers of at most
-// that many bytes, as a device with small limits would grant.
+// Two query parameters, for scripts and for states that few machines show:
+// - ?buffer=134217728 asks the GPU for buffers of at most that many bytes, as a device with small limits would grant.
+// - ?salt=7 writes that number into every shader's source, as a u32, so it is a whole number from 0 to 4294967295,
+//   and the page ignores any other, e.g. ?salt=1.5 or a time in ms. With a number that no earlier load used, the GPU
+//   compiles the shaders without its cache, as on a visitor's first load, which is how the README's first-visit
+//   times are measured.
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {type CellColors, type MapLayout, cellCenterCss, mapLayout, nextMatch, paintCells, pickedDocument} from './demo-map.ts'
 import {
   type Failure, type Line, type LoadReason, type PatternAnalysis, type RegExpTime, type Scope, type Where, analyzePattern, count, documentRuns, documentText,
-  documentsThatFit, failureSentence, isScope, loadNotice, narrowDocumentCount, resultLine, runClassName, wideDocumentCount,
+  documentsThatFit, failureSentence, isScope, loadNotice, narrowDocumentCount, resultLine, runClassName, shaderSaltOf, wideDocumentCount,
 } from './demo-text.ts'
 import type {WorkerAnswer, WorkerRequest} from './demo-worker.ts'
 import {requestBatchDevice} from './gpu/host.ts'
 import {cellsPerDocument, writeDocumentCells} from './program.ts'
-import {type Searcher, bufferBytesFor, createGpuSearcher, defaultStateCapacities} from './searcher.ts'
+import {type ProgramDescription, type Searcher, bufferBytesFor, createGpuSearcher, defaultStateCapacities} from './searcher.ts'
 
 // What one search took on its way to the screen, for scripts that measure the page.
 export type SearchTiming = {
@@ -44,10 +48,15 @@ export type JsonSearchDebug = {
   where: Where | null
   documentCount: number
   // In ms: writing the documents' texts, writing their characters as numbers for the GPU, creating the GPU's
-  // searcher, and from the page's start until the documents were ready to search.
+  // searcher, and from the start of the page's navigation, as `paintedAt` below, until the documents were ready to
+  // search. The page's script starts 20 to 36 ms after the navigation on the built site, on an Apple M5 Max.
   loadMs: {writeDocuments: number, writeCells: number, createSearcher: number, total: number} | null
   // The searches whose complete answers were painted, the latest 1,000.
   searches: SearchTiming[]
+  // The programs on the GPU, each with its shader's statements, e.g. 147 for the search program of 8 states, and the
+  // ms from createShaderModule until JavaScript had its pipeline, which holds the wait for the other programs' builds
+  // and compiles, see searcher.ts. null before the documents exist, and where the programs run on the CPU.
+  programs: ProgramDescription[] | null
   // Where a document's cell is in the window, in CSS px, or null before the map is laid out.
   locate: (index: number) => {x: number, y: number} | null
 }
@@ -98,9 +107,10 @@ type Arrival =
   // Without a message when the workers' script didn't load.
   | {kind: 'workerFailed', message: string | undefined}
 
-// A search that has been in flight this long gets a line that says so, and the map shows no matches. A search on the
-// GPU takes up to 80 ms on the programs for 8 and 16 states, so it never shows the line, which would flash at each
-// key. A search on the program for 32 states takes about 0.9 s, and shows it.
+// A search that has been in flight this long gets a line that says so, and the map shows no matches. On an Apple M5
+// Max a search on the GPU takes about 12 ms on any of the three search programs, so it never shows the line, which
+// would flash at each key. What does show it: the first search on the CPU, which waits about 0.4 s for its worker
+// to start and to write its documents, and a search on a GPU that takes this long.
 const longSearchMs = 250
 // How long the page waits for RegExp's time. RegExp can backtrack for minutes on a pattern, e.g. on (([a-z]+)+)+x,
 // which has one pair of parentheses more than the Try list's pattern, and nothing stops a RegExp that is running
@@ -125,10 +135,9 @@ const nextTask = () => new Promise<void>(resolve => {
   channel.port2.postMessage(null)
 })
 
-// A search of every document on the GPU. The first search on a program also builds the program and compiles its
-// shader, once: `prepare` does both ahead of the search, so the search's time leaves them out.
-async function searchOnGpu(searcher: Searcher, key: string, pattern: string, scope: Scope, states: number): Promise<GpuAnswer> {
-  await searcher.prepare(states)
+// A search of every document on the GPU. Every search program is compiled when the page loads, so no search waits
+// for a compile.
+async function searchOnGpu(searcher: Searcher, key: string, pattern: string, scope: Scope): Promise<GpuAnswer> {
   const result = await searcher.search({pattern, scope})
   invariant(result?.status === 'searched', 'the page searches one pattern at a time, and only one that a search program holds')
   const {matchCounts} = result
@@ -146,7 +155,6 @@ async function documentOnGpu(searcher: Searcher, index: number, key: string, sea
 }
 
 function mountJsonSearch(document: Document, window: Window) {
-  const pageStart = window.performance.now()
   const find = <Found extends Element>(selector: string): Found => {
     const node = document.querySelector<Found>(selector)
     invariant(node !== null, `${selector} is missing`)
@@ -210,6 +218,9 @@ function mountJsonSearch(document: Document, window: Window) {
 
   const debug: JsonSearchDebug = {
     ready: false, where: null, documentCount: wantedDocumentCount, loadMs: null, searches: [],
+    get programs() {
+      return st.world?.gpu?.searcher.programs() ?? null
+    },
     locate(index) {
       if (mapCache.layout === null || index < 0 || index >= mapCache.layout.documentCount) return null
       const center = cellCenterCss(mapCache.layout, index)
@@ -377,16 +388,17 @@ function mountJsonSearch(document: Document, window: Window) {
     let gpu: World['gpu'] = null
     let createSearcherMs = 0
     if (device !== null && cells !== null) {
+      const askedSalt = shaderSaltOf(new URLSearchParams(window.location.search).get('salt'))
       const createStarted = window.performance.now()
       try {
-        gpu = {searcher: await createGpuSearcher(device, texts, {cells}), device}
+        gpu = {searcher: await createGpuSearcher(device, texts, {cells, ...(askedSalt === null ? {} : {shaderSalt: askedSalt})}), device}
         createSearcherMs = window.performance.now() - createStarted
       } catch (error) {
         device.destroy()
         st.plan = {documentCount, reason: {kind: 'gpuFailed', message: error instanceof Error ? error.message : String(error)}}
       }
     }
-    return {documentCount, texts, gpu, loadMs: {writeDocuments: writeDocumentsMs, writeCells: writeCellsMs, createSearcher: createSearcherMs, total: window.performance.now() - pageStart}}
+    return {documentCount, texts, gpu, loadMs: {writeDocuments: writeDocumentsMs, writeCells: writeCellsMs, createSearcher: createSearcherMs, total: window.performance.now()}}
   }
 
   function writeLine(node: HTMLElement, line: Line) {
@@ -591,8 +603,8 @@ function mountJsonSearch(document: Document, window: Window) {
           lineView = {state: 'bad', line: [analysis.sentence]}
           break
         case 'fits':
-          // Without the answer yet, the line stays as it is, except for a search that takes longer than a few
-          // frames, e.g. on the program for 32 states, and for the first search.
+          // Without the answer yet, the line stays as it is, except for a search that runs long, e.g. the first one
+          // on the CPU while its worker starts, and for the first search.
           if (found !== null) lineView = {state: found.searched < documentCount ? 'busy' : 'ok', line: resultLine(found, documentCount, where, regExpTime)}
           else if (searchRunsLong || st.found === null) lineView = {state: 'busy', line: [`Searching ${count(documentCount)} documents…`]}
           break
@@ -720,7 +732,7 @@ function mountJsonSearch(document: Document, window: Window) {
       // On the GPU, one piece at a time: the search for the pattern in the field, then the document that the panel
       // should show.
       if (where === 'gpu' && world.gpu !== null && st.job === null) {
-        if (searchPending && analysis.kind === 'fits') startOnGpu(searchOnGpu(world.gpu.searcher, key, pattern, scope, analysis.states))
+        if (searchPending) startOnGpu(searchOnGpu(world.gpu.searcher, key, pattern, scope))
         else if (wantedDocument !== null && !documentIsHere) startOnGpu(documentOnGpu(world.gpu.searcher, wantedDocument.index, key, search))
       }
       // RegExp's time for the search, one timing at a time: the next one waits for the answer of the one in flight,

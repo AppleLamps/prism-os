@@ -1,0 +1,29 @@
+| Pattern | The search reads | Kernels compared | Documents with a match, by RegExp and JSON.parse | Documents where a kernel answers differently | The same against the string tokens as written | Matches, by RegExp | By the count kernels |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `error` | everything | 5 | 105,133 | 0 |  | 123,917 | 123,917 |
+| `error` | string values | 2 | 28,169 | 0 | 0 | 28,169 | 28,169 |
+| `error` | keys | 2 | 95,748 | 0 | 0 | 95,748 | 95,748 |
+| `[a-z]+Id` | everything | 5 | 238,302 | 0 |  | 238,302 | 238,302 |
+| `[a-z]+Id` | string values | 2 | 0 | 0 | 0 | 0 | 0 |
+| `[a-z]+Id` | keys | 2 | 238,302 | 0 | 0 | 238,302 | 238,302 |
+| `[a-z0-9.]+@[a-z.]+` | everything | 5 | 143,808 | 0 |  | 143,808 | 143,808 |
+| `[a-z0-9.]+@[a-z.]+` | string values | 2 | 143,808 | 0 | 0 | 143,808 | 143,808 |
+| `[a-z0-9.]+@[a-z.]+` | keys | 2 | 0 | 0 | 0 | 0 | 0 |
+| `\d\d\d\d-\d\d-\d\d` | everything | 5 | 275,094 | 0 |  | 275,094 | 275,094 |
+| `\d\d\d\d-\d\d-\d\d` | string values | 2 | 275,094 | 0 | 0 | 275,094 | 275,094 |
+| `\d\d\d\d-\d\d-\d\d` | keys | 2 | 0 | 0 | 0 | 0 | 0 |
+| `([a-z]+)+x` | everything | 5 | 474,433 | 0 |  | 694,858 | 694,858 |
+| `([a-z]+)+x` | string values | 2 | 332,460 | 0 | 0 | 439,277 | 439,277 |
+| `([a-z]+)+x` | keys | 2 | 214,835 | 0 | 0 | 255,581 | 255,581 |
+| `connection reset` | everything | 5 | 14,271 | 0 |  | 14,271 | 14,271 |
+| `connection reset` | string values | 2 | 14,271 | 0 | 0 | 14,271 | 14,271 |
+| `connection reset` | keys | 2 | 0 | 0 | 0 | 0 | 0 |
+| `"[^"]+"` | everything | 5 | 1,000,000 | 0 |  | 19,937,843 | 19,937,843 |
+| `"[^"]+"` | string values | 2 | 103,383 | 1,775,944 | 2,796 | 113,448, and 7,118,641 in the tokens as written | 6,831,368 |
+| `"[^"]+"` | keys | 2 | 0 | 2,000,000 | 0 | 0, and 12,808,102 in the tokens as written | 12,808,102 |
+| `Müller` | everything | 5 | 13,882 | 0 |  | 13,882 | 13,882 |
+| `Müller` | string values | 2 | 16,273 | 4,782 | 0 | 16,273, and 13,882 in the tokens as written | 13,882 |
+| `Müller` | keys | 2 | 0 | 0 | 0 | 0 | 0 |
+
+The report's six patterns: 54 searches, 54,000,000 documents' answers, 0 differ.
+`"[^"]+"` and `Müller`: 10 searches over the whole text, 10,000,000 answers, 0 differ. 8 searches inside string values or keys, 8,000,000 answers, of which 3,780,726 differ from the parsed values and 2,796 from the string tokens as written.

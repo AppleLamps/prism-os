@@ -25,6 +25,16 @@ export function documentsThatFit(wanted: number, largestBufferBytes: number, byt
   return most >= wanted ? wanted : Math.floor(most / 1000) * 1000
 }
 
+// The number of `?salt=` in the page's address, which goes into every shader's source as a u32: a whole number from
+// 0 to 4294967295, written in digits, e.g. "7". Anything else is null, and the page then writes no salt: no
+// parameter, "", "1.5", "-3", "1e21", and "4294967296", which a u32 doesn't hold, so that every shader would fail to
+// compile and the page would go on with the CPU.
+export function shaderSaltOf(text: string | null): number | null {
+  if (text === null || !/^\d{1,10}$/.test(text)) return null
+  const salt = Number(text)
+  return salt <= 0xffff_ffff ? salt : null
+}
+
 export const count = (value: number) => value.toLocaleString('en-US')
 
 // Why the page shows something else than the wanted documents on the GPU.

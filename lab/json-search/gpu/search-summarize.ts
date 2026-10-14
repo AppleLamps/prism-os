@@ -25,9 +25,11 @@ type SearchPage = {
     engines: EngineResult[],
   }[],
 }
-type CombinedSearch = {states: number, scope: string, patterns: string[], prepareMs: number, backToBack: Timings, withTimestamps?: Timings, afterIdle?: Idle[], windowOnly?: Timings}
+type CombinedSearch = {states: number, scope: string, patterns: string[], backToBack: Timings, withTimestamps?: Timings, afterIdle?: Idle[], windowOnly?: Timings}
 type CombinedPage = {
   crossOriginIsolated: boolean, error?: string, emptyPipelineMs: number,
+  // Only the runs since October 14, 2026 say which writer wrote the shaders. The ones before are loop-emit.ts's.
+  config?: {writers?: {search: string, highlighter: string}},
   results: {
     count: number,
     plainJavaScript: {tableLoop: CpuTime, jsonParse: CpuTime, regExp: ({pattern: string, scope: string, states: number, matches: number, documentsWhereTheProgramCountsTheSame: number, runs?: number, findingTheRunsMs?: number} & CpuTime)[]},
@@ -79,6 +81,20 @@ const describeRuns = (label: string, runs: readonly Run<{crossOriginIsolated: bo
     const minutes = run.driver.finishedAt === undefined ? '?' : ((Date.parse(run.driver.finishedAt) - Date.parse(run.driver.startedAt)) / 60000).toFixed(1)
     console.log(`${label} run ${index + 1}: ${run.driver.browser}, ${run.driver.machine}, Bun ${run.driver.bun}, started ${run.driver.startedAt}, ${minutes} minutes, 1-minute load average ${loadRange(run.driver)}, cross-origin isolated ${run.page.crossOriginIsolated}${run.page.error === undefined && run.driver.error === undefined ? '' : `, ERROR ${run.page.error ?? run.driver.error}`}`)
   })
+}
+
+// The smallest count from which the GPU takes less time at every larger measured count, interpolated on a logarithmic
+// count axis between the two neighboring measured counts.
+function crossoverOf(counts: readonly number[], gpu: readonly number[], cpu: readonly number[]) {
+  let from = counts.length
+  while (from > 0 && gpu[from - 1]! < cpu[from - 1]!) from--
+  if (from === counts.length) return `never, up to ${whole(counts.at(-1)!)}`
+  if (from === 0) return `below ${whole(counts[0]!)}`
+  const [lowCount, highCount] = [counts[from - 1]!, counts[from]!]
+  const lowGap = cpu[from - 1]! - gpu[from - 1]!
+  const highGap = cpu[from]! - gpu[from]!
+  const fraction = lowGap / (lowGap - highGap)
+  return whole(Number((lowCount * (highCount / lowCount) ** fraction).toPrecision(2)))
 }
 
 const searchRuns = files('--search').map(path => JSON.parse(readFileSync(path, 'utf8')) as Run<SearchPage>)
@@ -178,19 +194,7 @@ if (searchRuns.length > 0) {
   const pauses = idleGaps.filter(gap => gap >= 200).slice(0, 1)
   console.log(`| What runs | ${counts.map(count => `ms at ${whole(count)} documents`).join(' | ')} | Documents from which the GPU takes less time, back to back | ${pauses.map(gap => `After a pause of ${whole(gap)} ms`).join(' | ')} |`)
   console.log(`| --- | ${counts.map(() => '---').join(' | ')} | --- | ${pauses.map(() => '---').join(' | ')} |`)
-  const crossover = (gpu: number[], cpu: number[]) => {
-    // The smallest count from which the GPU takes less time at every larger measured count, interpolated on a
-    // logarithmic count axis between the two neighboring measured counts.
-    let from = counts.length
-    while (from > 0 && gpu[from - 1]! < cpu[from - 1]!) from--
-    if (from === counts.length) return 'never, up to 100,000'
-    if (from === 0) return `below ${whole(counts[0]!)}`
-    const [lowCount, highCount] = [counts[from - 1]!, counts[from]!]
-    const lowGap = cpu[from - 1]! - gpu[from - 1]!
-    const highGap = cpu[from]! - gpu[from]!
-    const fraction = lowGap / (lowGap - highGap)
-    return whole(Number((lowCount * (highCount / lowCount) ** fraction).toPrecision(2)))
-  }
+  const crossover = (gpu: number[], cpu: number[]) => crossoverOf(counts, gpu, cpu)
   console.log(`| the step on the GPU, back to back | ${counts.map(count => format(stepAt(count, entry => entry.backToBack.totalMs?.median))).join(' | ')} | | ${pauses.map(() => '').join(' | ')} |`)
   for (const gap of pauses) console.log(`| the step on the GPU, after a pause of ${whole(gap)} ms | ${counts.map(count => format(stepAt(count, entry => entry.afterIdle?.find(idle => idle.idleMs === gap)?.totalMs?.median))).join(' | ')} | | ${pauses.map(() => '').join(' | ')} |`)
   for (const entry of first.regExp.filter(other => other.positions === 512)) {
@@ -212,8 +216,14 @@ if (combinedRuns.length > 0) {
   }), digits)
   const gaps = first.results[0]!.validate.afterIdle.map(idle => idle.idleMs)
 
+  // Since October 14, 2026 the searcher compiles every search program when it is created, at the same time as the
+  // highlighter's pass, so its two times are the cells and everything else.
+  const compilesEverySearchProgram = first.config?.writers !== undefined
+  if (compilesEverySearchProgram) console.log(`\nThe search programs' shaders are ${first.config!.writers!.search}.ts's, and the highlighter's is ${first.config!.writers!.highlighter}.ts's.`)
   console.log('\n### The searcher: creating it\n')
-  console.log('| Documents | MB of cells | JavaScript writing the cells, ms | Upload, compile the highlighter\'s shader, validate, ms | Total with the first search shader, ms |')
+  console.log(compilesEverySearchProgram
+    ? '| Documents | MB of cells | JavaScript writing the cells, ms | Upload, the highlighter\'s shader and pass, and every search program built and compiled, ms | Total, ms |'
+    : '| Documents | MB of cells | JavaScript writing the cells, ms | Upload, compile the highlighter\'s shader, validate, ms | Total with the first search shader, ms |')
   console.log('| --- | --- | --- | --- | --- |')
   for (const count of counts) console.log(`| ${whole(count)} | ${cell(count, result => result.load.megabytesOfCells)} | ${cell(count, result => result.load.cellsMs)} | ${cell(count, result => result.load.validateMs)} | ${cell(count, result => result.load.totalMs)} |`)
   console.log('\n| Program | Operations per stage | WGSL statements | Compile shader ms, by document count |')
@@ -271,6 +281,39 @@ if (combinedRuns.length > 0) {
   }
   const differing = pages.flatMap(page => page.results.flatMap(result => result.plainJavaScript.regExp.filter(entry => entry.documentsWhereTheProgramCountsTheSame !== result.count)))
   console.log(`\nPatterns, scopes and counts where RegExp's count differs from the program's for some document: ${differing.length}${differing.length === 0 ? '' : `, e.g. ${JSON.stringify(differing[0])}`}.`)
+
+  // Where a search through the searcher takes less time than RegExp, per pattern, for the scope that was also timed
+  // after a pause. A pattern runs on the smallest program that holds it.
+  const pausedScope = first.results[0]!.searches.find(search => search.afterIdle !== undefined)?.scope
+  if (pausedScope !== undefined && baselinePages.length > 0) {
+    const pause = gaps.find(gap => gap >= 200)
+    const searchAt = (states: number, count: number, pick: (search: CombinedSearch) => number | undefined) => {
+      const values = defined(pages.map(page => {
+        const search = at(page, count)?.searches.find(other => other.states === states && other.scope === pausedScope)
+        return search === undefined ? undefined : pick(search)
+      }))
+      return values.length === 0 ? undefined : median(values)
+    }
+    console.log(`\n### One search through the searcher against RegExp, ${pausedScope}: ms at each document count, and the count from which the GPU takes less time\n`)
+    console.log(`| What runs | ${counts.map(count => `ms at ${whole(count)} documents`).join(' | ')} | Documents from which the GPU takes less time, back to back | ${pause === undefined ? '' : `After a pause of ${whole(pause)} ms |`}`)
+    console.log(`| --- | ${counts.map(() => '---').join(' | ')} | --- | ${pause === undefined ? '' : '--- |'}`)
+    const programs = [...new Set(first.results.flatMap(result => result.searches.map(search => search.states)))]
+    const timesOf = (states: number, pick: (search: CombinedSearch) => number | undefined) => counts.map(count => searchAt(states, count, pick))
+    const show = (values: readonly (number | undefined)[]) => values.map(value => value === undefined ? '' : format(value)).join(' | ')
+    for (const states of programs) {
+      console.log(`| the searcher's program of ${states} states, back to back | ${show(timesOf(states, search => search.backToBack.totalMs?.median))} | | ${pause === undefined ? '' : ' |'}`)
+      if (pause !== undefined) console.log(`| the same after a pause of ${whole(pause)} ms | ${show(timesOf(states, search => search.afterIdle?.find(idle => idle.idleMs === pause)?.totalMs?.median))} | | |`)
+    }
+    for (const pattern of [...new Set(first.results[0]!.plainJavaScript.regExp.map(entry => entry.pattern))]) {
+      const patternStates = first.results[0]!.plainJavaScript.regExp.find(entry => entry.pattern === pattern)!.states
+      const states = programs.find(program => program >= patternStates)
+      if (states === undefined) continue
+      const regExpMs = counts.map(count => median(defined(baselinePages.map(page => at(page, count)?.plainJavaScript.regExp.find(entry => entry.pattern === pattern && entry.scope === pausedScope)?.microsecondsPerDocument))) * count / 1000)
+      // A program that wasn't timed at every count has no crossover, e.g. loop-emit.ts's of 32 states at 100,000 documents.
+      const against = (gpu: readonly (number | undefined)[]) => gpu.includes(undefined) ? '' : crossoverOf(counts, gpu as number[], regExpMs)
+      console.log(`| RegExp, \`${pattern.replaceAll('|', '\\|')}\`, which the searcher runs on ${states} states | ${show(regExpMs)} | ${against(timesOf(states, search => search.backToBack.totalMs?.median))} | ${pause === undefined ? '' : `${against(timesOf(states, search => search.afterIdle?.find(idle => idle.idleMs === pause)?.totalMs?.median))} |`}`)
+    }
+  }
 
   console.log('\n### The same programs on the CPU, µs per document\n')
   console.log('| Backend | Documents sampled | Validate | Search, 8 states | 16 states | 32 states |')

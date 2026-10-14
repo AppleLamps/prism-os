@@ -1,0 +1,356 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T18:58:53.827Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 0.68 1.48 1.64 }",
+  "memoryBefore": "System-wide memory free percentage: 70%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "edge",
+   "--profile",
+   "review-edge-79432",
+   "--out",
+   "review-edge-bit-emit-2.json",
+   "--port",
+   "4618",
+   "--devtools-port",
+   "9618",
+   "--chrome",
+   "chrome-for-testing"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T18:59:03.872Z",
+    "load": "{ 0.88 1.50 1.64 }"
+   },
+   {
+    "at": "2026-10-14T18:59:13.874Z",
+    "load": "{ 0.97 1.50 1.64 }"
+   },
+   {
+    "at": "2026-10-14T18:59:23.876Z",
+    "load": "{ 1.21 1.53 1.65 }"
+   },
+   {
+    "at": "2026-10-14T18:59:33.878Z",
+    "load": "{ 1.26 1.53 1.65 }"
+   },
+   {
+    "at": "2026-10-14T18:59:43.880Z",
+    "load": "{ 1.44 1.56 1.66 }"
+   },
+   {
+    "at": "2026-10-14T18:59:53.881Z",
+    "load": "{ 2.08 1.69 1.70 }"
+   },
+   {
+    "at": "2026-10-14T19:00:03.883Z",
+    "load": "{ 2.15 1.72 1.71 }"
+   },
+   {
+    "at": "2026-10-14T19:00:13.885Z",
+    "load": "{ 2.28 1.76 1.73 }"
+   },
+   {
+    "at": "2026-10-14T19:00:23.886Z",
+    "load": "{ 2.08 1.73 1.72 }"
+   },
+   {
+    "at": "2026-10-14T19:00:33.888Z",
+    "load": "{ 2.00 1.73 1.71 }"
+   },
+   {
+    "at": "2026-10-14T19:00:43.890Z",
+    "load": "{ 1.84 1.70 1.70 }"
+   },
+   {
+    "at": "2026-10-14T19:00:53.892Z",
+    "load": "{ 1.87 1.71 1.71 }"
+   },
+   {
+    "at": "2026-10-14T19:01:03.894Z",
+    "load": "{ 1.88 1.72 1.71 }"
+   },
+   {
+    "at": "2026-10-14T19:01:13.896Z",
+    "load": "{ 2.06 1.76 1.73 }"
+   },
+   {
+    "at": "2026-10-14T19:01:23.899Z",
+    "load": "{ 2.51 1.87 1.76 }"
+   },
+   {
+    "at": "2026-10-14T19:01:33.901Z",
+    "load": "{ 2.87 1.97 1.80 }"
+   },
+   {
+    "at": "2026-10-14T19:01:43.903Z",
+    "load": "{ 2.90 2.00 1.81 }"
+   },
+   {
+    "at": "2026-10-14T19:01:53.905Z",
+    "load": "{ 2.83 2.02 1.82 }"
+   },
+   {
+    "at": "2026-10-14T19:02:03.907Z",
+    "load": "{ 3.49 2.18 1.88 }"
+   },
+   {
+    "at": "2026-10-14T19:02:13.909Z",
+    "load": "{ 4.04 2.34 1.94 }"
+   },
+   {
+    "at": "2026-10-14T19:02:23.911Z",
+    "load": "{ 3.89 2.36 1.95 }"
+   },
+   {
+    "at": "2026-10-14T19:02:33.912Z",
+    "load": "{ 3.52 2.33 1.95 }"
+   },
+   {
+    "at": "2026-10-14T19:02:43.914Z",
+    "load": "{ 3.37 2.34 1.95 }"
+   },
+   {
+    "at": "2026-10-14T19:02:53.921Z",
+    "load": "{ 3.41 2.38 1.97 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9618",
+   "--user-data-dir=review-edge-79432",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "chromePid": 79442,
+  "browser": "Chrome/155.0.8059.79",
+  "finishedAt": "2026-10-14T19:02:54.035Z",
+  "loadAfter": "{ 3.41 2.38 1.97 }",
+  "memoryAfter": "System-wide memory free percentage: 71%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T18:58:54.294Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "edge",
+   "shaderSalt": 113694888,
+   "searchWriter": "bit-emit",
+   "seed": 20261013,
+   "invalidFraction": 0.1,
+   "edgeSizes": {
+    "broken": 400,
+    "generated": 200,
+    "random": 100,
+    "mutated": 300,
+    "long": 40
+   },
+   "windowDocuments": 256,
+   "documents": 100000,
+   "executorDocuments": 2000,
+   "generatedDocumentsAt32States": 10000,
+   "patterns": [
+    "(the|an?) [a-z]+",
+    "error",
+    "[a-z0-9.]+@[a-z.]+",
+    "\"[a-z]+\":",
+    "[A-Z][a-z]+ [A-Z][a-z]+",
+    "\\d+\\.\\d+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "(the|an?|some) [a-z]+(ing)?s?",
+    "(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ",
+    "([a-z]+)+x"
+   ],
+   "workerCounts": [
+    1,
+    2,
+    4,
+    8,
+    16
+   ],
+   "warmupMs": 200,
+   "sampleMs": 1000,
+   "minimumSamples": 15,
+   "maximumSamples": 200,
+   "cpuWarmupMs": 300,
+   "cpuSampleMs": 200,
+   "cpuSamples": 5
+  },
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeWorkgroupsPerDimension": 65535
+   },
+   "hasTimestamps": true,
+   "grantedBufferBytes": 134217728
+  },
+  "documents": {
+   "count": 1449,
+   "valid": 411,
+   "codePointLengths": {
+    "count": 1449,
+    "median": 132,
+    "p10": 1,
+    "p90": 511,
+    "min": 0,
+    "max": 2163
+   }
+  },
+  "programs": [
+   {
+    "name": "JSON highlighter",
+    "operations": [
+     37,
+     17
+    ],
+    "statements": 107,
+    "compileMs": 57.5
+   },
+   {
+    "name": "regex search, 8 states",
+    "operations": [
+     8,
+     151,
+     92
+    ],
+    "statements": 147,
+    "compileMs": 21.424999952316284
+   },
+   {
+    "name": "regex search, 16 states",
+    "operations": [
+     16,
+     359,
+     308
+    ],
+    "statements": 171,
+    "compileMs": 23.210000038146973
+   },
+   {
+    "name": "regex search, 32 states",
+    "operations": [
+     32,
+     1159,
+     1124
+    ],
+    "statements": 219,
+    "compileMs": 31.384999990463257
+   }
+  ],
+  "againstWrittenOutProgramsOnTheExecutor": {
+   "documents": 1449,
+   "validationValues": 747684,
+   "validationMismatches": 0,
+   "searches": 46,
+   "searchValues": 34248380,
+   "searchMismatches": 0,
+   "expectedValidDocuments": 411,
+   "expectedMatches": 540943,
+   "expectedMarkedPositions": 1678878,
+   "searchesWithMatches": 36,
+   "examples": [],
+   "executorMs": 203738.425,
+   "totalMs": 204654.83
+  },
+  "at32StatesAgainstGeneratedJavaScript": {
+   "documents": 1449,
+   "validationValues": 747684,
+   "validationMismatches": 0,
+   "searches": 8,
+   "searchValues": 2804368,
+   "searchMismatches": 0,
+   "expectedMatches": 1378,
+   "referenceSearchMs": [
+    1846.78,
+    1632.58,
+    1677.55,
+    1636.36,
+    1737.32,
+    1806.94,
+    1711.22,
+    1642.49
+   ],
+   "examples": [],
+   "totalMs": 17067.735
+  },
+  "at32StatesAgainstTheLoopProgramOnTheExecutor": {
+   "documents": 32,
+   "validationValues": 16512,
+   "validationMismatches": 0,
+   "searches": 8,
+   "searchValues": 131328,
+   "searchMismatches": 0,
+   "expectedMatches": 189,
+   "referenceSearchMs": [
+    906.77,
+    894.61,
+    894.07,
+    889.9,
+    892.69,
+    891.6,
+    897.63,
+    887.01
+   ],
+   "examples": [],
+   "totalMs": 7302.29
+  },
+  "selfCheck": {
+   "documents": 300,
+   "searches": 30,
+   "values": 4771800,
+   "mismatches": 0,
+   "cpuMs": 5763.8400003910065,
+   "gpuMs": 174.92000031471252
+  },
+  "threeRequestsAtOnce": {
+   "rounds": 20,
+   "olderRequestsWithAResult": 0,
+   "newestWithoutAResult": 0,
+   "values": 2650420,
+   "mismatches": 0
+  },
+  "firstStageShadersOverTheEdgeDocuments": [
+   {
+    "rootSet": "summary",
+    "compileMs": 1757.715,
+    "documents": 1449,
+    "values": 4347,
+    "mismatches": 0
+   },
+   {
+    "rootSet": "display",
+    "compileMs": 2285.05,
+    "documents": 1449,
+    "values": 746235,
+    "mismatches": 0
+   }
+  ],
+  "finishedAt": "2026-10-14T19:02:53.966Z",
+  "logLines": [
+   "186.985 ms: 1449 edge documents, 411 valid by the GPU, programs [[\"JSON highlighter\",107,57.5],[\"regex search, 8 states\",147,21.425],[\"regex search, 16 states\",171,23.21],[\"regex search, 32 states\",219,31.385]]",
+   "204846.985 ms: against the written-out programs on the executor: {\"documents\":1449,\"validationValues\":747684,\"validationMismatches\":0,\"searches\":46,\"searchValues\":34248380,\"searchMismatches\":0,\"expectedValidDocuments\":411,\"expectedMatches\":540943,\"expectedMarkedPositions\":1678878,\"searchesWithMatches\":36,\"examples\":[],\"executorMs\":203738.425,\"totalMs\":204654.83}",
+   "221916.47 ms: 32 states against generated JavaScript: {\"documents\":1449,\"validationValues\":747684,\"validationMismatches\":0,\"searches\":8,\"searchValues\":2804368,\"searchMismatches\":0,\"expectedMatches\":1378,\"referenceSearchMs\":[1846.78,1632.58,1677.55,1636.36,1737.32,1806.94,1711.22,1642.49],\"examples\":[],\"totalMs\":17067.735}",
+   "229218.875 ms: 32 states against the loop program on the executor: {\"documents\":32,\"validationValues\":16512,\"validationMismatches\":0,\"searches\":8,\"searchValues\":131328,\"searchMismatches\":0,\"expectedMatches\":189,\"referenceSearchMs\":[906.77,894.61,894.07,889.9,892.69,891.6,897.63,887.01],\"examples\":[],\"totalMs\":7302.29}",
+   "235159.37 ms: self check {\"documents\":300,\"searches\":30,\"values\":4771800,\"mismatches\":0,\"cpuMs\":5763.8400003910065,\"gpuMs\":174.92000031471252}",
+   "235219.545 ms: three requests at once: {\"rounds\":20,\"olderRequestsWithAResult\":0,\"newestWithoutAResult\":0,\"values\":2650420,\"mismatches\":0}",
+   "239730.19 ms: the first stage's shaders: [{\"rootSet\":\"summary\",\"compileMs\":1757.715,\"documents\":1449,\"values\":4347,\"mismatches\":0},{\"rootSet\":\"display\",\"compileMs\":2285.05,\"documents\":1449,\"values\":746235,\"mismatches\":0}]"
+  ],
+  "done": true
+ }
+}

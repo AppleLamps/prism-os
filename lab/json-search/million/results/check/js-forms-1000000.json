@@ -1,0 +1,741 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T08:23:38.612Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 4.58 3.97 4.37 }",
+  "memoryBefore": "System-wide memory free percentage: 78%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "js",
+   "--count",
+   "1000000",
+   "--js-parts",
+   "forms",
+   "--profile",
+   "js-forms-1000000-1791966218599",
+   "--out",
+   "js-forms-1000000.json",
+   "--port",
+   "4512",
+   "--devtools-port",
+   "9512"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T08:23:48.651Z",
+    "load": "{ 4.73 4.02 4.38 }"
+   },
+   {
+    "at": "2026-10-14T08:23:58.652Z",
+    "load": "{ 4.77 4.05 4.39 }"
+   },
+   {
+    "at": "2026-10-14T08:24:08.653Z",
+    "load": "{ 4.88 4.10 4.40 }"
+   },
+   {
+    "at": "2026-10-14T08:24:18.654Z",
+    "load": "{ 4.83 4.11 4.40 }"
+   },
+   {
+    "at": "2026-10-14T08:24:28.655Z",
+    "load": "{ 4.63 4.09 4.39 }"
+   },
+   {
+    "at": "2026-10-14T08:24:38.655Z",
+    "load": "{ 4.53 4.09 4.39 }"
+   },
+   {
+    "at": "2026-10-14T08:24:48.656Z",
+    "load": "{ 4.60 4.12 4.39 }"
+   },
+   {
+    "at": "2026-10-14T08:24:58.657Z",
+    "load": "{ 4.34 4.08 4.38 }"
+   },
+   {
+    "at": "2026-10-14T08:25:08.657Z",
+    "load": "{ 4.13 4.04 4.36 }"
+   },
+   {
+    "at": "2026-10-14T08:25:18.658Z",
+    "load": "{ 4.03 4.02 4.35 }"
+   },
+   {
+    "at": "2026-10-14T08:25:28.659Z",
+    "load": "{ 3.72 3.96 4.32 }"
+   },
+   {
+    "at": "2026-10-14T08:25:38.660Z",
+    "load": "{ 3.53 3.91 4.30 }"
+   },
+   {
+    "at": "2026-10-14T08:25:48.661Z",
+    "load": "{ 3.46 3.88 4.28 }"
+   },
+   {
+    "at": "2026-10-14T08:25:58.662Z",
+    "load": "{ 3.39 3.85 4.27 }"
+   },
+   {
+    "at": "2026-10-14T08:26:08.663Z",
+    "load": "{ 3.18 3.79 4.24 }"
+   },
+   {
+    "at": "2026-10-14T08:26:18.664Z",
+    "load": "{ 2.92 3.71 4.21 }"
+   },
+   {
+    "at": "2026-10-14T08:26:28.665Z",
+    "load": "{ 2.84 3.67 4.19 }"
+   },
+   {
+    "at": "2026-10-14T08:26:38.666Z",
+    "load": "{ 2.78 3.63 4.17 }"
+   },
+   {
+    "at": "2026-10-14T08:26:48.667Z",
+    "load": "{ 2.73 3.60 4.15 }"
+   },
+   {
+    "at": "2026-10-14T08:26:58.668Z",
+    "load": "{ 3.01 3.62 4.15 }"
+   },
+   {
+    "at": "2026-10-14T08:27:08.669Z",
+    "load": "{ 2.78 3.55 4.12 }"
+   },
+   {
+    "at": "2026-10-14T08:27:18.670Z",
+    "load": "{ 2.81 3.54 4.11 }"
+   },
+   {
+    "at": "2026-10-14T08:27:28.671Z",
+    "load": "{ 2.84 3.52 4.09 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9512",
+   "--user-data-dir=js-forms-1000000-1791966218599",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900",
+   "--js-flags=--expose-gc"
+  ],
+  "chromePid": 10229,
+  "browser": "Chrome/155.0.8059.80",
+  "finishedAt": "2026-10-14T08:27:35.436Z",
+  "loadAfter": "{ 2.85 3.51 4.09 }",
+  "memoryAfter": "System-wide memory free percentage: 79%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T08:23:38.990Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "js",
+   "count": 1000000,
+   "patterns": [
+    "error",
+    "[a-z]+Id",
+    "[a-z0-9.]+@[a-z.]+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "([a-z]+)+x",
+    "connection reset"
+   ],
+   "capacities": [
+    8,
+    16,
+    32
+   ],
+   "shaderSalt": 560750592,
+   "pieceDocuments": 50000,
+   "engines": [
+    "f32-kernel",
+    "bytes-boundaries",
+    "bytes",
+    "bytes-scope",
+    "packed",
+    "packed-scope",
+    "bytes-bits",
+    "bytes-has",
+    "bytes-scope-has",
+    "packed-scope-has"
+   ],
+   "f32": true,
+   "pausesMs": [
+    200
+   ],
+   "longPausesMs": [
+    1000
+   ],
+   "longPauseEngines": [
+    "f32-kernel",
+    "bytes",
+    "bytes-scope-has"
+   ],
+   "pauseSamples": 9,
+   "restMs": 0,
+   "warmPauses": [],
+   "minimumSamples": 15,
+   "sampleMs": 1000,
+   "layout": "fixed",
+   "workers": 8,
+   "scopeBits": true,
+   "limits": "needed",
+   "keepTexts": false,
+   "regExpFlags": "",
+   "jsSamples": 9,
+   "jsPauseMs": 0,
+   "filterWorkers": 8,
+   "jsParts": [
+    "forms"
+   ]
+  },
+  "memory": {
+   "the texts": {
+    "javaScriptBytes": 335161206,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 334,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 335068642,
+    "processes": {
+     "processes": [
+      {
+       "pid": 10229,
+       "type": "browser",
+       "residentBytes": 535609344,
+       "footprintBytes": 351471680,
+       "footprintPeakBytes": 351471680
+      },
+      {
+       "pid": 10233,
+       "type": "gpu-process",
+       "residentBytes": 157745152,
+       "footprintBytes": 382059816,
+       "footprintPeakBytes": 437847336
+      },
+      {
+       "pid": 10237,
+       "type": "renderer",
+       "residentBytes": 204439552,
+       "footprintBytes": 72468064,
+       "footprintPeakBytes": 72468064
+      },
+      {
+       "pid": 10240,
+       "type": "renderer",
+       "residentBytes": 124174336,
+       "footprintBytes": 28935560,
+       "footprintPeakBytes": 30213512
+      },
+      {
+       "pid": 10243,
+       "type": "renderer",
+       "residentBytes": 605667328,
+       "footprintBytes": 472745952,
+       "footprintPeakBytes": 493914008
+      },
+      {
+       "pid": 10245,
+       "type": "renderer",
+       "residentBytes": 124518400,
+       "footprintBytes": 31278448,
+       "footprintPeakBytes": 32097648
+      },
+      {
+       "pid": 10264,
+       "type": "renderer",
+       "residentBytes": 109674496,
+       "footprintBytes": 28935536,
+       "footprintPeakBytes": 30639472
+      }
+     ],
+     "availableGigabytes": 17.3,
+     "swap": "total = 3072.00M  used = 2048.06M  free = 1023.94M  (encrypted)"
+    }
+   }
+  },
+  "loadAtStart": 4.58,
+  "js": {
+   "load": [
+    4.58,
+    2.85
+   ],
+   "generateMs": 3133.745,
+   "characters": 299197444,
+   "regExpFlags": "",
+   "forms": [
+    {
+     "pattern": "error",
+     "filterWithoutFlag": {
+      "documentsWithMatch": 105133,
+      "ms": {
+       "count": 9,
+       "median": 188.18,
+       "p10": 186.945,
+       "p90": 189.295,
+       "min": 186.945,
+       "max": 189.295
+      },
+      "times": [
+       188.755,
+       188.56,
+       188.5,
+       187.47,
+       189.295,
+       187.67,
+       188.18,
+       186.945,
+       187.85
+      ]
+     },
+     "filterWithU": {
+      "documentsWithMatch": 105133,
+      "ms": {
+       "count": 9,
+       "median": 188.01,
+       "p10": 186.865,
+       "p90": 189.41,
+       "min": 186.865,
+       "max": 189.41
+      },
+      "times": [
+       187.03,
+       186.865,
+       188.125,
+       188.01,
+       188.955,
+       187.395,
+       188.93,
+       187.365,
+       189.41
+      ]
+     },
+     "loopWithoutFlag": {
+      "documentsWithMatch": 105133,
+      "ms": {
+       "count": 9,
+       "median": 188.205,
+       "p10": 183.715,
+       "p90": 190.935,
+       "min": 183.715,
+       "max": 190.935
+      },
+      "times": [
+       189.93,
+       189.585,
+       190.275,
+       188.205,
+       190.935,
+       185.595,
+       187.015,
+       183.955,
+       183.715
+      ]
+     },
+     "includes": {
+      "documentsWithMatch": 105133,
+      "ms": {
+       "count": 9,
+       "median": 185.655,
+       "p10": 184.395,
+       "p90": 187.47,
+       "min": 184.395,
+       "max": 187.47
+      },
+      "times": [
+       185.915,
+       185.655,
+       184.47,
+       184.79,
+       185.08,
+       187.47,
+       184.395,
+       185.97,
+       187.45
+      ]
+     }
+    },
+    {
+     "pattern": "[a-z]+Id",
+     "filterWithoutFlag": {
+      "documentsWithMatch": 238302,
+      "ms": {
+       "count": 9,
+       "median": 204.325,
+       "p10": 202.355,
+       "p90": 206.025,
+       "min": 202.355,
+       "max": 206.025
+      },
+      "times": [
+       202.355,
+       204.535,
+       206.025,
+       203.045,
+       202.795,
+       204.325,
+       205.685,
+       202.91,
+       204.965
+      ]
+     },
+     "filterWithU": {
+      "documentsWithMatch": 238302,
+      "ms": {
+       "count": 9,
+       "median": 220.065,
+       "p10": 215.95,
+       "p90": 221.09,
+       "min": 215.95,
+       "max": 221.09
+      },
+      "times": [
+       221.09,
+       220.59,
+       221.085,
+       219.135,
+       219.635,
+       220.495,
+       220.065,
+       215.95,
+       217.09
+      ]
+     },
+     "loopWithoutFlag": {
+      "documentsWithMatch": 238302,
+      "ms": {
+       "count": 9,
+       "median": 197.35,
+       "p10": 194.73,
+       "p90": 200.14,
+       "min": 194.73,
+       "max": 200.14
+      },
+      "times": [
+       199.435,
+       198.455,
+       198.25,
+       200.14,
+       197.35,
+       195.655,
+       195.775,
+       195.215,
+       194.73
+      ]
+     }
+    },
+    {
+     "pattern": "[a-z0-9.]+@[a-z.]+",
+     "filterWithoutFlag": {
+      "documentsWithMatch": 143808,
+      "ms": {
+       "count": 9,
+       "median": 310.065,
+       "p10": 308.27,
+       "p90": 313.075,
+       "min": 308.27,
+       "max": 313.075
+      },
+      "times": [
+       313.075,
+       310.065,
+       312.665,
+       312.975,
+       312.565,
+       309.22,
+       308.27,
+       309.34,
+       309.01
+      ]
+     },
+     "filterWithU": {
+      "documentsWithMatch": 143808,
+      "ms": {
+       "count": 9,
+       "median": 344.795,
+       "p10": 335.805,
+       "p90": 346.585,
+       "min": 335.805,
+       "max": 346.585
+      },
+      "times": [
+       335.805,
+       344.465,
+       338.14,
+       337.265,
+       345.52,
+       344.82,
+       345.66,
+       344.795,
+       346.585
+      ]
+     },
+     "loopWithoutFlag": {
+      "documentsWithMatch": 143808,
+      "ms": {
+       "count": 9,
+       "median": 313.41,
+       "p10": 311.385,
+       "p90": 314.85,
+       "min": 311.385,
+       "max": 314.85
+      },
+      "times": [
+       313.41,
+       311.715,
+       314.145,
+       311.385,
+       311.675,
+       314.155,
+       314.07,
+       314.85,
+       311.945
+      ]
+     }
+    },
+    {
+     "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+     "filterWithoutFlag": {
+      "documentsWithMatch": 275094,
+      "ms": {
+       "count": 9,
+       "median": 59.365,
+       "p10": 58.52,
+       "p90": 59.775,
+       "min": 58.52,
+       "max": 59.775
+      },
+      "times": [
+       59.07,
+       59.775,
+       59.365,
+       59.77,
+       59.05,
+       59.65,
+       58.52,
+       59.42,
+       58.73
+      ]
+     },
+     "filterWithU": {
+      "documentsWithMatch": 275094,
+      "ms": {
+       "count": 9,
+       "median": 67.815,
+       "p10": 67.225,
+       "p90": 68.145,
+       "min": 67.225,
+       "max": 68.145
+      },
+      "times": [
+       67.64,
+       67.615,
+       68.145,
+       67.94,
+       67.815,
+       67.225,
+       68.09,
+       67.295,
+       67.87
+      ]
+     },
+     "loopWithoutFlag": {
+      "documentsWithMatch": 275094,
+      "ms": {
+       "count": 9,
+       "median": 54.72,
+       "p10": 54.46,
+       "p90": 55.085,
+       "min": 54.46,
+       "max": 55.085
+      },
+      "times": [
+       55.085,
+       54.71,
+       54.685,
+       54.945,
+       54.795,
+       54.46,
+       54.59,
+       55.02,
+       54.72
+      ]
+     }
+    },
+    {
+     "pattern": "([a-z]+)+x",
+     "filterWithoutFlag": {
+      "documentsWithMatch": 474433,
+      "ms": {
+       "count": 3,
+       "median": 14458.54,
+       "p10": 14372.285,
+       "p90": 14495.345,
+       "min": 14372.285,
+       "max": 14495.345
+      },
+      "times": [
+       14458.54,
+       14372.285,
+       14495.345
+      ]
+     },
+     "filterWithU": {
+      "documentsWithMatch": 474433,
+      "ms": {
+       "count": 3,
+       "median": 14865.76,
+       "p10": 13596.49,
+       "p90": 14910.005,
+       "min": 13596.49,
+       "max": 14910.005
+      },
+      "times": [
+       14865.76,
+       14910.005,
+       13596.49
+      ]
+     },
+     "loopWithoutFlag": {
+      "documentsWithMatch": 474433,
+      "ms": {
+       "count": 3,
+       "median": 14117.675,
+       "p10": 13727.21,
+       "p90": 14181.955,
+       "min": 13727.21,
+       "max": 14181.955
+      },
+      "times": [
+       14117.675,
+       13727.21,
+       14181.955
+      ]
+     }
+    },
+    {
+     "pattern": "connection reset",
+     "filterWithoutFlag": {
+      "documentsWithMatch": 14271,
+      "ms": {
+       "count": 9,
+       "median": 73.775,
+       "p10": 72.97,
+       "p90": 76.175,
+       "min": 72.97,
+       "max": 76.175
+      },
+      "times": [
+       75.73,
+       76.175,
+       75.28,
+       73.68,
+       74.955,
+       73.59,
+       73.775,
+       73.085,
+       72.97
+      ]
+     },
+     "filterWithU": {
+      "documentsWithMatch": 14271,
+      "ms": {
+       "count": 9,
+       "median": 72.75,
+       "p10": 72.38,
+       "p90": 73.145,
+       "min": 72.38,
+       "max": 73.145
+      },
+      "times": [
+       72.75,
+       72.86,
+       72.78,
+       72.735,
+       72.7,
+       72.8,
+       73.145,
+       72.64,
+       72.38
+      ]
+     },
+     "loopWithoutFlag": {
+      "documentsWithMatch": 14271,
+      "ms": {
+       "count": 9,
+       "median": 68.945,
+       "p10": 68.725,
+       "p90": 69.705,
+       "min": 68.725,
+       "max": 69.705
+      },
+      "times": [
+       69.22,
+       69.335,
+       68.885,
+       68.725,
+       69.67,
+       69.705,
+       68.84,
+       68.77,
+       68.945
+      ]
+     },
+     "includes": {
+      "documentsWithMatch": 14271,
+      "ms": {
+       "count": 9,
+       "median": 69.295,
+       "p10": 68.435,
+       "p90": 69.845,
+       "min": 68.435,
+       "max": 69.845
+      },
+      "times": [
+       69.595,
+       68.925,
+       69.635,
+       68.82,
+       69.295,
+       69.845,
+       68.73,
+       68.435,
+       69.41
+      ]
+     }
+    }
+   ]
+  },
+  "loadAtEnd": 2.85,
+  "finishedAt": "2026-10-14T08:27:35.411Z",
+  "logLines": [
+   "20749.825 ms: memory, the texts: {\"javaScriptBytes\":335161206,\"javaScriptBreakdown\":[{\"megabytes\":334,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":335068642,\"processes\":{\"processes\":[{\"pid\":10229,\"type\":\"browser\",\"residentBytes\":535609344,\"footprintBytes\":351471680,\"footprintPeakBytes\":351471680},{\"pid\":10233,\"type\":\"gpu-process\",\"residentBytes\":157745152,\"footprintBytes\":382059816,\"footprintPeakBytes\":437847336},{\"pid\":10237,\"type\":\"renderer\",\"residentBytes\":204439552,\"footprintBytes\":72468064,\"footprintPeakBytes\":72468064},{\"pid\":10240,\"type\":\"renderer\",\"residentBytes\":124174336,\"footprintBytes\":28935560,\"footprintPeakBytes\":30213512},{\"pid\":10243,\"type\":\"renderer\",\"residentBytes\":605667328,\"footprintBytes\":472745952,\"footprintPeakBytes\":493914008},{\"pid\":10245,\"type\":\"renderer\",\"residentBytes\":124518400,\"footprintBytes\":31278448,\"footprintPeakBytes\":32097648},{\"pid\":10264,\"type\":\"renderer\",\"residentBytes\":109674496,\"footprintBytes\":28935536,\"footprintPeakBytes\":30639472}],\"availableGigabytes\":17.3,\"swap\":\"total = 3072.00M  used = 2048.06M  free = 1023.94M  (encrypted)\"}}",
+   "28571.29 ms: forms, error: {\"filterWithoutFlag\":188.18,\"filterWithU\":188.01,\"loopWithoutFlag\":188.205,\"includes\":185.655}",
+   "35087.385 ms: forms, [a-z]+Id: {\"filterWithoutFlag\":204.325,\"filterWithU\":220.065,\"loopWithoutFlag\":197.35}",
+   "45164.145 ms: forms, [a-z0-9.]+@[a-z.]+: {\"filterWithoutFlag\":310.065,\"filterWithU\":344.795,\"loopWithoutFlag\":313.41}",
+   "47139.84 ms: forms, \\d\\d\\d\\d-\\d\\d-\\d\\d: {\"filterWithoutFlag\":59.365,\"filterWithU\":67.815,\"loopWithoutFlag\":54.72}",
+   "233405.27 ms: forms, ([a-z]+)+x: {\"filterWithoutFlag\":14458.54,\"filterWithU\":14865.76,\"loopWithoutFlag\":14117.675}",
+   "236477.64 ms: forms, connection reset: {\"filterWithoutFlag\":73.775,\"filterWithU\":72.75,\"loopWithoutFlag\":68.945,\"includes\":69.295}"
+  ],
+  "done": true
+ }
+}

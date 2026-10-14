@@ -1,0 +1,263 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T07:31:04.280Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 2.91 4.76 6.50 }",
+  "memoryBefore": "System-wide memory free percentage: 77%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "load",
+   "--count",
+   "1000000",
+   "--layout",
+   "fixed",
+   "--keep-texts",
+   "--profile",
+   "load-fixed-1000000-1791963064267",
+   "--out",
+   "load-fixed-1000000.json",
+   "--port",
+   "4512",
+   "--devtools-port",
+   "9512"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T07:31:14.317Z",
+    "load": "{ 3.83 4.90 6.53 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9512",
+   "--user-data-dir=load-fixed-1000000-1791963064267",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900",
+   "--js-flags=--expose-gc"
+  ],
+  "chromePid": 98221,
+  "browser": "Chrome/155.0.8059.80",
+  "finishedAt": "2026-10-14T07:31:21.274Z",
+  "loadAfter": "{ 3.85 4.87 6.50 }",
+  "memoryAfter": "System-wide memory free percentage: 77%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T07:31:04.719Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "load",
+   "count": 1000000,
+   "patterns": [
+    "error",
+    "[a-z]+Id",
+    "[a-z0-9.]+@[a-z.]+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "([a-z]+)+x",
+    "connection reset"
+   ],
+   "capacities": [
+    8,
+    16,
+    32
+   ],
+   "shaderSalt": 434812327,
+   "pieceDocuments": 25000,
+   "engines": [
+    "f32-kernel",
+    "bytes-boundaries",
+    "bytes",
+    "bytes-scope",
+    "packed",
+    "packed-scope",
+    "bytes-bits",
+    "bytes-has",
+    "bytes-scope-has",
+    "packed-scope-has"
+   ],
+   "f32": true,
+   "pausesMs": [
+    200
+   ],
+   "longPausesMs": [
+    1000
+   ],
+   "longPauseEngines": [
+    "f32-kernel",
+    "bytes",
+    "bytes-scope-has"
+   ],
+   "pauseSamples": 9,
+   "restMs": 0,
+   "warmPauses": [],
+   "minimumSamples": 15,
+   "sampleMs": 1000,
+   "layout": "fixed",
+   "workers": 8,
+   "scopeBits": true,
+   "limits": "needed",
+   "keepTexts": true,
+   "jsSamples": 9,
+   "jsPauseMs": 0,
+   "filterWorkers": 8,
+   "jsParts": [
+    "wholeText",
+    "parse",
+    "walk",
+    "collected",
+    "workers"
+   ]
+  },
+  "memory": {
+   "after the load": {
+    "javaScriptBytes": 340666453,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 340,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 340574594,
+    "processes": {
+     "processes": [
+      {
+       "pid": 98221,
+       "type": "browser",
+       "residentBytes": 392478720,
+       "footprintBytes": 207390616,
+       "footprintPeakBytes": 229328792
+      },
+      {
+       "pid": 98227,
+       "type": "gpu-process",
+       "residentBytes": 282673152,
+       "footprintBytes": 849954232,
+       "footprintPeakBytes": 1639564752
+      },
+      {
+       "pid": 98231,
+       "type": "renderer",
+       "residentBytes": 199966720,
+       "footprintBytes": 68142640,
+       "footprintPeakBytes": 68175408
+      },
+      {
+       "pid": 98234,
+       "type": "renderer",
+       "residentBytes": 124403712,
+       "footprintBytes": 28984712,
+       "footprintPeakBytes": 30229896
+      },
+      {
+       "pid": 98237,
+       "type": "renderer",
+       "residentBytes": 781123584,
+       "footprintBytes": 613943840,
+       "footprintPeakBytes": 1526173320
+      },
+      {
+       "pid": 98239,
+       "type": "renderer",
+       "residentBytes": 124387328,
+       "footprintBytes": 31163808,
+       "footprintPeakBytes": 32507296
+      },
+      {
+       "pid": 98285,
+       "type": "renderer",
+       "residentBytes": 141541376,
+       "footprintBytes": 33883528,
+       "footprintPeakBytes": 36799856
+      },
+      {
+       "pid": 98287,
+       "type": "renderer",
+       "residentBytes": 109740032,
+       "footprintBytes": 29050272,
+       "footprintPeakBytes": 30770592
+      }
+     ],
+     "availableGigabytes": 17.4,
+     "swap": "total = 3072.00M  used = 2112.06M  free = 959.94M  (encrypted)"
+    }
+   }
+  },
+  "loadAtStart": 2.91,
+  "timeline": {
+   "navigationToScriptMs": 56.76,
+   "workersStartedMs": 60.295,
+   "deviceMs": 107.38,
+   "buffersMs": 107.785,
+   "kernelCompiledMs": 206.67,
+   "firstPieceUploadedMs": 244.405,
+   "firstAnswerMs": 271.46,
+   "everyPieceUploadedMs": 872.825,
+   "everyDocumentSearchedMs": 899.77
+  },
+  "deviceLimits": {
+   "maxStorageBufferBindingSize": 512000000,
+   "maxBufferSize": 512000000,
+   "maxStorageBuffersPerShaderStage": 8
+  },
+  "load": {
+   "pattern": "error",
+   "states": 8,
+   "pieces": 40,
+   "pieceDocuments": 25000,
+   "workers": 8,
+   "firstAnswer": {
+    "documents": 25000,
+    "searchMs": 26.91,
+    "documentsWithMatch": 2747
+   },
+   "firstPieceArrivedMs": 235.745,
+   "lastPieceArrivedMs": 854.955,
+   "workerMs": {
+    "generate": 3662.955,
+    "pack": 394.1,
+    "highlight": 2152.585
+   },
+   "uploadCallsMs": 77.905,
+   "wholeSearchMs": 26.91,
+   "documentsWithMatch": 105133,
+   "documentsWithMatchInStrings": 28169,
+   "textsHeld": 1000000,
+   "writingTheTextsMs": 3140.105,
+   "bufferBytes": {
+    "documents": [
+     512000000
+    ],
+    "documentBytesUsed": 512000000,
+    "starts": 0,
+    "scopes": 128000000,
+    "tables": 2376,
+    "results": 4000000,
+    "bits": 0,
+    "readback": 4000000
+   },
+   "load": 3.64
+  },
+  "textsStillHeld": 1000000,
+  "loadAtEnd": 3.85,
+  "finishedAt": "2026-10-14T07:31:21.243Z",
+  "logLines": [
+   "4087.695 ms: load: {\"pattern\":\"error\",\"states\":8,\"pieces\":40,\"pieceDocuments\":25000,\"workers\":8,\"firstAnswer\":{\"documents\":25000,\"searchMs\":26.91,\"documentsWithMatch\":2747},\"firstPieceArrivedMs\":235.745,\"lastPieceArrivedMs\":854.955,\"workerMs\":{\"generate\":3662.955,\"pack\":394.1,\"highlight\":2152.585},\"uploadCallsMs\":77.905,\"wholeSearchMs\":26.91,\"documentsWithMatch\":105133,\"documentsWithMatchInStrings\":28169,\"textsHeld\":1000000,\"writingTheTextsMs\":3140.105,\"bufferBytes\":{\"documents\":[512000000],\"documentBytesUsed\":512000000,\"starts\":0,\"scopes\":128000000,\"tables\":2376,\"results\":4000000,\"bits\":0,\"readback\":4000000},\"load\":3.64}, timeline {\"navigationToScriptMs\":56.76,\"workersStartedMs\":60.295,\"deviceMs\":107.38,\"buffersMs\":107.785,\"kernelCompiledMs\":206.67,\"firstPieceUploadedMs\":244.405,\"firstAnswerMs\":271.46,\"everyPieceUploadedMs\":872.825,\"everyDocumentSearchedMs\":899.77}",
+   "16575.65 ms: memory, after the load: {\"javaScriptBytes\":340666453,\"javaScriptBreakdown\":[{\"megabytes\":340,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":340574594,\"processes\":{\"processes\":[{\"pid\":98221,\"type\":\"browser\",\"residentBytes\":392478720,\"footprintBytes\":207390616,\"footprintPeakBytes\":229328792},{\"pid\":98227,\"type\":\"gpu-process\",\"residentBytes\":282673152,\"footprintBytes\":849954232,\"footprintPeakBytes\":1639564752},{\"pid\":98231,\"type\":\"renderer\",\"residentBytes\":199966720,\"footprintBytes\":68142640,\"footprintPeakBytes\":68175408},{\"pid\":98234,\"type\":\"renderer\",\"residentBytes\":124403712,\"footprintBytes\":28984712,\"footprintPeakBytes\":30229896},{\"pid\":98237,\"type\":\"renderer\",\"residentBytes\":781123584,\"footprintBytes\":613943840,\"footprintPeakBytes\":1526173320},{\"pid\":98239,\"type\":\"renderer\",\"residentBytes\":124387328,\"footprintBytes\":31163808,\"footprintPeakBytes\":32507296},{\"pid\":98285,\"type\":\"renderer\",\"residentBytes\":141541376,\"footprintBytes\":33883528,\"footprintPeakBytes\":36799856},{\"pid\":98287,\"type\":\"renderer\",\"residentBytes\":109740032,\"footprintBytes\":29050272,\"footprintPeakBytes\":30770592}],\"availableGigabytes\":17.4,\"swap\":\"total = 3072.00M  used = 2112.06M  free = 959.94M  (encrypted)\"}}"
+  ],
+  "done": true
+ }
+}

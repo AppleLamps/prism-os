@@ -1,0 +1,31 @@
+100,000 documents, load average 9.53 before and 16.6 after. A pattern runs at every state capacity that holds it, in three forms: without a scope, without a scope with the loops stopping at the text's end, and with a scope, once for each of everything, string values, keys, and string values and keys.
+
+| Pattern | States | Why it is here | Searches | Match counts compared | Marks compared | Match counts that differ | Marks that differ | Matches by RegExp: everything, string values, keys | Matches that end at a text's last character, and of those at position 511 | Code points above U+00FF inside matches | Empty matches that RegExp finds, not counted |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `example` | 8 | exactly 8 states | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 18,387, 18,387, 0 | 0, 0 | 0 | 0 |
+| `"[A-Z][a-z]+ [A-Z][a-zü]+"` | 8 | exactly 8 states, with classes and repeats | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 13,658, 13,658, 0 | 0, 0 | 0 | 0 |
+| `\w+@\w+\.com` | 8 | exactly 8 states, with \w | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 14,481, 14,481, 0 | 0, 0 | 0 | 0 |
+| `"level": "warn"` | 16 | exactly 16 states | 12 | 1,200,000 | 614,400,000 | 0 | 0 | 2,186, 0, 0 | 0, 0 | 0 | 0 |
+| `connection rese` | 16 | exactly 16 states | 12 | 1,200,000 | 614,400,000 | 0 | 0 | 1,440, 1,440, 0 | 0, 0 | 0 | 0 |
+| `tLogin": ?"\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ"` | 32 | exactly 32 states | 6 | 600,000 | 307,200,000 | 0 | 0 | 8,414, 0, 0 | 0, 0 | 0 | 0 |
+| `: ?"\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ"[,}\n\t ]+"[a-z]+": ?[-\d"tfn]` | 32 | exactly 32 states, with repeats, across two members of an object | 6 | 600,000 | 307,200,000 | 0 | 0 | 26,675, 0, 0 | 0, 0 | 0 | 0 |
+| `\d*` | 2 | matches the empty text: only the runs of digits count | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 1,173,969, 531,709, 0 | 0, 0 | 0 | 26,911,236 |
+| `(error)?` | 6 | matches the empty text, with a group | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 12,507, 2,939, 9,568 | 0, 0 | 0 | 29,977,658 |
+| `[}\]]` | 2 | matches at every document's last character | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 383,987, 0, 0 | 100,000, 156 | 0 | 0 |
+| `[^,]+` | 2 | long matches, and one that ends at every document's last character | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 1,268,558, 767,225, 1,281,001 | 100,000, 156 | 9,930 | 0 |
+| `[^]+` | 2 | one match over the whole document: the cells past the text's end must stay 0 | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 100,000, 759,574, 1,281,001 | 100,000, 156 | 9,930 | 0 |
+| `.+` | 2 | every line | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 990,438, 759,574, 1,281,001 | 100,000, 156 | 9,930 | 0 |
+| `東京` | 3 | characters above U+00FF | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 2,293, 2,293, 0 | 0, 0 | 4,586 | 0 |
+| `[ø-東]+` | 2 | a class from U+00F8 to U+6771 | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 12,518, 12,518, 0 | 0, 0 | 7,947 | 0 |
+| `[^ -~\t\n]+` | 2 | every run of characters outside ASCII | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 61,699, 61,699, 0 | 0, 0 | 9,930 | 0 |
+| `M[uü]ller\|Garc[ií]a\|咲\|李` | 15 | alternatives, some above U+00FF | 12 | 1,200,000 | 614,400,000 | 0 | 0 | 6,080, 6,080, 0 | 0, 0 | 3,361 | 0 |
+| `(re\|reset\|res)` | 11 | the longest alternative isn't the first | 12 | 1,200,000 | 614,400,000 | 0 | 0 | 120,753, 56,825, 63,928 | 0, 0 | 0 | 0 |
+| `"(name\|city)": ?"[A-Z]\w*( \w+)?"` | 19 | groups, ?, * and + in one pattern | 6 | 600,000 | 307,200,000 | 0 | 0 | 29,195, 0, 0 | 0, 0 | 0 | 0 |
+| `"[^"]*"` | 4 | every string as written, with its quotes | 18 | 1,800,000 | 921,600,000 | 0 | 0 | 2,005,421, 686,345, 1,281,001 | 0, 0 | 9,930 | 0 |
+
+In all: 300 searches, 30,000,000 match counts and 15,360,000,000 marks from bit-emit.ts's shaders on the GPU against RegExp in Bun. 0 match counts differ, 0 marks differ. RegExp finds 108,593,786 matches over these searches and the shaders return 108,593,786.
+As searcher.ts calls the shader for the demo page, every document in one pass with the marks of 64 documents in the middle: 200 searches with a scope, 20,000,000 match counts and 6,553,600 marks. 0 match counts differ, 0 marks differ. RegExp finds 71,595,886 matches and the shaders return 71,595,886.
+The display kinds from bit-emit.ts's shader of the highlighter's step, which the searches with a scope read: 51,200,000 positions against this file's reading of each valid JSON text, 0 differ.
+The same shader on 8,529 other texts, of which 5,369 are broken JSON and 310 are longer than 512 code points: 4,400,964 summary values and display kinds against the repo's plain JavaScript highlighter, 0 summary values and 0 display kinds differ.
+Of all the values above, 0 are -0, which the comparisons take for 0.
+Before the run: the RegExp of each pattern against the longest matches by anchored tests on 980 texts, 3,150 matches, 0 texts differ.

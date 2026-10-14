@@ -2,9 +2,9 @@
 // writes before an evaluation and that next-state values are written back into.
 // Each cell is declared once, with what happens to it around an evaluation, a range
 // and an initial value, and cells nest into objects and lists. The table derives
-// each cell's position (in declaration order), the circuit's range, grid and one-hot
-// declarations, the initial table, a validator, and the wire that holds each cell's
-// next value.
+// each cell's position (in declaration order), the circuit's range, grid, exact bit
+// and one-hot declarations, the initial table, a validator, and the wire that holds
+// each cell's next value.
 //
 // Building has two phases, since a Circuit needs its source size before the first
 // operation exists: declare every cell and call createCircuit, then build behavior,
@@ -185,6 +185,8 @@ export function createSourceTable() {
         const wire = created.source(index)
         created.assumeRange(wire, spec.range[0], spec.range[1])
         if (spec.grid !== undefined) created.assumeGrid(wire, spec.grid)
+        // The circuit keeps the declaration and builds nothing differently for it, see Circuit.exactBits.
+        if (spec.exactBit) created.assumeBit(wire)
       })
       for (const rule of rules) {
         if (rule.declareToCircuit) created.assumeOneHot(rule.members, rule.allowAllZero)

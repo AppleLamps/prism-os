@@ -14,10 +14,12 @@
 // - search-step.ts, regex search's step with the pattern as data, once per search: the match count of every document,
 //   and for the documents of a window, e.g. the ones on screen, a mark per code point. It reads the display kinds, so
 //   a search can read only string values, only keys, or everything. There is one such program per state capacity,
-//   8, 16 and 32 by default, and a pattern runs on the smallest one that holds it, since a step's cost grows with the
-//   square of the capacity.
+//   8, 16 and 32 by default, and a pattern runs on the smallest one that holds it. A step takes one table read per
+//   pair of states, so on the CPU its time grows steeply with the capacity: 0.14, 0.34 and 1.8 ms per document at 8,
+//   16 and 32 states. On the GPU, bit-emit.ts writes the reads of one state as one AND of two 32-bit words, and the
+//   three programs take nearly the same time.
 // On the GPU a search uploads the search program's shared cells, 1,135 to 16,591 numbers, of which the pattern writes
-// 1,097 to 16,481, and nothing per document.
+// 1,097 to 16,481, and the 272 to 1,088 words that the runner packs from them, and nothing per document.
 //
 // A page calls search when the pattern, the scope or the window changes. One evaluation is in flight at a time: a
 // request waits for the one before it, and a request that a newer one replaced, before or while it ran, resolves to
@@ -27,9 +29,10 @@ import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {capacity as positions} from '../../src/json-highlighter/kinds.ts'
 import {type CompiledPattern, PatternSyntaxError, capacityErrors, compilePattern} from '../regex-search/pattern.ts'
 import {type ProgramRunner, createDocumentStore, createProgramRunner} from './gpu/host.ts'
+import {emitBitLoopWgsl} from './bit-emit.ts'
 import {buildJsonLoop, stepSummaryNames} from './json-step.ts'
 import {emitLoopWgsl} from './loop-emit.ts'
-import {type LoopRunner, createLoopRunner, describeLoop} from './loop-program.ts'
+import {type LoopProgram, type LoopRunner, createLoopRunner, describeLoop} from './loop-program.ts'
 import {cellsPerDocument, writeDocumentCells} from './program.ts'
 import {type SearchLoop, type SearchScope, boundaryCapacity, buildSearchLoop, classCapacity} from './search-step.ts'
 
@@ -100,7 +103,10 @@ export type ProgramDescription = {
   name: string
   // The operations of each stage, e.g. [8, 151, 92] for a search's start, reverse step and forward step.
   operations: number[]
-  // Only on the GPU: the shader's size, and the time to compile it.
+  // Only on the GPU: the shader's size, and the ms from createShaderModule until JavaScript has its pipeline. That
+  // is more than the GPU's compile: JavaScript builds the search programs while the highlighter's shader compiles,
+  // and the search programs' shaders compile at the same time as each other. E.g. the highlighter's shader shows 31
+  // to 38 ms for 1,000 and 10,000 documents, where it showed 14 to 16 ms when nothing else was built meanwhile.
   statements: number | undefined
   compileMs: number | undefined
 }
@@ -110,10 +116,12 @@ export type Searcher = {
   documentCount: number
   stateCapacities: readonly number[]
   validation: Validation
-  // The time to create the searcher, in ms: JavaScript writing the cells, then validating every document, which on the
-  // GPU includes the upload and the highlighter's shader compile, and in the total the first search program too.
+  // The time to create the searcher, in ms: JavaScript writing the cells, then everything else. On the GPU that is
+  // the upload, the highlighter's shader compile and its pass over every document, and building and compiling every
+  // search program, which overlap, so `validateMs` holds all of them and the total is the sum of the two.
   load: {cellsMs: number, validateMs: number, totalMs: number}
-  // The programs built so far.
+  // The programs built so far: on the GPU every one, and on the CPU the highlighter and each search program that a
+  // search has run on.
   programs: () => ProgramDescription[]
   // What the device granted, and how many documents fit one buffer. Undefined on the CPU.
   limits: {maxStorageBufferBindingSize: number, maxBufferSize: number, maxDocuments: number, hasTimestamps: boolean} | undefined
@@ -124,16 +132,24 @@ export type Searcher = {
   kinds: (window: DocumentWindow) => Promise<Float32Array>
   // Resolves to undefined when a newer request replaced this one.
   search: (request: SearchRequest) => Promise<SearchResult | undefined>
-  // Builds and compiles the program for a state capacity ahead of its first search, and resolves to the ms it took.
-  prepare: (states: number) => Promise<number>
   // Compares the first `documents` documents with the same programs on the other backend: on the GPU with generated
   // JavaScript, and on the CPU with the CPU executor. A page that gets mismatches from a GPU searcher uses the CPU one.
   selfCheck: (documents: number, searches?: readonly {pattern: string, scope: SearchScope}[]) => Promise<SelfCheck>
   destroy: () => void
 }
 
+// This folder's two writers of a loop program's WGSL. Both write the same program, and a GPU gives the same values
+// from either shader.
+// - 'loop-emit' writes every operation as one f32 statement, e.g. one table read per pair of states in a search step.
+// - 'bit-emit' holds a value that is proven to be 0 or 1 as a bit, and writes the table reads that one gate combines
+//   as one AND of two 32-bit words, see bit-emit.ts.
+export type ShaderWriter = 'bit-emit' | 'loop-emit'
+
 export type SearcherOptions = {
   stateCapacities?: readonly number[]
+  // Which writer writes the GPU searcher's shaders, for tests and measurements that compare the two. Unless given,
+  // the search programs' shaders are bit-emit.ts's and the highlighter's is loop-emit.ts's, see createGpuSearcher.
+  writers?: {search?: ShaderWriter, highlighter?: ShaderWriter}
   // How many documents a window holds at most, 64 unless given.
   windowCapacity?: number
   // Goes into every shader's source, see gpu/host.ts. For measuring cold compiles.
@@ -144,11 +160,26 @@ export type SearcherOptions = {
   cells?: Float32Array
 }
 
+// What a self check searches for. The last seven are there for what the first four leave out:
+// - A pattern that has exactly as many states as a program holds, for each of the three programs, e.g. bit 31 of a
+//   word at 32 states.
+// - A pattern of characters above U+00FF.
+// - One that matches at every document's last character.
+// - A class that holds every character but one, twice, so a match stops only where the searched characters stop: at
+//   the text's end, and with 'strings' at each string value's closing quote. The step reads -1 past either, and a
+//   shader that took that -1 for a character, e.g. for U+0000, would let these matches run on.
 export const defaultSelfCheckSearches: readonly {pattern: string, scope: SearchScope}[] = [
   {pattern: '[a-z]+', scope: 'everything'},
   {pattern: '(the|an?) [a-z]+', scope: 'strings'},
   {pattern: '"[a-z]+"', scope: 'keys'},
   {pattern: '\\d+', scope: 'stringsAndKeys'},
+  {pattern: 'example', scope: 'everything'},
+  {pattern: 'connection rese', scope: 'everything'},
+  {pattern: 'tLogin": ?"\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ"', scope: 'everything'},
+  {pattern: '東京', scope: 'strings'},
+  {pattern: '[}\\]]', scope: 'everything'},
+  {pattern: '[^,]+', scope: 'everything'},
+  {pattern: '[^,]+', scope: 'strings'},
 ]
 
 // One evaluation at a time, and only the newest request gets a result.
@@ -235,8 +266,17 @@ function writeCells(texts: readonly string[], written: Float32Array | undefined)
 // The search program for a state capacity. On the CPU its loops stop at the text's end, which saves the share of the
 // 512 positions that hold no text, 40% for documents of 300 code points, and gives the same values: a position past
 // the end holds -1, whose class has no steps. On the GPU the loops run every position, since stopping made a search
-// slower there, e.g. 9.4 ms against 7.0 ms for 100,000 documents at 8 states.
+// slower there with either writer's shader, e.g. 13 ms against 4.4 ms for 100,000 documents at 8 states with
+// bit-emit.ts's.
 const buildMaskedLoop = (states: number, stopAtLength: boolean) => buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions, cellsPerDocument, masked: true, stopAtLength})
+
+// A loop program's shader, as one of the two writers writes it.
+const writeShader = (loop: LoopProgram, writer: ShaderWriter) => writer === 'bit-emit' ? emitBitLoopWgsl(loop) : emitLoopWgsl(loop)
+
+// A pause until a later task, so that a page's thread handles what arrived meanwhile, e.g. a key.
+const laterTask = () => new Promise<void>(resolve => {
+  setTimeout(resolve, 0)
+})
 
 function checkWindow(window: DocumentWindow, documentCount: number, windowCapacity: number) {
   invariant(Number.isInteger(window.firstDocument) && Number.isInteger(window.documentCount) && window.firstDocument >= 0 && window.documentCount >= 0, 'a window is a range of documents')
@@ -367,11 +407,6 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
       }
       return gate.run(() => Promise.resolve(evaluate(resolved.compiled, resolved.states, request, patternStarted)))
     },
-    prepare(states) {
-      const prepareStarted = performance.now()
-      searchFor(states)
-      return Promise.resolve(performance.now() - prepareStarted)
-    },
     // The other backend here is the CPU executor, the repo's definition of a program's values.
     selfCheck(documents, checks = defaultSelfCheckSearches) {
       const sample = Math.min(documents, documentCount)
@@ -402,9 +437,22 @@ function buildCpuSearcher(texts: readonly string[], options: CpuOptions): {searc
   return {searcher, evaluate}
 }
 
-// The searcher on the GPU. Creating it writes and uploads every document's cells, compiles the highlighter's loop
-// shader, validates every document, and compiles the search shader of the smallest state capacity. A larger capacity
-// compiles on its first search, or ahead of time with prepare.
+// The searcher on the GPU. Creating it writes and uploads every document's cells, validates every document with the
+// highlighter's shader, and builds and compiles the search program of every state capacity, so that no search waits
+// for a compile. On an Apple M5 Max, creating it for 100,000 documents takes 86 to 93 ms after the cells are written,
+// as the medians of five sets of loads of the demo page. The searcher before October 14, 2026, which compiled only
+// the smallest program's shader at creation, as loop-emit.ts writes it, took 75 to 86 ms, 3 to 14 ms less in each
+// set: the three programs are built and compiled while the GPU compiles the highlighter's shader and runs its pass.
+// For 20,000 documents, where that wait is shorter than JavaScript's 50 ms for the three programs, it takes 64 to
+// 72 ms where the one before took 26 to 39 ms.
+//
+// Which writer writes which shader, unless `writers` says otherwise:
+// - The search programs' shaders are bit-emit.ts's. One search of 100,000 documents takes 4.6, 4.7 and 5.2 ms at 8, 16
+//   and 32 states when searches follow each other, where loop-emit.ts's shaders take 7.8, 69 and 945 ms.
+// - The highlighter's shader is loop-emit.ts's. Its step has no gate over several table reads, so bit-emit.ts packs
+//   nothing for it, and its pass didn't get faster from bit-emit.ts's shader: 2.3 to 4.5 ms for 100,000 documents
+//   against 2.3 to 3.9 ms, in six turns each. In two of the six pairs of turns the two took the same time within
+//   0.03 ms, and in four bit-emit.ts's took 0.5 to 0.7 ms longer.
 export async function createGpuSearcher(device: GPUDevice, texts: readonly string[], options: SearcherOptions = {}): Promise<Searcher> {
   const started = performance.now()
   const documentCount = texts.length
@@ -414,6 +462,8 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
   // Read here, so that the functions below don't keep `options`, and with it the caller's cells, 205 MB for 100,000
   // documents, for as long as the searcher lives.
   const {shaderSalt} = options
+  const searchWriter = options.writers?.search ?? 'bit-emit'
+  const highlighterWriter = options.writers?.highlighter ?? 'loop-emit'
   const maxDocuments = Math.floor(Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) / (cellsPerDocument * 4))
   invariant(documentCount <= maxDocuments, `${documentCount} documents need a buffer of ${bufferBytesFor(documentCount)} bytes, and this device binds ${device.limits.maxStorageBufferBindingSize}. Ask for more with requestBatchDevice(bufferBytesFor(count)), or pass fewer documents.`)
   const cells = writeCells(texts, options.cells)
@@ -423,34 +473,39 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
 
   // The highlighter, once. Its display kinds stay in the runner's second output buffer, for every document.
   const json = buildJsonLoop(cellsPerDocument)
-  const jsonShader = emitLoopWgsl(json.loop)
-  const jsonRunner = await createProgramRunner(device, jsonShader, json.loop.sharedValues, store, shaderSalt, {windowCapacity: documentCount})
-  const everyDocument = {firstDocument: 0, documentCount}
-  const validated = await jsonRunner.evaluate({count: documentCount, window: everyDocument, readbacks: [{group: 0, ...everyDocument}]})
-  const validation = validationOf(validated.outputs[0]!, documentCount)
-  const kindsBuffer = jsonRunner.outputBuffers[1]!
-
-  type Search = {built: SearchLoop, runner: ProgramRunner, shared: Float32Array, statements: number}
-  const searches = new Map<number, Promise<Search>>()
-  const built = new Map<number, Search>()
-  const searchFor = (states: number) => {
-    let entry = searches.get(states)
-    if (entry === undefined) {
-      entry = (async () => {
-        const loop = buildMaskedLoop(states, false)
-        const shader = emitLoopWgsl(loop.loop)
-        const runner = await createProgramRunner(device, shader, loop.loop.sharedValues, store, shaderSalt, {inputs: [kindsBuffer], windowCapacity})
-        const search = {built: loop, runner, shared: new Float32Array(loop.loop.sharedValues), statements: shader.statementCount}
-        built.set(states, search)
-        return search
-      })()
-      searches.set(states, entry)
-    }
-    return entry
+  const jsonShader = writeShader(json.loop, highlighterWriter)
+  const jsonRunnerCreated = createProgramRunner(device, jsonShader, json.loop.sharedValues, store, shaderSalt, {windowCapacity: documentCount})
+  // Awaited below, where a failure is thrown. Until then a failure isn't an unhandled one.
+  jsonRunnerCreated.catch(() => {})
+  // While the GPU compiles the highlighter's shader, JavaScript builds each search program and writes its shader, 7,
+  // 12 and 31 ms at 8, 16 and 32 states in Chrome. Building a program and writing its shader are a task each, so
+  // that a page's thread handles input in between, and no piece holds it for more than about 20 ms.
+  const sources: {states: number, built: SearchLoop, shader: ReturnType<typeof writeShader>}[] = []
+  for (const states of stateCapacities) {
+    await laterTask()
+    const built = buildMaskedLoop(states, false)
+    await laterTask()
+    sources.push({states, built, shader: writeShader(built.loop, searchWriter)})
   }
-  const validateMs = performance.now() - started - cellsMs
-  await searchFor(stateCapacities[0]!)
-  const load = {cellsMs, validateMs, totalMs: performance.now() - started}
+  const jsonRunner = await jsonRunnerCreated
+  const everyDocument = {firstDocument: 0, documentCount}
+  // The pass over every document and the search shaders' compiles, all at the same time. gpu/host.ts's error scopes
+  // of the three runners then overlap, so what the GPU refuses for one runner, e.g. a bind group that doesn't fit its
+  // shader, may be thrown by another runner's promise. Creating the searcher fails with the GPU's message and its
+  // kind of error either way, see `checked` there.
+  const [validated, ...runners] = await Promise.all([
+    jsonRunner.evaluate({count: documentCount, window: everyDocument, readbacks: [{group: 0, ...everyDocument}]}),
+    ...sources.map(({built, shader}) => createProgramRunner(device, shader, built.loop.sharedValues, store, shaderSalt, {inputs: [jsonRunner.outputBuffers[1]!], windowCapacity})),
+  ])
+  const validation = validationOf(validated.outputs[0]!, documentCount)
+  type Search = {built: SearchLoop, runner: ProgramRunner, shared: Float32Array, statements: number}
+  const searches = new Map<number, Search>(sources.map(({states, built, shader}, index) => [states, {built, runner: runners[index]!, shared: new Float32Array(built.loop.sharedValues), statements: shader.statementCount}]))
+  const searchFor = (states: number) => {
+    const search = searches.get(states)
+    invariant(search !== undefined, `${states} isn't one of this searcher's state capacities`)
+    return search
+  }
+  const load = {cellsMs, validateMs: performance.now() - started - cellsMs, totalMs: performance.now() - started}
   const gate = createGate()
 
   async function evaluate(compiled: CompiledPattern, states: number, request: SearchRequest, patternStarted: number): Promise<SearchResult & {status: 'searched'}> {
@@ -458,7 +513,7 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
     const window = request.window ?? {firstDocument: 0, documentCount: 0}
     checkWindow(window, documentCount, windowCapacity)
     const all = request.documents !== 'window'
-    const search = await searchFor(states)
+    const search = searchFor(states)
     search.shared.set(search.built.loop.sharedValues)
     search.built.writePattern(search.shared, compiled)
     search.built.writeScope(search.shared, scope)
@@ -493,7 +548,7 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
     limits: {maxStorageBufferBindingSize: device.limits.maxStorageBufferBindingSize, maxBufferSize: device.limits.maxBufferSize, maxDocuments, hasTimestamps: device.features.has('timestamp-query')},
     programs: () => [
       {name: 'JSON highlighter', operations: describeLoop(json.loop).map(stage => stage.operations), statements: jsonShader.statementCount, compileMs: jsonRunner.compileMs},
-      ...[...built].map(([states, search]) => ({name: `regex search, ${states} states`, operations: describeLoop(search.built.loop).map(stage => stage.operations), statements: search.statements, compileMs: search.runner.compileMs})),
+      ...[...searches].map(([states, search]) => ({name: `regex search, ${states} states`, operations: describeLoop(search.built.loop).map(stage => stage.operations), statements: search.statements, compileMs: search.runner.compileMs})),
     ],
     async validate({timestamps = false} = {}) {
       const evaluation = await jsonRunner.evaluate({count: documentCount, window: everyDocument, readbacks: [{group: 0, ...everyDocument}], ...(timestamps && jsonRunner.hasTimestamps ? {timestamps: true} : {})})
@@ -512,14 +567,8 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
       }
       return gate.run(() => evaluate(resolved.compiled, resolved.states, request, patternStarted))
     },
-    async prepare(states) {
-      invariant(stateCapacities.includes(states), `${states} isn't one of this searcher's state capacities`)
-      const prepareStarted = performance.now()
-      await searchFor(states)
-      return performance.now() - prepareStarted
-    },
     // Runs when no search is in flight, e.g. right after creating the searcher: it doesn't go through the gate. It
-    // checks the highlighter, and each search program compiled so far.
+    // checks the highlighter, and each search program with every one of the searches that the program holds.
     async selfCheck(documents, checks = defaultSelfCheckSearches) {
       const sample = Math.min(documents, documentCount)
       const cpuStarted = performance.now()
@@ -534,7 +583,7 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
       const gpuKinds = await jsonRunner.read({group: 1, firstDocument: 0, documentCount: sample})
       result.gpuMs += performance.now() - gpuStarted
       compare(gpuKinds, await reference.searcher.kinds({firstDocument: 0, documentCount: sample}), sample * positions)
-      for (const states of [...built.keys()]) {
+      for (const states of stateCapacities) {
         for (const {pattern, scope} of checks) {
           const resolved = resolvePattern(pattern, [states])
           if ('status' in resolved) continue
@@ -557,7 +606,7 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
     },
     destroy() {
       jsonRunner.destroy()
-      for (const search of built.values()) search.runner.destroy()
+      for (const search of searches.values()) search.runner.destroy()
       store.destroy()
     },
   }

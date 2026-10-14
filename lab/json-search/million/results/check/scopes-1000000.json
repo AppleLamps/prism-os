@@ -1,0 +1,260 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T08:22:29.044Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 4.49 3.68 4.30 }",
+  "memoryBefore": "System-wide memory free percentage: 79%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "scopes",
+   "--count",
+   "1000000",
+   "--profile",
+   "scopes-1000000-1791966149030",
+   "--out",
+   "scopes-1000000.json",
+   "--port",
+   "4512",
+   "--devtools-port",
+   "9512"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T08:22:39.085Z",
+    "load": "{ 4.81 3.77 4.33 }"
+   },
+   {
+    "at": "2026-10-14T08:22:49.087Z",
+    "load": "{ 5.93 4.04 4.42 }"
+   },
+   {
+    "at": "2026-10-14T08:22:59.088Z",
+    "load": "{ 5.70 4.06 4.42 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9512",
+   "--user-data-dir=scopes-1000000-1791966149030",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900",
+   "--js-flags=--expose-gc"
+  ],
+  "chromePid": 9826,
+  "browser": "Chrome/155.0.8059.80",
+  "finishedAt": "2026-10-14T08:23:00.035Z",
+  "loadAfter": "{ 5.70 4.06 4.42 }",
+  "memoryAfter": "System-wide memory free percentage: 79%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T08:22:29.458Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "scopes",
+   "count": 1000000,
+   "patterns": [
+    "error",
+    "[a-z]+Id",
+    "[a-z0-9.]+@[a-z.]+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "([a-z]+)+x",
+    "connection reset"
+   ],
+   "capacities": [
+    8,
+    16,
+    32
+   ],
+   "shaderSalt": 657500656,
+   "pieceDocuments": 50000,
+   "engines": [
+    "f32-kernel",
+    "bytes-boundaries",
+    "bytes",
+    "bytes-scope",
+    "packed",
+    "packed-scope",
+    "bytes-bits",
+    "bytes-has",
+    "bytes-scope-has",
+    "packed-scope-has"
+   ],
+   "f32": true,
+   "pausesMs": [
+    200
+   ],
+   "longPausesMs": [
+    1000
+   ],
+   "longPauseEngines": [
+    "f32-kernel",
+    "bytes",
+    "bytes-scope-has"
+   ],
+   "pauseSamples": 9,
+   "restMs": 0,
+   "warmPauses": [],
+   "minimumSamples": 15,
+   "sampleMs": 1000,
+   "layout": "fixed",
+   "workers": 8,
+   "scopeBits": true,
+   "limits": "needed",
+   "keepTexts": false,
+   "regExpFlags": "",
+   "jsSamples": 9,
+   "jsPauseMs": 0,
+   "filterWorkers": 8,
+   "jsParts": [
+    "wholeText",
+    "parse",
+    "walk",
+    "collected",
+    "workers"
+   ]
+  },
+  "memory": {
+   "after the highlighter's passes": {
+    "javaScriptBytes": 130653312,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 130,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 130560728,
+    "processes": {
+     "processes": [
+      {
+       "pid": 9826,
+       "type": "browser",
+       "residentBytes": 599277568,
+       "footprintBytes": 127060152,
+       "footprintPeakBytes": 410781880
+      },
+      {
+       "pid": 9830,
+       "type": "gpu-process",
+       "residentBytes": 198623232,
+       "footprintBytes": 947488088,
+       "footprintPeakBytes": 1275430232
+      },
+      {
+       "pid": 9834,
+       "type": "renderer",
+       "residentBytes": 196919296,
+       "footprintBytes": 59049520,
+       "footprintPeakBytes": 72255024
+      },
+      {
+       "pid": 9837,
+       "type": "renderer",
+       "residentBytes": 123977728,
+       "footprintBytes": 29001048,
+       "footprintPeakBytes": 30197080
+      },
+      {
+       "pid": 9840,
+       "type": "renderer",
+       "residentBytes": 334626816,
+       "footprintBytes": 200050392,
+       "footprintPeakBytes": 534366272
+      },
+      {
+       "pid": 9861,
+       "type": "renderer",
+       "residentBytes": 107413504,
+       "footprintBytes": 26952904,
+       "footprintPeakBytes": 28640456
+      }
+     ],
+     "availableGigabytes": 18,
+     "swap": "total = 3072.00M  used = 2048.06M  free = 1023.94M  (encrypted)"
+    }
+   }
+  },
+  "loadAtStart": 4.49,
+  "emptyPipelineMs": 40.93,
+  "scopes": {
+   "pieceDocuments": 50000,
+   "pieces": 20,
+   "compileMs": {
+    "highlighter": 40.12,
+    "unpack": 16.725,
+    "pack": 15.26
+   },
+   "firstMs": 83.35,
+   "ms": {
+    "count": 9,
+    "median": 46.555,
+    "p10": 46.355,
+    "p90": 47.495,
+    "min": 46.355,
+    "max": 47.495
+   },
+   "times": [
+    47.495,
+    46.43,
+    46.45,
+    46.555,
+    46.49,
+    47.29,
+    46.355,
+    46.745,
+    46.925
+   ],
+   "highlighterMs": {
+    "count": 9,
+    "median": 44.75,
+    "p10": 44.515,
+    "p90": 45.59,
+    "min": 44.515,
+    "max": 45.59
+   },
+   "afterPauseOf1000Ms": {
+    "count": 9,
+    "median": 57.43,
+    "p10": 52.48,
+    "p90": 62.44,
+    "min": 52.48,
+    "max": 62.44
+   },
+   "valid": 1000000,
+   "comparedWords": 32000000,
+   "mismatchedWords": 0,
+   "onOneThread": {
+    "highlightMs": 1214.09,
+    "scopeBitsMs": 495.525
+   },
+   "bufferBytes": {
+    "cellsOfOnePiece": 102600000,
+    "kindsOfOnePiece": 102400000,
+    "scopes": 128000000
+   },
+   "load": 5.14
+  },
+  "loadAtEnd": 5.7,
+  "finishedAt": "2026-10-14T08:23:00.011Z",
+  "logLines": [
+   "5488.32 ms: 1000000 documents written",
+   "15646.58 ms: scopes: {\"pieceDocuments\":50000,\"pieces\":20,\"compileMs\":{\"highlighter\":40.12,\"unpack\":16.725,\"pack\":15.26},\"firstMs\":83.35,\"ms\":{\"count\":9,\"median\":46.555,\"p10\":46.355,\"p90\":47.495,\"min\":46.355,\"max\":47.495},\"times\":[47.495,46.43,46.45,46.555,46.49,47.29,46.355,46.745,46.925],\"highlighterMs\":{\"count\":9,\"median\":44.75,\"p10\":44.515,\"p90\":45.59,\"min\":44.515,\"max\":45.59},\"afterPauseOf1000Ms\":{\"count\":9,\"median\":57.43,\"p10\":52.48,\"p90\":62.44,\"min\":52.48,\"max\":62.44},\"valid\":1000000,\"comparedWords\":32000000,\"mismatchedWords\":0,\"onOneThread\":{\"highlightMs\":1214.09,\"scopeBitsMs\":495.525},\"bufferBytes\":{\"cellsOfOnePiece\":102600000,\"kindsOfOnePiece\":102400000,\"scopes\":128000000},\"load\":5.14}",
+   "30614.73 ms: memory, after the highlighter's passes: {\"javaScriptBytes\":130653312,\"javaScriptBreakdown\":[{\"megabytes\":130,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":130560728,\"processes\":{\"processes\":[{\"pid\":9826,\"type\":\"browser\",\"residentBytes\":599277568,\"footprintBytes\":127060152,\"footprintPeakBytes\":410781880},{\"pid\":9830,\"type\":\"gpu-process\",\"residentBytes\":198623232,\"footprintBytes\":947488088,\"footprintPeakBytes\":1275430232},{\"pid\":9834,\"type\":\"renderer\",\"residentBytes\":196919296,\"footprintBytes\":59049520,\"footprintPeakBytes\":72255024},{\"pid\":9837,\"type\":\"renderer\",\"residentBytes\":123977728,\"footprintBytes\":29001048,\"footprintPeakBytes\":30197080},{\"pid\":9840,\"type\":\"renderer\",\"residentBytes\":334626816,\"footprintBytes\":200050392,\"footprintPeakBytes\":534366272},{\"pid\":9861,\"type\":\"renderer\",\"residentBytes\":107413504,\"footprintBytes\":26952904,\"footprintPeakBytes\":28640456}],\"availableGigabytes\":18,\"swap\":\"total = 3072.00M  used = 2048.06M  free = 1023.94M  (encrypted)\"}}"
+  ],
+  "done": true
+ }
+}

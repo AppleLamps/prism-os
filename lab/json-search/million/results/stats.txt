@@ -1,0 +1,22 @@
+1,000,000 documents, written and measured in 14.5 s
+- 299,197,444 UTF-16 units, 299,197,444 code points, 299.2 per document, the longest 512
+- 251,885 documents hold a code point past U+007F, and 46,600 hold one past U+00FD, which a byte stores as 255
+- as UTF-8: 299,958,257 bytes, the longest document 528 bytes, 1,492 documents longer than 512 bytes
+- one f32 per code point: 2052 MB, and as much again for the display kinds
+- 512 bytes per document: 512 MB. Packed, each document padded to 4 bytes: 301 MB, and 4 MB for where each document starts
+- 2 scope bits per position: 128 MB. One match count per document: 4 MB. One bit per document: 125 KB
+
+| Pattern | States | Classes | Class boundaries | The largest boundary | The same matches on bytes |
+| --- | --- | --- | --- | --- | --- |
+| `error` | 6 | 3 | 6 | U+0073 | yes |
+| `[a-z]+Id` | 4 | 3 | 6 | U+007B | yes |
+| `[a-z0-9.]+@[a-z.]+` | 4 | 3 | 8 | U+007B | yes |
+| `\d\d\d\d-\d\d-\d\d` | 11 | 2 | 4 | U+003A | yes |
+| `([a-z]+)+x` | 3 | 2 | 4 | U+007B | yes |
+| `connection reset` | 17 | 9 | 15 | U+0075 | yes |
+| `"[^"]+"` | 4 | 2 | 2 | U+0023 | yes |
+| `Müller` | 7 | 5 | 10 | U+00FD | yes |
+| `.+` | 2 | 1 | 6 | U+202A | no |
+| `東京` | 3 | 2 | 4 | U+6772 | no |
+
+`東京` has a match in 23,115 documents. On bytes, where both of its code points are 255, a kernel could at best find two neighbors of 255, which 34,396 documents have.

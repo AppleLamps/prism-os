@@ -1,0 +1,882 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T14:12:05.826Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 21.99 20.12 20.78 }",
+  "memoryBefore": "System-wide memory free percentage: 59%",
+  "busiestBefore": [],
+  "argv": [
+   "--profile",
+   "chrome-profile",
+   "--out",
+   "probes-gpu.json",
+   "--fuzz",
+   "400",
+   "--port",
+   "4554",
+   "--devtools-port",
+   "9554"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T14:12:15.874Z",
+    "load": "{ 19.60 19.67 20.61 }"
+   },
+   {
+    "at": "2026-10-14T14:12:25.877Z",
+    "load": "{ 17.28 19.17 20.42 }"
+   },
+   {
+    "at": "2026-10-14T14:12:35.878Z",
+    "load": "{ 15.31 18.69 20.24 }"
+   },
+   {
+    "at": "2026-10-14T14:12:45.880Z",
+    "load": "{ 14.28 18.35 20.10 }"
+   },
+   {
+    "at": "2026-10-14T14:12:55.882Z",
+    "load": "{ 13.21 17.99 19.95 }"
+   },
+   {
+    "at": "2026-10-14T14:13:05.884Z",
+    "load": "{ 11.87 17.55 19.77 }"
+   },
+   {
+    "at": "2026-10-14T14:13:15.886Z",
+    "load": "{ 10.75 17.12 19.59 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9554",
+   "--user-data-dir=chrome-profile",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "chromePid": 92875,
+  "browser": "Chrome/155.0.8059.80",
+  "finishedAt": "2026-10-14T14:13:18.865Z",
+  "loadAfter": "{ 10.75 17.12 19.59 }",
+  "memoryAfter": "System-wide memory free percentage: 62%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T14:12:06.378Z",
+  "config": {
+   "fuzzPrograms": 400,
+   "rounds": 12,
+   "fuzzRounds": 4,
+   "salt": 185289848
+  },
+  "entries": [
+   {
+    "name": "sharedReads",
+    "values": 19968,
+    "nonZero": 5443,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 12
+   },
+   {
+    "name": "otherOrder",
+    "values": 10752,
+    "nonZero": 3467,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "constantTrue",
+    "values": 10752,
+    "nonZero": 6194,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "reads33",
+    "values": 10752,
+    "nonZero": 6359,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "reads64",
+    "values": 10752,
+    "nonZero": 6801,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 12
+   },
+   {
+    "name": "reads65",
+    "values": 10752,
+    "nonZero": 6136,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 12
+   },
+   {
+    "name": "reads40Ungated",
+    "values": 10752,
+    "nonZero": 7757,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 12
+   },
+   {
+    "name": "comparedBits",
+    "values": 10752,
+    "nonZero": 2815,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "comparedWholeBits",
+    "values": 10752,
+    "nonZero": 3805,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "twoBitsZeroBelow",
+    "values": 10752,
+    "nonZero": 5238,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 5
+   },
+   {
+    "name": "twoBitsReachRowZero",
+    "values": 10752,
+    "nonZero": 4996,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "threeBits",
+    "values": 10752,
+    "nonZero": 1976,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 5
+   },
+   {
+    "name": "fourBits",
+    "values": 10752,
+    "nonZero": 1206,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 5
+   },
+   {
+    "name": "fiveBits",
+    "values": 10752,
+    "nonZero": 1770,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "gridBitTables",
+    "values": 10752,
+    "nonZero": 5027,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "constantTables",
+    "values": 10752,
+    "nonZero": 6547,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "wholeTables",
+    "values": 10752,
+    "nonZero": 6012,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "floatTables",
+    "values": 10752,
+    "nonZero": 5757,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "rows-clamp-clamp-far",
+    "values": 10752,
+    "nonZero": 4401,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "rows-clamp-clamp-near",
+    "values": 10752,
+    "nonZero": 4716,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "rows-clamp-clamp-ungated",
+    "values": 10752,
+    "nonZero": 5687,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 5
+   },
+   {
+    "name": "rows-clamp-zero-far",
+    "values": 10752,
+    "nonZero": 3279,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "rows-clamp-zero-near",
+    "values": 10752,
+    "nonZero": 3594,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "rows-clamp-zero-ungated",
+    "values": 10752,
+    "nonZero": 4624,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "rows-zero-clamp-far",
+    "values": 10752,
+    "nonZero": 3767,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "rows-zero-clamp-near",
+    "values": 10752,
+    "nonZero": 4016,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "rows-zero-clamp-ungated",
+    "values": 10752,
+    "nonZero": 4261,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "rows-zero-zero-far",
+    "values": 10752,
+    "nonZero": 2435,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 7
+   },
+   {
+    "name": "rows-zero-zero-near",
+    "values": 10752,
+    "nonZero": 2894,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "rows-zero-zero-ungated",
+    "values": 10752,
+    "nonZero": 3198,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 7
+   },
+   {
+    "name": "reversedTables",
+    "values": 10752,
+    "nonZero": 3800,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "oneRow",
+    "values": 10752,
+    "nonZero": 2634,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 1
+   },
+   {
+    "name": "twoRows",
+    "values": 10752,
+    "nonZero": 3322,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 3
+   },
+   {
+    "name": "fixedRow",
+    "values": 10752,
+    "nonZero": 4608,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 5
+   },
+   {
+    "name": "doubledRow",
+    "values": 10752,
+    "nonZero": 3447,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "twoCircuits",
+    "values": 9984,
+    "nonZero": 9909,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 13
+   },
+   {
+    "name": "splitField",
+    "values": 9984,
+    "nonZero": 4016,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "switches8",
+    "values": 16128,
+    "nonZero": 8434,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "switches32",
+    "values": 34560,
+    "nonZero": 10425,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "switches33",
+    "values": 35328,
+    "nonZero": 10997,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "switches40",
+    "values": 40704,
+    "nonZero": 13442,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 12
+   },
+   {
+    "name": "switchesReversed",
+    "values": 16128,
+    "nonZero": 6371,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "switchesRotated",
+    "values": 16128,
+    "nonZero": 4532,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "switchesPartNone",
+    "values": 16128,
+    "nonZero": 7522,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 12
+   },
+   {
+    "name": "switchesGatedReads",
+    "values": 16128,
+    "nonZero": 8434,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "switchesGatedReads33",
+    "values": 35328,
+    "nonZero": 10997,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "switchesAndSeen",
+    "values": 22272,
+    "nonZero": 14578,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 6
+   },
+   {
+    "name": "noneOf40",
+    "values": 9984,
+    "nonZero": 1088,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "noneOf32",
+    "values": 9984,
+    "nonZero": 1856,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "noneOf33",
+    "values": 9984,
+    "nonZero": 1024,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "noneOfNegations40",
+    "values": 9984,
+    "nonZero": 1088,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "noneOfGates20",
+    "values": 9984,
+    "nonZero": 1856,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "noneOfGates40",
+    "values": 9984,
+    "nonZero": 1664,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "weights",
+    "values": 37632,
+    "nonZero": 4928,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "otherGates",
+    "values": 37632,
+    "nonZero": 17984,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "comparisons",
+    "values": 37632,
+    "nonZero": 12346,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "comparisonKept",
+    "values": 19200,
+    "nonZero": 6116,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "comparedZeros",
+    "values": 9984,
+    "nonZero": 320,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "largeWeightOnZero",
+    "values": 9984,
+    "nonZero": 4160,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "registerFractionWritten",
+    "values": 9984,
+    "nonZero": 8256,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "registerOffGridWritten",
+    "values": 9984,
+    "nonZero": 7680,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "fieldFractionWritten",
+    "values": 9984,
+    "nonZero": 7659,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 0
+   },
+   {
+    "name": "miniSearch",
+    "values": 9984,
+    "nonZero": 6845,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 272
+   },
+   {
+    "name": "miniSearch32",
+    "values": 9984,
+    "nonZero": 8628,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 1088
+   },
+   {
+    "name": "miniSearch3States40Classes",
+    "values": 9984,
+    "nonZero": 4204,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 246
+   },
+   {
+    "name": "miniSearch20States5Classes",
+    "values": 9984,
+    "nonZero": 7040,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 240
+   },
+   {
+    "name": "miniSearchByTable",
+    "values": 9984,
+    "nonZero": 6876,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 272
+   },
+   {
+    "name": "miniSearchByClassReversed",
+    "values": 9984,
+    "nonZero": 7024,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 272
+   },
+   {
+    "name": "miniSearchDescending",
+    "values": 9984,
+    "nonZero": 6845,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 272
+   },
+   {
+    "name": "miniSearchRotated",
+    "values": 9984,
+    "nonZero": 6845,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 272
+   },
+   {
+    "name": "miniSearchFieldReversed",
+    "values": 9984,
+    "nonZero": 6845,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 272
+   },
+   {
+    "name": "miniSearchAndGate",
+    "values": 9984,
+    "nonZero": 6845,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 272
+   },
+   {
+    "name": "miniSearchAndGateDescending",
+    "values": 9984,
+    "nonZero": 6845,
+    "mismatches": [
+     0,
+     0
+    ],
+    "packedWords": 272
+   }
+  ],
+  "adapter": {
+   "vendor": "apple",
+   "architecture": "metal-3",
+   "description": "Apple M5 Max"
+  },
+  "scalar": {
+   "name": "scalar: 400 random programs",
+   "programs": 386,
+   "refused": 14,
+   "values": 3515648,
+   "nonZero": 1465206,
+   "mismatches": [
+    1408,
+    1408
+   ],
+   "withPackedWords": 127,
+   "failed": [
+    {
+     "name": "scalar 94",
+     "values": 11264,
+     "nonZero": 6837,
+     "mismatches": [
+      1408,
+      1408
+     ],
+     "packedWords": 0,
+     "firstMismatch": "round 1, output group 3, value 1: the executor gives 25165828, loop-emit.ts's shader 25165826, bit-emit.ts's shader 25165826"
+    }
+   ]
+  },
+  "lanes": {
+   "name": "lanes: 400 random programs",
+   "programs": 400,
+   "refused": 0,
+   "values": 6390272,
+   "nonZero": 2328729,
+   "mismatches": [
+    0,
+    0
+   ],
+   "withPackedWords": 130,
+   "failed": []
+  },
+  "broken": {
+   "name": "broken: 400 random programs",
+   "programs": 386,
+   "refused": 14,
+   "values": 3515648,
+   "nonZero": 1428002,
+   "mismatches": [
+    1408,
+    1408
+   ],
+   "withPackedWords": 93,
+   "failed": [
+    {
+     "name": "broken 94",
+     "values": 11264,
+     "nonZero": 6724,
+     "mismatches": [
+      1408,
+      1408
+     ],
+     "packedWords": 0,
+     "firstMismatch": "round 1, output group 3, value 1: the executor gives 25165828, loop-emit.ts's shader 25165826, bit-emit.ts's shader 25165826"
+    }
+   ]
+  },
+  "finishedAt": "2026-10-14T14:13:18.836Z",
+  "done": true
+ }
+}

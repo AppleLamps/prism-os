@@ -15,7 +15,7 @@ import {
   state,
   stateBit,
 } from '../../src/runtime/cells.ts'
-import {type Circuit, type Wire, asWire, emitSelect} from '../../src/runtime/numeric-ui-core.ts'
+import {type Circuit, type Wire, asWire, emitCompare, emitSelect, inlineCircuit} from '../../src/runtime/numeric-ui-core.ts'
 
 // One cell of every kind, a one-hot group, a permutation, and a cell declared in a second call under a name.
 function smallTable() {
@@ -62,6 +62,70 @@ test('createCircuit declares ranges, grids and one-hot groups, and finish derive
   expect([nextSource[cells.margin], nextSource[cells.width], nextSource[cells.snap], nextSource[cells.count]]).toEqual([cells.margin, cells.width, cells.snap, nextCount])
   expect(circuit.operations[nextSource[cells.click]! - circuit.sourceSize]).toMatchObject({kind: 'affine', leftTerms: [], leftBias: 0})
   expect([...initialSource]).toEqual([12, 40, 0, 0, 2, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0])
+})
+
+test('createCircuit declares exact bits, and an operation that reads one is built as before', () => {
+  const {table, cells} = smallTable()
+  const circuit = table.createCircuit()
+  // click, snap, open, the three choice cells and the permutation's nine cells.
+  const declaredBits = circuit.exactBits.flatMap((isBit, wire) => isBit ? [wire] : [])
+  expect(declaredBits).toEqual([cells.click, cells.snap, cells.open, ...cells.choice, ...cells.order.flat()])
+  // A bit gets no grid from the declaration, so a sum that reads it has none, and emitCompare would still build a
+  // sign cascade for the sum: assumeGrid(wire, 1) is the declaration that changes that.
+  expect(circuit.grids[cells.snap]).toBe(undefined)
+  const sum = circuit.affine([[cells.width, 1], [cells.snap, 1]])
+  expect([circuit.grids[sum], circuit.exactBits[sum], circuit.ranges[sum]]).toEqual([undefined, false, {minimum: 0, maximum: 101}])
+  // The declaration narrows the range to 0..1, and a range outside 0..1 contradicts it.
+  circuit.assumeBit(cells.margin)
+  expect([circuit.ranges[cells.margin], circuit.exactBits[cells.margin]]).toEqual([{minimum: 0, maximum: 1}, true])
+  expect(() => circuit.assumeBit(circuit.affine([[cells.count, 1]], 5))).toThrow('numeric range contradicts known bounds')
+})
+
+test('a program built over exact bits has the operations and the compiled layers of the same program built over cells within 0..1', () => {
+  // The same builder code twice: once with the three bits declared with inputBit, once as plain cells within 0..1.
+  const build = (bit: () => ReturnType<typeof inputBit>) => {
+    const table = createSourceTable()
+    const cells = table.declare({enabled: bit(), flags: list(4, bit), row: input([0, 3], {grid: 1}), width: input([0, 100], {grid: 1 / 64}), limit: input([0, 100])})
+    const circuit = table.createCircuit()
+    const flag = circuit.indexRead(cells.row, cells.flags)
+    // A comparison whose operand reads a bit: with a grid on the bit, the builder would write integer bits here.
+    const scaled = circuit.roundAffine([[cells.width, 1], [cells.enabled, 8]])
+    const over = emitCompare(circuit, scaled, '>', cells.limit)
+    const output = [circuit.reglu([[cells.width, 1]], 0, [[flag, 1], [cells.enabled, 1]], -1), over, circuit.multiply(cells.enabled, cells.width), emitSelect(circuit, flag, cells.width, cells.limit)]
+    return {circuit, program: circuit.compileTensorProgram(output)}
+  }
+  const withBits = build(() => inputBit())
+  const without = build(() => input([0, 1]))
+  expect([withBits.circuit.exactBits.filter(Boolean).length, without.circuit.exactBits.filter(Boolean).length]).toEqual([5, 0])
+  expect(withBits.circuit.operations.length).toBeGreaterThan(20)
+  expect(withBits.circuit.operations).toEqual(without.circuit.operations)
+  expect(withBits.circuit.grids).toEqual(without.circuit.grids)
+  expect(withBits.program).toEqual(without.program)
+})
+
+test('inlineCircuit repeats an exact bit on the wire that the bit lands on, and builds the operations that it builds without the declaration', () => {
+  // The same inner program twice, with its `enabled` cell declared with inputBit and as a cell within 0..1, inlined
+  // into an outer circuit whose own cells aren't bits: JS for the inner program, enabled ? width : 0.
+  const build = (bit: () => ReturnType<typeof inputBit>) => {
+    const innerTable = createSourceTable()
+    const inner = innerTable.declare({enabled: bit(), width: input([0, 100], {grid: 1})})
+    const innerCircuit = innerTable.createCircuit()
+    innerCircuit.multiply(inner.enabled, inner.width)
+    const outerTable = createSourceTable()
+    const outer = outerTable.declare({flag: input([0, 1]), size: input([0, 100], {grid: 1}), other: input([0, 1])})
+    const circuit = outerTable.createCircuit()
+    const wires = inlineCircuit(circuit, innerCircuit, [outer.flag, outer.size])
+    return {circuit, outer, program: circuit.compileTensorProgram([wires.at(-1)!])}
+  }
+  const withBit = build(() => inputBit())
+  const without = build(() => input([0, 1]))
+  // Only the cell that the inner bit was mapped to is an exact bit of the outer circuit.
+  expect(withBit.circuit.exactBits.flatMap((isBit, wire) => isBit ? [wire] : [])).toEqual([withBit.outer.flag])
+  expect(without.circuit.exactBits.includes(true)).toBe(false)
+  expect(withBit.circuit.operations.length).toBeGreaterThan(0)
+  expect(withBit.circuit.operations).toEqual(without.circuit.operations)
+  expect([withBit.circuit.ranges, withBit.circuit.grids]).toEqual([without.circuit.ranges, without.circuit.grids])
+  expect(withBit.program).toEqual(without.program)
 })
 
 test('a state cell without a next value, or with two, fails while building, and so does a call out of order', () => {

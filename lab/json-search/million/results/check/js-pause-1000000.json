@@ -1,0 +1,963 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T08:27:48.444Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 2.65 3.43 4.05 }",
+  "memoryBefore": "System-wide memory free percentage: 81%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "js",
+   "--count",
+   "1000000",
+   "--js-parts",
+   "wholeText,workers",
+   "--js-pause",
+   "200",
+   "--profile",
+   "js-pause-1000000-1791966468432",
+   "--out",
+   "js-pause-1000000.json",
+   "--port",
+   "4512",
+   "--devtools-port",
+   "9512"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T08:27:58.480Z",
+    "load": "{ 2.55 3.39 4.02 }"
+   },
+   {
+    "at": "2026-10-14T08:28:08.483Z",
+    "load": "{ 2.39 3.32 3.99 }"
+   },
+   {
+    "at": "2026-10-14T08:28:18.484Z",
+    "load": "{ 2.25 3.26 3.96 }"
+   },
+   {
+    "at": "2026-10-14T08:28:28.486Z",
+    "load": "{ 2.29 3.24 3.95 }"
+   },
+   {
+    "at": "2026-10-14T08:28:38.486Z",
+    "load": "{ 2.41 3.23 3.94 }"
+   },
+   {
+    "at": "2026-10-14T08:28:48.489Z",
+    "load": "{ 2.95 3.32 3.96 }"
+   },
+   {
+    "at": "2026-10-14T08:28:58.490Z",
+    "load": "{ 3.88 3.51 4.02 }"
+   },
+   {
+    "at": "2026-10-14T08:29:08.491Z",
+    "load": "{ 3.66 3.47 4.00 }"
+   },
+   {
+    "at": "2026-10-14T08:29:18.492Z",
+    "load": "{ 4.09 3.57 4.03 }"
+   },
+   {
+    "at": "2026-10-14T08:29:28.493Z",
+    "load": "{ 4.31 3.63 4.04 }"
+   },
+   {
+    "at": "2026-10-14T08:29:38.494Z",
+    "load": "{ 4.10 3.61 4.03 }"
+   },
+   {
+    "at": "2026-10-14T08:29:48.495Z",
+    "load": "{ 3.70 3.54 4.00 }"
+   },
+   {
+    "at": "2026-10-14T08:29:58.496Z",
+    "load": "{ 3.60 3.52 3.99 }"
+   },
+   {
+    "at": "2026-10-14T08:30:08.497Z",
+    "load": "{ 3.43 3.49 3.97 }"
+   },
+   {
+    "at": "2026-10-14T08:30:18.499Z",
+    "load": "{ 3.72 3.56 3.99 }"
+   },
+   {
+    "at": "2026-10-14T08:30:28.500Z",
+    "load": "{ 3.54 3.52 3.97 }"
+   },
+   {
+    "at": "2026-10-14T08:30:38.501Z",
+    "load": "{ 3.23 3.45 3.94 }"
+   },
+   {
+    "at": "2026-10-14T08:30:48.502Z",
+    "load": "{ 3.03 3.40 3.92 }"
+   },
+   {
+    "at": "2026-10-14T08:30:58.503Z",
+    "load": "{ 3.75 3.54 3.96 }"
+   },
+   {
+    "at": "2026-10-14T08:31:08.504Z",
+    "load": "{ 3.54 3.51 3.94 }"
+   },
+   {
+    "at": "2026-10-14T08:31:18.505Z",
+    "load": "{ 3.15 3.42 3.91 }"
+   },
+   {
+    "at": "2026-10-14T08:31:28.506Z",
+    "load": "{ 4.00 3.59 3.96 }"
+   },
+   {
+    "at": "2026-10-14T08:31:38.507Z",
+    "load": "{ 4.84 3.78 4.02 }"
+   },
+   {
+    "at": "2026-10-14T08:31:48.509Z",
+    "load": "{ 4.09 3.66 3.98 }"
+   },
+   {
+    "at": "2026-10-14T08:31:58.510Z",
+    "load": "{ 3.61 3.57 3.94 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9512",
+   "--user-data-dir=js-pause-1000000-1791966468432",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900",
+   "--js-flags=--expose-gc"
+  ],
+  "chromePid": 11068,
+  "browser": "Chrome/155.0.8059.80",
+  "finishedAt": "2026-10-14T08:32:04.099Z",
+  "loadAfter": "{ 3.48 3.54 3.93 }",
+  "memoryAfter": "System-wide memory free percentage: 78%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T08:27:48.877Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "js",
+   "count": 1000000,
+   "patterns": [
+    "error",
+    "[a-z]+Id",
+    "[a-z0-9.]+@[a-z.]+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "([a-z]+)+x",
+    "connection reset"
+   ],
+   "capacities": [
+    8,
+    16,
+    32
+   ],
+   "shaderSalt": 138396867,
+   "pieceDocuments": 50000,
+   "engines": [
+    "f32-kernel",
+    "bytes-boundaries",
+    "bytes",
+    "bytes-scope",
+    "packed",
+    "packed-scope",
+    "bytes-bits",
+    "bytes-has",
+    "bytes-scope-has",
+    "packed-scope-has"
+   ],
+   "f32": true,
+   "pausesMs": [
+    200
+   ],
+   "longPausesMs": [
+    1000
+   ],
+   "longPauseEngines": [
+    "f32-kernel",
+    "bytes",
+    "bytes-scope-has"
+   ],
+   "pauseSamples": 9,
+   "restMs": 0,
+   "warmPauses": [],
+   "minimumSamples": 15,
+   "sampleMs": 1000,
+   "layout": "fixed",
+   "workers": 8,
+   "scopeBits": true,
+   "limits": "needed",
+   "keepTexts": false,
+   "regExpFlags": "",
+   "jsSamples": 9,
+   "jsPauseMs": 200,
+   "filterWorkers": 8,
+   "jsParts": [
+    "wholeText",
+    "workers"
+   ]
+  },
+  "memory": {
+   "the texts": {
+    "javaScriptBytes": 335161390,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 334,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 335068826,
+    "processes": {
+     "processes": [
+      {
+       "pid": 11068,
+       "type": "browser",
+       "residentBytes": 427540480,
+       "footprintBytes": 242862024,
+       "footprintPeakBytes": 242862024
+      },
+      {
+       "pid": 11074,
+       "type": "gpu-process",
+       "residentBytes": 159367168,
+       "footprintBytes": 81806632,
+       "footprintPeakBytes": 466027840
+      },
+      {
+       "pid": 11078,
+       "type": "renderer",
+       "residentBytes": 201211904,
+       "footprintBytes": 69027400,
+       "footprintPeakBytes": 69043784
+      },
+      {
+       "pid": 11081,
+       "type": "renderer",
+       "residentBytes": 124223488,
+       "footprintBytes": 28951848,
+       "footprintPeakBytes": 30082320
+      },
+      {
+       "pid": 11084,
+       "type": "renderer",
+       "residentBytes": 605274112,
+       "footprintBytes": 471304064,
+       "footprintPeakBytes": 491341696
+      },
+      {
+       "pid": 11086,
+       "type": "renderer",
+       "residentBytes": 124485632,
+       "footprintBytes": 31262112,
+       "footprintPeakBytes": 32081312
+      },
+      {
+       "pid": 11108,
+       "type": "renderer",
+       "residentBytes": 107741184,
+       "footprintBytes": 27051256,
+       "footprintPeakBytes": 28755192
+      }
+     ],
+     "availableGigabytes": 18.4,
+     "swap": "total = 3072.00M  used = 2024.06M  free = 1047.94M  (encrypted)"
+    }
+   },
+   "the texts in the page and in the workers": {
+    "javaScriptBytes": 677389724,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 43,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 43,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 43,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 43,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 43,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 43,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 43,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 43,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "DedicatedWorkerGlobalScope"
+      ]
+     },
+     {
+      "megabytes": 335,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 336227301,
+    "processes": {
+     "processes": [
+      {
+       "pid": 11068,
+       "type": "browser",
+       "residentBytes": 636026880,
+       "footprintBytes": 123013352,
+       "footprintPeakBytes": 439650536
+      },
+      {
+       "pid": 11074,
+       "type": "gpu-process",
+       "residentBytes": 161808384,
+       "footprintBytes": 54068520,
+       "footprintPeakBytes": 466027840
+      },
+      {
+       "pid": 11078,
+       "type": "renderer",
+       "residentBytes": 197230592,
+       "footprintBytes": 56362616,
+       "footprintPeakBytes": 74581600
+      },
+      {
+       "pid": 11081,
+       "type": "renderer",
+       "residentBytes": 130252800,
+       "footprintBytes": 30442888,
+       "footprintPeakBytes": 30475680
+      },
+      {
+       "pid": 11084,
+       "type": "renderer",
+       "residentBytes": 974307328,
+       "footprintBytes": 807833128,
+       "footprintPeakBytes": 1478938248
+      },
+      {
+       "pid": 11108,
+       "type": "renderer",
+       "residentBytes": 109494272,
+       "footprintBytes": 27542776,
+       "footprintPeakBytes": 28755192
+      }
+     ],
+     "availableGigabytes": 16.8,
+     "swap": "total = 3072.00M  used = 2024.06M  free = 1047.94M  (encrypted)"
+    }
+   }
+  },
+  "loadAtStart": 2.65,
+  "js": {
+   "load": [
+    2.65,
+    2.95,
+    3.48
+   ],
+   "generateMs": 2972.12,
+   "characters": 299197444,
+   "regExpFlags": "",
+   "wholeText": [
+    {
+     "pattern": "error",
+     "documentsWithMatch": 105133,
+     "ms": {
+      "count": 9,
+      "median": 183.72,
+      "p10": 181.925,
+      "p90": 187.39,
+      "min": 181.925,
+      "max": 187.39
+     },
+     "times": [
+      184.25,
+      183.22,
+      186.92,
+      187.39,
+      184.83,
+      183.62,
+      181.925,
+      183.72,
+      183.46
+     ],
+     "afterPause": {
+      "pauseMs": 200,
+      "ms": {
+       "count": 9,
+       "median": 186.095,
+       "p10": 183.32,
+       "p90": 188.47,
+       "min": 183.32,
+       "max": 188.47
+      },
+      "times": [
+       186.655,
+       187.7,
+       188.47,
+       186.095,
+       183.32,
+       187.115,
+       185.78,
+       185.12,
+       185.555
+      ]
+     }
+    },
+    {
+     "pattern": "[a-z]+Id",
+     "documentsWithMatch": 238302,
+     "ms": {
+      "count": 9,
+      "median": 196.625,
+      "p10": 195.51,
+      "p90": 198.75,
+      "min": 195.51,
+      "max": 198.75
+     },
+     "times": [
+      196.33,
+      197.035,
+      196.85,
+      195.665,
+      195.51,
+      196.91,
+      196.625,
+      196.05,
+      198.75
+     ],
+     "afterPause": {
+      "pauseMs": 200,
+      "ms": {
+       "count": 9,
+       "median": 205.05,
+       "p10": 201.75,
+       "p90": 219.81,
+       "min": 201.75,
+       "max": 219.81
+      },
+      "times": [
+       201.75,
+       205.05,
+       204.215,
+       204.55,
+       203.63,
+       206.85,
+       215.125,
+       219.81,
+       216.305
+      ]
+     }
+    },
+    {
+     "pattern": "[a-z0-9.]+@[a-z.]+",
+     "documentsWithMatch": 143808,
+     "ms": {
+      "count": 9,
+      "median": 308.68,
+      "p10": 295.51,
+      "p90": 315.815,
+      "min": 295.51,
+      "max": 315.815
+     },
+     "times": [
+      303.855,
+      314.69,
+      295.51,
+      315.815,
+      308.68,
+      304.74,
+      308.695,
+      305.965,
+      311.365
+     ],
+     "afterPause": {
+      "pauseMs": 200,
+      "ms": {
+       "count": 9,
+       "median": 315.495,
+       "p10": 310.375,
+       "p90": 318.325,
+       "min": 310.375,
+       "max": 318.325
+      },
+      "times": [
+       315.66,
+       315.495,
+       316.655,
+       314.18,
+       310.375,
+       318.325,
+       317.16,
+       314.425,
+       314.04
+      ]
+     }
+    },
+    {
+     "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+     "documentsWithMatch": 275094,
+     "ms": {
+      "count": 9,
+      "median": 58.005,
+      "p10": 57.58,
+      "p90": 58.34,
+      "min": 57.58,
+      "max": 58.34
+     },
+     "times": [
+      57.92,
+      57.72,
+      58.265,
+      58.1,
+      57.58,
+      58.34,
+      57.94,
+      58.285,
+      58.005
+     ],
+     "afterPause": {
+      "pauseMs": 200,
+      "ms": {
+       "count": 9,
+       "median": 77.815,
+       "p10": 65.145,
+       "p90": 81.635,
+       "min": 65.145,
+       "max": 81.635
+      },
+      "times": [
+       65.145,
+       81.61,
+       81.46,
+       77.47,
+       81.43,
+       75.445,
+       81.635,
+       70.86,
+       77.815
+      ]
+     }
+    },
+    {
+     "pattern": "([a-z]+)+x",
+     "documentsWithMatch": 474433,
+     "ms": {
+      "count": 9,
+      "median": 14455.885,
+      "p10": 13971.705,
+      "p90": 14660.71,
+      "min": 13971.705,
+      "max": 14660.71
+     },
+     "times": [
+      14546.325,
+      14448.475,
+      14426.58,
+      14455.885,
+      14460.2,
+      14660.71,
+      14658.585,
+      14209.435,
+      13971.705
+     ]
+    },
+    {
+     "pattern": "connection reset",
+     "documentsWithMatch": 14271,
+     "ms": {
+      "count": 9,
+      "median": 72.23,
+      "p10": 71.78,
+      "p90": 72.54,
+      "min": 71.78,
+      "max": 72.54
+     },
+     "times": [
+      72.23,
+      71.985,
+      72.1,
+      72.535,
+      72.355,
+      71.78,
+      72.54,
+      72.48,
+      72.165
+     ],
+     "afterPause": {
+      "pauseMs": 200,
+      "ms": {
+       "count": 9,
+       "median": 91.22,
+       "p10": 74.465,
+       "p90": 94.505,
+       "min": 74.465,
+       "max": 94.505
+      },
+      "times": [
+       91.49,
+       91.22,
+       93.955,
+       94.505,
+       93.24,
+       74.465,
+       83.07,
+       88.96,
+       86.61
+      ]
+     }
+    }
+   ],
+   "workers": {
+    "workers": 8,
+    "writingTheDocumentsMs": 450.09,
+    "patterns": [
+     {
+      "pattern": "error",
+      "documentsWithMatch": 105133,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 24.22,
+       "p10": 24.045,
+       "p90": 24.795,
+       "min": 24.045,
+       "max": 24.795
+      },
+      "times": [
+       24.795,
+       24.045,
+       24.12,
+       24.42,
+       24.5,
+       24.2,
+       24.22,
+       24.085,
+       24.305
+      ],
+      "afterPause": {
+       "pauseMs": 200,
+       "ms": {
+        "count": 9,
+        "median": 40.04,
+        "p10": 27.52,
+        "p90": 44.305,
+        "min": 27.52,
+        "max": 44.305
+       },
+       "times": [
+        27.52,
+        28.085,
+        28.825,
+        40.04,
+        44.305,
+        40.175,
+        44.035,
+        43.25,
+        38.6
+       ]
+      }
+     },
+     {
+      "pattern": "[a-z]+Id",
+      "documentsWithMatch": 238302,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 26.525,
+       "p10": 26.39,
+       "p90": 26.915,
+       "min": 26.39,
+       "max": 26.915
+      },
+      "times": [
+       26.915,
+       26.49,
+       26.525,
+       26.42,
+       26.79,
+       26.82,
+       26.62,
+       26.46,
+       26.39
+      ],
+      "afterPause": {
+       "pauseMs": 200,
+       "ms": {
+        "count": 9,
+        "median": 40.8,
+        "p10": 32.62,
+        "p90": 42.955,
+        "min": 32.62,
+        "max": 42.955
+       },
+       "times": [
+        36.705,
+        33.12,
+        40.8,
+        42.18,
+        42.435,
+        39.415,
+        32.62,
+        42.955,
+        41.645
+       ]
+      }
+     },
+     {
+      "pattern": "[a-z0-9.]+@[a-z.]+",
+      "documentsWithMatch": 143808,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 43.98,
+       "p10": 43.205,
+       "p90": 44.41,
+       "min": 43.205,
+       "max": 44.41
+      },
+      "times": [
+       43.725,
+       43.625,
+       43.98,
+       44.22,
+       44.065,
+       43.205,
+       43.62,
+       44.21,
+       44.41
+      ],
+      "afterPause": {
+       "pauseMs": 200,
+       "ms": {
+        "count": 9,
+        "median": 59.07,
+        "p10": 45.195,
+        "p90": 64,
+        "min": 45.195,
+        "max": 64
+       },
+       "times": [
+        57.375,
+        61.56,
+        59.07,
+        45.195,
+        58.365,
+        64,
+        61.765,
+        60.265,
+        58.48
+       ]
+      }
+     },
+     {
+      "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+      "documentsWithMatch": 275094,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 8.385,
+       "p10": 8.26,
+       "p90": 8.76,
+       "min": 8.26,
+       "max": 8.76
+      },
+      "times": [
+       8.76,
+       8.56,
+       8.5,
+       8.635,
+       8.37,
+       8.335,
+       8.385,
+       8.26,
+       8.36
+      ],
+      "afterPause": {
+       "pauseMs": 200,
+       "ms": {
+        "count": 9,
+        "median": 15.97,
+        "p10": 11.845,
+        "p90": 21.35,
+        "min": 11.845,
+        "max": 21.35
+       },
+       "times": [
+        12.465,
+        19.505,
+        15.97,
+        17.34,
+        21.35,
+        15.765,
+        11.845,
+        12.8,
+        16.315
+       ]
+      }
+     },
+     {
+      "pattern": "([a-z]+)+x",
+      "documentsWithMatch": 474433,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 1803.635,
+       "p10": 1756.465,
+       "p90": 1826.705,
+       "min": 1756.465,
+       "max": 1826.705
+      },
+      "times": [
+       1768.84,
+       1756.465,
+       1790.335,
+       1808.05,
+       1804.11,
+       1803.635,
+       1802.575,
+       1815.61,
+       1826.705
+      ]
+     },
+     {
+      "pattern": "connection reset",
+      "documentsWithMatch": 14271,
+      "documentsThatDifferFromOneThread": 0,
+      "ms": {
+       "count": 9,
+       "median": 10.265,
+       "p10": 9.89,
+       "p90": 10.595,
+       "min": 9.89,
+       "max": 10.595
+      },
+      "times": [
+       10.17,
+       10.31,
+       10.175,
+       9.89,
+       10.07,
+       10.595,
+       10.42,
+       10.28,
+       10.265
+      ],
+      "afterPause": {
+       "pauseMs": 200,
+       "ms": {
+        "count": 9,
+        "median": 20.165,
+        "p10": 11.025,
+        "p90": 22.54,
+        "min": 11.025,
+        "max": 22.54
+       },
+       "times": [
+        11.025,
+        11.65,
+        20.635,
+        18.7,
+        19.565,
+        20.165,
+        22.495,
+        21.34,
+        22.54
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "loadAtEnd": 3.48,
+  "finishedAt": "2026-10-14T08:32:04.067Z",
+  "logLines": [
+   "19497.225 ms: memory, the texts: {\"javaScriptBytes\":335161390,\"javaScriptBreakdown\":[{\"megabytes\":334,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":335068826,\"processes\":{\"processes\":[{\"pid\":11068,\"type\":\"browser\",\"residentBytes\":427540480,\"footprintBytes\":242862024,\"footprintPeakBytes\":242862024},{\"pid\":11074,\"type\":\"gpu-process\",\"residentBytes\":159367168,\"footprintBytes\":81806632,\"footprintPeakBytes\":466027840},{\"pid\":11078,\"type\":\"renderer\",\"residentBytes\":201211904,\"footprintBytes\":69027400,\"footprintPeakBytes\":69043784},{\"pid\":11081,\"type\":\"renderer\",\"residentBytes\":124223488,\"footprintBytes\":28951848,\"footprintPeakBytes\":30082320},{\"pid\":11084,\"type\":\"renderer\",\"residentBytes\":605274112,\"footprintBytes\":471304064,\"footprintPeakBytes\":491341696},{\"pid\":11086,\"type\":\"renderer\",\"residentBytes\":124485632,\"footprintBytes\":31262112,\"footprintPeakBytes\":32081312},{\"pid\":11108,\"type\":\"renderer\",\"residentBytes\":107741184,\"footprintBytes\":27051256,\"footprintPeakBytes\":28755192}],\"availableGigabytes\":18.4,\"swap\":\"total = 3072.00M  used = 2024.06M  free = 1047.94M  (encrypted)\"}}",
+   "24856.52 ms: whole text, error: 105133 documents, 183.72 ms",
+   "30536.72 ms: whole text, [a-z]+Id: 238302 documents, 196.625 ms",
+   "38288.18 ms: whole text, [a-z0-9.]+@[a-z.]+: 143808 documents, 308.68 ms",
+   "41394.715 ms: whole text, \\d\\d\\d\\d-\\d\\d-\\d\\d: 275094 documents, 58.005 ms",
+   "185677.61 ms: whole text, ([a-z]+)+x: 474433 documents, 14455.885 ms",
+   "189024.655 ms: whole text, connection reset: 14271 documents, 72.23 ms",
+   "192079.615 ms: 8 workers, error: 105133 documents, 24.22 ms, 0 differ",
+   "194742.89 ms: 8 workers, [a-z]+Id: 238302 documents, 26.525 ms, 0 differ",
+   "197874.085 ms: 8 workers, [a-z0-9.]+@[a-z.]+: 143808 documents, 43.98 ms, 0 differ",
+   "199983.72 ms: 8 workers, \\d\\d\\d\\d-\\d\\d-\\d\\d: 275094 documents, 8.385 ms, 0 differ",
+   "233650.615 ms: 8 workers, ([a-z]+)+x: 474433 documents, 1803.635 ms, 0 differ",
+   "235821.01 ms: 8 workers, connection reset: 14271 documents, 10.265 ms, 0 differ",
+   "255243 ms: memory, the texts in the page and in the workers: {\"javaScriptBytes\":677389724,\"javaScriptBreakdown\":[{\"megabytes\":43,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":43,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":43,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":43,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":43,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":43,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":43,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":43,\"types\":[\"JavaScript\"],\"scopes\":[\"DedicatedWorkerGlobalScope\"]},{\"megabytes\":335,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":336227301,\"processes\":{\"processes\":[{\"pid\":11068,\"type\":\"browser\",\"residentBytes\":636026880,\"footprintBytes\":123013352,\"footprintPeakBytes\":439650536},{\"pid\":11074,\"type\":\"gpu-process\",\"residentBytes\":161808384,\"footprintBytes\":54068520,\"footprintPeakBytes\":466027840},{\"pid\":11078,\"type\":\"renderer\",\"residentBytes\":197230592,\"footprintBytes\":56362616,\"footprintPeakBytes\":74581600},{\"pid\":11081,\"type\":\"renderer\",\"residentBytes\":130252800,\"footprintBytes\":30442888,\"footprintPeakBytes\":30475680},{\"pid\":11084,\"type\":\"renderer\",\"residentBytes\":974307328,\"footprintBytes\":807833128,\"footprintPeakBytes\":1478938248},{\"pid\":11108,\"type\":\"renderer\",\"residentBytes\":109494272,\"footprintBytes\":27542776,\"footprintPeakBytes\":28755192}],\"availableGigabytes\":16.8,\"swap\":\"total = 3072.00M  used = 2024.06M  free = 1047.94M  (encrypted)\"}}"
+  ],
+  "done": true
+ }
+}
