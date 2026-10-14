@@ -104,27 +104,31 @@ export type CellColors = {match: number, plain: number, waiting: number}
 // their match count, and the others have the color `rest`, e.g. the waiting color while a search on the CPU hasn't
 // reached them. `matchCounts` holds a count for each of the first `searched` documents.
 //
-// A document with a match also gets the gap around its cell, e.g. 4 by 4 pixels instead of 2 by 2, so that one match
-// among 100,000 documents can be seen. The gap belongs to no other cell, so every other document's cell stays as it
-// is, and where neighbors match their marks join.
+// A document with a match gets a larger mark than its cell, so that one match among 100,000 documents can be seen:
+// the cell and the gap around it, e.g. 4 by 4 pixels instead of 2 by 2, and at most twice the cell's side, which is
+// the cell and the gap to its right and below it where a cell is 1 pixel. Either way the mark is about 2 CSS px wide
+// for 100,000 documents. The gap belongs to no other cell, so every other document's cell stays as it is, and where
+// neighbors match their marks join.
 //
-// One call writes e.g. 900,000 pixels for 100,000 cells of 2 by 2 pixels, in under 1 ms in Chrome once the JavaScript
+// One call writes e.g. 900,000 pixels for 100,000 cells of 2 by 2 pixels, in about 1 ms in Chrome once the JavaScript
 // engine has compiled the loop. The colors are read before the loop and the counts are always an array, since the
 // engine left the compiled loop when a color was first read inside it, or when the counts were null for "no search".
 export function paintCells(pixels: Uint32Array, layout: MapLayout, loaded: number, searched: number, matchCounts: Float32Array, colors: CellColors, rest: number) {
   const {cell, pitch, width, height, columns} = layout
   const {match, plain} = colors
-  const gap = pitch - cell
-  // The last paint's marks, which may have reached into gaps that this paint leaves empty.
+  // A mark's side, and how far it starts before its cell.
+  const mark = Math.min(cell + 2 * (pitch - cell), 2 * cell)
+  const before = (mark - cell) >> 1
+  // The last paint's marks, which reached into gaps that this paint may leave empty.
   pixels.fill(0)
   for (let index = 0, column = 0, row = 0; index < loaded; index++) {
     const x = column * pitch
     const y = row * pitch
     if (index < searched && matchCounts[index]! > 0) {
-      const right = Math.min(width, x + cell + gap)
-      const bottom = Math.min(height, y + cell + gap)
-      for (let pixelY = Math.max(0, y - gap); pixelY < bottom; pixelY++) {
-        for (let pixelX = Math.max(0, x - gap), offset = pixelY * width + pixelX; pixelX < right; pixelX++, offset++) pixels[offset] = match
+      const right = Math.min(width, x - before + mark)
+      const bottom = Math.min(height, y - before + mark)
+      for (let pixelY = Math.max(0, y - before); pixelY < bottom; pixelY++) {
+        for (let pixelX = Math.max(0, x - before), offset = pixelY * width + pixelX; pixelX < right; pixelX++, offset++) pixels[offset] = match
       }
     } else {
       const color = index < searched ? plain : rest

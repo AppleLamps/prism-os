@@ -156,6 +156,18 @@ describe('the map of every document', () => {
       expect(every.map(colorOf)).toEqual([11, 11, 11, 11, 11, 11, 11, 11, 11])
       expect([painted(11), painted(22), cornerOf(4)]).toEqual([9 * layout.cell * layout.cell, 0, 0])
     }
+    // The smallest cell, 1 pixel with a gap of 1, as for 100,000 documents at one device pixel per CSS px: a mark is
+    // at most twice the cell's side, so it is the cell and the gap to its right and below it, 2 by 2 pixels.
+    const smallest: MapLayout = {scale: 1, documentCount: 9, width: 5, height: 5, pitch: 2, cell: 1, columns: 3, rows: 3}
+    const pixels = new Uint32Array(25)
+    paintCells(pixels, smallest, 9, 9, Float32Array.from([0, 0, 0, 0, 1, 0, 0, 0, 3]), colors, colors.waiting)
+    expect([...pixels]).toEqual([
+      11, 0, 11, 0, 11,
+      0, 0, 0, 0, 0,
+      11, 0, 22, 22, 11,
+      0, 0, 22, 22, 0,
+      11, 0, 11, 0, 22,
+    ])
   })
 })
 
