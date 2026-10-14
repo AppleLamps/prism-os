@@ -13,13 +13,18 @@
 //   inside ±2^24, e.g. input([0, 16], {grid: 1}).
 // - An operation is whole when its operands are whole, its weights and biases are whole numbers, and the largest value
 //   that any product or partial sum can take stays within 2^24. FP32 then computes every one of them without rounding,
-//   in any order, so i32 arithmetic gives the same value. A boolean atom is a bit. An index read is whole when every
-//   candidate that its index can reach is whole. An operation that the circuit declares on a grid with a small range
-//   is whole too, e.g. the bit that emitCompare returns from a sign cascade.
+//   in any order, so i32 arithmetic gives the same value. Each weight is itself within 2^24, since it is written as
+//   an i32 literal. A boolean atom is a bit. An index read is whole when every candidate that its index can reach is
+//   whole. An operation that the circuit declares on a grid with a small range is whole too, e.g. the bit that
+//   emitCompare returns from a sign cascade.
 // - A register or a field is held as an integer when the cells bound to it are declared whole and every stage that
 //   writes it writes a proven whole number, a bit for a register of bits. The range of a cell that is bound to a
 //   register comes from the cell's declaration, e.g. a match count within 0..512: the writer proves that every write is
 //   a whole number, and doesn't prove that a counter stays below its declared maximum.
+// - A register or a field that isn't proven is held as f32, and then its cell's declared grid isn't known to hold,
+//   e.g. a level declared a whole number into which a stage writes level + 0.25. The circuit infers the grid of a sum
+//   or a product from its operands' grids, so the circuit's grid for an operation is taken only when it holds for
+//   every operand: 2 × level is no whole number there, whatever the circuit says.
 //
 // The rules, each with why the integer statement gives the f32 statement's value:
 // - Sum. An affine operation over whole numbers is an i32 sum, e.g. `1i - i32(b) + 2i * i32(c)`. JS: !bit, as 1 - bit,
@@ -53,7 +58,9 @@
 //   `reached & (notReach ^ 255u)`. "None of these bits is 1" over such a word is `word == 0u`. A list of gated reads
 //   with the same base is the packed word itself, and a list of shared cells is packed into a word once per document.
 //   Any other list of bits is written into its lanes one by one, `b0 | (b1 << 1u) | ...`, as loop-emit.ts writes a
-//   field of bits.
+//   field of bits. Where the order of a list is free, i.e. for the values that must all be 0 in one gate, the writer
+//   takes the order of the stored lanes that the values are computed from, so a gate's reads can be built in any
+//   order of the states. A word holds 32 bits, and a longer list is taken 32 bits at a time.
 //
 // Statements are written when a later statement or an output first needs them, so an operation that only feeds a packed
 // read, a comparison or a word operation gets no statement of its own.
@@ -295,29 +302,53 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
   const bufferName = (buffer: number) => buffer === 0 ? 'instance_sources' : `instance_inputs_${buffer}`
   const baseName = (buffer: number) => buffer === 0 ? 'source_base' : `input_base_${buffer}`
 
-  // Registers of bits that the same stages write can be the lanes of one u32 word, 32 a word, in the registers' order,
-  // e.g. the 8 reached[s] bits that the forward step writes, so that one word operation reads or writes all of them.
-  // A word only pays when the stages read it as a word. So the stages are written with every such word first, and a
-  // word of which half the registers or more were read one by one, each read a shift and an AND, is given up: its
-  // registers are variables of their own again, and the stages are written once more.
-  const writersOf = (register: number) => loop.stages.flatMap((stage, index) => stage.outputs.some(({write}) => write.kind === 'register' && write.register === register) ? [index] : []).join(',')
-  const registersByWriters = new Map<string, number[]>()
-  registerStorage.forEach((storage, register) => {
-    if (storage !== 'bit') return
-    const group = registersByWriters.get(writersOf(register))
-    if (group === undefined) registersByWriters.set(writersOf(register), [register])
-    else group.push(register)
-  })
-  let registerWords: number[][] = []
-  for (const group of registersByWriters.values()) for (let from = 0; from < group.length; from += 32) registerWords.push(group.slice(from, from + 32))
-  registerWords = registerWords.filter(registers => registers.length > 1)
-  let written = writeStages(registerWords)
-  for (;;) {
-    const kept = registerWords.filter((registers, word) => written.laneReads[word]! * 2 < registers.length)
-    if (kept.length === registerWords.length) break
-    registerWords = kept
-    written = writeStages(registerWords)
+  // Registers of bits can be the lanes of one u32 word, 32 a word, in the registers' order, e.g. the 8 reached[s] bits
+  // that the forward step writes, so that one word operation reads or writes all of them. A word only pays when the
+  // stages read it as a word, and a loop program doesn't say which registers it uses as one list. So the stages are
+  // written with a first choice of words, and a word of which half the registers or more were read one by one, each
+  // read a shift and an AND, is replaced and the stages are written again:
+  // - first, the registers that the same stages write are one word
+  // - then, of those, the registers that each stage writes with one kind of operation, e.g. 8 switches that a stage
+  //   writes with gates, next to 8 "was on" bits that the same stage writes with negations
+  // - then the registers are variables of their own.
+  // What the stages write into a register: per stage, 'written', or with `form` the operation's kind and how many
+  // of its weights are positive, e.g. 'reglu 1 3' for on && !blocked && !stuck.
+  const writesOf = (register: number, form: boolean) => loop.stages.map((stage, stageIndex) => {
+    const output = stage.outputs.find(({write}) => write.kind === 'register' && write.register === register)
+    if (output === undefined) return ''
+    if (!form) return 'written'
+    const row = stageProofs[stageIndex]!.rows[positionsOfWires(stage.program, [output.wire])[0]! - stage.program.sourceSize]!
+    const terms = row.kind === 'index' ? row.indexTerms : row.kind === 'reglu' ? [...row.gateTerms, ...row.terms] : row.terms
+    return `${row.kind} ${terms.filter(term => term.weight > 0).length} ${terms.length}`
+  }).join(',')
+  // The registers with the same key, 32 a word, without a register that is alone.
+  const wordsBy = (registers: readonly number[], keyOf: (register: number) => string) => {
+    const groups = new Map<string, number[]>()
+    for (const register of registers) {
+      const group = groups.get(keyOf(register))
+      if (group === undefined) groups.set(keyOf(register), [register])
+      else group.push(register)
+    }
+    const words: number[][] = []
+    for (const group of groups.values()) for (let from = 0; from < group.length; from += 32) words.push(group.slice(from, from + 32))
+    return words.filter(word => word.length > 1)
   }
+  // `split` marks a word of the second choice.
+  let wordChoices = wordsBy(registerStorage.flatMap((storage, register) => storage === 'bit' ? [register] : []), register => writesOf(register, false)).map(registers => ({registers, split: false}))
+  let written = writeStages(wordChoices.map(word => word.registers))
+  for (;;) {
+    const {laneReads} = written
+    const pays = (word: {registers: number[]}, index: number) => laneReads[index]! * 2 < word.registers.length
+    if (wordChoices.every(pays)) break
+    wordChoices = wordChoices.flatMap((word, index) => {
+      if (pays(word, index)) return [word]
+      if (word.split) return []
+      // A word whose registers are all written by one kind of operation has no smaller words to try.
+      return wordsBy(word.registers, register => writesOf(register, true)).filter(registers => registers.length < word.registers.length).map(registers => ({registers, split: true}))
+    })
+    written = writeStages(wordChoices.map(word => word.registers))
+  }
+  const registerWords = wordChoices.map(word => word.registers)
   const {hoisted, packedCells, rules, rowCounts, stageLines} = written
   const laneOfRegister = (register: number) => {
     const word = registerWords.findIndex(registers => registers.includes(register))
@@ -695,20 +726,63 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
         | {kind: 'not', positions: readonly number[], operand: WordSlot}
         | {kind: 'gate', positions: readonly number[], all: WordSlot[], none: WordSlot[]}
       type WordSlot = WordPlan | {kind: 'lanes', positions: readonly number[]}
+      // The stored word and the lane of a source cell that is one bit of a field's word or of a word of registers.
+      function storedLane(position: number) {
+        const binding = stage.bindings.get(position as Wire)
+        if (binding?.kind === 'register') {
+          const lane = laneOf.get(binding.register)
+          return lane === undefined ? undefined : {key: `r${lane.word}`, lane: lane.lane, word: () => `rw${lane.word}`, width: words[lane.word]!.length}
+        }
+        const {field} = binding?.kind === 'field' ? binding : {field: -1}
+        if (binding?.kind !== 'field' || !fieldWords[field]! || fieldStorage[field] !== 'bit') return undefined
+        return {key: `f${field}`, lane: binding.component, word: () => fieldWord(field), width: loop.fields[field]!.width}
+      }
+      // The stored lane that a bit is computed from: its own, or that of the first operand that has one, through
+      // negations, gates of the Gate rule and the gating bits of gated reads. E.g. reached[3]'s lane for
+      // continuing[3] = reached[3] && !notReach[3], and for a read that is gated by continuing[3].
+      const origins = new Map<number, {key: string, lane: number} | undefined>()
+      function originOf(position: number): {key: string, lane: number} | undefined {
+        if (origins.has(position)) return origins.get(position)
+        const row = rowAt(position)
+        let operands: readonly number[] = []
+        if (row !== undefined) {
+          const negated = negatedBit(row)
+          const gate = row.kind === 'reglu' ? conjunction(row) : undefined
+          if (negated !== undefined) operands = [negated]
+          else if (gate !== undefined) operands = [...gate.all, ...gate.none]
+          else if (row.kind === 'index') operands = gatedRead(row)?.gating ?? []
+        }
+        let origin: {key: string, lane: number} | undefined = row === undefined ? storedLane(position) : undefined
+        for (let index = 0; index < operands.length && origin === undefined; index++) origin = originOf(operands[index]!)
+        origins.set(position, origin)
+        return origin
+      }
+      // A list of bits whose order is free, e.g. the values that must all be 0 in a gate, as lists of at most 32 bits
+      // that can each be one word: the bits that are computed from one stored word, in the order of its lanes, and the
+      // other bits in the order given. So a gate's reads can be built in any order of the states, e.g. state 7 first,
+      // and their gating bits are still the stored word.
+      function wordLists<Item>(items: readonly Item[], positionOf: (item: Item) => number): Item[][] {
+        const byWord = new Map<string, {item: Item, lane: number}[]>()
+        for (const item of items) {
+          const origin = originOf(positionOf(item))
+          const key = origin?.key ?? ''
+          const entries = byWord.get(key)
+          if (entries === undefined) byWord.set(key, [{item, lane: origin?.lane ?? 0}])
+          else entries.push({item, lane: origin?.lane ?? 0})
+        }
+        const lists: Item[][] = []
+        for (const entries of byWord.values()) {
+          // The sort keeps the given order of two bits from one lane, and of the bits without a stored word.
+          entries.sort((left, right) => left.lane - right.lane)
+          for (let from = 0; from < entries.length; from += 32) lists.push(entries.slice(from, from + 32).map(entry => entry.item))
+        }
+        return lists
+      }
       function wordPlan(positions: readonly number[]): WordPlan | undefined {
         invariant(positions.length <= 32, 'a word holds at most 32 bits')
         if (positions.length < 2 || !positions.every(position => proofs[position] !== undefined && isBit(proofs[position]))) return undefined
         const slot = (operands: readonly number[]): WordSlot => wordPlan(operands) ?? {kind: 'lanes', positions: operands}
-        const lanes = positions.map(position => {
-          const binding = stage.bindings.get(position as Wire)
-          if (binding?.kind === 'register') {
-            const lane = laneOf.get(binding.register)
-            return lane === undefined ? undefined : {key: `r${lane.word}`, lane: lane.lane, word: () => `rw${lane.word}`, width: words[lane.word]!.length}
-          }
-          const {field} = binding?.kind === 'field' ? binding : {field: -1}
-          if (binding?.kind !== 'field' || !fieldWords[field]! || fieldStorage[field] !== 'bit') return undefined
-          return {key: `f${field}`, lane: binding.component, word: () => fieldWord(field), width: loop.fields[field]!.width}
-        })
+        const lanes = positions.map(storedLane)
         const first = lanes[0]
         if (first !== undefined && lanes.every((lane, index) => lane?.key === first.key && lane.lane === first.lane + index)) return {kind: 'stored', positions, word: first.word, first: first.lane, width: first.width}
         if (positions.every(position => position < sourceSize && !stage.bindings.has(position as Wire))) return {kind: 'shared', positions}
@@ -725,11 +799,12 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
         // statement each.
         if (!gates.every(gate => gate.all.length === shape.all.length && gate.none.length === shape.none.length && gate.none.every(operand => zeroTest(operand) === 'bit' || zeroTest(operand) === 'read'))) return undefined
         const none = shape.none.map((_, index) => slot(gates.map(gate => gate.none[index]!)))
-        // Gated reads among the values that must be 0 are taken as lanes only when they are one packed word that needs
-        // no open bit written lane by lane. Otherwise each gate keeps its own reads, which the Packed reads rule packs
-        // per gate, e.g. the 8 reads of each notReach[s] gate.
-        const readsAreWords = none.every((zeros, index) => zeroTest(shape.none[index]!) !== 'read' || (zeros.kind === 'reads' && isWhole(zeros)))
-        return readsAreWords ? {kind: 'gate', positions, all: shape.all.map((_, index) => slot(gates.map(gate => gate.all[index]!))), none} : undefined
+        // The values that must be 0 are taken lane by lane, the first value of every gate, the second, and so on, when
+        // each of those lists is a word without building it lane by lane. When one isn't, a gate that tests its own
+        // values as a word keeps them, e.g. each notReach[s] gate its packed word of 8 reads: taken lane by lane, the
+        // open bit of every lane would be the same register, written 8 times.
+        if (!none.every(isWhole) && gates.some(gate => testsWords(zeroTests(gate.none)))) return undefined
+        return {kind: 'gate', positions, all: shape.all.map((_, index) => slot(gates.map(gate => gate.all[index]!))), none}
       }
       const isWhole = (slot: WordSlot): boolean => {
         switch (slot.kind) {
@@ -796,11 +871,12 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
       }
       const wordOfBits = (positions: readonly number[]) => wordOf(wordPlan(positions) ?? {kind: 'lanes', positions})
 
-      // The Gate rule's statement: a u32 expression of 0 or 1.
-      function gateText({all, none}: {all: number[], none: number[]}) {
-        const factors = all.map(bitText)
-        // The gated reads by key, and the bits that must be 0.
+      // How a gate tests its values with a negative weight, which must all be 0. Gated reads with the same base go
+      // into packed words. The bits, in lists of at most 32, are one word each where they are a word without building
+      // it lane by lane. A comparison's inner gate and a whole number are tested on their own.
+      function zeroTests(none: readonly number[]) {
         const groups = new Map<string, {gated: Gated, reads: IndexRow[]}>()
+        const others: ({kind: 'comparison', inner: ReluRow} | {kind: 'number', position: number})[] = []
         const zeroBits: number[] = []
         for (const position of none) {
           const row = rowAt(position)
@@ -813,32 +889,50 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
               else group.reads.push(read)
               break
             }
-            case 'comparison': {
-              // The Comparison rule: max(0, sum) is 0 exactly when sum <= 0.
-              const inner = row as ReluRow
-              rules.comparison++
-              factors.push(`u32(${atMostZero(inner.gateTerms, inner.gateBias)})`)
+            case 'comparison':
+              others.push({kind: 'comparison', inner: row as ReluRow})
               break
-            }
             case 'bit':
               zeroBits.push(position)
               break
             case 'number':
-              factors.push(`u32(${intText(position)} == 0i)`)
+              others.push({kind: 'number', position})
               break
           }
         }
+        const packs: {gated: Gated, reads: IndexRow[]}[] = []
         for (const {gated, reads} of groups.values()) {
-          // One gated read alone is an ordinary bit.
-          if (reads.length === 1) zeroBits.push(reads[0]!.position)
-          else for (let from = 0; from < reads.length; from += 32) factors.push(`u32((${packedWord(gated, reads.slice(from, from + 32))}) == 0u)`)
+          for (const list of wordLists(reads, read => read.position)) {
+            // One gated read alone is an ordinary bit.
+            if (list.length === 1) zeroBits.push(list[0]!.position)
+            else packs.push({gated, reads: list})
+          }
         }
-        // "None of these bits is 1", 32 bits at a time: one comparison when the bits are a word without building it lane
-        // by lane, and an OR of the bits otherwise.
-        for (let from = 0; from < zeroBits.length; from += 32) {
-          const bits = zeroBits.slice(from, from + 32)
+        const bitLists = wordLists(zeroBits, position => position).map(bits => {
           const word = wordPlan(bits)
-          if (word !== undefined && isWhole(word)) factors.push(`u32(${wordOf(word)} == 0u)`)
+          return {bits, word: word !== undefined && isWhole(word) ? word : undefined}
+        })
+        return {others, packs, bitLists}
+      }
+      const testsWords = ({packs, bitLists}: ReturnType<typeof zeroTests>) => packs.length > 0 || bitLists.some(list => list.word !== undefined)
+
+      // The Gate rule's statement: a u32 expression of 0 or 1.
+      function gateText({all, none}: {all: number[], none: number[]}) {
+        const factors = all.map(bitText)
+        const {others, packs, bitLists} = zeroTests(none)
+        for (const other of others) {
+          if (other.kind === 'comparison') {
+            // The Comparison rule: max(0, sum) is 0 exactly when sum <= 0.
+            rules.comparison++
+            factors.push(`u32(${atMostZero(other.inner.gateTerms, other.inner.gateBias)})`)
+          } else {
+            factors.push(`u32(${intText(other.position)} == 0i)`)
+          }
+        }
+        for (const {gated, reads} of packs) factors.push(`u32((${packedWord(gated, reads)}) == 0u)`)
+        // "None of these bits is 1": one comparison of a word with 0, or an OR of the bits.
+        for (const {bits, word} of bitLists) {
+          if (word !== undefined) factors.push(`u32(${wordOf(word)} == 0u)`)
           else factors.push(`(${bits.length === 1 ? bitText(bits[0]!) : `(${bits.map(bitText).join(' | ')})`} ^ 1u)`)
         }
         return factors.join(' & ')

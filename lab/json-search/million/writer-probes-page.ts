@@ -108,7 +108,8 @@ try {
   await post(false)
 
   // The random programs, summed per kind, with the entries that didn't agree.
-  for (const [kind, build] of [['scalar', buildScalar], ['lanes', buildLanes]] as const) {
+  // In a 'broken' program, two registers' own stage writes numbers that their cells' declarations rule out.
+  for (const [kind, build] of [['scalar', buildScalar], ['lanes', buildLanes], ['broken', (seed: number) => buildScalar(seed, true)]] as const) {
     const total = {name: `${kind}: ${config.fuzzPrograms} random programs`, programs: 0, refused: 0, values: 0, nonZero: 0, mismatches: [0, 0], withPackedWords: 0, failed: [] as Entry[]}
     for (let seed = 1; seed <= config.fuzzPrograms; seed++) {
       let entry: Entry
