@@ -1604,6 +1604,41 @@ test('while a window frame animates its size, the content box already has the de
   }
 })
 
+test('a window is visible while it is drawn, and hidden once it has landed in the dock, so the Tab key skips what it holds', () => {
+  const machine = createWindowManagerMachine()
+  const frames = Array.from({length: windowCount}, createFakeElement)
+  const contents = Array.from({length: windowCount}, createFakeElement)
+  const monitor = 0
+  const visibilities = () => frames.map(frame => frame.style.visibility)
+  let values = step(machine)
+  projectWindowElements(frames, contents, values, machine.output.windows)
+  assert.deepEqual(visibilities(), ['visible', 'visible', 'visible'])
+
+  // Minimized and closed alike: the window stays visible while it flies to the
+  // dock, and is hidden in the frame that draws it at opacity 0. The dock item
+  // brings it back, visible from the first frame of its flight.
+  for (const control of ['minimize', 'close'] as const) {
+    values = clickWindowControl(machine, values, monitor, control)
+    let flyingFrames = 0
+    while (animationActive(machine, values) !== 0) {
+      projectWindowElements(frames, contents, values, machine.output.windows)
+      assert.deepEqual([frames[monitor]!.style.opacity, frames[monitor]!.style.visibility], ['1', 'visible'])
+      flyingFrames++
+      assert.ok(flyingFrames < 240, 'the animation did not settle')
+      values = step(machine)
+    }
+    assert.ok(flyingFrames > 5, `${flyingFrames} frames of flight`)
+    projectWindowElements(frames, contents, values, machine.output.windows)
+    assert.deepEqual([frames[monitor]!.style.opacity, frames[monitor]!.style.visibility], ['0', 'hidden'])
+    assert.deepEqual(visibilities(), ['hidden', 'visible', 'visible'])
+
+    values = clickDock(machine, values, monitor)
+    projectWindowElements(frames, contents, values, machine.output.windows)
+    assert.deepEqual([frames[monitor]!.style.opacity, frames[monitor]!.style.visibility], ['1', 'visible'])
+    values = settle(machine)
+  }
+})
+
 test("the note's keyboard focus follows the focused window: a frame focuses the note after a mouse press that leaves Notes focused, and blurs it while Notes isn't", () => {
   const mouseOnAWindow = {byMouse: true, outsideEveryWindow: false}
   const frame = {notesIsFocusedWindow: true, noteHasKeyboardFocus: false, pressedOrReleased: true, lastPress: mouseOnAWindow}

@@ -2078,7 +2078,13 @@ export function projectWindowElements(
     frame.style.transform =
       `translate3d(${read(windowOutputField.translateX)}px,${read(windowOutputField.translateY)}px,0)`
       + ` scale(${read(windowOutputField.scale)})`
-    frame.style.opacity = `${read(windowOutputField.opacity)}`
+    // The opacity output is 0 or 1: 0 once a closed or minimized window has landed
+    // in the dock. A window at opacity 0 also gets visibility: hidden, so that the Tab
+    // key skips what the window holds, e.g. the scroller of Monitor's list. At opacity
+    // 0 alone, the Tab key gave the keyboard focus to a scroller that nobody sees.
+    const opacity = read(windowOutputField.opacity)
+    frame.style.opacity = `${opacity}`
+    frame.style.visibility = opacity === 0 ? 'hidden' : 'visible'
     frame.style.zIndex = `${10 + read(windowOutputField.stack)}`
     frame.style.setProperty('--focused', `${read(windowOutputField.focused)}`)
     frame.style.setProperty('--maximized', `${read(windowOutputField.maximized)}`)

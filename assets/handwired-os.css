@@ -236,14 +236,21 @@ body {
   }
 }
 
-/* Windows: sheets of paper. The window with focus is whiter and casts the larger shadow. */
+/* Windows: sheets of paper. The window with focus is whiter and casts the larger shadow.
+
+   The frame cuts its content off with overflow: clip, and so does the content box below.
+   A browser scrolls a box with overflow: hidden to show what gets the keyboard focus
+   inside it, e.g. the caret of the note, or the scroller of Monitor's list at the Tab
+   key, and nothing scrolls the box back. The frame cuts the content box off while it
+   grows to a new size, e.g. during a maximize, so a key pressed then moved a window's
+   whole content for good. A box with overflow: clip can't be scrolled. */
 .window {
   position: absolute;
   top: 0;
   left: 0;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow: clip;
   /* The program's content box is the frame minus this 1 px border and the title bar. */
   border: 1px solid var(--edge);
   border-radius: calc(var(--radius-3) - var(--maximized) * 8px);
@@ -377,7 +384,7 @@ body {
   position: absolute;
   top: var(--title-height);
   left: 0;
-  overflow: hidden;
+  overflow: clip;
 }
 
 /* The grip is an arc around the corner's center, 3 px inside the border. The program's grip
@@ -819,15 +826,6 @@ body {
     font-size: 16px;
     line-height: 24px;
   }
-}
-
-/* A browser scrolls a box with overflow: hidden to show the caret of a focused text
-   field that the box cuts off, which would move the window's content for good. The frame
-   cuts the content box off while it grows to a new size, e.g. during a maximize. A box
-   with overflow: clip can't be scrolled, so neither the frame nor the content box is. */
-.window-notes,
-.notes-content {
-  overflow: clip;
 }
 
 /* Monitor's footer: the program's sizes at the left, and at the right the program's time
