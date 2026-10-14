@@ -64,6 +64,23 @@ test('createCircuit declares ranges, grids and one-hot groups, and finish derive
   expect([...initialSource]).toEqual([12, 40, 0, 0, 2, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0])
 })
 
+test('createCircuit declares exact bits, and an operation that reads one is built as before', () => {
+  const {table, cells} = smallTable()
+  const circuit = table.createCircuit()
+  // click, snap, open, the three choice cells and the permutation's nine cells.
+  const declaredBits = circuit.exactBits.flatMap((isBit, wire) => isBit ? [wire] : [])
+  expect(declaredBits).toEqual([cells.click, cells.snap, cells.open, ...cells.choice, ...cells.order.flat()])
+  // A bit gets no grid from the declaration, so a sum that reads it has none, and emitCompare would still build a
+  // sign cascade for the sum: assumeGrid(wire, 1) is the declaration that changes that.
+  expect(circuit.grids[cells.snap]).toBe(undefined)
+  const sum = circuit.affine([[cells.width, 1], [cells.snap, 1]])
+  expect([circuit.grids[sum], circuit.exactBits[sum], circuit.ranges[sum]]).toEqual([undefined, false, {minimum: 0, maximum: 101}])
+  // The declaration narrows the range to 0..1, and a range outside 0..1 contradicts it.
+  circuit.assumeBit(cells.margin)
+  expect([circuit.ranges[cells.margin], circuit.exactBits[cells.margin]]).toEqual([{minimum: 0, maximum: 1}, true])
+  expect(() => circuit.assumeBit(circuit.affine([[cells.count, 1]], 5))).toThrow('numeric range contradicts known bounds')
+})
+
 test('a state cell without a next value, or with two, fails while building, and so does a call out of order', () => {
   const missing = smallTable()
   missing.table.createCircuit()

@@ -246,6 +246,12 @@ export class Circuit {
   // Declared with assumeGrid, or inferred for sums and products whose operands
   // have grids and whose declared ranges prove that nothing rounds.
   grids: (number | undefined)[]
+  // True for a wire that is declared to hold exactly 0 or 1 with assumeBit, e.g.
+  // a cell declared with inputBit. A range of 0..1 alone also allows 0.5. No
+  // operation is built differently for a declared bit, and the compiler doesn't
+  // read the declaration. A backend reads it, e.g. lab/json-search/bit-emit.ts,
+  // which holds such a value as one bit of a word.
+  exactBits: boolean[]
   // True for a wire once an operation reads it, so assumeRange can refuse a
   // declaration that would come too late for those operations.
   hasReaders: boolean[]
@@ -262,6 +268,7 @@ export class Circuit {
     this.expressionWires = new Map()
     this.ranges = Array.from({length: sourceSize}, unknownRange)
     this.grids = Array<number | undefined>(sourceSize).fill(undefined)
+    this.exactBits = Array<boolean>(sourceSize).fill(false)
     this.hasReaders = Array<boolean>(sourceSize).fill(false)
     this.oneHotGroups = []
     this.tensorProgram = null
@@ -351,6 +358,16 @@ export class Circuit {
       )
     }
     this.grids[wire] = grid
+  }
+
+  // Declare that this wire holds exactly 0 or 1, e.g. a cell that JavaScript
+  // writes as a bit. Like assumeRange, the declaration is a caller promise, and
+  // it also narrows the wire's range to 0..1. Unlike assumeGrid(wire, 1), it
+  // changes no operation that is built afterwards, e.g. emitCompare still builds
+  // a sign cascade for a sum that reads the wire.
+  assumeBit(wire: Wire, options: DeclarationOptions = {}) {
+    this.assumeRange(wire, 0, 1, options)
+    this.exactBits[wire] = true
   }
 
   // Record an operation as a rounding point, e.g. each step of a round chain
@@ -528,6 +545,7 @@ export class Circuit {
     this.depths.push(depth + 1)
     this.constants.push(undefined)
     this.grids.push(undefined)
+    this.exactBits.push(false)
     this.hasReaders.push(false)
     for (const [wire] of readTerms) this.hasReaders[wire] = true
     this.ranges.push(indexReadRange(table, indexRange, below, above, this.ranges))
@@ -611,6 +629,7 @@ export class Circuit {
     this.depths.push(depth + 1)
     this.constants.push(!options.preserveRounding && kind === 'affine' && leftTerms.length === 0 ? leftBias : undefined)
     this.grids.push(inferOperationGrid(kind, leftTerms, leftBias, gateTerms, gateBias, this.grids, this.ranges))
+    this.exactBits.push(false)
     this.hasReaders.push(false)
     if (leftTerms.length > 0) for (const [dependency] of readLeftTerms) this.hasReaders[dependency] = true
     if (gateTerms.length > 0) for (const [dependency] of readGateTerms) this.hasReaders[dependency] = true
@@ -2902,6 +2921,7 @@ export function inlineCircuit(
     target.assumeRange(sourceWires[wire]!, range.minimum, range.maximum, options)
     const grid = source.grids[wire]
     if (grid !== undefined) target.assumeGrid(sourceWires[wire]!, grid, options)
+    if (source.exactBits[wire] === true) target.assumeBit(sourceWires[wire]!, options)
   }
   // Map each distinct table once, so reads of one large table share one mapped array.
   const mappedTables = new Map<CandidateTable, readonly Wire[]>()
