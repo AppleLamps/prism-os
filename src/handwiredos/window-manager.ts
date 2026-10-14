@@ -1930,9 +1930,18 @@ function mountWindowManager(document: Document, window: Window) {
   // and sends no pointerup, so a title bar pressed with it would follow the pointer
   // with no button held, and a second finger's events would move and release the
   // first finger's drag.
+  //
+  // Another button's press on the note still makes Notes the focused window. The
+  // browser gives the note the keyboard focus at a press of any button, e.g. of the
+  // right button, whose menu then pastes into the note. If Notes weren't the focused
+  // window, the frame would take the keyboard focus away under the open menu. So
+  // such a press reaches the program as a press and a cancel at one time: the
+  // program raises and focuses the window, and nothing is held afterwards.
   window.addEventListener('pointerdown', (event: PointerEvent) => {
-    if (!event.isPrimary || event.button !== 0) return
+    if (!event.isPrimary) return
+    if (event.button !== 0 && event.target !== domCache.note) return
     machine.pointerDown(event.clientX, event.clientY, event.timeStamp)
+    if (event.button !== 0) machine.pointerCancel(event.clientX, event.clientY, event.timeStamp)
     events.press = event
     scheduleRender()
   })

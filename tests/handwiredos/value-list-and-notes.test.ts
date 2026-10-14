@@ -152,6 +152,60 @@ test('a press on the note raises and focuses Notes and nothing else: it starts n
   assert.deepEqual(windowStates(machine), before)
 })
 
+test("a press and a cancel at one time, which is how the page sends the right button's press on the note, raise and focus the window under them and hold nothing", () => {
+  const machine = createMachine()
+  let values = click(machine, monitorTitleBar)
+  assert.deepEqual(stackOrder(machine), [1, 2, 0])
+  const before = windowStates(machine)
+  const pressAndCancel = (point: {x: number, y: number}) => {
+    const time = eventTime(machine, 4)
+    machine.pointerDown(point.x, point.y, time)
+    machine.pointerCancel(point.x, point.y, time)
+    return step(machine)
+  }
+  // What the page receives after such a press: moves with no button held, then on
+  // Windows the right button's release, and the menu's event, which the page sends
+  // as a cancel. None of them moves a window or acts on a control.
+  const afterwards = (point: {x: number, y: number}, label: string) => {
+    for (const offset of [40, 80]) {
+      machine.pointerMove(point.x + offset, point.y + offset, eventTime(machine, 4))
+      step(machine)
+      assert.deepEqual(heldPress(machine), nothingHeld, label)
+    }
+    machine.pointerUp(point.x + 80, point.y + 80, eventTime(machine, 4))
+    machine.pointerCancel(point.x + 80, point.y + 80, eventTime(machine, 8))
+    values = step(machine)
+    assert.deepEqual(windowStates(machine), before, label)
+    assert.equal(selectedRow(machine), -1, label)
+    assert.equal(openPhoto(machine), -1, label)
+    assert.equal(machine.clock.animatedUntilMs, null, label)
+  }
+
+  // On the note: the two events share one evaluation, which raises and focuses Notes.
+  values = pressAndCancel(onNoteOnly)
+  assert.deepEqual(machine.evaluations.map(evaluation => evaluation.events), [['pointer down', 'pointer cancel'], []])
+  assert.equal(focusedWindow(machine, values), 1)
+  assert.deepEqual(stackOrder(machine), [2, 0, 1])
+  assert.deepEqual(heldPress(machine), nothingHeld)
+  afterwards(onNoteOnly, 'on the note')
+  assert.equal(focusedWindow(machine, values), 1)
+
+  // The program tests a press against the windows' destinations, so while a window
+  // animates, a press on the drawn note can be a press on another window's title
+  // bar, grip or button for the program. There too, the window is raised and
+  // focused, no drag and no resize starts, and no control is armed or acts.
+  const photosGrip = {x: 650 + 560 - 8, y: 190 + 430 - 8}
+  const photosClose = {x: 650 + 560 - 19, y: 190 + 22}
+  for (const [point, label] of [[photosTitleBar, "on Photos' title bar"], [photosGrip, "on Photos' grip"], [photosClose, "on Photos' close button"]] as const) {
+    click(machine, monitorTitleBar)
+    values = pressAndCancel(point)
+    assert.equal(focusedWindow(machine, values), 2, label)
+    assert.deepEqual(stackOrder(machine), [1, 0, 2], label)
+    assert.deepEqual(heldPress(machine), nothingHeld, label)
+    afterwards(point, label)
+  }
+})
+
 test('a press where Notes covers the list arms no row, and with Monitor in front the same point selects its row', () => {
   const machine = createMachine()
   // Notes starts above Monitor. The down raises Notes and arms nothing, so the
