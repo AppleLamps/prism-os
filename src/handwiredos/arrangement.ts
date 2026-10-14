@@ -32,6 +32,7 @@
 // The note's text is the browser's to lay out, so the arrangement measures none of
 // it: Notes keeps a fixed part of the note in view, see noteShown.
 import {type Wire, invariant} from '../runtime/numeric-ui-core.ts'
+import {maximumPhotoTallness} from './photo-gallery.ts'
 import {locationCount, monitorLayout} from './value-list.ts'
 
 export type Rectangle = {left: number, top: number, width: number, height: number}
@@ -92,12 +93,14 @@ function monitorShownFor(available: number, whole: number, metrics: ArrangementM
 
 // How tall Photos is at most at a width: its title bar, and 4 columns and 3 rows of
 // photos with its gap around and between them, where a photo is at most 1.25 times
-// as tall as wide. E.g. 319 px at 306 px of width, and more than the default 430 px
-// from 425 px of width, where the default height stays. At its default size, 560 px
-// wide, a photo is 117 × 104 px.
+// as tall as wide. The program draws no photo taller than that, see
+// maximumPhotoTallness in photo-gallery.ts, so a taller Photos would open with free
+// room above and below its photos. E.g. 319 px at 306 px of width, and more than the
+// default 430 px from 425 px of width, where the default height stays. At its
+// default size, 560 px wide, a photo is 117 × 104 px.
 function photosTallestFor(width: number, metrics: ArrangementMetrics) {
   const photoWidth = (width - 2 * border - 5 * metrics.photosGap) / 4
-  return metrics.titleHeight + 2 * border + 4 * metrics.photosGap + 3 * 1.25 * photoWidth
+  return metrics.titleHeight + 2 * border + 4 * metrics.photosGap + 3 * maximumPhotoTallness * photoWidth
 }
 
 function clamp(value: number, minimum: number, maximum: number) {

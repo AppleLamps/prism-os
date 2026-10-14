@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {createWindowManagerMachine, windowCount, windowOutputField} from '../../src/handwiredos/window-manager.ts'
 import {type ArrangementMetrics, type Rectangle, arrangeInitialWindows, arrangeWindows} from '../../src/handwiredos/arrangement.ts'
+import {itemCount as photoCount, maximumPhotoTallness, maximumPhotoWideness, photoField} from '../../src/handwiredos/photo-gallery.ts'
 
 // The program's numbers, see windowManagerCells in window-manager.ts.
 const systemBarHeight = 36
@@ -283,6 +284,41 @@ test('in one column and in one row, a maximized window covers the other two wind
       const label = `${width} × ${height}: ${name}`
       assert.ok(rectangle.left >= maximized.left && rectangle.top >= maximized.top, label)
       assert.ok(rectangle.left + rectangle.width <= maximized.left + maximized.width && rectangle.top + rectangle.height <= maximized.top + maximized.height, label)
+    }
+  }
+})
+
+test('on a phone, the photos of a maximized Photos keep their proportions, and Photos opens with photos that fill their slots', () => {
+  // A phone held upright and sideways, and a smaller one, with the content box of
+  // the maximized Photos: the workspace without the 12 px margin, the 1 px border
+  // and the 44 px title bar.
+  for (const [width, height, contentWidth, contentHeight] of [[390, 844, 364, 662], [844, 390, 818, 208], [360, 640, 334, 458]] as const) {
+    const machine = createWindowManagerMachine()
+    const photos = arrangeInitialWindows(machine.source, machine.cells, width, height)[2]!
+    let values = machine.step(width, height, 16)
+    const photoSizes = () => Array.from({length: photoCount}, (_, item) => ({
+      width: values[machine.output.photos.photos[item * photoField.size + photoField.width]!]!,
+      height: values[machine.output.photos.photos[item * photoField.size + photoField.height]!]!,
+    }))
+    const label = `${width} × ${height}`
+    // At load, Photos is as tall as its photos need, so every photo fills its slot:
+    // 4 columns and 3 rows with the 18 px gap around and between them.
+    const atLoad = photoSizes()[0]!
+    assert.equal(atLoad.width, (photos.width - 2 - 5 * 18) / 4, label)
+    assert.ok(Math.abs(atLoad.height - (photos.height - 44 - 2 - 4 * 18) / 3) < 1e-4, label)
+
+    machine.pointerDown(photos.left + photos.width - 47, photos.top + 22, 20)
+    machine.pointerUp(photos.left + photos.width - 47, photos.top + 22, 24)
+    values = machine.step(width, height, 32)
+    for (let frameTime = 48; machine.clock.animatedUntilMs !== null; frameTime += 16) values = machine.step(width, height, frameTime)
+    const slot = {width: (contentWidth - 5 * 18) / 4, height: (contentHeight - 4 * 18) / 3}
+    // Each of these boxes is far from the proportions that a slot may have: a slot
+    // on the upright phone is 68.5 × 196.7 px, and sideways 182 × 45.3 px.
+    assert.ok(slot.height > 2 * slot.width || slot.width > 4 * slot.height, label)
+    for (const photo of photoSizes()) {
+      assert.ok(photo.height <= maximumPhotoTallness * photo.width + 1e-3, `${label}: a photo is ${photo.width} × ${photo.height}`)
+      assert.ok(photo.width <= maximumPhotoWideness * photo.height + 1e-3, `${label}: a photo is ${photo.width} × ${photo.height}`)
+      assert.ok(Math.abs(photo.width - slot.width) < 1e-3 || Math.abs(photo.height - slot.height) < 1e-3, `${label}: a photo is ${photo.width} × ${photo.height}`)
     }
   }
 })

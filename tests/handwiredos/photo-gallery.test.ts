@@ -6,6 +6,8 @@ import {
   createPhotoGalleryMachine,
   focusField,
   itemCount,
+  maximumPhotoTallness,
+  maximumPhotoWideness,
   photoField,
   rowCount,
   sourceField,
@@ -146,6 +148,105 @@ test('the fixed grid opens every photo with a tapered thumbnail carousel', () =>
     - visibleThumbnails[0]!.left
   assert.ok(stripWidth > 473 && stripWidth < 474)
   assert.equal(values[machine.output.backdropOpacity], 1)
+})
+
+// FP32 keeps a limited photo's size within a few millionths of a pixel.
+function assertNear(actual: number, expected: number, label: string) {
+  assert.ok(Math.abs(actual - expected) < 1e-4, `${label}: ${actual} != ${expected}`)
+}
+
+test('in a tall box a photo is at most 1.25 times as tall as wide, in a wide box at most twice as wide as tall, and the grid is centered', () => {
+  // The content box of a maximized Photos on a phone 390 × 844 px. A photo's slot is
+  // 68.5 × 196.7 px there, and the photo is 68.5 × 85.625 px.
+  const tall = createPhotoGalleryMachine()
+  let values = tall.step(364, 662)
+  let grid = projectPhotos(tall, values)
+  const tallPhotoHeight = maximumPhotoTallness * 68.5
+  // The grid's 3 rows and 4 gaps are 328.875 px tall, with 166.5625 px free above and below.
+  const freeAbove = (662 - (rowCount * tallPhotoHeight + (rowCount + 1) * gap)) / 2
+  grid.forEach((photo, item) => {
+    const column = item % columnCount
+    const row = Math.floor(item / columnCount)
+    assert.equal(photo.width, 68.5)
+    assertNear(photo.height, tallPhotoHeight, `photo ${item}'s height`)
+    assert.equal(photo.left, gap + column * (68.5 + gap))
+    assertNear(photo.top, freeAbove + gap + row * (tallPhotoHeight + gap), `photo ${item}'s top`)
+    assert.equal(photo.opacity, 1)
+  })
+  assertNear(freeAbove, 166.5625, 'the free part above the grid')
+  // A click in the free part above the grid opens no photo, also where the first
+  // photo's slot is, and a click on a photo opens that photo.
+  for (const [x, y] of [[182, 100], [gap + 34, gap + 10], [182, 662 - 100]] as const) {
+    tall.click(x, y)
+    values = tall.step(364, 662)
+    assert.deepEqual(readFocus(tall), Array(itemCount).fill(0), `a click at ${x}, ${y}`)
+  }
+  const target = grid[5]!
+  tall.click(target.left + target.width / 2, target.top + target.height / 2)
+  values = tall.step(364, 662)
+  assertOneFocus(tall, 5)
+
+  // The content box of a maximized Photos on the same phone held sideways. A slot is
+  // 182 × 45.3 px, and the photo is 90.7 × 45.3 px, with 182.7 px free at the left
+  // and at the right of the grid.
+  const wide = createPhotoGalleryMachine()
+  values = wide.step(818, 208)
+  grid = projectPhotos(wide, values)
+  const widePhotoHeight = (208 - (rowCount + 1) * gap) / rowCount
+  const widePhotoWidth = maximumPhotoWideness * widePhotoHeight
+  const freeLeft = (818 - (columnCount * widePhotoWidth + (columnCount + 1) * gap)) / 2
+  grid.forEach((photo, item) => {
+    const column = item % columnCount
+    const row = Math.floor(item / columnCount)
+    assertNear(photo.width, widePhotoWidth, `photo ${item}'s width`)
+    assertNear(photo.height, widePhotoHeight, `photo ${item}'s height`)
+    assertNear(photo.left, freeLeft + gap + column * (widePhotoWidth + gap), `photo ${item}'s left`)
+    assertNear(photo.top, gap + row * (widePhotoHeight + gap), `photo ${item}'s top`)
+  })
+  wide.click(100, 104)
+  values = wide.step(818, 208)
+  assert.deepEqual(readFocus(wide), Array(itemCount).fill(0))
+  const wideTarget = grid[11]!
+  wide.click(wideTarget.left + wideTarget.width / 2, wideTarget.top + wideTarget.height / 2)
+  wide.step(818, 208)
+  assertOneFocus(wide, 11)
+})
+
+test('at every box size the photos keep their proportions within the two limits, fill their slots in one direction at least, and lie centered inside the box', () => {
+  const machine = createPhotoGalleryMachine()
+  let limitedInHeight = 0
+  let limitedInWidth = 0
+  let unlimited = 0
+  // From the content box of the smallest Photos window, 278 × 144 px, to a box larger
+  // than a maximized window on a 2560 × 1440 px display, in steps that reach odd sizes.
+  for (let width = 278; width <= 2600; width += 129) {
+    for (let height = 144; height <= 1400; height += 97) {
+      const values = machine.step(width, height)
+      const grid = projectPhotos(machine, values)
+      const slotWidth = (width - (columnCount + 1) * gap) / columnCount
+      const slotHeight = (height - (rowCount + 1) * gap) / rowCount
+      const first = grid[0]!
+      const last = grid[itemCount - 1]!
+      const label = `${width} × ${height}`
+      assert.ok(first.height <= maximumPhotoTallness * first.width + 1e-3, `${label}: a photo is ${first.width} × ${first.height}`)
+      assert.ok(first.width <= maximumPhotoWideness * first.height + 1e-3, `${label}: a photo is ${first.width} × ${first.height}`)
+      assert.ok(first.width <= slotWidth + 1e-3 && first.height <= slotHeight + 1e-3, label)
+      assert.ok(Math.abs(first.width - slotWidth) < 1e-3 || Math.abs(first.height - slotHeight) < 1e-3, `${label}: a photo fills its slot in neither direction`)
+      if (first.height < slotHeight - 1e-3) limitedInHeight++
+      else if (first.width < slotWidth - 1e-3) limitedInWidth++
+      else unlimited++
+      for (const photo of grid) {
+        assert.equal(photo.width, first.width, label)
+        assert.equal(photo.height, first.height, label)
+      }
+      // As much free at the left as at the right, and above as below, the gap at least.
+      assertNear(first.left, width - (last.left + last.width), `${label}: left and right`)
+      assertNear(first.top, height - (last.top + last.height), `${label}: above and below`)
+      assert.ok(first.left >= gap - 1e-3 && first.top >= gap - 1e-3, label)
+    }
+  }
+  // The sizes cover all three cases.
+  assert.ok(limitedInHeight > 20 && limitedInWidth > 20 && unlimited > 20, `${limitedInHeight} limited in height, ${limitedInWidth} in width, ${unlimited} not limited`)
 })
 
 test('the gallery keeps focus decisions exact across representative items', () => {

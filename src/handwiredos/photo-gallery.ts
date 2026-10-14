@@ -50,6 +50,14 @@ import {
 export const itemCount = 12
 export const columnCount = 4
 export const rowCount = 3
+// The limits on a photo's proportions in the grid, see buildPhotos. The pictures are
+// square, and a photo shows the middle of its picture: at 1.25 times as tall as
+// wide, 80% of the picture's width, and at twice as wide as tall, half of its
+// height. HandwiredOS's starting arrangement makes Photos no taller than the first
+// limit allows, see photosTallestFor in arrangement.ts. The second limit is the
+// proportion that the photos have in the smallest Photos window, 47 × 24 px.
+export const maximumPhotoTallness = 1.25
+export const maximumPhotoWideness = 2
 
 // Thumbnails and HandwiredOS's windows share these constants, so one spring matrix
 // serves both.
@@ -268,25 +276,41 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   const {viewportWidth, viewportHeight, click, present, interactive, unit} = host
   const events = photoEvents(cells)
   const zero = circuit.constant(0)
-  const gridWidth = emitRelu(
+  // The grid: 4 columns and 3 rows of photos, with the gap around and between them.
+  // A slot is what the content box leaves for one photo, e.g. 117 × 104 px in
+  // HandwiredOS's Photos at its default size.
+  const slotWidth = emitRelu(
     circuit,
     circuit.affine([
       [viewportWidth, 1 / columnCount],
       [cells.gap, -(columnCount + 1) / columnCount],
     ]),
   )
-  const gridHeight = emitRelu(
+  const slotHeight = emitRelu(
     circuit,
     circuit.affine([
       [viewportHeight, 1 / rowCount],
       [cells.gap, -(rowCount + 1) / rowCount],
     ]),
   )
+  // A photo fills its slot up to a limit on its proportions: it is at most
+  // maximumPhotoTallness times as tall as wide, and at most maximumPhotoWideness
+  // times as wide as tall. Past a limit the photos stop growing in that direction,
+  // the gaps stay, and the grid is centered in the content box. E.g. in a content box
+  // of 364 × 662 px, a maximized Photos on a phone 390 × 844 px, a slot is
+  // 68.5 × 196.7 px and a photo 68.5 × 85.6 px, with 166.6 px free above and below
+  // the grid. Without the limit the photos were strips, each showing a third of its
+  // picture's width. A click in the free part hits no photo.
+  const gridWidth = emitMinimum(circuit, slotWidth, circuit.affine([[slotHeight, maximumPhotoWideness]]))
+  const gridHeight = emitMinimum(circuit, slotHeight, circuit.affine([[slotWidth, maximumPhotoTallness]]))
+  // What a limit takes from every photo, added up over a row or a column and halved.
+  const gridOriginX = circuit.affine([[slotWidth, columnCount / 2], [gridWidth, -columnCount / 2]])
+  const gridOriginY = circuit.affine([[slotHeight, rowCount / 2], [gridHeight, -rowCount / 2]])
 
   const gridLeft = Array.from({length: columnCount}, (_, column) =>
-    circuit.affine([[cells.gap, 1 + column], [gridWidth, column]]))
+    circuit.affine([[gridOriginX, 1], [cells.gap, 1 + column], [gridWidth, column]]))
   const gridTop = Array.from({length: rowCount}, (_, row) =>
-    circuit.affine([[cells.gap, 1 + row], [gridHeight, row]]))
+    circuit.affine([[gridOriginY, 1], [cells.gap, 1 + row], [gridHeight, row]]))
   const gridColumnHit = gridLeft.map(left =>
     emitIntervalHit(circuit, click.x, left, gridWidth))
   const gridRowHit = gridTop.map(top =>
