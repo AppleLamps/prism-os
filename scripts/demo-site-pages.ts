@@ -33,6 +33,14 @@ export const siteFoldersNotBuilt: string[] = pagesBuiltWhenTheyExist
   .filter(page => !existsSync(resolve(repoRoot, page.source)))
   .map(page => page.path)
 
+// The scripts that a page starts as a worker. Bun's bundler (1.4.3) doesn't follow `new Worker(...)` from a page's
+// script, so each worker is built on its own, as one file that imports nothing. `path` is the file on the site,
+// relative to the site's root, next to its page: the page at json-search/ starts its worker as "./demo-worker.js".
+export type SiteWorker = {source: string, path: string}
+export const siteWorkers: SiteWorker[] = [
+  {source: 'lab/json-search/demo-worker.ts', path: 'json-search/demo-worker.js'},
+].filter(worker => existsSync(resolve(repoRoot, worker.source)))
+
 // The project's mark, three wires into one eyelet and one wire out, on a tile of the paper color, so the mark also
 // shows on a dark tab bar. The colors repeat --paper, --ink and --copper of assets/site.css, since an image can't read
 // the page's custom properties.
