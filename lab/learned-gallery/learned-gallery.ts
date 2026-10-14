@@ -90,7 +90,7 @@ function createCinemaLayout(): TrainableGeometry[] {
 // A large rectangle, two beside it, and 2 rows of 4 below. After 500 steps from the seeded weights, the largest
 // error of a photo's left, top, width or height is 0.029% of the stage, and a test keeps it under 0.06%. Among
 // 200 variants of these proportions the largest error ranged from 0.002% to 0.17%, with a median of 0.02%, and
-// every line of photos was within 0.25 px in 133 of them, on a stage of 538 by 430 px (October 13, 2026).
+// every line of photos was within 0.25 px in 131 of them, on a stage of 538 by 430 px (October 13, 2026).
 function createStoryLayout(): TrainableGeometry[] {
   const heroWidth = 0.6
   const heroHeight = 0.52

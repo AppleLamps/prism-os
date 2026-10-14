@@ -75,7 +75,7 @@ const geometryLossThreshold = 0.08
 // width or height counts twice. With equal weights the network fits positions sooner than sizes, so after the
 // page's 500 steps the right and bottom edges were the ones off their lines: Story's worst line was 0.47 px apart
 // with equal weights and 0.26 px with these, and among 200 variants of Story's proportions, every line was within
-// 0.25 px in 80 with equal weights and in 133 with these (October 13, 2026, px on a stage of 538 by 430).
+// 0.25 px in 80 with equal weights and in 131 with these (October 13, 2026, px on a stage of 538 by 430).
 const fieldWeights = [1, 1, 2, 2] as const
 const fieldWeightSum = 6
 // The two axes of a rectangle: the field of its low edge and the field of its size.
