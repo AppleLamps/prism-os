@@ -76,6 +76,7 @@ async function checked<Result>(device: GPUDevice, build: () => Promise<Result> |
   return result
 }
 
+/** @public */
 export type DocumentStore = {
   buffer: GPUBuffer
   capacity: number
@@ -101,9 +102,11 @@ export async function createDocumentStore(device: GPUDevice, cellsPerDocument: n
 }
 
 // The documents of one output group to copy out of the GPU.
+/** @public */
 export type Readback = {group: number, firstDocument: number, documentCount: number}
 
 // performance.now() times of one evaluation, in ms.
+/** @public */
 export type Evaluation = {
   // The writeBuffer calls, which return before the GPU has the data.
   uploadMs: number
@@ -119,7 +122,7 @@ export type Evaluation = {
   outputs: Float32Array[]
 }
 
-export type EvaluateOptions = {
+type EvaluateOptions = {
   // Evaluates `count` documents, from firstDocument on, which is 0 unless given. Only a loop shader reads firstDocument.
   count: number
   firstDocument?: number
@@ -136,6 +139,7 @@ export type EvaluateOptions = {
 
 // What a runner needs from a shader: emit.ts's WgslModule, loop-emit.ts's LoopWgslModule and bit-emit.ts's
 // BitLoopWgslModule all have it.
+/** @public */
 export type RunnableShader = {
   code: string
   workgroupSize: number
@@ -151,7 +155,7 @@ export type RunnableShader = {
   packedCells?: readonly (readonly number[])[]
 }
 
-export type RunnerOptions = {
+type RunnerOptions = {
   // The buffers of shader.inputCells, in order, e.g. another runner's outputBuffers[1].
   inputs?: readonly GPUBuffer[]
   // How many documents a windowed output group holds.
@@ -342,6 +346,7 @@ export async function createProgramRunner(device: GPUDevice, shader: RunnableSha
 // output of every group. `cells` holds those documents' cells, which the store must already hold. A page runs it once
 // after compiling, e.g. over 500 documents, about 40 ms of executor time, and falls back to the CPU when
 // `mismatches` isn't 0.
+/** @public */
 export async function selfCheck(runner: ProgramRunner, program: BatchProgram, cells: Float32Array, count: number) {
   const cpuStarted = performance.now()
   const expected = expectedOutputs(program, cells, count)
@@ -356,10 +361,12 @@ export async function selfCheck(runner: ProgramRunner, program: BatchProgram, ce
   return {documents: count, values, mismatches, cpuMs, gpuMs: totalMs}
 }
 
+/** @public */
 export type KernelRunner = Awaited<ReturnType<typeof createKernelRunner>>
 
 // A runner for tests/json-search/bit-rows.ts's hand-written kernel, which reads its pattern from a buffer of u32 values and writes one
 // match count per document. It's here for the comparison with the loop shader, and reads the same store.
+/** @public */
 export async function createKernelRunner(device: GPUDevice, kernel: {code: string, workgroupSize: number, tableLength: number, cellsPerDocument: number}, store: DocumentStore, salt?: number) {
   invariant(kernel.cellsPerDocument === store.cellsPerDocument, 'the kernel reads the store\'s cells per document')
   const {capacity} = store

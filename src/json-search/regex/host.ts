@@ -1,8 +1,10 @@
 // JavaScript around both programs: text cells in, matches out.
 import {type Wire, invariant} from '../../runtime/numeric-ui-core.ts'
 
+/** @public */
 export type Match = {start: number, end: number}
 
+/** @public */
 export function codePointsOf(text: string): number[] {
   return Array.from(text, character => character.codePointAt(0)!)
 }
@@ -17,6 +19,7 @@ export function writeText(values: Float32Array, textCells: readonly Wire[], code
 
 // The matches that the program's output bits describe: a match starts at each position whose start bit is 1, and covers
 // the highlighted positions after it, up to the next start or the next position that isn't highlighted.
+/** @public */
 export function matchesFromBits(highlighted: readonly number[], starts: readonly number[]): Match[] {
   const matches: Match[] = []
   highlighted.forEach((bit, position) => {

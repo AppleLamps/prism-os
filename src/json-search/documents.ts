@@ -19,13 +19,16 @@ function hash3(a: number, b: number, c: number) {
 }
 
 export const defaultSeed = 20261013
+/** @public */
 export const defaultInvalidFraction = 0.1
 
+/** @public */
 export const shapes = ['packageManifest', 'userRecord', 'logEvent', 'settings', 'order', 'mapFeature', 'sensorReadings'] as const
-export type Shape = typeof shapes[number]
+type Shape = typeof shapes[number]
 
 // The ways a document is broken. JSON.parse rejects every one except tooDeep and tooLong, which are valid JSON that the
 // highlighter doesn't hold: it reports tooDeep at the 17th nested opener and tooLong at code point 512.
+/** @public */
 export const defects = [
   // A string loses one of its quotes, e.g. {"name: "ada"}.
   'missingQuote',
@@ -60,8 +63,9 @@ export const defects = [
   // More text after the document's value, e.g. {"id": 1}}.
   'extraText',
 ] as const
-export type Defect = typeof defects[number]
+type Defect = typeof defects[number]
 
+/** @public */
 export type GeneratedDocument = {text: string, shape: Shape, defect: Defect | 'none'}
 
 type Json = string | number | boolean | null | Json[] | {[key: string]: Json}
@@ -250,6 +254,7 @@ function serialize(value: Json, style: Style, escapeNonAscii: boolean) {
   return escapeNonAscii ? text.replace(/[\u0080-\uffff]/g, character => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`) : text
 }
 
+/** @public */
 export function codePointLength(text: string) {
   let length = text.length
   for (let index = 0; index < text.length - 1; index++) {
@@ -438,12 +443,14 @@ export function documentAt(seed: number, index: number, invalidFraction = defaul
   }
 }
 
+/** @public */
 export function generateDocuments(count: number, seed = defaultSeed, invalidFraction = defaultInvalidFraction): GeneratedDocument[] {
   return Array.from({length: count}, (_, index) => documentAt(seed, index, invalidFraction))
 }
 
 // Counts per shape and per defect, and the lengths in code points: the smallest, the quartiles, the mean, the largest,
 // and a histogram in steps of 64 code points, whose last bucket holds every text longer than the capacity.
+/** @public */
 export function describeDocuments(documents: readonly GeneratedDocument[]) {
   const lengths = documents.map(document => codePointLength(document.text)).sort((left, right) => left - right)
   const at = (fraction: number) => lengths[Math.min(lengths.length - 1, Math.floor(fraction * lengths.length))]!

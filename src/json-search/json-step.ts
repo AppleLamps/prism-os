@@ -46,8 +46,6 @@ const onGrid = (circuit: Circuit, wire: Wire) => {
   return wire
 }
 
-export type JsonLoop = ReturnType<typeof buildJsonLoop>
-
 // `cellsPerDocument` is the layout of buffer 0: 512 code points, then the text's length.
 export function buildJsonLoop(cellsPerDocument = capacity + 1) {
   const table = createSourceTable()

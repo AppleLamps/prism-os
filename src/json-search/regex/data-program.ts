@@ -63,6 +63,7 @@ export function createStepAnd(circuit: Circuit, cells: DataSearchCells) {
   }
 }
 
+/** @public */
 export function buildDataSearch(capacity: DataCapacity) {
   const {states, textLength} = capacity
   const table = createSourceTable()
@@ -109,7 +110,7 @@ export function buildDataSearch(capacity: DataCapacity) {
 }
 
 type DataSearch = ReturnType<typeof buildDataSearch>
-export type SearchOutput = WireValues<DataSearch['output']>
+type SearchOutput = WireValues<DataSearch['output']>
 
 // Writes a compiled pattern into the cells of form (a) or form (c). Throws when the pattern doesn't fit, which a caller
 // checks first with capacityErrors, e.g. JSON search's page.
@@ -134,6 +135,7 @@ export function writePattern(values: Float32Array, {cells, capacity}: {cells: Da
   })
 }
 
+/** @public */
 export function createDataSearch(capacity: DataCapacity) {
   const built = buildDataSearch(capacity)
   const evaluate = createEvaluator(built)

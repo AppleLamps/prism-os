@@ -43,6 +43,7 @@ export function mapLayout(widthCss: number, scale: number, documentCount: number
 
 // The document whose cell a point is over, or -1 where there is no cell. A cell answers for itself and for the gap to
 // its right and below it.
+/** @public */
 export function cellAt(layout: MapLayout, xCss: number, yCss: number): number {
   const column = Math.floor(xCss * layout.scale / layout.pitch)
   const row = Math.floor(yCss * layout.scale / layout.pitch)
@@ -62,6 +63,7 @@ export function cellCenterCss(layout: MapLayout, index: number): {x: number, y: 
 // Among the first `searched` documents, the one with a match whose cell is nearest to a point, or -1 when none has a
 // match. A pattern that few documents hold marks a few cells among 100,000, each 1 CSS px wide, so the pointer picks
 // the nearest one instead of the one under it. One call reads every document's count, 0.1 ms for 100,000.
+/** @public */
 export function nearestMatch(layout: MapLayout, matchCounts: Float32Array, searched: number, xCss: number, yCss: number): number {
   const {columns, pitch, cell, scale} = layout
   // The point in cells, from the first cell's center.

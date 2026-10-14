@@ -18,8 +18,8 @@ export const maxCodePoint = 0x10ffff
 export const codePointLimit = 0x110000
 
 // Inclusive ranges of code points, sorted, with a gap between neighbors, e.g. [[48, 57], [97, 122]] for [0-9a-z].
-export type Interval = readonly [low: number, high: number]
-export type CodePointSet = readonly Interval[]
+type Interval = readonly [low: number, high: number]
+type CodePointSet = readonly Interval[]
 
 const code = (character: string) => character.codePointAt(0)!
 const syntaxCharacters: ReadonlySet<number> = new Set(Array.from('^$\\.*+?()[]{}|', character => code(character)))
@@ -27,7 +27,7 @@ const dotSet: CodePointSet = [[0, 9], [11, 12], [14, 0x2027], [0x202a, maxCodePo
 const digitSet: CodePointSet = [[48, 57]]
 const wordSet: CodePointSet = [[48, 57], [65, 90], [95, 95], [97, 122]]
 
-export function normalizeSet(intervals: readonly Interval[]): CodePointSet {
+function normalizeSet(intervals: readonly Interval[]): CodePointSet {
   const sorted = [...intervals].sort((left, right) => left[0] - right[0])
   const merged: [low: number, high: number][] = []
   for (const [low, high] of sorted) {
@@ -49,11 +49,12 @@ function complementSet(set: CodePointSet): CodePointSet {
   return gaps
 }
 
+/** @public */
 export function setContains(set: CodePointSet, codePoint: number) {
   return set.some(([low, high]) => codePoint >= low && codePoint <= high)
 }
 
-export type PatternNode =
+type PatternNode =
   | {kind: 'atom', set: CodePointSet}
   // An empty sequence matches the empty string, e.g. the pattern () or the right side of a|.
   | {kind: 'sequence', parts: PatternNode[]}
@@ -70,6 +71,7 @@ export class PatternSyntaxError extends Error {
   }
 }
 
+/** @public */
 export function parsePattern(pattern: string): PatternNode {
   const codePoints = Array.from(pattern, character => code(character))
   let position = 0
@@ -190,7 +192,7 @@ export function parsePattern(pattern: string): PatternNode {
 // A position automaton (Glushkov's construction): state 0 is the initial state, and state p + 1 is the pattern's p-th
 // atom, e.g. (ab)*c has the states initial, a, b and c. Every step into a state reads a code point of that state's set,
 // so the automaton has no empty steps, and one step per code point runs it.
-export type Automaton = {
+type Automaton = {
   stateCount: number
   // targets[s] lists the states one step from s can reach, ascending, e.g. [1, 3] for the initial state of (ab)*c.
   targets: number[][]
@@ -201,7 +203,7 @@ export type Automaton = {
 
 type Summary = {nullable: boolean, first: ReadonlySet<number>, last: ReadonlySet<number>}
 
-export function buildAutomaton(node: PatternNode): Automaton {
+function buildAutomaton(node: PatternNode): Automaton {
   const sets: CodePointSet[] = []
   const follow: Set<number>[] = []
   const union = (left: ReadonlySet<number>, right: ReadonlySet<number>) => new Set([...left, ...right])
@@ -253,7 +255,7 @@ export function buildAutomaton(node: PatternNode): Automaton {
 
 // Code points that every step reads the same way share a class, e.g. (the|an?) [a-z]+ has 7 classes: t, h, e, a, n, the
 // space, and the other letters of a..z. The partition lists the code points where the class changes.
-export type ClassPartition = {
+type ClassPartition = {
   classCount: number
   // Ascending, within 1..0x10FFFF. Region 0 is the code points below boundaries[0], and region k the code points from
   // boundaries[k - 1] up to boundaries[k] - 1, or up to 0x10FFFF for the last region.
@@ -264,7 +266,7 @@ export type ClassPartition = {
   classReads: boolean[][]
 }
 
-export function partitionClasses(automaton: Automaton): ClassPartition {
+function partitionClasses(automaton: Automaton): ClassPartition {
   const cuts = new Set<number>()
   for (const set of automaton.stateSets) {
     for (const [low, high] of set) {

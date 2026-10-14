@@ -10,6 +10,7 @@ export function not(circuit: Circuit, bit: Bit): Bit {
 }
 
 // JS: a && b, as relu(a + b - 1).
+/** @public */
 export function and(circuit: Circuit, a: Bit, b: Bit): Bit {
   if (a === false || b === false) return false
   if (a === true) return b

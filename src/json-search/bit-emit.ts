@@ -81,6 +81,7 @@ type Held = {text: string, type: 'bit' | 'int' | 'float'}
 const wholeLimit = 2 ** 24
 const isBit = (whole: Whole) => whole.minimum >= 0 && whole.maximum <= 1
 
+/** @public */
 export type RuleCounts = {
   // Operations written as integer or bit statements, by rule.
   sum: number
@@ -99,7 +100,7 @@ export type RuleCounts = {
   float: number
 }
 
-export type BitLoopWgslModule = LoopWgslModule & {
+type BitLoopWgslModule = LoopWgslModule & {
   // The plan of the buffer packed_words, for the runner: bit b of word w is the shared cell packedCells[w][b], which
   // holds 0 or 1. A word without cells is 0. Empty when the shader has no such buffer.
   packedCells: readonly (readonly number[])[]

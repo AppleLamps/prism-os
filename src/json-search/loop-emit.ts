@@ -56,7 +56,7 @@ function orderRowsByUse(rows: readonly Row[], sourceSize: number, outputPosition
   return ordered
 }
 
-export type LoopWgslOptions = {
+type LoopWgslOptions = {
   workgroupSize?: number
   // 'use', the default, writes each row right after the rows it reads. 'layers' keeps the compiled program's order.
   order?: 'use' | 'layers'

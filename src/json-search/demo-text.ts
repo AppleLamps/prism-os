@@ -75,7 +75,7 @@ export function failureSentence(failure: Failure): string {
 }
 
 // What a search reads: every character, or only the ones that the highlighter shows as keys or as string values.
-export const scopes = ['everything', 'keys', 'strings'] as const
+const scopes = ['everything', 'keys', 'strings'] as const
 export type Scope = typeof scopes[number]
 export const isScope = (value: string | undefined): value is Scope => scopes.some(scope => scope === value)
 
@@ -119,10 +119,11 @@ export function analyzePattern(pattern: string, stateCapacities: readonly number
 
 // A line of text for the page. A strong part is drawn bold, e.g. the number in "10,541 of 100,000 documents match".
 export type Line = readonly (string | {readonly strong: string})[]
-export const strong = (text: string) => ({strong: text})
+const strong = (text: string) => ({strong: text})
 
 // A measured time. Chrome's clock reads in steps of 0.1 ms on this page, so a short time gets one decimal. The space
 // before the unit doesn't break, so a line never ends between a number and its unit.
+/** @public */
 export function duration(ms: number): string {
   if (ms >= 995) return `${(ms / 1000).toFixed(ms >= 9950 ? 0 : 1)} s`
   if (ms >= 9.95) return `${Math.round(ms)} ms`
@@ -162,7 +163,7 @@ export function resultLine(result: {withMatch: number, searched: number, ms: num
 }
 
 // A run of a document's characters that are drawn the same way.
-export type Run = {
+type Run = {
   text: string
   // The display kind, k0 to k8 in the order of src/json-search/highlighter/kinds.ts.
   kind: number

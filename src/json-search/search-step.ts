@@ -34,6 +34,7 @@ export const boundaryCapacity = 32
 // keys. An escape such as \n is a kind of its own, so no match of 'strings' or 'keys' crosses one, and after the first
 // error the highlighter shows every later key as a string.
 export type SearchScope = 'everything' | 'strings' | 'keys' | 'stringsAndKeys' | readonly number[]
+/** @public */
 export const searchScopes = ['everything', 'strings', 'keys', 'stringsAndKeys'] as const
 export function searchableKinds(scope: SearchScope): readonly number[] {
   switch (scope) {
@@ -55,7 +56,7 @@ function emitMaskedCodePoint(circuit: Circuit, codePoint: Wire, kind: Wire, sear
   return searched
 }
 
-export type SearchLoopOptions = {
+type SearchLoopOptions = {
   // How many positions the loops run, e.g. 512. The search reads a document's first `positions` code points.
   positions: number
   // The cells per document of buffer 0: the code points, then the text's length in the last cell.
@@ -229,6 +230,7 @@ function emitPasses(circuit: Circuit, cells: DataSearchCells, classOf: readonly 
 // The masked search with every position written out, as one program for the CPU executor: what a masked search loop is
 // compared with. Its cells are the text, the display kind of every code point, the nine searchable bits, and the
 // pattern's tables.
+/** @public */
 export function buildMaskedSearch(capacity: DataCapacity) {
   const table = createSourceTable()
   const cells = table.declare({

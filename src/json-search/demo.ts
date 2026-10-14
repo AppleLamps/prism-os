@@ -27,7 +27,7 @@ import {cellsPerDocument, writeDocumentCells} from './program.ts'
 import {type ProgramDescription, type Searcher, bufferBytesFor, createGpuSearcher, defaultStateCapacities} from './searcher.ts'
 
 // What one search took on its way to the screen, for scripts that measure the page.
-export type SearchTiming = {
+type SearchTiming = {
   pattern: string
   scope: Scope
   where: Where
@@ -42,7 +42,7 @@ export type SearchTiming = {
   // From the first input event since the last answer to the frame after the one that painted the answer.
   inputToNextFrameMs?: number
 }
-export type JsonSearchDebug = {
+type JsonSearchDebug = {
   ready: boolean
   // Where the search program runs, or null before the documents exist.
   where: Where | null

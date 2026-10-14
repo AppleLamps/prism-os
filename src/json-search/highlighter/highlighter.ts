@@ -247,6 +247,7 @@ export function buildHighlighter(form: ScanForm = 'loop', limits: Limits = defau
 }
 
 type HighlighterProgram = ReturnType<typeof buildHighlighter>
+/** @public */
 export type HighlighterOutput = WireValues<HighlighterProgram['output']>
 
 // Writes the text's first 512 code points, -1 after them, the text's length and the caret, a code point index clamped to

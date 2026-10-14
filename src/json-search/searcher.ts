@@ -36,15 +36,14 @@ import {type LoopProgram, type LoopRunner, createLoopRunner, describeLoop} from 
 import {cellsPerDocument, writeDocumentCells} from './program.ts'
 import {type SearchLoop, type SearchScope, boundaryCapacity, buildSearchLoop, classCapacity} from './search-step.ts'
 
-export {positions}
 export const defaultStateCapacities: readonly number[] = [8, 16, 32]
 // The bytes of the largest buffer a GPU searcher creates for this many documents, for requestBatchDevice.
 export const bufferBytesFor = (documentCount: number) => documentCount * cellsPerDocument * 4
 
-export type DocumentWindow = {firstDocument: number, documentCount: number}
+type DocumentWindow = {firstDocument: number, documentCount: number}
 
 // What the highlighter says about every document. firstErrorKind indexes src/json-search/highlighter/kinds.ts's errorKinds.
-export type Validation = {
+type Validation = {
   valid: Uint8Array
   // -1 for a valid document.
   firstErrorPosition: Int16Array
@@ -54,7 +53,7 @@ export type Validation = {
   validCount: number
 }
 
-export type SearchRequest = {
+type SearchRequest = {
   pattern: string
   // Which display kinds the search reads, 'everything' unless given, see search-step.ts.
   scope?: SearchScope
@@ -67,6 +66,7 @@ export type SearchRequest = {
   timestamps?: boolean
 }
 
+/** @public */
 export type SearchResult =
   | {
     status: 'searched'
@@ -97,7 +97,7 @@ export type SearchResult =
   // The pattern needs more states, classes or class boundaries than the largest program holds.
   | {status: 'tooLarge', pattern: string, messages: string[]}
 
-export type SelfCheck = {documents: number, searches: number, values: number, mismatches: number, cpuMs: number, gpuMs: number}
+type SelfCheck = {documents: number, searches: number, values: number, mismatches: number, cpuMs: number, gpuMs: number}
 
 export type ProgramDescription = {
   name: string
@@ -143,9 +143,10 @@ export type Searcher = {
 // - 'loop-emit' writes every operation as one f32 statement, e.g. one table read per pair of states in a search step.
 // - 'bit-emit' holds a value that is proven to be 0 or 1 as a bit, and writes the table reads that one gate combines
 //   as one AND of two 32-bit words, see bit-emit.ts.
+/** @public */
 export type ShaderWriter = 'bit-emit' | 'loop-emit'
 
-export type SearcherOptions = {
+type SearcherOptions = {
   stateCapacities?: readonly number[]
   // Which writer writes the GPU searcher's shaders, for tests and measurements that compare the two. Unless given,
   // the search programs' shaders are bit-emit.ts's and the highlighter's is loop-emit.ts's, see createGpuSearcher.
@@ -168,6 +169,7 @@ export type SearcherOptions = {
 // - A class that holds every character but one, twice, so a match stops only where the searched characters stop: at
 //   the text's end, and with 'strings' at each string value's closing quote. The step reads -1 past either, and a
 //   shader that took that -1 for a character, e.g. for U+0000, would let these matches run on.
+/** @public */
 export const defaultSelfCheckSearches: readonly {pattern: string, scope: SearchScope}[] = [
   {pattern: '[a-z]+', scope: 'everything'},
   {pattern: '(the|an?) [a-z]+', scope: 'strings'},

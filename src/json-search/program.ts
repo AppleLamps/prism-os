@@ -14,12 +14,14 @@ import {type Guard, type TensorProgram, type WgslModule, emitWgsl, packSharedVal
 import {emitJavaScript} from './generated-js.ts'
 
 export const cellsPerDocument = capacity + 1
-export const summaryNames = ['valid', 'firstErrorPosition', 'truncated'] as const
+const summaryNames = ['valid', 'firstErrorPosition', 'truncated'] as const
+/** @public */
 export const summaryCount = summaryNames.length
+/** @public */
 export const kindCount = capacity
 
-export type RootSet = 'summary' | 'display'
-export const rootSets: readonly RootSet[] = ['summary', 'display']
+type RootSet = 'summary' | 'display'
+const rootSets: readonly RootSet[] = ['summary', 'display']
 
 // highlighter.ts's lengthLimit, which that file doesn't export: a longer text writes this length.
 const lengthLimit = 1_048_576
@@ -69,6 +71,7 @@ export type BatchProgram = {
 }
 
 // Builds the highlighter's circuit once and compiles it for each root set.
+/** @public */
 export function buildBatchPrograms(sets: readonly RootSet[] = rootSets) {
   const buildStarted = performance.now()
   const built = buildHighlighter('loop')
@@ -107,6 +110,7 @@ export function buildBatchPrograms(sets: readonly RootSet[] = rootSets) {
   return {built, buildMs, programs, writeText: (source: Float32Array, text: string) => writeText(cells, source, text, 0)}
 }
 
+/** @public */
 export function buildBatchProgram(rootSet: RootSet) {
   return buildBatchPrograms([rootSet]).programs[0]!
 }

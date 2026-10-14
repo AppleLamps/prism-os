@@ -99,7 +99,7 @@ export function positionsOfWires(program: TensorProgram, wires: readonly number[
   })
 }
 
-export const lowestFloat32 = -3.4028234663852886e38
+const lowestFloat32 = -3.4028234663852886e38
 
 // A float32 value as one WGSL literal with the exact bits, like codegen's wgslFloat. WGSL folds an expression of two
 // literals in 64 bits, so no statement combines two literals.
@@ -122,7 +122,7 @@ export const wgslInt = (value: number) => value < 0 ? `(${value}i)` : `${value}i
 
 export type Guard = 'none' | 'max'
 
-export type WgslOptions = {
+type WgslOptions = {
   // The source wires that differ per instance, in the order of the instance buffer's columns.
   instanceCells: readonly number[]
   // Each group's wires are written to that group's output buffer, in order.

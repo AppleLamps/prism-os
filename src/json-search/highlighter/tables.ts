@@ -241,11 +241,8 @@ export function depthTables(maximumDepth: number) {
 // The same three tables at the default maximum depth, under the names they had before the depth became a parameter,
 // for code that reads the tables without building a program, e.g. the plain JavaScript loop over them in table-loop.ts.
 const defaultDepthTables = depthTables(defaultMaximumDepth)
-/** @public */
 export const objectWeightTable = defaultDepthTables.objectWeight
-/** @public */
 export const levelWeightTable = defaultDepthTables.levelWeight
-/** @public */
 export const depthClassTable = defaultDepthTables.depthClass
 const depthClassCount = 4
 // The grammar's context for a character: depthClass × 2 + [the container at the current depth is an object].

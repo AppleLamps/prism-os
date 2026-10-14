@@ -31,7 +31,7 @@ export type Binding =
   | {kind: 'field', field: number, component: number}
 
 // Where one output of a stage goes.
-export type Write =
+type Write =
   | {kind: 'register', register: number}
   | {kind: 'field', field: number, component: number}
   // One value per position in an output group of kind 'position'.
@@ -100,6 +100,7 @@ export function describeLoop(loop: LoopProgram) {
 }
 
 // How many operations one document takes when every looped stage runs every position.
+/** @public */
 export function operationsPerDocument(loop: LoopProgram) {
   return describeLoop(loop).reduce((total, stage) => total + stage.operations * (stage.repeat === 'once' ? 1 : loop.positions), 0)
 }
