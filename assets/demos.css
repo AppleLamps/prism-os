@@ -29,11 +29,6 @@
   font: var(--type-ui);
 }
 
-/* Under a finger the link beside the button is as tall as the button, 40 px. */
-@media (pointer: coarse) {
-  .opening-links a:not(.button) { padding-block: 10px; }
-}
-
 /* The wiring figure: Math.min(a, b) as the three operations that emitMinimum emits. Wires are copper, and each
    wire ends in an eyelet, a small ring, like the mark in the header. */
 .wiring { grid-column: 2; grid-row: 1 / span 2; margin: 0; }

@@ -883,12 +883,7 @@ function createLearnedGalleryDomCache(document: Document, editor: LearnedGallery
   const machine = editor.machine
   for (const [selector, value] of [
     ['#learning-coefficients', machine.parameterCount],
-    ['#learning-steps-after-change', trainingStepsAfterChange],
-    ['#learning-steps-at-most', maximumTrainingStepsAfterChange],
-    ['#learning-rest-steps', restSteps],
     ['#learning-steps-per-second', Math.round(1000 / msPerTrainingStep)],
-    ['#learning-operations', machine.circuit.operations.length],
-    ['#learning-layers', machine.tensorProgram.layers.length],
   ] as const) {
     requireElement(document, selector, `${selector} is missing`).textContent = value.toLocaleString('en-US')
   }

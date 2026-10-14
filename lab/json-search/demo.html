@@ -32,17 +32,20 @@
          the title is right from the first paint. demo.ts decides by the same width, once, and from its first frame on
          it writes the title itself, with the count that the page holds. -->
     <h1 class="title">Search <span class="at-wide">100,000</span><span class="at-narrow">20,000</span> JSON documents</h1>
-    <!-- Where the code shows what the deck says about the pattern: writePattern, in lab/regex-search/data-program.ts,
-         writes a compiled pattern into the cells of the search program's table, e.g. 1,097 numbers for the program
-         of 8 states. searcher.ts holds the search program in three sizes, for 8, 16 and 32 states, and a pattern runs
-         on the smallest one that holds it, e.g. the Try list's date, which has 11 states, on the second. On the GPU
+    <!-- What the deck's "written in JS" and "turned into WebGPU kernels" stand for. The regex matching and the JSON
+         parsing with its coloring are two fixed programs of weighted sums, ReLU gates and table reads, which builder
+         functions in JavaScript write, and a code writer turns each program into a shader. The map and the status
+         line are ordinary page code that reads the kernels' answers. A pattern is data, not code: writePattern, in
+         lab/regex-search/data-program.ts, writes a compiled pattern into the cells of the search program's table,
+         e.g. 1,097 numbers for the program of 8 states. searcher.ts holds the search program in three sizes, for 8,
+         16 and 32 states, and a pattern runs on the smallest one that holds it, e.g. the Try list's date, which has 11 states, on the second. On the GPU
          the three take nearly the same time. On the CPU, behind the page's toggle, a search on the largest takes 13
          times as long as on the smallest, which is why there are three. Each size's shader is written from the
          program alone, by the code writer bit-emit.ts, before any pattern is in the table, and all three are
          compiled once, when the page loads. So no pattern is compiled into GPU code, and no keystroke makes the page
          compile GPU code. A search uploads that table, and its cells again as bits packed into 32-bit words, 272
          words for the program of 8 states, which the shader reads a word at a time, and nothing per document. -->
-    <p class="deck">Each keystroke turns the pattern into tables of numbers for a fixed program of weighted sums, ReLU gates and table reads, so no pattern is compiled into GPU code. Then one pass on the GPU runs the program once per document, since no document reads another. Each document is JSON of up to 512 characters, colored by a second such program.</p>
+    <p class="deck">The regex matching, JSON parsing &amp; highlighting are all written in JS, then turned into WebGPU kernels for massive parallelism.</p>
     <!-- What the page does instead, and why, e.g. without WebGPU. demo.ts writes the sentence. -->
     <p id="notice" class="notice" style="display: none"></p>
 
@@ -93,16 +96,10 @@
       </section>
     </div>
 
-    <!-- Under the map: what the pointer and the Enter key do there, and the one link to how the page works. -->
+    <!-- Under the map: what the pointer and the Enter key do there. -->
     <div class="notes">
       <p><span class="with-mouse">Point at the map to read a document, click to keep it, and press <kbd>Enter</kbd> for the next match.</span><span class="with-touch">Tap the map to read a document.</span></p>
-      <a href="https://github.com/chenglou/handwired/blob/main/lab/json-search/README.md#the-demo-page">How it works</a>
     </div>
-
-    <footer class="colophon">
-      <span><a href="../learned-gallery/">Previous: Learned gallery</a></span>
-      <span><a href="../">All demos</a></span>
-    </footer>
   </main>
   <script type="module" src="./demo.ts"></script>
 </body>

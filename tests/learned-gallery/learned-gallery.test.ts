@@ -831,11 +831,11 @@ test('the numbers in the page\'s text are the code\'s', () => {
   assert.ok(html.includes('<label class="label" for="learning-penalty">Misalignment penalty</label>'))
   assert.ok(maximumHoldDistance / penaltyStrength < 0.09)
   // The detail text's example is the slider as the page loads, and the penalty's reach there.
-  assert.ok(html.includes(`at ${defaultHoldDistance * 100}%, edges closer than ${defaultHoldDistance / penaltyStrength * 100}% of the stage&rsquo;s width end on one line`))
+  assert.ok(html.includes(`At ${defaultHoldDistance * 100}%, two edges of one kind, e.g. two tops, that are closer than ${defaultHoldDistance / penaltyStrength * 100}% of the stage&rsquo;s width end on one line`))
   // The chart's label names its window of steps.
   assert.ok(html.includes(`over the latest ${chartStepCount.toLocaleString('en-US')} training steps`))
   // The numbers of the detail text are written by the page's script, into these elements.
-  for (const id of ['learning-coefficients', 'learning-steps-after-change', 'learning-rest-steps', 'learning-steps-at-most', 'learning-steps-per-second', 'learning-operations', 'learning-layers']) {
+  for (const id of ['learning-coefficients', 'learning-steps-per-second']) {
     assert.ok(html.includes(`<b id="${id}"></b>`), `${id} is missing`)
   }
   // The detail text is closed as the page loads.

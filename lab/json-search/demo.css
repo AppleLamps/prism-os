@@ -213,18 +213,13 @@
 .document-text .hit.even { background: var(--copper-wash); }
 .document-text .hit.odd { background: var(--copper-wash-deep); }
 
-/* The line under the map and the document: how to use the map, and at the line's end the link. */
+/* The line under the map and the document: how to use the map. */
 .notes {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-1) var(--space-5);
   margin-top: var(--space-3);
   color: var(--ink-2);
   font: var(--type-ui);
 }
 .notes p { margin: 0; }
-.notes a { flex: none; }
 
 /* Below the page's full width the map's height changes with its width, so this is a height from the middle of the
    range, which demo.ts replaces. */
@@ -247,5 +242,4 @@
   .map { height: 330px; }
   .surface pre.document-text { padding: var(--space-3); }
   .document-name { padding-left: var(--space-3); }
-  .notes { flex-direction: column; }
 }
