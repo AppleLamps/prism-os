@@ -60,13 +60,14 @@
           <button id="learning-delete" class="button" type="button" title="Delete the selected rectangle">Delete</button>
         </div>
         <!-- How close two edges of the sketch have to be for their photos to share a line, in percent of the stage.
-             learned-gallery.ts reads the slider in each frame and writes the words after it. The value is the
-             reach that trainable-geometry.ts starts with, which learned-gallery.test.ts checks. -->
-        <label class="tools line-up">
-          <span class="label">Line up edges</span>
+             learned-gallery.ts reads the slider in each frame, writes the words after it, e.g. "within 3%", and
+             gives the slider its aria-valuetext, e.g. "within 3% of the stage". The value is the reach that
+             trainable-geometry.ts starts with, which learned-gallery.test.ts checks. -->
+        <div class="tools line-up">
+          <label class="label" for="learning-align">Line up edges</label>
           <input id="learning-align" class="range" type="range" min="0" max="6" step="0.5" value="3">
-          <span id="learning-align-value" class="range-value"></span>
-        </label>
+          <span id="learning-align-value" class="range-value" aria-hidden="true"></span>
+        </div>
       </div>
       <div>
         <div class="stage-head"><span class="label">Learned</span><span>placed by the network</span></div>
