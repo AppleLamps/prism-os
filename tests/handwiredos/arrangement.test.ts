@@ -65,14 +65,14 @@ function assertFits(rectangles: readonly Rectangle[], workspace: Rectangle, labe
 
 test('at 1440 × 900 Monitor is a column as tall as Notes and Photos together, and Photos covers Notes\' lower right part', () => {
   assert.deepEqual(arrangeWindows(workspaceOf(1440, 900), minimum, natural, metrics), [
-    {left: 38, top: 84, width: 540, height: 556},
-    {left: 602, top: 84, width: 500, height: 366},
-    {left: 842, top: 210, width: 560, height: 430},
+    {left: 38, top: 152, width: 540, height: 556},
+    {left: 602, top: 152, width: 500, height: 366},
+    {left: 842, top: 278, width: 560, height: 430},
   ])
-  // The page prints the list of things to try on the desk's lower right, 124 px tall
-  // and ending 12 px above the dock: 48 px lie between Photos and the list, as many
-  // as between the system bar and the windows.
-  assert.equal(900 - dockHeight - 12 - 124 - (210 + 430), 84 - systemBarHeight)
+  // The group is centered: 116 px lie between the system bar and the windows, and as
+  // many between Photos and the dock, and 38 px at the left and at the right.
+  assert.equal(152 - systemBarHeight, 900 - dockHeight - (278 + 430))
+  assert.equal(38, 1440 - (842 + 560))
 })
 
 test('a viewport 1280 px wide narrows Photos, and Monitor keeps the width that shows five columns', () => {
@@ -85,8 +85,7 @@ test('a viewport 1280 px wide narrows Photos, and Monitor keeps the width that s
   // The list is Monitor's content box without the 152 px sidebar, and Operations' five
   // columns take 372 px, see handwired-os.css.
   assert.ok(rectangles[0]!.width - 2 - 152 >= 372)
-  // 800 px of height show no list of things to try, so the group is centered between
-  // the system bar and the dock.
+  // The group is centered between the system bar and the dock.
   assert.equal(102 - systemBarHeight, 800 - dockHeight - (228 + 430))
 })
 

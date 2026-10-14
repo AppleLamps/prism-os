@@ -58,7 +58,7 @@ body {
    Nothing on it moves, so the dots show how far a window has been dragged. */
 #desktop {
   /* JavaScript copies these six from the program's table when the page loads. The values
-     here are for what is painted before that: the system bar and the list of things to try. */
+     here are for what is painted before that: the system bar. */
   --title-height: 44px;
   --button-size: 18px;
   --button-gap: 10px;
@@ -96,8 +96,7 @@ body {
    The canvas is shown at 36% of its opacity, and wiring.ts draws each arc the fainter the
    more weights the program stores, e.g. at 29% for 8,965 weights. One arc alone is then
    at about 10%, a hairline, and a band where many arcs lie on each other stops at 36% of
-   the arc's color, so the picture stays quiet behind the windows and the list of things
-   to try.
+   the arc's color, so the picture stays quiet behind the windows.
 
    JavaScript writes the canvas's left, top, width and height each frame, see
    wiringRectangle in wiring.ts: 24 px in from the desktop's left and right edges, from
@@ -123,57 +122,6 @@ body {
 @media (max-width: 639px) {
   .desk-wiring {
     opacity: 0.18;
-  }
-}
-
-/* Things to try, printed on the desk's lower right corner. Windows pass over it. The
-   windows' first arrangement, see arrangement.ts, leaves this corner free on a viewport of
-   at least 1100 × 850 px: the list's five lines of 20 px and its label are 124 px tall
-   and end 12 px above the dock's strip, so at 850 px of height the label starts at least
-   22 px under Photos. */
-.desk-legend {
-  position: absolute;
-  z-index: 0;
-  right: 32px;
-  bottom: calc(var(--dock-height) + 12px);
-  /* As wide as its longest line, in whatever font the system has: 482 px in the system
-     font of macOS. */
-  width: max-content;
-  max-width: 520px;
-}
-
-.desk-legend .label {
-  margin: 0 0 var(--space-2);
-  color: var(--ink-2);
-}
-
-/* A key cap fits into its line's 20 px: 1 px of padding above and below its 11.3 px of
-   text and its borders, raised by 1 px. With 2 px of padding below and no raise, as on
-   the site's other pages, the cap made its line 21.3 px tall in the system font of macOS,
-   and the list 125.3 px. */
-.desk-legend kbd {
-  margin: 0 1px;
-  padding: 1px 4px;
-  vertical-align: 1px;
-}
-
-@media (max-width: 1099px), (max-height: 849px) {
-  .desk-legend {
-    display: none;
-  }
-}
-
-/* Where the list is shown, the arcs behind it fade to a fifth, so no arc strikes through
-   a word. The clearing is an ellipse around the list's middle, which lies 249 px from the
-   canvas's right edge and 144 px above its bottom. The two clearings multiply, which is
-   what mask-composite: intersect does, and source-in is the same under its older name. */
-@media (min-width: 1100px) and (min-height: 850px) {
-  .desk-wiring {
-    --legend-clearing: radial-gradient(370px 160px at calc(100% - 249px) calc(100% - 144px), rgb(0 0 0 / 0.2) 70%, #000);
-    -webkit-mask-image: var(--dock-clearing), var(--legend-clearing);
-    mask-image: var(--dock-clearing), var(--legend-clearing);
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
   }
 }
 
