@@ -288,7 +288,7 @@ So recovering L lines of an N-segment paragraph this way is O(L × N) operations
 | 1,023 | next-start table + segment scan | 166,147 | 4,128 | 0% | 166,147 |
 | 1,023 | segment walker | 23,496 | 9,204 | 0% | 23,496 |
 
-The estimate replaces every one-hot group with one operation, as if the executor could read a table at an integer wire. It's an estimate, not a built circuit. The index-read prototype added such an instruction, `indexRead`, to its own copy of the runtime, and code-points and streaming-words used that copy. Since September 14, 2026, numeric-ui-core.ts has the same instruction ([decision 1](../review-and-decisions.md#1-should-the-shared-runtime-get-an-index-read-instruction)), but nobody has rebuilt text-walker's circuits with it yet.
+The estimate replaces every one-hot group with one operation, as if the executor could read a table at an integer wire. It's an estimate, not a built circuit. The index-read prototype added such an instruction, `indexRead`, to its own copy of the runtime, and code-points and streaming-words used that copy. Since September 14, 2026, numeric-ui-core.ts has the same instruction ([decision 1](../review-and-decisions.md#1-should-the-shared-runtime-get-an-index-read-instruction)), and on September 17, 2026, text-walker rebuilt gathered lines with it at another size: 27,634 operations instead of 113,802 at 517 segments and 83 line slots ([text-walker](../../text-walker/README.md#many-paragraphs-on-the-gpu-september-17-2026)).
 
 Gather lowering also keeps a list of candidate positions for every read, one per segment. For gathered lines at 1,023 segments those lists add up to 10.3 million table entries.
 
@@ -366,13 +366,13 @@ Obstacles should be the windows' destinations, not their drawn positions. With w
 
 - One line's end from a known start: O(lookahead) comparisons at constant depth, plus the prefix sums, which are O(N) additions in O(log N) layers with Brent-Kung, or one wide sum per prefix in 1 layer with about N²/2 stored weights.
 - Every start's line end: O(N × lookahead) comparisons at constant depth.
-- L lines chained through one-hots: O(L × N) operations and O(L) layers. numeric-ui-core.ts has had the index read instruction since September 14, 2026, which would bring this to about O(N + L × lookahead) operations, but no text circuit has been rebuilt on it, so that size and the table's last column are still estimates.
+- L lines chained through one-hots: O(L × N) operations and O(L) layers. numeric-ui-core.ts has had the index read instruction since September 14, 2026, which brings this to about O(N + L × lookahead) operations. text-walker built that form on September 17, 2026, at other sizes than the table's, so the table's last column is still an estimate.
 - Each word's x and line index from the slots' one-hots: one product per segment per slot, O(N × L).
 
 ### When not to use the walker
 
 - When one width drives a block of fixed text, tabulation is much smaller and 4 layers deep, e.g. the Notes window's 10 tabulated blocks are 1,041 operations with every painting output.
-- For long paragraphs chained through one-hots, as text-walker built them: at 1,023 segments, gathered lines are 361,890 operations, 89% of them one-hots. The index read instruction in numeric-ui-core.ts would replace those one-hots, but nobody has rebuilt text-walker on it yet.
+- For long paragraphs chained through one-hots, as text-walker built them: at 1,023 segments, gathered lines are 361,890 operations, 89% of them one-hots. The index read instruction in numeric-ui-core.ts replaces those one-hots, as in text-walker's batch programs since September 17, 2026.
 - For speed. On the CPU executor the walker circuits ran 50 to about 1,000 times slower than pretext's own walker. The reason to use the walker is that text becomes part of one program with window geometry and springs.
 
 ### Pitfalls

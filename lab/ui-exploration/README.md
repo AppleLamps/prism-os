@@ -63,7 +63,7 @@ These constructions came up in prototype after prototype. They're the closest th
 
 ## Capability map
 
-Operations are live operations after compilation. For scale, HandwiredOS was 5,253 operations, 192 layers, and 11,598 stored weights during the exploration, and has been 3,654, 124 and 7,890 since September 15, 2026.
+Operations are live operations after compilation. For scale, HandwiredOS was 5,253 operations, 192 layers, and 11,598 stored weights during the exploration, and 3,654, 124 and 7,890 on September 15, 2026.
 
 | UI area | Prototype | Size (operations / layers) | Checked against | What stayed outside |
 | --- | --- | --- | --- | --- |
