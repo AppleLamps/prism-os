@@ -11,14 +11,15 @@
 //
 // Two query parameters, for scripts and for states that few machines show:
 // - ?buffer=134217728 asks the GPU for buffers of at most that many bytes, as a device with small limits would grant.
-// - ?salt=7 writes that number into every shader's source. With a number that no earlier load used, the GPU compiles
-//   the shaders without its cache, as on a visitor's first load, which is how the README's first-visit times are
-//   measured.
+// - ?salt=7 writes that number into every shader's source, as a u32, so it is a whole number from 0 to 4294967295,
+//   and the page ignores any other, e.g. ?salt=1.5 or a time in ms. With a number that no earlier load used, the GPU
+//   compiles the shaders without its cache, as on a visitor's first load, which is how the README's first-visit
+//   times are measured.
 import {invariant} from '../../src/runtime/numeric-ui-core.ts'
 import {type CellColors, type MapLayout, cellCenterCss, mapLayout, nextMatch, paintCells, pickedDocument} from './demo-map.ts'
 import {
   type Failure, type Line, type LoadReason, type PatternAnalysis, type RegExpTime, type Scope, type Where, analyzePattern, count, documentRuns, documentText,
-  documentsThatFit, failureSentence, isScope, loadNotice, narrowDocumentCount, resultLine, runClassName, wideDocumentCount,
+  documentsThatFit, failureSentence, isScope, loadNotice, narrowDocumentCount, resultLine, runClassName, shaderSaltOf, wideDocumentCount,
 } from './demo-text.ts'
 import type {WorkerAnswer, WorkerRequest} from './demo-worker.ts'
 import {requestBatchDevice} from './gpu/host.ts'
@@ -47,13 +48,14 @@ export type JsonSearchDebug = {
   where: Where | null
   documentCount: number
   // In ms: writing the documents' texts, writing their characters as numbers for the GPU, creating the GPU's
-  // searcher, and from the page's start until the documents were ready to search.
+  // searcher, and from the start of the page's navigation, as `paintedAt` below, until the documents were ready to
+  // search. The page's script starts 20 to 36 ms after the navigation on the built site, on an Apple M5 Max.
   loadMs: {writeDocuments: number, writeCells: number, createSearcher: number, total: number} | null
   // The searches whose complete answers were painted, the latest 1,000.
   searches: SearchTiming[]
-  // The programs on the GPU, each with its shader's statements and the ms that the GPU took to compile it, e.g. 147
-  // statements for the search program of 8 states. null before the documents exist, and where the programs run on
-  // the CPU.
+  // The programs on the GPU, each with its shader's statements, e.g. 147 for the search program of 8 states, and the
+  // ms from createShaderModule until JavaScript had its pipeline, which holds the wait for the other programs' builds
+  // and compiles, see searcher.ts. null before the documents exist, and where the programs run on the CPU.
   programs: ProgramDescription[] | null
   // Where a document's cell is in the window, in CSS px, or null before the map is laid out.
   locate: (index: number) => {x: number, y: number} | null
@@ -153,7 +155,6 @@ async function documentOnGpu(searcher: Searcher, index: number, key: string, sea
 }
 
 function mountJsonSearch(document: Document, window: Window) {
-  const pageStart = window.performance.now()
   const find = <Found extends Element>(selector: string): Found => {
     const node = document.querySelector<Found>(selector)
     invariant(node !== null, `${selector} is missing`)
@@ -387,17 +388,17 @@ function mountJsonSearch(document: Document, window: Window) {
     let gpu: World['gpu'] = null
     let createSearcherMs = 0
     if (device !== null && cells !== null) {
+      const askedSalt = shaderSaltOf(new URLSearchParams(window.location.search).get('salt'))
       const createStarted = window.performance.now()
       try {
-        const askedSalt = Number(new URLSearchParams(window.location.search).get('salt') ?? Number.NaN)
-        gpu = {searcher: await createGpuSearcher(device, texts, {cells, ...(Number.isInteger(askedSalt) && askedSalt >= 0 ? {shaderSalt: askedSalt} : {})}), device}
+        gpu = {searcher: await createGpuSearcher(device, texts, {cells, ...(askedSalt === null ? {} : {shaderSalt: askedSalt})}), device}
         createSearcherMs = window.performance.now() - createStarted
       } catch (error) {
         device.destroy()
         st.plan = {documentCount, reason: {kind: 'gpuFailed', message: error instanceof Error ? error.message : String(error)}}
       }
     }
-    return {documentCount, texts, gpu, loadMs: {writeDocuments: writeDocumentsMs, writeCells: writeCellsMs, createSearcher: createSearcherMs, total: window.performance.now() - pageStart}}
+    return {documentCount, texts, gpu, loadMs: {writeDocuments: writeDocumentsMs, writeCells: writeCellsMs, createSearcher: createSearcherMs, total: window.performance.now()}}
   }
 
   function writeLine(node: HTMLElement, line: Line) {

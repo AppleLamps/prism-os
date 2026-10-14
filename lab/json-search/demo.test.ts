@@ -7,7 +7,7 @@ import {describe, expect, test} from 'bun:test'
 import {readFileSync} from 'node:fs'
 import {capacity, displayKind} from '../../src/json-highlighter/kinds.ts'
 import {type MapLayout, cellAt, cellCenterCss, mapLayout, nearestMatch, nextMatch, paintCells, pickedDocument} from './demo-map.ts'
-import {type Line, analyzePattern, count, documentRuns, documentText, documentsThatFit, duration, failureSentence, isScope, loadNotice, resultLine, runClassName} from './demo-text.ts'
+import {type Line, analyzePattern, count, documentRuns, documentText, documentsThatFit, duration, failureSentence, isScope, loadNotice, resultLine, runClassName, shaderSaltOf} from './demo-text.ts'
 import type {WorkerAnswer, WorkerRequest} from './demo-worker.ts'
 import {codePointLength} from './documents.ts'
 import {createInterpretedDevice} from './interpreted-gpu.ts'
@@ -265,6 +265,12 @@ describe('the page\'s documents', () => {
     expect(documentsThatFit(100_000, 134_217_728, bytesPerDocument)).toBe(65_000)
     expect(documentsThatFit(20_000, 134_217_728, bytesPerDocument)).toBe(20_000)
     expect(documentsThatFit(100_000, 180_000_000, bytesPerDocument)).toBe(87_000)
+  })
+
+  test('takes a salt for the shaders only when it is a whole number that a u32 holds', () => {
+    expect(['7', '0', '4294967295', '0042'].map(shaderSaltOf)).toEqual([7, 0, 4_294_967_295, 42])
+    // A time in ms, as a script might pass for "a number that no earlier load used", is past a u32.
+    expect([null, '', '4294967296', '1760400000000', '1e21', '1e3', '1.5', '-3', 'abc', ' 7'].map(shaderSaltOf)).toEqual(Array<null>(10).fill(null))
   })
 
   test('says in one sentence what the page does instead of searching the wanted documents on the GPU, and why', () => {
