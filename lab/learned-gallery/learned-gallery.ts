@@ -266,6 +266,21 @@ export const msPerTrainingStep = 1000 / 600
 export const maximumTrainingStepsPerFrame = 20
 export const trainingMsPerFrame = 6
 export const unmeasuredTrainingStepsPerFrame = 4
+// The fewest steps one frame trains, unless fewer are left: a frame whose time or budget holds only one step
+// trains two or none. trainOrUndo takes a frame's steps back together with Adam's momentum, so after a frame of
+// one step that was taken back, the next frame takes the same step again at half the learning rate. Where that
+// momentum points uphill, the step raises what it follows at any rate, and every frame is taken back until the
+// multipliers have changed the slopes enough. The photos stand still meanwhile, and after 100 steps they count as
+// at rest: at 5 ms a step, Contact sheet's first fit had 100 frames in a row taken back and stopped after 529
+// steps with a line of photos 0.47 px apart on a stage of 500 by 400 px. With frames of two steps, whose second
+// step has more of the slope in its momentum, the longest such row in that fit is 2 frames, and the fit stops
+// after 874 steps with every line within 0.03 px. Measured in 24 sessions of 40 small drags and resizes, as the
+// share of the 960 edits that end with two photo edges 0.5 to 10 px apart on that stage (October 14, 2026): on a
+// device where a step takes 5 ms, so that the budget holds one step, 46% with frames of one step and 1.0% with
+// frames of two. On a 500 Hz display, where a frame's time holds one step or two, 6.4% and 2.2%. With 10 steps a
+// frame it is 1.1%. The price is that a frame's training takes up to twice the budget where a step takes over
+// 3 ms, e.g. 10 ms at 5 ms a step.
+export const minimumTrainingStepsPerFrame = 2
 // The loss chart shows this many of the latest steps, which holds Story's and Contact sheet's whole first fit,
 // about 700 and 900 steps, and most of Cinema's 1,400.
 export const chartStepCount = 1000
@@ -650,16 +665,18 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       }
     }
 
-    // Training: as many steps as the time since the last frame holds, within the caps.
+    // Training: as many steps as the time since the last frame holds, within the caps. A frame whose time holds
+    // fewer steps than the minimum trains none, and the next frame has the time of both.
     let newTrainedUntilTime = trainedUntilTime ?? frameTime
-    const stepsThisFrame = Math.max(0, Math.min(
+    const stepsHeld = Math.min(
       stepsLeft,
       maximumTrainingStepsPerFrame,
       measuredMsPerStep > 0
-        ? Math.max(1, Math.floor(trainingMsPerFrame / measuredMsPerStep))
+        ? Math.max(minimumTrainingStepsPerFrame, Math.floor(trainingMsPerFrame / measuredMsPerStep))
         : unmeasuredTrainingStepsPerFrame,
       Math.floor((frameTime - newTrainedUntilTime) / msPerTrainingStep),
-    ))
+    )
+    const stepsThisFrame = stepsHeld >= Math.min(minimumTrainingStepsPerFrame, stepsLeft) ? stepsHeld : 0
     newTrainedUntilTime += stepsThisFrame * msPerTrainingStep
     if (stepsThisFrame > 0) {
       const trainingStart = readClock()

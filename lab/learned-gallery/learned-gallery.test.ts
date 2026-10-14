@@ -12,6 +12,7 @@ import {
   maximumHoldDistance,
   maximumTrainingStepsAfterChange,
   maximumTrainingStepsPerFrame,
+  minimumTrainingStepsPerFrame,
   msPerTrainingStep,
   restDistance,
   restSteps,
@@ -1130,6 +1131,55 @@ test('a slow device trains as many steps per frame as fit in the budget', () => 
   // itself, as with 10 steps per frame.
   assert.ok(frame.step >= trainingStepsAfterChange && frame.step < maximumTrainingStepsAfterChange, `${frame.step} steps`)
   assert.equal(frameCount, 2 + (frame.step - unmeasuredTrainingStepsPerFrame) / 2)
+})
+
+test('a frame trains two steps or none, and the photos end in line where the budget or the time holds one step', () => {
+  // A device where one step takes 5 ms, so the budget of 6 ms holds one step: a frame trains two. With one step
+  // per frame, Contact sheet's first fit stopped after 529 steps with a line of photos 0.09% of the stage apart:
+  // the last 100 frames were all taken back, so the photos stood still and counted as at rest.
+  const msPerStep = 5
+  const holder: {machine: LearnedGalleryMachine | null} = {machine: null}
+  const slow = createEditorDriver(1000 / 60, () => (holder.machine?.trainingStep ?? 0) * msPerStep)
+  holder.machine = slow.machine
+  slow.frame([{kind: 'layout', name: 'contact'}])
+  let frame = slow.frame()
+  assert.equal(frame.stepsThisFrame, unmeasuredTrainingStepsPerFrame)
+  while (frame.training) {
+    frame = slow.frame()
+    assert.equal(frame.stepsThisFrame, minimumTrainingStepsPerFrame)
+  }
+  // Measured: 874 steps, and the lines of photos within 0.007% of the stage.
+  for (const line of sketchLines(slow.machine)) {
+    const spread = lineSpread(slow.machine, frame.values, line.slots, line.edge)
+    assert.ok(spread < 0.0003, `the ${line.edge} edges of rectangles ${line.slots.join(', ')} are ${spread} apart`)
+  }
+  // A rectangle nudged 6 px down ends in its row, and the row a quarter of the nudge down.
+  const row = [4, 5, 6, 7]
+  const rowTop = lineMean(slow.machine, frame.values, row, 'top')
+  roughEdit(slow, 5, false, 0, 6)
+  frame = slow.settle()
+  assert.ok(lineSpread(slow.machine, frame.values, row, 'top') < 0.0001, `the row's tops are ${lineSpread(slow.machine, frame.values, row, 'top')} apart`)
+  assert.ok(Math.abs(lineMean(slow.machine, frame.values, row, 'top') - rowTop - 0.015 / 4) < 0.0003)
+
+  // A 500 Hz display, where a frame's 2 ms hold 1.2 steps: a frame trains no step until the time holds two, so
+  // training still takes 600 steps a second.
+  const fast = createEditorDriver(1000 / 500)
+  fast.frame([{kind: 'layout', name: 'contact'}])
+  frame = fast.frame()
+  let frameCount = 2
+  let framesWithoutSteps = 0
+  while (frame.training) {
+    frame = fast.frame()
+    frameCount++
+    if (frame.stepsThisFrame === 0) framesWithoutSteps++
+    assert.notEqual(frame.stepsThisFrame, 1)
+    if (frameCount === 250) assert.ok(Math.abs(frame.step - 300) <= 3, `${frame.step} steps in half a second`)
+  }
+  assert.ok(framesWithoutSteps > frameCount / 3, `${framesWithoutSteps} of ${frameCount} frames trained no step`)
+  for (const line of sketchLines(fast.machine)) {
+    const spread = lineSpread(fast.machine, frame.values, line.slots, line.edge)
+    assert.ok(spread < 0.0003, `the ${line.edge} edges of rectangles ${line.slots.join(', ')} are ${spread} apart`)
+  }
 })
 
 test('a press on empty space adds a rectangle until every photo has one', () => {
