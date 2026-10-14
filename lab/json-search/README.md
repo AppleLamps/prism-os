@@ -83,7 +83,7 @@ One search as the page's line shows it, by the program that the pattern runs on,
 | 16 states | 76.9 ms (74.7 to 80.5) | 66.4 ms (63.8 to 69.6) | 12.5 ms (11.6 to 16.4) | 7.7 ms (5.6 to 14.6) |
 | 32 states | 901 ms (868 to 933) | 881 ms (863 to 920) | 14.5 ms (13.7 to 18.9) | 8.1 ms (5.4 to 11.8) |
 
-The page's first pattern and its four examples in the same loads, each with what it reads, and one pattern for the largest program. The search's two columns are after a pause of 200 ms. RegExp's column is the time that the page's worker measured for the pattern as typed, which the page's line shows, in the 12 loads of both builds, 101 to 156 timings per pattern, and 12 for the last example:
+The page's first pattern and its four examples in the same loads, each with what it reads, and one pattern for the largest program. The search's two columns are after a pause of 200 ms. RegExp's column is the time that the page's worker measured for the pattern as typed, which the page's line shows, in the 12 loads of both builds, 101 to 156 timings per pattern, and 12 for `([a-z]+)+x`:
 
 | Pattern | The search reads | The program of | Before | Now | Native RegExp |
 | --- | --- | --- | --- | --- | --- |

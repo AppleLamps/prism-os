@@ -23,7 +23,7 @@ From `writers-100000`, 100,000 documents, load average 8.2 to 14.4.  Every outpu
 
 ### The five runs with a new and with a repeated salt, whose files are at commit 1bed1ea
 
-Five Chrome processes, each with a new profile folder, compiled the three shaders with a scope for 2,000 documents. Their JSON files were in salts/ until October 14, 2026, and `git show 1bed1ea:lab/json-search/million/results/writer-fixed/salts/new-salt-1.json` prints one. This table holds every compile time of them, in ms.
+Five Chrome processes, each with a new profile folder, compiled the three shaders with a scope for 2,000 documents. Their JSON files were in salts/ until October 14, 2026, and `git show 1bed1ea:lab/json-search/million/results/writer-fixed/salts/new-salt-1.json` prints one. This table holds every compile time of them, in ms. summarize.ts didn't print it, since these runs have other names than the ones it reads: it is each run's `page.results[].compileMs`, per engine and state capacity.
 
 | Run | Its salt | What runs on the GPU | Compile at 8 states | 16 states | 32 states | Load average |
 | --- | --- | --- | --- | --- | --- | --- |

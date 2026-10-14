@@ -41,7 +41,7 @@ From `writers-100000`, 100,000 documents, load average 4.1 to 4.9.  Every output
 
 ### The four earlier runs, whose files are at commit 1bed1ea
 
-Four runs of the first version, each with one thing changed in the writer, 100,000 documents as one f32 per code point, a search that reads everything. Their JSON files were in earlier/ until October 14, 2026, and `git show 1bed1ea:lab/json-search/million/results/writer/earlier/before-lanes.json` prints one. This table holds the times that the README cites from them. A cell is back to back, as the median with the smallest and the largest sample; then the median after a pause of 200 ms.
+Four runs of the first version, each with one thing changed in the writer, 100,000 documents as one f32 per code point, a search that reads everything. Their JSON files were in earlier/ until October 14, 2026, and `git show 1bed1ea:lab/json-search/million/results/writer/earlier/before-lanes.json` prints one. This table holds the times that the README cites from them. summarize.ts didn't print it, since these runs have other names than the ones it reads: it is each run's `page.results`, per engine and state capacity, the scope `everything`. A cell is back to back, `backToBack.totalMs`, as the median with the smallest and the largest sample; then the median after a pause of 200 ms, `afterPause[].totalMs.median`.
 
 | Run | What it tried | What runs on the GPU | 8 states | 16 states | 32 states | Load average |
 | --- | --- | --- | --- | --- | --- | --- |
