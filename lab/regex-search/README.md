@@ -8,7 +8,7 @@ Search as you type over a text of fixed capacity, e.g. 256 or 1,024 code points,
 - (b) The pattern built into the program, in builtin-program.ts. The builder knows the automaton, so each step is a fixed sparse sum over the steps the pattern has, and a new pattern rebuilds and recompiles the program.
 - (c) The pattern as data in form (a)'s cells, with the steps over the text combined in a tree of matrix products instead of two loops, in tree-program.ts. It was added later the same day to test whether the program's matrix products can run as a few large batched products on the GPU, see [Matrix product tree on the GPU](#matrix-product-tree-on-the-gpu-september-17-2026). The page doesn't offer it.
 
-On October 14, 2026 the files that JSON search's page loads moved into [src/json-search/regex/](../../src/json-search/regex/): pattern.ts, data-program.ts, bits.ts and host.ts. reference.ts moved into tests/json-search/regex/. This folder keeps the other forms, the GPU measurement of form (c), report.ts and the tests.
+On October 14, 2026 the files that JSON search's page loads moved into [src/json-search/regex/](../../src/json-search/regex/): pattern.ts, data-program.ts, bits.ts and host.ts. reference.ts moved into tests/json-search/regex/, and so did the tests of the moved files, which were in this folder's regex-search.test.ts. This folder keeps the other forms with their tests, the GPU measurement of form (c) and report.ts.
 
 The pattern language is a subset of JavaScript's RegExp syntax with the `u` flag: literal code points, `.`, `\d`, `\w`, character classes with ranges and negation, e.g. `[a-z_]` or `[^0-9]`, `?`, `*`, `+`, `|` and groups. Everything else, e.g. `*?`, `{2}`, `^` or `(?:`, throws a `PatternSyntaxError` with its position.
 
@@ -17,7 +17,8 @@ The pattern language is a subset of JavaScript's RegExp syntax with the `u` flag
 From the repo root:
 
 ```sh
-bun test lab/regex-search                                   # 13 tests in 2 files, about 6 seconds
+bun test lab/regex-search                                   # 10 tests in 2 files, of forms (b) and (c), about 6 seconds
+bun test tests/json-search/regex                            # 8 tests of form (a) and of the pattern compiler, about 2 seconds
 bunx tsc -p lab/regex-search                                # type-check, including gpu/
 bunx oxlint --type-aware lab/regex-search                   # lint
 bun lab/regex-search/report.ts                              # every Bun measurement of forms (a) and (b) below, each variant in its own process, about 7 minutes
@@ -41,7 +42,8 @@ The page, rewritten on October 13, 2026, has a pattern field and three selects: 
 | `src/json-search/regex/bits.ts` | AND, AND NOT, NOT and "none of" on bits, folding bits that builder code already knows |
 | `src/json-search/regex/host.ts` | Writing code points into text cells, and turning the output bits into matches |
 | `tests/json-search/regex/reference.ts` | The two plain JavaScript references |
-| `regex-search.test.ts` | Differential tests |
+| `regex-search.test.ts` | Differential tests of forms (b) and (c) |
+| `tests/json-search/regex/regex-search.test.ts`, `tests/json-search/regex/test-patterns.ts` | Differential tests of form (a) and of the pattern compiler, and the hand-written cases and seeded random patterns and texts that both test files draw |
 | `report.ts` | Measurements in Bun |
 | `sample-text.ts` | The text of the measurements |
 

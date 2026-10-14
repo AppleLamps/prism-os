@@ -39,7 +39,7 @@ const isolatedLetters = Array.from('acegikmoqsuwyACE')
 const lettersOfBit = (bit: number) => isolatedLetters.filter((_, index) => ((index + 1) >> bit) & 1).join('')
 const fullClassesPattern = `([${lettersOfBit(0)}]|[${lettersOfBit(1)}]|[${lettersOfBit(2)}]|[${lettersOfBit(3)}]|[${lettersOfBit(4)}]|a|c)+`
 
-// Patterns for a capacity of 8 states: lab/regex-search's edge cases, the capacities, and the measurement's patterns.
+// Patterns for a capacity of 8 states: regex/test-patterns.ts's edge cases, the capacities, and the measurement's patterns.
 const handPatterns = [
   'a', 'a*', '', '()*', 'a|ab', '(a|ab)(c|bcd)', 'a+b|a', 'aba', 'a(bc)*', '.+', '[^a]+', '.', '\\w+', '\\d+', '😀+', '[]', '[^]', '[^]*',
   '\\d+\\.\\d+', '[a-c-]+', '(x|y)*z', 'abc', 'b+', '(the|an?) [a-z]+', 'abcdefg', fullClassesPattern, 'error', '[a-z0-9.]+@[a-z.]+',
@@ -47,7 +47,7 @@ const handPatterns = [
 ]
 const textAlphabet = ['a', 'b', 'c', 'x', 'y', 'z', '0', '9', 'Z', '_', '-', '.', '\n', ' ', ' ', 'é', '😀', '\u{10FFFF}', 't', 'h', 'e', 'n', '"', ':', '@', ...isolatedLetters]
 
-// Random patterns over a small alphabet, like lab/regex-search's tests: literals, classes, groups, alternation, repeats.
+// Random patterns over a small alphabet, like regex/test-patterns.ts's: literals, classes, groups, alternation, repeats.
 function randomPattern(random: () => number, depth: number): string {
   const roll = random()
   if (depth <= 0 || roll < 0.35) {
