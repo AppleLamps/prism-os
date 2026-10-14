@@ -11,6 +11,9 @@
 //              arrays of strings collected once, and the whole-text search in several workers.
 //   'scopes'   where the scope bits come from when the highlighter stays the repo's program: its own pass on the GPU, a
 //              piece of the documents at a time, between a kernel that unpacks bytes and one that packs display kinds.
+//   'writers'  every output of bit-emit.ts's shaders against loop-emit.ts's, for the same loop programs on the same
+//              documents: the highlighter's summary and display kinds, and the search step's match count of every
+//              document and mark of every position, without a scope and with each scope.
 //
 // The documents are the demo page's: documentText(index), every one valid JSON of at most 512 code points.
 import {capacityErrors, compilePattern} from '../../regex-search/pattern.ts'
@@ -18,10 +21,12 @@ import {bitRowKernel, bitRowTables} from '../bit-rows.ts'
 import {mapLayout, paintCells} from '../demo-map.ts'
 import {documentText} from '../demo-text.ts'
 import {displayKind} from '../../../src/json-highlighter/kinds.ts'
-import {type DocumentStore, createDocumentStore, createProgramRunner, requestBatchDevice} from '../gpu/host.ts'
+import {emitBitLoopWgsl} from '../bit-emit.ts'
+import {type DocumentStore, type ProgramRunner, type RunnableShader, createDocumentStore, createProgramRunner, requestBatchDevice} from '../gpu/host.ts'
 import {buildJsonLoop, stepSummaryNames} from '../json-step.ts'
 import {compileEmptyPipeline, createReporter, round, sleep, summary} from '../gpu/measure.ts'
 import {emitLoopWgsl} from '../loop-emit.ts'
+import type {LoopProgram} from '../loop-program.ts'
 import {cellsPerDocument, writeDocumentCells} from '../program.ts'
 import {boundaryCapacity, buildSearchLoop, classCapacity} from '../search-step.ts'
 import {type SearchResult, bufferBytesFor, createGpuSearcher} from '../searcher.ts'
@@ -33,7 +38,7 @@ import {type ScopeName, byteTableLength, byteTables, bytesPerDocument, packFixed
 import type {FilterAnswer, FilterRequest, HoldRequest, LoadRequest, LoadedPiece} from './worker.ts'
 
 export type PageConfig = {
-  mode: 'compact' | 'program' | 'load' | 'js' | 'scopes'
+  mode: 'compact' | 'program' | 'load' | 'js' | 'scopes' | 'writers'
   count: number
   patterns: string[]
   capacities: number[]
@@ -312,6 +317,39 @@ async function runCompact() {
     },
   })
   const everything = ['everything'] as const
+  // The repo's own search step (search-step.ts) over the f32 documents, as one of the two writers writes it. With a
+  // scope, the step also reads every code point's display kind, which the highlighter's own pass writes once.
+  const store: DocumentStore | undefined = f32 === undefined ? undefined : {buffer: f32, capacity: count, cellsPerDocument, write: () => {}, destroy: () => {}}
+  let highlighter: ProgramRunner | undefined
+  const kindsBuffer = async () => {
+    if (highlighter === undefined) {
+      const json = buildJsonLoop(cellsPerDocument)
+      highlighter = await createProgramRunner(device, emitLoopWgsl(json.loop), json.loop.sharedValues, store!, config.shaderSalt, {windowCapacity: count})
+      await highlighter.evaluate({count, window: {firstDocument: 0, documentCount: count}, readbacks: []})
+    }
+    return highlighter.outputBuffers[1]!
+  }
+  const stepEngine = (name: string, what: string, emit: (loop: LoopProgram) => RunnableShader, masked: boolean): EngineSpec => ({
+    name, what, needs: 'f32', scopes: masked ? ['everything', 'strings', 'keys'] : everything,
+    async create(states) {
+      const built = buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions, cellsPerDocument, masked, stopAtLength: false})
+      const runner = await createProgramRunner(device, emit(built.loop), built.loop.sharedValues, store!, config.shaderSalt, {windowCapacity: 1, ...(masked ? {inputs: [await kindsBuffer()]} : {})})
+      const shared = new Float32Array(built.loop.sharedValues.length)
+      return {
+        compileMs: runner.compileMs, output: 'floats',
+        async search({count: documents, pattern, scope, timestamps}) {
+          const started = performance.now()
+          shared.set(built.loop.sharedValues)
+          built.writePattern(shared, compilePattern(pattern.pattern))
+          if (masked) built.writeScope(shared, scope)
+          const patternMs = performance.now() - started
+          const evaluation = await runner.evaluate({count: documents, shared, readbacks: [{group: 0, firstDocument: 0, documentCount: documents}], timestamps})
+          return {patternMs, totalMs: performance.now() - started, submitMs: evaluation.uploadMs + evaluation.encodeAndSubmitMs, waitMs: evaluation.waitMs, copyMs: evaluation.copyMs, passMs: evaluation.passMs, gapMs: 0, values: evaluation.outputs[0]!}
+        },
+        destroy: () => runner.destroy(),
+      }
+    },
+  })
   const engineSpecs: EngineSpec[] = [
     f32Engine('f32-kernel', 'bit-rows.ts\'s kernel as it is, on one f32 per code point', states => {
       const kernel = bitRowKernel(states, positions, cellsPerDocument)
@@ -329,27 +367,10 @@ async function runCompact() {
     byteEngine('bytes-split', 'the counts, from four buffers of at most 128 MiB', {layout: 'fixed', classes: 'table', scope: false, output: 'count'}, everything, {split: true}),
     f32Engine('rewrite-1', 'the program\'s step with every 0-or-1 value as a bit, one table read per pair of states', states => rewriteKernel(states, 1, cellsPerDocument), cellTables, 'counts'),
     f32Engine('rewrite-2', 'the same with the reads of one sum as one word', states => rewriteKernel(states, 2, cellsPerDocument), tables => tables, 'counts'),
-    {
-      name: 'program-step', what: 'the program\'s own step as loop-emit.ts writes it, without a scope', needs: 'f32', scopes: everything,
-      async create(states) {
-        const built = buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions, cellsPerDocument, masked: false, stopAtLength: false})
-        const store: DocumentStore = {buffer: f32!, capacity: count, cellsPerDocument, write: () => {}, destroy: () => {}}
-        const runner = await createProgramRunner(device, emitLoopWgsl(built.loop), built.loop.sharedValues, store, config.shaderSalt, {windowCapacity: 1})
-        const shared = new Float32Array(built.loop.sharedValues.length)
-        return {
-          compileMs: runner.compileMs, output: 'floats',
-          async search({count: documents, pattern, timestamps}) {
-            const started = performance.now()
-            shared.set(built.loop.sharedValues)
-            built.writePattern(shared, compilePattern(pattern.pattern))
-            const patternMs = performance.now() - started
-            const evaluation = await runner.evaluate({count: documents, shared, readbacks: [{group: 0, firstDocument: 0, documentCount: documents}], timestamps})
-            return {patternMs, totalMs: performance.now() - started, submitMs: evaluation.uploadMs + evaluation.encodeAndSubmitMs, waitMs: evaluation.waitMs, copyMs: evaluation.copyMs, passMs: evaluation.passMs, gapMs: 0, values: evaluation.outputs[0]!}
-          },
-          destroy: () => runner.destroy(),
-        }
-      },
-    },
+    stepEngine('program-step', 'the program\'s own step as loop-emit.ts writes it, without a scope', emitLoopWgsl, false),
+    stepEngine('program-bits', 'the same step as bit-emit.ts writes it', emitBitLoopWgsl, false),
+    stepEngine('program-step-masked', 'the program\'s step with a scope, which the demo page runs, as loop-emit.ts writes it', emitLoopWgsl, true),
+    stepEngine('program-bits-masked', 'the same step with a scope as bit-emit.ts writes it', emitBitLoopWgsl, true),
   ]
   // A salt goes into every kernel's source, so that it compiles without hitting a shader cache.
   function withSalt<Shader extends {code: string}>(kernel: Shader): Shader {
@@ -448,6 +469,7 @@ async function runCompact() {
   }
   if (kept.counts.length === 2 && kept.bits.length === 2) report['paint'] = await measurePaint(count, kept.counts, kept.bits)
   await measureMemory('after the searches, with every layout\'s buffers')
+  highlighter?.destroy()
   for (const buffer of [fixed, scopes, packedBuffer, startsBuffer, f32, ...splitParts.map(part => part.buffer)]) buffer?.destroy()
 }
 
@@ -1128,12 +1150,112 @@ async function runScopes() {
   for (const buffer of [fixed, scopes, store.buffer, params, readback]) buffer.destroy()
 }
 
+// ----------------------------------------------------------------------------------------------------------------
+// 'writers': bit-emit.ts's shaders against loop-emit.ts's, value by value.
+
+async function runWriters() {
+  const {count} = config
+  // How many documents get per position outputs in one evaluation, e.g. 10,000 documents are 5,120,000 marks.
+  const windowDocuments = Math.min(count, config.pieceDocuments, 10_000)
+  const granted = await requestBatchDevice(count * cellsPerDocument * 4)
+  const {device} = granted
+  watchDevice(device)
+  report['emptyPipelineMs'] = round(await compileEmptyPipeline(device, config.shaderSalt))
+  const store = await createDocumentStore(device, cellsPerDocument, count)
+  const cells = new Float32Array(windowDocuments * cellsPerDocument)
+  for (let first = 0; first < count; first += windowDocuments) {
+    const documents = Math.min(windowDocuments, count - first)
+    for (let row = 0; row < documents; row++) writeDocumentCells(cells, row * cellsPerDocument, documentText(first + row))
+    store.write(cells, documents, first)
+    await device.queue.onSubmittedWorkDone()
+  }
+  log(`${count} documents written`)
+
+  type Comparison = Record<string, unknown> & {values: number, mismatches: number}
+  const comparisons: Comparison[] = []
+  report['comparisons'] = comparisons
+  // Both shaders of one loop program over every document, a window of documents at a time: each output group's values
+  // of the window's documents from one runner against the other's. `total` sums output group 0, to see that the
+  // compared values aren't all 0.
+  const compare = async (today: ProgramRunner, bits: ProgramRunner, shared: Float32Array | undefined) => {
+    const result = {values: 0, mismatches: 0, total: 0}
+    for (let first = 0; first < count; first += windowDocuments) {
+      const window = {firstDocument: first, documentCount: Math.min(windowDocuments, count - first)}
+      const options = {
+        count: window.documentCount, firstDocument: first, window, ...(shared === undefined ? {} : {shared}),
+        readbacks: [{group: 0, firstDocument: first, documentCount: window.documentCount}, {group: 1, firstDocument: 0, documentCount: window.documentCount}],
+      }
+      const expected = await today.evaluate(options)
+      const actual = await bits.evaluate(options)
+      expected.outputs.forEach((values, group) => {
+        const others = actual.outputs[group]!
+        result.values += values.length
+        for (let index = 0; index < values.length; index++) if (values[index] !== others[index]) result.mismatches++
+      })
+      for (const value of expected.outputs[0]!) result.total += value
+    }
+    return result
+  }
+  const describe = (shader: ReturnType<typeof emitBitLoopWgsl>) => ({statements: shader.statementCount, bytes: shader.bytes, rules: shader.rules, rows: shader.rowCounts, packedWords: shader.packedCells.length})
+
+  // The highlighter's step: its summary of every document, and its display kind of every position.
+  const json = buildJsonLoop(cellsPerDocument)
+  const jsonBitShader = emitBitLoopWgsl(json.loop)
+  const jsonToday = await createProgramRunner(device, emitLoopWgsl(json.loop), json.loop.sharedValues, store, config.shaderSalt, {windowCapacity: count})
+  const jsonBits = await createProgramRunner(device, jsonBitShader, json.loop.sharedValues, store, config.shaderSalt, {windowCapacity: windowDocuments})
+  // Today's shader first writes every document's display kinds, which the searches with a scope read.
+  await jsonToday.evaluate({count, window: {firstDocument: 0, documentCount: count}, readbacks: []})
+  const jsonReference = await createProgramRunner(device, emitLoopWgsl(json.loop), json.loop.sharedValues, store, config.shaderSalt, {windowCapacity: windowDocuments})
+  comparisons.push({program: 'the JSON highlighter\'s step', compileMs: {today: round(jsonReference.compileMs), bits: round(jsonBits.compileMs)}, ...describe(jsonBitShader), ...await compare(jsonReference, jsonBits, undefined)})
+  log(`the highlighter: ${JSON.stringify(comparisons.at(-1))}`)
+  jsonReference.destroy()
+  jsonBits.destroy()
+  await post(false)
+
+  const patterns = config.patterns.map(pattern => compilePattern(pattern))
+  for (const states of config.capacities) {
+    const capacity = {states, classes: classCapacity, boundaries: boundaryCapacity}
+    for (const masked of [false, true]) {
+      const built = buildSearchLoop(capacity, {positions, cellsPerDocument, masked, stopAtLength: false})
+      const bitShader = emitBitLoopWgsl(built.loop)
+      const runnerOptions = {windowCapacity: windowDocuments, ...(masked ? {inputs: [jsonToday.outputBuffers[1]!]} : {})}
+      const today = await createProgramRunner(device, emitLoopWgsl(built.loop), built.loop.sharedValues, store, config.shaderSalt, runnerOptions)
+      const bits = await createProgramRunner(device, bitShader, built.loop.sharedValues, store, config.shaderSalt, runnerOptions)
+      const shared = new Float32Array(built.loop.sharedValues.length)
+      for (const compiled of patterns) {
+        // Every pattern that fits this capacity, also one that a smaller capacity holds.
+        if (capacityErrors(compiled, capacity).length > 0) continue
+        for (const scope of masked ? ['everything', 'strings', 'keys'] as const : ['everything'] as const) {
+          shared.set(built.loop.sharedValues)
+          built.writePattern(shared, compiled)
+          if (masked) built.writeScope(shared, scope)
+          const started = performance.now()
+          comparisons.push({
+            program: `the search step, ${states} states${masked ? ', with a scope' : ''}`, states, masked, scope, pattern: compiled.pattern,
+            compileMs: {today: round(today.compileMs), bits: round(bits.compileMs)}, ...describe(bitShader), ...await compare(today, bits, shared), ms: round(performance.now() - started), load: await loadAverage(),
+          })
+          const {values, mismatches, total} = comparisons.at(-1)!
+          log(`${states} states${masked ? ', with a scope' : ''}, ${compiled.pattern}, ${scope}: ${values} values, ${mismatches} mismatched, ${String(total)} matches`)
+        }
+      }
+      today.destroy()
+      bits.destroy()
+      await post(false)
+    }
+  }
+  report['compared'] = {comparisons: comparisons.length, values: comparisons.reduce((total, entry) => total + entry.values, 0), mismatches: comparisons.reduce((total, entry) => total + entry.mismatches, 0)}
+  log(`compared: ${JSON.stringify(report['compared'])}`)
+  jsonToday.destroy()
+  store.destroy()
+}
+
 try {
   report['loadAtStart'] = await loadAverage()
   if (config.mode === 'compact') await runCompact()
   else if (config.mode === 'program') await runProgram()
   else if (config.mode === 'load') await runLoad()
   else if (config.mode === 'scopes') await runScopes()
+  else if (config.mode === 'writers') await runWriters()
   else await runJs()
   report['loadAtEnd'] = await loadAverage()
   report['finishedAt'] = new Date().toISOString()

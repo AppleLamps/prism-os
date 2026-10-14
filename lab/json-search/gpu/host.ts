@@ -8,6 +8,8 @@
 //   outputs     one buffer per output group, e.g. 3 summary values per document and 512 display kinds per document.
 //               They stay on the GPU, and an evaluation copies the ranges it reads back into mappable buffers, e.g. the
 //               summary of every document and the kinds of the 64 documents on screen.
+//   packed      for a shader of bit-emit.ts, words of bits that the runner packs from the shared values with the
+//               shader's plan, each time the shared values change, e.g. 272 words for regex search at 8 states
 //
 //   const {device} = await requestBatchDevice(documentCount * cellsPerDocument * 4)
 //   const store = createDocumentStore(device, cellsPerDocument, documentCount)
@@ -15,6 +17,7 @@
 //   const runner = await createProgramRunner(device, shader, program.packShared(shader), store)
 //   const {outputs} = await runner.evaluate({count: documentCount, readbacks: [{group: 0, firstDocument: 0, documentCount}]})
 import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
+import {packWords} from '../bit-emit.ts'
 import {countMismatches, expectedOutputs} from '../check.ts'
 import type {BatchProgram} from '../program.ts'
 
@@ -117,7 +120,8 @@ export type EvaluateOptions = {
   timestamps?: boolean
 }
 
-// What a runner needs from a shader: emit.ts's WgslModule and loop-emit.ts's LoopWgslModule both have it.
+// What a runner needs from a shader: emit.ts's WgslModule, loop-emit.ts's LoopWgslModule and bit-emit.ts's
+// BitLoopWgslModule all have it.
 export type RunnableShader = {
   code: string
   workgroupSize: number
@@ -128,6 +132,9 @@ export type RunnableShader = {
   windowedGroups?: boolean[]
   // The cells per document of the buffers a loop shader reads after the store.
   inputCells?: number[]
+  // bit-emit.ts's plan of the buffer packed_words, bound after the output buffers: which shared cell is which bit of
+  // which word. Without it, or with no words, the shader has no such buffer.
+  packedCells?: readonly (readonly number[])[]
 }
 
 export type RunnerOptions = {
@@ -174,10 +181,16 @@ export async function createProgramRunner(device: GPUDevice, shader: RunnableSha
     buffers.push(created)
     return created
   }
-  const {params, shared, outputBuffers, bindGroup, querySet, queryResolve, queryReadback} = await checked(device, () => {
+  const packedCells = shader.packedCells ?? []
+  // The shared values as last uploaded, since the packed words are packed from all of them and writeShared may write
+  // only a part.
+  const sharedCopy = new Float32Array(sharedValues)
+  const packedWords = new Uint32Array(packedCells.length)
+  const {params, shared, packed, outputBuffers, bindGroup, querySet, queryResolve, queryReadback} = await checked(device, () => {
     const created = {
       params: buffer({size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST}),
       shared: buffer({size: sharedValues.byteLength, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST, mappedAtCreation: true}),
+      packed: packedCells.length > 0 ? buffer({size: packedCells.length * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST}) : undefined,
       outputBuffers: shader.outputCounts.map((outputCount, group) => buffer({size: Math.max(4, groupCapacity[group]! * outputCount * 4), usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC})),
       querySet: hasTimestamps ? device.createQuerySet({type: 'timestamp', count: 2}) : undefined,
       queryResolve: buffer({size: 16, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC}),
@@ -193,10 +206,12 @@ export async function createProgramRunner(device: GPUDevice, shader: RunnableSha
         {binding: 2, resource: {buffer: store.buffer}},
         ...inputs.map((input, index) => ({binding: 3 + index, resource: {buffer: input}})),
         ...created.outputBuffers.map((outputBuffer, group) => ({binding: 3 + inputs.length + group, resource: {buffer: outputBuffer}})),
+        ...(created.packed === undefined ? [] : [{binding: 3 + inputs.length + created.outputBuffers.length, resource: {buffer: created.packed}}]),
       ],
     })
     return {...created, bindGroup}
   })
+  if (packed !== undefined) device.queue.writeBuffer(packed, 0, packWords(packedCells, sharedCopy, packedWords))
   // Per group, a mappable buffer and a JavaScript array, both made on the first readback and made again when a later
   // readback is larger, e.g. 131 KB for the kinds of 64 documents and 205 MB for the kinds of 100,000.
   const readbackBuffers: (GPUBuffer | undefined)[] = shader.outputCounts.map(() => undefined)
@@ -262,10 +277,16 @@ export async function createProgramRunner(device: GPUDevice, shader: RunnableSha
     return {uploadMs: uploaded - started, encodeAndSubmitMs: submitted - uploaded, waitMs: mapped - submitted, copyMs: finished - mapped, totalMs: finished - started, passMs, outputs}
   }
 
-  // New shared values from `offset` on, e.g. another pattern's cells in a search program.
+  // New shared values from `offset` on, e.g. another pattern's cells in a search program. With a plan of packed words,
+  // the words are packed again from every shared value and uploaded too, e.g. 34,816 cells into 1,088 words for regex
+  // search at 32 states.
   function writeShared(values: Float32Array, offset = 0) {
     invariant(offset + values.length <= shader.sharedLength, 'the values lie within the shared buffer')
     device.queue.writeBuffer(shared, offset * 4, values.buffer, values.byteOffset, values.byteLength)
+    if (packed !== undefined) {
+      sharedCopy.set(values, offset)
+      device.queue.writeBuffer(packed, 0, packWords(packedCells, sharedCopy, packedWords))
+    }
   }
 
   // Copies some documents' values of one output group out of the GPU without running a pass, e.g. the display kinds of
