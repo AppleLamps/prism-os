@@ -17,7 +17,7 @@ import {generateDocuments} from '../documents.ts'
 import {createPlainSearch} from '../plain-search.ts'
 import {buildBatchProgram, cellsPerDocument, kindCount, writeDocumentCells} from '../program.ts'
 import {type SearchScope, boundaryCapacity, classCapacity, kindCount as displayKindCount, searchableKinds} from '../search-step.ts'
-import {type Searcher, bufferBytesFor, createCpuSearcher, createGpuSearcher, positions} from '../searcher.ts'
+import {type Searcher, type ShaderWriter, bufferBytesFor, createCpuSearcher, createGpuSearcher, positions} from '../searcher.ts'
 import {highlightWithTables, tableLoopResult} from '../table-loop.ts'
 import {createDocumentStore, createProgramRunner, requestBatchDevice} from './host.ts'
 import {type SamplingConfig, compileEmptyPipeline, createReporter, round, sample, sleep, summary, timeCpu} from './measure.ts'
@@ -32,6 +32,8 @@ export type CombinedPageConfig = SamplingConfig & {
   idleSamples: number
   windowDocuments: number
   shaderSalt: number
+  // Which writer writes the search programs' shaders and the highlighter's, see searcher.ts.
+  writers: {search: ShaderWriter, highlighter: ShaderWriter}
   seed: number
   invalidFraction: number
   // How many documents the plain JavaScript loop is compared with the loop program on the CPU, and how many the
@@ -39,7 +41,8 @@ export type CombinedPageConfig = SamplingConfig & {
   cpuDocuments: number
   executorDocuments: number
   selfCheckDocuments: number
-  // The 32-state program is timed up to this many documents, since one search takes about 1 s per 100,000.
+  // The 32-state program is timed up to this many documents, since one search of loop-emit.ts's shader takes about
+  // 1 s per 100,000.
   largestCountFor32States: number
   // Also compiles and times the first stage's display shader at the largest count.
   straightLine: boolean
@@ -109,7 +112,7 @@ async function run() {
     entry['plainJavaScript'] = plainTimes
 
     // The searcher, as a page creates it. A different salt per count, so that every count compiles cold.
-    const searcher: Searcher = await createGpuSearcher(device, texts, {windowCapacity: config.windowDocuments, shaderSalt: config.shaderSalt + countIndex})
+    const searcher: Searcher = await createGpuSearcher(device, texts, {windowCapacity: config.windowDocuments, shaderSalt: config.shaderSalt + countIndex, writers: config.writers})
     entry['load'] = {cellsMs: round(searcher.load.cellsMs), validateMs: round(searcher.load.validateMs), totalMs: round(searcher.load.totalMs), megabytesOfCells: round(count * cellsPerDocument * 4 / 1e6)}
     entry['limits'] = searcher.limits
     log(`${count} documents: searcher created in ${round(searcher.load.totalMs)} ms, ${JSON.stringify(searcher.programs())}`)

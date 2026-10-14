@@ -7,7 +7,8 @@
 // The groups, and the table that each one fills:
 //   compact   the hand-written kernels at 100,000 to 1,000,000 documents, the map, and at 100,000 documents the program's
 //             own step next to the two rewrites of it
-//   program   searcher.ts, what the demo page runs today, at each count, as far as it fits
+//   program   searcher.ts with loop-emit.ts's search shaders, which the demo page ran when this check was made, at
+//             each count, as far as it fits
 //   load      the load of a page and its memory, per layout and count
 //   js        regular JavaScript on one thread and in 8 workers
 //   warm      a search after a pause in which the GPU was kept busy
@@ -28,8 +29,8 @@ const runs: Run[] = [
   {name: 'compact-1000000', group: 'compact', args: ['--mode', 'compact', '--count', '1000000', '--engines', `${kernels},bytes-split`]},
   {name: 'compact-100000', group: 'compact', args: ['--mode', 'compact', '--count', '100000', '--engines', `${kernels},rewrite-1,rewrite-2,program-step`]},
   {name: 'js-1000000', group: 'js', args: ['--mode', 'js', '--count', '1000000']},
-  {name: 'program-1000000', group: 'program', args: ['--mode', 'program', '--count', '1000000']},
-  {name: 'program-500000', group: 'program', args: ['--mode', 'program', '--count', '500000']},
+  {name: 'program-1000000', group: 'program', args: ['--mode', 'program', '--count', '1000000', '--search-writer', 'loop-emit']},
+  {name: 'program-500000', group: 'program', args: ['--mode', 'program', '--count', '500000', '--search-writer', 'loop-emit']},
   ...counts.toReversed().flatMap(count => [
     {name: `load-fixed-${count}`, group: 'load', args: ['--mode', 'load', '--count', String(count), '--layout', 'fixed', '--keep-texts']},
     {name: `load-packed-${count}`, group: 'load', args: ['--mode', 'load', '--count', String(count), '--layout', 'packed', '--keep-texts']},
@@ -39,8 +40,8 @@ const runs: Run[] = [
   {name: 'load-fixed-1000000-default-limits', group: 'load', args: ['--mode', 'load', '--count', '1000000', '--layout', 'fixed', '--limits', 'default']},
   {name: 'compact-500000', group: 'compact', args: ['--mode', 'compact', '--count', '500000', '--engines', kernels]},
   {name: 'compact-250000', group: 'compact', args: ['--mode', 'compact', '--count', '250000', '--engines', kernels]},
-  {name: 'program-250000', group: 'program', args: ['--mode', 'program', '--count', '250000']},
-  {name: 'program-100000', group: 'program', args: ['--mode', 'program', '--count', '100000']},
+  {name: 'program-250000', group: 'program', args: ['--mode', 'program', '--count', '250000', '--search-writer', 'loop-emit']},
+  {name: 'program-100000', group: 'program', args: ['--mode', 'program', '--count', '100000', '--search-writer', 'loop-emit']},
   {name: 'js-100000', group: 'js', args: ['--mode', 'js', '--count', '100000']},
   // The whole-text search again, with each search also after a pause of 200 ms, as a keystroke would find the CPU.
   {name: 'js-pause-1000000', group: 'js', args: ['--mode', 'js', '--count', '1000000', '--js-parts', 'wholeText,workers', '--js-pause', '200']},

@@ -1,6 +1,7 @@
 // The demo page's parts that need no browser: the map's geometry and pixels (demo-map.ts), the page's documents,
-// sentences and numbers (demo-text.ts), and the worker that runs both programs on the CPU and times RegExp
-// (demo-worker.ts), which Bun runs as a worker here.
+// sentences and numbers (demo-text.ts), the worker that runs both programs on the CPU and times RegExp
+// (demo-worker.ts), which Bun runs as a worker here, and the searches that the page asks its GPU searcher for, with
+// each pass run by the WGSL interpreter (interpreted-gpu.ts).
 // Run from the repo root: bun test lab/json-search/demo.test.ts
 import {describe, expect, test} from 'bun:test'
 import {readFileSync} from 'node:fs'
@@ -9,8 +10,9 @@ import {type MapLayout, cellAt, cellCenterCss, mapLayout, nearestMatch, nextMatc
 import {type Line, analyzePattern, count, documentRuns, documentText, documentsThatFit, duration, failureSentence, isScope, loadNotice, resultLine, runClassName} from './demo-text.ts'
 import type {WorkerAnswer, WorkerRequest} from './demo-worker.ts'
 import {codePointLength} from './documents.ts'
+import {createInterpretedDevice} from './interpreted-gpu.ts'
 import {createPlainSearch} from './plain-search.ts'
-import {bufferBytesFor, createCpuSearcher, defaultStateCapacities} from './searcher.ts'
+import {bufferBytesFor, createCpuSearcher, createGpuSearcher, defaultStateCapacities} from './searcher.ts'
 
 // A line as plain text.
 const text = (line: Line) => line.map(part => typeof part === 'string' ? part : part.strong).join('')
@@ -220,6 +222,39 @@ describe('the page\'s documents', () => {
       expect(plain.search(pattern, scope).matches).toBeGreaterThan(100)
     }
   })
+
+  test('the page\'s searches on the GPU, each pass through the WGSL interpreter, give what its toggle\'s other side gives on the CPU: the pattern that the page starts with, and every example', async () => {
+    // What demo.ts asks its searcher for: every document's count at a keystroke, then the display kinds and the
+    // marks of the one document that it shows. The first 40 documents, since the interpreter takes about 15 ms per
+    // document and search.
+    const few = texts.slice(0, 40)
+    const html = page('./demo.html')
+    const firstPattern = /<input id="pattern"[^>]* value="([^"]*)"/.exec(html)?.[1]
+    expect(firstPattern).toBe('error')
+    const searches = [{pattern: firstPattern!, scope: 'everything'}, ...[...html.matchAll(/data-pattern="([^"]*)" data-scope="([^"]*)"/g)].map(([, pattern, scope]) => ({pattern: pattern!, scope: scope!}))]
+    // As the page creates it, and as its worker creates the one for the CPU.
+    const gpu = await createGpuSearcher(createInterpretedDevice(), few)
+    const cpu = createCpuSearcher(few, {highlight: 'whenFirstRead', windowCapacity: 256})
+    const programs = new Set<number>()
+    for (const {pattern, scope} of searches) {
+      if (!isScope(scope)) throw new Error(`${scope} isn't one of the page's scopes`)
+      const [found, expected] = [await gpu.search({pattern, scope}), await cpu.search({pattern, scope})]
+      if (found?.status !== 'searched' || expected?.status !== 'searched') throw new Error(`${pattern} wasn't searched`)
+      expect([pattern, found.states, [...found.matchCounts]]).toEqual([pattern, expected.states, [...expected.matchCounts]])
+      programs.add(found.states)
+      // The first document with a match, which the page shows.
+      const index = found.matchCounts.findIndex(matches => matches > 0)
+      expect([pattern, index >= 0]).toEqual([pattern, true])
+      const window = {firstDocument: index, documentCount: 1}
+      const [marked, expectedMarks] = [await gpu.search({pattern, scope, window, documents: 'window'}), await cpu.search({pattern, scope, window, documents: 'window'})]
+      if (marked?.status !== 'searched' || expectedMarks?.status !== 'searched') throw new Error(`${pattern} wasn't searched`)
+      expect([pattern, [...marked.marks]]).toEqual([pattern, [...expectedMarks.marks]])
+      expect(marked.marks.filter(mark => mark === 2).length).toBe(found.matchCounts[index]!)
+      expect([...await gpu.kinds(window)]).toEqual([...await cpu.kinds(window)])
+    }
+    // The date runs on the program of 16 states, and the others on the one of 8.
+    expect([...programs].sort((left, right) => left - right)).toEqual([8, 16])
+  }, 60_000)
 
   test('keeps the wanted count when one buffer of the GPU holds it, and otherwise the whole thousands that fit', () => {
     const bytesPerDocument = bufferBytesFor(1)

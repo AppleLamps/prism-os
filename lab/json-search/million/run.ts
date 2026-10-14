@@ -8,7 +8,11 @@
 //   bun lab/json-search/million/run.ts --mode js --count 1000000 --profile <new folder> --out <file.json>
 //     [--engines bytes,bytes-has] [--capacities 8,16,32] [--no-f32] [--workers 8] [--no-scope-bits] [--limits default]
 //     [--keep-texts] [--js-parts wholeText,forms,parse,walk,collected,workers] [--regexp-flags u] [--warm-pauses 200:16]
-//     [--port 4511] [--devtools-port 9511]
+//     [--port 4511] [--devtools-port 9511] [--search-writer loop-emit] [--chrome <path>]
+//
+// In the 'program' mode the searcher is the demo page's unless --search-writer says otherwise: bit-emit.ts's shaders
+// for the search programs. `--search-writer loop-emit` is what the demo page ran when this check was made, and what
+// all.ts's 'program' runs pass.
 //
 // all.ts runs every table's runs one after the other, and summarize.ts prints the tables from the JSON files.
 // Before a run of 500,000 documents or more, this script reads how much memory is free, and stops when it is less than
@@ -27,8 +31,11 @@ const profile = required('--profile')
 const pagePatterns = ['error', '[a-z]+Id', '[a-z0-9.]+@[a-z.]+', '\\d\\d\\d\\d-\\d\\d-\\d\\d', '([a-z]+)+x', 'connection reset']
 const everyEngine = ['f32-kernel', 'bytes-boundaries', 'bytes', 'bytes-scope', 'packed', 'packed-scope', 'bytes-bits', 'bytes-has', 'bytes-scope-has', 'packed-scope-has']
 
+const searchWriter = argument('--search-writer') ?? 'bit-emit'
+if (searchWriter !== 'bit-emit' && searchWriter !== 'loop-emit') throw new Error(`--search-writer is bit-emit or loop-emit, got ${searchWriter}`)
+
 const config: PageConfig = {
-  mode, count,
+  mode, count, searchWriter,
   patterns: (argument('--patterns') ?? pagePatterns.join('\n')).split('\n'),
   capacities: numbers(argument('--capacities') ?? '8,16,32'),
   shaderSalt: Number(argument('--salt') ?? Math.floor(Math.random() * 1e9)),

@@ -1,7 +1,8 @@
 // Regex search as a loop over positions (search-step.ts) against lab/regex-search's form (a) with every position written
 // out, on the CPU executor: the loop program on the executor, on generated JavaScript, and its WGSL text through the
-// strict interpreter, as loop-emit.ts writes it and as bit-emit.ts writes it. A real GPU compiler may fuse or regroup
-// operations; gpu/search-run.ts and million/run.ts's 'writers' mode check the same outputs in headless Chrome.
+// strict interpreter, as loop-emit.ts writes it and as bit-emit.ts writes it. The demo page's searches run bit-emit.ts's
+// shaders, so where a test samples its cases, bit-emit.ts's shader runs on more of them. A real GPU compiler may fuse
+// or regroup operations; gpu/search-run.ts and million/run.ts's 'writers' mode check the same outputs in headless Chrome.
 // Run from the repo root: bun test lab/json-search/search.test.ts
 import {describe, expect, test} from 'bun:test'
 import {buildDataSearch, writePattern} from '../regex-search/data-program.ts'
@@ -307,7 +308,8 @@ describe('regex search as a loop, at the measured capacities', () => {
       const built = buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions, cellsPerDocument: storeCells, masked: false, stopAtLength})
       return {built, runner: createLoopRunner(built.loop, 'generated'), shared: new Float32Array(built.loop.sharedValues)}
     })
-    const interpreters = (['loop-emit', 'bit-emit'] as const).map(writer => interpreterOf(variants[0]!.built.loop, writer))
+    // loop-emit.ts's shader on every 6th document, and bit-emit.ts's, which the page runs, on every 2nd.
+    const interpreters = ([['loop-emit', 6], ['bit-emit', 2]] as const).map(([writer, every]) => ({interpret: interpreterOf(variants[0]!.built.loop, writer), every}))
     const count = new Float32Array(1)
     const marks = new Float32Array(positions)
     const rowMarks = new Uint8Array(positions)
@@ -329,14 +331,13 @@ describe('regex search as a loop, at the measured capacities', () => {
           variant.runner.run([cells], row, [count, marks], 0, 0)
           if (count[0] !== wanted.count || mismatchCount(marks, wanted.marks) > 0) expect({pattern, text, count: count[0], marks: [...marks]}).toEqual(wanted)
         }
-        if (row % 6 === 0) {
-          for (const interpret of interpreters) {
-            // Not the answer that the runner left in the arrays, so that a shader which wrote nothing fails.
-            count.fill(9)
-            marks.fill(9)
-            interpret(variants[0]!.shared, cells.subarray(row * storeCells, (row + 1) * storeCells), 1, [count, marks], {window: {first: 0, count: 1}})
-            if (count[0] !== wanted.count || mismatchCount(marks, wanted.marks) > 0) expect({pattern, text, count: count[0], marks: [...marks]}).toEqual(wanted)
-          }
+        for (const {interpret, every} of interpreters) {
+          if (row % every !== 0) continue
+          // Not the answer that the runner left in the arrays, so that a shader which wrote nothing fails.
+          count.fill(9)
+          marks.fill(9)
+          interpret(variants[0]!.shared, cells.subarray(row * storeCells, (row + 1) * storeCells), 1, [count, marks], {window: {first: 0, count: 1}})
+          if (count[0] !== wanted.count || mismatchCount(marks, wanted.marks) > 0) expect({pattern, text, count: count[0], marks: [...marks]}).toEqual(wanted)
         }
         const loopCount = search(text, rowMarks)
         if (loopCount !== wanted.count || mismatchCount(rowMarks, wanted.marks) > 0) expect({pattern, text, count: loopCount, marks: [...rowMarks]}).toEqual(wanted)
@@ -496,7 +497,9 @@ describe('searching only some kinds of characters', () => {
     const runner = createLoopRunner(built.loop, 'generated')
     const shader = emitLoopWgsl(built.loop)
     expect([shader.inputCells, shader.cellsPerInstance]).toEqual([[positions], storeCells])
-    const interpreters = (['loop-emit', 'bit-emit'] as const).map(writer => interpreterOf(built.loop, writer))
+    // loop-emit.ts's shader on every 9th case, and bit-emit.ts's, which is the shader of the page's 8-state program, on
+    // every 3rd.
+    const interpreters = ([['loop-emit', 9], ['bit-emit', 3]] as const).map(([writer, every]) => ({interpret: interpreterOf(built.loop, writer), every}))
     const shared = new Float32Array(built.loop.sharedValues)
     const count = new Float32Array(1)
     const marks = new Float32Array(positions)
@@ -507,16 +510,17 @@ describe('searching only some kinds of characters', () => {
       runner.setShared(shared)
       runner.run([cells, kinds], entry.row, [count, marks], 0, 0)
       if (count[0] !== entry.count || mismatchCount(marks, entry.marks) > 0) expect({...entry, count: count[0], marks: [...marks]}).toEqual(entry)
-      if (index % 9 !== 0) continue
-      for (const interpret of interpreters) {
+      for (const {interpret, every} of interpreters) {
+        if (index % every !== 0) continue
         // Not the answer that the runner left in the arrays, so that a shader which wrote nothing fails.
         count.fill(9)
         marks.fill(9)
         interpret(shared, cells.subarray(entry.row * storeCells, (entry.row + 1) * storeCells), 1, [count, marks], {inputs: [kinds.subarray(entry.row * kindsPerDocument, (entry.row + 1) * kindsPerDocument)], window: {first: 0, count: 1}})
         if (count[0] !== entry.count || mismatchCount(marks, entry.marks) > 0) expect({...entry, count: count[0], marks: [...marks]}).toEqual(entry)
+        interpreted++
       }
-      interpreted++
     }
-    expect(interpreted).toBeGreaterThan(80)
+    // 104 cases through loop-emit.ts's shader and 310 through bit-emit.ts's.
+    expect(interpreted).toBeGreaterThan(400)
   }, 120_000)
 })

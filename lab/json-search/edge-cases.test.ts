@@ -1,7 +1,8 @@
-// Documents and searches at the limits of both programs (edge-cases.ts), through the demo page's module on the CPU,
-// against the programs that have every position written out, on the CPU executor: the looped steps have to give the
-// values of the full programs at exactly the capacity, at the maximum depth, on an empty text, and for patterns that
-// fill a program's states, classes and class boundaries. gpu/review-run.ts runs the same comparison on the GPU.
+// Documents and searches at the limits of both programs (edge-cases.ts), through the demo page's module, against the
+// programs that have every position written out, on the CPU executor: the looped steps have to give the values of
+// the full programs at exactly the capacity, at the maximum depth, on an empty text, and for patterns that fill a
+// program's states, classes and class boundaries. The module runs on the CPU, and as the page runs it on the GPU, with
+// each pass run by the WGSL interpreter (interpreted-gpu.ts). gpu/review-run.ts runs the same comparison on a GPU.
 // Run from the repo root: bun test lab/json-search/edge-cases.test.ts
 import {describe, expect, test} from 'bun:test'
 import {capacity, errorKind, maximumDepth} from '../../src/json-highlighter/kinds.ts'
@@ -11,9 +12,10 @@ import {
   stateCapacityOf,
 } from './edge-cases.ts'
 import {generateDocuments} from './documents.ts'
+import {createInterpretedDevice} from './interpreted-gpu.ts'
 import {summaryCount} from './program.ts'
 import {boundaryCapacity, classCapacity} from './search-step.ts'
-import {createCpuSearcher, defaultSelfCheckSearches} from './searcher.ts'
+import {createCpuSearcher, createGpuSearcher, defaultSelfCheckSearches} from './searcher.ts'
 
 const documents = handWrittenDocuments()
 const texts = documents.map(document => document.text)
@@ -109,9 +111,34 @@ describe('documents and searches at the limits', () => {
     expect(backends.expectedMatches).toBeGreaterThan(30)
   }, 180_000)
 
+  test('the searcher on the GPU, each pass through the WGSL interpreter, gives the written-out programs\' values at 8 states, and the CPU searcher\'s at 16 and 32', async () => {
+    // Every 3rd document of more than one code point, among them texts of exactly the capacity, matches at the first
+    // and at the last position, and nesting at the maximum depth, and every 3rd search.
+    const sample = longer.filter((_, index) => index % 3 === 2)
+    const searches = edgeSearches(8).filter((_, index) => index % 3 === 0)
+    const gpu = await createGpuSearcher(createInterpretedDevice(), sample, {windowCapacity: 16})
+    expect(gpu.programs().map(program => program.statements)).toEqual([107, 147, 171, 219])
+    const comparison = await compareWithWrittenOutPrograms(gpu, sample, searches, {windowDocuments: 16, maxWrittenOutStates: 8})
+    expect([comparison.documents, comparison.searches, comparison.validationMismatches, comparison.searchMismatches, comparison.examples]).toEqual([sample.length, searches.length, 0, 0, []])
+    expect(comparison.expectedValidDocuments).toBeGreaterThan(5)
+    expect(comparison.expectedMatches).toBeGreaterThan(4000)
+    expect(comparison.expectedMarkedPositions).toBeGreaterThan(20_000)
+    // 4 of the 12 searches can't match: the empty class, the empty pattern, and two that read no kind of character.
+    expect(comparison.searchesWithMatches).toBe(8)
+
+    // The patterns that fill 16 and 32 states, among them the ones with 16 classes and 32 class boundaries, over the
+    // documents whose matches touch the first and the last position.
+    const few = documents.filter(document => /times a$|isolated letters|both ends|a date at the end|emoji around/.test(document.name)).map(document => document.text)
+    const larger = [...edgeSearches(16), ...edgeSearches(32)].filter(search => search.scope === 'everything')
+    const windows = Array.from({length: Math.ceil(few.length / 8)}, (_, index) => ({firstDocument: index * 8, documentCount: Math.min(8, few.length - index * 8)}))
+    const backends = await compareSearchers(await createGpuSearcher(createInterpretedDevice(), few, {windowCapacity: 8}), createCpuSearcher(few, {windowCapacity: 8}), larger, windows)
+    expect([backends.documents, backends.searches, backends.validationMismatches, backends.searchMismatches, backends.examples]).toEqual([few.length, larger.length, 0, 0, []])
+    expect(backends.expectedMatches).toBeGreaterThan(100)
+  }, 180_000)
+
   test('what a self check expects is mostly not zero, so a GPU that returned zeros would fail it', async () => {
     // The first 300 generated documents, which a page's self check runs: 268 are valid, 91% of their display kinds
-    // aren't 0, and each of the self check's four searches finds matches.
+    // aren't 0, and each of the self check's nine searches finds matches, e.g. `東京` 6 and the one of 32 states 32.
     const searcher = createCpuSearcher(generateDocuments(300).map(document => document.text))
     const kinds = await searcher.kinds({firstDocument: 0, documentCount: 300})
     const found: [matches: number, documentsWithMatches: number][] = []
@@ -120,6 +147,6 @@ describe('documents and searches at the limits', () => {
       if (result?.status !== 'searched') throw new Error(`the self check's pattern ${pattern} wasn't searched`)
       found.push([result.matches, result.documentsWithMatches])
     }
-    expect([searcher.validation.validCount, kinds.filter(kind => kind !== 0).length, kinds.length, found]).toEqual([268, 140_525, 300 * capacity, [[8705, 300], [133, 78], [2868, 251], [1482, 224]]])
+    expect([searcher.validation.validCount, kinds.filter(kind => kind !== 0).length, kinds.length, found]).toEqual([268, 140_525, 300 * capacity, [[8705, 300], [133, 78], [2868, 251], [1482, 224], [57, 55], [4, 4], [32, 31], [6, 6], [1178, 300]]])
   }, 60_000)
 })

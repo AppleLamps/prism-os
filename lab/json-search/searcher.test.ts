@@ -1,7 +1,10 @@
-// The demo page's module on the CPU (searcher.ts), against plain JavaScript written from the definitions: the
+// The demo page's module (searcher.ts). On the CPU, against plain JavaScript written from the definitions: the
 // highlighter's reference in tests/json-highlighter/reference.ts and lab/regex-search's automaton simulator over the
-// code points of the searched kinds. The GPU version runs the same loop programs through loop-emit.ts's shaders, which
-// search.test.ts checks through the WGSL interpreter and gpu/combined-run.ts checks in headless Chrome.
+// code points of the searched kinds. On the GPU, against the CPU version: `createGpuSearcher` runs here on a device
+// whose compute pass is the WGSL interpreter (interpreted-gpu.ts), so the test covers what the page calls, i.e. the
+// shaders as bit-emit.ts writes them for a search and as loop-emit.ts writes the highlighter's, gpu/host.ts's buffers
+// and packed words, and the readbacks. The interpreter says nothing about a GPU's compiler: gpu/combined-run.ts and
+// gpu/review-run.ts run the same searcher in headless Chrome.
 // Run from the repo root: bun test lab/json-search/searcher.test.ts
 import {describe, expect, test} from 'bun:test'
 import {capacity, displayKind} from '../../src/json-highlighter/kinds.ts'
@@ -9,9 +12,10 @@ import {highlightReference} from '../../tests/json-highlighter/reference.ts'
 import {compilePattern} from '../regex-search/pattern.ts'
 import {automatonMatches} from '../regex-search/reference.ts'
 import {generateDocuments} from './documents.ts'
+import {createInterpretedDevice} from './interpreted-gpu.ts'
 import {createPlainSearch} from './plain-search.ts'
 import {type SearchScope, searchScopes, searchableKinds} from './search-step.ts'
-import {type SearchResult, createCpuSearcher} from './searcher.ts'
+import {type SearchResult, type Searcher, type ShaderWriter, createCpuSearcher, createGpuSearcher, defaultSelfCheckSearches} from './searcher.ts'
 
 const texts = [...generateDocuments(60).map(document => document.text), '{"the tide": "an owl", "a": ["the pier", 12]}', '', '"😀 the tide"', `["${'the harbor '.repeat(60)}"]`]
 const references = texts.map(text => highlightReference(text, 0))
@@ -127,10 +131,107 @@ describe('the searcher on the CPU', () => {
   })
 
   test('the self check finds no difference between generated JavaScript and the CPU executor', async () => {
+    // The 7 of the self check's 9 searches that the program of 8 states holds.
     const check = await createCpuSearcher(texts.slice(0, 12), {stateCapacities: [8]}).selfCheck(12)
-    expect([check.documents, check.searches, check.mismatches]).toEqual([12, 4, 0])
-    expect(check.values).toBe(4 * 12 + 4 * (12 + 12 * capacity))
+    expect([check.documents, check.searches, check.mismatches]).toEqual([12, 7, 0])
+    expect(check.values).toBe(4 * 12 + 7 * (12 + 12 * capacity))
   }, 60_000)
+
+  test('the self check\'s searches fill each program\'s states, read characters above U+00FF, and match at a document\'s last character', () => {
+    const statesOf = (pattern: string) => compilePattern(pattern).automaton.stateCount
+    const patterns = defaultSelfCheckSearches.map(search => search.pattern)
+    for (const states of [8, 16, 32]) expect(patterns.map(statesOf)).toContain(states)
+    expect(patterns.some(pattern => Array.from(pattern).every(character => character.codePointAt(0)! > 0xff))).toBe(true)
+    // Every generated document that is valid JSON ends with a bracket, which `[}\\]]` matches.
+    expect(patterns).toContain('[}\\]]')
+    const closing = compilePattern('[}\\]]')
+    for (const text of generateDocuments(40, undefined, 0).map(document => document.text)) {
+      const codePoints = Array.from(text, character => character.codePointAt(0)!)
+      expect(automatonMatches(closing, codePoints).at(-1)?.end).toBe(codePoints.length)
+    }
+  })
+})
+
+// The GPU version over a device that runs each pass through the WGSL interpreter, about 30 ms per document and
+// search for bit-emit.ts's shaders, and 0.1, 0.3 and 1 s at 8, 16 and 32 states for loop-emit.ts's. So these tests
+// hold a few documents: six generated ones, then the four written by hand above, one of them empty and one longer
+// than a program holds.
+describe('the searcher on the GPU, with every pass run by the WGSL interpreter', () => {
+  const few = [...texts.slice(0, 6), ...texts.slice(60)]
+  const everyDocument = {firstDocument: 0, documentCount: few.length}
+  const cpu = createCpuSearcher(few, {windowCapacity: few.length})
+  // The four documents written by hand.
+  const window = {firstDocument: 6, documentCount: 4}
+  // A pattern that fills each program's states, and one of 2 states. `states` is the program that the pattern runs on.
+  const searches: {pattern: string, scope: SearchScope, states: number}[] = [
+    {pattern: '(the|an?) [a-z]+', scope: 'strings', states: 8},
+    {pattern: '[a-z]+', scope: 'keys', states: 8},
+    {pattern: '(the|an?|some) [a-z]+(ing)?s?', scope: 'everything', states: 16},
+    {pattern: '(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ', scope: 'stringsAndKeys', states: 32},
+  ]
+
+  // A GPU searcher's validation, kinds, and each search's counts and marks, against the CPU searcher's: with every
+  // document in one pass and the marks of a window, as a page searches at a keystroke, and with the window's
+  // documents alone, as a page reads the marks of the document that it shows.
+  async function expectTheCpuSearchersValues(gpu: Searcher, wanted: typeof searches) {
+    expect(gpu.validation).toEqual(cpu.validation)
+    expect(gpu.validation.validCount).toBeLessThan(few.length)
+    expect([...await gpu.kinds(everyDocument)]).toEqual([...await cpu.kinds(everyDocument)])
+    let matches = 0
+    for (const {pattern, scope, states} of wanted) {
+      const expected = searched(await cpu.search({pattern, scope, window}))
+      const all = searched(await gpu.search({pattern, scope, window}))
+      expect([pattern, all.states, all.patternStates, [...all.matchCounts], [...all.marks]]).toEqual([pattern, states, expected.patternStates, [...expected.matchCounts], [...expected.marks]])
+      const some = searched(await gpu.search({pattern, scope, window, documents: 'window'}))
+      expect([pattern, [...some.matchCounts], [...some.marks]]).toEqual([pattern, [...expected.matchCounts.subarray(window.firstDocument, window.firstDocument + window.documentCount)], [...expected.marks]])
+      expect(expected.marks.some(mark => mark === 2)).toBe(true)
+      matches += expected.matches
+    }
+    expect(matches).toBeGreaterThan(wanted.length * 10)
+    expect(wanted.map(search => compilePattern(search.pattern).automaton.stateCount)).toContain(wanted.at(-1)!.states)
+  }
+  const statementsOf = (searcher: Searcher) => searcher.programs().map(program => [program.name, program.statements])
+
+  test('as a page creates it: the search programs\' shaders are bit-emit.ts\'s and the highlighter\'s is loop-emit.ts\'s, all compiled at creation, and every value is the CPU searcher\'s', async () => {
+    const gpu = await createGpuSearcher(createInterpretedDevice(), few)
+    expect([gpu.backend, gpu.stateCapacities]).toEqual(['gpu', [8, 16, 32]])
+    // loop-emit.ts writes the same search programs as 503, 1,375 and 4,655 statements.
+    expect(statementsOf(gpu)).toEqual([['JSON highlighter', 107], ['regex search, 8 states', 147], ['regex search, 16 states', 171], ['regex search, 32 states', 219]])
+    expect(await gpu.prepare(32)).toBe(0)
+    await expectTheCpuSearchersValues(gpu, searches)
+    gpu.destroy()
+  }, 60_000)
+
+  test('only the newest of several requests gets a result, while the one before it is in flight', async () => {
+    const gpu = await createGpuSearcher(createInterpretedDevice(), few, {stateCapacities: [8]})
+    const first = gpu.search({pattern: 'a'})
+    const second = gpu.search({pattern: 'b'})
+    const third = gpu.search({pattern: 'the', scope: 'strings'})
+    const expected = searched(await cpu.search({pattern: 'the', scope: 'strings'}))
+    expect([await first, await second, [...searched(await third).matchCounts]]).toEqual([undefined, undefined, [...expected.matchCounts]])
+    expect(expected.matches).toBeGreaterThan(5)
+    // A pattern that the largest program of this searcher doesn't hold.
+    expect((await gpu.search({pattern: 'connection reset'}))?.status).toBe('tooLarge')
+  }, 30_000)
+
+  test('with the other writer for each shader, every value is the same: loop-emit.ts\'s search shaders at 8 and 16 states, and bit-emit.ts\'s shader for the highlighter', async () => {
+    const writers: {search: ShaderWriter, highlighter: ShaderWriter} = {search: 'loop-emit', highlighter: 'bit-emit'}
+    const gpu = await createGpuSearcher(createInterpretedDevice(), few, {writers, stateCapacities: [8, 16]})
+    expect(statementsOf(gpu)).toEqual([['JSON highlighter', 103], ['regex search, 8 states', 503], ['regex search, 16 states', 1375]])
+    await expectTheCpuSearchersValues(gpu, searches.filter(search => search.states <= 16))
+  }, 120_000)
+
+  test('the self check finds no difference between the shaders and generated JavaScript: every search on every program that holds it', async () => {
+    const sample = 4
+    const gpu = await createGpuSearcher(createInterpretedDevice(), few, {windowCapacity: 3})
+    const check = await gpu.selfCheck(sample)
+    // 7 of the 9 searches fit 8 states, 8 fit 16, and all fit 32.
+    expect([check.documents, check.searches, check.mismatches]).toEqual([sample, 7 + 8 + 9, 0])
+    expect(check.values).toBe(4 * sample + sample * capacity + 24 * (sample + sample * capacity))
+    // The same with loop-emit.ts's shader at 8 states.
+    const other = await (await createGpuSearcher(createInterpretedDevice(), few, {writers: {search: 'loop-emit'}, stateCapacities: [8]})).selfCheck(sample)
+    expect([other.searches, other.mismatches, other.values]).toEqual([7, 0, 4 * sample + sample * capacity + 7 * (sample + sample * capacity)])
+  }, 120_000)
 })
 
 describe('the plain JavaScript baseline', () => {

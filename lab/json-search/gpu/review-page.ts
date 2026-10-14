@@ -14,7 +14,7 @@
 import {type EdgeSearch, compareSearchers, compareWithWrittenOutPrograms, edgeDocuments, edgeSearches, highlighterOnTheExecutor} from '../edge-cases.ts'
 import {generateDocuments} from '../documents.ts'
 import {buildBatchPrograms, cellsPerDocument, kindCount, summaryCount, writeDocumentCells} from '../program.ts'
-import {bufferBytesFor, createCpuSearcher, createGpuSearcher, positions} from '../searcher.ts'
+import {type ShaderWriter, bufferBytesFor, createCpuSearcher, createGpuSearcher, positions} from '../searcher.ts'
 import {highlightWithTables, tableLoopResult} from '../table-loop.ts'
 import {createDocumentStore, createProgramRunner, requestBatchDevice, selfCheck} from './host.ts'
 import {type SamplingConfig, createReporter, round, summary, timeCpu} from './measure.ts'
@@ -22,6 +22,8 @@ import {type SamplingConfig, createReporter, round, summary, timeCpu} from './me
 export type ReviewPageConfig = SamplingConfig & {
   mode: 'edge' | 'many' | 'baselines'
   shaderSalt: number
+  // Which writer writes the search programs' shaders, see searcher.ts.
+  searchWriter: ShaderWriter
   seed: number
   invalidFraction: number
   // 'edge': how many documents of each kind edge-cases.ts adds to its hand-written ones, and how many a window holds.
@@ -63,7 +65,7 @@ async function runEdge() {
   const texts = documents.map(document => document.text)
   const count = texts.length
   const device = await requestDevice(bufferBytesFor(count))
-  const searcher = await createGpuSearcher(device, texts, {windowCapacity: config.windowDocuments, shaderSalt: config.shaderSalt})
+  const searcher = await createGpuSearcher(device, texts, {windowCapacity: config.windowDocuments, shaderSalt: config.shaderSalt, writers: {search: config.searchWriter}})
   for (const states of [16, 32]) await searcher.prepare(states)
   report['documents'] = {count, valid: searcher.validation.validCount, codePointLengths: summary(texts.map(text => Array.from(text).length))}
   report['programs'] = searcher.programs()
@@ -91,7 +93,7 @@ async function runEdge() {
   // every fifth of the hand-written documents of more than one code point.
   started = performance.now()
   const sampleTexts = documents.filter(document => !document.name.startsWith('one code point')).filter((_, index) => index % 5 === 0).slice(0, 32).map(document => document.text)
-  const sampleSearcher = await createGpuSearcher(device, sampleTexts, {windowCapacity: sampleTexts.length, shaderSalt: config.shaderSalt})
+  const sampleSearcher = await createGpuSearcher(device, sampleTexts, {windowCapacity: sampleTexts.length, shaderSalt: config.shaderSalt, writers: {search: config.searchWriter}})
   await sampleSearcher.prepare(32)
   const at32OnTheExecutor = await compareSearchers(sampleSearcher, createCpuSearcher(sampleTexts, {windowCapacity: sampleTexts.length, backend: 'executor'}), edgeSearches(32), [{firstDocument: 0, documentCount: sampleTexts.length}])
   sampleSearcher.destroy()
@@ -151,7 +153,7 @@ async function runMany() {
   const count = config.documents
   const texts = generateDocuments(count, config.seed, config.invalidFraction).map(document => document.text)
   const device = await requestDevice(bufferBytesFor(count))
-  const searcher = await createGpuSearcher(device, texts, {windowCapacity: config.windowDocuments, shaderSalt: config.shaderSalt})
+  const searcher = await createGpuSearcher(device, texts, {windowCapacity: config.windowDocuments, shaderSalt: config.shaderSalt, writers: {search: config.searchWriter}})
   for (const states of [16, 32]) await searcher.prepare(states)
   log(`${count} generated documents on the GPU, ${searcher.validation.validCount} valid`)
 

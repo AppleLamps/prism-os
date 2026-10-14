@@ -4,7 +4,8 @@
 //   'compact'  hand-written kernels over the documents in compact layouts: the time of one search, back to back and
 //              after a pause, with every answer of every timed search compared with a plain JavaScript loop over the
 //              same automaton. Also the time to paint a map of the results.
-//   'program'  what the demo page runs today: searcher.ts on the documents as one f32 per code point.
+//   'program'  searcher.ts on the documents as one f32 per code point, with the search shaders of `searchWriter`:
+//              loop-emit.ts's are what the demo page ran when this check was made, and bit-emit.ts's what it runs since.
 //   'load'     the load of a page: workers write the documents and their scope bits, the page uploads them, and a
 //              search answers. With the memory of the page and of Chrome's processes afterwards.
 //   'js'       regular JavaScript on one thread: RegExp over the whole texts, JSON.parse, a walk over parsed objects,
@@ -30,7 +31,7 @@ import {emitLoopWgsl} from '../loop-emit.ts'
 import type {LoopProgram} from '../loop-program.ts'
 import {cellsPerDocument, writeDocumentCells} from '../program.ts'
 import {boundaryCapacity, buildSearchLoop, classCapacity} from '../search-step.ts'
-import {type SearchResult, bufferBytesFor, createGpuSearcher} from '../searcher.ts'
+import {type SearchResult, type ShaderWriter, bufferBytesFor, createGpuSearcher} from '../searcher.ts'
 import {highlightWithTables} from '../table-loop.ts'
 import {buildCharacterSets, countCharacters} from './character-sets.ts'
 import {type DocumentPart, type Engine, checked, compile, createEngine} from './engine.ts'
@@ -41,6 +42,8 @@ import type {FilterAnswer, FilterRequest, HoldRequest, LoadRequest, LoadedPiece}
 
 export type PageConfig = {
   mode: 'compact' | 'program' | 'load' | 'js' | 'scopes' | 'writers'
+  // 'program': which writer writes the searcher's search shaders, see searcher.ts.
+  searchWriter: ShaderWriter
   count: number
   patterns: string[]
   capacities: number[]
@@ -609,7 +612,7 @@ async function runProgram() {
   report['adapter'] = {info: granted.adapterInfo, limits: granted.adapterLimits, hasTimestamps: granted.hasTimestamps, grantedBufferBytes: granted.largestBufferBytes}
   report['emptyPipelineMs'] = round(await compileEmptyPipeline(granted.device, config.shaderSalt))
   started = performance.now()
-  const searcher = await createGpuSearcher(granted.device, texts, {shaderSalt: config.shaderSalt})
+  const searcher = await createGpuSearcher(granted.device, texts, {shaderSalt: config.shaderSalt, writers: {search: config.searchWriter}})
   report['searcher'] = {
     generateMs: round(generateMs), createMs: round(performance.now() - started), load: searcher.load, limits: searcher.limits, validCount: searcher.validation.validCount,
     // The store of cells, the highlighter's display kinds, and its summary of 4 values per document.
@@ -655,7 +658,7 @@ async function runProgram() {
         return {patternMs: result.timings.patternMs, totalMs: result.timings.totalMs, submitMs: 0, waitMs: result.timings.evaluateMs, copyMs: 0, passMs: result.timings.passMs, gapMs}
       }
       const first = await searchOnce({})
-      const entry: Record<string, unknown> = {states, engine: 'searcher', what: 'searcher.ts on one f32 per code point, what the demo page runs today', scope, patterns: fitting.map(pattern => pattern.pattern), prepareMs: round(prepareMs), at: new Date().toISOString(), load: await loadAverage(), firstSearchMs: round(first.totalMs)}
+      const entry: Record<string, unknown> = {states, engine: 'searcher', what: `searcher.ts on one f32 per code point, with ${config.searchWriter}.ts's search shaders`, scope, patterns: fitting.map(pattern => pattern.pattern), prepareMs: round(prepareMs), at: new Date().toISOString(), load: await loadAverage(), firstSearchMs: round(first.totalMs)}
       results.push(entry)
       entry['backToBack'] = summarizeTimed(await sampleSearches(() => searchOnce({}), 9))
       const slow = (entry['backToBack'] as ReturnType<typeof summarizeTimed>).totalMs!.median > 1500

@@ -3,17 +3,22 @@
 //   bun lab/json-search/gpu/review-run.ts --mode edge --profile <new folder> --out <file.json>        about 5 minutes
 //   bun lab/json-search/gpu/review-run.ts --mode many --profile <new folder> --out <file.json>        about 6 minutes
 //   bun lab/json-search/gpu/review-run.ts --mode baselines --profile <new folder> --out <file.json>   about 4 minutes
-//     [--documents 100000] [--port 4427] [--devtools-port 9427] [--salt <number>]
-// Every run needs a profile folder that no other Chrome uses, see chrome.ts.
+//     [--documents 100000] [--port 4427] [--devtools-port 9427] [--salt <number>] [--search-writer loop-emit] [--chrome <path>]
+// Every run needs a profile folder that no other Chrome uses, see chrome.ts. Without --search-writer the searcher is
+// the demo page's, with bit-emit.ts's shaders for the search programs. `--search-writer loop-emit` is the searcher of
+// results/review-edge-1.json and review-many-1.json.
 import {defaultInvalidFraction, defaultSeed} from '../documents.ts'
 import {argument, numbers, required, runPage} from './chrome.ts'
 import page from './review-page.html'
 import type {ReviewPageConfig} from './review-page.ts'
 
 const mode = (argument('--mode') ?? 'edge') as ReviewPageConfig['mode']
+const searchWriter = argument('--search-writer') ?? 'bit-emit'
+if (searchWriter !== 'bit-emit' && searchWriter !== 'loop-emit') throw new Error(`--search-writer is bit-emit or loop-emit, got ${searchWriter}`)
 const config: ReviewPageConfig = {
   mode,
   shaderSalt: Number(argument('--salt') ?? Math.floor(Math.random() * 1e9)),
+  searchWriter,
   seed: defaultSeed,
   invalidFraction: defaultInvalidFraction,
   edgeSizes: {broken: 400, generated: 200, random: 100, mutated: 300, long: 40},

@@ -2,11 +2,24 @@
 // demo page's module, searcher.ts, created, checked and timed at each document count.
 //   bun lab/json-search/gpu/combined-run.ts --profile <new folder> --out <file.json>
 //     [--counts 100,1000,10000,100000] [--idle-gaps 16,200,1000] [--port 4424] [--devtools-port 9424] [--salt <number>]
+//     [--search-writer loop-emit] [--highlighter-writer bit-emit] [--chrome <path>]
 // Every run needs a profile folder that no other Chrome uses, see chrome.ts. One run takes about 6 minutes.
+// Without the two writer options the searcher is the demo page's: bit-emit.ts's shaders for the search programs and
+// loop-emit.ts's for the highlighter. `--search-writer loop-emit` is the searcher of results/combined-main-1.json to
+// combined-main-5.json, whose 32-state program is timed up to 10,000 documents, since one search of 100,000 takes
+// about 1 s.
 import {defaultInvalidFraction, defaultSeed} from '../documents.ts'
 import {argument, numbers, required, runPage} from './chrome.ts'
 import page from './combined-page.html'
+import type {ShaderWriter} from '../searcher.ts'
 import type {CombinedPageConfig} from './combined-page.ts'
+
+const writerOf = (name: string, fallback: ShaderWriter): ShaderWriter => {
+  const writer = argument(name) ?? fallback
+  if (writer !== 'bit-emit' && writer !== 'loop-emit') throw new Error(`${name} is bit-emit or loop-emit, got ${writer}`)
+  return writer
+}
+const writers = {search: writerOf('--search-writer', 'bit-emit'), highlighter: writerOf('--highlighter-writer', 'loop-emit')}
 
 const config: CombinedPageConfig = {
   counts: numbers(argument('--counts') ?? '100,1000,10000,100000'),
@@ -22,6 +35,7 @@ const config: CombinedPageConfig = {
   windowDocuments: 64,
   // A new salt by default, so the shaders compile cold.
   shaderSalt: Number(argument('--salt') ?? Math.floor(Math.random() * 1e9)),
+  writers,
   seed: defaultSeed,
   invalidFraction: defaultInvalidFraction,
   warmupMs: 200,
@@ -34,7 +48,7 @@ const config: CombinedPageConfig = {
   cpuDocuments: Number(argument('--cpu-documents') ?? 200),
   executorDocuments: Number(argument('--executor-documents') ?? 16),
   selfCheckDocuments: Number(argument('--self-check-documents') ?? 300),
-  largestCountFor32States: Number(argument('--largest-count-for-32-states') ?? 10_000),
+  largestCountFor32States: Number(argument('--largest-count-for-32-states') ?? (writers.search === 'loop-emit' ? 10_000 : Number.MAX_SAFE_INTEGER)),
   straightLine: !process.argv.includes('--no-straight-line'),
 }
 
