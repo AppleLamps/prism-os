@@ -224,6 +224,68 @@ test('reset restores the initial coefficient tensor and optimizer', () => {
   assert.deepEqual([...machine.source], initialSource)
 })
 
+test('steps that raise the loss are taken back', () => {
+  // Adam at a fixed learning rate doesn't come to rest: after Cinema's first 500 steps, a frame of 10 more steps
+  // raises the loss 93 times at its worst, which the page showed as photos that jump and come back.
+  const plain = createLearnedGalleryMachine('cinema')
+  let loss = plain.train(trainingStepsAfterChange).loss
+  let largestRise = 1
+  for (let frame = 0; frame < 150; frame++) {
+    const next = plain.train(10).loss
+    largestRise = Math.max(largestRise, next / loss)
+    loss = next
+  }
+  assert.ok(largestRise > 20, `the largest rise was ${largestRise} times`)
+
+  // trainOrUndo takes such a frame's steps back: the loss never rises, and the weights and the outputs are the
+  // ones from before the frame.
+  const guarded = createLearnedGalleryMachine('cinema')
+  loss = guarded.train(trainingStepsAfterChange).loss
+  let undoneFrames = 0
+  for (let frame = 0; frame < 150; frame++) {
+    const sourceBefore = [...guarded.source]
+    const valuesBefore = guarded.evaluate().values
+    const result = guarded.trainOrUndo(10)
+    assert.ok(result.loss <= loss, `frame ${frame} raised the loss from ${loss} to ${result.loss}`)
+    if (result.undone) {
+      undoneFrames++
+      assert.equal(result.loss, loss)
+      assert.deepEqual([...guarded.source], sourceBefore)
+      assert.deepEqual(result.values, valuesBefore)
+    }
+    loss = result.loss
+  }
+  assert.ok(undoneFrames >= 5 && undoneFrames <= 60, `${undoneFrames} frames were undone`)
+  // The steps that were taken back still count as steps taken.
+  assert.equal(guarded.trainingStep, trainingStepsAfterChange + 1500)
+  // The loss ends about where plain training leaves it, without the jumps on the way.
+  assert.ok(loss < plain.evaluate().loss * 2, `${loss} against ${plain.evaluate().loss}`)
+})
+
+test('after steps were taken back, the next steps are smaller, until the learning rate is restored', () => {
+  // How far 10 steps move the weights, from the same weights and the same optimizer state.
+  function createSettledMachine() {
+    const machine = createLearnedGalleryMachine('cinema')
+    machine.train(trainingStepsAfterChange)
+    // Frames until one is undone, which halves the learning rate for the frames after it.
+    while (!machine.trainOrUndo(10).undone) { /* keep training */ }
+    return machine
+  }
+  function distanceMoved(machine: LearnedGalleryMachine, sourceBefore: readonly number[]) {
+    return Math.hypot(...sourceBefore.map((value, parameter) => machine.source[parameter]! - value))
+  }
+  const halved = createSettledMachine()
+  const restored = createSettledMachine()
+  assert.deepEqual([...restored.source], [...halved.source])
+  const sourceBefore = [...halved.source]
+  halved.trainOrUndo(10)
+  restored.restoreLearningRate()
+  restored.train(10)
+  // Adam's step is proportional to the learning rate, so half the rate moves the weights half as far.
+  const ratio = distanceMoved(halved, sourceBefore) / distanceMoved(restored, sourceBefore)
+  assert.ok(ratio > 0.3 && ratio < 0.7, `the halved rate moved the weights ${ratio} times as far`)
+})
+
 test('adding and deleting rectangles changes the fitted output count', () => {
   const machine = createLearnedGalleryMachine()
   const initialCount = machine.activeCount()
@@ -513,6 +575,33 @@ test('training continues from the current weights while a rectangle is dragged',
   fromSeed.target.active.set(machine.target.active)
   const fromSeedLoss = fromSeed.train(trainingStepsAfterChange)
   assert.ok(final.loss < fromSeedLoss.loss * 2, `loss ${final.loss} against ${fromSeedLoss.loss} from the seeded weights`)
+})
+
+test('the loss never rises in a frame where the sketch stays the same', () => {
+  const page = createEditorDriver()
+  const {machine} = page
+  page.frame([{kind: 'layout', name: 'cinema'}])
+  page.settle()
+  // Six rough drags in a row, each followed by its 500 steps, as a visitor who rearranges the sketch makes them.
+  // The page before trained with plain steps, and its photos jumped by up to 14 px in the frames after such drags.
+  const offsets = [[7, -5], [-6, 8], [9, 6], [-8, -7], [5, 9], [-9, 4]] as const
+  let framesWithoutChange = 0
+  for (const [index, [horizontal, vertical]] of offsets.entries()) {
+    const point = pointOf(machine, (index * 2 + 1) % machine.activeCount())
+    let frame = page.frame([press(point.x, point.y)])
+    for (let moveIndex = 1; moveIndex <= 8; moveIndex++) {
+      frame = page.frame([move(point.x + horizontal * moveIndex / 8, point.y + vertical * moveIndex / 8)])
+    }
+    frame = page.frame([release])
+    while (frame.training) {
+      const lossBefore = frame.loss
+      frame = page.frame()
+      framesWithoutChange++
+      assert.ok(frame.loss <= lossBefore, `after drag ${index + 1}, a frame raised the loss from ${lossBefore} to ${frame.loss}`)
+    }
+  }
+  // Each drag's last move starts 500 steps, about 50 frames.
+  assert.ok(framesWithoutChange >= 6 * 48, `${framesWithoutChange} frames`)
 })
 
 test('training takes as many steps per second at 120 Hz as at 60 Hz', () => {

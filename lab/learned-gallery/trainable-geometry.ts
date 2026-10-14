@@ -408,7 +408,15 @@ export function createTrainableGeometryMachine(
   const initialSource = new Float32Array(parameters.size)
   const firstMoment = new Float32Array(parameters.size)
   const secondMoment = new Float32Array(parameters.size)
+  // Every step taken since the last reset, including the steps that trainOrUndo took back.
   let trainingStep = 0
+  // The step count of Adam's bias corrections, which trainOrUndo takes back with the moments.
+  let momentStep = 0
+  // The part of the learning rate that trainOrUndo's steps use, from 0 to 1.
+  let learningRateScale = 1
+  const savedSource = new Float32Array(parameters.size)
+  const savedFirstMoment = new Float32Array(parameters.size)
+  const savedSecondMoment = new Float32Array(parameters.size)
 
   function activeTargetItems() {
     const items: number[] = []
@@ -560,7 +568,7 @@ export function createTrainableGeometryMachine(
     return loss
   }
 
-  function trainStep() {
+  function trainStep(stepLearningRate: number) {
     const values = circuit.evaluateReference(source)
     const targetItems = activeTargetItems()
     if (targetItems.length === 0) return
@@ -598,10 +606,11 @@ export function createTrainableGeometryMachine(
     }
     const gradients = circuit.backpropagateReference(values, outputGradients)
     trainingStep++
+    momentStep++
     const firstDecay = 0.9
     const secondDecay = 0.999
-    const firstCorrection = 1 - firstDecay ** trainingStep
-    const secondCorrection = 1 - secondDecay ** trainingStep
+    const firstCorrection = 1 - firstDecay ** momentStep
+    const secondCorrection = 1 - secondDecay ** momentStep
     let gradientMagnitude = 0
     for (let parameter = 0; parameter < parameters.size; parameter++) {
       gradients[parameter] = Math.fround(
@@ -621,7 +630,7 @@ export function createTrainableGeometryMachine(
       const correctedSecond = secondMoment[parameter]! / secondCorrection
       source[parameter] = Math.fround(
         source[parameter]!
-          - learningRate * correctedFirst / (Math.sqrt(correctedSecond) + 1e-8),
+          - stepLearningRate * correctedFirst / (Math.sqrt(correctedSecond) + 1e-8),
       )
       source[parameter] = Math.max(-6, Math.min(6, source[parameter]!))
     }
@@ -631,6 +640,8 @@ export function createTrainableGeometryMachine(
     firstMoment.fill(0)
     secondMoment.fill(0)
     trainingStep = 0
+    momentStep = 0
+    learningRateScale = 1
   }
 
   function reset() {
@@ -661,10 +672,46 @@ export function createTrainableGeometryMachine(
     clearOptimizer,
     train(steps = 1) {
       invariant(Number.isInteger(steps) && steps >= 0, 'training step count is invalid')
-      for (let step = 0; step < steps; step++) trainStep()
+      for (let step = 0; step < steps; step++) trainStep(learningRate)
       const values = circuit.evaluateTensor(source)
       assertFiniteValues(values, 'trainable geometry values')
       return {values, loss: measure(values), step: trainingStep}
+    },
+    // Like train, for a page that trains a few steps per frame and draws the result: steps that leave the loss
+    // higher than it was before them are taken back, so the page never draws a worse fit than the frame before.
+    // Adam at a fixed learning rate doesn't come to rest once the loss is low. Its steps keep their size while the
+    // gradients shrink, and every few hundred steps they overshoot: on the page, the loss rose up to 60 times within
+    // 20 steps, the photos jumped up to 14 px and came back, and an edit's 500 steps could end in the middle of
+    // such a jump (October 13, 2026). So after steps that were taken back, the steps that follow use half the
+    // learning rate, and after steps that were kept, a tenth more, up to the full rate. restoreLearningRate sets
+    // the full rate again, e.g. when the target changed and the weights have somewhere to go.
+    trainOrUndo(steps: number) {
+      invariant(Number.isInteger(steps) && steps >= 0, 'training step count is invalid')
+      const lossBefore = measure(circuit.evaluateTensor(source))
+      savedSource.set(source)
+      savedFirstMoment.set(firstMoment)
+      savedSecondMoment.set(secondMoment)
+      const savedMomentStep = momentStep
+      for (let step = 0; step < steps; step++) trainStep(learningRate * learningRateScale)
+      let values = circuit.evaluateTensor(source)
+      let loss = measure(values)
+      const undone = loss > lossBefore
+      if (undone) {
+        source.set(savedSource)
+        firstMoment.set(savedFirstMoment)
+        secondMoment.set(savedSecondMoment)
+        momentStep = savedMomentStep
+        learningRateScale *= 0.5
+        values = circuit.evaluateTensor(source)
+        loss = lossBefore
+      } else {
+        learningRateScale = Math.min(1, learningRateScale * 1.1)
+      }
+      assertFiniteValues(values, 'trainable geometry values')
+      return {values, loss, step: trainingStep, undone}
+    },
+    restoreLearningRate() {
+      learningRateScale = 1
     },
     evaluate() {
       const values = circuit.evaluateTensor(source)

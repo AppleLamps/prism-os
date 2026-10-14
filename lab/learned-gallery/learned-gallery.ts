@@ -573,6 +573,8 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       }
       // With no rectangle there is nothing to train, and no reason for another frame.
       stepsRemaining = activeCount > 0 ? trainingStepsAfterChange : 0
+      // The weights have somewhere to go again, so the steps are full steps again (trainOrUndo).
+      machine.restoreLearningRate()
     }
 
     // Layout and cursor.
@@ -604,7 +606,8 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
     newTrainedUntilTime += stepsThisFrame * msPerTrainingStep
     if (stepsThisFrame > 0) {
       const trainingStart = readClock()
-      result = machine.train(stepsThisFrame)
+      // Steps that raise the loss are taken back, so a photo never jumps away from where it has settled.
+      result = machine.trainOrUndo(stepsThisFrame)
       const trainingMs = readClock() - trainingStart
       measuredMsPerStep = trainingMs / stepsThisFrame
       runSteps += stepsThisFrame
