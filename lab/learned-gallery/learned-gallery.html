@@ -59,6 +59,14 @@
           </div>
           <button id="learning-delete" class="button" type="button" title="Delete the selected rectangle">Delete</button>
         </div>
+        <!-- How close two edges of the sketch have to be for their photos to share a line, in percent of the stage.
+             learned-gallery.ts reads the slider in each frame and writes the words after it. The value is the
+             reach that trainable-geometry.ts starts with, which learned-gallery.test.ts checks. -->
+        <label class="tools line-up">
+          <span class="label">Line up edges</span>
+          <input id="learning-align" class="range" type="range" min="0" max="6" step="0.5" value="3">
+          <span id="learning-align-value" class="range-value"></span>
+        </label>
       </div>
       <div>
         <div class="stage-head"><span class="label">Learned</span><span>placed by the network</span></div>
@@ -80,7 +88,7 @@
     </section>
 
     <!-- learned-gallery.ts fills the numbers, and shows the part about one step's cost once it has timed a step. -->
-    <p class="stats">The loss measures how far the photos are from the sketch, and each training step changes the <b id="learning-coefficients"></b> weights a little to lower the loss. Each change of the sketch gets <b id="learning-steps-after-change"></b> more steps, at up to <b id="learning-steps-per-second"></b> steps a second<span id="learning-step-cost-clause" style="display: none">, and one step takes about <b id="learning-step-cost"></b> on this device</span>. The program is <b id="learning-operations"></b> operations in <b id="learning-layers"></b> layers, and the weights are its only input.</p>
+    <p class="stats">The loss measures how far the photos are from the sketch, and each training step changes the <b id="learning-coefficients"></b> weights a little to lower the loss. Edges of the sketch that are closer to each other than the Line up distance, a share of the stage&rsquo;s width or height, count as one line, so the photos line up although the sketch was drawn by hand. Each change of the sketch gets <b id="learning-steps-after-change"></b> more steps, at up to <b id="learning-steps-per-second"></b> steps a second<span id="learning-step-cost-clause" style="display: none">, and one step takes about <b id="learning-step-cost"></b> on this device</span>. The program is <b id="learning-operations"></b> operations in <b id="learning-layers"></b> layers, and the weights are its only input.</p>
 
     <footer class="colophon">
       <span>The network learns the rectangles&rsquo; positions and sizes, not the photos.</span>

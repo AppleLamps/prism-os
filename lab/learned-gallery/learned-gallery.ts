@@ -4,6 +4,7 @@
 // preset sketches, the editor, which is the page's state and what one frame does to that state, and the page.
 import {
   createTrainableGeometryMachine,
+  defaultAlignmentReach,
   trainableGeometryField,
   type TrainableGeometry,
   type TrainableGeometryTarget,
@@ -67,8 +68,8 @@ function createGridCells(
 
 // Each layout has fewer rectangles than there are photos and leaves its last cell empty, so a visitor has room to
 // add one. Edges of different rectangles are either equal or at least 0.09 apart. The loss reads edges that are
-// within 0.03 of each other as one line (alignRectangles in trainable-geometry.ts), so a preset reads as it is
-// drawn.
+// closer than the "Line up" slider's distance as one line (alignRectangles in trainable-geometry.ts), and the
+// slider goes up to 0.06, so a preset reads as it is drawn wherever the slider is.
 
 // 4 columns and 3 rows.
 function createContactLayout(): TrainableGeometry[] {
@@ -357,6 +358,9 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
   const editOrder = new Uint32Array(learnedSlotCount)
   machine.target.editOrder = editOrder
   let editCount = 0
+  // How close two edges of the sketch have to be for their photos to share a line, which the page's "Line up"
+  // slider sets: see alignRectangles in trainable-geometry.ts.
+  let alignmentReach = defaultAlignmentReach
   let result = machine.evaluate()
   let history = [{step: result.step, loss: result.loss}]
 
@@ -416,10 +420,12 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
     return outputByTarget[targetItems.indexOf(item)] ?? null
   }
 
+  // newAlignmentReach is where the "Line up" slider is now, as a fraction of the stage.
   function frame(
     frameTime: number,
     stageWidth: number,
     stageHeight: number,
+    newAlignmentReach: number,
     inputs: readonly LearnedGalleryInput[],
   ): LearnedGalleryFrame {
     // Handle inputs.
@@ -571,6 +577,18 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
     }
     const activeCount = machine.activeCount()
     if (sketchEdited) layout = null
+    // A new reach is a change of what the network is fitted to only if it moves an edge, e.g. Story as it loads
+    // reads the same at every reach of the slider, since its edges are either equal or 9% of the stage apart.
+    // Edges that are equal as drawn can differ in the last digits of their 32-bit floats, e.g. a right edge that
+    // is one rectangle's left plus width and another's, so a move of less than a millionth of the stage is none.
+    let alignmentChanged = false
+    if (newAlignmentReach !== alignmentReach) {
+      const before = machine.alignedTarget().slice()
+      alignmentReach = newAlignmentReach
+      machine.setAlignmentReach(alignmentReach)
+      const after = machine.alignedTarget()
+      alignmentChanged = before.some((value, field) => Math.abs(value - after[field]!) > 1e-6)
+    }
     // A preset and "Train again" start from the seeded weights, and their frame draws those weights' output before
     // any step, as the page's first frame does. Every other change continues from the current weights and the
     // optimizer's current state, so the photos follow a drag instead of forming again from a pile.
@@ -578,7 +596,7 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       machine.reset()
       trainedUntilTime = null
     }
-    if (sketchEdited || restarted) {
+    if (sketchEdited || alignmentChanged || restarted) {
       if (stepsRemaining === 0 || restarted) {
         runSteps = 0
         runMs = 0
@@ -623,11 +641,11 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       runSteps += stepsThisFrame
       runMs += trainingMs
       averageMsPerStep = runMs / runSteps
-    } else if (sketchEdited || restarted) {
+    } else if (sketchEdited || alignmentChanged || restarted) {
       result = machine.evaluate()
     }
     if (restarted) history = []
-    if (stepsThisFrame > 0 || sketchEdited || restarted) {
+    if (stepsThisFrame > 0 || sketchEdited || alignmentChanged || restarted) {
       history.push({step: result.step, loss: result.loss})
       // One sample before the chart's first step stays, so the line starts at the chart's left edge.
       while (history.length > 2 && history[1]!.step <= result.step - chartStepCount) history.shift()
@@ -681,6 +699,9 @@ type LearnedGalleryDomCache = {
   rectangleCount: HTMLElement // mount lifetime
   layoutButtons: {name: LearnedLayoutName, button: HTMLButtonElement}[] // mount lifetime
   deleteButton: HTMLButtonElement // mount lifetime
+  // The "Line up" slider, in percent of the stage, and the words after it. The browser keeps the slider's value.
+  alignment: HTMLInputElement // mount lifetime
+  alignmentValue: HTMLElement // mount lifetime
   trainButton: HTMLButtonElement // mount lifetime
   chart: SVGSVGElement // mount lifetime
   chartArea: SVGPolygonElement // mount lifetime
@@ -766,6 +787,8 @@ function createLearnedGalleryDomCache(document: Document, editor: LearnedGallery
     rectangleCount: requireElement(document, '#learning-count', 'rectangle count is missing'),
     layoutButtons,
     deleteButton: requireElement<HTMLButtonElement>(document, '#learning-delete', 'delete button is missing'),
+    alignment: requireElement<HTMLInputElement>(document, '#learning-align', 'line up slider is missing'),
+    alignmentValue: requireElement(document, '#learning-align-value', 'line up value is missing'),
     trainButton: requireElement<HTMLButtonElement>(document, '#learning-train', 'train button is missing'),
     chart: requireElement<SVGSVGElement>(document, '#learning-chart', 'loss chart is missing'),
     chartArea: requireElement<SVGPolygonElement>(document, '#learning-chart polygon', 'loss area is missing'),
@@ -802,7 +825,9 @@ function mountLearnedGallery(document: Document, window: Window) {
   const domCache = createLearnedGalleryDomCache(document, editor)
   // What the text nodes and the chart hold now. A frame writes one only when it changes, since writing a text node
   // again collapses a selection inside it.
-  const written = {rectangleCount: '', trainingStep: '', trainingLoss: '', stepCost: '', chartLine: ''}
+  const written = {rectangleCount: '', trainingStep: '', trainingLoss: '', stepCost: '', chartLine: '', alignmentValue: ''}
+  // The slider's largest value, in percent of the stage, which the page's markup sets.
+  const alignmentPercentMax = Number(domCache.alignment.max)
   let rawInputs: RawInput[] = []
   // The mouse's clientX while it is over the chart, where the chart then reads out the nearest sample.
   let chartPointerX: number | null = null
@@ -822,6 +847,8 @@ function mountLearnedGallery(document: Document, window: Window) {
     const stageHeight = domCache.sketchStage.clientHeight
     // The chart takes the width that its row leaves, and its coordinates are CSS pixels.
     const chartBounds = domCache.chart.getBoundingClientRect()
+    // Where the "Line up" slider is, in percent of the stage.
+    const alignmentPercent = domCache.alignment.valueAsNumber
 
     // Inputs, cursor and training.
     const inputs: LearnedGalleryInput[] = []
@@ -845,7 +872,7 @@ function mountLearnedGallery(document: Document, window: Window) {
       }
     }
     rawInputs = []
-    const frame = editor.frame(frameTime, stageWidth, stageHeight, inputs)
+    const frame = editor.frame(frameTime, stageWidth, stageHeight, alignmentPercent / 100, inputs)
 
     // The chart: steps from left to right, with the latest sample at the right end once 500 steps have run.
     const latestSample = frame.history.at(-1)!
@@ -900,6 +927,14 @@ function mountLearnedGallery(document: Document, window: Window) {
       button.setAttribute('aria-pressed', frame.layout === name ? 'true' : 'false')
     }
     domCache.deleteButton.disabled = frame.selected === null
+    // The slider's track is copper up to its eyelet (learned-gallery.css), and the words after the slider say the
+    // distance, also to a screen reader.
+    const alignmentValue = alignmentPercent === 0 ? 'off' : `within ${alignmentPercent}%`
+    if (written.alignmentValue !== alignmentValue) {
+      domCache.alignmentValue.textContent = written.alignmentValue = alignmentValue
+      domCache.alignment.setAttribute('aria-valuetext', alignmentPercent === 0 ? 'off' : `within ${alignmentPercent}% of the stage`)
+      domCache.alignment.style.setProperty('--filled', `${alignmentPercent / alignmentPercentMax}`)
+    }
 
     const rectangleCount = `${frame.activeCount} of ${learnedPhotoCount} rectangles`
     if (written.rectangleCount !== rectangleCount) {
@@ -969,6 +1004,8 @@ function mountLearnedGallery(document: Document, window: Window) {
     record({kind: 'delete'})
   })
   domCache.deleteButton.addEventListener('click', () => record({kind: 'delete'}))
+  // The frame reads the slider.
+  domCache.alignment.addEventListener('input', scheduleRender)
   domCache.trainButton.addEventListener('click', () => record({kind: 'train again'}))
   for (const {name, button} of domCache.layoutButtons) {
     button.addEventListener('click', () => record({kind: 'layout', name}))

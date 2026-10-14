@@ -407,14 +407,20 @@ function createEditorDriver(frameMs = 1000 / 60, readClock?: () => number) {
   let readings = 0
   const editor = createLearnedGalleryEditor(readClock ?? (() => readings++ * 0.01))
   let time = 0
+  // Where the page's "Line up" slider is, as a fraction of the stage. A frame reads it like the stage's size.
+  let alignmentReach = defaultAlignmentReach
   function frame(inputs: LearnedGalleryInput[] = []) {
     time += frameMs
-    return editor.frame(time, stageWidth, stageHeight, inputs)
+    return editor.frame(time, stageWidth, stageHeight, alignmentReach, inputs)
   }
   return {
     editor,
     machine: editor.machine,
     frame,
+    // Moves the slider. The next frame reads it.
+    setAlignmentReach(reach: number) {
+      alignmentReach = reach
+    },
     // Frames until training stops, which is when the page stops requesting them.
     settle() {
       let last = frame()
@@ -494,7 +500,7 @@ test('each preset sketch is fitted closely by the first 500 steps', () => {
     // Story ends at 9.55e-9 with a largest error of 0.029% of the stage, and the other two closer.
     assert.ok(settled.loss < 0.000_000_03, `${name} loss ${settled.loss}`)
     assert.ok(largestError(page.machine, settled.values) < 0.0006, `${name} error ${largestError(page.machine, settled.values)}`)
-    // A preset's edges are equal or far apart, so it reads as drawn at twice the reach that the page uses too.
+    // A preset's edges are equal or far apart, so it reads as drawn at every reach that the page's slider has.
     const drawn = page.machine.target.geometries
     for (const reach of [0, defaultAlignmentReach, 0.06]) {
       page.machine.setAlignmentReach(reach)
@@ -576,6 +582,9 @@ test('the numbers in the page\'s text are the code\'s', () => {
   assert.ok(html.includes(`but its ${parameterCount} weights are trained`))
   assert.ok(html.includes(`trains the network's ${parameterCount} weights`))
   assert.ok(html.includes(`empty space to add one, up to ${learnedPhotoCount}<`))
+  // The slider is in percent of the stage: it starts at the reach that the network is fitted with before the
+  // first frame reads it, and it ends below 9, the distance of a preset's closest edges that aren't equal.
+  assert.ok(html.includes(`<input id="learning-align" class="range" type="range" min="0" max="6" step="0.5" value="${defaultAlignmentReach * 100}">`))
 })
 
 test('training continues from the current weights while a rectangle is dragged', () => {
@@ -672,6 +681,33 @@ test('a rectangle dragged roughly within its row gets a photo that is in the row
   // No photo moved: the rectangles that weren't dragged are the older ones, so the lines are where they were.
   const largestMove = Math.max(...loadedPhotos.map((value, wire) => Math.abs(value - settled.values[wire]!)))
   assert.ok(largestMove < 0.0002, `a photo moved by ${largestMove} of the stage`)
+
+  // With the slider at 0, the photos follow the sketch as it is drawn: training continues from the current
+  // weights, and the photo ends on its rectangle, 0.025 of the stage below its row.
+  page.setAlignmentReach(0)
+  frame = page.frame()
+  assert.equal(frame.training, true)
+  assert.equal(frame.stepsThisFrame, 0)
+  const stepsBefore = frame.step
+  settled = page.settle()
+  assert.equal(settled.step, stepsBefore + trainingStepsAfterChange)
+  assert.ok(largestError(machine, settled.values) < 0.0006, `the largest error is ${largestError(machine, settled.values)}`)
+  assert.ok(Math.abs(lineSpread(machine, settled.values, row, 'top') - 0.025) < 0.0006)
+  assert.ok(Math.abs(lineSpread(machine, settled.values, column, 'left') - 0.02) < 0.0006)
+
+  // A reach shorter than the vertical distance and longer than the horizontal one lines up the column only.
+  page.setAlignmentReach(0.022)
+  page.frame()
+  settled = page.settle()
+  assert.ok(lineSpread(machine, settled.values, column, 'left') < 0.0006)
+  assert.ok(Math.abs(lineSpread(machine, settled.values, row, 'top') - 0.025) < 0.0006)
+
+  // Back at the reach of 0.03, the photo is in its row again.
+  page.setAlignmentReach(defaultAlignmentReach)
+  page.frame()
+  settled = page.settle()
+  assert.ok(lineSpread(machine, settled.values, row, 'top') < 0.0006)
+  assert.ok(lineSpread(machine, settled.values, column, 'left') < 0.0006)
 })
 
 test('a rectangle dragged farther than the reach keeps its photo', () => {
@@ -689,6 +725,22 @@ test('a rectangle dragged farther than the reach keeps its photo', () => {
   const settled = page.settle()
   assert.ok(largestError(machine, settled.values) < 0.0006, `the largest error is ${largestError(machine, settled.values)}`)
   assert.ok(Math.abs(lineSpread(machine, settled.values, [4, 5, 6, 7], 'top') - 0.04) < 0.0006)
+})
+
+test('a move of the slider that changes no line starts no training', () => {
+  const page = createEditorDriver()
+  const loaded = page.settle()
+  assert.equal(loaded.layout, 'story')
+  // Story's edges are equal or at least 0.09 apart, so every reach up to the slider's 0.06 reads it the same.
+  for (const reach of [0.06, 0, 0.045, defaultAlignmentReach]) {
+    page.setAlignmentReach(reach)
+    const frame = page.frame()
+    assert.equal(frame.training, false)
+    assert.equal(frame.stepsThisFrame, 0)
+    assert.equal(frame.step, trainingStepsAfterChange)
+    // The slider doesn't edit the sketch, so the preset stays marked.
+    assert.equal(frame.layout, 'story')
+  }
 })
 
 test('the loss never rises in a frame where the sketch stays the same', () => {
@@ -723,8 +775,8 @@ test('a photo follows its rectangle from the first frames of a drag, also after 
     const page = createEditorDriver()
     const {machine} = page
     page.frame([{kind: 'layout', name}])
-    // With no edges read as one line, a photo has only its rectangle to follow, and no line to stay on.
-    machine.setAlignmentReach(0)
+    // With "Line up" off, a photo has only its rectangle to follow, and no line to stay on.
+    page.setAlignmentReach(0)
     page.settle()
     // 3,000 more steps at rest, in the page's frames, e.g. after edits that changed little. By then frames have
     // been taken back, and the learning rate is low.
