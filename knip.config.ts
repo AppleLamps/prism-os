@@ -28,10 +28,6 @@ const config = {
   // node_modules/.bin/tsc to TypeScript 7: of two packages with a `tsc` binary, Bun 1.4.3 links the one whose name
   // sorts first. scripts/check.ts stops if `bunx tsc` is ever another compiler than the typescript package's.
   ignoreDependencies: ['oxlint', 'oxlint-tsgolint', '@chenglou/pretext', 'typescript6'],
-  ignoreIssues: {
-    // These names distinguish two wire views that currently share one layout.
-    'src/handwiredos/photo-gallery.ts': ['duplicates'],
-  },
 }
 
 export default config

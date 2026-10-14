@@ -275,6 +275,8 @@ export const photoSourceField = {
   closeActive: positions.photos.close,
   focusStart: positions.photos.focus[0]!,
   thumbnailSpringStart: positions.photos.thumbnails[0]!.centerXDisplacement,
+  zoomOpenSpring: positions.photos.zoom.openSpring,
+  zoomUnderWay: positions.photos.zoom.underWay,
   size: layout.size,
 }
 
@@ -368,6 +370,11 @@ export function stackSourceField(rank: number, windowIndex: number) {
 
 export function photoFocusSourceField(item: number) {
   return cellAt(positions.photos.focus, item, 'photo index')
+}
+
+// The bit that is 1 for the photo that was closed last, see "The zoom" in photo-gallery.ts.
+export function photoClosedLastSourceField(item: number) {
+  return cellAt(positions.photos.zoom.closedLast, item, 'photo index')
 }
 
 export function photoThumbnailSpringSourceField(item: number, field: number) {
@@ -1326,7 +1333,8 @@ function buildWindowManager() {
     present: windows[photosWindowOutputStart + windowOutputField.opacity]!,
     interactive: photosInteractive,
     unit,
-    // Thumbnails and windows share stiffness and damping, so one matrix serves both.
+    // The thumbnails, the zoom and the windows share stiffness and damping, so one
+    // matrix serves all of them.
     springMatrix: cells.springMatrix,
     settleCheck: cells.settleCheck,
     snap: cells.snap,

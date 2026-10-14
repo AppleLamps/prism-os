@@ -67,8 +67,8 @@ export const maximumPhotoWideness = 2
 export const maximumOpenPhotoTallness = 2
 export const maximumOpenPhotoWideness = 2.5
 
-// Thumbnails and HandwiredOS's windows share these constants, so one spring matrix
-// serves both.
+// The thumbnails, the zoom and HandwiredOS's windows share these constants, so one
+// spring matrix serves all of them.
 export const springConstants: SpringConstants = {stiffness: 650, damping: 45}
 // Every FP32 matrix entry the host writes for up to 300 steps stays within this
 // bound.
@@ -89,6 +89,28 @@ const thumbnailSpringCells = {
   scaleDestination: state(unitInterval),
 }
 
+// A zoom spring: its displacement from its destination, which is 0 or 1, and its
+// velocity, see "The zoom" in buildPhotos. Like a thumbnail's, they need no declared
+// range. The destination isn't stored: it follows from openSpring and the focus cells.
+const zoomSpringCells = {
+  displacement: state(anyNumber),
+  velocity: state(anyNumber),
+}
+// A zoom is settled within 1/65,536 of its end, and under 1/65,536 per second. The
+// default thresholds, 0.01 px and 0.01 px/s, are for springs in pixels: this spring
+// goes from 0 to 1, and 0.01 of a photo's way is 10 px for a photo that grows by
+// 1,000 px in a maximized Photos, which would show as a jump at the end. At 1/65,536
+// the same photo is within 0.02 px.
+const zoomSettleThreshold = 2 ** -16
+// How fast the photos in their cells fade while another photo opens: their opacity is
+// 1 - gridFadeRate × the other photo's zoom, so it is 0 from 1/1,025 before the zoom's
+// end, which is under 1 px for a photo that grows by 1,000 px. With a rate of 1, the
+// opacity would be 0 when the zoom first reaches 1, about a millionth again for a few
+// frames when the spring swings back, and 0 when it settles, and the page would take
+// the 11 other photos' nodes out of the DOM, put them back and take them out again.
+/** @public */
+export const gridFadeRate = 1 + 2 ** -10
+
 // Photos' own cells. A host declares them once, e.g. nested as {photos: photoCells}
 // in HandwiredOS, adds the rule for photoEvents, and passes the cells' wires to
 // buildPhotos.
@@ -108,6 +130,19 @@ export const photoCells = {
   // The open photo, or none while the grid shows.
   focus: oneHot(list(itemCount, () => stateBit()), {allowAllZero: true, declareToCircuit: false}),
   thumbnails: list(itemCount, () => thumbnailSpringCells),
+  // The zoom between a photo's cell and the open photo's rectangle, see "The zoom"
+  // in buildPhotos.
+  zoom: {
+    springs: list(2, () => zoomSpringCells),
+    // Which of the two springs is the open photo's: 0 or 1. The other one takes the
+    // photo that was closed last back to its cell.
+    openSpring: stateBit(),
+    // The photo that was closed last, or none before the first close.
+    closedLast: oneHot(list(itemCount, () => stateBit()), {allowAllZero: true, declareToCircuit: false}),
+    // 1 while one of the two springs moves, as of the last evaluation that wrote
+    // state back. The thumbnails read it, see buildPhotos.
+    underWay: stateBit(),
+  },
 }
 type PhotoCells = CellWires<typeof photoCells>
 
@@ -118,11 +153,11 @@ export function photoEvents(cells: PhotoCells) {
   return [cells.click.active, cells.previous, cells.next, cells.close]
 }
 
-const {thumbnails: thumbnailCells, ...photoCellsBeforeThumbnails} = photoCells
+const {thumbnails: thumbnailCells, zoom: zoomCells, ...photoCellsBeforeThumbnails} = photoCells
 // Photos on its own, with the cells that a host otherwise provides: the viewport,
 // how visible Photos is, whether Photos takes events, the unit, and what advanceFrame
 // plans. The table keeps the layout it had before Photos became a component, with
-// these cells between the focus cells and the thumbnails.
+// these cells between the focus cells and the thumbnails, and the zoom's cells last.
 const photoGalleryCells = {
   viewportWidth: input([0, 16_384]),
   viewportHeight: input([0, 16_384]),
@@ -141,6 +176,7 @@ const photoGalleryCells = {
   settleCheck: stateBit(),
   snap: stateBit(),
   thumbnails: thumbnailCells,
+  zoom: zoomCells,
 }
 
 // The standalone table's cell positions under their earlier names, e.g.
@@ -184,7 +220,32 @@ export function focusField(item: number) {
   return positions.focus[item]!
 }
 
+// A photo's outputs. zoom is how far the photo is open, from 0 in its cell to 1 in
+// the open photo's rectangle, and stack is the photo's z-index: photoStack.open,
+// photoStack.returning or 0, see "The zoom" in buildPhotos.
 export const photoField = {
+  left: 0,
+  top: 1,
+  width: 2,
+  height: 3,
+  opacity: 4,
+  zoom: 5,
+  stack: 6,
+  size: 7,
+}
+
+// The photos' z-indexes inside Photos' content box, where a photo in its cell has 0.
+// The stylesheet puts the thumbnails at 1, between the photos in their cells and a
+// photo on its way back, and the previous and next controls at 4, above all.
+/** @public */
+export const photoStack = {
+  returning: 2,
+  open: 3,
+}
+
+// A thumbnail's outputs. focused is how strongly the thumbnail's ring is drawn: its
+// photo's zoom, so 1 for the open photo's thumbnail at rest and 0 for the others.
+export const thumbnailField = {
   left: 0,
   top: 1,
   width: 2,
@@ -193,8 +254,6 @@ export const photoField = {
   focused: 5,
   size: 6,
 }
-
-export const thumbnailField = photoField
 
 export const controlField = {
   left: 0,
@@ -211,13 +270,18 @@ type Geometry = Record<(typeof geometryFields)[number], Wire>
 
 type PhotoProjection = Geometry & {
   opacity: Wire
+  zoom: Wire
+  stack: Wire
+}
+
+type ThumbnailProjection = Geometry & {
+  opacity: Wire
   focused: Wire
 }
 
 type ThumbnailTarget = {
   centerX: Wire
   scale: Wire
-  focused: Wire
 }
 
 // What buildPhotos returns, e.g. HandwiredOS's output.photos.
@@ -430,16 +494,12 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
         [emitMultiply(circuit, thumbnailBaseSize, spread), 1],
         [emitMultiply(circuit, thumbnailGap, offset), 1],
       ])
-      result.push({
-        centerX,
-        scale: falloff,
-        focused: focus[item]!,
-      })
+      result.push({centerX, scale: falloff})
     }
     return result
   }
 
-  function projectThumbnail(target: ThumbnailTarget): PhotoProjection {
+  function projectThumbnail(target: ThumbnailTarget): Geometry & {opacity: Wire} {
     const visibleScale = emitMultiply(circuit, present, target.scale)
     const size = emitMultiply(circuit, thumbnailBaseSize, visibleScale)
     return {
@@ -448,7 +508,6 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
       width: size,
       height: size,
       opacity: visibleScale,
-      focused: target.focused,
     }
   }
 
@@ -553,22 +612,246 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
 
   const nextFocusMass = circuit.affine(nextFocus.map(wire => [wire, 1]))
   circuit.assumeRange(nextFocusMass, 0, 1)
-  const nextGridMass = circuit.affine([[nextFocusMass, -1]], 1)
-  const projectedGridLeft = gridLeft.map(left => emitMultiply(circuit, nextGridMass, left))
-  const projectedGridTop = gridTop.map(top => emitMultiply(circuit, nextGridMass, top))
-  const projectedGridWidth = emitMultiply(circuit, nextGridMass, gridWidth)
-  const projectedGridHeight = emitMultiply(circuit, nextGridMass, gridHeight)
-  const photos: PhotoProjection[] = []
-  const thumbnailTargets = projectThumbnailTargets(nextFocus, nextFocusMass)
-  // Thumbnails animate while a photo stays open, and snap onto their targets when
-  // the carousel opens or closes, or when the host plans a snap.
-  const animateThumbnails = emitMultiply(circuit, previousFocusMass, nextFocusMass)
-  const snapThumbnails = emitClampZeroOne(
-    circuit,
-    circuit.affine([[animateThumbnails, -1], [host.snap, 1]], 1),
+
+  // The zoom. A click on a photo in the grid opens it: the photo moves and grows from
+  // its cell to the open photo's rectangle, and a close takes it back to its cell.
+  // A spring animates one number, the zoom: how far the photo is open, from 0 in its
+  // cell to 1 in the open photo's rectangle. Each of the photo's left, top, width and
+  // height is that far between the cell's and the open rectangle's, e.g.
+  //   left = (1 - zoom) × cellLeft + zoom × openLeft
+  // so at zoom 0 and at zoom 1 the photo has the exact FP32 values of its cell and of
+  // the open rectangle, which a click is tested against. The spring has the windows'
+  // and the thumbnails' constants, so the host's one matrix steps it. A spring for
+  // each of left, top, width and height would draw the same rectangles while the box
+  // keeps its size, since all four would have covered the same share of their way at
+  // every time. They differ when the box changes its size, e.g. while the window is
+  // resized: the cell and the open rectangle are this evaluation's, so the photo
+  // follows the new layout at once, and a zoom that is under way continues from the
+  // share that it had reached.
+  //
+  // In plain JavaScript every photo would have its own spring:
+  //   photo.zoom.destination = photo === openPhoto ? 1 : 0
+  // A spring costs its operations in every evaluation, whether it moves or not, and at
+  // most one photo is open, so the program has two springs for the 12 photos, which
+  // takes about 300 operations less than 12 springs:
+  // - The open photo's spring. Its destination is 1 while a photo is open.
+  // - The other spring, which takes the photo that was closed last back to its cell.
+  //   Its destination is 0.
+  // openSpring says which of the two is the open photo's, and four rules cover every
+  // event:
+  // - A close swaps the two. The spring that opened the photo takes it back from
+  //   where it is, with its velocity, e.g. a close during the opening turns the photo
+  //   around. The other spring becomes the open photo's and is put at rest at 0. If
+  //   it was still taking an earlier photo back, that photo is in its cell from this
+  //   evaluation on. This is the only case where a photo jumps to its cell, and it
+  //   takes a close, an open of another photo and a second close within the half
+  //   second that a zoom lasts.
+  // - An open of the photo that was closed last swaps the two back, so the spring
+  //   that holds that photo opens it again from where it is.
+  // - An open of another photo starts the open photo's spring from 0, while the other
+  //   spring goes on taking the closed photo back.
+  // - A step to the previous or next photo, or a click on a thumbnail, changes which
+  //   photo the open photo's spring draws, and no spring: the new photo is in the
+  //   open rectangle at once, as before the zoom existed, or as far open as the old
+  //   one was if the step comes during the opening. A step onto the photo that is on
+  //   its way back ends that return.
+  //
+  // What the page draws from the outputs:
+  // - A photo's opacity is 1 minus the zoom of the other photos, so the grid fades
+  //   while a photo opens, e.g. to 0.3 when the photo is 0.7 open, and comes back
+  //   while it closes. The content box behind the photos has one color, so this
+  //   looks like a sheet that fades in over the grid. With the open photo at its
+  //   end, the others are at opacity 0 and their nodes leave the DOM, as before, see
+  //   gridFadeRate. The photo on its way back fades only with a photo that opens
+  //   meanwhile, and a photo that is opened while another returns starts at the
+  //   opacity that it had in its cell, see fadedByReturning.
+  // - stack is the z-index, see photoStack: 3 for the open photo, and 2 for the photo
+  //   that was closed last while its spring moves, so that it passes above the photos
+  //   in their cells, which have 0. The stylesheet puts the thumbnails at 1, so a photo
+  //   that opens or returns is above them all the way, e.g. a photo of the bottom row,
+  //   whose cell lies under the strip, and the controls above all. Once the returning
+  //   photo's spring is at rest, the photo has 0 like every photo in its cell, as a
+  //   window of HandwiredOS is raised only while its springs move. A z-index that
+  //   stayed until the next close would draw that one photo above the thumbnails of
+  //   the next photo that opens, and the other photos of its row below them.
+  // - The picture's crop: a photo is one node in its cell and in the open rectangle,
+  //   and the stylesheet's background-size: cover fits the picture to the node in
+  //   every frame, so the crop changes with the rectangle's proportions and never
+  //   jumps.
+  // - The backdrop, the previous and next controls, and the open photo's shadow and
+  //   name fade with the zoom, and so does the ring of the photo's thumbnail. The
+  //   thumbnails have their own springs, see below.
+  //
+  // A press acts on destinations, as in the rest of HandwiredOS. While a photo
+  // opens, a click is tested against the open photo's rectangle, the controls and the
+  // thumbnails' destinations, e.g. a click beside the open rectangle closes the photo
+  // that is still growing. While a photo returns, a click is tested against the cells,
+  // e.g. a click on the returning photo's cell opens it again. `present` only decides
+  // whether the photos are drawn: the springs go on while Photos flies to the dock, and
+  // a window that comes back in the middle of a zoom shows the zoom under way.
+  const closing = emitFirstOnly(circuit, previousFocusMass, nextFocusMass)
+  // 1 when the photo that is open after this evaluation is the one that was closed last.
+  const closedLastIsOpen = circuit.affine(
+    nextFocus.map((wire, item) => [emitBoth(circuit, wire, cells.zoom.closedLast[item]!), 1]),
   )
-  const thumbnailProjections: PhotoProjection[] = []
-  const thumbnailActivityTerms: [Wire, number][] = []
+  circuit.assumeRange(closedLastIsOpen, 0, 1)
+  // An open of the photo that was closed last: no photo was open, and that photo is now.
+  const reopening = emitFirstOnly(circuit, closedLastIsOpen, previousFocusMass)
+  const swap = circuit.affine([[closing, 1], [reopening, 1]])
+  circuit.assumeRange(swap, 0, 1)
+  // openSpring after the swap: 1 when exactly one of openSpring and swap is 1.
+  const nextOpenSpring = circuit.affine([
+    [emitFirstOnly(circuit, cells.zoom.openSpring, swap), 1],
+    [emitFirstOnly(circuit, swap, cells.zoom.openSpring), 1],
+  ])
+  circuit.assumeRange(nextOpenSpring, 0, 1)
+  table.next(cells.zoom.openSpring, nextOpenSpring)
+  // The spring that wasn't the open photo's is put at rest at 0 by a close, which
+  // makes it the open photo's, and by a step onto the photo that it was taking back.
+  const steppedOntoClosedLast = emitBoth(circuit, previousFocusMass, closedLastIsOpen)
+  const otherSpringStops = circuit.affine([[closing, 1], [steppedOntoClosedLast, 1]])
+  circuit.assumeRange(otherSpringStops, 0, 1)
+  const zoomSprings = cells.zoom.springs.map((spring, index) => {
+    // Whether this spring is the open photo's, before and after this evaluation's events.
+    const wasOpenSpring = index === 0 ? circuit.affine([[cells.zoom.openSpring, -1]], 1) : cells.zoom.openSpring
+    const isOpenSpring = index === 0 ? circuit.affine([[nextOpenSpring, -1]], 1) : nextOpenSpring
+    const keepsMoving = circuit.reglu(
+      [],
+      1,
+      [[host.snap, -1], [emitFirstOnly(circuit, otherSpringStops, wasOpenSpring), -1]],
+      1,
+    )
+    const snap = circuit.affine([[keepsMoving, -1]], 1)
+    circuit.assumeRange(snap, 0, 1)
+    // The destination is 1 for the open photo's spring while a photo is open. The
+    // steps simulate time before this evaluation's events, so they pull toward the
+    // destination that the stored openSpring and focus cells give.
+    const object = emitAnimatedObject(circuit, [{
+      matrix: host.springMatrix,
+      displacement: spring.displacement,
+      velocity: spring.velocity,
+      destination: emitBoth(circuit, isOpenSpring, nextFocusMass),
+      destinationDuringSteps: emitBoth(circuit, wasOpenSpring, previousFocusMass),
+    }], {settleCheck: host.settleCheck, snap, settleDistance: zoomSettleThreshold, settleSpeed: zoomSettleThreshold})
+    table.next(spring, {displacement: object.displacements[0]!, velocity: object.velocities[0]!})
+    // Clamped only where drawn, e.g. a zoom that overshoots 1 by 0.003 keeps its
+    // stored displacement, and the photo stays inside the open rectangle.
+    return {isOpenSpring, zoom: emitClampZeroOne(circuit, object.positions[0]!), active: object.active}
+  })
+  const [firstSpring, secondSpring] = zoomSprings as [typeof zoomSprings[number], typeof zoomSprings[number]]
+  // The zoom of the open photo, and of the photo that was closed last.
+  const openZoom = circuit.affine([
+    [emitMultiply(circuit, firstSpring.zoom, firstSpring.isOpenSpring), 1],
+    [emitMultiply(circuit, secondSpring.zoom, secondSpring.isOpenSpring), 1],
+  ])
+  circuit.assumeRange(openZoom, 0, 1)
+  const returnZoom = circuit.affine([
+    [emitMultiply(circuit, firstSpring.zoom, secondSpring.isOpenSpring), 1],
+    [emitMultiply(circuit, secondSpring.zoom, firstSpring.isOpenSpring), 1],
+  ])
+  circuit.assumeRange(returnZoom, 0, 1)
+  // 1 while the photo that was closed last is on its way back: the spring that isn't
+  // the open photo's still moves. That spring is at rest whenever the photo that was
+  // closed last is the open photo.
+  const returning = circuit.affine([
+    [emitBoth(circuit, firstSpring.active, secondSpring.isOpenSpring), 1],
+    [emitBoth(circuit, secondSpring.active, firstSpring.isOpenSpring), 1],
+  ])
+  circuit.assumeRange(returning, 0, 1)
+  // A close makes the open photo the one that was closed last.
+  const nextClosedLast = cells.zoom.closedLast.map((closedLast, item) => {
+    const next = circuit.affine([
+      [closedLast, 1],
+      [circuit.reglu([[cells.focus[item]!, 1], [closedLast, -1]], 0, [[closing, 1]], 0), 1],
+    ])
+    circuit.assumeRange(next, 0, 1)
+    return next
+  })
+  table.next(cells.zoom.closedLast, nextClosedLast)
+  // How far the lightbox covers the grid: the two zooms together, at most 1. The
+  // backdrop and the controls have this opacity, and a photo in its cell has the rest.
+  const zoomSum = circuit.affine([[openZoom, 1], [returnZoom, 1]])
+  const lightboxOpacity = circuit.affine([
+    [zoomSum, 1],
+    [emitRelu(circuit, circuit.affine([[zoomSum, 1]], -1)), -1],
+  ])
+  circuit.assumeRange(lightboxOpacity, 0, 1)
+  // The part of it that the returning photo adds, which doesn't fade that photo itself.
+  const returningShare = circuit.affine([[lightboxOpacity, 1], [openZoom, -1]])
+  circuit.assumeRange(returningShare, 0, 1)
+  const lightboxPresent = emitMultiply(circuit, present, lightboxOpacity)
+
+  const photos: PhotoProjection[] = []
+  for (let item = 0; item < itemCount; item++) {
+    const column = item % columnCount
+    const row = Math.floor(item / columnCount)
+    const focused = nextFocus[item]!
+    const closedLast = nextClosedLast[item]!
+    // The open photo has the open photo's spring, and the photo that was closed last
+    // has the other one, unless it is the open photo again.
+    const zoomAsOpenPhoto = emitMultiply(circuit, openZoom, focused)
+    const zoom = circuit.affine([
+      [zoomAsOpenPhoto, 1],
+      [circuit.reglu([[returnZoom, 1]], 0, [[closedLast, 1], [focused, -1]], 0), 1],
+    ])
+    circuit.assumeRange(zoom, 0, 1)
+    // (1 - zoom) × cellValue + zoom × openValue. Each product reads its wires as they
+    // are, so at zoom 0 the sum is cellValue × 1 + 0, the cell's own FP32 value, and
+    // at zoom 1 it is the open rectangle's.
+    const between = (cellValue: Wire, openValue: Wire) => circuit.affine([
+      [circuit.append('reglu', [[cellValue, 1]], 0, [[zoom, -1]], 1, {preserveRounding: true}), 1],
+      [emitMultiply(circuit, openValue, zoom), 1],
+    ])
+    // The zoom of the other photos: the open photo's unless this is the open photo,
+    // and the returning photo's unless this is the returning photo. The open photo
+    // has the returning photo's share minus its own zoom: a photo that is opened
+    // while another returns was faded in its cell by the returning photo, e.g. to an
+    // opacity of 0.2 when that photo was still 0.8 open, so its opacity starts there
+    // and reaches 1 when it is as far open as the returning photo still is. With 0
+    // for the open photo, that cell went from 0.2 to 1 in the frame of the click.
+    const fadedByOpen = circuit.reglu([], 1, [[openZoom, 1], [focused, -1]], 0)
+    const fadedByReturning = circuit.reglu([], 1, [[returningShare, 1], [zoomAsOpenPhoto, -1], [closedLast, -1]], 0)
+    photos.push({
+      left: between(gridLeft[column]!, main.left),
+      top: between(gridTop[row]!, main.top),
+      width: between(gridWidth, main.width),
+      height: between(gridHeight, main.height),
+      opacity: circuit.reglu([[present, 1]], 0, [[fadedByOpen, -gridFadeRate], [fadedByReturning, -gridFadeRate]], 1),
+      zoom,
+      stack: circuit.affine([
+        [focused, photoStack.open],
+        [circuit.reglu([], 1, [[closedLast, 1], [returning, 1], [focused, -1]], -1), photoStack.returning],
+      ]),
+    })
+  }
+
+  const thumbnailTargets = projectThumbnailTargets(nextFocus, nextFocusMass)
+  // Thumbnails are springs while a photo is open or a zoom is under way: at an open
+  // they grow out of the strip's middle to their places, and at a close they shrink
+  // back into it, since with no photo open every thumbnail's destination is the
+  // strip's middle at size 0. With no photo open and no zoom under way they snap onto
+  // that destination, e.g. while the window is resized with the grid in view, so
+  // that nothing moves where nothing is drawn. They also snap when the host plans a
+  // snap. Whether a zoom is under way comes from the stored underWay bit, i.e. from
+  // the evaluation before this one, which is at most one settle check late and keeps
+  // the thumbnails' operations out of the layers after the zoom's settle bits: reading
+  // this evaluation's bits made the program 7 layers deeper.
+  const underWay = circuit.affine([
+    [circuit.reglu([], 1, [[firstSpring.active, -1], [secondSpring.active, -1]], 1), -1],
+  ], 1)
+  circuit.assumeRange(underWay, 0, 1)
+  table.next(cells.zoom.underWay, underWay)
+  const stripIdle = circuit.reglu(
+    [],
+    1,
+    [[previousFocusMass, -1], [nextFocusMass, -1], [cells.zoom.underWay, -1]],
+    1,
+  )
+  const thumbnailsKeepMoving = circuit.reglu([], 1, [[host.snap, -1], [stripIdle, -1]], 1)
+  const snapThumbnails = circuit.affine([[thumbnailsKeepMoving, -1]], 1)
+  circuit.assumeRange(snapThumbnails, 0, 1)
+  const thumbnailProjections: ThumbnailProjection[] = []
+  const activityTerms: [Wire, number][] = [[firstSpring.active, 1], [secondSpring.active, 1]]
   for (let item = 0; item < itemCount; item++) {
     const target = thumbnailTargets[item]!
     // centerX and scale settle together. The steps simulate time before this
@@ -610,38 +893,17 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
       scaleVelocity: thumbnail.velocities[1]!,
       scaleDestination: target.scale,
     })
-    thumbnailProjections.push(projectThumbnail({
-      centerX,
-      scale,
-      focused: target.focused,
-    }))
-    thumbnailActivityTerms.push([thumbnail.active, 1])
+    // The ring of a thumbnail is as strong as its photo is open, so it fades in with
+    // the photo that opens and out with the photo that returns. With the focus bit, it
+    // was gone in the first frame of a close, on a thumbnail that was still at its
+    // full size.
+    thumbnailProjections.push({...projectThumbnail({centerX, scale}), focused: photos[item]!.zoom})
+    activityTerms.push([thumbnail.active, 1])
   }
   const animationActive = emitClampZeroOne(
     circuit,
-    circuit.affine(thumbnailActivityTerms),
+    circuit.affine(activityTerms),
   )
-  for (let item = 0; item < itemCount; item++) {
-    const column = item % columnCount
-    const row = Math.floor(item / columnCount)
-    const thisFocused = nextFocus[item]!
-    const project = (gridProjection: Wire, mainValue: Wire) => circuit.affine([
-      [gridProjection, 1],
-      [emitMultiply(circuit, thisFocused, mainValue), 1],
-    ])
-    photos.push({
-      left: project(projectedGridLeft[column]!, main.left),
-      top: project(projectedGridTop[row]!, main.top),
-      width: project(projectedGridWidth, main.width),
-      height: project(projectedGridHeight, main.height),
-      opacity: emitMultiply(
-        circuit,
-        present,
-        circuit.affine([[nextGridMass, 1], [thisFocused, 1]]),
-      ),
-      focused: thisFocused,
-    })
-  }
 
   table.next(cells.focus, nextFocus)
   const previousControlOutput = [
@@ -649,21 +911,21 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
     previousControl.top,
     previousControl.width,
     previousControl.height,
-    emitMultiply(circuit, present, nextFocusMass),
+    lightboxPresent,
   ]
   const nextControlOutput = [
     nextControl.left,
     nextControl.top,
     nextControl.width,
     nextControl.height,
-    emitMultiply(circuit, present, nextFocusMass),
+    lightboxPresent,
   ]
 
   return {
-    backdropOpacity: emitMultiply(circuit, present, nextFocusMass),
+    backdropOpacity: lightboxPresent,
     animationActive,
-    photos: flattenProjections(photos),
-    thumbnails: flattenProjections(thumbnailProjections),
+    photos: flattenPhotos(photos),
+    thumbnails: flattenThumbnails(thumbnailProjections),
     previousControl: previousControlOutput,
     nextControl: nextControlOutput,
   }
@@ -938,7 +1200,25 @@ function thumbnailSpread(distance: number) {
   return spread
 }
 
-function flattenProjections(projections: readonly PhotoProjection[]) {
+// The photos' outputs in photoField's order.
+function flattenPhotos(projections: readonly PhotoProjection[]) {
+  const output: Wire[] = []
+  for (const projection of projections) {
+    output.push(
+      projection.left,
+      projection.top,
+      projection.width,
+      projection.height,
+      projection.opacity,
+      projection.zoom,
+      projection.stack,
+    )
+  }
+  return output
+}
+
+// The thumbnails' outputs in thumbnailField's order.
+function flattenThumbnails(projections: readonly ThumbnailProjection[]) {
   const output: Wire[] = []
   for (const projection of projections) {
     output.push(
@@ -952,6 +1232,17 @@ function flattenProjections(projections: readonly PhotoProjection[]) {
   }
   return output
 }
+
+// The page draws no photo and no thumbnail that is under 1/64 px wide or tall. A box
+// that small changes no pixel: 1/64 px is the unit in which Chrome and Safari lay
+// boxes out, and a thumbnail's opacity is its share of its full size, e.g. 0.0002
+// for a thumbnail of 82 px that is 1/64 px wide. A thumbnail's spring passes size 0
+// on its way to a destination of 0, e.g. about 0.29 s after a close, and swings back
+// above 0 about 0.3 s later by a few millionths of a pixel, for up to 4 frames. With
+// every size above 0 drawn, the page took up to 9 thumbnails' nodes out of the DOM,
+// put them back for those frames and took them out again.
+/** @public */
+export const smallestDrawnSize = 1 / 64
 
 export function createPhotoGalleryRenderer(document: Document, root: HTMLElement) {
   const backdrop = root.querySelector<HTMLElement>('.photos-backdrop')
@@ -989,59 +1280,57 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
     return element
   }
 
+  // Keeps an item's node in the DOM only while the program draws the item, i.e. while
+  // its opacity output is positive and its width and height outputs are at least
+  // smallestDrawnSize, and writes the node's rectangle and opacity. photoField and
+  // thumbnailField hold these five outputs at the same places. Returns the node, or
+  // null for an item that isn't drawn.
   function projectItem(
     elements: (HTMLElement | null)[],
     item: number,
     values: Float32Array,
     output: readonly Wire[],
-    fields: typeof photoField,
-    classKind: 'photo' | 'thumbnail',
+    outputStart: number,
+    thumbnail: boolean,
   ) {
-    const outputStart = item * fields.size
-    const width = values[output[outputStart + fields.width]!]!
-    const height = values[output[outputStart + fields.height]!]!
-    const opacity = values[output[outputStart + fields.opacity]!]!
-    const visible = width > 0 && height > 0 && opacity > 0
+    const width = values[output[outputStart + photoField.width]!]!
+    const height = values[output[outputStart + photoField.height]!]!
+    const opacity = values[output[outputStart + photoField.opacity]!]!
+    const visible = width >= smallestDrawnSize && height >= smallestDrawnSize && opacity > 0
     let element = elements[item] ?? null
     if (!visible) {
       if (element !== null) {
         element.remove()
         elements[item] = null
       }
-      return
+      return null
     }
     if (element === null) {
-      element = createPhotoElement(item, classKind === 'thumbnail')
+      element = createPhotoElement(item, thumbnail)
       elements[item] = element
     }
     projectGeometry(element, values, output, outputStart)
     element.style.opacity = `${opacity}`
-    element.style.setProperty(
-      '--focused',
-      `${values[output[outputStart + fields.focused]!]}`,
-    )
+    return element
   }
 
   return {
     render(values: Float32Array, output: PhotoOutputs) {
       backdrop.style.opacity = `${values[output.backdropOpacity]}`
       for (let item = 0; item < itemCount; item++) {
-        projectItem(
-          photoElements,
-          item,
-          values,
-          output.photos,
-          photoField,
-          'photo',
-        )
-        projectItem(
-          thumbnailElements,
-          item,
-          values,
-          output.thumbnails,
-          thumbnailField,
-          'thumbnail',
-        )
+        const photoStart = item * photoField.size
+        const photo = projectItem(photoElements, item, values, output.photos, photoStart, false)
+        if (photo !== null) {
+          // --zoom scales the photo's shadow and fades its name in, and --focused is the
+          // opacity of a thumbnail's ring, see handwired-os.css.
+          photo.style.setProperty('--zoom', `${values[output.photos[photoStart + photoField.zoom]!]}`)
+          photo.style.zIndex = `${values[output.photos[photoStart + photoField.stack]!]}`
+        }
+        const thumbnailStart = item * thumbnailField.size
+        const thumbnail = projectItem(thumbnailElements, item, values, output.thumbnails, thumbnailStart, true)
+        if (thumbnail !== null) {
+          thumbnail.style.setProperty('--focused', `${values[output.thumbnails[thumbnailStart + thumbnailField.focused]!]}`)
+        }
       }
       projectGeometry(previousControl, values, output.previousControl)
       projectGeometry(nextControl, values, output.nextControl)
@@ -1143,10 +1432,12 @@ export function validatePhotoGalleryOutput(
       tolerance,
     )
     assertUnitInterval(
-      values[output.photos[outputStart + photoField.focused]!],
-      'photo focus',
+      values[output.photos[outputStart + photoField.zoom]!],
+      'photo zoom',
       tolerance,
     )
+    const stack = values[output.photos[outputStart + photoField.stack]!]
+    invariant(stack === 0 || stack === photoStack.returning || stack === photoStack.open, `photo stack must be 0, 2 or 3, got ${stack}`)
   }
   for (let item = 0; item < itemCount; item++) {
     const outputStart = item * thumbnailField.size
@@ -1183,4 +1474,16 @@ function emitClampZeroOne(circuit: Circuit, value: Wire): Wire {
   const result = circuit.affine([[positive, 1], [aboveOne, -1]])
   circuit.assumeRange(result, 0, 1)
   return result
+}
+
+// 1 when both bits are 1, as relu(first + second - 1), e.g. this spring is the open
+// photo's and a photo is open.
+function emitBoth(circuit: Circuit, first: Wire, second: Wire): Wire {
+  return circuit.reglu([], 1, [[first, 1], [second, 1]], -1)
+}
+
+// 1 when the first bit is 1 and the second is 0, as relu(first - second), e.g. a
+// photo was open and none is now.
+function emitFirstOnly(circuit: Circuit, first: Wire, second: Wire): Wire {
+  return circuit.reglu([], 1, [[first, 1], [second, -1]], 0)
 }
