@@ -1749,9 +1749,15 @@ function mountWindowManager(document: Document, window: Window) {
     invariant(content !== null, 'window content is missing')
     return content
   })
+  const titleBars = windows.map(element => {
+    const titleBar = element.querySelector<HTMLElement>('.titlebar')
+    invariant(titleBar !== null, 'a title bar is missing')
+    return titleBar
+  })
   const domCache = {
     desktop, // mount lifetime
     windows, // mount lifetime
+    titleBars, // mount lifetime
     windowContents, // mount lifetime
     dockItems, // mount lifetime
     photosViewport, // mount lifetime
@@ -1858,10 +1864,28 @@ function mountWindowManager(document: Document, window: Window) {
       if (values[machine.output.windows[windowIndex * windowOutputField.size + windowOutputField.focused]!] === 1) focusedWindowAtLastFrame = windowIndex
     }
     const notesIsFocusedWindow = focusedWindowAtLastFrame === notesWindowIndex
+    // The cursors, from what the press holds in the program's table after the step's
+    // events. While a title bar drags its window, the cursor is 'grabbing' on the
+    // title bar and everywhere else on the desktop, e.g. where the window has stopped
+    // at the workspace's edge and the pointer has gone on. While a grip resizes its
+    // window, the cursor is the grip's everywhere. A press that drags nothing changes
+    // no cursor, e.g. a press on a window button, or on the title bar of a maximized
+    // window, which can't be dragged and whose title bar shows the default cursor.
+    let draggedWindow = -1
+    let resizing = false
+    for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+      if (machine.source[machine.cells.drag[windowIndex]!] === 1) draggedWindow = windowIndex
+      if (machine.source[machine.cells.resize[windowIndex]!] === 1) resizing = true
+    }
 
     // DOM writes.
     const wiringPending = wiring.render(viewportWidth, viewportHeight, frameTime)
+    domCache.desktop.style.cursor = draggedWindow !== -1 ? 'grabbing' : resizing ? 'nwse-resize' : 'auto'
     projectWindowElements(domCache.windows, domCache.windowContents, values, machine.output.windows)
+    for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+      const maximized = values[machine.output.windows[windowIndex * windowOutputField.size + windowOutputField.maximized]!] === 1
+      domCache.titleBars[windowIndex]!.style.cursor = maximized ? 'default' : windowIndex === draggedWindow ? 'grabbing' : 'grab'
+    }
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       const element = domCache.dockItems[windowIndex]!
       const outputStart = windowIndex * dockOutputField.size

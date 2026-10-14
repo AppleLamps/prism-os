@@ -3,9 +3,11 @@
    components that every demo page shares.
 
    The program computes every position and size, and JavaScript writes them as inline
-   styles each frame: a window's width, height, transform, opacity and z-index, its content
-   box's width and height, a dock item's rectangle, each photo's position, and the numbers
-   --focused, --maximized, --inactive and --open, each 0 or 1.
+   styles each frame: a window's width, height, transform, opacity, visibility and z-index,
+   its content box's width and height, a dock item's rectangle, each photo's position, and
+   the numbers --focused, --maximized, --inactive and --open, each 0 or 1. JavaScript also
+   writes the cursor of the desktop and of each title bar, from what the program says the
+   press holds, and the rectangle of the wallpaper's canvas, from the viewport.
    So no rule here gives one of those properties a transition, an animation or a default.
    What depends on the four numbers is arithmetic on them, e.g. a shadow that grows with
    --focused, and has no transition either: focus changes in the frame of the press, and
@@ -39,19 +41,17 @@ body {
 /* While a press is held, only the pressed element and the elements that it lies in take
    the pointer. So nothing else shows a hover state or sets the cursor while the pointer
    passes over it with the button down, e.g. a dock item under a selection of the note's
-   text that is dragged out of the note. A drag of a title bar or of a grip keeps its
-   cursor wherever the pointer goes, e.g. over the note when a resize has stopped at a
-   window's smallest size. */
-#desktop:has(:active) :not(:active) {
+   text that is dragged out of the note. The pointer is then over the desktop wherever it
+   is over nothing pressed, so the cursor that JavaScript gives the desktop during a drag
+   of a title bar or of a grip shows wherever the pointer goes, e.g. over the note when a
+   resize has stopped at a window's smallest size.
+
+   The desktop is :active during a press on anything in it and on the bare desk, so the
+   rule needs no :has(). With "#desktop:has(:active) :not(:active)", Chrome computed the
+   style of every element of the desktop again in every frame that replaced a text, e.g.
+   the time in Monitor's footer: about 0.6 ms a frame, where this rule costs 0.02 ms. */
+#desktop:active :not(:active) {
   pointer-events: none;
-}
-
-#desktop:has(.titlebar:active) {
-  cursor: grabbing;
-}
-
-#desktop:has(.resize-grip:active) {
-  cursor: nwse-resize;
 }
 
 /* The desk: one warm surface with paper grain and a dot every 24 px, lit from the top left.
@@ -269,7 +269,8 @@ body {
    frame's outer edge. So the padding is 1 px less on the right than the program's gap, and
    1 px at the bottom: the buttons are then centered 22 px below the frame's top and end
    10 px before its right edge, exactly on the rectangles that the program tests presses
-   against. */
+   against. JavaScript writes the title bar's cursor: grab, grabbing while the title bar
+   drags its window, and the default one on a maximized window, which can't be dragged. */
 .titlebar {
   height: var(--title-height);
   display: flex;
@@ -277,11 +278,6 @@ body {
   justify-content: space-between;
   padding: 0 calc(var(--button-gap) - 1px) 1px 14px;
   border-bottom: 1px solid var(--rule);
-  cursor: grab;
-}
-
-.titlebar:active {
-  cursor: grabbing;
 }
 
 .window-title {
