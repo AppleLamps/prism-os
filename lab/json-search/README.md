@@ -54,7 +54,7 @@ What the page leaves out on purpose:
 
 Other states:
 
-- **A window narrower than 720 px**, e.g. a phone, gets 20,000 documents, and the title says so. 100,000 documents take 410 MB on the GPU, and on the CPU the worker holds 501 MB for them. The page decides once, when it starts: a window that changes its width later, e.g. a phone turned on its side, keeps its documents, and the title keeps their count.
+- **A window narrower than 720 px**, e.g. a phone, gets 20,000 documents, and the title says so. 100,000 documents take 410 MB on the GPU, and on the CPU the worker for it holds 448 MB for them. The page decides once, when it starts: a window that changes its width later, e.g. a phone turned on its side, keeps its documents, and the title keeps their count.
 - **A GPU whose buffers hold fewer documents** than the page wants gets the count that fits, and the page says so, in its title and in a sentence, e.g. "One buffer of this GPU holds 65,000 documents, so the page searches 65,000 instead of 100,000." `?buffer=134217728` in the page's address asks the GPU for buffers of at most that many bytes, which shows this state on a machine that grants more.
 - **A GPU that stops working** while the page is open: the page goes on with both programs on the CPU, and says why.
 - **A worker that fails**, e.g. because its script didn't load: the page says so in the line's place and searches no more, also not on the GPU.
@@ -75,7 +75,7 @@ Measured on October 13, 2026 on an Apple M5 Max in headless Chrome 155, with the
 - **A whole search on the CPU**, 100,000 documents, a pattern of up to 8 states: 14.3, 14.2 and 14.2 s as the line shows it, and 23.0, 14.3 and 14.3 s on the clock, the first one with the highlighter.
 - **Without WebGPU** the documents are ready after 0.36 s, the line's first numbers show within 0.67 s of the navigation, and the first search is done after 23.6 to 23.7 s, of which the search program takes 14.1 to 14.3 s.
 - **Typing while a search runs on the CPU** held the page's thread for at most 5.4 ms, and a key's own search showed its first numbers 18 to 67 ms after the key.
-- **Memory**, by Chrome's `performance.measureUserAgentSpecificMemory`: the page's JavaScript holds 134 MB at rest on the GPU, 43 MB of it on the page's thread, mostly the documents' texts, 87 MB in the worker, its own copy of the texts and the plain JavaScript highlighter's kinds, and 4 MB for the canvas. After a search on the CPU the worker holds 501 MB: the CPU searcher keeps every document's cells and display kinds as f32 values, 205 MB each.
+- **Memory**, by Chrome's `performance.measureUserAgentSpecificMemory`: the page's JavaScript holds 134 MB at rest on the GPU, 43 MB of it on the page's thread, mostly the documents' texts, 88 MB in the worker that times RegExp, its own copy of the texts and the plain JavaScript highlighter's kinds, and 4 MB for the canvas. After a search on the CPU it holds 582 MB, 448 MB of them in the worker for the CPU: the CPU searcher keeps every document's cells and display kinds as f32 values, 205 MB each, next to that worker's copy of the texts.
 
 The page's files:
 
@@ -86,7 +86,7 @@ The page's files:
 | `demo-map.ts` | The map without a DOM: how large a cell is, which document the pointer picks, the next document with a match, and the cells' pixels |
 | `demo-text.ts` | The page's documents, the line of numbers and the other sentences, and a document's text as runs of characters that look the same |
 | `demo-worker.ts` | The workers' script, which the page starts twice: one worker times RegExp, and the other runs a search on the CPU in pieces and returns one document's kinds and marks |
-| `demo.test.ts` | 18 tests of the map, the documents, the sentences and the worker, without a browser. Bun runs the worker as a worker |
+| `demo.test.ts` | 19 tests of the map, the documents, the sentences and the worker, without a browser. Bun runs the worker as a worker |
 
 scripts/demo-site-pages.ts lists the workers' script next to the page, since Bun's bundler doesn't follow `new Worker(...)`: the site's build writes it as one file, json-search/demo-worker.js, and the development server builds it at each request.
 
@@ -161,7 +161,7 @@ From the repo root:
 
 ```sh
 bun start                                        # the demo site, with the demo page at /json-search/
-bun test lab/json-search                         # 64 tests in 5 files, about 40 seconds, no GPU
+bun test lab/json-search                         # 65 tests in 5 files, about 40 seconds, no GPU
 bunx tsgo -p lab/json-search                     # type-check, including gpu/
 bunx oxlint --type-aware lab/json-search         # lint
 bun lab/json-search/report.ts sizes              # the first stage's two programs and their shaders, with and without guards
@@ -414,7 +414,7 @@ The interpreter rounds every f32 operation on its own, and says nothing about wh
 
 ### Regex search, the highlighter's loop and the searcher
 
-`bun test lab/json-search` runs 64 tests in 5 files without a GPU, 18 of them the demo page's, in demo.test.ts. The ones for the loops, in search.test.ts and searcher.test.ts:
+`bun test lab/json-search` runs 65 tests in 5 files without a GPU, 19 of them the demo page's, in demo.test.ts. The ones for the loops, in search.test.ts and searcher.test.ts:
 
 - **Regex search's loop against form (a).** For 274 patterns of up to 8 states with 8 texts each, at a capacity of 40 positions, the loop program gives the match count and the marks of lab/regex-search's `buildDataSearch` on the CPU executor: on the executor, as generated JavaScript, and through the WGSL interpreter. The interpreter also runs the shader in the compiled program's statement order, with the bits as f32 values, and stopping at the text's end, each on every third or fifth pattern. The patterns are lab/regex-search's edge cases, the measurement's patterns, random ones, and the capacities: patterns of exactly 8 states, and one with 16 classes and 32 class boundaries, `([aeimquyC]|[cekmsuAC]|…|a|c)+`. Every pattern gets an empty text, a text as long as the program holds, a longer one, and two that end with a match on the last position. The full program's outputs are compared with lab/regex-search's automaton simulator first, so a mistake shared by the loop and the full program fails too.
 - **16 and 32 states**, including patterns with exactly that many states: the loop as generated JavaScript and through the interpreter against form (a) at 24 positions.
