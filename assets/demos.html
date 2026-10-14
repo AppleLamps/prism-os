@@ -85,8 +85,8 @@
            October 13, 2026: HandwiredOS's from its Monitor window in Chrome (14,467 operations in 275 layers), the
            JSON highlighter's from `bun scripts/measure-json-highlighter.ts` (15,928 operations in 1,043 layers for
            the loop form, which the page runs), and the regex search's from the page's own status line at its
-           default settings (697,070 operations in 8,192 layers). `bun run site:check` prints what each demo's page
-           reports, and fails when a number here is more than 10% away from the page's. -->
+           default settings, 12 states and 768 code points (312,108 operations in 6,142 layers). `bun run site:check`
+           prints what each demo's page reports, and fails when a number here is more than 10% away from the page's. -->
       <section class="demos" aria-labelledby="demos">
         <a class="card demo is-first" href="os/" aria-labelledby="handwiredos-title">
           <div class="demo-picture">
@@ -135,7 +135,7 @@
           <div class="demo-body">
             <h3 id="regex-search-title">Regex search</h3>
             <p>Type a pattern, and one program finds every match in a text as you type. The pattern reaches the program as tables of numbers, so every pattern runs on the same program.</p>
-            <p class="meta facts">About <b data-count="operations">700,000</b> operations in about <b data-count="layers">8,000</b> layers</p>
+            <p class="meta facts">About <b data-count="operations">310,000</b> operations in about <b data-count="layers">6,100</b> layers</p>
           </div>
         </a>
 
