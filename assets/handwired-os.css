@@ -36,6 +36,24 @@ body {
   -webkit-user-select: none;
 }
 
+/* While a press is held, only the pressed element and the elements that it lies in take
+   the pointer. So nothing else shows a hover state or sets the cursor while the pointer
+   passes over it with the button down, e.g. a dock item under a selection of the note's
+   text that is dragged out of the note. A drag of a title bar or of a grip keeps its
+   cursor wherever the pointer goes, e.g. over the note when a resize has stopped at a
+   window's smallest size. */
+#desktop:has(:active) :not(:active) {
+  pointer-events: none;
+}
+
+#desktop:has(.titlebar:active) {
+  cursor: grabbing;
+}
+
+#desktop:has(.resize-grip:active) {
+  cursor: nwse-resize;
+}
+
 /* The desk: one warm surface with paper grain and a dot every 24 px, lit from the top left.
    Nothing on it moves, so the dots show how far a window has been dragged. */
 #desktop {
