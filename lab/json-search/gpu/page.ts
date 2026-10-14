@@ -11,14 +11,14 @@
 //   display-window  the display shader, the summary of every document, and the display kinds of `windowDocuments`
 //                   documents in the middle, e.g. the ones a list shows
 //   display-all     the display shader, the summary and the 512 display kinds of every document
-import {createCorpus} from '../../../tests/json-highlighter/corpus.ts'
-import {highlightReference} from '../../../tests/json-highlighter/reference.ts'
-import {countMismatches, expectedOutputs} from '../check.ts'
-import {type GeneratedDocument, describeDocuments, generateDocuments} from '../documents.ts'
-import type {Guard} from '../emit.ts'
-import {type BatchProgram, buildBatchPrograms, cellsPerDocument, kindCount, summaryCount, writeDocumentCells} from '../program.ts'
-import {highlightWithTables, tableLoopResult} from '../table-loop.ts'
-import {type Evaluation, type ProgramRunner, type Readback, createDocumentStore, createProgramRunner, requestBatchDevice, selfCheck} from './host.ts'
+import {createCorpus} from '../../../tests/json-search/highlighter/corpus.ts'
+import {highlightReference} from '../../../tests/json-search/highlighter/reference.ts'
+import {countMismatches, expectedOutputs} from '../../../src/json-search/check.ts'
+import {type GeneratedDocument, describeDocuments, generateDocuments} from '../../../src/json-search/documents.ts'
+import type {Guard} from '../../../src/json-search/emit.ts'
+import {type BatchProgram, buildBatchPrograms, cellsPerDocument, kindCount, summaryCount, writeDocumentCells} from '../../../src/json-search/program.ts'
+import {highlightWithTables, tableLoopResult} from '../../../src/json-search/table-loop.ts'
+import {type Evaluation, type ProgramRunner, type Readback, createDocumentStore, createProgramRunner, requestBatchDevice, selfCheck} from '../../../src/json-search/gpu/host.ts'
 
 export type PageConfig = {
   mode: 'main' | 'check'
@@ -34,7 +34,7 @@ export type PageConfig = {
   // During a gap of this length, a one-document dispatch every 16 ms, to see whether it keeps the next evaluation fast.
   keepWarmGapMs: number
   windowDocuments: number
-  // Goes into every shader's source, see host.ts. A salt that no earlier run used gives cold compile times.
+  // Goes into every shader's source, see src/json-search/gpu/host.ts. A salt that no earlier run used gives cold compile times.
   shaderSalt: number
   seed: number
   invalidFraction: number

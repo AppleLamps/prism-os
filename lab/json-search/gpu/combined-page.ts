@@ -11,15 +11,16 @@
 //   and the same programs on the CPU.
 // In 'straightLine' runs it also compiles the first stage's display shader, every position written out, to time it in
 // the same process as the loop.
-import {capacityErrors, compilePattern} from '../../regex-search/pattern.ts'
-import {type KindMask, bitRowTables, createBitRowSearch} from '../bit-rows.ts'
-import {generateDocuments} from '../documents.ts'
-import {createPlainSearch} from '../plain-search.ts'
-import {buildBatchProgram, cellsPerDocument, kindCount, writeDocumentCells} from '../program.ts'
-import {type SearchScope, boundaryCapacity, classCapacity, kindCount as displayKindCount, searchableKinds} from '../search-step.ts'
-import {type Searcher, type ShaderWriter, bufferBytesFor, createCpuSearcher, createGpuSearcher, positions} from '../searcher.ts'
-import {highlightWithTables, tableLoopResult} from '../table-loop.ts'
-import {createDocumentStore, createProgramRunner, requestBatchDevice} from './host.ts'
+import {capacityErrors, compilePattern} from '../../../src/json-search/regex/pattern.ts'
+import {type KindMask, bitRowTables, createBitRowSearch} from '../../../tests/json-search/bit-rows.ts'
+import {generateDocuments} from '../../../src/json-search/documents.ts'
+import {createPlainSearch} from '../../../src/json-search/plain-search.ts'
+import {buildBatchProgram, cellsPerDocument, kindCount, writeDocumentCells} from '../../../src/json-search/program.ts'
+import {type SearchScope, boundaryCapacity, classCapacity, kindCount as displayKindCount, searchableKinds} from '../../../src/json-search/search-step.ts'
+import {capacity as positions} from '../../../src/json-search/highlighter/kinds.ts'
+import {type Searcher, type ShaderWriter, bufferBytesFor, createCpuSearcher, createGpuSearcher} from '../../../src/json-search/searcher.ts'
+import {highlightWithTables, tableLoopResult} from '../../../src/json-search/table-loop.ts'
+import {createDocumentStore, createProgramRunner, requestBatchDevice} from '../../../src/json-search/gpu/host.ts'
 import {type SamplingConfig, compileEmptyPipeline, createReporter, round, sample, sleep, summary, timeCpu} from './measure.ts'
 
 export type CombinedPageConfig = SamplingConfig & {

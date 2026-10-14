@@ -13,10 +13,10 @@
 //   a match that covers the position.
 import {type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
 import {type WireValues, createEvaluator, createSourceTable, list} from '../../src/runtime/cells.ts'
-import {type Bit, and, bitWire, noneOf, not} from './bits.ts'
-import {type DataCapacity, createStepAnd, dataSearchCells, emitClasses, writePattern} from './data-program.ts'
-import {writeText} from './host.ts'
-import type {CompiledPattern} from './pattern.ts'
+import {type Bit, and, bitWire, noneOf, not} from '../../src/json-search/regex/bits.ts'
+import {type DataCapacity, createStepAnd, dataSearchCells, emitClasses, writePattern} from '../../src/json-search/regex/data-program.ts'
+import {writeText} from '../../src/json-search/regex/host.ts'
+import type {CompiledPattern} from '../../src/json-search/regex/pattern.ts'
 import {brentKungPrefix, sklanskyPrefix} from '../../src/runtime/prefix-networks.ts'
 
 export type PrefixNetwork = 'brent-kung' | 'sklansky'

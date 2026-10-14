@@ -249,7 +249,7 @@ export class Circuit {
   // True for a wire that is declared to hold exactly 0 or 1 with assumeBit, e.g.
   // a cell declared with inputBit. A range of 0..1 alone also allows 0.5. No
   // operation is built differently for a declared bit, and the compiler doesn't
-  // read the declaration. A backend reads it, e.g. lab/json-search/bit-emit.ts,
+  // read the declaration. A backend reads it, e.g. src/json-search/bit-emit.ts,
   // which holds such a value as one bit of a word.
   exactBits: boolean[]
   // True for a wire once an operation reads it, so assumeRange can refuse a

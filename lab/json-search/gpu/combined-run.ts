@@ -8,10 +8,10 @@
 // loop-emit.ts's for the highlighter. `--search-writer loop-emit` is the searcher of results/combined-main-1.json to
 // combined-main-5.json, whose 32-state program is timed up to 10,000 documents, since one search of 100,000 takes
 // about 1 s.
-import {defaultInvalidFraction, defaultSeed} from '../documents.ts'
+import {defaultInvalidFraction, defaultSeed} from '../../../src/json-search/documents.ts'
 import {argument, numbers, required, runPage} from './chrome.ts'
 import page from './combined-page.html'
-import type {ShaderWriter} from '../searcher.ts'
+import type {ShaderWriter} from '../../../src/json-search/searcher.ts'
 import type {CombinedPageConfig} from './combined-page.ts'
 
 const writerOf = (name: string, fallback: ShaderWriter): ShaderWriter => {

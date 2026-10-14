@@ -13,7 +13,7 @@
 import {readFileSync} from 'node:fs'
 import {join} from 'node:path'
 import {argument, required} from '../gpu/chrome.ts'
-import {documentText} from '../demo-text.ts'
+import {documentText} from '../../../src/json-search/demo-text.ts'
 import type {Answer, AnswersConfig} from './answers-page.ts'
 
 const folder = required('--answers')

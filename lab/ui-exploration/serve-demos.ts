@@ -89,7 +89,7 @@ const readmePaths = [
   'src/learned-gallery/README.md',
   'lab/hard-attend/README.md',
   'lab/candidate-gallery/README.md',
-  'src/json-highlighter/README.md',
+  'src/json-search/highlighter/README.md',
   'lab/regex-search/README.md',
   'lab/knuth-plass/README.md',
   'lab/ui-exploration/README.md',

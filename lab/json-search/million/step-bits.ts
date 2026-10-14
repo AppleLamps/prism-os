@@ -4,9 +4,9 @@
 // builder keeps per wire, and prints one row per stage and state capacity.
 //
 //   bun lab/json-search/million/step-bits.ts
-import {flattenProgram} from '../emit.ts'
-import {cellsPerDocument} from '../program.ts'
-import {boundaryCapacity, buildSearchLoop, classCapacity} from '../search-step.ts'
+import {flattenProgram} from '../../../src/json-search/emit.ts'
+import {cellsPerDocument} from '../../../src/json-search/program.ts'
+import {boundaryCapacity, buildSearchLoop, classCapacity} from '../../../src/json-search/search-step.ts'
 
 const rows: string[] = ['| States | Stage | Operations | Hold 0 or 1 | A comparison of two whole numbers, as two ReLU gates | A ReLU gate over bits with weights of 1 and -1 | A sum of bits | Table reads | Of those, a transition cell gated by a bit | Of those, gated by the sum of two bits | Reads that feed one gate | Other operations |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |']
 for (const states of [8, 16, 32]) {

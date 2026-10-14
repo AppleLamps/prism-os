@@ -2,8 +2,8 @@
 // loops, and the GPU plan run in JavaScript all give productTreeInputs's reach bits. The kernels themselves run only in
 // page.ts, which compares every readback with the bit files that cpu-time.ts writes.
 import {expect, test} from 'bun:test'
-import {codePointsOf} from '../host.ts'
-import {compilePattern} from '../pattern.ts'
+import {codePointsOf} from '../../../src/json-search/regex/host.ts'
+import {compilePattern} from '../../../src/json-search/regex/pattern.ts'
 import {patternsByStates} from '../report.ts'
 import {augmentedLeaves, productTreeInputs} from '../tree-inputs.ts'
 import {bitmaskInputs, bitmaskReach, classInputs, createLeafWriter, denseReach, gpuPlan, packReach, runGpuPlanInJavaScript, textOf} from './automaton-inputs.ts'

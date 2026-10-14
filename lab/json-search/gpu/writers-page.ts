@@ -13,16 +13,16 @@
 //   the time from the call of `searcher.search` until its promise resolves;
 // - in the 'stop' part, times bit-emit.ts's search shader with loops that run every position, which the searcher uses,
 //   next to the same shader with loops that stop at the text's end.
-import {capacity as positions} from '../../../src/json-highlighter/kinds.ts'
-import {compilePattern} from '../../regex-search/pattern.ts'
-import {emitBitLoopWgsl} from '../bit-emit.ts'
-import {documentText} from '../demo-text.ts'
-import {buildJsonLoop} from '../json-step.ts'
-import {emitLoopWgsl} from '../loop-emit.ts'
-import {cellsPerDocument, writeDocumentCells} from '../program.ts'
-import {type SearchScope, boundaryCapacity, buildSearchLoop, classCapacity} from '../search-step.ts'
-import {type Searcher, bufferBytesFor, createGpuSearcher} from '../searcher.ts'
-import {createDocumentStore, createProgramRunner, requestBatchDevice} from './host.ts'
+import {capacity as positions} from '../../../src/json-search/highlighter/kinds.ts'
+import {compilePattern} from '../../../src/json-search/regex/pattern.ts'
+import {emitBitLoopWgsl} from '../../../src/json-search/bit-emit.ts'
+import {documentText} from '../../../src/json-search/demo-text.ts'
+import {buildJsonLoop} from '../../../src/json-search/json-step.ts'
+import {emitLoopWgsl} from '../../../src/json-search/loop-emit.ts'
+import {cellsPerDocument, writeDocumentCells} from '../../../src/json-search/program.ts'
+import {type SearchScope, boundaryCapacity, buildSearchLoop, classCapacity} from '../../../src/json-search/search-step.ts'
+import {type Searcher, bufferBytesFor, createGpuSearcher} from '../../../src/json-search/searcher.ts'
+import {createDocumentStore, createProgramRunner, requestBatchDevice} from '../../../src/json-search/gpu/host.ts'
 import {createReporter, round, sleep, summary} from './measure.ts'
 
 export type WritersPageConfig = {

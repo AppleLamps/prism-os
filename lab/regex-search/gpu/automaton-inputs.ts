@@ -7,8 +7,8 @@
 // code point and ends in an accepting state, i.e. form (a)'s reverse pass, and form (c)'s longestEnds[j][s] > 0. They're
 // packed as one 32-bit word per position, with bit s for state s, since S ≤ 32.
 import {invariant} from '../../../src/runtime/numeric-ui-core.ts'
-import {codePointsOf} from '../host.ts'
-import type {CompiledPattern} from '../pattern.ts'
+import {codePointsOf} from '../../../src/json-search/regex/host.ts'
+import type {CompiledPattern} from '../../../src/json-search/regex/pattern.ts'
 import {sampleText} from '../sample-text.ts'
 import {prefixNetworkPlan} from '../tree-inputs.ts'
 import type {PrefixNetwork} from '../tree-program.ts'

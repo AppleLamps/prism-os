@@ -15,15 +15,15 @@
 // every readback is compared with the plain JavaScript loop over the same automaton (bit-rows.ts), which this page
 // first compares with the program on the CPU: the loop program on generated JavaScript for the first `stepDocuments`
 // documents, and the program with every position written out on the CPU executor for the first `executorDocuments`.
-import {buildDataSearch, writePattern} from '../../regex-search/data-program.ts'
-import {type CompiledPattern, capacityErrors, compilePattern} from '../../regex-search/pattern.ts'
-import {type BitRowTables, bitRowKernel, bitRowTables, createBitRowSearch} from '../bit-rows.ts'
-import {generateDocuments} from '../documents.ts'
-import {emitLoopWgsl} from '../loop-emit.ts'
-import {createLoopRunner, describeLoop, operationsPerDocument} from '../loop-program.ts'
-import {cellsPerDocument, writeDocumentCells} from '../program.ts'
-import {type SearchLoop, boundaryCapacity, buildSearchLoop, classCapacity} from '../search-step.ts'
-import {type DocumentStore, type KernelRunner, type ProgramRunner, createDocumentStore, createKernelRunner, createProgramRunner, requestBatchDevice} from './host.ts'
+import {buildDataSearch, writePattern} from '../../../src/json-search/regex/data-program.ts'
+import {type CompiledPattern, capacityErrors, compilePattern} from '../../../src/json-search/regex/pattern.ts'
+import {type BitRowTables, bitRowKernel, bitRowTables, createBitRowSearch} from '../../../tests/json-search/bit-rows.ts'
+import {generateDocuments} from '../../../src/json-search/documents.ts'
+import {emitLoopWgsl} from '../../../src/json-search/loop-emit.ts'
+import {createLoopRunner, describeLoop, operationsPerDocument} from '../../../src/json-search/loop-program.ts'
+import {cellsPerDocument, writeDocumentCells} from '../../../src/json-search/program.ts'
+import {type SearchLoop, boundaryCapacity, buildSearchLoop, classCapacity} from '../../../src/json-search/search-step.ts'
+import {type DocumentStore, type KernelRunner, type ProgramRunner, createDocumentStore, createKernelRunner, createProgramRunner, requestBatchDevice} from '../../../src/json-search/gpu/host.ts'
 
 export type Engine = 'step' | 'step-stop' | 'step-f32' | 'step-layers' | 'kernel'
 

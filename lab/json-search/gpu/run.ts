@@ -6,8 +6,8 @@
 // Every run needs a profile folder that no other Chrome uses: Chrome starts with a fresh profile there, and the run
 // ends only the Chrome it started. Chrome runs with --enable-webgpu-developer-features, so timestamp queries aren't
 // rounded to 100 µs. The main mode takes about 8 minutes, most of it waiting before the evaluations after a pause.
-import type {Guard} from '../emit.ts'
-import {defaultInvalidFraction, defaultSeed} from '../documents.ts'
+import type {Guard} from '../../../src/json-search/emit.ts'
+import {defaultInvalidFraction, defaultSeed} from '../../../src/json-search/documents.ts'
 import {argument, numbers, required, runPage} from './chrome.ts'
 import page from './page.html'
 import type {PageConfig} from './page.ts'

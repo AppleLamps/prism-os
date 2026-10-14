@@ -3,7 +3,7 @@
 //     [--sizes 8x256,8x512,16x256,16x512,32x256,32x512] [--counts 100,1000,10000,100000] [--engines step,step-stop,kernel]
 //     [--idle-engines step-stop,kernel] [--idle-gaps 16,200,1000] [--port 4424] [--devtools-port 9424] [--salt <number>]
 // Every run needs a profile folder that no other Chrome uses, see chrome.ts. The default run takes about 15 minutes.
-import {defaultInvalidFraction, defaultSeed} from '../documents.ts'
+import {defaultInvalidFraction, defaultSeed} from '../../../src/json-search/documents.ts'
 import {argument, numbers, required, runPage} from './chrome.ts'
 import page from './search-page.html'
 import type {Engine, SearchPageConfig} from './search-page.ts'
