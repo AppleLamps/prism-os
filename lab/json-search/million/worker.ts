@@ -30,7 +30,8 @@ export type LoadedPiece = {
   highlightMs: number
 }
 export type HoldRequest = {kind: 'hold', firstDocument: number, documentCount: number}
-export type FilterRequest = {kind: 'filter', pattern: string, flags: boolean}
+// `regExpFlags` are the RegExp's flags, e.g. '' or 'u'. With `flags`, the answer also says which documents match.
+export type FilterRequest = {kind: 'filter', pattern: string, regExpFlags: string, flags: boolean}
 export type FilterAnswer = {kind: 'filtered', matching: number, ms: number, flags: Uint8Array<ArrayBuffer> | undefined}
 
 let held: string[] = []
@@ -63,7 +64,7 @@ addEventListener('message', event => {
     held = Array.from({length: request.documentCount}, (_, index) => documentText(request.firstDocument + index))
     postMessage({kind: 'holding', documents: held.length})
   } else {
-    const pattern = new RegExp(request.pattern, 'u')
+    const pattern = new RegExp(request.pattern, request.regExpFlags)
     const started = performance.now()
     const matching = held.filter(text => pattern.test(text)).length
     const ms = performance.now() - started

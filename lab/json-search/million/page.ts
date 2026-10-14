@@ -64,14 +64,18 @@ export type PageConfig = {
   scopeBits: boolean
   limits: 'needed' | 'default'
   keepTexts: boolean
+  // 'js': the flags of every timed RegExp, e.g. '' for /error/ or 'u'. Without a flag is what a programmer writes
+  // first, and in Chrome 155 the u flag made a search with a character class 8 to 14% slower.
+  regExpFlags: string
   // 'js': how many times each search is timed, and how many workers the whole-text search gets.
   jsSamples: number
   // 'js': with a pause above 0, the whole-text search is also timed after a pause of this many ms, on one thread and in
   // the workers, as a keystroke would find the CPU. A search of more than 1.5 s has no such series.
   jsPauseMs: number
   filterWorkers: number
-  // 'js': what is measured. The parsed objects of a million documents may not fit one tab.
-  jsParts: ('wholeText' | 'parse' | 'walk' | 'collected' | 'workers')[]
+  // 'js': what is measured. The parsed objects of a million documents may not fit one tab. 'forms' times other plain
+  // ways to write the whole-text search, to see that the measured one isn't a slow one.
+  jsParts: ('wholeText' | 'forms' | 'parse' | 'walk' | 'collected' | 'workers')[]
 }
 
 const GPUBufferUsage = {MAP_READ: 0x0001, COPY_SRC: 0x0004, COPY_DST: 0x0008, UNIFORM: 0x0040, STORAGE: 0x0080} as const
@@ -842,17 +846,52 @@ async function runJs() {
   const texts = textsOf(0, count)
   results['generateMs'] = round(performance.now() - started)
   results['characters'] = texts.reduce((total, text) => total + text.length, 0)
+  results['regExpFlags'] = config.regExpFlags
   await measureMemory('the texts')
 
   if (config.jsParts.includes('wholeText')) {
     const wholeText: Record<string, unknown>[] = []
     results['wholeText'] = wholeText
     for (const source of config.patterns) {
-      const pattern = new RegExp(source, 'u')
+      const pattern = new RegExp(source, config.regExpFlags)
       const measured = await timeJs(() => texts.filter(text => pattern.test(text)).length)
       const afterPause = config.jsPauseMs > 0 && measured.ms!.median < 1500 ? await timeJsAfterPause(() => texts.filter(text => pattern.test(text)).length) : undefined
       wholeText.push({pattern: source, documentsWithMatch: measured.result, ms: measured.ms, times: measured.times, afterPause})
       log(`whole text, ${source}: ${measured.result} documents, ${measured.ms?.median} ms`)
+      await post(false)
+    }
+    await load()
+  }
+
+  if (config.jsParts.includes('forms')) {
+    // The whole-text search written in other plain ways, each timed like the search above: with the u flag and without
+    // a flag, as a loop that counts instead of filter, and for a pattern that is a plain word as text.includes(word).
+    const forms: Record<string, unknown>[] = []
+    results['forms'] = forms
+    for (const source of config.patterns) {
+      const withFlag = new RegExp(source, 'u')
+      const plain = new RegExp(source)
+      // A search that takes seconds, e.g. one that makes RegExp backtrack, is timed 3 times.
+      const once = performance.now()
+      texts.filter(text => plain.test(text))
+      const samples = performance.now() - once > 1500 ? 3 : config.jsSamples
+      const form = async (run: () => number) => {
+        const measured = await timeJs(run, samples)
+        return {documentsWithMatch: measured.result, ms: measured.ms, times: measured.times}
+      }
+      const entry: Record<string, unknown> = {
+        pattern: source,
+        filterWithoutFlag: await form(() => texts.filter(text => plain.test(text)).length),
+        filterWithU: await form(() => texts.filter(text => withFlag.test(text)).length),
+        loopWithoutFlag: await form(() => {
+          let found = 0
+          for (const text of texts) if (plain.test(text)) found++
+          return found
+        }),
+      }
+      if (/^[a-z ]+$/.test(source)) entry['includes'] = await form(() => texts.filter(text => text.includes(source)).length)
+      forms.push(entry)
+      log(`forms, ${source}: ${JSON.stringify(Object.fromEntries(Object.entries(entry).filter(([name]) => name !== 'pattern').map(([name, value]) => [name, (value as {ms: {median: number}}).ms.median])))}`)
       await post(false)
     }
     await load()
@@ -884,7 +923,7 @@ async function runJs() {
     results['walk'] = walk
     const objects = parsed
     for (const source of config.patterns) {
-      const pattern = new RegExp(source, 'u')
+      const pattern = new RegExp(source, config.regExpFlags)
       const values = await timeJs(() => {
         let found = 0
         for (const value of objects) if (valueMatches(value, pattern)) found++
@@ -916,7 +955,7 @@ async function runJs() {
     const fromArrays: Record<string, unknown>[] = []
     results['collected'] = fromArrays
     for (const source of config.patterns) {
-      const pattern = new RegExp(source, 'u')
+      const pattern = new RegExp(source, config.regExpFlags)
       const values = await timeJs(() => {
         let found = 0
         for (const entry of collected) if (entry.values.some(value => pattern.test(value))) found++
@@ -948,10 +987,10 @@ async function runJs() {
     const inWorkers: Record<string, unknown>[] = []
     results['workers'] = {workers: config.filterWorkers, writingTheDocumentsMs: round(holdMs), patterns: inWorkers}
     for (const source of config.patterns) {
-      const pattern = new RegExp(source, 'u')
+      const pattern = new RegExp(source, config.regExpFlags)
       const request = async (flags: boolean) => {
         const requested = performance.now()
-        const answers = await Promise.all(workers.map(worker => ask<FilterAnswer>(worker, {kind: 'filter', pattern: source, flags})))
+        const answers = await Promise.all(workers.map(worker => ask<FilterAnswer>(worker, {kind: 'filter', pattern: source, regExpFlags: config.regExpFlags, flags})))
         return {ms: performance.now() - requested, answers}
       }
       // The check, outside the timed requests: which documents each worker says match, against the page's own RegExp.

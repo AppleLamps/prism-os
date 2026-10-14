@@ -44,6 +44,11 @@ const runs: Run[] = [
   {name: 'js-100000', group: 'js', args: ['--mode', 'js', '--count', '100000']},
   // The whole-text search again, with each search also after a pause of 200 ms, as a keystroke would find the CPU.
   {name: 'js-pause-1000000', group: 'js', args: ['--mode', 'js', '--count', '1000000', '--js-parts', 'wholeText,workers', '--js-pause', '200']},
+  // The same twice more with only the five ordinary patterns, since the first of these runs differed from the others.
+  ...['js-pause-1000000-ordinary', 'js-pause-1000000-ordinary-2'].map(name => ({name, group: 'js', args: ['--mode', 'js', '--count', '1000000', '--js-parts', 'wholeText,workers', '--js-pause', '200', '--patterns', ['error', '[a-z]+Id', '[a-z0-9.]+@[a-z.]+', '\\d\\d\\d\\d-\\d\\d-\\d\\d', 'connection reset'].join('\n')]})),
+  // The whole-text search written in other plain ways: with the u flag, which the first runs of this check gave every
+  // RegExp, as a loop that counts, and with text.includes for a plain word.
+  {name: 'js-forms-1000000', group: 'js', args: ['--mode', 'js', '--count', '1000000', '--js-parts', 'forms']},
   // The kernels at a million documents again, with a rest of 2 s before each series of searches: in the first run the
   // searches of a back to back series got slower one after the other once the GPU had been busy for two minutes.
   {name: 'compact-1000000-rested', group: 'rested', args: ['--mode', 'compact', '--count', '1000000', '--engines', `${kernels},bytes-split`, '--rest', '2000']},

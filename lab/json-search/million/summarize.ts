@@ -34,7 +34,8 @@ type Page = {
   timeline?: Record<string, number>, deviceLimits?: Record<string, number>,
   js?: Record<string, unknown>, scopes?: Record<string, unknown>,
 }
-type Run = {name: string, driver: {loadBefore: string, loadAfter: string, loadSamples: {load: string}[], timedOut?: string, error?: string, browser?: string, machine?: string}, page?: Page}
+// A run that is still in progress has no loadAfter yet.
+type Run = {name: string, driver: {loadBefore: string, loadAfter?: string, loadSamples: {load: string}[], timedOut?: string, error?: string, browser?: string, machine?: string}, page?: Page}
 
 const runs = new Map<string, Run>()
 for (const file of readdirSync(from).filter(name => name.endsWith('.json')).sort()) {
@@ -51,7 +52,7 @@ const megabytes = (bytes: number | undefined) => bytes === undefined || Number.i
 function loadOf(names: readonly string[]) {
   const loads = names.flatMap(name => {
     const driver = run(name)?.driver
-    return driver === undefined ? [] : [driver.loadBefore, driver.loadAfter, ...driver.loadSamples.map(sample => sample.load)].map(text => Number(text.trim().split(/\s+/)[1]))
+    return driver === undefined ? [] : [driver.loadBefore, ...(driver.loadAfter === undefined ? [] : [driver.loadAfter]), ...driver.loadSamples.map(sample => sample.load)].map(text => Number(text.trim().split(/\s+/)[1]))
   }).filter(value => !Number.isNaN(value))
   return loads.length === 0 ? 'not run' : `${Math.min(...loads).toFixed(1)} to ${Math.max(...loads).toFixed(1)}`
 }
@@ -81,6 +82,9 @@ const processesOf = (memory: Memory | undefined) => {
   return {gpu: processes.find(process => process.type === 'gpu-process'), renderer}
 }
 const processCell = (process: Process | undefined) => process === undefined ? '' : `${megabytes(process.footprintBytes)} (${megabytes(process.residentBytes)})`
+// The footprint when the page measured it, and the largest footprint the process had until then, e.g. while 8 workers
+// wrote the documents and the page uploaded them.
+const peakCell = (process: Process | undefined) => process === undefined ? '' : `${megabytes(process.footprintBytes)}, at most ${megabytes(process.footprintPeakBytes)}`
 
 section('fit', 'Memory per layout and document count', () => {
   const rows: string[][] = []
@@ -239,9 +243,12 @@ for (const [name, title] of kernelRuns) section('kernels', title, () => {
   ].join('\n')
 })
 
-// The run of a million documents that the report's table shows: the first one. The second one, with a rest before
-// each series, ran while other jobs kept more of the machine busy, and its series were less steady, see RESULTS.md.
-const mainKernelRun = 'compact-1000000'
+// The run of a million documents that the report's table 3 shows: 'compact-1000000' unless --kernel-run names another
+// one, e.g. 'compact-1000000-short', whose series are 15 searches after a rest. The other one of the two is the line
+// under the table.
+const mainKernelRun = argument('--kernel-run') ?? 'compact-1000000'
+const otherKernelRun = mainKernelRun === 'compact-1000000' ? 'compact-1000000-short' : 'compact-1000000'
+const seriesOf = (name: string) => name === 'compact-1000000-short' ? 'a series is 15 searches after a rest of 3 s' : 'a series is at least 15 searches and 1 s, with no rest before it'
 
 section('steady', 'How steady a back to back series was: its first three and its last three searches, ms', () => {
   const rows: string[][] = []
@@ -460,15 +467,15 @@ section('report', 'The report\'s tables', () => {
   }
   const fitRow = (name: string, perDocument: string, memory: Memory | undefined, bytes: {documents: number, scopes: number, results: number} | undefined, underDefaults: string) => [
     name, perDocument, bytes === undefined ? '' : `${megabytes(bytes.documents)} + ${megabytes(bytes.scopes)} + ${megabytes(bytes.results)}`,
-    megabytes(memory?.javaScriptBytes), processCell(processesOf(memory).gpu), processCell(processesOf(memory).renderer), underDefaults,
+    megabytes(memory?.javaScriptBytes), peakCell(processesOf(memory).gpu), peakCell(processesOf(memory).renderer), underDefaults,
   ]
   out.push(
-    '**1. Memory at 1,000,000 documents, one run each.** A process\'s memory is its footprint, with the resident size from `ps` in parentheses.',
+    '**1. Memory at 1,000,000 documents, one run each.** A process\'s memory is its footprint once every document is on the GPU, and the largest footprint it had until then.',
     '',
-    table(['Layout', 'Bytes per document', 'GPU buffers: documents + kinds or scope bits + results', 'JavaScript, with the texts in the page', 'Chrome\'s GPU process', 'The page\'s renderer process', 'Documents per buffer under WebGPU\'s default limits'], [
-      fitRow('today\'s, through searcher.ts', '2,052 + 2,048', todayMemory, today?.searcher === undefined ? undefined : {documents: today.searcher.bufferBytes['cells']!, scopes: today.searcher.bufferBytes['kinds']!, results: today.searcher.bufferBytes['summary']! + today.searcher.bufferBytes['matchCounts']!}, '65,408'),
-      fitRow('bytes, 512 per document', '512 + 128', fixed?.memory?.['after the load'], loadBytes(fixed), '262,144, so four buffers'),
-      fitRow('bytes, packed', '301 on average + 4 + 128', packed?.memory?.['after the load'], loadBytes(packed), '445,000 on average'),
+    table(['Layout', 'Bytes per document', 'GPU buffers: documents + kinds or scope bits + results', 'JavaScript', 'Chrome\'s GPU process', 'The page\'s renderer process, with its workers', 'Documents per buffer under WebGPU\'s default limits'], [
+      fitRow('today\'s, through searcher.ts, with the texts in the page', '2,052 + 2,048', todayMemory, today?.searcher === undefined ? undefined : {documents: today.searcher.bufferBytes['cells']!, scopes: today.searcher.bufferBytes['kinds']!, results: today.searcher.bufferBytes['summary']! + today.searcher.bufferBytes['matchCounts']!}, '65,408'),
+      fitRow('bytes, 512 per document, with the texts in the page', '512 + 128', fixed?.memory?.['after the load'], loadBytes(fixed), '262,144, so four buffers'),
+      fitRow('bytes, packed, with the texts in the page', '301 on average + 4 + 128', packed?.memory?.['after the load'], loadBytes(packed), '445,000 on average'),
       fitRow('bytes, 512 per document, no texts in the page', '512 + 128', noTexts?.memory?.['after the load'], loadBytes(noTexts), ''),
     ]),
     '',
@@ -514,16 +521,22 @@ section('report', 'The report\'s tables', () => {
     ['the whole-text filter in 8 workers, which isn\'t what Cheng asked about', span(ordinary(js?.workers?.patterns).map(entry => entry.ms)), cell(slow(js?.workers?.patterns)?.ms)],
     ['`JSON.parse` of every document, the validation at load', cell(js?.jsonParse?.ms), ''],
   ]
-  // The back to back searches again, from the run whose series are 15 searches after a rest.
-  const shortRun = compactResults('compact-1000000-short')
+  // The same searches again, from the other run of a million documents.
+  const shortRun = compactResults(otherKernelRun)
   const shortCells = (engine: string, scopeName: string) => [8, 16, 32].map(states => {
     const scope = shortRun.find(result => result.engine === engine && result.states === states)?.scopes?.find(entry => entry.scope === scopeName)
     return `${cell(scope?.backToBack.totalMs)}; ${cell(pauseOf(scope, 200))}`
   }).join(' at 8 states, ').replace(/ at 8 states, ([^,]+)$/, ' at 16, and $1 at 32')
-  const shortLine = shortRun.length === 0 ? '' : `The same searches in a third run, \`compact-1000000-short\`, where a series is 15 searches after a rest of 3 s (load average ${loadOf(['compact-1000000-short'])}), again back to back; after a pause of 200 ms. Which documents match, with a scope: ${shortCells('bytes-scope-has', 'strings')}. A count per document, with a scope: ${shortCells('bytes-scope', 'strings')}.`
-  const pausedLine = paused === undefined ? '' : `A pause of 200 ms before the search doesn't change JavaScript's time. In a second run, on a busier machine (\`js-pause-1000000\`, load average ${loadOf(['js-pause-1000000'])}), the five ordinary patterns took ${span(ordinary(paused.wholeText).map(entry => entry.afterPause?.ms))} ms on one thread after a pause against ${span(ordinary(paused.wholeText).map(entry => entry.ms))} ms without one, and ${span(ordinary(paused.workers?.patterns).map(entry => entry.afterPause?.ms))} ms in 8 workers against ${span(ordinary(paused.workers?.patterns).map(entry => entry.ms))} ms.`
+  const shortLine = shortRun.length === 0 ? '' : `The same searches in \`${otherKernelRun}\`, where ${seriesOf(otherKernelRun)} (load average ${loadOf([otherKernelRun])}), again back to back; after a pause of 200 ms. Which documents match, with a scope: ${shortCells('bytes-scope-has', 'strings')}. Without a scope: ${shortCells('bytes-has', 'everything')}. A count per document, with a scope: ${shortCells('bytes-scope', 'strings')}. Without a scope: ${shortCells('bytes', 'everything')}. \`bitRowKernel\`: ${shortCells('f32-kernel', 'everything')}.`
+  // Every run that timed the whole-text search both ways: 'js-pause-1000000', and the runs with only the ordinary patterns.
+  const pausedRuns = [...runs.keys()].filter(key => key.startsWith('js-pause-1000000')).sort((left, right) => left.length - right.length || left.localeCompare(right)).map(name => ({name, js: run(name)?.page?.js as {wholeText?: Paused[], workers?: {patterns: Paused[]}} | undefined}))
+  const pausedLine = paused === undefined ? '' : `The same searches after a pause of 200 ms, from the runs that time each search both ways, as the smallest and the largest median of the five ordinary patterns. ${pausedRuns.map(({name, js: both}) => `\`${name}\` (load average ${loadOf([name])}): ${span(ordinary(both?.wholeText).map(entry => entry.afterPause?.ms))} ms on one thread after a pause against ${span(ordinary(both?.wholeText).map(entry => entry.ms))} ms without one, and ${span(ordinary(both?.workers?.patterns).map(entry => entry.afterPause?.ms))} ms in 8 workers against ${span(ordinary(both?.workers?.patterns).map(entry => entry.ms))} ms.`).join(' ')}`
+  // Other plain ways to write the whole-text search, from the run that times them.
+  type Form = {ms: Summary}
+  const forms = (run('js-forms-1000000')?.page?.js as {forms?: {pattern: string, filterWithoutFlag: Form, filterWithU: Form, loopWithoutFlag: Form, includes?: Form}[]} | undefined)?.forms
+  const flagLine = forms === undefined ? '' : `Every RegExp above has no flag, as in \`/error/\`. Other plain ways to write the whole-text search, from \`js-forms-1000000\` (load average ${loadOf(['js-forms-1000000'])}): the same filter, the filter with the u flag, a loop that counts instead of \`filter\`, and \`text.includes(word)\` for a plain word took ${forms.map(entry => `${[entry.filterWithoutFlag, entry.filterWithU, entry.loopWithoutFlag, ...(entry.includes === undefined ? [] : [entry.includes])].map(form => digits(form.ms.median)).join(', ')} ms for ${tick(entry.pattern)}`).join('; ')}.`
   out.push(
-    `**3. One search of 1,000,000 documents, ms.** A kernel's cell is back to back; after a pause of 200 ms, each as the median with the smallest and the largest sample. From \`${mainKernelRun}\` (load average ${loadOf([mainKernelRun])}), \`program-1000000\` (${loadOf(['program-1000000'])}) and \`js-1000000\` (${loadOf(['js-1000000'])}).`,
+    `**3. One search of 1,000,000 documents, ms.** A kernel's cell is back to back; after a pause of 200 ms, each as the median with the smallest and the largest sample. From \`${mainKernelRun}\`, where ${seriesOf(mainKernelRun)} (load average ${loadOf([mainKernelRun])}), \`program-1000000\` (${loadOf(['program-1000000'])}) and \`js-1000000\` (${loadOf(['js-1000000'])}).`,
     '',
     table(['What runs on the GPU', 'Patterns of up to 8 states', 'up to 16 states', 'up to 32 states'], [
       kernelRow('hand-written kernel on bytes: which documents match, with a scope (string values)', 'bytes-scope-has', 'strings'),
@@ -533,13 +546,16 @@ section('report', 'The report\'s tables', () => {
       kernelRow('the same on packed bytes', 'packed', 'everything'),
       kernelRow('the lab\'s `bitRowKernel` as it is, one f32 per code point, a count per document', 'f32-kernel', 'everything'),
       programRow,
-    ]),
+      // A kernel that the run didn't measure has no row.
+    ].filter(row => row.slice(1).some(text => text !== ''))),
     '',
     shortLine,
     '',
     table(['Regular JavaScript on one thread, 9 runs each', 'The five ordinary patterns, the smallest and the largest median', '`([a-z]+)+x`'], jsRows),
     '',
     pausedLine,
+    '',
+    flagLine,
     '',
   )
   // 4. What was compared.
@@ -555,8 +571,11 @@ section('report', 'The report\'s tables', () => {
   const patterns = run('compact-1000000')?.page?.patterns ?? []
   const differ = patterns.reduce((total, pattern) => total + pattern.regExpDiffers + pattern.walkDiffers.keys + pattern.walkDiffers.strings, 0)
   const scopesChecked = run('scopes-1000000')?.page?.scopes as {comparedWords: number, mismatchedWords: number} | undefined
+  // The last two lines of what independent.ts printed, when the folder holds its output.
+  const independentFile = join(from, 'independent.txt')
+  const independentLine = existsSync(independentFile) ? readFileSync(independentFile, 'utf8').trim().split('\n').slice(-2).join(' ') : undefined
   out.push(
-    `**4. What was compared.** Every timed search of the ${checked.runs} kernel and program runs, ${thousands(checked.searches)} searches, was compared with the lab's plain JavaScript loop over the same automaton for every document of its run: the match count per document where the kernel returns counts, and whether the document has a match where it returns bits, with \`table-loop.ts\`'s display kinds as the mask for a scope. ${thousands(checked.values)} values, ${thousands(checked.mismatches)} mismatched. Over the 1,000,000 documents and the ${patterns.length} patterns, \`pattern.test(text)\`, the walk over keys and the walk over string values say "this document has a match" for ${differ === 0 ? 'exactly the same documents as the loop' : `the same documents as the loop, except for ${thousands(differ)}`}. The scope bits from the highlighter's pass on the GPU: ${thousands(scopesChecked?.comparedWords ?? 0)} words compared with the table loop's, ${thousands(scopesChecked?.mismatchedWords ?? 0)} mismatched.`,
+    `**4. What was compared.** Every timed search of the ${checked.runs} kernel and program runs, ${thousands(checked.searches)} searches, was compared with the lab's plain JavaScript loop over the same automaton for every document of its run: the match count per document where the kernel returns counts, and whether the document has a match where it returns bits, with \`table-loop.ts\`'s display kinds as the mask for a scope. ${thousands(checked.values)} values, ${thousands(checked.mismatches)} mismatched. Over the 1,000,000 documents and the ${patterns.length} patterns, \`pattern.test(text)\`, the walk over keys and the walk over string values say "this document has a match" for ${differ === 0 ? 'exactly the same documents as the loop' : `the same documents as the loop, except for ${thousands(differ)}`}. The scope bits from the highlighter's pass on the GPU: ${thousands(scopesChecked?.comparedWords ?? 0)} words compared with the table loop's, ${thousands(scopesChecked?.mismatchedWords ?? 0)} mismatched.${independentLine === undefined ? '' : ` The review's independent count, which shares only the document generator with the above, compared what the main kernels returned over everything, string values and keys with \`RegExp\` over the whole text and over every string value and key of the parsed document. ${independentLine} A kernel's scope reads the text as written, with its quotes and escapes, which is where the two added patterns differ, see independent.txt.`}`,
     '',
   )
   // 5. The map.

@@ -7,7 +7,8 @@
 //   bun lab/json-search/million/run.ts --mode load --count 1000000 --layout fixed --profile <new folder> --out <file.json>
 //   bun lab/json-search/million/run.ts --mode js --count 1000000 --profile <new folder> --out <file.json>
 //     [--engines bytes,bytes-has] [--capacities 8,16,32] [--no-f32] [--workers 8] [--no-scope-bits] [--limits default]
-//     [--keep-texts] [--js-parts wholeText,parse,walk,collected,workers] [--warm-pauses 200:16] [--port 4511] [--devtools-port 9511]
+//     [--keep-texts] [--js-parts wholeText,forms,parse,walk,collected,workers] [--regexp-flags u] [--warm-pauses 200:16]
+//     [--port 4511] [--devtools-port 9511]
 //
 // all.ts runs every table's runs one after the other, and summarize.ts prints the tables from the JSON files.
 // Before a run of 500,000 documents or more, this script reads how much memory is free, and stops when it is less than
@@ -48,6 +49,7 @@ const config: PageConfig = {
   scopeBits: !has('--no-scope-bits'),
   limits: (argument('--limits') ?? 'needed') as PageConfig['limits'],
   keepTexts: has('--keep-texts'),
+  regExpFlags: argument('--regexp-flags') ?? '',
   jsSamples: Number(argument('--js-samples') ?? 9),
   jsPauseMs: Number(argument('--js-pause') ?? 0),
   filterWorkers: Number(argument('--filter-workers') ?? 8),
