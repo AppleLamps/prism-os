@@ -138,7 +138,7 @@ Cheng asked: "does the program as written change? Or it's just compiler optimiza
 
 - **Yes: the writer produces rewrite 2's form from the unchanged search program, and runs within 0.5 ms of it.** For 100,000 documents, back to back, bit-emit.ts's shader takes 3.5, 3.4 and 4.4 ms at 8, 16 and 32 states, the hand-written rewrite 3.0, 3.4 and 4.0 ms in the same run, and loop-emit.ts's shader 7.2, 63 and 944 ms. After a pause of 200 ms: 9.9, 11.0 and 13.5 ms, against 8.6, 10.6 and 13.0 ms and 17.2, 66 and 972 ms. With a scope, which is what the demo page runs: 4.4, 4.5 and 5.6 ms back to back and 11.3, 12.0 and 14.1 ms after a pause, where loop-emit.ts's shader takes 7.7, 65 and 941 ms and 17.4, 66 and 994 ms.
 - **The rules are general, and the program doesn't change.** Each rule is a statement about a compiled stage: an operation's kind, terms and weights, an index read's candidates and out-of-range rules, and the ranges, grids and exact bits that the circuit keeps per wire. No rule names regex search, `createStepAnd`, a state count or a position. The rules fire on programs written without `createStepAnd` and `noneOf`, with their index reads and gates written out, and don't fire on six near misses. search-step.ts, data-program.ts, bits.ts and `orExclusive` are unchanged. One declaration is new: the circuit keeps which cells are declared exact bits, and no compiled program changed with it.
-- **Every value is the same.** On the GPU, 3,129,600,000 outputs of bit-emit.ts's shaders against loop-emit.ts's over 100,000 documents, 0 mismatched. Through the WGSL interpreter, both writers' shaders against the CPU executor on every case of search.test.ts and on 14 small programs.
+- **Every value is the same.** On the GPU, 3,386,100,000 outputs of bit-emit.ts's shaders against loop-emit.ts's over 100,000 documents, for the search, the highlighter and a third program, 0 mismatched. Through the WGSL interpreter, both writers' shaders against the CPU executor on every case of search.test.ts and on 14 small programs.
 
 So the program is still only affine sums, ReGLU gates and index reads, and differentiable as before. What is new is how the GPU code writer writes each operation for inference.
 
@@ -219,12 +219,13 @@ gpu/host.ts's `createProgramRunner` creates `packed_words` after the output buff
 | Program | Words | What a word holds |
 | --- | --- | --- |
 | the search step at 8, 16 and 32 states, with or without a scope | 272, 544 and 1,088 | 17 words per gate, one per class and one of zeros for class 16, each with 8, 16 or 32 transition cells. Every transition cell is in two words, once by row for the reverse step and once by column for the forward step, as in bit-rows.ts's hand-written tables |
+| the characters of the wanted sets | 130 | a word of zeros, 128 words of 4 bits, one per code point below 128 and one bit per set, and a word of zeros |
 | flags, `manyTables` | 12 | 6 words of 32 flags and 6 words of 8 flags: 5 rows and a word of zeros, for 40 tables |
 | flags, `zeroBelow` | 7 | a word of zeros, 5 rows of 3 flags, a word of zeros |
 | flags, `ungated` | 5 | 5 rows of 3 flags, without a word of zeros, since a row past the table reads the last row |
 | switches, `lanes` | 6 | 5 rows of 6 cells, and a word of zeros |
 
-On the GPU the runner applied the search step's plans, in every run below. The small programs' plans were applied by the same function for the interpreter.
+On the GPU, host.ts's runner applied the search step's plans in every run below, and the plan of the characters' program in `writers-100000`. The small programs' plans were applied by the same function for the interpreter.
 
 ### The programs, and which rules fired
 
@@ -239,6 +240,7 @@ The numbers are operations of one position. "Packed reads" is how many index rea
 | the search step, 16 states, with a scope | 683 | 4 | 67 | 33 | 1 | 2 | 512 in 32 | 64 |  | 1,375 | 171 |
 | the search step, 32 states, with a scope | 2,315 | 4 | 99 | 33 | 1 | 2 | 2,048 in 64 | 128 |  | 4,655 | 219 |
 | the JSON highlighter's step | 54 | 12 | 1 | 1 | 7 | 18 |  |  | 15 | 107 | 103 |
+| the characters of the wanted sets | 7 | 2 | 1 |  |  |  | 4 in 1 |  |  | 36 | 30 |
 | flags, `gated` | 7 | 2 | 2 |  |  |  | 3 in 1 |  |  | 37 | 33 |
 | flags, `ungated` | 7 | 2 | 2 |  |  |  | 3 in 1 |  |  | 34 | 29 |
 | flags, `manyTables` | 44 | 2 | 2 |  |  |  | 40 in 2 |  |  | 149 | 71 |
@@ -256,6 +258,7 @@ The numbers are operations of one position. "Packed reads" is how many index rea
 
 - **The search step.** Every operation is written by a rule at each capacity, and no f32 statement is left. Four operations per state are lanes of a word operation: the first notFinish bits, the next notFinish bits, continuing, and the next reached bits.
 - **The highlighter's step** has no gated reads. Its tables are whole numbers, so its reads and sums are integer statements, and the comparison of the container code with a level weight is a sign cascade whose 15 operations multiply by 2^24 and stay f32.
+- **The characters of the wanted sets** ([character-sets.ts](character-sets.ts)) runs over the same documents as the search: which characters are digits, lowercase letters, uppercase letters or JSON's punctuation, for the sets that are wanted, and how many. Four tables of 128 bits are read at the code point, with `indexReadAffine` and one gate written out. Its whole step is `u32((packed_words[1 + clamp(codePoint, -1, 128)] & wanted) == 0u)`, with the four wanted cells packed into a word once per document.
 - **flags** asks "does any wanted flag hold at this row?" for each of a document's 12 rows: 3 tables of 5 flags, read with `indexReadAffine` directly, one gate over the reads, a count and a bit carried in registers. `gated` is the form of rule 5. `ungated` reads without a gating bit, so every read is always open and the word needs no AND. `manyTables` has 40 tables, two words. `zeroBelow` has rows from -1 on and reads +0 below the table. `exclusiveBits` gates table 0 by two bits `p && !q` and `p && q`, which the writer proves never both 1, by other gates than the search step's.
 - **switches, `lanes`** keeps six switches on while a table and a shared cell don't turn them off. Its six gates are one statement, `rw0 & ((sw0 | a_m0) ^ 63u)`, with `a_m0` the packed word of six tables at the row, and "no switch is on" is `a_m1 == 0u`.
 - **The near misses**, where a rule must not fire, and doesn't. `shortGate`: rows start at -1 and an unwanted table's index moves by 5 where 6 is needed, so its row -1 reads row 4, and no read is `table[row] && wanted`. This one wasn't planned: it was the first `zeroBelow`, and the rule refused it. `fractionInGate`: the gate also subtracts a number within 0..1 that isn't whole, so the gate, the count and the carried bit are f32 statements, the two registers are held as f32, and the reads are bits read one by one. `differentIndexes`: table k is read at row + k, so no two reads have the same base, and each is read on its own as a bit. `fractionAsBit`: the gating value is declared within 0..1 and not as a bit, and holds e.g. 0.5, where the read is two rows further on: the index isn't whole and keeps its floor. `twoFreeBits`: table 0 is gated by two bits that can both be 1, where the read is row 0 through the clamp, so table 0 is read on its own and the other two tables are still one word. `oneByOne`: each switch reads two other switches, so the word of registers is given up and the registers are variables.
@@ -264,9 +267,9 @@ The numbers are operations of one position. "Packed reads" is how many index rea
 
 ### The values that were compared
 
-- **On the GPU, shader against shader**, `writers-100000`, the 'writers' mode of page.ts: every output of bit-emit.ts's shader against loop-emit.ts's for 100,000 documents. The highlighter's summary and display kinds: 51,600,000 values, 0 mismatched. The search step's match count of every document and mark of every position, for the six patterns at each capacity that holds a pattern (4 at 8 states, 5 at 16, 6 at 32), without a scope and with each of three scopes, 60 searches: 3,078,000,000 values, 0 mismatched, with 1,254,405 matches among them. In total 3,129,600,000 values.
+- **On the GPU, shader against shader**, `writers-100000`, the 'writers' mode of page.ts, at a load average of 4.1 to 4.9: every output of bit-emit.ts's shader against loop-emit.ts's for 100,000 documents. The highlighter's summary and display kinds: 51,600,000 values, 0 mismatched. The count and the marks of the characters' program for 5 choices of sets: 256,500,000 values, 0 mismatched, and each of the 500,000 counts, 48,340,424 characters in all, equals the count of a plain JavaScript loop over the text. The search step's match count of every document and mark of every position, for the six patterns at each capacity that holds a pattern (4 at 8 states, 5 at 16, 6 at 32), without a scope and with each of three scopes, 60 searches: 3,078,000,000 values, 0 mismatched, with 1,254,405 matches among them. In total 3,386,100,000 values.
 - **On the GPU, against the lab's plain JavaScript loop**: every timed search of the two timing runs below, 11,419 searches, 1,141,900,000 match counts, 0 mismatched.
-- **Through the WGSL interpreter, against the CPU executor.** search.test.ts runs both writers' shaders wherever it ran loop-emit.ts's: the 274 patterns of 8 states with 8 texts each, with either kind of field and stopping at the text's end; 16 and 32 states with patterns of exactly that many states; 512 positions over generated documents; the search with a scope over five scopes; and the highlighter's 2,509 texts. bit-emit.test.ts runs the 14 small programs for 40 shared tables and 6 documents each, 3,120 to 3,360 values per program and writer, 0 different.
+- **Through the WGSL interpreter, against the CPU executor.** search.test.ts runs both writers' shaders wherever it ran loop-emit.ts's: the 274 patterns of 8 states with 8 texts each, with either kind of field and stopping at the text's end; 16 and 32 states with patterns of exactly that many states; 512 positions over generated documents; the search with a scope over five scopes; and the highlighter's 2,509 texts. bit-emit.test.ts runs the 14 small programs for 40 shared tables and 6 documents each, 3,120 to 3,360 values per program and writer, 0 different, and the characters' program over 26 documents against the plain JavaScript count.
 
 ### The timings
 
@@ -301,13 +304,13 @@ One search of 100,000 documents as one f32 per code point, ms, as in table 6: ba
 - **Any other GPU or browser.** Every run was headless Chrome 155 on the one Apple M5 Max. Whether integer comparisons and bit operations are as fast as f32 statements elsewhere isn't measured.
 - **A million documents with this writer**, see above, and the writer on bytes instead of one f32 per code point: parts 2 and 3 of "What would have to be built" are as they were.
 - **The page.** searcher.ts and the demo page still run loop-emit.ts's shader. What a runner needs is in host.ts already: a shader with `packedCells` gets its `packed_words` buffer. A second job puts `emitBitLoopWgsl` into searcher.ts.
-- **Programs with other forms.** Gated reads with a positive weight in a gate, i.e. "every one of these reads is 1", are read one by one, not packed. A register word is built from the registers' order and their writers, so two groups of registers that one stage writes together share a word, and whether that helps depends on the program. A loop program with a gather isn't written at all, as in loop-emit.ts. The rules were run on the two programs that the page has and on 14 programs written to probe them, by the writer's author.
+- **Programs with other forms.** Gated reads with a positive weight in a gate, i.e. "every one of these reads is 1", are read one by one, not packed. A register word is built from the registers' order and their writers, so two groups of registers that one stage writes together share a word, and whether that helps depends on the program. A loop program with a gather isn't written at all, as in loop-emit.ts. The rules were run on the two programs that the page has and on 15 programs written to probe them, by the writer's author.
 - **The declared range of a cell bound to a register is trusted**, as the builder trusts it. A register that leaves its declared range could make rule 2 or rule 4 write another value than the f32 statement. The writer proves that a register holds a whole number, and for a register of bits that it holds 0 or 1.
 - **Why a search after a pause varies**, as in the first check: within one series after a pause of 200 ms, single searches ran at the back to back speed.
 
 ### The writer's size
 
-bit-emit.ts is 1,032 lines, 836 of code and 166 of comments, where loop-emit.ts is 242. About 75 of them write the shader around the stages a second time, as loop-emit.ts does, since loop-emit.ts stays as it is. Writing the search step's shader at 32 states takes the writer 14 to 18 ms in Bun, where loop-emit.ts takes 3 to 7 ms. bit-emit.test.ts is 459 lines. Outside the writer: 27 lines in gpu/host.ts for the packed words, 77 in wgsl-interpreter.ts for integer statements, 28 in src/runtime for the exact bit declaration, and the two modes of page.ts and the table of summarize.ts for the measurements.
+bit-emit.ts is 1,032 lines, 836 of code and 166 of comments, where loop-emit.ts is 242. About 75 of them write the shader around the stages a second time, as loop-emit.ts does, since loop-emit.ts stays as it is. Writing the search step's shader at 32 states takes the writer 14 to 18 ms in Bun, where loop-emit.ts takes 3 to 7 ms. bit-emit.test.ts is 490 lines. Outside the writer: 27 lines in gpu/host.ts for the packed words, 77 in wgsl-interpreter.ts for integer statements, 28 in src/runtime for the exact bit declaration, and the two modes of page.ts and the table of summarize.ts for the measurements.
 
 ## Not measured, and what went wrong
 
@@ -354,6 +357,7 @@ Table 4 comes from every kernel and program run. A single run is `bun lab/json-s
 | File | What it holds |
 | --- | --- |
 | `layouts.ts` | The compact layouts: what a byte is, 512 bytes per document, packed bytes with a start per document, 2 scope bits per position, and a pattern's tables for kernels that read bytes |
+| `character-sets.ts` | A third loop program over the documents, for the code writer's check: which characters are in one of the wanted sets, and how many |
 | `kernels.ts` | The WGSL kernels: `byteKernel` with its options (layout, class lookup, scope bits, counts or one bit per document), the pass that packs counts into bits, the two kernels around the highlighter's own pass, and `rewriteKernel`, what a mechanical rewrite of the program's search step would give |
 | `engine.ts` | Runs one kernel over documents that are on the GPU and times one search, with the documents in one buffer or in several |
 | `expected.ts` | What every search is compared with: the lab's plain JavaScript loop over the same automaton, per document and scope. Also the regular JavaScript searches |

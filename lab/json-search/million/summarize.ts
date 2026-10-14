@@ -35,7 +35,7 @@ type Page = {
   timeline?: Record<string, number>, deviceLimits?: Record<string, number>,
   js?: Record<string, unknown>, scopes?: Record<string, unknown>,
   // The 'writers' mode: one entry per program, pattern and scope, and their totals.
-  comparisons?: {program: string, values: number, mismatches: number, total: number}[], compared?: {comparisons: number, values: number, mismatches: number},
+  comparisons?: {program: string, values: number, mismatches: number, total: number, differFromJavaScript: number}[], compared?: {comparisons: number, values: number, mismatches: number},
 }
 // A run that is still in progress has no loadAfter yet.
 type Run = {name: string, driver: {loadBefore: string, loadAfter?: string, loadSamples: {load: string}[], timedOut?: string, error?: string, browser?: string, machine?: string}, page?: Page}
@@ -650,9 +650,11 @@ if (wanted?.includes('writer') === true) section('writer', 'The search step as e
     const page = found.page
     if (page?.comparisons === undefined) continue
     const search = page.comparisons.filter(entry => entry.program.startsWith('the search step'))
+    const sets = page.comparisons.filter(entry => entry.program === 'the characters of the wanted sets')
+    const highlighter = page.comparisons.filter(entry => entry.program.startsWith('the JSON highlighter'))
     const sum = (entries: readonly {values: number, mismatches: number}[]) => `${thousands(entries.reduce((total, entry) => total + entry.values, 0))} values, ${thousands(entries.reduce((total, entry) => total + entry.mismatches, 0))} mismatched`
     out.push(
-      `From \`${name}\`, ${thousands(page.config.count)} documents, load average ${loadOf([name])}. ${problems(name)} Every output of bit-emit.ts's shader against loop-emit.ts's on the GPU. The highlighter's summary and display kinds: ${sum(page.comparisons.filter(entry => !entry.program.startsWith('the search step')))}. The search step's match count of every document and mark of every position, ${search.length} searches (each pattern at each state capacity that holds it, without a scope and with each of three scopes): ${sum(search)}, and ${thousands(search.reduce((total, entry) => total + entry.total, 0))} matches in all. In total ${thousands(page.compared?.values ?? 0)} values, ${thousands(page.compared?.mismatches ?? 0)} mismatched.`,
+      `From \`${name}\`, ${thousands(page.config.count)} documents, load average ${loadOf([name])}. ${problems(name)} Every output of bit-emit.ts's shader against loop-emit.ts's on the GPU. The highlighter's summary and display kinds: ${sum(highlighter)}. The count and the marks of character-sets.ts's program, for ${sets.length} choices of sets: ${sum(sets)}, ${thousands(sets.reduce((total, entry) => total + entry.total, 0))} characters counted, and ${thousands(sets.reduce((total, entry) => total + entry.differFromJavaScript, 0))} of ${thousands(sets.length * page.config.count)} counts differ from plain JavaScript's. The search step's match count of every document and mark of every position, ${search.length} searches (each pattern at each state capacity that holds it, without a scope and with each of three scopes): ${sum(search)}, and ${thousands(search.reduce((total, entry) => total + entry.total, 0))} matches in all. In total ${thousands(page.compared?.values ?? 0)} values, ${thousands(page.compared?.mismatches ?? 0)} mismatched.`,
       '',
     )
   }

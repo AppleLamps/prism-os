@@ -9,10 +9,12 @@ import {type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
 import {constant, createSourceTable, input, inputBit, list} from '../../src/runtime/cells.ts'
 import {and, andNot, not} from '../regex-search/bits.ts'
 import {type RuleCounts, emitBitLoopWgsl, packWords} from './bit-emit.ts'
+import {generateDocuments} from './documents.ts'
 import {buildJsonLoop} from './json-step.ts'
 import {emitLoopWgsl} from './loop-emit.ts'
 import {type Binding, type LoopProgram, createLoopRunner, createStage} from './loop-program.ts'
-import {cellsPerDocument} from './program.ts'
+import {buildCharacterSets, characterSets, countCharacters} from './million/character-sets.ts'
+import {cellsPerDocument, writeDocumentCells} from './program.ts'
 import {boundaryCapacity, buildSearchLoop, classCapacity} from './search-step.ts'
 import {createWgslInterpreter} from './wgsl-interpreter.ts'
 
@@ -416,6 +418,35 @@ describe('bit-emit.ts on small loop programs', () => {
     // The streak and the bucket are i32 registers, the total an f32 one.
     const code = emitBitLoopWgsl(buildMixed().loop).code
     expect(['var r0: i32 = 0i;', 'var r1: f32 = 0.0f;', 'var r2: i32 = 0i;'].every(line => code.includes(line))).toBe(true)
+  })
+})
+
+describe('bit-emit.ts on a third program over the documents', () => {
+  test('the characters of the wanted sets: four tables of 128 bits are one word read, and both shaders give plain JavaScript\'s counts', () => {
+    const textPositions = 512
+    const {loop, writeWanted} = buildCharacterSets(textPositions, cellsPerDocument)
+    const shader = emitBitLoopWgsl(loop)
+    // 128 words of 4 bits, and a word of zeros on each side for a code point of -1 and for one from 128 on.
+    expect([fired(shader.rules), shader.packedCells.length, shader.packedCells[0], shader.packedCells[129]]).toEqual([{sum: 2, gate: 1, packedRead: 4, packedWord: 1}, 130, [], []])
+    const texts = [...generateDocuments(24).map(document => document.text), '', 'Ünïcödé 42 "x": [1, 2]']
+    const cells = new Float32Array(texts.length * cellsPerDocument)
+    texts.forEach((text, row) => writeDocumentCells(cells, row * cellsPerDocument, text))
+    const interpreters = [createWgslInterpreter(emitLoopWgsl(loop).code), createWgslInterpreter(shader.code)]
+    const shared = new Float32Array(loop.sharedValues)
+    let counted = 0
+    for (const wanted of [[true, false, false, false], [false, true, true, false], [true, true, true, true], [false, false, false, false]]) {
+      writeWanted(shared, wanted)
+      const expected = texts.map(text => countCharacters(text, wanted, textPositions))
+      counted += expected.reduce((total, count) => total + count, 0)
+      const outputs = interpreters.map(interpret => {
+        const groups = [new Float32Array(texts.length), new Float32Array(texts.length * textPositions).fill(9)]
+        interpret(shared, cells, texts.length, groups, {window: {first: 0, count: texts.length}, packed: packWords(shader.packedCells, shared)})
+        return groups
+      })
+      expect([[...outputs[0]![0]!], [...outputs[1]![0]!]]).toEqual([expected, expected])
+      expect(outputs[1]![1]).toEqual(outputs[0]![1]!)
+    }
+    expect([characterSets.length, counted > 5000]).toEqual([4, true])
   })
 })
 

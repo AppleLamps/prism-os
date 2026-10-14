@@ -36,6 +36,6 @@ Compile ms at 8, 16 and 32 states, each shader with a salt that no earlier run u
 
 Every timed search was compared with the lab's plain JavaScript loop for every document: 5,676 searches, 567,600,000 values, 0 mismatched.
 
-From `writers-100000`, 100,000 documents, load average 10.1 to 24.9.  Every output of bit-emit.ts's shader against loop-emit.ts's on the GPU. The highlighter's summary and display kinds: 51,600,000 values, 0 mismatched. The search step's match count of every document and mark of every position, 60 searches (each pattern at each state capacity that holds it, without a scope and with each of three scopes): 3,078,000,000 values, 0 mismatched, and 1,254,405 matches in all. In total 3,129,600,000 values, 0 mismatched.
+From `writers-100000`, 100,000 documents, load average 4.1 to 4.9.  Every output of bit-emit.ts's shader against loop-emit.ts's on the GPU. The highlighter's summary and display kinds: 51,600,000 values, 0 mismatched. The count and the marks of character-sets.ts's program, for 5 choices of sets: 256,500,000 values, 0 mismatched, 48,340,424 characters counted, and 0 of 500,000 counts differ from plain JavaScript's. The search step's match count of every document and mark of every position, 60 searches (each pattern at each state capacity that holds it, without a scope and with each of three scopes): 3,078,000,000 values, 0 mismatched, and 1,254,405 matches in all. In total 3,386,100,000 values, 0 mismatched.
 
 

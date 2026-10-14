@@ -12,8 +12,9 @@
 //   'scopes'   where the scope bits come from when the highlighter stays the repo's program: its own pass on the GPU, a
 //              piece of the documents at a time, between a kernel that unpacks bytes and one that packs display kinds.
 //   'writers'  every output of bit-emit.ts's shaders against loop-emit.ts's, for the same loop programs on the same
-//              documents: the highlighter's summary and display kinds, and the search step's match count of every
-//              document and mark of every position, without a scope and with each scope.
+//              documents: the highlighter's summary and display kinds, character-sets.ts's count and marks, and the
+//              search step's match count of every document and mark of every position, without a scope and with each
+//              scope.
 //
 // The documents are the demo page's: documentText(index), every one valid JSON of at most 512 code points.
 import {capacityErrors, compilePattern} from '../../regex-search/pattern.ts'
@@ -31,6 +32,7 @@ import {cellsPerDocument, writeDocumentCells} from '../program.ts'
 import {boundaryCapacity, buildSearchLoop, classCapacity} from '../search-step.ts'
 import {type SearchResult, bufferBytesFor, createGpuSearcher} from '../searcher.ts'
 import {highlightWithTables} from '../table-loop.ts'
+import {buildCharacterSets, countCharacters} from './character-sets.ts'
 import {type DocumentPart, type Engine, checked, compile, createEngine} from './engine.ts'
 import {type ExpectedPattern, type Json, collectStrings, createExpected, keyMatches, valueMatches} from './expected.ts'
 import {type ByteKernelOptions, type Kernel, byteKernel, cellTables, packKindsKernel, rewriteKernel, unpackCellsKernel} from './kernels.ts'
@@ -1176,23 +1178,28 @@ async function runWriters() {
   report['comparisons'] = comparisons
   // Both shaders of one loop program over every document, a window of documents at a time: each output group's values
   // of the window's documents from one runner against the other's. `total` sums output group 0, to see that the
-  // compared values aren't all 0.
-  const compare = async (today: ProgramRunner, bits: ProgramRunner, shared: Float32Array | undefined) => {
-    const result = {values: 0, mismatches: 0, total: 0}
+  // compared values aren't all 0. With `expected`, the first value of output group 0 of every document is also compared
+  // with what plain JavaScript gives for that document.
+  const compare = async (today: ProgramRunner, bits: ProgramRunner, shared: Float32Array | undefined, expected?: (document: number) => number) => {
+    const result = {values: 0, mismatches: 0, total: 0, differFromJavaScript: 0}
     for (let first = 0; first < count; first += windowDocuments) {
       const window = {firstDocument: first, documentCount: Math.min(windowDocuments, count - first)}
       const options = {
         count: window.documentCount, firstDocument: first, window, ...(shared === undefined ? {} : {shared}),
         readbacks: [{group: 0, firstDocument: first, documentCount: window.documentCount}, {group: 1, firstDocument: 0, documentCount: window.documentCount}],
       }
-      const expected = await today.evaluate(options)
+      const fromToday = await today.evaluate(options)
       const actual = await bits.evaluate(options)
-      expected.outputs.forEach((values, group) => {
+      fromToday.outputs.forEach((values, group) => {
         const others = actual.outputs[group]!
         result.values += values.length
         for (let index = 0; index < values.length; index++) if (values[index] !== others[index]) result.mismatches++
       })
-      for (const value of expected.outputs[0]!) result.total += value
+      for (const value of fromToday.outputs[0]!) result.total += value
+      if (expected !== undefined) {
+        const perDocument = fromToday.outputs[0]!.length / window.documentCount
+        for (let row = 0; row < window.documentCount; row++) if (actual.outputs[0]![row * perDocument] !== expected(first + row)) result.differFromJavaScript++
+      }
     }
     return result
   }
@@ -1210,6 +1217,24 @@ async function runWriters() {
   log(`the highlighter: ${JSON.stringify(comparisons.at(-1))}`)
   jsonReference.destroy()
   jsonBits.destroy()
+  await post(false)
+
+  // A third program over the same documents, see character-sets.ts: both shaders, and its count in plain JavaScript.
+  const sets = buildCharacterSets(positions, cellsPerDocument)
+  const setsBitShader = emitBitLoopWgsl(sets.loop)
+  const setsToday = await createProgramRunner(device, emitLoopWgsl(sets.loop), sets.loop.sharedValues, store, config.shaderSalt, {windowCapacity: windowDocuments})
+  const setsBits = await createProgramRunner(device, setsBitShader, sets.loop.sharedValues, store, config.shaderSalt, {windowCapacity: windowDocuments})
+  const setsShared = new Float32Array(sets.loop.sharedValues)
+  for (const wanted of [[true, false, false, false], [false, true, true, false], [false, false, false, true], [true, true, true, true], [false, false, false, false]]) {
+    sets.writeWanted(setsShared, wanted)
+    comparisons.push({
+      program: 'the characters of the wanted sets', wanted, compileMs: {today: round(setsToday.compileMs), bits: round(setsBits.compileMs)}, ...describe(setsBitShader),
+      ...await compare(setsToday, setsBits, setsShared, document => countCharacters(documentText(document), wanted, positions)),
+    })
+    log(`the characters of the wanted sets, ${JSON.stringify(wanted)}: ${JSON.stringify(comparisons.at(-1))}`)
+  }
+  setsToday.destroy()
+  setsBits.destroy()
   await post(false)
 
   const patterns = config.patterns.map(pattern => compilePattern(pattern))
