@@ -387,6 +387,19 @@
   .stages { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
 }
 
+/* With forced colors, e.g. a high contrast theme of Windows, the browser draws no gradient and
+   no shadow and replaces every background color. So the slider's wire gets the text's color,
+   the pressed preset and the selected rectangle with its photo get an outline in the theme's
+   color for a selection, and the legend's dots keep their own colors, which the chart's lines
+   keep too. */
+@media (forced-colors: active) {
+  .range::-webkit-slider-runnable-track { background: CanvasText; }
+  .range::-moz-range-track { background: CanvasText; }
+  .segments button[aria-pressed="true"] { outline: 2px solid Highlight; outline-offset: -2px; }
+  .target-rectangle.is-selected, .learned-rectangle.is-selected { outline: 2px solid Highlight; }
+  .loss .key { forced-color-adjust: none; }
+}
+
 /* The instructions name what the main pointer does: a mouse clicks, a finger taps. */
 .for-finger { display: none; }
 
