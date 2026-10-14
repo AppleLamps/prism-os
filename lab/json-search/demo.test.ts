@@ -280,15 +280,15 @@ describe('the page\'s worker', () => {
     }
     return {worker, answers, post, until}
   }
-  const searchedOf = (answers: readonly WorkerAnswer[], key: string) => answers.filter((answer): answer is Extract<WorkerAnswer, {kind: 'searched'}> => answer.kind === 'searched' && answer.key === key)
+  const searchedOf = (answers: readonly WorkerAnswer[], id: number) => answers.filter((answer): answer is Extract<WorkerAnswer, {kind: 'searched'}> => answer.kind === 'searched' && answer.id === id)
 
   test('a search on the CPU answers in pieces, in the documents\' order, which add up to the CPU searcher\'s counts', async () => {
     const {worker, answers, post, until} = startWorker()
     const pattern = '(the|an?) [a-z]+'
-    post({kind: 'search', search: {key: 'first', pattern, scope: 'strings'}})
-    const reached = (key: string) => searchedOf(answers, key).reduce((total, piece) => total + piece.matchCounts.length, 0)
-    await until(() => reached('first') === documentCount)
-    const pieces = searchedOf(answers, 'first')
+    post({kind: 'search', search: {id: 1, pattern, scope: 'strings'}})
+    const reached = (id: number) => searchedOf(answers, id).reduce((total, piece) => total + piece.matchCounts.length, 0)
+    await until(() => reached(1) === documentCount)
+    const pieces = searchedOf(answers, 1)
     expect(pieces.length).toBeGreaterThan(2)
     const counts: number[] = []
     for (const piece of pieces) {
@@ -302,19 +302,19 @@ describe('the page\'s worker', () => {
     expect(counts).toEqual([...expected.matchCounts])
 
     // A second search replaces one in progress: the first one's pieces stop, and the second one answers for every document.
-    post({kind: 'search', search: {key: 'replaced', pattern: 'error', scope: 'everything'}})
-    post({kind: 'search', search: {key: 'second', pattern: '[a-z]+Id', scope: 'keys'}})
-    await until(() => reached('second') === documentCount)
-    expect(reached('replaced')).toBeLessThan(documentCount)
+    post({kind: 'search', search: {id: 2, pattern: 'error', scope: 'everything'}})
+    post({kind: 'search', search: {id: 3, pattern: '[a-z]+Id', scope: 'keys'}})
+    await until(() => reached(3) === documentCount)
+    expect(reached(2)).toBeLessThan(documentCount)
     const second = await createCpuSearcher(texts).search({pattern: '[a-z]+Id', scope: 'keys'})
     if (second?.status !== 'searched') throw new Error('the searcher didn\'t search')
-    expect(searchedOf(answers, 'second').flatMap(piece => [...piece.matchCounts])).toEqual([...second.matchCounts])
+    expect(searchedOf(answers, 3).flatMap(piece => [...piece.matchCounts])).toEqual([...second.matchCounts])
     // And a search that is stopped answers no more.
-    post({kind: 'search', search: {key: 'stopped', pattern: 'error', scope: 'everything'}})
+    post({kind: 'search', search: {id: 4, pattern: 'error', scope: 'everything'}})
     post({kind: 'search', search: null})
     post({kind: 'regExp', key: 'after the stop', pattern: 'error', scope: 'everything'})
     await until(() => answers.some(answer => answer.kind === 'regExp' && answer.key === 'after the stop'))
-    expect(reached('stopped')).toBe(0)
+    expect(reached(4)).toBe(0)
     worker.terminate()
   }, 30_000)
 

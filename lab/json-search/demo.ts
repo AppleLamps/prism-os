@@ -230,9 +230,9 @@ function mountJsonSearch(document: Document, window: Window) {
     pointer: null as {x: number, y: number} | null,
     // The GPU's piece of work in flight. Its promise's callback pushes an arrival with its id.
     job: null as number | null,
-    // What the worker was last asked for: RegExp's time and the search on the CPU, each by its key, '' for none, and
-    // whether a document's answer is still to come.
-    asked: {regExp: '', search: '', document: false},
+    // What the worker was last asked for: RegExp's time, by its key, the search on the CPU, by its key and by the
+    // number that its answers carry, and whether a document's answer is still to come.
+    asked: {regExp: '', search: null as {id: number, key: string} | null, document: false},
     // The last line of numbers and the last answer on the map. Both stay on screen while a search is in flight, so
     // that nothing flashes between two keystrokes.
     lineView: {state: 'busy' as 'idle' | 'busy' | 'ok' | 'bad', line: [] as Line},
@@ -277,6 +277,8 @@ function mountJsonSearch(document: Document, window: Window) {
     scheduleRender()
   })
 
+  // The number of the next search on the CPU, which its answers carry.
+  let nextSearchId = 1
   // Starts the GPU's one piece of work. Its answer arrives in a later frame.
   let nextJob = 1
   function startOnGpu(work: Promise<GpuAnswer>) {
@@ -427,10 +429,12 @@ function mountJsonSearch(document: Document, window: Window) {
               st.regExp = {key: answer.key, ms: answer.ms}
               break
             case 'searched': {
-              if (answer.key !== st.wantedKey || st.world === null) break
+              // A piece of a search that the page has replaced or stopped since is dropped.
+              if (st.asked.search?.id !== answer.id || st.world === null) break
               // The first piece of a search starts its answer, and each piece adds its documents' counts.
-              if (st.found?.key !== answer.key) st.found = {key: answer.key, matchCounts: new Float32Array(st.world.documentCount), searched: 0, withMatch: 0, firstMatch: -1, ms: 0}
+              if (answer.firstDocument === 0) st.found = {key: st.asked.search.key, matchCounts: new Float32Array(st.world.documentCount), searched: 0, withMatch: 0, firstMatch: -1, ms: 0}
               const found = st.found
+              invariant(found !== null && found.searched === answer.firstDocument, 'a search\'s pieces arrive in the documents\' order')
               found.matchCounts.set(answer.matchCounts, answer.firstDocument)
               found.searched = answer.firstDocument + answer.matchCounts.length
               found.ms += answer.ms
@@ -668,10 +672,15 @@ function mountJsonSearch(document: Document, window: Window) {
         st.asked.regExp = regExpKey
         post({kind: 'regExp', key: regExpKey, ...search})
       }
-      const cpuKey = where === 'cpu' ? key : ''
-      if (st.asked.search !== cpuKey) {
-        st.asked.search = cpuKey
-        post({kind: 'search', search: search === null || where === 'gpu' ? null : {key, ...search}})
+      const cpuSearch = where === 'cpu' ? search : null
+      if (cpuSearch === null) {
+        if (st.asked.search !== null) {
+          st.asked.search = null
+          post({kind: 'search', search: null})
+        }
+      } else if (st.asked.search?.key !== key) {
+        st.asked.search = {id: nextSearchId++, key}
+        post({kind: 'search', search: {id: st.asked.search.id, ...cpuSearch}})
       }
       if (where === 'cpu' && wantedDocument !== null && !documentIsHere && !st.asked.document) {
         st.asked.document = true

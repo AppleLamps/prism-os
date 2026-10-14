@@ -19,14 +19,16 @@ export type WorkerRequest =
   | {kind: 'documents', documentCount: number}
   | {kind: 'regExp', key: string, pattern: string, scope: Scope}
   // A search of every document with the programs on the CPU, which replaces the one in progress. null stops it.
-  | {kind: 'search', search: {key: string, pattern: string, scope: Scope} | null}
+  // `id` is the page's number for this search, which the search's answers carry: a key of the pattern alone would
+  // also fit the answers of an earlier search for the same pattern that the page has given up since.
+  | {kind: 'search', search: {id: number, pattern: string, scope: Scope} | null}
   // One document's display kinds, and with a search its marks, from the programs on the CPU.
   | {kind: 'document', key: string, index: number, search: {pattern: string, scope: Scope} | null}
 
 export type WorkerAnswer =
   | {kind: 'regExp', key: string, ms: number}
   // The match counts of the documents from `firstDocument` on, and the search program's time for them.
-  | {kind: 'searched', key: string, firstDocument: number, matchCounts: Float32Array, ms: number}
+  | {kind: 'searched', id: number, firstDocument: number, matchCounts: Float32Array, ms: number}
   // 512 display kinds, and 512 marks: 0 outside a match, 1 inside one, 2 at a match's first code point.
   | {kind: 'document', key: string, index: number, kinds: Float32Array, marks: Float32Array | null}
 
@@ -41,7 +43,7 @@ const wanted = {
   documentCount: 0,
   regExp: null as Extract<WorkerRequest, {kind: 'regExp'}> | null,
   // `nextDocument` is how far the search is, and `pieceDocuments` how many documents its next piece holds.
-  search: null as {key: string, pattern: string, scope: Scope, nextDocument: number, pieceDocuments: number} | null,
+  search: null as {id: number, pattern: string, scope: Scope, nextDocument: number, pieceDocuments: number} | null,
   document: null as Extract<WorkerRequest, {kind: 'document'}> | null,
 }
 // The documents, and what is built from them when it is first needed.
@@ -85,7 +87,7 @@ async function work() {
     invariant(result?.status === 'searched', 'the page asks for a pattern that a search program holds')
     // The search's time is its loops' time: the first piece also builds the search program, and a first search also
     // runs the highlighter, and neither is part of it.
-    post({kind: 'searched', key: search.key, firstDocument: window.firstDocument, matchCounts: result.matchCounts, ms: result.timings.evaluateMs}, [result.matchCounts.buffer])
+    post({kind: 'searched', id: search.id, firstDocument: window.firstDocument, matchCounts: result.matchCounts, ms: result.timings.evaluateMs}, [result.matchCounts.buffer])
     search.nextDocument += window.documentCount
     // The clock reads in steps of 0.1 ms, so a piece that took less counts as 0.1 ms.
     search.pieceDocuments = Math.max(1, Math.min(mostPieceDocuments, Math.round(window.documentCount * pieceMs / Math.max(0.1, pieceTook))))
