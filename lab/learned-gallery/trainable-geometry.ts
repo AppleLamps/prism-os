@@ -31,6 +31,10 @@ export type TrainableGeometryTarget = {
   // Which output rectangles the active targets are fitted with, 1 for as many slots as there are active targets.
   // Without it they are the first outputs, e.g. outputs 0 to 9 for 10 targets.
   outputs?: Uint8Array
+  // Per slot, a number that is larger the later the slot's rectangle was last edited, e.g. 0 for a rectangle as a
+  // preset drew it and a running count for the others. Edges that count as one line go where the rectangles edited
+  // longest ago have them (alignRectangles). Without it, no rectangle is older than another.
+  editOrder?: Uint32Array
 }
 
 type ParameterLayout = {
@@ -55,18 +59,90 @@ export type TrainableGeometryOptions = {
   weightDecay?: number
   matching?: 'assignment' | 'ordered'
   positionalFrequencyCount?: number
-  relationStrength?: number
-  relationSigma?: number
+  // How close two edges of the target have to be to count as one line, see alignRectangles. 0 fits the target as
+  // it is. setAlignmentReach changes it later.
+  alignmentReach?: number
 }
+
+// The reach that the page starts with: 3% of the stage, i.e. 16 px across and 13 px down on a stage of 538 by
+// 430 px. A hand that puts a rectangle back in its row is rarely farther off, and edges that a sketch means to be
+// apart are rarely that close.
+export const defaultAlignmentReach = 0.03
 
 const outputFieldCount = trainableGeometryField.size
 const geometryLossThreshold = 0.08
-const relationChannels = [
-  [[trainableGeometryField.left, 1]],
-  [[trainableGeometryField.top, 1]],
-  [[trainableGeometryField.left, 1], [trainableGeometryField.width, 1]],
-  [[trainableGeometryField.top, 1], [trainableGeometryField.height, 1]],
+// The loss is the mean of the Huber loss over each rectangle's left, top, width and height, where an error in
+// width or height counts twice. With equal weights the network fits positions sooner than sizes, so after the
+// page's 500 steps the right and bottom edges were the ones off their lines: Story's worst line was 0.47 px apart
+// with equal weights and 0.26 px with these, and among 200 variants of Story's proportions, every line was within
+// 0.25 px in 80 with equal weights and in 133 with these (October 13, 2026, px on a stage of 538 by 430).
+const fieldWeights = [1, 1, 2, 2] as const
+const fieldWeightSum = 6
+// The two axes of a rectangle: the field of its low edge and the field of its size.
+const axes = [
+  [trainableGeometryField.left, trainableGeometryField.width],
+  [trainableGeometryField.top, trainableGeometryField.height],
 ] as const
+
+// Moves the edges of rectangles that are nearly on one line onto that line, and writes the result to `aligned`,
+// which has the layout of `target.geometries`. The network is fitted to this result, so photos line up although
+// the sketch was drawn by hand.
+//
+// Left edges are compared with left edges, and likewise right, top and bottom edges. Sorted by position, an edge
+// within `reach` of the next one is on the same line as it, so a line can hold several edges, e.g. the tops of a
+// row of 4. The line goes where the rectangles edited longest ago have their edge, at the mean if there are
+// several: a rectangle that was just dragged back into its row moves onto the row's line, and the row stays where
+// it is. Positions are fractions of the stage, e.g. a reach of 0.03 is 3% of the stage's width for left and right
+// edges and 3% of its height for top and bottom edges.
+//
+// A rectangle that the lines would leave less than half as wide or as tall as it was drawn keeps its own two
+// edges on that axis, e.g. a narrow rectangle between two lines that would otherwise close it.
+export function alignRectangles(target: TrainableGeometryTarget, reach: number, aligned: Float32Array) {
+  aligned.set(target.geometries)
+  if (reach <= 0) return
+  const items: number[] = []
+  for (let item = 0; item < target.active.length; item++) {
+    if (target.active[item] === 1) items.push(item)
+  }
+  // Each active rectangle's two edges on the current axis, after the move.
+  const moved = [new Float64Array(items.length), new Float64Array(items.length)] as const
+  const edges = new Float64Array(items.length)
+  const order = items.map((_, index) => index)
+  for (const [positionField, sizeField] of axes) {
+    for (let side = 0; side < 2; side++) {
+      for (let index = 0; index < items.length; index++) {
+        const start = items[index]! * outputFieldCount
+        edges[index] = target.geometries[start + positionField]! + side * target.geometries[start + sizeField]!
+      }
+      order.sort((a, b) => edges[a]! - edges[b]!)
+      let lineStart = 0
+      for (let lineEnd = 1; lineEnd <= order.length; lineEnd++) {
+        if (lineEnd < order.length && edges[order[lineEnd]!]! - edges[order[lineEnd - 1]!]! <= reach) continue
+        // order[lineStart] to order[lineEnd - 1] are one line.
+        let oldest = Infinity
+        for (let position = lineStart; position < lineEnd; position++) {
+          oldest = Math.min(oldest, target.editOrder?.[items[order[position]!]!] ?? 0)
+        }
+        let sum = 0
+        let count = 0
+        for (let position = lineStart; position < lineEnd; position++) {
+          if ((target.editOrder?.[items[order[position]!]!] ?? 0) !== oldest) continue
+          sum += edges[order[position]!]!
+          count++
+        }
+        for (let position = lineStart; position < lineEnd; position++) moved[side]![order[position]!] = sum / count
+        lineStart = lineEnd
+      }
+    }
+    for (let index = 0; index < items.length; index++) {
+      const start = items[index]! * outputFieldCount
+      const size = moved[1][index]! - moved[0][index]!
+      if (size < 0.5 * target.geometries[start + sizeField]!) continue
+      aligned[start + positionField] = moved[0][index]!
+      aligned[start + sizeField] = size
+    }
+  }
+}
 
 function createParameterLayout(
   hiddenWidth: number,
@@ -383,11 +459,17 @@ export function createTrainableGeometryMachine(
   const hiddenWidth = options.hiddenWidth ?? 6
   const seed = options.seed ?? 0x51_7a_9e
   const learningRate = options.learningRate ?? 0.008
-  const weightDecay = options.weightDecay ?? 0.000_02
+  // The decay is added to the gradient, and Adam scales a gradient by its size, so the decay pulls the weights
+  // toward 0 about as hard as the loss pulls them wherever the loss's gradient is as small as the decay's. That
+  // sets how closely the outputs can match the target: with 0.000_02, the value until October 13, 2026, the
+  // presets were still 1.4 to 1.8 px off after 500 steps, and with this value 0.01 to 0.14 px (px on a stage of
+  // 538 by 430). Without any decay, a unit whose gate has closed for every slot in use gets no gradient and can't
+  // open again: over 200 random edits in a row, 2 to 4 of the first layer's 6 units ended shut in 5 of 6 runs, and
+  // at most 1 with this decay, which still brings such a unit's weights back toward 0.
+  const weightDecay = options.weightDecay ?? 0.000_000_2
   const matching = options.matching ?? 'assignment'
   const positionalFrequencyCount = options.positionalFrequencyCount ?? 4
-  const relationStrength = options.relationStrength ?? 8
-  const relationSigma = options.relationSigma ?? 0.025
+  let alignmentReach = options.alignmentReach ?? defaultAlignmentReach
   const inputFeatureCount = 2 + positionalFrequencyCount * 2
   invariant(slotCount === target.active.length, 'target slot count mismatch')
   invariant(target.geometries.length === slotCount * outputFieldCount, 'target shape mismatch')
@@ -396,8 +478,7 @@ export function createTrainableGeometryMachine(
     Number.isInteger(positionalFrequencyCount) && positionalFrequencyCount >= 0,
     'position frequency count must be a nonnegative integer',
   )
-  invariant(relationStrength >= 0, 'relation strength must be nonnegative')
-  invariant(relationSigma > 0, 'relation sigma must be positive')
+  invariant(alignmentReach >= 0, 'alignment reach must be nonnegative')
   const {circuit, geometries, parameters, tensorProgram} =
     createTrainableGeometryCircuit(
       slotCount,
@@ -417,6 +498,8 @@ export function createTrainableGeometryMachine(
   const savedSource = new Float32Array(parameters.size)
   const savedFirstMoment = new Float32Array(parameters.size)
   const savedSecondMoment = new Float32Array(parameters.size)
+  // The target as the loss reads it: with the edges that are nearly on one line moved onto that line.
+  const aligned = new Float32Array(target.geometries.length)
 
   function activeTargetItems() {
     const items: number[] = []
@@ -435,9 +518,9 @@ export function createTrainableGeometryMachine(
     const outputStart = outputItem * outputFieldCount
     let loss = 0
     for (let field = 0; field < outputFieldCount; field++) {
-      loss += robustLoss(
+      loss += fieldWeights[field]! * robustLoss(
         values[geometries[outputStart + field]!]!
-          - target.geometries[targetStart + field]!,
+          - aligned[targetStart + field]!,
       )
     }
     return loss
@@ -469,79 +552,10 @@ export function createTrainableGeometryMachine(
     return minimumCostAssignment(costs).map(index => outputItems[index]!)
   }
 
-  function targetRelationValue(
-    geometryValues: Float32Array,
-    item: number,
-    channel: (typeof relationChannels)[number],
-  ) {
-    const start = item * outputFieldCount
-    let value = 0
-    for (const [field, coefficient] of channel) {
-      value += geometryValues[start + field]! * coefficient
-    }
-    return value
-  }
-
-  function outputRelationValue(
-    values: Float32Array,
-    item: number,
-    channel: (typeof relationChannels)[number],
-  ) {
-    const start = item * outputFieldCount
-    let value = 0
-    for (const [field, coefficient] of channel) {
-      value += values[geometries[start + field]!]! * coefficient
-    }
-    return value
-  }
-
-  function relationFacts(
-    values: Float32Array,
-    targetItems: readonly number[],
-    outputByTarget: Int32Array,
-  ) {
-    const facts: {
-      outputItem: number
-      channel: (typeof relationChannels)[number]
-      weight: number
-      difference: number
-    }[] = []
-    let mass = 0
-    for (const channel of relationChannels) {
-      const targetValues = targetItems.map(item =>
-        targetRelationValue(target.geometries, item, channel))
-      for (let targetIndex = 0; targetIndex < targetItems.length; targetIndex++) {
-        let mode = targetValues[targetIndex]!
-        let neighborhoodMass = 1
-        for (let iteration = 0; iteration < 4; iteration++) {
-          let weightedValue = 0
-          neighborhoodMass = 0
-          for (const targetValue of targetValues) {
-            const normalizedDifference =
-              (mode - targetValue) / relationSigma
-            const weight = Math.exp(
-              -0.5 * normalizedDifference * normalizedDifference,
-            )
-            weightedValue += weight * targetValue
-            neighborhoodMass += weight
-          }
-          mode = weightedValue / neighborhoodMass
-        }
-        const weight = Math.max(0, 1 - 1 / neighborhoodMass)
-        if (weight < 0.001) continue
-        const outputItem = outputByTarget[targetIndex]!
-        const difference =
-          outputRelationValue(values, outputItem, channel) - mode
-        facts.push({outputItem, channel, weight, difference})
-        mass += weight
-      }
-    }
-    return {facts, mass}
-  }
-
   function measure(values: Float32Array) {
     const targetItems = activeTargetItems()
     if (targetItems.length === 0) return 0
+    alignRectangles(target, alignmentReach, aligned)
     const outputByTarget = matchRectangles(values, targetItems)
     let loss = 0
     for (let targetIndex = 0; targetIndex < targetItems.length; targetIndex++) {
@@ -551,57 +565,27 @@ export function createTrainableGeometryMachine(
         outputByTarget[targetIndex]!,
       )
     }
-    loss /= targetItems.length * outputFieldCount
-    if (relationStrength > 0) {
-      const relations = relationFacts(values, targetItems, outputByTarget)
-      if (relations.mass > 0) {
-        let relationLoss = 0
-        for (const relation of relations.facts) {
-          relationLoss += 0.5
-            * relation.weight
-            * relation.difference
-            * relation.difference
-        }
-        loss += relationStrength * relationLoss / relations.mass
-      }
-    }
-    return loss
+    return loss / (targetItems.length * fieldWeightSum)
   }
 
   function trainStep(stepLearningRate: number) {
     const values = circuit.evaluateReference(source)
     const targetItems = activeTargetItems()
     if (targetItems.length === 0) return
+    alignRectangles(target, alignmentReach, aligned)
     const outputByTarget = matchRectangles(values, targetItems)
     const outputGradients = new Float32Array(values.length)
-    const gradientScale = 1 / (targetItems.length * outputFieldCount)
+    const gradientScale = 1 / (targetItems.length * fieldWeightSum)
     for (let targetIndex = 0; targetIndex < targetItems.length; targetIndex++) {
       const targetStart = targetItems[targetIndex]! * outputFieldCount
       const outputStart = outputByTarget[targetIndex]! * outputFieldCount
       for (let field = 0; field < outputFieldCount; field++) {
         const wire = geometries[outputStart + field]!
-        const error = values[wire]! - target.geometries[targetStart + field]!
+        const error = values[wire]! - aligned[targetStart + field]!
         outputGradients[wire] = Math.fround(
           outputGradients[wire]!
-            + robustGradient(error) * gradientScale,
+            + fieldWeights[field]! * robustGradient(error) * gradientScale,
         )
-      }
-    }
-    if (relationStrength > 0) {
-      const relations = relationFacts(values, targetItems, outputByTarget)
-      if (relations.mass > 0) {
-        const relationScale = relationStrength / relations.mass
-        for (const relation of relations.facts) {
-          const gradient =
-            relation.weight * relation.difference * relationScale
-          const outputStart = relation.outputItem * outputFieldCount
-          for (const [field, coefficient] of relation.channel) {
-            const wire = geometries[outputStart + field]!
-            outputGradients[wire] = Math.fround(
-              outputGradients[wire]! + gradient * coefficient,
-            )
-          }
-        }
       }
     }
     const gradients = circuit.backpropagateReference(values, outputGradients)
@@ -713,6 +697,16 @@ export function createTrainableGeometryMachine(
     restoreLearningRate() {
       learningRateScale = 1
     },
+    // How close two edges of the target have to be to count as one line. 0 fits the target as it is.
+    setAlignmentReach(reach: number) {
+      invariant(reach >= 0, 'alignment reach must be nonnegative')
+      alignmentReach = reach
+    },
+    // The target as the loss reads it now, with the layout of target.geometries.
+    alignedTarget() {
+      alignRectangles(target, alignmentReach, aligned)
+      return aligned
+    },
     evaluate() {
       const values = circuit.evaluateTensor(source)
       assertFiniteValues(values, 'trainable geometry values')
@@ -720,6 +714,7 @@ export function createTrainableGeometryMachine(
     },
     match(values: Float32Array) {
       const targetItems = activeTargetItems()
+      alignRectangles(target, alignmentReach, aligned)
       return {
         targetItems,
         outputByTarget: matchRectangles(values, targetItems),

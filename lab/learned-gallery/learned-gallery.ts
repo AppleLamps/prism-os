@@ -66,10 +66,9 @@ function createGridCells(
 }
 
 // Each layout has fewer rectangles than there are photos and leaves its last cell empty, so a visitor has room to
-// add one. Edges of different rectangles are either equal or at least 0.09 apart: the loss pulls edges that are
-// within about 0.05 of each other toward a shared value (relationSigma in trainable-geometry.ts), so the network
-// doesn't fit such edges closely, e.g. a row of 4 cells above a row of 5 stayed 1.3% of the stage off after
-// 1,500 steps.
+// add one. Edges of different rectangles are either equal or at least 0.09 apart. The loss reads edges that are
+// within 0.03 of each other as one line (alignRectangles in trainable-geometry.ts), so a preset reads as it is
+// drawn.
 
 // 4 columns and 3 rows.
 function createContactLayout(): TrainableGeometry[] {
@@ -87,9 +86,10 @@ function createCinemaLayout(): TrainableGeometry[] {
   ]
 }
 
-// A large rectangle, two beside it, and 2 rows of 4 below. Among 200 variants of these proportions, the network's
-// fit after 500 steps from its seeded start left a largest error from 0.13% to 2.9% of the stage, with a median of
-// 1.2%. These proportions are one of the closest fits, 0.15%, and a test keeps it under 0.3%.
+// A large rectangle, two beside it, and 2 rows of 4 below. After 500 steps from the seeded weights, the largest
+// error of a photo's left, top, width or height is 0.029% of the stage, and a test keeps it under 0.06%. Among
+// 200 variants of these proportions the largest error ranged from 0.002% to 0.17%, with a median of 0.02%, and
+// every line of photos was within 0.25 px in 133 of them, on a stage of 538 by 430 px (October 13, 2026).
 function createStoryLayout(): TrainableGeometry[] {
   const heroWidth = 0.6
   const heroHeight = 0.52
@@ -350,6 +350,13 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
     outputs.fill(1, 0, machine.activeCount())
   }
   useFirstOutputs()
+  // The order of the edits: a rectangle that is moved, resized or added gets the next number, and a preset's
+  // rectangles have 0. Where edges are close enough to share a line, the line is where the rectangles edited
+  // longest ago have their edge, so the photo of the rectangle that was just dragged moves onto the line, and no
+  // other photo moves.
+  const editOrder = new Uint32Array(learnedSlotCount)
+  machine.target.editOrder = editOrder
+  let editCount = 0
   let result = machine.evaluate()
   let history = [{step: result.step, loss: result.loss}]
 
@@ -397,7 +404,10 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
       width: addedRectangleWidth,
       height: addedRectangleHeight,
     })
-    if (item >= 0) outputs[outputs.indexOf(0)] = 1
+    if (item >= 0) {
+      outputs[outputs.indexOf(0)] = 1
+      editOrder[item] = ++editCount
+    }
     return item
   }
 
@@ -511,6 +521,7 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
             || after.height !== before.height
           ) {
             sketchEdited = true
+            editOrder[drag.item] = ++editCount
           }
           break
         }
@@ -545,6 +556,7 @@ export function createLearnedGalleryEditor(readClock: () => number = () => perfo
         case 'layout':
           machine.setTargetLayout(input.name)
           useFirstOutputs()
+          editOrder.fill(0)
           layout = input.name
           selected = null
           drag = null
@@ -773,10 +785,11 @@ function createLearnedGalleryDomCache(document: Document, editor: LearnedGallery
   }
 }
 
-// The chart's vertical axis is logarithmic, from a loss of 1 at the top to 1e-8 at the bottom: the loss falls from
-// about 0.2 to about 1e-7 while training, which a linear axis would show as one drop followed by a flat line.
-const chartLogTop = 0
-const chartLogBottom = -8
+// The chart's vertical axis is logarithmic, from a loss of 0.1 at the top to 1e-11 at the bottom: the loss falls
+// from about 0.01 to between 1e-8 and 1e-11 while training, which a linear axis would show as one drop followed by
+// a flat line.
+const chartLogTop = -1
+const chartLogBottom = -11
 // Room around the line for its marker, a dot of 4 px radius with a 1 px ring, in CSS pixels.
 const chartPadding = 5
 

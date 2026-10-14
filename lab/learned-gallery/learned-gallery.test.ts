@@ -17,7 +17,9 @@ import {
   type LearnedTargetGeometry,
 } from './learned-gallery.ts'
 import {
+  alignRectangles,
   createTrainableGeometryMachine,
+  defaultAlignmentReach,
   trainableGeometryField,
   type TrainableGeometry,
   type TrainableGeometryTarget,
@@ -176,41 +178,6 @@ for (const {name, kind, rmse} of convergenceCases) {
   })
 }
 
-test('soft relation loss rejects much of a rough grid drag', () => {
-  const clean = createSidebarGrid()
-  const rough = clean.map((geometry, item) => {
-    const horizontal = ((item * 17) % 7 - 3) * 0.01
-    const vertical = ((item * 11) % 7 - 3) * 0.01
-    const width = geometry.width + vertical * 0.4
-    const height = geometry.height + horizontal * 0.4
-    return {
-      left: Math.min(1 - width, Math.max(0, geometry.left + horizontal)),
-      top: Math.min(1 - height, Math.max(0, geometry.top + vertical)),
-      width,
-      height,
-    }
-  })
-  const machine = createLearnedGalleryMachine()
-  replaceTarget(machine, rough)
-  const trained = machine.train(500)
-  const roughError = Math.sqrt(
-    rough.reduce((sum, geometry, item) => {
-      for (const field of geometryFields) {
-        const error = geometry[field] - clean[item]![field]
-        sum += error * error
-      }
-      return sum
-    }, 0) / (rough.length * learnedGeometryField.size),
-  )
-  const learnedError = matchedRootMeanSquareError(
-    machine,
-    trained.values,
-    clean,
-  )
-
-  assert.ok(learnedError < roughError * 0.75)
-})
-
 test('reset restores the initial coefficient tensor and optimizer', () => {
   const machine = createLearnedGalleryMachine()
   const initialSource = [...machine.source]
@@ -226,7 +193,7 @@ test('reset restores the initial coefficient tensor and optimizer', () => {
 
 test('steps that raise the loss are taken back', () => {
   // Adam at a fixed learning rate doesn't come to rest: after Cinema's first 500 steps, a frame of 10 more steps
-  // raises the loss 93 times at its worst, which the page showed as photos that jump and come back.
+  // raises the loss 679 times at its worst, which the page showed as photos that jump and come back.
   const plain = createLearnedGalleryMachine('cinema')
   let loss = plain.train(trainingStepsAfterChange).loss
   let largestRise = 1
@@ -338,6 +305,79 @@ function createTrainableGeometryTarget(
   return target
 }
 
+function alignedGeometries(target: TrainableGeometryTarget, reach: number, count: number) {
+  const aligned = new Float32Array(target.geometries.length)
+  alignRectangles(target, reach, aligned)
+  return Array.from({length: count}, (_, item) => {
+    const start = item * trainableGeometryField.size
+    // Rounded to 6 decimals, since the target's numbers are 32-bit floats.
+    return geometryFields.map(field => Math.round(aligned[start + trainableGeometryField[field]]! * 1e6) / 1e6)
+  })
+}
+
+test('edges that are nearly on one line are moved onto it', () => {
+  // A row of three rectangles and one below the row's middle, as left, top, width and height in fractions of the
+  // stage. The middle one of the row was dragged last: its top is 0.012 below the row's, and its left is 0.02
+  // right of the lower rectangle's.
+  const row: TrainableGeometry[] = [
+    {left: 0.1, top: 0.1, width: 0.2, height: 0.2},
+    {left: 0.36, top: 0.112, width: 0.2, height: 0.2},
+    {left: 0.58, top: 0.1, width: 0.2, height: 0.2},
+    {left: 0.34, top: 0.4, width: 0.2, height: 0.3},
+  ]
+  const target = createTrainableGeometryTarget(row)
+  target.editOrder = new Uint32Array(learnedSlotCount)
+  target.editOrder[1] = 1
+  // With a reach of 0.03, its top and bottom are on the row's lines and its left and right on the lower
+  // rectangle's, and no other rectangle moved.
+  assert.deepEqual(alignedGeometries(target, 0.03, 4), [
+    [0.1, 0.1, 0.2, 0.2],
+    [0.34, 0.1, 0.2, 0.2],
+    [0.58, 0.1, 0.2, 0.2],
+    [0.34, 0.4, 0.2, 0.3],
+  ])
+  // A reach shorter than both distances, and a reach of 0, leave the rectangles as they are drawn.
+  const drawn = row.map(geometry => geometryFields.map(field => geometry[field]))
+  assert.deepEqual(alignedGeometries(target, 0.01, 4), drawn)
+  assert.deepEqual(alignedGeometries(target, 0, 4), drawn)
+  // A reach between the two distances moves only the nearer edges, the top and the bottom.
+  assert.deepEqual(alignedGeometries(target, 0.015, 4)[1], [0.36, 0.1, 0.2, 0.2])
+  // When no rectangle is older than another, the edges meet at their mean, e.g. the three tops at 0.104.
+  const unordered = createTrainableGeometryTarget(row)
+  assert.deepEqual(alignedGeometries(unordered, 0.03, 4), [
+    [0.1, 0.104, 0.2, 0.2],
+    [0.35, 0.104, 0.2, 0.2],
+    [0.58, 0.104, 0.2, 0.2],
+    [0.35, 0.4, 0.2, 0.3],
+  ])
+  // Inactive slots don't count, e.g. a slot whose rectangle was deleted and that still holds zeros.
+  assert.deepEqual([...unordered.geometries.subarray(4 * trainableGeometryField.size)].every(value => value === 0), true)
+
+  // Edges that are each within reach of the next are one line: tops at 0.1, 0.12 and 0.14 all go to the top of
+  // the rectangle edited longest ago, although the last one is 0.04 from it.
+  const steps = createTrainableGeometryTarget([
+    {left: 0.1, top: 0.1, width: 0.1, height: 0.3},
+    {left: 0.4, top: 0.12, width: 0.1, height: 0.5},
+    {left: 0.7, top: 0.14, width: 0.1, height: 0.7},
+  ])
+  steps.editOrder = Uint32Array.from({length: learnedSlotCount}, (_, item) => item)
+  assert.deepEqual(alignedGeometries(steps, 0.03, 3).map(geometry => geometry[1]), [0.1, 0.1, 0.1])
+  // Their bottoms are 0.2 apart, so they stay, and the two that moved up are taller by as much.
+  assert.deepEqual(alignedGeometries(steps, 0.03, 3).map(geometry => geometry[3]), [0.3, 0.52, 0.74])
+
+  // A rectangle that the lines would close keeps its own edges: this one is 0.04 wide, and one older rectangle's
+  // left is 0.02 inside its left edge while another's right is 0.01 inside its right edge, which would leave it
+  // 0.01 wide.
+  const narrow = createTrainableGeometryTarget([
+    {left: 0.5, top: 0.1, width: 0.04, height: 0.2},
+    {left: 0.52, top: 0.5, width: 0.3, height: 0.2},
+    {left: 0.2, top: 0.75, width: 0.33, height: 0.2},
+  ])
+  narrow.editOrder = new Uint32Array(learnedSlotCount)
+  narrow.editOrder[0] = 1
+  assert.deepEqual(alignedGeometries(narrow, 0.03, 3)[0], [0.5, 0.1, 0.04, 0.2])
+})
+
 test('shared trainable coefficients fit an unseen sidebar grid', () => {
   const target = createTrainableGeometryTarget(createSidebarGrid())
   const machine = createTrainableGeometryMachine(target)
@@ -445,11 +485,19 @@ test('each preset sketch is fitted closely by the first 500 steps', () => {
     assert.equal(first.activeCount, count)
     // The first frame draws the seeded weights' output, before any step.
     assert.equal(first.step, 0)
-    assert.ok(first.loss > 0.1, `${name} starts at loss ${first.loss}`)
+    assert.ok(first.loss > 0.005, `${name} starts at loss ${first.loss}`)
     const settled = page.settle()
     assert.equal(settled.step, trainingStepsAfterChange)
-    assert.ok(settled.loss < 0.000_001, `${name} loss ${settled.loss}`)
-    assert.ok(largestError(page.machine, settled.values) < 0.003, `${name} error ${largestError(page.machine, settled.values)}`)
+    // Story ends at 9.55e-9 with a largest error of 0.029% of the stage, and the other two closer.
+    assert.ok(settled.loss < 0.000_000_03, `${name} loss ${settled.loss}`)
+    assert.ok(largestError(page.machine, settled.values) < 0.0006, `${name} error ${largestError(page.machine, settled.values)}`)
+    // A preset's edges are equal or far apart, so it reads as drawn at twice the reach that the page uses too.
+    const drawn = page.machine.target.geometries
+    for (const reach of [0, defaultAlignmentReach, 0.06]) {
+      page.machine.setAlignmentReach(reach)
+      const aligned = page.machine.alignedTarget()
+      assert.ok(aligned.every((value, field) => Math.abs(value - drawn[field]!) < 1e-6), `${name} at a reach of ${reach}`)
+    }
   }
 })
 
@@ -573,8 +621,71 @@ test('training continues from the current weights while a rectangle is dragged',
   const fromSeed = createLearnedGalleryMachine()
   fromSeed.target.geometries.set(machine.target.geometries)
   fromSeed.target.active.set(machine.target.active)
+  fromSeed.target.editOrder = machine.target.editOrder!
   const fromSeedLoss = fromSeed.train(trainingStepsAfterChange)
   assert.ok(final.loss < fromSeedLoss.loss * 2, `loss ${final.loss} against ${fromSeedLoss.loss} from the seeded weights`)
+})
+
+// How far apart the photos of the given sketch rectangles are at one edge, in fractions of the stage: 0 when the
+// photos are on one line.
+function lineSpread(machine: LearnedGalleryMachine, values: Float32Array, slots: readonly number[], edge: 'left' | 'top' | 'right' | 'bottom') {
+  const {targetItems, outputByTarget} = machine.match(values)
+  const positions = slots.map(slot => {
+    const geometry = outputGeometry(machine, values, outputByTarget[targetItems.indexOf(slot)]!)
+    return edge === 'left' ? geometry.left : edge === 'top' ? geometry.top : edge === 'right' ? geometry.left + geometry.width : geometry.top + geometry.height
+  })
+  return Math.max(...positions) - Math.min(...positions)
+}
+
+test('a rectangle dragged roughly within its row gets a photo that is in the row', () => {
+  const page = createEditorDriver()
+  const {machine} = page
+  page.frame([{kind: 'layout', name: 'contact'}])
+  const loaded = page.settle()
+  const loadedPhotos = [...loaded.values]
+  // Contact sheet is 4 columns and 3 rows. Rectangle 5 is in the second row and the second column.
+  const row = [4, 5, 6, 7]
+  const column = [1, 5, 9]
+  const cell = pointOf(machine, 5)
+  // 10 px right and 10 px down on a stage of 500 by 400, i.e. 0.02 and 0.025 of the stage, which is within the
+  // reach of 0.03 that the page starts with.
+  let frame = page.frame([press(cell.x, cell.y)])
+  for (let moveIndex = 1; moveIndex <= 12; moveIndex++) {
+    frame = page.frame([move(cell.x + 10 * moveIndex / 12, cell.y + 10 * moveIndex / 12)])
+  }
+  frame = page.frame([release])
+  assert.equal(frame.layout, null)
+  let settled = page.settle()
+  // The photo is on the lines of its row and its column, within 0.1 px, and so 10 px from its rectangle.
+  // Measured: 0.004% of the stage. Before the loss read such edges as one line, the photo ended 0.2% off its
+  // row, about 1 px, and the row's other photos had moved 0.6% toward it.
+  for (const edge of ['top', 'bottom'] as const) {
+    assert.ok(lineSpread(machine, settled.values, row, edge) < 0.0002, `the row's ${edge}s are ${lineSpread(machine, settled.values, row, edge)} apart`)
+  }
+  for (const edge of ['left', 'right'] as const) {
+    assert.ok(lineSpread(machine, settled.values, column, edge) < 0.0002, `the column's ${edge}s are ${lineSpread(machine, settled.values, column, edge)} apart`)
+  }
+  assert.ok(Math.abs(largestError(machine, settled.values, 5) - 0.025) < 0.0005)
+  // No photo moved: the rectangles that weren't dragged are the older ones, so the lines are where they were.
+  const largestMove = Math.max(...loadedPhotos.map((value, wire) => Math.abs(value - settled.values[wire]!)))
+  assert.ok(largestMove < 0.0002, `a photo moved by ${largestMove} of the stage`)
+})
+
+test('a rectangle dragged farther than the reach keeps its photo', () => {
+  const page = createEditorDriver()
+  const {machine} = page
+  page.frame([{kind: 'layout', name: 'contact'}])
+  page.settle()
+  const cell = pointOf(machine, 5)
+  // 20 px right and 16 px down, i.e. 0.04 of the stage both ways, past the reach of 0.03.
+  page.frame([press(cell.x, cell.y)])
+  for (let moveIndex = 1; moveIndex <= 12; moveIndex++) {
+    page.frame([move(cell.x + 20 * moveIndex / 12, cell.y + 16 * moveIndex / 12)])
+  }
+  page.frame([release])
+  const settled = page.settle()
+  assert.ok(largestError(machine, settled.values) < 0.0006, `the largest error is ${largestError(machine, settled.values)}`)
+  assert.ok(Math.abs(lineSpread(machine, settled.values, [4, 5, 6, 7], 'top') - 0.04) < 0.0006)
 })
 
 test('the loss never rises in a frame where the sketch stays the same', () => {
@@ -858,12 +969,23 @@ test('a preset and "Train again" start over from the seeded weights', () => {
   assert.deepEqual([...machine.source], [...machine.initialSource])
   assert.equal(frame.history.length, 1)
   assert.equal(frame.layout, null)
-  const again = page.settle()
+  // The steps of each frame until training stops, e.g. 10, 10, 9, 10.
+  const stepsPerFrame: number[] = []
+  while (frame.training) {
+    frame = page.frame()
+    stepsPerFrame.push(frame.stepsThisFrame)
+  }
+  const again = frame
   assert.equal(again.step, trainingStepsAfterChange)
+  // The same sketch from the same weights, trained in the same frames, ends at the same loss.
   const fromSeed = createLearnedGalleryMachine()
   fromSeed.target.geometries.set(machine.target.geometries)
   fromSeed.target.active.set(machine.target.active)
-  assert.equal(again.loss, fromSeed.train(trainingStepsAfterChange).loss)
+  fromSeed.target.editOrder = machine.target.editOrder!
+  fromSeed.target.outputs = machine.target.outputs!
+  let fromSeedLoss = fromSeed.evaluate().loss
+  for (const steps of stepsPerFrame) fromSeedLoss = fromSeed.trainOrUndo(steps).loss
+  assert.equal(again.loss, fromSeedLoss)
 
   // A preset replaces the sketch, and the same sketch from the same weights trains to the same result.
   frame = page.frame([{kind: 'layout', name: 'story'}])
