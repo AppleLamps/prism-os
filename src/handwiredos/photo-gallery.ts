@@ -74,19 +74,16 @@ export const springConstants: SpringConstants = {stiffness: 650, damping: 45}
 // bound.
 const matrixBound = springMatrixBound(springConstants)
 
-// Per thumbnail: each spring's displacement from the destination in effect, its
-// velocity, and that destination. The drawn value is destination + displacement,
-// which the program computes and doesn't store. Displacements and velocities need
-// no declared range. The destinations written back are this evaluation's thumbnail
-// targets. A target center is the viewport's middle plus at most about 232 px
-// either way, so -16,384..32,768 holds it for any viewport within 0..16,384.
+// Per thumbnail: each spring's displacement from its destination, and its velocity.
+// The drawn value is destination + displacement, which the program computes and
+// doesn't store. Displacements and velocities need no declared range. The
+// destinations aren't stored: they follow from the focus cells and from this
+// evaluation's layout, see "The thumbnails" in buildPhotos.
 const thumbnailSpringCells = {
   centerXDisplacement: state(anyNumber),
   centerXVelocity: state(anyNumber),
-  centerXDestination: state([-16_384, 32_768]),
   scaleDisplacement: state(anyNumber),
   scaleVelocity: state(anyNumber),
-  scaleDestination: state(unitInterval),
 }
 
 // A zoom spring: its displacement from its destination, which is 0 or 1, and its
@@ -139,9 +136,6 @@ export const photoCells = {
     openSpring: stateBit(),
     // The photo that was closed last, or none before the first close.
     closedLast: oneHot(list(itemCount, () => stateBit()), {allowAllZero: true, declareToCircuit: false}),
-    // 1 while one of the two springs moves, as of the last evaluation that wrote
-    // state back. The thumbnails read it, see buildPhotos.
-    underWay: stateBit(),
   },
 }
 type PhotoCells = CellWires<typeof photoCells>
@@ -181,8 +175,8 @@ const photoGalleryCells = {
 
 // The standalone table's cell positions under their earlier names, e.g.
 // sourceField.clickX is the position of click.x, and
-// thumbnailSpringField.centerXDestination is the index of centerXDestination within
-// one thumbnail's spring cells.
+// thumbnailSpringField.scaleVelocity is the index of scaleVelocity within one
+// thumbnail's spring cells.
 const layout = createSourceTable()
 const positions = layout.declare(photoGalleryCells)
 
@@ -825,54 +819,62 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
     })
   }
 
+  // The thumbnails. Each has two springs, one for its center's x and one for its
+  // scale. At an open they grow out of the strip's middle to their places, and at a
+  // close they shrink back into it, since with no photo open every thumbnail's place
+  // is the strip's middle at scale 0. A step to another photo moves them along the
+  // strip.
+  //
+  // A spring keeps its displacement from its destination, and no destination is
+  // stored. Every evaluation computes two destinations from its own layout: one for
+  // the photo that was open before the evaluation's events, which the stored
+  // displacement is measured from, and one for the photo that is open after them. In
+  // plain JavaScript:
+  //   const before = thumbnailCenterX(layout, thumbnail, openPhotoBefore)
+  //   const after = thumbnailCenterX(layout, thumbnail, openPhotoAfter)
+  //   thumbnail.displacement += before - after
+  //   drawnCenterX = after + thumbnail.displacement
+  // So only a change of the open photo moves a spring. While the same photo stays
+  // open, `before` and `after` are the same FP32 number, since the same sums and
+  // products compute both, so a change of the layout adds an exact 0, e.g. while the
+  // window is resized, and the displacement and the velocity keep every bit. The
+  // thumbnails are then drawn in the new layout in the same evaluation, and don't
+  // trail behind the window. A thumbnail that is on its way stays as many px from its
+  // place as it was, and goes on from there.
+  //
+  // Until October 14, 2026 a state cell held each destination from the evaluation
+  // before, so a change of the layout started every thumbnail's spring toward its new
+  // place. E.g. the strip was up to 35 px behind a window whose corner was dragged,
+  // and 415 px behind a window that was maximized, for up to a quarter of a second.
+  // The thumbnails also needed a rule that put them at rest with the grid in view,
+  // where a change of the box's width moved every destination, the box's middle,
+  // with nothing drawn. Now that change moves no spring, and the thumbnails snap only
+  // when the host plans a snap.
   const thumbnailTargets = projectThumbnailTargets(nextFocus, nextFocusMass)
-  // Thumbnails are springs while a photo is open or a zoom is under way: at an open
-  // they grow out of the strip's middle to their places, and at a close they shrink
-  // back into it, since with no photo open every thumbnail's destination is the
-  // strip's middle at size 0. With no photo open and no zoom under way they snap onto
-  // that destination, e.g. while the window is resized with the grid in view, so
-  // that nothing moves where nothing is drawn. They also snap when the host plans a
-  // snap. Whether a zoom is under way comes from the stored underWay bit, i.e. from
-  // the evaluation before this one, which is at most one settle check late and keeps
-  // the thumbnails' operations out of the layers after the zoom's settle bits: reading
-  // this evaluation's bits made the program 7 layers deeper.
-  const underWay = circuit.affine([
-    [circuit.reglu([], 1, [[firstSpring.active, -1], [secondSpring.active, -1]], 1), -1],
-  ], 1)
-  circuit.assumeRange(underWay, 0, 1)
-  table.next(cells.zoom.underWay, underWay)
-  const stripIdle = circuit.reglu(
-    [],
-    1,
-    [[previousFocusMass, -1], [nextFocusMass, -1], [cells.zoom.underWay, -1]],
-    1,
-  )
-  const thumbnailsKeepMoving = circuit.reglu([], 1, [[host.snap, -1], [stripIdle, -1]], 1)
-  const snapThumbnails = circuit.affine([[thumbnailsKeepMoving, -1]], 1)
-  circuit.assumeRange(snapThumbnails, 0, 1)
   const thumbnailProjections: ThumbnailProjection[] = []
   const activityTerms: [Wire, number][] = [[firstSpring.active, 1], [secondSpring.active, 1]]
   for (let item = 0; item < itemCount; item++) {
+    const before = currentThumbnailTargets[item]!
     const target = thumbnailTargets[item]!
     // centerX and scale settle together. The steps simulate time before this
-    // evaluation's events, so they pull toward the destinations that the previous
-    // evaluation wrote back.
+    // evaluation's events, so they pull toward the destinations for the photo that
+    // was open before them.
     const thumbnail = emitAnimatedObject(circuit, [
       {
         matrix: host.springMatrix,
         displacement: cells.thumbnails[item]!.centerXDisplacement,
         velocity: cells.thumbnails[item]!.centerXVelocity,
         destination: target.centerX,
-        destinationDuringSteps: cells.thumbnails[item]!.centerXDestination,
+        destinationDuringSteps: before.centerX,
       },
       {
         matrix: host.springMatrix,
         displacement: cells.thumbnails[item]!.scaleDisplacement,
         velocity: cells.thumbnails[item]!.scaleVelocity,
         destination: target.scale,
-        destinationDuringSteps: cells.thumbnails[item]!.scaleDestination,
+        destinationDuringSteps: before.scale,
       },
-    ], {settleCheck: host.settleCheck, snap: snapThumbnails})
+    ], {settleCheck: host.settleCheck, snap: host.snap})
     // Clamped only where drawn, e.g. a scale that undershoots 0 while springing
     // keeps its stored displacement.
     const centerX = emitMinimum(
@@ -888,10 +890,8 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
     table.next(cells.thumbnails[item]!, {
       centerXDisplacement: thumbnail.displacements[0]!,
       centerXVelocity: thumbnail.velocities[0]!,
-      centerXDestination: target.centerX,
       scaleDisplacement: thumbnail.displacements[1]!,
       scaleVelocity: thumbnail.velocities[1]!,
-      scaleDestination: target.scale,
     })
     // The ring of a thumbnail is as strong as its photo is open, so it fades in with
     // the photo that opens and out with the photo that returns. With the focus bit, it
@@ -1146,9 +1146,10 @@ export function createPhotoGalleryMachine(options: {writeBack?: WriteBack} = {})
         const earliest = queued.reduce((time, event) => Math.min(time, event.timeStamp ?? frameTime), frameTime)
         queueViewport('mount', viewportWidth, viewportHeight, earliest)
       } else if (viewportWidth !== queuedViewport[0] || viewportHeight !== queuedViewport[1]) {
-        // The viewport sets thumbnail destinations, so a change reaches the program
-        // as an event. Written without one, it would change destinations only in
-        // frame evaluations, which never start the clock.
+        // A change of the viewport reaches the program as an event, so the stored
+        // table holds it. Written without one, it would reach only frame
+        // evaluations, which run on a copy of the table, and a later click would be
+        // tested against the layout for the old viewport.
         queueViewport('resize', viewportWidth, viewportHeight, frameTime)
       }
       const events = queued.map(event => ({...event, timeStamp: event.timeStamp ?? frameTime}))
