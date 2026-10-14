@@ -131,7 +131,7 @@ export function arrangeWindows(workspace: Rectangle, minimum: Size, natural: rea
   const rectangles = !fitsTwoRows
     ? arrangeRow(workspace, minimum, sizes, metrics)
     : workspace.width >= 1000
-      ? arrangeDesk(workspace, minimum, sizes)
+      ? arrangeDesk(workspace, minimum, sizes, metrics)
       : workspace.width >= 640
         ? arrangeColumns(workspace, minimum, sizes, metrics)
         : arrangeColumn(workspace, minimum, sizes, metrics)
@@ -152,27 +152,17 @@ function fitInto(rectangle: Rectangle, workspace: Rectangle, minimum: Size): Rec
   }
 }
 
-function arrangeDesk(workspace: Rectangle, minimum: Size, [monitor, notes, photos]: readonly [Size, Size, Size]): Rectangle[] {
+function arrangeDesk(workspace: Rectangle, minimum: Size, [monitor, notes, photos]: readonly [Size, Size, Size], metrics: ArrangementMetrics): Rectangle[] {
   const gap = 24
   const margin = 24
   // Photos starts 240 px right of Notes' left edge and 126 px below Notes' top: two
   // full lines of text above Photos, then a column of 205 px beside it.
   const photosOffsetX = 240
   const photosOffsetY = 126
-  // The group at full size: 1364 × 556 px, down to Photos' bottom edge.
+  // The group at full size is 1364 px wide.
   const fullWidth = monitor.width + gap + photosOffsetX + photos.width
-  const fullHeight = photosOffsetY + photos.height
   const width = Math.min(fullWidth, workspace.width - 2 * margin)
-  const height = Math.min(fullHeight, workspace.height - 2 * margin)
-  // The page prints the list of things to try on the desk's lower right, on a
-  // workspace of at least 1100 × 738 px, i.e. a viewport of 1100 × 850 px, see
-  // .desk-legend in handwired-os.css. There, 160 px stay free under the group where
-  // the height allows: the list's 124 px, the 12 px under it, and 24 px above it.
-  // Space beyond that is split above and below.
-  const legendRoom = workspace.width >= 1100 && workspace.height >= 738 ? 160 - margin : 0
-  const spare = Math.max(0, workspace.height - 2 * margin - legendRoom - height)
   const originX = workspace.left + (workspace.width - width) / 2
-  const originY = workspace.top + margin + spare / 2
 
   // A narrower group takes the first 120 px of the missing width from Photos, whose
   // photos are still 87 px wide then, so that Monitor keeps the width that shows
@@ -183,7 +173,25 @@ function arrangeDesk(workspace: Rectangle, minimum: Size, [monitor, notes, photo
   const notesLeft = monitorWidth + gap
   const photosLeft = notesLeft + photosOffsetX
   const photosWidth = clamp(width - photosLeft, minimum.width, photos.width)
+
+  // Photos shows 4 columns and 3 rows of photos, with its gap around and between
+  // them, under the title bar. At its default size a photo is 117 × 104 px. A
+  // narrower Photos is shorter too, where its photos would otherwise be more than
+  // 1.25 times as tall as wide, e.g. 306 × 319 px instead of 306 × 430 px.
+  const photoWidth = (photosWidth - 2 * border - 5 * metrics.photosGap) / 4
+  const photosTallest = metrics.titleHeight + 2 * border + 4 * metrics.photosGap + 3 * 1.25 * photoWidth
+  // The group is as tall as Notes and Photos together, 556 px at full size, and
+  // Monitor is as tall as the group.
+  const height = Math.min(photosOffsetY + Math.min(photos.height, photosTallest), workspace.height - 2 * margin)
   const photosHeight = clamp(height - photosOffsetY, minimum.height, photos.height)
+  // The page prints the list of things to try on the desk's lower right, on a
+  // workspace of at least 1100 × 738 px, i.e. a viewport of 1100 × 850 px, see
+  // .desk-legend in handwired-os.css. There, 160 px stay free under the group where
+  // the height allows: the list's 124 px, the 12 px under it, and 24 px above it.
+  // Space beyond that is split above and below.
+  const legendRoom = workspace.width >= 1100 && workspace.height >= 738 ? 160 - margin : 0
+  const spare = Math.max(0, workspace.height - 2 * margin - legendRoom - height)
+  const originY = workspace.top + margin + spare / 2
 
   return [
     {left: originX, top: originY, width: monitorWidth, height},

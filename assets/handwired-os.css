@@ -110,8 +110,8 @@ body {
 /* Things to try, printed on the desk's lower right corner. Windows pass over it. The
    windows' first arrangement, see arrangement.ts, leaves this corner free on a viewport of
    at least 1100 × 850 px: the list's five lines and its label are 124 px tall and end
-   12 px above the dock's strip, so at 850 px of height the label starts 22 px under
-   Photos. */
+   12 px above the dock's strip, so at 850 px of height the label starts at least 22 px
+   under Photos. */
 .desk-legend {
   position: absolute;
   z-index: 0;

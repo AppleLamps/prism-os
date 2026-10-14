@@ -92,6 +92,24 @@ test('a viewport 1280 px wide narrows Photos, and Monitor keeps the width that s
   assert.equal(102 - systemBarHeight, 800 - dockHeight - (228 + 430))
 })
 
+test('on a narrower desk Photos is shorter too, so that its photos are at most 1.25 times as tall as wide', () => {
+  // A photo's size in Photos: 4 columns and 3 rows, with the 18 px gap around and
+  // between them, inside the 1 px border and under the 44 px title bar.
+  const photoOf = (photos: Rectangle) => ({width: (photos.width - 2 - 5 * 18) / 4, height: (photos.height - 44 - 2 - 4 * 18) / 3})
+  for (const [width, height] of [[1100, 850], [1024, 768], [1000, 700]] as const) {
+    const [monitor, notes, photos] = arrangeWindows(workspaceOf(width, height), minimum, natural, metrics) as [Rectangle, Rectangle, Rectangle]
+    const photo = photoOf(photos)
+    const label = `${width} × ${height}`
+    assert.ok(photos.width < 400 && photos.height < 430, `${label}: Photos is ${photos.width} × ${photos.height}`)
+    // Within the half pixel that rounding the window's height to whole pixels moves a photo's height.
+    assert.ok(Math.abs(photo.height - 1.25 * photo.width) < 0.5, `${label}: a photo is ${photo.width} × ${photo.height}`)
+    // Monitor is still as tall as Notes and Photos together.
+    assert.deepEqual([monitor.top, monitor.top + monitor.height], [notes.top, photos.top + photos.height], label)
+  }
+  // At 1280 px of width, Photos is 434 px wide and keeps its height: a photo is 85.5 × 104 px.
+  assert.deepEqual(photoOf(arrangeWindows(workspaceOf(1280, 800), minimum, natural, metrics)[2]!), {width: 85.5, height: 104})
+})
+
 test('a larger viewport centers the group, at the same sizes', () => {
   const reference = arrangeWindows(workspaceOf(1440, 900), minimum, natural, metrics)
   const large = arrangeWindows(workspaceOf(1920, 1080), minimum, natural, metrics)
