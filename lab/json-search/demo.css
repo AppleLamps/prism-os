@@ -27,7 +27,7 @@
   .with-touch { display: inline; }
 }
 
-/* The caption is two sentences, so it gets a wider column than site.css's one-sentence caption. */
+/* The caption is three sentences, so it gets a wider column than site.css's one-sentence caption. */
 .deck { max-width: 47em; }
 
 /* What the page does instead of searching the wanted documents on the GPU, and why. */
