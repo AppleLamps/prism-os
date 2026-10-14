@@ -46,8 +46,8 @@
       <div>
         <div class="stage-head"><span class="label">Sketch</span><span id="learning-count" class="stage-note"></span></div>
         <!-- learned-gallery.ts adds the rectangles, which are positioned in percent of this box. The sketch takes
-             focus at a press, so that the Delete key reaches it. It isn't a stop of the Tab key, since no key
-             selects or moves a rectangle. -->
+             focus at a press, which turns its outline copper. It isn't a stop of the Tab key, since no key selects
+             or moves a rectangle. The Delete key removes the selected rectangle wherever the focus is. -->
         <div id="learning-target" class="surface stage sketch" tabindex="-1" role="group" aria-label="Sketch: rectangles to drag, resize, add and delete">
           <!-- learned-gallery.ts shows this line while the sketch has no rectangle. -->
           <p id="learning-empty" class="stage-hint" style="display: none"><span class="for-mouse">Click</span><span class="for-finger">Tap</span> to add a rectangle</p>

@@ -1067,8 +1067,8 @@ function mountLearnedGallery(document: Document, window: Window) {
     domCache.chartHairline.setAttribute('y2', `${chartBounds.height}`)
     domCache.chartHairline.style.display = chartPointerX === null ? 'none' : 'inline'
 
-    // Side effects. The stage takes focus at a press so that the Delete key reaches it, and captures the pointer
-    // of a drag so that the drag continues outside the stage.
+    // Side effects. The stage takes focus at a press, so its outline turns copper and the focus leaves e.g. the
+    // slider, and it captures the pointer of a drag so that the drag continues outside the stage.
     if (frame.pressed) domCache.sketchStage.focus({preventScroll: true})
     if (frame.capturedPointer !== null) domCache.sketchStage.setPointerCapture(frame.capturedPointer)
     if (frame.training) scheduleRender()
@@ -1097,7 +1097,10 @@ function mountLearnedGallery(document: Document, window: Window) {
   domCache.sketchStage.addEventListener('pointerup', event => record({kind: 'pointer up', pointerId: event.pointerId}))
   domCache.sketchStage.addEventListener('pointercancel', event => record({kind: 'pointer cancel', pointerId: event.pointerId}))
   domCache.sketchStage.addEventListener('pointerleave', event => record({kind: 'pointer leave', pointerId: event.pointerId}))
-  domCache.sketchStage.addEventListener('keydown', event => {
+  // The Delete key removes the selected rectangle wherever the keyboard's focus is, e.g. on the slider after the
+  // visitor moved it, since the rectangle stays drawn as selected there. The page has no text field that the key
+  // could edit instead.
+  document.addEventListener('keydown', event => {
     if (event.key !== 'Backspace' && event.key !== 'Delete') return
     event.preventDefault()
     record({kind: 'delete'})
