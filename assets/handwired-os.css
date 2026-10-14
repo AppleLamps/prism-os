@@ -217,7 +217,8 @@ body {
   }
 }
 
-/* Windows: sheets of paper. The window with focus is whiter and casts the larger shadow. */
+/* Windows: sheets of paper. The window with focus is whiter, casts the larger shadow, and
+   has a copper wash on its title bar. */
 .window {
   position: absolute;
   top: 0;
@@ -243,14 +244,19 @@ body {
    frame's outer edge. So the padding is 1 px less on the right than the program's gap, and
    1 px at the bottom: the buttons are then centered 22 px below the frame's top and end
    10 px before its right edge, exactly on the rectangles that the program tests presses
-   against. */
+   against.
+
+   The bar of the window with focus is washed with copper, over a copper hairline, so the
+   window that takes the keys can be told at a glance, e.g. among three windows that
+   overlap. Without focus the bar is the sheet itself. */
 .titlebar {
   height: var(--title-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 calc(var(--button-gap) - 1px) 1px 14px;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid color-mix(in srgb, var(--copper-line) calc(var(--focused) * 100%), var(--rule));
+  background: color-mix(in srgb, var(--copper-wash-deep) calc(var(--focused) * 100%), transparent);
   cursor: grab;
 }
 
