@@ -1,0 +1,4366 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T14:34:55.502Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 11.33 12.37 13.77 }",
+  "memoryBefore": "System-wide memory free percentage: 61%",
+  "busiestBefore": [],
+  "argv": [
+   "--mode",
+   "compact",
+   "--count",
+   "2000",
+   "--engines",
+   "program-step-masked,program-bits-masked",
+   "--salt",
+   "918273602",
+   "--samples",
+   "3",
+   "--sample-ms",
+   "30",
+   "--pause-samples",
+   "1",
+   "--profile",
+   "chrome-profile",
+   "--out",
+   "d.json",
+   "--port",
+   "4554",
+   "--devtools-port",
+   "9554"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T14:35:05.555Z",
+    "load": "{ 12.87 12.68 13.86 }"
+   },
+   {
+    "at": "2026-10-14T14:35:15.558Z",
+    "load": "{ 12.27 12.56 13.81 }"
+   },
+   {
+    "at": "2026-10-14T14:35:25.560Z",
+    "load": "{ 11.45 12.38 13.73 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9554",
+   "--user-data-dir=chrome-profile",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900",
+   "--js-flags=--expose-gc"
+  ],
+  "chromePid": 12360,
+  "browser": "Chrome/155.0.8059.80",
+  "finishedAt": "2026-10-14T14:35:26.819Z",
+  "loadAfter": "{ 11.45 12.38 13.73 }",
+  "memoryAfter": "System-wide memory free percentage: 61%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T14:34:56.104Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "crossOriginIsolated": true,
+  "config": {
+   "mode": "compact",
+   "count": 2000,
+   "patterns": [
+    "error",
+    "[a-z]+Id",
+    "[a-z0-9.]+@[a-z.]+",
+    "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "([a-z]+)+x",
+    "connection reset"
+   ],
+   "capacities": [
+    8,
+    16,
+    32
+   ],
+   "shaderSalt": 918273602,
+   "pieceDocuments": 50000,
+   "engines": [
+    "program-step-masked",
+    "program-bits-masked"
+   ],
+   "f32": true,
+   "pausesMs": [
+    200
+   ],
+   "longPausesMs": [
+    1000
+   ],
+   "longPauseEngines": [
+    "f32-kernel",
+    "bytes",
+    "bytes-scope-has"
+   ],
+   "pauseSamples": 1,
+   "restMs": 0,
+   "warmPauses": [],
+   "minimumSamples": 3,
+   "sampleMs": 30,
+   "layout": "fixed",
+   "workers": 8,
+   "scopeBits": true,
+   "limits": "needed",
+   "keepTexts": false,
+   "regExpFlags": "",
+   "jsSamples": 9,
+   "jsPauseMs": 0,
+   "filterWorkers": 8,
+   "jsParts": [
+    "wholeText",
+    "parse",
+    "walk",
+    "collected",
+    "workers"
+   ]
+  },
+  "memory": {
+   "after the searches, with every layout's buffers": {
+    "javaScriptBytes": 10847695,
+    "javaScriptBreakdown": [
+     {
+      "megabytes": 10,
+      "types": [
+       "JavaScript"
+      ],
+      "scopes": [
+       "Window"
+      ]
+     }
+    ],
+    "usedHeapBytes": 10724607,
+    "processes": {
+     "processes": [
+      {
+       "pid": 12360,
+       "type": "browser",
+       "residentBytes": 575733760,
+       "footprintBytes": 118343888,
+       "footprintPeakBytes": 419252432
+      },
+      {
+       "pid": 12364,
+       "type": "gpu-process",
+       "residentBytes": 161710080,
+       "footprintBytes": 98715304,
+       "footprintPeakBytes": 1202194088
+      },
+      {
+       "pid": 12380,
+       "type": "renderer",
+       "residentBytes": 160890880,
+       "footprintBytes": 60622432,
+       "footprintPeakBytes": 75515488
+      },
+      {
+       "pid": 12383,
+       "type": "renderer",
+       "residentBytes": 102547456,
+       "footprintBytes": 28837136,
+       "footprintPeakBytes": 30033168
+      },
+      {
+       "pid": 12386,
+       "type": "renderer",
+       "residentBytes": 170983424,
+       "footprintBytes": 72058560,
+       "footprintPeakBytes": 139691712
+      },
+      {
+       "pid": 12431,
+       "type": "renderer",
+       "residentBytes": 85278720,
+       "footprintBytes": 27133248,
+       "footprintPeakBytes": 28820800
+      }
+     ],
+     "availableGigabytes": 16.2,
+     "swap": "total = 6144.00M  used = 4868.12M  free = 1275.88M  (encrypted)"
+    }
+   }
+  },
+  "loadAtStart": 11.33,
+  "adapter": {
+   "info": {
+    "vendor": "apple",
+    "architecture": "metal-3",
+    "description": "Apple M5 Max"
+   },
+   "limits": {
+    "maxStorageBufferBindingSize": 4294967292,
+    "maxBufferSize": 4294967292,
+    "maxComputeWorkgroupsPerDimension": 65535
+   },
+   "hasTimestamps": true,
+   "grantedBufferBytes": 134217728
+  },
+  "emptyPipelineMs": 17.08,
+  "prepare": {
+   "generateMs": 14.77,
+   "fixedMs": 1.81,
+   "packedMs": 1.43,
+   "highlightMs": 4.785,
+   "scopeBitsMs": 2.505,
+   "cellsMs": 2.195,
+   "expectedMs": 370.34,
+   "characters": 599216,
+   "longestCodePoints": 512,
+   "documentsPast512": 0
+  },
+  "buffers": {
+   "fixedBytes": 1024000,
+   "scopeBytes": 256000,
+   "packedBytes": 602240,
+   "startsBytes": 8004,
+   "f32Bytes": 4104000
+  },
+  "patterns": [
+   {
+    "pattern": "error",
+    "states": 6,
+    "capacity": 8,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 248,
+     "keys": 189,
+     "strings": 59
+    },
+    "documentsWithMatch": {
+     "everything": 204,
+     "keys": 189,
+     "strings": 59
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   },
+   {
+    "pattern": "[a-z]+Id",
+    "states": 4,
+    "capacity": 8,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 484,
+     "keys": 484,
+     "strings": 0
+    },
+    "documentsWithMatch": {
+     "everything": 484,
+     "keys": 484,
+     "strings": 0
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   },
+   {
+    "pattern": "[a-z0-9.]+@[a-z.]+",
+    "states": 4,
+    "capacity": 8,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 296,
+     "keys": 0,
+     "strings": 296
+    },
+    "documentsWithMatch": {
+     "everything": 296,
+     "keys": 0,
+     "strings": 296
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   },
+   {
+    "pattern": "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+    "states": 11,
+    "capacity": 16,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 548,
+     "keys": 0,
+     "strings": 548
+    },
+    "documentsWithMatch": {
+     "everything": 548,
+     "keys": 0,
+     "strings": 548
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   },
+   {
+    "pattern": "([a-z]+)+x",
+    "states": 3,
+    "capacity": 8,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 1358,
+     "keys": 479,
+     "strings": 879
+    },
+    "documentsWithMatch": {
+     "everything": 928,
+     "keys": 408,
+     "strings": 664
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   },
+   {
+    "pattern": "connection reset",
+    "states": 17,
+    "capacity": 32,
+    "exactOnBytes": true,
+    "matches": {
+     "everything": 29,
+     "keys": 0,
+     "strings": 29
+    },
+    "documentsWithMatch": {
+     "everything": 29,
+     "keys": 0,
+     "strings": 29
+    },
+    "regExpDiffers": 0,
+    "walkDiffers": {
+     "keys": 0,
+     "strings": 0
+    }
+   }
+  ],
+  "results": [
+   {
+    "states": 8,
+    "engine": "program-step-masked",
+    "what": "the program's step with a scope, which the demo page runs, as loop-emit.ts writes it",
+    "patterns": [
+     "error",
+     "[a-z]+Id",
+     "[a-z0-9.]+@[a-z.]+",
+     "([a-z]+)+x"
+    ],
+    "compileMs": 10.605,
+    "scopes": [
+     {
+      "scope": "everything",
+      "at": "2026-10-14T14:34:56.688Z",
+      "load": 11.33,
+      "firstSearchMs": 12.81,
+      "backToBack": {
+       "patternMs": {
+        "count": 27,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.035,
+        "min": 0.015,
+        "max": 0.04
+       },
+       "submitMs": {
+        "count": 27,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.025
+       },
+       "waitMs": {
+        "count": 27,
+        "median": 1.085,
+        "p10": 1.055,
+        "p90": 1.14,
+        "min": 1.045,
+        "max": 1.22
+       },
+       "copyMs": {
+        "count": 27,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 27,
+        "median": 1.125,
+        "p10": 1.105,
+        "p90": 1.195,
+        "min": 1.08,
+        "max": 1.285
+       },
+       "gapMs": {
+        "count": 27,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "totals": [
+        1.14,
+        1.14,
+        1.115,
+        1.12,
+        1.13,
+        1.095,
+        1.145,
+        1.21,
+        1.16,
+        1.125,
+        1.11,
+        1.12,
+        1.105,
+        1.08,
+        1.125,
+        1.16,
+        1.16,
+        1.195,
+        1.145,
+        1.115,
+        1.125,
+        1.19,
+        1.285,
+        1.15,
+        1.125,
+        1.11,
+        1.105
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 22,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.03,
+        "min": 0.02,
+        "max": 0.035
+       },
+       "submitMs": {
+        "count": 22,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.025
+       },
+       "waitMs": {
+        "count": 22,
+        "median": 1.227,
+        "p10": 1.185,
+        "p90": 1.29,
+        "min": 1.17,
+        "max": 1.4
+       },
+       "copyMs": {
+        "count": 22,
+        "median": 0.008,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 22,
+        "median": 1.36,
+        "p10": 1.305,
+        "p90": 1.42,
+        "min": 1.29,
+        "max": 1.53
+       },
+       "passMs": {
+        "count": 22,
+        "median": 0.782,
+        "p10": 0.776,
+        "p90": 0.815,
+        "min": 0.775,
+        "max": 0.889
+       },
+       "gapMs": {
+        "count": 22,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.35,
+        1.43,
+        1.38,
+        1.355,
+        1.33,
+        1.375,
+        1.395,
+        1.325,
+        1.3,
+        1.315,
+        1.53,
+        1.39,
+        1.335,
+        1.39,
+        1.405,
+        1.42,
+        1.33,
+        1.315,
+        1.305,
+        1.415,
+        1.29,
+        1.365
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.05,
+         "p10": 0.05,
+         "p90": 0.05,
+         "min": 0.05,
+         "max": 0.05
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.05,
+         "p10": 0.05,
+         "p90": 0.05,
+         "min": 0.05,
+         "max": 0.05
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 4.135,
+         "p10": 4.135,
+         "p90": 4.135,
+         "min": 4.135,
+         "max": 4.135
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.02,
+         "p10": 0.02,
+         "p90": 0.02,
+         "min": 0.02,
+         "max": 0.02
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 4.265,
+         "p10": 4.265,
+         "p90": 4.265,
+         "min": 4.265,
+         "max": 4.265
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.14,
+         "p10": 202.14,
+         "p90": 202.14,
+         "min": 202.14,
+         "max": 202.14
+        },
+        "totals": [
+         4.265
+        ]
+       }
+      ],
+      "loadAfter": 11.33
+     },
+     {
+      "scope": "strings",
+      "at": "2026-10-14T14:34:57.369Z",
+      "load": 11.33,
+      "firstSearchMs": 5.36,
+      "backToBack": {
+       "patternMs": {
+        "count": 25,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.04,
+        "min": 0.02,
+        "max": 0.045
+       },
+       "submitMs": {
+        "count": 25,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.025,
+        "min": 0.015,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 25,
+        "median": 1.135,
+        "p10": 1.105,
+        "p90": 1.185,
+        "min": 1.08,
+        "max": 1.26
+       },
+       "copyMs": {
+        "count": 25,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 25,
+        "median": 1.2,
+        "p10": 1.165,
+        "p90": 1.26,
+        "min": 1.13,
+        "max": 1.32
+       },
+       "gapMs": {
+        "count": 25,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.2,
+        1.19,
+        1.18,
+        1.235,
+        1.22,
+        1.19,
+        1.175,
+        1.155,
+        1.275,
+        1.23,
+        1.2,
+        1.22,
+        1.18,
+        1.17,
+        1.18,
+        1.13,
+        1.24,
+        1.22,
+        1.235,
+        1.26,
+        1.165,
+        1.185,
+        1.32,
+        1.255,
+        1.24
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 22,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.03,
+        "min": 0.015,
+        "max": 0.035
+       },
+       "submitMs": {
+        "count": 22,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.01,
+        "max": 0.015
+       },
+       "waitMs": {
+        "count": 22,
+        "median": 1.225,
+        "p10": 1.195,
+        "p90": 1.32,
+        "min": 1.17,
+        "max": 1.395
+       },
+       "copyMs": {
+        "count": 22,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 22,
+        "median": 1.353,
+        "p10": 1.31,
+        "p90": 1.46,
+        "min": 1.275,
+        "max": 1.53
+       },
+       "passMs": {
+        "count": 22,
+        "median": 0.783,
+        "p10": 0.776,
+        "p90": 0.819,
+        "min": 0.775,
+        "max": 0.851
+       },
+       "gapMs": {
+        "count": 22,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "totals": [
+        1.34,
+        1.37,
+        1.385,
+        1.435,
+        1.4,
+        1.53,
+        1.35,
+        1.31,
+        1.465,
+        1.325,
+        1.35,
+        1.34,
+        1.335,
+        1.275,
+        1.295,
+        1.415,
+        1.355,
+        1.355,
+        1.32,
+        1.32,
+        1.44,
+        1.46
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.04,
+         "p10": 0.04,
+         "p90": 0.04,
+         "min": 0.04,
+         "max": 0.04
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.04,
+         "p10": 0.04,
+         "p90": 0.04,
+         "min": 0.04,
+         "max": 0.04
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 4.51,
+         "p10": 4.51,
+         "p90": 4.51,
+         "min": 4.51,
+         "max": 4.51
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.005,
+         "p10": 0.005,
+         "p90": 0.005,
+         "min": 0.005,
+         "max": 0.005
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 4.605,
+         "p10": 4.605,
+         "p90": 4.605,
+         "min": 4.605,
+         "max": 4.605
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.075,
+         "p10": 202.075,
+         "p90": 202.075,
+         "min": 202.075,
+         "max": 202.075
+        },
+        "totals": [
+         4.605
+        ]
+       }
+      ],
+      "loadAfter": 11.33
+     },
+     {
+      "scope": "keys",
+      "at": "2026-10-14T14:34:58.049Z",
+      "load": 11.33,
+      "firstSearchMs": 4.56,
+      "backToBack": {
+       "patternMs": {
+        "count": 21,
+        "median": 0.035,
+        "p10": 0.03,
+        "p90": 0.04,
+        "min": 0.03,
+        "max": 0.045
+       },
+       "submitMs": {
+        "count": 21,
+        "median": 0.015,
+        "p10": 0.015,
+        "p90": 0.025,
+        "min": 0.01,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 21,
+        "median": 1.225,
+        "p10": 1.195,
+        "p90": 1.28,
+        "min": 1.185,
+        "max": 4.935
+       },
+       "copyMs": {
+        "count": 21,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 21,
+        "median": 1.295,
+        "p10": 1.26,
+        "p90": 1.35,
+        "min": 1.24,
+        "max": 5
+       },
+       "gapMs": {
+        "count": 21,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.01
+       },
+       "totals": [
+        1.46,
+        1.31,
+        1.27,
+        1.26,
+        1.24,
+        1.275,
+        1.315,
+        1.28,
+        5,
+        1.35,
+        1.345,
+        1.31,
+        1.285,
+        1.265,
+        1.295,
+        1.26,
+        1.3,
+        1.29,
+        1.305,
+        1.265,
+        1.31
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 20,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.045,
+        "min": 0.03,
+        "max": 0.05
+       },
+       "submitMs": {
+        "count": 20,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.03,
+        "min": 0.01,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 20,
+        "median": 1.345,
+        "p10": 1.265,
+        "p90": 1.53,
+        "min": 1.23,
+        "max": 1.54
+       },
+       "copyMs": {
+        "count": 20,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 20,
+        "median": 1.525,
+        "p10": 1.42,
+        "p90": 1.71,
+        "min": 1.38,
+        "max": 1.73
+       },
+       "passMs": {
+        "count": 20,
+        "median": 0.811,
+        "p10": 0.799,
+        "p90": 0.843,
+        "min": 0.793,
+        "max": 0.845
+       },
+       "gapMs": {
+        "count": 20,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.38,
+        1.71,
+        1.495,
+        1.47,
+        1.545,
+        1.545,
+        1.495,
+        1.495,
+        1.615,
+        1.705,
+        1.465,
+        1.505,
+        1.42,
+        1.415,
+        1.465,
+        1.59,
+        1.6,
+        1.57,
+        1.555,
+        1.73
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.055,
+         "p10": 0.055,
+         "p90": 0.055,
+         "min": 0.055,
+         "max": 0.055
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.05,
+         "p10": 0.05,
+         "p90": 0.05,
+         "min": 0.05,
+         "max": 0.05
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 5.03,
+         "p10": 5.03,
+         "p90": 5.03,
+         "min": 5.03,
+         "max": 5.03
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.02,
+         "p10": 0.02,
+         "p90": 0.02,
+         "min": 0.02,
+         "max": 0.02
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 5.16,
+         "p10": 5.16,
+         "p90": 5.16,
+         "min": 5.16,
+         "max": 5.16
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.07,
+         "p10": 202.07,
+         "p90": 202.07,
+         "min": 202.07,
+         "max": 202.07
+        },
+        "totals": [
+         5.16
+        ]
+       }
+      ],
+      "loadAfter": 11.33
+     }
+    ],
+    "checks": {
+     "searches": 961,
+     "values": 1922000,
+     "mismatches": 0
+    }
+   },
+   {
+    "states": 8,
+    "engine": "program-bits-masked",
+    "what": "the same step with a scope as bit-emit.ts writes it",
+    "patterns": [
+     "error",
+     "[a-z]+Id",
+     "[a-z0-9.]+@[a-z.]+",
+     "([a-z]+)+x"
+    ],
+    "compileMs": 5.425,
+    "scopes": [
+     {
+      "scope": "everything",
+      "at": "2026-10-14T14:34:58.749Z",
+      "load": 11.33,
+      "firstSearchMs": 3.455,
+      "backToBack": {
+       "patternMs": {
+        "count": 25,
+        "median": 0.035,
+        "p10": 0.03,
+        "p90": 0.045,
+        "min": 0.03,
+        "max": 0.05
+       },
+       "submitMs": {
+        "count": 25,
+        "median": 0.03,
+        "p10": 0.02,
+        "p90": 0.035,
+        "min": 0.02,
+        "max": 0.04
+       },
+       "waitMs": {
+        "count": 25,
+        "median": 1.15,
+        "p10": 0.995,
+        "p90": 1.25,
+        "min": 0.96,
+        "max": 1.335
+       },
+       "copyMs": {
+        "count": 25,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 25,
+        "median": 1.23,
+        "p10": 1.065,
+        "p90": 1.345,
+        "min": 1.045,
+        "max": 1.405
+       },
+       "gapMs": {
+        "count": 25,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.245,
+        1.23,
+        1.16,
+        1.065,
+        1.17,
+        1.23,
+        1.29,
+        1.235,
+        1.235,
+        1.345,
+        1.17,
+        1.26,
+        1.29,
+        1.27,
+        1.205,
+        1.15,
+        1.175,
+        1.115,
+        1.32,
+        1.39,
+        1.205,
+        1.065,
+        1.045,
+        1.405,
+        1.13
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 23,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.045,
+        "min": 0.03,
+        "max": 0.075
+       },
+       "submitMs": {
+        "count": 23,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.03,
+        "min": 0.02,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 23,
+        "median": 1.155,
+        "p10": 1.105,
+        "p90": 1.205,
+        "min": 1.095,
+        "max": 1.3
+       },
+       "copyMs": {
+        "count": 23,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 23,
+        "median": 1.34,
+        "p10": 1.285,
+        "p90": 1.395,
+        "min": 1.28,
+        "max": 1.48
+       },
+       "passMs": {
+        "count": 23,
+        "median": 0.683,
+        "p10": 0.67,
+        "p90": 0.713,
+        "min": 0.665,
+        "max": 0.738
+       },
+       "gapMs": {
+        "count": 23,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.335,
+        1.33,
+        1.34,
+        1.395,
+        1.35,
+        1.36,
+        1.35,
+        1.48,
+        1.395,
+        1.285,
+        1.4,
+        1.31,
+        1.305,
+        1.315,
+        1.295,
+        1.345,
+        1.28,
+        1.355,
+        1.325,
+        1.34,
+        1.29,
+        1.285,
+        1.39
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.055,
+         "p10": 0.055,
+         "p90": 0.055,
+         "min": 0.055,
+         "max": 0.055
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.06,
+         "p10": 0.06,
+         "p90": 0.06,
+         "min": 0.06,
+         "max": 0.06
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 2.075,
+         "p10": 2.075,
+         "p90": 2.075,
+         "min": 2.075,
+         "max": 2.075
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.02,
+         "p10": 0.02,
+         "p90": 0.02,
+         "min": 0.02,
+         "max": 0.02
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 2.225,
+         "p10": 2.225,
+         "p90": 2.225,
+         "min": 2.225,
+         "max": 2.225
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.085,
+         "p10": 202.085,
+         "p90": 202.085,
+         "min": 202.085,
+         "max": 202.085
+        },
+        "totals": [
+         2.225
+        ]
+       }
+      ],
+      "loadAfter": 11.33
+     },
+     {
+      "scope": "strings",
+      "at": "2026-10-14T14:34:59.427Z",
+      "load": 11.33,
+      "firstSearchMs": 2.43,
+      "backToBack": {
+       "patternMs": {
+        "count": 35,
+        "median": 0.03,
+        "p10": 0.03,
+        "p90": 0.045,
+        "min": 0.025,
+        "max": 0.055
+       },
+       "submitMs": {
+        "count": 35,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.025,
+        "min": 0.015,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 35,
+        "median": 0.79,
+        "p10": 0.775,
+        "p90": 0.86,
+        "min": 0.765,
+        "max": 0.935
+       },
+       "copyMs": {
+        "count": 35,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 35,
+        "median": 0.855,
+        "p10": 0.835,
+        "p90": 0.925,
+        "min": 0.82,
+        "max": 1.005
+       },
+       "gapMs": {
+        "count": 35,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        0.845,
+        0.92,
+        0.895,
+        0.9,
+        0.84,
+        0.855,
+        0.85,
+        0.83,
+        0.82,
+        0.85,
+        0.85,
+        0.855,
+        0.895,
+        0.885,
+        0.84,
+        0.925,
+        0.89,
+        0.87,
+        0.84,
+        0.855,
+        1.005,
+        0.935,
+        0.98,
+        0.875,
+        0.845,
+        0.85,
+        0.845,
+        0.845,
+        0.835,
+        0.825,
+        0.895,
+        0.87,
+        0.925,
+        0.865,
+        0.895
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 32,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.03,
+        "min": 0.02,
+        "max": 0.035
+       },
+       "submitMs": {
+        "count": 32,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.025,
+        "min": 0.015,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 32,
+        "median": 0.785,
+        "p10": 0.76,
+        "p90": 0.855,
+        "min": 0.73,
+        "max": 0.935
+       },
+       "copyMs": {
+        "count": 32,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 32,
+        "median": 0.94,
+        "p10": 0.91,
+        "p90": 1.01,
+        "min": 0.865,
+        "max": 1.075
+       },
+       "passMs": {
+        "count": 32,
+        "median": 0.349,
+        "p10": 0.342,
+        "p90": 0.38,
+        "min": 0.34,
+        "max": 0.397
+       },
+       "gapMs": {
+        "count": 32,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        0.935,
+        0.905,
+        0.94,
+        0.94,
+        1.005,
+        0.995,
+        1.025,
+        0.925,
+        0.94,
+        0.905,
+        0.92,
+        0.97,
+        0.97,
+        0.955,
+        1.02,
+        0.955,
+        1.01,
+        0.975,
+        0.91,
+        0.865,
+        0.92,
+        1.075,
+        0.935,
+        0.96,
+        0.925,
+        0.94,
+        0.915,
+        0.915,
+        0.93,
+        0.99,
+        0.91,
+        0.91
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.06,
+         "p10": 0.06,
+         "p90": 0.06,
+         "min": 0.06,
+         "max": 0.06
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.06,
+         "p10": 0.06,
+         "p90": 0.06,
+         "min": 0.06,
+         "max": 0.06
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 2.355,
+         "p10": 2.355,
+         "p90": 2.355,
+         "min": 2.355,
+         "max": 2.355
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.015,
+         "p10": 0.015,
+         "p90": 0.015,
+         "min": 0.015,
+         "max": 0.015
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 2.505,
+         "p10": 2.505,
+         "p90": 2.505,
+         "min": 2.505,
+         "max": 2.505
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 201.315,
+         "p10": 201.315,
+         "p90": 201.315,
+         "min": 201.315,
+         "max": 201.315
+        },
+        "totals": [
+         2.505
+        ]
+       }
+      ],
+      "loadAfter": 13.46
+     },
+     {
+      "scope": "keys",
+      "at": "2026-10-14T14:35:00.102Z",
+      "load": 13.46,
+      "firstSearchMs": 2.1,
+      "backToBack": {
+       "patternMs": {
+        "count": 32,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.04,
+        "min": 0.02,
+        "max": 0.055
+       },
+       "submitMs": {
+        "count": 32,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.025,
+        "min": 0.015,
+        "max": 0.04
+       },
+       "waitMs": {
+        "count": 32,
+        "median": 0.87,
+        "p10": 0.825,
+        "p90": 0.905,
+        "min": 0.785,
+        "max": 1.07
+       },
+       "copyMs": {
+        "count": 32,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 32,
+        "median": 0.93,
+        "p10": 0.89,
+        "p90": 0.985,
+        "min": 0.85,
+        "max": 1.13
+       },
+       "gapMs": {
+        "count": 32,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "totals": [
+        0.93,
+        0.93,
+        1.015,
+        0.97,
+        0.945,
+        0.93,
+        0.9,
+        0.95,
+        0.955,
+        1.13,
+        0.925,
+        0.89,
+        0.92,
+        0.985,
+        0.89,
+        0.9,
+        0.91,
+        0.935,
+        0.92,
+        0.925,
+        0.89,
+        0.91,
+        0.94,
+        0.91,
+        0.93,
+        0.95,
+        1.09,
+        0.975,
+        0.885,
+        0.85,
+        0.93,
+        0.94
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 24,
+        "median": 0.035,
+        "p10": 0.03,
+        "p90": 0.045,
+        "min": 0.03,
+        "max": 0.055
+       },
+       "submitMs": {
+        "count": 24,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.03,
+        "min": 0.015,
+        "max": 0.05
+       },
+       "waitMs": {
+        "count": 24,
+        "median": 1.085,
+        "p10": 1.035,
+        "p90": 1.16,
+        "min": 0.99,
+        "max": 1.36
+       },
+       "copyMs": {
+        "count": 24,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 24,
+        "median": 1.28,
+        "p10": 1.205,
+        "p90": 1.37,
+        "min": 1.16,
+        "max": 1.555
+       },
+       "passMs": {
+        "count": 24,
+        "median": 0.56,
+        "p10": 0.545,
+        "p90": 0.588,
+        "min": 0.525,
+        "max": 0.594
+       },
+       "gapMs": {
+        "count": 24,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.205,
+        1.195,
+        1.16,
+        1.28,
+        1.28,
+        1.26,
+        1.23,
+        1.32,
+        1.555,
+        1.3,
+        1.435,
+        1.245,
+        1.245,
+        1.285,
+        1.285,
+        1.305,
+        1.28,
+        1.34,
+        1.37,
+        1.33,
+        1.285,
+        1.26,
+        1.24,
+        1.235
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.055,
+         "p10": 0.055,
+         "p90": 0.055,
+         "min": 0.055,
+         "max": 0.055
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.05,
+         "p10": 0.05,
+         "p90": 0.05,
+         "min": 0.05,
+         "max": 0.05
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 2.475,
+         "p10": 2.475,
+         "p90": 2.475,
+         "min": 2.475,
+         "max": 2.475
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.015,
+         "p10": 0.015,
+         "p90": 0.015,
+         "min": 0.015,
+         "max": 0.015
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 2.6,
+         "p10": 2.6,
+         "p90": 2.6,
+         "min": 2.6,
+         "max": 2.6
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 200.35,
+         "p10": 200.35,
+         "p90": 200.35,
+         "min": 200.35,
+         "max": 200.35
+        },
+        "totals": [
+         2.6
+        ]
+       }
+      ],
+      "loadAfter": 13.46
+     }
+    ],
+    "checks": {
+     "searches": 1157,
+     "values": 2314000,
+     "mismatches": 0
+    }
+   },
+   {
+    "states": 16,
+    "engine": "program-step-masked",
+    "what": "the program's step with a scope, which the demo page runs, as loop-emit.ts writes it",
+    "patterns": [
+     "error",
+     "[a-z]+Id",
+     "[a-z0-9.]+@[a-z.]+",
+     "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+     "([a-z]+)+x"
+    ],
+    "compileMs": 41.595,
+    "scopes": [
+     {
+      "scope": "everything",
+      "at": "2026-10-14T14:35:00.854Z",
+      "load": 13.46,
+      "firstSearchMs": 19.205,
+      "backToBack": {
+       "patternMs": {
+        "count": 4,
+        "median": 0.075,
+        "p10": 0.075,
+        "p90": 0.08,
+        "min": 0.075,
+        "max": 0.08
+       },
+       "submitMs": {
+        "count": 4,
+        "median": 0.038,
+        "p10": 0.035,
+        "p90": 0.04,
+        "min": 0.035,
+        "max": 0.04
+       },
+       "waitMs": {
+        "count": 4,
+        "median": 7.755,
+        "p10": 7.735,
+        "p90": 7.815,
+        "min": 7.735,
+        "max": 7.815
+       },
+       "copyMs": {
+        "count": 4,
+        "median": 0.02,
+        "p10": 0.02,
+        "p90": 0.02,
+        "min": 0.02,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 4,
+        "median": 7.9,
+        "p10": 7.87,
+        "p90": 7.95,
+        "min": 7.87,
+        "max": 7.95
+       },
+       "gapMs": {
+        "count": 4,
+        "median": 0.008,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.01
+       },
+       "totals": [
+        7.87,
+        7.915,
+        7.885,
+        7.95
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 9,
+        "median": 0.07,
+        "p10": 0.055,
+        "p90": 0.075,
+        "min": 0.055,
+        "max": 0.075
+       },
+       "submitMs": {
+        "count": 9,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.045,
+        "min": 0.025,
+        "max": 0.045
+       },
+       "waitMs": {
+        "count": 9,
+        "median": 8.05,
+        "p10": 7.995,
+        "p90": 8.08,
+        "min": 7.995,
+        "max": 8.08
+       },
+       "copyMs": {
+        "count": 9,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.02,
+        "min": 0.01,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 9,
+        "median": 8.305,
+        "p10": 8.22,
+        "p90": 8.33,
+        "min": 8.22,
+        "max": 8.33
+       },
+       "passMs": {
+        "count": 9,
+        "median": 7.42,
+        "p10": 7.255,
+        "p90": 7.494,
+        "min": 7.255,
+        "max": 7.494
+       },
+       "gapMs": {
+        "count": 9,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.01
+       },
+       "totals": [
+        8.31,
+        8.325,
+        8.33,
+        8.285,
+        8.32,
+        8.22,
+        8.305,
+        8.285,
+        8.23
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.075,
+         "p10": 0.075,
+         "p90": 0.075,
+         "min": 0.075,
+         "max": 0.075
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.05,
+         "p10": 0.05,
+         "p90": 0.05,
+         "min": 0.05,
+         "max": 0.05
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 8.28,
+         "p10": 8.28,
+         "p90": 8.28,
+         "min": 8.28,
+         "max": 8.28
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.015,
+         "p10": 0.015,
+         "p90": 0.015,
+         "min": 0.015,
+         "max": 0.015
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 8.425,
+         "p10": 8.425,
+         "p90": 8.425,
+         "min": 8.425,
+         "max": 8.425
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 200.48,
+         "p10": 200.48,
+         "p90": 200.48,
+         "min": 200.48,
+         "max": 200.48
+        },
+        "totals": [
+         8.425
+        ]
+       }
+      ],
+      "loadAfter": 13.46
+     },
+     {
+      "scope": "strings",
+      "at": "2026-10-14T14:35:01.599Z",
+      "load": 13.46,
+      "firstSearchMs": 8.305,
+      "backToBack": {
+       "patternMs": {
+        "count": 4,
+        "median": 0.062,
+        "p10": 0.05,
+        "p90": 0.065,
+        "min": 0.05,
+        "max": 0.065
+       },
+       "submitMs": {
+        "count": 4,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.035,
+        "min": 0.025,
+        "max": 0.035
+       },
+       "waitMs": {
+        "count": 4,
+        "median": 7.635,
+        "p10": 7.59,
+        "p90": 7.82,
+        "min": 7.59,
+        "max": 7.82
+       },
+       "copyMs": {
+        "count": 4,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.01,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 4,
+        "median": 7.74,
+        "p10": 7.7,
+        "p90": 7.935,
+        "min": 7.7,
+        "max": 7.935
+       },
+       "gapMs": {
+        "count": 4,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "totals": [
+        7.935,
+        7.7,
+        7.725,
+        7.755
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 9,
+        "median": 0.055,
+        "p10": 0.05,
+        "p90": 0.07,
+        "min": 0.05,
+        "max": 0.07
+       },
+       "submitMs": {
+        "count": 9,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.04,
+        "min": 0.025,
+        "max": 0.04
+       },
+       "waitMs": {
+        "count": 9,
+        "median": 7.82,
+        "p10": 7.755,
+        "p90": 8.07,
+        "min": 7.755,
+        "max": 8.07
+       },
+       "copyMs": {
+        "count": 9,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.01,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 9,
+        "median": 8.065,
+        "p10": 7.995,
+        "p90": 8.275,
+        "min": 7.995,
+        "max": 8.275
+       },
+       "passMs": {
+        "count": 9,
+        "median": 7.282,
+        "p10": 7.222,
+        "p90": 7.534,
+        "min": 7.222,
+        "max": 7.534
+       },
+       "gapMs": {
+        "count": 9,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.01
+       },
+       "totals": [
+        8.065,
+        7.995,
+        8.02,
+        8.075,
+        8.21,
+        8.275,
+        8.025,
+        7.995,
+        8.095
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.06,
+         "p10": 0.06,
+         "p90": 0.06,
+         "min": 0.06,
+         "max": 0.06
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.045,
+         "p10": 0.045,
+         "p90": 0.045,
+         "min": 0.045,
+         "max": 0.045
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 7.7,
+         "p10": 7.7,
+         "p90": 7.7,
+         "min": 7.7,
+         "max": 7.7
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.015,
+         "p10": 0.015,
+         "p90": 0.015,
+         "min": 0.015,
+         "max": 0.015
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 7.825,
+         "p10": 7.825,
+         "p90": 7.825,
+         "min": 7.825,
+         "max": 7.825
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.055,
+         "p10": 202.055,
+         "p90": 202.055,
+         "min": 202.055,
+         "max": 202.055
+        },
+        "totals": [
+         7.825
+        ]
+       }
+      ],
+      "loadAfter": 13.46
+     },
+     {
+      "scope": "keys",
+      "at": "2026-10-14T14:35:02.336Z",
+      "load": 13.46,
+      "firstSearchMs": 8.305,
+      "backToBack": {
+       "patternMs": {
+        "count": 4,
+        "median": 0.057,
+        "p10": 0.05,
+        "p90": 0.06,
+        "min": 0.05,
+        "max": 0.06
+       },
+       "submitMs": {
+        "count": 4,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.035,
+        "min": 0.025,
+        "max": 0.035
+       },
+       "waitMs": {
+        "count": 4,
+        "median": 7.7,
+        "p10": 7.64,
+        "p90": 7.84,
+        "min": 7.64,
+        "max": 7.84
+       },
+       "copyMs": {
+        "count": 4,
+        "median": 0.013,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.01,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 4,
+        "median": 7.803,
+        "p10": 7.755,
+        "p90": 7.94,
+        "min": 7.755,
+        "max": 7.94
+       },
+       "gapMs": {
+        "count": 4,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.01
+       },
+       "totals": [
+        7.94,
+        7.77,
+        7.835,
+        7.755
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 9,
+        "median": 0.055,
+        "p10": 0.05,
+        "p90": 0.065,
+        "min": 0.05,
+        "max": 0.065
+       },
+       "submitMs": {
+        "count": 9,
+        "median": 0.03,
+        "p10": 0.025,
+        "p90": 0.035,
+        "min": 0.025,
+        "max": 0.035
+       },
+       "waitMs": {
+        "count": 9,
+        "median": 7.995,
+        "p10": 7.725,
+        "p90": 8.155,
+        "min": 7.725,
+        "max": 8.155
+       },
+       "copyMs": {
+        "count": 9,
+        "median": 0.015,
+        "p10": 0.01,
+        "p90": 0.015,
+        "min": 0.01,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 9,
+        "median": 8.2,
+        "p10": 7.94,
+        "p90": 8.37,
+        "min": 7.94,
+        "max": 8.37
+       },
+       "passMs": {
+        "count": 9,
+        "median": 7.41,
+        "p10": 7.21,
+        "p90": 7.607,
+        "min": 7.21,
+        "max": 7.607
+       },
+       "gapMs": {
+        "count": 9,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        8.37,
+        8.125,
+        8.285,
+        8.2,
+        8.315,
+        7.94,
+        8.155,
+        8.11,
+        8.2
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.07,
+         "p10": 0.07,
+         "p90": 0.07,
+         "min": 0.07,
+         "max": 0.07
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.05,
+         "p10": 0.05,
+         "p90": 0.05,
+         "min": 0.05,
+         "max": 0.05
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 8.215,
+         "p10": 8.215,
+         "p90": 8.215,
+         "min": 8.215,
+         "max": 8.215
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.02,
+         "p10": 0.02,
+         "p90": 0.02,
+         "min": 0.02,
+         "max": 0.02
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 8.36,
+         "p10": 8.36,
+         "p90": 8.36,
+         "min": 8.36,
+         "max": 8.36
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.06,
+         "p10": 202.06,
+         "p90": 202.06,
+         "min": 202.06,
+         "max": 202.06
+        },
+        "totals": [
+         8.36
+        ]
+       }
+      ],
+      "loadAfter": 13.46
+     }
+    ],
+    "checks": {
+     "searches": 198,
+     "values": 396000,
+     "mismatches": 0
+    }
+   },
+   {
+    "states": 16,
+    "engine": "program-bits-masked",
+    "what": "the same step with a scope as bit-emit.ts writes it",
+    "patterns": [
+     "error",
+     "[a-z]+Id",
+     "[a-z0-9.]+@[a-z.]+",
+     "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+     "([a-z]+)+x"
+    ],
+    "compileMs": 4.56,
+    "scopes": [
+     {
+      "scope": "everything",
+      "at": "2026-10-14T14:35:03.085Z",
+      "load": 13.46,
+      "firstSearchMs": 0.955,
+      "backToBack": {
+       "patternMs": {
+        "count": 41,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.045,
+        "min": 0.03,
+        "max": 0.05
+       },
+       "submitMs": {
+        "count": 41,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.03,
+        "min": 0.02,
+        "max": 0.035
+       },
+       "waitMs": {
+        "count": 41,
+        "median": 0.65,
+        "p10": 0.635,
+        "p90": 0.7,
+        "min": 0.62,
+        "max": 0.8
+       },
+       "copyMs": {
+        "count": 41,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 41,
+        "median": 0.72,
+        "p10": 0.705,
+        "p90": 0.775,
+        "min": 0.695,
+        "max": 0.88
+       },
+       "gapMs": {
+        "count": 41,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "totals": [
+        0.71,
+        0.71,
+        0.705,
+        0.72,
+        0.72,
+        0.78,
+        0.735,
+        0.75,
+        0.76,
+        0.72,
+        0.715,
+        0.7,
+        0.71,
+        0.705,
+        0.78,
+        0.755,
+        0.76,
+        0.77,
+        0.735,
+        0.705,
+        0.735,
+        0.725,
+        0.71,
+        0.71,
+        0.705,
+        0.71,
+        0.72,
+        0.72,
+        0.705,
+        0.71,
+        0.695,
+        0.88,
+        0.75,
+        0.74,
+        0.72,
+        0.71,
+        0.775,
+        0.845,
+        0.755,
+        0.735,
+        0.72
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 29,
+        "median": 0.045,
+        "p10": 0.04,
+        "p90": 0.055,
+        "min": 0.04,
+        "max": 0.09
+       },
+       "submitMs": {
+        "count": 29,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.04,
+        "min": 0.02,
+        "max": 0.045
+       },
+       "waitMs": {
+        "count": 29,
+        "median": 0.845,
+        "p10": 0.79,
+        "p90": 0.895,
+        "min": 0.785,
+        "max": 1.53
+       },
+       "copyMs": {
+        "count": 29,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 29,
+        "median": 1.005,
+        "p10": 0.945,
+        "p90": 1.105,
+        "min": 0.945,
+        "max": 1.78
+       },
+       "passMs": {
+        "count": 29,
+        "median": 0.397,
+        "p10": 0.391,
+        "p90": 0.436,
+        "min": 0.388,
+        "max": 0.477
+       },
+       "gapMs": {
+        "count": 29,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        0.945,
+        0.98,
+        0.97,
+        0.985,
+        0.945,
+        0.945,
+        0.995,
+        1,
+        1.005,
+        1.065,
+        1.02,
+        0.96,
+        0.95,
+        1.06,
+        1.075,
+        1.01,
+        0.98,
+        1.035,
+        1.085,
+        0.985,
+        0.99,
+        0.95,
+        1.105,
+        1.065,
+        1.025,
+        1.05,
+        1.01,
+        1.78,
+        1.12
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.075,
+         "p10": 0.075,
+         "p90": 0.075,
+         "min": 0.075,
+         "max": 0.075
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.06,
+         "p10": 0.06,
+         "p90": 0.06,
+         "min": 0.06,
+         "max": 0.06
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 2.145,
+         "p10": 2.145,
+         "p90": 2.145,
+         "min": 2.145,
+         "max": 2.145
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.02,
+         "p10": 0.02,
+         "p90": 0.02,
+         "min": 0.02,
+         "max": 0.02
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 2.305,
+         "p10": 2.305,
+         "p90": 2.305,
+         "min": 2.305,
+         "max": 2.305
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.06,
+         "p10": 202.06,
+         "p90": 202.06,
+         "min": 202.06,
+         "max": 202.06
+        },
+        "totals": [
+         2.305
+        ]
+       }
+      ],
+      "loadAfter": 13.46
+     },
+     {
+      "scope": "strings",
+      "at": "2026-10-14T14:35:03.760Z",
+      "load": 13.46,
+      "firstSearchMs": 2.96,
+      "backToBack": {
+       "patternMs": {
+        "count": 41,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.045,
+        "min": 0.03,
+        "max": 0.05
+       },
+       "submitMs": {
+        "count": 41,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.03,
+        "min": 0.02,
+        "max": 0.04
+       },
+       "waitMs": {
+        "count": 41,
+        "median": 0.655,
+        "p10": 0.635,
+        "p90": 0.715,
+        "min": 0.63,
+        "max": 0.765
+       },
+       "copyMs": {
+        "count": 41,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 41,
+        "median": 0.73,
+        "p10": 0.705,
+        "p90": 0.78,
+        "min": 0.695,
+        "max": 0.84
+       },
+       "gapMs": {
+        "count": 41,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        0.72,
+        0.83,
+        0.78,
+        0.75,
+        0.82,
+        0.74,
+        0.73,
+        0.735,
+        0.745,
+        0.74,
+        0.715,
+        0.705,
+        0.71,
+        0.7,
+        0.705,
+        0.745,
+        0.765,
+        0.745,
+        0.73,
+        0.825,
+        0.73,
+        0.725,
+        0.715,
+        0.84,
+        0.745,
+        0.735,
+        0.765,
+        0.77,
+        0.73,
+        0.715,
+        0.7,
+        0.705,
+        0.705,
+        0.7,
+        0.715,
+        0.71,
+        0.695,
+        0.71,
+        0.78,
+        0.735,
+        0.755
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 31,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.045,
+        "min": 0.035,
+        "max": 0.05
+       },
+       "submitMs": {
+        "count": 31,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.025,
+        "min": 0.02,
+        "max": 0.03
+       },
+       "waitMs": {
+        "count": 31,
+        "median": 0.815,
+        "p10": 0.77,
+        "p90": 0.85,
+        "min": 0.745,
+        "max": 0.985
+       },
+       "copyMs": {
+        "count": 31,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 31,
+        "median": 0.96,
+        "p10": 0.91,
+        "p90": 1.005,
+        "min": 0.895,
+        "max": 1.135
+       },
+       "passMs": {
+        "count": 31,
+        "median": 0.393,
+        "p10": 0.39,
+        "p90": 0.429,
+        "min": 0.389,
+        "max": 0.517
+       },
+       "gapMs": {
+        "count": 31,
+        "median": 0,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.005
+       },
+       "totals": [
+        0.99,
+        0.995,
+        0.895,
+        0.945,
+        1.135,
+        0.97,
+        0.955,
+        0.945,
+        0.96,
+        0.91,
+        0.935,
+        0.95,
+        0.94,
+        1.005,
+        0.995,
+        0.975,
+        0.98,
+        0.99,
+        0.93,
+        0.94,
+        1.085,
+        1.005,
+        1.055,
+        0.94,
+        0.97,
+        0.99,
+        0.965,
+        0.945,
+        0.915,
+        0.905,
+        0.895
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.055,
+         "p10": 0.055,
+         "p90": 0.055,
+         "min": 0.055,
+         "max": 0.055
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.05,
+         "p10": 0.05,
+         "p90": 0.05,
+         "min": 0.05,
+         "max": 0.05
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 2.745,
+         "p10": 2.745,
+         "p90": 2.745,
+         "min": 2.745,
+         "max": 2.745
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.01,
+         "p10": 0.01,
+         "p90": 0.01,
+         "min": 0.01,
+         "max": 0.01
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 2.865,
+         "p10": 2.865,
+         "p90": 2.865,
+         "min": 2.865,
+         "max": 2.865
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.055,
+         "p10": 202.055,
+         "p90": 202.055,
+         "min": 202.055,
+         "max": 202.055
+        },
+        "totals": [
+         2.865
+        ]
+       }
+      ],
+      "loadAfter": 13.46
+     },
+     {
+      "scope": "keys",
+      "at": "2026-10-14T14:35:04.436Z",
+      "load": 13.46,
+      "firstSearchMs": 2.74,
+      "backToBack": {
+       "patternMs": {
+        "count": 40,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.045,
+        "min": 0.03,
+        "max": 0.05
+       },
+       "submitMs": {
+        "count": 40,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.03,
+        "min": 0.015,
+        "max": 0.035
+       },
+       "waitMs": {
+        "count": 40,
+        "median": 0.68,
+        "p10": 0.65,
+        "p90": 0.735,
+        "min": 0.635,
+        "max": 0.835
+       },
+       "copyMs": {
+        "count": 40,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 40,
+        "median": 0.748,
+        "p10": 0.71,
+        "p90": 0.81,
+        "min": 0.7,
+        "max": 0.9
+       },
+       "gapMs": {
+        "count": 40,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        0.77,
+        0.745,
+        0.75,
+        0.74,
+        0.755,
+        0.77,
+        0.75,
+        0.765,
+        0.76,
+        0.735,
+        0.735,
+        0.75,
+        0.74,
+        0.9,
+        0.785,
+        0.745,
+        0.78,
+        0.755,
+        0.745,
+        0.75,
+        0.755,
+        0.725,
+        0.7,
+        0.715,
+        0.71,
+        0.7,
+        0.725,
+        0.765,
+        0.735,
+        0.825,
+        0.79,
+        0.735,
+        0.735,
+        0.705,
+        0.735,
+        0.855,
+        0.81,
+        0.78,
+        0.725,
+        0.705
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 31,
+        "median": 0.04,
+        "p10": 0.035,
+        "p90": 0.055,
+        "min": 0.035,
+        "max": 0.055
+       },
+       "submitMs": {
+        "count": 31,
+        "median": 0.025,
+        "p10": 0.02,
+        "p90": 0.03,
+        "min": 0.02,
+        "max": 0.035
+       },
+       "waitMs": {
+        "count": 31,
+        "median": 0.81,
+        "p10": 0.785,
+        "p90": 0.9,
+        "min": 0.755,
+        "max": 0.975
+       },
+       "copyMs": {
+        "count": 31,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 31,
+        "median": 0.965,
+        "p10": 0.925,
+        "p90": 1.08,
+        "min": 0.895,
+        "max": 1.14
+       },
+       "passMs": {
+        "count": 31,
+        "median": 0.395,
+        "p10": 0.391,
+        "p90": 0.432,
+        "min": 0.389,
+        "max": 0.518
+       },
+       "gapMs": {
+        "count": 31,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        0.94,
+        1.12,
+        1.01,
+        0.945,
+        0.94,
+        0.925,
+        0.97,
+        1.03,
+        0.995,
+        0.98,
+        0.93,
+        0.92,
+        0.945,
+        0.935,
+        0.925,
+        0.895,
+        1.1,
+        1.05,
+        0.95,
+        1.08,
+        0.94,
+        0.955,
+        0.935,
+        1.04,
+        1.045,
+        0.965,
+        1.14,
+        1.04,
+        0.985,
+        0.975,
+        0.96
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.07,
+         "p10": 0.07,
+         "p90": 0.07,
+         "min": 0.07,
+         "max": 0.07
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.06,
+         "p10": 0.06,
+         "p90": 0.06,
+         "min": 0.06,
+         "max": 0.06
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 2.325,
+         "p10": 2.325,
+         "p90": 2.325,
+         "min": 2.325,
+         "max": 2.325
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.015,
+         "p10": 0.015,
+         "p90": 0.015,
+         "min": 0.015,
+         "max": 0.015
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 2.475,
+         "p10": 2.475,
+         "p90": 2.475,
+         "min": 2.475,
+         "max": 2.475
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.085,
+         "p10": 202.085,
+         "p90": 202.085,
+         "min": 202.085,
+         "max": 202.085
+        },
+        "totals": [
+         2.475
+        ]
+       }
+      ],
+      "loadAfter": 12.87
+     }
+    ],
+    "checks": {
+     "searches": 1460,
+     "values": 2920000,
+     "mismatches": 0
+    }
+   },
+   {
+    "states": 32,
+    "engine": "program-step-masked",
+    "what": "the program's step with a scope, which the demo page runs, as loop-emit.ts writes it",
+    "patterns": [
+     "error",
+     "[a-z]+Id",
+     "[a-z0-9.]+@[a-z.]+",
+     "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+     "([a-z]+)+x",
+     "connection reset"
+    ],
+    "compileMs": 175.125,
+    "scopes": [
+     {
+      "scope": "everything",
+      "at": "2026-10-14T14:35:05.406Z",
+      "load": 12.87,
+      "firstSearchMs": 97.905,
+      "backToBack": {
+       "patternMs": {
+        "count": 3,
+        "median": 0.14,
+        "p10": 0.135,
+        "p90": 0.205,
+        "min": 0.135,
+        "max": 0.205
+       },
+       "submitMs": {
+        "count": 3,
+        "median": 0.055,
+        "p10": 0.05,
+        "p90": 0.055,
+        "min": 0.05,
+        "max": 0.055
+       },
+       "waitMs": {
+        "count": 3,
+        "median": 84.59,
+        "p10": 83.915,
+        "p90": 84.795,
+        "min": 83.915,
+        "max": 84.795
+       },
+       "copyMs": {
+        "count": 3,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.025,
+        "min": 0.015,
+        "max": 0.025
+       },
+       "totalMs": {
+        "count": 3,
+        "median": 84.87,
+        "p10": 84.135,
+        "p90": 85.015,
+        "min": 84.135,
+        "max": 85.015
+       },
+       "gapMs": {
+        "count": 3,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.01
+       },
+       "totals": [
+        84.135,
+        84.87,
+        85.015
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 9,
+        "median": 0.145,
+        "p10": 0.13,
+        "p90": 0.155,
+        "min": 0.13,
+        "max": 0.155
+       },
+       "submitMs": {
+        "count": 9,
+        "median": 0.05,
+        "p10": 0.045,
+        "p90": 0.055,
+        "min": 0.045,
+        "max": 0.055
+       },
+       "waitMs": {
+        "count": 9,
+        "median": 84.46,
+        "p10": 83.92,
+        "p90": 85.055,
+        "min": 83.92,
+        "max": 85.055
+       },
+       "copyMs": {
+        "count": 9,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.025,
+        "min": 0.015,
+        "max": 0.025
+       },
+       "totalMs": {
+        "count": 9,
+        "median": 84.805,
+        "p10": 84.255,
+        "p90": 85.42,
+        "min": 84.255,
+        "max": 85.42
+       },
+       "passMs": {
+        "count": 9,
+        "median": 83.9,
+        "p10": 83.297,
+        "p90": 84.444,
+        "min": 83.297,
+        "max": 84.444
+       },
+       "gapMs": {
+        "count": 9,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.01
+       },
+       "totals": [
+        84.435,
+        85.38,
+        84.585,
+        84.805,
+        85.3,
+        84.795,
+        84.255,
+        85.25,
+        85.42
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.155,
+         "p10": 0.155,
+         "p90": 0.155,
+         "min": 0.155,
+         "max": 0.155
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.06,
+         "p10": 0.06,
+         "p90": 0.06,
+         "min": 0.06,
+         "max": 0.06
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 84.725,
+         "p10": 84.725,
+         "p90": 84.725,
+         "min": 84.725,
+         "max": 84.725
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.015,
+         "p10": 0.015,
+         "p90": 0.015,
+         "min": 0.015,
+         "max": 0.015
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 84.965,
+         "p10": 84.965,
+         "p90": 84.965,
+         "min": 84.965,
+         "max": 84.965
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 200.315,
+         "p10": 200.315,
+         "p90": 200.315,
+         "min": 200.315,
+         "max": 200.315
+        },
+        "totals": [
+         84.965
+        ]
+       }
+      ],
+      "loadAfter": 12.87
+     },
+     {
+      "scope": "strings",
+      "at": "2026-10-14T14:35:07.308Z",
+      "load": 12.87,
+      "firstSearchMs": 84.715,
+      "backToBack": {
+       "patternMs": {
+        "count": 3,
+        "median": 0.145,
+        "p10": 0.13,
+        "p90": 0.155,
+        "min": 0.13,
+        "max": 0.155
+       },
+       "submitMs": {
+        "count": 3,
+        "median": 0.055,
+        "p10": 0.05,
+        "p90": 0.06,
+        "min": 0.05,
+        "max": 0.06
+       },
+       "waitMs": {
+        "count": 3,
+        "median": 84.78,
+        "p10": 84.655,
+        "p90": 85.04,
+        "min": 84.655,
+        "max": 85.04
+       },
+       "copyMs": {
+        "count": 3,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.025,
+        "min": 0.015,
+        "max": 0.025
+       },
+       "totalMs": {
+        "count": 3,
+        "median": 85.01,
+        "p10": 84.89,
+        "p90": 85.255,
+        "min": 84.89,
+        "max": 85.255
+       },
+       "gapMs": {
+        "count": 3,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.01
+       },
+       "totals": [
+        85.255,
+        85.01,
+        84.89
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 9,
+        "median": 0.16,
+        "p10": 0.14,
+        "p90": 0.185,
+        "min": 0.14,
+        "max": 0.185
+       },
+       "submitMs": {
+        "count": 9,
+        "median": 0.06,
+        "p10": 0.05,
+        "p90": 0.075,
+        "min": 0.05,
+        "max": 0.075
+       },
+       "waitMs": {
+        "count": 9,
+        "median": 84.965,
+        "p10": 84.06,
+        "p90": 85.83,
+        "min": 84.06,
+        "max": 85.83
+       },
+       "copyMs": {
+        "count": 9,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.04,
+        "min": 0.015,
+        "max": 0.04
+       },
+       "totalMs": {
+        "count": 9,
+        "median": 85.425,
+        "p10": 84.52,
+        "p90": 86.23,
+        "min": 84.52,
+        "max": 86.23
+       },
+       "passMs": {
+        "count": 9,
+        "median": 84.308,
+        "p10": 83.313,
+        "p90": 85.137,
+        "min": 83.313,
+        "max": 85.137
+       },
+       "gapMs": {
+        "count": 9,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.015
+       },
+       "totals": [
+        85.335,
+        85.35,
+        85.425,
+        84.93,
+        85.44,
+        85.845,
+        84.52,
+        86.06,
+        86.23
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.165,
+         "p10": 0.165,
+         "p90": 0.165,
+         "min": 0.165,
+         "max": 0.165
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.075,
+         "p10": 0.075,
+         "p90": 0.075,
+         "min": 0.075,
+         "max": 0.075
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 84.255,
+         "p10": 84.255,
+         "p90": 84.255,
+         "min": 84.255,
+         "max": 84.255
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.02,
+         "p10": 0.02,
+         "p90": 0.02,
+         "min": 0.02,
+         "max": 0.02
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 84.515,
+         "p10": 84.515,
+         "p90": 84.515,
+         "min": 84.515,
+         "max": 84.515
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.6,
+         "p10": 202.6,
+         "p90": 202.6,
+         "min": 202.6,
+         "max": 202.6
+        },
+        "totals": [
+         84.515
+        ]
+       }
+      ],
+      "loadAfter": 12.87
+     },
+     {
+      "scope": "keys",
+      "at": "2026-10-14T14:35:09.222Z",
+      "load": 12.87,
+      "firstSearchMs": 85.5,
+      "backToBack": {
+       "patternMs": {
+        "count": 3,
+        "median": 0.15,
+        "p10": 0.135,
+        "p90": 0.16,
+        "min": 0.135,
+        "max": 0.16
+       },
+       "submitMs": {
+        "count": 3,
+        "median": 0.06,
+        "p10": 0.05,
+        "p90": 0.075,
+        "min": 0.05,
+        "max": 0.075
+       },
+       "waitMs": {
+        "count": 3,
+        "median": 85.025,
+        "p10": 84.27,
+        "p90": 85.73,
+        "min": 84.27,
+        "max": 85.73
+       },
+       "copyMs": {
+        "count": 3,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.035,
+        "min": 0.015,
+        "max": 0.035
+       },
+       "totalMs": {
+        "count": 3,
+        "median": 85.24,
+        "p10": 84.51,
+        "p90": 85.995,
+        "min": 84.51,
+        "max": 85.995
+       },
+       "gapMs": {
+        "count": 3,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.015
+       },
+       "totals": [
+        84.51,
+        85.24,
+        85.995
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 9,
+        "median": 0.145,
+        "p10": 0.14,
+        "p90": 0.165,
+        "min": 0.14,
+        "max": 0.165
+       },
+       "submitMs": {
+        "count": 9,
+        "median": 0.055,
+        "p10": 0.05,
+        "p90": 0.065,
+        "min": 0.05,
+        "max": 0.065
+       },
+       "waitMs": {
+        "count": 9,
+        "median": 85.755,
+        "p10": 85.29,
+        "p90": 86.44,
+        "min": 85.29,
+        "max": 86.44
+       },
+       "copyMs": {
+        "count": 9,
+        "median": 0.02,
+        "p10": 0.015,
+        "p90": 0.02,
+        "min": 0.015,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 9,
+        "median": 86.12,
+        "p10": 85.67,
+        "p90": 86.795,
+        "min": 85.67,
+        "max": 86.795
+       },
+       "passMs": {
+        "count": 9,
+        "median": 85.083,
+        "p10": 84.5,
+        "p90": 85.703,
+        "min": 84.5,
+        "max": 85.703
+       },
+       "gapMs": {
+        "count": 9,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.01
+       },
+       "totals": [
+        85.84,
+        85.67,
+        86.335,
+        85.745,
+        86.47,
+        86.12,
+        86.525,
+        86.795,
+        86
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.165,
+         "p10": 0.165,
+         "p90": 0.165,
+         "min": 0.165,
+         "max": 0.165
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.07,
+         "p10": 0.07,
+         "p90": 0.07,
+         "min": 0.07,
+         "max": 0.07
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 85.09,
+         "p10": 85.09,
+         "p90": 85.09,
+         "min": 85.09,
+         "max": 85.09
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.02,
+         "p10": 0.02,
+         "p90": 0.02,
+         "min": 0.02,
+         "max": 0.02
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 85.35,
+         "p10": 85.35,
+         "p90": 85.35,
+         "min": 85.35,
+         "max": 85.35
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.135,
+         "p10": 202.135,
+         "p90": 202.135,
+         "min": 202.135,
+         "max": 202.135
+        },
+        "totals": [
+         85.35
+        ]
+       }
+      ],
+      "loadAfter": 12.56
+     }
+    ],
+    "checks": {
+     "searches": 60,
+     "values": 120000,
+     "mismatches": 0
+    }
+   },
+   {
+    "states": 32,
+    "engine": "program-bits-masked",
+    "what": "the same step with a scope as bit-emit.ts writes it",
+    "patterns": [
+     "error",
+     "[a-z]+Id",
+     "[a-z0-9.]+@[a-z.]+",
+     "\\d\\d\\d\\d-\\d\\d-\\d\\d",
+     "([a-z]+)+x",
+     "connection reset"
+    ],
+    "compileMs": 13.815,
+    "scopes": [
+     {
+      "scope": "everything",
+      "at": "2026-10-14T14:35:11.126Z",
+      "load": 12.56,
+      "firstSearchMs": 1.975,
+      "backToBack": {
+       "patternMs": {
+        "count": 28,
+        "median": 0.125,
+        "p10": 0.115,
+        "p90": 0.15,
+        "min": 0.11,
+        "max": 0.16
+       },
+       "submitMs": {
+        "count": 28,
+        "median": 0.07,
+        "p10": 0.06,
+        "p90": 0.075,
+        "min": 0.06,
+        "max": 0.075
+       },
+       "waitMs": {
+        "count": 28,
+        "median": 0.875,
+        "p10": 0.84,
+        "p90": 0.92,
+        "min": 0.835,
+        "max": 0.945
+       },
+       "copyMs": {
+        "count": 28,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 28,
+        "median": 1.085,
+        "p10": 1.045,
+        "p90": 1.145,
+        "min": 1.025,
+        "max": 1.185
+       },
+       "gapMs": {
+        "count": 28,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.135,
+        1.185,
+        1.125,
+        1.085,
+        1.09,
+        1.075,
+        1.13,
+        1.15,
+        1.065,
+        1.085,
+        1.145,
+        1.08,
+        1.105,
+        1.105,
+        1.075,
+        1.1,
+        1.105,
+        1.095,
+        1.115,
+        1.075,
+        1.07,
+        1.065,
+        1.025,
+        1.03,
+        1.055,
+        1.045,
+        1.06,
+        1.07
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 23,
+        "median": 0.125,
+        "p10": 0.115,
+        "p90": 0.145,
+        "min": 0.115,
+        "max": 0.155
+       },
+       "submitMs": {
+        "count": 23,
+        "median": 0.065,
+        "p10": 0.06,
+        "p90": 0.075,
+        "min": 0.06,
+        "max": 0.08
+       },
+       "waitMs": {
+        "count": 23,
+        "median": 1.015,
+        "p10": 0.98,
+        "p90": 1.08,
+        "min": 0.97,
+        "max": 1.125
+       },
+       "copyMs": {
+        "count": 23,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 23,
+        "median": 1.315,
+        "p10": 1.26,
+        "p90": 1.375,
+        "min": 1.25,
+        "max": 1.445
+       },
+       "passMs": {
+        "count": 23,
+        "median": 0.53,
+        "p10": 0.513,
+        "p90": 0.553,
+        "min": 0.513,
+        "max": 0.602
+       },
+       "gapMs": {
+        "count": 23,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.005,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.315,
+        1.345,
+        1.375,
+        1.42,
+        1.37,
+        1.295,
+        1.265,
+        1.305,
+        1.345,
+        1.365,
+        1.445,
+        1.36,
+        1.37,
+        1.315,
+        1.29,
+        1.37,
+        1.355,
+        1.295,
+        1.26,
+        1.3,
+        1.25,
+        1.26,
+        1.295
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.155,
+         "p10": 0.155,
+         "p90": 0.155,
+         "min": 0.155,
+         "max": 0.155
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.105,
+         "p10": 0.105,
+         "p90": 0.105,
+         "min": 0.105,
+         "max": 0.105
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 1.525,
+         "p10": 1.525,
+         "p90": 1.525,
+         "min": 1.525,
+         "max": 1.525
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.015,
+         "p10": 0.015,
+         "p90": 0.015,
+         "min": 0.015,
+         "max": 0.015
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 1.81,
+         "p10": 1.81,
+         "p90": 1.81,
+         "min": 1.81,
+         "max": 1.81
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.105,
+         "p10": 202.105,
+         "p90": 202.105,
+         "min": 202.105,
+         "max": 202.105
+        },
+        "totals": [
+         1.81
+        ]
+       }
+      ],
+      "loadAfter": 12.56
+     },
+     {
+      "scope": "strings",
+      "at": "2026-10-14T14:35:11.803Z",
+      "load": 12.56,
+      "firstSearchMs": 1.33,
+      "backToBack": {
+       "patternMs": {
+        "count": 17,
+        "median": 0.125,
+        "p10": 0.115,
+        "p90": 0.14,
+        "min": 0.11,
+        "max": 0.145
+       },
+       "submitMs": {
+        "count": 17,
+        "median": 0.07,
+        "p10": 0.065,
+        "p90": 0.08,
+        "min": 0.065,
+        "max": 0.08
+       },
+       "waitMs": {
+        "count": 17,
+        "median": 1.54,
+        "p10": 1.365,
+        "p90": 1.935,
+        "min": 1.355,
+        "max": 2.88
+       },
+       "copyMs": {
+        "count": 17,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.02
+       },
+       "totalMs": {
+        "count": 17,
+        "median": 1.76,
+        "p10": 1.565,
+        "p90": 2.145,
+        "min": 1.555,
+        "max": 3.095
+       },
+       "gapMs": {
+        "count": 17,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.67,
+        1.825,
+        1.86,
+        3.095,
+        1.85,
+        2.145,
+        1.76,
+        1.555,
+        1.565,
+        1.69,
+        1.995,
+        1.695,
+        1.62,
+        1.6,
+        1.805,
+        1.895,
+        1.625
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 12,
+        "median": 0.125,
+        "p10": 0.115,
+        "p90": 0.14,
+        "min": 0.11,
+        "max": 0.145
+       },
+       "submitMs": {
+        "count": 12,
+        "median": 0.07,
+        "p10": 0.065,
+        "p90": 0.075,
+        "min": 0.065,
+        "max": 0.08
+       },
+       "waitMs": {
+        "count": 12,
+        "median": 2.17,
+        "p10": 2,
+        "p90": 2.46,
+        "min": 1.915,
+        "max": 2.52
+       },
+       "copyMs": {
+        "count": 12,
+        "median": 0.01,
+        "p10": 0.01,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 12,
+        "median": 2.477,
+        "p10": 2.335,
+        "p90": 2.77,
+        "min": 2.215,
+        "max": 2.84
+       },
+       "passMs": {
+        "count": 12,
+        "median": 1.636,
+        "p10": 1.405,
+        "p90": 1.759,
+        "min": 1.39,
+        "max": 1.931
+       },
+       "gapMs": {
+        "count": 12,
+        "median": 0.005,
+        "p10": 0,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        2.215,
+        2.77,
+        2.56,
+        2.41,
+        2.46,
+        2.46,
+        2.47,
+        2.335,
+        2.57,
+        2.84,
+        2.6,
+        2.485
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.14,
+         "p10": 0.14,
+         "p90": 0.14,
+         "min": 0.14,
+         "max": 0.14
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.1,
+         "p10": 0.1,
+         "p90": 0.1,
+         "min": 0.1,
+         "max": 0.1
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 3.405,
+         "p10": 3.405,
+         "p90": 3.405,
+         "min": 3.405,
+         "max": 3.405
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.02,
+         "p10": 0.02,
+         "p90": 0.02,
+         "min": 0.02,
+         "max": 0.02
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 3.675,
+         "p10": 3.675,
+         "p90": 3.675,
+         "min": 3.675,
+         "max": 3.675
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 202.06,
+         "p10": 202.06,
+         "p90": 202.06,
+         "min": 202.06,
+         "max": 202.06
+        },
+        "totals": [
+         3.675
+        ]
+       }
+      ],
+      "loadAfter": 12.56
+     },
+     {
+      "scope": "keys",
+      "at": "2026-10-14T14:35:12.485Z",
+      "load": 12.56,
+      "firstSearchMs": 3.32,
+      "backToBack": {
+       "patternMs": {
+        "count": 19,
+        "median": 0.12,
+        "p10": 0.115,
+        "p90": 0.135,
+        "min": 0.115,
+        "max": 0.145
+       },
+       "submitMs": {
+        "count": 19,
+        "median": 0.07,
+        "p10": 0.06,
+        "p90": 0.075,
+        "min": 0.06,
+        "max": 0.075
+       },
+       "waitMs": {
+        "count": 19,
+        "median": 1.435,
+        "p10": 1.375,
+        "p90": 1.505,
+        "min": 1.365,
+        "max": 1.515
+       },
+       "copyMs": {
+        "count": 19,
+        "median": 0.01,
+        "p10": 0.005,
+        "p90": 0.015,
+        "min": 0.005,
+        "max": 0.015
+       },
+       "totalMs": {
+        "count": 19,
+        "median": 1.635,
+        "p10": 1.565,
+        "p90": 1.705,
+        "min": 1.56,
+        "max": 1.74
+       },
+       "gapMs": {
+        "count": 19,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.565,
+        1.635,
+        1.66,
+        1.68,
+        1.675,
+        1.59,
+        1.705,
+        1.605,
+        1.59,
+        1.56,
+        1.605,
+        1.645,
+        1.64,
+        1.675,
+        1.61,
+        1.65,
+        1.74,
+        1.62,
+        1.585
+       ]
+      },
+      "withTimestamps": {
+       "patternMs": {
+        "count": 16,
+        "median": 0.13,
+        "p10": 0.115,
+        "p90": 0.155,
+        "min": 0.115,
+        "max": 0.16
+       },
+       "submitMs": {
+        "count": 16,
+        "median": 0.07,
+        "p10": 0.065,
+        "p90": 0.075,
+        "min": 0.065,
+        "max": 0.075
+       },
+       "waitMs": {
+        "count": 16,
+        "median": 1.59,
+        "p10": 1.52,
+        "p90": 1.71,
+        "min": 1.495,
+        "max": 1.725
+       },
+       "copyMs": {
+        "count": 16,
+        "median": 0.008,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0.005,
+        "max": 0.01
+       },
+       "totalMs": {
+        "count": 16,
+        "median": 1.922,
+        "p10": 1.815,
+        "p90": 2.005,
+        "min": 1.805,
+        "max": 2.1
+       },
+       "passMs": {
+        "count": 16,
+        "median": 1.04,
+        "p10": 1.014,
+        "p90": 1.077,
+        "min": 1.012,
+        "max": 1.113
+       },
+       "gapMs": {
+        "count": 16,
+        "median": 0.005,
+        "p10": 0.005,
+        "p90": 0.01,
+        "min": 0,
+        "max": 0.01
+       },
+       "totals": [
+        1.84,
+        1.85,
+        1.955,
+        1.89,
+        2.1,
+        1.92,
+        2.005,
+        1.925,
+        1.93,
+        1.815,
+        1.815,
+        1.94,
+        1.945,
+        1.9,
+        1.805,
+        1.99
+       ]
+      },
+      "afterPause": [
+       {
+        "pauseMs": 200,
+        "patternMs": {
+         "count": 1,
+         "median": 0.15,
+         "p10": 0.15,
+         "p90": 0.15,
+         "min": 0.15,
+         "max": 0.15
+        },
+        "submitMs": {
+         "count": 1,
+         "median": 0.105,
+         "p10": 0.105,
+         "p90": 0.105,
+         "min": 0.105,
+         "max": 0.105
+        },
+        "waitMs": {
+         "count": 1,
+         "median": 4.245,
+         "p10": 4.245,
+         "p90": 4.245,
+         "min": 4.245,
+         "max": 4.245
+        },
+        "copyMs": {
+         "count": 1,
+         "median": 0.02,
+         "p10": 0.02,
+         "p90": 0.02,
+         "min": 0.02,
+         "max": 0.02
+        },
+        "totalMs": {
+         "count": 1,
+         "median": 4.525,
+         "p10": 4.525,
+         "p90": 4.525,
+         "min": 4.525,
+         "max": 4.525
+        },
+        "gapMs": {
+         "count": 1,
+         "median": 201.235,
+         "p10": 201.235,
+         "p90": 201.235,
+         "min": 201.235,
+         "max": 201.235
+        },
+        "totals": [
+         4.525
+        ]
+       }
+      ],
+      "loadAfter": 12.56
+     }
+    ],
+    "checks": {
+     "searches": 908,
+     "values": 1816000,
+     "mismatches": 0
+    }
+   }
+  ],
+  "loadAtEnd": 11.45,
+  "finishedAt": "2026-10-14T14:35:26.792Z",
+  "logLines": [
+   "613.595 ms: 2000 documents written and their expected answers computed",
+   "615.905 ms: patterns: [{\"pattern\":\"error\",\"states\":6,\"capacity\":8,\"exactOnBytes\":true,\"matches\":{\"everything\":248,\"keys\":189,\"strings\":59},\"documentsWithMatch\":{\"everything\":204,\"keys\":189,\"strings\":59},\"regExpDiffers\":0,\"walkDiffers\":{\"keys\":0,\"strings\":0}},{\"pattern\":\"[a-z]+Id\",\"states\":4,\"capacity\":8,\"exactOnBytes\":true,\"matches\":{\"everything\":484,\"keys\":484,\"strings\":0},\"documentsWithMatch\":{\"everything\":484,\"keys\":484,\"strings\":0},\"regExpDiffers\":0,\"walkDiffers\":{\"keys\":0,\"strings\":0}},{\"pattern\":\"[a-z0-9.]+@[a-z.]+\",\"states\":4,\"capacity\":8,\"exactOnBytes\":true,\"matches\":{\"everything\":296,\"keys\":0,\"strings\":296},\"documentsWithMatch\":{\"everything\":296,\"keys\":0,\"strings\":296},\"regExpDiffers\":0,\"walkDiffers\":{\"keys\":0,\"strings\":0}},{\"pattern\":\"\\\\d\\\\d\\\\d\\\\d-\\\\d\\\\d-\\\\d\\\\d\",\"states\":11,\"capacity\":16,\"exactOnBytes\":true,\"matches\":{\"everything\":548,\"keys\":0,\"strings\":548},\"documentsWithMatch\":{\"everything\":548,\"keys\":0,\"strings\":548},\"regExpDiffers\":0,\"walkDiffers\":{\"keys\":0,\"strings\":0}},{\"pattern\":\"([a-z]+)+x\",\"states\":3,\"capacity\":8,\"exactOnBytes\":true,\"matches\":{\"everything\":1358,\"keys\":479,\"strings\":879},\"documentsWithMatch\":{\"everything\":928,\"keys\":408,\"strings\":664},\"regExpDiffers\":0,\"walkDiffers\":{\"keys\":0,\"strings\":0}},{\"pattern\":\"connection reset\",\"states\":17,\"capacity\":32,\"exactOnBytes\":true,\"matches\":{\"everything\":29,\"keys\":0,\"strings\":29},\"documentsWithMatch\":{\"everything\":29,\"keys\":0,\"strings\":29},\"regExpDiffers\":0,\"walkDiffers\":{\"keys\":0,\"strings\":0}}]",
+   "1336.81 ms: 8 states, program-step-masked, everything, 2000 documents: back to back 1.125 ms, pass 0.782 ms, after a pause 200 ms: 4.265, checks so far {\"searches\":327,\"values\":654000,\"mismatches\":0}",
+   "2017.37 ms: 8 states, program-step-masked, strings, 2000 documents: back to back 1.2 ms, pass 0.783 ms, after a pause 200 ms: 4.605, checks so far {\"searches\":665,\"values\":1330000,\"mismatches\":0}",
+   "2700.41 ms: 8 states, program-step-masked, keys, 2000 documents: back to back 1.295 ms, pass 0.811 ms, after a pause 200 ms: 5.16, checks so far {\"searches\":961,\"values\":1922000,\"mismatches\":0}",
+   "3397.9 ms: 8 states, program-bits-masked, everything, 2000 documents: back to back 1.23 ms, pass 0.683 ms, after a pause 200 ms: 2.225, checks so far {\"searches\":309,\"values\":618000,\"mismatches\":0}",
+   "4073.595 ms: 8 states, program-bits-masked, strings, 2000 documents: back to back 0.855 ms, pass 0.349 ms, after a pause 200 ms: 2.505, checks so far {\"searches\":775,\"values\":1550000,\"mismatches\":0}",
+   "4753.585 ms: 8 states, program-bits-masked, keys, 2000 documents: back to back 0.93 ms, pass 0.56 ms, after a pause 200 ms: 2.6, checks so far {\"searches\":1157,\"values\":2314000,\"mismatches\":0}",
+   "5563.99 ms: 16 states, program-step-masked, everything, 2000 documents: back to back 7.9 ms, pass 7.42 ms, after a pause 200 ms: 8.425, checks so far {\"searches\":66,\"values\":132000,\"mismatches\":0}",
+   "6300.595 ms: 16 states, program-step-masked, strings, 2000 documents: back to back 7.74 ms, pass 7.282 ms, after a pause 200 ms: 7.825, checks so far {\"searches\":132,\"values\":264000,\"mismatches\":0}",
+   "7037.815 ms: 16 states, program-step-masked, keys, 2000 documents: back to back 7.803 ms, pass 7.41 ms, after a pause 200 ms: 8.36, checks so far {\"searches\":198,\"values\":396000,\"mismatches\":0}",
+   "7729.745 ms: 16 states, program-bits-masked, everything, 2000 documents: back to back 0.72 ms, pass 0.397 ms, after a pause 200 ms: 2.305, checks so far {\"searches\":540,\"values\":1080000,\"mismatches\":0}",
+   "8406.225 ms: 16 states, program-bits-masked, strings, 2000 documents: back to back 0.73 ms, pass 0.393 ms, after a pause 200 ms: 2.865, checks so far {\"searches\":1007,\"values\":2014000,\"mismatches\":0}",
+   "9082.195 ms: 16 states, program-bits-masked, keys, 2000 documents: back to back 0.748 ms, pass 0.395 ms, after a pause 200 ms: 2.475, checks so far {\"searches\":1460,\"values\":2920000,\"mismatches\":0}",
+   "11195.975 ms: 32 states, program-step-masked, everything, 2000 documents: back to back 84.87 ms, pass 83.9 ms, after a pause 200 ms: 84.965, checks so far {\"searches\":20,\"values\":40000,\"mismatches\":0}",
+   "13109.18 ms: 32 states, program-step-masked, strings, 2000 documents: back to back 85.01 ms, pass 84.308 ms, after a pause 200 ms: 84.515, checks so far {\"searches\":40,\"values\":80000,\"mismatches\":0}",
+   "15034.42 ms: 32 states, program-step-masked, keys, 2000 documents: back to back 85.24 ms, pass 85.083 ms, after a pause 200 ms: 85.35, checks so far {\"searches\":60,\"values\":120000,\"mismatches\":0}",
+   "15775.14 ms: 32 states, program-bits-masked, everything, 2000 documents: back to back 1.085 ms, pass 0.53 ms, after a pause 200 ms: 1.81, checks so far {\"searches\":382,\"values\":764000,\"mismatches\":0}",
+   "16454.81 ms: 32 states, program-bits-masked, strings, 2000 documents: back to back 1.76 ms, pass 1.636 ms, after a pause 200 ms: 3.675, checks so far {\"searches\":650,\"values\":1300000,\"mismatches\":0}",
+   "17137.365 ms: 32 states, program-bits-masked, keys, 2000 documents: back to back 1.635 ms, pass 1.04 ms, after a pause 200 ms: 4.525, checks so far {\"searches\":908,\"values\":1816000,\"mismatches\":0}",
+   "30762.855 ms: memory, after the searches, with every layout's buffers: {\"javaScriptBytes\":10847695,\"javaScriptBreakdown\":[{\"megabytes\":10,\"types\":[\"JavaScript\"],\"scopes\":[\"Window\"]}],\"usedHeapBytes\":10724607,\"processes\":{\"processes\":[{\"pid\":12360,\"type\":\"browser\",\"residentBytes\":575733760,\"footprintBytes\":118343888,\"footprintPeakBytes\":419252432},{\"pid\":12364,\"type\":\"gpu-process\",\"residentBytes\":161710080,\"footprintBytes\":98715304,\"footprintPeakBytes\":1202194088},{\"pid\":12380,\"type\":\"renderer\",\"residentBytes\":160890880,\"footprintBytes\":60622432,\"footprintPeakBytes\":75515488},{\"pid\":12383,\"type\":\"renderer\",\"residentBytes\":102547456,\"footprintBytes\":28837136,\"footprintPeakBytes\":30033168},{\"pid\":12386,\"type\":\"renderer\",\"residentBytes\":170983424,\"footprintBytes\":72058560,\"footprintPeakBytes\":139691712},{\"pid\":12431,\"type\":\"renderer\",\"residentBytes\":85278720,\"footprintBytes\":27133248,\"footprintPeakBytes\":28820800}],\"availableGigabytes\":16.2,\"swap\":\"total = 6144.00M  used = 4868.12M  free = 1275.88M  (encrypted)\"}}"
+  ],
+  "done": true
+ }
+}

@@ -1,0 +1,2135 @@
+{
+ "driver": {
+  "startedAt": "2026-10-14T14:24:17.014Z",
+  "machine": "Apple M5 Max, 18 cores, 36 GiB, macOS 27.0",
+  "bun": "1.4.3",
+  "loadBefore": "{ 9.53 10.99 14.55 }",
+  "memoryBefore": "System-wide memory free percentage: 61%",
+  "busiestBefore": [],
+  "argv": [
+   "--out",
+   "independent",
+   "--profile",
+   "chrome-profile",
+   "--port",
+   "4554",
+   "--devtools-port",
+   "9554"
+  ],
+  "loadSamples": [
+   {
+    "at": "2026-10-14T14:24:27.108Z",
+    "load": "{ 9.89 11.03 14.52 }"
+   },
+   {
+    "at": "2026-10-14T14:24:37.110Z",
+    "load": "{ 10.66 11.16 14.53 }"
+   },
+   {
+    "at": "2026-10-14T14:24:47.205Z",
+    "load": "{ 10.40 11.08 14.46 }"
+   },
+   {
+    "at": "2026-10-14T14:24:57.206Z",
+    "load": "{ 10.25 11.03 14.40 }"
+   },
+   {
+    "at": "2026-10-14T14:25:07.213Z",
+    "load": "{ 16.69 12.38 14.84 }"
+   },
+   {
+    "at": "2026-10-14T14:25:17.231Z",
+    "load": "{ 16.62 12.51 14.86 }"
+   },
+   {
+    "at": "2026-10-14T14:25:27.237Z",
+    "load": "{ 23.24 14.10 15.40 }"
+   },
+   {
+    "at": "2026-10-14T14:25:37.257Z",
+    "load": "{ 20.80 13.88 15.30 }"
+   },
+   {
+    "at": "2026-10-14T14:25:47.487Z",
+    "load": "{ 23.26 14.63 15.55 }"
+   },
+   {
+    "at": "2026-10-14T14:25:57.482Z",
+    "load": "{ 22.69 14.80 15.60 }"
+   },
+   {
+    "at": "2026-10-14T14:26:07.482Z",
+    "load": "{ 24.92 15.57 15.87 }"
+   },
+   {
+    "at": "2026-10-14T14:26:17.494Z",
+    "load": "{ 22.41 15.34 15.78 }"
+   },
+   {
+    "at": "2026-10-14T14:26:27.496Z",
+    "load": "{ 21.22 15.33 15.77 }"
+   },
+   {
+    "at": "2026-10-14T14:26:37.498Z",
+    "load": "{ 19.03 15.05 15.67 }"
+   },
+   {
+    "at": "2026-10-14T14:26:47.511Z",
+    "load": "{ 18.11 14.98 15.64 }"
+   },
+   {
+    "at": "2026-10-14T14:26:57.515Z",
+    "load": "{ 17.61 14.98 15.63 }"
+   }
+  ],
+  "flags": [
+   "--headless=new",
+   "--enable-unsafe-webgpu",
+   "--enable-webgpu-developer-features",
+   "--remote-debugging-port=9554",
+   "--user-data-dir=chrome-profile",
+   "--no-first-run",
+   "--no-default-browser-check",
+   "--disable-background-timer-throttling",
+   "--disable-renderer-backgrounding",
+   "--disable-backgrounding-occluded-windows",
+   "--window-size=1200,900"
+  ],
+  "chromePid": 2566,
+  "browser": "Chrome/155.0.8059.80",
+  "finishedAt": "2026-10-14T14:27:02.820Z",
+  "loadAfter": "{ 16.60 14.82 15.57 }",
+  "memoryAfter": "System-wide memory free percentage: 62%",
+  "busiestAfter": []
+ },
+ "page": {
+  "startedAt": "2026-10-14T14:24:17.660Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "config": {
+   "count": 100000,
+   "windowDocuments": 10000,
+   "patterns": [
+    "example",
+    "\"[A-Z][a-z]+ [A-Z][a-zü]+\"",
+    "\\w+@\\w+\\.com",
+    "\"level\": \"warn\"",
+    "connection rese",
+    "tLogin\": ?\"\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ\"",
+    ": ?\"\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\dZ\"[,}\n\t ]+\"[a-z]+\": ?[-\\d\"tfn]",
+    "\\d*",
+    "(error)?",
+    "[}\\]]",
+    "[^,]+",
+    "[^]+",
+    ".+",
+    "東京",
+    "[ø-東]+",
+    "[^ -~\t\n]+",
+    "M[uü]ller|Garc[ií]a|咲|李",
+    "(re|reset|res)",
+    "\"(name|city)\": ?\"[A-Z]\\w*( \\w+)?\"",
+    "\"[^\"]*\""
+   ],
+   "capacities": [
+    8,
+    16,
+    32
+   ],
+   "shaderSalt": 860532508,
+   "brokenTexts": 8529
+  },
+  "searches": [
+   {
+    "patternIndex": 0,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 1,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 2,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 7,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 8,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 9,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 10,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 11,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 12,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 13,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 14,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 15,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 19,
+    "states": 8,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 0,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 1,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 2,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 7,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 8,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 9,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 10,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 11,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 12,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 13,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 14,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 15,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 19,
+    "states": 8,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 0,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 0,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 0,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 0,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 1,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 1,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 1,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 1,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 2,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 2,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 2,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 2,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 7,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 7,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 7,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 7,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 8,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 8,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 8,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 8,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 9,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 9,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 9,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 9,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 10,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 10,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 10,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 10,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 11,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 11,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 11,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 11,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 12,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 12,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 12,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 12,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 13,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 13,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 13,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 13,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 14,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 14,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 14,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 14,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 15,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 15,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 15,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 15,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 19,
+    "states": 8,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 19,
+    "states": 8,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 19,
+    "states": 8,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 19,
+    "states": 8,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 0,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 1,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 2,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 3,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 4,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 7,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 8,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 9,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 10,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 11,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 12,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 13,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 14,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 15,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 16,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 17,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 19,
+    "states": 16,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 0,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 1,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 2,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 3,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 4,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 7,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 8,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 9,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 10,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 11,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 12,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 13,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 14,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 15,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 16,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 17,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 19,
+    "states": 16,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 0,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 0,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 0,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 0,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 1,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 1,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 1,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 1,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 2,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 2,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 2,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 2,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 3,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 3,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 3,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 3,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 4,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 4,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 4,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 4,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 7,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 7,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 7,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 7,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 8,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 8,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 8,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 8,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 9,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 9,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 9,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 9,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 10,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 10,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 10,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 10,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 11,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 11,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 11,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 11,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 12,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 12,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 12,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 12,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 13,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 13,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 13,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 13,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 14,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 14,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 14,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 14,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 15,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 15,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 15,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 15,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 16,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 16,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 16,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 16,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 17,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 17,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 17,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 17,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 19,
+    "states": 16,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 19,
+    "states": 16,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 19,
+    "states": 16,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 19,
+    "states": 16,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 0,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 1,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 2,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 3,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 4,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 5,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 6,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 7,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 8,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 9,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 10,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 11,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 12,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 13,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 14,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 15,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 16,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 17,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 18,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 19,
+    "states": 32,
+    "form": "plain",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 0,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 1,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 2,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 3,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 4,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 5,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 6,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 7,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 8,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 9,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 10,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 11,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 12,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 13,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 14,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 15,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 16,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 17,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 18,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 19,
+    "states": 32,
+    "form": "stop",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 0,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 0,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 0,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 0,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 1,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 1,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 1,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 1,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 2,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 2,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 2,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 2,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 3,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 3,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 3,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 3,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 4,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 4,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 4,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 4,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 5,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 5,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 5,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 5,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 6,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 6,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 6,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 6,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 7,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 7,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 7,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 7,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 8,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 8,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 8,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 8,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 9,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 9,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 9,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 9,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 10,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 10,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 10,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 10,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 11,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 11,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 11,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 11,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 12,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 12,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 12,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 12,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 13,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 13,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 13,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 13,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 14,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 14,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 14,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 14,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 15,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 15,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 15,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 15,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 16,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 16,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 16,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 16,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 17,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 17,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 17,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 17,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 18,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 18,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 18,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 18,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   },
+   {
+    "patternIndex": 19,
+    "states": 32,
+    "form": "scope",
+    "scope": "everything"
+   },
+   {
+    "patternIndex": 19,
+    "states": 32,
+    "form": "scope",
+    "scope": "strings"
+   },
+   {
+    "patternIndex": 19,
+    "states": 32,
+    "form": "scope",
+    "scope": "keys"
+   },
+   {
+    "patternIndex": 19,
+    "states": 32,
+    "form": "scope",
+    "scope": "stringsAndKeys"
+   }
+  ],
+  "shaders": [
+   {
+    "program": "the highlighter's step",
+    "compileMs": 49.74500012397766,
+    "statements": 103,
+    "rules": {
+     "sum": 12,
+     "gate": 1,
+     "comparison": 1,
+     "product": 7,
+     "read": 18,
+     "packedRead": 0,
+     "packedWord": 0,
+     "lane": 0,
+     "float": 15
+    }
+   },
+   {
+    "program": "the search step",
+    "states": 8,
+    "form": "plain",
+    "compileMs": 20.65000009536743,
+    "statements": 141,
+    "rules": {
+     "sum": 3,
+     "gate": 51,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "packedWords": 272
+   },
+   {
+    "program": "the search step",
+    "states": 8,
+    "form": "stop",
+    "compileMs": 20.579999923706055,
+    "statements": 147,
+    "rules": {
+     "sum": 3,
+     "gate": 51,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "packedWords": 272
+   },
+   {
+    "program": "the search step",
+    "states": 8,
+    "form": "scope",
+    "compileMs": 23.744999885559082,
+    "statements": 147,
+    "rules": {
+     "sum": 4,
+     "gate": 51,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 128,
+     "packedWord": 16,
+     "lane": 32,
+     "float": 0
+    },
+    "packedWords": 272
+   },
+   {
+    "program": "the search step",
+    "states": 16,
+    "form": "plain",
+    "compileMs": 25.799999952316284,
+    "statements": 165,
+    "rules": {
+     "sum": 3,
+     "gate": 67,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "packedWords": 544
+   },
+   {
+    "program": "the search step",
+    "states": 16,
+    "form": "stop",
+    "compileMs": 40.05999994277954,
+    "statements": 171,
+    "rules": {
+     "sum": 3,
+     "gate": 67,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "packedWords": 544
+   },
+   {
+    "program": "the search step",
+    "states": 16,
+    "form": "scope",
+    "compileMs": 35.0550000667572,
+    "statements": 171,
+    "rules": {
+     "sum": 4,
+     "gate": 67,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 512,
+     "packedWord": 32,
+     "lane": 64,
+     "float": 0
+    },
+    "packedWords": 544
+   },
+   {
+    "program": "the search step",
+    "states": 32,
+    "form": "plain",
+    "compileMs": 38.8050000667572,
+    "statements": 213,
+    "rules": {
+     "sum": 3,
+     "gate": 99,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "packedWords": 1088
+   },
+   {
+    "program": "the search step",
+    "states": 32,
+    "form": "stop",
+    "compileMs": 34.18499994277954,
+    "statements": 219,
+    "rules": {
+     "sum": 3,
+     "gate": 99,
+     "comparison": 33,
+     "product": 0,
+     "read": 1,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "packedWords": 1088
+   },
+   {
+    "program": "the search step",
+    "states": 32,
+    "form": "scope",
+    "compileMs": 33.4300000667572,
+    "statements": 219,
+    "rules": {
+     "sum": 4,
+     "gate": 99,
+     "comparison": 33,
+     "product": 1,
+     "read": 2,
+     "packedRead": 2048,
+     "packedWord": 64,
+     "lane": 128,
+     "float": 0
+    },
+    "packedWords": 1088
+   }
+  ],
+  "finishedAt": "2026-10-14T14:27:02.756Z",
+  "done": true
+ }
+}
