@@ -76,7 +76,7 @@ import {
   unitInterval,
 } from '../runtime/cells.ts'
 import {arrangeInitialWindows} from './arrangement.ts'
-import {createMonitorFooter, frameCapacity as monitorFrameCapacity} from './monitor-footer.ts'
+import {averagedFrames as monitorAveragedFrames, createMonitorFooter, frameCapacity as monitorFrameCapacity} from './monitor-footer.ts'
 import {mountWiring} from './wiring.ts'
 
 export const windowCount = 3
@@ -1735,7 +1735,7 @@ function mountWindowManager(document: Document, window: Window) {
     describeOutputs(machine.namedOutputs, machine.values),
   ])
   // Monitor's footer, see monitor-footer.ts: the program's sizes, and the program's
-  // time in each of the last frames.
+  // time per frame over the last frames.
   const footer = createMonitorFooter(monitorFooter, machine.tensorProgram)
 
   domCache.desktop.style.setProperty('--title-height', `${machine.source[machine.cells.titleHeight]}px`)
@@ -1768,16 +1768,17 @@ function mountWindowManager(document: Document, window: Window) {
   let valueListScrollTop = 0
 
   // How many more frames the page runs by itself after it loads. The chart in
-  // Monitor's footer shows the program's time in each of the last 60 frames, and a
-  // page that runs a frame only for an input would open with a chart of one dot:
-  // the first frame, which takes about 3.5 ms in Chrome where a later frame takes
-  // 0.3 ms, since the browser hasn't compiled the program's loops yet. So the page
-  // starts with as many frames as the chart holds, after 12 more for the slow ones,
-  // which is 1.2 s at 60 frames a second. Each is a real frame with no input: it
-  // steps the machine, writes the DOM and adds its time to the chart, so the chart
-  // is full of the times of frames that ran. After them, a frame runs only for an
-  // input or while a spring moves.
-  let openingFramesLeft = monitorFrameCapacity + 12
+  // Monitor's footer shows the program's time per frame over the last 60 frames,
+  // each point an average of 10 frames, and a page that runs a frame only for an
+  // input would open with a chart of one dot: the first frame, which takes about
+  // 2 ms in Chrome where a later frame takes about 0.2 ms, since the browser hasn't
+  // compiled the program's loops yet. So the page starts with as many frames as the
+  // chart's points average, 69, after 3 more for the slow ones, which is 1.2 s at 60
+  // frames a second. Each is a real frame with no input: it steps the machine,
+  // writes the DOM and adds its time to the chart, so the chart is full of the
+  // times of frames that ran. After them, a frame runs only for an input or while a
+  // spring moves.
+  let openingFramesLeft = monitorFrameCapacity + monitorAveragedFrames - 1 + 3
 
   let scheduledRaf: number | null = null
   function scheduleRender() {

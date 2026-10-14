@@ -824,8 +824,8 @@ body {
 }
 
 /* Monitor's footer: the program's sizes at the left, and at the right the program's time
-   in each of the last 60 frames as a small chart, with the last frame's time beside it.
-   monitor-footer.ts writes all of it. */
+   per frame over the last 60 frames as a small chart, with the time at the chart's last
+   point beside it. monitor-footer.ts writes all of it. */
 .monitor-footer {
   position: absolute;
   right: 0;
@@ -882,7 +882,7 @@ body {
 
 /* The chart is 100 by 24 px. The path's box is 59 units wide and 1 unit tall, stretched
    over the chart's inner 97 by 20 px, and the strokes keep their widths in px. So the
-   last frame's dot is 3 px from the chart's right edge, and a frame at the top or at the
+   last point's dot is 3 px from the chart's right edge, and a point at the top or at the
    bottom of the scale keeps its whole stroke. */
 .monitor-chart {
   width: 100px;
@@ -913,8 +913,8 @@ body {
   stroke-width: 5;
 }
 
-/* The last frame's time is tabular, and under 100 ms it is always three digits and a
-   point, e.g. 0.40 or 12.3, so the chart beside it doesn't move when the time changes. */
+/* The time is tabular, and under 100 ms it is always three digits and a point, e.g. 0.16
+   or 12.3, so the chart beside it doesn't move when the time changes. */
 .monitor-frame-figure {
   font-variant-numeric: tabular-nums;
 }
