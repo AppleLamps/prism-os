@@ -47,7 +47,7 @@ type ParameterLayout = {
   size: number
 }
 
-export type TrainableGeometryOptions = {
+type TrainableGeometryOptions = {
   slotCount?: number
   hiddenWidth?: number
   seed?: number
@@ -134,6 +134,7 @@ const multiplierGrowth = 0.02
 // The pull between two edges of one kind whose gap is `gap`, in the units of the distance term's slope: positive
 // pulls the first edge down and the second up. `multiplier` is the pair's multiplier, or 0 for the slope of the
 // loss alone.
+/** @public */
 export function pairPull(gap: number, multiplier: number, reach: number) {
   const limit = Math.max(0, reach - Math.abs(gap))
   return Math.max(-limit, Math.min(limit, multiplier + penaltyStiffness * gap))
@@ -143,6 +144,7 @@ export function pairPull(gap: number, multiplier: number, reach: number) {
 // it stays what it is there. With a multiplier of 0 it is the charge of the loss: half the stiffness times the
 // squared gap for a small gap, and less than that from where the pull meets its limit. The multiplier is within
 // the reach, as startFrame leaves it, so the pull meets only its upper limit on the way up.
+/** @public */
 export function pairCost(gap: number, multiplier: number, reach: number) {
   // The mirrored pair has the same sum.
   const end = Math.min(Math.abs(gap), reach)
