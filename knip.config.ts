@@ -1,6 +1,7 @@
 const config = {
   entry: [
     'src/handwiredos/window-manager.ts',
+    'src/learned-gallery/learned-gallery.ts',
     // The JSON highlighter's measurement, which is run by hand. src/json-highlighter has no page of its own: this
     // script and lab/json-search, which knip doesn't look at, are what import the program. So this entry is the only
     // one that reaches src/json-highlighter and src/runtime/prefix-networks.ts: without it, knip reports

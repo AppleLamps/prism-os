@@ -8,7 +8,7 @@
     "start:candidates": "bun ./lab/candidate-gallery/candidate-gallery.html",
     "start:hard-attend": "bun ./lab/hard-attend/hard-attend.html",
     "start:knuth-plass": "bun ./lab/knuth-plass/demo.html",
-    "start:learning": "bun ./lab/learned-gallery/learned-gallery.html",
+    "start:learning": "bun ./assets/learned-gallery.html",
     "start:reusable": "bun ./lab/reusable-layout/demo.html",
     "start:template": "bun ./template/index.html",
     "site:build": "bun scripts/build-demo-site.ts",

@@ -3,7 +3,7 @@
    the footer come from assets/site.css. The page links this file only, and the import below puts
    site.css's rules before this file's: with two links, Bun's development server (1.4.3) serves
    the stylesheets in the reverse of the page's order, and bun build in the page's order. */
-@import "../../assets/site.css";
+@import "./site.css";
 
 /* This page is wider than the other pages with two columns, so that the stages are larger: up to
    1268 px, where a stage is 620 px wide inside its border, instead of 1104 px and 538 px.
@@ -112,18 +112,18 @@
 .learned-rectangle.is-selected {
   box-shadow: inset 0 0 0 1px var(--edge), 0 0 0 2px var(--sheet), 0 0 0 4px var(--copper);
 }
-.image-0 { background-image: url("../../assets/photo-gallery-00.webp"); }
-.image-1 { background-image: url("../../assets/photo-gallery-01.webp"); }
-.image-2 { background-image: url("../../assets/photo-gallery-02.webp"); }
-.image-3 { background-image: url("../../assets/photo-gallery-03.webp"); }
-.image-4 { background-image: url("../../assets/photo-gallery-04.webp"); }
-.image-5 { background-image: url("../../assets/photo-gallery-05.webp"); }
-.image-6 { background-image: url("../../assets/photo-gallery-06.webp"); }
-.image-7 { background-image: url("../../assets/photo-gallery-07.webp"); }
-.image-8 { background-image: url("../../assets/photo-gallery-08.webp"); }
-.image-9 { background-image: url("../../assets/photo-gallery-09.webp"); }
-.image-10 { background-image: url("../../assets/photo-gallery-10.webp"); }
-.image-11 { background-image: url("../../assets/photo-gallery-11.webp"); }
+.image-0 { background-image: url("./photo-gallery-00.webp"); }
+.image-1 { background-image: url("./photo-gallery-01.webp"); }
+.image-2 { background-image: url("./photo-gallery-02.webp"); }
+.image-3 { background-image: url("./photo-gallery-03.webp"); }
+.image-4 { background-image: url("./photo-gallery-04.webp"); }
+.image-5 { background-image: url("./photo-gallery-05.webp"); }
+.image-6 { background-image: url("./photo-gallery-06.webp"); }
+.image-7 { background-image: url("./photo-gallery-07.webp"); }
+.image-8 { background-image: url("./photo-gallery-08.webp"); }
+.image-9 { background-image: url("./photo-gallery-09.webp"); }
+.image-10 { background-image: url("./photo-gallery-10.webp"); }
+.image-11 { background-image: url("./photo-gallery-11.webp"); }
 
 /* The two rows under each stage, each 40 px tall. Under the sketch: the presets with the Delete
    button, and the slider. Under the photos: the loss's numbers with the Retrain button, and the

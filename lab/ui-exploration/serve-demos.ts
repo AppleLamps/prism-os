@@ -20,7 +20,7 @@ import indexPage from './demos.html'
 
 import handwiredOS from '../../assets/index.html'
 import candidateGallery from '../candidate-gallery/candidate-gallery.html'
-import learnedGallery from '../learned-gallery/learned-gallery.html'
+import learnedGallery from '../../assets/learned-gallery.html'
 import hardAttend from '../hard-attend/hard-attend.html'
 import generativeFields from '../generative-fields/demo.html'
 import eventWindow from '../event-window/demo.html'
@@ -51,7 +51,7 @@ const repoRoot = resolve(import.meta.dir, '../..')
 const pages = {
   '/assets/index.html': handwiredOS,
   '/lab/candidate-gallery/candidate-gallery.html': candidateGallery,
-  '/lab/learned-gallery/learned-gallery.html': learnedGallery,
+  '/assets/learned-gallery.html': learnedGallery,
   '/lab/hard-attend/hard-attend.html': hardAttend,
   '/lab/generative-fields/demo.html': generativeFields,
   '/lab/event-window/demo.html': eventWindow,
@@ -86,7 +86,7 @@ const readmePaths = [
   'lab/generative-fields/README.md',
   'lab/event-window/README.md',
   'lab/reusable-layout/README.md',
-  'lab/learned-gallery/README.md',
+  'src/learned-gallery/README.md',
   'lab/hard-attend/README.md',
   'lab/candidate-gallery/README.md',
   'src/json-highlighter/README.md',

@@ -16,7 +16,7 @@ export type SitePage = {source: string, path: string}
 const publishedPages: SitePage[] = [
   {source: 'assets/demos.html', path: ''},
   {source: 'assets/index.html', path: 'os/'},
-  {source: 'lab/learned-gallery/learned-gallery.html', path: 'learned-gallery/'},
+  {source: 'assets/learned-gallery.html', path: 'learned-gallery/'},
 ]
 // The GPU search demo is on the site only once its page exists. Its card in assets/demos.html has a hidden attribute
 // until then.
