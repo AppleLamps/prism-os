@@ -1845,8 +1845,9 @@ test("while the Photos window's corner is dragged with a photo open, and from th
     const label = `move ${move}`
     // In the frame of every move: the window has its new size, nothing animates, and
     // no thumbnail spring has left its rest. The open photo's thumbnail is in the
-    // middle of the content box. With each destination kept in a cell, it was up to
-    // 35 px off the middle here, behind the corner.
+    // middle of the content box. With each destination kept in a cell, it was behind
+    // the corner here: 7.5 px off the middle in the first move's frame, and 33 px in
+    // the last one's.
     const {width, contentWidth} = projectWindows(opened, moved)[photosWindow]!
     assert.deepEqual([width, contentWidth], [560 - 15 * move, 558 - 15 * move], label)
     assert.equal(animationActive(opened, moved), 0, label)

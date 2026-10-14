@@ -844,8 +844,12 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   //
   // Until October 14, 2026 a state cell held each destination from the evaluation
   // before, so a change of the layout started every thumbnail's spring toward its new
-  // place. E.g. the strip was up to 35 px behind a window whose corner was dragged,
-  // and 415 px behind a window that was maximized, for up to a quarter of a second.
+  // place, and the strip slid after the window, further behind the faster the window
+  // changed. E.g. at 60 frames a second the strip was 35 px behind a corner that was
+  // dragged by -150, -90 px over 320 ms, and 74 px behind when the same drag took 100
+  // ms. After a maximize or a restore in a viewport of 1440 × 900 px, every
+  // thumbnail's spring started 428 px from its new place and took a quarter of a
+  // second to arrive.
   // The thumbnails also needed a rule that put them at rest with the grid in view,
   // where a change of the box's width moved every destination, the box's middle,
   // with nothing drawn. Now that change moves no spring, and the thumbnails snap only
