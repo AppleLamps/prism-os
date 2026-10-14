@@ -65,8 +65,9 @@ export type TrainableGeometryOptions = {
 }
 
 // The reach that the page starts with: 3% of the stage, i.e. 16 px across and 13 px down on a stage of 538 by
-// 430 px. A hand that puts a rectangle back in its row is rarely farther off, and edges that a sketch means to be
-// apart are rarely that close.
+// 430 px. With it, a rectangle dragged 5 or 11 px off its row gets a photo that is in the row, and one dragged
+// 22 px off keeps its place. The page's presets read as drawn, since their edges are equal or at least 9% apart.
+// How far off a hand usually puts a rectangle wasn't measured, so 3% is a choice, and the page's slider changes it.
 export const defaultAlignmentReach = 0.03
 
 const outputFieldCount = trainableGeometryField.size
