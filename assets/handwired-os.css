@@ -94,7 +94,7 @@ body {
    148 px, and the arcs are at full strength from 244 px.
 
    The canvas is shown at 36% of its opacity, and wiring.ts draws each arc the fainter the
-   more weights the program stores, e.g. at 29% for 8,959 weights. One arc alone is then
+   more weights the program stores, e.g. at 29% for 8,965 weights. One arc alone is then
    at about 10%, a hairline, and a band where many arcs lie on each other stops at 36% of
    the arc's color, so the picture stays quiet behind the windows and the list of things
    to try. */
@@ -453,7 +453,7 @@ body {
 
 /* At its bottom, the sidebar says what the shown location holds: its rows by kind, which
    only Operations has, e.g. "ReGLU" beside the swatch that the list's kind column draws,
-   and "2,526", then one sentence. JavaScript writes them when the list shows another
+   and "2,527", then one sentence. JavaScript writes them when the list shows another
    location.
 
    The caption is the box between the items, which end 100 px below the sidebar's top,
@@ -547,7 +547,7 @@ body {
 /* A sidebar item: the location's name, and its number of rows at the right edge. Each of
    the two is a line as tall as the item, and the item wraps: in a system font too wide for
    both, the count moves to a second line, which the item cuts off, and the name stays
-   whole. In the system font of macOS, "Operations" and "4,251" leave 18 px between them. */
+   whole. In the system font of macOS, "Operations" and "4,254" leave 18 px between them. */
 .monitor-location {
   position: absolute;
   display: flex;
@@ -695,18 +695,25 @@ body {
   outline-offset: -2px;
 }
 
+/* The spacer is as tall as all the rows together, and ruled like a ledger: a hairline
+   at the bottom of every 24 px. The lines are the spacer's and not the rows', so the
+   list is ruled where no row is drawn too. The browser scrolls the list before the
+   next frame gives the rows their new places, so a scroll past every row that the last
+   frame drew shows a frame without rows, e.g. when the scrollbar's thumb is dragged by
+   2,000 px of the list in one frame. That frame shows ruled paper instead of a blank
+   sheet, as far as the browser has painted the spacer ahead of the view. */
 .monitor-spacer {
   position: relative;
+  background: linear-gradient(to top, color-mix(in srgb, var(--rule) 55%, transparent) 1px, transparent 1px) 0 0 / 100% var(--monitor-row-height);
 }
 
-/* Every row is 24 px tall, so the list draws only the rows in view. Ruled like a ledger. */
+/* Every row is 24 px tall, so the list draws only the rows in view and around it. */
 .monitor-row {
   position: absolute;
   top: 0;
   right: 0;
   left: 0;
   height: var(--monitor-row-height);
-  box-shadow: inset 0 -1px color-mix(in srgb, var(--rule) 55%, transparent);
 }
 
 .monitor-cell {

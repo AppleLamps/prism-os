@@ -31,7 +31,6 @@ import {
 
 const rowHeight = 24
 const slotCount = 64
-const overscanRows = 2
 const maximumViewportHeight = 16_384
 const pixelGrid = 1 / 64
 
@@ -71,9 +70,9 @@ function referenceValueList(state: ReferenceState, frame: ReferenceFrame) {
   const scroll = Math.min(frame.scrollTop, maximumScroll)
   const firstVisible = Math.floor(scroll / rowHeight)
   const offsetInRow = scroll - firstVisible * rowHeight
-  const endVisible = Math.ceil((scroll + viewportCeil) / rowHeight)
-  const firstDrawn = Math.max(0, firstVisible - overscanRows)
-  const endDrawn = Math.min(endVisible + overscanRows, rowCount)
+  const endVisible = Math.min(Math.ceil((scroll + viewportCeil) / rowHeight), rowCount)
+  const spareSlots = Math.max(0, slotCount - (endVisible - firstVisible))
+  const firstDrawn = Math.max(0, firstVisible - Math.floor(spareSlots / 2))
 
   if (frame.listClickY !== null) {
     const clickY = Math.min(Math.max(frame.listClickY, 0), maximumViewportHeight)
@@ -107,7 +106,7 @@ function referenceValueList(state: ReferenceState, frame: ReferenceFrame) {
 
   // The rows that get a DOM node, in row order. A row past the last slot gets none.
   const drawn: {slot: number, row: number, top: number, selected: boolean}[] = []
-  for (let row = firstDrawn; row < Math.min(endDrawn, firstDrawn + slotCount); row++) {
+  for (let row = firstDrawn; row < Math.min(rowCount, firstDrawn + slotCount); row++) {
     drawn.push({slot: row % slotCount, row, top: row * rowHeight, selected: row === selected})
   }
   return {
@@ -118,7 +117,7 @@ function referenceValueList(state: ReferenceState, frame: ReferenceFrame) {
     scroll,
     scrollTarget,
     scrollRequest: scrollTarget !== scroll,
-    slotOverflow: endDrawn - firstDrawn > slotCount,
+    slotOverflow: endVisible - firstVisible > slotCount,
     drawn,
     // Not outputs of the program: for the tests' counters.
     firstVisible,
@@ -382,7 +381,7 @@ test('the list builds only integer bits and marked rounding points, and no sign 
   assert.equal(kinds.get('boolean') ?? 0, 0)
   assert.ok((kinds.get('integer bit') ?? 0) > 400, `${kinds.get('integer bit')} integer bit operations`)
   // Two per rounded quotient or rounded height.
-  assert.equal(kinds.get('marked'), 14)
+  assert.equal(kinds.get('marked'), 16)
   assert.equal(circuit.oneHotGroups.length, 0)
 })
 
@@ -511,8 +510,9 @@ test("the three locations' row counts are the program's own numbers of source ce
   assert.equal(shownLocation(machine), operationsLocation)
   assert.ok(rowCountOf(machine) > 4_000)
   assert.equal(values[machine.output.valueList.totalHeight], rowCountOf(machine) * rowHeight)
-  // 234 px hold 10 rows, the last one partly, and 2 more are drawn below the view.
-  assert.deepEqual(drawnRows(machine, values).map(row => row.row), Array.from({length: 12}, (_, row) => row))
+  // 234 px hold 10 rows, the last one partly. No row is above the view, so the other
+  // 54 slots draw the rows below it.
+  assert.deepEqual(drawnRows(machine, values).map(row => row.row), Array.from({length: slotCount}, (_, row) => row))
   assertDrawsLikeReference(machine, values, 0, list.height)
   assert.equal(selectedRow(machine), -1)
 })
@@ -688,7 +688,7 @@ test('a release on a sidebar location after a press on it shows that location: i
   assert.equal(machine.valueListScrollTo, 0)
   assert.equal(values[machine.output.valueList.scroll], 0)
   assert.equal(values[machine.output.valueList.totalHeight], outputsRows! * rowHeight)
-  assert.deepEqual(drawnRows(machine, values).map(row => row.row), Array.from({length: 12}, (_, row) => row))
+  assert.deepEqual(drawnRows(machine, values).map(row => row.row), Array.from({length: slotCount}, (_, row) => row))
   assert.ok(operationsRows! > outputsRows! && outputsRows! > stateRows!)
   // A key in the same evaluation as the release that shows another location
   // doesn't select: the new location starts with no selection.
@@ -839,7 +839,9 @@ test('maximizing Monitor at the end of the list draws the rows for the new viewp
   assert.equal(machine.valueListScrollTo, null)
   const expected = assertDrawsLikeReference(machine, values, end, maximizedHeight)
   assert.equal(expected.drawn.at(-1)!.row, rowCountOf(machine) - 1)
-  assert.equal(expected.drawn.length, Math.ceil(maximizedHeight / rowHeight) + overscanRows)
+  // The view holds the list's last 24 rows, and half of the 40 slots left over draw
+  // the rows above them. No row is below the view.
+  assert.equal(expected.drawn.length, 24 + 20)
   // Restoring the window keeps the position that the browser clamped to.
   values = click(machine, maximizedMaximize, undefined, totalHeight - maximizedHeight)
   assert.equal(machine.source[windowSourceField(0, windowStateField.maximized)], 0)
@@ -860,7 +862,9 @@ test("resizing Monitor with its grip changes the rows drawn, and the list's hit 
   assert.deepEqual([machine.source[windowSourceField(0, windowStateField.width)], machine.source[windowSourceField(0, windowStateField.height)]], [640, 460])
   assert.equal(selectedRow(machine), -1)
   const expected = assertDrawsLikeReference(machine, values, 0, list.height + 120)
-  assert.equal(expected.drawn.length, Math.ceil(354 / rowHeight) + overscanRows)
+  // 354 px hold 15 rows at the top of the list, and the other 49 slots draw the rows
+  // below them.
+  assert.equal(expected.drawn.length, slotCount)
   // Row 13 lies below the old viewport, and x 600 right of the old list.
   click(machine, {x: 600, y: rowPoint(13).y})
   assert.equal(selectedRow(machine), 13)
@@ -1020,8 +1024,8 @@ test('with more rows in view than DOM slots, 64 rows get a node and slotOverflow
   assert.equal(rows.length, slotCount)
   const expected = assertDrawsLikeReference(machine, values, 1200, maximizedHeight)
   assert.equal(expected.slotOverflow, true)
-  // The rows that get a node are the first 64 from 2 rows above the view.
-  assert.deepEqual(rows.map(row => row.row), Array.from({length: slotCount}, (_, index) => 1200 / rowHeight - overscanRows + index))
+  // The rows that get a node are the first 64 in view.
+  assert.deepEqual(rows.map(row => row.row), Array.from({length: slotCount}, (_, index) => 1200 / rowHeight + index))
 })
 
 test('HandwiredOS with the list builds no sign cascade, and every declared and inferred grid and range holds on each evaluation of a session in the list', () => {
@@ -1353,7 +1357,7 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
     locationNodes.map(node => [node.style['left'], node.style['top'], node.style['width'], node.style['height']]),
     [['8px', '28px', '136px', '24px'], ['8px', '52px', '136px', '24px'], ['8px', '76px', '136px', '24px']],
   )
-  // An item holds its location's name and its row count, e.g. 'Operations' and '4,251'.
+  // An item holds its location's name and its row count, e.g. 'Operations' and '4,254'.
   assert.deepEqual(
     locationNodes.map(node => node.children.map(part => [part.className, part.textContent])),
     [['State', machine.sourceCells.length], ['Operations', rowCountOf(machine)], ['Outputs', machine.namedOutputs.length]]
@@ -1373,13 +1377,13 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   assert.deepEqual(operationKinds().children.map(entry => entry.children[0]!.textContent), ['affine', 'ReGLU', 'boolean'])
   assert.equal(captionSentence(), '')
 
-  // The first frame shows Operations from the top: 12 rows, each in the slot of its
-  // index, with its text, its kind's class and its value. The frame also writes the
-  // list's class once, for the location.
+  // The first frame shows Operations from the top: a row in every slot, i.e. the 10
+  // rows in view and the 54 after them, each in the slot of its index, with its
+  // text, its kind's class and its value. The frame also writes the list's class
+  // once, for the location.
   let values = step(machine)
-  assert.equal(renderAndCountKindChanges(values, 1), 12)
-  assert.deepEqual(kindClasses().slice(0, 12), Array.from({length: 12}, (_, row) => expectedKindClass(operationsLocation, row)))
-  assert.ok(kindClasses().slice(12).every(kindClass => kindClass === 'monitor-cell monitor-cell-kind'))
+  assert.equal(renderAndCountKindChanges(values, 1), slotCount)
+  assert.deepEqual(kindClasses(), Array.from({length: slotCount}, (_, row) => expectedKindClass(operationsLocation, row)))
   assert.equal(dom.list.className, 'monitor-list monitor-list-operations')
   assert.deepEqual(dom.header.children.map(cell => cell.textContent), ['wire', 'kind', 'layer', 'weights', 'value'])
   assert.deepEqual(locationNodes.map(node => node.style['--selected']), ['0', '1', '0'])
@@ -1388,8 +1392,8 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   assert.equal(captionSentence(), 'What the program computes: each number from earlier ones.')
   assert.equal(dom.spacer.style['height'], `${rowCountOf(machine) * rowHeight}px`)
   assert.equal(dom.overflow.style['display'], 'none')
-  assert.deepEqual(rowNodes.map(node => node.style['display']), Array.from({length: slotCount}, (_, slot) => slot < 12 ? 'grid' : 'none'))
-  for (let row = 0; row < 12; row++) {
+  assert.ok(rowNodes.every(node => node.style['display'] === 'grid'))
+  for (let row = 0; row < slotCount; row++) {
     assert.equal(rowNodes[row]!.style['transform'], `translateY(${row * rowHeight}px)`)
     assert.equal(rowNodes[row]!.style['--selected'], '0')
     assert.deepEqual(rowTexts(rowNodes[row]!), expectedTexts(operationsLocation, row))
@@ -1401,17 +1405,22 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   assert.equal(renderAndCountKindChanges(values), 0)
   assert.equal(dom.counts.textWrites, textWrites)
   // The display, which the renderer writes for every slot in every frame, is back.
-  assert.equal(drawnNodes().length, 12)
+  assert.equal(drawnNodes().length, slotCount)
 
-  // The list scrolled by one row: the rows that stay drawn keep their nodes and
-  // their text, and the one row that comes into the drawn range is written, 4 texts
-  // and a value.
-  values = step(machine, rowHeight)
-  assert.equal(renderAndCountKindChanges(values), 1)
-  assert.equal(dom.counts.textWrites, textWrites + 5)
-  assert.deepEqual(rowTexts(rowNodes[12]!), expectedTexts(operationsLocation, 12))
-  assert.equal(kindClasses()[12], expectedKindClass(operationsLocation, 12))
-  assert.deepEqual(drawnNodes().map(node => rowNodes.indexOf(node)), Array.from({length: 13}, (_, row) => row))
+  // The list scrolled by 28 rows, so that 27 rows are drawn above the view and the
+  // drawn rows are rows 1 to 64: the rows that stay drawn keep their nodes and
+  // their text, and the one row that comes into the drawn range, row 64 in slot 0,
+  // is written, 4 texts and a value. Of the rows that stay, only a value that the
+  // scroll position changed is written.
+  const valuesBeforeTheScroll = Array.from({length: slotCount}, (_, row) => locations[operationsLocation]!.value(row))
+  values = step(machine, 28 * rowHeight)
+  const valuesChangedByTheScroll = valuesBeforeTheScroll.filter((value, row) => row >= 1 && !Object.is(value, locations[operationsLocation]!.value(row))).length
+  assert.equal(renderAndCountKindChanges(values), Number(expectedKindClass(operationsLocation, slotCount) !== expectedKindClass(operationsLocation, 0)))
+  assert.equal(dom.counts.textWrites, textWrites + 5 + valuesChangedByTheScroll)
+  assert.ok(valuesChangedByTheScroll < 8, `${valuesChangedByTheScroll} values changed`)
+  assert.deepEqual(rowTexts(rowNodes[0]!), expectedTexts(operationsLocation, slotCount))
+  assert.equal(kindClasses()[0], expectedKindClass(operationsLocation, slotCount))
+  assert.deepEqual(drawnNodes().map(node => rowNodes.indexOf(node)), [...Array.from({length: slotCount - 1}, (_, row) => row + 1), 0])
   // Far down the list, a slot shows another row of its own: row 4,174 is in slot 14.
   // Every drawn row has its own kind's class, and the rows drawn there are of more
   // than one kind.
@@ -1420,7 +1429,8 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
   assert.deepEqual(rowTexts(rowNodes[4174 % slotCount]!), expectedTexts(operationsLocation, 4174))
   assert.equal(rowNodes[4174 % slotCount]!.style['transform'], `translateY(${4174 * rowHeight}px)`)
   const rowsFarDown = drawnNodes().map(node => Number.parseFloat(node.style['transform']!.slice(11)) / rowHeight)
-  assert.equal(rowsFarDown.length, 15)
+  // The 11 rows in view from row 4,166 on, 26 above them and 27 below.
+  assert.deepEqual(rowsFarDown, Array.from({length: slotCount}, (_, index) => 4140 + index))
   assert.deepEqual(drawnNodes().map(node => node.children[1]!.className), rowsFarDown.map(row => expectedKindClass(operationsLocation, row)))
   assert.ok(new Set(rowsFarDown.map(row => expectedKindClass(operationsLocation, row))).size > 1)
   // A selected row.
@@ -1430,20 +1440,20 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
 
   // Another location: the header's titles, the list's class name, the caption's
   // sentence, and the text of every drawn row, which the program draws from the
-  // top. State's rows have no kind class, so each of its 12 drawn slots that held an
-  // operation's class loses it, and the caption shows no list of kinds.
+  // top. State's rows have no kind class, so each of the 64 slots, which all held an
+  // operation's class, loses it, and the caption shows no list of kinds.
   textWrites = dom.counts.textWrites
   values = click(machine, locationPoint(stateLocation), undefined, 100_000)
-  const slotsWithKind = kindClasses().slice(0, 12).filter(kindClass => kindClass !== 'monitor-cell monitor-cell-kind').length
-  assert.equal(slotsWithKind, 12)
+  const slotsWithKind = kindClasses().filter(kindClass => kindClass !== 'monitor-cell monitor-cell-kind').length
+  assert.equal(slotsWithKind, slotCount)
   assert.equal(renderAndCountKindChanges(values, 1), slotsWithKind)
-  assert.ok(kindClasses().slice(0, 12).every(kindClass => kindClass === 'monitor-cell monitor-cell-kind'))
+  assert.ok(kindClasses().every(kindClass => kindClass === 'monitor-cell monitor-cell-kind'))
   assert.equal(dom.list.className, 'monitor-list monitor-list-state')
   assert.deepEqual(dom.header.children.map(cell => cell.textContent), ['cell', 'kind', '', '', 'value'])
   assert.deepEqual(locationNodes.map(node => node.style['--selected']), ['1', '0', '0'])
   assert.equal(operationKinds().style['display'], 'none')
   assert.equal(captionSentence(), 'What the program reads: its input, its constants and the state it keeps.')
-  assert.equal(dom.counts.textWrites, textWrites + 5 + 1 + 12 * 5)
+  assert.equal(dom.counts.textWrites, textWrites + 5 + 1 + slotCount * 5)
   assert.deepEqual(rowTexts(rowNodes[0]!), ['viewportWidth', 'input', '', '', '1280'])
   // The program asked for the top, which the host gives the scroller after its DOM
   // writes, and the position read back is what the scroller kept.

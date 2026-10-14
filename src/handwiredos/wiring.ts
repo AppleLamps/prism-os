@@ -100,7 +100,7 @@ export function drawWiring(canvas: HTMLCanvasElement, program: TensorProgram, op
 
 // The opacity of one arc, for a program that stores `weightCount` weights. Every
 // program's picture gets the same amount of ink, that of 2,600 arcs at full
-// opacity, shared among its arcs: e.g. 29% an arc for 8,959 weights, and 6% for
+// opacity, shared among its arcs: e.g. 29% an arc for 8,965 weights, and 6% for
 // 43,180. So the desk looks about as dark whether the program grows or shrinks. A
 // program of fewer than 2,600 weights draws every arc in full.
 /** @public */
