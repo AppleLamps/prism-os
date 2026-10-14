@@ -6,12 +6,15 @@
 @import "../../assets/site.css";
 
 /* This page is wider than the other pages with two columns, so that the stages are larger: up to
-   1268 px, where a stage is 620 px wide and 496 px tall, instead of 1104 px and 538 px. Between
-   the two, the page is as wide as lets a stage and the two rows of controls under it fit in the
-   window's height: above a stage are 296 px, and under it 96 px for the two rows, so a window
-   900 px tall has room for a stage 508 px tall, and a window 800 px tall gets the 1104 px that
-   the other pages have. */
-.page.wide { --page-width: clamp(1104px, (100vh - 392px) * 2.5 + 24px, 1268px); }
+   1268 px, where a stage is 620 px wide inside its border, instead of 1104 px and 538 px.
+   Between the two, the page is as wide as lets a stage and the two rows of controls under it
+   fit in the window's height. A stage starts 298 px down the page and the two rows under it
+   take 96 px, so a stage that is 400 px less tall than the window leaves 6 px under the rows.
+   The page is two stages and a gap of 24 px wide, and a stage is 5 wide and 4 tall, so the
+   page's width is 2.5 times a stage's height plus 24 px. A window 900 px tall has room for the
+   widest page. A window 832 px tall or less gets the 1104 px that the other pages have, and
+   there the second row is partly below the window's edge, e.g. at 1280 by 800. */
+.page.wide { --page-width: clamp(1104px, (100vh - 400px) * 2.5 + 24px, 1268px); }
 
 /* The caption is one line, with its last words in ink and italic. */
 .deck { max-width: none; }
@@ -126,8 +129,8 @@
    button, and the slider. Under the photos: the loss's numbers with the Retrain button, and the
    chart. So when the stages are side by side, the two buttons are on one line, and the slider
    and the chart on the next. Each stage's column is a container, so a row is laid out for the
-   width of its column, which is about the same at a 1,000 px window with two columns (464 px)
-   as at a 480 px window with one (440 px). */
+   width of its column, which is the same at a 1,000 px window with two columns as at a 512 px
+   window with one: 464 px. */
 .stages > div { container-type: inline-size; }
 .tools {
   display: flex;
@@ -140,10 +143,15 @@
 /* A row's button sits at the row's right end, also on a line of its own, where a row is too
    narrow for the button, e.g. Delete at a 320 px window. */
 .tools .button { margin-left: auto; }
-/* In a column under 440 px, e.g. on a phone, a row's label is a line of its own above the row's
-   controls, like the label above a stage, so the slider is as long as the column allows. */
-@container (max-width: 439px) {
+/* In a column under 464 px, e.g. on a phone, a row's label is a line of its own above the row's
+   controls, like the label above a stage, so the slider is as long as the column allows. The
+   second row is then farther from the first, so that its label reads as its own. On one line,
+   "Choose preset", the three presets and the Delete button need 452 px: with the label beside
+   the presets from 440 px on, Delete went to a line of its own in columns of 440 to 451 px,
+   e.g. at a 960 px window. */
+@container (max-width: 463px) {
   .tools > .label { flex-basis: 100%; }
+  .tools + .tools { margin-top: var(--space-4); }
 }
 /* The rows under the photos: the numbers and the button share the first, and the chart has the
    second to itself, as wide as the column. */
@@ -197,7 +205,7 @@
 /* The "Misalignment penalty" row under the sketch's controls: a label, a slider and the
    slider's value, e.g. "4%". The value has a fixed width, so the slider keeps its length while
    the value changes, e.g. to "4.5%" or to "off". */
-@container (min-width: 440px) {
+@container (min-width: 464px) {
   .tools.penalty { flex-wrap: nowrap; }
 }
 .range-value {
