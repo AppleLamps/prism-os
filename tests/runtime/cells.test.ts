@@ -95,7 +95,7 @@ test('a program built over exact bits has the operations and the compiled layers
     return {circuit, program: circuit.compileTensorProgram(output)}
   }
   const withBits = build(() => inputBit())
-  const without = build(() => input([0, 1]) as ReturnType<typeof inputBit>)
+  const without = build(() => input([0, 1]))
   expect([withBits.circuit.exactBits.filter(Boolean).length, without.circuit.exactBits.filter(Boolean).length]).toEqual([5, 0])
   expect(withBits.circuit.operations.length).toBeGreaterThan(20)
   expect(withBits.circuit.operations).toEqual(without.circuit.operations)
