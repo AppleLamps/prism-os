@@ -411,6 +411,9 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
   invariant(documentCount >= 1, 'a searcher holds at least one document')
   const stateCapacities = [...(options.stateCapacities ?? defaultStateCapacities)].sort((left, right) => left - right)
   const windowCapacity = options.windowCapacity ?? 64
+  // Read here, so that the functions below don't keep `options`, and with it the caller's cells, 205 MB for 100,000
+  // documents, for as long as the searcher lives.
+  const {shaderSalt} = options
   const maxDocuments = Math.floor(Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) / (cellsPerDocument * 4))
   invariant(documentCount <= maxDocuments, `${documentCount} documents need a buffer of ${bufferBytesFor(documentCount)} bytes, and this device binds ${device.limits.maxStorageBufferBindingSize}. Ask for more with requestBatchDevice(bufferBytesFor(count)), or pass fewer documents.`)
   const cells = writeCells(texts, options.cells)
@@ -421,7 +424,7 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
   // The highlighter, once. Its display kinds stay in the runner's second output buffer, for every document.
   const json = buildJsonLoop(cellsPerDocument)
   const jsonShader = emitLoopWgsl(json.loop)
-  const jsonRunner = await createProgramRunner(device, jsonShader, json.loop.sharedValues, store, options.shaderSalt, {windowCapacity: documentCount})
+  const jsonRunner = await createProgramRunner(device, jsonShader, json.loop.sharedValues, store, shaderSalt, {windowCapacity: documentCount})
   const everyDocument = {firstDocument: 0, documentCount}
   const validated = await jsonRunner.evaluate({count: documentCount, window: everyDocument, readbacks: [{group: 0, ...everyDocument}]})
   const validation = validationOf(validated.outputs[0]!, documentCount)
@@ -436,7 +439,7 @@ export async function createGpuSearcher(device: GPUDevice, texts: readonly strin
       entry = (async () => {
         const loop = buildMaskedLoop(states, false)
         const shader = emitLoopWgsl(loop.loop)
-        const runner = await createProgramRunner(device, shader, loop.loop.sharedValues, store, options.shaderSalt, {inputs: [kindsBuffer], windowCapacity})
+        const runner = await createProgramRunner(device, shader, loop.loop.sharedValues, store, shaderSalt, {inputs: [kindsBuffer], windowCapacity})
         const search = {built: loop, runner, shared: new Float32Array(loop.loop.sharedValues), statements: shader.statementCount}
         built.set(states, search)
         return search
