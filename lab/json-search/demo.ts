@@ -154,6 +154,7 @@ function mountJsonSearch(document: Document, window: Window) {
     scopes: [...document.querySelectorAll<HTMLInputElement>('input[name="scope"]')], // mount lifetime
     whereGpu: find<HTMLInputElement>('input[name="where"][value="gpu"]'), // mount lifetime
     whereCpu: find<HTMLInputElement>('input[name="where"][value="cpu"]'), // mount lifetime
+    title: find<HTMLElement>('h1.title'), // mount lifetime
     notice: find<HTMLElement>('#notice'), // mount lifetime
     status: find<HTMLElement>('#status'), // mount lifetime
     statusLine: find<HTMLElement>('#status > span'), // mount lifetime; its children live until the line changes
@@ -170,7 +171,7 @@ function mountJsonSearch(document: Document, window: Window) {
   // What the last frame wrote, so a frame writes only what changed: a rewrite of a line would have a screen reader
   // read it again, and one of the document's text would collapse a selection in it.
   const written = {
-    notice: '', statusClass: '', statusBusy: '', statusLine: '', gpuDisabled: false, mapHeight: '', ring: '', ringClass: '', documentName: '', documentKey: '',
+    title: '', notice: '', statusClass: '', statusBusy: '', statusLine: '', gpuDisabled: false, mapHeight: '', ring: '', ringClass: '', documentName: '', documentKey: '',
     // The answer whose timing is recorded.
     timedFound: null as Found | null,
   }
@@ -566,7 +567,15 @@ function mountJsonSearch(document: Document, window: Window) {
     st.lineView = lineView
     st.mapView = mapView
 
-    // DOM writes.
+    // DOM writes. The title, in the heading and on the browser's tab, has the count that the page holds. Before the
+    // first frame, the page's HTML and demo.css show the count that the window's width asks for, which is the same
+    // one. Later the two can differ: a window that changes its width keeps its documents, e.g. a phone turned on its
+    // side, and a GPU with small buffers gets fewer documents than the width asks for.
+    const title = `Search ${count(documentCount)} JSON documents`
+    if (written.title !== title) {
+      domCache.title.textContent = written.title = title
+      document.title = `${title} · Handwired`
+    }
     if (written.notice !== notice) {
       domCache.notice.textContent = written.notice = notice
       domCache.notice.style.display = notice === '' ? 'none' : 'block'

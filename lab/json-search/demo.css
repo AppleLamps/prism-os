@@ -14,8 +14,8 @@
   --cell-waiting-strength: 0.12;
 }
 
-/* The count of documents in the title and in the first line under the field: 100,000, or 20,000 in a window narrower
-   than 720 px. demo.ts picks the count by the same media query. */
+/* The count of documents in the title and in the first line under the field, until demo.ts writes both: 100,000, or
+   20,000 in a window narrower than 720 px. demo.ts picks the count by the same media query, when the page starts. */
 .at-narrow { display: none; }
 @media (max-width: 719px) {
   .at-wide { display: none; }

@@ -29,7 +29,8 @@
     </header>
 
     <!-- A window narrower than 720 px loads 20,000 documents, and demo.css shows the count that fits the window, so
-         the title is right from the first paint. demo.ts decides by the same width. -->
+         the title is right from the first paint. demo.ts decides by the same width, once, and from its first frame on
+         it writes the title itself, with the count that the page holds. -->
     <h1 class="title">Search <span class="at-wide">100,000</span><span class="at-narrow">20,000</span> JSON documents</h1>
     <p class="deck">Each keystroke runs regex search, a fixed program of weighted sums, ReLU gates and table reads, once per document, and one pass on the GPU runs them all, since no document reads another. Each document is JSON of up to 512 characters, colored by the JSON highlighter, a second such program.</p>
     <!-- What the page does instead, and why, e.g. without WebGPU. demo.ts writes the sentence. -->
