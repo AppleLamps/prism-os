@@ -18,12 +18,11 @@ export const wideDocumentCount = 100_000
 export const narrowDocumentCount = 20_000
 
 // How many of the wanted documents fit one buffer of the device, e.g. 65,000 of 100,000 in the 128 MiB that every
-// WebGPU device binds, at 2,052 bytes per document. Fewer than wanted is rounded down to a round count.
+// WebGPU device binds, at 2,052 bytes per document. Fewer than wanted is rounded down to whole thousands. No device
+// holds fewer than those 128 MiB, which are 65,408 documents.
 export function documentsThatFit(wanted: number, largestBufferBytes: number, bytesPerDocument: number): number {
   const most = Math.floor(largestBufferBytes / bytesPerDocument)
-  if (most >= wanted) return wanted
-  const step = most >= 10_000 ? 1000 : most >= 1000 ? 100 : 1
-  return Math.max(1, Math.floor(most / step) * step)
+  return most >= wanted ? wanted : Math.floor(most / 1000) * 1000
 }
 
 export const count = (value: number) => value.toLocaleString('en-US')

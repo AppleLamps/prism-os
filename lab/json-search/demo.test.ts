@@ -197,7 +197,7 @@ describe('the page\'s documents', () => {
     }
   })
 
-  test('keeps the wanted count when one buffer of the GPU holds it, and otherwise the largest round count that fits', () => {
+  test('keeps the wanted count when one buffer of the GPU holds it, and otherwise the whole thousands that fit', () => {
     const bytesPerDocument = bufferBytesFor(1)
     expect(bytesPerDocument).toBe(2052)
     expect(documentsThatFit(100_000, bufferBytesFor(100_000), bytesPerDocument)).toBe(100_000)
@@ -205,9 +205,7 @@ describe('the page\'s documents', () => {
     // What every WebGPU device binds without being asked, 128 MiB, holds 65,408 documents.
     expect(documentsThatFit(100_000, 134_217_728, bytesPerDocument)).toBe(65_000)
     expect(documentsThatFit(20_000, 134_217_728, bytesPerDocument)).toBe(20_000)
-    expect(documentsThatFit(100_000, 16_000_000, bytesPerDocument)).toBe(7700)
-    expect(documentsThatFit(100_000, 1_000_000, bytesPerDocument)).toBe(487)
-    expect(documentsThatFit(100_000, 100, bytesPerDocument)).toBe(1)
+    expect(documentsThatFit(100_000, 180_000_000, bytesPerDocument)).toBe(87_000)
   })
 
   test('says in one sentence what the page does instead of searching the wanted documents on the GPU, and why', () => {
