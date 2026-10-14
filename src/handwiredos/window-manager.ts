@@ -77,7 +77,7 @@ import {
 } from '../runtime/cells.ts'
 import {arrangeInitialWindows} from './arrangement.ts'
 import {averagedFrames as monitorAveragedFrames, createMonitorFooter, frameCapacity as monitorFrameCapacity} from './monitor-footer.ts'
-import {mountWiring} from './wiring.ts'
+import {createWiringRenderer} from './wiring.ts'
 
 export const windowCount = 3
 
@@ -1784,9 +1784,16 @@ function mountWindowManager(document: Document, window: Window) {
     '--system-bar-height',
     `${machine.source[machine.cells.systemBarHeight]}px`,
   )
-  // The desk's wallpaper, the program's weights as arcs, see wiring.ts. The canvas's
-  // size follows from the system bar's height, which is set just above.
-  mountWiring(wiringCanvas, machine.tensorProgram, window)
+  // The desk's wallpaper, the program's weights as arcs, see wiring.ts. Its two
+  // colors are the stylesheet's. The frame gives the canvas its rectangle and draws
+  // the picture.
+  const wiringStyle = window.getComputedStyle(wiringCanvas)
+  const wiring = createWiringRenderer(
+    wiringCanvas,
+    machine.tensorProgram,
+    {adds: wiringStyle.getPropertyValue('--copper').trim(), subtracts: wiringStyle.getPropertyValue('--wire-indigo').trim()},
+    machine.source[machine.cells.systemBarHeight]!,
+  )
 
   // The focused window in the last frame's outputs, or -1, for the keydown listener.
   let focusedWindowAtLastFrame = -1
@@ -1853,6 +1860,7 @@ function mountWindowManager(document: Document, window: Window) {
     const notesIsFocusedWindow = focusedWindowAtLastFrame === notesWindowIndex
 
     // DOM writes.
+    const wiringPending = wiring.render(viewportWidth, viewportHeight, frameTime)
     projectWindowElements(domCache.windows, domCache.windowContents, values, machine.output.windows)
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       const element = domCache.dockItems[windowIndex]!
@@ -1909,10 +1917,10 @@ function mountWindowManager(document: Document, window: Window) {
     if (valueListScrollTo !== null) valueList.scrollTo(valueListScrollTo)
 
     // Frames continue while springs are stepping, i.e. until an evaluation that
-    // writes state back finds nothing animating, and through the page's opening
-    // frames, see openingFramesLeft.
+    // writes state back finds nothing animating, through the page's opening
+    // frames, see openingFramesLeft, and while the wallpaper waits for its picture.
     if (openingFramesLeft > 0) openingFramesLeft--
-    if (machine.clock.animatedUntilMs !== null || openingFramesLeft > 0) scheduleRender()
+    if (machine.clock.animatedUntilMs !== null || openingFramesLeft > 0 || wiringPending) scheduleRender()
   }
 
   // Each event carries its own timestamp, which shares the time origin of

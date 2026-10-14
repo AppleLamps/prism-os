@@ -97,15 +97,15 @@ body {
    more weights the program stores, e.g. at 29% for 8,965 weights. One arc alone is then
    at about 10%, a hairline, and a band where many arcs lie on each other stops at 36% of
    the arc's color, so the picture stays quiet behind the windows and the list of things
-   to try. */
+   to try.
+
+   JavaScript writes the canvas's left, top, width and height each frame, see
+   wiringRectangle in wiring.ts: 24 px in from the desktop's left and right edges, from
+   12 px under the system bar to 6 px above the desktop's bottom. */
 .desk-wiring {
   --dock-clearing: radial-gradient(258px 100px at 50% calc(100% - 32px), transparent 68%, #000);
   position: absolute;
   z-index: 0;
-  top: calc(var(--system-bar-height) + 12px);
-  left: 24px;
-  width: calc(100% - 48px);
-  height: calc(100% - var(--system-bar-height) - 18px);
   pointer-events: none;
   opacity: 0.36;
   -webkit-mask-image: var(--dock-clearing);
