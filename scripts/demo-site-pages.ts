@@ -9,8 +9,8 @@ export const repoRoot = resolve(import.meta.dir, '..')
 // `source` is the page's file in the repo, and `path` is its folder on the site, relative to the site's root, e.g.
 // 'os/' is served at <site>/os/ and built as site/os/index.html. The site is served under a path prefix, e.g.
 // https://example.com/handwired/, so every link between pages is relative and written for these paths: the index
-// links to HandwiredOS as "os/", and HandwiredOS links to the index as "../" and to another demo as e.g.
-// "../learned-gallery/".
+// links to HandwiredOS as "os/", and a demo's page links to the index as "../" and to another demo as e.g.
+// "../learned-gallery/", which is the JSON search page's link to the learned gallery.
 export type SitePage = {source: string, path: string}
 
 const publishedPages: SitePage[] = [
