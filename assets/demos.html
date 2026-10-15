@@ -39,8 +39,9 @@
 
         <!-- The README's example (README.md, "How It Works"), a ternary, in three views. The first two are one
              dark block of code: the ternary as written, under the comment "your code", and the same ternary as
-             arithmetic, under the comment "turns into" and a second comment that says what relu is. The third is
-             the circuit under the block, which draws that arithmetic. The figure has no caption.
+             arithmetic, under the comment "turns into". A comment beside above4's line says what relu is; in a
+             window of 640 px or narrower that comment stands over the line. The third view is the circuit under
+             the block, which draws that arithmetic. The figure has no caption.
              - The arithmetic. relu(x) is Math.max(0, x). For an a up to 4, relu(a - 4) and relu(a - 5) are both 0,
                and for an a from 5 they are a - 4 and a - 5, whose difference is 1. So above4 is the condition
                a > 4 as a number, 1 or 0. The second line computes both branches and keeps one of them:
@@ -74,11 +75,11 @@
              within the operands' declared ranges, e.g. 4.5 > 4 gives exactly 1. The arithmetic's second line has
              the form of emitSelect: two products and their sum.
 
-             The arithmetic's second line is written as two lines, so that the two branches stand one under the
-             other, with the plus under the "=". The arithmetic's first line breaks only at the space in its span
-             with the class "break", which is before its minus, and only where the line doesn't fit, e.g. in a
-             window of 390 px where the code's font is SF Mono. --hang is how far demos.css then indents the rest
-             of the line: as far as the line's "=", so that the minus comes under the "=". -->
+             A line of the arithmetic breaks only at the space in its span with the class "break", which is before
+             an operator, and only where the line doesn't fit: the second line before its plus in a window narrower
+             than about 405 px, e.g. at 390 px, and the first line before its minus in one narrower than about 360 px.
+             --hang is how far demos.css then indents the rest of the line: as far as the line's "=", so that the
+             operator comes under the "=". -->
         <figure class="example">
           <div class="code">
             <div class="lines">
@@ -87,10 +88,11 @@
             </div>
             <div class="lines">
               <code class="comment">// turns into</code>
-              <code class="comment">// (relu(x) is Math.max(0, x))</code>
-              <code style="--hang: 13ch"><span class="keyword">const</span> <span class="bit">above4</span> = relu(a - 4)<span class="break"> </span>- relu(a - 5)</code>
-              <code><span class="keyword">const</span> result = <span class="bit">above4</span> * 10</code>
-              <code>             + (1 - <span class="bit">above4</span>) * 12</code>
+              <div class="with-note">
+                <code style="--hang: 13ch"><span class="keyword">const</span> <span class="bit">above4</span> = relu(a - 4)<span class="break"> </span>- relu(a - 5)</code>
+                <code class="comment">// relu(x) is Math.max(0, x)</code>
+              </div>
+              <code style="--hang: 13ch"><span class="keyword">const</span> result = <span class="bit">above4</span> * 10<span class="break"> </span>+ (1 - <span class="bit">above4</span>) * 12</code>
             </div>
           </div>
             <svg class="wires" viewBox="0 0 408 72" role="img" aria-label="The two lines of arithmetic drawn as a circuit. The input a feeds two ReLU gates, relu(a &minus; 4) and relu(a &minus; 5). The second gate's value is subtracted from the first's, which gives above4, and above4 feeds result.">

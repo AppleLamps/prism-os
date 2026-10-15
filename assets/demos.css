@@ -3,14 +3,16 @@
 @import "./site.css";
 
 /* The opening: the headline and one sentence under it on the left, the example on the right, both starting at the
-   same height. The example is the taller of the two, by 20 px (292 px against 272 px in a window of 1440 px),
-   and the second row takes that height, so the sentence stays right under the headline. */
+   same height. In a window of 1440 px the example is 244 px tall and the headline with its sentence 272 px.
+   The second row takes what the example needs beyond the headline, so the sentence stays right under the headline
+   also where the example is the taller of the two. */
 .opening {
   display: grid;
-  /* The example's column is as wide as the circuit's drawing, 408 px. */
-  grid-template-columns: minmax(0, 1fr) 408px;
+  /* The example's column holds the block's longest line with the block's padding: the line of above4 with the
+     comment beside it, 69 characters, which is 555 px in the system's SF Mono at 13 px and 540 px in Menlo. */
+  grid-template-columns: minmax(0, 1fr) 592px;
   grid-template-rows: auto 1fr;
-  column-gap: var(--space-8);
+  column-gap: var(--space-7);
   align-items: start;
   margin-top: var(--space-8);
 }
@@ -43,9 +45,9 @@
 .lines + .lines { margin-top: var(--space-3); }
 /* A line breaks only at the one space that wraps like a space of ordinary text, the space of the line's .break,
    and only where the line doesn't fit. The rest of the line is then indented by --hang, which demos.html sets so
-   that the operator after the space comes under the line's "=". Only the arithmetic's first line has such a
-   space: its 40 characters are 322 px in the system's SF Mono at 13 px, and the block's inside is 318 px in a
-   window of 390 px. The arithmetic's second line is two lines in demos.html. */
+   that the operator after the space comes under the line's "=". The arithmetic's two lines each have such a
+   space: the second line breaks before its plus in a window narrower than about 405 px, e.g. at 390 px, and the
+   first before its minus in one narrower than about 360 px. */
 .lines code {
   display: block;
   padding: 0 0 0 var(--hang, 0);
@@ -57,15 +59,18 @@
   white-space: pre;
 }
 .lines .break { white-space: normal; }
+/* The line of above4 with the comment that says what relu is beside it. In a window of 640 px or narrower the two
+   don't fit on one line, and the comment stands over the line. */
+.lines .with-note { display: flex; column-gap: 1ch; font: var(--type-code); }
 /* Comments and "const" are pale, so that a line of code starts at its name. The condition is copper in every
    view: "a > 4" in the code, the name above4 in the arithmetic, and the name in above4's box in the circuit. */
 .lines .comment, .lines .keyword { color: var(--pale-on-ink); }
 .lines .bit { color: var(--copper-on-ink); }
 /* The circuit. A wire is copper, and the circuit's open end, the input a, is an eyelet, a small ring, like the
    one in the header's mark. The circuit ends at the box result. A box is a sheet with an ink outline, and its name is
-   in the serif. The drawing is 408 px wide, as wide as the example's column, and is shown at that size in every
-   window of 448 px or more. In a narrower window the drawing is as wide as the example, e.g. 350 px in a window of
-   390 px. At its own size a box's outline covers whole pixels, and a wire, which is 1.5 px wide, has its middle a
+   in the serif. The drawing is 408 px wide, narrower than the block of code over it, and is shown at that size in
+   every window of 448 px or more. In a narrower window the drawing is as wide as the example, e.g. 350 px in a
+   window of 390 px. At its own size a box's outline covers whole pixels, and a wire, which is 1.5 px wide, has its middle a
    quarter of a pixel past a whole pixel, e.g. at y = 36.25. The wire then covers three whole device pixels on a
    screen with two device pixels per CSS px, and one whole pixel and half of the next on a screen with one. */
 .wires { display: block; width: 100%; max-width: 408px; height: auto; margin-top: var(--space-4); overflow: visible; }
@@ -173,36 +178,21 @@ a.card:hover .go::after { transform: translateX(3px); }
 .documents .document { fill: var(--ink); fill-opacity: 0.3; }
 .documents .found { fill: var(--copper); }
 
-/* Below the page's full width, 1104 px. */
+/* Below the page's full width, 1104 px, the opening is one column: the headline runs across the page, and the
+   sentence and the example follow under it. Beside the example the headline's column is 464 px, and the headline's
+   longest line, "Turn your regular", is 444 px wide in the Mac's serif and 458 px in Palatino Linotype, the widest
+   of the serifs that site.css names. */
 @media (max-width: 1151px) {
-  .opening { column-gap: var(--space-7); }
+  .opening { grid-template-columns: minmax(0, 1fr); }
+  .example { grid-column: 1; grid-row: auto; max-width: 592px; margin-top: var(--space-6); }
   /* The text beside the screenshot would be too narrow, so the screenshot goes on top. */
   .demo.is-first { grid-template-columns: 1fr; }
   .demo.is-first .demo-picture { border-bottom: 1px solid var(--rule); }
   .demo.is-first .demo-picture::after { content: none; }
   .go { margin-top: 0; }
 }
-/* Beside the example the headline has three lines. The longest of them, "Turn your regular", is 444 px wide in
-   the Mac's serif and 458 px in Palatino Linotype, the widest of the serifs that site.css names. In a window of
-   1000 px the headline's column is 496 px, which leaves 38 px for a serif that is wider still, e.g. a system's own
-   serif where the system has none of the named ones. In a narrower window the opening becomes one column: the
-   headline runs across the page, and the sentence and the example follow under it. */
-@media (max-width: 999px) {
-  .opening { grid-template-columns: minmax(0, 1fr); }
-  .example { grid-column: 1; grid-row: auto; margin-top: var(--space-6); }
-}
-/* From 901 px the page is wide enough for the code and the circuit side by side: the block of code on the left, in
-   a column of 408 px, and the circuit on the right, at the middle of the block's height. The gap between the
-   columns is 32 px: in a window of 901 px that leaves the right column 413 px, and a gap of 48 px would leave
-   less than the circuit's 408 px. */
-@media (min-width: 901px) and (max-width: 999px) {
-  .example { display: grid; grid-template-columns: 408px minmax(0, 1fr); column-gap: var(--space-6); align-items: center; }
-  .wires { margin-top: 0; }
-}
 @media (max-width: 900px) {
   .opening { margin-top: var(--space-7); }
-  /* The code and the circuit are one under the other again, no wider than beside the headline. */
-  .example { max-width: 408px; }
   .demo.is-first .demo-body { padding: var(--space-5); }
 }
 /* One card to a row in a window narrower than 720 px, where each of two cards side by side would be less than
@@ -218,5 +208,6 @@ a.card:hover .go::after { transform: translateX(3px); }
 /* The width where site.css makes the titles and the code smaller. */
 @media (max-width: 640px) {
   .opening { margin-top: var(--space-6); }
+  .lines .with-note { flex-direction: column-reverse; }
   .section-label { margin-top: var(--space-7); }
 }
