@@ -3,6 +3,7 @@ import {test} from 'bun:test'
 import {needsConfirmation, parsePhoto, validateCall} from '../../src/prismos/commands.ts'
 import {formatCall, parseModelAnswer} from '../../src/prismos/function-calls.ts'
 import {quickCommands} from '../../src/prismos/quick-commands.ts'
+import {quickSuggestions} from '../../src/prismos/command-center.ts'
 
 test('photos parse by name, part of a name, digit, word and ordinal', () => {
   assert.equal(parsePhoto('Blue Lagoon'), 10)
@@ -66,4 +67,8 @@ test('the quick parser takes whole common sentences and leaves the rest to the m
   assert.equal(quickCommands('make it purple'), null)
   assert.equal(quickCommands('open photo of my cat'), null)
   assert.equal(quickCommands(''), null)
+})
+
+test('every suggestion the panel shows without the model is a quick command', () => {
+  for (const suggestion of quickSuggestions) assert.notEqual(quickCommands(suggestion), null, suggestion)
 })

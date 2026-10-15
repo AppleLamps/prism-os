@@ -14,7 +14,12 @@ import type {Operator} from './operator.ts'
 import {quickCommands} from './quick-commands.ts'
 import type {WorkerAnswer, WorkerRequest} from './model-worker.ts'
 
-// The fine-tuned model on the Hugging Face Hub, see src/prismos/training.
+// The fine-tuned model on the Hugging Face Hub, see src/prismos/training. Off until the
+// model is trained on the final command list and published as a public repo: until
+// then the panel runs quick commands only, with no download offered. ?model=on turns it
+// on for one visit, to try a published model; to turn it on for everyone, set this to
+// true.
+export const modelEnabled = typeof location !== 'undefined' && new URLSearchParams(location.search).get('model') === 'on'
 export const modelId = 'AppleLampsX/prism-os-functiongemma'
 const developerPrompt = 'You are a model that can do function calling with the following functions'
 const consentKey = 'prism-os.model-consent'
@@ -28,13 +33,22 @@ type ModelState =
   | {kind: 'unsupported'}
   | {kind: 'failed', message: string}
 
-const suggestions = [
+const modelSuggestions = [
   'Put Scope and Chroma side by side',
   'Open Blue Lagoon',
   'Write "call the dentist" in my note',
   'Dark mode and a teal accent',
   'How big is the program?',
 ]
+// Each of these is a quick command, see quickSuggestions in tests/prismos/commands.test.ts.
+export const quickSuggestions = [
+  'Open photo Blue Lagoon',
+  'Minimize Inkwell',
+  'Dark mode',
+  'Make it teal',
+  'How big is the program?',
+]
+const suggestions = modelEnabled ? modelSuggestions : quickSuggestions
 
 function describeCall(command: Command) {
   if (command.name === 'open_photo') return `open_photo(${photoNames[command.photo]})`
@@ -208,6 +222,11 @@ export function mountCommandCenter(document: Document, window: Window, operator:
         await runCommands(user, quick, entry)
         return
       }
+      if (!modelEnabled) {
+        entry.reply = 'I don\'t know that one yet. Try "open chroma", "minimize scope", "dark mode", "make it teal", "open photo 3" or "show desktop".'
+        entry.tone = 'error'
+        return
+      }
       if (modelState.kind !== 'ready') {
         entry.reply = modelState.kind === 'loading'
           ? 'The model is still downloading. Try again in a moment, or use a short command like "dark mode".'
@@ -312,12 +331,14 @@ export function mountCommandCenter(document: Document, window: Window, operator:
     input.disabled = busy && pendingConfirmation === null
     root.classList.toggle('is-busy', busy)
 
-    loadButton.hidden = modelState.kind !== 'idle' && modelState.kind !== 'failed'
+    loadButton.hidden = !modelEnabled || (modelState.kind !== 'idle' && modelState.kind !== 'failed')
     loadButton.textContent = modelState.kind === 'failed' ? 'Try again' : 'Load model'
     progress.hidden = modelState.kind !== 'loading'
     switch (modelState.kind) {
       case 'idle':
-        statusText.textContent = 'Short commands work now. Load the model for everything else: about 425 MB, downloaded once.'
+        statusText.textContent = modelEnabled
+          ? 'Short commands work now. Load the model for everything else: about 425 MB, downloaded once.'
+          : 'Short commands for windows, photos, the note and settings. Everything runs in your browser.'
         break
       case 'loading': {
         const {loaded, total} = modelState
@@ -345,7 +366,7 @@ export function mountCommandCenter(document: Document, window: Window, operator:
   function open() {
     root.hidden = false
     trigger.setAttribute('aria-expanded', 'true')
-    if (storedConsent()) loadModel()
+    if (modelEnabled && storedConsent()) loadModel()
     render()
     input.focus()
   }
