@@ -42,10 +42,10 @@
 .example .code { padding: var(--space-3) var(--space-4); border-radius: var(--radius-2); background: var(--ink); color: var(--paper); }
 .lines + .lines { margin-top: var(--space-3); }
 /* A line breaks only at the one space that wraps like a space of ordinary text, the space of the line's .break,
-   and only where the line doesn't fit. The rest of the line is then indented by --hang, which demos.html sets for
-   each line so that the operator after the space comes under the line's "=". The longest line has 50 characters,
-   391 px in Menlo at 13 px and 402 px in the system's SF Mono, and the block's inside is 376 px, so that line
-   always breaks, before its plus. */
+   and only where the line doesn't fit. The rest of the line is then indented by --hang, which demos.html sets so
+   that the operator after the space comes under the line's "=". Only the arithmetic's first line has such a
+   space: its 40 characters are 322 px in the system's SF Mono at 13 px, and the block's inside is 318 px in a
+   window of 390 px. The arithmetic's second line is two lines in demos.html. */
 .lines code {
   display: block;
   padding: 0 0 0 var(--hang, 0);
@@ -58,7 +58,7 @@
 }
 .lines .break { white-space: normal; }
 /* Comments and "const" are pale, so that a line of code starts at its name. The condition is copper in every
-   view: "a > 4" in the code, the name isAbove4 in the arithmetic, and the name in isAbove4's box in the circuit. */
+   view: "a > 4" in the code, the name above4 in the arithmetic, and the name in above4's box in the circuit. */
 .lines .comment, .lines .keyword { color: var(--pale-on-ink); }
 .lines .bit { color: var(--copper-on-ink); }
 /* The circuit. A wire is copper, and the circuit's open end, the input a, is an eyelet, a small ring, like the
@@ -75,7 +75,7 @@
 .wires .joint { fill: var(--copper); }
 .wires text { fill: var(--ink); font: italic 400 14px/1 var(--font-serif); text-anchor: middle; }
 .wires .bit { fill: var(--copper); }
-/* The plus sign and the minus sign beside the two wires that end at isAbove4. Nothing else in the circuit says which
+/* The plus sign and the minus sign beside the two wires that end at above4. Nothing else in the circuit says which
    ReLU is subtracted, so the signs are 13 px: in a window of 390 px, where the drawing is at 86% of its size, the
    signs are still 11 px. */
 .wires .sign { fill: var(--ink-2); font: 500 13px/1 var(--font-sans); text-anchor: end; }

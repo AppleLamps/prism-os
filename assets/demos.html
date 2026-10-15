@@ -42,24 +42,26 @@
              arithmetic, under the comment "turns into" and a second comment that says what relu is. The third is
              the circuit under the block, which draws that arithmetic. The figure has no caption.
              - The arithmetic. relu(x) is Math.max(0, x). For an a up to 4, relu(a - 4) and relu(a - 5) are both 0,
-               and for an a from 5 they are a - 4 and a - 5, whose difference is 1. So isAbove4 is the condition
+               and for an a from 5 they are a - 4 and a - 5, whose difference is 1. So above4 is the condition
                a > 4 as a number, 1 or 0. The second line computes both branches and keeps one of them:
-               1 * 10 + 0 * 12 is 10, and 0 * 10 + 1 * 12 is 12. E.g. a = 5 gives isAbove4 = 1 - 0 = 1 and the
-               result 10, and a = 4 gives isAbove4 = 0 - 0 = 0 and the result 12.
+               1 * 10 + 0 * 12 is 10, and 0 * 10 + 1 * 12 is 12. E.g. a = 5 gives above4 = 1 - 0 = 1 and the
+               result 10, and a = 4 gives above4 = 0 - 0 = 0 and the result 12.
              - The circuit draws those two lines, and the code above the circuit is its legend. A box has the name
                of the value on the wire that leaves the box. A wire from the input a splits and ends at the two
-               ReLUs. A wire from each ReLU ends at isAbove4, where a plus sign and a minus sign say which ReLU is
-               subtracted. A wire from isAbove4 ends at result, which is the circuit's last box; no wire leaves it.
+               ReLUs. A wire from each ReLU ends at above4, where a plus sign and a minus sign say which ReLU is
+               subtracted. A wire from above4 ends at result, which is the circuit's last box; no wire leaves it.
                The circuit is the headline's neural net, two ReLUs and weighted sums of their values.
-             - The condition is copper in every view: "a > 4" in the ternary, the name isAbove4 in the arithmetic,
-               and the name in isAbove4's box in the circuit. That box's outline is ink, like every box's. The
+             - The condition is copper in every view: "a > 4" in the ternary, the name above4 in the arithmetic,
+               and the name in above4's box in the circuit. That box's outline is ink, like every box's. The
                circuit's wires are copper too, as the site's wires are, whichever value a wire carries.
 
-             Where isAbove4 is exact. isAbove4 is exactly 1 or 0 for every a up to 4 and for every a from 5, so for
-             every integer a. The page doesn't say so; the README's comment in the example does. Between 4 and 5, isAbove4 is a - 4, e.g.
-             a = 4.5 gives 0.5, and the result is then 11. A very large integer goes wrong too, where a - 5 has no
+             The bit's name is above4 here and isAbove4 in the README; the shorter name keeps the lines short.
+
+             Where above4 is exact. above4 is exactly 1 or 0 for every a up to 4 and for every a from 5, so for
+             every integer a. The page doesn't say so; the README's comment in the example does. Between 4 and 5,
+             above4 is a - 4, e.g. a = 4.5 gives 0.5, and the result is then 11. A very large integer goes wrong too, where a - 5 has no
              exact value: in FP32, the runtime's number type, the first such integer is 2^24 + 6 = 16,777,222,
-             where a - 5 rounds to 2^24, so isAbove4 is 2 and the result 8. In JavaScript's own numbers the first
+             where a - 5 rounds to 2^24, so above4 is 2 and the result 8. In JavaScript's own numbers the first
              is 2^53 + 6.
 
              The runtime builds a comparison in another way, in emitCompare (src/runtime/numeric-ui-core.ts). For
@@ -72,11 +74,11 @@
              within the operands' declared ranges, e.g. 4.5 > 4 gives exactly 1. The arithmetic's second line has
              the form of emitSelect: two products and their sum.
 
-             A line of code breaks only at the space in its span with the class "break", which is before an
-             operator, and only where the line doesn't fit. The longest line, the arithmetic's second, is wider
-             than the block at every window width, so it always breaks before its plus, and the two branches
-             stand one under the other. --hang is how far demos.css then indents the rest of the line: as far as
-             the line's "=", so that the operator comes under the "=". -->
+             The arithmetic's second line is written as two lines, so that the two branches stand one under the
+             other, with the plus under the "=". The arithmetic's first line breaks only at the space in its span
+             with the class "break", which is before its minus, and only where the line doesn't fit, e.g. in a
+             window of 390 px where the code's font is SF Mono. --hang is how far demos.css then indents the rest
+             of the line: as far as the line's "=", so that the minus comes under the "=". -->
         <figure class="example">
           <div class="code">
             <div class="lines">
@@ -86,11 +88,12 @@
             <div class="lines">
               <code class="comment">// turns into</code>
               <code class="comment">// (relu(x) is Math.max(0, x))</code>
-              <code style="--hang: 15ch"><span class="keyword">const</span> <span class="bit">isAbove4</span> = relu(a - 4)<span class="break"> </span>- relu(a - 5)</code>
-              <code style="--hang: 13ch"><span class="keyword">const</span> result = <span class="bit">isAbove4</span> * 10<span class="break"> </span>+ (1 - <span class="bit">isAbove4</span>) * 12</code>
+              <code style="--hang: 13ch"><span class="keyword">const</span> <span class="bit">above4</span> = relu(a - 4)<span class="break"> </span>- relu(a - 5)</code>
+              <code><span class="keyword">const</span> result = <span class="bit">above4</span> * 10</code>
+              <code>             + (1 - <span class="bit">above4</span>) * 12</code>
             </div>
           </div>
-            <svg class="wires" viewBox="0 0 408 72" role="img" aria-label="The two lines of arithmetic drawn as a circuit. The input a feeds two ReLU gates, relu(a &minus; 4) and relu(a &minus; 5). The second gate's value is subtracted from the first's, which gives isAbove4, and isAbove4 feeds result.">
+            <svg class="wires" viewBox="0 0 408 72" role="img" aria-label="The two lines of arithmetic drawn as a circuit. The input a feeds two ReLU gates, relu(a &minus; 4) and relu(a &minus; 5). The second gate's value is subtracted from the first's, which gives above4, and above4 feeds result.">
               <path class="wire" d="M5 36.25H28.25"/>
               <path class="wire" d="M28.25 36.25V22.25a8 8 0 0 1 8-8H53"/>
               <path class="wire" d="M28.25 36.25V50.25a8 8 0 0 0 8 8H53"/>
@@ -106,7 +109,7 @@
               <text x="5" y="24">a</text>
               <text x="96.5" y="18.5">relu(a &minus; 4)</text>
               <text x="96.5" y="62.5">relu(a &minus; 5)</text>
-              <text class="bit" x="232.5" y="40.5">isAbove4</text>
+              <text class="bit" x="232.5" y="40.5">above4</text>
               <text x="334.5" y="40.5">result</text>
               <text class="sign" x="188" y="24">+</text>
               <text class="sign" x="188" y="56">&minus;</text>
