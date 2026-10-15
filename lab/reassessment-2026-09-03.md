@@ -108,7 +108,7 @@ Training uses correct internal state and directly supervised decisions. That is 
 
 ## Claims to retire
 
-The old shared brief labels several speculative conclusions "take these as given." That is the most important documentation cleanup: it passes yesterday's interpretation to tomorrow's agents as a constraint. [Shared brief](briefs/context-shared.md).
+The old shared brief labels several speculative conclusions "take these as given." That is the most important documentation cleanup: it passes yesterday's interpretation to tomorrow's agents as a constraint. The shared brief was lab/briefs/context-shared.md; the folder lab/briefs was removed on October 14, 2026.
 
 | Earlier claim | Better statement |
 | --- | --- |
