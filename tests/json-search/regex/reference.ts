@@ -4,8 +4,10 @@
 // - automatonMatches runs the compiled automaton from each scan position, one code point at a time, until no state is
 //   left, and keeps the last position where an accepting state was reached.
 // - regexpMatches doesn't use the compiled automaton: it tests every substring with RegExp.
-import type {Match} from '../../../src/json-search/regex/host.ts'
 import {type CompiledPattern, setContains} from '../../../src/json-search/regex/pattern.ts'
+
+// A match covers the code points from `start` up to and not including `end`.
+export type Match = {start: number, end: number}
 
 export function automatonMatches({automaton}: CompiledPattern, codePoints: readonly number[]): Match[] {
   const matches: Match[] = []

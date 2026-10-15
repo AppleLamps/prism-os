@@ -1,7 +1,11 @@
 // The hand-written cases and the seeded random patterns and texts of regex-search.test.ts in this folder, which tests
-// the program that JSON search's step is built from.
-import {type Match, codePointsOf} from '../../../src/json-search/regex/host.ts'
+// JSON search's search step.
 import {type CompiledPattern, maxCodePoint} from '../../../src/json-search/regex/pattern.ts'
+import type {Match} from './reference.ts'
+
+export function codePointsOf(text: string): number[] {
+  return Array.from(text, character => character.codePointAt(0)!)
+}
 
 export function createRandom(seed: number) {
   let state = seed >>> 0
