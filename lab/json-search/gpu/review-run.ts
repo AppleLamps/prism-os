@@ -1,6 +1,6 @@
 // Opens review-page.html in a fresh headless Chrome with WebGPU and writes what the page posts to a JSON file: the
 // review's checks and baselines, see review-page.ts.
-//   bun lab/json-search/gpu/review-run.ts --mode edge --profile <new folder> --out <file.json>        about 5 minutes
+//   bun lab/json-search/gpu/review-run.ts --mode edge --profile <new folder> --out <file.json>        about 1 minute
 //   bun lab/json-search/gpu/review-run.ts --mode many --profile <new folder> --out <file.json>        about 6 minutes
 //   bun lab/json-search/gpu/review-run.ts --mode baselines --profile <new folder> --out <file.json>   about 4 minutes
 //     [--documents 100000] [--port 4427] [--devtools-port 9427] [--salt <number>] [--search-writer loop-emit] [--chrome <path>]

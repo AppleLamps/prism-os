@@ -1,4 +1,4 @@
-// Prints what the README says about sizes and documents, without a GPU:
+// Prints what src/json-search's README says about sizes and what this folder's says about the documents, without a GPU:
 //   bun lab/json-search/report.ts loops                 the loop programs' stages and their shaders
 //   bun lab/json-search/report.ts documents [count]     the generated documents' shapes, defects and lengths, 100,000 by default
 //   bun lab/json-search/report.ts examples [count]      the first documents' texts, 8 by default
