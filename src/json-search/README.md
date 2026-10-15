@@ -29,7 +29,7 @@ What the page shows, from top to bottom, and how each number is measured:
 - **The pattern field with two toggles.** All, Keys or String values is what the search reads. GPU or CPU is where the search program runs.
 - **One line of numbers**, e.g. "10,559 of 100,000 documents match. This program: 13 ms on the GPU. Native RegExp: 21 ms." The line names both, because "16 s on the CPU" alone reads as the time of the browser's own RegExp.
   - The count is the number of documents with at least one match.
-  - The time on the GPU runs from before the pattern is compiled until every document's count is copied out of the GPU's buffer: compiling the pattern, uploading its cells, the pass and the readback, `timings.totalMs` of the searcher's result. No search's time holds a shader's compile, since every search program is compiled when the page loads.
+  - The time on the GPU runs from before the pattern is compiled until every document's count is copied out of the GPU's buffer: compiling the pattern, uploading its cells, the pass and the readback, `timings.totalMs` of the searcher's result.
   - RegExp's time is measured in a worker, on one thread, for the same pattern and the same documents: plain-search.ts runs `RegExp` on each document, or on each key or each string value, and counts every match. A pass that takes under 100 ms is made twice, and the faster one counts. Finding the keys and the string values happens once, with table-loop.ts's plain JavaScript highlighter, and isn't part of the time.
   - The page waits 10 s for RegExp's time, and then the line says "Native RegExp: more than 10 s." RegExp can backtrack for minutes, e.g. on `(([a-z]+)+)+x`, which has one pair of parentheses more than the Try list's pattern, and a `RegExp` call that is running can only be stopped by ending its worker. So this worker does nothing but time RegExp: the page ends it after those 10 s, or after 1 s when the timing is for a search that the page has left since, e.g. after another keystroke, and the next timing starts a new worker, which writes its documents again, about half a second.
   - A pattern with a syntax error, or one that needs more than the largest program's 32 states, gets a sentence in the line's place.
@@ -45,7 +45,7 @@ With the toggle on CPU, or in a browser without WebGPU, both programs run in a s
 What the page leaves out on purpose:
 
 - **It never says that the GPU beats RegExp or JavaScript.** The line gives both times for every pattern. RegExp's is the shorter one for the patterns that RegExp matches fastest, e.g. 13 ms on the GPU against 9 ms for the date of the Try list, and the longer one for others, e.g. 12 ms against 19 to 21 ms for `error` and for the Try list's email address and its keys, and 11 ms against 2.1 s for `([a-z]+)+x`, which makes RegExp backtrack.
-- **It runs no self check when it loads.** Both programs hold only integers, which a GPU computes exactly in any order, and the tests and lab/json-search's runs on the GPU compare the two backends ([how to test](#how-to-test)). `selfCheck` stays in searcher.ts for those.
+- **It runs no self check when it loads.** Both programs hold only integers, which a GPU computes exactly in any order, and the tests and lab/json-search's runs on the GPU compare the two backends ([how to test](#how-to-test)). searcher.ts has `selfCheck` for a page that wants one.
 - **It shows no documents with errors.** lab/json-search's measurements keep the generator's 1 broken document in 10.
 
 Other states:
@@ -58,13 +58,23 @@ Other states:
 
 What it costs, on an Apple M5 Max in headless Chrome for Testing 155, in a window of 1440 by 900 px with 100,000 documents: the documents are ready to search 0.54 s after the navigation, 0.32 s of which is writing them, and the first search's answer is painted after 0.56 s. A search takes 11 ms while typing, as the line shows it, and 12 to 15 ms after a pause of 200 ms, depending on which of the three programs the pattern runs on. Native RegExp takes 8 to 28 ms for the same eight ordinary patterns on one thread. The same search on the CPU takes 13 s, after 9 s for the highlighter at the first search. The page's JavaScript holds 140 MB at rest and 588 MB after a search on the CPU. [The demo page's times](../../lab/json-search/README.md#the-demo-pages-times) has the tables, and [Is the GPU clearly faster?](../../lab/json-search/README.md#is-the-gpu-clearly-faster) the comparison with RegExp, with JSON.parse and with JavaScript in several workers.
 
+## What the highlighter shows
+
+Each of a document's first 512 code points gets one display kind: whitespace, punctuation, string, key, escape, number, literal or error, and a cell past the text's end gets `pastEnd` (highlighter/kinds.ts). A document's summary is `valid`, `firstErrorPosition`, `firstErrorKind`, e.g. `expectedColon` or `badNumber`, and `truncated`. Three rules go past JSON's grammar:
+
+- **The first error's position** is the first code point at which the text stops being the start of a valid JSON text, or the text's length when the text is such a start but isn't complete, e.g. 3 for `[1 2]` and 2 for `[1`.
+- **After a tokenizer error**, e.g. the `x` of `[x]` or the `1` of `01`, the rest of the line is shown as an error, and tokenizing starts again after the next line feed, so later lines keep their colors.
+- **A string is shown as a key** when the grammar accepts it in a key position before the first error. A key after the first error is shown as a string.
+
+tests/json-search/highlighter/reference.ts implements these rules as a scanner and a parser, and the tests compare the program with it ([how to test](#how-to-test)).
+
 ## What the search finds
 
 From a scan position, the longest non-empty match that starts there is reported, and the scan continues at its end. When no match starts there, the scan moves one code point on. So the search finds every non-overlapping, non-empty match, leftmost and then longest. E.g. `a|ab` on `xabx` finds `ab`, where JavaScript's own `String.prototype.match` returns `a`, and `a*` on `baab` finds `aa` and never reports an empty match. RegExp takes the first alternative that matches, so its count can differ from the program's, e.g. `a|abab` finds 2 matches in `xabab` where the program finds 1. The page's RegExp time is therefore a baseline and not a check. On the patterns that lab/json-search measured, the page's among them, the two counts are equal for every document.
 
 The pattern language is a subset of JavaScript's RegExp syntax with the `u` flag: literal code points, `.`, which doesn't match `\n`, `\r`, U+2028 or U+2029, `\d`, `\w`, character classes with ranges and negation, e.g. `[a-z_]` or `[^0-9]`, `?`, `*`, `+`, `|` and groups. Everything else, e.g. `*?`, `{2}`, `^` or `(?:`, throws a `PatternSyntaxError` with its position. regex/pattern.ts compiles a pattern into an automaton with one state per character or class that the pattern reads, plus one, e.g. `error` has 6 states and `connection reset` has 17, and into character classes, i.e. sets of code points that every step reads the same way. A pattern that needs more than a program holds gets a named message instead of a wrong answer, e.g. "the pattern needs 33 states, and the program holds 32" ([a fixed maximum with a named fallback](../../docs/behavior-choices.md#a-fixed-maximum-with-a-named-fallback)).
 
-A search can read only some kinds of characters, e.g. string values, and a match then lies inside one run of such characters. The scopes are sets of the highlighter's display kinds: `'everything'`, `'strings'` for the characters shown as string values, with their quotes, `'keys'`, `'stringsAndKeys'`, or any list of kinds, e.g. `[displayKind.number]`. An escape such as `\n` is a kind of its own, so no match of `'strings'` crosses one, and after the first error the highlighter shows every later key as a string. The characters are read as typed: with `'everything'` the escape `é` is 6 characters, and with `'strings'` it isn't read at all.
+A search can read only some kinds of characters, e.g. string values, and a match then lies inside one run of such characters. The scopes are sets of the highlighter's display kinds: `'everything'`, `'strings'` for the characters shown as string values, with their quotes, `'keys'`, `'stringsAndKeys'`, or any list of kinds, e.g. `[displayKind.number]`. An escape such as `\n` is a kind of its own, so no match of `'strings'` crosses one, and a key after the first error is a string ([what the highlighter shows](#what-the-highlighter-shows)). The characters are read as typed: with `'everything'` the escape `\u00e9` is 6 characters, and with `'strings'` it isn't read at all.
 
 ## How the two programs work
 
@@ -74,7 +84,7 @@ A document's cells are its first 512 code points, -1 after the text, and the tex
 
 ### A program as a loop over positions
 
-Both programs do one position's work at every position of a document. Written out once per position, a program grows with the capacity, and so does its shader: one shader with a statement per operation of the search at 8 states and 256 positions, 91,774 statements, took 107 to 130 s to compile. [docs/patterns.md](../../docs/patterns.md#a-loop-over-items-that-mixes-per-item-work-with-values-carried-to-the-next-item) has the pattern for that: the work of one item is ordinary builder code, compiled once as its own small program, and it runs once per item.
+Both programs do one position's work at every position of a document. Written out once per position, a program grows with the capacity, and so does its shader: one shader with a statement per operation of the search at 8 states and 256 positions, 91,774 statements, took 107 to 130 s to compile ([the three stages](../../lab/json-search/README.md#the-question-and-the-three-stages)). [docs/patterns.md](../../docs/patterns.md#a-loop-over-items-that-mixes-per-item-work-with-values-carried-to-the-next-item) has the pattern for that: the work of one item is ordinary builder code, compiled once as its own small program, and it runs once per item.
 
 loop-program.ts describes one document's program in that form. JS for what a looped stage does:
 
@@ -224,7 +234,7 @@ gpu/host.ts is plain functions with no page globals:
 
 ## How to test
 
-`bun test tests/json-search` runs without a GPU and without a browser. Every comparison is exact, since every value of both programs is a bit or a small integer. `bun run test` runs the same files with the rest of the repo and gives each test 30 s, where `bun test` alone gives 5 s, which a busy machine can pass.
+`bun test tests/json-search` runs without a GPU and without a browser. Every comparison is exact, since every value of both programs is a bit or a small integer. `bun run test` runs the same files with the rest of the repo and gives each test 30 s, where `bun test` alone gives 5 s, which a test can exceed on a busy machine.
 
 What the programs are compared with was written from the rules, and not from the programs:
 
@@ -234,7 +244,7 @@ What the programs are compared with was written from the rules, and not from the
 The tests, by file:
 
 - **json-step.test.ts**: the highlighter's step, run over a document's positions on the CPU executor and as generated JavaScript, gives the reference's summary, first error kind and display kinds on 2,509 test texts, which reach every error kind, on 280 documents at the limits, and on an object inside arrays and an array inside objects at every depth from 1 to 16. On the literal evaluator, every declared grid and index read holds at every position.
-- **regex/regex-search.test.ts**: the search's step gives both references' matches on 26 hand-written cases and on 400 random patterns with 6 texts each, a syntax error for syntax outside the language, a named message for a pattern that doesn't fit, and holds its declarations at every position.
+- **regex/regex-search.test.ts**: the search's step gives both references' matches on 26 hand-written cases and on the random patterns that fit its small program, more than 250 of 400, with 6 texts each, a syntax error for syntax outside the language, a named message for a pattern that doesn't fit, and holds its declarations at every position.
 - **search.test.ts**: the loop programs and both writers' shaders, through the WGSL interpreter, give the automaton reference's match count and marks for 274 patterns of up to 8 states with 8 texts each, at 16 and 32 states, at 512 positions over generated documents, and in every scope, and the highlighter's shaders give the reference's values on the 2,509 texts. It pins the sizes that this README gives.
 - **searcher.test.ts**: the searcher on the CPU against both references, and the searcher on the GPU as a page creates it, where tests/json-search/interpreted-gpu.ts is a WebGPU device whose compute pass runs the shader's text through the interpreter. Only the newest of several requests gets a result, and a self check finds no difference between the backends.
 - **edge-cases.test.ts**: a searcher on the CPU and on the GPU against both references over the documents and patterns of edge-cases.ts, which are at the limits, e.g. the empty text, texts of 511 to 514 code points, nesting 16 and 17 deep, a match on the last position, and patterns that fill a program's states ([the list](../../lab/json-search/README.md#the-reviews-checks-the-limits-and-the-programs-with-every-position-written-out)).
