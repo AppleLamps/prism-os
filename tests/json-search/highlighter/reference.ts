@@ -8,10 +8,8 @@
 // - After a lexer error, e.g. the x of [x], the rest of the line is shown as an error, and scanning starts again after
 //   the next line feed. A line feed that is itself the error, e.g. inside a string, starts scanning again right away.
 // - A string is shown as a key when the parser accepts it in a key position before the first error.
-// - Brackets pair up as with a stack of openers, whatever their kinds, and a closer with an empty stack pairs with nothing.
-// - The bracket at the caret is the code point before the caret when it's a bracket, otherwise the code point at the caret.
 // - Text past 512 code points isn't read, and the error is tooLong unless an error comes first. An opening bracket at
-//   depth 16 is the error tooDeep, and depthExceeded is 1 only when tooDeep is the first error.
+//   depth 16 is the error tooDeep.
 import {capacity, displayKind, errorKind, maximumDepth} from '../../../src/json-search/highlighter/kinds.ts'
 
 export type HighlightResult = {
@@ -20,9 +18,6 @@ export type HighlightResult = {
   firstErrorKind: number
   valid: number
   truncated: number
-  depthExceeded: number
-  caretBracket: number
-  matchingBracket: number
 }
 
 type Token = {type: 'string' | 'scalar' | '{' | '[' | '}' | ']' | ':' | ',', start: number, end: number}
@@ -213,7 +208,7 @@ function parse(tokens: readonly Token[], limit: number) {
   return {error: null, keys, expected}
 }
 
-export function highlightReference(text: string, caret: number): HighlightResult {
+export function highlightReference(text: string): HighlightResult {
   const allCodePoints = Array.from(text, character => character.codePointAt(0)!)
   const truncated = allCodePoints.length > capacity
   const codePoints = allCodePoints.slice(0, capacity)
@@ -232,33 +227,11 @@ export function highlightReference(text: string, caret: number): HighlightResult
     }
   }
 
-  // Bracket pairs, with a stack of opener positions.
-  const partner = Array<number>(length).fill(-1)
-  const openers: number[] = []
-  for (const token of tokens) {
-    if (token.type === '{' || token.type === '[') openers.push(token.start)
-    if (token.type === '}' || token.type === ']') {
-      const opener = openers.pop()
-      if (opener !== undefined) {
-        partner[opener] = token.start
-        partner[token.start] = opener
-      }
-    }
-  }
-  const isBracket = (position: number) =>
-    position >= 0 && position < length && kinds[position] === displayKind.punctuation && is(codePoints[position], '{}[]')
-  // A caret past code point 512 has neither neighbor among the 512 code points read, so no bracket is at the caret.
-  const clampedCaret = Math.min(Math.max(0, caret), capacity + 1)
-  const caretBracket = isBracket(clampedCaret - 1) ? clampedCaret - 1 : isBracket(clampedCaret) ? clampedCaret : -1
-
   return {
     displayKinds: kinds,
     firstErrorPosition: firstError?.position ?? -1,
     firstErrorKind: firstError?.kind ?? errorKind.none,
     valid: Number(firstError === null),
     truncated: Number(truncated),
-    depthExceeded: Number(firstError?.kind === errorKind.tooDeep),
-    caretBracket,
-    matchingBracket: caretBracket === -1 ? -1 : partner[caretBracket]!,
   }
 }

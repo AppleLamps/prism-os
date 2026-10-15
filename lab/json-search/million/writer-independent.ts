@@ -304,7 +304,7 @@ function compareBroken(values: Float32Array) {
   const summaryValues = 4
   const kindsBase = brokenTexts.length * summaryValues
   for (const [row, text] of brokenTexts.entries()) {
-    const expected = highlightReference(text, 0)
+    const expected = highlightReference(text)
     const summary = [expected.valid, expected.firstErrorPosition, expected.truncated, expected.firstErrorKind]
     let differ = 0
     for (let column = 0; column < summaryValues; column++) if (values[row * summaryValues + column] !== summary[column]) differ++

@@ -21,7 +21,7 @@ import {type SearchScope, boundaryCapacity, buildSearchLoop, classCapacity, sear
 import {type SearchResult, type Searcher, type ShaderWriter, createCpuSearcher, createGpuSearcher, defaultSelfCheckSearches} from '../../src/json-search/searcher.ts'
 
 const texts = [...generateDocuments(60).map(document => document.text), '{"the tide": "an owl", "a": ["the pier", 12]}', '', '"😀 the tide"', `["${'the harbor '.repeat(60)}"]`]
-const references = texts.map(text => highlightReference(text, 0))
+const references = texts.map(text => highlightReference(text))
 const searcher = createCpuSearcher(texts)
 
 // What the definitions give: the automaton simulator over the first 512 code points, with -1 for every code point

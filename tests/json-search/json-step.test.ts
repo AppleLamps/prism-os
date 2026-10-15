@@ -30,7 +30,7 @@ function expectTheReference(backend: typeof backends[number], texts: readonly st
   return texts.map(text => {
     writeDocumentCells(cells, 0, text)
     runner.run([cells], 0, [summary, kinds], 0, 0)
-    const reference = highlightReference(text, 0)
+    const reference = highlightReference(text)
     const expectedSummary = stepSummaryNames.map(name => reference[name])
     const differingKind = reference.displayKinds.findIndex((kind, position) => kinds[position] !== kind)
     if (differingKind !== -1 || expectedSummary.some((value, column) => summary[column] !== value)) {
@@ -82,7 +82,7 @@ describe('the highlighter\'s step, run over a document\'s positions, gives the r
     // three test texts that have it.
     const textsOfKind = errorKinds.map(() => [] as string[])
     for (const text of corpus) {
-      const ofKind = textsOfKind[highlightReference(text, 0).firstErrorKind]!
+      const ofKind = textsOfKind[highlightReference(text).firstErrorKind]!
       if (ofKind.length < 3) ofKind.push(text)
     }
     const texts = [...nestedTexts, ...edgeTexts.filter((_, index) => index % 10 === 0), ...textsOfKind.flat()]
@@ -115,7 +115,7 @@ describe('the highlighter\'s step, run over a document\'s positions, gives the r
           registers = nextRegisters
         }
       }
-      const reference = highlightReference(text, 0)
+      const reference = highlightReference(text)
       if (JSON.stringify({summary, kinds}) !== JSON.stringify({summary: stepSummaryNames.map(name => reference[name]), kinds: reference.displayKinds})) {
         expect({text, summary, kinds}).toEqual({text, summary: stepSummaryNames.map(name => reference[name]), kinds: reference.displayKinds})
       }

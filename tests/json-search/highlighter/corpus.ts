@@ -1,9 +1,8 @@
-// Texts for the tests and for the measurement scripts in scripts/: edge cases written by hand, random JSON, and random
-// edits of random JSON.
+// Texts for the tests: edge cases written by hand, random JSON, and random edits of random JSON.
 import {capacity, maximumDepth} from '../../../src/json-search/highlighter/kinds.ts'
 
 // mulberry32, so tests are repeatable.
-export function createRandom(seed: number): () => number {
+function createRandom(seed: number): () => number {
   let state = seed >>> 0
   return () => {
     state = (state + 0x6d2b79f5) >>> 0
@@ -18,7 +17,7 @@ const pick = <T>(random: () => number, items: readonly T[]): T => items[Math.flo
 const count = (random: () => number, minimum: number, maximum: number) => minimum + Math.floor(random() * (maximum - minimum + 1))
 const nested = (depth: number, inner = '') => '['.repeat(depth) + inner + ']'.repeat(depth)
 
-export const edgeCases: readonly string[] = [
+const edgeCases: readonly string[] = [
   // Valid texts.
   '0', '-0', '12', '-12.5', '1e5', '1E+5', '2.5e-3', '0.0', '-0.0e0', 'true', 'false', 'null', '""', '"abc"', '[]', '{}',
   ' [ ] ', '\t{\r\n}\n', '[1,2,3]', '{"a":1,"b":[true,false,null]}', '{"a":{"b":{"c":[{}]}}}', '[[],[[]],{}]',
@@ -84,7 +83,7 @@ function randomValue(random: () => number, depth: number, maximumNesting: number
   return pick(random, ['true', 'false', 'null'])
 }
 
-export function randomJson(random: () => number): string {
+function randomJson(random: () => number): string {
   // Mostly shallow texts, and some chains of containers near the maximum depth.
   if (random() < 0.08) {
     const openers = Array.from({length: count(random, maximumDepth - 2, maximumDepth + 3)}, () => random() < 0.5)
@@ -99,7 +98,7 @@ export function randomJson(random: () => number): string {
 const editAlphabet = [...'{}[]:,"\\/ -+.0123456789eEtrufalsnxbu\n\t\r'.split(''), 'é', '😀', '\u0000', '\u001f']
 
 // 1 to 3 random edits: insert, delete or replace a code point, duplicate a slice, or cut the text.
-export function mutate(random: () => number, text: string): string {
+function mutate(random: () => number, text: string): string {
   let codePoints = Array.from(text)
   const edits = count(random, 1, 3)
   for (let edit = 0; edit < edits; edit++) {
@@ -115,7 +114,7 @@ export function mutate(random: () => number, text: string): string {
 }
 
 // Longer texts, from under the capacity to past it.
-export function randomLongJson(random: () => number): string {
+function randomLongJson(random: () => number): string {
   const items: string[] = []
   let length = 2
   const target = count(random, capacity - 40, capacity + 60)
@@ -133,15 +132,4 @@ export function createCorpus(seed: number, sizes: {random: number, mutated: numb
   const mutatedTexts = Array.from({length: sizes.mutated}, () => mutate(random, randomJson(random)))
   const longTexts = Array.from({length: sizes.long}, () => random() < 0.5 ? randomLongJson(random) : mutate(random, randomLongJson(random)))
   return {randomTexts, mutatedTexts, longTexts, all: [...edgeCases, ...randomTexts, ...mutatedTexts, ...longTexts]}
-}
-
-// A valid JSON text of exactly 512 code points, with strings, numbers, literals, escapes and nesting, for timings.
-export function timingText() {
-  const item = '{"id": 12, "name": "caf\\u00e9 字 \\"q\\"", "tags": ["a", "b"], "ok": true, "score": -1.5e3, "next": null}'
-  let text = '['
-  while (Array.from(text).length + Array.from(item).length + 2 <= capacity) text += (text === '[' ? '' : ',') + item
-  text += ' '.repeat(capacity - Array.from(text).length - 1) + ']'
-  if (Array.from(text).length !== capacity) throw new Error('the timing text fills the capacity')
-  JSON.parse(text)
-  return text
 }

@@ -1,13 +1,12 @@
-// The JSON highlighter (highlighter/highlighter.ts) compiled for many documents: the same circuit, the loop form, compiled
-// once per set of outputs, so each set keeps only the operations its outputs need.
+// The JSON highlighter (highlighter/highlighter.ts) compiled for many documents: the same circuit, compiled once per set
+// of outputs, so each set keeps only the operations its outputs need.
 //   'summary'  valid, firstErrorPosition, truncated: 3 values per document
 //   'display'  those 3, and the 512 display kinds in a second output group
-// Both sets leave out firstErrorKind, depthExceeded and the bracket at the caret, whose index reads pick among values
-// computed per document, which emit.ts can't write as one `let` per value. Without them no operation reads the caret.
+// Both sets leave out firstErrorKind, whose index read picks among values computed per document, which emit.ts can't
+// write as one `let` per value.
 //
 // A document's cells are the 512 code points, -1 past the text, and the text's length in code points: 513 float32
-// values, 2,052 bytes. Every other source cell, i.e. the caret and the 4,061 table cells, is the same for every
-// document.
+// values, 2,052 bytes. Every other source cell, i.e. the 4,061 table cells, is the same for every document.
 import {buildHighlighter, writeText} from './highlighter/highlighter.ts'
 import {capacity} from './highlighter/kinds.ts'
 import {type Guard, type TensorProgram, type WgslModule, emitWgsl, packSharedValues} from './emit.ts'
@@ -74,7 +73,7 @@ export type BatchProgram = {
 /** @public */
 export function buildBatchPrograms(sets: readonly RootSet[] = rootSets) {
   const buildStarted = performance.now()
-  const built = buildHighlighter('loop')
+  const built = buildHighlighter()
   const buildMs = performance.now() - buildStarted
   const {cells, output, circuit} = built
   const instanceCells: number[] = [...cells.codePoints, cells.textLength]
@@ -107,7 +106,7 @@ export function buildBatchPrograms(sets: readonly RootSet[] = rootSets) {
       emitJavaScript: () => emitJavaScript(program, wgslOptions),
     }
   })
-  return {built, buildMs, programs, writeText: (source: Float32Array, text: string) => writeText(cells, source, text, 0)}
+  return {built, buildMs, programs, writeText: (source: Float32Array, text: string) => writeText(cells, source, text)}
 }
 
 /** @public */

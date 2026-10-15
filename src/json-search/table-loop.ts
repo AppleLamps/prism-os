@@ -1,7 +1,7 @@
 // The highlighter as one plain JavaScript loop over the same tables the program reads (src/json-search/highlighter/tables.ts), as
 // typed arrays: the fastest plain JavaScript baseline here for a display kind per character and the first error.
 // tests/json-search/highlighter/reference.ts, the other baseline, is a hand-written scanner and parser that was written to be
-// read, not to be fast. Like the batch programs, this loop leaves out the bracket at the caret.
+// read, not to be fast.
 //
 // Where the program keeps the container kinds as running totals of ±2^depth, the loop keeps one bit per depth, and it
 // stops running the grammar at the first error, which the program can't.

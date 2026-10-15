@@ -348,7 +348,7 @@ describe('regex search as a loop, at the measured capacities', () => {
 })
 
 describe('the JSON highlighter as a loop over positions', () => {
-  // The texts of tests/json-search/highlighter/highlighter.test.ts, 2,509 in all, and what the highlighter with every position
+  // The highlighter's test texts (highlighter/corpus.ts), 2,509 in all, and what the highlighter with every position
   // written out gives for them on the CPU executor.
   const corpus = createCorpus(20260917, {random: 700, mutated: 1600, long: 80}).all
   const batch = buildBatchPrograms(['display'])

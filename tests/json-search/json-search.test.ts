@@ -16,7 +16,7 @@ import {buildBatchPrograms, cellsPerDocument, kindCount, summaryCount, writeDocu
 import {highlightWithTables, tableLoopResult} from '../../src/json-search/table-loop.ts'
 import {createWgslInterpreter} from './wgsl-interpreter.ts'
 
-// The texts of tests/json-search/highlighter/highlighter.test.ts: edge cases, random JSON, random edits, and texts around the
+// The highlighter's test texts (highlighter/corpus.ts): edge cases, random JSON, random edits, and texts around the
 // capacity, 2,509 in all.
 const corpus = createCorpus(20260917, {random: 700, mutated: 1600, long: 80}).all
 const batch = buildBatchPrograms()
@@ -121,8 +121,8 @@ describe('the emitter', () => {
 
 describe('the highlighter\'s batch programs', () => {
   test('have the sizes the README gives', () => {
-    expect(summaryProgram.sizes).toMatchObject({sourceCells: 4575, operations: 7186, layers: 536, indexReads: 4609})
-    expect(displayProgram.sizes).toMatchObject({sourceCells: 4575, operations: 7698, layers: 536, indexReads: 5121})
+    expect(summaryProgram.sizes).toMatchObject({sourceCells: 4574, operations: 7186, layers: 536, indexReads: 4609})
+    expect(displayProgram.sizes).toMatchObject({sourceCells: 4574, operations: 7698, layers: 536, indexReads: 5121})
     const summaryShader = summaryProgram.emitShader()
     const displayShader = displayProgram.emitShader()
     expect([summaryShader.statementCount, summaryShader.outputCounts, summaryShader.cellsPerInstance]).toEqual([11_814, [summaryCount], cellsPerDocument])
@@ -136,7 +136,7 @@ describe('the highlighter\'s batch programs', () => {
     const source = new Float32Array(batch.built.initialSource)
     const cells = new Float32Array(cellsPerDocument)
     for (const text of [...corpus, '😀', 'a\ud83d', '\ude00b', `"${'😀'.repeat(300)}"`]) {
-      writeText(batch.built.cells, source, text, 0)
+      writeText(batch.built.cells, source, text)
       writeDocumentCells(cells, 0, text)
       const expected = [...batch.built.cells.codePoints, batch.built.cells.textLength].map(wire => source[wire]!)
       if (countMismatches(cells, expected, cellsPerDocument) > 0) expect({text, cells: [...cells]}).toEqual({text, cells: expected})
@@ -146,7 +146,7 @@ describe('the highlighter\'s batch programs', () => {
   test('the executor\'s summary and display kinds are the plain JavaScript reference\'s, on the highlighter\'s test texts', () => {
     const [summary, kinds] = corpusExpected.get('display')!
     corpus.forEach((text, index) => {
-      const reference = highlightReference(text, 0)
+      const reference = highlightReference(text)
       const actual = {text, summary: [...summary!.subarray(index * summaryCount, (index + 1) * summaryCount)], kinds: [...kinds!.subarray(index * kindCount, (index + 1) * kindCount)]}
       const expected = {text, summary: [reference.valid, reference.firstErrorPosition, reference.truncated], kinds: reference.displayKinds}
       if (JSON.stringify(actual) !== JSON.stringify(expected)) expect(actual).toEqual(expected)
@@ -196,7 +196,7 @@ describe('the table loop', () => {
     const texts = [...corpus, ...generateDocuments(3000).map(document => document.text)]
     for (const text of texts) {
       highlightWithTables(text, kinds, 0)
-      const reference = highlightReference(text, 0)
+      const reference = highlightReference(text)
       const actual = {text, ...tableLoopResult, kinds: [...kinds]}
       const expected = {text, firstErrorPosition: reference.firstErrorPosition, firstErrorKind: reference.firstErrorKind, truncated: reference.truncated, kinds: reference.displayKinds}
       if (JSON.stringify(actual) !== JSON.stringify(expected)) expect(actual).toEqual(expected)
@@ -224,7 +224,7 @@ describe('the generated documents', () => {
       } catch {
         parses = false
       }
-      const reference = highlightReference(document.text, 0)
+      const reference = highlightReference(document.text)
       const expectValid = document.defect === 'none'
       const expectParses = expectValid || document.defect === 'tooDeep' || document.defect === 'tooLong'
       const fits = codePointLength(document.text) <= capacity
@@ -246,7 +246,7 @@ describe('the generated documents', () => {
     expect(description.histogram.at(-1)).toBe(description.defects.tooLong)
     // Some documents hold characters past U+007F, and some a display kind of every sort except pastEnd-only texts.
     expect(description.nonAscii).toBeGreaterThan(4000)
-    const kindsSeen = new Set(documents.slice(0, 500).flatMap(document => highlightReference(document.text, 0).displayKinds))
+    const kindsSeen = new Set(documents.slice(0, 500).flatMap(document => highlightReference(document.text).displayKinds))
     expect([...kindsSeen].sort((left, right) => left - right)).toEqual(Object.values(displayKind).sort((left, right) => left - right))
   })
 })

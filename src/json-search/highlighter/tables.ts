@@ -2,7 +2,7 @@
 // tokenizer's transition and event tables, small tables per event, and the grammar's transition and error tables.
 // Each table comes from a transition function written from JSON's grammar (RFC 8259) and the rules in kinds.ts, e.g.
 // lexerStep(state, characterClass). tests/json-search/highlighter/reference.ts implements the same rules as a hand-written
-// scanner and parser, without these tables, and highlighter.test.ts beside it compares the two.
+// scanner and parser, without these tables, and tests/json-search/json-step.test.ts compares the page's program with it.
 import {displayKind, errorKind, maximumDepth} from './kinds.ts'
 
 // Character classes. Letters that matter to one or more tokens get their own class, e.g. `e` is a hex digit, an

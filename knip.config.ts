@@ -5,11 +5,12 @@ const config = {
     // JSON search's page loads demo.ts. demo.ts starts demo-worker.ts as a worker from a URL, which is not an import,
     // and imports only two types from it, and scripts/demo-site-pages.ts builds the worker as a file of its own. So
     // both are entries. demo.ts reaches the two programs that the page runs, in src/json-search/regex and
-    // src/json-search/highlighter, and through the highlighter src/runtime/prefix-networks.ts.
+    // src/json-search/highlighter.
     'src/json-search/demo.ts',
     'src/json-search/demo-worker.ts',
-    // The JSON highlighter's measurement, which is run by hand, so no module imports it.
-    'scripts/measure-json-highlighter.ts',
+    // The prefix networks, which only tests and lab code import, e.g. tests/runtime/prefix-networks.test.ts,
+    // lab/knuth-plass and the guide's examples in lab/ui-exploration/guide.
+    'src/runtime/prefix-networks.ts',
     'lab/candidate-gallery/candidate-gallery.ts',
     'template/main.ts',
     // The template's switch in plain JavaScript, which only template/toggle.test.ts imports.

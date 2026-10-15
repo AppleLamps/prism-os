@@ -255,7 +255,7 @@ async function runMain() {
     // JSON.parse accepts nesting past depth 16 and texts past 512 code points, which the highlighter reports.
     if (parses !== (valid === 1 || defect === 'tooDeep' || defect === 'tooLong')) agreement.jsonParseDisagrees++
     const kinds = expectedKinds.subarray(index * kindCount, (index + 1) * kindCount)
-    const reference = highlightReference(text, 0)
+    const reference = highlightReference(text)
     if (reference.valid !== valid || reference.firstErrorPosition !== firstErrorPosition || reference.truncated !== truncated || countMismatches(reference.displayKinds, kinds, kindCount) > 0) agreement.referenceDisagrees++
     highlightWithTables(text, kindsScratch, 0)
     if (tableLoopResult.firstErrorPosition !== firstErrorPosition || tableLoopResult.truncated !== truncated || countMismatches(kindsScratch, kinds, kindCount) > 0) agreement.tableLoopDisagrees++
@@ -295,7 +295,7 @@ async function runMain() {
       }, count),
       // A display kind per character and the first error, like the display program.
       reference: timeCpu(() => {
-        for (let index = 0; index < count; index++) sink += highlightReference(texts[index]!, 0).firstErrorPosition
+        for (let index = 0; index < count; index++) sink += highlightReference(texts[index]!).firstErrorPosition
       }, count),
       tableLoop: timeCpu(() => {
         for (let index = 0; index < count; index++) {
