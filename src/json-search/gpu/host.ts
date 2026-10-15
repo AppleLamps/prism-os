@@ -162,7 +162,7 @@ export type ProgramRunner = Awaited<ReturnType<typeof createProgramRunner>>
 // changing its work, so a salt that no earlier run used compiles without hitting a shader cache, e.g. Metal's.
 export async function createProgramRunner(device: GPUDevice, shader: RunnableShader, sharedValues: Float32Array, store: DocumentStore, salt?: number, options: RunnerOptions = {}) {
   invariant(shader.cellsPerInstance === store.cellsPerDocument, 'the shader reads the store\'s cells per document')
-  invariant(sharedValues.length === shader.sharedLength, 'the shared values have the shader\'s length, see packSharedValues')
+  invariant(sharedValues.length === shader.sharedLength, 'the shared values have the shader\'s length')
   const {capacity} = store
   const inputs = options.inputs ?? []
   invariant(inputs.length === (shader.inputCells?.length ?? 0), 'the runner gets one buffer per input of the shader')

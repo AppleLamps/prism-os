@@ -3,9 +3,6 @@
 import {capacity} from './highlighter/kinds.ts'
 
 export const cellsPerDocument = capacity + 1
-const summaryNames = ['valid', 'firstErrorPosition', 'truncated'] as const
-/** @public */
-export const summaryCount = summaryNames.length
 
 // The largest text length that is written. A longer text writes this length, which still reads as longer than 512.
 // json-step.ts declares the length's cell with this limit.
