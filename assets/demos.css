@@ -3,14 +3,11 @@
 @import "./site.css";
 
 /* The opening: the headline and one sentence under it on the left, the example on the right, both starting at the
-   same height. The example is the taller of the two, by about 25 px, and the second row takes that height, so the
-   sentence stays right under the headline. */
+   same height. The example is the taller of the two, by 20 px (292 px against 272 px in a window of 1440 px),
+   and the second row takes that height, so the sentence stays right under the headline. */
 .opening {
   display: grid;
-  /* The example's column holds the example's longest line of code, which has 50 characters. At 13 px that line is
-     391.3 px wide in Menlo and 401.8 px in the system's SF Mono. On the Mac where the line was measured, Chrome
-     draws the code in Menlo, and Safari's engine draws it in SF Mono, which ui-monospace names there. 408 px
-     leaves 6 px for a wider monospace font. */
+  /* The example's column is as wide as the circuit's drawing, 408 px. */
   grid-template-columns: minmax(0, 1fr) 408px;
   grid-template-rows: auto 1fr;
   column-gap: var(--space-8);
@@ -27,45 +24,51 @@
 .opening-text { grid-column: 1; }
 .opening .deck { margin-top: var(--space-5); }
 
-/* The example: one line of code in three views, one under the other, i.e. the code under "your code", then under
-   "turns into" the same code as arithmetic, and that arithmetic as a circuit, which has no name of its own. A
-   comment in assets/demos.html explains the three. */
-.example { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
-.view + .view { margin-top: var(--space-4); }
-/* A view's name, e.g. "turns into", and the note that says what relu is. The note stands at the other
-   end of the line of the second view's name, and where the two don't fit on one line, the note goes under the
-   name. The note is a paragraph of its own, so that a reader without the layout, e.g. a screen reader, gets the
-   name and the note as two sentences. */
-.view-head { display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: var(--space-3); }
-.view-label, .legend { margin: 0; color: var(--ink-3); font: var(--type-small); }
-/* The code in the note is plain monospace text, without the wash that site.css puts behind code. */
-.legend code { padding: 0; background: none; color: var(--ink-2); font-size: 11px; }
-/* A line of code stands on the paper, with no sheet behind it. A line breaks only at the one space that wraps
-   like a space of ordinary text, the space of the line's .break, and only where the line doesn't fit, e.g. the
-   longest line in a window of 390 px. The rest of the line is then indented by --hang, which demos.html sets for
-   each line so that the operator after the space comes under the line's "=". */
+/* The example: one line of code in three views, i.e. a dark block that holds the code and, under a comment, the
+   same code as arithmetic, and under the block that arithmetic as a circuit. A comment in assets/demos.html
+   explains the three. */
+.example {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
+  /* Two colors that only the dark block needs. Comments and "const" are the paper's color mixed toward the ink,
+     6:1 against the ink. The condition's copper is site.css's copper made lighter, 7:1 against the ink, where
+     the copper itself would be 3:1. */
+  --pale-on-ink: color-mix(in srgb, var(--paper) 58%, var(--ink));
+  --copper-on-ink: #e39a6c;
+}
+/* The block of code: ink, with text in the paper's color. Its two parts each start with a comment that names the
+   part, "your code" and "turns into". */
+.example .code { padding: var(--space-3) var(--space-4); border-radius: var(--radius-2); background: var(--ink); color: var(--paper); }
+.lines + .lines { margin-top: var(--space-3); }
+/* A line breaks only at the one space that wraps like a space of ordinary text, the space of the line's .break,
+   and only where the line doesn't fit. The rest of the line is then indented by --hang, which demos.html sets for
+   each line so that the operator after the space comes under the line's "=". The longest line has 50 characters,
+   391 px in Menlo at 13 px and 402 px in the system's SF Mono, and the block's inside is 376 px, so that line
+   always breaks, before its plus. */
 .lines code {
   display: block;
   padding: 0 0 0 var(--hang, 0);
   border-radius: 0;
   background: none;
+  color: inherit;
   font: var(--type-code);
   text-indent: calc(-1 * var(--hang, 0));
   white-space: pre;
 }
 .lines .break { white-space: normal; }
-/* "const" is pale, so that a line starts at its name. The condition is copper in every view: "a > 4" in the first,
-   the name isAbove4 in the second, and the name in isAbove4's box in the circuit. */
-.lines .keyword { color: var(--ink-3); }
-.lines .bit { color: var(--copper); }
-/* The circuit. A wire is copper, and the circuit's two open ends, the input a and the end of the last wire, are
-   eyelets, small rings, like the one in the header's mark. A box is a sheet with an ink outline, and its name is
+/* Comments and "const" are pale, so that a line of code starts at its name. The condition is copper in every
+   view: "a > 4" in the code, the name isAbove4 in the arithmetic, and the name in isAbove4's box in the circuit. */
+.lines .comment, .lines .keyword { color: var(--pale-on-ink); }
+.lines .bit { color: var(--copper-on-ink); }
+/* The circuit. A wire is copper, and the circuit's open end, the input a, is an eyelet, a small ring, like the
+   one in the header's mark. The circuit ends at the box result. A box is a sheet with an ink outline, and its name is
    in the serif. The drawing is 408 px wide, as wide as the example's column, and is shown at that size in every
    window of 448 px or more. In a narrower window the drawing is as wide as the example, e.g. 350 px in a window of
    390 px. At its own size a box's outline covers whole pixels, and a wire, which is 1.5 px wide, has its middle a
    quarter of a pixel past a whole pixel, e.g. at y = 36.25. The wire then covers three whole device pixels on a
    screen with two device pixels per CSS px, and one whole pixel and half of the next on a screen with one. */
-.wires { display: block; width: 100%; max-width: 408px; height: auto; margin-top: var(--space-2); overflow: visible; }
+.wires { display: block; width: 100%; max-width: 408px; height: auto; margin-top: var(--space-4); overflow: visible; }
 .wires .wire { fill: none; stroke: var(--copper); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .wires .box { fill: var(--sheet); stroke: var(--ink); stroke-width: 1; }
 .wires .eyelet { fill: var(--paper); stroke: var(--copper); stroke-width: 1.5; }
@@ -188,18 +191,17 @@ a.card:hover .go::after { transform: translateX(3px); }
   .opening { grid-template-columns: minmax(0, 1fr); }
   .example { grid-column: 1; grid-row: auto; margin-top: var(--space-6); }
 }
-/* From 901 px the page is wide enough for the example's views side by side: the two views of code on the left, in
-   a column of 408 px, and the circuit on the right. The example is then 120 px tall instead of 208 px. The rule
-   places only the circuit's view, and the two views of code fill the left column's two rows. The gap between the
+/* From 901 px the page is wide enough for the code and the circuit side by side: the block of code on the left, in
+   a column of 408 px, and the circuit on the right, at the middle of the block's height. The gap between the
    columns is 32 px: in a window of 901 px that leaves the right column 413 px, and a gap of 48 px would leave
    less than the circuit's 408 px. */
 @media (min-width: 901px) and (max-width: 999px) {
-  .example { display: grid; grid-template-columns: 408px minmax(0, 1fr); column-gap: var(--space-6); }
-  .view:nth-child(3) { grid-area: 1 / 2 / span 2; margin-top: 0; }
+  .example { display: grid; grid-template-columns: 408px minmax(0, 1fr); column-gap: var(--space-6); align-items: center; }
+  .wires { margin-top: 0; }
 }
 @media (max-width: 900px) {
   .opening { margin-top: var(--space-7); }
-  /* The views are one under the other again, no wider than beside the headline. */
+  /* The code and the circuit are one under the other again, no wider than beside the headline. */
   .example { max-width: 408px; }
   .demo.is-first .demo-body { padding: var(--space-5); }
 }

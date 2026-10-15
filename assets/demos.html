@@ -37,9 +37,10 @@
           <p class="deck">No training, exact yet also fully differentiable, runnable in a browser without GPU.</p>
         </div>
 
-        <!-- The README's example (README.md, "How It Works"), a ternary, in three views: the ternary as written,
-             under "your code", then under "turns into" the same ternary as arithmetic, and that arithmetic as a
-             circuit. The figure has no caption.
+        <!-- The README's example (README.md, "How It Works"), a ternary, in three views. The first two are one
+             dark block of code: the ternary as written, under the comment "your code", and the same ternary as
+             arithmetic, under the comment "turns into" and a second comment that says what relu is. The third is
+             the circuit under the block, which draws that arithmetic. The figure has no caption.
              - The arithmetic. relu(x) is Math.max(0, x). For an a up to 4, relu(a - 4) and relu(a - 5) are both 0,
                and for an a from 5 they are a - 4 and a - 5, whose difference is 1. So isAbove4 is the condition
                a > 4 as a number, 1 or 0. The second line computes both branches and keeps one of them:
@@ -72,27 +73,23 @@
              the form of emitSelect: two products and their sum.
 
              A line of code breaks only at the space in its span with the class "break", which is before an
-             operator, and only where the line doesn't fit, e.g. in a window of 390 px. --hang is how far demos.css
-             then indents the rest of the line: as far as the line's "=", so that the operator comes under
-             the "=". -->
+             operator, and only where the line doesn't fit. The longest line, the arithmetic's second, is wider
+             than the block at every window width, so it always breaks before its plus, and the two branches
+             stand one under the other. --hang is how far demos.css then indents the rest of the line: as far as
+             the line's "=", so that the operator comes under the "=". -->
         <figure class="example">
-          <div class="view">
-            <p class="view-label">your code</p>
+          <div class="code">
             <div class="lines">
+              <code class="comment">// your code</code>
               <code><span class="keyword">const</span> result = <span class="bit">a &gt; 4</span> ? 10 : 12</code>
             </div>
-          </div>
-          <div class="view">
-            <div class="view-head">
-              <p class="view-label">turns into</p>
-              <p class="legend"><code>relu(x)</code> is <code>Math.max(0, x)</code></p>
-            </div>
             <div class="lines">
+              <code class="comment">// turns into</code>
+              <code class="comment">// (relu(x) is Math.max(0, x))</code>
               <code style="--hang: 15ch"><span class="keyword">const</span> <span class="bit">isAbove4</span> = relu(a - 4)<span class="break"> </span>- relu(a - 5)</code>
               <code style="--hang: 13ch"><span class="keyword">const</span> result = <span class="bit">isAbove4</span> * 10<span class="break"> </span>+ (1 - <span class="bit">isAbove4</span>) * 12</code>
             </div>
           </div>
-          <div class="view">
             <svg class="wires" viewBox="0 0 408 72" role="img" aria-label="The two lines of arithmetic drawn as a circuit. The input a feeds two ReLU gates, relu(a &minus; 4) and relu(a &minus; 5). The second gate's value is subtracted from the first's, which gives isAbove4, and isAbove4 feeds result.">
               <path class="wire" d="M5 36.25H28.25"/>
               <path class="wire" d="M28.25 36.25V22.25a8 8 0 0 1 8-8H53"/>
@@ -114,7 +111,6 @@
               <text class="sign" x="188" y="24">+</text>
               <text class="sign" x="188" y="56">&minus;</text>
             </svg>
-          </div>
         </figure>
       </section>
 
