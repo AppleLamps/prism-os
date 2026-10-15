@@ -1546,3 +1546,155 @@
   color: var(--ink-3);
   font: 400 13px/18px var(--font-sans);
 }
+
+/* Spotlight's commands, see command-center.ts. A sentence Spotlight can run is a result
+   whose subtitle is the calls it will make, in the monospace of Terminal. After it runs,
+   the last exchanges show under the results: what was typed, the reply, and the calls that
+   ran, so what was decided is never hidden. */
+.spotlight-command .spotlight-subtitle {
+  font: 400 11.5px/16px var(--font-mono);
+}
+
+.spotlight-results[hidden],
+.spotlight-transcript[hidden],
+.spotlight-confirm[hidden],
+.spotlight-status[hidden],
+.spotlight-commands .prism-button[hidden],
+.spotlight-progress[hidden] {
+  display: none;
+}
+
+.spotlight-transcript {
+  max-height: min(300px, 40vh);
+  margin: 0;
+  padding: 2px 0;
+  overflow: auto;
+  border-top: 1px solid var(--rule);
+  list-style: none;
+}
+
+.spotlight-entry {
+  padding: 8px 14px 8px 56px;
+}
+
+.spotlight-entry + .spotlight-entry {
+  border-top: 1px solid var(--rule);
+}
+
+.spotlight-entry p {
+  max-width: 62ch;
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.spotlight-user {
+  color: var(--ink-3);
+  font: 400 12px/18px var(--font-sans);
+}
+
+.spotlight-reply {
+  color: var(--ink);
+  font: 400 14px/21px var(--font-sans);
+}
+
+.spotlight-reply.is-error {
+  color: var(--ink-2);
+}
+
+.spotlight-calls {
+  margin-top: 3px !important;
+  color: var(--copper);
+  font: 500 11.5px/17px var(--font-mono);
+}
+
+.spotlight-commands.is-busy .spotlight-entry:last-child .spotlight-reply::after {
+  content: "…";
+}
+
+.spotlight-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: 4px 4px 2px;
+  padding: 8px 10px 8px 52px;
+  border-radius: 14px;
+  background: var(--wash);
+}
+
+.spotlight-confirm-text {
+  margin: 0;
+  font: 500 14px/20px var(--font-sans);
+}
+
+.spotlight-confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.spotlight-commands .prism-button {
+  padding: 3px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  color: var(--ink);
+  font: 500 13px/20px var(--font-sans);
+  cursor: pointer;
+}
+
+.spotlight-commands .prism-button:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
+/* The accent paints the confirming button, with the paper color for its label, which
+   reads on the light scheme's darker accents and the dark scheme's brighter ones. */
+.spotlight-commands .spotlight-accept {
+  border-color: transparent;
+  background: var(--copper);
+  color: var(--paper);
+}
+
+.spotlight-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 4px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-3);
+  font: 400 12px/18px var(--font-sans);
+}
+
+.spotlight-status-text {
+  flex: 1;
+}
+
+.spotlight-progress {
+  flex: none;
+  width: 96px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--wash);
+  overflow: hidden;
+}
+
+.spotlight-progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--copper);
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left;
+  transition: transform 200ms linear;
+}
+
+@media (max-width: 520px) {
+  .spotlight-entry {
+    padding-left: 14px;
+  }
+  .spotlight-confirm {
+    padding-left: 10px;
+  }
+}

@@ -15,6 +15,9 @@
 // tile sends every panel behind the windows, to 1 and up, and a press on a panel brings
 // them back in front.
 import {type AppContext, type AppInstance, type PanelApp, panelApps} from './apps.ts'
+import {type CommandCenter, modelEnabled, previewSentence} from './command-center.ts'
+import type {PanelAppName} from './commands.ts'
+import type {PanelControls} from './operator.ts'
 import {accentControl, appearanceControl, sceneControl, toggleControl} from './controls.ts'
 import {button, el, icon, icons} from './dom.ts'
 import {type SettingsStore, accents, appearances, scenes} from './settings.ts'
@@ -60,11 +63,13 @@ function isShellTarget(target: EventTarget | null): boolean {
   return target instanceof Element && target.closest('[data-prism-layer]') !== null
 }
 
-export function startShell(store: SettingsStore) {
+// Spotlight runs sentences with `commands`, see command-center.ts. The returned controls
+// let the operator (operator.ts) open, close, move and zoom Prism's own apps.
+export function startShell(store: SettingsStore, commands: CommandCenter | null = null): PanelControls | null {
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const systemBar = document.querySelector<HTMLElement>('#system-bar')
   const dock = document.querySelector<HTMLElement>('#dock')
-  if (desktop === null || systemBar === null || dock === null) return
+  if (desktop === null || systemBar === null || dock === null) return null
   const startedAt = new Date()
 
   // Input. See the comment at the top of the file.
@@ -159,10 +164,11 @@ export function startShell(store: SettingsStore) {
     restack()
   }
 
-  const openPanel = (id: string) => {
+  // A command from Spotlight opens a panel and leaves Spotlight open, with its reply.
+  const openPanel = (id: string, keepOverlays = false) => {
     const panel = panels.get(id) ?? createPanel(id)
     if (panel === undefined) return
-    closeOverlays()
+    if (!keepOverlays) closeOverlays()
     if (panel.state === 'closed') {
       // A new window opens near the middle of the workspace, a little lower and to the right
       // of the last one, like a cascade.
@@ -180,7 +186,7 @@ export function startShell(store: SettingsStore) {
     panel.state = 'open'
     panel.element.dataset['state'] = 'open'
     focusPanel(panel)
-    panel.element.focus({preventScroll: true})
+    if (!keepOverlays) panel.element.focus({preventScroll: true})
     if (wasClosed) panel.instance.opened?.()
   }
 
@@ -388,7 +394,8 @@ export function startShell(store: SettingsStore) {
   }
 
   // Spotlight: apps and commands, found as you type.
-  type Result = {title: string, subtitle: string, glyph: string, tile: string, run(): void}
+  // A result runs and closes Spotlight, or with keepOpen runs a sentence and stays.
+  type Result = {title: string, subtitle: string, glyph: string, tile: string, run(): void, keepOpen?: boolean, kind?: 'command'}
   const spotlight = makeOverlay('prism-spotlight', 'Spotlight')
   const searchRow = el('div', 'spotlight-row')
   const searchInput = el('input', 'spotlight-input')
@@ -401,6 +408,31 @@ export function startShell(store: SettingsStore) {
   const resultList = el('ul', 'spotlight-results')
   resultList.setAttribute('role', 'listbox')
   spotlight.sheet.append(searchRow, resultList)
+  if (commands !== null) {
+    spotlight.sheet.append(commands.element)
+    searchInput.placeholder = 'Search, or tell Prism OS what to do'
+    searchInput.setAttribute('aria-label', 'Search or command')
+  }
+
+  // A sentence that Spotlight can run, as a result: the calls it will make, or a note
+  // that the model will read it.
+  const commandResult = (query: string): Result | null => {
+    if (commands === null) return null
+    const preview = previewSentence(query)
+    if (preview === null) return null
+    const subtitle = preview.kind === 'commands' ? preview.calls : preview.kind === 'help' ? 'What Spotlight can do' : 'The model in your browser decides'
+    return {title: query.trim(), subtitle, glyph: icons.command, tile: 'prism-command', keepOpen: true, kind: 'command', run: () => runSentence(query)}
+  }
+
+  const runSentence = (query: string) => {
+    if (commands === null) return
+    searchInput.value = ''
+    selected = 0
+    renderResults()
+    void commands.run(query).finally(() => {
+      if (spotlight.open && !commands.hasPendingQuestion()) searchInput.focus({preventScroll: true})
+    })
+  }
 
   const catalog = (): Result[] => [
     ...programApps.map(app => ({title: app.name, subtitle: 'Handwired program window', glyph: app.glyph, tile: `prism-app-${app.id}`, run: () => open(app.id)})),
@@ -425,11 +457,18 @@ export function startShell(store: SettingsStore) {
       if (title.includes(query) || result.subtitle.toLowerCase().includes(query)) return 1
       return 0
     }
-    results = all.map((result, index) => ({result, index, score: score(result)}))
+    const ranked = all.map((result, index) => ({result, index, score: score(result)}))
       .filter(entry => entry.score > 0)
       .sort((a, b) => b.score - a.score || a.index - b.index)
-      .slice(0, 8)
-      .map(entry => entry.result)
+    const command = query === '' ? null : commandResult(searchInput.value)
+    // One word is a search: "dark" finds "Dark appearance" first and the command second.
+    // A sentence is a command: "lagoon wallpaper" runs first, and Spotlight stays open.
+    const strongMatch = ranked.length > 0 && ranked[0]!.score === 3 && !/\s/u.test(query)
+    results = [
+      ...(command !== null && !strongMatch ? [command] : []),
+      ...ranked.slice(0, command === null ? 8 : 7).map(entry => entry.result),
+      ...(command !== null && strongMatch ? [command] : []),
+    ]
     selected = Math.min(selected, Math.max(0, results.length - 1))
     resultList.replaceChildren(...results.map((result, index) => {
       const item = el('li', 'spotlight-result')
@@ -445,13 +484,15 @@ export function startShell(store: SettingsStore) {
         selected = index
         renderResults()
       })
-      item.addEventListener('click', () => {
-        closeOverlays()
-        result.run()
-      })
+      item.addEventListener('click', () => runResult(result))
+      if (result.kind === 'command') item.classList.add('spotlight-command')
       return item
     }))
-    if (results.length === 0) resultList.append(el('li', 'spotlight-empty', 'No results'))
+    if (results.length === 0 && query !== '') {
+      resultList.append(el('li', 'spotlight-empty', commands !== null && !modelEnabled ? 'No app or command matches. Try "help" for what I can do.' : 'No results'))
+    }
+    // After a command ran, an empty query shows the replies instead of the default list.
+    resultList.hidden = query === '' && hasReplies()
   }
   searchInput.addEventListener('input', () => {
     selected = 0
@@ -465,9 +506,23 @@ export function startShell(store: SettingsStore) {
     } else if (event.key === 'Enter') {
       event.preventDefault()
       const result = results[selected]
-      closeOverlays()
-      result?.run()
+      if (result !== undefined) runResult(result)
     }
+  })
+
+  function runResult(result: Result) {
+    if (result.keepOpen === true) {
+      result.run()
+      return
+    }
+    closeOverlays()
+    result.run()
+  }
+  function hasReplies() {
+    return commands !== null && commands.element.querySelector('.spotlight-entry') !== null
+  }
+  commands?.onRender(() => {
+    if (spotlight.open) resultList.hidden = searchInput.value.trim() === '' && hasReplies()
   })
 
   // Control Center: the quick preferences, and a way into Settings.
@@ -507,6 +562,7 @@ export function startShell(store: SettingsStore) {
     searchInput.value = ''
     selected = 0
     renderResults()
+    commands?.opened()
     searchInput.focus({preventScroll: true})
   }
 
@@ -533,4 +589,48 @@ export function startShell(store: SettingsStore) {
       place(panel)
     }
   })
+
+  // What the operator may do to Prism's apps, the same things their buttons do.
+  const panelFor = (id: PanelAppName) => panels.get(id) ?? createPanel(id)
+  return {
+    state: id => panels.get(id)?.state ?? 'closed',
+    zoomed: id => (panels.get(id)?.restore ?? null) !== null,
+    resizable: id => panelApps.find(app => app.id === id)?.resizable ?? false,
+    open: id => openPanel(id, true),
+    close: id => void closePanel(id),
+    minimize: id => {
+      const panel = panels.get(id)
+      if (panel !== undefined) hidePanel(panel, 'minimized')
+    },
+    zoom: id => {
+      const panel = panelFor(id)
+      if (panel !== undefined) toggleZoom(panel)
+    },
+    move: (id, position) => {
+      const panel = panelFor(id)
+      if (panel === undefined) return
+      if (panel.restore !== null) toggleZoom(panel)
+      const {width, height} = viewport()
+      const margin = 12
+      const top = systemBarHeight + margin
+      const bottom = height - dockHeight - margin - panel.height
+      const left = margin
+      const right = width - margin - panel.width
+      const centerX = Math.round((width - panel.width) / 2)
+      const centerY = Math.round(systemBarHeight + (height - systemBarHeight - dockHeight - panel.height) / 2)
+      const places = {
+        left: [left, centerY], right: [right, centerY], center: [centerX, centerY],
+        top_left: [left, top], top_right: [right, top], bottom_left: [left, bottom], bottom_right: [right, bottom],
+      } as const
+      ;[panel.x, panel.y] = places[position]
+      clampPanel(panel)
+      place(panel)
+      focusPanel(panel)
+    },
+    sendBehind: sendPanelsBehind,
+    stopwatch: action => {
+      openPanel('clock', true)
+      return panels.get('clock')?.instance.stopwatch?.(action) ?? 'Clock isn\'t available.'
+    },
+  }
 }

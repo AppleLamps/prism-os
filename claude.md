@@ -40,7 +40,7 @@ bun start                    # demo site at http://127.0.0.1:3000/ — Prism at 
 bun ./assets/prism-os.html   # Prism page only
 bun run check                # typecheck + lint
 bun test tests/handwiredos   # window manager behavior (~20s)
-bun test tests/prismos       # Prism's cascade, Calculator, Terminal, settings, no-purple check
+bun test tests/prismos       # Prism's cascade, Calculator, Terminal, settings, no-purple check, Spotlight's commands
 ```
 
 Demo site routes are listed in `scripts/demo-site-pages.ts`. The landing page is `assets/demos.html` (Prism is the featured card).
@@ -55,6 +55,15 @@ Demo site routes are listed in `scripts/demo-site-pages.ts`. The landing page is
 | Wallpaper motion and palettes | `src/prismos/wallpaper.ts` |
 | A new Prism app | `src/prismos/apps.ts` (a `PanelApp`), its dock side in `shell.ts`, its colors as `.prism-app-<id>` in `assets/prism-os.css` |
 | Mount options (e.g. another arrangement) | `src/prismos/boot.ts`, `WindowManagerMountOptions` in `window-manager.ts` |
+
+## Spotlight's commands
+
+Spotlight runs typed sentences as commands; `src/prismos/README.md` describes it. The rules for agents:
+
+- `src/prismos/commands.ts` is the single source of truth for commands. A new feature that people would ask for by name gets a command there, a pattern in `quick-commands.ts` when it's common, a case in `operator.ts`, and phrasings in `scripts/prismos-dataset.ts`, so the next model training learns it.
+- The operator acts on the program only through its event methods (`pointerDown`, `pointerMove`, `pointerUp`, `photoNext`, `valueListKey`, ...), aimed at points read from the program's outputs. Never write source cells from outside the machine. `mountWindowManager` returns `{machine, nextFrame}` for this, and nothing else reaches in.
+- Prism's apps are reached through the controls `startShell` returns, never by editing panel elements directly.
+- `tests/prismos/operator.test.ts` drives the real program through every window, photo and Scope command. Run `bun test tests/prismos` after touching anything here.
 
 ## Design rules
 

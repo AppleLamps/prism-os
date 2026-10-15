@@ -38,6 +38,8 @@ export const siteFoldersNotBuilt: string[] = pagesBuiltWhenTheyExist
 export type SiteWorker = {source: string, path: string}
 export const siteWorkers: SiteWorker[] = [
   {source: 'src/json-search/demo-worker.ts', path: 'json-search/demo-worker.js'},
+  // Prism OS's command center runs its model in this worker, see src/prismos/model-worker.ts.
+  {source: 'src/prismos/model-worker.ts', path: 'prism-os/model-worker.js'},
 ].filter(worker => existsSync(resolve(repoRoot, worker.source)))
 
 // The project's mark, three wires into one eyelet and one wire out, on a tile of the paper color, so the mark also

@@ -17,9 +17,14 @@ export type AppContext = {
   startedAt: Date
 }
 
+export type StopwatchAction = 'start' | 'stop' | 'lap' | 'reset'
+
 export type AppInstance = {
   opened?(): void
   closed?(): void
+  // Clock's stopwatch, for Spotlight's commands: shows the stopwatch and acts like its
+  // buttons, then returns what happened.
+  stopwatch?(action: StopwatchAction): string
 }
 
 export type PanelApp = {
@@ -188,7 +193,7 @@ const clock: PanelApp = {
       if (running) frame = requestAnimationFrame(animate)
     }
 
-    startButton.addEventListener('click', () => {
+    const startOrStop = () => {
       if (running) {
         carried = elapsed()
         running = false
@@ -198,8 +203,9 @@ const clock: PanelApp = {
         if (frame === 0) frame = requestAnimationFrame(animate)
       }
       renderStopwatch()
-    })
-    lapButton.addEventListener('click', () => {
+    }
+    startButton.addEventListener('click', startOrStop)
+    const lapOrReset = () => {
       if (running) {
         lapTimes.push(elapsed() - lapStart)
         lapStart = elapsed()
@@ -209,7 +215,8 @@ const clock: PanelApp = {
         lapTimes = []
       }
       renderStopwatch()
-    })
+    }
+    lapButton.addEventListener('click', lapOrReset)
 
     const renderWorld = () => {
       const now = new Date()
@@ -249,6 +256,28 @@ const clock: PanelApp = {
       closed() {
         window.clearInterval(tick)
         tick = 0
+      },
+      stopwatch(action) {
+        show('stopwatch')
+        const time = () => formatStopwatch(elapsed())
+        switch (action) {
+          case 'start':
+            if (running) return `The stopwatch is already running: ${time()}.`
+            startOrStop()
+            return 'The stopwatch is running.'
+          case 'stop':
+            if (!running) return elapsed() === 0 ? 'The stopwatch isn\'t running.' : `The stopwatch is stopped at ${time()}.`
+            startOrStop()
+            return `Stopped at ${time()}.`
+          case 'lap':
+            if (!running) return 'The stopwatch isn\'t running. Start it first.'
+            lapOrReset()
+            return `Lap ${lapTimes.length}: ${formatStopwatch(lapTimes.at(-1) ?? 0)}.`
+          case 'reset':
+            if (running) startOrStop()
+            if (elapsed() > 0) lapOrReset()
+            return 'The stopwatch is back at zero.'
+        }
       },
     }
   },

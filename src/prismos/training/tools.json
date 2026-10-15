@@ -1,0 +1,716 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "open_app",
+      "description": "Open, show or bring an app to the front",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "app": {
+            "type": "STRING",
+            "description": "The app",
+            "enum": [
+              "scope",
+              "inkwell",
+              "chroma",
+              "calculator",
+              "clock",
+              "terminal",
+              "settings",
+              "about"
+            ]
+          }
+        },
+        "required": [
+          "app"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "minimize_app",
+      "description": "Minimize an app into the dock",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "app": {
+            "type": "STRING",
+            "description": "The app",
+            "enum": [
+              "scope",
+              "inkwell",
+              "chroma",
+              "calculator",
+              "clock",
+              "terminal",
+              "settings",
+              "about"
+            ]
+          }
+        },
+        "required": [
+          "app"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "maximize_app",
+      "description": "Maximize an app to fill the screen",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "app": {
+            "type": "STRING",
+            "description": "The app",
+            "enum": [
+              "scope",
+              "inkwell",
+              "chroma",
+              "calculator",
+              "clock",
+              "terminal",
+              "settings",
+              "about"
+            ]
+          }
+        },
+        "required": [
+          "app"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "restore_app",
+      "description": "Restore a maximized or minimized app to its normal size",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "app": {
+            "type": "STRING",
+            "description": "The app",
+            "enum": [
+              "scope",
+              "inkwell",
+              "chroma",
+              "calculator",
+              "clock",
+              "terminal",
+              "settings",
+              "about"
+            ]
+          }
+        },
+        "required": [
+          "app"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "close_app",
+      "description": "Close an app",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "app": {
+            "type": "STRING",
+            "description": "The app",
+            "enum": [
+              "scope",
+              "inkwell",
+              "chroma",
+              "calculator",
+              "clock",
+              "terminal",
+              "settings",
+              "about"
+            ]
+          }
+        },
+        "required": [
+          "app"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "move_app",
+      "description": "Move an app's window to a part of the screen",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "app": {
+            "type": "STRING",
+            "description": "The app",
+            "enum": [
+              "scope",
+              "inkwell",
+              "chroma",
+              "calculator",
+              "clock",
+              "terminal",
+              "settings",
+              "about"
+            ]
+          },
+          "position": {
+            "type": "STRING",
+            "description": "Where to move it",
+            "enum": [
+              "left",
+              "right",
+              "center",
+              "top_left",
+              "top_right",
+              "bottom_left",
+              "bottom_right"
+            ]
+          }
+        },
+        "required": [
+          "app",
+          "position"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "resize_app",
+      "description": "Resize a program window",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "app": {
+            "type": "STRING",
+            "description": "The program window: scope, inkwell or chroma",
+            "enum": [
+              "scope",
+              "inkwell",
+              "chroma"
+            ]
+          },
+          "size": {
+            "type": "STRING",
+            "description": "The new size, or bigger or smaller than now",
+            "enum": [
+              "small",
+              "medium",
+              "large",
+              "bigger",
+              "smaller"
+            ]
+          }
+        },
+        "required": [
+          "app",
+          "size"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "side_by_side",
+      "description": "Put two program windows next to each other, each on half the screen",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "left": {
+            "type": "STRING",
+            "description": "The window on the left",
+            "enum": [
+              "scope",
+              "inkwell",
+              "chroma"
+            ]
+          },
+          "right": {
+            "type": "STRING",
+            "description": "The window on the right",
+            "enum": [
+              "scope",
+              "inkwell",
+              "chroma"
+            ]
+          }
+        },
+        "required": [
+          "left",
+          "right"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "show_desktop",
+      "description": "Minimize every window to show the desktop",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "reset_layout",
+      "description": "Put the program windows back where they opened",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "open_photo",
+      "description": "Open a photo in Chroma",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "photo": {
+            "type": "STRING",
+            "description": "The photo name, or its number from 1 to 12"
+          }
+        },
+        "required": [
+          "photo"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "next_photo",
+      "description": "Show the next photo in Chroma",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "previous_photo",
+      "description": "Show the previous photo in Chroma",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "close_photo",
+      "description": "Close the open photo and go back to the grid",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "slideshow",
+      "description": "Start or stop a slideshow of the photos",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "action": {
+            "type": "STRING",
+            "description": "start or stop",
+            "enum": [
+              "start",
+              "stop"
+            ]
+          }
+        },
+        "required": [
+          "action"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "scope_show",
+      "description": "Show a list in Scope, the inspector of the program",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "view": {
+            "type": "STRING",
+            "description": "Which list",
+            "enum": [
+              "state",
+              "operations",
+              "outputs"
+            ]
+          }
+        },
+        "required": [
+          "view"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "scope_list",
+      "description": "Move through the list in Scope",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "action": {
+            "type": "STRING",
+            "description": "How to move",
+            "enum": [
+              "up",
+              "down",
+              "page_up",
+              "page_down",
+              "top",
+              "bottom"
+            ]
+          }
+        },
+        "required": [
+          "action"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "write_note",
+      "description": "Write text into the note in Inkwell",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "text": {
+            "type": "STRING",
+            "description": "The text to write"
+          },
+          "mode": {
+            "type": "STRING",
+            "description": "append adds to the note, replace replaces it",
+            "enum": [
+              "append",
+              "replace"
+            ]
+          }
+        },
+        "required": [
+          "text",
+          "mode"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "clear_note",
+      "description": "Erase the note in Inkwell",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "read_note",
+      "description": "Read the note in Inkwell",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "set_theme",
+      "description": "Set light or dark appearance",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "theme": {
+            "type": "STRING",
+            "description": "light, dark, or auto to follow the device",
+            "enum": [
+              "light",
+              "dark",
+              "auto"
+            ]
+          }
+        },
+        "required": [
+          "theme"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "set_accent",
+      "description": "Set the accent color",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "color": {
+            "type": "STRING",
+            "description": "The color",
+            "enum": [
+              "blue",
+              "teal",
+              "green",
+              "yellow",
+              "orange",
+              "red",
+              "graphite"
+            ]
+          }
+        },
+        "required": [
+          "color"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "set_wallpaper",
+      "description": "Change the wallpaper scene",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "scene": {
+            "type": "STRING",
+            "description": "The scene",
+            "enum": [
+              "dunes",
+              "lagoon",
+              "ember",
+              "graphite"
+            ]
+          }
+        },
+        "required": [
+          "scene"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "set_motion",
+      "description": "Turn the wallpaper animation on or off",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "motion": {
+            "type": "STRING",
+            "description": "on or off",
+            "enum": [
+              "on",
+              "off"
+            ]
+          }
+        },
+        "required": [
+          "motion"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "set_arcs",
+      "description": "Show or hide the arcs of the program weights behind the windows",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "visibility": {
+            "type": "STRING",
+            "description": "shown or hidden",
+            "enum": [
+              "shown",
+              "hidden"
+            ]
+          }
+        },
+        "required": [
+          "visibility"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "calculate",
+      "description": "Do arithmetic",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "expression": {
+            "type": "STRING",
+            "description": "The arithmetic, e.g. 17 * 23"
+          }
+        },
+        "required": [
+          "expression"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "stopwatch",
+      "description": "Use the stopwatch in Clock",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "action": {
+            "type": "STRING",
+            "description": "start, stop, lap or reset",
+            "enum": [
+              "start",
+              "stop",
+              "lap",
+              "reset"
+            ]
+          }
+        },
+        "required": [
+          "action"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "world_time",
+      "description": "Tell the time in a city",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "city": {
+            "type": "STRING",
+            "description": "The city, or here"
+          }
+        },
+        "required": [
+          "city"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "open_link",
+      "description": "Leave Prism OS for another page",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "link": {
+            "type": "STRING",
+            "description": "demos for all demos, source for the source code",
+            "enum": [
+              "demos",
+              "source"
+            ]
+          }
+        },
+        "required": [
+          "link"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_stats",
+      "description": "Report the live numbers of the program that runs Prism OS",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "explain",
+      "description": "Explain a part of Prism OS",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "topic": {
+            "type": "STRING",
+            "description": "What to explain",
+            "enum": [
+              "prism_os",
+              "scope",
+              "inkwell",
+              "chroma",
+              "calculator",
+              "clock",
+              "terminal",
+              "handwired",
+              "command_center"
+            ]
+          }
+        },
+        "required": [
+          "topic"
+        ]
+      }
+    }
+  }
+]
