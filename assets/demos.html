@@ -38,39 +38,78 @@
           <p class="deck">No training, exact yet also fully differentiable, runnable in a browser without GPU.</p>
         </div>
 
-        <!-- Math.min(a, b) as emitMinimum in src/runtime/numeric-ui-core.ts builds it, a - relu(a - b): a weighted
-             sum of a and b with the weights +1 and -1, a ReLU of that sum, and a weighted sum of a and the ReLU with
-             the weights +1 and -1. -->
-        <figure class="wiring">
-          <svg viewBox="0 20 352 160" role="img" aria-label="The wiring of Math.min(a, b). A first weighted sum computes a minus b, a ReLU gate keeps that difference when it is positive, and a second weighted sum subtracts the gate's output from a.">
-            <path class="wire" d="M22 56H260"/>
-            <path class="wire" d="M64 56V120a8 8 0 0 0 8 8H100"/>
-            <path class="wire" d="M22 144H100"/>
-            <path class="wire" d="M136 136H168"/>
-            <path class="wire" d="M204 136H224a8 8 0 0 0 8-8V80a8 8 0 0 1 8-8H260"/>
-            <path class="wire" d="M296 64H330"/>
-            <rect class="part" x="100.5" y="118.5" width="35" height="35" rx="6"/>
-            <rect class="part" x="168.5" y="118.5" width="35" height="35" rx="6"/>
-            <rect class="part" x="260.5" y="46.5" width="35" height="35" rx="6"/>
-            <text class="sigma" x="118" y="142" text-anchor="middle">&Sigma;</text>
-            <path class="glyph" d="M176.5 142h8l9.5-11.5"/>
-            <text class="sigma" x="278" y="70" text-anchor="middle">&Sigma;</text>
-            <circle class="joint" cx="64" cy="56" r="3"/>
-            <circle class="eyelet" cx="18" cy="56" r="4.25"/>
-            <circle class="eyelet" cx="18" cy="144" r="4.25"/>
-            <circle class="eyelet" cx="334" cy="64" r="4.25"/>
-            <text class="name" x="18" y="40" text-anchor="middle">a</text>
-            <text class="name" x="18" y="128" text-anchor="middle">b</text>
-            <text class="name" x="340" y="36" text-anchor="end">min(a, b)</text>
-            <text class="weight" x="94" y="123" text-anchor="end">+1</text>
-            <text class="weight" x="94" y="139" text-anchor="end">&minus;1</text>
-            <text class="weight" x="254" y="51" text-anchor="end">+1</text>
-            <text class="weight" x="254" y="67" text-anchor="end">&minus;1</text>
-            <text x="118" y="172" text-anchor="middle">a &minus; b</text>
-            <text x="186" y="172" text-anchor="middle">relu</text>
-            <text x="278" y="100" text-anchor="middle">a &minus; relu(a &minus; b)</text>
-          </svg>
-          <figcaption><code>Math.min(a, b)</code>, wired by hand as a&nbsp;&minus;&nbsp;relu(a&nbsp;&minus;&nbsp;b): a weighted sum, a ReLU gate and a second weighted sum. The builder function <code>emitMinimum</code> emits these three, and the Mini OS below is thousands of operations like them.</figcaption>
+        <!-- The README's example (README.md, "How It Works"), a ternary, in three views: the ternary as written, the
+             same ternary as arithmetic, and that arithmetic as a circuit.
+             - The arithmetic. relu(x) is Math.max(0, x). For an integer a up to 4, relu(a - 4) and relu(a - 5) are
+               both 0, and from 5 they are a - 4 and a - 5, whose difference is 1. So isAbove4 is the condition
+               a > 4 as a number, 1 or 0. The second line computes both branches and keeps one of them:
+               1 * 10 + 0 * 12 is 10, and 0 * 10 + 1 * 12 is 12. E.g. a = 5 gives isAbove4 = 1 - 0 = 1 and the
+               result 10, and a = 4 gives isAbove4 = 0 - 0 = 0 and the result 12.
+             - The circuit draws those two lines, and the code above the circuit is its legend. A box has the name
+               of the value on the wire that leaves the box. A wire from the input a splits and ends at the two
+               ReLUs. A wire from each ReLU ends at isAbove4, where a plus sign and a minus sign say which ReLU is
+               subtracted. A wire from isAbove4 ends at result, and the last wire carries result out.
+             - The condition is copper in every view: "a > 4" in the ternary, the name isAbove4 in the arithmetic,
+               and isAbove4's box in the circuit.
+
+             isAbove4 is exactly 1 or 0 only for an integer a, which the caption says. Between 4 and 5, isAbove4 is
+             a - 4, e.g. a = 4.5 gives 0.5, and the result is then 11.
+
+             The runtime builds a comparison in another way, in emitCompare (src/runtime/numeric-ui-core.ts). For
+             two operands declared on a grid, e.g. integers, a > b is relu(1 - relu(1 - D)), where D is a - b in
+             grid steps. That bit is also 1 or 0 at every integer D, and it is a ReLU of a ReLU where the figure has
+             the difference of two ReLUs, so that an operation that reads the bit can't copy two large ReLU values
+             into its own sum. For other operands, e.g. two without a grid, emitCompare builds a sign cascade, i.e.
+             stages that multiply the difference a - b by powers of two and clamp it, and the bit then equals
+             JavaScript's comparison for every pair of FP32 values within the operands' declared ranges, e.g.
+             4.5 > 4 gives exactly 1. The arithmetic's second line has the form of emitSelect: two products and
+             their sum.
+
+             A line of code breaks only at the space in its span with the class "break", which is before an
+             operator, and only where the line doesn't fit, e.g. in a window of 390 px. --hang is how far demos.css
+             then indents the rest of the line: as far as the line's "=", so that the operator comes under
+             the "=". -->
+        <figure class="example">
+          <div class="view">
+            <p class="view-label">your code</p>
+            <div class="lines">
+              <code><span class="keyword">const</span> result = <span class="bit">a &gt; 4</span> ? 10 : 12</code>
+            </div>
+          </div>
+          <div class="view">
+            <p class="view-label">the same, as arithmetic <span class="legend"><code>relu(x)</code> is <code>Math.max(0, x)</code></span></p>
+            <div class="lines">
+              <code style="--hang: 15ch"><span class="keyword">const</span> <span class="bit">isAbove4</span> = relu(a - 4)<span class="break"> </span>- relu(a - 5)</code>
+              <code style="--hang: 13ch"><span class="keyword">const</span> result = <span class="bit">isAbove4</span> * 10<span class="break"> </span>+ (1 - <span class="bit">isAbove4</span>) * 12</code>
+            </div>
+          </div>
+          <div class="view">
+            <p class="view-label">the same, as wires</p>
+            <svg class="wires" viewBox="0 0 400 72" role="img" aria-label="The two lines of arithmetic drawn as a circuit. The input a feeds two ReLU gates, relu(a &minus; 4) and relu(a &minus; 5). The second gate's value is subtracted from the first's, which gives isAbove4, and isAbove4 feeds result.">
+              <path class="wire" d="M5 36.25H28.25"/>
+              <path class="wire" d="M28.25 36.25V22.25a8 8 0 0 1 8-8H53"/>
+              <path class="wire" d="M28.25 36.25V50.25a8 8 0 0 0 8 8H53"/>
+              <path class="wire" d="M140 14.25H152a7.5 7.5 0 0 1 7.5 7.5a7.5 7.5 0 0 0 7.5 7.5H191"/>
+              <path class="wire" d="M140 58.25H152a7.5 7.5 0 0 0 7.5-7.5a7.5 7.5 0 0 1 7.5-7.5H191"/>
+              <path class="wire" d="M266 36.25H299"/>
+              <path class="wire" d="M354 36.25H395"/>
+              <rect class="box" x="52.5" y="0.5" width="88" height="27" rx="6"/>
+              <rect class="box" x="52.5" y="44.5" width="88" height="27" rx="6"/>
+              <rect class="box" x="190.5" y="22.5" width="76" height="27" rx="6"/>
+              <rect class="box" x="298.5" y="22.5" width="56" height="27" rx="6"/>
+              <circle class="joint" cx="28.25" cy="36.25" r="3"/>
+              <circle class="eyelet" cx="5" cy="36.25" r="4.25"/>
+              <circle class="eyelet" cx="395" cy="36.25" r="4.25"/>
+              <text x="5" y="24">a</text>
+              <text x="96.5" y="18.5">relu(a &minus; 4)</text>
+              <text x="96.5" y="62.5">relu(a &minus; 5)</text>
+              <text class="bit" x="228.5" y="40.5">isAbove4</text>
+              <text x="326.5" y="40.5">result</text>
+              <text class="sign" x="184" y="24">+</text>
+              <text class="sign" x="184" y="55">&minus;</text>
+            </svg>
+          </div>
+          <figcaption>For an integer <code>a</code>, <code>isAbove4</code> is exactly 1 if <code>a &gt; 4</code>, and 0 otherwise. The Mini OS below is thousands of such operations.</figcaption>
         </figure>
       </section>
 

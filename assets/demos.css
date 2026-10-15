@@ -1,14 +1,18 @@
-/* The demo index, assets/demos.html: the opening with the wiring figure and the demo cards.
+/* The demo index, assets/demos.html: the opening with its example and the demo cards.
    This file is the page's only stylesheet. It imports site.css first and uses only site.css's tokens. */
 @import "./site.css";
 
-/* The opening: the headline and one sentence under it on the left, the wiring figure on the right. The figure
-   stands beside both, and its last line is level with the sentence's last line. */
+/* The opening: the headline and one sentence under it on the left, the example on the right, both starting at the
+   same height. The example is the taller of the two, by about 25 px, and the second row takes that height, so the
+   sentence stays right under the headline. */
 .opening {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 352px;
+  /* The example's longest line of code has 50 characters, which is 392 px in SF Mono at 13 px. 400 px leaves 8 px
+     for a wider monospace font. */
+  grid-template-columns: minmax(0, 1fr) 400px;
+  grid-template-rows: auto 1fr;
   column-gap: var(--space-8);
-  align-items: end;
+  align-items: start;
   margin-top: var(--space-8);
 }
 .opening h1 {
@@ -21,20 +25,59 @@
 .opening-text { grid-column: 1; }
 .opening .deck { margin-top: var(--space-5); }
 
-/* The wiring figure: Math.min(a, b) as the three operations that emitMinimum emits. Wires are copper, and each
-   wire ends in an eyelet, a small ring, like the mark in the header. */
-.wiring { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
-.wiring svg { display: block; width: 100%; height: auto; overflow: visible; }
-.wiring .wire { fill: none; stroke: var(--copper); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.wiring .part { fill: var(--sheet); stroke: var(--ink); stroke-width: 1; }
-.wiring .glyph { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.wiring .eyelet { fill: var(--paper); stroke: var(--copper); stroke-width: 1.5; }
-.wiring .joint { fill: var(--copper); }
-.wiring text { fill: var(--ink-2); font: 500 11px/1 var(--font-sans); font-variant-numeric: tabular-nums; }
-.wiring .weight { fill: var(--ink-3); }
-.wiring .name { fill: var(--ink); font: italic 400 15px/1 var(--font-serif); }
-.wiring .sigma { fill: var(--ink); font: 400 16px/1 var(--font-serif); }
-.wiring figcaption {
+/* The example: one line of code in three views, one under the other, i.e. the code, the same code as arithmetic,
+   and that arithmetic as a circuit. A comment in assets/demos.html explains the three. */
+.example { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
+.view + .view { margin-top: var(--space-4); }
+/* A view's name, e.g. "the same, as arithmetic". The second view's name has a note at the other end of its line,
+   which says what relu is. Where the name and the note don't fit on one line, the note goes under the name. */
+.view-label {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  column-gap: var(--space-3);
+  margin: 0;
+  color: var(--ink-3);
+  font: var(--type-small);
+}
+/* The code in the note, and in the caption below, is plain monospace text, without the wash that site.css puts
+   behind code. */
+.example .legend code { padding: 0; background: none; color: var(--ink-2); font-size: 11px; }
+/* A line of code stands on the paper, with no sheet behind it. A line breaks only at the one space that wraps
+   like a space of ordinary text, the space of the line's .break, and only where the line doesn't fit, e.g. the
+   longest line in a window of 390 px. The rest of the line is then indented by --hang, which demos.html sets for
+   each line so that the operator after the space comes under the line's "=". */
+.lines code {
+  display: block;
+  padding: 0 0 0 var(--hang, 0);
+  border-radius: 0;
+  background: none;
+  font: var(--type-code);
+  text-indent: calc(-1 * var(--hang, 0));
+  white-space: pre;
+}
+.lines .break { white-space: normal; }
+/* "const" is pale, so that a line starts at its name. The condition is copper in every view: "a > 4" in the first,
+   the name isAbove4 in the second, and isAbove4's box in the circuit. */
+.lines .keyword { color: var(--ink-3); }
+.lines .bit { color: var(--copper); }
+/* The circuit. A wire is copper, and the circuit's two open ends, the input a and the end of the last wire, are
+   eyelets, small rings, like the one in the header's mark. A box is a sheet with an ink outline, and its name is
+   in the serif. The drawing is 400 px wide, so it has its own size wherever the example is 400 px wide, which is
+   in every window of 440 px or more. At that size a box's outline covers whole pixels, and a wire, which is 1.5 px
+   wide, has its middle a quarter of a pixel past a whole pixel, e.g. at y = 36.25. The wire then covers three
+   whole device pixels on a screen with two device pixels per CSS px, and one whole pixel and half of the next on
+   a screen with one. */
+.wires { display: block; width: 100%; height: auto; margin-top: var(--space-2); overflow: visible; }
+.wires .wire { fill: none; stroke: var(--copper); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.wires .box { fill: var(--sheet); stroke: var(--ink); stroke-width: 1; }
+.wires .eyelet { fill: var(--paper); stroke: var(--copper); stroke-width: 1.5; }
+.wires .joint { fill: var(--copper); }
+.wires text { fill: var(--ink); font: italic 400 14px/1 var(--font-serif); text-anchor: middle; }
+.wires .bit { fill: var(--copper); }
+/* The plus sign and the minus sign beside the two wires that end at isAbove4. */
+.wires .sign { fill: var(--ink-3); font: 500 11px/1 var(--font-sans); text-anchor: end; }
+.example figcaption {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
   border-top: 1px solid var(--rule);
@@ -42,6 +85,7 @@
   font: var(--type-ui);
   text-wrap: pretty;
 }
+.example figcaption code { padding: 0; background: none; color: var(--ink); }
 
 .section-label { margin: var(--space-8) 0 var(--space-4); }
 
@@ -138,21 +182,32 @@ a.card:hover .go::after { transform: translateX(3px); }
 
 /* Below the page's full width, 1104 px. */
 @media (max-width: 1151px) {
-  /* Beside the figure the headline would break into three or four lines, e.g. in a window of 960 px. So the
-     headline runs across the page, and the figure stands beside the text alone, both starting at the same height:
-     the text is the taller of the two in a narrow window and the shorter in a wide one. */
-  .opening { column-gap: var(--space-7); align-items: start; }
-  .opening h1 { grid-column: 1 / -1; }
-  .wiring { grid-row: 2; margin-top: var(--space-5); }
+  .opening { column-gap: var(--space-7); }
   /* The text beside the screenshot would be too narrow, so the screenshot goes on top. */
   .demo.is-first { grid-template-columns: 1fr; }
   .demo.is-first .demo-picture { border-bottom: 1px solid var(--rule); }
   .demo.is-first .demo-picture::after { content: none; }
   .go { margin-top: 0; }
 }
+/* In a window narrower than 1000 px, the headline's column beside the example would be narrower than 504 px, and
+   the headline's longest line, "Turn your regular", is about 445 px wide. So the opening becomes one column: the
+   headline runs across the page, and the sentence and the example follow under it. */
+@media (max-width: 999px) {
+  .opening { grid-template-columns: minmax(0, 1fr); }
+  .example { grid-column: 1; grid-row: auto; margin-top: var(--space-6); }
+}
+/* From 901 px the page is wide enough for the example's views side by side, each 400 px wide: the two views of
+   code on the left, the circuit on the right, and the caption under both. The example is then 165 px tall instead
+   of 297 px. The rule places only the circuit's view, and the two views of code fill the left column's two rows. */
+@media (min-width: 901px) and (max-width: 999px) {
+  .example { display: grid; grid-template-columns: repeat(2, minmax(0, 400px)); column-gap: var(--space-7); }
+  .view:nth-child(3) { grid-area: 1 / 2 / span 2; margin-top: 0; }
+  .example figcaption { grid-column: 1 / -1; }
+}
 @media (max-width: 900px) {
-  .opening { grid-template-columns: minmax(0, 1fr); margin-top: var(--space-7); }
-  .wiring { grid-column: 1; grid-row: auto; max-width: 400px; margin-top: var(--space-6); }
+  .opening { margin-top: var(--space-7); }
+  /* The views are one under the other again, no wider than beside the headline. */
+  .example { max-width: 400px; }
   .demo.is-first .demo-body { padding: var(--space-5); }
 }
 /* One card to a row in a window narrower than 720 px, where each of two cards side by side would be less than
