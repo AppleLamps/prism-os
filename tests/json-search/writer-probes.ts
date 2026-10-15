@@ -413,7 +413,7 @@ function buildSplitField(): Probe {
 
 // The search step's two passes (search-step.ts) written again without createStepAnd, noneOf and dataSearchCells, over a
 // class per position instead of a code point, so that the reads' order, the tables' layout and length and the lists'
-// order can each change. JS, with reach and finish as in data-program.ts:
+// order can each change. JS, with reach and finish as in search-step.ts:
 //
 //   notFinish = accepting.map(isAccepting => !isAccepting)
 //   for (const position of positions.toReversed()) {

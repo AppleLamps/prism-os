@@ -47,7 +47,6 @@ const config: SearchPageConfig = {
   cpuSamples: 5,
   stepDocuments: Number(argument('--step-documents') ?? 200),
   executorDocuments: Number(argument('--executor-documents') ?? 40),
-  fullProgramMaxOperations: Number(argument('--full-program-max-operations') ?? 400_000),
 }
 
 await runPage({

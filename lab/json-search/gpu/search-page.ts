@@ -13,9 +13,7 @@
 // the cells are uploaded, one compute pass runs every document, and the match count of every document comes back,
 // with the marks of `windowDocuments` documents for the loop shaders. Consecutive searches use different patterns, and
 // every readback is compared with the plain JavaScript loop over the same automaton (bit-rows.ts), which this page
-// first compares with the program on the CPU: the loop program on generated JavaScript for the first `stepDocuments`
-// documents, and the program with every position written out on the CPU executor for the first `executorDocuments`.
-import {buildDataSearch, writePattern} from '../../../src/json-search/regex/data-program.ts'
+// first compares with the loop program as generated JavaScript, for the first `stepDocuments` documents.
 import {type CompiledPattern, capacityErrors, compilePattern} from '../../../src/json-search/regex/pattern.ts'
 import {type BitRowTables, bitRowKernel, bitRowTables, createBitRowSearch} from '../../../tests/json-search/bit-rows.ts'
 import {generateDocuments} from '../../../src/json-search/documents.ts'
@@ -49,12 +47,10 @@ export type SearchPageConfig = {
   cpuWarmupMs: number
   cpuSampleMs: number
   cpuSamples: number
-  // How many documents the program on the CPU is checked and timed on.
+  // How many documents the loop program is checked and timed on as generated JavaScript, and how many it is timed on
+  // on the CPU executor.
   stepDocuments: number
   executorDocuments: number
-  // The program with every position written out is only built up to this many operations, e.g. 572,064 at 32 states
-  // and 256 code points, since building it holds about 0.5 KB of heap per operation.
-  fullProgramMaxOperations: number
 }
 
 const round = (value: number) => Math.round(value * 1000) / 1000
@@ -257,7 +253,7 @@ async function run() {
     const marks = new Uint8Array(positions)
     const stepOutputs = [new Float32Array(1), new Float32Array(positions)]
     const stepDocuments = Math.min(maxCount, config.stepDocuments)
-    const cpuCheck = {stepDocuments, stepValues: 0, stepMismatches: 0, executorDocuments: 0, executorValues: 0, executorMismatches: 0, fullProgramOperations: 0}
+    const cpuCheck = {stepDocuments, stepValues: 0, stepMismatches: 0}
     for (const {compiled, tables} of fitting) {
       plain.writePattern(shared, compiled)
       generatedRunner.setShared(shared)
@@ -270,36 +266,6 @@ async function run() {
         for (let position = 0; position < positions; position++) if (stepOutputs[1]![position] !== marks[position]) cpuCheck.stepMismatches++
       }
     }
-    const fullOperations = positions * stepOperations.filter(stage => stage.repeat !== 'once').reduce((total, stage) => total + stage.operations, 0)
-    let evaluateFull: ((index: number) => Float32Array) | undefined
-    let writeFullPattern: ((compiled: CompiledPattern) => void) | undefined
-    if (fullOperations <= config.fullProgramMaxOperations) {
-      const buildStarted = performance.now()
-      const full = buildDataSearch({...capacity, textLength: positions})
-      const evaluate = full.circuit.createTensorEvaluator([...full.output.highlighted, ...full.output.starts, full.output.matchCount])
-      const source = new Float32Array(full.initialSource)
-      cpuCheck.fullProgramOperations = full.circuit.operations.length
-      entry['fullProgramBuildMs'] = round(performance.now() - buildStarted)
-      writeFullPattern = compiled => writePattern(source, full, compiled)
-      evaluateFull = index => {
-        const base = index * cellsPerDocument
-        for (let position = 0; position < positions; position++) source[full.cells.text[position]!] = cells[base + position]!
-        return evaluate(source)
-      }
-      const executorDocuments = Math.min(maxCount, config.executorDocuments)
-      cpuCheck.executorDocuments = executorDocuments
-      for (const {compiled, tables} of fitting) {
-        writeFullPattern(compiled)
-        const search = createBitRowSearch(tables, positions)
-        for (let index = 0; index < executorDocuments; index++) {
-          const count = search(sliced[index]!, marks)
-          const values = evaluateFull(index)
-          cpuCheck.executorValues += 1 + positions
-          if (values[2 * positions] !== count) cpuCheck.executorMismatches++
-          for (let position = 0; position < positions; position++) if (values[position]! + values[positions + position]! !== marks[position]) cpuCheck.executorMismatches++
-        }
-      }
-    }
     entry['cpuCheck'] = cpuCheck
     log(`${states} states, ${positions} positions: ${fitting.length} patterns fit, program ${JSON.stringify(entry['program'])}, CPU check ${JSON.stringify(cpuCheck)}`)
 
@@ -309,7 +275,6 @@ async function run() {
     plain.writePattern(shared, timingPattern.compiled)
     generatedRunner.setShared(shared)
     executorRunner.setShared(shared)
-    writeFullPattern?.(timingPattern.compiled)
     const sampleOf = (limit: number) => Math.max(1, Math.min(maxCount, limit))
     const generatedSample = sampleOf(config.stepDocuments)
     const executorSample = sampleOf(config.executorDocuments)
@@ -325,10 +290,6 @@ async function run() {
       stepExecutor: {documents: Math.min(executorSample, 8), ...timeCpu(() => {
         for (let index = 0; index < Math.min(executorSample, 8); index++) executorRunner.run([cells], index, stepOutputs, 0, -1)
       }, Math.min(executorSample, 8))},
-      // The program with every position written out, on the CPU executor.
-      fullExecutor: evaluateFull === undefined ? undefined : {documents: executorSample, ...timeCpu(() => {
-        for (let index = 0; index < executorSample; index++) sink += evaluateFull(index)[2 * positions]!
-      }, executorSample)},
     }
     log(`CPU: ${JSON.stringify(entry['cpu'])}`)
     await post(false)

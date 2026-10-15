@@ -16,9 +16,9 @@
 //              the forward pass reads
 //   outputs    a document's results after the last stage, and per position values for the documents a page shows
 //
-// The same LoopProgram runs three ways, and the tests compare all three with the program that has every position written
-// out: createLoopRunner on the CPU executor, createLoopRunner on generated JavaScript, and loop-emit.ts's WGSL, where
-// each stage's statements are written once inside a `for` loop.
+// The same LoopProgram runs three ways, and the tests compare all three with plain JavaScript references:
+// createLoopRunner on the CPU executor, createLoopRunner on generated JavaScript, and loop-emit.ts's WGSL, where each
+// stage's statements are written once inside a `for` loop.
 import {type Circuit, type Wire, invariant} from '../runtime/numeric-ui-core.ts'
 import {type TensorProgram, positionsOfWires} from './emit.ts'
 import {compileChunks} from './generated-js.ts'

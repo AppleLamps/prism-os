@@ -1,7 +1,6 @@
 // One WGSL compute shader from a loop program (loop-program.ts): one invocation runs one document, and each looped
 // stage's operations are written once, inside a `for` loop over the document's positions. So the shader's length is
-// the work of one position, whatever the number of positions, e.g. 496 statements for regex search's step at 8 states
-// where the program with every position written out is 91,774.
+// the work of one position, whatever the number of positions, e.g. 496 statements for regex search's step at 8 states.
 //
 // What the shader reads and writes:
 //   shared_values       every stage's source table, e.g. a pattern's cells, uploaded per search

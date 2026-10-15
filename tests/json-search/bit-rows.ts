@@ -1,8 +1,8 @@
-// The same automaton as regex search's form (a), with every row of a class's transition matrix as one 32-bit word:
-// what a programmer would write by hand, in JavaScript and as a WGSL kernel. Neither is the repo's program. They are
-// here as comparisons: the JavaScript loop is the plain JavaScript baseline for the automaton, and the kernel shows what
-// the GPU does with this search when nothing has to be a sum, a ReLU gate or a table read of float32 values. Both read
-// the pattern from one table of numbers, like form (a), so a new pattern compiles nothing.
+// The same automaton as the search step's (src/json-search/search-step.ts), with every row of a class's transition
+// matrix as one 32-bit word: what a programmer would write by hand, in JavaScript and as a WGSL kernel. Neither is the
+// repo's program. They are here as comparisons: the JavaScript loop is the plain JavaScript baseline for the automaton,
+// and the kernel shows what the GPU does with this search when nothing has to be a sum, a ReLU gate or a table read of
+// float32 values. Both read the pattern from one table of numbers, like the step, so a new pattern compiles nothing.
 //
 // Where the program takes one table read per pair of states, `transitions[class][from][to] && bit`, i.e. S × S reads
 // per pass and code point, a row here is one AND and one comparison per state:

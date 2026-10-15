@@ -1,10 +1,19 @@
-// Regex search's form (a) (src/json-search/regex/data-program.ts, the pattern as data) as the work of one code point, for
-// loop-program.ts. The full program writes that work out once per code point, e.g. 58,920 operations for 256 code
-// points at 8 states, and as one shader with a statement per operation it took 107 to 130 s to compile. Here the same builder code runs
-// for one position: the class of the code point, one step of the reverse pass, and one step of the forward pass, 240
-// operations at 8 states, whatever the number of positions. A new pattern still writes cells and changes no program.
+// Regex search as the work of one code point, for loop-program.ts: the class of the code point, one step of a reverse
+// pass, and one step of a forward pass, 240 operations at 8 states, whatever the number of positions. The pattern is
+// data (regex/data-program.ts): its automaton and its character classes sit in cells, so a new pattern writes cells
+// and changes no program. With the same work written once per code point, a program for 256 code points at 8 states
+// is 58,920 operations, and one shader with a statement per operation took 107 to 130 s to compile.
 //
-// The stages of the loop program, each built with data-program.ts's own emitClasses and createStepAnd:
+// The search runs two passes over a document's code points, and each step multiplies the code point's transition
+// matrix with a 0/1 state vector:
+// - The reverse pass, from the end of the text: reach[j][s] is 1 when some path from state s at position j reads at
+//   least one code point and ends in an accepting state.
+// - The forward pass, from the start: reached[j][s] is 1 when the match in progress has reached state s by position j.
+//   Code point j continues the match when reached[j][s] && reach[j][s] for some state s, and when no match continues,
+//   a match starts at j when reach[j][initial state]. So the forward pass knows at every position whether a longer
+//   match exists, and never has to go back to where a longest match ended.
+//
+// The stages of the loop program, each built with data-program.ts's emitClasses and createStepAnd:
 //   start    once: notFinish[s] = !accepting[s], the reverse pass's bits before the last code point
 //   reverse  from the last position down: the code point's class, notReach[s], and the next notFinish[s]
 //   forward  from position 0 up: whether a match continues or starts here, the next reached[s], and the match count
@@ -15,12 +24,12 @@
 // the text's end, which no step reads, so a match lies inside one run of searched characters, e.g. inside one string.
 //
 // Every value is an integer: bits, classes up to 16, code points and boundaries up to 0x110000, and a count up to the
-// number of positions. So every operation is exact in FP32 in any order, and the loop gives the full program's values.
+// number of positions. So every operation is exact in FP32 in any order.
 import {type Circuit, type Wire, invariant} from '../runtime/numeric-ui-core.ts'
 import {createSourceTable, input, inputBit, list} from '../runtime/cells.ts'
 import {displayKind} from './highlighter/kinds.ts'
 import {type Bit, andNot, bitWire, noneOf, not, orExclusive} from './regex/bits.ts'
-import {type DataCapacity, type DataSearchCells, createStepAnd, dataSearchCells, emitClasses, writePattern} from './regex/data-program.ts'
+import {type DataSearchCells, createStepAnd, dataSearchCells, emitClasses, writePattern} from './regex/data-program.ts'
 import type {CompiledPattern, SearchCapacity} from './regex/pattern.ts'
 import {type Binding, type LoopProgram, createStage} from './loop-program.ts'
 
@@ -99,7 +108,8 @@ export function buildSearchLoop(capacity: SearchCapacity, options: SearchLoopOpt
   // start. JS: notFinish = accepting.map(isAccepting => !isAccepting)
   const startNotFinish = pattern.accepting.map(accepting => bitWire(circuit, not(circuit, accepting)))
 
-  // reverse, the body of data-program.ts's reverse loop.
+  // reverse. notReach[s] is !reach[s] at this position, and the carried notFinish[t] is !(accepting[t] || reach[t]) at
+  // the position after it. JS: reach[s] = states.some(t => transitions[classOf(codePoint)][s][t] && (accepting[t] || reachAfter[t]))
   const mask = cells.mask[0]
   const searched = mask === undefined ? codePoint : emitMaskedCodePoint(circuit, codePoint, mask.kind, mask.searchable)
   const classOf = emitClasses(circuit, {...pattern, text: [searched]})[0]!
@@ -107,14 +117,17 @@ export function buildSearchLoop(capacity: SearchCapacity, options: SearchLoopOpt
   const notReach = list(states, from => bitWire(circuit, noneOf(circuit, list(states, to => stepAnd(classOf, from, to, not(circuit, notFinish[to]!))))))
   const nextNotFinish = list(states, state => bitWire(circuit, andNot(circuit, notReach[state]!, pattern.accepting[state]!)))
 
-  // forward, the body of data-program.ts's forward loop.
+  // forward. JS: continuing[s] = reached[s] && reach[s], the states from which the match in progress can still read
+  // this code point and end in an accepting state.
   const continuing = list(states, state => andNot(circuit, cells.reached[state]!, cells.notReach[state]!))
   const notContinuing = noneOf(circuit, continuing)
+  // JS: start = !continuing.some(Boolean) && reach[0]
   const start = andNot(circuit, notContinuing, cells.notReach[0]!)
   const live = continuing.map((bit, state) => state === 0 ? orExclusive(circuit, bit, start) : bit)
   const highlighted = orExclusive(circuit, not(circuit, notContinuing), start)
   // 0 outside a match, 1 inside one, and 2 at a match's first code point: highlighted + start.
   const mark = circuit.affine([[bitWire(circuit, highlighted), 1], [bitWire(circuit, start), 1]])
+  // JS: reached[t] = states.some(s => live[s] && transitions[codePointClass][s][t])
   const nextReached = list(states, to => bitWire(circuit, not(circuit, noneOf(circuit, list(states, from => stepAnd(cells.codePointClass, from, to, live[from]!))))))
   const nextMatchCount = circuit.affine([[cells.matchCount, 1], [bitWire(circuit, start), 1]])
 
@@ -178,8 +191,7 @@ export function buildSearchLoop(capacity: SearchCapacity, options: SearchLoopOpt
   const searchableCells = mask?.searchable
   return {
     loop, capacity, options, circuit,
-    // Writes a pattern's cells into a copy of loop.sharedValues, as regex/data-program.ts's writePattern does for the full
-    // program. Throws when the pattern doesn't fit the capacity.
+    // Writes a pattern's cells into a copy of loop.sharedValues. Throws when the pattern doesn't fit the capacity.
     writePattern(shared: Float32Array, compiled: CompiledPattern) {
       writePattern(shared, {cells: dataCells, capacity: {...capacity, textLength: 1}}, compiled)
     },
@@ -194,52 +206,4 @@ export function buildSearchLoop(capacity: SearchCapacity, options: SearchLoopOpt
     // How many shared cells a new pattern writes: the boundaries, the region classes, the transitions and the accepting bits.
     patternCells: capacity.boundaries + capacity.boundaries + 1 + capacity.classes * states * states + states,
   }
-}
-
-// The two passes of src/json-search/regex/data-program.ts over the given classes, copied from buildDataSearch, which builds
-// them inline and doesn't export them.
-function emitPasses(circuit: Circuit, cells: DataSearchCells, classOf: readonly Wire[]) {
-  const states = cells.accepting.length
-  const textLength = classOf.length
-  const stepAnd = createStepAnd(circuit, cells)
-  const notReachAt = Array<Bit[]>(textLength)
-  let notFinish: Bit[] = cells.accepting.map(accepting => not(circuit, accepting))
-  for (let position = textLength - 1; position >= 0; position--) {
-    const codePointClass = classOf[position]!
-    const notReach = list(states, from => noneOf(circuit, list(states, to => stepAnd(codePointClass, from, to, not(circuit, notFinish[to]!)))))
-    notReachAt[position] = notReach
-    notFinish = list(states, state => andNot(circuit, notReach[state]!, cells.accepting[state]!))
-  }
-  let reached: Bit[] = list(states, () => false)
-  const highlighted: Wire[] = []
-  const starts: Wire[] = []
-  for (let position = 0; position < textLength; position++) {
-    const notReach = notReachAt[position]!
-    const continuing = list(states, state => andNot(circuit, reached[state]!, notReach[state]!))
-    const notContinuing = noneOf(circuit, continuing)
-    const start = andNot(circuit, notContinuing, notReach[0]!)
-    const live = continuing.map((bit, state) => state === 0 ? orExclusive(circuit, bit, start) : bit)
-    highlighted.push(bitWire(circuit, orExclusive(circuit, not(circuit, notContinuing), start)))
-    starts.push(bitWire(circuit, start))
-    const codePointClass = classOf[position]!
-    reached = list(states, to => not(circuit, noneOf(circuit, list(states, from => stepAnd(codePointClass, from, to, live[from]!)))))
-  }
-  return {highlighted, starts, matchCount: circuit.affine(starts.map(start => [start, 1] as const))}
-}
-
-// The masked search with every position written out, as one program for the CPU executor: what a masked search loop is
-// compared with. Its cells are the text, the display kind of every code point, the nine searchable bits, and the
-// pattern's tables.
-/** @public */
-export function buildMaskedSearch(capacity: DataCapacity) {
-  const table = createSourceTable()
-  const cells = table.declare({
-    search: dataSearchCells(capacity),
-    kinds: list(capacity.textLength, () => input([0, kindCount - 1], {initial: displayKind.pastEnd, grid: 1})),
-    searchable: list(kindCount, () => inputBit(1)),
-  })
-  const circuit = table.createCircuit()
-  const searched = cells.search.text.map((codePoint, position) => emitMaskedCodePoint(circuit, codePoint, cells.kinds[position]!, cells.searchable))
-  const output = emitPasses(circuit, cells.search, emitClasses(circuit, {...cells.search, text: searched}))
-  return {cells, capacity, output, ...table.finish()}
 }

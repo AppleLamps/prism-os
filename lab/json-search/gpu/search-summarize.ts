@@ -20,7 +20,9 @@ type SearchPage = {
     states: number, positions: number,
     patterns: {pattern: string, states: number, classes: number, boundaries: number, matches: number, documentsWhereRegExpCountsTheSame: number}[],
     program: {stages: {name: string, operations: number, indexReads: number}[], operationsPerDocument: number, sharedCells: number, patternCells: number},
-    cpuCheck: {stepDocuments: number, stepValues: number, stepMismatches: number, executorDocuments: number, executorValues: number, executorMismatches: number},
+    // A run from before the search with every position written out was removed also checked and timed that program
+    // on the CPU executor: its result file has executorValues, executorMismatches and fullExecutor.
+    cpuCheck: {stepDocuments: number, stepValues: number, stepMismatches: number, executorValues?: number, executorMismatches?: number},
     cpu: {pattern: string, bitRowLoop: ({count: number} & CpuTime)[], stepGenerated: CpuTime, stepExecutor: CpuTime, fullExecutor?: CpuTime},
     engines: EngineResult[],
   }[],
@@ -142,14 +144,15 @@ if (searchRuns.length > 0) {
   console.log(`Patterns and sizes where RegExp's count differs from the automaton's for some document: ${disagreements.length}.`)
 
   console.log('\n### The CPU, µs per document\n')
-  console.log('| States | Positions | Plain JavaScript loop over 32-bit rows | The loop program as generated JavaScript, sampled | The loop program on the CPU executor, sampled | Form (a) with every position written out, on the CPU executor, sampled |')
-  console.log('| --- | --- | --- | --- | --- | --- |')
+  const timedWrittenOut = pages.some(page => page.results.some(result => result.cpu.fullExecutor !== undefined))
+  console.log(`| States | Positions | Plain JavaScript loop over 32-bit rows | The loop program as generated JavaScript, sampled | The loop program on the CPU executor, sampled |${timedWrittenOut ? ' The search with every position written out, on the CPU executor, sampled |' : ''}`)
+  console.log(`| --- | --- | --- | --- | --- |${timedWrittenOut ? ' --- |' : ''}`)
   for (const [states, positions] of sizes) {
     const cpu = (pick: (result: SearchPage['results'][number]) => number | undefined) => spread(pages.map(page => {
       const result = resultOf(page, states, positions)
       return result === undefined ? undefined : pick(result)
     }))
-    console.log(`| ${states} | ${positions} | ${cpu(result => result.cpu.bitRowLoop.find(entry => entry.count === largest)?.microsecondsPerDocument)} | ${cpu(result => result.cpu.stepGenerated.microsecondsPerDocument)} | ${cpu(result => result.cpu.stepExecutor.microsecondsPerDocument)} | ${cpu(result => result.cpu.fullExecutor?.microsecondsPerDocument)} |`)
+    console.log(`| ${states} | ${positions} | ${cpu(result => result.cpu.bitRowLoop.find(entry => entry.count === largest)?.microsecondsPerDocument)} | ${cpu(result => result.cpu.stepGenerated.microsecondsPerDocument)} | ${cpu(result => result.cpu.stepExecutor.microsecondsPerDocument)} |${timedWrittenOut ? ` ${cpu(result => result.cpu.fullExecutor?.microsecondsPerDocument)} |` : ''}`)
   }
 
   const idleGaps = defined(first.results.flatMap(result => result.engines.flatMap(engine => engine.byCount.flatMap(entry => entry.afterIdle?.map(idle => idle.idleMs))))).filter((gap, index, all) => all.indexOf(gap) === index)
@@ -182,7 +185,7 @@ if (searchRuns.length > 0) {
     const engines = page.results.flatMap(result => result.engines)
     const total = (pick: (engine: EngineResult) => number) => engines.reduce((sum, engine) => sum + pick(engine), 0)
     const cpu = page.results.map(result => result.cpuCheck)
-    console.log(`Run ${index + 1}: ${whole(total(engine => engine.checks.searches))} searches read back, ${whole(total(engine => engine.checks.values))} values compared with the plain JavaScript loop, ${whole(total(engine => engine.checks.mismatches))} mismatched. The plain loop against the loop program as generated JavaScript: ${whole(cpu.reduce((sum, check) => sum + check.stepValues, 0))} values, ${cpu.reduce((sum, check) => sum + check.stepMismatches, 0)} mismatched. Against form (a) with every position written out on the executor: ${whole(cpu.reduce((sum, check) => sum + check.executorValues, 0))} values, ${cpu.reduce((sum, check) => sum + check.executorMismatches, 0)} mismatched.`)
+    console.log(`Run ${index + 1}: ${whole(total(engine => engine.checks.searches))} searches read back, ${whole(total(engine => engine.checks.values))} values compared with the plain JavaScript loop, ${whole(total(engine => engine.checks.mismatches))} mismatched. The plain loop against the loop program as generated JavaScript: ${whole(cpu.reduce((sum, check) => sum + check.stepValues, 0))} values, ${cpu.reduce((sum, check) => sum + check.stepMismatches, 0)} mismatched.${cpu.some(check => check.executorValues !== undefined) ? ` Against the search with every position written out, on the executor: ${whole(cpu.reduce((sum, check) => sum + (check.executorValues ?? 0), 0))} values, ${cpu.reduce((sum, check) => sum + (check.executorMismatches ?? 0), 0)} mismatched.` : ''}`)
   })
 
   // Where the step on the GPU takes less time than RegExp counting every match, per pattern, at 512 positions.
