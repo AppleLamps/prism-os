@@ -8,7 +8,7 @@ This repository is **[Handwired](https://github.com/chenglou/handwired)** plus *
 
 | Prism OS | HandwiredOS (same program underneath) |
 | --- | --- |
-| Twilight glass UI, aurora wallpaper, teal/violet accents | Warm paper desk, copper accents |
+| Liquid glass UI in light and dark, dune wallpaper, system-blue accent, traffic-light buttons, app-icon dock | Warm paper desk, copper accents |
 | **Scope**, **Inkwell**, **Chroma** | Monitor, Notes, Photos |
 | **Cascade** opening layout (36px step per window) | Magazine-style tiling |
 
@@ -22,9 +22,9 @@ Prism OS touches only the host layer for chrome and arrangement:
 
 - **Program + machine:** `src/handwiredos/window-manager.ts` (`createWindowManagerMachine`, `mountWindowManager`)
 - **HandwiredOS entry:** `src/handwiredos/boot.ts` mounts the window manager with its defaults. `window-manager.ts` itself only exports `mountWindowManager`, so importing it never mounts a page
-- **Prism entry:** `src/prismos/boot.ts` — calls `mountWindowManager(..., { arrange: arrangePrismWindows })` and starts the aurora canvas
+- **Prism entry:** `src/prismos/boot.ts` calls `mountWindowManager(..., { arrange: arrangePrismWindows })` and starts the wallpaper canvas
 - **Prism layout:** `src/prismos/arrangement.ts` — runs Handwired’s `arrangeInitialWindows`, then shifts each window in a cascade and clamps to the workspace
-- **Prism atmosphere:** `src/prismos/aurora-wallpaper.ts` — animated canvas behind the weight arcs
+- **Prism wallpaper:** `src/prismos/wallpaper.ts`: full-bleed animated dunes behind the weight arcs, with a day and a night palette
 - **Page:** `assets/prism-os.html`, `assets/prism-os.css` (imports `handwired-os.css` for geometry/hit targets)
 
 Changing window sizes, title bar height, dock height, or hit-test geometry belongs in **`window-manager.ts` and `handwired-os.css`**, not only in Prism CSS. Prism CSS should change color, blur, radii, and branding—not layout constants the program assumes.
@@ -49,10 +49,16 @@ Demo site routes are listed in `scripts/demo-site-pages.ts`. The landing page is
 | Goal | Where to edit |
 | --- | --- |
 | Rename apps, default note text, dock icons | `assets/prism-os.html` |
-| Colors, glass, dock shelf, aurora blend | `assets/prism-os.css` (tokens live on `:root.prism` so they beat `site.css` in any stylesheet order; never move `#dock` itself, the program hit-tests its tiles in desktop coordinates) |
+| Colors, glass, traffic lights, dock tiles and shelf | `assets/prism-os.css` (tokens live on `:root.prism` and every rule starts with `.prism-desktop`, so they beat `site.css` and `handwired-os.css` in any stylesheet order; never move `#dock` itself, the program hit-tests its tiles in desktop coordinates) |
 | Opening window positions | `src/prismos/arrangement.ts` (`cascadeStep`, clamp logic) |
-| Aurora motion / colors | `src/prismos/aurora-wallpaper.ts` |
+| Wallpaper motion and palettes | `src/prismos/wallpaper.ts` |
 | Mount options (e.g. another arrangement) | `src/prismos/boot.ts`, `WindowManagerMountOptions` in `window-manager.ts` |
+
+## Design rules
+
+- No purple or violet anywhere in Prism: the palette is blues, teals, warm sand, and the macOS traffic-light colors.
+- Every color, surface and shadow has a light and a dark value under `prefers-color-scheme`.
+- Transforms on dock tiles only move paint; never change the geometry of anything the program places.
 
 ## Avoid unless you mean to change the whole OS
 

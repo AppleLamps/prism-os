@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Prism OS</title>
-  <meta name="description" content="A twilight glass desktop powered by the same handwired numeric program as HandwiredOS: drag, stack, and spring three apps while aurora light moves under the network of weights.">
-  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="A liquid glass desktop powered by the same handwired numeric program as HandwiredOS: drag, stack and spring three apps over drifting glass dunes and the network of weights.">
+  <meta name="theme-color" content="#0f4f96" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1424" media="(prefers-color-scheme: dark)">
   <script>
     new MutationObserver((records, observer) => {
       const script = document.head.querySelector('script[type=module][src]')
@@ -26,7 +27,7 @@
         All demos
       </a>
       <div class="prism-brand" aria-hidden="true">
-        <span class="prism-mark"></span>
+        <svg class="prism-mark" viewBox="0 0 16 16"><path d="M8 1.75L14.5 13.5h-13z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 1.75v11.75" stroke="currentColor" stroke-width="1.1" opacity="0.6"/></svg>
         Prism OS
       </div>
       <nav class="system-links">
@@ -34,7 +35,7 @@
       </nav>
     </header>
 
-    <canvas class="desk-aurora" aria-hidden="true"></canvas>
+    <canvas class="desk-wallpaper" aria-hidden="true"></canvas>
     <canvas class="desk-wiring" aria-hidden="true"></canvas>
 
     <section class="window">
@@ -72,9 +73,9 @@
       <div class="window-content notes-content">
         <textarea class="notes-text" aria-label="Note">Prism OS showcase
 
-&ndash; Same 9,909-weight program as HandwiredOS
-&ndash; New cascade layout and aurora wallpaper
-&ndash; Drag the title bars, resize from the corner
+&ndash; The same 9,909-weight program as HandwiredOS
+&ndash; Glass windows over drifting dunes
+&ndash; Drag a title bar, resize from a corner
 &ndash; Open a photo in Chroma, read the circuit in Scope</textarea>
       </div>
       <div class="resize-grip"></div>
@@ -101,25 +102,24 @@
 
     <nav id="dock" class="prism-dock">
       <span class="dock-wire"></span>
-      <div class="dock-item" title="Scope">
-        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="14" cy="14" r="8"/>
-          <path class="accent" d="M14 6v4M14 18v4M6 14h4M18 14h4"/>
+      <div class="dock-item dock-scope" title="Scope">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4.5" y="6" width="19" height="14" rx="3"/>
+          <path d="M7.5 13h3l1.75-3.5 3.5 7 1.75-3.5h3"/>
+          <path d="M11 23h6"/>
         </svg>
         <i></i>
       </div>
-      <div class="dock-item" title="Inkwell">
-        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M8.5 4.5h8l4.5 4.5v12.5a2 2 0 0 1-2 2h-10.5a2 2 0 0 1-2-2v-15a2 2 0 0 1 2-2z"/>
-          <path class="accent" d="M11 14h6M11 17.5h4"/>
+      <div class="dock-item dock-ink" title="Inkwell">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 9.5h12M8 14h12M8 18.5h7"/>
         </svg>
         <i></i>
       </div>
-      <div class="dock-item" title="Chroma">
-        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="4" y="6" width="20" height="16" rx="2.5"/>
-          <path d="M4.5 18.5l4.6-4.8a1.2 1.2 0 0 1 1.7 0l3.2 3.3"/>
-          <circle class="accent-fill" cx="18.5" cy="10.8" r="1.8"/>
+      <div class="dock-item dock-chroma" title="Chroma">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="18.5" cy="9.5" r="2.5"/>
+          <path d="M4.5 20.5l6-6.5 4.5 4.5 3-3 5.5 5"/>
         </svg>
         <i></i>
       </div>

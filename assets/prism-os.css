@@ -1,120 +1,405 @@
-/* Prism OS: twilight glass skin over HandwiredOS's geometry. Sizes and hit targets stay
-   in the numeric program; this file only changes color, depth, and atmosphere.
+/* Prism OS: a liquid glass skin over HandwiredOS's geometry. Sizes and hit targets stay in
+   the numeric program; this file only changes color, material, type and depth.
 
-   The tokens are on :root.prism, which outranks site.css's :root in either order of the
-   two stylesheets: Bun's development server links a page's stylesheets in reverse, and
-   bun build keeps the page's order, see handwired-os.css. */
+   Two rules about order, since Bun's development server links a page's stylesheets in
+   reverse and bun build keeps the page's order, see handwired-os.css:
+   - The tokens are on :root.prism, which outranks site.css's :root.
+   - Every other rule starts with .prism-desktop, so it outranks the handwired-os.css rule
+     that it restyles, e.g. .prism-desktop .window over .window.
+
+   Never move or resize #dock, a window, a button or a tile here: the program tests presses
+   against the rectangles that it computes, and paints them where it computes them. */
 
 :root.prism {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --paper: #0f1424;
-  --sheet: rgb(18 24 42 / 0.82);
-  --desk: #070b14;
-  --ink: #e8edf7;
-  --ink-2: #a8b4cc;
-  --ink-3: #7f8aa3;
-  --rule: rgb(148 163 184 / 0.16);
-  --rule-strong: rgb(148 163 184 / 0.28);
-  --edge: rgb(148 163 255 / 0.22);
-  --wash: rgb(148 163 255 / 0.08);
-  --copper: #5eead4;
-  --copper-line: rgb(94 234 212 / 0.55);
-  --copper-wash: rgb(94 234 212 / 0.14);
-  --copper-wash-deep: rgb(167 139 250 / 0.22);
-  --wire-indigo: #a78bfa;
+  /* Ink and surfaces. */
+  --paper: #f2f4f7;
+  --sheet: rgb(255 255 255 / 0.78);
+  --desk: #0f4f96;
+  --ink: #1d1d1f;
+  --ink-2: #4a4a50;
+  --ink-3: #6e6e75;
+  --rule: rgb(0 0 0 / 0.08);
+  --rule-strong: rgb(0 0 0 / 0.2);
+  --edge: rgb(0 0 0 / 0.1);
+  --wash: rgb(0 0 0 / 0.05);
+
+  /* The accent is the system blue. The handwired tokens keep their names, so every rule of
+     handwired-os.css that reads --copper draws in blue. */
+  --copper: #007aff;
+  --copper-line: rgb(0 122 255 / 0.5);
+  --copper-wash: rgb(0 122 255 / 0.14);
+  --copper-wash-deep: rgb(0 122 255 / 0.24);
+
+  /* The chart colors of Monitor's operation kinds: blue, orange, green and pink. */
+  --wire-indigo: #ff9500;
+  --wire-ochre: #34c759;
+  --wire-plum: #ff2d55;
+  --wire-green: #34c759;
+  --wire-red: #ff3b30;
+
+  /* Type: the system's sans for everything, as on a Mac. */
+  --font-serif: var(--font-sans);
+  --type-title-xs: 600 13px/20px var(--font-sans);
+
+  --shadow-ink: 6 24 56;
   --grain: none;
+
+  /* Glass: a fill, a bright rim along the top edge where the light comes from, a hairline
+     around the edge, and the blur and saturation of what lies behind. */
+  --glass: rgb(255 255 255 / 0.5);
+  --glass-strong: rgb(255 255 255 / 0.72);
+  /* A window is denser glass than the dock and the bar, so the text in it stays crisp over
+     whatever lies behind, as a Mac window is. */
+  --window-glass: rgb(250 251 253 / 0.8);
+  --window-glass-focused: rgb(255 255 255 / 0.9);
+  --glass-edge: rgb(255 255 255 / 0.55);
+  --glass-rim: rgb(255 255 255 / 0.85);
+  --glass-hairline: rgb(0 0 0 / 0.1);
+  --glass-blur: blur(30px) saturate(1.9);
+  --sidebar: rgb(0 0 0 / 0.025);
+  --zebra: rgb(0 0 0 / 0.025);
+  --dock-dot: rgb(0 0 0 / 0.55);
+  --light-idle: rgb(0 0 0 / 0.13);
+  --glyph-on-light: rgb(0 0 0 / 0.55);
+  --notes-caret: #e5a500;
+
+  /* The dock's app tiles. */
+  --tile-scope: linear-gradient(180deg, #6ad4ff 0%, #1f8fff 55%, #0062e6 100%);
+  --tile-ink: linear-gradient(180deg, #ffd84d 0 30%, #fffdf6 30% 100%);
+  --tile-chroma: linear-gradient(160deg, #ffd25a 0%, #ff8a3d 50%, #ff4d3d 100%);
 }
 
+@media (prefers-color-scheme: dark) {
+  :root.prism {
+    color-scheme: dark;
+
+    --paper: #1c1c1e;
+    --sheet: rgb(44 44 46 / 0.78);
+    --desk: #0a1424;
+    --ink: #f5f5f7;
+    --ink-2: #c7c7cc;
+    --ink-3: #8e8e93;
+    --rule: rgb(255 255 255 / 0.09);
+    --rule-strong: rgb(255 255 255 / 0.22);
+    --edge: rgb(255 255 255 / 0.12);
+    --wash: rgb(255 255 255 / 0.07);
+
+    --copper: #0a84ff;
+    --copper-line: rgb(10 132 255 / 0.6);
+    --copper-wash: rgb(10 132 255 / 0.24);
+    --copper-wash-deep: rgb(10 132 255 / 0.36);
+
+    --wire-indigo: #ff9f0a;
+    --wire-ochre: #30d158;
+    --wire-plum: #ff375f;
+    --wire-green: #30d158;
+    --wire-red: #ff453a;
+
+    --shadow-ink: 0 0 0;
+
+    --glass: rgb(28 30 34 / 0.48);
+    --glass-strong: rgb(34 36 40 / 0.7);
+    --window-glass: rgb(30 32 36 / 0.8);
+    --window-glass-focused: rgb(36 38 42 / 0.9);
+    --glass-edge: rgb(255 255 255 / 0.14);
+    --glass-rim: rgb(255 255 255 / 0.22);
+    --glass-hairline: rgb(0 0 0 / 0.5);
+    --sidebar: rgb(255 255 255 / 0.03);
+    --zebra: rgb(255 255 255 / 0.03);
+    --dock-dot: rgb(255 255 255 / 0.7);
+    --light-idle: rgb(255 255 255 / 0.2);
+    --notes-caret: #ffd60a;
+  }
+}
+
+/* The desk: the wallpaper canvas fills it, behind the program's weight arcs. */
 #desktop.prism-desktop {
   background: transparent;
   color: var(--ink);
+  font: 400 13px/20px var(--font-sans);
 }
 
-.desk-aurora {
+.prism-desktop .desk-wallpaper {
   position: absolute;
   z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 
-.desk-wiring {
-  z-index: 1;
-  opacity: 0.42;
-  mix-blend-mode: screen;
+/* The arcs, one per stored weight, as a faint white tracery over the dunes. wiring.ts reads
+   its two stroke colors from the canvas's --copper and --wire-indigo when the page loads. */
+.prism-desktop .desk-wiring {
+  --copper: rgb(255 255 255);
+  --wire-indigo: rgb(205 232 255);
+  opacity: 0.3;
+  mix-blend-mode: soft-light;
 }
 
-#system-bar {
-  background: rgb(10 14 26 / 0.72);
-  backdrop-filter: blur(14px);
-  border-bottom-color: var(--edge);
-  pointer-events: none;
+/* The menu bar: clear glass over the wallpaper, with white type. */
+.prism-desktop #system-bar {
+  border-bottom: 0;
+  background: linear-gradient(rgb(0 0 0 / 0.14), rgb(0 0 0 / 0.04));
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+  color: rgb(255 255 255 / 0.88);
+  font: 500 13px/20px var(--font-sans);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+}
+
+.prism-desktop .system-back {
+  color: #fff;
+  font: 600 13px/20px var(--font-sans);
+}
+
+.prism-desktop .system-links a {
+  color: rgb(255 255 255 / 0.85);
+}
+
+@media (hover: hover) {
+  .prism-desktop .system-back:hover,
+  .prism-desktop .system-links a:hover {
+    color: #fff;
+    text-decoration-color: rgb(255 255 255 / 0.7);
+  }
 }
 
 .prism-brand {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
+  translate: -50% 0;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  font: var(--type-title-xs);
-  letter-spacing: 0.04em;
-  color: var(--ink);
+  gap: 6px;
+  color: #fff;
+  font: 600 13px/20px var(--font-sans);
+  letter-spacing: -0.005em;
   pointer-events: none;
 }
 
 .prism-mark {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  background: linear-gradient(135deg, #5eead4, #a78bfa 55%, #f472b6);
-  box-shadow: 0 0 18px rgb(94 234 212 / 0.45);
+  width: 14px;
+  height: 14px;
 }
 
-.window {
-  border-radius: 14px;
-  border-color: var(--edge);
-  background: var(--sheet);
-  backdrop-filter: blur(18px) saturate(1.2);
+/* A window: glass that is clearer without focus and denser with it, a bright rim at the top,
+   a dark hairline around the edge, and a shadow that deepens with focus. The 1 px border
+   stays, since the title bar's padding counts it, see handwired-os.css. */
+.prism-desktop .window {
+  border: 1px solid var(--glass-edge);
+  border-radius: calc(18px - var(--maximized) * 6px);
+  background: color-mix(in srgb, var(--window-glass-focused) calc(var(--focused) * 100%), var(--window-glass));
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.04) inset,
-    0 22px 60px rgb(0 0 0 / 0.45),
-    0 0 calc(40px * var(--focused, 0)) rgb(94 234 212 / 0.18);
+    inset 0 1px 0 var(--glass-rim),
+    0 0 0 0.5px var(--glass-hairline),
+    0 calc(4px + var(--focused) * 6px) calc(12px + var(--focused) * 12px) rgb(var(--shadow-ink) / calc(0.1 + var(--focused) * 0.06)),
+    0 calc(16px + var(--focused) * 18px) calc(40px + var(--focused) * 40px) calc(-10px - var(--focused) * 6px) rgb(var(--shadow-ink) / calc(0.22 + var(--focused) * 0.2));
 }
 
-.titlebar {
-  border-radius: 14px 14px 0 0;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent);
+.prism-desktop .titlebar {
+  border-bottom-color: var(--rule);
+  background: transparent;
 }
 
-.app-dot-scope {
-  background: linear-gradient(135deg, #5eead4, #22d3ee);
+.prism-desktop .window-title {
+  gap: 8px;
+  color: color-mix(in srgb, var(--ink) calc(var(--focused) * 100%), var(--ink-3));
+  letter-spacing: -0.005em;
 }
 
-.app-dot-ink {
-  background: linear-gradient(135deg, #a78bfa, #c4b5fd);
+/* Each window's title starts with its app's icon, the dock tile in small. */
+.prism-desktop .app-dot {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 4.5px;
+  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.55), 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 1px 2px rgb(0 0 0 / 0.14);
+  opacity: calc(0.6 + var(--focused) * 0.4);
 }
 
-.app-dot-chroma {
-  background: linear-gradient(135deg, #f472b6, #fb7185);
+.prism-desktop .app-dot-scope { background: var(--tile-scope); }
+.prism-desktop .app-dot-ink { background: var(--tile-ink); }
+.prism-desktop .app-dot-chroma { background: var(--tile-chroma); }
+
+/* The window buttons as traffic lights: a 12 px light in the program's 18 px button, colored
+   while the window has focus and gray without it. The glyphs show while the pointer is over
+   the buttons, and every light lights up then, as on a Mac. */
+.prism-desktop .window-button {
+  padding: 3px;
+  background-clip: content-box;
+  background-color: color-mix(in srgb, var(--light) calc(var(--focused) * 100%), var(--light-idle));
+  box-shadow: none;
+  color: var(--glyph-on-light);
+  transition: background-color var(--quick) var(--ease);
 }
 
-.window-button {
+.prism-desktop .window-button::before {
+  opacity: 0;
+  transition: opacity var(--quick) var(--ease);
+}
+
+.prism-desktop .window-button.minimize {
+  --light: #febc2e;
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M6 9h6' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.prism-desktop .window-button.maximize {
+  --light: #28c840;
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M6.25 9.75v-3.5h3.5zM11.75 8.25v3.5h-3.5z' fill='%23000'/%3E%3C/svg%3E");
+}
+
+.prism-desktop .window-button.close {
+  --light: #ff5f57;
+  --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M6.5 6.5l5 5m0-5l-5 5' stroke='%23000' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+@media (hover: hover) {
+  .prism-desktop .window-controls:hover .window-button {
+    background-color: var(--light);
+    box-shadow: none;
+    color: var(--glyph-on-light);
+  }
+  .prism-desktop .window-controls:hover .window-button::before {
+    opacity: 1;
+  }
+}
+
+.prism-desktop .window-controls .window-button:active {
+  background-color: color-mix(in srgb, var(--light) 78%, #000);
+  box-shadow: none;
+  color: rgb(0 0 0 / 0.7);
+}
+
+.prism-desktop .window-controls .window-button:active::before {
+  opacity: 1;
+}
+
+.prism-desktop .resize-grip::after {
+  background: var(--ink-3);
+  opacity: 0.55;
+}
+
+/* Scope: Monitor's list as a Mac table, with a tinted sidebar, rounded selections, title
+   case headers and alternating rows. */
+.prism-desktop .monitor-sidebar {
+  border-right-color: var(--rule);
+  background: var(--sidebar);
+}
+
+.prism-desktop .monitor-sidebar strong,
+.prism-desktop .monitor-header {
+  color: var(--ink-3);
+  font: 600 11px/16px var(--font-sans);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.prism-desktop .monitor-location {
+  border-radius: 6px;
+}
+
+.prism-desktop .monitor-header {
+  border-bottom-color: var(--rule);
+  text-transform: capitalize;
+}
+
+.prism-desktop .monitor-spacer {
+  background: linear-gradient(transparent 50%, var(--zebra) 50%) 0 0 / 100% calc(2 * var(--monitor-row-height));
+}
+
+.prism-desktop .monitor-row .monitor-cell-kind[class*=" kind-"]::before,
+.prism-desktop .monitor-caption-kinds li::before {
   border-radius: 50%;
-  background: rgb(255 255 255 / 0.06);
 }
 
-.window-button.close {
-  background: rgb(248 113 113 / 0.2);
+.prism-desktop .monitor-footer {
+  border-top-color: var(--rule);
 }
 
-/* The glass shelf under the dock's tiles. #dock itself keeps handwired-os.css's box, the
-   whole desktop, since the program places each tile in the desktop's coordinates and tests
-   presses at those places. The shelf is drawn around where the program puts the tiles:
-   three 50 px tiles 12 px apart, centered, with their middles 38 px above the bottom,
-   see dockItemWidth, dockGap and dockHeight in window-manager.ts. On a viewport too
-   narrow for 174 px of tiles, the shelf spans the viewport. */
-#dock.prism-dock::before {
+.prism-desktop .monitor-overflow {
+  border-color: var(--glass-edge);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* Inkwell: the note in the system font, with a Notes-yellow caret. */
+.prism-desktop .notes-text {
+  color: var(--ink);
+  caret-color: var(--notes-caret);
+  font: 400 15px/22px var(--font-sans);
+  letter-spacing: -0.005em;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .prism-desktop .notes-text {
+    font-size: 16px;
+    line-height: 24px;
+  }
+}
+
+/* Chroma: the photos sit right on the glass. */
+.prism-desktop .photos-backdrop {
+  background: transparent;
+}
+
+.prism-desktop .photos-photo {
+  border-radius: 10px;
+}
+
+.prism-desktop .photos-thumbnail {
+  border-radius: 12%;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.15);
+}
+
+.prism-desktop .photos-thumbnail::after {
+  box-shadow: inset 0 0 0 2.5px var(--copper), inset 0 0 0 4px rgb(255 255 255 / 0.9);
+}
+
+.prism-desktop .photos-photo span {
+  padding: 4px 12px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  color: var(--ink);
+  font: 500 13px/20px var(--font-sans);
+  box-shadow: inset 0 1px 0 var(--glass-rim), 0 4px 12px rgb(var(--shadow-ink) / 0.18);
+}
+
+.prism-desktop .photos-control::before {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+@media (hover: hover) {
+  .prism-desktop .photos-control:hover::before {
+    background-color: var(--glass-strong);
+    box-shadow: inset 0 1px 0 var(--glass-rim), 0 0 0 0.5px var(--glass-hairline), 0 4px 12px rgb(var(--shadow-ink) / 0.18);
+  }
+}
+
+@container (max-width: 518px) {
+  .prism-desktop .photos-control::before {
+    background-color: var(--glass-strong);
+    box-shadow: inset 0 1px 0 var(--glass-rim), 0 0 0 0.5px var(--glass-hairline), 0 4px 12px rgb(var(--shadow-ink) / 0.18);
+  }
+}
+
+/* The dock: a glass shelf under three app tiles. #dock itself keeps handwired-os.css's box,
+   the whole desktop, since the program places each tile in the desktop's coordinates and
+   tests presses at those places. The shelf is drawn around where the program puts the
+   tiles: three 50 px tiles 12 px apart, centered, with their middles 38 px above the bottom,
+   see dockItemWidth, dockGap and dockHeight in window-manager.ts. On a viewport too narrow
+   for 174 px of tiles, the shelf spans the viewport. */
+.prism-desktop #dock::before {
   --shelf-padding: 10px;
   content: "";
   position: absolute;
@@ -123,36 +408,100 @@
   width: calc(min(174px, 100%) + 2 * var(--shelf-padding));
   height: calc(50px + 2 * var(--shelf-padding));
   translate: -50% 0;
-  border: 1px solid var(--edge);
-  border-radius: 22px;
-  background: rgb(12 18 34 / 0.78);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 16px 50px rgb(0 0 0 / 0.5);
-  box-sizing: border-box;
+  border: 1px solid var(--glass-edge);
+  border-radius: 24px;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim),
+    0 0 0 0.5px var(--glass-hairline),
+    0 12px 32px -10px rgb(var(--shadow-ink) / 0.4);
 }
 
-#dock .dock-wire {
-  opacity: 0.35;
-  background: linear-gradient(90deg, transparent, var(--copper), var(--wire-indigo), transparent);
+/* The handwired wire under the dock belongs to HandwiredOS's paper desk. */
+.prism-desktop .dock-wire {
+  display: none;
 }
 
-.monitor-sidebar {
-  background: rgb(8 12 24 / 0.55);
+/* A tile: an app icon, a rounded square with its own colors and a lit top edge. It lifts
+   under the pointer and sinks while pressed. The transform only moves the paint: the
+   program tests presses against the tile's rectangle, which the transform leaves alone. */
+.prism-desktop .dock-item {
+  border: 0;
+  border-radius: 23%;
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    inset 0 -1px 0 rgb(0 0 0 / 0.08),
+    0 0 0 0.5px rgb(0 0 0 / 0.1),
+    0 6px 14px -4px rgb(var(--shadow-ink) / 0.35);
+  transition: transform 260ms cubic-bezier(0.3, 1.4, 0.5, 1), filter var(--quick) var(--ease);
 }
 
-.notes-text {
-  background: rgb(6 10 20 / 0.55);
-  color: var(--ink);
-}
+.prism-desktop .dock-scope { background: var(--tile-scope); }
+.prism-desktop .dock-ink { background: var(--tile-ink); color: #8e8e93; }
+.prism-desktop .dock-chroma { background: var(--tile-chroma); }
 
-.photos-backdrop {
-  background: radial-gradient(120% 90% at 50% 0%, rgb(94 234 212 / 0.08), transparent 55%),
-    rgb(6 10 20 / 0.4);
+.prism-desktop .dock-item svg {
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.12));
 }
 
 @media (hover: hover) {
-  .system-back:hover,
-  .system-links a:hover {
-    color: var(--copper);
+  .prism-desktop .dock-item:hover {
+    border-color: transparent;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.5),
+      inset 0 -1px 0 rgb(0 0 0 / 0.08),
+      0 0 0 0.5px rgb(0 0 0 / 0.1),
+      0 10px 20px -6px rgb(var(--shadow-ink) / 0.45);
+    transform: translateY(-4px) scale(1.08);
+  }
+}
+
+.prism-desktop .dock-item:active {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), 0 0 0 0.5px rgb(0 0 0 / 0.12);
+  filter: brightness(0.9);
+  transform: scale(0.95);
+}
+
+/* The running-app dot under a tile: shown while its window is open, minimized or not. */
+.prism-desktop .dock-item i {
+  bottom: -6px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--dock-dot);
+  opacity: var(--open);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prism-desktop .dock-item {
+    transition: none;
+  }
+  .prism-desktop .dock-item:hover,
+  .prism-desktop .dock-item:active {
+    transform: none;
+  }
+}
+
+/* Where the browser can't blur what lies behind, the glass is made denser so text keeps
+   its contrast. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root.prism {
+    --glass: rgb(250 251 253 / 0.92);
+    --glass-strong: rgb(255 255 255 / 0.96);
+    --window-glass: rgb(250 251 253 / 0.96);
+    --window-glass-focused: rgb(255 255 255 / 0.98);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root.prism {
+      --glass: rgb(36 38 42 / 0.94);
+      --glass-strong: rgb(44 46 50 / 0.97);
+      --window-glass: rgb(36 38 42 / 0.97);
+      --window-glass-focused: rgb(44 46 50 / 0.98);
+    }
   }
 }
