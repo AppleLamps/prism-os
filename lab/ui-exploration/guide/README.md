@@ -25,7 +25,7 @@ The sections use each of these terms with the meaning given here.
 
 ### The program and the host
 
-- **Source table**: the `Float32Array` that holds every number a frame reads, i.e. inputs that JavaScript writes and state that the program computes. E.g. HandwiredOS's source table has 241 cells, including the viewport width and each window's left edge.
+- **Source table**: the `Float32Array` that holds every number a frame reads, i.e. inputs that JavaScript writes and state that the program computes. E.g. on September 15, 2026, HandwiredOS's source table had 241 cells, including the viewport width and each window's left edge.
 - **Cell**: one number at a fixed position in the source table, with a declared range and a policy: constant, input, event latch or state. E.g. `downActive` is the event latch cell that holds 1 after a pointer press.
 - **Latch**: a stored value that keeps its most recently written value until the next write. E.g. an event latch cell holds 1 after a pointer press until a frame reads it, and the frame's next value for that cell is 0.
 - **Event queue**: a fixed number of queue entries in the source table, each holding one event's kind bits and coordinates, for when the order of several events within one frame matters. E.g. input's folded window circuit has 16 queue entries per evaluation.

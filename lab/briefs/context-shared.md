@@ -6,7 +6,7 @@ Updated September 2026 after the reassessment. Read `lab/reassessment-2026-09-03
 
 Handwired explores whether making state and behavior into smaller numeric pieces enables useful new computation, learning, and generative UI. It is an art/science project, not an exercise in replacing every conventional UI technique for production.
 
-Read Cheng's talk in `lab/briefs/talk-repeatable-breakthrough.md`, the repository's `agents.md` (removed from the repo on October 14, 2026), and chenguini's current `docs/engineering.md`. Cheap prototypes, clear measurements, and useful pivots matter. Do not constrain a new experiment to reproduce a prior agent's preferred architecture.
+Read Cheng's talk in `lab/briefs/talk-repeatable-breakthrough.md` and chenguini's current `docs/engineering.md`. Cheap prototypes, clear measurements, and useful pivots matter. Do not constrain a new experiment to reproduce a prior agent's preferred architecture.
 
 The concrete goals are to explore neural methods on the numeric representation, generate useful layouts not individually specified, and understand small exact interpretable forms of computation. Recovering familiar mechanisms can be interesting, but naming something attention or recurrence is not itself a result.
 
