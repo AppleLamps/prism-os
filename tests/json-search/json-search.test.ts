@@ -4,13 +4,12 @@
 // Run from the repo root: bun test tests/json-search/json-search.test.ts
 import {describe, expect, test} from 'bun:test'
 import {constant, createSourceTable, input, list} from '../../src/runtime/cells.ts'
-import {writeText} from '../../src/json-search/highlighter/highlighter.ts'
 import {capacity, displayKind, errorKind} from '../../src/json-search/highlighter/kinds.ts'
 import {createCorpus} from './highlighter/corpus.ts'
 import {highlightReference} from './highlighter/reference.ts'
 import {countMismatches, expectedOutputs} from '../../src/json-search/check.ts'
 import {codePointLength, defaultSeed, defects, describeDocuments, documentAt, generateDocuments, shapes} from '../../src/json-search/documents.ts'
-import {emitWgsl, packSharedValues, wgslFloat} from '../../src/json-search/emit.ts'
+import {emitWgsl, flattenProgram, packSharedValues, wgslFloat} from '../../src/json-search/emit.ts'
 import {emitJavaScript} from '../../src/json-search/generated-js.ts'
 import {buildBatchPrograms, cellsPerDocument, kindCount, summaryCount, writeDocumentCells} from '../../src/json-search/program.ts'
 import {highlightWithTables, tableLoopResult} from '../../src/json-search/table-loop.ts'
@@ -106,10 +105,17 @@ describe('the emitter', () => {
     expect(countMismatches(fromJavaScript, expected, expected.length)).toBe(0)
   })
 
-  test('refuses an index read whose candidates are computed per instance, e.g. the highlighter\'s firstErrorKind', () => {
-    const {circuit, output, cells} = batch.built
-    const program = circuit.compileTensorProgram([output.firstErrorKind])
-    expect(() => emitWgsl(program, {instanceCells: [...cells.codePoints, cells.textLength], outputGroups: [[output.firstErrorKind]]})).toThrow('candidates are computed values')
+  test('refuses an index read whose candidates are computed values, e.g. a read among sums', () => {
+    const table = createSourceTable()
+    const cells = table.declare({prices: list(4, () => input([0, 8], {grid: 1})), quantities: list(4, () => input([0, 8], {grid: 1})), index: input([0, 3], {grid: 1})})
+    const circuit = table.createCircuit()
+    // JS: totals[index], where totals[item] = prices[item] × quantities[item] is computed from cells.
+    const totals = cells.prices.map((price, item) => circuit.reglu([[price, 1]], 0, [[cells.quantities[item]!, 1]], 0))
+    const total = circuit.indexRead(cells.index, totals)
+    table.finish()
+    // A shader writes one `let` per value, and a `let` can't be indexed. Every writer reads a program through
+    // flattenProgram, so every writer refuses such a read.
+    expect(() => flattenProgram(circuit.compileTensorProgram([total]))).toThrow('candidates are computed values')
   })
 
   test('literals are exact float32 values', () => {
@@ -130,17 +136,6 @@ describe('the highlighter\'s batch programs', () => {
     // Every weight and bias is an integer. The 12 of 2^24 or more belong to the sign cascade at position 511.
     expect([summaryShader.fractionalLiterals, summaryShader.largeIntegerLiterals, summaryShader.rowCounts.boolean]).toEqual([0, 12, 0])
     expect(displayProgram.emitShader({guard: 'max'}).guards).toBe(9737)
-  })
-
-  test('writeDocumentCells writes what the highlighter\'s writeText writes', () => {
-    const source = new Float32Array(batch.built.initialSource)
-    const cells = new Float32Array(cellsPerDocument)
-    for (const text of [...corpus, '😀', 'a\ud83d', '\ude00b', `"${'😀'.repeat(300)}"`]) {
-      writeText(batch.built.cells, source, text)
-      writeDocumentCells(cells, 0, text)
-      const expected = [...batch.built.cells.codePoints, batch.built.cells.textLength].map(wire => source[wire]!)
-      if (countMismatches(cells, expected, cellsPerDocument) > 0) expect({text, cells: [...cells]}).toEqual({text, cells: expected})
-    }
   })
 
   test('the executor\'s summary and display kinds are the plain JavaScript reference\'s, on the highlighter\'s test texts', () => {
@@ -187,6 +182,24 @@ describe('the highlighter\'s batch programs', () => {
   test('countMismatches counts zeros of either sign as equal, and a NaN as a mismatch', () => {
     expect(countMismatches(Float32Array.of(0, -0, 1, Number.NaN), [-0, 0, 1, Number.NaN], 4)).toBe(1)
     expect(countMismatches(Float32Array.of(1, 2, 3), [1, 5, 3], 3)).toBe(1)
+  })
+})
+
+describe('a document\'s cells', () => {
+  test('writeDocumentCells writes the text\'s first 512 code points, -1 after them, and the text\'s length in code points', () => {
+    const cells = new Float32Array(cellsPerDocument)
+    // The test texts, an emoji, a lone high surrogate and a lone low one, and 300 emoji, which are 600 UTF-16 code units.
+    for (const text of [...corpus, '😀', 'a\ud83d', '\ude00b', `"${'😀'.repeat(300)}"`]) {
+      writeDocumentCells(cells, 0, text)
+      // Array.from reads a string by code points: a surrogate pair is one code point, and a lone surrogate is its own.
+      const codePoints = Array.from(text, character => character.codePointAt(0)!)
+      const expected = [...Array.from({length: capacity}, (_, position) => codePoints[position] ?? -1), codePoints.length]
+      if (expected.some((value, column) => cells[column] !== value)) expect({text, cells: [...cells]}).toEqual({text, cells: expected})
+    }
+    expect([...cells.subarray(0, 3), cells[capacity]]).toEqual([0x22, 0x1f600, 0x1f600, 302])
+    // A text of more than 1,048,576 code points writes that length, which still reads as longer than 512.
+    writeDocumentCells(cells, 0, 'a'.repeat(1_048_600))
+    expect([cells[0], cells[capacity - 1], cells[capacity]]).toEqual([0x61, 0x61, 1_048_576])
   })
 })
 
