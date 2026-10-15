@@ -1951,6 +1951,8 @@ export function mountWindowManager(document: Document, window: Window, options: 
   let openingFramesLeft = monitorFrameCapacity + monitorAveragedFrames - 1 + 3
 
   let scheduledRaf: number | null = null
+  // Callers waiting for the next frame to finish, see nextFrame in the returned handle.
+  const frameWaiters: (() => void)[] = []
   function scheduleRender() {
     if (scheduledRaf !== null) return
     scheduledRaf = window.requestAnimationFrame(renderWindowManager)
@@ -2079,6 +2081,7 @@ export function mountWindowManager(document: Document, window: Window, options: 
     // frames, see openingFramesLeft, and while the wallpaper waits for its picture.
     if (openingFramesLeft > 0) openingFramesLeft--
     if (machine.clock.animatedUntilMs !== null || openingFramesLeft > 0 || wiringPending) scheduleRender()
+    for (const resolve of frameWaiters.splice(0)) resolve()
   }
 
   // Each event carries its own timestamp, which shares the time origin of
@@ -2226,6 +2229,20 @@ export function mountWindowManager(document: Document, window: Window, options: 
     quantizeViewport(document.documentElement.clientHeight),
   )
   renderWindowManager(window.performance.now())
+
+  // What the page's other code may reach, e.g. Prism OS's command center, which queues
+  // pointer and key events into the machine like the listeners above and waits for the
+  // frames that apply them.
+  return {
+    machine,
+    // Requests a frame and resolves after it ran.
+    nextFrame() {
+      return new Promise<void>(resolve => {
+        frameWaiters.push(resolve)
+        scheduleRender()
+      })
+    },
+  }
 }
 
 // Writes each window's outputs into its frame element and its .window-content

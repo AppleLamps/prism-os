@@ -1,0 +1,217 @@
+import assert from 'node:assert/strict'
+import {test} from 'bun:test'
+import {createWindowManagerMachine} from '../../src/handwiredos/window-manager.ts'
+import {arrangePrismWindows} from '../../src/prismos/arrangement.ts'
+import {appWindowIndex, toolDeclarations, validateCall, type Command} from '../../src/prismos/commands.ts'
+import {createOperator, type MachineDriver, type PageEffects, type Rectangle} from '../../src/prismos/operator.ts'
+import {defaultSettings, type Settings} from '../../src/prismos/settings.ts'
+
+// A machine on a clock of its own: each frame is 16 ms after the last, and an event
+// queued between frames is 8 ms before the next one, like the window manager's tests.
+function createTestDriver(width = 1280, height = 800): MachineDriver {
+  const machine = createWindowManagerMachine()
+  arrangePrismWindows(machine.source, machine.cells, width, height)
+  let frameTime = 16
+  machine.step(width, height, frameTime)
+  return {
+    machine,
+    viewport: () => ({width, height}),
+    now: () => frameTime + 8,
+    frame: async () => {
+      frameTime += 16
+      machine.step(width, height, frameTime)
+    },
+  }
+}
+
+function createPage(driver: MachineDriver) {
+  let settings: Settings = {...defaultSettings}
+  let note = 'first line'
+  const navigated: string[] = []
+  let slideshow = false
+  const {width, height} = driver.viewport()
+  const home = (() => {
+    const scratch = createWindowManagerMachine()
+    return arrangePrismWindows(scratch.source, scratch.cells, width, height)
+  })()
+  const page: PageEffects = {
+    settings: {get: () => settings, set: patch => { settings = {...settings, ...patch} }},
+    note: {read: () => note, write: text => { note = text }},
+    navigate: link => navigated.push(link),
+    slideshow: {start: () => { slideshow = true }, stop: () => { slideshow = false }, running: () => slideshow},
+    homeRectangles: () => home,
+  }
+  return {page, settings: () => settings, note: () => note, navigated, slideshow: () => slideshow, home}
+}
+
+function command(name: string, args: Record<string, unknown> = {}): Command {
+  const result = validateCall(name, args)
+  assert.ok(result.ok, result.ok ? '' : result.reason)
+  return result.command
+}
+
+function setup(width?: number, height?: number) {
+  const driver = createTestDriver(width, height)
+  const fake = createPage(driver)
+  const operator = createOperator(driver, fake.page)
+  return {driver, fake, operator}
+}
+
+const insideWorkspace = (rectangle: Rectangle, width = 1280, height = 800) =>
+  rectangle.left >= 0 && rectangle.top >= 36 && rectangle.left + rectangle.width <= width && rectangle.top + rectangle.height <= height - 76
+
+test('every declared tool validates with arguments from its own enums', () => {
+  for (const declaration of toolDeclarations) {
+    const args: Record<string, unknown> = {}
+    for (const [key, parameter] of Object.entries(declaration.function.parameters.properties)) {
+      args[key] = parameter.enum?.[0] ?? (key === 'photo' ? '3' : 'hello')
+    }
+    if (declaration.function.name === 'side_by_side') args['right'] = 'chroma'
+    const result = validateCall(declaration.function.name, args)
+    assert.ok(result.ok, `${declaration.function.name}: ${result.ok ? '' : result.reason}`)
+  }
+})
+
+test('minimize, then open from the dock, through the program\'s own buttons', async () => {
+  const {operator} = setup()
+  const inkwell = appWindowIndex.inkwell
+  assert.equal(operator.windowState(inkwell).minimized, false)
+  assert.equal(await operator.run(command('minimize_app', {app: 'notes'})), 'Minimized Inkwell.')
+  assert.equal(operator.windowState(inkwell).minimized, true)
+  assert.equal(await operator.run(command('minimize_app', {app: 'inkwell'})), 'Inkwell is already in the dock.')
+  await operator.run(command('open_app', {app: 'inkwell'}))
+  const state = operator.windowState(inkwell)
+  assert.equal(state.minimized, false)
+  assert.equal(state.focused, true)
+})
+
+test('maximize fills the workspace and restore brings the window back', async () => {
+  const {operator} = setup()
+  const chroma = appWindowIndex.chroma
+  const before = operator.windowState(chroma).rectangle
+  await operator.run(command('maximize_app', {app: 'chroma'}))
+  const maximized = operator.windowState(chroma)
+  assert.equal(maximized.maximized, true)
+  assert.ok(maximized.rectangle.width > before.width)
+  await operator.run(command('restore_app', {app: 'chroma'}))
+  assert.equal(operator.windowState(chroma).maximized, false)
+  assert.deepEqual(operator.windowState(chroma).rectangle, before)
+})
+
+test('close, then the dock opens the window again', async () => {
+  const {operator} = setup()
+  await operator.run(command('close_app', {app: 'scope'}))
+  assert.equal(operator.windowState(appWindowIndex.scope).open, false)
+  assert.equal(await operator.run(command('close_app', {app: 'scope'})), 'Scope is already closed.')
+  await operator.run(command('open_app', {app: 'monitor'}))
+  assert.equal(operator.windowState(appWindowIndex.scope).open, true)
+})
+
+test('move puts a window at the workspace\'s edge, and the program keeps it inside', async () => {
+  const {operator} = setup()
+  for (const position of ['left', 'right', 'top_left', 'bottom_right', 'center'] as const) {
+    await operator.run(command('move_app', {app: 'inkwell', position}))
+    const rectangle = operator.windowState(appWindowIndex.inkwell).rectangle
+    assert.ok(insideWorkspace(rectangle), `${position}: ${JSON.stringify(rectangle)}`)
+    if (position === 'left' || position === 'top_left') assert.equal(rectangle.left, 12)
+    if (position === 'right' || position === 'bottom_right') assert.equal(rectangle.left + rectangle.width, 1280 - 12)
+    if (position === 'top_left') assert.equal(rectangle.top, 36 + 12)
+  }
+})
+
+test('a maximized window is restored before it moves', async () => {
+  const {operator} = setup()
+  await operator.run(command('maximize_app', {app: 'chroma'}))
+  await operator.run(command('move_app', {app: 'chroma', position: 'top_left'}))
+  const state = operator.windowState(appWindowIndex.chroma)
+  assert.equal(state.maximized, false)
+  assert.equal(state.rectangle.left, 12)
+})
+
+test('resize grows and shrinks around the center, never past the workspace', async () => {
+  const {operator} = setup()
+  const index = appWindowIndex.scope
+  const before = operator.windowState(index).rectangle
+  await operator.run(command('resize_app', {app: 'scope', size: 'bigger'}))
+  const bigger = operator.windowState(index).rectangle
+  assert.ok(bigger.width > before.width && bigger.height > before.height, JSON.stringify({before, bigger}))
+  await operator.run(command('resize_app', {app: 'scope', size: 'large'}))
+  const large = operator.windowState(index).rectangle
+  assert.ok(insideWorkspace(large), JSON.stringify(large))
+  await operator.run(command('resize_app', {app: 'scope', size: 'small'}))
+  const small = operator.windowState(index).rectangle
+  assert.ok(small.width >= 280 && small.height >= 190, JSON.stringify(small))
+  assert.ok(small.width < large.width)
+})
+
+test('side by side splits the workspace between two windows', async () => {
+  const {operator} = setup()
+  await operator.run(command('side_by_side', {left: 'scope', right: 'chroma'}))
+  const left = operator.windowState(appWindowIndex.scope).rectangle
+  const right = operator.windowState(appWindowIndex.chroma).rectangle
+  assert.deepEqual(left, {left: 0, top: 36, width: 640, height: 800 - 36 - 76})
+  assert.deepEqual(right, {left: 640, top: 36, width: 640, height: 800 - 36 - 76})
+})
+
+test('show desktop minimizes every window, and reset layout puts them back', async () => {
+  const {operator, fake} = setup()
+  await operator.run(command('move_app', {app: 'chroma', position: 'top_left'}))
+  await operator.run(command('show_desktop'))
+  for (const index of [0, 1, 2]) assert.equal(operator.windowState(index).minimized, true)
+  await operator.run(command('reset_layout'))
+  for (const index of [0, 1, 2]) {
+    const state = operator.windowState(index)
+    assert.equal(state.minimized, false)
+    assert.deepEqual(state.rectangle, fake.home[index])
+  }
+})
+
+test('photos open by name and by number, step with wraparound, and close', async () => {
+  const {operator} = setup()
+  assert.equal(await operator.run(command('open_photo', {photo: 'Blue Lagoon'})), 'Opened Blue Lagoon.')
+  assert.equal(operator.openPhoto(), 10)
+  await operator.run(command('next_photo'))
+  assert.equal(operator.openPhoto(), 11)
+  await operator.run(command('next_photo'))
+  assert.equal(operator.openPhoto(), 0)
+  await operator.run(command('previous_photo'))
+  assert.equal(operator.openPhoto(), 11)
+  // With a photo open, another opens from the thumbnail strip.
+  await operator.run(command('open_photo', {photo: 'three'}))
+  assert.equal(operator.openPhoto(), 2)
+  await operator.run(command('close_photo'))
+  assert.equal(operator.openPhoto(), -1)
+  assert.equal(await operator.run(command('close_photo')), 'No photo is open.')
+})
+
+test('a photo opens even when Chroma was minimized behind other windows', async () => {
+  const {operator} = setup()
+  await operator.run(command('minimize_app', {app: 'chroma'}))
+  await operator.run(command('open_photo', {photo: 5}))
+  assert.equal(operator.openPhoto(), 4)
+})
+
+test('Scope switches its list by a click on the sidebar', async () => {
+  const {operator, driver} = setup()
+  const location = driver.machine.cells.valueList.location
+  for (const [view, index] of [['state', 0], ['outputs', 2], ['operations', 1]] as const) {
+    await operator.run(command('scope_show', {view}))
+    assert.deepEqual(location.map(cell => driver.machine.source[cell]), [0, 1, 2].map(i => Number(i === index)), view)
+  }
+})
+
+test('page commands change settings, the note and links, never the program', async () => {
+  const {operator, fake} = setup()
+  await operator.run(command('set_theme', {theme: 'dark'}))
+  await operator.run(command('set_accent', {color: 'teal'}))
+  assert.equal(fake.settings().theme, 'dark')
+  assert.equal(fake.settings().accent, 'teal')
+  await operator.run(command('write_note', {text: 'buy milk', mode: 'append'}))
+  assert.equal(fake.note(), 'first line\nbuy milk')
+  assert.equal(await operator.run(command('read_note')), 'first line\nbuy milk')
+  await operator.run(command('clear_note'))
+  assert.equal(fake.note(), '')
+  await operator.run(command('open_link', {link: 'source'}))
+  assert.deepEqual(fake.navigated, ['source'])
+  assert.match(await operator.run(command('get_stats')), /source cells/u)
+})

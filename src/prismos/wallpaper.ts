@@ -4,8 +4,11 @@
 //
 // The dunes drift slowly, so the canvas is redrawn at most every frameIntervalMs instead of
 // at the display's rate. Under prefers-reduced-motion it's drawn once, and again only when
-// the viewport or the color scheme changes. The palette follows prefers-color-scheme: a
-// day sky in the light scheme and a night sky in the dark one.
+// the viewport or the color scheme changes. The palette follows the page's scheme: a day
+// sky in the light scheme and a night sky in the dark one. The command center's settings
+// can override both, see settings.ts: options.isDark decides the scheme, and
+// options.isStill holds the dunes still like prefers-reduced-motion does. After a setting
+// changes, the caller calls refresh().
 
 const frameIntervalMs = 66
 // How far a dune samples its curve, in px. Two sines sampled this often draw as a smooth line.
@@ -52,10 +55,17 @@ const night: Palette = {
   ],
 }
 
-export function startWallpaper(canvas: HTMLCanvasElement) {
+export type WallpaperOptions = {
+  isDark?: () => boolean
+  isStill?: () => boolean
+}
+
+export function startWallpaper(canvas: HTMLCanvasElement, options: WallpaperOptions = {}) {
   const context = canvas.getContext('2d')
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
   const darkScheme = window.matchMedia('(prefers-color-scheme: dark)')
+  const isDark = options.isDark ?? (() => darkScheme.matches)
+  const isStill = () => reducedMotion.matches || (options.isStill?.() ?? false)
   let width = 0
   let height = 0
   let pixelRatio = 1
@@ -74,7 +84,7 @@ export function startWallpaper(canvas: HTMLCanvasElement) {
   const draw = (timeMs: number) => {
     if (context === null || width <= 0 || height <= 0) return
     lastDrawMs = timeMs
-    const palette = darkScheme.matches ? night : day
+    const palette = isDark() ? night : day
     const t = timeMs * 0.0001
 
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
@@ -122,7 +132,7 @@ export function startWallpaper(canvas: HTMLCanvasElement) {
     frameRequest = 0
     if (!running) return
     if (timeMs - lastDrawMs >= frameIntervalMs) draw(timeMs)
-    if (!reducedMotion.matches) frameRequest = requestAnimationFrame(frame)
+    if (!isStill()) frameRequest = requestAnimationFrame(frame)
   }
 
   const start = () => {
@@ -151,6 +161,7 @@ export function startWallpaper(canvas: HTMLCanvasElement) {
   darkScheme.addEventListener('change', redraw)
 
   return {
+    refresh: redraw,
     stop() {
       running = false
       if (frameRequest !== 0) cancelAnimationFrame(frameRequest)
