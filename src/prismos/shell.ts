@@ -53,6 +53,9 @@ type Panel = {
   // The rectangle to go back to when a zoomed panel zooms out.
   restore: {x: number, y: number, width: number, height: number} | null
   tile: HTMLElement | null
+  // The rectangle last written to the element's style, so that place() writes only what
+  // changed, e.g. a drag moves the panel and never sets its size.
+  placed: {x: number, y: number, width: number, height: number}
 }
 
 function viewport() {
@@ -143,9 +146,11 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   }
 
   const place = (panel: Panel) => {
-    panel.element.style.transform = `translate(${panel.x}px, ${panel.y}px)`
-    panel.element.style.width = `${panel.width}px`
-    panel.element.style.height = `${panel.height}px`
+    const {placed, element} = panel
+    if (panel.x !== placed.x || panel.y !== placed.y) element.style.transform = `translate(${panel.x}px, ${panel.y}px)`
+    if (panel.width !== placed.width) element.style.width = `${panel.width}px`
+    if (panel.height !== placed.height) element.style.height = `${panel.height}px`
+    panel.placed = {x: panel.x, y: panel.y, width: panel.width, height: panel.height}
   }
 
   // Keeps a panel's title bar reachable: inside the workspace vertically, and at least
@@ -183,11 +188,13 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     clampPanel(panel)
     place(panel)
     const wasClosed = panel.state === 'closed'
+    const wasHidden = panel.state !== 'open'
     panel.state = 'open'
     panel.element.dataset['state'] = 'open'
     focusPanel(panel)
     if (!keepOverlays) panel.element.focus({preventScroll: true})
     if (wasClosed) panel.instance.opened?.()
+    if (wasHidden) panel.instance.visible?.(true)
   }
 
   const hidePanel = (panel: Panel, state: 'closed' | 'minimized') => {
@@ -196,6 +203,7 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     panel.state = state
     panel.element.dataset['state'] = state
     order = order.filter(other => other !== panel)
+    if (wasOpen) panel.instance.visible?.(false)
     if (state === 'closed') panel.instance.closed?.()
     restack()
     if (wasOpen) order.at(-1)?.element.focus({preventScroll: true})
@@ -251,7 +259,7 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     element.append(bar, body)
     layer.append(element)
 
-    const panel: Panel = {app, element, instance: {}, state: 'closed', x: 0, y: 0, width: app.width, height: app.height, restore: null, tile: null}
+    const panel: Panel = {app, element, instance: {}, state: 'closed', x: 0, y: 0, width: app.width, height: app.height, restore: null, tile: null, placed: {x: Number.NaN, y: Number.NaN, width: Number.NaN, height: Number.NaN}}
     panels.set(id, panel)
     panel.instance = app.build(element, body, context)
 
@@ -271,24 +279,38 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
       }
     })
 
-    // Dragging by the title bar.
-    let drag: {pointerId: number, dx: number, dy: number} | null = null
+    // Dragging by the title bar. A move only records where the pointer is, and one
+    // update per displayed frame moves the panel there: the browser can send several
+    // moves between two frames. The release moves the panel to its last move at once.
+    let drag: {pointerId: number, dx: number, dy: number, clientX: number, clientY: number} | null = null
+    let dragFrame = 0
+    const moveToPointer = () => {
+      dragFrame = 0
+      if (drag === null) return
+      panel.x = Math.round(drag.clientX - drag.dx)
+      panel.y = Math.round(drag.clientY - drag.dy)
+      clampPanel(panel)
+      place(panel)
+    }
     bar.addEventListener('pointerdown', event => {
       if (event.button !== 0 || (event.target instanceof Element && event.target.closest('.window-controls') !== null)) return
       if (panel.restore !== null) return
-      drag = {pointerId: event.pointerId, dx: event.clientX - panel.x, dy: event.clientY - panel.y}
+      drag = {pointerId: event.pointerId, dx: event.clientX - panel.x, dy: event.clientY - panel.y, clientX: event.clientX, clientY: event.clientY}
       bar.setPointerCapture(event.pointerId)
       element.classList.add('prism-dragging')
     })
     bar.addEventListener('pointermove', event => {
       if (drag?.pointerId !== event.pointerId) return
-      panel.x = Math.round(event.clientX - drag.dx)
-      panel.y = Math.round(event.clientY - drag.dy)
-      clampPanel(panel)
-      place(panel)
+      drag.clientX = event.clientX
+      drag.clientY = event.clientY
+      if (dragFrame === 0) dragFrame = requestAnimationFrame(moveToPointer)
     })
     const endDrag = (event: PointerEvent) => {
       if (drag?.pointerId !== event.pointerId) return
+      if (dragFrame !== 0) {
+        cancelAnimationFrame(dragFrame)
+        moveToPointer()
+      }
       drag = null
       element.classList.remove('prism-dragging')
     }

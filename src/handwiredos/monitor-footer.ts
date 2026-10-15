@@ -134,13 +134,16 @@ export function createMonitorFooter(footer: HTMLElement, program: TensorProgram)
   // that a frame writes only what changed.
   let frameTimeText = ''
   let captionScale = 0
+  let chartPath = ''
 
   return {
     // Records the time the program took in the frame that just ran, in ms, and
-    // draws the chart with it. A frame's DOM writes.
-    update(frameMs: number) {
+    // draws the chart with it while the footer can be seen. A frame's DOM writes. A
+    // hidden footer keeps recording, and its next shown frame draws every frame kept.
+    update(frameMs: number, shown = true) {
       if (times.length === frameCapacity + averagedFrames - 1) times.shift()
       times.push(Math.round(frameMs * 1000))
+      if (!shown) return
       const points = averageFrameTimes(times, frameCapacity, averagedFrames)
       const lastPoint = points[points.length - 1]!
 
@@ -160,6 +163,10 @@ export function createMonitorFooter(footer: HTMLElement, program: TensorProgram)
         domCache.frame.setAttribute('title', `The program's time per frame. A browser's clock counts in steps of 0.1 ms or more, so each of the chart's ${frameCapacity} points, and the number beside it, is the average of the ${averagedFrames} frames up to it. The chart goes from 0 at its bottom to ${formatCount(scale / 1000)} ms at its top.`)
       }
       const line = frameTimesPath(points, frameCapacity, scale)
+      // The same points draw the same chart, e.g. in a frame whose average rounds
+      // like the last one's.
+      if (line === chartPath) return
+      chartPath = line
       domCache.line.setAttribute('d', line)
       domCache.area.setAttribute('d', `${line}V1H${frameCapacity - points.length}Z`)
       // The last point again, as a line of no length, whose round caps draw the dot

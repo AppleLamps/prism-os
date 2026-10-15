@@ -1606,6 +1606,35 @@ test('while a window frame animates its size, the content box already has the de
   }
 })
 
+test('a frame writes only the window styles whose values changed', () => {
+  const machine = createWindowManagerMachine()
+  const frames = Array.from({length: windowCount}, createFakeElement)
+  const contents = Array.from({length: windowCount}, createFakeElement)
+  let values = step(machine)
+  projectWindowElements(frames, contents, values, machine.output.windows)
+  const styleOf = (element: HTMLElement) => element.style as unknown as Record<string, string>
+  const written = () => [...frames, ...contents].map(element => Object.fromEntries(Object.entries(styleOf(element))))
+  const first = written()
+  // Every style marked here stays marked through a frame with the same outputs.
+  for (const element of [...frames, ...contents]) {
+    for (const name of Object.keys(element.style)) {
+      if (name !== 'setProperty') styleOf(element)[name] = 'stale'
+    }
+  }
+  values = step(machine)
+  projectWindowElements(frames, contents, values, machine.output.windows)
+  assert.ok(written().every(style => Object.entries(style).every(([name, value]) => name === 'setProperty' || value === 'stale')))
+  // A maximize changes Notes' outputs: its frame and content get new sizes, and the
+  // other two windows keep their marks.
+  for (const [index, style] of first.entries()) Object.assign(([...frames, ...contents][index]!).style, style)
+  const notes = 1
+  values = clickWindowControl(machine, values, notes, 'maximize')
+  for (const element of [frames[0]!, frames[2]!]) element.style.width = 'stale'
+  projectWindowElements(frames, contents, values, machine.output.windows)
+  assert.equal(contents[notes]!.style.width, '1254px')
+  assert.deepEqual([frames[0]!.style.width, frames[2]!.style.width], ['stale', 'stale'])
+})
+
 test('a window is visible while it is drawn, and hidden once it has landed in the dock, so the Tab key skips what it holds', () => {
   const machine = createWindowManagerMachine()
   const frames = Array.from({length: windowCount}, createFakeElement)

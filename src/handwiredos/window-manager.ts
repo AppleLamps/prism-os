@@ -2015,21 +2015,7 @@ export function mountWindowManager(document: Document, window: Window, options: 
       domCache.titleBars[windowIndex]!.style.cursor = maximized ? 'default' : windowIndex === draggedWindow ? 'grabbing' : 'grab'
     }
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
-      const element = domCache.dockItems[windowIndex]!
-      const outputStart = windowIndex * dockOutputField.size
-      projectDockGeometry(element, values, machine.output.dockItems, outputStart)
-      element.style.setProperty(
-        '--inactive',
-        `${values[machine.output.dockItems[outputStart + dockOutputField.inactive]!]}`,
-      )
-      element.style.setProperty(
-        '--focused',
-        `${values[machine.output.dockItems[outputStart + dockOutputField.focused]!]}`,
-      )
-      element.style.setProperty(
-        '--open',
-        `${values[machine.output.dockItems[outputStart + dockOutputField.open]!]}`,
-      )
+      projectDockItem(domCache.dockItems[windowIndex]!, values, machine.output.dockItems, windowIndex * dockOutputField.size)
     }
 
     photos.render(values, machine.output.photos)
@@ -2038,8 +2024,10 @@ export function mountWindowManager(document: Document, window: Window, options: 
     domCache.note.tabIndex = notesIsFocusedWindow ? 0 : -1
     valueList.render(values, machine.output.valueList)
     // The chart in Monitor's footer gets the time that the program took in this
-    // frame, i.e. the time of machine.step.
-    footer.update(executionMs)
+    // frame, i.e. the time of machine.step. While Monitor sits in the dock, at
+    // opacity 0, the chart keeps the frames' times and draws them when it's back.
+    const monitorShown = values[machine.output.windows[monitorWindowIndex * windowOutputField.size + windowOutputField.opacity]!] !== 0
+    footer.update(executionMs, monitorShown)
 
     // Side effects, after every DOM write. The note's keyboard focus follows the
     // focused window, see noteFocusChange. The focus call can't scroll a box: it
@@ -2245,6 +2233,30 @@ export function mountWindowManager(document: Document, window: Window, options: 
   }
 }
 
+// The values that each element was last given, so that a frame writes only the style
+// properties whose values changed, e.g. while one window springs, the other two get no
+// writes. Keyed by the element, NaN until the first write. Only this file writes these
+// properties, so what was written last is what the element has.
+const projectedValues = new WeakMap<HTMLElement, Float64Array>()
+function projectedValuesOf(element: HTMLElement, count: number) {
+  let projected = projectedValues.get(element)
+  if (projected === undefined) {
+    projected = new Float64Array(count).fill(Number.NaN)
+    projectedValues.set(element, projected)
+  }
+  return projected
+}
+
+// Whether `value` differs from the value in `slot` of `last`, which it then becomes.
+function takeChange(last: Float64Array, slot: number, value: number) {
+  if (Object.is(last[slot], value)) return false
+  last[slot] = value
+  return true
+}
+
+// A frame's values in the order projectWindowElements keeps them.
+const frameSlot = {width: 0, height: 1, translateX: 2, translateY: 3, scale: 4, opacity: 5, stack: 6, focused: 7, maximized: 8, size: 9}
+
 // Writes each window's outputs into its frame element and its .window-content
 // element. The frame is drawn at the animated size, position and scale, and clips
 // the content box, which takes the window's destination size as soon as an event
@@ -2262,38 +2274,62 @@ export function projectWindowElements(
     const content = contents[windowIndex]!
     const outputStart = windowIndex * windowOutputField.size
     const read = (field: number) => values[output[outputStart + field]!]!
-    frame.style.width = `${read(windowOutputField.width)}px`
-    frame.style.height = `${read(windowOutputField.height)}px`
-    frame.style.transform =
-      `translate3d(${read(windowOutputField.translateX)}px,${read(windowOutputField.translateY)}px,0)`
-      + ` scale(${read(windowOutputField.scale)})`
+    const last = projectedValuesOf(frame, frameSlot.size)
+    const width = read(windowOutputField.width)
+    if (takeChange(last, frameSlot.width, width)) frame.style.width = `${width}px`
+    const height = read(windowOutputField.height)
+    if (takeChange(last, frameSlot.height, height)) frame.style.height = `${height}px`
+    // Three values in one property. Each comparison runs, so each slot takes its value.
+    const translateX = read(windowOutputField.translateX)
+    const translateY = read(windowOutputField.translateY)
+    const scale = read(windowOutputField.scale)
+    const movedX = takeChange(last, frameSlot.translateX, translateX)
+    const movedY = takeChange(last, frameSlot.translateY, translateY)
+    const scaled = takeChange(last, frameSlot.scale, scale)
+    if (movedX || movedY || scaled) frame.style.transform = `translate3d(${translateX}px,${translateY}px,0) scale(${scale})`
     // The opacity output is 0 or 1: 0 once a closed or minimized window has landed
     // in the dock. A window at opacity 0 also gets visibility: hidden, so that the Tab
     // key skips what the window holds, e.g. the scroller of Monitor's list. At opacity
     // 0 alone, the Tab key gave the keyboard focus to a scroller that nobody sees.
     const opacity = read(windowOutputField.opacity)
-    frame.style.opacity = `${opacity}`
-    frame.style.visibility = opacity === 0 ? 'hidden' : 'visible'
-    frame.style.zIndex = `${10 + read(windowOutputField.stack)}`
-    frame.style.setProperty('--focused', `${read(windowOutputField.focused)}`)
-    frame.style.setProperty('--maximized', `${read(windowOutputField.maximized)}`)
+    if (takeChange(last, frameSlot.opacity, opacity)) {
+      frame.style.opacity = `${opacity}`
+      frame.style.visibility = opacity === 0 ? 'hidden' : 'visible'
+    }
+    const stack = read(windowOutputField.stack)
+    if (takeChange(last, frameSlot.stack, stack)) frame.style.zIndex = `${10 + stack}`
+    const focused = read(windowOutputField.focused)
+    if (takeChange(last, frameSlot.focused, focused)) frame.style.setProperty('--focused', `${focused}`)
+    const maximized = read(windowOutputField.maximized)
+    if (takeChange(last, frameSlot.maximized, maximized)) frame.style.setProperty('--maximized', `${maximized}`)
     // handwired-os.css gives .window-content its top and left only, so the box
     // takes its whole size from these two writes.
-    content.style.width = `${read(windowOutputField.contentWidth)}px`
-    content.style.height = `${read(windowOutputField.contentHeight)}px`
+    const contentLast = projectedValuesOf(content, 2)
+    const contentWidth = read(windowOutputField.contentWidth)
+    if (takeChange(contentLast, 0, contentWidth)) content.style.width = `${contentWidth}px`
+    const contentHeight = read(windowOutputField.contentHeight)
+    if (takeChange(contentLast, 1, contentHeight)) content.style.height = `${contentHeight}px`
   }
 }
 
-function projectDockGeometry(
+// Writes a dock item's outputs, only those that changed: its rectangle, and the three
+// custom properties that handwired-os.css draws it with.
+const dockProperties = [['--inactive', 'inactive'], ['--focused', 'focused'], ['--open', 'open']] as const
+function projectDockItem(
   element: HTMLElement,
   values: Float32Array,
   output: readonly Wire[],
   outputStart: number,
 ) {
-  for (const geometryField of geometryFields) {
-    element.style[geometryField] =
-      `${values[output[outputStart + dockOutputField[geometryField]]!]}px`
-  }
+  const last = projectedValuesOf(element, geometryFields.length + dockProperties.length)
+  geometryFields.forEach((geometryField, slot) => {
+    const value = values[output[outputStart + dockOutputField[geometryField]]!]!
+    if (takeChange(last, slot, value)) element.style[geometryField] = `${value}px`
+  })
+  dockProperties.forEach(([property, field], index) => {
+    const value = values[output[outputStart + dockOutputField[field]]!]!
+    if (takeChange(last, geometryFields.length + index, value)) element.style.setProperty(property, `${value}`)
+  })
 }
 
 function emitFrontmost(

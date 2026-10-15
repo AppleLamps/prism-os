@@ -113,23 +113,51 @@ export function startWallpaper(canvas: HTMLCanvasElement, initial: WallpaperOpti
       + Math.sin(x * k * 2.3 - dune.phase * 1.7 - t * dune.drift * 0.6) * swell * 0.35
   }
 
-  const traceCrest = (dune: Dune, t: number) => {
+  // A dune's crest, one height per sample from x = 0 to the first sample past the right
+  // edge, computed once a draw and traced twice: for the dune's fill and for its rim.
+  let crestHeights = new Float64Array(0)
+  const sampleCrest = (dune: Dune, t: number) => {
+    const count = Math.ceil(width / sampleStep) + 2
+    if (crestHeights.length < count) crestHeights = new Float64Array(count)
+    crestHeights[0] = crest(dune, 0, t)
+    let index = 1
+    for (let x = sampleStep; x < width + sampleStep; x += sampleStep) crestHeights[index++] = crest(dune, x, t)
+    return index
+  }
+  const traceCrest = (count: number) => {
     if (context === null) return
-    context.moveTo(0, crest(dune, 0, t))
-    for (let x = sampleStep; x < width + sampleStep; x += sampleStep) context.lineTo(x, crest(dune, x, t))
+    context.moveTo(0, crestHeights[0]!)
+    for (let index = 1; index < count; index++) context.lineTo(index * sampleStep, crestHeights[index]!)
+  }
+
+  // The sky's gradient and each dune's, kept until the size or the palette changes. The
+  // sun's gradient moves with the sun, so it's made at every draw.
+  let gradients: {sky: CanvasGradient, dunes: CanvasGradient[]} | null = null
+  const makeGradients = () => {
+    if (context === null) return null
+    const sky = context.createLinearGradient(0, 0, 0, height)
+    sky.addColorStop(0, palette.sky[0])
+    sky.addColorStop(0.45, palette.sky[1])
+    sky.addColorStop(0.75, palette.sky[2])
+    const dunes = palette.dunes.map(dune => {
+      const top = height * dune.y - dune.swell * (height / 1000) * 1.35
+      const fill = context.createLinearGradient(0, top, 0, height)
+      fill.addColorStop(0, dune.top)
+      fill.addColorStop(1, dune.bottom)
+      return fill
+    })
+    return {sky, dunes}
   }
 
   const draw = (timeMs: number) => {
     if (context === null || width <= 0 || height <= 0) return
     lastDrawMs = timeMs
     const t = timeMs * 0.0001
+    gradients ??= makeGradients()
+    if (gradients === null) return
 
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
-    const sky = context.createLinearGradient(0, 0, 0, height)
-    sky.addColorStop(0, palette.sky[0])
-    sky.addColorStop(0.45, palette.sky[1])
-    sky.addColorStop(0.75, palette.sky[2])
-    context.fillStyle = sky
+    context.fillStyle = gradients.sky
     context.fillRect(0, 0, width, height)
 
     // A soft sun, high on the right, that the dunes catch on their rims.
@@ -141,26 +169,23 @@ export function startWallpaper(canvas: HTMLCanvasElement, initial: WallpaperOpti
     context.fillStyle = sun
     context.fillRect(0, 0, width, height)
 
-    for (const dune of palette.dunes) {
-      const top = height * dune.y - dune.swell * (height / 1000) * 1.35
-      const fill = context.createLinearGradient(0, top, 0, height)
-      fill.addColorStop(0, dune.top)
-      fill.addColorStop(1, dune.bottom)
+    palette.dunes.forEach((dune, index) => {
+      const count = sampleCrest(dune, t)
       context.beginPath()
-      traceCrest(dune, t)
+      traceCrest(count)
       context.lineTo(width + sampleStep, height)
       context.lineTo(0, height)
       context.closePath()
-      context.fillStyle = fill
+      context.fillStyle = gradients!.dunes[index]!
       context.fill()
 
       // The rim: a bright hairline along the crest, the glass edge that catches the light.
       context.beginPath()
-      traceCrest(dune, t)
+      traceCrest(count)
       context.strokeStyle = dune.rim
       context.lineWidth = 1.25
       context.stroke()
-    }
+    })
   }
 
   const animates = () => options.motion && !reducedMotion.matches
@@ -188,6 +213,7 @@ export function startWallpaper(canvas: HTMLCanvasElement, initial: WallpaperOpti
     // Resizing clears the canvas, so it's redrawn at once.
     canvas.width = Math.round(width * pixelRatio)
     canvas.height = Math.round(height * pixelRatio)
+    gradients = null
     redraw()
   }
 
@@ -196,9 +222,17 @@ export function startWallpaper(canvas: HTMLCanvasElement, initial: WallpaperOpti
   reducedMotion.addEventListener('change', start)
 
   return {
+    // Called at every change of the settings, e.g. of the accent, which the wallpaper
+    // doesn't show: only a change of the scene, the scheme or the motion redraws it.
     set(change: Partial<WallpaperOptions>) {
-      options = {...options, ...change}
-      palette = wallpaperPalette(options.scene, options.scheme)
+      const next = {...options, ...change}
+      const paletteChanged = next.scene !== options.scene || next.scheme !== options.scheme
+      if (!paletteChanged && next.motion === options.motion) return
+      options = next
+      if (paletteChanged) {
+        palette = wallpaperPalette(options.scene, options.scheme)
+        gradients = null
+      }
       redraw()
     },
   }

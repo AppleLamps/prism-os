@@ -22,6 +22,9 @@ export type StopwatchAction = 'start' | 'stop' | 'lap' | 'reset'
 export type AppInstance = {
   opened?(): void
   closed?(): void
+  // Whether the panel can be seen: true when it opens or comes back from the dock, false
+  // when it closes or is minimized. An app runs its timers only while it's seen.
+  visible?(shown: boolean): void
   // Clock's stopwatch, for Spotlight's commands: shows the stopwatch and acts like its
   // buttons, then returns what happened.
   stopwatch?(action: StopwatchAction): string
@@ -96,10 +99,29 @@ const calculator: PanelApp = {
 // Clock: world clocks with small analog faces, and a stopwatch with laps.
 type City = {name: string, zone: string}
 
+// One formatter per time zone, made the first time the zone is read: a formatter is slow
+// to make and quick to use, and Clock reads every zone once a second.
+const partsFormatters = new Map<string, Intl.DateTimeFormat>()
+
 function zoneParts(date: Date, zone: string) {
-  const parts = new Intl.DateTimeFormat('en-US', {timeZone: zone, hour12: false, year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}).formatToParts(date)
+  let formatter = partsFormatters.get(zone)
+  if (formatter === undefined) {
+    formatter = new Intl.DateTimeFormat('en-US', {timeZone: zone, hour12: false, year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'})
+    partsFormatters.set(zone, formatter)
+  }
+  const parts = formatter.formatToParts(date)
   const read = (type: string) => Number(parts.find(part => part.type === type)?.value ?? '0')
   return {year: read('year'), month: read('month'), day: read('day'), hour: read('hour') % 24, minute: read('minute'), second: read('second')}
+}
+
+// A setter of an element's text that writes only a text it didn't write last time.
+function textWriter(node: Node) {
+  let written: string | null = null
+  return (text: string) => {
+    if (text === written) return
+    written = text
+    node.textContent = text
+  }
 }
 
 function formatStopwatch(milliseconds: number): string {
@@ -149,7 +171,8 @@ const clock: PanelApp = {
       row.append(face, text, time)
       world.append(row)
       const hands = ['.clock-hour', '.clock-minute', '.clock-second'].map(selector => face.querySelector<SVGLineElement>(selector))
-      return {city, offset, time, face, hands}
+      const timeFormat = new Intl.DateTimeFormat(undefined, {timeZone: city.zone, hour: 'numeric', minute: '2-digit'})
+      return {city, face, hands, timeFormat, writeOffset: textWriter(offset), writeTime: textWriter(time), angles: ['', '', ''], night: false}
     })
 
     const stopwatch = el('div', 'clock-stopwatch')
@@ -168,55 +191,58 @@ const clock: PanelApp = {
     let lapTimes: number[] = []
     let frame = 0
     let tick = 0
+    // Whether the panel can be seen, and which tab it shows. Clock redraws only what's
+    // seen: the world clocks once a second while their tab shows, the stopwatch every
+    // frame while it runs and its tab shows. The stopwatch's time is a difference of
+    // performance.now(), so it keeps counting while nothing draws it.
+    let panelShown = false
+    let tab: 'world' | 'stopwatch' = 'world'
     const elapsed = () => carried + (running ? performance.now() - startedAt : 0)
 
+    // The laps, newest first: the lap that's running, then the finished laps. A finished
+    // lap's row is made once, when it finishes, and only the running lap's time changes.
+    const currentLap = el('li', 'clock-lap')
+    const currentLabel = el('span', '')
+    const currentTime = el('span', 'clock-lap-time')
+    currentLap.append(currentLabel, currentTime)
+    let currentShown = false
+    const writeReadout = textWriter(readout)
+    const writeCurrentLabel = textWriter(currentLabel)
+    const writeCurrentTime = textWriter(currentTime)
+    let buttons: 'zero' | 'running' | 'stopped' | null = null
+
     const renderStopwatch = () => {
-      readout.textContent = formatStopwatch(elapsed())
-      startButton.textContent = running ? 'Stop' : 'Start'
-      startButton.setAttribute('aria-label', running ? 'Stop' : 'Start')
-      startButton.classList.toggle('clock-stop', running)
-      lapButton.textContent = running || elapsed() === 0 ? 'Lap' : 'Reset'
-      lapButton.setAttribute('aria-label', lapButton.textContent)
-      lapButton.disabled = !running && elapsed() === 0
-      const current = elapsed() - lapStart
-      const all = [...lapTimes, ...(elapsed() > 0 ? [current] : [])]
-      laps.replaceChildren(...all.map((time, index) => {
-        const item = el('li', 'clock-lap')
-        item.append(el('span', '', `Lap ${index + 1}`), el('span', 'clock-lap-time', formatStopwatch(time)))
-        return item
-      }).reverse())
+      const now = elapsed()
+      writeReadout(formatStopwatch(now))
+      const nextButtons = running ? 'running' : now === 0 ? 'zero' : 'stopped'
+      if (nextButtons !== buttons) {
+        buttons = nextButtons
+        startButton.textContent = running ? 'Stop' : 'Start'
+        startButton.setAttribute('aria-label', running ? 'Stop' : 'Start')
+        startButton.classList.toggle('clock-stop', running)
+        lapButton.textContent = running || now === 0 ? 'Lap' : 'Reset'
+        lapButton.setAttribute('aria-label', lapButton.textContent)
+        lapButton.disabled = !running && now === 0
+      }
+      const showCurrent = now > 0
+      if (showCurrent !== currentShown) {
+        if (showCurrent) laps.prepend(currentLap)
+        else currentLap.remove()
+        currentShown = showCurrent
+      }
+      if (showCurrent) {
+        writeCurrentLabel(`Lap ${lapTimes.length + 1}`)
+        writeCurrentTime(formatStopwatch(now - lapStart))
+      }
     }
+
+    const stopwatchShown = () => panelShown && tab === 'stopwatch'
 
     const animate = () => {
       frame = 0
       renderStopwatch()
-      if (running) frame = requestAnimationFrame(animate)
+      if (running && stopwatchShown()) frame = requestAnimationFrame(animate)
     }
-
-    const startOrStop = () => {
-      if (running) {
-        carried = elapsed()
-        running = false
-      } else {
-        startedAt = performance.now()
-        running = true
-        if (frame === 0) frame = requestAnimationFrame(animate)
-      }
-      renderStopwatch()
-    }
-    startButton.addEventListener('click', startOrStop)
-    const lapOrReset = () => {
-      if (running) {
-        lapTimes.push(elapsed() - lapStart)
-        lapStart = elapsed()
-      } else {
-        carried = 0
-        lapStart = 0
-        lapTimes = []
-      }
-      renderStopwatch()
-    }
-    lapButton.addEventListener('click', lapOrReset)
 
     const renderWorld = () => {
       const now = new Date()
@@ -228,19 +254,82 @@ const clock: PanelApp = {
         const hours = Math.round((stamp - localStamp) / 360_000) / 10
         const dayDifference = Date.UTC(parts.year, parts.month - 1, parts.day) - Date.UTC(local.year, local.month - 1, local.day)
         const day = dayDifference > 0 ? 'Tomorrow' : dayDifference < 0 ? 'Yesterday' : 'Today'
-        row.offset.textContent = hours === 0 ? `${day}, local time` : `${day}, ${hours > 0 ? '+' : ''}${hours} hrs`
-        row.time.textContent = new Intl.DateTimeFormat(undefined, {timeZone: row.city.zone, hour: 'numeric', minute: '2-digit'}).format(now)
+        row.writeOffset(hours === 0 ? `${day}, local time` : `${day}, ${hours > 0 ? '+' : ''}${hours} hrs`)
+        row.writeTime(row.timeFormat.format(now))
         const angles = [(parts.hour % 12) * 30 + parts.minute * 0.5, parts.minute * 6 + parts.second * 0.1, parts.second * 6]
-        row.hands.forEach((hand, index) => hand?.setAttribute('transform', `rotate(${angles[index] ?? 0} 20 20)`))
-        row.face.classList.toggle('clock-night', parts.hour < 6 || parts.hour >= 18)
+        row.hands.forEach((hand, index) => {
+          const transform = `rotate(${angles[index] ?? 0} 20 20)`
+          if (transform === row.angles[index]) return
+          row.angles[index] = transform
+          hand?.setAttribute('transform', transform)
+        })
+        const night = parts.hour < 6 || parts.hour >= 18
+        if (night !== row.night) {
+          row.night = night
+          row.face.classList.toggle('clock-night', night)
+        }
       }
     }
 
-    const show = (tab: 'world' | 'stopwatch') => {
-      worldTab.setAttribute('aria-selected', `${tab === 'world'}`)
-      stopwatchTab.setAttribute('aria-selected', `${tab === 'stopwatch'}`)
-      world.hidden = tab !== 'world'
-      stopwatch.hidden = tab !== 'stopwatch'
+    // Starts and stops the timers for what's seen now. What comes into view is drawn at
+    // once, so it never shows a stale time.
+    const sync = () => {
+      const worldShown = panelShown && tab === 'world'
+      if (worldShown && tick === 0) {
+        renderWorld()
+        tick = window.setInterval(renderWorld, 1000)
+      } else if (!worldShown && tick !== 0) {
+        window.clearInterval(tick)
+        tick = 0
+      }
+      if (running && stopwatchShown()) {
+        if (frame === 0) frame = requestAnimationFrame(animate)
+      } else if (frame !== 0) {
+        cancelAnimationFrame(frame)
+        frame = 0
+      }
+    }
+
+    const startOrStop = () => {
+      if (running) {
+        carried = elapsed()
+        running = false
+      } else {
+        startedAt = performance.now()
+        running = true
+      }
+      renderStopwatch()
+      sync()
+    }
+    startButton.addEventListener('click', startOrStop)
+    const lapOrReset = () => {
+      if (running) {
+        const lap = elapsed() - lapStart
+        lapTimes.push(lap)
+        lapStart += lap
+        const item = el('li', 'clock-lap')
+        item.append(el('span', '', `Lap ${lapTimes.length}`), el('span', 'clock-lap-time', formatStopwatch(lap)))
+        laps.insertBefore(item, currentShown ? currentLap.nextSibling : laps.firstChild)
+      } else {
+        carried = 0
+        lapStart = 0
+        lapTimes = []
+        laps.replaceChildren()
+        currentShown = false
+      }
+      renderStopwatch()
+    }
+    lapButton.addEventListener('click', lapOrReset)
+
+    const show = (next: 'world' | 'stopwatch') => {
+      worldTab.setAttribute('aria-selected', `${next === 'world'}`)
+      stopwatchTab.setAttribute('aria-selected', `${next === 'stopwatch'}`)
+      world.hidden = next !== 'world'
+      stopwatch.hidden = next !== 'stopwatch'
+      if (next === tab) return
+      tab = next
+      if (stopwatchShown()) renderStopwatch()
+      sync()
     }
     worldTab.addEventListener('click', () => show('world'))
     stopwatchTab.addEventListener('click', () => show('stopwatch'))
@@ -249,13 +338,10 @@ const clock: PanelApp = {
     renderStopwatch()
 
     return {
-      opened() {
-        renderWorld()
-        if (tick === 0) tick = window.setInterval(renderWorld, 1000)
-      },
-      closed() {
-        window.clearInterval(tick)
-        tick = 0
+      visible(shown) {
+        panelShown = shown
+        if (stopwatchShown()) renderStopwatch()
+        sync()
       },
       stopwatch(action) {
         show('stopwatch')

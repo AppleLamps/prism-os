@@ -705,19 +705,24 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
       node.title = `${formatCount(location.rowCount)} ${location.rowNoun}. ${location.description}`
       return node
     }),
+    // What each location item's --selected, the spacer's height and the overflow
+    // note were last given, so a frame writes them only when they change.
+    locationSelected: locations.map(() => Number.NaN),
+    totalHeight: Number.NaN,
+    overflowShown: null as boolean | null,
     // The location whose titles the header's cells hold, or -1 before the first
     // frame. Lifetime: until the list shows another location.
     location: -1,
     // The nodes have mount lifetime. Each slot also keeps the row whose text its
     // cells hold, or -1, until the slot shows another row or the list another
     // location, the kind class that its kind cell has, '' for none as at creation,
-    // until a row of another kind takes the slot, and the value whose text its last
-    // cell holds, until the row's value changes.
+    // until a row of another kind takes the slot, the value whose text its last
+    // cell holds, until the row's value changes, and its box as last written.
     slots: Array.from({length: slotCount}, () => {
       const node = document.createElement('div')
       node.className = 'monitor-row'
       spacer.appendChild(node)
-      return {node, cells: createCells(node, 'row'), row: -1, kindClass: '', value: Number.NaN}
+      return {node, cells: createCells(node, 'row'), row: -1, kindClass: '', value: Number.NaN, present: null as boolean | null, top: Number.NaN, selected: Number.NaN}
     }),
   }
 
@@ -732,7 +737,10 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
       const location = locations[locationIndex]
       invariant(location !== undefined, 'the list shows one location')
       domCache.locationNodes.forEach((node, index) => {
-        node.style.setProperty('--selected', `${values[output.locations[index]!]}`)
+        const selected = values[output.locations[index]!]!
+        if (selected === domCache.locationSelected[index]) return
+        domCache.locationSelected[index] = selected
+        node.style.setProperty('--selected', `${selected}`)
       })
       if (domCache.location !== locationIndex) {
         // Another location: its column titles, its columns' sizes through the class
@@ -749,15 +757,36 @@ export function createValueListRenderer(document: Document, root: HTMLElement, l
         for (const slot of domCache.slots) slot.row = -1
         domCache.location = locationIndex
       }
-      domCache.spacer.style.height = `${values[output.totalHeight]}px`
-      domCache.overflow.style.display = values[output.slotOverflow] === 1 ? 'block' : 'none'
+      // The spacer, the overflow note and each slot's box, written only when their
+      // values change: a frame that scrolls by a row moves one slot.
+      const totalHeight = values[output.totalHeight]!
+      if (totalHeight !== domCache.totalHeight) {
+        domCache.totalHeight = totalHeight
+        domCache.spacer.style.height = `${totalHeight}px`
+      }
+      const overflow = values[output.slotOverflow] === 1
+      if (overflow !== domCache.overflowShown) {
+        domCache.overflowShown = overflow
+        domCache.overflow.style.display = overflow ? 'block' : 'none'
+      }
       domCache.slots.forEach((slot, index) => {
         const outputStart = index * slotField.size
         const present = values[output.slots[outputStart + slotField.present]!] === 1
         const row = values[output.slots[outputStart + slotField.row]!]!
-        slot.node.style.display = present ? 'grid' : 'none'
-        slot.node.style.transform = `translateY(${values[output.slots[outputStart + slotField.top]!]}px)`
-        slot.node.style.setProperty('--selected', `${values[output.slots[outputStart + slotField.selected]!]}`)
+        const top = values[output.slots[outputStart + slotField.top]!]!
+        const selected = values[output.slots[outputStart + slotField.selected]!]!
+        if (present !== slot.present) {
+          slot.present = present
+          slot.node.style.display = present ? 'grid' : 'none'
+        }
+        if (top !== slot.top) {
+          slot.top = top
+          slot.node.style.transform = `translateY(${top}px)`
+        }
+        if (selected !== slot.selected) {
+          slot.selected = selected
+          slot.node.style.setProperty('--selected', `${selected}`)
+        }
         if (!present) return
         // A row's text is written only when the slot's row changes: a row keeps its
         // slot while it's drawn, so scrolling by one row writes one row's text. The

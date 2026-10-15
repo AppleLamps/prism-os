@@ -1313,7 +1313,7 @@ function createFakeDom() {
   return {counts, document: {createElement: () => createElement()}, root, sidebar, caption, list, header, scroller, spacer, overflow}
 }
 
-test("the renderer writes a row's text only when a slot's row changes, its kind cell's class only when the kind changes, a value's text only when the value changes, and every slot's display and transform in every frame", () => {
+test("the renderer writes a row's text only when a slot's row changes, its kind cell's class only when the kind changes, a value's text only when the value changes, and a slot's display and transform only when they change", () => {
   const machine = createMachine()
   const dom = createFakeDom()
   const locations = [
@@ -1409,13 +1409,15 @@ test("the renderer writes a row's text only when a slot's row changes, its kind 
     assert.equal(rowNodes[row]!.style['--selected'], '0')
     assert.deepEqual(rowTexts(rowNodes[row]!), expectedTexts(operationsLocation, row))
   }
-  // The same frame again writes no text and no class.
+  // The same frame again writes no text, no class and no style: a display marked
+  // here stays marked, since the renderer writes a slot's display only when it changes.
   let textWrites = dom.counts.textWrites
   for (const node of rowNodes) node.style['display'] = 'stale'
   values = step(machine)
   assert.equal(renderAndCountKindChanges(values), 0)
   assert.equal(dom.counts.textWrites, textWrites)
-  // The display, which the renderer writes for every slot in every frame, is back.
+  assert.ok(rowNodes.every(node => node.style['display'] === 'stale'))
+  for (const node of rowNodes) node.style['display'] = 'grid'
   assert.equal(drawnNodes().length, slotCount)
 
   // The list scrolled by 28 rows, so that 27 rows are drawn above the view and the
