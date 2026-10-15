@@ -5,6 +5,10 @@ const config = {
     // HandwiredOS's and Prism OS's pages load these two, which mount window-manager.ts.
     'src/handwiredos/boot.ts',
     'src/prismos/boot.ts',
+    // The command center's model worker, which boot.ts starts from a URL, see siteWorkers in scripts/demo-site-pages.ts.
+    'src/prismos/model-worker.ts',
+    // Writes the command center's training data from src/prismos/commands.ts.
+    'scripts/prismos-dataset.ts',
     'src/learned-gallery/learned-gallery.ts',
     // JSON search's page loads demo.ts. demo.ts starts demo-worker.ts as a worker from a URL, which is not an import,
     // and imports only two types from it, and scripts/demo-site-pages.ts builds the worker as a file of its own. So

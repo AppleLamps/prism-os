@@ -2405,7 +2405,7 @@ function quantizePixels(value: number) {
 // 20,000 becomes 16,384. A browser can report more than 16,384 CSS px, e.g. an 8K
 // display at 25% zoom, and a value outside a cell's range fails the table check
 // before every later evaluation too, since the queued event never commits.
-function quantizeViewport(value: number) {
+export function quantizeViewport(value: number) {
   return Math.min(pixel[1], Math.max(pixel[0], quantizePixels(value)))
 }
 

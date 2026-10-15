@@ -27,10 +27,12 @@
 
   /* The accent is the system blue. The handwired tokens keep their names, so every rule of
      handwired-os.css that reads --copper draws in blue. */
-  --copper: #007aff;
-  --copper-line: rgb(0 122 255 / 0.5);
-  --copper-wash: rgb(0 122 255 / 0.14);
-  --copper-wash-deep: rgb(0 122 255 / 0.24);
+  --accent-light: 0 122 255;
+  --accent-dark: 10 132 255;
+  --copper: rgb(var(--accent-light));
+  --copper-line: rgb(var(--accent-light) / 0.5);
+  --copper-wash: rgb(var(--accent-light) / 0.14);
+  --copper-wash-deep: rgb(var(--accent-light) / 0.24);
 
   /* The chart colors of Monitor's operation kinds: blue, orange, green and pink. */
   --wire-indigo: #ff9500;
@@ -71,8 +73,10 @@
   --tile-chroma: linear-gradient(160deg, #ffd25a 0%, #ff8a3d 50%, #ff4d3d 100%);
 }
 
+/* The dark scheme: under the device's dark appearance unless the command center's theme
+   setting says light, and always under its dark setting, see settings.ts. */
 @media (prefers-color-scheme: dark) {
-  :root.prism {
+  :root.prism:not([data-theme="light"]) {
     color-scheme: dark;
 
     --paper: #1c1c1e;
@@ -86,10 +90,10 @@
     --edge: rgb(255 255 255 / 0.12);
     --wash: rgb(255 255 255 / 0.07);
 
-    --copper: #0a84ff;
-    --copper-line: rgb(10 132 255 / 0.6);
-    --copper-wash: rgb(10 132 255 / 0.24);
-    --copper-wash-deep: rgb(10 132 255 / 0.36);
+    --copper: rgb(var(--accent-dark));
+    --copper-line: rgb(var(--accent-dark) / 0.6);
+    --copper-wash: rgb(var(--accent-dark) / 0.24);
+    --copper-wash-deep: rgb(var(--accent-dark) / 0.36);
 
     --wire-indigo: #ff9f0a;
     --wire-ochre: #30d158;
@@ -112,6 +116,47 @@
     --light-idle: rgb(255 255 255 / 0.2);
     --notes-caret: #ffd60a;
   }
+}
+
+:root.prism[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper: #1c1c1e;
+  --sheet: rgb(44 44 46 / 0.78);
+  --desk: #0a1424;
+  --ink: #f5f5f7;
+  --ink-2: #c7c7cc;
+  --ink-3: #8e8e93;
+  --rule: rgb(255 255 255 / 0.09);
+  --rule-strong: rgb(255 255 255 / 0.22);
+  --edge: rgb(255 255 255 / 0.12);
+  --wash: rgb(255 255 255 / 0.07);
+
+  --copper: rgb(var(--accent-dark));
+  --copper-line: rgb(var(--accent-dark) / 0.6);
+  --copper-wash: rgb(var(--accent-dark) / 0.24);
+  --copper-wash-deep: rgb(var(--accent-dark) / 0.36);
+
+  --wire-indigo: #ff9f0a;
+  --wire-ochre: #30d158;
+  --wire-plum: #ff375f;
+  --wire-green: #30d158;
+  --wire-red: #ff453a;
+
+  --shadow-ink: 0 0 0;
+
+  --glass: rgb(28 30 34 / 0.48);
+  --glass-strong: rgb(34 36 40 / 0.7);
+  --window-glass: rgb(30 32 36 / 0.8);
+  --window-glass-focused: rgb(36 38 42 / 0.9);
+  --glass-edge: rgb(255 255 255 / 0.14);
+  --glass-rim: rgb(255 255 255 / 0.22);
+  --glass-hairline: rgb(0 0 0 / 0.5);
+  --sidebar: rgb(255 255 255 / 0.03);
+  --zebra: rgb(255 255 255 / 0.03);
+  --dock-dot: rgb(255 255 255 / 0.7);
+  --light-idle: rgb(255 255 255 / 0.2);
+  --notes-caret: #ffd60a;
 }
 
 /* The desk: the wallpaper canvas fills it, behind the program's weight arcs. */
@@ -497,11 +542,325 @@
     --window-glass-focused: rgb(255 255 255 / 0.98);
   }
   @media (prefers-color-scheme: dark) {
-    :root.prism {
+    :root.prism:not([data-theme="light"]) {
       --glass: rgb(36 38 42 / 0.94);
       --glass-strong: rgb(44 46 50 / 0.97);
       --window-glass: rgb(36 38 42 / 0.97);
       --window-glass-focused: rgb(44 46 50 / 0.98);
     }
   }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root.prism[data-theme="dark"] {
+    --glass: rgb(36 38 42 / 0.94);
+    --glass-strong: rgb(44 46 50 / 0.97);
+    --window-glass: rgb(36 38 42 / 0.97);
+    --window-glass-focused: rgb(44 46 50 / 0.98);
+  }
+}
+
+/* The accent setting. Each color has a light-scheme value dark enough for text on white and
+   a dark-scheme value bright enough on the dark glass. No purple, by the design rules. */
+:root.prism[data-accent="teal"] { --accent-light: 0 125 145; --accent-dark: 64 200 224; }
+:root.prism[data-accent="green"] { --accent-light: 36 138 61; --accent-dark: 48 209 88; }
+:root.prism[data-accent="sand"] { --accent-light: 158 104 32; --accent-dark: 222 176 112; }
+:root.prism[data-accent="graphite"] { --accent-light: 99 99 104; --accent-dark: 160 160 166; }
+
+/* Reduced transparency: solid surfaces and no blur, as the system setting of that name does. */
+:root.prism[data-transparency="reduced"] {
+  --glass: rgb(246 247 249);
+  --glass-strong: rgb(255 255 255);
+  --window-glass: rgb(246 247 249);
+  --window-glass-focused: rgb(255 255 255);
+  --glass-blur: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root.prism[data-transparency="reduced"]:not([data-theme="light"]) {
+    --glass: rgb(38 40 44);
+    --glass-strong: rgb(46 48 52);
+    --window-glass: rgb(38 40 44);
+    --window-glass-focused: rgb(46 48 52);
+  }
+}
+
+:root.prism[data-transparency="reduced"][data-theme="dark"] {
+  --glass: rgb(38 40 44);
+  --glass-strong: rgb(46 48 52);
+  --window-glass: rgb(38 40 44);
+  --window-glass-focused: rgb(46 48 52);
+}
+
+/* The weight arcs, hidden by the arcs setting. The canvas keeps drawing; only its paint goes. */
+:root.prism[data-arcs="hidden"] .prism-desktop .desk-wiring {
+  opacity: 0;
+}
+
+/* The command center. Its trigger sits in the system bar with the Source link. */
+.prism-desktop .command-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 14px;
+  padding: 2px 6px 2px 10px;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.14);
+  color: #fff;
+  font: 500 12px/18px var(--font-sans);
+  cursor: pointer;
+}
+
+.prism-desktop .command-trigger kbd {
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.2);
+  font: 500 11px/16px var(--font-sans);
+}
+
+@media (hover: hover) {
+  .prism-desktop .command-trigger:hover {
+    background: rgb(255 255 255 / 0.24);
+  }
+}
+
+.prism-desktop .command-trigger:focus-visible,
+.prism-desktop .command-center button:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
+/* The panel: Spotlight's place and shape, the windows' glass. It floats above every window
+   and the dock, and never moves anything the program places. */
+.prism-desktop .command-center {
+  position: fixed;
+  z-index: 10000;
+  top: 72px;
+  left: 50%;
+  width: min(600px, calc(100vw - 32px));
+  max-height: calc(100vh - 72px - 96px);
+  display: flex;
+  flex-direction: column;
+  translate: -50% 0;
+  border: 1px solid var(--glass-edge);
+  border-radius: 22px;
+  background: var(--window-glass-focused);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim),
+    0 0 0 0.5px var(--glass-hairline),
+    0 30px 80px -20px rgb(var(--shadow-ink) / 0.5);
+  color: var(--ink);
+  overflow: hidden;
+  animation: command-open 180ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+.prism-desktop .command-center[hidden] {
+  display: none;
+}
+
+@keyframes command-open {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prism-desktop .command-center { animation: none; }
+}
+
+.prism-desktop .command-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+}
+
+.prism-desktop .command-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--copper);
+}
+
+.prism-desktop .command-center.is-busy .command-mark {
+  animation: command-think 1.1s ease-in-out infinite;
+}
+
+@keyframes command-think {
+  50% { opacity: 0.35; }
+}
+
+.prism-desktop .command-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 400 20px/28px var(--font-sans);
+  letter-spacing: -0.01em;
+  outline: none;
+}
+
+.prism-desktop .command-input::placeholder {
+  color: var(--ink-3);
+}
+
+.prism-desktop .command-body {
+  overflow-y: auto;
+  border-top: 1px solid var(--rule);
+}
+
+.prism-desktop .command-transcript,
+.prism-desktop .command-suggestions {
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+}
+
+.prism-desktop .command-transcript[hidden],
+.prism-desktop .command-suggestions[hidden],
+.prism-desktop .command-confirm[hidden] {
+  display: none;
+}
+
+.prism-desktop .command-entry {
+  padding: 10px 18px 10px 50px;
+}
+
+.prism-desktop .command-entry + .command-entry {
+  border-top: 1px solid var(--rule);
+}
+
+.prism-desktop .command-entry p {
+  margin: 0;
+  max-width: 62ch;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.prism-desktop .command-user {
+  color: var(--ink-3);
+  font: 400 13px/20px var(--font-sans);
+}
+
+.prism-desktop .command-reply {
+  color: var(--ink);
+  font: 400 15px/22px var(--font-sans);
+}
+
+.prism-desktop .command-reply.is-error {
+  color: var(--ink-2);
+}
+
+/* The calls that ran, as the model wrote them after validation: what was decided, in the
+   operator's own words. */
+.prism-desktop .command-calls {
+  margin-top: 4px !important;
+  color: var(--copper);
+  font: 500 12px/18px ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.prism-desktop .command-suggestion {
+  display: block;
+  width: 100%;
+  padding: 8px 18px 8px 50px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font: 400 14px/20px var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .prism-desktop .command-suggestion:hover {
+    background: var(--copper-wash);
+    color: var(--ink);
+  }
+}
+
+.prism-desktop .command-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 12px 12px;
+  padding: 10px 12px 10px 38px;
+  border-radius: 14px;
+  background: var(--wash);
+}
+
+.prism-desktop .command-confirm-text {
+  margin: 0;
+  font: 500 14px/20px var(--font-sans);
+}
+
+.prism-desktop .command-confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.prism-desktop .command-button {
+  padding: 4px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  color: var(--ink);
+  font: 500 13px/20px var(--font-sans);
+  cursor: pointer;
+}
+
+/* The paper color flips with the scheme, so the label stays readable on each accent: light
+   on the darker light-scheme accents, dark on the brighter dark-scheme ones. */
+.prism-desktop .command-accept {
+  border-color: transparent;
+  background: var(--copper);
+  color: var(--paper);
+}
+
+.prism-desktop .command-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-3);
+  font: 400 12px/18px var(--font-sans);
+}
+
+.prism-desktop .command-status-text {
+  flex: 1;
+}
+
+.prism-desktop .command-load[hidden],
+.prism-desktop .command-progress[hidden] {
+  display: none;
+}
+
+.prism-desktop .command-progress {
+  flex: none;
+  width: 96px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--wash);
+  overflow: hidden;
+}
+
+.prism-desktop .command-progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--copper);
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left;
+  transition: transform 200ms linear;
+}
+
+@media (max-width: 520px) {
+  .prism-desktop .command-trigger kbd { display: none; }
+  .prism-desktop .command-center { top: 52px; }
+  .prism-desktop .command-entry,
+  .prism-desktop .command-suggestion { padding-left: 18px; }
+  .prism-desktop .command-confirm { flex-direction: column; align-items: flex-start; padding-left: 12px; }
 }

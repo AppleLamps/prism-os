@@ -74,6 +74,7 @@ export function parseCall(body: string): FunctionCall | null {
 
 // The format back, as the chat template writes a call: keys in sorted order, strings
 // escaped. The tests use it to check that parsing inverts it.
+/** @public */
 export function formatCall(call: FunctionCall): string {
   const fields = Object.keys(call.arguments).sort().map(key => {
     const value = call.arguments[key]

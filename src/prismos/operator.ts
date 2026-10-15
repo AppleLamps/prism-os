@@ -286,7 +286,8 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
       operations: program.valueCount - program.sourceSize,
       layers: program.layers.length,
       weights,
-      kilobytes: Math.round(bytes / 1024),
+      // Scope's footer counts 1 KB as 1,000 bytes, and so does this.
+      kilobytes: Math.round(bytes / 1000),
     }
   }
 
@@ -450,7 +451,22 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
     }
   }
 
-  return {run, windowState, openPhoto, stats, rest, photoKey}
+  // One command at a time: a slideshow step that arrived during a drag waits for it.
+  let chain: Promise<unknown> = Promise.resolve()
+  function exclusive<Result>(task: () => Promise<Result>): Promise<Result> {
+    const next = chain.then(task, task)
+    chain = next.catch(() => undefined)
+    return next
+  }
+
+  return {
+    run: (command: Command) => exclusive(() => run(command)),
+    // The slideshow's step: the next photo, through the same queue as the commands.
+    nextPhoto: () => exclusive(() => photoKey('next')),
+    windowState,
+    openPhoto,
+    stats,
+  }
 }
 
 export type Operator = ReturnType<typeof createOperator>

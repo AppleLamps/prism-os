@@ -55,6 +55,7 @@ parser.add_argument("--batch", type=int, default=16)
 parser.add_argument("--micro", type=int, default=8)
 parser.add_argument("--onnx-eval", type=int, default=100, help="eval rows to run through the ONNX export")
 parser.add_argument("--skip-base-eval", action="store_true")
+parser.add_argument("--base-result", default=None, help="the base model's score from an earlier run, e.g. 132/597, for the README when --skip-base-eval")
 parser.add_argument("--public", action="store_true", help="publish the repo as public; private by default")
 args = parser.parse_args()
 
@@ -315,12 +316,18 @@ def signature(m):
     from collections import Counter
     return ([i.name for i in m.graph.input], [o.name for o in m.graph.output],
             sorted(Counter((n.domain, n.op_type) for n in m.graph.node).items()))
-same = signature(reference) == signature(mine)
+same = signature(reference)[:2] == signature(mine)[:2] and signature(reference)[2] == signature(mine)[2]
 print("matches the reference build's inputs, outputs and operators:", same, flush=True)
 if not same:
     for a, b, label in zip(signature(reference), signature(mine), ["inputs", "outputs", "ops"]):
         if a != b:
             print(f"  {label} differ:\n    reference {a}\n    mine      {b}", flush=True)
+
+# Logits for the last position only, see last_token_logits.py: the builder's graph
+# computes them for the whole 1,863-token prompt, about 2 GB that generation never reads.
+helper_scope = {"__name__": "last_token_logits"}
+exec(compile(fetch("last_token_logits.py"), "last_token_logits.py", "exec"), helper_scope)
+helper_scope["last_token_logits"](str(web_dir / "onnx" / "model_q4f16.onnx"))
 
 for name in ["tokenizer.json", "tokenizer_config.json", "chat_template.jinja", "config.json", "generation_config.json"]:
     shutil.copy(hf_hub_download(WEB_REFERENCE, name), web_dir / name)
@@ -391,6 +398,7 @@ results["onnx_bytes"] = sum(p.stat().st_size for p in (web_dir / "onnx").iterdir
 # Publish: the browser build at the root, as Transformers.js expects, and the PyTorch
 # weights in pytorch/ for the next round of training.
 
+base_row = f"{results['base']['correct']}/{results['base']['total']}" if "base" in results else (args.base_result or "not measured")
 readme = f"""---
 license: gemma
 base_model: google/functiongemma-270m-it
@@ -412,7 +420,7 @@ Every eval sentence uses a phrasing template that never appears in training.
 
 | Model | Correct |
 | --- | --- |
-| Base FunctionGemma | {results.get('base', {}).get('correct', 'n/a')}/{results.get('base', {}).get('total', 'n/a')} |
+| Base FunctionGemma | {base_row} |
 | Fine-tuned (PyTorch, bf16) | {results['fine_tuned']['correct']}/{results['fine_tuned']['total']} |
 | Fine-tuned, ONNX {checked}, first {len(subset)} | {results['onnx_q4f16']['correct']}/{results['onnx_q4f16']['total']} |
 

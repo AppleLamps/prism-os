@@ -145,8 +145,6 @@ export const toolDeclarations: readonly ToolDeclaration[] = [
   }),
 ]
 
-export const commandNames: readonly CommandName[] = toolDeclarations.map(declaration => declaration.function.name)
-
 // The words people use for each app, besides its name. Lowercase.
 export const appAliases: Record<App, readonly string[]> = {
   scope: ['scope', 'monitor', 'inspector', 'the inspector', 'circuit inspector'],
