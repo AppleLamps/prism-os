@@ -6,7 +6,7 @@
 // write as one `let` per value.
 //
 // A document's cells are the 512 code points, -1 past the text, and the text's length in code points: 513 float32
-// values, 2,052 bytes. Every other source cell, i.e. the 4,061 table cells, is the same for every document.
+// values, 2,052 bytes. Every other source cell, i.e. the 3,986 table cells, is the same for every document.
 import {buildHighlighter, writeText} from './highlighter/highlighter.ts'
 import {capacity} from './highlighter/kinds.ts'
 import {type Guard, type TensorProgram, type WgslModule, emitWgsl, packSharedValues} from './emit.ts'

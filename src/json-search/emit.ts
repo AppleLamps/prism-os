@@ -3,7 +3,7 @@
 // flattenProgram ignores index reads, and adds them with both out-of-range rules.
 //
 // What the shader reads and writes:
-//   shared_values      the program's source table, uploaded once, e.g. the highlighter's 4,061 table cells, then the
+//   shared_values      the program's source table, uploaded once, e.g. the highlighter's 3,986 table cells, then the
 //                      lowest float32 value at lowestOffset for the guards
 //   instance_sources   the source cells that differ per instance, cellsPerInstance float32 values per instance, in the
 //                      order of options.instanceCells, e.g. 512 code points and the length per document

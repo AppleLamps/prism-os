@@ -121,8 +121,8 @@ describe('the emitter', () => {
 
 describe('the highlighter\'s batch programs', () => {
   test('have the sizes the README gives', () => {
-    expect(summaryProgram.sizes).toMatchObject({sourceCells: 4574, operations: 7186, layers: 536, indexReads: 4609})
-    expect(displayProgram.sizes).toMatchObject({sourceCells: 4574, operations: 7698, layers: 536, indexReads: 5121})
+    expect(summaryProgram.sizes).toMatchObject({sourceCells: 4499, operations: 7186, layers: 536, indexReads: 4609})
+    expect(displayProgram.sizes).toMatchObject({sourceCells: 4499, operations: 7698, layers: 536, indexReads: 5121})
     const summaryShader = summaryProgram.emitShader()
     const displayShader = displayProgram.emitShader()
     expect([summaryShader.statementCount, summaryShader.outputCounts, summaryShader.cellsPerInstance]).toEqual([11_814, [summaryCount], cellsPerDocument])

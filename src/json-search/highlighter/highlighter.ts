@@ -20,9 +20,9 @@ import {type Circuit, type Terms, type Wire, emitCompare} from '../../runtime/nu
 import {constant, createSourceTable, input, list} from '../../runtime/cells.ts'
 import {capacity} from './kinds.ts'
 import {
-  bracketTable, classCount, classTable, closerTable, contextCount, depthChangeTable, depthClassTable, displayTable, eventCount,
-  grammarErrorTable, grammarNextTable, grammarStateCount, grammarStates, grammarTokenTable, levelWeightTable, lexerErrorKindTable,
-  lexerEventTable, lexerNextTable, objectWeightTable, openerTable, symbolCount,
+  classCount, classTable, contextCount, depthChangeTable, depthClassTable, displayTable, eventCount, grammarErrorTable, grammarNextTable,
+  grammarStateCount, grammarStates, grammarTokenTable, levelWeightTable, lexerErrorKindTable, lexerEventTable, lexerNextTable,
+  objectWeightTable, symbolCount,
 } from './tables.ts'
 
 // The largest text length the host writes. A longer text writes this length, which still reads as too long.
@@ -50,10 +50,6 @@ function highlighterCells() {
       grammarToken: tableCells(grammarTokenTable),
       lexerErrorKind: tableCells(lexerErrorKindTable),
       depthChange: tableCells(depthChangeTable),
-      // No operation reads these three tables.
-      opener: tableCells(openerTable),
-      closer: tableCells(closerTable),
-      bracket: tableCells(bracketTable),
       objectWeight: tableCells(objectWeightTable),
       levelWeight: tableCells(levelWeightTable),
       depthClass: tableCells(depthClassTable),

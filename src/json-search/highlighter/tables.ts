@@ -212,9 +212,6 @@ export const grammarTokenTable: readonly number[] = lexerEvents.map(event => gra
 export const lexerErrorKindTable: readonly number[] = lexerEvents.map(lexerErrorKindOf)
 export const depthChangeTable: readonly number[] = lexerEvents.map(event =>
   event === 'openObject' || event === 'openArray' ? 1 : event === 'closeObject' || event === 'closeArray' ? -1 : 0)
-export const openerTable: readonly number[] = lexerEvents.map(event => Number(event === 'openObject' || event === 'openArray'))
-export const closerTable: readonly number[] = lexerEvents.map(event => Number(event === 'closeObject' || event === 'closeArray'))
-export const bracketTable: readonly number[] = lexerEvents.map((_, index) => openerTable[index]! + closerTable[index]!)
 
 // The container kinds as one integer, before the first error: bit d − 1 is 1 when the container at depth d is an object.
 // An opening brace at depth d − 1 adds 2^(d − 1), and a closing brace at depth d subtracts it, so
