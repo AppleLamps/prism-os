@@ -12,20 +12,20 @@
 
 ## Running
 
-The repo needs [Bun](https://bun.sh), and its tests and checks were last run with Bun 1.4.3.
+The repo needs [Bun](https://bun.sh), and is tested with Bun 1.4.3.
 
 ```sh
 bun install
 bun start                                 # the demo site at http://127.0.0.1:3000/: the landing page, and the demos at /os/, /learned-gallery/ and /json-search/
-bun run start:template                    # the template app, a toggle switch
+bun run start:template                    # the template app, a toggle switch, at http://localhost:3000/
 bun run test
 bun run check
 bun run site:build                        # the demo site as static files in site/
 bun run site:check                        # builds the site and loads every page in headless Chrome
-bun lab/ui-exploration/serve-demos.ts     # every demo except the JSON search, history included, at http://127.0.0.1:4321/
+bun lab/ui-exploration/serve-demos.ts     # the lab's demos, at http://127.0.0.1:4321/
 ```
 
-`bun start` takes `--port` for another port, and `bun run site:check` needs Chrome, with `CHROME_PATH` for a binary that isn't at the macOS default path.
+`bun start` takes `--port` for another port. The demo site and the template use the same port number on two host names, 127.0.0.1 and localhost, so open each at the address above. `bun run site:check` needs Chrome, with `CHROME_PATH` for a binary that isn't at the macOS default path.
 
 ## Where things are
 
@@ -38,5 +38,4 @@ bun lab/ui-exploration/serve-demos.ts     # every demo except the JSON search, h
 - `tests/handwiredos/`, `tests/learned-gallery/` and `tests/json-search/`: each demo's tests, which run without a browser, e.g. HandwiredOS over scripted traces, the gallery's editor frame by frame, and JSON search's GPU code through an interpreter
 - `scripts/check.ts`, `tsconfig.json`, `package.json` and `knip.config.ts`: `bun run check` type-checks and lints the code ([lab/status.md](../lab/status.md#verification-and-reproduction) says which folders), package.json holds the scripts under [Running](#running), and `bun run knip` reports unused exports in src/, scripts/ and template/
 - `scripts/demo-site-pages.ts`, `scripts/serve-demo-site.ts`, `scripts/build-demo-site.ts` and `scripts/check-demo-site.ts`: the demo site, i.e. the list of its pages and their paths, the development server behind `bun start`, the static build into site/ behind `bun run site:build`, and the check of the built site in headless Chrome behind `bun run site:check`. `.github/workflows/pages.yml` runs the build on pushes to main and publishes site/ to GitHub Pages
-- `scripts/measure-json-highlighter.ts`: the JSON highlighter's sizes and µs per evaluation in Bun
-- `lab/`: the experiments. Their READMEs describe the code as it was when each was written, and only [lab/status.md](../lab/status.md) is kept current
+- `lab/`: the experiments that the runtime and the demos came out of. Their READMEs describe the code as it was when each was written, and [lab/status.md](../lab/status.md) is the lab's dated record. Its section [The folders of lab/](../lab/status.md#the-folders-of-lab) says what each folder is, what moved into src/, and which tags keep what was removed
