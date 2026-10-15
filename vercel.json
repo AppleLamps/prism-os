@@ -5,7 +5,30 @@
   "outputDirectory": "site",
   "trailingSlash": true,
   "redirects": [
-    {"source": "/:page(prism-os|demos|os|learned-gallery|json-search)/:rest*", "destination": "/", "permanent": false},
-    {"source": "/:page(prism-os|demos|os|learned-gallery|json-search)", "destination": "/", "permanent": false}
+    {
+      "source": "/prism-os/",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/demos/",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/os/",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/learned-gallery/",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/json-search/",
+      "destination": "/",
+      "permanent": false
+    }
   ]
 }
