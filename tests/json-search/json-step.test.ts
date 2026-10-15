@@ -2,10 +2,12 @@
 // position by loop-program.ts. The reference, highlighter/reference.ts, is a scanner and a parser written from JSON's
 // grammar, and it doesn't read the tables that the step reads, so a wrong table cell that changes a text's result fails
 // here. Both CPU forms of the program run: the CPU executor, which defines a program's values, and generated JavaScript,
-// which the page's CPU search runs.
+// which the page's CPU search runs. The last test runs the step on the literal evaluator, which computes every operation
+// as built, and checks what the step declares about its values at every position.
 // Run from the repo root: bun test tests/json-search/json-step.test.ts
 import {describe, expect, test} from 'bun:test'
-import {capacity, errorKinds, maximumDepth} from '../../src/json-search/highlighter/kinds.ts'
+import {validateGrids, validateIndexReads, validateNoNaN} from '../../src/runtime/numeric-ui-core.ts'
+import {capacity, displayKind, errorKinds, maximumDepth} from '../../src/json-search/highlighter/kinds.ts'
 import {buildJsonLoop, stepSummaryNames} from '../../src/json-search/json-step.ts'
 import {createLoopRunner} from '../../src/json-search/loop-program.ts'
 import {cellsPerDocument, writeDocumentCells} from '../../src/json-search/program.ts'
@@ -74,4 +76,50 @@ describe('the highlighter\'s step, run over a document\'s positions, gives the r
       expect(references.map(reference => reference.valid)).toEqual(nestedTexts.map(() => 1))
     })
   }
+
+  test('on the literal evaluator, with every declared grid and index read holding at every position', () => {
+    // The nested texts, every tenth document at the limits, and for each kind of first error, and for none, the first
+    // three test texts that have it.
+    const textsOfKind = errorKinds.map(() => [] as string[])
+    for (const text of corpus) {
+      const ofKind = textsOfKind[highlightReference(text, 0).firstErrorKind]!
+      if (ofKind.length < 3) ofKind.push(text)
+    }
+    const texts = [...nestedTexts, ...edgeTexts.filter((_, index) => index % 10 === 0), ...textsOfKind.flat()]
+    const {loop} = built
+    const cells = new Float32Array(cellsPerDocument)
+    for (const text of texts) {
+      writeDocumentCells(cells, 0, text)
+      // JS: what loop-program.ts's runner does, with circuit.evaluateReference in place of the compiled stage.
+      let registers = loop.registers.map(register => register.initial)
+      const summary = Array<number>(stepSummaryNames.length).fill(0)
+      const kinds = Array<number>(capacity).fill(displayKind.pastEnd)
+      for (const stage of loop.stages) {
+        const source = loop.sharedValues.slice(stage.sharedOffset, stage.sharedOffset + stage.program.sourceSize)
+        const count = stage.repeat === 'once' ? 1 : loop.positions
+        for (let position = 0; position < count; position++) {
+          for (const [wire, binding] of stage.bindings) {
+            if (binding.kind === 'field') throw new Error('the highlighter\'s step reads no field')
+            source[wire] = binding.kind === 'item' ? cells[position]! : binding.kind === 'cell' ? cells[binding.column]! : registers[binding.register]!
+          }
+          const values = stage.circuit.evaluateReference(source)
+          validateIndexReads(stage.circuit, values)
+          validateGrids(stage.circuit, values)
+          validateNoNaN(stage.circuit, values)
+          const nextRegisters = [...registers]
+          for (const {wire, write} of stage.outputs) {
+            if (write.kind === 'register') nextRegisters[write.register] = values[wire]!
+            else if (write.kind === 'position') kinds[position] = values[wire]!
+            else if (write.kind === 'document') summary[write.column] = values[wire]!
+          }
+          registers = nextRegisters
+        }
+      }
+      const reference = highlightReference(text, 0)
+      if (JSON.stringify({summary, kinds}) !== JSON.stringify({summary: stepSummaryNames.map(name => reference[name]), kinds: reference.displayKinds})) {
+        expect({text, summary, kinds}).toEqual({text, summary: stepSummaryNames.map(name => reference[name]), kinds: reference.displayKinds})
+      }
+    }
+    expect(texts.length).toBe(nestedTexts.length + 28 + 3 * errorKinds.length)
+  }, 60_000)
 })
