@@ -45,7 +45,7 @@ Handwired keeps that loop and moves its middle into one fixed numeric program. T
 - Some outputs are the next values of state cells. After the frame, JavaScript copies all of them back into the source table at once. This is ui.md's commit step.
 - The other outputs are numbers for the DOM, e.g. a translate x, an opacity, a focused bit, and one number that is above 0 while another frame should be scheduled. JavaScript turns them into style strings.
 
-Here is how ui.md's phases split between the two, in HandwiredOS (`window-manager.ts`, with line numbers at commit 1795045, before cells.ts, the Notes flow and presses that act on release) and in this section's toggle switch:
+Here is how ui.md's phases split between the two, in HandwiredOS (`window-manager.ts`, with line numbers at commit 6ace584, before cells.ts, the Notes flow and presses that act on release) and in this section's toggle switch:
 
 | ui.md phase | Done by | HandwiredOS | Toggle switch |
 | --- | --- | --- | --- |
@@ -63,7 +63,7 @@ Here is how ui.md's phases split between the two, in HandwiredOS (`window-manage
 
 Inside the program, the phases don't have to come in ui.md's literal order. An operation only has to come after the values it reads, e.g. the toggle switch computes the track rectangle before the hit tests that read it.
 
-HandwiredOS's `step` has host-timing.ts's `advanceFrame` plan the frame's evaluations: one per distinct event timestamp, settle checks at fixed simulated times, and one for the frame. Each evaluation is the whole middle of the loop (window-manager.ts:1429-1456 at commit 1795045, trimmed):
+HandwiredOS's `step` has host-timing.ts's `advanceFrame` plan the frame's evaluations: one per distinct event timestamp, settle checks at fixed simulated times, and one for the frame. Each evaluation is the whole middle of the loop (window-manager.ts:1429-1456 at commit 6ace584, trimmed):
 
 ```ts
 function evaluate(evaluation: PlannedEvaluation<WindowManagerEvent>) {
@@ -134,7 +134,7 @@ The arguments are the cell's name, its policy, its range, its initial value, and
 
 Nested objects and arrays exist only while building. The builder lays their numbers out one after another, e.g. 4 windows of 8 fields each take 32 consecutive cells, and code refers to each number by name. On September 15, 2026, HandwiredOS's source table had 241 cells.
 
-The original HandwiredOS writes positions by hand, and states ranges and next values in separate places (window-manager.ts:110-153, 322-399, 1019-1024 at commit ce37920, before its springs moved to `emitAnimatedObject`):
+The original HandwiredOS writes positions by hand, and states ranges and next values in separate places (window-manager.ts:110-153, 322-399, 1019-1024 at commit 3422ed2, before its springs moved to `emitAnimatedObject`):
 
 ```ts
 export const sourceField = {

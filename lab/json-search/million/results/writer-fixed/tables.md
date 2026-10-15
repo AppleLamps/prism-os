@@ -21,9 +21,9 @@ Every timed search was compared with the lab's plain JavaScript loop for every d
 From `writers-100000`, 100,000 documents, load average 8.2 to 14.4.  Every output of bit-emit.ts's shader against loop-emit.ts's on the GPU. The highlighter's summary and display kinds: 51,600,000 values, 0 mismatched. The count and the marks of character-sets.ts's program, for 5 choices of sets: 256,500,000 values, 0 mismatched, 48,340,424 characters counted, and 0 of 500,000 counts differ from plain JavaScript's. The search step's match count of every document and mark of every position, 60 searches (each pattern at each state capacity that holds it, without a scope and with each of three scopes): 3,078,000,000 values, 0 mismatched, and 1,254,405 matches in all. In total 3,386,100,000 values, 0 mismatched.
 
 
-### The five runs with a new and with a repeated salt, whose files are at commit 1bed1ea
+### The five runs with a new and with a repeated salt, whose files are at commit eb38977
 
-Five Chrome processes, each with a new profile folder, compiled the three shaders with a scope for 2,000 documents. Their JSON files were in salts/ until October 14, 2026, and `git show 1bed1ea:lab/json-search/million/results/writer-fixed/salts/new-salt-1.json` prints one. This table holds every compile time of them, in ms. summarize.ts didn't print it, since these runs have other names than the ones it reads: it is each run's `page.results[].compileMs`, per engine and state capacity.
+Five Chrome processes, each with a new profile folder, compiled the three shaders with a scope for 2,000 documents. Their JSON files were in salts/ until October 14, 2026, and `git show eb38977:lab/json-search/million/results/writer-fixed/salts/new-salt-1.json` prints one. This table holds every compile time of them, in ms. summarize.ts didn't print it, since these runs have other names than the ones it reads: it is each run's `page.results[].compileMs`, per engine and state capacity.
 
 | Run | Its salt | What runs on the GPU | Compile at 8 states | 16 states | 32 states | Load average |
 | --- | --- | --- | --- | --- | --- | --- |

@@ -1,4 +1,4 @@
-// A copy of photo-gallery.ts from the repo root at commit ce37920, with the code unchanged except for the import path.
+// A copy of photo-gallery.ts from the repo root at commit 3422ed2, with the code unchanged except for the import path.
 // On September 15, 2026, the root module moved to host-timed springs, so window-manager-copy.ts imports this copy and
 // codegen's two copies keep building the HandwiredOS program from before that change: 5,253 live operations in 192
 // layers. The lab folders that measure that program import these copies too.

@@ -28,9 +28,9 @@ test('candidate-gallery-copy.ts builds the same program and steps to the same va
 })
 
 // Until September 15, 2026, this test compared window-manager-copy.ts with window-manager.ts. The root module then moved
-// to host-timed springs, and the copy, with photo-gallery-copy.ts, keeps the program from commit ce37920, which the lab
+// to host-timed springs, and the copy, with photo-gallery-copy.ts, keeps the program from commit 3422ed2, which the lab
 // folders that measure the original HandwiredOS import. So the test pins that program and the table after the session.
-test('window-manager-copy.ts keeps the HandwiredOS program from commit ce37920 and steps to the same table over the scripted session', () => {
+test('window-manager-copy.ts keeps the HandwiredOS program from commit 3422ed2 and steps to the same table over the scripted session', () => {
   const copy = windowManagerCopy.createWindowManagerMachine()
   const program = copy.tensorProgram
   expect([
@@ -46,6 +46,6 @@ test('window-manager-copy.ts keeps the HandwiredOS program from commit ce37920 a
   const tableHash = new Bun.CryptoHasher('sha256')
     .update(new Uint8Array(copy.source.buffer, copy.source.byteOffset, copy.source.byteLength))
     .digest('hex')
-  // Recorded at commit ce37920, when the copy built the same program as window-manager.ts.
+  // Recorded at commit 3422ed2, when the copy built the same program as window-manager.ts.
   expect(tableHash).toBe('0953827a90136c395b05c7dc1e838978dee586a02e75b4cd2cf597105e026915')
 })
