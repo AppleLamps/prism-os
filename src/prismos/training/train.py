@@ -55,6 +55,7 @@ parser.add_argument("--batch", type=int, default=16)
 parser.add_argument("--micro", type=int, default=8)
 parser.add_argument("--onnx-eval", type=int, default=100, help="eval rows to run through the ONNX export")
 parser.add_argument("--skip-base-eval", action="store_true")
+parser.add_argument("--public", action="store_true", help="publish the repo as public; private by default")
 args = parser.parse_args()
 
 torch.manual_seed(0)
@@ -422,7 +423,9 @@ Use is subject to the [Gemma Terms of Use](https://ai.google.dev/gemma/terms).
 shutil.copytree(hf_dir, web_dir / "pytorch")
 
 api = HfApi(token=os.environ["HF_TOKEN"])
-api.create_repo(args.repo, repo_type="model", exist_ok=True, private=False)
+# Private unless asked: the browser can only load a public repo, so the owner makes it
+# public once they have checked the results.
+api.create_repo(args.repo, repo_type="model", exist_ok=True, private=not args.public)
 api.upload_folder(folder_path=str(web_dir), repo_id=args.repo, repo_type="model",
                   commit_message=f"Fine-tuned on Prism OS commands: {results['fine_tuned']['correct']}/{results['fine_tuned']['total']} held-out")
 print("\nRESULTS", json.dumps(results), flush=True)
