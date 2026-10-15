@@ -14,11 +14,20 @@
 // holds something that a GPU's shader compiler refuses, e.g. a shift by 32 bits.
 import {type Circuit, type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
 import {constant, createSourceTable, input, inputBit, list} from '../../src/runtime/cells.ts'
-import {and, andNot, not} from '../../src/json-search/regex/bits.ts'
+import {type Bit, andNot, not} from '../../src/json-search/regex/bits.ts'
 import {emitBitLoopWgsl, packWords} from '../../src/json-search/bit-emit.ts'
 import {emitLoopWgsl} from '../../src/json-search/loop-emit.ts'
 import {type Binding, type LoopProgram, createLoopRunner, createStage} from '../../src/json-search/loop-program.ts'
 import {createWgslInterpreter} from './wgsl-interpreter.ts'
+
+// JS: a && b, as relu(a + b - 1), with bits that builder code already knows folded, like the helpers of
+// src/json-search/regex/bits.ts. It is here because only the probes and bit-emit.test.ts build an AND this way.
+export function and(circuit: Circuit, a: Bit, b: Bit): Bit {
+  if (a === false || b === false) return false
+  if (a === true) return b
+  if (b === true) return a
+  return circuit.reglu([], 1, [[a, 1], [b, 1]], -1)
+}
 
 function lowbias32(n: number) {
   n = Math.imul((n >>> 16) ^ n, 0x21f0aaad)

@@ -7,7 +7,7 @@
 import {describe, expect, test} from 'bun:test'
 import {type Wire, emitCompare} from '../../src/runtime/numeric-ui-core.ts'
 import {constant, createSourceTable, input, inputBit, list} from '../../src/runtime/cells.ts'
-import {and, andNot, not} from '../../src/json-search/regex/bits.ts'
+import {andNot, not} from '../../src/json-search/regex/bits.ts'
 import {type RuleCounts, emitBitLoopWgsl, packWords} from '../../src/json-search/bit-emit.ts'
 import {generateDocuments} from '../../src/json-search/documents.ts'
 import {buildJsonLoop} from '../../src/json-search/json-step.ts'
@@ -17,6 +17,7 @@ import {buildCharacterSets, characterSets, countCharacters} from './character-se
 import {cellsPerDocument, writeDocumentCells} from '../../src/json-search/program.ts'
 import {boundaryCapacity, buildSearchLoop, classCapacity} from '../../src/json-search/search-step.ts'
 import {createWgslInterpreter} from './wgsl-interpreter.ts'
+import {and} from './writer-probes.ts'
 
 function lowbias32(n: number) {
   n = Math.imul((n >>> 16) ^ n, 0x21f0aaad)

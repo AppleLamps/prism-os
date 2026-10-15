@@ -65,8 +65,7 @@ export const defects = [
 ] as const
 type Defect = typeof defects[number]
 
-/** @public */
-export type GeneratedDocument = {text: string, shape: Shape, defect: Defect | 'none'}
+type GeneratedDocument = {text: string, shape: Shape, defect: Defect | 'none'}
 
 type Json = string | number | boolean | null | Json[] | {[key: string]: Json}
 type Random = {

@@ -9,15 +9,6 @@ export function not(circuit: Circuit, bit: Bit): Bit {
   return typeof bit === 'boolean' ? !bit : circuit.affine([[bit, -1]], 1)
 }
 
-// JS: a && b, as relu(a + b - 1).
-/** @public */
-export function and(circuit: Circuit, a: Bit, b: Bit): Bit {
-  if (a === false || b === false) return false
-  if (a === true) return b
-  if (b === true) return a
-  return circuit.reglu([], 1, [[a, 1], [b, 1]], -1)
-}
-
 // JS: a && !b, as relu(a - b).
 export function andNot(circuit: Circuit, a: Bit, b: Bit): Bit {
   if (a === false || b === true) return false
