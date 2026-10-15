@@ -10,7 +10,7 @@ bun test tests/handwiredos         # 127 tests in 8 files, about 9 s
 bun lab/runtime-cost/report.ts     # the program's current sizes and µs per evaluation in Bun, in the entry named "window manager"
 ```
 
-As of October 14, 2026, the program has 234 source cells, 4,646 live operations in 130 layers and 9,909 stored weights, and standalone Photos, the machine that photo-gallery.ts's tests run, has 98 cells and 2,026 live operations in 67 layers. [lab/status.md](../../lab/status.md#runtime-additions-since-september-14-2026) records the sizes and the times at each change.
+The program has 234 source cells, 4,646 live operations in 130 layers and 9,909 stored weights, and standalone Photos, the machine that photo-gallery.ts's tests run, has 98 cells and 2,026 live operations in 67 layers. `bun lab/runtime-cost/report.ts` prints the sizes as they are, and [lab/status.md](../../lab/status.md#runtime-additions-since-september-14-2026) records them and the times at each change.
 
 ## The windows
 
