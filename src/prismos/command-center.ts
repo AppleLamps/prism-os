@@ -144,7 +144,7 @@ export function mountCommandCenter(document: Document, window: Window, operator:
       if (answer.kind === 'progress') modelState = {kind: 'loading', loaded: answer.loaded, total: answer.total}
       else if (answer.kind === 'ready') modelState = {kind: 'ready'}
       else if (answer.kind === 'error' && answer.id === null) {
-        modelState = answer.message === 'no-webgpu' ? {kind: 'unsupported'} : {kind: 'failed', message: answer.message}
+        modelState = answer.message === 'no-webgpu' || answer.message === 'no-f16' ? {kind: 'unsupported'} : {kind: 'failed', message: answer.message}
       }
       if ((answer.kind === 'answer' || answer.kind === 'error') && answer.id !== null) {
         waiting.get(answer.id)?.(answer)
@@ -156,7 +156,10 @@ export function mountCommandCenter(document: Document, window: Window, operator:
       modelState = {kind: 'failed', message: 'the model\'s script didn\'t load'}
       render()
     }
-    const request: WorkerRequest = {kind: 'load', modelId, tools: [...toolDeclarations], developerPrompt}
+    // ?model-device=wasm runs the model on the CPU instead, slowly: a way to test the
+    // command center in a browser whose GPU can't run it.
+    const device = new URL(window.location.href).searchParams.get('model-device') === 'wasm' ? 'wasm' : 'webgpu'
+    const request: WorkerRequest = {kind: 'load', modelId, tools: [...toolDeclarations], developerPrompt, device}
     worker.postMessage(request)
   }
 
@@ -209,7 +212,7 @@ export function mountCommandCenter(document: Document, window: Window, operator:
         entry.reply = modelState.kind === 'loading'
           ? 'The model is still downloading. Try again in a moment, or use a short command like "dark mode".'
           : modelState.kind === 'unsupported'
-            ? 'That needs the model, and this browser has no WebGPU. Short commands like "minimize scope" still work.'
+            ? 'That needs the model, which this browser or GPU can\'t run. Short commands like "minimize scope" still work.'
             : 'That needs the model. Load it below; it downloads once and runs on this device.'
         entry.tone = 'error'
         return
@@ -327,7 +330,7 @@ export function mountCommandCenter(document: Document, window: Window, operator:
         statusText.textContent = 'The model runs on this device. Nothing you type leaves your browser.'
         break
       case 'unsupported':
-        statusText.textContent = 'This browser has no WebGPU, so only short commands work. Chrome or Edge can run the model.'
+        statusText.textContent = 'This browser or GPU can\'t run the model (it needs WebGPU with 16-bit floats), so only short commands work. Chrome or Edge on most Macs and recent PCs can.'
         break
       case 'failed':
         statusText.textContent = `The model didn't load: ${modelState.message}`

@@ -9,7 +9,7 @@
 // instead of an import.
 
 export type WorkerRequest =
-  | {kind: 'load', modelId: string, tools: unknown[], developerPrompt: string}
+  | {kind: 'load', modelId: string, tools: unknown[], developerPrompt: string, device: 'webgpu' | 'wasm'}
   | {kind: 'ask', id: number, text: string}
 
 export type WorkerAnswer =
@@ -44,10 +44,16 @@ let developerPrompt = ''
 let queue: Promise<void> = Promise.resolve()
 
 async function load(request: Extract<WorkerRequest, {kind: 'load'}>) {
-  const navigator = globalThis.navigator as unknown as {gpu?: {requestAdapter(): Promise<unknown>}}
-  if (navigator.gpu === undefined || await navigator.gpu.requestAdapter() === null) {
-    send({kind: 'error', id: null, message: 'no-webgpu'})
-    return
+  const {device} = request
+  // The model's activations are fp16, which a WebGPU device runs only with the
+  // shader-f16 feature, e.g. most Macs and recent Windows GPUs have it.
+  const navigator = globalThis.navigator as unknown as {gpu?: {requestAdapter(): Promise<{features: Set<string>} | null>}}
+  if (device === 'webgpu') {
+    const adapter = navigator.gpu === undefined ? null : await navigator.gpu.requestAdapter()
+    if (adapter === null || !adapter.features.has('shader-f16')) {
+      send({kind: 'error', id: null, message: adapter === null ? 'no-webgpu' : 'no-f16'})
+      return
+    }
   }
   // A variable, so the bundler leaves the CDN import to the browser.
   const url = transformersUrl
@@ -71,10 +77,10 @@ async function load(request: Extract<WorkerRequest, {kind: 'load'}>) {
     send({kind: 'progress', loaded, total})
   }
   tokenizer = await library.AutoTokenizer.from_pretrained(request.modelId, {progress_callback: progress})
-  model = await library.AutoModelForCausalLM.from_pretrained(request.modelId, {dtype: 'q4f16', device: 'webgpu', progress_callback: progress})
+  model = await library.AutoModelForCausalLM.from_pretrained(request.modelId, {dtype: 'q4f16', device, progress_callback: progress})
   // A first run compiles the GPU's shaders, so the visitor's first sentence doesn't pay for it.
   await generate('hi')
-  send({kind: 'ready', device: 'webgpu'})
+  send({kind: 'ready', device})
 }
 
 async function generate(text: string) {

@@ -54,6 +54,15 @@ Demo site routes are listed in `scripts/demo-site-pages.ts`. The landing page is
 | Wallpaper motion and palettes | `src/prismos/wallpaper.ts` |
 | Mount options (e.g. another arrangement) | `src/prismos/boot.ts`, `WindowManagerMountOptions` in `window-manager.ts` |
 
+## Command center
+
+Prism OS has a command center (⌘K): a fine-tuned FunctionGemma 270M in the browser that turns sentences into commands. `src/prismos/README.md` describes it. The rules for agents:
+
+- `src/prismos/commands.ts` is the single source of truth for commands. Change it, then run `bun scripts/prismos-dataset.ts` and the training job, or the model won't know the change.
+- The operator acts on the program only through its event methods (`pointerDown`, `pointerMove`, `pointerUp`, `photoNext`, `valueListKey`, ...), aimed at points read from the program's outputs. Never write source cells from outside the machine.
+- `mountWindowManager` returns `{machine, nextFrame}` for page code like the command center. Keep that the only way in.
+- `tests/prismos/operator.test.ts` drives the real program through every window, photo and Scope command. Run `bun test tests/prismos` after touching anything here.
+
 ## Design rules
 
 - No purple or violet anywhere in Prism: the palette is blues, teals, warm sand, and the macOS traffic-light colors.
