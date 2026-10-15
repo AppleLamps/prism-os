@@ -15,10 +15,10 @@ The above can be expressed as basic arithmetic:
 
 ```ts
 const a = 5
-// Math.max(0, x) is ReLU. For an integer a, isAbove4 is 1 if a > 4, and 0 otherwise
-const isAbove4 = Math.max(0, a - 4) - Math.max(0, a - 5)
-// Both branches compute, and isAbove4 picks one
-const result = isAbove4 * 10 + (1 - isAbove4) * 12
+// Math.max(0, x) is ReLU. For an integer a, above4 is 1 if a > 4, and 0 otherwise
+const above4 = Math.max(0, a - 4) - Math.max(0, a - 5)
+// Both branches compute, and above4 picks one
+const result = above4 * 10 + (1 - above4) * 12
 ```
 
 You can calculate that by hand and see that both arrive at the same result.
