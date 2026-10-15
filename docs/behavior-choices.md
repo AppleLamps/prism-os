@@ -66,7 +66,7 @@ previousContainerWidth = containerWidth.pos // stored with the rest of the state
 
 **Circuit version.** The copy is one more source cell with a declared range, whose next value is this evaluation's value, e.g. `nextSource[previousWidth] = drawnWidth`, written back with the other next-state values. The longest chain through the value becomes the longer of the part that computes the value and the part that reads it, instead of the two added together.
 
-**Cost.** No more operations, one more source cell, and one more copy per evaluation that writes back. The drawer is 144 operations in 17 layers instead of 30. In HandwiredOS's Photos, the thumbnails snap onto their destination, the middle of their strip at size 0, once no photo is open and no photo's zoom is under way. They read whether a zoom is under way from a state bit that the evaluation before stored, `underWay` in photo-gallery.ts, and the program is 130 layers deep, where it was 137 with the zoom springs' settle bits of the same evaluation, counted on October 14, 2026. The stored bit delays that snap by at most one settle check, at a time when no thumbnail is drawn.
+**Cost.** No more operations, one more source cell, and one more copy per evaluation that writes back. The drawer is 144 operations in 17 layers instead of 30.
 
 **Why choose it.** Fewer layers with no more operations. Fewer layers only save time on an executor that runs a layer's operations at the same time, while today's CPU executor pays per operation.
 

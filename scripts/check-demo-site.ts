@@ -7,7 +7,7 @@
 // file that fails to load, or requests anything outside the site, and when a link on the page to another page of the
 // site doesn't resolve. It also waits for what each demo shows once its program has run, and prints it, e.g.
 // HandwiredOS's Monitor window with the program's sizes. The index's first card states two of those sizes, e.g.
-// "9,882 weights", and the check fails when a number on the card isn't the number that the demo's page reports.
+// "9,909 weights", and the check fails when a number on the card isn't the number that the demo's page reports.
 // The server listens on a free port unless --port names one, and Chrome picks its debugging port unless
 // --debugging-port names one. CHROME_PATH overrides the Chrome binary, and CHROME_PROFILE_DIR the profile folder,
 // which defaults to a new folder in the system's temporary folder. --screenshots saves a PNG of each page.
@@ -35,8 +35,8 @@ const expectations: Record<string, {ready: string, report: string}> = {
   'os/': {
     // HandwiredOS reports its program in its Monitor window, which the page fills from the compiled program at
     // mount. Each item of the window's sidebar counts a location's rows, and a pointer that rests on the item reads
-    // the count with what a row is, e.g. "4,639 operations. What the program computes: ...". The window's footer
-    // counts the rest, e.g. "130 layers", "9,882 weights". The report is the sidebar's counts, then the footer's.
+    // the count with what a row is, e.g. "4,646 operations. What the program computes: ...". The window's footer
+    // counts the rest, e.g. "130 layers", "9,909 weights". The report is the sidebar's counts, then the footer's.
     ready: `/\\d/.test(document.querySelector('.monitor-counts')?.textContent ?? '')`,
     report: `[
       ...[...document.querySelectorAll('.monitor-location')].map(item => item.title.split('.')[0]),
@@ -221,7 +221,7 @@ try {
   // Every page a link points to is requested once, however many pages link to it.
   const linkStatus = new Map<string, number>()
   // The counts on the index's cards, each in an element with data-count inside the card's link, e.g.
-  // <span data-count="weights">9,882</span> in the link to os/. And each page's printed report.
+  // <span data-count="weights">9,909</span> in the link to os/. And each page's printed report.
   let indexCounts: {path: string, name: string, value: number}[] = []
   const reports = new Map<string, string>()
   for (const page of sitePages) {
@@ -292,7 +292,7 @@ try {
     if (pageProblems.length > 0) failed = true
   }
 
-  // A count on the index against the first "<number> <name>" of the demo's report, e.g. "9,882 weights". One
+  // A count on the index against the first "<number> <name>" of the demo's report, e.g. "9,909 weights". One
   // word may stand between the two, e.g. "244 trained weights".
   if (indexCounts.length > 0) console.log(`\nThe index's counts, each the number that the demo's page reports:`)
   for (const count of indexCounts) {
