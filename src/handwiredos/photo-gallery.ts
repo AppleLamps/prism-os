@@ -114,6 +114,8 @@ export const gridFadeRate = 1 + 2 ** -10
 export const photoCells = {
   // Spacing and control-size constants live in the tens of pixels; 1024 is
   // generous.
+  available: list(itemCount, () => inputBit(1)),
+  toolbarHeight: input([0, 64]),
   gap: constant(18, [0, 1024]),
   mainInset: constant(92, [0, 1024]),
   thumbnailHeight: constant(82, [0, 1024]),
@@ -339,7 +341,9 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   for (const entry of host.springMatrix) circuit.assumeRange(entry, -matrixBound, matrixBound)
   circuit.assumeRange(host.settleCheck, 0, 1)
   circuit.assumeRange(host.snap, 0, 1)
-  const {viewportWidth, viewportHeight, click, present, interactive, unit} = host
+  const {viewportWidth, present, interactive, unit} = host
+  const viewportHeight = emitRelu(circuit, circuit.affine([[host.viewportHeight, 1], [cells.toolbarHeight, -1]]))
+  const click = {x: host.click.x, y: circuit.affine([[host.click.y, 1], [cells.toolbarHeight, -1]])}
   const events = photoEvents(cells)
   const zero = circuit.constant(0)
   // The grid: 4 columns and 3 rows of photos, with the gap around and between them.
@@ -593,15 +597,22 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   ])
   const nextFocus: Wire[] = []
   for (let item = 0; item < itemCount; item++) {
-    const previousShift = cells.focus[(item + 1) % itemCount]!
-    const nextShift = cells.focus[(item + itemCount - 1) % itemCount]!
-    nextFocus.push(circuit.affine([
+    const last = item === itemCount - 1 ? cells.available[item]! : circuit.affine([[cells.available[item]!, 1], [cells.available[item + 1]!, -1]])
+    const previousShift = circuit.affine([
+      [item < itemCount - 1 ? cells.focus[item + 1]! : zero, 1],
+      [emitMultiply(circuit, last, cells.focus[0]!), 1],
+    ])
+    const nextShift = item === 0 ? circuit.affine(cells.focus.map((focus, index) => {
+      const isLast = index === itemCount - 1 ? cells.available[index]! : circuit.affine([[cells.available[index]!, 1], [cells.available[index + 1]!, -1]])
+      return [emitMultiply(circuit, focus, isLast), 1] as [Wire, number]
+    })) : cells.focus[item - 1]!
+    nextFocus.push(emitMultiply(circuit, cells.available[item]!, circuit.affine([
       [emitMultiply(circuit, currentFocusGate, cells.focus[item]!), 1],
       [emitMultiply(circuit, clickGridGate, gridHit[item]!), 1],
       [thumbnailClicks[item]!, 1],
       [emitMultiply(circuit, previousFocusGate, previousShift), 1],
       [emitMultiply(circuit, nextFocusGate, nextShift), 1],
-    ]))
+    ])))
   }
 
   const nextFocusMass = circuit.affine(nextFocus.map(wire => [wire, 1]))
@@ -807,10 +818,10 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
     const fadedByReturning = circuit.reglu([], 1, [[returningShare, 1], [zoomAsOpenPhoto, -1], [closedLast, -1]], 0)
     photos.push({
       left: between(gridLeft[column]!, main.left),
-      top: between(gridTop[row]!, main.top),
+      top: circuit.affine([[between(gridTop[row]!, main.top), 1], [cells.toolbarHeight, 1]]),
       width: between(gridWidth, main.width),
       height: between(gridHeight, main.height),
-      opacity: circuit.reglu([[present, 1]], 0, [[fadedByOpen, -gridFadeRate], [fadedByReturning, -gridFadeRate]], 1),
+      opacity: emitMultiply(circuit, cells.available[item]!, circuit.reglu([[present, 1]], 0, [[fadedByOpen, -gridFadeRate], [fadedByReturning, -gridFadeRate]], 1)),
       zoom,
       stack: circuit.affine([
         [focused, photoStack.open],
@@ -901,7 +912,10 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
     // the photo that opens and out with the photo that returns. With the focus bit, it
     // was gone in the first frame of a close, on a thumbnail that was still at its
     // full size.
-    thumbnailProjections.push({...projectThumbnail({centerX, scale}), focused: photos[item]!.zoom})
+    const projection = projectThumbnail({centerX, scale})
+    thumbnailProjections.push({...projection,
+      top: circuit.affine([[projection.top, 1], [cells.toolbarHeight, 1]]),
+      opacity: emitMultiply(circuit, projection.opacity, cells.available[item]!), focused: photos[item]!.zoom})
     activityTerms.push([thumbnail.active, 1])
   }
   const animationActive = emitClampZeroOne(
@@ -912,14 +926,14 @@ export function buildPhotos(circuit: Circuit, table: SourceTable, cells: PhotoCe
   table.next(cells.focus, nextFocus)
   const previousControlOutput = [
     previousControl.left,
-    previousControl.top,
+    circuit.affine([[previousControl.top, 1], [cells.toolbarHeight, 1]]),
     previousControl.width,
     previousControl.height,
     lightboxPresent,
   ]
   const nextControlOutput = [
     nextControl.left,
-    nextControl.top,
+    circuit.affine([[nextControl.top, 1], [cells.toolbarHeight, 1]]),
     nextControl.width,
     nextControl.height,
     lightboxPresent,
@@ -1258,6 +1272,7 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
   invariant(nextControl !== null, 'next control is missing')
   const photoElements = Array<HTMLElement | null>(itemCount).fill(null)
   const thumbnailElements = Array<HTMLElement | null>(itemCount).fill(null)
+  let items: readonly {name: string, url: string}[] | null = null
 
   function projectGeometry(
     element: HTMLElement,
@@ -1278,8 +1293,13 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
       `${thumbnail ? 'photos-thumbnail' : 'photos-photo'} image-${item}`
     if (!thumbnail) {
       const title = document.createElement('span')
-      title.textContent = photoNames[item]!
+      title.textContent = items?.[item]?.name ?? photoNames[item]!
       element.appendChild(title)
+    }
+    if (items?.[item]) {
+      element.classList.remove(`image-${item}`)
+      element.style.backgroundImage = `url("${items[item].url}")`
+      element.setAttribute('aria-label', items[item].name)
     }
     root.appendChild(element)
     return element
@@ -1320,6 +1340,12 @@ export function createPhotoGalleryRenderer(document: Document, root: HTMLElement
   }
 
   return {
+    setItems(next: readonly {name: string, url: string}[] | null) {
+      items = next
+      for (const elements of [photoElements, thumbnailElements]) for (let index = 0; index < elements.length; index++) {
+        elements[index]?.remove(); elements[index] = null
+      }
+    },
     render(values: Float32Array, output: PhotoOutputs) {
       backdrop.style.opacity = `${values[output.backdropOpacity]}`
       for (let item = 0; item < itemCount; item++) {

@@ -14,6 +14,7 @@
 // under the dock, which prism-os.css lifts to 29. A press on a program window or its dock
 // tile sends every panel behind the windows, to 1 and up, and a press on a panel brings
 // them back in front.
+import type {Cabinet} from './cabinet.ts'
 import {type AppContext, type AppInstance, type PanelApp, panelApps} from './apps.ts'
 import {type CommandCenter, modelEnabled, previewSentence} from './command-center.ts'
 import type {PanelAppName} from './commands.ts'
@@ -31,7 +32,7 @@ const programApps = [
 ] as const
 
 // Prism's tiles on each side of the program's three, so the dock stays centered.
-const dockLeft = ['calculator', 'clock'] as const
+const dockLeft = ['cabinet', 'calculator', 'clock'] as const
 const dockRight = ['terminal', 'settings'] as const
 
 // The program's geometry, see windowManagerCells in window-manager.ts.
@@ -68,7 +69,7 @@ function isShellTarget(target: EventTarget | null): boolean {
 
 // Spotlight runs sentences with `commands`, see command-center.ts. The returned controls
 // let the operator (operator.ts) open, close, move and zoom Prism's own apps.
-export function startShell(store: SettingsStore, commands: CommandCenter | null = null): PanelControls | null {
+export function startShell(store: SettingsStore, commands: CommandCenter | null = null, cabinet?: Cabinet): PanelControls | null {
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const systemBar = document.querySelector<HTMLElement>('#system-bar')
   const dock = document.querySelector<HTMLElement>('#dock')
@@ -130,6 +131,9 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   let panelsInFront = true
 
   const restack = () => {
+    // Keep the shell as one stacking group when resizing glass-backed panels.
+    // Otherwise compositor hit testing can leave a front panel below program windows.
+    layer.style.zIndex = panelsInFront ? '20' : '1'
     order.forEach((panel, index) => {
       panel.element.style.zIndex = `${(panelsInFront ? 20 : 1) + index}`
       panel.element.style.setProperty('--focused', panelsInFront && index === order.length - 1 ? '1' : '0')
@@ -140,6 +144,8 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   }
 
   function sendPanelsBehind() {
+    const active = document.activeElement
+    if (active instanceof HTMLElement && active.closest('.prism-panel') !== null) active.blur()
     if (!panelsInFront) return
     panelsInFront = false
     restack()
@@ -161,6 +167,10 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     panel.height = Math.min(panel.height, Math.max(titleHeight + 120, height - systemBarHeight - dockHeight - 16))
     panel.x = Math.min(width - 96, Math.max(96 - panel.width, panel.x))
     panel.y = Math.min(height - dockHeight - titleHeight, Math.max(systemBarHeight + 8, panel.y))
+    if (panel.app.id === 'cabinet') {
+      panel.x = Math.max(8, Math.min(width - panel.width - 8, panel.x))
+      panel.y = Math.max(systemBarHeight + 8, Math.min(height - dockHeight - panel.height - 8, panel.y))
+    }
   }
 
   const focusPanel = (panel: Panel) => {
@@ -348,7 +358,7 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     else openPanel(id)
   }
 
-  const context: AppContext = {settings: store, apps, open, close: closePanel, programFacts, startedAt}
+  const context: AppContext = {cabinet, settings: store, apps, open, close: closePanel, programFacts, startedAt}
 
   // The dock's extra tiles. They sit beside the program's tiles, whose places the program
   // computes; see .prism-tile in prism-os.css for theirs.
@@ -566,6 +576,8 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   )
 
   function closeOverlays() {
+    const active = document.activeElement
+    if (active instanceof HTMLElement && active.closest('.prism-scrim') !== null) active.blur()
     for (const overlay of [spotlight, controlCenter]) {
       overlay.open = false
       overlay.scrim.hidden = true

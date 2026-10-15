@@ -1,3 +1,4 @@
+import {itemCount as photoItemCount} from './photo-gallery.ts'
 import {
   type Circuit,
   type Wire,
@@ -1440,6 +1441,7 @@ type WindowManagerEvent = {
     | 'photo previous'
     | 'photo next'
     | 'photo close'
+    | 'photo page'
     | 'value list key'
   // Shares the time origin of requestAnimationFrame timestamps, e.g. event.timeStamp.
   timeStamp: number
@@ -1755,6 +1757,25 @@ export function createWindowManagerMachine(options: {writeBack?: WriteBack} = {}
     // ends a drag or a resize at its point, and it acts on no control.
     pointerCancel(x: number, y: number, timeStamp?: number) {
       receivePointer('pointer cancel', cells.up, x, y, timeStamp)
+    },
+    photoPage(count: number, selected = -1, toolbarHeight = 0, timeStamp?: number) {
+      invariant(Number.isInteger(count) && count >= 0 && count <= photoItemCount, 'invalid photo page size')
+      invariant(Number.isInteger(selected) && selected >= -1 && selected < count, 'invalid photo page selection')
+      invariant(Number.isFinite(toolbarHeight) && toolbarHeight >= 0 && toolbarHeight <= 64, 'invalid photo toolbar height')
+      queue('photo page', timeStamp, table => {
+        for (const field of photoEvents(cells.photos)) table[field] = 0
+        table[cells.photos.toolbarHeight] = toolbarHeight
+        for (let index = 0; index < photoItemCount; index++) {
+          table[cells.photos.available[index]!] = index < count ? 1 : 0
+          table[cells.photos.focus[index]!] = index === selected ? 1 : 0
+          table[cells.photos.zoom.closedLast[index]!] = 0
+          for (const field of Object.values(cells.photos.thumbnails[index]!)) table[field] = 0
+        }
+        table[cells.photos.zoom.openSpring] = 0
+        for (const spring of cells.photos.zoom.springs) {
+          table[spring.displacement] = 0; table[spring.velocity] = 0
+        }
+      })
     },
     photoPrevious(timeStamp?: number) {
       receivePhotoEvent('photo previous', cells.photos.previous, timeStamp)
@@ -2223,6 +2244,7 @@ export function mountWindowManager(document: Document, window: Window, options: 
   // frames that apply them.
   return {
     machine,
+    setPhotoItems: (items: Parameters<typeof photos.setItems>[0]) => photos.setItems(items),
     // Requests a frame and resolves after it ran.
     nextFrame() {
       return new Promise<void>(resolve => {

@@ -2,6 +2,287 @@
   {
     "type": "function",
     "function": {
+      "name": "list_files",
+      "description": "List files in a Cabinet folder",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "open_file",
+      "description": "Open a file or folder by Cabinet path",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "create_folder",
+      "description": "Create a Cabinet folder",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "create_document",
+      "description": "Create an empty text document",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "save_note_as",
+      "description": "Save the current Inkwell draft to a new file",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "duplicate_file",
+      "description": "Duplicate a file or folder",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "trash_file",
+      "description": "Move a file or folder to recoverable Trash",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "restore_file",
+      "description": "Restore an item from Trash",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "download_file",
+      "description": "Download a Cabinet file",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "delete_file",
+      "description": "Permanently delete an item from Trash",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "search_files",
+      "description": "Search all live files by name",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "query": {
+            "type": "STRING",
+            "description": "Part of the file name"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "rename_file",
+      "description": "Rename a file or folder",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          },
+          "new_name": {
+            "type": "STRING",
+            "description": "New item name"
+          }
+        },
+        "required": [
+          "path",
+          "new_name"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "move_file",
+      "description": "Move an item to a folder",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          },
+          "destination": {
+            "type": "STRING",
+            "description": "Destination folder path"
+          }
+        },
+        "required": [
+          "path",
+          "destination"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "empty_trash",
+      "description": "Permanently delete everything in Trash",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "import_files",
+      "description": "Open Cabinet so the user can press Import",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "open_app",
       "description": "Open, show or bring an app to the front",
       "parameters": {
@@ -14,6 +295,7 @@
               "scope",
               "inkwell",
               "chroma",
+              "cabinet",
               "calculator",
               "clock",
               "terminal",
@@ -43,6 +325,7 @@
               "scope",
               "inkwell",
               "chroma",
+              "cabinet",
               "calculator",
               "clock",
               "terminal",
@@ -72,6 +355,7 @@
               "scope",
               "inkwell",
               "chroma",
+              "cabinet",
               "calculator",
               "clock",
               "terminal",
@@ -101,6 +385,7 @@
               "scope",
               "inkwell",
               "chroma",
+              "cabinet",
               "calculator",
               "clock",
               "terminal",
@@ -130,6 +415,7 @@
               "scope",
               "inkwell",
               "chroma",
+              "cabinet",
               "calculator",
               "clock",
               "terminal",
@@ -159,6 +445,7 @@
               "scope",
               "inkwell",
               "chroma",
+              "cabinet",
               "calculator",
               "clock",
               "terminal",

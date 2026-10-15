@@ -23,6 +23,7 @@ export function icon(paths: string, className = 'prism-icon'): HTMLSpanElement {
 }
 
 export const icons = {
+  cabinet: '<path d="M3 7h7l2 2h9v10H3zM3 7V5h7l2 2h9v2"/>',
   search: '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>',
   controls: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
   calculator: '<rect x="5" y="3.5" width="14" height="17" rx="3"/><path d="M8.5 7.5h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01" stroke-width="2"/>',

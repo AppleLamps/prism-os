@@ -1,3 +1,4 @@
+import {fileCommandNames, validateFileCommand, type FileCommand} from './file-commands.ts'
 // The command center's vocabulary: every action Spotlight can take in Prism OS when a
 // sentence is typed into it, as function declarations for FunctionGemma, and the
 // validator that turns a call the model (or the quick parser) produced into a typed
@@ -14,7 +15,7 @@ import {type AccentName, type Appearance, type SceneName, accents, scenes} from 
 
 // The handwired program's three windows, and Prism's own apps in glass panels.
 export const programApps = ['scope', 'inkwell', 'chroma'] as const
-export const panelApps = ['calculator', 'clock', 'terminal', 'settings', 'about'] as const
+export const panelApps = ['cabinet', 'calculator', 'clock', 'terminal', 'settings', 'about'] as const
 export const apps = [...programApps, ...panelApps] as const
 export type ProgramApp = (typeof programApps)[number]
 export type PanelAppName = (typeof panelApps)[number]
@@ -25,6 +26,7 @@ export const isProgramApp = (app: App): app is ProgramApp => (programApps as rea
 // (Photos).
 export const appWindowIndex: Record<ProgramApp, number> = {scope: 0, inkwell: 1, chroma: 2}
 export const appTitle: Record<App, string> = {
+  cabinet: 'Cabinet',
   scope: 'Scope',
   inkwell: 'Inkwell',
   chroma: 'Chroma',
@@ -85,7 +87,7 @@ export const cities: Readonly<Record<string, string>> = {
   'auckland': 'Pacific/Auckland',
 }
 
-export type Command =
+export type Command = FileCommand
   | {name: 'open_app', app: App}
   | {name: 'minimize_app', app: App}
   | {name: 'maximize_app', app: App}
@@ -96,7 +98,7 @@ export type Command =
   | {name: 'side_by_side', left: ProgramApp, right: ProgramApp}
   | {name: 'show_desktop'}
   | {name: 'reset_layout'}
-  | {name: 'open_photo', photo: number}
+  | {name: 'open_photo', photo: number, bundled?: boolean}
   | {name: 'next_photo'}
   | {name: 'previous_photo'}
   | {name: 'close_photo'}
@@ -139,6 +141,21 @@ function tool(name: CommandName, description: string, properties: Record<string,
 // Short descriptions on purpose: every request carries all of them, and each token of the
 // prompt is work for a 270M model in the browser.
 export const toolDeclarations: readonly ToolDeclaration[] = [
+  tool('list_files', 'List files in a Cabinet folder', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
+  tool('open_file', 'Open a file or folder by Cabinet path', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
+  tool('create_folder', 'Create a Cabinet folder', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
+  tool('create_document', 'Create an empty text document', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
+  tool('save_note_as', 'Save the current Inkwell draft to a new file', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
+  tool('duplicate_file', 'Duplicate a file or folder', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
+  tool('trash_file', 'Move a file or folder to recoverable Trash', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
+  tool('restore_file', 'Restore an item from Trash', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
+  tool('download_file', 'Download a Cabinet file', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
+  tool('delete_file', 'Permanently delete an item from Trash', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
+  tool('search_files', 'Search all live files by name', {query: {type: 'STRING', description: 'Part of the file name'}}),
+  tool('rename_file', 'Rename a file or folder', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}, new_name: {type: 'STRING', description: 'New item name'}}),
+  tool('move_file', 'Move an item to a folder', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}, destination: {type: 'STRING', description: 'Destination folder path'}}),
+  tool('empty_trash', 'Permanently delete everything in Trash', {}),
+  tool('import_files', 'Open Cabinet so the user can press Import', {}),
   tool('open_app', 'Open, show or bring an app to the front', {app: appParameter}),
   tool('minimize_app', 'Minimize an app into the dock', {app: appParameter}),
   tool('maximize_app', 'Maximize an app to fill the screen', {app: appParameter}),
@@ -211,6 +228,7 @@ export const toolDeclarations: readonly ToolDeclaration[] = [
 
 // The words people use for each app, besides its name. Lowercase.
 export const appAliases: Record<App, readonly string[]> = {
+  cabinet: ['cabinet', 'files', 'file manager', 'the files', 'the file manager'],
   scope: ['scope', 'monitor', 'inspector', 'the inspector', 'circuit inspector'],
   inkwell: ['inkwell', 'notes', 'note', 'the note', 'notepad', 'ink well'],
   chroma: ['chroma', 'photos', 'photo', 'gallery', 'pictures', 'the gallery', 'images'],
@@ -284,6 +302,9 @@ export function validateCall(name: string, args: Readonly<Record<string, unknown
   const fail = (reason: string): Validation => ({ok: false, reason})
   const done = (command: Command): Validation => ({ok: true, command})
   const unknownApp = (key = 'app') => fail(`I don't know an app called "${String(args[key])}".`)
+  if ((fileCommandNames as readonly string[]).includes(name)) {
+    try { return done(validateFileCommand(name, args)) } catch (error) { return fail(error instanceof Error ? error.message : String(error)) }
+  }
   switch (name) {
     case 'open_app':
     case 'minimize_app':
@@ -324,8 +345,17 @@ export function validateCall(name: string, args: Readonly<Record<string, unknown
     case 'get_stats':
       return done({name})
     case 'open_photo': {
-      const photo = parsePhoto(args['photo'])
-      return photo === null ? fail(`Chroma has 12 photos: ${photoNames.join(', ')}.`) : done({name, photo})
+      const value = args['photo']
+      const key = typeof value === 'string' ? value.trim().toLowerCase().replace(/^(the\s+)?(photo|picture|image|pic)\s*/u, '') : ''
+      const bundled = key.length >= 4 && photoNames.some(title => title.toLowerCase().includes(key))
+      const parsed = parsePhoto(value)
+      const number = typeof value === 'number' ? value : /^\d+$/u.test(key) ? Number(key) : 0
+      const photo = parsed ?? (Number.isSafeInteger(number) && number >= 1 ? number - 1 : null)
+      if (photo !== null) return done(bundled ? {name, photo, bundled: true} : {name, photo})
+      if (typeof value === 'string' && /\.[a-z0-9]+$/iu.test(value)) {
+        try { return done(validateFileCommand('open_file', {path: value})) } catch { return fail('Provide an image path in Cabinet.') }
+      }
+      return fail(`Choose an image in Cabinet or a bundled photo: ${photoNames.join(', ')}.`)
     }
     case 'slideshow': {
       const action = oneOf(slideshowActions, args['action'])
@@ -392,6 +422,8 @@ export function validateCall(name: string, args: Readonly<Record<string, unknown
 // Commands that change what's on screen in ways that are hard to take back ask first.
 export function needsConfirmation(command: Command): string | null {
   switch (command.name) {
+    case 'delete_file': return `Permanently delete ${command.path}?`
+    case 'empty_trash': return 'Permanently delete everything in Trash?'
     case 'clear_note':
       return 'Erase everything in the note?'
     case 'write_note':

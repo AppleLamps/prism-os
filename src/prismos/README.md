@@ -9,9 +9,9 @@
 | Look | Warm paper desk | Liquid glass windows, light and dark schemes, dune wallpaper, system-blue accent, traffic-light buttons, an app-icon dock |
 | Layout | Magazine-style tiling | Gentle **cascade** (each window offset down-right) |
 | Program windows | Monitor, Notes, Photos | **Scope** (circuit inspector), **Inkwell** (notes), **Chroma** (gallery) |
-| Prism apps | None | **Calculator**, **Clock** (world clocks, stopwatch), **Terminal**, **Settings**, **About**, in glass panels beside the program |
+| Prism apps | None | **Cabinet** (files), **Calculator**, **Clock** (world clocks, stopwatch), **Terminal**, **Settings**, **About**, in glass panels beside the program |
 | System | Links in a bar | Menu bar clock, **Spotlight** (⌘K or Ctrl+K), **Control Center**, saved preferences: appearance, accent, four wallpapers, motion, weight arcs |
-| Program | 9,909 weights, 130 layers | Identical — only host chrome and arrangement change |
+| Program | 9,909 weights, 130 layers | Shared circuit, with runtime gallery pages; 10,163 weights and 132 layers |
 
 ## How the shell and the program share the page
 
@@ -53,6 +53,55 @@ hf jobs uv run --flavor a10g-small --secrets HF_TOKEN --timeout 2h \
 ```
 
 The data has 8,000 training sentences and about 700 eval sentences whose phrasings never appear in training, so the eval score measures sentences shaped unlike anything the model saw. A first run on an earlier command list went from 22.1% (base FunctionGemma) to 78.4% on those held-out sentences, before the phrasings were widened. `train.py` fine-tunes the whole model, scores it, uploads the PyTorch weights, builds the browser file with ONNX Runtime GenAI's builder (4-bit weights in blocks of 32, fp16 activations), cuts the vocabulary projection to the last position (`last_token_logits.py`, which avoids about 2 GB of logits per prompt), checks the ONNX file's answers, and publishes to the Hub, privately unless `--public` is passed. The page can only load a public repo. `--checkpoint <repo> --skip-training` exports saved weights again without training.
+
+## Cabinet
+
+Cabinet stores files in this browser using IndexedDB. Open it from the dock, Spotlight
+("open files"), or Terminal ("open cabinet"). Import individual files up to 50 MiB,
+organize folders, search all live files, rename, move, duplicate, download, and use
+recoverable Trash. Permanent deletion asks for confirmation. Browser storage can be
+cleared or evicted; download copies of anything you want to keep. There is no cloud sync,
+disk-folder access, folder import/export, or archive extraction.
+
+UTF-8 text files up to 1 MiB open in Inkwell. It saves after 500 ms of inactivity and
+flushes before switching documents or closing. Save As makes a new file. Failed saves
+retain the draft; Retry, Save As, Download, or Discard resolve it. Revisions prevent a
+second tab from silently replacing newer content. The old `prism-os.note` value is kept
+as a migration backup; migration creates `Documents/Notes.txt` only once.
+
+PNG, JPEG, WebP, GIF, and AVIF open in Chroma as a name-sorted collection of images from
+the same folder. The circuit still lays out 12 slots; queued page-load events set which
+slots exist and reset animation state. Arrow keys, controls, and slideshow cross page
+boundaries. The toolbar switches back to the bundled gallery. HTML and SVG are download
+only. Previews release blob URLs when no longer needed.
+
+Spotlight examples: `list files in /Documents`, `search files for Plan`,
+`create document /Documents/Plan.txt`, `open file /Documents/Plan.txt`,
+`save my note as /Documents/Copy.txt`, `rename file /Documents/Copy.txt to Draft.txt`,
+`move file /Documents/Draft.txt to /`, `duplicate file /Documents/Plan.txt`,
+`trash file /Documents/Plan.txt`, `restore file /Documents/Plan.txt`,
+`download file /Documents/Plan.txt`, `delete file /Documents/Plan.txt`, `empty trash`,
+and `import files`. Paths are relative to Cabinet's current folder unless they start
+with `/`. An ambiguous name returns paths to choose from. Import requires pressing
+Cabinet's Import button. Named bundled photos switch collections; image numbers use
+the active collection.
+
+Storage, migration, conflict, document, command, and numeric gallery tests run with
+`bun test tests/prismos`. The browser acceptance fixture uses a dedicated Playwright CLI
+session and resets only that session's Cabinet database. With `bun start` running:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli -s=cabinet open http://127.0.0.1:3000/ --browser msedge
+npx --yes --package @playwright/cli playwright-cli -s=cabinet run-code --filename tests/prismos/cabinet.pwcode
+npx --yes --package @playwright/cli playwright-cli -s=cabinet run-code --filename tests/prismos/cabinet-failures.pwcode
+```
+
+The fixtures check import, autosave, reload, duplicate, rename, Trash and restore,
+binary download, 25-image pagination by keyboard and pointer, slideshow, commands,
+desktop/dark/narrow layouts, conflicting revisions, Save As recovery, transaction
+aborts, and broken images. Narrow layouts have a Preview toggle beside Grid / List.
+Screenshots are written under `output/playwright/`. For the production smoke test on
+Windows, set `CHROME_PATH` to a Chrome or Edge executable before `bun run site:check`.
 
 ## Run it
 

@@ -3,3 +3,7 @@ node_modules/
 .DS_Store
 # The demo site that `bun run site:build` builds.
 site/
+
+# Local browser acceptance artifacts.
+.playwright-cli/
+output/playwright/

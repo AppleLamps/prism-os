@@ -11,7 +11,7 @@
 //   bun scripts/prismos-dataset.ts
 //
 // writes src/prismos/training/{train.jsonl,eval.jsonl,tools.json}.
-import {mkdirSync, writeFileSync} from 'node:fs'
+import {existsSync, readFileSync, mkdirSync, writeFileSync} from 'node:fs'
 import {resolve} from 'node:path'
 import {photoNames} from '../src/handwiredos/photo-gallery.ts'
 import {type App, type ProgramApp, accentNames, apps, cities, programApps, sceneNames, toolDeclarations, validateCall} from '../src/prismos/commands.ts'
@@ -43,6 +43,7 @@ function phrasings<T>(list: readonly T[], split: Split): readonly T[] {
 }
 
 const appForms: Record<App, readonly string[]> = {
+  cabinet: ['cabinet', 'Cabinet', 'files', 'file manager'],
   scope: ['Scope', 'scope', 'the monitor', 'Monitor', 'the inspector', 'the scope window', 'scope app'],
   inkwell: ['Inkwell', 'inkwell', 'notes', 'the notes app', 'my notes', 'the note', 'Notes', 'the notepad'],
   chroma: ['Chroma', 'chroma', 'photos', 'the gallery', 'Photos', 'the photo app', 'pictures', 'the photos window'],
@@ -236,6 +237,29 @@ function dress(sentence: string) {
 
 // One command row of each kind, phrased from the split's templates.
 const commandMakers: Record<string, (split: Split) => Row> = {
+  cabinet(split) {
+    const name = pick(['list_files', 'open_file', 'create_folder', 'create_document', 'save_note_as', 'duplicate_file', 'trash_file', 'restore_file', 'download_file', 'delete_file', 'search_files', 'rename_file', 'move_file', 'empty_trash', 'import_files'] as const)
+    const path = pick(['/Documents/Notes.txt', '/Documents/Plan.txt', '/Pictures/Beach.png', '/Projects/Ideas.txt'])
+    const forms: Record<string, {args: Record<string, string>, train: string, eval: string}> = {
+      list_files: {args: {path: '/Documents'}, train: 'list files in /Documents', eval: 'show the contents of /Documents'},
+      open_file: {args: {path}, train: `open file ${path}`, eval: `bring up the Cabinet file ${path}`},
+      create_folder: {args: {path: '/Documents/Projects'}, train: 'create folder /Documents/Projects', eval: 'make a new folder called Projects in Documents'},
+      create_document: {args: {path: '/Documents/Idea.txt'}, train: 'create document /Documents/Idea.txt', eval: 'make an empty text file at /Documents/Idea.txt'},
+      save_note_as: {args: {path: '/Documents/Copy.txt'}, train: 'save my note as /Documents/Copy.txt', eval: 'keep a copy of my Inkwell draft in /Documents/Copy.txt'},
+      duplicate_file: {args: {path}, train: `duplicate file ${path}`, eval: `make another copy of ${path}`},
+      trash_file: {args: {path}, train: `trash file ${path}`, eval: `put ${path} in recoverable Trash`},
+      restore_file: {args: {path}, train: `restore file ${path}`, eval: `recover ${path} from Trash`},
+      download_file: {args: {path}, train: `download file ${path}`, eval: `export ${path} to my device`},
+      delete_file: {args: {path}, train: `delete file ${path}`, eval: `permanently remove ${path} from Trash`},
+      search_files: {args: {query: 'Plan'}, train: 'search files for Plan', eval: 'find Cabinet items containing Plan in their names'},
+      rename_file: {args: {path, new_name: 'Updated.txt'}, train: `rename file ${path} to Updated.txt`, eval: `change the name of ${path} to Updated.txt`},
+      move_file: {args: {path, destination: '/Documents'}, train: `move file ${path} to /Documents`, eval: `relocate ${path} into the Documents folder`},
+      empty_trash: {args: {}, train: 'empty the trash', eval: 'erase all items in Trash permanently'},
+      import_files: {args: {}, train: 'import files', eval: 'I want to add files from my device to Cabinet'},
+    }
+    const form = forms[name]!
+    return {user: form[split], calls: single(name, form.args)}
+  },
   app_command(split) {
     const name = pick(['open_app', 'minimize_app', 'maximize_app', 'restore_app', 'close_app'] as const)
     const app = pick(name === 'maximize_app' || name === 'restore_app' ? zoomable : apps)
@@ -440,13 +464,18 @@ function toMessages(row: Row) {
 if (import.meta.main) {
   const directory = resolve(import.meta.dir, '../src/prismos/training')
   mkdirSync(directory, {recursive: true})
+  const write = (name: string, text: string) => {
+    const path = resolve(directory, name)
+    const crlf = existsSync(path) && readFileSync(path, 'utf8').includes('\r\n')
+    writeFileSync(path, crlf ? text.replaceAll('\n', '\r\n') : text)
+  }
   const train = generate('train', 8000)
   const evaluation = generate('eval', 700)
   const trainUsers = new Set(train.map(row => row.user.toLowerCase()))
   const heldOut = evaluation.filter(row => !trainUsers.has(row.user.toLowerCase()))
-  writeFileSync(resolve(directory, 'train.jsonl'), train.map(row => JSON.stringify(toMessages(row))).join('\n') + '\n')
-  writeFileSync(resolve(directory, 'eval.jsonl'), heldOut.map(row => JSON.stringify(toMessages(row))).join('\n') + '\n')
-  writeFileSync(resolve(directory, 'tools.json'), JSON.stringify(toolDeclarations, null, 2) + '\n')
+  write('train.jsonl', train.map(row => JSON.stringify(toMessages(row))).join('\n') + '\n')
+  write('eval.jsonl', heldOut.map(row => JSON.stringify(toMessages(row))).join('\n') + '\n')
+  write('tools.json', JSON.stringify(toolDeclarations, null, 2) + '\n')
   const count = (rows: Row[], test: (row: Row) => boolean) => rows.filter(test).length
   console.log(`train: ${train.length} rows, ${count(train, row => (row.calls?.length ?? 0) > 1)} with two calls, ${count(train, row => row.reply !== undefined)} replies`)
   console.log(`eval: ${heldOut.length} rows (${evaluation.length - heldOut.length} dropped as seen in train), ${count(heldOut, row => (row.calls?.length ?? 0) > 1)} with two calls, ${count(heldOut, row => row.reply !== undefined)} replies`)

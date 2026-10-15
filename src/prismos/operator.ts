@@ -1,3 +1,6 @@
+import {isFileCommand, runFileCommand} from './file-commands.ts'
+import type {Cabinet} from './cabinet.ts'
+import type {CabinetGallery} from './cabinet-gallery.ts'
 // The operator: runs a validated command against Prism OS. Window, photo and Scope
 // commands become the same timestamped pointer and key events a person's hand would
 // produce, aimed at points the program itself computes, so every rule of the handwired
@@ -59,6 +62,8 @@ export type PanelControls = {
 }
 
 export type PageEffects = {
+  cabinet?: Cabinet | undefined
+  gallery?: CabinetGallery | undefined
   settings: {get(): Settings, update(change: Partial<Settings>): void}
   panels: PanelControls
   note: {read(): string, write(text: string): void}
@@ -316,6 +321,10 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
 
   // Runs one command and resolves to the reply the command center shows.
   async function run(command: Command): Promise<string> {
+    if (isFileCommand(command)) {
+      if (!page.cabinet) return 'Cabinet is unavailable.'
+      return runFileCommand(page.cabinet, command)
+    }
     switch (command.name) {
       case 'open_app': {
         if (isProgramApp(command.app)) await bringToFront(command.app)
@@ -362,6 +371,7 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
         return `${title} is back to its normal size.`
       }
       case 'close_app': {
+        if (command.app === 'inkwell' && page.cabinet && !await page.cabinet.resolveDraft()) return 'Kept Inkwell open with your draft.'
         const title = appTitle[command.app]
         if (!isProgramApp(command.app)) {
           if (page.panels.state(command.app) === 'closed') return `${title} is already closed.`
@@ -427,12 +437,16 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
       }
       case 'open_photo': {
         page.slideshow.stop()
+        if (command.bundled === true && page.gallery?.active()) await page.gallery.bundled()
+        if (page.gallery?.active()) { await bringToFront('chroma'); return page.gallery.show(command.photo) }
+        if (command.photo >= photoCount) return 'The bundled gallery has 12 photos. Open a Cabinet image folder to browse more.'
         await bringToFront('chroma')
         if (openPhoto() !== command.photo) await click(photoPoint(command.photo))
         return openPhoto() === command.photo ? `Opened ${photoNames[command.photo]}.` : `I couldn't reach ${photoNames[command.photo]}; Chroma may be too small to show it.`
       }
       case 'next_photo':
       case 'previous_photo': {
+        if (page.gallery?.active()) { await bringToFront('chroma'); return page.gallery.step(command.name === 'next_photo' ? 1 : -1) }
         if (openPhoto() === -1) {
           await bringToFront('chroma')
           await click(photoPoint(command.name === 'next_photo' ? 0 : photoCount - 1))
@@ -444,6 +458,7 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
       }
       case 'close_photo': {
         page.slideshow.stop()
+        if (page.gallery?.active()) return page.gallery.close()
         if (openPhoto() === -1) return 'No photo is open.'
         await photoKey('close')
         return 'Back to the grid.'
@@ -454,7 +469,8 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
           return 'Slideshow stopped.'
         }
         await bringToFront('chroma')
-        if (openPhoto() === -1) await click(photoPoint(0))
+        if (page.gallery?.active()) await page.gallery.step(1)
+        else if (openPhoto() === -1) await click(photoPoint(0))
         page.slideshow.start()
         return 'Slideshow started. Say "stop the slideshow" or press Escape to end it.'
       }
@@ -474,10 +490,12 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
         const current = page.note.read()
         const text = command.mode === 'replace' || current.trim() === '' ? command.text : `${current.replace(/\s+$/u, '')}\n${command.text}`
         page.note.write(text)
+        await page.cabinet?.flush()
         return command.mode === 'replace' ? 'Replaced the note.' : 'Added to the note.'
       }
       case 'clear_note': {
         page.note.write('')
+        await page.cabinet?.flush()
         return 'The note is empty.'
       }
       case 'read_note': {
@@ -531,9 +549,12 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
   }
 
   return {
+    // Cabinet calls this both from its UI and from inside the command queue.
+    // Keep this effect unqueued so opening a document cannot wait on its own command.
+    focusProgram: bringToFront,
     run: (command: Command) => exclusive(() => run(command)),
     // The slideshow's step: the next photo, through the same queue as the commands.
-    nextPhoto: () => exclusive(() => photoKey('next')),
+    nextPhoto: () => exclusive(async () => { if (page.gallery?.active()) await page.gallery.step(1); else await photoKey('next') }),
     windowState,
     openPhoto,
     stats,

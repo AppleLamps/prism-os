@@ -1,0 +1,43 @@
+.prism-desktop .prism-tile.prism-app-cabinet, .prism-desktop .prism-app-dot.prism-app-cabinet { background: linear-gradient(145deg, #60baff, #007aff); color: white; }
+.prism-desktop .cabinet-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; font: 12px/1.5 var(--font-sans); color: var(--ink); }
+.prism-desktop .cabinet-toolbar, .prism-desktop .cabinet-actions, .prism-desktop .cabinet-breadcrumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px; border-bottom: 1px solid var(--rule); }
+.prism-desktop .cabinet-toolbar input { flex: 1; min-width: 90px; }
+.prism-desktop .cabinet-layout { display: flex; flex: 1; min-height: 90px; overflow: hidden; }
+.prism-desktop .cabinet-sidebar { flex: 0 0 116px; padding: 12px 6px; background: var(--sidebar); border-right: 1px solid var(--rule); }
+.prism-desktop .cabinet-sidebar button { display: block; width: 100%; text-align: left; margin-bottom: 6px; }
+.prism-desktop .cabinet-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.prism-desktop .cabinet-breadcrumbs { flex-shrink: 0; }
+.prism-desktop .cabinet-list { flex: 1; overflow: auto; padding: 8px; }
+.prism-desktop .cabinet-item { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; width: 100%; gap: 6px; align-items: center; text-align: left; margin-bottom: 4px; }
+.prism-desktop .cabinet-item span, .prism-desktop .cabinet-item small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prism-desktop .cabinet-item small { max-width: 160px; color: var(--ink-3); }
+.prism-desktop .cabinet-item[aria-selected="true"] { background: var(--copper-wash); border-color: var(--copper); }
+.prism-desktop .cabinet-file-icon { color: var(--copper); font-size: 22px; }
+.prism-desktop .cabinet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); align-content: start; gap: 8px; }
+.prism-desktop .cabinet-grid .cabinet-item { display: flex; flex-direction: column; padding: 12px 6px; }
+.prism-desktop .cabinet-grid .cabinet-item span, .prism-desktop .cabinet-grid .cabinet-item small { max-width: 100%; }
+.prism-desktop .cabinet-preview { flex: 0 0 168px; padding: 12px; overflow: auto; border-left: 1px solid var(--rule); overflow-wrap: anywhere; }
+.prism-desktop .cabinet-preview img { width: 100%; height: auto; border-radius: 8px; }
+.prism-desktop .cabinet-preview pre { white-space: pre-wrap; font-size: 11px; }
+.prism-desktop .cabinet-status { padding: 7px 10px; color: var(--ink-2); border-top: 1px solid var(--rule); max-height: 64px; overflow: auto; }
+.prism-desktop .cabinet-empty { padding: 16px; color: var(--ink-3); }
+.prism-desktop .cabinet-body button, .prism-desktop .cabinet-body input, .prism-desktop .cabinet-body select, .prism-desktop .inkwell-files button, .prism-desktop .cabinet-gallery-toolbar button, .cabinet-dialog button, .cabinet-dialog input, .cabinet-dialog select { color: var(--ink); background: var(--card); border: 1px solid var(--rule-strong); border-radius: 7px; padding: 5px 8px; font: inherit; }
+.prism-desktop .cabinet-body button:disabled { opacity: .45; cursor: default; }
+.prism-desktop .cabinet-body :focus-visible, .prism-desktop .inkwell-files :focus-visible, .prism-desktop .cabinet-gallery-toolbar :focus-visible, .cabinet-dialog :focus-visible { outline: 2px solid var(--copper); outline-offset: 2px; }
+.prism-desktop .inkwell-files { position: absolute; top: 0; left: 0; right: 0; height: 36px; display: flex; align-items: center; gap: 7px; padding: 0 10px; background: var(--glass-strong); font-size: 11px; z-index: 2; }
+.prism-desktop .inkwell-files span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prism-desktop .notes-content:has(.inkwell-files) .notes-text { padding-top: 44px; }
+.prism-desktop .cabinet-gallery-toolbar { position: absolute; top: 0; left: 0; right: 0; height: 36px; z-index: 5; display: flex; gap: 6px; align-items: center; padding: 0 8px; background: var(--glass-strong); font-size: 11px; }
+.prism-desktop .cabinet-gallery-toolbar[hidden] { display: none; }
+.prism-desktop .cabinet-gallery-toolbar span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.cabinet-dialog { width: min(440px, calc(100vw - 32px)); box-sizing: border-box; color: var(--ink); background: var(--window-glass-focused); backdrop-filter: var(--glass-blur); border: 1px solid var(--rule-strong); border-radius: 16px; padding: 22px; font: 13px/1.5 var(--font-sans); box-shadow: 0 18px 64px rgb(var(--shadow-ink) / .3); }
+.cabinet-dialog::backdrop { background: rgb(0 0 0 / .2); }
+.cabinet-dialog h2 { font-size: 17px; margin: 0 0 12px; }
+.cabinet-dialog input, .cabinet-dialog select { width: 100%; box-sizing: border-box; }
+.cabinet-dialog .cabinet-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+@media (min-width: 520px) { .prism-desktop #dock.prism-dock.prism-dock-extended::before { width: calc(546px + 2 * var(--shelf-padding)); transform: translateX(-31px); } }
+@media (max-width: 650px) { .prism-desktop .cabinet-preview { display: none; } .prism-desktop .cabinet-sidebar { flex-basis: 90px; } }
+@media (max-width: 650px) {
+  .prism-desktop .cabinet-show-preview .cabinet-preview { display: block; flex: 1; }
+  .prism-desktop .cabinet-show-preview .cabinet-content { display: none; }
+}

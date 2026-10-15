@@ -3,7 +3,7 @@
 // sentence that matches runs at once, with no model, which is how Spotlight runs
 // commands until the model ships. Anything else returns null: the model's turn, or a hint.
 // The patterns match the whole sentence, so "don't close scope" never closes Scope.
-import {type Command, accentNames, appAliases, apps, parseApp, parseCity, parsePhoto, positions, sceneNames, validateCall} from './commands.ts'
+import {parsePhoto, type Command, accentNames, appAliases, apps, parseApp, parseCity, positions, sceneNames, validateCall} from './commands.ts'
 import {evaluateExpression} from './expression.ts'
 import {photoNames} from '../handwiredos/photo-gallery.ts'
 
@@ -38,6 +38,17 @@ type Call = Record<string, unknown> & {name: string}
 type Rule = [RegExp, (match: RegExpExecArray) => Call | Call[] | null]
 
 const rules: Rule[] = [
+  [/^list files(?: in (.+))?$/u, m => ({name: 'list_files', path: m[1] ?? '.'})],
+  [/^(?:search|find) files (?:for |named )?(.+)$/u, m => ({name: 'search_files', query: m[1]})],
+  [/^open (?:file|folder) (.+)$/u, m => ({name: 'open_file', path: m[1]})],
+  [/^create folder (.+)$/u, m => ({name: 'create_folder', path: m[1]})],
+  [/^create (?:text )?document (.+)$/u, m => ({name: 'create_document', path: m[1]})],
+  [/^save (?:my |the )?note as (.+)$/u, m => ({name: 'save_note_as', path: m[1]})],
+  [/^rename file (.+) to (.+)$/u, m => ({name: 'rename_file', path: m[1], new_name: m[2]})],
+  [/^move file (.+) to (.+)$/u, m => ({name: 'move_file', path: m[1], destination: m[2]})],
+  [/^(duplicate|trash|restore|download|delete) file (.+)$/u, m => ({name: ({duplicate: 'duplicate_file', trash: 'trash_file', restore: 'restore_file', download: 'download_file', delete: 'delete_file'} as Record<string, string>)[m[1]!]!, path: m[2]})],
+  [/^empty (?:the )?trash$/u, () => ({name: 'empty_trash'})],
+  [/^import files$/u, () => ({name: 'import_files'})],
   // Clock, first: "start the stopwatch" is the stopwatch, not "start" an app named Clock.
   [/^(start|stop|reset|lap) (?:the )?stopwatch$|^stopwatch (start|stop|reset|lap)$|^(lap)$/u, m => ({name: 'stopwatch', action: m[1] ?? m[2] ?? m[3]})],
   [/^(?:what time is it|whats the time|what is the time|time|the time|current time)(?: (?:in|at) (.+))?$|^time in (.+)$/u, m => ({name: 'world_time', city: m[1] ?? m[2] ?? 'here'})],
@@ -70,7 +81,7 @@ const rules: Rule[] = [
   [/^(?:next|next photo|next picture)$/u, () => ({name: 'next_photo'})],
   [/^(?:previous|prev|back|previous photo|previous picture|last photo)$/u, () => ({name: 'previous_photo'})],
   [/^(?:close (?:the )?photo|back to (?:the )?grid)$/u, () => ({name: 'close_photo'})],
-  [/^(?:open|show|view) (?:the )?(?:photo|picture|image) (.+)$/u, m => ({name: 'open_photo', photo: m[1]})],
+  [/^(?:open|show|view) (?:the )?(?:photo|picture|image) (.+)$/u, m => parsePhoto(m[1]) === null && /\.[a-z0-9]+$/iu.test(m[1]!) ? ({name: 'open_file', path: m[1]}) : ({name: 'open_photo', photo: m[1]})],
   [new RegExp(`^(?:open|show|view|show me) (?:the )?(${alternatives(photoNames.map(name => name.toLowerCase()))})(?: photo| picture)?$`, 'u'), m => ({name: 'open_photo', photo: m[1]})],
   [/^(?:open|show|view|show me) the (first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth) (?:photo|picture|image)$/u, m => ({name: 'open_photo', photo: m[1]})],
   [/^(?:start (?:a |the )?slideshow|slideshow|play (?:a )?slideshow)$/u, () => ({name: 'slideshow', action: 'start'})],
@@ -102,6 +113,26 @@ function arithmetic(sentence: string): Call | null {
 // one command may be several joined by "and" or "then", e.g. "dark mode and a teal accent",
 // when every part is one.
 export function quickCommands(input: string): Command[] | null {
+  const fileInput = input.trim().replace(/^(?:please |can you )/iu, '').replace(/ please$/iu, '')
+  const imageRequest = /^(?:open|show|view) (?:photo|picture|image) (.+)$/iu.exec(fileInput)
+  if (imageRequest && parsePhoto(imageRequest[1]) === null && /\.[a-z0-9]+$/iu.test(imageRequest[1]!)) {
+    const result = validateCall('open_file', {path: imageRequest[1]}); return result.ok ? [result.command] : null
+  }
+  const filePatterns: [RegExp, (m: RegExpExecArray) => Record<string, unknown> & {name: string}][] = [
+    [/^open (?:file|folder) (.+)$/iu, m => ({name: 'open_file', path: m[1]})],
+    [/^list files(?: in (.+))?$/iu, m => ({name: 'list_files', path: m[1] ?? '.'})],
+    [/^(?:search|find) files (?:for |named )?(.+)$/iu, m => ({name: 'search_files', query: m[1]})],
+    [/^create folder (.+)$/iu, m => ({name: 'create_folder', path: m[1]})],
+    [/^create (?:text )?document (.+)$/iu, m => ({name: 'create_document', path: m[1]})],
+    [/^save (?:my |the )?note as (.+)$/iu, m => ({name: 'save_note_as', path: m[1]})],
+    [/^rename file (.+) to (.+)$/iu, m => ({name: 'rename_file', path: m[1], new_name: m[2]})],
+    [/^move file (.+) to (.+)$/iu, m => ({name: 'move_file', path: m[1], destination: m[2]})],
+    [/^(duplicate|trash|restore|download|delete) file (.+)$/iu, m => ({name: `${m[1]!.toLowerCase()}_file`, path: m[2]})],
+  ]
+  for (const [pattern, make] of filePatterns) {
+    const match = pattern.exec(fileInput)
+    if (match) { const call = make(match); const result = validateCall(call.name, call); return result.ok ? [result.command] : null }
+  }
   const sentence = normalize(input)
   if (sentence === '') return null
   const whole = single(sentence)

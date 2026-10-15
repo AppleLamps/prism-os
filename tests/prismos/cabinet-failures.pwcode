@@ -1,0 +1,70 @@
+// Run after cabinet.pwcode in the dedicated cabinet Playwright CLI browser session.
+async page => {
+  const wait = predicate => page.waitForFunction(predicate, null, {timeout: 10000}).catch(error => { throw new Error(`${predicate.toString()}: ${error.message}`) })
+  const assert = (condition, text) => { if (!condition) throw new Error(text) }
+  await page.setViewportSize({width: 1440, height: 960})
+  await page.reload()
+  await page.getByRole('button', {name: 'Cabinet', exact: true}).click()
+  const cabinet = page.getByRole('dialog', {name: 'Cabinet', exact: true})
+  await cabinet.getByRole('navigation', {name: 'Cabinet locations'}).getByRole('button', {name: 'Documents', exact: true}).click()
+  await cabinet.getByRole('option', {name: 'Cabinet Acceptance.txt', exact: true}).dblclick()
+  await wait(() => document.querySelector('.inkwell-files span')?.textContent === 'Cabinet Acceptance.txt' && document.querySelector('.notes-text')?.readOnly === false)
+  await page.getByRole('textbox', {name: 'Note', exact: true}).fill('unsaved draft from this tab')
+  // Commit another tab's revision before this tab's debounce expires.
+  await page.evaluate(async () => {
+    const opening = indexedDB.open('prism-os.files', 1)
+    const db = await new Promise(resolve => { opening.onsuccess = () => resolve(opening.result) })
+    const tx = db.transaction(['entries', 'blobs'], 'readwrite')
+    const reading = tx.objectStore('entries').getAll()
+    reading.onsuccess = () => {
+      const file = reading.result.find(entry => entry.name === 'Cabinet Acceptance.txt')
+      const blob = new Blob(['committed by another tab'], {type: 'text/plain'})
+      tx.objectStore('entries').put({...file, revision: file.revision + 1, size: blob.size}, file.id)
+      tx.objectStore('blobs').put(blob, file.id)
+    }
+    await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onabort = () => reject(tx.error) }); db.close()
+    const channel = new BroadcastChannel('prism-os.files'); channel.postMessage('changed'); channel.close()
+  })
+  await wait(() => document.querySelector('.inkwell-files [role=status]')?.textContent.startsWith('Save failed:'))
+  assert(await page.getByRole('textbox', {name: 'Note', exact: true}).inputValue() === 'unsaved draft from this tab', 'Conflict replaced the draft')
+  await page.getByRole('button', {name: 'Save As', exact: true}).click()
+  await page.getByRole('textbox', {name: 'Save document as', exact: true}).fill('Recovered.txt')
+  await page.getByRole('dialog', {name: 'Save document as', exact: true}).getByRole('button', {name: 'OK', exact: true}).click()
+  await page.getByRole('dialog', {name: 'Choose a folder', exact: true}).getByRole('button', {name: 'OK', exact: true}).click()
+  await wait(() => document.querySelector('.inkwell-files span')?.textContent === 'Recovered.txt' && document.querySelector('.inkwell-files [role=status]')?.textContent === 'Saved')
+  const content = await page.evaluate(async () => {
+    const opening = indexedDB.open('prism-os.files', 1)
+    const db = await new Promise(resolve => { opening.onsuccess = () => resolve(opening.result) })
+    const read = request => new Promise(resolve => { request.onsuccess = () => resolve(request.result) })
+    const entries = await read(db.transaction('entries').objectStore('entries').getAll())
+    const original = entries.find(entry => entry.name === 'Cabinet Acceptance.txt')
+    const recovered = entries.find(entry => entry.name === 'Recovered.txt')
+    const a = await read(db.transaction('blobs').objectStore('blobs').get(original.id))
+    const b = await read(db.transaction('blobs').objectStore('blobs').get(recovered.id))
+    db.close(); return [await a.text(), await b.text()]
+  })
+  assert(content[0] === 'committed by another tab' && content[1] === 'unsaved draft from this tab', 'Save As did not preserve both versions')
+  await page.getByRole('button', {name: 'Cabinet', exact: true}).click()
+  await page.evaluate(() => {
+    const original = IDBObjectStore.prototype.put
+    window.cabinetOriginalPut = original
+    IDBObjectStore.prototype.put = function(value, key) {
+      if (this.name === 'entries' && value.name === 'Quota failure.txt') throw new DOMException('Simulated full storage', 'QuotaExceededError')
+      return original.call(this, value, key)
+    }
+  })
+  try {
+    await cabinet.locator('input[type=file]').setInputFiles({name: 'Quota failure.txt', mimeType: 'text/plain', buffer: Buffer.from('must not commit')})
+    await wait(() => document.querySelector('.cabinet-status')?.textContent.includes('Browser storage is full'))
+  } finally {
+    await page.evaluate(() => { IDBObjectStore.prototype.put = window.cabinetOriginalPut; delete window.cabinetOriginalPut })
+  }
+  assert(await cabinet.getByRole('option', {name: 'Quota failure.txt', exact: true}).count() === 0, 'Aborted import left an entry')
+  await cabinet.getByRole('navigation', {name: 'Cabinet locations'}).getByRole('button', {name: 'Pictures', exact: true}).click()
+  await cabinet.locator('input[type=file]').setInputFiles({name: 'Broken.png', mimeType: 'image/png', buffer: Buffer.from('invalid image bytes')})
+  await wait(() => document.querySelector('.cabinet-status')?.textContent.includes('Imported 1/1'))
+  await cabinet.getByRole('option', {name: 'Broken.png', exact: true}).dblclick()
+  await wait(() => document.querySelector('.cabinet-gallery-toolbar')?.textContent.includes('Cannot preview: Broken.png'))
+  assert(await page.getByRole('button', {name: 'Bundled gallery', exact: true}).isVisible(), 'Broken image blocked the gallery')
+  console.log('PASS: cross-tab conflict, Save As recovery, real IndexedDB transaction abort, broken image recovery')
+}

@@ -68,7 +68,7 @@ test('FunctionGemma calls parse, including strings with commas and braces, and s
 test('the quick parser takes whole common sentences and leaves the rest to the model', () => {
   assert.deepEqual(quickCommands('Dark mode'), [{name: 'set_theme', theme: 'dark'}])
   assert.deepEqual(quickCommands('please minimize the notes window'), [{name: 'minimize_app', app: 'inkwell'}])
-  assert.deepEqual(quickCommands('Open photo Blue Lagoon!'), [{name: 'open_photo', photo: 10}])
+  assert.deepEqual(quickCommands('Open photo Blue Lagoon!'), [{name: 'open_photo', photo: 10, bundled: true}])
   assert.deepEqual(quickCommands('next'), [{name: 'next_photo'}])
   assert.deepEqual(quickCommands('make it teal'), [{name: 'set_accent', color: 'teal'}])
   assert.deepEqual(quickCommands('night mode'), [{name: 'set_theme', theme: 'dark'}])

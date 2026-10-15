@@ -625,8 +625,8 @@
   }
 }
 
-/* Panels: Prism's apps in glass windows like the program's. The layer has no z-index,
-   so each panel's z-index, which shell.ts writes, stacks it among the program's windows. */
+/* Panels: Prism's apps in glass windows like the program's. The shell moves the layer
+   in front of or behind the program, then orders panels within that stacking group. */
 .prism-layer {
   position: absolute;
   inset: 0;

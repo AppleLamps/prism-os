@@ -1,3 +1,6 @@
+import {Cabinet, message} from './cabinet.ts'
+import {CabinetGallery} from './cabinet-gallery.ts'
+import {button, el} from './dom.ts'
 import {mountWindowManager, quantizeViewport} from '../handwiredos/window-manager.ts'
 import {arrangePrismWindows} from './arrangement.ts'
 import {createCommandCenter, createSlideshow} from './command-center.ts'
@@ -59,14 +62,35 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
   } catch {
     // The starting note stays.
   }
-  note?.addEventListener('input', saveNote)
+  const cabinet = note === null ? undefined : new Cabinet(note)
+  note?.addEventListener('input', () => {
+    cabinet?.edit(note.value)
+    if (!cabinet?.documents) saveNote()
+  })
+  if (cabinet && note) {
+    const bar = el('div', 'inkwell-files'); bar.dataset['prismLayer'] = ''
+    const name = el('span'), status = el('span')
+    status.setAttribute('role', 'status')
+    const saveAs = button('', 'Save As', 'Save As')
+    saveAs.addEventListener('click', () => { void cabinet.saveAs().catch(error => { status.textContent = message(error) }) })
+    bar.append(name, status, saveAs); note.parentElement?.append(bar)
+    cabinet.subscribe(() => {
+      name.textContent = cabinet.documents?.entry?.name ?? 'Notes'
+      status.textContent = cabinet.documents?.status ?? cabinet.error
+      saveAs.disabled = cabinet.documents === null
+    })
+    window.addEventListener('beforeunload', event => {
+      if (cabinet.documents?.dirty === true) { void cabinet.flush().catch(() => {}); event.preventDefault(); event.returnValue = '' }
+    })
+  }
 
   // The shell listens for input before the program does, see shell.ts. Spotlight runs
   // sentences through the command center, see command-center.ts.
   const commands = createCommandCenter(window, new URL('./model-worker.js', document.baseURI).href)
-  const panels = startShell(store, commands)
+  const panels = startShell(store, commands, cabinet)
   const manager = mountWindowManager(document, window, {arrange: arrangePrismWindows})
 
+  const gallery = new CabinetGallery(manager, text => console.warn(text))
   if (panels !== null) {
     const viewport = () => ({
       width: quantizeViewport(document.documentElement.clientWidth),
@@ -82,6 +106,8 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
     const operator = createOperator(
       {machine: manager.machine, viewport, now: () => window.performance.now(), frame: () => manager.nextFrame()},
       {
+        cabinet,
+        gallery,
         settings: store,
         panels,
         note: {
@@ -89,7 +115,8 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
           write: text => {
             if (note === null) return
             note.value = text
-            saveNote()
+            if (cabinet?.documents) cabinet.edit(text)
+            else saveNote()
           },
         },
         slideshow,
@@ -99,6 +126,16 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
         },
       },
     )
+    cabinet?.connect(async app => { if (app === 'cabinet') panels.open('cabinet'); else await operator.focusProgram(app) }, gallery)
+    let blockedClose = false
+    window.addEventListener('pointerdown', event => {
+      if (cabinet?.documents?.dirty !== true || !(event.target instanceof Element)) return
+      const close = event.target.closest('.window-button.close')
+      if (!close?.closest('.window')?.querySelector('.notes-text')) return
+      event.preventDefault(); event.stopImmediatePropagation(); blockedClose = true
+      void cabinet.resolveDraft().then(ok => { if (ok) void operator.run({name: 'close_app', app: 'inkwell'}) })
+    }, true)
+    window.addEventListener('pointerup', event => { if (blockedClose) { blockedClose = false; event.preventDefault(); event.stopImmediatePropagation() } }, true)
     nextPhoto = () => operator.nextPhoto()
     commands.setOperator(operator)
   }
