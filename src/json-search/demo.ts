@@ -13,8 +13,8 @@
 // - ?buffer=134217728 asks the GPU for buffers of at most that many bytes, as a device with small limits would grant.
 // - ?salt=7 writes that number into every shader's source, as a u32, so it is a whole number from 0 to 4294967295,
 //   and the page ignores any other, e.g. ?salt=1.5 or a time in ms. With a number that no earlier load used, the GPU
-//   compiles the shaders without its cache, as on a visitor's first load, which is how the README's first-visit
-//   times are measured.
+//   compiles the shaders without its cache, as on a visitor's first load, which is how the first-visit times of
+//   lab/json-search/README.md are measured.
 import {invariant} from '../runtime/numeric-ui-core.ts'
 import {type CellColors, type MapLayout, cellCenterCss, mapLayout, nextMatch, paintCells, pickedDocument} from './demo-map.ts'
 import {
