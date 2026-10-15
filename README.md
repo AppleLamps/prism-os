@@ -1,6 +1,6 @@
 # Handwired
 
-Turn your regular JavaScript code into a neural net; no training & fully differentiable!
+Turn your regular JavaScript code into a neural net; no training, exact, yet also fully differentiable!
 
 ## How It Works
 
@@ -34,6 +34,10 @@ This unlocks lots of funny use-cases, like:
 - unfreezing the weights and train them (what does that even do? Let's find out!)
 - attaching a specific frozen program to a generic neural net and train end-to-end (now a nanoGPT can do both shakespare and your particular UI?)
 - achieving GPU-level of parallelism with JS code that was written in a traditional single-threaded way (see the JSON research demo that runs in miliseconds over 100k documents)
+
+## Play With It
+
+`git clone && bun install` then check `docs/`, `src/` and `template/` to get started! (`labs/` is a bunch of old expreiments you can check or ignore)
 
 ![HandwiredOS](assets/demos-handwiredos.webp)
 
