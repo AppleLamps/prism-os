@@ -37,8 +37,9 @@
           <p class="deck">No training, exact yet also fully differentiable, runnable in a browser without GPU.</p>
         </div>
 
-        <!-- The README's example (README.md, "How It Works"), a ternary, in three views: the ternary as written, the
-             same ternary as arithmetic, and that arithmetic as a circuit.
+        <!-- The README's example (README.md, "How It Works"), a ternary, in three views: the ternary as written,
+             under "your code", then under "turns into" the same ternary as arithmetic, and that arithmetic as a
+             circuit. The figure has no caption.
              - The arithmetic. relu(x) is Math.max(0, x). For an a up to 4, relu(a - 4) and relu(a - 5) are both 0,
                and for an a from 5 they are a - 4 and a - 5, whose difference is 1. So isAbove4 is the condition
                a > 4 as a number, 1 or 0. The second line computes both branches and keeps one of them:
@@ -47,15 +48,14 @@
              - The circuit draws those two lines, and the code above the circuit is its legend. A box has the name
                of the value on the wire that leaves the box. A wire from the input a splits and ends at the two
                ReLUs. A wire from each ReLU ends at isAbove4, where a plus sign and a minus sign say which ReLU is
-               subtracted. A wire from isAbove4 ends at result, and the last wire carries result out. The circuit
-               is the headline's neural net, two ReLUs and weighted sums of their values, and the caption is where
-               the figure says so.
+               subtracted. A wire from isAbove4 ends at result, which is the circuit's last box; no wire leaves it.
+               The circuit is the headline's neural net, two ReLUs and weighted sums of their values.
              - The condition is copper in every view: "a > 4" in the ternary, the name isAbove4 in the arithmetic,
                and the name in isAbove4's box in the circuit. That box's outline is ink, like every box's. The
                circuit's wires are copper too, as the site's wires are, whichever value a wire carries.
 
              Where isAbove4 is exact. isAbove4 is exactly 1 or 0 for every a up to 4 and for every a from 5, so for
-             every integer a, which is the case that the caption names. Between 4 and 5, isAbove4 is a - 4, e.g.
+             every integer a. The page doesn't say so; the README's comment in the example does. Between 4 and 5, isAbove4 is a - 4, e.g.
              a = 4.5 gives 0.5, and the result is then 11. A very large integer goes wrong too, where a - 5 has no
              exact value: in FP32, the runtime's number type, the first such integer is 2^24 + 6 = 16,777,222,
              where a - 5 rounds to 2^24, so isAbove4 is 2 and the result 8. In JavaScript's own numbers the first
@@ -84,7 +84,7 @@
           </div>
           <div class="view">
             <div class="view-head">
-              <p class="view-label">the same, as arithmetic</p>
+              <p class="view-label">turns into</p>
               <p class="legend"><code>relu(x)</code> is <code>Math.max(0, x)</code></p>
             </div>
             <div class="lines">
@@ -93,7 +93,6 @@
             </div>
           </div>
           <div class="view">
-            <p class="view-label">the same, as wires</p>
             <svg class="wires" viewBox="0 0 408 72" role="img" aria-label="The two lines of arithmetic drawn as a circuit. The input a feeds two ReLU gates, relu(a &minus; 4) and relu(a &minus; 5). The second gate's value is subtracted from the first's, which gives isAbove4, and isAbove4 feeds result.">
               <path class="wire" d="M5 36.25H28.25"/>
               <path class="wire" d="M28.25 36.25V22.25a8 8 0 0 1 8-8H53"/>
@@ -101,14 +100,12 @@
               <path class="wire" d="M140 14.25H152a7.5 7.5 0 0 1 7.5 7.5a7.5 7.5 0 0 0 7.5 7.5H195"/>
               <path class="wire" d="M140 58.25H152a7.5 7.5 0 0 0 7.5-7.5a7.5 7.5 0 0 1 7.5-7.5H195"/>
               <path class="wire" d="M270 36.25H307"/>
-              <path class="wire" d="M362 36.25H403"/>
               <rect class="box" x="52.5" y="0.5" width="88" height="27" rx="6"/>
               <rect class="box" x="52.5" y="44.5" width="88" height="27" rx="6"/>
               <rect class="box" x="194.5" y="22.5" width="76" height="27" rx="6"/>
               <rect class="box" x="306.5" y="22.5" width="56" height="27" rx="6"/>
               <circle class="joint" cx="28.25" cy="36.25" r="3"/>
               <circle class="eyelet" cx="5" cy="36.25" r="4.25"/>
-              <circle class="eyelet" cx="403" cy="36.25" r="4.25"/>
               <text x="5" y="24">a</text>
               <text x="96.5" y="18.5">relu(a &minus; 4)</text>
               <text x="96.5" y="62.5">relu(a &minus; 5)</text>
@@ -118,7 +115,6 @@
               <text class="sign" x="188" y="56">&minus;</text>
             </svg>
           </div>
-          <figcaption>For an integer <code>a</code>, <code>isAbove4</code> is exactly 1 if <code>a &gt; 4</code>, and 0 otherwise. This neural net has four boxes. The Mini OS below has thousands.</figcaption>
         </figure>
       </section>
 

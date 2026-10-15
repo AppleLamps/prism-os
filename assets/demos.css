@@ -27,18 +27,18 @@
 .opening-text { grid-column: 1; }
 .opening .deck { margin-top: var(--space-5); }
 
-/* The example: one line of code in three views, one under the other, i.e. the code, the same code as arithmetic,
-   and that arithmetic as a circuit. A comment in assets/demos.html explains the three. */
+/* The example: one line of code in three views, one under the other, i.e. the code under "your code", then under
+   "turns into" the same code as arithmetic, and that arithmetic as a circuit, which has no name of its own. A
+   comment in assets/demos.html explains the three. */
 .example { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
 .view + .view { margin-top: var(--space-4); }
-/* A view's name, e.g. "the same, as arithmetic", and the note that says what relu is. The note stands at the other
+/* A view's name, e.g. "turns into", and the note that says what relu is. The note stands at the other
    end of the line of the second view's name, and where the two don't fit on one line, the note goes under the
    name. The note is a paragraph of its own, so that a reader without the layout, e.g. a screen reader, gets the
    name and the note as two sentences. */
 .view-head { display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: var(--space-3); }
 .view-label, .legend { margin: 0; color: var(--ink-3); font: var(--type-small); }
-/* The code in the note, and in the caption below, is plain monospace text, without the wash that site.css puts
-   behind code. */
+/* The code in the note is plain monospace text, without the wash that site.css puts behind code. */
 .legend code { padding: 0; background: none; color: var(--ink-2); font-size: 11px; }
 /* A line of code stands on the paper, with no sheet behind it. A line breaks only at the one space that wraps
    like a space of ordinary text, the space of the line's .break, and only where the line doesn't fit, e.g. the
@@ -76,17 +76,6 @@
    ReLU is subtracted, so the signs are 13 px: in a window of 390 px, where the drawing is at 86% of its size, the
    signs are still 11 px. */
 .wires .sign { fill: var(--ink-2); font: 500 13px/1 var(--font-sans); text-anchor: end; }
-.example figcaption {
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--rule);
-  color: var(--ink-2);
-  font: var(--type-ui);
-  text-wrap: pretty;
-}
-/* A piece of code in the caption stays on one line, e.g. "a > 4". Without the rule Safari's engine ends a line of
-   the caption at a space inside the code, e.g. after "a >" in a window of 390 px. */
-.example figcaption code { padding: 0; background: none; color: var(--ink); white-space: nowrap; }
 
 .section-label { margin: var(--space-8) 0 var(--space-4); }
 
@@ -200,15 +189,13 @@ a.card:hover .go::after { transform: translateX(3px); }
   .example { grid-column: 1; grid-row: auto; margin-top: var(--space-6); }
 }
 /* From 901 px the page is wide enough for the example's views side by side: the two views of code on the left, in
-   a column of 408 px, the circuit on the right, and the caption under both. The example is then 165 px tall instead
-   of 297 px. The rule places only the circuit's view, and the two views of code fill the left column's two rows.
-   The right column takes the rest of the page, so the caption's hairline ends where the header's hairline ends,
-   and the circuit keeps its own 408 px. The gap between the columns is 32 px: in a window of 901 px that leaves
-   the right column 413 px, and a gap of 48 px would leave less than the circuit's 408 px. */
+   a column of 408 px, and the circuit on the right. The example is then 120 px tall instead of 208 px. The rule
+   places only the circuit's view, and the two views of code fill the left column's two rows. The gap between the
+   columns is 32 px: in a window of 901 px that leaves the right column 413 px, and a gap of 48 px would leave
+   less than the circuit's 408 px. */
 @media (min-width: 901px) and (max-width: 999px) {
   .example { display: grid; grid-template-columns: 408px minmax(0, 1fr); column-gap: var(--space-6); }
   .view:nth-child(3) { grid-area: 1 / 2 / span 2; margin-top: 0; }
-  .example figcaption { grid-column: 1 / -1; }
 }
 @media (max-width: 900px) {
   .opening { margin-top: var(--space-7); }
