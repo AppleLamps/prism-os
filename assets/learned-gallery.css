@@ -217,7 +217,7 @@
   font: var(--type-ui);
   font-variant-numeric: tabular-nums;
 }
-/* The slider: a wire with an eyelet on it, like the mark in the page's header. The wire is
+/* The slider: a wire with an eyelet on it, like the mark in the landing page's header. The wire is
    copper from its left end to the eyelet, which learned-gallery.ts says through --filled, a
    number from 0 to 1. The eyelet's box is --eyelet wide, and its center travels from half a box
    inside the left end to half a box inside the right end, so the copper's end follows the same
@@ -276,7 +276,7 @@
   transition: background var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
 }
 /* Under a mouse pointer the eyelet gets the ring of a focused field, and while it is held it is
-   filled, like the header's eyelet under the pointer. */
+   filled, like the eyelet of the landing page's mark under the pointer. */
 @media (hover: hover) {
   .range:hover::-webkit-slider-thumb { box-shadow: var(--shadow-1), 0 0 0 3px var(--copper-wash); }
   .range:hover::-moz-range-thumb { box-shadow: var(--shadow-1), 0 0 0 3px var(--copper-wash); }

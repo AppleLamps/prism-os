@@ -307,8 +307,10 @@ export function buildValueList(circuit: Circuit, table: SourceTable, cells: Valu
   // The list draws a row in every slot: the rows in view, and in the slots left over
   // the rows above and below the view, half of them on each side. A browser scrolls
   // the list before the next frame runs, and until then the scrolled view shows the
-  // rows that the last frame drew. E.g. a view of 19 rows has 22 rows drawn above it
-  // and 23 below, so a scroll of up to 528 px between two frames still finds rows.
+  // rows that the last frame drew. E.g. in the middle of the list, a view of 19 rows
+  // has 22 rows drawn above it and 23 below, so a scroll of up to 528 px between two
+  // frames still finds rows. Near the list's start the list has fewer rows above the
+  // view, and the slots that they leave draw more rows below it.
   // With 2 rows on each side, as the list drew until October 14, 2026, one step of a
   // mouse wheel, 100 px, showed a band without rows at the list's edge.
   // JS: spareSlots = Math.max(0, slotCount - (endVisible - firstVisible))
@@ -590,8 +592,8 @@ export function describeOperations(program: TensorProgram, packedValues: Float32
 }
 
 // The rows of a source table's cells, in table order: the cell's name from its place
-// in the cell declarations, written with dots, e.g. 'windows.3.left' for the table's
-// 'windows[3].left', and what happens to the cell around an evaluation, e.g. 'state'.
+// in the cell declarations, written with dots, e.g. 'windows.2.left' for the table's
+// 'windows[2].left', and what happens to the cell around an evaluation, e.g. 'state'.
 // The source cells are the first packed values, so a cell's value is the one that
 // the last evaluation read, e.g. the spring matrix that the host wrote for it.
 export function describeState(cells: readonly {name: string, policy: string}[], packedValues: Float32Array): ValueListLocation {

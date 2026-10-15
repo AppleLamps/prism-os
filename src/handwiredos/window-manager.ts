@@ -885,8 +885,8 @@ function buildWindowManager() {
   // ended on one rectangle, 12, 36 and 366 × 278 px, since the sideways workspace is
   // 278 px tall, and a window kept the smallest size that a viewport had ever given
   // it. chenguini's engineering.md, "Data Modeling", says to compute derived data
-  // and not to store it on the data that it came from, and ui.md's "Layout" counts
-  // the viewport's size among a frame's inputs.
+  // and not to store it on the data that it came from, and ui.md's "State The
+  // Browser Keeps" counts the viewport's size among a frame's inputs.
   //
   // A drag or a resize starts from the fitted rectangle, where the window is drawn,
   // and stores what it leaves: a drag the position, and a resize the position and

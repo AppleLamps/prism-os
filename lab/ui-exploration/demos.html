@@ -67,7 +67,7 @@
         <p class="try-label">Try</p>
         <ul>
           <li>Drag a title bar, resize a window from its corner, and use the three window buttons; a closed window comes back from the dock.</li>
-          <li>In Photos, click a photo to open it, then use the arrow controls.</li>
+          <li>In Photos, click a photo: it zooms from its place in the grid to the open photo. Then use the arrow controls, and click beside the photo to send it back.</li>
           <li>Click in Notes and type, then click another window: the keyboard focus leaves the text field.</li>
           <li>In Monitor, scroll the list of the program's operations, click a row, use the arrow keys, Page Up, Page Down, Home and End, and pick State or Outputs in the sidebar to watch values change while you drag a window.</li>
         </ul>
@@ -88,11 +88,11 @@
       <article class="card">
         <h3><a href="/assets/learned-gallery.html">Learned gallery</a></h3>
         <p class="path">assets/learned-gallery.html</p>
-        <p>Backpropagation trains a small geometry network so that its photo layout matches rectangles you sketch.</p>
+        <p>Backpropagation trains a small geometry network so that its photo layout matches rectangles you sketch, with photo edges that are nearly on one line pulled onto it.</p>
         <p class="try-label">Try</p>
         <ul>
-          <li>In Sketch, drag a rectangle to move it, drag its corner to resize it, click empty space to add one, up to 12, or remove the selected one with Delete; the photos in Learned follow while you drag.</li>
-          <li>Pick Cinema or Contact sheet, or press Train again, and watch the photos form from a pile while the loss chart under them falls.</li>
+          <li>In Sketch, drag a rectangle to move it, drag its corner to resize it, click empty space to add one, up to 12, or remove the selected one with Delete; the photos in Learned follow while you drag, and a photo stays in its row or column until its rectangle is about 4% of the stage's width away.</li>
+          <li>Pick Cinema or Contact sheet, or press Retrain, and watch the photos form from a pile while the loss chart under them falls.</li>
         </ul>
         <p class="links"><a href="/src/learned-gallery/README.md">README</a></p>
       </article>
@@ -385,7 +385,7 @@
       <article class="card">
         <h3>Regex search</h3>
         <p class="path">lab/regex-search/README.md</p>
-        <p>A search for a pattern in a text of a fixed capacity, e.g. 1,024 code points. JavaScript compiles the pattern into an automaton, and the program runs it one code point at a time as products of transition matrices with 0/1 state vectors, in a reverse pass and a forward pass, to find leftmost, then longest matches.</p>
+        <p>A search for a pattern in a text of a fixed capacity, e.g. 1,024 code points. JavaScript compiles the pattern into an automaton, and the program runs it one code point at a time as products of transition matrices with 0/1 state vectors, in a reverse pass and a forward pass, to find leftmost, then longest matches. Since October 14, 2026 the pattern compiler and this program are in src/json-search/regex, and lab/regex-search keeps a second form of the program, which combines the steps in a tree of matrix products, with its measurements on WebGPU.</p>
         <p class="note">No demo page since October 14, 2026, when its own page was removed: the JSON search's page runs this program over every document. See the folder's README.</p>
         <p class="links"><a href="/lab/regex-search/README.md">README</a></p>
       </article>

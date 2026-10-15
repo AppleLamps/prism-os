@@ -1,0 +1,46 @@
+# HandwiredOS
+
+A small desktop with 3 window slots (Monitor, Notes and Photos) and a dock, run by one compiled program. The demo site's landing page calls it Mini OS. The program handles focus, stacking, dragging, resizing, the three window controls, closing a window to the dock and reopening it from there, the springs that animate all of that, Photos' layout, and a list of the program's own numbers. Every weight of the program is written by builder code, and none is trained.
+
+From the repo root:
+
+```sh
+bun start                          # the demo site, with HandwiredOS at /os/
+bun test tests/handwiredos         # 125 tests in 8 files, about 9 s
+bun lab/runtime-cost/report.ts     # the program's current sizes and µs per evaluation in Bun, in the entry named "window manager"
+```
+
+As of October 14, 2026, the program has 259 source cells, 4,639 live operations in 130 layers and 9,882 stored weights, and standalone Photos, the machine that photo-gallery.ts's tests run, has 123 cells and 2,019 live operations in 67 layers. [lab/status.md](../../lab/status.md#runtime-additions-since-september-14-2026) records the sizes and the times at each change.
+
+## The windows
+
+- **Springs.** Windows, Photos' thumbnails and the two springs of a photo's zoom are `emitAnimatedObject`s: each spring keeps its displacement from its destination and its velocity in the source table, and every evaluation applies a step matrix that the host writes, so the program never loops over spring steps. host-timing.ts's `advanceFrame` counts the fixed 4 ms steps, steps the springs to each event's timestamp before applying the event, and with `'events and settle checks'` writes state back only at events, settle checks and snaps, so stored state doesn't depend on the frame rate ([execution-model.md](../../docs/execution-model.md#springs-and-time)).
+- **Content.** A window's content box takes its destination size as soon as an event changes the destination, while only the frame animates and clips the content, so content lays out once per destination change instead of at every in-between size.
+- **Presses.** Presses are hit-tested against destination rectangles instead of drawn ones, with `emitCompare`: the host writes pointer coordinates on a 1/64 px grid and the window geometry is declared on a 1/64 px grid, so each edge comparison is an exact integer bit ([execution-model.md](../../docs/execution-model.md#comparisons)).
+- **Releases.** The window controls, the dock items, Photos' content, and the rows and the sidebar locations of Monitor's list act on release, like native buttons: a press arms the control under it, a release over the armed control acts, whatever path the pointer took between them, and a release anywhere else or a pointercancel acts on nothing. Every release reaches Photos as a click at the release point, read against Photos' layout at the window's destination, so during a maximize a release at a photo's destination opens that photo even where the drawn frame doesn't cover the point yet.
+- **Keys.** Keys reach a window only while that window is focused: ArrowLeft, ArrowRight and Escape reach Photos, and the six list keys, e.g. PageDown, reach Monitor. A key typed into Notes' text field stays with the browser and never reaches the program, and so does a key held with Command, Control or Alt.
+- **The viewport.** The page opens the windows at rectangles that its own JavaScript picks for the viewport, e.g. one column on a phone, and writes into the source table before the first step. After that, a window stores the rectangle that a drag or a resize gave it, and the viewport never changes the stored rectangle: every evaluation fits the stored rectangle into the workspace, i.e. the part of the viewport between the system bar and the dock, for hit tests, drawing and springs (`fitIntoWorkspace` in window-manager.ts). So a viewport that shrinks and grows back leaves every window where it was, e.g. a phone turned on its side and back ([behavior-choices.md](../../docs/behavior-choices.md#store-what-the-user-placed-and-fit-it-to-the-viewport-in-every-evaluation)).
+- **Cells.** Every cell of the source table is declared with cells.ts, which gives each cell its position, range, grid and initial value, and derives the validator that checks the table and the outputs around each evaluation.
+
+## Photos, Monitor and Notes
+
+Photos is built by `buildPhotos` into the same circuit as the window manager, and so is the list in the Monitor window, so the browser runs one source table, one program and one render loop.
+
+- **Photos** has a grid, a lightbox and a spring-animated thumbnail strip. A click on a photo in the grid opens it: the photo moves and grows from its cell to the open photo's rectangle on a spring, the other photos fade meanwhile, and a close takes the photo back. The spring animates one number, how far the photo is open, and the photo's rectangle is that far between its cell and the open rectangle of the same evaluation, so a photo in the middle of a zoom follows a resize of the window at once ("The zoom" in photo-gallery.ts's `buildPhotos`). A photo in the grid is at most 1.25 times as tall as wide and at most twice as wide as tall, and the open photo at most twice as tall as wide and 2.5 times as wide as tall. Where a limit applies, the photos stop growing in that direction, and the grid, or the open photo, is centered with free room around it, e.g. 166.6 px above and below the grid in a maximized Photos on a phone of 390 × 844 px. A photo's node is attached to the DOM only while the program's opacity output is positive and its width and height outputs are at least 1/64 px.
+- **Monitor** shows the running program itself in a virtualized list, i.e. every source cell (State), every live operation (Operations) and every output (Outputs) with its current value. The list scrolls natively: the page reads the scroller's position at the top of a frame as one more input, and the program computes which row each of 64 DOM slots shows, so the program holds no row ([behavior-choices.md](../../docs/behavior-choices.md#scroll-a-list-natively-and-select-a-row-at-the-release)). Around the list, the page's JavaScript writes what it reads from the compiled program, e.g. the number of operations of each kind in the sidebar, and the layers and the stored weights in the footer, next to a chart of the program's time per frame as the page measures it, each point the average of 10 frames.
+- **Notes** holds one native `<textarea>`: the browser edits, selects, wraps and scrolls the text, and the program computes the window around the text, e.g. the window's rectangle and springs, and whether the window is focused. The program holds no text and gets no event for a typed character. In a frame's side effects, the page gives the text field the keyboard focus or takes it away, so that the keyboard focus follows the focused window, e.g. a click on Notes' title bar gives the field the keyboard focus, and a click on another window takes it away. The first keyboard focus that the page gives the field puts the caret at the end of the text, and every later one keeps the caret or the selection (`noteFocusChange` in window-manager.ts).
+
+## Files
+
+| File | What it holds |
+| --- | --- |
+| `window-manager.ts` | The window manager's cells and builder code, the machine, and the page's render loop |
+| `photo-gallery.ts` | Photos, built into the same program, and a machine for Photos alone, which the tests run |
+| `value-list.ts` | The list in the Monitor window, built into the same program, and the three locations' rows |
+| `arrangement.ts` | The page's own JavaScript: the windows' first rectangles for the viewport |
+| `monitor-footer.ts` | The page's own JavaScript: the footer of the Monitor window, i.e. the program's sizes and the chart of frame times |
+| `wiring.ts` | The page's own JavaScript: the wallpaper, which draws every stored weight as one arc |
+| [`assets/index.html`](../../assets/index.html), [`assets/handwired-os.css`](../../assets/handwired-os.css), `assets/photo-gallery-00.webp` to `photo-gallery-11.webp` | The page, its stylesheet and the 12 photos |
+| [`tests/handwiredos/`](../../tests/handwiredos) | HandwiredOS and Photos over scripted traces (`window-manager`, `photo-gallery`, `oracle-trace`). Monitor's list against the same list in plain JavaScript (`value-list`). Presses and keys where the list and the Notes window meet (`value-list-and-notes`). The page's own code: the rule for the keyboard focus of Notes' text field (in `window-manager`), the windows' first rectangles at many viewport sizes (`arrangement`), Monitor's footer, e.g. the program's size in bytes and the chart's averages (`monitor-footer`), and the wallpaper's arcs and their opacity (`wiring`) |
+
+The runtime that the program is built with is in [src/runtime/](../runtime), and [docs/tutorial.md](../../docs/tutorial.md) walks through a first program.

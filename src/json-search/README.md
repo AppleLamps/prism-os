@@ -271,6 +271,7 @@ The demo page's own times, in [The demo page](#the-demo-page), were measured wit
 | `lab/json-search/results/` | The raw results |
 | `lab/json-search/report.ts` | Sizes and the documents' distribution, without a GPU |
 | `json-search.test.ts`, `search.test.ts`, `bit-emit.test.ts`, `writer-probes.test.ts`, `searcher.test.ts`, `edge-cases.test.ts`, `demo.test.ts`, in tests/json-search/ | The tests |
+| `tests/json-search/writer-probes.ts`, `tests/json-search/writer-fuzz.ts`, `tests/json-search/character-sets.ts` | Programs for the checks of bit-emit.ts. writer-probes.test.ts runs a reviewer's 73 loop programs, which each change one thing that a rule of the writer depends on, and a sample of the reviewer's random loop programs. bit-emit.test.ts runs character-sets.ts, a third loop program over the documents, written without regex search's helpers |
 | `tests/json-search/highlighter/`, `tests/json-search/regex/` | The highlighter's tests, corpus and reference in plain JavaScript, and the same for regex search's form (a) |
 | `lab/json-search/million/` | A check of a million documents with hand-written kernels, and the making and the reviews of bit-emit.ts, see [lab/json-search/million/README.md](../../lab/json-search/million/README.md) |
 

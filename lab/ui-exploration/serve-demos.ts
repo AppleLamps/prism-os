@@ -1,4 +1,6 @@
-// Serves every demo page in the repo from one Bun server, with an index page at "/".
+// Serves every demo page in the repo except the JSON search's from one Bun server, with an index page at "/".
+// The JSON search's page, assets/json-search.html, starts a worker whose script this server doesn't build:
+// scripts/serve-demo-site.ts does, so `bun start` serves that page, at /json-search/.
 //
 //   bun lab/ui-exploration/serve-demos.ts              (from the repo root)
 //   bun lab/ui-exploration/serve-demos.ts --port 5000  (or PORT=5000; the default is 4321)

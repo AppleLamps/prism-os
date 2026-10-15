@@ -9,8 +9,8 @@ export const repoRoot = resolve(import.meta.dir, '..')
 // `source` is the page's file in the repo, and `path` is its folder on the site, relative to the site's root, e.g.
 // 'os/' is served at <site>/os/ and built as site/os/index.html. The site is served under a path prefix, e.g.
 // https://example.com/handwired/, so every link between pages is relative and written for these paths: the index
-// links to HandwiredOS as "os/", and a demo's page links to the index as "../" and to another demo as e.g.
-// "../learned-gallery/", which is the JSON search page's link to the learned gallery.
+// links to HandwiredOS as "os/", and a demo's page links to the index as "../". A link from one demo's page to
+// another demo would be e.g. "../learned-gallery/", and no page has such a link today.
 export type SitePage = {source: string, path: string}
 
 const publishedPages: SitePage[] = [
@@ -18,8 +18,8 @@ const publishedPages: SitePage[] = [
   {source: 'assets/index.html', path: 'os/'},
   {source: 'assets/learned-gallery.html', path: 'learned-gallery/'},
 ]
-// The GPU search demo is on the site only once its page exists. Its card in assets/demos.html has a hidden attribute
-// until then.
+// A page of this list is built, served and checked only while its file exists. The list was made for the GPU search
+// demo while its page was being written. The page exists now, and its card in assets/demos.html is shown.
 const pagesBuiltWhenTheyExist: SitePage[] = [
   {source: 'assets/json-search.html', path: 'json-search/'},
 ]
