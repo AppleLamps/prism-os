@@ -4,7 +4,7 @@ Turn your regular JavaScript code into a neural net; no training, exact, yet als
 
 ## How It Works
 
-A program's made of if-else, loops, and state. Handwired transform them into matrix multiplication + reglu over floats. For example:
+A program's made of if-else, loops, and state. Handwired transforms them into matrix multiplication + reglu over floats. For example:
 
 ```ts
 const a = 5
@@ -25,23 +25,25 @@ You can calculate that by hand and see that both arrive at the same result.
 
 We then collect the + and * and relu into a giant matmul, and either run it on JS or WebGPU, for fun.
 
-Because we basically only use these 2 promitives:
+Because we basically only use these 2 primitives:
 - the full program stays differentiable
 - the weights don't need training since they're written manually
 - existing gpu techniques, such as fusion, sparsity, reordering, have a great time optimizing such minimal primitives
 
 This unlocks lots of funny use-cases, like:
 - unfreezing the weights and train them (what does that even do? Let's find out!)
-- attaching a specific frozen program to a generic neural net and train end-to-end (now a nanoGPT can do both shakespare and your particular UI?)
-- achieving GPU-level of parallelism with JS code that was written in a traditional single-threaded way (see the JSON research demo that runs in miliseconds over 100k documents)
+- attaching a specific frozen program to a generic neural net and train end-to-end (now a nanoGPT can do both Shakespeare and your particular UI?)
+- achieving GPU-level of parallelism with JS code that was written in a traditional single-threaded way (see the JSON search demo that runs in milliseconds over 100k documents)
 
 ## Play With It
 
-`git clone && bun install` then check `docs/`, `src/` and `template/` to get started! (`labs/` is a bunch of old expreiments you can check or ignore)
+`git clone && bun install` then check `docs/`, `src/` and `template/` to get started! (`lab/` is a bunch of old experiments you can check or ignore)
 
 ![HandwiredOS](assets/demos-handwiredos.webp)
 
 ## Demos
+
+The demos are live at https://chenglou.me/handwired/.
 
 `bun install`, then `bun start`, serves the three demos at http://127.0.0.1:3000/, with a landing page at / ([Running](#running)):
 
