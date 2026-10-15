@@ -6,7 +6,7 @@ From the repo root:
 
 ```sh
 bun start                         # the demo site, with the page at /json-search/
-bun test tests/json-search        # 182 tests in 10 files, about 40 s, no GPU
+bun test tests/json-search        # 183 tests in 10 files, about 40 s, no GPU
 bun run check                     # type-check and lint, with the rest of the repo
 ```
 
@@ -238,7 +238,7 @@ gpu/host.ts is plain functions with no page globals:
 
 What the programs are compared with was written from the rules, and not from the programs:
 
-- **tests/json-search/highlighter/reference.ts** is a hand-written scanner and parser with a real stack, written to be read next to JSON's grammar. reference.test.ts checks it against JSON.parse and against the definitions of the errors, on texts from corpus.ts.
+- **tests/json-search/highlighter/reference.ts** is a hand-written scanner and parser with a real stack, written to be read next to JSON's grammar. reference.test.ts checks it against JSON.parse and against the definitions of the errors, on texts from corpus.ts, and against display kinds written by hand for 13 texts, e.g. a key, an escape inside a key, and the rest of a line after an error.
 - **tests/json-search/regex/reference.ts** has two references for [what the search finds](#what-the-search-finds). `automatonMatches` runs the compiled automaton from each scan position until no state is left, and keeps the last position where an accepting state was reached. `regexpMatches` doesn't use the compiled automaton: it tests every substring with `new RegExp('^(?:' + pattern + ')$', 'u')`.
 
 The tests, by file:

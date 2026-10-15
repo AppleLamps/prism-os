@@ -1,9 +1,9 @@
 // The plain JavaScript reference on its own: against JSON.parse, against the definitions of the first error on texts cut
-// short, and against first errors written by hand. JSON search's tests compare the page's programs with this reference,
-// so these tests are what checks the reference itself on broken texts.
+// short, and against first errors and display kinds written by hand. JSON search's tests compare the page's programs
+// with this reference, so these tests are what checks the reference itself on broken texts.
 // Run from the repo root: bun test tests/json-search/highlighter/reference.test.ts
 import {describe, expect, test} from 'bun:test'
-import {capacity, errorKind, errorKinds, maximumDepth} from '../../../src/json-search/highlighter/kinds.ts'
+import {capacity, displayKind, errorKind, errorKinds, maximumDepth} from '../../../src/json-search/highlighter/kinds.ts'
 import {createCorpus} from './corpus.ts'
 import {highlightReference} from './reference.ts'
 
@@ -72,6 +72,39 @@ describe('the reference', () => {
     ]
     for (const [text, position, kind] of cases) {
       expect([text, highlightReference(text).firstErrorPosition, errorKinds[highlightReference(text).firstErrorKind]]).toEqual([text, position, kind])
+    }
+  })
+
+  test('shows each character as the kind that the rules say', () => {
+    // One letter per code point, written by hand from the rules at the top of reference.ts and in kinds.ts.
+    const letters = {w: 'whitespace', p: 'punctuation', s: 'string', k: 'key', e: 'escape', n: 'number', l: 'literal', x: 'error'} as const
+    const letterOfKind = new Map(Object.entries(letters).map(([letter, name]) => [displayKind[name], letter]))
+    const cases: [text: string, kinds: string][] = [
+      // A string in a key position is a key, and a string value is a string.
+      ['{"a": "b"}', 'pkkkpwsssp'],
+      ['["a"]', 'psssp'],
+      ['[1, true, null, -2.5e3]', 'pnpwllllpwllllpwnnnnnnp'],
+      [' \t\r\n1', 'wwwwn'],
+      // An escape is its own kind, in a value and in a key.
+      ['"a\\n\\u00e9"', 'sseeeeeeees'],
+      ['{"a\\tb": 1}', 'pkkeekkpwnp'],
+      // After a lexer error, the rest of the line is an error, and the next line is tokenized again.
+      ['[x y\n1]', 'pxxxwnp'],
+      ['[01]', 'pnxx'],
+      ['[nul!]', 'plllxx'],
+      ['"\\u12x4"', 'seeeexxx'],
+      ['"\\q"', 'sexx'],
+      // A line feed that is itself the error starts tokenizing again right away, here at a `b` that starts no token.
+      ['"a\nb"', 'ssxxx'],
+      // A key is found only before the first error, which is the second string here.
+      ['{"a": 1 "b": 2, "c": 3}', 'pkkkpwnwssspwnpwssspwnp'],
+    ]
+    for (const [text, kinds] of cases) {
+      const result = highlightReference(text)
+      const length = Array.from(text).length
+      const shown = result.displayKinds.slice(0, length).map(kind => letterOfKind.get(kind) ?? '?').join('')
+      // The cell after the text is pastEnd.
+      expect([text, shown, result.displayKinds[length]]).toEqual([text, kinds, displayKind.pastEnd])
     }
   })
 })
