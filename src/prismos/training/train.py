@@ -8,6 +8,7 @@
 #   "onnx",
 #   "onnxruntime",
 #   "onnxruntime-genai",
+#   "onnx-ir",
 #   "numpy",
 # ]
 # ///
@@ -56,6 +57,10 @@ parser.add_argument("--micro", type=int, default=8)
 parser.add_argument("--onnx-eval", type=int, default=100, help="eval rows to run through the ONNX export")
 parser.add_argument("--skip-base-eval", action="store_true")
 parser.add_argument("--base-result", default=None, help="the base model's score from an earlier run, e.g. 132/597, for the README when --skip-base-eval")
+parser.add_argument("--skip-training", action="store_true", help="export --checkpoint (or the base model) without training, e.g. to test the export")
+parser.add_argument("--checkpoint", default=None, help="a Hub repo whose pytorch/ folder holds weights to start from, or a local folder")
+parser.add_argument("--eval-limit", type=int, default=0, help="score only this many eval rows, e.g. for a quick export test")
+parser.add_argument("--no-publish", action="store_true", help="build and check everything, publish nothing")
 parser.add_argument("--public", action="store_true", help="publish the repo as public; private by default")
 args = parser.parse_args()
 
@@ -77,10 +82,16 @@ def fetch(name):
 train_rows = [json.loads(line) for line in fetch("train.jsonl").splitlines() if line.strip()]
 eval_rows = [json.loads(line) for line in fetch("eval.jsonl").splitlines() if line.strip()]
 tools = json.loads(fetch("tools.json"))
+if args.eval_limit:
+    eval_rows = eval_rows[: args.eval_limit]
 print(f"data: {len(train_rows)} train, {len(eval_rows)} eval, {len(tools)} tools", flush=True)
 
 tokenizer = AutoTokenizer.from_pretrained(BASE)
-model = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.bfloat16, attn_implementation="eager").to(device)
+start_from = {"pretrained_model_name_or_path": BASE}
+if args.checkpoint:
+    start_from = {"pretrained_model_name_or_path": args.checkpoint} if Path(args.checkpoint).exists() else {"pretrained_model_name_or_path": args.checkpoint, "subfolder": "pytorch"}
+model = AutoModelForCausalLM.from_pretrained(**start_from, dtype=torch.bfloat16, attn_implementation="eager").to(device)
+api = HfApi(token=os.environ.get("HF_TOKEN"))
 
 
 def as_ids(value):
@@ -129,14 +140,28 @@ def parse_answer(text):
     return calls, text
 
 
+NUMBER_WORDS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"]
+ORDINALS = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth"]
+
+
 def photo_index(value):
-    value = str(value).strip().lower()
+    """parsePhoto in src/prismos/commands.ts: a name, part of a name, a number, a word."""
+    key = re.sub(r"^(the\s+)?(photo|picture|image|pic)\s*", "", str(value).strip().lower())
+    key = re.sub(r"^(number|#|no\.?)\s*", "", key).strip()
     for index, name in enumerate(PHOTOS):
-        if value == name.lower():
+        if key == name.lower():
             return index
-    if value.isdigit():
-        return int(value) - 1
-    return value
+    for index, name in enumerate(PHOTOS):
+        if len(key) >= 4 and key in name.lower():
+            return index
+    digits = re.match(r"^(\d{1,2})(st|nd|rd|th)?$", key)
+    if digits and 1 <= int(digits.group(1)) <= 12:
+        return int(digits.group(1)) - 1
+    if key in NUMBER_WORDS:
+        return NUMBER_WORDS.index(key)
+    if key in ORDINALS:
+        return ORDINALS.index(key)
+    return key
 
 
 def canonical(calls):
@@ -215,7 +240,7 @@ model.train()
 model.gradient_checkpointing_enable()
 optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.0, betas=(0.9, 0.98))
 steps_per_epoch = math.ceil(len(encoded) / args.batch)
-total_steps = int(steps_per_epoch * args.epochs)
+total_steps = 0 if args.skip_training else int(steps_per_epoch * args.epochs)
 warmup = max(1, int(total_steps * 0.03))
 accumulate = args.batch // args.micro
 
@@ -274,6 +299,19 @@ while step < total_steps:
 model.gradient_checkpointing_disable()
 model.eval()
 results["fine_tuned"] = score(eval_rows, torch_generate, "fine-tuned FunctionGemma on held-out phrasings")
+
+# The weights go to the Hub before anything else can fail, so an export problem never
+# costs the training run: --checkpoint <repo> --skip-training exports them again.
+if not args.no_publish and not args.skip_training:
+    early_dir = work / "pytorch"
+    if early_dir.exists():
+        shutil.rmtree(early_dir)
+    model.save_pretrained(early_dir, safe_serialization=True)
+    tokenizer.save_pretrained(early_dir)
+    api.create_repo(args.repo, repo_type="model", exist_ok=True, private=not args.public)
+    api.upload_folder(folder_path=str(early_dir), path_in_repo="pytorch", repo_id=args.repo, repo_type="model",
+                      commit_message=f"PyTorch weights: {results['fine_tuned']['correct']}/{results['fine_tuned']['total']} held-out")
+    print(f"saved the PyTorch weights to {args.repo}/pytorch", flush=True)
 
 # ---------------------------------------------------------------------------------------
 # The browser build: ONNX Runtime GenAI's builder with 4-bit weights in blocks of 32 and
@@ -430,7 +468,10 @@ Use is subject to the [Gemma Terms of Use](https://ai.google.dev/gemma/terms).
 (web_dir / "results.json").write_text(json.dumps(results, indent=2))
 shutil.copytree(hf_dir, web_dir / "pytorch")
 
-api = HfApi(token=os.environ["HF_TOKEN"])
+if args.no_publish:
+    print("\nRESULTS", json.dumps(results), flush=True)
+    print("--no-publish: built and checked, published nothing", flush=True)
+    sys.exit(0)
 # Private unless asked: the browser can only load a public repo, so the owner makes it
 # public once they have checked the results.
 api.create_repo(args.repo, repo_type="model", exist_ok=True, private=not args.public)
