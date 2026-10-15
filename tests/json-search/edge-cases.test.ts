@@ -1,6 +1,6 @@
 // Documents and searches at the limits of both programs (edge-cases.ts), through the demo page's module, against the
-// programs that have every position written out, on the CPU executor: the looped steps have to give the values of
-// the full programs at exactly the capacity, at the maximum depth, on an empty text, and for patterns that fill a
+// plain JavaScript references: the looped steps have to give the reference highlighter's and the automaton
+// simulator's values at exactly the capacity, at the maximum depth, on an empty text, and for patterns that fill a
 // program's states, classes and class boundaries. The module runs on the CPU, and as the page runs it on the GPU, with
 // each pass run by the WGSL interpreter (interpreted-gpu.ts). lab/json-search/gpu/review-run.ts runs the same comparison on a GPU.
 // Run from the repo root: bun test tests/json-search/edge-cases.test.ts
@@ -8,12 +8,11 @@ import {describe, expect, test} from 'bun:test'
 import {capacity, errorKind, maximumDepth} from '../../src/json-search/highlighter/kinds.ts'
 import {compilePattern} from '../../src/json-search/regex/pattern.ts'
 import {
-  compareSearchers, compareWithWrittenOutPrograms, createSearchOnTheExecutor, edgePatterns, edgeSearches, handWrittenDocuments, highlighterOnTheExecutor,
-  stateCapacityOf,
+  compareSearchers, compareWithReferences, createReferenceSearch, edgePatterns, edgeSearches, handWrittenDocuments, referenceHighlights,
+  stateCapacityOf, validationNames,
 } from './edge-cases.ts'
 import {generateDocuments} from '../../src/json-search/documents.ts'
 import {createInterpretedDevice} from './interpreted-gpu.ts'
-import {summaryCount} from '../../src/json-search/program.ts'
 import {boundaryCapacity, classCapacity} from '../../src/json-search/search-step.ts'
 import {createCpuSearcher, createGpuSearcher, defaultSelfCheckSearches} from '../../src/json-search/searcher.ts'
 
@@ -28,13 +27,13 @@ const rowOf = (name: string) => {
 const longer = documents.filter(document => !document.name.startsWith('one code point')).map(document => document.text)
 
 describe('documents and searches at the limits', () => {
-  test('the documents and the patterns reach the limits, by the written-out programs\' values on the executor', () => {
+  test('the documents and the patterns reach the limits, by the references\' values', () => {
     expect(new Set(documents.map(document => document.name)).size).toBe(documents.length)
     const lengths = texts.map(text => Array.from(text).length)
     for (const length of [0, 1, capacity - 1, capacity, capacity + 1]) expect(lengths).toContain(length)
 
-    const expected = highlighterOnTheExecutor(texts)
-    const summaryOf = (name: string) => [...expected.summary.subarray(rowOf(name) * summaryCount, (rowOf(name) + 1) * summaryCount), expected.errorKinds[rowOf(name)]]
+    const expected = referenceHighlights(texts)
+    const summaryOf = (name: string) => [...expected.validation.subarray(rowOf(name) * validationNames.length, (rowOf(name) + 1) * validationNames.length)]
     // valid, firstErrorPosition, truncated, firstErrorKind.
     expect(summaryOf(`a string of ${capacity} code points`)).toEqual([1, -1, 0, errorKind.none])
     expect(summaryOf(`a string of ${capacity + 1} code points`)).toEqual([0, capacity, 1, errorKind.tooLong])
@@ -56,7 +55,7 @@ describe('documents and searches at the limits', () => {
       expect(compiled.some(entry => entry.partition.classCount === classCapacity && entry.partition.boundaries.length === boundaryCapacity && (states === 8 || entry.automaton.stateCount === states))).toBe(true)
     }
 
-    const search = createSearchOnTheExecutor(8)
+    const search = createReferenceSearch()
     const marks = new Float32Array(capacity)
     const countOf = (pattern: string, name: string) => {
       search.setSearch(compilePattern(pattern), 'everything')
@@ -72,15 +71,15 @@ describe('documents and searches at the limits', () => {
     expect([countOf('(the|an?) [a-z]+', `the tide at both ends of ${capacity} code points`), marks[0], marks[capacity - 1]]).toEqual([2, 2, 1])
   }, 60_000)
 
-  test('the searcher as generated JavaScript gives the written-out programs\' values: every document\'s validation and kinds, and every 8-state search', async () => {
-    const all = await compareWithWrittenOutPrograms(createCpuSearcher(texts, {windowCapacity: texts.length}), texts, [{pattern: '[^]', scope: 'everything'}, {pattern: '"', scope: 'strings'}], {windowDocuments: texts.length, maxWrittenOutStates: 8})
+  test('the searcher as generated JavaScript gives the references\' values: every document\'s validation and kinds, and every 8-state search', async () => {
+    const all = await compareWithReferences(createCpuSearcher(texts, {windowCapacity: texts.length}), texts, [{pattern: '[^]', scope: 'everything'}, {pattern: '"', scope: 'strings'}], {windowDocuments: texts.length})
     expect([all.documents, all.validationValues, all.validationMismatches, all.searchMismatches, all.examples]).toEqual([texts.length, texts.length * (4 + capacity), 0, 0, []])
     expect(all.expectedValidDocuments).toBeGreaterThan(20)
     expect(all.expectedValidDocuments).toBeLessThan(texts.length / 2)
 
     // Every pattern in every document, and each other scope with 6 of the patterns.
     const searches = edgeSearches(8).filter((search, index) => search.scope === 'everything' || index % 6 === 1)
-    const some = await compareWithWrittenOutPrograms(createCpuSearcher(longer, {windowCapacity: longer.length}), longer, searches, {windowDocuments: longer.length, maxWrittenOutStates: 8})
+    const some = await compareWithReferences(createCpuSearcher(longer, {windowCapacity: longer.length}), longer, searches, {windowDocuments: longer.length})
     expect([some.searches, some.validationMismatches, some.searchMismatches, some.examples]).toEqual([searches.length, 0, 0, []])
     // The patterns that can match find something: all but the empty class, the empty pattern, and the searches of no kind.
     expect(some.searchesWithMatches).toBeGreaterThanOrEqual(searches.length - 4)
@@ -91,19 +90,22 @@ describe('documents and searches at the limits', () => {
   test('the searcher on the CPU executor gives them too, a window at a time', async () => {
     const sample = longer.filter((_, index) => index % 4 === 0)
     const searches = edgeSearches(8).filter((_, index) => index % 5 === 0)
-    const comparison = await compareWithWrittenOutPrograms(createCpuSearcher(sample, {windowCapacity: 16, backend: 'executor'}), sample, searches, {windowDocuments: 16, maxWrittenOutStates: 8})
+    const comparison = await compareWithReferences(createCpuSearcher(sample, {windowCapacity: 16, backend: 'executor'}), sample, searches, {windowDocuments: 16})
     expect([comparison.searches, comparison.validationMismatches, comparison.searchMismatches, comparison.examples]).toEqual([searches.length, 0, 0, []])
     expect(comparison.expectedMatches).toBeGreaterThan(1000)
   }, 120_000)
 
-  test('16 states: the searcher gives the written-out program\'s values, and 32 states: generated JavaScript gives the executor\'s', async () => {
+  test('16 and 32 states: the searcher as generated JavaScript gives the references\' values, and at 32 states the CPU executor gives generated JavaScript\'s', async () => {
     const sample = longer.filter((_, index) => index % 2 === 1)
-    const comparison = await compareWithWrittenOutPrograms(createCpuSearcher(sample, {windowCapacity: 32}), sample, edgeSearches(16), {windowDocuments: 32, maxWrittenOutStates: 16})
-    expect([comparison.searches, comparison.validationMismatches, comparison.searchMismatches, comparison.examples]).toEqual([edgeSearches(16).length, 0, 0, []])
-    expect(comparison.searchesWithMatches).toBeGreaterThanOrEqual(6)
+    const larger = [...edgeSearches(16), ...edgeSearches(32)]
+    const comparison = await compareWithReferences(createCpuSearcher(sample, {windowCapacity: 32}), sample, larger, {windowDocuments: 32})
+    expect([comparison.searches, comparison.validationMismatches, comparison.searchMismatches, comparison.examples]).toEqual([larger.length, 0, 0, []])
+    // 7 of the 18 searches find nothing in these documents: the two of `connection reset`, which no document holds,
+    // and five whose scope holds no match.
+    expect(comparison.searchesWithMatches).toBe(11)
 
-    // The program of 32 states with every position written out is 1,167,392 operations, so here the two CPU backends of
-    // the loop are compared. bun lab/json-search/report.ts edge-cases compares it with the written-out program.
+    // The loop program on the CPU executor takes 39 ms per document at 32 states, so it runs a few documents, and is
+    // compared with generated JavaScript.
     const few = documents.filter(document => /times a$|isolated letters|both ends|emoji around/.test(document.name)).map(document => document.text).slice(0, 14)
     const searches = edgeSearches(32).filter(search => search.scope === 'everything')
     const backends = await compareSearchers(createCpuSearcher(few, {windowCapacity: 8}), createCpuSearcher(few, {windowCapacity: 8, backend: 'executor'}), searches, [{firstDocument: 0, documentCount: 8}, {firstDocument: 8, documentCount: few.length - 8}])
@@ -111,14 +113,14 @@ describe('documents and searches at the limits', () => {
     expect(backends.expectedMatches).toBeGreaterThan(30)
   }, 180_000)
 
-  test('the searcher on the GPU, each pass through the WGSL interpreter, gives the written-out programs\' values at 8 states, and the CPU searcher\'s at 16 and 32', async () => {
+  test('the searcher on the GPU, each pass through the WGSL interpreter, gives the references\' values at 8 states, and the CPU searcher\'s at 16 and 32', async () => {
     // Every 3rd document of more than one code point, among them texts of exactly the capacity, matches at the first
     // and at the last position, and nesting at the maximum depth, and every 3rd search.
     const sample = longer.filter((_, index) => index % 3 === 2)
     const searches = edgeSearches(8).filter((_, index) => index % 3 === 0)
     const gpu = await createGpuSearcher(createInterpretedDevice(), sample, {windowCapacity: 16})
     expect(gpu.programs().map(program => program.statements)).toEqual([107, 147, 171, 219])
-    const comparison = await compareWithWrittenOutPrograms(gpu, sample, searches, {windowDocuments: 16, maxWrittenOutStates: 8})
+    const comparison = await compareWithReferences(gpu, sample, searches, {windowDocuments: 16})
     expect([comparison.documents, comparison.searches, comparison.validationMismatches, comparison.searchMismatches, comparison.examples]).toEqual([sample.length, searches.length, 0, 0, []])
     expect(comparison.expectedValidDocuments).toBeGreaterThan(5)
     expect(comparison.expectedMatches).toBeGreaterThan(4000)

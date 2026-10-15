@@ -14,13 +14,18 @@ type BaselinesPage = {
   workers: {workers: number, sendingTheDocumentsMs: number, jsonParse: {total: number, ms: Summary}, regExp: {pattern: string, total: number, ms: Summary}[]}[]
 }
 type Check = Record<string, unknown>
+// A run from before the programs with every position written out were removed compared with them, on the CPU
+// executor, where a later run compares with the plain JavaScript references. Such a result file has the first key of
+// each pair below instead of the second.
 type EdgePage = {
   documents: {count: number, valid: number}
-  againstWrittenOutProgramsOnTheExecutor: Check, at32StatesAgainstGeneratedJavaScript: Check, at32StatesAgainstTheLoopProgramOnTheExecutor: Check, selfCheck: Check,
+  againstWrittenOutProgramsOnTheExecutor?: Check, againstTheReferences?: Check,
+  at32StatesAgainstGeneratedJavaScript: Check, at32StatesAgainstTheLoopProgramOnTheExecutor: Check, selfCheck: Check,
   threeRequestsAtOnce: Check, firstStageShadersOverTheEdgeDocuments: Check[],
 }
 type ManyPage = {
-  validationAgainstTheHighlighterOnTheExecutor: Check, validateBackToBack: {fromCallToResolveMs: Summary, evaluateMs: Summary},
+  validationAgainstTheHighlighterOnTheExecutor?: Check, validationAgainstTheReference?: Check,
+  validateBackToBack: {fromCallToResolveMs: Summary, evaluateMs: Summary},
   againstGeneratedJavaScript: Check & {validateMicrosecondsPerDocument: number, referenceSearchMs: number[], searchesRun: {pattern: string, scope: unknown}[]},
   at32StatesAgainstGeneratedJavaScript: Check & {documents: number, referenceSearchMs: number[]},
   againstTheLoopProgramsOnTheExecutor: Check & {documents: number, validateMicrosecondsPerDocument: number, referenceSearchMs: number[]},
@@ -95,7 +100,8 @@ for (const run of edge) {
   const page = run.page
   console.log(`\n### Documents and patterns at the limits, on the GPU\n`)
   console.log(`${format(page.documents.count, 0)} documents, of which the GPU calls ${format(page.documents.valid, 0)} valid.`)
-  console.log(`Against the programs with every position written out, on the CPU executor: ${JSON.stringify(page.againstWrittenOutProgramsOnTheExecutor)}`)
+  if (page.againstWrittenOutProgramsOnTheExecutor !== undefined) console.log(`Against the programs with every position written out, on the CPU executor: ${JSON.stringify(page.againstWrittenOutProgramsOnTheExecutor)}`)
+  if (page.againstTheReferences !== undefined) console.log(`Against the plain JavaScript references: ${JSON.stringify(page.againstTheReferences)}`)
   console.log(`32 states, against the loop program as generated JavaScript: ${JSON.stringify(page.at32StatesAgainstGeneratedJavaScript)}`)
   console.log(`32 states, against the loop program on the CPU executor: ${JSON.stringify(page.at32StatesAgainstTheLoopProgramOnTheExecutor)}`)
   console.log(`The searcher's self check: ${JSON.stringify(page.selfCheck)}`)
@@ -107,7 +113,8 @@ for (const run of many) {
   const page = run.page
   const count = run.page.config.documents
   console.log(`\n### ${format(count, 0)} generated documents on the GPU\n`)
-  console.log(`Validation and every display kind against the highlighter with every position written out, on the CPU executor: ${JSON.stringify(page.validationAgainstTheHighlighterOnTheExecutor)}`)
+  if (page.validationAgainstTheHighlighterOnTheExecutor !== undefined) console.log(`Validation and every display kind against the highlighter with every position written out, on the CPU executor: ${JSON.stringify(page.validationAgainstTheHighlighterOnTheExecutor)}`)
+  if (page.validationAgainstTheReference !== undefined) console.log(`Validation and every display kind against the reference highlighter: ${JSON.stringify(page.validationAgainstTheReference)}`)
   console.log(`searcher.validate() back to back, ms: from the call until the promise resolves ${page.validateBackToBack.fromCallToResolveMs.median} (${page.validateBackToBack.fromCallToResolveMs.min} to ${page.validateBackToBack.fromCallToResolveMs.max}), its own evaluateMs ${page.validateBackToBack.evaluateMs.median}`)
   console.log(`Searches against the loop programs as generated JavaScript, every document: ${JSON.stringify(page.againstGeneratedJavaScript)}`)
   console.log(`32 states against generated JavaScript, the first ${format(page.at32StatesAgainstGeneratedJavaScript.documents, 0)} documents: ${JSON.stringify(page.at32StatesAgainstGeneratedJavaScript)}`)

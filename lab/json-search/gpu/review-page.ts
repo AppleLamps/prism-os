@@ -2,18 +2,18 @@
 // headless Chrome, and writes what it posts to /result. Modes, from /config:
 // - 'edge': a GPU searcher over the documents of edge-cases.ts, i.e. texts at exactly the capacity, empty texts, every
 //   kind of broken document and nesting around the maximum depth, with patterns that fill each program's states,
-//   classes and class boundaries or match nothing or everything. Every value is compared with the programs that have
-//   every position written out, on the CPU executor. Then three requests at once, of which only the newest gets a
-//   result, and the first stage's two shaders over the same documents.
+//   classes and class boundaries or match nothing or everything. Every value is compared with the plain JavaScript
+//   references of tests/json-search: the reference highlighter and the automaton simulator. Then three requests at
+//   once, of which only the newest gets a result, and the first stage's two shaders over the same documents.
 // - 'many': a GPU searcher over the measurements' generated documents. The validation and every display kind of every
-//   document are compared with the highlighter on the CPU executor, the searches with the same loop programs as
-//   generated JavaScript over every document, and with the loop programs on the CPU executor over the first ones.
+//   document are compared with the reference highlighter, the searches with the same loop programs as generated
+//   JavaScript over every document, and with the loop programs on the CPU executor over the first ones.
 // - 'baselines': other ways to write the plain JavaScript baselines, timed in this page: four ways to count a
 //   pattern's matches with RegExp, the table loop with one array for every document's kinds or one array of 512, and
 //   JSON.parse and RegExp in several workers that each hold a share of the documents.
-import {type EdgeSearch, compareSearchers, compareWithWrittenOutPrograms, edgeDocuments, edgeSearches, highlighterOnTheExecutor} from '../../../tests/json-search/edge-cases.ts'
+import {type EdgeSearch, compareSearchers, compareWithReferences, edgeDocuments, edgeSearches, referenceHighlights, validationNames} from '../../../tests/json-search/edge-cases.ts'
 import {generateDocuments} from '../../../src/json-search/documents.ts'
-import {buildBatchPrograms, cellsPerDocument, kindCount, summaryCount, writeDocumentCells} from '../../../src/json-search/program.ts'
+import {buildBatchPrograms, cellsPerDocument, writeDocumentCells} from '../../../src/json-search/program.ts'
 import {capacity as positions} from '../../../src/json-search/highlighter/kinds.ts'
 import {type ShaderWriter, bufferBytesFor, createCpuSearcher, createGpuSearcher} from '../../../src/json-search/searcher.ts'
 import {highlightWithTables, tableLoopResult} from '../../../src/json-search/table-loop.ts'
@@ -72,16 +72,16 @@ async function runEdge() {
   log(`${count} edge documents, ${searcher.validation.validCount} valid by the GPU, programs ${JSON.stringify(searcher.programs().map(program => [program.name, program.statements, round(program.compileMs ?? 0)]))}`)
   await post(false)
 
-  // Up to 16 states: every value against the programs with every position written out, on the CPU executor.
+  // Up to 16 states: every value against the plain JavaScript references.
   const searches = [...edgeSearches(8), ...edgeSearches(16)]
   let started = performance.now()
-  const writtenOut = await compareWithWrittenOutPrograms(searcher, texts, searches, {windowDocuments: config.windowDocuments, maxWrittenOutStates: 16})
-  report['againstWrittenOutProgramsOnTheExecutor'] = {...writtenOut, executorMs: round(writtenOut.executorMs), totalMs: round(performance.now() - started)}
-  log(`against the written-out programs on the executor: ${JSON.stringify(report['againstWrittenOutProgramsOnTheExecutor'])}`)
+  const references = await compareWithReferences(searcher, texts, searches, {windowDocuments: config.windowDocuments})
+  report['againstTheReferences'] = {...references, referenceMs: round(references.referenceMs), totalMs: round(performance.now() - started)}
+  log(`against the references: ${JSON.stringify(report['againstTheReferences'])}`)
   await post(false)
 
-  // 32 states: the written-out program is 1,167,392 operations, so the GPU is compared with the same loop program as
-  // generated JavaScript on every document, and on the CPU executor on a few.
+  // 32 states: the GPU against the same loop program as generated JavaScript on every document, and on the CPU
+  // executor on a few.
   started = performance.now()
   const cpu = createCpuSearcher(texts, {windowCapacity: config.windowDocuments})
   const windows = windowsOver(count, config.windowDocuments)
@@ -155,24 +155,24 @@ async function runMany() {
   const searcher = await createGpuSearcher(device, texts, {windowCapacity: config.windowDocuments, shaderSalt: config.shaderSalt, writers: {search: config.searchWriter}})
   log(`${count} generated documents on the GPU, ${searcher.validation.validCount} valid`)
 
-  // The highlighter on the CPU executor, every position written out, for every document. Its 410 MB of expected values
-  // are let go before the next comparison.
+  // The reference highlighter for every document. Its expected values, 258 MB for 100,000 documents, are let go
+  // before the next comparison.
   let started = performance.now()
   const compareValidation = async () => {
-    const expected = highlighterOnTheExecutor(texts)
-    const validation = {documents: count, values: 0, mismatches: 0, expectedValidDocuments: 0, expectedKindsThatAreNotWhitespace: 0, executorMs: round(performance.now() - started)}
+    const expected = referenceHighlights(texts)
+    const validation = {documents: count, values: 0, mismatches: 0, expectedValidDocuments: 0, expectedKindsThatAreNotWhitespace: 0, referenceMs: round(performance.now() - started)}
     for (let row = 0; row < count; row++) {
-      const actual = [searcher.validation.valid[row]!, searcher.validation.firstErrorPosition[row]!, searcher.validation.truncated[row]!, searcher.validation.firstErrorKind[row]!]
-      const wanted = [expected.summary[row * summaryCount]!, expected.summary[row * summaryCount + 1]!, expected.summary[row * summaryCount + 2]!, expected.errorKinds[row]!]
-      validation.expectedValidDocuments += wanted[0]!
-      validation.values += 4
-      for (let column = 0; column < 4; column++) if (actual[column] !== wanted[column]) validation.mismatches++
+      validation.expectedValidDocuments += expected.validation[row * validationNames.length]!
+      validation.values += validationNames.length
+      validationNames.forEach((name, column) => {
+        if (searcher.validation[name][row] !== expected.validation[row * validationNames.length + column]) validation.mismatches++
+      })
     }
     for (const range of windowsOver(count, 4096)) {
       const kinds = await searcher.kinds(range)
       validation.values += kinds.length
       for (let index = 0; index < kinds.length; index++) {
-        const wanted = expected.kinds[range.firstDocument * kindCount + index]!
+        const wanted = expected.kinds[range.firstDocument * positions + index]!
         if (wanted !== 0) validation.expectedKindsThatAreNotWhitespace++
         if (kinds[index] !== wanted) validation.mismatches++
       }
@@ -180,7 +180,7 @@ async function runMany() {
     return validation
   }
   const validation = await compareValidation()
-  report['validationAgainstTheHighlighterOnTheExecutor'] = validation
+  report['validationAgainstTheReference'] = validation
   // searcher.validate()'s own evaluateMs, which the searcher's measurement page reports, next to the time from the
   // call until its promise resolves, which also holds JavaScript turning the summary into four typed arrays.
   const validateWall: number[] = []
@@ -195,7 +195,7 @@ async function runMany() {
   }
   report['validateBackToBack'] = {fromCallToResolveMs: summary(validateWall), evaluateMs: summary(validateEvaluate)}
   log(`validate back to back: ${JSON.stringify(report['validateBackToBack'])}`)
-  log(`validation and kinds against the highlighter on the executor: ${JSON.stringify(validation)}`)
+  log(`validation and kinds against the reference highlighter: ${JSON.stringify(validation)}`)
   await post(false)
 
   // The searches: the same loop programs as generated JavaScript, over every document.

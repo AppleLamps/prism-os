@@ -3,12 +3,12 @@
 //   bun lab/json-search/report.ts documents [count]     the generated documents' shapes, defects and lengths, 100,000 by default
 //   bun lab/json-search/report.ts examples [count]      the first documents' texts, 8 by default
 //   bun lab/json-search/report.ts loops                 the loop programs' stages and their shaders
-//   bun lab/json-search/report.ts edge-cases            the searcher on the CPU against the programs with every position
-//                                                       written out, on the executor, over documents and patterns at the
-//                                                       limits, about 5 minutes
+//   bun lab/json-search/report.ts edge-cases            the searcher on the CPU against the plain JavaScript references of
+//                                                       tests/json-search, over documents and patterns at the limits,
+//                                                       about 15 s
 import {createCorpus} from '../../tests/json-search/highlighter/corpus.ts'
 import {describeDocuments, generateDocuments} from '../../src/json-search/documents.ts'
-import {type Comparison, compareWithWrittenOutPrograms, edgeDocuments, edgeSearches} from '../../tests/json-search/edge-cases.ts'
+import {type Comparison, compareWithReferences, edgeDocuments, edgeSearches} from '../../tests/json-search/edge-cases.ts'
 import {buildJsonLoop} from '../../src/json-search/json-step.ts'
 import {emitLoopWgsl} from '../../src/json-search/loop-emit.ts'
 import {type LoopProgram, describeLoop, operationsPerDocument} from '../../src/json-search/loop-program.ts'
@@ -53,21 +53,21 @@ if (command === 'sizes') {
     }
   }
 } else if (command === 'edge-cases') {
-  const print = (name: string, comparison: Comparison) => console.log(`${name}: ${format(comparison.documents)} documents, of which the executor calls ${format(comparison.expectedValidDocuments)} valid. Validation and kinds: ${format(comparison.validationValues)} values, ${comparison.validationMismatches} different. ${comparison.searches} searches, of which ${comparison.searchesWithMatches} find something, ${format(comparison.expectedMatches)} matches and ${format(comparison.expectedMarkedPositions)} marked positions in all: ${format(comparison.searchValues)} values, ${comparison.searchMismatches} different. The executor took ${format(Math.round(comparison.executorMs))} ms.${comparison.examples.length === 0 ? '' : `\n  ${comparison.examples.join('\n  ')}`}`)
+  const print = (name: string, comparison: Comparison) => console.log(`${name}: ${format(comparison.documents)} documents, of which the reference calls ${format(comparison.expectedValidDocuments)} valid. Validation and kinds: ${format(comparison.validationValues)} values, ${comparison.validationMismatches} different. ${comparison.searches} searches, of which ${comparison.searchesWithMatches} find something, ${format(comparison.expectedMatches)} matches and ${format(comparison.expectedMarkedPositions)} marked positions in all: ${format(comparison.searchValues)} values, ${comparison.searchMismatches} different. The references took ${format(Math.round(comparison.referenceMs))} ms.${comparison.examples.length === 0 ? '' : `\n  ${comparison.examples.join('\n  ')}`}`)
   // The sizes of gpu/review-run.ts's edge mode, so both compare the same documents.
   const documents = edgeDocuments({broken: 400, generated: 200, random: 100, mutated: 300, long: 40})
   const texts = documents.map(document => document.text)
-  print('Up to 16 states, generated JavaScript', await compareWithWrittenOutPrograms(createCpuSearcher(texts, {windowCapacity: texts.length}), texts, [...edgeSearches(8), ...edgeSearches(16)], {windowDocuments: texts.length, maxWrittenOutStates: 16}))
-  // The program of 32 states with every position written out is 1,167,392 operations and takes about 13 ms per
-  // document, so it runs over the hand-written documents of more than one code point.
+  print('Up to 16 states, generated JavaScript', await compareWithReferences(createCpuSearcher(texts, {windowCapacity: texts.length}), texts, [...edgeSearches(8), ...edgeSearches(16)], {windowDocuments: texts.length}))
+  // The loop program of 32 states takes about 3.6 ms per document and search as generated JavaScript, so its searches
+  // run over the hand-written documents of more than one code point.
   const longer = documents.filter(document => document.name.startsWith('one code point') === false && document.name.includes('generated') === false && document.name.includes('highlighter test text') === false).map(document => document.text)
-  print('32 states, generated JavaScript', await compareWithWrittenOutPrograms(createCpuSearcher(longer, {windowCapacity: longer.length}), longer, edgeSearches(32), {windowDocuments: longer.length, maxWrittenOutStates: 32}))
+  print('32 states, generated JavaScript', await compareWithReferences(createCpuSearcher(longer, {windowCapacity: longer.length}), longer, edgeSearches(32), {windowDocuments: longer.length}))
   // The loop programs on the CPU executor, over every fourth of those documents, a window of 16 at a time.
   const sample = longer.filter((_, index) => index % 4 === 0)
-  print('Up to 16 states, the loop programs on the CPU executor', await compareWithWrittenOutPrograms(createCpuSearcher(sample, {windowCapacity: 16, backend: 'executor'}), sample, [...edgeSearches(8), ...edgeSearches(16)].filter((_, index) => index % 3 === 0), {windowDocuments: 16, maxWrittenOutStates: 16}))
+  print('Up to 16 states, the loop programs on the CPU executor', await compareWithReferences(createCpuSearcher(sample, {windowCapacity: 16, backend: 'executor'}), sample, [...edgeSearches(8), ...edgeSearches(16)].filter((_, index) => index % 3 === 0), {windowDocuments: 16}))
   // The highlighter's loop alone, over many more texts of the highlighter's own kinds and broken generated documents.
   const many = [...createCorpus(20261015, {random: 6000, mutated: 18_000, long: 1500}).all, ...generateDocuments(6000, 979, 1).map(document => document.text)]
-  print('The highlighter\'s loop alone, generated JavaScript', await compareWithWrittenOutPrograms(createCpuSearcher(many, {windowCapacity: 1}), many, [], {windowDocuments: 1, maxWrittenOutStates: 8}))
+  print('The highlighter\'s loop alone, generated JavaScript', await compareWithReferences(createCpuSearcher(many, {windowCapacity: 1}), many, [], {windowDocuments: 1}))
 } else {
   throw new Error(`unknown command ${command}`)
 }

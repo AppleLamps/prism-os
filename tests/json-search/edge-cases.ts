@@ -1,21 +1,21 @@
 // Documents and searches at the limits of both programs, and the comparison of a searcher (searcher.ts, on the CPU or
-// on the GPU) with the programs that have every position written out, on the CPU executor. The review of JSON search
-// added them: the measurements compare the GPU with the executor on generated documents, which are ordinary JSON, and
-// with a plain JavaScript loop for the searches.
+// on the GPU) with the plain JavaScript references. The review of JSON search added them: the measurements run
+// generated documents, which are ordinary JSON.
 //
 // What the comparison reads as the definition of each value:
-// - valid, firstErrorPosition, truncated, firstErrorKind and the 512 display kinds: src/json-search/highlighter/highlighter.ts,
-//   compiled as it is, on the CPU executor.
-// - a search's match count and marks: search-step.ts's buildMaskedSearch, i.e. regex search's form (a) with every
-//   position written out over the code points of the searched kinds, on the CPU executor, with the executor's kinds.
+// - valid, firstErrorPosition, truncated, firstErrorKind and the 512 display kinds: highlighter/reference.ts, a scanner
+//   and a parser written from JSON's grammar.
+// - a search's match count and marks: regex/reference.ts's automaton simulator over the document's first 512 code
+//   points, with -1, the value of a cell past the text's end, in place of every code point whose display kind the
+//   search doesn't read. The kinds are the reference highlighter's.
 import {capacity, displayKind, maximumDepth} from '../../src/json-search/highlighter/kinds.ts'
 import {createCorpus} from './highlighter/corpus.ts'
-import {writePattern} from '../../src/json-search/regex/data-program.ts'
+import {highlightReference} from './highlighter/reference.ts'
 import {type CompiledPattern, capacityErrors, compilePattern} from '../../src/json-search/regex/pattern.ts'
-import {expectedOutputs} from '../../src/json-search/check.ts'
+import {automatonMatches} from './regex/reference.ts'
 import {generateDocuments} from '../../src/json-search/documents.ts'
-import {buildBatchPrograms, cellsPerDocument, summaryCount, writeDocumentCells} from '../../src/json-search/program.ts'
-import {type SearchScope, boundaryCapacity, buildMaskedSearch, classCapacity, searchableKinds} from '../../src/json-search/search-step.ts'
+import {cellsPerDocument, writeDocumentCells} from '../../src/json-search/program.ts'
+import {type SearchScope, boundaryCapacity, classCapacity, searchableKinds} from '../../src/json-search/search-step.ts'
 import type {Searcher} from '../../src/json-search/searcher.ts'
 
 const positions = capacity
@@ -142,47 +142,49 @@ export function edgeSearches(states: 8 | 16 | 32): EdgeSearch[] {
 
 export const stateCapacityOf = (compiled: CompiledPattern) => ([8, 16, 32] as const).find(states => capacityErrors(compiled, {states, classes: classCapacity, boundaries: boundaryCapacity}).length === 0)
 
-// The highlighter with every position written out, on the CPU executor: each text's cells, the summary (valid,
-// firstErrorPosition, truncated), the first error's kind, and the 512 display kinds.
-export function highlighterOnTheExecutor(texts: readonly string[]) {
-  const batch = buildBatchPrograms(['display'])
+// The four values that a searcher's validation holds per document, in the order of the reference's array below.
+export const validationNames = ['valid', 'firstErrorPosition', 'truncated', 'firstErrorKind'] as const
+
+// The reference highlighter for each text: the text's cells, the four validation values, and the 512 display kinds,
+// which are small integers, so every document's kinds fit one array of bytes, e.g. 51 MB for 100,000 documents.
+export function referenceHighlights(texts: readonly string[]) {
   const cells = new Float32Array(texts.length * cellsPerDocument)
-  texts.forEach((text, row) => writeDocumentCells(cells, row * cellsPerDocument, text))
-  const [summary, kinds] = expectedOutputs(batch.programs[0]!, cells, texts.length) as [Float32Array, Float32Array]
-  const evaluateErrorKind = batch.built.circuit.createTensorEvaluator([batch.built.output.firstErrorKind])
-  const source = new Float32Array(batch.built.initialSource)
-  const errorKinds = new Float32Array(texts.length)
+  const validation = new Float32Array(texts.length * validationNames.length)
+  const kinds = new Uint8Array(texts.length * positions)
   texts.forEach((text, row) => {
-    batch.writeText(source, text)
-    errorKinds[row] = evaluateErrorKind(source)[0]!
+    writeDocumentCells(cells, row * cellsPerDocument, text)
+    const reference = highlightReference(text)
+    validationNames.forEach((name, column) => {
+      validation[row * validationNames.length + column] = reference[name]
+    })
+    kinds.set(reference.displayKinds, row * positions)
   })
-  return {cells, summary, kinds, errorKinds}
+  return {cells, validation, kinds}
 }
 
-// The masked search with every position written out, on the CPU executor, for one state capacity: 127,414 operations at
-// 8 states, and about 2 ms per document.
-export function createSearchOnTheExecutor(states: number) {
-  const full = buildMaskedSearch({states, classes: classCapacity, boundaries: boundaryCapacity, textLength: positions})
-  const evaluate = full.circuit.createTensorEvaluator([...full.output.highlighted, ...full.output.starts, full.output.matchCount])
-  const source = new Float32Array(full.initialSource)
+// The reference for a search: the automaton simulator over the code points of the searched kinds. A pattern of any
+// number of states runs, since the simulator has no capacity.
+export function createReferenceSearch() {
+  let pattern: CompiledPattern | undefined
+  let searchable = new Set<number>()
+  const masked = Array<number>(positions).fill(-1)
   return {
-    operations: full.circuit.operations.length,
     setSearch(compiled: CompiledPattern, scope: SearchScope) {
-      writePattern(source, {cells: full.cells.search, capacity: full.capacity}, compiled)
-      const searchable = new Set(searchableKinds(scope))
-      full.cells.searchable.forEach((wire, kind) => {
-        source[wire] = searchable.has(kind) ? 1 : 0
-      })
+      pattern = compiled
+      searchable = new Set(searchableKinds(scope))
     },
-    // Document `row`'s match count, and its marks written at marks[marksOffset]: highlighted + start per position.
+    // Document `row`'s match count, and its marks written at marks[marksOffset]: 0 outside a match, 1 inside one, and 2
+    // at a match's first code point. `cells` and `kinds` are referenceHighlights' arrays.
     run(cells: Float32Array, kinds: ArrayLike<number>, row: number, marks: Float32Array, marksOffset: number) {
-      for (let position = 0; position < positions; position++) {
-        source[full.cells.search.text[position]!] = cells[row * cellsPerDocument + position]!
-        source[full.cells.kinds[position]!] = kinds[row * positions + position]!
+      if (pattern === undefined) throw new Error('setSearch comes before run')
+      for (let position = 0; position < positions; position++) masked[position] = searchable.has(kinds[row * positions + position]!) ? cells[row * cellsPerDocument + position]! : -1
+      const found = automatonMatches(pattern, masked)
+      marks.fill(0, marksOffset, marksOffset + positions)
+      for (const match of found) {
+        marks.fill(1, marksOffset + match.start, marksOffset + match.end)
+        marks[marksOffset + match.start] = 2
       }
-      const values = evaluate(source)
-      for (let position = 0; position < positions; position++) marks[marksOffset + position] = values[position]! + values[positions + position]!
-      return values[2 * positions]!
+      return found.length
     },
   }
 }
@@ -202,38 +204,37 @@ export type Comparison = {
   searchesWithMatches: number
   // The first few differences, e.g. to print.
   examples: string[]
-  executorMs: number
+  // The time the references took.
+  referenceMs: number
 }
 
-// Compares a searcher over `texts` with the programs that have every position written out, on the CPU executor. The
-// searcher's window capacity must be at least `windowDocuments`. Each search runs over every document, with the marks
-// of the first window, and then over each later window alone, so both of a searcher's ways to search are compared.
-// `maxWrittenOutStates` leaves out the searches whose program would be too large to build with every position written
-// out, e.g. 1,167,392 operations at 32 states.
-export async function compareWithWrittenOutPrograms(searcher: Searcher, texts: readonly string[], searches: readonly EdgeSearch[], options: {windowDocuments: number, maxWrittenOutStates: number}): Promise<Comparison> {
+// Compares a searcher over `texts` with the plain JavaScript references. The searcher's window capacity must be at
+// least `windowDocuments`. Each search runs over every document, with the marks of the first window, and then over
+// each later window alone, so both of a searcher's ways to search are compared. A search whose pattern no program of
+// the searcher holds is left out.
+export async function compareWithReferences(searcher: Searcher, texts: readonly string[], searches: readonly EdgeSearch[], options: {windowDocuments: number}): Promise<Comparison> {
   const count = texts.length
   const result: Comparison = {
     documents: count, validationValues: 0, validationMismatches: 0, searches: 0, searchValues: 0, searchMismatches: 0,
-    expectedValidDocuments: 0, expectedMatches: 0, expectedMarkedPositions: 0, searchesWithMatches: 0, examples: [], executorMs: 0,
+    expectedValidDocuments: 0, expectedMatches: 0, expectedMarkedPositions: 0, searchesWithMatches: 0, examples: [], referenceMs: 0,
   }
   const note = (text: string) => {
     if (result.examples.length < 8) result.examples.push(text)
   }
   let started = performance.now()
-  const expected = highlighterOnTheExecutor(texts)
-  result.executorMs += performance.now() - started
+  const expected = referenceHighlights(texts)
+  result.referenceMs += performance.now() - started
 
   const {validation} = searcher
   for (let row = 0; row < count; row++) {
-    const actual = [validation.valid[row]!, validation.firstErrorPosition[row]!, validation.truncated[row]!, validation.firstErrorKind[row]!]
-    const wanted = [expected.summary[row * summaryCount]!, expected.summary[row * summaryCount + 1]!, expected.summary[row * summaryCount + 2]!, expected.errorKinds[row]!]
-    result.expectedValidDocuments += wanted[0]!
-    result.validationValues += 4
-    for (let column = 0; column < 4; column++) {
-      if (actual[column] === wanted[column]) continue
+    result.expectedValidDocuments += expected.validation[row * validationNames.length]!
+    result.validationValues += validationNames.length
+    validationNames.forEach((name, column) => {
+      const wanted = expected.validation[row * validationNames.length + column]
+      if (validation[name][row] === wanted) return
       result.validationMismatches++
-      note(`document ${row}, validation value ${column}: ${actual[column]} instead of ${wanted[column]}`)
-    }
+      note(`document ${row}, ${name}: ${validation[name][row]} instead of ${wanted}`)
+    })
   }
   const chunk = 2048
   for (let first = 0; first < count; first += chunk) {
@@ -247,24 +248,20 @@ export async function compareWithWrittenOutPrograms(searcher: Searcher, texts: r
     }
   }
 
-  const programs = new Map<number, ReturnType<typeof createSearchOnTheExecutor>>()
+  const reference = createReferenceSearch()
   const expectedCounts = new Float32Array(count)
   const expectedMarks = new Float32Array(count * positions)
   const window = Math.min(options.windowDocuments, count)
   for (const {pattern, scope} of searches) {
     const compiled = compilePattern(pattern)
+    // The program that the searcher runs the pattern on.
     const states = stateCapacityOf(compiled)
-    if (states === undefined || states > options.maxWrittenOutStates) continue
+    if (states === undefined) continue
     started = performance.now()
-    let program = programs.get(states)
-    if (program === undefined) {
-      program = createSearchOnTheExecutor(states)
-      programs.set(states, program)
-    }
-    program.setSearch(compiled, scope)
+    reference.setSearch(compiled, scope)
     let matches = 0
-    for (let row = 0; row < count; row++) matches += expectedCounts[row] = program.run(expected.cells, expected.kinds, row, expectedMarks, row * positions)
-    result.executorMs += performance.now() - started
+    for (let row = 0; row < count; row++) matches += expectedCounts[row] = reference.run(expected.cells, expected.kinds, row, expectedMarks, row * positions)
+    result.referenceMs += performance.now() - started
     result.searches++
     result.expectedMatches += matches
     if (matches > 0) result.searchesWithMatches++
