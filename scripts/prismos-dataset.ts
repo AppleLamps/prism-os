@@ -112,10 +112,6 @@ const templates = {
     hidden: ['hide the arcs', 'hide the weight lines', 'turn off the wiring', 'remove the lines behind the windows', 'hide the weights', 'no arcs please', 'get rid of the curves on the desktop', 'turn off the weight arcs', 'clear the lines from the background', 'hide the network drawing', 'hide the wires', 'no wiring', 'remove the arcs', 'turn the arcs off', 'hide the lines on the desk'],
     shown: ['show the arcs', 'show the weight lines', 'turn on the wiring', 'bring back the lines behind the windows', 'show the weights', 'arcs on', 'draw the network again', 'turn the weight arcs back on', 'I want the curves back', 'display the weight arcs', 'show the wires', 'wiring on', 'bring the arcs back', 'turn the arcs on', 'show the lines on the desk'],
   },
-  open_link: {
-    demos: ['go back to all demos', 'show the other demos', 'take me to the demos page', 'leave prism os', 'all demos', 'what other demos are there', 'exit to the demo list', 'back to the main page', 'open the demos', 'go home', 'other demos', 'back to the demo list', 'show me more demos', 'demos page', 'leave this page for the demos'],
-    source: ['show me the source code', 'open the github', 'where is the code', 'view source', 'open the repository', 'I want to read the code', 'take me to github', 'source code please', 'show the repo', 'how is this built, show me the code', 'github', 'open the source', 'the code behind this', 'let me see the source', 'repo link'],
-  },
   get_stats: ['how many weights does this have', 'stats', 'how big is the program', 'how many operations are there', 'how many layers are there', 'give me the numbers', 'program stats', 'how many source cells', 'what are the program numbers', 'show me the stats', 'how large is the network', 'size of the program', 'how many layers does it have', 'how many weights are there', 'count the operations', 'how many parameters', 'what is the weight count', 'numbers on the program', 'how many cells', 'how big is the network'],
   explain: {
     prism_os: ['what is prism os', 'what is this', 'what am I looking at', 'explain prism os', 'what is this desktop', 'tell me about prism os', 'what is this thing', 'describe prism os', 'what does prism os do', 'what is this site'],
@@ -334,10 +330,6 @@ const commandMakers: Record<string, (split: Split) => Row> = {
     }
     const visibility = pick(['hidden', 'shown'] as const)
     return {user: pick(phrasings(templates.set_arcs[visibility], split)), calls: single(kind, {visibility})}
-  },
-  open_link(split) {
-    const link = pick(['demos', 'source'] as const)
-    return {user: pick(phrasings(templates.open_link[link], split)), calls: single('open_link', {link})}
   },
   info(split) {
     if (random.next() < 0.4) return {user: pick(phrasings(templates.get_stats, split)), calls: single('get_stats')}

@@ -4,8 +4,8 @@
 // program applies to the operator exactly as to a person: a press tests the same hit
 // rectangles, a drag stores through the same fit into the workspace, a window can't be
 // pushed off-screen. Prism's own apps run in the shell beside the program (shell.ts), so
-// their commands go through the shell's own functions. Settings, the note and links are
-// the page's own state, which the program never sees.
+// their commands go through the shell's own functions. Settings and the note are the
+// page's own state, which the program never sees.
 import type {ValueListKey} from '../handwiredos/value-list.ts'
 import {monitorLayout} from '../handwiredos/value-list.ts'
 import {itemCount as photoCount, photoField, photoNames, thumbnailField} from '../handwiredos/photo-gallery.ts'
@@ -62,7 +62,6 @@ export type PageEffects = {
   settings: {get(): Settings, update(change: Partial<Settings>): void}
   panels: PanelControls
   note: {read(): string, write(text: string): void}
-  navigate(link: 'demos' | 'source'): void
   slideshow: {start(): void, stop(): void, running(): boolean}
   // Where the windows opened, for the viewport as it is now, see arrangement.ts.
   homeRectangles(): readonly Rectangle[]
@@ -514,9 +513,6 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
         const place = command.city === 'here' ? 'here' : `in ${command.city.replace(/\b\w/gu, letter => letter.toUpperCase())}`
         return `It's ${time} ${place}, ${day}.`
       }
-      case 'open_link':
-        page.navigate(command.link)
-        return 'Opening…'
       case 'get_stats': {
         const s = stats()
         return `The program behind Prism OS has ${format(s.sourceCells)} source cells, ${format(s.operations)} live operations in ${format(s.layers)} layers, and ${format(s.weights)} stored weights (${format(s.kilobytes)} KB). None of them were trained: every weight was written by hand.`

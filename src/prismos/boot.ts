@@ -92,9 +92,6 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
             saveNote()
           },
         },
-        navigate: link => {
-          window.location.href = link === 'demos' ? 'demos/' : 'https://github.com/AppleLamps/prism-os'
-        },
         slideshow,
         homeRectangles: () => {
           const {width, height} = viewport()

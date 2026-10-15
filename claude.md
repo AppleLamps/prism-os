@@ -36,7 +36,7 @@ Requires [Bun](https://bun.sh) (project tested with Bun 1.4.x).
 
 ```sh
 bun install
-bun start                    # Prism OS at http://127.0.0.1:3000/, the other demos at /demos/
+bun start                    # Prism OS at http://127.0.0.1:3000/
 bun ./assets/prism-os.html   # Prism page only
 bun run check                # typecheck + lint
 bun test tests/handwiredos   # window manager behavior (~20s)

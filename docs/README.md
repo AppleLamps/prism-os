@@ -26,12 +26,12 @@ The repo needs [Bun](https://bun.sh), and is tested with Bun 1.4.3.
 
 ```sh
 bun install
-bun start                                 # the demo site at http://127.0.0.1:3000/: Prism OS, the list of demos at /demos/, and the demos at /os/, /learned-gallery/ and /json-search/
+bun start                                 # Prism OS at http://127.0.0.1:3000/
 bun run start:template                    # the template app, a toggle switch, at http://localhost:3000/
 bun run test                              # every test in tests/, template/ and lab/, in about 3 minutes
 bun test tests/runtime                    # one folder's tests, in about 2 s
 bun run check                             # type-checks and lints src/, tests/, scripts/, template/ and lab/, in about 3 s
-bun run site:build                        # the demo site as static files in site/
+bun run site:build                        # Prism OS as static files in site/, which Vercel publishes
 bun run site:check                        # builds the site and loads every page in headless Chrome
 bun lab/ui-exploration/serve-demos.ts     # the lab's demos, at http://127.0.0.1:4321/
 bun lab/runtime-cost/report.ts            # three programs' sizes and µs per evaluation in Bun. "window manager" is HandwiredOS
@@ -43,7 +43,7 @@ bun lab/runtime-cost/report.ts            # three programs' sizes and µs per ev
 
 - `src/runtime/`: what every program is built and run with. `numeric-ui-core.ts` has the `Circuit` class, the builder functions, the compiler and the evaluators. `cells.ts` declares a program's cells and checks their values. `host-timing.ts` plans a frame's evaluations and spring steps, in plain JavaScript. `prefix-networks.ts` computes every prefix of a list under an associative combine, e.g. running totals of row heights
 - `src/handwiredos/`, `src/learned-gallery/` and `src/json-search/`: the three demos, each with a README that names its files. HandwiredOS is a small desktop with three windows and a dock, run by one program. The learned gallery is a photo layout computed by a small network inside a program, whose coefficients are trained with the program's own gradients. JSON search searches 100,000 JSON documents at each keystroke, with two programs that it writes as WebGPU shaders
-- `assets/`: the demo site's pages, stylesheets and images, e.g. `demos.html` for the landing page and `index.html` for HandwiredOS
+- `assets/`: the pages, stylesheets and images. The site publishes `prism-os.html` alone; `demos.html`, `index.html` (HandwiredOS) and the other demos come from Handwired and run with `bun ./assets/<page>.html`
 - `template/`: the toggle switch to start an app from
 - `tests/`: `tests/runtime/` runs programs, including seeded random ones, through a plain reference evaluator and the compiled one, and compares the results. The other folders hold each demo's tests, which run without a browser, e.g. JSON search's GPU code through an interpreter
 - `scripts/`: `check.ts` is what `bun run check` runs, and the other files are the demo site's server, build and check, which share the list of pages in `demo-site-pages.ts`. `.github/workflows/pages.yml` runs the build on pushes to main and publishes site/ to GitHub Pages

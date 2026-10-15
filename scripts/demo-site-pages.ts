@@ -6,41 +6,23 @@ import {resolve} from 'node:path'
 
 export const repoRoot = resolve(import.meta.dir, '..')
 
-// `source` is the page's file in the repo, and `path` is its folder on the site, relative to the site's root, e.g.
-// 'os/' is served at <site>/os/ and built as site/os/index.html. Prism OS is the site's front page, at its root, and
-// the list of demos is at demos/. The site is served under a path prefix, e.g. https://example.com/handwired/, so
-// every link between pages is relative and written for these paths: the list links to HandwiredOS as "../os/" and
-// to Prism OS as "../", Prism OS links to the list as "demos/", and another demo's page links to it as "../demos/".
+// `source` is the page's file in the repo, and `path` is its folder on the site, relative to the site's root: '' is
+// the root, built as site/index.html. The site is Prism OS alone. The repo's other pages, e.g. assets/index.html
+// (HandwiredOS) and assets/demos.html, come from Handwired and still run with `bun ./assets/<page>.html`, but aren't
+// published. A page's links are relative, so the site also works under a path prefix, e.g. https://example.com/prism/.
 export type SitePage = {source: string, path: string}
 
-const publishedPages: SitePage[] = [
-  {source: 'assets/prism-os.html', path: ''},
-  {source: 'assets/demos.html', path: 'demos/'},
-  {source: 'assets/index.html', path: 'os/'},
-  {source: 'assets/learned-gallery.html', path: 'learned-gallery/'},
-]
-// A page of this list is built, served and checked only while its file exists. The list was made for the GPU search
-// demo while its page was being written. The page exists now, and its card in assets/demos.html is shown.
-const pagesBuiltWhenTheyExist: SitePage[] = [
-  {source: 'assets/json-search.html', path: 'json-search/'},
-]
-// The page that lists the demos, whose cards link to every other page.
-export const demosPath = 'demos/'
 export const sitePages: SitePage[] = [
-  ...publishedPages,
-  ...pagesBuiltWhenTheyExist.filter(page => existsSync(resolve(repoRoot, page.source))),
+  {source: 'assets/prism-os.html', path: ''},
 ]
-export const siteFoldersNotBuilt: string[] = pagesBuiltWhenTheyExist
-  .filter(page => !existsSync(resolve(repoRoot, page.source)))
-  .map(page => page.path)
+// Folders the site links to without building, e.g. a page that's still being written. None today.
+export const siteFoldersNotBuilt: string[] = []
 
 // The scripts that a page starts as a worker. Bun's bundler (1.4.3) doesn't follow `new Worker(...)` from a page's
 // script, so each worker is built on its own, as one file that imports nothing. `path` is the file on the site,
-// relative to the site's root, next to its page: the page at json-search/ starts its worker as "./demo-worker.js", and
-// Prism OS, at the root, starts its model's worker as "./model-worker.js".
+// relative to the site's root, next to its page: Prism OS, at the root, starts its model's worker as "./model-worker.js".
 export type SiteWorker = {source: string, path: string}
 export const siteWorkers: SiteWorker[] = [
-  {source: 'src/json-search/demo-worker.ts', path: 'json-search/demo-worker.js'},
   // Prism OS's command center runs its model in this worker, see src/prismos/model-worker.ts.
   {source: 'src/prismos/model-worker.ts', path: 'model-worker.js'},
 ].filter(worker => existsSync(resolve(repoRoot, worker.source)))

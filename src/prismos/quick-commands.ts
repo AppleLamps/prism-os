@@ -87,8 +87,6 @@ const rules: Rule[] = [
     const topic = {'prism os': 'prism_os', 'prism': 'prism_os', 'this': 'prism_os', 'spotlight': 'command_center'}[m[1]!] ?? m[1]
     return {name: 'explain', topic}
   }],
-  [/^(?:(?:show|open) (?:me )?(?:the )?source(?: code)?|github|view source)$/u, () => ({name: 'open_link', link: 'source'})],
-  [/^(?:all demos|(?:show|open) (?:the |all )?(?:other )?demos)$/u, () => ({name: 'open_link', link: 'demos'})],
 ]
 
 // A sentence that is only arithmetic, e.g. "17 * 23", "what is 17 times 23" or

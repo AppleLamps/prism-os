@@ -5,7 +5,7 @@
   "outputDirectory": "site",
   "trailingSlash": true,
   "redirects": [
-    {"source": "/prism-os", "destination": "/", "permanent": true},
-    {"source": "/prism-os/", "destination": "/", "permanent": true}
+    {"source": "/:page(prism-os|demos|os|learned-gallery|json-search)/:rest*", "destination": "/", "permanent": false},
+    {"source": "/:page(prism-os|demos|os|learned-gallery|json-search)", "destination": "/", "permanent": false}
   ]
 }

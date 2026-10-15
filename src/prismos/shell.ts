@@ -366,7 +366,7 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   controlButton.append(icon(icons.controls))
   const clockText = el('time', 'prism-clock')
   status.append(searchButton, controlButton, clockText)
-  systemBar.querySelector('.system-links')?.before(status)
+  systemBar.append(status)
   const clockFormat = new Intl.DateTimeFormat(undefined, {weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'})
   const renderClock = () => {
     const now = new Date()

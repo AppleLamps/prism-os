@@ -26,7 +26,7 @@ A sentence takes one path today, and a second one later:
 1. **The quick parser** (`quick-commands.ts`) reads the sentences people type most, including two commands joined by "and" or "then", and arithmetic. It runs at once, with nothing to download.
 2. **The model**, off until it's trained on the final command list: FunctionGemma 270M, fine-tuned on Prism OS's commands, running in a worker in the browser on WebGPU (`model-worker.ts`). It takes the sentences the patterns miss. `modelEnabled` in `command-center.ts` switches it on for everyone, and `?model=on` on the page switches it on for one visit.
 
-Every call passes the validator in `commands.ts`, which accepts the names people use ("notes", "the gallery", "photo 3", "grey", "NYC") and rejects anything Prism OS lacks. The operator (`operator.ts`) runs what passes. Commands for the program's windows become the pointer and key events a hand would make, aimed at points the program itself computes: a click on the minimize button, a drag of a title bar, a release on a dock tile. So the program's rules hold for commands exactly as for a person, e.g. a window moved by a command still can't leave the workspace. Commands for Prism's apps go through the shell's own functions, the same ones their buttons call. Erasing or replacing the note and leaving the page ask first.
+Every call passes the validator in `commands.ts`, which accepts the names people use ("notes", "the gallery", "photo 3", "grey", "NYC") and rejects anything Prism OS lacks. The operator (`operator.ts`) runs what passes. Commands for the program's windows become the pointer and key events a hand would make, aimed at points the program itself computes: a click on the minimize button, a drag of a title bar, a release on a dock tile. So the program's rules hold for commands exactly as for a person, e.g. a window moved by a command still can't leave the workspace. Commands for Prism's apps go through the shell's own functions, the same ones their buttons call. Erasing or replacing the note asks first.
 
 | Commands | What they do |
 | --- | --- |
@@ -37,7 +37,7 @@ Every call passes the validator in `commands.ts`, which accepts the names people
 | `write_note`, `clear_note`, `read_note` | Inkwell's note, which is saved in the browser |
 | `set_theme`, `set_accent`, `set_wallpaper`, `set_motion`, `set_arcs` | The preferences in `settings.ts`, as Control Center sets them |
 | `calculate`, `stopwatch`, `world_time` | Arithmetic with precedence (`expression.ts`), Clock's stopwatch, the time in 30 cities |
-| `open_link`, `get_stats`, `explain` | The demos page or the source, the program's live sizes, short explanations |
+| `get_stats`, `explain` | The program's live sizes, short explanations |
 
 ### Training the model
 
@@ -84,7 +84,7 @@ bun ./assets/prism-os.html
 | `command-center.ts` | Spotlight's commands: the preview as you type, running a sentence, replies, confirmations, the model's status, and the slideshow |
 | `commands.ts` | The commands: the function declarations the model sees, and the validator every call passes |
 | `quick-commands.ts`, `expression.ts` | The patterns for common sentences, and the arithmetic parser |
-| `operator.ts` | Runs a command: the program's windows through their own events, Prism's apps through the shell, preferences, the note and links in the page |
+| `operator.ts` | Runs a command: the program's windows through their own events, Prism's apps through the shell, preferences and the note in the page |
 | `function-calls.ts`, `model-worker.ts` | FunctionGemma's call format, and the model in a worker through Transformers.js on WebGPU |
 | [`training/`](training) | `train.py`, the Hugging Face job, `last_token_logits.py`, and the data that `scripts/prismos-dataset.ts` writes |
 | [`tests/prismos/`](../../tests/prismos) | The cascade at many viewport sizes, Calculator's arithmetic, Terminal's commands, the stored preferences, and a check that no palette or accent is purple |

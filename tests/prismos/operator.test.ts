@@ -28,7 +28,6 @@ function createTestDriver(width = 1280, height = 800): MachineDriver {
 function createPage(driver: MachineDriver) {
   let settings: Settings = {...defaultSettings}
   let note = 'first line'
-  const navigated: string[] = []
   let slideshow = false
   const {width, height} = driver.viewport()
   const home = (() => {
@@ -59,11 +58,10 @@ function createPage(driver: MachineDriver) {
     settings: {get: () => settings, update: change => { settings = {...settings, ...change} }},
     panels,
     note: {read: () => note, write: text => { note = text }},
-    navigate: link => navigated.push(link),
     slideshow: {start: () => { slideshow = true }, stop: () => { slideshow = false }, running: () => slideshow},
     homeRectangles: () => home,
   }
-  return {page, settings: () => settings, note: () => note, navigated, slideshow: () => slideshow, home, panel, behind: () => behind}
+  return {page, settings: () => settings, note: () => note, slideshow: () => slideshow, home, panel, behind: () => behind}
 }
 
 function command(name: string, args: Record<string, unknown> = {}): Command {
@@ -237,8 +235,6 @@ test('page commands change settings, the note and links, never the program', asy
   assert.equal(await operator.run(command('read_note')), 'first line\nbuy milk')
   await operator.run(command('clear_note'))
   assert.equal(fake.note(), '')
-  await operator.run(command('open_link', {link: 'source'}))
-  assert.deepEqual(fake.navigated, ['source'])
   assert.match(await operator.run(command('get_stats')), /source cells/u)
 })
 

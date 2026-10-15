@@ -651,29 +651,6 @@
   {
     "type": "function",
     "function": {
-      "name": "open_link",
-      "description": "Leave Prism OS for another page",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "link": {
-            "type": "STRING",
-            "description": "demos for all demos, source for the source code",
-            "enum": [
-              "demos",
-              "source"
-            ]
-          }
-        },
-        "required": [
-          "link"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
       "name": "get_stats",
       "description": "Report the live numbers of the program that runs Prism OS",
       "parameters": {

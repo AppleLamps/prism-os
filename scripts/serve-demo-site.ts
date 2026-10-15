@@ -1,6 +1,5 @@
-// Serves the demo site while developing, at the paths of the published site: Prism OS at /, the list of demos at
-// /demos/, HandwiredOS at /os/ and so on, as listed in demo-site-pages.ts. The links between pages are relative and
-// written for those paths, so the same links work here and in the built site.
+// Serves the site while developing, at the paths of the published site: Prism OS at /, as listed in
+// demo-site-pages.ts. Its links are relative, so the same links work here and in the built site.
 //
 //   bun start                                       (http://127.0.0.1:3000/)
 //   bun scripts/serve-demo-site.ts --port 5000      (or PORT=5000)

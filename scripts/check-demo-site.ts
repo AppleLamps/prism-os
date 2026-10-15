@@ -6,8 +6,7 @@
 // For each page of demo-site-pages.ts, the check fails when the page logs an error or a warning, throws, requests a
 // file that fails to load, or requests anything outside the site, and when a link on the page to another page of the
 // site doesn't resolve. It also waits for what each demo shows once its program has run, and prints it, e.g.
-// HandwiredOS's Monitor window with the program's sizes. The index's first card states two of those sizes, e.g.
-// "9,909 weights", and the check fails when a number on the card isn't the number that the demo's page reports.
+// Scope's counts of the program's sizes.
 // The server listens on a free port unless --port names one, and Chrome picks its debugging port unless
 // --debugging-port names one. CHROME_PATH overrides the Chrome binary, and CHROME_PROFILE_DIR the profile folder,
 // which defaults to a new folder in the system's temporary folder. --screenshots saves a PNG of each page.
@@ -15,7 +14,7 @@
 import {existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import path from 'node:path'
-import {demosPath, repoRoot, sitePages} from './demo-site-pages.ts'
+import {repoRoot, sitePages} from './demo-site-pages.ts'
 
 const siteFolder = path.join(repoRoot, 'site')
 // GitHub Pages serves a project's site under the repo's name.
@@ -26,11 +25,9 @@ function option(name: string): string | undefined {
   return index === -1 ? undefined : process.argv[index + 1]
 }
 
-// What each demo shows once its program has run: `ready` is polled until it is true, and `report` is printed.
-// Both are JavaScript evaluated in the page. A page without an entry is loaded and given a moment. The reports
-// include each page's own counts, e.g. HandwiredOS's weights and layers, which is where the numbers on the
-// index's first card come from.
-const textOf = (selector: string) => `[...document.querySelectorAll('${selector}')].map(element => element.textContent.trim().replace(/\\s+/g, ' ')).filter(text => text !== '').join('\\n')`
+// What each page shows once its program has run: `ready` is polled until it is true, and `report` is printed.
+// Both are JavaScript evaluated in the page. A page without an entry is loaded and given a moment. Prism OS reports
+// Scope's counts, e.g. "130 layers" and "9,909 weights".
 const expectations: Record<string, {ready: string, report: string}> = {
   '': {
     ready: `/\\d/.test(document.querySelector('.monitor-counts')?.textContent ?? '')`,
@@ -38,31 +35,6 @@ const expectations: Record<string, {ready: string, report: string}> = {
       ...[...document.querySelectorAll('.monitor-location')].map(item => item.title.split('.')[0]),
       ...[...document.querySelectorAll('.monitor-counts li')].map(item => item.textContent.trim()),
     ].join(', ')`,
-  },
-  'os/': {
-    // HandwiredOS reports its program in its Monitor window, which the page fills from the compiled program at
-    // mount. Each item of the window's sidebar counts a location's rows, and a pointer that rests on the item reads
-    // the count with what a row is, e.g. "4,646 operations. What the program computes: ...". The window's footer
-    // counts the rest, e.g. "130 layers", "9,909 weights". The report is the sidebar's counts, then the footer's.
-    ready: `/\\d/.test(document.querySelector('.monitor-counts')?.textContent ?? '')`,
-    report: `[
-      ...[...document.querySelectorAll('.monitor-location')].map(item => item.title.split('.')[0]),
-      ...[...document.querySelectorAll('.monitor-counts li')].map(item => item.textContent.trim()),
-    ].join(', ')`,
-  },
-  'learned-gallery/': {
-    ready: `/\\d/.test(document.querySelector('#learning-coefficients')?.textContent ?? '')`,
-    report: `document.querySelector('#learning-coefficients').textContent.trim() + ' trained weights'`,
-  },
-  'json-search/': {
-    // The page is ready once its documents are loaded and its line of numbers holds the first search's, e.g.
-    // "10,559 of 100,000 documents match. This program: 13 ms on the GPU." In a browser without WebGPU the search runs on the CPU
-    // and takes 20 s or more, so there the first numbers are a part of the answer, e.g. "56 of the first 596
-    // documents match.", and the page also shows a sentence that says why. The report is that line, then the
-    // programs that the page compiled for the GPU with the size of each one's shader, e.g. "regex search, 8 states:
-    // 147 statements", which is the shader as src/json-search/bit-emit.ts writes it.
-    ready: `window.jsonSearch?.ready === true && / documents match/.test(document.querySelector('#status')?.textContent ?? '')`,
-    report: `${textOf('#status, #notice')} + '\\n' + (window.jsonSearch.programs === null ? 'Both programs run on the CPU.' : window.jsonSearch.programs.map(program => program.name + ': ' + program.statements + ' statements').join(', '))`,
   },
 }
 
@@ -227,10 +199,6 @@ try {
 
   // Every page a link points to is requested once, however many pages link to it.
   const linkStatus = new Map<string, number>()
-  // The counts on the index's cards, each in an element with data-count inside the card's link, e.g.
-  // <span data-count="weights">9,909</span> in the link to os/. And each page's printed report.
-  let indexCounts: {path: string, name: string, value: number}[] = []
-  const reports = new Map<string, string>()
   for (const page of sitePages) {
     pageProblems = []
     requestUrls = new Map()
@@ -252,12 +220,6 @@ try {
     await evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))')
     await Bun.sleep(300)
 
-    reports.set(page.path, report)
-    if (page.path === demosPath) {
-      indexCounts = await evaluate<typeof indexCounts>(`[...document.querySelectorAll('a[href] [data-count]')].filter(element => element.checkVisibility()).map(element => ({
-        path: element.closest('a').href.slice(${JSON.stringify(siteUrl)}.length), name: element.dataset.count, value: Number(element.textContent.replaceAll(',', '')),
-      }))`)
-    }
     const title = await evaluate<string>('document.title')
     if (title.trim() === '') pageProblems.push('the page has no title')
     const links = await evaluate<{href: string, visible: boolean}[]>(`[...document.querySelectorAll('a[href]')].map(link => ({href: link.href, visible: link.checkVisibility()}))`)
@@ -297,25 +259,6 @@ try {
     for (const line of report.split('\n')) if (line !== '') console.log(`      ${line}`)
     for (const problem of pageProblems) console.log(`      problem: ${problem}`)
     if (pageProblems.length > 0) failed = true
-  }
-
-  // A count on the index against the first "<number> <name>" of the demo's report, e.g. "9,909 weights". One
-  // word may stand between the two, e.g. "244 trained weights".
-  if (indexCounts.length > 0) console.log(`\nThe index's counts, each the number that the demo's page reports:`)
-  for (const count of indexCounts) {
-    const found = new RegExp(`(\\d[\\d,]*) +(?:\\w+ +)?${count.name}\\b`).exec(reports.get(count.path) ?? '')
-    const onTheIndex = `${prefix}${count.path} ${count.name}: ${count.value.toLocaleString('en-US')} on the index`
-    if (found === null) {
-      console.log(`      not compared, since the page's report above has no count of ${count.name}: ${onTheIndex}`)
-      continue
-    }
-    const reported = Number(found[1]!.replaceAll(',', ''))
-    if (count.value === reported) {
-      console.log(`ok    ${onTheIndex}, ${reported.toLocaleString('en-US')} on the page`)
-    } else {
-      failed = true
-      console.log(`FAIL  ${onTheIndex}, ${reported.toLocaleString('en-US')} on the page. Write ${reported.toLocaleString('en-US')} in the card's element with data-count="${count.name}" in assets/demos.html.`)
-    }
   }
 
   const outside = requests.filter(request => !request.path.startsWith(prefix) && `${request.path}/` !== prefix)

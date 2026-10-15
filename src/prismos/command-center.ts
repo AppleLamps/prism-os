@@ -157,7 +157,7 @@ export function createCommandCenter(window: Window, workerUrl: string) {
       if (question !== null) {
         pending = {command, rest: commands.slice(index + 1), entry}
         confirmText.textContent = question
-        acceptButton.textContent = command.name === 'clear_note' ? 'Erase note' : command.name === 'open_link' ? 'Leave page' : 'Replace note'
+        acceptButton.textContent = command.name === 'clear_note' ? 'Erase note' : 'Replace note'
         render()
         acceptButton.focus({preventScroll: true})
         return

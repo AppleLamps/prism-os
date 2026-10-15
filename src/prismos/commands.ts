@@ -44,7 +44,6 @@ export const accentNames = Object.keys(accents) as AccentName[]
 export const sceneNames = Object.keys(scenes) as SceneName[]
 export const onOff = ['on', 'off'] as const
 export const arcVisibilities = ['shown', 'hidden'] as const
-export const links = ['demos', 'source'] as const
 export const topics = ['prism_os', 'scope', 'inkwell', 'chroma', 'calculator', 'clock', 'terminal', 'handwired', 'command_center'] as const
 export const noteModes = ['append', 'replace'] as const
 export const slideshowActions = ['start', 'stop'] as const
@@ -115,7 +114,6 @@ export type Command =
   | {name: 'calculate', expression: string}
   | {name: 'stopwatch', action: (typeof stopwatchActions)[number]}
   | {name: 'world_time', city: string}
-  | {name: 'open_link', link: (typeof links)[number]}
   | {name: 'get_stats'}
   | {name: 'explain', topic: (typeof topics)[number]}
 
@@ -204,9 +202,6 @@ export const toolDeclarations: readonly ToolDeclaration[] = [
   }),
   tool('world_time', 'Tell the time in a city', {
     city: {type: 'STRING', description: 'The city, or here'},
-  }),
-  tool('open_link', 'Leave Prism OS for another page', {
-    link: {type: 'STRING', description: 'demos for all demos, source for the source code', enum: links},
   }),
   tool('get_stats', 'Report the live numbers of the program that runs Prism OS'),
   tool('explain', 'Explain a part of Prism OS', {
@@ -385,10 +380,6 @@ export function validateCall(name: string, args: Readonly<Record<string, unknown
       const city = parseCity(args['city'] ?? 'here')
       return city === null ? fail(`I know the time in ${Object.keys(cities).filter(key => key !== 'here').map(key => key.replace(/\b\w/gu, letter => letter.toUpperCase())).join(', ')}.`) : done({name, city})
     }
-    case 'open_link': {
-      const link = oneOf(links, args['link'])
-      return link === null ? fail('I can open all demos or the source code.') : done({name, link})
-    }
     case 'explain': {
       const topic = oneOf(topics, args['topic'])
       return topic === null ? fail(`I can explain ${topics.join(', ').replaceAll('_', ' ')}.`) : done({name, topic})
@@ -405,8 +396,6 @@ export function needsConfirmation(command: Command): string | null {
       return 'Erase everything in the note?'
     case 'write_note':
       return command.mode === 'replace' ? 'Replace the whole note?' : null
-    case 'open_link':
-      return command.link === 'demos' ? 'Leave Prism OS for the demos page?' : 'Leave Prism OS for the source code?'
     default:
       return null
   }

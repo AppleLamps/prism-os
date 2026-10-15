@@ -1,5 +1,4 @@
-// Builds the demo site into site/, the folder that GitHub Pages and Vercel publish: Prism OS at site/index.html, the
-// list of demos at site/demos/index.html and each other demo in its own folder, e.g. site/os/index.html, as listed in
+// Builds the site into site/, the folder that Vercel publishes: Prism OS at site/index.html, as listed in
 // demo-site-pages.ts.
 //   bun run site:build
 // The steps:
@@ -20,7 +19,7 @@ import {createHash} from 'node:crypto'
 import {existsSync} from 'node:fs'
 import {mkdir, readdir, readFile, rm, rmdir, stat, writeFile} from 'node:fs/promises'
 import path from 'node:path'
-import {demosPath, iconLinkTag, repoRoot, siteFoldersNotBuilt, sitePages, siteWorkers} from './demo-site-pages.ts'
+import {iconLinkTag, repoRoot, siteFoldersNotBuilt, sitePages, siteWorkers} from './demo-site-pages.ts'
 
 const outdir = path.join(repoRoot, 'site')
 const problems: string[] = []
@@ -151,7 +150,7 @@ async function checkSite(): Promise<{fileCount: number, byteCount: number}> {
     if (!name.endsWith('.html') && !name.endsWith('.css')) continue
     for (const {url, where, loadsAFile, hidden} of urlsOf(name, await readFile(path.join(outdir, name), 'utf8'))) {
       if (url.startsWith('/')) {
-        problems.push(`site/${name}: ${where} has a URL that starts at the host's root. Under a path prefix that URL leaves the site, so write it relative to the page, e.g. "../demos/" for the list of demos.`)
+        problems.push(`site/${name}: ${where} has a URL that starts at the host's root. Under a path prefix that URL leaves the site, so write it relative to the page, e.g. "./model-worker.js".`)
       } else if (hasScheme(url)) {
         if (loadsAFile && !url.startsWith('data:')) problems.push(`site/${name}: ${where} loads a file from another host`)
       } else if (isRelative(url)) {
@@ -173,16 +172,6 @@ async function checkSite(): Promise<{fileCount: number, byteCount: number}> {
         }
       }
     }
-  }
-  // A page that the list of demos doesn't link to can only be reached by its address, e.g. a demo whose card is still
-  // hidden. Each link is resolved from the list's folder to a path from the site's root, e.g. "../os/" to "os/".
-  const demosFile = `${demosPath}index.html`
-  const demosHtml = names.includes(demosFile) ? await readFile(path.join(outdir, demosFile), 'utf8') : ''
-  const linkedFromTheList = urlsOf(demosFile, demosHtml).filter(found => !found.hidden).filter(found => isRelative(found.url))
-    .map(found => path.posix.join(demosPath, withoutQuery(found.url)))
-    .map(target => target === './' || target === '.' ? '' : target)
-  for (const page of sitePages) {
-    if (page.path !== demosPath && !linkedFromTheList.includes(page.path)) console.warn(`Note: site/${page.path} is built from ${page.source}, and the list of demos has no visible link to it.`)
   }
   return {fileCount: names.length, byteCount}
 }
@@ -223,7 +212,7 @@ if (problems.length > 0) {
   for (const problem of problems) console.error(`- ${problem}`)
   process.exitCode = 1
 } else {
-  console.log(`\nBuilt ${sitePages.length} pages into ${outdir}: ${fileCount} files, ${Math.round(byteCount / 1024).toLocaleString('en-US')} KiB.`)
+  console.log(`\nBuilt ${sitePages.length} ${sitePages.length === 1 ? 'page' : 'pages'} into ${outdir}: ${fileCount} files, ${Math.round(byteCount / 1024).toLocaleString('en-US')} KiB.`)
   for (const page of sitePages) console.log(`  ${`/${page.path}`.padEnd(20)} ${page.source}`)
   if (siteFoldersNotBuilt.length > 0) console.log(`  Not built, since the page doesn't exist yet: ${siteFoldersNotBuilt.map(folder => `/${folder}`).join(', ')}`)
 }
