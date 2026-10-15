@@ -1,8 +1,7 @@
 // Regex search's program with the pattern as data (data-program.ts), which JSON search's step is built from, against
 // the two plain JavaScript references: the automaton simulator and the RegExp test of every substring. Hand-written
 // expectations come first, so a mistake shared by every version fails too. Also the pattern language's syntax errors
-// and pattern.ts's capacity errors. lab/regex-search/regex-search.test.ts has the same tests for form (c), the tree of
-// matrix products, which stayed in lab/, over the same cases, patterns and texts (test-patterns.ts).
+// and pattern.ts's capacity errors. The cases, patterns and texts are in test-patterns.ts.
 // Run from the repo root: bun test tests/json-search/regex
 import {expect, test} from 'bun:test'
 import {type Circuit, validateGrids, validateIndexReads, validateNoNaN} from '../../../src/runtime/numeric-ui-core.ts'
@@ -115,7 +114,7 @@ test('declarations hold: index reads read integers, grids and ranges hold, and n
 
 test('random patterns at capacity and full texts: the program matches both references', () => {
   const random = createRandom(4242)
-  // The text length of lab/regex-search's test of form (c), which isn't a power of two.
+  // A text length that isn't a power of two.
   const capacity: DataCapacity = {states: 16, classes: 8, boundaries: 16, textLength: 37}
   const data = createDataSearch(capacity)
   let patterns = 0

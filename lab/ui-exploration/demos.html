@@ -383,14 +383,6 @@
       </article>
 
       <article class="card">
-        <h3>Regex search</h3>
-        <p class="path">lab/regex-search/README.md</p>
-        <p>A search for a pattern in a text of a fixed capacity, e.g. 1,024 code points. JavaScript compiles the pattern into an automaton, and the program runs it one code point at a time as products of transition matrices with 0/1 state vectors, in a reverse pass and a forward pass, to find leftmost, then longest matches. Since October 14, 2026 the pattern compiler and this program are in src/json-search/regex, and lab/regex-search keeps a second form of the program, which combines the steps in a tree of matrix products, with its measurements on WebGPU.</p>
-        <p class="note">No demo page since October 14, 2026, when its own page was removed: the JSON search's page runs this program over every document. See the folder's README.</p>
-        <p class="links"><a href="/lab/regex-search/README.md">README</a></p>
-      </article>
-
-      <article class="card">
         <h3>Search 100,000 JSON documents</h3>
         <p class="path">assets/json-search.html</p>
         <p>From October 13, 2026: the JSON highlighter's and the regex search's programs, each written as one step that a shader loops over a document's positions, run over up to 100,000 JSON documents at once on WebGPU. The page searches them again at each keystroke, and shows the search's time next to native RegExp's.</p>

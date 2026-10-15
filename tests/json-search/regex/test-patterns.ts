@@ -1,6 +1,5 @@
-// The hand-written cases and the seeded random patterns and texts of regex search's tests: regex-search.test.ts in
-// this folder, for the program that JSON search runs, and lab/regex-search/regex-search.test.ts, for form (c), the
-// tree of matrix products, which stayed in lab/. Both files draw the same patterns and texts from the same seeds.
+// The hand-written cases and the seeded random patterns and texts of regex-search.test.ts in this folder, which tests
+// the program that JSON search's step is built from.
 import {type Match, codePointsOf} from '../../../src/json-search/regex/host.ts'
 import {type CompiledPattern, maxCodePoint} from '../../../src/json-search/regex/pattern.ts'
 

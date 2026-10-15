@@ -92,7 +92,6 @@ const readmePaths = [
   'lab/hard-attend/README.md',
   'lab/candidate-gallery/README.md',
   'src/json-search/highlighter/README.md',
-  'lab/regex-search/README.md',
   'lab/knuth-plass/README.md',
   'lab/ui-exploration/README.md',
   ...prototypeFolders.map(folder => `lab/ui-exploration/${folder}/README.md`),

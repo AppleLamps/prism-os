@@ -105,14 +105,13 @@ export function buildDataSearch(capacity: DataCapacity) {
   }
 
   const output = {highlighted, starts, matchCount: circuit.affine(starts.map(start => [start, 1] as const))}
-  // notReachAt is for tests, e.g. comparing the reverse pass with form (c)'s longest ends.
-  return {cells, capacity, output, notReachAt, ...table.finish()}
+  return {cells, capacity, output, ...table.finish()}
 }
 
 type DataSearch = ReturnType<typeof buildDataSearch>
 type SearchOutput = WireValues<DataSearch['output']>
 
-// Writes a compiled pattern into the cells of form (a) or form (c). Throws when the pattern doesn't fit, which a caller
+// Writes a compiled pattern into the cells of dataSearchCells. Throws when the pattern doesn't fit, which a caller
 // checks first with capacityErrors, e.g. JSON search's page.
 export function writePattern(values: Float32Array, {cells, capacity}: {cells: DataSearchCells, capacity: DataCapacity}, {automaton, partition}: CompiledPattern) {
   const errors = capacityErrors({pattern: '', automaton, partition}, capacity)

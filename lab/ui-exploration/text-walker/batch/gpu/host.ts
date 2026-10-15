@@ -1,6 +1,6 @@
 // The WebGPU host loop for batch/gpu's shaders: one compute pass that runs a shader from shaders.ts once per paragraph, like
-// lab/ui-exploration/codegen/gpu-runner.ts, with an evaluation's time split into parts the way
-// lab/regex-search/gpu/kernels.ts splits it. Buffers:
+// lab/ui-exploration/codegen/gpu-runner.ts, with an evaluation's time split into its parts: the upload, encoding and
+// submitting, the wait for the readback, and the copy. Buffers:
 //   params    the paragraph count of this evaluation
 //   shared    shaders.ts's sharedValues, uploaded once, and a new width at maxWidthOffset with the shared-width plan
 //   sources   count × instanceSourceCount float32 cells, from writeInstanceCells or cells.ts's createSharedWidthWriter
