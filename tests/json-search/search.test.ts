@@ -1,24 +1,26 @@
-// Regex search as a loop over positions (search-step.ts) against regex search's form (a) with every position written
-// out, on the CPU executor: the loop program on the executor, on generated JavaScript, and its WGSL text through the
-// strict interpreter, as loop-emit.ts writes it and as bit-emit.ts writes it. The demo page's searches run bit-emit.ts's
-// shaders, so where a test samples its cases, bit-emit.ts's shader runs on more of them. A real GPU compiler may fuse
-// or regroup operations; gpu/search-run.ts and million/run.ts's 'writers' mode, in lab/json-search, check the same outputs in headless Chrome.
+// The page's two programs as loops over positions, in every form that runs them, against the plain JavaScript
+// references. The search step (search-step.ts) against regex/reference.ts's automaton simulator, which this file first
+// compares with RegExp: the loop program on the CPU executor, on generated JavaScript, and its WGSL text through the
+// strict interpreter, as loop-emit.ts writes it and as bit-emit.ts writes it. The highlighter's step (json-step.ts) as
+// both writers' WGSL text against highlighter/reference.ts; json-step.test.ts compares its two CPU forms with the same
+// reference. The demo page's searches run bit-emit.ts's shaders, so where a test samples its cases, bit-emit.ts's
+// shader runs on more of them. A real GPU compiler may fuse or regroup operations; gpu/search-run.ts and
+// million/run.ts's 'writers' mode, in lab/json-search, check the same outputs in headless Chrome.
 // Run from the repo root: bun test tests/json-search/search.test.ts
 import {describe, expect, test} from 'bun:test'
-import {buildDataSearch, writePattern} from '../../src/json-search/regex/data-program.ts'
 import {type CompiledPattern, capacityErrors, compilePattern} from '../../src/json-search/regex/pattern.ts'
-import {automatonMatches} from './regex/reference.ts'
-import {displayKind, errorKind} from '../../src/json-search/highlighter/kinds.ts'
+import {type Match, automatonMatches, regexpMatches} from './regex/reference.ts'
+import {capacity as kindsPerDocument, displayKind, errorKind} from '../../src/json-search/highlighter/kinds.ts'
 import {createCorpus} from './highlighter/corpus.ts'
+import {highlightReference} from './highlighter/reference.ts'
 import {emitBitLoopWgsl, packWords} from '../../src/json-search/bit-emit.ts'
 import {bitRowTables, createBitRowSearch} from './bit-rows.ts'
-import {expectedOutputs} from '../../src/json-search/check.ts'
 import {generateDocuments} from '../../src/json-search/documents.ts'
 import {buildJsonLoop, stepSummaryNames} from '../../src/json-search/json-step.ts'
 import {emitLoopWgsl} from '../../src/json-search/loop-emit.ts'
 import {type LoopProgram, createLoopRunner, describeLoop, operationsPerDocument} from '../../src/json-search/loop-program.ts'
-import {buildBatchPrograms, kindCount as kindsPerDocument, cellsPerDocument as storeCells, summaryCount, writeDocumentCells} from '../../src/json-search/program.ts'
-import {type SearchScope, boundaryCapacity, buildMaskedSearch, buildSearchLoop, classCapacity, searchScopes, searchableKinds} from '../../src/json-search/search-step.ts'
+import {cellsPerDocument as storeCells, writeDocumentCells} from '../../src/json-search/program.ts'
+import {type SearchScope, boundaryCapacity, buildSearchLoop, classCapacity, searchScopes, searchableKinds} from '../../src/json-search/search-step.ts'
 import {type WgslInterpreter, createWgslInterpreter} from './wgsl-interpreter.ts'
 
 function lowbias32(n: number) {
@@ -83,31 +85,36 @@ function createCases(states: number, positions: number, randomPatterns: number, 
   return cases
 }
 
+const codePointsOf = (text: string) => Array.from(text, character => character.codePointAt(0)!)
+
 // A document's cells in the layout the loop reads: `positions` code points, -1 after the text, then the text's length.
 function writeCells(cells: Float32Array, row: number, positions: number, text: string) {
-  const codePoints = Array.from(text, character => character.codePointAt(0)!)
+  const codePoints = codePointsOf(text)
   const base = row * (positions + 1)
   for (let position = 0; position < positions; position++) cells[base + position] = codePoints[position] ?? -1
   cells[base + positions] = codePoints.length
 }
 
-// What form (a) with every position written out gives on the CPU executor for each case and text: the match count, and
-// highlighted + start per position, i.e. 0 outside a match, 1 inside one and 2 at a match's first code point.
-function expectedFromFullProgram(states: number, positions: number, cases: readonly Case[], cells: Float32Array) {
-  const capacity = {states, classes: classCapacity, boundaries: boundaryCapacity, textLength: positions}
-  const full = buildDataSearch(capacity)
-  const evaluate = full.circuit.createTensorEvaluator([...full.output.highlighted, ...full.output.starts, full.output.matchCount])
-  const source = new Float32Array(full.initialSource)
+// The marks of a text's matches: 0 outside a match, 1 inside one and 2 at a match's first code point.
+function marksOf(matches: readonly Match[], positions: number) {
+  const marks = Array<number>(positions).fill(0)
+  for (const match of matches) {
+    marks.fill(1, match.start, match.end)
+    marks[match.start] = 2
+  }
+  return marks
+}
+
+// What the plain reference gives for each case and text: the automaton simulator's matches in the text's first
+// `positions` code points, as a match count and the marks.
+function expectedFromTheAutomaton(positions: number, cases: readonly Case[]) {
   const counts: number[] = []
   const marks: number[] = []
-  let row = 0
   for (const {compiled, texts} of cases) {
-    writePattern(source, full, compiled)
-    for (let index = 0; index < texts.length; index++, row++) {
-      for (let position = 0; position < positions; position++) source[full.cells.text[position]!] = cells[row * (positions + 1) + position]!
-      const values = evaluate(source)
-      counts.push(values[2 * positions]!)
-      for (let position = 0; position < positions; position++) marks.push(values[position]! + values[positions + position]!)
+    for (const text of texts) {
+      const found = automatonMatches(compiled, codePointsOf(text).slice(0, positions))
+      counts.push(found.length)
+      for (const mark of marksOf(found, positions)) marks.push(mark)
     }
   }
   return {counts, marks}
@@ -136,11 +143,11 @@ describe('regex search as a loop over positions', () => {
   const rows = cases.reduce((total, entry) => total + entry.texts.length, 0)
   const cells = new Float32Array(rows * (positions + 1))
   cases.flatMap(entry => entry.texts).forEach((text, row) => writeCells(cells, row, positions, text))
-  const expected = expectedFromFullProgram(states, positions, cases, cells)
+  const expected = expectedFromTheAutomaton(positions, cases)
   const capacity = {states, classes: classCapacity, boundaries: boundaryCapacity}
   const loopOptions = {positions, cellsPerDocument: positions + 1, masked: false, stopAtLength: false}
 
-  test('the cases cover the capacities, and the full program finds what the automaton simulator finds', () => {
+  test('the cases cover the capacities, and the automaton simulator finds in them what RegExp finds', () => {
     // The hand-written patterns and the random ones that fit 8 states, 16 classes and 32 class boundaries, with 8 texts each.
     expect([cases.length, rows]).toEqual([274, 2192])
     const partitions = cases.map(entry => entry.compiled)
@@ -148,29 +155,30 @@ describe('regex search as a loop over positions', () => {
     const fullClasses = compilePattern(fullClassesPattern)
     expect([fullClasses.automaton.stateCount, fullClasses.partition.classCount, fullClasses.partition.boundaries.length]).toEqual([8, classCapacity, boundaryCapacity])
     expect(partitions).toContainEqual(fullClasses)
+    // The expected values of the tests below are the automaton simulator's, which reads the compiled pattern. RegExp
+    // reads only the pattern's text, and tests every substring, which takes about 5 ms per text. So it runs on two
+    // texts of each case, both as long as the program holds: a random one, and the one that ends with abc.
     let row = 0
-    let matches = 0
+    let matchesByRegExp = 0
     for (const {compiled, texts} of cases) {
-      for (const text of texts) {
-        const codePoints = Array.from(text, character => character.codePointAt(0)!).slice(0, positions)
-        const found = automatonMatches(compiled, codePoints)
-        matches += found.length
-        const marks = Array<number>(positions).fill(0)
-        for (const match of found) {
-          marks.fill(1, match.start, match.end)
-          marks[match.start] = 2
+      for (const [index, text] of texts.entries()) {
+        if (index === 1 || index === 3) {
+          const found = regexpMatches(compiled.pattern, codePointsOf(text).slice(0, positions))
+          matchesByRegExp += found.length
+          const marks = marksOf(found, positions)
+          const actual = {pattern: compiled.pattern, text, count: expected.counts[row], marks: expected.marks.slice(row * positions, (row + 1) * positions)}
+          if (actual.count !== found.length || mismatchCount(actual.marks, marks) > 0) expect(actual).toEqual({pattern: compiled.pattern, text, count: found.length, marks})
         }
-        const actual = {pattern: compiled.pattern, text, count: expected.counts[row], marks: expected.marks.slice(row * positions, (row + 1) * positions)}
-        if (actual.count !== found.length || mismatchCount(actual.marks, marks) > 0) expect(actual).toEqual({pattern: compiled.pattern, text, count: found.length, marks})
         row++
       }
     }
-    expect(matches).toBeGreaterThan(3000)
+    expect(matchesByRegExp).toBeGreaterThan(1500)
+    expect(expected.counts.reduce((total, count) => total + count, 0)).toBeGreaterThan(3000)
     // A text that is as long as the program holds and ends with a match, for a pattern that finds it.
     const lastPosition = cases.find(entry => entry.compiled.pattern === 'abc')!
     const lastRow = cases.slice(0, cases.indexOf(lastPosition)).reduce((total, entry) => total + entry.texts.length, 0) + 3
     expect(expected.marks.slice(lastRow * positions + positions - 3, (lastRow + 1) * positions)).toEqual([2, 1, 1])
-  })
+  }, 60_000)
 
   test('the step has the sizes the README gives', () => {
     const sizes = [8, 16, 32].map(count => {
@@ -186,7 +194,7 @@ describe('regex search as a loop over positions', () => {
   })
 
   for (const backend of ['executor', 'generated'] as const) {
-    test(`the loop program on ${backend === 'executor' ? 'the CPU executor' : 'generated JavaScript'} gives form (a)'s match count and marks`, () => {
+    test(`the loop program on ${backend === 'executor' ? 'the CPU executor' : 'generated JavaScript'} gives the automaton simulator's match count and marks`, () => {
       for (const stopAtLength of [false, true]) {
         const built = buildSearchLoop(capacity, {...loopOptions, stopAtLength})
         const runner = createLoopRunner(built.loop, backend)
@@ -263,7 +271,7 @@ describe('regex search as a loop over positions', () => {
 })
 
 describe('regex search as a loop, at the measured capacities', () => {
-  test('16 and 32 states: the loop program and both writers\' shaders give form (a)\'s outputs, including patterns with exactly that many states', () => {
+  test('16 and 32 states: the loop program and both writers\' shaders give the automaton simulator\'s match count and marks, including patterns with exactly that many states', () => {
     const positions = 24
     for (const [states, exact] of [[16, '(the|an?|some) [a-z]+(ing)?s?'], [32, '(the|an?|some|this|that|these) [a-z]+(ing|ed|s)? ']] as const) {
       const cases = createCases(states, positions, 12, 5, [exact, 'a'.repeat(states - 1), '\\d\\d\\d\\d-\\d\\d-\\d\\d']).filter((_, index) => index % 4 === 0 || index > 30)
@@ -272,7 +280,7 @@ describe('regex search as a loop, at the measured capacities', () => {
       const rows = cases.reduce((total, entry) => total + entry.texts.length, 0)
       const cells = new Float32Array(rows * (positions + 1))
       cases.flatMap(entry => entry.texts).forEach((text, row) => writeCells(cells, row, positions, text))
-      const expected = expectedFromFullProgram(states, positions, cases, cells)
+      const expected = expectedFromTheAutomaton(positions, cases)
       expect(expected.counts.reduce((total, count) => total + count, 0)).toBeGreaterThan(40)
       const built = buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions, cellsPerDocument: positions + 1, masked: false, stopAtLength: false})
       const runner = createLoopRunner(built.loop, 'generated')
@@ -295,15 +303,12 @@ describe('regex search as a loop, at the measured capacities', () => {
     }
   }, 120_000)
 
-  test('512 positions over generated documents in the store\'s layout: the loop program and both writers\' shaders give form (a)\'s outputs, and so does the plain JavaScript loop over 32-bit rows', () => {
+  test('512 positions over generated documents in the store\'s layout: the loop program and both writers\' shaders give the automaton simulator\'s match count and marks, and so does the plain JavaScript loop over 32-bit rows', () => {
     const states = 8
     const positions = 512
     const texts = generateDocuments(60).map(document => document.text)
     const cells = new Float32Array(texts.length * storeCells)
     texts.forEach((text, row) => writeDocumentCells(cells, row * storeCells, text))
-    const full = buildDataSearch({states, classes: classCapacity, boundaries: boundaryCapacity, textLength: positions})
-    const evaluate = full.circuit.createTensorEvaluator([...full.output.highlighted, ...full.output.starts, full.output.matchCount])
-    const source = new Float32Array(full.initialSource)
     const variants = [false, true].map(stopAtLength => {
       const built = buildSearchLoop({states, classes: classCapacity, boundaries: boundaryCapacity}, {positions, cellsPerDocument: storeCells, masked: false, stopAtLength})
       return {built, runner: createLoopRunner(built.loop, 'generated'), shared: new Float32Array(built.loop.sharedValues)}
@@ -316,16 +321,14 @@ describe('regex search as a loop, at the measured capacities', () => {
     let matches = 0
     for (const pattern of ['(the|an?) [a-z]+', '"[a-z]+":', '[a-z0-9.]+@[a-z.]+', '([a-z]+)+x']) {
       const compiled = compilePattern(pattern)
-      writePattern(source, full, compiled)
       const search = createBitRowSearch(bitRowTables(compiled, states), positions)
       for (const variant of variants) {
         variant.built.writePattern(variant.shared, compiled)
         variant.runner.setShared(variant.shared)
       }
       texts.forEach((text, row) => {
-        for (let position = 0; position < positions; position++) source[full.cells.text[position]!] = cells[row * storeCells + position]!
-        const values = evaluate(source)
-        const wanted = {pattern, text, count: values[2 * positions]!, marks: Array.from({length: positions}, (_, position) => values[position]! + values[positions + position]!)}
+        const found = automatonMatches(compiled, codePointsOf(text).slice(0, positions))
+        const wanted = {pattern, text, count: found.length, marks: marksOf(found, positions)}
         matches += wanted.count
         for (const variant of variants) {
           variant.runner.run([cells], row, [count, marks], 0, 0)
@@ -348,48 +351,21 @@ describe('regex search as a loop, at the measured capacities', () => {
 })
 
 describe('the JSON highlighter as a loop over positions', () => {
-  // The highlighter's test texts (highlighter/corpus.ts), 2,509 in all, and what the highlighter with every position
-  // written out gives for them on the CPU executor.
+  // The highlighter's test texts (highlighter/corpus.ts), 2,509 in all, and what the plain JavaScript reference gives for
+  // them: the summary, i.e. valid, firstErrorPosition, truncated and firstErrorKind, and the 512 display kinds.
   const corpus = createCorpus(20260917, {random: 700, mutated: 1600, long: 80}).all
-  const batch = buildBatchPrograms(['display'])
-  const cells = new Float32Array(corpus.length * storeCells)
-  corpus.forEach((text, row) => writeDocumentCells(cells, row * storeCells, text))
-  const [summary, kinds] = expectedOutputs(batch.programs[0]!, cells, corpus.length) as [Float32Array, Float32Array]
-  const evaluateErrorKind = batch.built.circuit.createTensorEvaluator([batch.built.output.firstErrorKind])
-  const source = new Float32Array(batch.built.initialSource)
-  const errorKinds = corpus.map(text => {
-    batch.writeText(source, text)
-    return evaluateErrorKind(source)[0]!
-  })
+  const references = corpus.map(text => highlightReference(text))
   const built = buildJsonLoop()
   const shader = emitLoopWgsl(built.loop)
-  // The loop's summary is valid, firstErrorPosition, truncated and firstErrorKind.
-  const summaryMismatches = (actual: Float32Array, rows: number) => {
-    let mismatches = 0
-    for (let row = 0; row < rows; row++) {
-      for (let column = 0; column < summaryCount; column++) if (actual[row * stepSummaryNames.length + column] !== summary[row * summaryCount + column]) mismatches++
-      if (actual[row * stepSummaryNames.length + summaryCount] !== errorKinds[row]) mismatches++
-    }
-    return mismatches
-  }
 
   test('the step is 37 operations, and its shader 107 statements', () => {
     expect(describeLoop(built.loop).map(stage => [stage.name, stage.operations, stage.indexReads])).toEqual([['step', 37, 12], ['end', 17, 6]])
     expect([operationsPerDocument(built.loop), built.loop.sharedValues.length, shader.statementCount, shader.outputCounts, shader.windowedGroups]).toEqual([18_961, 3994, 107, [4, 512], [false, true]])
-    // The test texts reach every error kind except none at all: the first error's kind is carried, not read.
-    expect(new Set(errorKinds).size).toBe(Object.keys(errorKind).length)
+    // The test texts reach every kind of first error, and none at all, so the shaders below are compared on each.
+    expect(new Set(references.map(reference => reference.firstErrorKind)).size).toBe(Object.keys(errorKind).length)
   })
 
-  for (const backend of ['executor', 'generated'] as const) {
-    test(`the loop program on ${backend === 'executor' ? 'the CPU executor' : 'generated JavaScript'} gives the highlighter's summary, first error kind and display kinds on every test text`, () => {
-      const runner = createLoopRunner(built.loop, backend)
-      const outputs = [new Float32Array(corpus.length * stepSummaryNames.length), new Float32Array(corpus.length * kindsPerDocument)]
-      for (let row = 0; row < corpus.length; row++) runner.run([cells], row, outputs, row, row)
-      expect([summaryMismatches(outputs[0]!, corpus.length), mismatchCount(outputs[1]!, kinds)]).toEqual([0, 0])
-    }, 60_000)
-  }
-
-  test('both writers\' loop shaders give them through the WGSL interpreter, loop-emit.ts\'s in both statement orders', () => {
+  test('both writers\' loop shaders give the reference\'s summary, first error kind and display kinds through the WGSL interpreter, loop-emit.ts\'s in both statement orders', () => {
     for (const [writer, order, every] of [['loop-emit', 'use', 1], ['loop-emit', 'layers', 6], ['bit-emit', 'use', 1]] as const) {
       const texts = corpus.filter((_, row) => row % every === 0)
       const rows = texts.length
@@ -399,10 +375,11 @@ describe('the JSON highlighter as a loop over positions', () => {
       interpreterOf(built.loop, writer, order)(built.loop.sharedValues, documents, rows, outputs, {window: {first: 0, count: rows}})
       let mismatches = 0
       for (let row = 0; row < rows; row++) {
-        const original = row * every
-        for (let column = 0; column < summaryCount; column++) if (outputs[0]![row * stepSummaryNames.length + column] !== summary[original * summaryCount + column]) mismatches++
-        if (outputs[0]![row * stepSummaryNames.length + summaryCount] !== errorKinds[original]) mismatches++
-        for (let position = 0; position < kindsPerDocument; position++) if (outputs[1]![row * kindsPerDocument + position] !== kinds[original * kindsPerDocument + position]) mismatches++
+        const reference = references[row * every]!
+        stepSummaryNames.forEach((name, column) => {
+          if (outputs[0]![row * stepSummaryNames.length + column] !== reference[name]) mismatches++
+        })
+        for (let position = 0; position < kindsPerDocument; position++) if (outputs[1]![row * kindsPerDocument + position] !== reference.displayKinds[position]) mismatches++
       }
       expect([writer, order, rows > 400, mismatches]).toEqual([writer, order, true, 0])
     }
@@ -423,50 +400,35 @@ describe('searching only some kinds of characters', () => {
   const texts = [...generateDocuments(50).map(document => document.text), ...records, '', '"the tide"', 'the tide']
   const cells = new Float32Array(texts.length * storeCells)
   texts.forEach((text, row) => writeDocumentCells(cells, row * storeCells, text))
-  const [, kinds] = expectedOutputs(buildBatchPrograms(['display']).programs[0]!, cells, texts.length) as [Float32Array, Float32Array]
+  // Every code point's display kind, from the plain JavaScript reference. The page's search reads the kinds that the
+  // highlighter's step computed, which json-step.test.ts compares with the same reference.
+  const kinds = new Float32Array(texts.length * kindsPerDocument)
+  texts.forEach((text, row) => kinds.set(highlightReference(text).displayKinds, row * kindsPerDocument))
   const patterns = ['(the|an?) [a-z]+', '[a-z]+', '"[a-z ]+"', 'a+b|a', '\\d+', 'e'].map(pattern => compilePattern(pattern))
   const scopes: SearchScope[] = [...searchScopes, [displayKind.number, displayKind.literal]]
   // Which scope each pattern and text is checked with: every scope for the first pattern, and one in turn for the rest.
   const scopesOf = (patternIndex: number, row: number) => patternIndex === 0 ? scopes : [scopes[(patternIndex + row) % scopes.length]!]
 
-  // The masked search with every position written out, on the CPU executor.
-  const full = buildMaskedSearch({...capacity, textLength: positions})
-  const evaluateFull = full.circuit.createTensorEvaluator([...full.output.highlighted, ...full.output.starts, full.output.matchCount])
-  const fullSource = new Float32Array(full.initialSource)
+  // What the plain reference gives: the automaton simulator over the document's first 512 code points, with -1, the
+  // value of a cell past the text's end, in place of every code point whose display kind the scope doesn't read.
   const expected: {pattern: string, scope: SearchScope, row: number, count: number, marks: number[]}[] = []
   patterns.forEach((compiled, patternIndex) => {
-    writePattern(fullSource, {cells: full.cells.search, capacity: full.capacity}, compiled)
     texts.forEach((_, row) => {
-      for (let position = 0; position < positions; position++) {
-        fullSource[full.cells.search.text[position]!] = cells[row * storeCells + position]!
-        fullSource[full.cells.kinds[position]!] = kinds[row * kindsPerDocument + position]!
-      }
       for (const scope of scopesOf(patternIndex, row)) {
         const searchable = new Set(searchableKinds(scope))
-        full.cells.searchable.forEach((wire, kind) => {
-          fullSource[wire] = searchable.has(kind) ? 1 : 0
-        })
-        const values = evaluateFull(fullSource)
-        expected.push({pattern: compiled.pattern, scope, row, count: values[2 * positions]!, marks: Array.from({length: positions}, (_, position) => values[position]! + values[positions + position]!)})
+        const masked = Array.from({length: positions}, (_, position) => searchable.has(kinds[row * kindsPerDocument + position]!) ? cells[row * storeCells + position]! : -1)
+        const found = automatonMatches(compiled, masked)
+        expected.push({pattern: compiled.pattern, scope, row, count: found.length, marks: marksOf(found, positions)})
       }
     })
   })
 
-  test('the program with every position written out finds what the automaton simulator finds in the masked code points', () => {
+  test('the expected values hold matches in every scope, fewer in a narrower one, and none in a text that the highlighter shows as an error', () => {
     let matches = 0
     const matchesByScope = new Map<string, number>()
     for (const entry of expected) {
-      const searchable = new Set(searchableKinds(entry.scope))
-      const masked = Array.from({length: positions}, (_, position) => searchable.has(kinds[entry.row * kindsPerDocument + position]!) ? cells[entry.row * storeCells + position]! : -1)
-      const found = automatonMatches(patterns.find(compiled => compiled.pattern === entry.pattern)!, masked)
-      const marks = Array<number>(positions).fill(0)
-      for (const match of found) {
-        marks.fill(1, match.start, match.end)
-        marks[match.start] = 2
-      }
-      if (entry.count !== found.length || mismatchCount(entry.marks, marks) > 0) expect(entry).toEqual({...entry, count: found.length, marks})
-      matches += found.length
-      matchesByScope.set(String(entry.scope), (matchesByScope.get(String(entry.scope)) ?? 0) + found.length)
+      matches += entry.count
+      matchesByScope.set(String(entry.scope), (matchesByScope.get(String(entry.scope)) ?? 0) + entry.count)
     }
     expect(matches).toBeGreaterThan(2000)
     // Every scope finds something, and a narrower scope finds less.
@@ -477,21 +439,7 @@ describe('searching only some kinds of characters', () => {
     expect([countOf('"the tide"', 'strings'), countOf('"the tide"', 'keys'), countOf('the tide', 'strings'), countOf('the tide', 'everything')]).toEqual([1, 0, 0, 1])
   })
 
-  test('with every kind searchable, the masked program gives form (a)\'s outputs', () => {
-    const plain = buildDataSearch({...capacity, textLength: positions})
-    const evaluatePlain = plain.circuit.createTensorEvaluator([...plain.output.highlighted, ...plain.output.starts, plain.output.matchCount])
-    const plainSource = new Float32Array(plain.initialSource)
-    writePattern(plainSource, plain, patterns[0]!)
-    for (const entry of expected) {
-      if (entry.pattern !== patterns[0]!.pattern || entry.scope !== 'everything') continue
-      for (let position = 0; position < positions; position++) plainSource[plain.cells.text[position]!] = cells[entry.row * storeCells + position]!
-      const values = evaluatePlain(plainSource)
-      const marks = Array.from({length: positions}, (_, position) => values[position]! + values[positions + position]!)
-      if (entry.count !== values[2 * positions] || mismatchCount(entry.marks, marks) > 0) expect(entry).toEqual({...entry, count: values[2 * positions]!, marks})
-    }
-  })
-
-  test('the masked loop program gives the masked program\'s outputs, on generated JavaScript and as both writers\' shaders through the WGSL interpreter', () => {
+  test('the masked loop program gives the automaton simulator\'s match count and marks over the searched kinds, on generated JavaScript and as both writers\' shaders through the WGSL interpreter', () => {
     const built = buildSearchLoop(capacity, {positions, cellsPerDocument: storeCells, masked: true, stopAtLength: false})
     expect(describeLoop(built.loop).map(stage => stage.operations)).toEqual([8, 151, 92])
     const runner = createLoopRunner(built.loop, 'generated')
