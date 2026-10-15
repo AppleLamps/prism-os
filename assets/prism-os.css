@@ -406,6 +406,107 @@
   }
 }
 
+/* Inkwell's document bar, see boot.ts: a strip of the window's own glass under the title
+   bar, the file at the left where the note's text starts, Save As at the right as a pill
+   like Spotlight's buttons. The note sits below the bar rather than under it, so the bar
+   needs no backdrop of its own. */
+.prism-desktop .inkwell-files {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  /* The icon's stroke starts 3 px into its box, so the icon lines up with the note's text. */
+  padding: 0 10px 0 calc(var(--space-5) - 3px);
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-3);
+  font: 400 12px/16px var(--font-sans);
+  letter-spacing: -0.003em;
+  white-space: nowrap;
+}
+
+.prism-desktop .notes-content:has(.inkwell-files) .notes-text {
+  height: calc(100% - 40px);
+  margin-top: 40px;
+  padding-top: 14px;
+}
+
+.prism-desktop .inkwell-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.prism-desktop .inkwell-file-icon {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--ink-3);
+}
+
+.prism-desktop .inkwell-file-name,
+.prism-desktop .inkwell-file-status-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prism-desktop .inkwell-file-status {
+  --status: #28c840;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.prism-desktop .inkwell-file-status::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status);
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.12);
+}
+
+.prism-desktop .inkwell-files[data-state="saving"] .inkwell-file-status { --status: #febc2e; }
+.prism-desktop .inkwell-files[data-state="problem"] .inkwell-file-status { --status: #ff5f57; color: var(--ink-2); }
+.prism-desktop .inkwell-files[data-state="idle"] .inkwell-file-status { display: none; }
+
+.prism-desktop .inkwell-save-as {
+  flex: none;
+  margin-left: auto;
+  padding: 3px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--segment-on);
+  box-shadow: var(--pill-lift);
+  color: var(--ink);
+  font: 500 12px/18px var(--font-sans);
+  cursor: default;
+}
+
+.prism-desktop .inkwell-save-as:active:not(:disabled) {
+  background: var(--segment-track);
+  box-shadow: none;
+}
+
+.prism-desktop .inkwell-save-as:disabled {
+  opacity: 0.45;
+}
+
+.prism-desktop .inkwell-save-as:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
 /* Chroma: the photos sit right on the glass. */
 .prism-desktop .photos-backdrop {
   background: transparent;

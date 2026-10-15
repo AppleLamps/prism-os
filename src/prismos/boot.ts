@@ -1,6 +1,6 @@
 import {Cabinet, message} from './cabinet.ts'
 import {CabinetGallery} from './cabinet-gallery.ts'
-import {button, el} from './dom.ts'
+import {button, el, icon, icons} from './dom.ts'
 import {mountWindowManager, quantizeViewport} from '../handwiredos/window-manager.ts'
 import {arrangePrismWindows} from './arrangement.ts'
 import {createCommandCenter, createSlideshow} from './command-center.ts'
@@ -69,15 +69,30 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
     if (!cabinet?.documents) saveNote()
   })
   if (cabinet && note) {
+    // Inkwell's document bar: the file's name, whether it's saved, and Save As. The
+    // state colors the status dot like the window buttons: green saved, yellow saving,
+    // red for a problem, whose whole message shows on hover.
     const bar = el('div', 'inkwell-files'); bar.dataset['prismLayer'] = ''
-    const name = el('span'), status = el('span')
+    const file = el('span', 'inkwell-file')
+    file.append(icon(icons.document, 'prism-icon inkwell-file-icon'))
+    const name = el('span', 'inkwell-file-name')
+    file.append(name)
+    const status = el('span', 'inkwell-file-status')
     status.setAttribute('role', 'status')
-    const saveAs = button('', 'Save As', 'Save As')
-    saveAs.addEventListener('click', () => { void cabinet.saveAs().catch(error => { status.textContent = message(error) }) })
-    bar.append(name, status, saveAs); note.parentElement?.append(bar)
+    const statusText = el('span', 'inkwell-file-status-text')
+    status.append(statusText)
+    const saveAs = button('inkwell-save-as', 'Save As', 'Save As…')
+    const showStatus = (text: string) => {
+      statusText.textContent = text
+      status.title = text
+      bar.dataset['state'] = text === '' ? 'idle' : text === 'Saved' ? 'saved' : text.startsWith('Saving') ? 'saving' : 'problem'
+    }
+    saveAs.addEventListener('click', () => { void cabinet.saveAs().catch(error => { showStatus(message(error)) }) })
+    bar.append(file, status, saveAs); note.parentElement?.append(bar)
     cabinet.subscribe(() => {
       name.textContent = cabinet.documents?.entry?.name ?? 'Notes'
-      status.textContent = cabinet.documents?.status ?? cabinet.error
+      name.title = name.textContent
+      showStatus(cabinet.documents?.status ?? cabinet.error)
       saveAs.disabled = cabinet.documents === null
     })
     window.addEventListener('beforeunload', event => {
