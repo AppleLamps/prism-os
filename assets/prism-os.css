@@ -3,7 +3,9 @@
 
    Two rules about order, since Bun's development server links a page's stylesheets in
    reverse and bun build keeps the page's order, see handwired-os.css:
-   - The tokens are on :root.prism, which outranks site.css's :root.
+   - The tokens are on :root.prism, which outranks site.css's :root. The dark scheme's are
+     on :root.prism[data-theme="dark"]: boot.ts sets data-theme from the appearance in
+     Settings and the system's preference, before the first paint.
    - Every other rule starts with .prism-desktop, so it outranks the handwired-os.css rule
      that it restyles, e.g. .prism-desktop .window over .window.
 
@@ -25,12 +27,13 @@
   --edge: rgb(0 0 0 / 0.1);
   --wash: rgb(0 0 0 / 0.05);
 
-  /* The accent is the system blue. The handwired tokens keep their names, so every rule of
-     handwired-os.css that reads --copper draws in blue. */
-  --copper: #007aff;
-  --copper-line: rgb(0 122 255 / 0.5);
-  --copper-wash: rgb(0 122 255 / 0.14);
-  --copper-wash-deep: rgb(0 122 255 / 0.24);
+  /* The accent: the system blue, or the --accent that boot.ts sets from Settings. The
+     handwired tokens keep their names, so every rule of handwired-os.css that reads
+     --copper draws in the accent. */
+  --copper: var(--accent, #007aff);
+  --copper-line: color-mix(in srgb, var(--copper) 50%, transparent);
+  --copper-wash: color-mix(in srgb, var(--copper) 14%, transparent);
+  --copper-wash-deep: color-mix(in srgb, var(--copper) 24%, transparent);
 
   /* The chart colors of Monitor's operation kinds: blue, orange, green and pink. */
   --wire-indigo: #ff9500;
@@ -64,6 +67,14 @@
   --light-idle: rgb(0 0 0 / 0.13);
   --glyph-on-light: rgb(0 0 0 / 0.55);
   --notes-caret: #e5a500;
+  --card: rgb(255 255 255 / 0.55);
+  --segment-track: rgb(0 0 0 / 0.06);
+  --segment-on: #fff;
+  --switch-off: rgb(0 0 0 / 0.12);
+  --key-digit: rgb(255 255 255 / 0.78);
+  --key-function: rgb(0 0 0 / 0.1);
+  --start-ink: #1f9d47;
+  --stop-ink: #e5383b;
 
   /* The dock's app tiles. */
   --tile-scope: linear-gradient(180deg, #6ad4ff 0%, #1f8fff 55%, #0062e6 100%);
@@ -71,47 +82,53 @@
   --tile-chroma: linear-gradient(160deg, #ffd25a 0%, #ff8a3d 50%, #ff4d3d 100%);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root.prism {
-    color-scheme: dark;
+:root.prism[data-theme="dark"] {
+  color-scheme: dark;
 
-    --paper: #1c1c1e;
-    --sheet: rgb(44 44 46 / 0.78);
-    --desk: #0a1424;
-    --ink: #f5f5f7;
-    --ink-2: #c7c7cc;
-    --ink-3: #8e8e93;
-    --rule: rgb(255 255 255 / 0.09);
-    --rule-strong: rgb(255 255 255 / 0.22);
-    --edge: rgb(255 255 255 / 0.12);
-    --wash: rgb(255 255 255 / 0.07);
+  --paper: #1c1c1e;
+  --sheet: rgb(44 44 46 / 0.78);
+  --desk: #0a1424;
+  --ink: #f5f5f7;
+  --ink-2: #c7c7cc;
+  --ink-3: #8e8e93;
+  --rule: rgb(255 255 255 / 0.09);
+  --rule-strong: rgb(255 255 255 / 0.22);
+  --edge: rgb(255 255 255 / 0.12);
+  --wash: rgb(255 255 255 / 0.07);
 
-    --copper: #0a84ff;
-    --copper-line: rgb(10 132 255 / 0.6);
-    --copper-wash: rgb(10 132 255 / 0.24);
-    --copper-wash-deep: rgb(10 132 255 / 0.36);
+  --copper: var(--accent, #0a84ff);
+  --copper-line: color-mix(in srgb, var(--copper) 60%, transparent);
+  --copper-wash: color-mix(in srgb, var(--copper) 24%, transparent);
+  --copper-wash-deep: color-mix(in srgb, var(--copper) 36%, transparent);
 
-    --wire-indigo: #ff9f0a;
-    --wire-ochre: #30d158;
-    --wire-plum: #ff375f;
-    --wire-green: #30d158;
-    --wire-red: #ff453a;
+  --wire-indigo: #ff9f0a;
+  --wire-ochre: #30d158;
+  --wire-plum: #ff375f;
+  --wire-green: #30d158;
+  --wire-red: #ff453a;
 
-    --shadow-ink: 0 0 0;
+  --shadow-ink: 0 0 0;
 
-    --glass: rgb(28 30 34 / 0.48);
-    --glass-strong: rgb(34 36 40 / 0.7);
-    --window-glass: rgb(30 32 36 / 0.8);
-    --window-glass-focused: rgb(36 38 42 / 0.9);
-    --glass-edge: rgb(255 255 255 / 0.14);
-    --glass-rim: rgb(255 255 255 / 0.22);
-    --glass-hairline: rgb(0 0 0 / 0.5);
-    --sidebar: rgb(255 255 255 / 0.03);
-    --zebra: rgb(255 255 255 / 0.03);
-    --dock-dot: rgb(255 255 255 / 0.7);
-    --light-idle: rgb(255 255 255 / 0.2);
-    --notes-caret: #ffd60a;
-  }
+  --glass: rgb(28 30 34 / 0.48);
+  --glass-strong: rgb(34 36 40 / 0.7);
+  --window-glass: rgb(30 32 36 / 0.8);
+  --window-glass-focused: rgb(36 38 42 / 0.9);
+  --glass-edge: rgb(255 255 255 / 0.14);
+  --glass-rim: rgb(255 255 255 / 0.22);
+  --glass-hairline: rgb(0 0 0 / 0.5);
+  --sidebar: rgb(255 255 255 / 0.03);
+  --zebra: rgb(255 255 255 / 0.03);
+  --dock-dot: rgb(255 255 255 / 0.7);
+  --light-idle: rgb(255 255 255 / 0.2);
+  --notes-caret: #ffd60a;
+  --card: rgb(255 255 255 / 0.06);
+  --segment-track: rgb(255 255 255 / 0.08);
+  --segment-on: rgb(255 255 255 / 0.2);
+  --switch-off: rgb(255 255 255 / 0.16);
+  --key-digit: rgb(255 255 255 / 0.14);
+  --key-function: rgb(255 255 255 / 0.28);
+  --start-ink: #30d158;
+  --stop-ink: #ff453a;
 }
 
 /* The desk: the wallpaper canvas fills it, behind the program's weight arcs. */
@@ -496,12 +513,1036 @@
     --window-glass: rgb(250 251 253 / 0.96);
     --window-glass-focused: rgb(255 255 255 / 0.98);
   }
-  @media (prefers-color-scheme: dark) {
-    :root.prism {
-      --glass: rgb(36 38 42 / 0.94);
-      --glass-strong: rgb(44 46 50 / 0.97);
-      --window-glass: rgb(36 38 42 / 0.97);
-      --window-glass-focused: rgb(44 46 50 / 0.98);
-    }
+  :root.prism[data-theme="dark"] {
+    --glass: rgb(36 38 42 / 0.94);
+    --glass-strong: rgb(44 46 50 / 0.97);
+    --window-glass: rgb(36 38 42 / 0.97);
+    --window-glass-focused: rgb(44 46 50 / 0.98);
   }
+}
+
+/* ===== The shell: Prism's own apps, menu bar extras and overlays, see shell.ts ===== */
+
+:root.prism[data-arcs="off"] .prism-desktop .desk-wiring {
+  visibility: hidden;
+}
+
+:where(.prism-desktop button) {
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.prism-desktop input {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* The search field and the terminal's prompt show their caret, as their focus. */
+.prism-desktop .spotlight-input:focus-visible,
+.prism-desktop .term-input:focus-visible,
+.prism-desktop .prism-panel:focus-visible {
+  outline: none;
+}
+
+/* The dock floats over every window, as on a Mac: the program's windows never reach it,
+   and a panel dragged down slides under it. */
+.prism-desktop #dock {
+  z-index: 29;
+}
+
+.prism-desktop [hidden] {
+  display: none !important;
+}
+
+.prism-icon {
+  display: inline-grid;
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.prism-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* The app icons' colors, shared by dock tiles, Spotlight's results and panel titles. */
+.prism-app-scope { --app-tile: var(--tile-scope); --app-glyph: #fff; }
+.prism-app-inkwell { --app-tile: var(--tile-ink); --app-glyph: #8e8e93; }
+.prism-app-chroma { --app-tile: var(--tile-chroma); --app-glyph: #fff; }
+.prism-app-calculator { --app-tile: linear-gradient(180deg, #55555b, #232326); --app-glyph: #ff9f0a; }
+.prism-app-clock { --app-tile: linear-gradient(180deg, #ffffff, #e6e8ec); --app-glyph: #1d1d1f; }
+.prism-app-terminal { --app-tile: linear-gradient(180deg, #44474d, #17191c); --app-glyph: #e5e5ea; }
+.prism-app-settings { --app-tile: linear-gradient(180deg, #d3d6db, #8f949c); --app-glyph: #fff; }
+.prism-app-about { --app-tile: var(--tile-scope); --app-glyph: #fff; }
+.prism-command { --app-tile: var(--copper); --app-glyph: #fff; }
+
+/* The menu bar: the brand opens About; Spotlight, Control Center and the clock sit at the
+   right, before Source. */
+.prism-desktop .prism-brand {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.prism-status {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  margin-right: -12px;
+  pointer-events: auto;
+}
+
+.prism-status-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgb(255 255 255 / 0.92);
+  cursor: default;
+}
+
+.prism-status-button .prism-icon {
+  width: 17px;
+  height: 17px;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.2));
+}
+
+@media (hover: hover) {
+  .prism-desktop .prism-brand:hover,
+  .prism-status-button:hover {
+    background: rgb(255 255 255 / 0.16);
+  }
+}
+
+.prism-status-button[aria-expanded="true"] {
+  background: rgb(255 255 255 / 0.24);
+}
+
+.prism-clock {
+  padding: 0 8px;
+  color: #fff;
+  font: 500 13px/20px var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 719px) {
+  .prism-clock {
+    display: none;
+  }
+}
+
+/* Panels: Prism's apps in glass windows like the program's. The layer has no z-index,
+   so each panel's z-index, which shell.ts writes, stacks it among the program's windows. */
+.prism-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.prism-desktop .prism-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  border: 1px solid var(--glass-edge);
+  border-radius: 18px;
+  outline: none;
+  background: color-mix(in srgb, var(--window-glass-focused) calc(var(--focused, 0) * 100%), var(--window-glass));
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim),
+    0 0 0 0.5px var(--glass-hairline),
+    0 calc(4px + var(--focused, 0) * 6px) calc(12px + var(--focused, 0) * 12px) rgb(var(--shadow-ink) / calc(0.1 + var(--focused, 0) * 0.06)),
+    0 calc(16px + var(--focused, 0) * 18px) calc(40px + var(--focused, 0) * 40px) calc(-10px - var(--focused, 0) * 6px) rgb(var(--shadow-ink) / calc(0.22 + var(--focused, 0) * 0.2));
+  pointer-events: auto;
+  transform-origin: 50% 60%;
+  transition: opacity 180ms var(--ease), scale 220ms var(--ease), visibility 0s;
+}
+
+.prism-desktop .prism-panel[data-state="closed"],
+.prism-desktop .prism-panel[data-state="minimized"] {
+  visibility: hidden;
+  opacity: 0;
+  scale: 0.94;
+  pointer-events: none;
+  transition: opacity 160ms var(--ease), scale 160ms var(--ease), visibility 0s 160ms;
+}
+
+.prism-desktop .prism-panel[data-zoomed="true"] {
+  border-radius: 12px;
+}
+
+.prism-panel-bar {
+  flex: none;
+  touch-action: none;
+}
+
+.prism-panel .window-button {
+  border: 0;
+  appearance: none;
+}
+
+.prism-desktop .window-controls .window-button:disabled {
+  background-color: var(--light-idle);
+  cursor: default;
+}
+
+.prism-desktop .window-controls .window-button:disabled::before {
+  opacity: 0;
+}
+
+.prism-desktop .prism-app-dot {
+  display: grid;
+  place-items: center;
+  background: var(--app-tile);
+  color: var(--app-glyph);
+}
+
+.prism-app-dot .prism-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.prism-panel-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  color: var(--ink);
+}
+
+/* The dock's extra tiles, beside the program's, see addTile in shell.ts. A tile's left edge
+   is --offset from the dock's middle, and its bottom 13 px above the desktop's, where the
+   program's tiles end. The shelf grows to hold all seven. Where the viewport is too narrow
+   for them, they hide, and Spotlight still opens every app. */
+.prism-desktop .prism-tile {
+  position: absolute;
+  left: calc(50% + var(--offset));
+  bottom: 13px;
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  border: 0;
+  border-radius: 23%;
+  background: var(--app-tile);
+  color: var(--app-glyph);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    inset 0 -1px 0 rgb(0 0 0 / 0.08),
+    0 0 0 0.5px rgb(0 0 0 / 0.1),
+    0 6px 14px -4px rgb(var(--shadow-ink) / 0.35);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 260ms cubic-bezier(0.3, 1.4, 0.5, 1), filter var(--quick) var(--ease);
+}
+
+.prism-tile .prism-icon {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.12));
+}
+
+.prism-tile i {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--dock-dot);
+  opacity: var(--open, 0);
+}
+
+@media (hover: hover) {
+  .prism-desktop .prism-tile:hover {
+    transform: translateY(-4px) scale(1.08);
+  }
+}
+
+.prism-desktop .prism-tile:active {
+  filter: brightness(0.9);
+  transform: scale(0.95);
+}
+
+.prism-desktop #dock.prism-dock-extended::before {
+  width: calc(min(422px, 100%) + 2 * var(--shelf-padding));
+}
+
+@media (max-width: 519px) {
+  .prism-desktop .prism-tile {
+    display: none;
+  }
+  .prism-desktop #dock.prism-dock-extended::before {
+    width: calc(min(174px, 100%) + 2 * var(--shelf-padding));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prism-desktop .prism-tile,
+  .prism-desktop .prism-panel {
+    transition: none;
+  }
+  .prism-desktop .prism-tile:hover,
+  .prism-desktop .prism-tile:active {
+    transform: none;
+  }
+}
+
+/* Overlays: Spotlight and Control Center, each over a clear scrim that takes the presses
+   outside it. */
+.prism-scrim {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+}
+
+.prism-overlay {
+  position: absolute;
+  border: 1px solid var(--glass-edge);
+  background: var(--window-glass-focused);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim),
+    0 0 0 0.5px var(--glass-hairline),
+    0 24px 60px -12px rgb(var(--shadow-ink) / 0.45);
+  color: var(--ink);
+  animation: prism-pop 180ms var(--ease);
+}
+
+@keyframes prism-pop {
+  from {
+    opacity: 0;
+    scale: 0.97;
+  }
+}
+
+.prism-spotlight {
+  top: max(64px, 16vh);
+  left: 50%;
+  width: min(620px, calc(100% - 32px));
+  padding: 6px;
+  border-radius: 22px;
+  translate: -50% 0;
+}
+
+.spotlight-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 14px;
+  color: var(--ink-3);
+}
+
+.spotlight-row .prism-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.spotlight-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: 400 22px/28px var(--font-sans);
+  letter-spacing: -0.01em;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.spotlight-input::placeholder {
+  color: var(--ink-3);
+}
+
+.spotlight-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.spotlight-results {
+  max-height: min(420px, 56vh);
+  margin: 0;
+  padding: 4px 0 2px;
+  overflow: auto;
+  border-top: 1px solid var(--rule);
+  list-style: none;
+}
+
+.spotlight-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 4px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  cursor: default;
+}
+
+.spotlight-result[aria-selected="true"] {
+  background: var(--copper);
+  color: #fff;
+}
+
+.spotlight-glyph {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--app-tile);
+  color: var(--app-glyph);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), 0 0 0 0.5px rgb(0 0 0 / 0.12);
+}
+
+.spotlight-glyph .prism-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.spotlight-text {
+  display: grid;
+  min-width: 0;
+}
+
+.spotlight-title {
+  font: 500 14px/18px var(--font-sans);
+}
+
+.spotlight-subtitle {
+  color: var(--ink-3);
+  font: 400 12px/16px var(--font-sans);
+}
+
+.spotlight-result[aria-selected="true"] .spotlight-subtitle {
+  color: rgb(255 255 255 / 0.8);
+}
+
+.spotlight-empty {
+  padding: 12px 14px;
+  color: var(--ink-3);
+  font: 400 13px/20px var(--font-sans);
+}
+
+.prism-control-center {
+  top: 44px;
+  right: 12px;
+  display: grid;
+  gap: 8px;
+  width: min(340px, calc(100% - 24px));
+  max-height: calc(100% - 140px);
+  padding: 10px;
+  overflow: auto;
+  border-radius: 22px;
+  transform-origin: 100% 0;
+}
+
+.cc-card {
+  padding: 10px 12px 12px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 0.5px var(--rule);
+}
+
+.cc-title {
+  margin-bottom: 8px;
+  color: var(--ink-3);
+  font: 600 11px/16px var(--font-sans);
+}
+
+.cc-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 0.5px var(--rule);
+  font-weight: 500;
+}
+
+/* The preference controls, see controls.ts. */
+.prism-segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--segment-track);
+}
+
+.prism-segment {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font: 500 12px/16px var(--font-sans);
+  white-space: nowrap;
+  transition: background-color var(--quick) var(--ease);
+}
+
+.prism-segment .prism-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.prism-segment[aria-checked="true"],
+.prism-segment[aria-selected="true"] {
+  background: var(--segment-on);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 0 0 0.5px rgb(0 0 0 / 0.04);
+}
+
+.prism-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 2px;
+}
+
+.prism-swatch {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.2), inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+
+.prism-swatch[aria-checked="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.prism-swatch[aria-checked="true"]::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--swatch);
+  border-radius: 50%;
+}
+
+.prism-scenes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.prism-scene {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: 500 12px/16px var(--font-sans);
+}
+
+.prism-scene-preview {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.18);
+}
+
+.prism-scenes-large .prism-scene-preview {
+  aspect-ratio: 16 / 10;
+  border-radius: 10px;
+}
+
+.prism-scene[aria-checked="true"] .prism-scene-preview {
+  outline: 2.5px solid var(--copper);
+  outline-offset: 2px;
+}
+
+.prism-scene[aria-checked="true"] {
+  color: var(--ink);
+}
+
+.prism-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font: 400 13px/20px var(--font-sans);
+  text-align: left;
+}
+
+.prism-toggle .prism-icon {
+  color: var(--ink-2);
+}
+
+.prism-toggle-label {
+  flex: 1;
+}
+
+.prism-switch {
+  position: relative;
+  flex: none;
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--switch-off);
+  transition: background-color 180ms var(--ease);
+}
+
+.prism-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  transition: translate 180ms var(--ease);
+}
+
+.prism-toggle[aria-checked="true"] .prism-switch {
+  background: #34c759;
+}
+
+.prism-toggle[aria-checked="true"] .prism-switch::after {
+  translate: 16px 0;
+}
+
+/* Calculator. */
+.calculator-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 14px 14px;
+  overflow: hidden;
+}
+
+.calc-display {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  justify-content: flex-end;
+  min-height: 64px;
+  overflow: hidden;
+  color: var(--ink);
+  font: 300 min(52px, calc(380px / var(--digits, 7))) / 1.1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.calc-keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.calc-key {
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  background: var(--key-digit);
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.06), 0 1px 1px rgb(0 0 0 / 0.06);
+  font: 400 21px/1 var(--font-sans);
+  transition: filter 80ms linear;
+}
+
+.calc-function {
+  background: var(--key-function);
+  font-weight: 500;
+}
+
+.calc-operator {
+  background: #ff9f0a;
+  color: #fff;
+  font-size: 24px;
+}
+
+.calc-operator[aria-pressed="true"] {
+  background: #fff;
+  color: #ff9f0a;
+}
+
+.calc-wide {
+  grid-column: span 2;
+  padding-left: 19px;
+  text-align: left;
+}
+
+.calc-key:active,
+.calc-flash {
+  filter: brightness(1.25);
+}
+
+/* Clock. */
+.clock-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 14px;
+  overflow: hidden;
+}
+
+.clock-tabs {
+  flex: none;
+  align-self: center;
+  width: 240px;
+}
+
+.clock-world {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.clock-city {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.clock-face {
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+
+.clock-face svg {
+  width: 100%;
+  height: 100%;
+}
+
+.clock-rim {
+  fill: #fff;
+  stroke: rgb(0 0 0 / 0.12);
+}
+
+.clock-tick,
+.clock-hour,
+.clock-minute {
+  stroke: #1d1d1f;
+  stroke-linecap: round;
+}
+
+.clock-tick {
+  stroke-width: 1;
+  opacity: 0.5;
+}
+
+.clock-hour {
+  stroke-width: 2.4;
+}
+
+.clock-minute {
+  stroke-width: 1.6;
+}
+
+.clock-second {
+  stroke: #ff9f0a;
+  stroke-width: 0.9;
+  stroke-linecap: round;
+}
+
+.clock-pin {
+  fill: #ff9f0a;
+}
+
+.clock-night .clock-rim {
+  fill: #1c1c1e;
+  stroke: rgb(255 255 255 / 0.18);
+}
+
+.clock-night .clock-tick,
+.clock-night .clock-hour,
+.clock-night .clock-minute {
+  stroke: #f5f5f7;
+}
+
+.clock-city-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.clock-city-name {
+  overflow: hidden;
+  font: 500 15px/20px var(--font-sans);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clock-city-offset {
+  color: var(--ink-3);
+  font: 400 12px/16px var(--font-sans);
+}
+
+.clock-city-time {
+  font: 300 26px/32px var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.clock-stopwatch {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-height: 0;
+}
+
+.clock-readout {
+  margin-top: 10px;
+  font: 200 56px/64px var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.clock-controls {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 12px;
+}
+
+.clock-round {
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--key-function);
+  font: 500 15px/1 var(--font-sans);
+}
+
+.clock-round:disabled {
+  opacity: 0.45;
+}
+
+.clock-start {
+  background: color-mix(in srgb, var(--start-ink) 22%, transparent);
+  color: var(--start-ink);
+}
+
+.clock-start.clock-stop {
+  background: color-mix(in srgb, var(--stop-ink) 22%, transparent);
+  color: var(--stop-ink);
+}
+
+.clock-laps {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.clock-lap {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 4px;
+  border-top: 1px solid var(--rule);
+  font: 400 14px/20px var(--font-sans);
+}
+
+.clock-lap-time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Terminal: always dark, like a terminal in either scheme. */
+.terminal-body {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px 12px;
+  background: rgb(16 18 22 / 0.94);
+  color: #e5e7eb;
+  font: 400 12.5px/18px var(--font-mono);
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.term-output {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  scrollbar-color: rgb(255 255 255 / 0.2) transparent;
+  scrollbar-width: thin;
+}
+
+.term-dim {
+  color: #8b949e;
+}
+
+.term-echo {
+  color: #f5f5f7;
+}
+
+.term-line {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  margin: 0;
+}
+
+.term-prompt {
+  color: #64d2ff;
+  white-space: nowrap;
+}
+
+.term-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  caret-color: #64d2ff;
+  font: inherit;
+}
+
+/* Settings and About. */
+.settings-body {
+  display: flex;
+  overflow: hidden;
+}
+
+.settings-scroller {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: 12px;
+  padding: 16px 18px 20px;
+  overflow: auto;
+}
+
+.settings-section {
+  padding: 12px 14px 14px;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 0.5px var(--rule);
+}
+
+.settings-heading {
+  margin: 0 0 10px;
+  font: 600 13px/18px var(--font-sans);
+}
+
+.settings-note,
+.about-note {
+  margin: 10px 0 0;
+  color: var(--ink-3);
+  font: 400 12px/17px var(--font-sans);
+}
+
+.prism-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+}
+
+.prism-fact {
+  display: flex;
+  flex-direction: column-reverse;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--wash);
+  text-align: left;
+}
+
+.prism-fact dt {
+  color: var(--ink-3);
+  font: 400 11px/14px var(--font-sans);
+}
+
+.prism-fact dd {
+  margin: 0;
+  font: 600 18px/22px var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.about-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 18px 20px 20px;
+  text-align: center;
+}
+
+.about-mark {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--tile-scope);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 8px 18px -6px rgb(var(--shadow-ink) / 0.4);
+}
+
+.about-mark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.about-title {
+  margin: 10px 0 0;
+  font: 700 22px/28px var(--font-sans);
+}
+
+.about-subtitle {
+  margin: 0 0 12px;
+  color: var(--ink-3);
+  font: 400 13px/18px var(--font-sans);
 }

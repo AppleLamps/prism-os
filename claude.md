@@ -4,7 +4,7 @@ This repository is **[Handwired](https://github.com/chenglou/handwired)** plus *
 
 ## What Prism OS is
 
-**Prism OS** is a small in-browser “desktop” with three windows and a dock. Visitors can drag, resize, stack, minimize, and maximize windows; open photos in a lightbox; and read the live state of the handwired program in a virtualized inspector.
+**Prism OS** is a small in-browser “desktop” with three program windows, Prism's own apps (Calculator, Clock, Terminal, Settings, About), a menu bar with Spotlight and Control Center, and a dock. Visitors can drag, resize, stack, minimize, and maximize windows; open photos in a lightbox; and read the live state of the handwired program in a virtualized inspector.
 
 | Prism OS | HandwiredOS (same program underneath) |
 | --- | --- |
@@ -24,7 +24,8 @@ Prism OS touches only the host layer for chrome and arrangement:
 - **HandwiredOS entry:** `src/handwiredos/boot.ts` mounts the window manager with its defaults. `window-manager.ts` itself only exports `mountWindowManager`, so importing it never mounts a page
 - **Prism entry:** `src/prismos/boot.ts` calls `mountWindowManager(..., { arrange: arrangePrismWindows })` and starts the wallpaper canvas
 - **Prism layout:** `src/prismos/arrangement.ts` — runs Handwired’s `arrangeInitialWindows`, then shifts each window in a cascade and clamps to the workspace
-- **Prism wallpaper:** `src/prismos/wallpaper.ts`: full-bleed animated dunes behind the weight arcs, with a day and a night palette
+- **Prism wallpaper:** `src/prismos/wallpaper.ts`: full-bleed animated dunes behind the weight arcs, four scenes with day and night palettes
+- **Prism shell:** `src/prismos/shell.ts` with `apps.ts`, `calculator.ts`, `terminal.ts`, `settings.ts`, `controls.ts`: apps in glass panels beside the program, Spotlight, Control Center and stored preferences, all in plain JavaScript. See "How the shell and the program share the page" in `src/prismos/README.md`
 - **Page:** `assets/prism-os.html`, `assets/prism-os.css` (imports `handwired-os.css` for geometry/hit targets)
 
 Changing window sizes, title bar height, dock height, or hit-test geometry belongs in **`window-manager.ts` and `handwired-os.css`**, not only in Prism CSS. Prism CSS should change color, blur, radii, and branding—not layout constants the program assumes.
@@ -39,7 +40,7 @@ bun start                    # demo site at http://127.0.0.1:3000/ — Prism at 
 bun ./assets/prism-os.html   # Prism page only
 bun run check                # typecheck + lint
 bun test tests/handwiredos   # window manager behavior (~20s)
-bun test tests/prismos       # Prism's cascade arrangement
+bun test tests/prismos       # Prism's cascade, Calculator, Terminal, settings, no-purple check
 ```
 
 Demo site routes are listed in `scripts/demo-site-pages.ts`. The landing page is `assets/demos.html` (Prism is the featured card).
@@ -52,6 +53,7 @@ Demo site routes are listed in `scripts/demo-site-pages.ts`. The landing page is
 | Colors, glass, traffic lights, dock tiles and shelf | `assets/prism-os.css` (tokens live on `:root.prism` and every rule starts with `.prism-desktop`, so they beat `site.css` and `handwired-os.css` in any stylesheet order; never move `#dock` itself, the program hit-tests its tiles in desktop coordinates) |
 | Opening window positions | `src/prismos/arrangement.ts` (`cascadeStep`, clamp logic) |
 | Wallpaper motion and palettes | `src/prismos/wallpaper.ts` |
+| A new Prism app | `src/prismos/apps.ts` (a `PanelApp`), its dock side in `shell.ts`, its colors as `.prism-app-<id>` in `assets/prism-os.css` |
 | Mount options (e.g. another arrangement) | `src/prismos/boot.ts`, `WindowManagerMountOptions` in `window-manager.ts` |
 
 ## Design rules
@@ -66,7 +68,7 @@ Demo site routes are listed in `scripts/demo-site-pages.ts`. The landing page is
 - `src/handwiredos/photo-gallery.ts`, `value-list.ts` — app logic inside the program
 - `docs/execution-model.md` — numeric semantics and rounding
 
-If you add a fourth window or new interactions, you are editing the handwired program, not just Prism skin.
+If you add a fourth program window or new interactions inside the program's windows, you are editing the handwired program, not just Prism skin. A new app that doesn't need to be part of the program belongs in Prism's shell as a panel. Never give a shell element the `.window` or `.dock-item` class: the program counts those at mount.
 
 ## Docs worth reading
 
