@@ -1,29 +1,23 @@
-// One WGSL compute shader from a compiled tensor program: one invocation runs every operation of the program for one
-// instance, e.g. one JSON document, with one `let` per operation. It starts from lab/ui-exploration/codegen/wgsl.ts, whose
-// flattenProgram ignores index reads, and adds them with both out-of-range rules.
-//
-// What the shader reads and writes:
-//   shared_values      the program's source table, uploaded once, e.g. the highlighter's 3,986 table cells, then the
-//                      lowest float32 value at lowestOffset for the guards
-//   instance_sources   the source cells that differ per instance, cellsPerInstance float32 values per instance, in the
-//                      order of options.instanceCells, e.g. 512 code points and the length per document
-//   instance_outputs_g one buffer per group of options.outputGroups, e.g. group 0 for 3 summary values per document and
-//                      group 1 for 512 display kinds, so a page can read back one group whole and a few documents of the other
+// A compiled tensor program as a list of rows, one per operation, and the WGSL `let` statement for each row: what the
+// two shader writers, loop-emit.ts and bit-emit.ts, and generated-js.ts start from. It starts from
+// lab/ui-exploration/codegen/wgsl.ts, whose flattenProgram ignores index reads, and adds them with both out-of-range
+// rules.
 //
 // An index read is two statements: `let p7: i32 = i32(floor(<index form>));` and a read of the candidate at
 // clamp(p7, 0, last). A side with the 'zero' rule wraps the read in a select, e.g. `select(<read>, 0.0f, p7 > 128i)`.
 // The candidates must be source cells at evenly spaced positions, e.g. a table of constant cells, which is how
-// compileTensorProgram stores a run of cells. A read whose candidates are computed per instance, e.g. the highlighter's
-// firstErrorKind, which reads one of 513 computed error kinds, throws: one `let` per value can't be indexed.
+// compileTensorProgram stores a run of cells. A read whose candidates are computed values, e.g. one of 513 sums,
+// throws: one `let` per value can't be indexed.
 //
 // Exactness. A row's sum is written as one chain in the executor's order, `bias + w1 * a - b`, which WGSL parses left to
 // right. Apple's Metal compiler fuses `a + w * x` into one multiply-add and regroups sums (the comment at the top of
 // codegen's wgsl.ts has the measurements), so with guard: 'none' only a program whose every product and partial sum is
-// exact gives the executor's bits, e.g. one that holds only integers below 2^24, like the JSON highlighter. With
-// guard: 'max', every product whose weight isn't a power of two and every partial sum is wrapped in max(x, lowest), which
-// kept the executor's rounding in every program codegen measured. Booleans are select(0.0f, 1.0f, score >= 0.5f). A NaN
-// index, or any NaN or Infinity, isn't reproduced, and zeros may differ in sign, which never changes a nonzero value of
-// these instructions.
+// exact gives the executor's bits, e.g. one that holds only integers below 2^24, like both programs of the page, whose
+// writers pass 'none'. With guard: 'max', every product whose weight isn't a power of two and every partial sum is
+// wrapped in max(x, lowest), which kept the executor's rounding in every program codegen measured. The shader around
+// the rows then declares `lowest` as the lowest float32 value, loaded from a buffer, so that the compiler can't prove
+// that the max returns x. Booleans are select(0.0f, 1.0f, score >= 0.5f). A NaN index, or any NaN or Infinity, isn't
+// reproduced, and zeros may differ in sign, which never changes a nonzero value of these instructions.
 import {type Circuit, invariant} from '../runtime/numeric-ui-core.ts'
 
 export type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
@@ -99,8 +93,6 @@ export function positionsOfWires(program: TensorProgram, wires: readonly number[
   })
 }
 
-const lowestFloat32 = -3.4028234663852886e38
-
 // A float32 value as one WGSL literal with the exact bits, like codegen's wgslFloat. WGSL folds an expression of two
 // literals in 64 bits, so no statement combines two literals.
 export function wgslFloat(value: number): string {
@@ -120,36 +112,7 @@ const isPowerOfTwo = (magnitude: number) => magnitude > 0 && Number.isInteger(Ma
 // A candidate table may run backwards, e.g. a reversed run of cells has a stride of -1.
 export const wgslInt = (value: number) => value < 0 ? `(${value}i)` : `${value}i`
 
-export type Guard = 'none' | 'max'
-
-type WgslOptions = {
-  // The source wires that differ per instance, in the order of the instance buffer's columns.
-  instanceCells: readonly number[]
-  // Each group's wires are written to that group's output buffer, in order.
-  outputGroups: readonly (readonly number[])[]
-  workgroupSize?: number
-  guard?: Guard
-}
-
-export type WgslModule = {
-  code: string
-  workgroupSize: number
-  guard: Guard
-  // The `let` statements and output writes, without the fixed lines around them.
-  statementCount: number
-  bytes: number
-  // The shared buffer holds the source table, then the lowest float32 value at lowestOffset.
-  sharedLength: number
-  lowestOffset: number
-  cellsPerInstance: number
-  // Values per instance in each output buffer.
-  outputCounts: number[]
-  rowCounts: {affine: number, reglu: number, boolean: number, index: number}
-  guards: number
-  // Weights and biases that are integers of 2^24 or more, or not integers, e.g. a sign cascade's weights of 2^24.
-  largeIntegerLiterals: number
-  fractionalLiterals: number
-}
+type Guard = 'none' | 'max'
 
 // A sum of more terms continues in a new statement, so that no expression nests deeper than this many guards.
 const termsPerStatement = 32
@@ -157,8 +120,9 @@ const termsPerStatement = 32
 export type IndexRow = Extract<Row, {kind: 'index'}>
 
 // Writes rows as WGSL `let` statements, one row at a time, into `body`. The caller says how a source cell is read and
-// where an index read's candidates are, so the same statements serve a shader that runs a whole program once per
-// instance (emitWgsl below) and one that runs a program once per position inside a loop (loop-emit.ts).
+// where an index read's candidates are, e.g. loop-emit.ts, whose shader runs a stage's rows once per position inside a
+// loop. `counts` says how many guards were written, and how many weights and biases are integers of 2^24 or more, or
+// not integers, e.g. a sign cascade's weights of 2^24.
 export function createRowWriter(sourceSize: number, options: {
   guard: Guard
   // Goes before the name of every `let`, so that two programs in one function don't share names, e.g. 'b_' gives b_v4576.
@@ -241,97 +205,4 @@ export function createRowWriter(sourceSize: number, options: {
     }
   }
   return {body, counts, rowCounts, name, write}
-}
-
-export function emitWgsl(program: TensorProgram, options: WgslOptions): WgslModule {
-  const workgroupSize = options.workgroupSize ?? 64
-  const guard = options.guard ?? 'none'
-  const rows = flattenProgram(program)
-  const {sourceSize} = program
-  const columnOfSource = new Map<number, number>()
-  options.instanceCells.forEach((wire, column) => {
-    invariant(wire < sourceSize && program.wireOrder[wire] === wire, 'an instance cell must be a source wire')
-    invariant(!columnOfSource.has(wire), 'an instance cell is listed once')
-    columnOfSource.set(wire, column)
-  })
-  const outputs = options.outputGroups.map(group => positionsOfWires(program, group))
-  const lowestOffset = sourceSize
-  const usedColumns = new Set<number>()
-  const hoisted = new Set<number>()
-  const {body, counts, rowCounts, name, write} = createRowWriter(sourceSize, {
-    guard, prefix: '',
-    source: position => {
-      const column = columnOfSource.get(position)
-      if (column !== undefined) {
-        usedColumns.add(column)
-        return `c${column}`
-      }
-      hoisted.add(position)
-      return `s${position}`
-    },
-    // Every candidate is a shared cell, or every candidate is an instance cell at evenly spaced columns.
-    candidate: (row, clamped) => {
-      const firstColumn = columnOfSource.get(row.candidateBase)
-      if (firstColumn === undefined) {
-        for (let candidate = 0; candidate < row.candidateCount; candidate++) {
-          invariant(!columnOfSource.has(row.candidateBase + candidate * row.candidateStride), 'an index read\'s candidates are all shared cells or all instance cells')
-        }
-        return `shared_values[u32(${row.candidateBase}i + ${clamped} * ${wgslInt(row.candidateStride)})]`
-      }
-      const columnStride = row.candidateCount > 1 ? columnOfSource.get(row.candidateBase + row.candidateStride)! - firstColumn : 0
-      for (let candidate = 0; candidate < row.candidateCount; candidate++) {
-        const column = columnOfSource.get(row.candidateBase + candidate * row.candidateStride)
-        invariant(column === firstColumn + candidate * columnStride, 'an index read\'s instance cells sit at evenly spaced columns')
-      }
-      return `instance_sources[source_base + u32(${firstColumn}i + ${clamped} * ${wgslInt(columnStride)})]`
-    },
-  })
-  for (const row of rows) write(row)
-  outputs.forEach((positions, group) => {
-    positions.forEach((position, output) => body.push(`instance_outputs_${group}[output_base_${group} + ${output}u] = ${name(position)};`))
-  })
-
-  const code = [
-    'struct Params {',
-    '  count: u32,',
-    '  pad0: u32,',
-    '  pad1: u32,',
-    '  pad2: u32,',
-    '}',
-    '@group(0) @binding(0) var<uniform> params: Params;',
-    '@group(0) @binding(1) var<storage, read> shared_values: array<f32>;',
-    '@group(0) @binding(2) var<storage, read> instance_sources: array<f32>;',
-    ...outputs.map((_, group) => `@group(0) @binding(${3 + group}) var<storage, read_write> instance_outputs_${group}: array<f32>;`),
-    '',
-    `@compute @workgroup_size(${workgroupSize})`,
-    'fn main(@builtin(global_invocation_id) id: vec3<u32>) {',
-    'let i: u32 = id.x;',
-    'if (i >= params.count) {',
-    'return;',
-    '}',
-    // Static uses keep both bindings in the automatic pipeline layout, e.g. when no row reads a shared cell.
-    '_ = arrayLength(&shared_values);',
-    '_ = arrayLength(&instance_sources);',
-    `let source_base: u32 = i * ${options.instanceCells.length}u;`,
-    ...outputs.map((positions, group) => `let output_base_${group}: u32 = i * ${positions.length}u;`),
-    ...(guard === 'max' ? [`let lowest: f32 = shared_values[${lowestOffset}u];`] : []),
-    ...[...hoisted].sort((left, right) => left - right).map(position => `let s${position}: f32 = shared_values[${position}u];`),
-    ...[...usedColumns].sort((left, right) => left - right).map(column => `let c${column}: f32 = instance_sources[source_base + ${column}u];`),
-    ...body,
-    '}',
-    '',
-  ].join('\n')
-  return {
-    code, workgroupSize, guard, statementCount: body.length, bytes: code.length, sharedLength: sourceSize + 1, lowestOffset,
-    cellsPerInstance: options.instanceCells.length, outputCounts: outputs.map(positions => positions.length), rowCounts, ...counts,
-  }
-}
-
-// The shared buffer's contents: the source table, with whatever the instance cells hold, which the shader doesn't read,
-// then the lowest float32 value.
-export function packSharedValues(module: Pick<WgslModule, 'sharedLength' | 'lowestOffset'>, source: Float32Array, target = new Float32Array(module.sharedLength)) {
-  invariant(source.length === module.lowestOffset && target.length === module.sharedLength, 'the source table has the program\'s length')
-  target.set(source)
-  target[module.lowestOffset] = lowestFloat32
-  return target
 }

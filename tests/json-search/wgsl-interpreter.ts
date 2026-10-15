@@ -1,8 +1,8 @@
-// A strict interpreter for the WGSL subset that emit.ts and loop-emit.ts write, so that the emitted text is tested on
+// A strict interpreter for the WGSL subset that loop-emit.ts and bit-emit.ts write, so that the emitted text is tested on
 // the CPU: the exact literals, the order of each sum, an index read's floor, clamp and selects, and for a loop shader
 // the `for` loops, the carried `var`s, the arrays between two loops, and the window of documents that gets per
 // position outputs. Every f32 operation rounds on its own, which is what WGSL means when no compiler fuses or regroups
-// anything. It says nothing about what a real GPU compiler does; run.ts and search-run.ts in lab/json-search/gpu check that. It
+// anything. It says nothing about what a real GPU compiler does; search-run.ts and writers-run.ts in lab/json-search/gpu check that. It
 // started as a copy of lab/ui-exploration/codegen/wgsl-interpreter.ts: this one has floor, min, u32(), f32(), the
 // comparisons > and <, &&, the bit operators | & << >>, `var`, assignments, `for`, `if`, several input and output
 // buffers, and has no switch statements. For bit-emit.ts's shaders it also has i32 variables and arrays, the

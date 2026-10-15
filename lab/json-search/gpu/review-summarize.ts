@@ -16,12 +16,13 @@ type BaselinesPage = {
 type Check = Record<string, unknown>
 // A run from before the programs with every position written out were removed compared with them, on the CPU
 // executor, where a later run compares with the plain JavaScript references. Such a result file has the first key of
-// each pair below instead of the second.
+// each pair below instead of the second, and firstStageShadersOverTheEdgeDocuments: the shaders with one statement
+// per operation, which were removed with those programs, over the same documents.
 type EdgePage = {
   documents: {count: number, valid: number}
   againstWrittenOutProgramsOnTheExecutor?: Check, againstTheReferences?: Check,
   at32StatesAgainstGeneratedJavaScript: Check, at32StatesAgainstTheLoopProgramOnTheExecutor: Check, selfCheck: Check,
-  threeRequestsAtOnce: Check, firstStageShadersOverTheEdgeDocuments: Check[],
+  threeRequestsAtOnce: Check, firstStageShadersOverTheEdgeDocuments?: Check[],
 }
 type ManyPage = {
   validationAgainstTheHighlighterOnTheExecutor?: Check, validationAgainstTheReference?: Check,
@@ -106,7 +107,7 @@ for (const run of edge) {
   console.log(`32 states, against the loop program on the CPU executor: ${JSON.stringify(page.at32StatesAgainstTheLoopProgramOnTheExecutor)}`)
   console.log(`The searcher's self check: ${JSON.stringify(page.selfCheck)}`)
   console.log(`Three requests at once: ${JSON.stringify(page.threeRequestsAtOnce)}`)
-  console.log(`The first stage's shaders over the same documents, against the executor: ${JSON.stringify(page.firstStageShadersOverTheEdgeDocuments)}`)
+  if (page.firstStageShadersOverTheEdgeDocuments !== undefined) console.log(`The shaders with one statement per operation over the same documents, against the executor: ${JSON.stringify(page.firstStageShadersOverTheEdgeDocuments)}`)
 }
 
 for (const run of many) {

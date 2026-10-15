@@ -1,25 +1,41 @@
-// The JSON highlighter (src/json-search/highlighter/highlighter.ts, the loop form) as the work of one position, for
-// loop-program.ts. The highlighter writes that work out for each of its 513 positions, e.g. 7,698 operations for the
-// summary and the display kinds, and as one shader with a statement per operation they took 1.9 to 2.3 s to compile. Here the stages of
-// highlighter.ts are written for one position, with the same tables, reads and comparisons:
-//   step   positions 0 to 511: the character's class, the tokenizer's event and next state, the depth and the container
-//          code after it, whether the innermost container is an object, the grammar's next state, and the display kind
+// The JSON highlighter as the work of one position, for loop-program.ts. JavaScript writes a document's first 512
+// code points and its length into cells (program.ts), and the program computes, for every code point, what it's shown
+// as, then whether the text is valid, the first error's position and kind, and whether the text is too long.
+//
+// What one position computes, from the tables of highlighter/tables.ts and from values carried from the position
+// before:
+// 1. The character's class, read from a table of 129 cells (patterns.md, "A loop over data that rarely changes").
+// 2. The tokenizer's event, e.g. stringStart or badNumber, and its next state, each as one read at (state, class)
+//    (patterns.md, "A state machine over queued events").
+// 3. The depth after the character, a running total of +1 and −1 (patterns.md, "Running totals").
+// 4. The container kinds as one integer, the container code: a running total of ±2^depth for braces. Whether the
+//    innermost container is an object is one comparison of the code with 2^(depth − 1) (expressions.md, "a >= b" on
+//    grids). Before the first error every container is still open at its depth, so the code's bits below the depth
+//    are the open containers' kinds, and the comparison reads the top bit. After the first error the code may be
+//    wrong, and the grammar stays in its error state whatever the comparison says.
+// 5. The grammar between tokens, a state machine of 8 states over (token, depth class, container kind), as one read.
+// 6. The display kind, one read at (event, grammar state), and the error kind of this position: the tokenizer's kind
+//    of the event plus the grammar's kind of the step.
+//
+// The stages of the loop program:
+//   step   positions 0 to 511: the six parts above
 //   end    position 512, the end of the text or the 513th code point of a longer one: the last event and grammar step,
 //          then valid, the first error's position and kind, and truncated
 // The tokenizer's state, the depth, the container code, the grammar's state, the count of positions in the error state
 // and the first error's kind are registers carried from one position to the next.
 //
-// What differs from the program with every position written out, and why the values are still the same:
-// - `inObject` compares the container code with a level weight. highlighter.ts's comparison is 2 operations at
-//   positions 1 to 510, where the code's range stays below 2^24, and a sign cascade of 17 at position 511. A step
-//   has one code for every position, so its range is position 511's, and every position gets the sign cascade. Both
-//   are exact comparisons of integers.
-// - At position 0, highlighter.ts writes the constant 0 for `inObject`. The step computes [0 >= levelWeight[0]], which
-//   is 0, since the code starts at 0 and the smallest level weight is 1.
-// - firstErrorKind is a read among the 513 positions' error kinds in highlighter.ts, at the count of positions before
-//   the error. The step carries it instead: it adds the position's error kind where the grammar enters the error
-//   state, which happens at most once, at that same position.
-// The tests compare every output with the executor on the highlighter's 2,509 test texts.
+// What follows from running one step at every position:
+// - `inObject` compares the container code with a level weight. A step has one code cell for every position, whose
+//   range is ±511 × 2^15, so the difference with a level weight can reach 2^24, where emitCompare builds a sign
+//   cascade of 17 operations instead of integer bits. Both are exact comparisons of integers.
+// - At position 0 the comparison needs no special case: the code starts at 0 and the smallest level weight is 1, so
+//   [0 >= levelWeight[0]] is 0.
+// - The first error's position is a count: the grammar's error state never goes back, so the positions before it are
+//   513 minus the positions in it (patterns.md, "findIndex when the test flips once along the items"). The first
+//   error's kind is carried: the step adds the position's error kind where the grammar enters the error state, which
+//   happens at most once.
+// tests/json-search/json-step.test.ts compares every output with a plain JavaScript reference, on 2,509 test texts, on
+// documents at the limits, and on an object and an array at every depth.
 import {type Circuit, type Terms, type Wire, emitCompare} from '../runtime/numeric-ui-core.ts'
 import {constant, createSourceTable, input} from '../runtime/cells.ts'
 import {capacity, displayKind, errorKinds, maximumDepth} from './highlighter/kinds.ts'
@@ -30,11 +46,11 @@ import {
 } from './highlighter/tables.ts'
 import {type Binding, type LoopProgram, createStage} from './loop-program.ts'
 
-// highlighter.ts's lengthLimit, which that file doesn't export.
+// The largest text length that program.ts's writeDocumentCells writes.
 const lengthLimit = 1_048_576
 export const stepSummaryNames = ['valid', 'firstErrorPosition', 'truncated', 'firstErrorKind'] as const
 
-// A table as constant cells within its own range, on a grid of 1, as highlighter.ts declares its tables.
+// A table that JavaScript writes once, as constant cells within the table's own range, on a grid of 1.
 const tableCells = (values: readonly number[]) => {
   const range = [Math.min(...values), Math.max(...values)] as const
   return values.map(value => constant(value, range, {grid: 1}))
@@ -105,7 +121,7 @@ export function buildJsonLoop(cellsPerDocument = capacity + 1) {
     return {event, lexerNext, grammarNext, errorAfter, firstErrorKind}
   }
 
-  // step, highlighter.ts's stages 1 to 6 for one of the positions 0 to 511.
+  // step, the six parts of the header for one of the positions 0 to 511.
   const characterClass = read(circuit, [[cells.codePoint, 1]], 1, tables.classes)
   const inObject = emitCompare(circuit, cells.code, '>=', onGrid(circuit, read(circuit, [[cells.depth, 1]], -1, tables.levelWeight)))
   const step = emitPosition([[characterClass, 1]], inObject)

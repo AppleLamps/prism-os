@@ -1,11 +1,10 @@
-// The WebGPU host for emit.ts's and loop-emit.ts's shaders: plain functions with no page globals, for the measurement
-// pages and for a demo page. One compute pass runs a shader once per document. Buffers:
+// The WebGPU host for loop-emit.ts's and bit-emit.ts's shaders: plain functions with no page globals, for the
+// measurement pages and for a demo page. One compute pass runs a shader once per document. Buffers:
 //   documents   a store of count × cellsPerDocument float32 cells, uploaded once and read by every program's shader
 //   shared      a program's source table, uploaded once, or again when it changes, e.g. a new pattern's cells
-//   params      the document count of this evaluation, and for a loop shader the window of documents that get per
-//               position outputs
-//   inputs      for a loop shader, other per-document buffers, e.g. the display kinds that another runner computed
-//   outputs     one buffer per output group, e.g. 3 summary values per document and 512 display kinds per document.
+//   params      the document count of this evaluation, and the window of documents that get per position outputs
+//   inputs      other per-document buffers, e.g. the display kinds that another runner computed
+//   outputs     one buffer per output group, e.g. 4 summary values per document and 512 display kinds per document.
 //               They stay on the GPU, and an evaluation copies the ranges it reads back into mappable buffers, e.g. the
 //               summary of every document and the kinds of the 64 documents on screen.
 //   packed      for a shader of bit-emit.ts, words of bits that the runner packs from the shared values with the
@@ -14,12 +13,10 @@
 //   const {device} = await requestBatchDevice(documentCount * cellsPerDocument * 4)
 //   const store = createDocumentStore(device, cellsPerDocument, documentCount)
 //   store.write(cells, documentCount)
-//   const runner = await createProgramRunner(device, shader, program.packShared(shader), store)
+//   const runner = await createProgramRunner(device, shader, loop.sharedValues, store)
 //   const {outputs} = await runner.evaluate({count: documentCount, readbacks: [{group: 0, firstDocument: 0, documentCount}]})
 import {invariant} from '../../runtime/numeric-ui-core.ts'
 import {packWords} from '../bit-emit.ts'
-import {countMismatches, expectedOutputs} from '../check.ts'
-import type {BatchProgram} from '../program.ts'
 
 // WebGPU's constants, with the values from the WebGPU specification, since TypeScript's DOM library declares the types and
 // not these values.
@@ -102,12 +99,10 @@ export async function createDocumentStore(device: GPUDevice, cellsPerDocument: n
 }
 
 // The documents of one output group to copy out of the GPU.
-/** @public */
-export type Readback = {group: number, firstDocument: number, documentCount: number}
+type Readback = {group: number, firstDocument: number, documentCount: number}
 
 // performance.now() times of one evaluation, in ms.
-/** @public */
-export type Evaluation = {
+type Evaluation = {
   // The writeBuffer calls, which return before the GPU has the data.
   uploadMs: number
   encodeAndSubmitMs: number
@@ -123,7 +118,7 @@ export type Evaluation = {
 }
 
 type EvaluateOptions = {
-  // Evaluates `count` documents, from firstDocument on, which is 0 unless given. Only a loop shader reads firstDocument.
+  // Evaluates `count` documents, from firstDocument on, which is 0 unless given.
   count: number
   firstDocument?: number
   // At most one readback per group. A windowed group's rows are the window's documents, so its readback starts at 0.
@@ -132,13 +127,12 @@ type EvaluateOptions = {
   cells?: Float32Array
   // New shared values, uploaded before the pass, e.g. the cells of the pattern to search for.
   shared?: Float32Array
-  // For a loop shader: the documents that get per position outputs, e.g. the ones on screen.
+  // The documents that get per position outputs, e.g. the ones on screen.
   window?: {firstDocument: number, documentCount: number}
   timestamps?: boolean
 }
 
-// What a runner needs from a shader: emit.ts's WgslModule, loop-emit.ts's LoopWgslModule and bit-emit.ts's
-// BitLoopWgslModule all have it.
+// What a runner needs from a shader: loop-emit.ts's LoopWgslModule and bit-emit.ts's BitLoopWgslModule both have it.
 /** @public */
 export type RunnableShader = {
   code: string
@@ -148,7 +142,7 @@ export type RunnableShader = {
   outputCounts: number[]
   // true for an output group that only holds the documents of a window.
   windowedGroups?: boolean[]
-  // The cells per document of the buffers a loop shader reads after the store.
+  // The cells per document of the buffers that the shader reads after the store.
   inputCells?: number[]
   // bit-emit.ts's plan of the buffer packed_words, bound after the output buffers: which shared cell is which bit of
   // which word. Without it, or with no words, the shader has no such buffer.
@@ -340,25 +334,6 @@ export async function createProgramRunner(device: GPUDevice, shader: RunnableSha
       querySet?.destroy()
     },
   }
-}
-
-// Whether this GPU gives the CPU executor's values: evaluates the first `count` documents on both, and compares every
-// output of every group. `cells` holds those documents' cells, which the store must already hold. A page runs it once
-// after compiling, e.g. over 500 documents, about 40 ms of executor time, and falls back to the CPU when
-// `mismatches` isn't 0.
-/** @public */
-export async function selfCheck(runner: ProgramRunner, program: BatchProgram, cells: Float32Array, count: number) {
-  const cpuStarted = performance.now()
-  const expected = expectedOutputs(program, cells, count)
-  const cpuMs = performance.now() - cpuStarted
-  const {outputs, totalMs} = await runner.evaluate({count, readbacks: program.outputCounts.map((_, group) => ({group, firstDocument: 0, documentCount: count}))})
-  let values = 0
-  let mismatches = 0
-  outputs.forEach((group, groupIndex) => {
-    values += group.length
-    mismatches += countMismatches(group, expected[groupIndex]!, group.length)
-  })
-  return {documents: count, values, mismatches, cpuMs, gpuMs: totalMs}
 }
 
 /** @public */

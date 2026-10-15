@@ -9,18 +9,16 @@
 //   (bit-rows.ts), which this page first compares with the loop program on the CPU for the first documents;
 // - times the same answers in plain JavaScript (plain-search.ts: the table loop, then RegExp per search), JSON.parse,
 //   and the same programs on the CPU.
-// In 'straightLine' runs it also compiles the first stage's display shader, every position written out, to time it in
-// the same process as the loop.
 import {capacityErrors, compilePattern} from '../../../src/json-search/regex/pattern.ts'
 import {type KindMask, bitRowTables, createBitRowSearch} from '../../../tests/json-search/bit-rows.ts'
 import {generateDocuments} from '../../../src/json-search/documents.ts'
 import {createPlainSearch} from '../../../src/json-search/plain-search.ts'
-import {buildBatchProgram, cellsPerDocument, kindCount, writeDocumentCells} from '../../../src/json-search/program.ts'
+import {cellsPerDocument} from '../../../src/json-search/program.ts'
 import {type SearchScope, boundaryCapacity, classCapacity, kindCount as displayKindCount, searchableKinds} from '../../../src/json-search/search-step.ts'
 import {capacity as positions} from '../../../src/json-search/highlighter/kinds.ts'
 import {type Searcher, type ShaderWriter, bufferBytesFor, createCpuSearcher, createGpuSearcher} from '../../../src/json-search/searcher.ts'
 import {highlightWithTables, tableLoopResult} from '../../../src/json-search/table-loop.ts'
-import {createDocumentStore, createProgramRunner, requestBatchDevice} from '../../../src/json-search/gpu/host.ts'
+import {requestBatchDevice} from '../../../src/json-search/gpu/host.ts'
 import {type SamplingConfig, compileEmptyPipeline, createReporter, round, sample, sleep, summary, timeCpu} from './measure.ts'
 
 export type CombinedPageConfig = SamplingConfig & {
@@ -45,8 +43,6 @@ export type CombinedPageConfig = SamplingConfig & {
   // The 32-state program is timed up to this many documents, since one search of loop-emit.ts's shader takes about
   // 1 s per 100,000.
   largestCountFor32States: number
-  // Also compiles and times the first stage's display shader at the largest count.
-  straightLine: boolean
 }
 
 const {report, post, log} = createReporter()
@@ -311,29 +307,6 @@ async function run() {
     await post(false)
   }
 
-  if (config.straightLine) {
-    // The first stage's display shader, every position written out, in the same process: its compile, and one
-    // evaluation with the summary of every document and the kinds of the window read back.
-    const texts = allTexts
-    const cells = new Float32Array(maxCount * cellsPerDocument)
-    for (let row = 0; row < maxCount; row++) writeDocumentCells(cells, row * cellsPerDocument, texts[row]!)
-    const store = await createDocumentStore(device, cellsPerDocument, maxCount)
-    store.write(cells, maxCount)
-    const program = buildBatchProgram('display')
-    const shader = program.emitShader()
-    const runner = await createProgramRunner(device, shader, program.packShared(shader), store, config.shaderSalt)
-    const straight: Record<string, unknown>[] = []
-    for (const count of config.counts) {
-      const windowDocuments = Math.min(count, config.windowDocuments)
-      const readbacks = [{group: 0, firstDocument: 0, documentCount: count}, {group: 1, firstDocument: Math.floor((count - windowDocuments) / 2), documentCount: windowDocuments}]
-      const totals = await sample(config, async () => (await runner.evaluate({count, readbacks})).totalMs)
-      straight.push({count, backToBackMs: summary(totals)})
-    }
-    report['straightLineDisplayShader'] = {statements: shader.statementCount, shaderBytes: shader.bytes, compileMs: round(runner.compileMs), kindsPerDocument: kindCount, byCount: straight}
-    log(`the display shader with every position written out: ${JSON.stringify(report['straightLineDisplayShader'])}`)
-    runner.destroy()
-    store.destroy()
-  }
   report['sink'] = sink
 }
 

@@ -1,5 +1,5 @@
-// Opens a measurement page in a fresh headless Chrome with WebGPU, and writes what the page posts to a JSON file. run.ts
-// and search-run.ts call it with their page and its configuration. Every run needs a profile folder that no other
+// Opens a measurement page in a fresh headless Chrome with WebGPU, and writes what the page posts to a JSON file. Each
+// run script, e.g. search-run.ts, calls it with its page and its configuration. Every run needs a profile folder that no other
 // Chrome uses: Chrome starts with a fresh profile there, and the run ends only the Chrome it started. Chrome runs with
 // --enable-webgpu-developer-features, so timestamp queries aren't rounded to 100 µs.
 import {mkdirSync, writeFileSync} from 'node:fs'

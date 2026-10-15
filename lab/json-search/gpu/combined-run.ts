@@ -49,7 +49,6 @@ const config: CombinedPageConfig = {
   executorDocuments: Number(argument('--executor-documents') ?? 16),
   selfCheckDocuments: Number(argument('--self-check-documents') ?? 300),
   largestCountFor32States: Number(argument('--largest-count-for-32-states') ?? (writers.search === 'loop-emit' ? 10_000 : Number.MAX_SAFE_INTEGER)),
-  straightLine: !process.argv.includes('--no-straight-line'),
 }
 
 await runPage({

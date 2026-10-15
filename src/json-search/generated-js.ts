@@ -1,14 +1,14 @@
-// The same compiled program as JavaScript statements, one per operation, like lab/ui-exploration/codegen/codegen.ts, with
-// index reads added: a baseline that runs the program's own operations on the CPU without the executor's loop over
-// layers. Every statement keeps the executor's FP32 rounding order, so every value has the executor's bits.
-import {invariant} from '../runtime/numeric-ui-core.ts'
-import {type TensorProgram, type Term, flattenProgram, positionsOfWires} from './emit.ts'
+// A compiled program as JavaScript statements, one per operation, like lab/ui-exploration/codegen/codegen.ts, with
+// index reads added. It runs the program's own operations on the CPU without the executor's loop over layers, several
+// times faster: loop-program.ts's 'generated' backend runs each stage this way, e.g. for the page's search on the CPU.
+// Every statement keeps the executor's FP32 rounding order, so every value has the executor's bits.
+import {type TensorProgram, type Term, flattenProgram} from './emit.ts'
 
 // JavaScriptCore and V8 stop optimizing very large functions, so the statements are split into functions of this many
 // operations.
 const rowsPerFunction = 128
 // A sum of more terms is written as several statements. V8's parser overflows its stack on `f(...)` nested about 660
-// deep, and the highlighter's widest sum has 513 terms.
+// deep, which a sum of that many terms would be as one expression.
 const termsPerStatement = 16
 
 const literal = (value: number) => Object.is(value, -0) ? '-0' : String(value)
@@ -74,33 +74,4 @@ export function compileChunks(program: TensorProgram) {
   // The Function constructor compiles the generated source, as codegen's compileScalarProgram does.
   const compile = Reflect.construct(Function, [source]) as () => ((values: Float32Array) => void)[]
   return {chunks: compile(), sourceBytes: source.length}
-}
-
-export function emitJavaScript(program: TensorProgram, options: {instanceCells: readonly number[], outputGroups: readonly (readonly number[])[]}) {
-  const {chunks, sourceBytes} = compileChunks(program)
-  const cellPositions = Int32Array.from(options.instanceCells)
-  const outputPositions = options.outputGroups.map(group => Int32Array.from(positionsOfWires(program, group)))
-  const values = new Float32Array(program.valueCount)
-  const cellCount = cellPositions.length
-  return {
-    sourceBytes,
-    functionCount: chunks.length,
-    // Runs the first `count` instances. `shared` is the source table, `cells` holds cellCount values per instance, and
-    // each output group is written to its own array.
-    run(shared: Float32Array, cells: Float32Array, count: number, outputs: readonly Float32Array[]) {
-      invariant(shared.length === program.sourceSize, 'the source table has the program\'s length')
-      values.set(shared)
-      for (let instance = 0; instance < count; instance++) {
-        const base = instance * cellCount
-        for (let column = 0; column < cellCount; column++) values[cellPositions[column]!] = cells[base + column]!
-        for (let index = 0; index < chunks.length; index++) chunks[index]!(values)
-        for (let group = 0; group < outputPositions.length; group++) {
-          const positions = outputPositions[group]!
-          const target = outputs[group]!
-          const outputBase = instance * positions.length
-          for (let output = 0; output < positions.length; output++) target[outputBase + output] = values[positions[output]!]!
-        }
-      }
-    },
-  }
 }

@@ -4,7 +4,7 @@
 //   kind of broken document and nesting around the maximum depth, with patterns that fill each program's states,
 //   classes and class boundaries or match nothing or everything. Every value is compared with the plain JavaScript
 //   references of tests/json-search: the reference highlighter and the automaton simulator. Then three requests at
-//   once, of which only the newest gets a result, and the first stage's two shaders over the same documents.
+//   once, of which only the newest gets a result.
 // - 'many': a GPU searcher over the measurements' generated documents. The validation and every display kind of every
 //   document are compared with the reference highlighter, the searches with the same loop programs as generated
 //   JavaScript over every document, and with the loop programs on the CPU executor over the first ones.
@@ -13,11 +13,10 @@
 //   JSON.parse and RegExp in several workers that each hold a share of the documents.
 import {type EdgeSearch, compareSearchers, compareWithReferences, edgeDocuments, edgeSearches, referenceHighlights, validationNames} from '../../../tests/json-search/edge-cases.ts'
 import {generateDocuments} from '../../../src/json-search/documents.ts'
-import {buildBatchPrograms, cellsPerDocument, writeDocumentCells} from '../../../src/json-search/program.ts'
 import {capacity as positions} from '../../../src/json-search/highlighter/kinds.ts'
 import {type ShaderWriter, bufferBytesFor, createCpuSearcher, createGpuSearcher} from '../../../src/json-search/searcher.ts'
 import {highlightWithTables, tableLoopResult} from '../../../src/json-search/table-loop.ts'
-import {createDocumentStore, createProgramRunner, requestBatchDevice, selfCheck} from '../../../src/json-search/gpu/host.ts'
+import {requestBatchDevice} from '../../../src/json-search/gpu/host.ts'
 import {type SamplingConfig, createReporter, round, summary, timeCpu} from './measure.ts'
 
 export type ReviewPageConfig = SamplingConfig & {
@@ -128,24 +127,6 @@ async function runEdge() {
   log(`three requests at once: ${JSON.stringify(overlapping)}`)
   searcher.destroy()
   await post(false)
-
-  // The first stage's shaders, every position written out, over the same documents, against the executor.
-  const batch = buildBatchPrograms()
-  const cells = new Float32Array(count * cellsPerDocument)
-  texts.forEach((text, row) => writeDocumentCells(cells, row * cellsPerDocument, text))
-  const store = await createDocumentStore(device, cellsPerDocument, count)
-  store.write(cells, count)
-  const firstStage: Record<string, unknown>[] = []
-  for (const program of batch.programs) {
-    const shader = program.emitShader()
-    const runner = await createProgramRunner(device, shader, program.packShared(shader), store, config.shaderSalt)
-    const check = await selfCheck(runner, program, cells, count)
-    firstStage.push({rootSet: program.rootSet, compileMs: round(runner.compileMs), documents: check.documents, values: check.values, mismatches: check.mismatches})
-    runner.destroy()
-  }
-  store.destroy()
-  report['firstStageShadersOverTheEdgeDocuments'] = firstStage
-  log(`the first stage's shaders: ${JSON.stringify(firstStage)}`)
 }
 
 async function runMany() {
@@ -272,7 +253,7 @@ async function runBaselines() {
   let sink = 0
 
   // JSON.parse, and the table loop written two ways: every document's kinds into one array of 512, as the searcher's
-  // page timed it, and into an array that holds every document's kinds, as the first stage's page timed it.
+  // page times it, and into an array that holds every document's kinds.
   const kindsScratch = new Uint8Array(positions)
   const kindsOfEveryDocument = new Uint8Array(count * positions)
   const validate = {

@@ -236,17 +236,20 @@ if (combinedRuns.length > 0) {
     const example = first.results.flatMap(result => result.programs).find(program => program.name === name) ?? pages.flatMap(page => page.results.flatMap(result => result.programs)).find(program => program.name === name)!
     console.log(`| ${name} | ${example.operations.map(whole).join(', ')} | ${example.statements === undefined ? '' : whole(example.statements)} | ${counts.map(count => `${whole(count)}: ${cell(count, result => result.programs.find(program => program.name === name)?.compileMs, 0)}`).join('; ')} |`)
   }
-  if (first.straightLineDisplayShader !== undefined) {
+  // A run from before the highlighter with every position written out was removed also compiled and timed its
+  // shader with one statement per operation, in the same process: its result file has straightLineDisplayShader.
+  const timedWrittenOutShader = pages.some(page => page.straightLineDisplayShader !== undefined)
+  if (timedWrittenOutShader) {
     const straight = defined(pages.map(page => page.straightLineDisplayShader))
-    console.log(`\nThe first stage's display shader, every position written out, in the same processes: ${whole(straight[0]!.statements)} statements, compiled in ${spread(straight.map(entry => entry.compileMs), 0)} ms.`)
+    console.log(`\nThe highlighter's shader with every position written out, in the same processes: ${whole(straight[0]!.statements)} statements, compiled in ${spread(straight.map(entry => entry.compileMs), 0)} ms.`)
   }
 
   console.log('\n### The highlighter\'s pass over every document, ms\n')
-  console.log(`| Documents | The loop: back to back | Compute pass, timestamps | ${gaps.map(gap => `After a pause of ${whole(gap)} ms`).join(' | ')} | Every position written out, back to back | Table loop, plain JavaScript | JSON.parse |`)
-  console.log(`| --- | --- | --- | ${gaps.map(() => '---').join(' | ')} | --- | --- | --- |`)
+  console.log(`| Documents | The loop: back to back | Compute pass, timestamps | ${gaps.map(gap => `After a pause of ${whole(gap)} ms`).join(' | ')} |${timedWrittenOutShader ? ' Every position written out, back to back |' : ''} Table loop, plain JavaScript | JSON.parse |`)
+  console.log(`| --- | --- | --- | ${gaps.map(() => '---').join(' | ')} |${timedWrittenOutShader ? ' --- |' : ''} --- | --- |`)
   for (const count of counts) {
     const straight = spread(pages.map(page => page.straightLineDisplayShader?.byCount.find(entry => entry.count === count)?.backToBackMs.median))
-    console.log(`| ${whole(count)} | ${cell(count, result => result.validate.backToBack.totalMs?.median)} | ${cell(count, result => result.validate.withTimestamps?.passMs?.median)} | ${gaps.map(gap => cell(count, result => result.validate.afterIdle.find(idle => idle.idleMs === gap)?.totalMs?.median)).join(' | ')} | ${straight} | ${cell(count, result => result.plainJavaScript.tableLoop.microsecondsPerDocument * count / 1000)} | ${cell(count, result => result.plainJavaScript.jsonParse.microsecondsPerDocument * count / 1000)} |`)
+    console.log(`| ${whole(count)} | ${cell(count, result => result.validate.backToBack.totalMs?.median)} | ${cell(count, result => result.validate.withTimestamps?.passMs?.median)} | ${gaps.map(gap => cell(count, result => result.validate.afterIdle.find(idle => idle.idleMs === gap)?.totalMs?.median)).join(' | ')} |${timedWrittenOutShader ? ` ${straight} |` : ''} ${cell(count, result => result.plainJavaScript.tableLoop.microsecondsPerDocument * count / 1000)} | ${cell(count, result => result.plainJavaScript.jsonParse.microsecondsPerDocument * count / 1000)} |`)
   }
 
   console.log('\n### One search through the searcher, ms\n')

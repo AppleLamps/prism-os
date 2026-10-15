@@ -1,29 +1,25 @@
-// The emitted shaders through the strict WGSL interpreter against the CPU executor, the other CPU versions of the
-// highlighter against each other, and the generated documents against their labels. A real GPU compiler may fuse or
-// regroup operations; lab/json-search/gpu/run.ts checks the same outputs in headless Chrome.
+// The code that both shader writers and the generated JavaScript start from (emit.ts, generated-js.ts), on a small
+// program with every kind of row; a document's cells; the plain JavaScript table loop; and the generated documents
+// against their labels. search.test.ts and json-step.test.ts compare the page's two programs with their references.
 // Run from the repo root: bun test tests/json-search/json-search.test.ts
 import {describe, expect, test} from 'bun:test'
+import type {Wire} from '../../src/runtime/numeric-ui-core.ts'
 import {constant, createSourceTable, input, list} from '../../src/runtime/cells.ts'
 import {capacity, displayKind, errorKind} from '../../src/json-search/highlighter/kinds.ts'
 import {createCorpus} from './highlighter/corpus.ts'
 import {highlightReference} from './highlighter/reference.ts'
-import {countMismatches, expectedOutputs} from '../../src/json-search/check.ts'
+import {emitBitLoopWgsl, packWords} from '../../src/json-search/bit-emit.ts'
 import {codePointLength, defaultSeed, defects, describeDocuments, documentAt, generateDocuments, shapes} from '../../src/json-search/documents.ts'
-import {emitWgsl, flattenProgram, packSharedValues, wgslFloat} from '../../src/json-search/emit.ts'
-import {emitJavaScript} from '../../src/json-search/generated-js.ts'
-import {buildBatchPrograms, cellsPerDocument, kindCount, summaryCount, writeDocumentCells} from '../../src/json-search/program.ts'
+import {flattenProgram, wgslFloat} from '../../src/json-search/emit.ts'
+import {emitLoopWgsl} from '../../src/json-search/loop-emit.ts'
+import {type Binding, type LoopProgram, createLoopRunner, createStage} from '../../src/json-search/loop-program.ts'
+import {cellsPerDocument, writeDocumentCells} from '../../src/json-search/program.ts'
 import {highlightWithTables, tableLoopResult} from '../../src/json-search/table-loop.ts'
 import {createWgslInterpreter} from './wgsl-interpreter.ts'
 
 // The highlighter's test texts (highlighter/corpus.ts): edge cases, random JSON, random edits, and texts around the
 // capacity, 2,509 in all.
 const corpus = createCorpus(20260917, {random: 700, mutated: 1600, long: 80}).all
-const batch = buildBatchPrograms()
-const [summaryProgram, displayProgram] = batch.programs as [typeof batch.programs[number], typeof batch.programs[number]]
-const corpusCells = new Float32Array(corpus.length * cellsPerDocument)
-corpus.forEach((text, index) => writeDocumentCells(corpusCells, index * cellsPerDocument, text))
-// The executor's outputs for every corpus text, per root set.
-const corpusExpected = new Map(batch.programs.map(program => [program.rootSet, expectedOutputs(program, corpusCells, corpus.length)]))
 
 function lowbias32(n: number) {
   n = Math.imul((n >>> 16) ^ n, 0x21f0aaad)
@@ -32,8 +28,8 @@ function lowbias32(n: number) {
 }
 const hash2 = (a: number, b: number) => (lowbias32(lowbias32(a) ^ b) >>> 0) / 0x100000000
 
-describe('the emitter', () => {
-  test('a program with every kind of row and every index read rule gives the executor\'s values, with and without guards', () => {
+describe('a program\'s rows as shader statements and as JavaScript statements', () => {
+  test('a program with every kind of row and every index read rule gives the executor\'s values: as generated JavaScript, and as both writers\' shaders through the WGSL interpreter', () => {
     const table = createSourceTable()
     const cells = table.declare({
       items: list(40, () => input([-64, 64])),
@@ -45,7 +41,7 @@ describe('the emitter', () => {
     const circuit = table.createCircuit()
     const {items, index, lookup} = cells
     const outputs = [
-      // table[index] with each pair of rules, a reversed table, one repeated candidate, and the instance's own cells.
+      // table[index] with each pair of rules, a reversed table, and one repeated candidate.
       circuit.indexReadAffine([[index, 1]], 0, lookup, 'clamp', 'clamp'),
       circuit.indexReadAffine([[index, 1]], 0, lookup, 'zero', 'zero'),
       circuit.indexReadAffine([[index, 1]], 0, lookup, 'clamp', 'zero'),
@@ -53,7 +49,6 @@ describe('the emitter', () => {
       circuit.indexReadAffine([[index, 0.5], [items[0]!, 0.125]], 1.25, lookup, 'zero', 'clamp'),
       circuit.indexReadAffine([[index, 1]], 2, [...lookup].reverse(), 'clamp', 'zero'),
       circuit.indexReadAffine([[index, 1]], 0, [lookup[2]!, lookup[2]!, lookup[2]!], 'zero', 'zero'),
-      circuit.indexReadAffine([[index, 1]], 3, items.slice(4, 30), 'zero', 'clamp'),
       // Products and sums that round, a ReGLU, a boolean atom, a shared cell read directly, and a sum of 40 terms, which
       // continues in a second statement.
       circuit.affine([[items[0]!, 0.1], [items[1]!, -0.7], [items[2]!, 3], [cells.factor, 1]], 0.3),
@@ -62,47 +57,65 @@ describe('the emitter', () => {
       circuit.boolean(cells.fraction),
       circuit.affine(items.map((item, position) => [item, position % 3 === 0 ? -1.1 : 0.37 * (position + 1)] as const), -5),
     ]
+    // A read among the document's own cells, which generated JavaScript runs and a shader writer refuses.
+    const readOfOwnCells = circuit.indexReadAffine([[index, 1]], 3, items.slice(4, 30), 'zero', 'clamp')
     const {initialSource} = table.finish()
-    const program = circuit.compileTensorProgram(outputs)
-    const evaluate = circuit.createTensorProgramEvaluator(program)
-    const instanceCells = [...items, index, cells.fraction]
+
+    // The rows as a loop program of one stage that runs once per document: every document cell is a column of the
+    // document's buffer, and every output a column of the document's output.
+    const documentCells = [...items, index, cells.fraction]
+    const loopOf = (wires: readonly Wire[]): LoopProgram => ({
+      positions: 1,
+      buffers: [{name: 'documents', cellsPerDocument: documentCells.length}],
+      registers: [],
+      fields: [],
+      outputGroups: [{name: 'values', kind: 'document', valuesPerDocument: wires.length, fill: 0}],
+      stages: [createStage({
+        name: 'rows', repeat: 'once', circuit, sharedOffset: 0,
+        bindings: new Map<Wire, Binding>(documentCells.map((wire, column) => [wire, {kind: 'cell', buffer: 0, column}])),
+        outputs: wires.map((wire, column) => ({wire, write: {kind: 'document', group: 0, column}})),
+      })],
+      results: [],
+      sharedValues: new Float32Array(initialSource),
+      lengthCell: undefined,
+    })
+
     const count = 600
-    const instances = new Float32Array(count * instanceCells.length)
-    for (let instance = 0; instance < count; instance++) {
-      const base = instance * instanceCells.length
+    const documents = new Float32Array(count * documentCells.length)
+    for (let row = 0; row < count; row++) {
+      const base = row * documentCells.length
       items.forEach((_, position) => {
-        instances[base + position] = Math.round((hash2(instance, position) * 128 - 64) * 8) / 8
+        documents[base + position] = Math.round((hash2(row, position) * 128 - 64) * 8) / 8
       })
       // Whole indices below, inside and above the tables, and fractional ones, which the read floors.
-      instances[base + items.length] = instance % 2 === 0 ? Math.floor(hash2(instance, 100) * 33) - 12 : hash2(instance, 101) * 32 - 12
-      instances[base + items.length + 1] = instance % 7 === 0 ? 0.5 : hash2(instance, 102)
+      documents[base + items.length] = row % 2 === 0 ? Math.floor(hash2(row, 100) * 33) - 12 : hash2(row, 101) * 32 - 12
+      documents[base + items.length + 1] = row % 7 === 0 ? 0.5 : hash2(row, 102)
     }
-    const source = new Float32Array(initialSource)
-    const expected = new Float32Array(count * outputs.length)
-    for (let instance = 0; instance < count; instance++) {
-      instanceCells.forEach((wire, column) => {
-        source[wire] = instances[instance * instanceCells.length + column]!
-      })
-      expected.set(evaluate(source), instance * outputs.length)
+    const valuesOf = (loop: LoopProgram, backend: 'executor' | 'generated') => {
+      const runner = createLoopRunner(loop, backend)
+      const values = new Float32Array(count * loop.outputGroups[0]!.valuesPerDocument)
+      for (let row = 0; row < count; row++) runner.run([documents], row, [values], row, -1)
+      return values
     }
-    expect(new Set(expected).size).toBeGreaterThan(1000)
-    for (const guard of ['none', 'max'] as const) {
-      // Two output groups: the reads, then the rest.
-      const shader = emitWgsl(program, {instanceCells, outputGroups: [outputs.slice(0, 8), outputs.slice(8)], guard})
-      expect(shader.rowCounts.index).toBe(8)
-      expect(shader.rowCounts.boolean).toBe(1)
-      expect(shader.guards > 0).toBe(guard === 'max')
-      const groups = [new Float32Array(count * 8), new Float32Array(count * (outputs.length - 8))]
-      createWgslInterpreter(shader.code)(packSharedValues(shader, new Float32Array(initialSource)), instances, count, groups)
-      for (let instance = 0; instance < count; instance++) {
-        const row = [...groups[0]!.subarray(instance * 8, instance * 8 + 8), ...groups[1]!.subarray(instance * (outputs.length - 8), (instance + 1) * (outputs.length - 8))]
-        expect(row).toEqual([...expected.subarray(instance * outputs.length, (instance + 1) * outputs.length)])
-      }
+
+    // Generated JavaScript, with the read among the document's own cells.
+    const withOwnCells = loopOf([...outputs, readOfOwnCells])
+    const expectedWithOwnCells = valuesOf(withOwnCells, 'executor')
+    expect(new Set(expectedWithOwnCells).size).toBeGreaterThan(1000)
+    expect([...valuesOf(withOwnCells, 'generated')]).toEqual([...expectedWithOwnCells])
+    expect(() => emitLoopWgsl(withOwnCells)).toThrow('an index read\'s candidates are shared cells')
+
+    // Both writers' shaders, without that read.
+    const loop = loopOf(outputs)
+    const expected = valuesOf(loop, 'executor')
+    const fromLoopEmit = emitLoopWgsl(loop)
+    expect([fromLoopEmit.rowCounts.index, fromLoopEmit.rowCounts.boolean]).toEqual([7, 1])
+    const fromBitEmit = emitBitLoopWgsl(loop)
+    for (const [shader, packed] of [[fromLoopEmit, undefined], [fromBitEmit, packWords(fromBitEmit.packedCells, loop.sharedValues)]] as const) {
+      const values = new Float32Array(expected.length)
+      createWgslInterpreter(shader.code)(loop.sharedValues, documents, count, [values], packed === undefined ? {} : {packed})
+      expect([...values]).toEqual([...expected])
     }
-    const generated = emitJavaScript(program, {instanceCells, outputGroups: [outputs]})
-    const fromJavaScript = new Float32Array(count * outputs.length)
-    generated.run(new Float32Array(initialSource), instances, count, [fromJavaScript])
-    expect(countMismatches(fromJavaScript, expected, expected.length)).toBe(0)
   })
 
   test('refuses an index read whose candidates are computed values, e.g. a read among sums', () => {
@@ -122,66 +135,6 @@ describe('the emitter', () => {
     expect([1, -3, 0.5, 2 ** 24, -(2 ** 24), 16_777_218, 0.1, -0, 1e-40].map(value => wgslFloat(Math.fround(value)))).toEqual([
       '1.0f', '(-3.0f)', '0x1.000000p-1f', '0x1.000000p24f', '(-0x1.000000p24f)', '0x1.000002p24f', '0x1.99999ap-4f', '(-0.0f)', '0x0.022d84p-126f',
     ])
-  })
-})
-
-describe('the highlighter\'s batch programs', () => {
-  test('have the sizes the README gives', () => {
-    expect(summaryProgram.sizes).toMatchObject({sourceCells: 4499, operations: 7186, layers: 536, indexReads: 4609})
-    expect(displayProgram.sizes).toMatchObject({sourceCells: 4499, operations: 7698, layers: 536, indexReads: 5121})
-    const summaryShader = summaryProgram.emitShader()
-    const displayShader = displayProgram.emitShader()
-    expect([summaryShader.statementCount, summaryShader.outputCounts, summaryShader.cellsPerInstance]).toEqual([11_814, [summaryCount], cellsPerDocument])
-    expect([displayShader.statementCount, displayShader.outputCounts, displayShader.cellsPerInstance]).toEqual([13_350, [summaryCount, kindCount], cellsPerDocument])
-    // Every weight and bias is an integer. The 12 of 2^24 or more belong to the sign cascade at position 511.
-    expect([summaryShader.fractionalLiterals, summaryShader.largeIntegerLiterals, summaryShader.rowCounts.boolean]).toEqual([0, 12, 0])
-    expect(displayProgram.emitShader({guard: 'max'}).guards).toBe(9737)
-  })
-
-  test('the executor\'s summary and display kinds are the plain JavaScript reference\'s, on the highlighter\'s test texts', () => {
-    const [summary, kinds] = corpusExpected.get('display')!
-    corpus.forEach((text, index) => {
-      const reference = highlightReference(text)
-      const actual = {text, summary: [...summary!.subarray(index * summaryCount, (index + 1) * summaryCount)], kinds: [...kinds!.subarray(index * kindCount, (index + 1) * kindCount)]}
-      const expected = {text, summary: [reference.valid, reference.firstErrorPosition, reference.truncated], kinds: reference.displayKinds}
-      if (JSON.stringify(actual) !== JSON.stringify(expected)) expect(actual).toEqual(expected)
-    })
-    // The summary program computes the same three values.
-    expect(countMismatches(corpusExpected.get('summary')![0]!, summary!, summary!.length)).toBe(0)
-  })
-
-  for (const program of batch.programs) {
-    test(`${program.rootSet}: the shader without guards gives the executor's outputs through the WGSL interpreter, on every test text`, () => {
-      const shader = program.emitShader()
-      const outputs = program.outputCounts.map(count => new Float32Array(corpus.length * count))
-      createWgslInterpreter(shader.code)(program.packShared(shader), corpusCells, corpus.length, outputs)
-      const expected = corpusExpected.get(program.rootSet)!
-      outputs.forEach((group, groupIndex) => expect(countMismatches(group, expected[groupIndex]!, group.length)).toBe(0))
-    }, 60_000)
-
-    test(`${program.rootSet}: the shader with guards does too, on every fifth test text`, () => {
-      const texts = corpus.filter((_, index) => index % 5 === 0)
-      const cells = new Float32Array(texts.length * cellsPerDocument)
-      texts.forEach((text, index) => writeDocumentCells(cells, index * cellsPerDocument, text))
-      const shader = program.emitShader({guard: 'max'})
-      const outputs = program.outputCounts.map(count => new Float32Array(texts.length * count))
-      createWgslInterpreter(shader.code)(program.packShared(shader), cells, texts.length, outputs)
-      const expected = expectedOutputs(program, cells, texts.length)
-      outputs.forEach((group, groupIndex) => expect(countMismatches(group, expected[groupIndex]!, group.length)).toBe(0))
-    }, 60_000)
-
-    test(`${program.rootSet}: generated JavaScript gives the executor's outputs on every test text`, () => {
-      const generated = program.emitJavaScript()
-      const outputs = program.outputCounts.map(count => new Float32Array(corpus.length * count))
-      generated.run(program.sharedValues, corpusCells, corpus.length, outputs)
-      const expected = corpusExpected.get(program.rootSet)!
-      outputs.forEach((group, groupIndex) => expect(countMismatches(group, expected[groupIndex]!, group.length)).toBe(0))
-    }, 60_000)
-  }
-
-  test('countMismatches counts zeros of either sign as equal, and a NaN as a mismatch', () => {
-    expect(countMismatches(Float32Array.of(0, -0, 1, Number.NaN), [-0, 0, 1, Number.NaN], 4)).toBe(1)
-    expect(countMismatches(Float32Array.of(1, 2, 3), [1, 5, 3], 3)).toBe(1)
   })
 })
 
