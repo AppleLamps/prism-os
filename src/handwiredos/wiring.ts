@@ -113,7 +113,7 @@ export function arcOpacity(weightCount: number) {
 // under the system bar down to 6 px above the viewport's bottom. The canvas's last
 // row is then the row of the dock's wire, see .dock-wire in handwired-os.css, so
 // the arcs stand on the wire's row.
-function wiringRectangle(viewportWidth: number, viewportHeight: number, systemBarHeight: number) {
+export function wiringRectangle(viewportWidth: number, viewportHeight: number, systemBarHeight: number) {
   return {
     left: 24,
     top: systemBarHeight + 12,

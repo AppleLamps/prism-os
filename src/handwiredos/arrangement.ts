@@ -51,7 +51,7 @@ export type ArrangementMetrics = {
 }
 
 // The cells of the window manager's table that the arrangement reads and writes.
-type ArrangementCells = {
+export type ArrangementCells = {
   systemBarHeight: Wire
   dockHeight: Wire
   minWidth: Wire

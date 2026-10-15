@@ -75,7 +75,19 @@ import {
   stateBit,
   unitInterval,
 } from '../runtime/cells.ts'
-import {arrangeInitialWindows} from './arrangement.ts'
+import {arrangeInitialWindows, type ArrangementCells} from './arrangement.ts'
+
+export type ArrangeInitialWindows = (
+  source: Float32Array,
+  cells: ArrangementCells,
+  viewportWidth: number,
+  viewportHeight: number,
+) => ReturnType<typeof arrangeInitialWindows>
+
+export type WindowManagerMountOptions = {
+  /** Window layout written before the first evaluation. Defaults to HandwiredOS's desk layout. */
+  arrange?: ArrangeInitialWindows
+}
 import {averagedFrames as monitorAveragedFrames, createMonitorFooter, frameCapacity as monitorFrameCapacity} from './monitor-footer.ts'
 import {createWiringRenderer} from './wiring.ts'
 
@@ -1833,7 +1845,8 @@ export function noteFocusChange(frame: {
   return frame.noteHasHadKeyboardFocus ? 'focus' : 'focus with the caret at the end'
 }
 
-function mountWindowManager(document: Document, window: Window) {
+export function mountWindowManager(document: Document, window: Window, options: WindowManagerMountOptions = {}) {
+  const arrange = options.arrange ?? arrangeInitialWindows
   const machine = createWindowManagerMachine()
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const windows = [...document.querySelectorAll<HTMLElement>('.window')]
@@ -2206,7 +2219,7 @@ function mountWindowManager(document: Document, window: Window) {
   // is clamped like the first step clamps the size that it reads, e.g. to 16,384 px
   // on a display wider than that, so the windows are arranged in the viewport that
   // the program lays out.
-  arrangeInitialWindows(
+  arrange(
     machine.source,
     machine.cells,
     quantizeViewport(document.documentElement.clientWidth),
@@ -2478,6 +2491,6 @@ function validateWindowManagerOutput(
   }
 }
 
-if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+if (import.meta.main && typeof document !== 'undefined' && typeof window !== 'undefined') {
   mountWindowManager(document, window)
 }

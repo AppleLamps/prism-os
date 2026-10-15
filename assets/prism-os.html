@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prism OS</title>
+  <meta name="description" content="A twilight glass desktop powered by the same handwired numeric program as HandwiredOS: drag, stack, and spring three apps while aurora light moves under the network of weights.">
+  <meta name="theme-color" content="#0b1020">
+  <script>
+    new MutationObserver((records, observer) => {
+      const script = document.head.querySelector('script[type=module][src]')
+      if (script === null) return
+      script.setAttribute('blocking', 'render')
+      observer.disconnect()
+    }).observe(document.head, {childList: true})
+  </script>
+  <link rel="stylesheet" href="./site.css">
+  <link rel="stylesheet" href="./handwired-os.css">
+  <link rel="stylesheet" href="./prism-os.css">
+</head>
+<body>
+  <main id="desktop" class="prism-desktop">
+    <header id="system-bar">
+      <a class="system-back" href="../">
+        <svg width="7" height="12" viewBox="0 0 7 12" aria-hidden="true"><path d="M5.5 1.5L1.5 6l4 4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        All demos
+      </a>
+      <div class="prism-brand" aria-hidden="true">
+        <span class="prism-mark"></span>
+        Prism OS
+      </div>
+      <nav class="system-links">
+        <a href="https://github.com/chenglou/handwired/tree/main/src/prismos">Source</a>
+      </nav>
+    </header>
+
+    <canvas class="desk-aurora" aria-hidden="true"></canvas>
+    <canvas class="desk-wiring" aria-hidden="true"></canvas>
+
+    <section class="window">
+      <div class="titlebar">
+        <div class="window-title"><span class="app-dot app-dot-scope"></span>Scope</div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content monitor-content">
+        <nav class="monitor-sidebar"><strong>Neural desk</strong><div class="monitor-caption">The handwired program behind Prism OS</div></nav>
+        <div class="monitor-list">
+          <div class="monitor-header"></div>
+          <div class="monitor-scroller">
+            <div class="monitor-spacer"></div>
+          </div>
+          <div class="monitor-overflow"></div>
+        </div>
+        <footer class="monitor-footer"></footer>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <section class="window">
+      <div class="titlebar">
+        <div class="window-title"><span class="app-dot app-dot-ink"></span>Inkwell</div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content notes-content">
+        <textarea class="notes-text" aria-label="Note">Prism OS showcase
+
+&ndash; Same 9,909-weight program as HandwiredOS
+&ndash; New cascade layout and aurora wallpaper
+&ndash; Drag the title bars, resize from the corner
+&ndash; Open a photo in Chroma, read the circuit in Scope</textarea>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <section class="window">
+      <div class="titlebar">
+        <div class="window-title">
+          <span class="app-dot app-dot-chroma"></span>Chroma
+        </div>
+        <div class="window-controls">
+          <span class="window-button minimize"></span>
+          <span class="window-button maximize"></span>
+          <span class="window-button close"></span>
+        </div>
+      </div>
+      <div class="window-content photos-content">
+        <div class="photos-backdrop"></div>
+        <div class="photos-control photos-previous"></div>
+        <div class="photos-control photos-next"></div>
+      </div>
+      <div class="resize-grip"></div>
+    </section>
+
+    <nav id="dock" class="prism-dock">
+      <span class="dock-wire"></span>
+      <div class="dock-item" title="Scope">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="14" cy="14" r="8"/>
+          <path class="accent" d="M14 6v4M14 18v4M6 14h4M18 14h4"/>
+        </svg>
+        <i></i>
+      </div>
+      <div class="dock-item" title="Inkwell">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8.5 4.5h8l4.5 4.5v12.5a2 2 0 0 1-2 2h-10.5a2 2 0 0 1-2-2v-15a2 2 0 0 1 2-2z"/>
+          <path class="accent" d="M11 14h6M11 17.5h4"/>
+        </svg>
+        <i></i>
+      </div>
+      <div class="dock-item" title="Chroma">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4" y="6" width="20" height="16" rx="2.5"/>
+          <path d="M4.5 18.5l4.6-4.8a1.2 1.2 0 0 1 1.7 0l3.2 3.3"/>
+          <circle class="accent-fill" cx="18.5" cy="10.8" r="1.8"/>
+        </svg>
+        <i></i>
+      </div>
+    </nav>
+  </main>
+  <script type="module" blocking="render" src="../src/prismos/boot.ts"></script>
+</body>
+</html>

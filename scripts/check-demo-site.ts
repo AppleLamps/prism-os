@@ -32,6 +32,13 @@ function option(name: string): string | undefined {
 // index's first card come from.
 const textOf = (selector: string) => `[...document.querySelectorAll('${selector}')].map(element => element.textContent.trim().replace(/\\s+/g, ' ')).filter(text => text !== '').join('\\n')`
 const expectations: Record<string, {ready: string, report: string}> = {
+  'prism-os/': {
+    ready: `/\\d/.test(document.querySelector('.monitor-counts')?.textContent ?? '')`,
+    report: `[
+      ...[...document.querySelectorAll('.monitor-location')].map(item => item.title.split('.')[0]),
+      ...[...document.querySelectorAll('.monitor-counts li')].map(item => item.textContent.trim()),
+    ].join(', ')`,
+  },
   'os/': {
     // HandwiredOS reports its program in its Monitor window, which the page fills from the compiled program at
     // mount. Each item of the window's sidebar counts a location's rows, and a pointer that rests on the item reads
