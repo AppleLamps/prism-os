@@ -6,7 +6,7 @@ From the repo root:
 
 ```sh
 bun start                         # the demo site, with the page at /json-search/
-bun test tests/json-search        # 183 tests in 10 files, about 40 s, no GPU
+bun test tests/json-search        # 184 tests in 10 files, about 45 s, no GPU
 bun run check                     # type-check and lint, with the rest of the repo
 ```
 
@@ -243,7 +243,7 @@ What the programs are compared with was written from the rules, and not from the
 
 The tests, by file:
 
-- **json-step.test.ts**: the highlighter's step, run over a document's positions on the CPU executor and as generated JavaScript, gives the reference's summary, first error kind and display kinds on 2,509 test texts, which reach every error kind, on 280 documents at the limits, and on an object inside arrays and an array inside objects at every depth from 1 to 16. On the literal evaluator, every declared grid and index read holds at every position.
+- **json-step.test.ts**: the highlighter's step, run over a document's positions on the CPU executor and as generated JavaScript, gives the reference's summary, first error kind and display kinds on 2,509 test texts, which reach every error kind, on 280 documents at the limits, and on an object inside arrays and an array inside objects at every depth from 1 to 16. As generated JavaScript it also gives them on the 43,420 short texts of highlighter/short-texts.ts: every tokenizer state followed by every kind of character and then by one more character, every ASCII character where its kind matters, and short texts inside containers at every nesting depth up to 18. On the literal evaluator, every declared grid and index read holds at every position.
 - **regex/regex-search.test.ts**: the search's step gives both references' matches on 26 hand-written cases and on the random patterns that fit its small program, more than 250 of 400, with 6 texts each, a syntax error for syntax outside the language, a named message for a pattern that doesn't fit, and holds its declarations at every position.
 - **search.test.ts**: the loop programs and both writers' shaders, through the WGSL interpreter, give the automaton reference's match count and marks for 274 patterns of up to 8 states with 8 texts each, at 16 and 32 states, at 512 positions over generated documents, and in every scope, and the highlighter's shaders give the reference's values on the 2,509 texts. It pins the sizes that this README gives.
 - **searcher.test.ts**: the searcher on the CPU against both references, and the searcher on the GPU as a page creates it, where tests/json-search/interpreted-gpu.ts is a WebGPU device whose compute pass runs the shader's text through the interpreter. Only the newest of several requests gets a result, and a self check finds no difference between the backends.

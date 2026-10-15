@@ -2,8 +2,10 @@
 // position by loop-program.ts. The reference, highlighter/reference.ts, is a scanner and a parser written from JSON's
 // grammar, and it doesn't read the tables that the step reads, so a wrong table cell that changes a text's result fails
 // here. Both CPU forms of the program run: the CPU executor, which defines a program's values, and generated JavaScript,
-// which the page's CPU search runs. The last test runs the step on the literal evaluator, which computes every operation
-// as built, and checks what the step declares about its values at every position.
+// which the page's CPU search runs. The short texts of highlighter/short-texts.ts, which put the tokenizer and the
+// grammar in each of their situations, run as generated JavaScript only, since there are 43,420 of them. The last test
+// runs the step on the literal evaluator, which computes every operation as built, and checks what the step declares
+// about its values at every position.
 // Run from the repo root: bun test tests/json-search/json-step.test.ts
 import {describe, expect, test} from 'bun:test'
 import {validateGrids, validateIndexReads, validateNoNaN} from '../../src/runtime/numeric-ui-core.ts'
@@ -14,6 +16,7 @@ import {cellsPerDocument, writeDocumentCells} from '../../src/json-search/progra
 import {handWrittenDocuments} from './edge-cases.ts'
 import {createCorpus} from './highlighter/corpus.ts'
 import {highlightReference} from './highlighter/reference.ts'
+import {shortTexts} from './highlighter/short-texts.ts'
 
 const built = buildJsonLoop()
 const backends = ['executor', 'generated'] as const
@@ -76,6 +79,15 @@ describe('the highlighter\'s step, run over a document\'s positions, gives the r
       expect(references.map(reference => reference.valid)).toEqual(nestedTexts.map(() => 1))
     })
   }
+
+  test('on generated JavaScript, for the short texts: every tokenizer state followed by every kind of character, and short texts at every nesting depth', () => {
+    const texts = shortTexts()
+    const references = expectTheReference('generated', texts)
+    expect(texts.length).toBe(43_420)
+    // The texts are at most 125 code points long, so they reach every kind of first error but tooLong, and none.
+    expect(new Set(references.map(reference => reference.firstErrorKind)).size).toBe(errorKinds.length - 1)
+    expect(references.filter(reference => reference.valid === 1).length).toBeGreaterThan(1_500)
+  }, 60_000)
 
   test('on the literal evaluator, with every declared grid and index read holding at every position', () => {
     // The nested texts, every tenth document at the limits, and for each kind of first error, and for none, the first
