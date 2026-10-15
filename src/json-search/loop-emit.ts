@@ -84,7 +84,7 @@ export function emitLoopWgsl(loop: LoopProgram, options: LoopWgslOptions = {}): 
     const names = new Map<number, string>()
     const wordsRead = new Set<number>()
     const writer = createRowWriter(program.sourceSize, {
-      guard: 'none', prefix,
+      prefix,
       source: position => {
         const existing = names.get(position)
         if (existing !== undefined) return existing

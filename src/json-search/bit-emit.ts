@@ -394,7 +394,7 @@ export function emitBitLoopWgsl(loop: LoopProgram, options: {workgroupSize?: num
         return `shared_values[u32(${first}i + ${index}${row.candidateStride === 1 ? '' : ` * ${wgslInt(row.candidateStride)}`})]`
       }
       const writer = createRowWriter(sourceSize, {
-        guard: 'none', prefix,
+        prefix,
         // writeFloat holds every operand before the row writer asks for it.
         source: position => floatText(position),
         candidate: candidateText,

@@ -11,13 +11,11 @@
 //
 // Exactness. A row's sum is written as one chain in the executor's order, `bias + w1 * a - b`, which WGSL parses left to
 // right. Apple's Metal compiler fuses `a + w * x` into one multiply-add and regroups sums (the comment at the top of
-// codegen's wgsl.ts has the measurements), so with guard: 'none' only a program whose every product and partial sum is
-// exact gives the executor's bits, e.g. one that holds only integers below 2^24, like both programs of the page, whose
-// writers pass 'none'. With guard: 'max', every product whose weight isn't a power of two and every partial sum is
-// wrapped in max(x, lowest), which kept the executor's rounding in every program codegen measured. The shader around
-// the rows then declares `lowest` as the lowest float32 value, loaded from a buffer, so that the compiler can't prove
-// that the max returns x. Booleans are select(0.0f, 1.0f, score >= 0.5f). A NaN index, or any NaN or Infinity, isn't
-// reproduced, and zeros may differ in sign, which never changes a nonzero value of these instructions.
+// codegen's wgsl.ts has the measurements), so only a program whose every product and partial sum is exact gives the
+// executor's bits, e.g. one that holds only integers below 2^24, like both programs of the page. A program with
+// fractions needs a guard around every inexact product and every partial sum, `max(x, lowest)`, which codegen's wgsl.ts
+// writes and this writer doesn't. Booleans are select(0.0f, 1.0f, score >= 0.5f). A NaN index, or any NaN or Infinity,
+// isn't reproduced, and zeros may differ in sign, which never changes a nonzero value of these instructions.
 import {type Circuit, invariant} from '../runtime/numeric-ui-core.ts'
 
 export type TensorProgram = ReturnType<Circuit['compileTensorProgram']>
@@ -108,23 +106,18 @@ export function wgslFloat(value: number): string {
   return value < 0 ? `(-${magnitude})` : magnitude
 }
 
-const isPowerOfTwo = (magnitude: number) => magnitude > 0 && Number.isInteger(Math.log2(magnitude))
 // A candidate table may run backwards, e.g. a reversed run of cells has a stride of -1.
 export const wgslInt = (value: number) => value < 0 ? `(${value}i)` : `${value}i`
 
-type Guard = 'none' | 'max'
-
-// A sum of more terms continues in a new statement, so that no expression nests deeper than this many guards.
+// A sum of more terms continues in a new statement, so that no expression is a chain of more than this many terms.
 const termsPerStatement = 32
 
 export type IndexRow = Extract<Row, {kind: 'index'}>
 
 // Writes rows as WGSL `let` statements, one row at a time, into `body`. The caller says how a source cell is read and
 // where an index read's candidates are, e.g. loop-emit.ts, whose shader runs a stage's rows once per position inside a
-// loop. `counts` says how many guards were written, and how many weights and biases are integers of 2^24 or more, or
-// not integers, e.g. a sign cascade's weights of 2^24.
+// loop.
 export function createRowWriter(sourceSize: number, options: {
-  guard: Guard
   // Goes before the name of every `let`, so that two programs in one function don't share names, e.g. 'b_' gives b_v4576.
   prefix: string
   // The text that reads the source cell at a packed position, e.g. 's12' for a shared cell that the caller hoists.
@@ -132,40 +125,27 @@ export function createRowWriter(sourceSize: number, options: {
   // The text that reads an index read's candidate at the clamped index.
   candidate: (row: IndexRow, clamped: string) => string
 }) {
-  const {guard, prefix} = options
+  const {prefix} = options
   const body: string[] = []
-  const counts = {guards: 0, largeIntegerLiterals: 0, fractionalLiterals: 0}
   const rowCounts = {affine: 0, reglu: 0, boolean: 0, index: 0}
 
-  const literal = (value: number) => {
-    if (!Number.isInteger(value)) counts.fractionalLiterals++
-    else if (Math.abs(value) >= 2 ** 24) counts.largeIntegerLiterals++
-    return wgslFloat(value)
-  }
-  const guarded = (text: string) => {
-    if (guard === 'none') return text
-    counts.guards++
-    return `max(${text}, lowest)`
-  }
   const name = (position: number) => position >= sourceSize ? `${prefix}v${position}` : options.source(position)
-  // |weight| × value. A product with a power of two is exact, so fusing it into a sum changes nothing.
+  // |weight| × value.
   const product = (term: Term) => {
     const magnitude = Math.abs(term.weight)
-    if (magnitude === 1) return name(term.position)
-    const text = `${literal(magnitude)} * ${name(term.position)}`
-    return isPowerOfTwo(magnitude) ? text : guarded(text)
+    return magnitude === 1 ? name(term.position) : `${wgslFloat(magnitude)} * ${name(term.position)}`
   }
-  // The executor's left fold, value = fround(value + fround(weight × input)) from the bias, as an expression. With no
-  // guard it's a chain that needs parentheses before a product, e.g. `2.0f + v7 - 3.0f * v9`. `partial` names the
-  // statements that a long sum continues in.
+  // The executor's left fold, value = fround(value + fround(weight × input)) from the bias, as one chain, e.g.
+  // `2.0f + v7 - 3.0f * v9`, which a ReGLU row puts in parentheses before it multiplies the chain by its gate. `partial`
+  // names the statements that a long sum continues in.
   const sum = (partial: string, bias: number, terms: readonly Term[]) => {
-    if (terms.length === 0) return literal(bias)
+    if (terms.length === 0) return wgslFloat(bias)
     let text = ''
     terms.forEach((term, index) => {
       const operand = product(term)
       // A bias of 0 is skipped: 0 + x is x, except that it turns -0 into +0.
       if (index === 0 && bias === 0) text = term.weight < 0 ? `-${operand}` : operand
-      else text = guarded(`${index === 0 ? literal(bias) : text} ${term.weight < 0 ? '-' : '+'} ${operand}`)
+      else text = `${index === 0 ? wgslFloat(bias) : text} ${term.weight < 0 ? '-' : '+'} ${operand}`
       if ((index + 1) % termsPerStatement === 0 && index + 1 < terms.length) {
         const partialName = `${partial}_${(index + 1) / termsPerStatement}`
         body.push(`let ${partialName}: f32 = ${text};`)
@@ -189,7 +169,7 @@ export function createRowWriter(sourceSize: number, options: {
         const gate = `max(0.0f, ${sum(`${prefix}g${row.position}`, row.gateBias, row.gateTerms)})`
         // fround(1 × max(0, gate)) is max(0, gate).
         if (row.terms.length === 0 && row.bias === 1) body.push(`let ${target}: f32 = ${gate};`)
-        else body.push(`let ${target}: f32 = ${guarded(`(${sum(target, row.bias, row.terms)}) * ${gate}`)};`)
+        else body.push(`let ${target}: f32 = (${sum(target, row.bias, row.terms)}) * ${gate};`)
         break
       }
       case 'index': {
@@ -204,5 +184,5 @@ export function createRowWriter(sourceSize: number, options: {
       }
     }
   }
-  return {body, counts, rowCounts, name, write}
+  return {body, rowCounts, name, write}
 }
