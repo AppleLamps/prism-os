@@ -202,9 +202,13 @@ for (const worker of siteWorkers) {
   if (!built.success || script === undefined) problems.push(`${worker.source}: ${built.logs.map(log => log.message).join('; ')}`)
   else await Bun.write(path.join(outdir, worker.path), script)
 }
-// The empty scripts of the pages without a script, and the empty chunks Bun splits off them.
-for (const name of await readdir(outdir)) {
-  if (name.endsWith('.js') && (await stat(path.join(outdir, name))).size === 0) await rm(path.join(outdir, name))
+// The empty scripts of the pages without a script, and the empty chunks Bun splits off them. Bun 1.3 also writes empty
+// chunks that other scripts import, e.g. `import"./prism-os-g71vysdg.js"`, and a page whose script imports a missing
+// file runs none of it, so an empty chunk that a script names stays.
+const builtScripts = (await readdir(outdir)).filter(name => name.endsWith('.js'))
+const builtCode = (await Promise.all(builtScripts.map(name => readFile(path.join(outdir, name), 'utf8')))).join('\n')
+for (const name of builtScripts) {
+  if ((await stat(path.join(outdir, name))).size === 0 && !builtCode.includes(`/${name}`)) await rm(path.join(outdir, name))
 }
 const {fileCount, byteCount} = await checkSite()
 if (pagesWithTheirOwnIcon.length > 0) {
