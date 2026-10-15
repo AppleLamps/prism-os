@@ -10,7 +10,7 @@
 | Layout | Magazine-style tiling | Gentle **cascade** (each window offset down-right) |
 | Program windows | Monitor, Notes, Photos | **Scope** (circuit inspector), **Inkwell** (notes), **Chroma** (gallery) |
 | Prism apps | None | **Cabinet** (files), **Calculator**, **Clock** (world clocks, stopwatch), **Terminal**, **Settings**, **About**, in glass panels beside the program |
-| System | Links in a bar | Menu bar clock, **Spotlight** (⌘K or Ctrl+K), **Control Center**, saved preferences: appearance, accent, four wallpapers, motion, weight arcs |
+| System | Links in a bar | A Mac-style menu bar (prism logo, the front app's name, clock), **Spotlight** (⌘K or Ctrl+K), **Control Center**, saved preferences: appearance, accent, four wallpapers, motion, weight arcs |
 | Program | 9,909 weights, 130 layers | Shared circuit, with runtime gallery pages; 10,163 weights and 132 layers |
 
 ## How the shell and the program share the page
@@ -125,7 +125,8 @@ bun ./assets/prism-os.html
 | `boot.ts` | Loads the preferences and the saved note, starts the wallpaper and the shell, mounts the window manager with Prism's arrangement, and connects Spotlight's commands to it |
 | `arrangement.ts` | Cascade layout on top of HandwiredOS's `arrangeInitialWindows` |
 | `wallpaper.ts` | Full-bleed glass dunes behind the weight arcs: four scenes, each with a day and a night palette |
-| `shell.ts` | Everything beside the program: input routing, Prism's panels and their dock tiles, the menu bar extras, Spotlight and Control Center; it returns the controls the operator uses for Prism's apps |
+| `glass.ts` | What the CSS glass can't do alone: refraction at the rims of the dock, Spotlight and Control Center (an SVG displacement map per element, redrawn only when its size changes; Chromium only, off with `?refraction=off` or under `prefers-reduced-transparency`), and the light that follows the pointer over `[data-glass-light]` elements, written once a frame and only while the pointer moves |
+| `shell.ts` | Everything beside the program: input routing, Prism's panels and their dock tiles, the menu bar (the front app's name, the extras), Spotlight and Control Center; it returns the controls the operator uses for Prism's apps |
 | `apps.ts` | The views of Calculator, Clock, Terminal, Settings and About |
 | `calculator.ts`, `terminal.ts` | Calculator's arithmetic and Terminal's commands, apart from their views |
 | `settings.ts`, `controls.ts` | The stored preferences, and the controls that Control Center and Settings share |

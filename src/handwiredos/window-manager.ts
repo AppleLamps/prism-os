@@ -88,6 +88,8 @@ export type ArrangeInitialWindows = (
 export type WindowManagerMountOptions = {
   /** Window layout written before the first evaluation. Defaults to HandwiredOS's desk layout. */
   arrange?: ArrangeInitialWindows
+  /** Called after a frame whose focused window differs from the last frame's, with its index, or -1 when no window has focus. */
+  onFocusChange?: (windowIndex: number) => void
 }
 import {averagedFrames as monitorAveragedFrames, createMonitorFooter, frameCapacity as monitorFrameCapacity} from './monitor-footer.ts'
 import {createWiringRenderer} from './wiring.ts'
@@ -2008,10 +2010,12 @@ export function mountWindowManager(document: Document, window: Window, options: 
     const executionStart = window.performance.now()
     const values = machine.step(viewportWidth, viewportHeight, frameTime, valueListScrollTop)
     const executionMs = window.performance.now() - executionStart
+    const focusedWindowBefore = focusedWindowAtLastFrame
     focusedWindowAtLastFrame = -1
     for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
       if (values[machine.output.windows[windowIndex * windowOutputField.size + windowOutputField.focused]!] === 1) focusedWindowAtLastFrame = windowIndex
     }
+    if (focusedWindowAtLastFrame !== focusedWindowBefore) options.onFocusChange?.(focusedWindowAtLastFrame)
     const notesIsFocusedWindow = focusedWindowAtLastFrame === notesWindowIndex
     // The cursors, from what the press holds in the program's table after the step's
     // events. While a title bar drags its window, the cursor is 'grabbing' on the

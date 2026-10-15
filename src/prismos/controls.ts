@@ -36,6 +36,7 @@ export function appearanceControl(store: SettingsStore): HTMLElement {
     const choice = button('prism-segment', option.label, option.label)
     choice.setAttribute('role', 'radio')
     choice.prepend(icon(option.glyph))
+    choice.dataset['glassLight'] = ''
     choice.addEventListener('click', () => store.update({appearance: option.value}))
     group.append(choice)
     return choice

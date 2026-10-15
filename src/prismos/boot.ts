@@ -6,6 +6,7 @@ import {arrangePrismWindows} from './arrangement.ts'
 import {createCommandCenter, createSlideshow} from './command-center.ts'
 import {createOperator, slideshowIntervalMs} from './operator.ts'
 import {type Settings, accents, createSettingsStore, resolveScheme} from './settings.ts'
+import {startGlass} from './glass.ts'
 import {startShell} from './shell.ts'
 import {startWallpaper} from './wallpaper.ts'
 
@@ -88,7 +89,11 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
   // sentences through the command center, see command-center.ts.
   const commands = createCommandCenter(window, new URL('./model-worker.js', document.baseURI).href)
   const panels = startShell(store, commands, cabinet)
-  const manager = mountWindowManager(document, window, {arrange: arrangePrismWindows})
+  startGlass(document, window)
+  const manager = mountWindowManager(document, window, {
+    arrange: arrangePrismWindows,
+    onFocusChange: windowIndex => panels?.programFocused(windowIndex),
+  })
 
   const gallery = new CabinetGallery(manager, text => console.warn(text))
   if (panels !== null) {

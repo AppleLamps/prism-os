@@ -69,7 +69,9 @@ function isShellTarget(target: EventTarget | null): boolean {
 
 // Spotlight runs sentences with `commands`, see command-center.ts. The returned controls
 // let the operator (operator.ts) open, close, move and zoom Prism's own apps.
-export function startShell(store: SettingsStore, commands: CommandCenter | null = null, cabinet?: Cabinet): PanelControls | null {
+// programFocused takes the program's focused window from mountWindowManager's
+// onFocusChange, for the menu bar's app name.
+export function startShell(store: SettingsStore, commands: CommandCenter | null = null, cabinet?: Cabinet): (PanelControls & {programFocused(windowIndex: number): void}) | null {
   const desktop = document.querySelector<HTMLElement>('#desktop')
   const systemBar = document.querySelector<HTMLElement>('#system-bar')
   const dock = document.querySelector<HTMLElement>('#dock')
@@ -130,6 +132,19 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   let order: Panel[] = []
   let panelsInFront = true
 
+  // The menu bar names the app in front, in bold beside the logo, as a Mac's does: the
+  // front panel while the panels are in front, else the program's focused window, else
+  // the front panel behind the program's closed windows. With nothing open, Prism OS.
+  const frontApp = systemBar.querySelector<HTMLElement>('.prism-front-app')
+  let programFocus = -1
+  const renderFrontApp = () => {
+    if (frontApp === null) return
+    const panel = panelsInFront ? order.at(-1) : undefined
+    const app = panel?.app ?? programApps[programFocus] ?? order.at(-1)?.app
+    const name = app === undefined || app.id === 'about' ? 'Prism OS' : app.name
+    if (frontApp.textContent !== name) frontApp.textContent = name
+  }
+
   const restack = () => {
     // Keep the shell as one stacking group when resizing glass-backed panels.
     // Otherwise compositor hit testing can leave a front panel below program windows.
@@ -141,6 +156,7 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     for (const panel of panels.values()) {
       panel.tile?.style.setProperty('--open', panel.state === 'closed' ? '0' : '1')
     }
+    renderFrontApp()
   }
 
   function sendPanelsBehind() {
@@ -382,9 +398,18 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   dockLeft.forEach((id, index) => addTile(id, 'left', dockLeft.length - 1 - index))
   dockRight.forEach((id, index) => addTile(id, 'right', index))
   dock.classList.add('prism-dock-extended')
+  // The dock's glass shelf, under every tile. Its span is the tiles', and its middle sits
+  // 31 px toward the side with more tiles for each tile more, see .prism-dock-glass.
+  const dockGlass = el('div', 'prism-dock-glass')
+  dockGlass.dataset['prismLayer'] = ''
+  dockGlass.dataset['glassLight'] = ''
+  dockGlass.style.setProperty('--tiles-span', `${174 + 62 * (dockLeft.length + dockRight.length)}px`)
+  dockGlass.style.setProperty('--tiles-shift', `${31 * (dockRight.length - dockLeft.length)}px`)
+  dock.prepend(dockGlass)
   restack()
 
-  // The menu bar: the brand opens About, then Spotlight, Control Center and the clock.
+  // The menu bar: the logo opens About, the front app's name follows it, and Spotlight,
+  // Control Center and the clock sit at the right.
   const brand = systemBar.querySelector<HTMLElement>('.prism-brand')
   if (brand !== null) {
     brand.dataset['prismLayer'] = ''
@@ -402,7 +427,8 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   const clockFormat = new Intl.DateTimeFormat(undefined, {weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'})
   const renderClock = () => {
     const now = new Date()
-    clockText.textContent = clockFormat.format(now).replace(/,(?=[^,]*$)/, '')
+    // "Thu Oct 15 6:57 PM", as a Mac's menu bar writes it.
+    clockText.textContent = clockFormat.format(now).replace(/,/g, '')
     clockText.dateTime = now.toISOString()
   }
   renderClock()
@@ -437,11 +463,16 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   searchInput.autocomplete = 'off'
   searchInput.spellcheck = false
   searchRow.append(icon(icons.search), searchInput)
+  searchRow.dataset['glassLight'] = ''
   const resultList = el('ul', 'spotlight-results')
   resultList.setAttribute('role', 'listbox')
-  spotlight.sheet.append(searchRow, resultList)
+  // The search floats as a capsule, and the results and replies sit in a sheet under it,
+  // which the stylesheet hides while it holds nothing.
+  const resultSheet = el('div', 'spotlight-sheet')
+  resultSheet.append(resultList)
+  spotlight.sheet.append(searchRow, resultSheet)
   if (commands !== null) {
-    spotlight.sheet.append(commands.element)
+    resultSheet.append(commands.element)
     searchInput.placeholder = 'Search, or tell Prism OS what to do'
     searchInput.setAttribute('aria-label', 'Search or command')
   }
@@ -561,11 +592,13 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   const controlCenter = makeOverlay('prism-control-center', 'Control Center')
   const card = (title: string, ...content: HTMLElement[]) => {
     const element = el('div', 'cc-card')
+    element.dataset['glassLight'] = ''
     element.append(el('div', 'cc-title', title), ...content)
     return element
   }
   const settingsLink = button('cc-link', 'Settings…', 'Settings…')
   settingsLink.prepend(icon(icons.settings))
+  settingsLink.dataset['glassLight'] = ''
   settingsLink.addEventListener('click', () => openPanel('settings'))
   controlCenter.sheet.append(
     card('Appearance', appearanceControl(store)),
@@ -662,6 +695,10 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
       focusPanel(panel)
     },
     sendBehind: sendPanelsBehind,
+    programFocused: windowIndex => {
+      programFocus = windowIndex
+      renderFrontApp()
+    },
     stopwatch: action => {
       openPanel('clock', true)
       return panels.get('clock')?.instance.stopwatch?.(action) ?? 'Clock isn\'t available.'

@@ -66,6 +66,7 @@ const calculator: PanelApp = {
     const keyButtons = new Map<CalculatorKey, HTMLButtonElement>()
     for (const entry of layout) {
       const key = button(`calc-key calc-${entry.kind}${entry.wide === true ? ' calc-wide' : ''}`, names[entry.key] ?? entry.label, entry.label)
+      key.dataset['glassLight'] = ''
       key.addEventListener('click', () => press(entry.key))
       keys.append(key)
       keyButtons.set(entry.key, key)
@@ -155,7 +156,10 @@ const clock: PanelApp = {
     tabs.setAttribute('role', 'tablist')
     const worldTab = button('prism-segment', 'World Clock', 'World Clock')
     const stopwatchTab = button('prism-segment', 'Stopwatch', 'Stopwatch')
-    for (const tab of [worldTab, stopwatchTab]) tab.setAttribute('role', 'tab')
+    for (const tab of [worldTab, stopwatchTab]) {
+      tab.setAttribute('role', 'tab')
+      tab.dataset['glassLight'] = ''
+    }
     tabs.append(worldTab, stopwatchTab)
 
     const world = el('ul', 'clock-world')

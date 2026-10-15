@@ -61,7 +61,30 @@
   --glass-rim: rgb(255 255 255 / 0.85);
   --glass-hairline: rgb(0 0 0 / 0.1);
   --glass-blur: blur(30px) saturate(1.9);
+
+  /* Liquid glass, for the chrome that floats over everything: the dock, Spotlight, Control
+     Center. Clear glass shows the wallpaper through it, and regular glass is denser where
+     text sits. The rim is a specular edge, brightest at the top left and the bottom right
+     where the light catches it, drawn as the border of whatever wears it (see
+     --glass-specular's users). The inner glow lights the glass from its edges. */
+  --glass-clear: rgb(255 255 255 / 0.16);
+  --glass-regular: rgb(255 255 255 / 0.58);
+  --glass-blur-clear: blur(8px) saturate(2.2) brightness(1.06);
+  --glass-blur-regular: blur(22px) saturate(2);
+  /* Where the glass refracts, it blurs less, or the blur would erase the bend. */
+  --glass-blur-lens: blur(14px) saturate(2);
+  --glass-blur-lens-thin: blur(8px) saturate(2);
+  --glass-specular: linear-gradient(135deg, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.3) 24%, rgb(255 255 255 / 0.08) 48%, rgb(255 255 255 / 0.22) 76%, rgb(255 255 255 / 0.8));
+  --glass-specular-soft: linear-gradient(135deg, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.2) 30%, rgb(0 0 0 / 0.04) 55%, rgb(255 255 255 / 0.5));
+  --glass-inner: inset 0 1px 1px rgb(255 255 255 / 0.45), inset 0 -1px 1px rgb(255 255 255 / 0.18), inset 0 0 18px rgb(255 255 255 / 0.22);
+  --glass-lift: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 2px 6px rgb(var(--shadow-ink) / 0.08), 0 18px 44px -12px rgb(var(--shadow-ink) / 0.36);
+  /* A raised pill, the selected segment or a key: a lit top edge and a soft contact shadow. */
+  --pill-lift: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 0.5px rgb(255 255 255 / 0.5), 0 1px 3px rgb(0 0 0 / 0.12), 0 0 0 0.5px rgb(0 0 0 / 0.05);
+  --well: inset 0 1px 2px rgb(0 0 0 / 0.07), inset 0 0 0 0.5px rgb(0 0 0 / 0.04);
+  /* The light that follows the pointer over lit glass, see glass.ts. */
+  --glass-light: rgb(255 255 255 / 0.5);
   --sidebar: rgb(0 0 0 / 0.025);
+  --sidebar-pane: rgb(232 237 244 / 0.62);
   --zebra: rgb(0 0 0 / 0.025);
   --dock-dot: rgb(0 0 0 / 0.55);
   --light-idle: rgb(0 0 0 / 0.13);
@@ -116,7 +139,18 @@
   --glass-edge: rgb(255 255 255 / 0.14);
   --glass-rim: rgb(255 255 255 / 0.22);
   --glass-hairline: rgb(0 0 0 / 0.5);
+  --glass-clear: rgb(30 34 40 / 0.2);
+  --glass-regular: rgb(30 33 38 / 0.6);
+  --glass-blur-clear: blur(8px) saturate(1.9) brightness(0.92);
+  --glass-specular: linear-gradient(135deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.14) 24%, rgb(255 255 255 / 0.04) 48%, rgb(255 255 255 / 0.1) 76%, rgb(255 255 255 / 0.36));
+  --glass-specular-soft: linear-gradient(135deg, rgb(255 255 255 / 0.28), rgb(255 255 255 / 0.08) 30%, rgb(255 255 255 / 0.03) 55%, rgb(255 255 255 / 0.16));
+  --glass-inner: inset 0 1px 1px rgb(255 255 255 / 0.12), inset 0 -1px 1px rgb(255 255 255 / 0.05), inset 0 0 18px rgb(255 255 255 / 0.05);
+  --glass-lift: 0 0 0 0.5px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.2), 0 18px 44px -12px rgb(0 0 0 / 0.6);
+  --pill-lift: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 0 0 0.5px rgb(255 255 255 / 0.08), 0 1px 3px rgb(0 0 0 / 0.3);
+  --well: inset 0 1px 2px rgb(0 0 0 / 0.25), inset 0 0 0 0.5px rgb(255 255 255 / 0.04);
+  --glass-light: rgb(255 255 255 / 0.16);
   --sidebar: rgb(255 255 255 / 0.03);
+  --sidebar-pane: rgb(255 255 255 / 0.06);
   --zebra: rgb(255 255 255 / 0.03);
   --dock-dot: rgb(255 255 255 / 0.7);
   --light-idle: rgb(255 255 255 / 0.2);
@@ -156,46 +190,59 @@
   mix-blend-mode: soft-light;
 }
 
-/* The menu bar: clear glass over the wallpaper, with white type. */
+/* The menu bar, as on a Mac: tinted glass over the wallpaper with a faint lower edge, the
+   logo and the front app's bold name at the left, the status items and the clock at the
+   right. */
 .prism-desktop #system-bar {
+  gap: 0;
+  padding: 0 10px;
   border-bottom: 0;
-  background: linear-gradient(rgb(0 0 0 / 0.14), rgb(0 0 0 / 0.04));
-  -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  backdrop-filter: blur(24px) saturate(1.6);
-  color: rgb(255 255 255 / 0.88);
+  background: linear-gradient(rgb(0 0 0 / 0.26), rgb(0 0 0 / 0.16));
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(1.8);
+  box-shadow: inset 0 -0.5px 0 rgb(255 255 255 / 0.1), 0 0.5px 0 rgb(0 0 0 / 0.18);
+  color: rgb(255 255 255 / 0.94);
   font: 500 13px/20px var(--font-sans);
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  letter-spacing: -0.01em;
+  text-shadow: 0 0.5px 1px rgb(0 0 0 / 0.25);
 }
 
 .prism-brand {
-  position: absolute;
-  left: 50%;
-  translate: -50% 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: inline-grid;
+  place-items: center;
   color: #fff;
-  font: 600 13px/20px var(--font-sans);
-  letter-spacing: -0.005em;
   pointer-events: none;
 }
 
 .prism-mark {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+  margin-top: -1px;
+  filter: drop-shadow(0 0.5px 1px rgb(0 0 0 / 0.25));
 }
 
-/* A window: glass that is clearer without focus and denser with it, a bright rim at the top,
-   a dark hairline around the edge, and a shadow that deepens with focus. The 1 px border
-   stays, since the title bar's padding counts it, see handwired-os.css. */
+.prism-front-app {
+  padding: 0 8px 0 4px;
+  overflow: hidden;
+  color: #fff;
+  font: 700 13px/20px var(--font-sans);
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+}
+
+/* A window: glass that is clearer without focus and denser with it, a specular rim, a glow
+   from its edges, a dark hairline around it, and a shadow that deepens with focus. The rim
+   is the 1 px border, which stays, since the title bar's padding counts it, see
+   handwired-os.css: the fill covers the padding box and the rim's gradient the border. */
 .prism-desktop .window {
-  border: 1px solid var(--glass-edge);
-  border-radius: calc(18px - var(--maximized) * 6px);
-  background: color-mix(in srgb, var(--window-glass-focused) calc(var(--focused) * 100%), var(--window-glass));
+  --window-fill: color-mix(in srgb, var(--window-glass-focused) calc(var(--focused) * 100%), var(--window-glass));
+  border: 1px solid transparent;
+  border-radius: calc(22px - var(--maximized) * 10px);
+  background: linear-gradient(var(--window-fill), var(--window-fill)) padding-box, var(--glass-specular-soft) border-box;
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
   box-shadow:
-    inset 0 1px 0 var(--glass-rim),
+    var(--glass-inner),
     0 0 0 0.5px var(--glass-hairline),
     0 calc(4px + var(--focused) * 6px) calc(12px + var(--focused) * 12px) rgb(var(--shadow-ink) / calc(0.1 + var(--focused) * 0.06)),
     0 calc(16px + var(--focused) * 18px) calc(40px + var(--focused) * 40px) calc(-10px - var(--focused) * 6px) rgb(var(--shadow-ink) / calc(0.22 + var(--focused) * 0.2));
@@ -233,6 +280,8 @@
   padding: 3px;
   background-clip: content-box;
   background-color: color-mix(in srgb, var(--light) calc(var(--focused) * 100%), var(--light-idle));
+  /* A glossy light: a highlight in its upper half, as on glass. */
+  background-image: radial-gradient(circle at 50% 28%, rgb(255 255 255 / calc(var(--focused) * 0.38)), rgb(255 255 255 / 0) 62%);
   box-shadow: none;
   color: var(--glyph-on-light);
   transition: background-color var(--quick) var(--ease);
@@ -284,11 +333,23 @@
   opacity: 0.55;
 }
 
-/* Scope: Monitor's list as a Mac table, with a tinted sidebar, rounded selections, title
-   case headers and alternating rows. */
+/* Scope: Monitor's list as a Mac table, with a sidebar of floating glass, rounded
+   selections, title case headers and alternating rows. The sidebar's box is the program's,
+   so the pane is painted inside it, 5 px in, with the window's radius less that. */
 .prism-desktop .monitor-sidebar {
-  border-right-color: var(--rule);
-  background: var(--sidebar);
+  border-right-color: transparent;
+  background: transparent;
+}
+
+.prism-desktop .monitor-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 5px 3px 5px 5px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: linear-gradient(var(--sidebar-pane), var(--sidebar-pane)) padding-box, var(--glass-specular-soft) border-box;
+  box-shadow: 0 0 0 0.5px var(--rule), 0 4px 14px -6px rgb(var(--shadow-ink) / 0.18);
+  pointer-events: none;
 }
 
 .prism-desktop .monitor-sidebar strong,
@@ -322,11 +383,12 @@
 }
 
 .prism-desktop .monitor-overflow {
-  border-color: var(--glass-edge);
+  border-color: transparent;
   border-radius: 999px;
-  background: var(--glass-strong);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
+  background: linear-gradient(var(--glass-regular), var(--glass-regular)) padding-box, var(--glass-specular) border-box;
+  -webkit-backdrop-filter: var(--glass-blur-regular);
+  backdrop-filter: var(--glass-blur-regular);
+  box-shadow: var(--glass-inner), var(--glass-lift);
 }
 
 /* Inkwell: the note in the system font, with a Notes-yellow caret. */
@@ -364,59 +426,59 @@
 
 .prism-desktop .photos-photo span {
   padding: 4px 12px;
-  border: 1px solid var(--glass-edge);
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--glass-strong);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
+  background: linear-gradient(var(--glass-regular), var(--glass-regular)) padding-box, var(--glass-specular) border-box;
+  -webkit-backdrop-filter: var(--glass-blur-regular);
+  backdrop-filter: var(--glass-blur-regular);
   color: var(--ink);
   font: 500 13px/20px var(--font-sans);
-  box-shadow: inset 0 1px 0 var(--glass-rim), 0 4px 12px rgb(var(--shadow-ink) / 0.18);
+  box-shadow: var(--glass-inner), var(--glass-lift);
 }
 
+/* The lightbox's buttons: clear glass discs over the photo. */
 .prism-desktop .photos-control::before {
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur-clear);
+  backdrop-filter: var(--glass-blur-clear);
 }
 
 @media (hover: hover) {
   .prism-desktop .photos-control:hover::before {
-    background-color: var(--glass-strong);
-    box-shadow: inset 0 1px 0 var(--glass-rim), 0 0 0 0.5px var(--glass-hairline), 0 4px 12px rgb(var(--shadow-ink) / 0.18);
+    background-color: var(--glass-regular);
+    box-shadow: var(--glass-inner), inset 0 0 0 0.5px rgb(255 255 255 / 0.35), var(--glass-lift);
   }
 }
 
 @container (max-width: 518px) {
   .prism-desktop .photos-control::before {
-    background-color: var(--glass-strong);
-    box-shadow: inset 0 1px 0 var(--glass-rim), 0 0 0 0.5px var(--glass-hairline), 0 4px 12px rgb(var(--shadow-ink) / 0.18);
+    background-color: var(--glass-regular);
+    box-shadow: var(--glass-inner), inset 0 0 0 0.5px rgb(255 255 255 / 0.35), var(--glass-lift);
   }
 }
 
-/* The dock: a glass shelf under three app tiles. #dock itself keeps handwired-os.css's box,
-   the whole desktop, since the program places each tile in the desktop's coordinates and
-   tests presses at those places. The shelf is drawn around where the program puts the
-   tiles: three 50 px tiles 12 px apart, centered, with their middles 38 px above the bottom,
-   see dockItemWidth, dockGap and dockHeight in window-manager.ts. On a viewport too narrow
-   for 174 px of tiles, the shelf spans the viewport. */
-.prism-desktop #dock::before {
+/* The dock: a shelf of clear liquid glass under the app tiles, the first child of #dock,
+   which the shell adds (see .prism-dock-glass in shell.ts). #dock itself keeps
+   handwired-os.css's box, the whole desktop, since the program places each tile in the
+   desktop's coordinates and tests presses at those places. The shelf is drawn around where
+   the program puts the tiles: three 50 px tiles 12 px apart, centered, with their middles
+   38 px above the bottom, see dockItemWidth, dockGap and dockHeight in window-manager.ts.
+   On a viewport too narrow for 174 px of tiles, the shelf spans the viewport. Presses pass
+   through it to the tiles and the desktop. */
+.prism-desktop .prism-dock-glass {
   --shelf-padding: 10px;
-  content: "";
   position: absolute;
   left: 50%;
   bottom: calc(38px - 25px - var(--shelf-padding));
   width: calc(min(174px, 100%) + 2 * var(--shelf-padding));
   height: calc(50px + 2 * var(--shelf-padding));
   translate: -50% 0;
-  border: 1px solid var(--glass-edge);
+  border: 1px solid transparent;
   border-radius: 24px;
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim),
-    0 0 0 0.5px var(--glass-hairline),
-    0 12px 32px -10px rgb(var(--shadow-ink) / 0.4);
+  background: linear-gradient(var(--glass-clear), var(--glass-clear)) padding-box, var(--glass-specular) border-box;
+  -webkit-backdrop-filter: var(--glass-blur-clear);
+  backdrop-filter: var(--glass-blur-clear);
+  box-shadow: var(--glass-inner), var(--glass-lift);
+  pointer-events: none;
 }
 
 /* The handwired wire under the dock belongs to HandwiredOS's paper desk. */
@@ -424,19 +486,32 @@
   display: none;
 }
 
-/* A tile: an app icon, a rounded square with its own colors and a lit top edge. It lifts
-   under the pointer and sinks while pressed. The transform only moves the paint: the
-   program tests presses against the tile's rectangle, which the transform leaves alone. */
+/* A tile: an app icon, a rounded square with its own colors under a coat of glass, a sheen
+   over its upper half and a specular edge. It lifts under the pointer and sinks while
+   pressed. The transform only moves the paint: the program tests presses against the
+   tile's rectangle, which the transform leaves alone. */
 .prism-desktop .dock-item {
   border: 0;
   border-radius: 23%;
   color: #fff;
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.5),
-    inset 0 -1px 0 rgb(0 0 0 / 0.08),
     0 0 0 0.5px rgb(0 0 0 / 0.1),
     0 6px 14px -4px rgb(var(--shadow-ink) / 0.35);
   transition: transform 260ms cubic-bezier(0.3, 1.4, 0.5, 1), filter var(--quick) var(--ease);
+}
+
+.prism-desktop .dock-item::after,
+.prism-desktop .prism-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(172deg, rgb(255 255 255 / 0.34), rgb(255 255 255 / 0.08) 46%, rgb(255 255 255 / 0) 54%);
+  box-shadow:
+    inset 0 1px 0.5px rgb(255 255 255 / 0.6),
+    inset 0 -1px 1px rgb(255 255 255 / 0.22),
+    inset 0 0 0 0.5px rgb(255 255 255 / 0.22);
+  pointer-events: none;
 }
 
 .prism-desktop .dock-scope { background: var(--tile-scope); }
@@ -451,8 +526,6 @@
   .prism-desktop .dock-item:hover {
     border-color: transparent;
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.5),
-      inset 0 -1px 0 rgb(0 0 0 / 0.08),
       0 0 0 0.5px rgb(0 0 0 / 0.1),
       0 10px 20px -6px rgb(var(--shadow-ink) / 0.45);
     transform: translateY(-4px) scale(1.08);
@@ -460,7 +533,7 @@
 }
 
 .prism-desktop .dock-item:active {
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), 0 0 0 0.5px rgb(0 0 0 / 0.12);
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.12);
   filter: brightness(0.9);
   transform: scale(0.95);
 }
@@ -487,21 +560,93 @@
   }
 }
 
-/* Where the browser can't blur what lies behind, the glass is made denser so text keeps
-   its contrast. */
+/* Where the browser can't blur what lies behind, or the system asks for less
+   transparency, the glass is made denser so text keeps its contrast. With less
+   transparency, glass.ts doesn't refract either, and the pointer's light is off. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root.prism {
     --glass: rgb(250 251 253 / 0.92);
     --glass-strong: rgb(255 255 255 / 0.96);
+    --glass-clear: rgb(246 247 250 / 0.92);
+    --glass-regular: rgb(250 251 253 / 0.96);
     --window-glass: rgb(250 251 253 / 0.96);
     --window-glass-focused: rgb(255 255 255 / 0.98);
   }
   :root.prism[data-theme="dark"] {
     --glass: rgb(36 38 42 / 0.94);
     --glass-strong: rgb(44 46 50 / 0.97);
+    --glass-clear: rgb(36 38 42 / 0.94);
+    --glass-regular: rgb(44 46 50 / 0.97);
     --window-glass: rgb(36 38 42 / 0.97);
     --window-glass-focused: rgb(44 46 50 / 0.98);
   }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root.prism {
+    --glass-clear: rgb(246 247 250 / 0.92);
+    --glass-regular: rgb(250 251 253 / 0.96);
+    --window-glass: rgb(250 251 253 / 0.96);
+    --window-glass-focused: rgb(255 255 255 / 0.98);
+  }
+  :root.prism[data-theme="dark"] {
+    --glass-clear: rgb(36 38 42 / 0.94);
+    --glass-regular: rgb(44 46 50 / 0.97);
+    --window-glass: rgb(36 38 42 / 0.97);
+    --window-glass-focused: rgb(44 46 50 / 0.98);
+  }
+  .prism-desktop [data-glass-light]::after {
+    display: none;
+  }
+}
+
+/* Refraction, in Chromium only (see glass.ts): the edges of the dock, Spotlight and Control
+   Center bend what lies behind them, as a lens's rim does, through an SVG displacement map
+   that glass.ts draws for each one's size. Elsewhere the glass is the same without the
+   bend. The map moves pixels only, never shifts their color, so no fringe of another hue
+   appears at the edges. */
+:root.prism-refract .prism-dock-glass[data-lens] {
+  -webkit-backdrop-filter: url(#prism-lens-dock) var(--glass-blur-clear);
+  backdrop-filter: url(#prism-lens-dock) var(--glass-blur-clear);
+}
+
+:root.prism-refract .spotlight-row[data-lens] {
+  -webkit-backdrop-filter: url(#prism-lens-spotlight) var(--glass-blur-lens-thin);
+  backdrop-filter: url(#prism-lens-spotlight) var(--glass-blur-lens-thin);
+}
+
+:root.prism-refract .spotlight-sheet[data-lens] {
+  -webkit-backdrop-filter: url(#prism-lens-results) var(--glass-blur-lens);
+  backdrop-filter: url(#prism-lens-results) var(--glass-blur-lens);
+}
+
+:root.prism-refract .prism-control-center[data-lens] {
+  -webkit-backdrop-filter: url(#prism-lens-controls) var(--glass-blur-lens);
+  backdrop-filter: url(#prism-lens-controls) var(--glass-blur-lens);
+}
+
+/* The light that follows the pointer over lit glass: glass.ts marks the element under the
+   pointer data-lit and writes where the pointer is in it, once a frame. Soft light over
+   light glass keeps dark text dark, and adding light over dark glass keeps light text
+   light. */
+.prism-desktop [data-glass-light]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle 90px at var(--light-x, 50%) var(--light-y, 50%), var(--glass-light), rgb(255 255 255 / 0));
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms var(--ease);
+}
+
+:root.prism[data-theme="dark"] .prism-desktop [data-glass-light]::after {
+  mix-blend-mode: plus-lighter;
+}
+
+.prism-desktop [data-glass-light][data-lit]::after {
+  opacity: 1;
 }
 
 /* ===== The shell: Prism's own apps, menu bar extras and overlays, see shell.ts ===== */
@@ -561,12 +706,14 @@
 .prism-app-about { --app-tile: var(--tile-scope); --app-glyph: #fff; }
 .prism-command { --app-tile: var(--copper); --app-glyph: #fff; }
 
-/* The menu bar: the brand opens About; Spotlight, Control Center and the clock sit at the
+/* The menu bar: the logo opens About; Spotlight, Control Center and the clock sit at the
    right. */
 .prism-desktop .prism-brand {
-  padding: 2px 8px;
+  width: 36px;
+  height: 24px;
+  padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 999px;
   background: transparent;
   pointer-events: auto;
   cursor: default;
@@ -575,46 +722,49 @@
 .prism-status {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   margin-left: auto;
-  margin-right: -6px;
   pointer-events: auto;
 }
 
 .prism-status-button {
   display: grid;
   place-items: center;
-  width: 30px;
+  width: 32px;
   height: 24px;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 999px;
   background: transparent;
-  color: rgb(255 255 255 / 0.92);
+  color: #fff;
   cursor: default;
 }
 
 .prism-status-button .prism-icon {
-  width: 17px;
-  height: 17px;
-  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.2));
+  width: 16px;
+  height: 16px;
+  filter: drop-shadow(0 0.5px 1px rgb(0 0 0 / 0.25));
 }
 
+/* Under the pointer, and while its overlay is open, an item sits in a capsule of glass. */
 @media (hover: hover) {
   .prism-desktop .prism-brand:hover,
   .prism-status-button:hover {
     background: rgb(255 255 255 / 0.16);
+    box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.4), inset 0 0 0 0.5px rgb(255 255 255 / 0.12);
   }
 }
 
 .prism-status-button[aria-expanded="true"] {
-  background: rgb(255 255 255 / 0.24);
+  background: rgb(255 255 255 / 0.26);
+  box-shadow: inset 0 0.5px 0 rgb(255 255 255 / 0.5), inset 0 0 0 0.5px rgb(255 255 255 / 0.16);
 }
 
 .prism-clock {
-  padding: 0 8px;
+  padding: 0 10px 0 8px;
   color: #fff;
   font: 500 13px/20px var(--font-sans);
+  word-spacing: 0.12em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -640,14 +790,15 @@
   display: flex;
   flex-direction: column;
   overflow: clip;
-  border: 1px solid var(--glass-edge);
-  border-radius: 18px;
+  --window-fill: color-mix(in srgb, var(--window-glass-focused) calc(var(--focused, 0) * 100%), var(--window-glass));
+  border: 1px solid transparent;
+  border-radius: 22px;
   outline: none;
-  background: color-mix(in srgb, var(--window-glass-focused) calc(var(--focused, 0) * 100%), var(--window-glass));
+  background: linear-gradient(var(--window-fill), var(--window-fill)) padding-box, var(--glass-specular-soft) border-box;
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
   box-shadow:
-    inset 0 1px 0 var(--glass-rim),
+    var(--glass-inner),
     0 0 0 0.5px var(--glass-hairline),
     0 calc(4px + var(--focused, 0) * 6px) calc(12px + var(--focused, 0) * 12px) rgb(var(--shadow-ink) / calc(0.1 + var(--focused, 0) * 0.06)),
     0 calc(16px + var(--focused, 0) * 18px) calc(40px + var(--focused, 0) * 40px) calc(-10px - var(--focused, 0) * 6px) rgb(var(--shadow-ink) / calc(0.22 + var(--focused, 0) * 0.2));
@@ -726,8 +877,6 @@
   background: var(--app-tile);
   color: var(--app-glyph);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.5),
-    inset 0 -1px 0 rgb(0 0 0 / 0.08),
     0 0 0 0.5px rgb(0 0 0 / 0.1),
     0 6px 14px -4px rgb(var(--shadow-ink) / 0.35);
   pointer-events: auto;
@@ -764,16 +913,18 @@
   transform: scale(0.95);
 }
 
-.prism-desktop #dock.prism-dock-extended::before {
-  width: calc(min(422px, 100%) + 2 * var(--shelf-padding));
+/* With Prism's tiles, the shelf spans every tile: shell.ts writes the tiles' span and how
+   far their middle sits from the dock's, since the two sides can hold different counts. */
+@media (min-width: 520px) {
+  .prism-desktop .prism-dock-extended .prism-dock-glass {
+    width: calc(var(--tiles-span) + 2 * var(--shelf-padding));
+    translate: calc(-50% + var(--tiles-shift)) 0;
+  }
 }
 
 @media (max-width: 519px) {
   .prism-desktop .prism-tile {
     display: none;
-  }
-  .prism-desktop #dock.prism-dock-extended::before {
-    width: calc(min(174px, 100%) + 2 * var(--shelf-padding));
   }
 }
 
@@ -796,16 +947,20 @@
   inset: 0;
 }
 
+/* An overlay's glass: regular liquid glass with a specular rim. Where glass.ts refracts,
+   the edges also bend what lies behind them, see :root.prism-refract below. */
+.prism-overlay,
+.spotlight-row,
+.spotlight-sheet {
+  border: 1px solid transparent;
+  background: linear-gradient(var(--glass-regular), var(--glass-regular)) padding-box, var(--glass-specular) border-box;
+  -webkit-backdrop-filter: var(--glass-blur-regular);
+  backdrop-filter: var(--glass-blur-regular);
+  box-shadow: var(--glass-inner), var(--glass-lift);
+}
+
 .prism-overlay {
   position: absolute;
-  border: 1px solid var(--glass-edge);
-  background: var(--window-glass-focused);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim),
-    0 0 0 0.5px var(--glass-hairline),
-    0 24px 60px -12px rgb(var(--shadow-ink) / 0.45);
   color: var(--ink);
   animation: prism-pop 180ms var(--ease);
 }
@@ -817,22 +972,44 @@
   }
 }
 
-.prism-spotlight {
+/* Spotlight floats: a capsule for the search, and under it a sheet of results and replies
+   that shows only while it holds something. The overlay itself is clear, a column of the
+   two. */
+.prism-desktop .prism-spotlight {
   top: max(64px, 16vh);
   left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   width: min(620px, calc(100% - 32px));
-  padding: 6px;
-  border-radius: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
   translate: -50% 0;
 }
 
 .spotlight-row {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 52px;
-  padding: 0 14px;
+  gap: 12px;
+  height: 58px;
+  padding: 0 20px;
+  border-radius: 999px;
   color: var(--ink-3);
+}
+
+.spotlight-sheet {
+  position: relative;
+  padding: 6px;
+  border-radius: 26px;
+}
+
+.spotlight-sheet:not(:has(.spotlight-results:not([hidden]) > li, .spotlight-entry, .spotlight-confirm:not([hidden]), .spotlight-status:not([hidden]))) {
+  display: none;
 }
 
 .spotlight-row .prism-icon {
@@ -865,24 +1042,25 @@
 .spotlight-results {
   max-height: min(420px, 56vh);
   margin: 0;
-  padding: 4px 0 2px;
+  padding: 0;
   overflow: auto;
-  border-top: 1px solid var(--rule);
   list-style: none;
 }
 
+/* A result's corners follow the sheet's: 26 px less the 6 px between them. */
 .spotlight-result {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 2px 4px;
-  padding: 6px 10px;
-  border-radius: 12px;
+  margin: 2px 0;
+  padding: 7px 12px;
+  border-radius: 20px;
   cursor: default;
 }
 
 .spotlight-result[aria-selected="true"] {
-  background: var(--copper);
+  background: color-mix(in srgb, var(--copper) 88%, transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), inset 0 0 0 0.5px rgb(255 255 255 / 0.16), 0 2px 8px -2px color-mix(in srgb, var(--copper) 50%, transparent);
   color: #fff;
 }
 
@@ -927,24 +1105,28 @@
   font: 400 13px/20px var(--font-sans);
 }
 
+/* Control Center: a sheet of glass holding cards of glass, each 10 px in, with the
+   sheet's radius less that. */
 .prism-control-center {
   top: 44px;
   right: 12px;
   display: grid;
-  gap: 8px;
+  gap: 10px;
   width: min(340px, calc(100% - 24px));
   max-height: calc(100% - 140px);
   padding: 10px;
   overflow: auto;
-  border-radius: 22px;
+  border-radius: 28px;
   transform-origin: 100% 0;
 }
 
 .cc-card {
-  padding: 10px 12px 12px;
-  border-radius: 16px;
-  background: var(--card);
-  box-shadow: inset 0 0 0 0.5px var(--rule);
+  position: relative;
+  padding: 9px 11px 11px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: linear-gradient(var(--card), var(--card)) padding-box, var(--glass-specular-soft) border-box;
+  box-shadow: var(--glass-inner), 0 1px 4px rgb(var(--shadow-ink) / 0.06);
 }
 
 .cc-title {
@@ -954,25 +1136,29 @@
 }
 
 .cc-link {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 36px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--card);
-  box-shadow: inset 0 0 0 0.5px var(--rule);
+  height: 40px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(var(--card), var(--card)) padding-box, var(--glass-specular-soft) border-box;
+  box-shadow: var(--glass-inner), 0 1px 4px rgb(var(--shadow-ink) / 0.06);
   font-weight: 500;
 }
 
 /* The preference controls, see controls.ts. */
+/* A segmented control: a recessed capsule, with the chosen segment a raised pill of
+   glass in it. */
 .prism-segmented {
   display: flex;
   gap: 2px;
   padding: 2px;
-  border-radius: 10px;
+  border-radius: 999px;
   background: var(--segment-track);
+  box-shadow: var(--well);
 }
 
 .prism-segment {
@@ -981,15 +1167,16 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  position: relative;
   height: 30px;
   padding: 0 8px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 999px;
   background: transparent;
   color: var(--ink-2);
   font: 500 12px/16px var(--font-sans);
   white-space: nowrap;
-  transition: background-color var(--quick) var(--ease);
+  transition: background-color var(--quick) var(--ease), box-shadow var(--quick) var(--ease);
 }
 
 .prism-segment .prism-icon {
@@ -1001,7 +1188,7 @@
 .prism-segment[aria-selected="true"] {
   background: var(--segment-on);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 0 0 0.5px rgb(0 0 0 / 0.04);
+  box-shadow: var(--pill-lift);
 }
 
 .prism-swatches {
@@ -1011,6 +1198,7 @@
   padding: 2px;
 }
 
+/* An accent: a bead of colored glass, lit from above. The chosen one has a halo. */
 .prism-swatch {
   position: relative;
   width: 24px;
@@ -1018,8 +1206,8 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--swatch);
-  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.2), inset 0 1px 0 rgb(255 255 255 / 0.35);
+  background: radial-gradient(circle at 50% 22%, rgb(255 255 255 / 0.45), rgb(255 255 255 / 0) 55%), var(--swatch);
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.18), inset 0 -2px 3px rgb(0 0 0 / 0.12), 0 1px 3px rgb(0 0 0 / 0.16);
 }
 
 .prism-swatch[aria-checked="true"]::before {
@@ -1036,6 +1224,7 @@
   inset: -4px;
   border: 2px solid var(--swatch);
   border-radius: 50%;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--swatch) 45%, transparent);
 }
 
 .prism-scenes {
@@ -1058,13 +1247,13 @@
 .prism-scene-preview {
   width: 100%;
   aspect-ratio: 4 / 3;
-  border-radius: 8px;
-  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.18);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.18), inset 0 1px 1px rgb(255 255 255 / 0.4), 0 1px 3px rgb(0 0 0 / 0.12);
 }
 
 .prism-scenes-large .prism-scene-preview {
   aspect-ratio: 16 / 10;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .prism-scene[aria-checked="true"] .prism-scene-preview {
@@ -1096,13 +1285,16 @@
   flex: 1;
 }
 
+/* A switch: a recessed capsule, with a knob that is a pill of glass, as in the new
+   system's switches. */
 .prism-switch {
   position: relative;
   flex: none;
-  width: 38px;
-  height: 22px;
-  border-radius: 11px;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
   background: var(--switch-off);
+  box-shadow: var(--well);
   transition: background-color 180ms var(--ease);
 }
 
@@ -1111,11 +1303,11 @@
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  width: 26px;
+  height: 20px;
+  border-radius: 10px;
+  background: linear-gradient(rgb(255 255 255), rgb(246 247 249));
+  box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.9), 0 1px 3px rgb(0 0 0 / 0.2), 0 0 0 0.5px rgb(0 0 0 / 0.06);
   transition: translate 180ms var(--ease);
 }
 
@@ -1124,7 +1316,7 @@
 }
 
 .prism-toggle[aria-checked="true"] .prism-switch::after {
-  translate: 16px 0;
+  translate: 14px 0;
 }
 
 /* Calculator. */
@@ -1156,13 +1348,16 @@
   gap: 10px;
 }
 
+/* The keys: capsules of glass, the digits clear, the functions tinted and the operators
+   orange, each with a lit top edge. */
 .calc-key {
+  position: relative;
   height: 48px;
   padding: 0;
   border: 0;
   border-radius: 24px;
   background: var(--key-digit);
-  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.06), 0 1px 1px rgb(0 0 0 / 0.06);
+  box-shadow: var(--pill-lift);
   font: 400 21px/1 var(--font-sans);
   transition: filter 80ms linear;
 }
@@ -1173,7 +1368,8 @@
 }
 
 .calc-operator {
-  background: #ff9f0a;
+  background: linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0)), #ff9f0a;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.4), inset 0 0 0 0.5px rgb(255 255 255 / 0.2), 0 1px 3px rgb(255 159 10 / 0.35);
   color: #fff;
   font-size: 24px;
 }
@@ -1337,6 +1533,7 @@
   border: 0;
   border-radius: 50%;
   background: var(--key-function);
+  box-shadow: var(--pill-lift);
   font: 500 15px/1 var(--font-sans);
 }
 
@@ -1447,10 +1644,11 @@
 }
 
 .settings-section {
-  padding: 12px 14px 14px;
-  border-radius: 14px;
-  background: var(--card);
-  box-shadow: inset 0 0 0 0.5px var(--rule);
+  padding: 11px 13px 13px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: linear-gradient(var(--card), var(--card)) padding-box, var(--glass-specular-soft) border-box;
+  box-shadow: var(--glass-inner), 0 1px 4px rgb(var(--shadow-ink) / 0.06);
 }
 
 .settings-heading {
@@ -1477,8 +1675,9 @@
   display: flex;
   flex-direction: column-reverse;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--wash);
+  box-shadow: var(--well);
   text-align: left;
 }
 
@@ -1509,9 +1708,9 @@
   height: 64px;
   padding: 14px;
   border-radius: 16px;
-  background: var(--tile-scope);
+  background: linear-gradient(172deg, rgb(255 255 255 / 0.34), rgb(255 255 255 / 0.08) 46%, rgb(255 255 255 / 0) 54%), var(--tile-scope);
   color: #fff;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 8px 18px -6px rgb(var(--shadow-ink) / 0.4);
+  box-shadow: inset 0 1px 0.5px rgb(255 255 255 / 0.6), inset 0 -1px 1px rgb(255 255 255 / 0.22), inset 0 0 0 0.5px rgb(255 255 255 / 0.22), 0 8px 18px -6px rgb(var(--shadow-ink) / 0.4);
 }
 
 .about-mark svg {
@@ -1552,8 +1751,12 @@
   margin: 0;
   padding: 2px 0;
   overflow: auto;
-  border-top: 1px solid var(--rule);
   list-style: none;
+}
+
+.spotlight-results:not([hidden]) + .spotlight-commands .spotlight-transcript {
+  margin-top: 4px;
+  border-top: 1px solid var(--rule);
 }
 
 .spotlight-entry {
@@ -1601,10 +1804,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px 12px;
-  margin: 4px 4px 2px;
-  padding: 8px 10px 8px 52px;
-  border-radius: 14px;
+  margin: 4px 0 2px;
+  padding: 8px 10px 8px 56px;
+  border-radius: 20px;
   background: var(--wash);
+  box-shadow: var(--well);
 }
 
 .spotlight-confirm-text {
@@ -1618,10 +1822,11 @@
 }
 
 .spotlight-commands .prism-button {
-  padding: 3px 12px;
-  border: 1px solid var(--rule-strong);
+  padding: 4px 14px;
+  border: 0;
   border-radius: 999px;
-  background: var(--glass-strong);
+  background: var(--segment-on);
+  box-shadow: var(--pill-lift);
   color: var(--ink);
   font: 500 13px/20px var(--font-sans);
   cursor: pointer;
@@ -1635,8 +1840,8 @@
 /* The accent paints the confirming button, with the paper color for its label, which
    reads on the light scheme's darker accents and the dark scheme's brighter ones. */
 .spotlight-commands .spotlight-accept {
-  border-color: transparent;
   background: var(--copper);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 1px 3px color-mix(in srgb, var(--copper) 40%, transparent);
   color: var(--paper);
 }
 
@@ -1675,7 +1880,7 @@
 
 @media (max-width: 520px) {
   .spotlight-entry {
-    padding-left: 14px;
+    padding-left: 12px;
   }
   .spotlight-confirm {
     padding-left: 10px;

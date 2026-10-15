@@ -35,7 +35,6 @@
 .cabinet-dialog h2 { font-size: 17px; margin: 0 0 12px; }
 .cabinet-dialog input, .cabinet-dialog select { width: 100%; box-sizing: border-box; }
 .cabinet-dialog .cabinet-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
-@media (min-width: 520px) { .prism-desktop #dock.prism-dock.prism-dock-extended::before { width: calc(546px + 2 * var(--shelf-padding)); transform: translateX(-31px); } }
 @media (max-width: 650px) { .prism-desktop .cabinet-preview { display: none; } .prism-desktop .cabinet-sidebar { flex-basis: 90px; } }
 @media (max-width: 650px) {
   .prism-desktop .cabinet-show-preview .cabinet-preview { display: block; flex: 1; }

@@ -17,7 +17,7 @@ Prism OS is a desktop that runs in the browser. Its three main windows are run b
 | --- | --- |
 | **Scope**, **Inkwell**, **Chroma** | The three program windows: the live circuit inspector, the note (saved in the browser), the photo gallery with a lightbox. Drag, resize, stack, minimize, maximize, all decided by the handwired program |
 | **Calculator**, **Clock**, **Terminal**, **Settings**, **About** | Prism's own apps, in glass panels beside the program, in plain JavaScript. Clock has world clocks and a stopwatch with laps |
-| Menu bar | The Prism OS name (opens About), Spotlight, Control Center, the clock. Nothing else |
+| Menu bar | Laid out like a Mac's: the prism logo (opens About) and the front app's name in bold at the left (Prism OS when nothing is open), Spotlight, Control Center and the clock at the right. Nothing else |
 | **Spotlight** (⌘K or Ctrl+K) | Finds apps and settings, and runs sentences as commands, see below |
 | **Control Center** and Settings | Appearance (light, dark, auto), seven accents, four wallpapers (dunes, lagoon, ember, graphite), motion, weight arcs. Saved in the browser |
 
@@ -33,6 +33,7 @@ Handwired programs are fixed lists of FP32 operations (`affine`, `reglu`, `boole
 | Prism's entry | `src/prismos/boot.ts`: loads preferences and the saved note, starts the wallpaper and the shell, mounts the window manager with Prism's arrangement, connects Spotlight |
 | Opening layout | `src/prismos/arrangement.ts`: Handwired's tiling, then a cascade, clamped to the workspace |
 | Wallpaper | `src/prismos/wallpaper.ts`: animated dunes on a canvas behind the weight arcs |
+| Glass | `src/prismos/glass.ts`: the refraction at the rims of the dock, Spotlight and Control Center, and the light that follows the pointer over lit glass |
 | Shell | `src/prismos/shell.ts` with `apps.ts`, `calculator.ts`, `terminal.ts`, `settings.ts`, `controls.ts`, `dom.ts`: panels, dock tiles, menu bar, Spotlight and Control Center |
 | Spotlight's commands | `commands.ts`, `quick-commands.ts`, `expression.ts`, `operator.ts`, `command-center.ts`, `function-calls.ts`, `model-worker.ts` |
 | Page | `assets/prism-os.html`, `assets/prism-os.css` (which builds on `site.css` and `handwired-os.css` for geometry and hit targets) |
@@ -152,7 +153,11 @@ Earlier mistakes to avoid: whole skills held out of training (ordinal photo name
 - No purple or violet anywhere. The palette is blues, teals, warm sand and the macOS traffic-light colors. A test checks this.
 - Every color, surface and shadow has a light and a dark value.
 - Transforms on dock tiles only move paint. Never change the geometry of anything the program places.
-- The menu bar holds the Prism OS name, Spotlight, Control Center and the clock. No outbound links.
+- The glass follows Apple's Liquid Glass. The tokens are on `:root.prism`: `--glass-clear` (dock, floating controls) and `--glass-regular` (Spotlight, Control Center), their blurs, `--glass-specular` for the rim, `--glass-inner` for the inner glow, `--glass-lift` for the shadow. A glass surface takes its rim as a gradient border: `border: 1px solid transparent; background: linear-gradient(fill, fill) padding-box, var(--glass-specular) border-box`. Inner shapes follow the outer ones' radii, and buttons are capsules.
+- The dock's shelf is `.prism-dock-glass`, a shell element inside `#dock` (it replaced `#dock::before`), sized from the number of tiles. It has `pointer-events: none`.
+- Refraction runs in Chromium only (the only engine that takes an SVG filter in `backdrop-filter`). Elsewhere, under `prefers-reduced-transparency` and with `?refraction=off`, the same glass shows without the bend. The displacement map moves pixels and never splits colors, so there are no chromatic fringes, which would break the purple rule. Refracting glass blurs less (`--glass-blur-lens`), or the blur would erase the bend.
+- `prefers-reduced-transparency` (Windows sends it when "Transparency effects" is off) makes all glass dense and turns off the refraction and the pointer's light.
+- The menu bar holds the prism logo, the front app's name, Spotlight, Control Center and the clock. No outbound links. The name comes from the shell: the front panel while panels are in front, otherwise the program's focused window, which `mountWindowManager` reports through its `onFocusChange` option.
 
 ## Avoid unless you mean to change the whole OS
 
