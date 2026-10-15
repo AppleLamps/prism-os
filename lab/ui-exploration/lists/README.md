@@ -252,7 +252,7 @@ JavaScript prepares each text once, with pretext's rich inline layout through te
 | `anchorRow = previousBottoms.findIndex(bottom => bottom > scrollTop)` | a binary search over the state cells, 13 index reads and 14 comparisons at 10,000 rows | patterns.md, "`findIndex` when the test flips once along the items", under "Don't use it when" |
 | `scrollTop = atBottom ? maximumScroll : Math.min(scrollTop + tops[anchorRow] - previousTops[anchorRow], maximumScroll)` | 2 index reads, `emitMinimumExact`, `emitMaximumExact` and `emitSelect` | expressions.md, `Math.min(a, b)` and `condition ? on : off` |
 | `firstRow = rows.findIndex(row => bottoms[row] > scrollTop)` | the same binary search over the computed bottoms, then `Math.min(count, rowCount)` | the same entry |
-| DOM slot k shows the row among the 64 from `firstRow` whose index % 64 is k | `firstRow % 64` from lists' `emitFloorOnGrid`, then 3 index reads and a few bits per slot | patterns.md, "Window slots" under "Not written up yet" |
+| DOM slot k shows the row among the 64 from `firstRow` whose index % 64 is k | `firstRow % 64` from lists' `emitFloorOnGrid`, then 3 index reads and a few bits per slot | patterns.md, "DOM slots for one run of visible rows" under "More constructions in lab/" |
 
 The scroll position, the anchor row, the first row and the 64 slots are 1,290 operations at 10,000 rows, by subtraction, and the heights and running totals are the other 109,981.
 

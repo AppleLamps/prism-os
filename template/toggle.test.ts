@@ -54,6 +54,7 @@ test('the program and plain JavaScript agree on every frame, and every scripted 
     largestThumbError = Math.max(largestThumbError, Math.abs(output.thumbOffset - expected.thumbOffset))
     if (expected.animating) animatingFrames++
   }
+  // A copied test with another trace changes two numbers: this count of animating frames, and the rest position below.
   expect(animatingFrames).toBe(38)
   expect(largestThumbError).toBeLessThan(1e-5)
   // At rest the thumb sits exactly on its side, and the host stops requesting frames.

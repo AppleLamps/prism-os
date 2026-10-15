@@ -1,13 +1,14 @@
 // A toggle switch centered in the viewport, as one numeric program. Like a native switch, it acts on release: a press
 // on the track arms it, a release on the track while armed flips it, and a release off the track or a pointercancel
-// disarms it. The thumb springs to its new side. tutorial.md walks through this file, toggle-reference.ts is the same
-// app in plain JavaScript, and toggle.test.ts compares the two.
+// disarms it. The thumb springs to its new side. docs/tutorial.md walks through this file, toggle-reference.ts is the
+// same app in plain JavaScript, and toggle.test.ts compares the two.
 import {type Wire, emitAnimatedObject, emitCompare, emitSelect} from '../src/runtime/numeric-ui-core.ts'
 import {type WriteBack, advanceFrame, defaultSpringClockConfig, springMatrixBound, springMatrixPower, springStepMatrix, stoppedSpringClock} from '../src/runtime/host-timing.ts'
 import {type WireValues, createEvaluator, createSourceTable, event, input, inputBit, state, stateBit} from '../src/runtime/cells.ts'
 
 export const layout = {trackWidth: 52, trackHeight: 32, thumbInset: 4, travel: 20} as const
 export const springConstants = {stiffness: 650, damping: 45}
+// The host writes the 2 × 2 matrix of an evaluation's spring steps into 4 input cells, each within ±matrixBound.
 const matrixBound = springMatrixBound(springConstants)
 const matrixEntry = input([-matrixBound, matrixBound])
 // The host rounds pointer coordinates onto a 1/64 px grid.
@@ -22,7 +23,8 @@ export const toggleCells = {
   cancel: event(),
   on: stateBit(),
   armed: stateBit(),
-  // What advanceFrame plans for each evaluation: the spring matrix of its steps, and the settle check and snap bits.
+  // What advanceFrame plans for each evaluation: the spring matrix of its steps, whether the spring may come to rest
+  // (a settle check), and whether the thumb snaps onto its destination because the frame would need too many steps.
   springMatrix: [matrixEntry, matrixEntry, matrixEntry, matrixEntry] as const,
   settleCheck: inputBit(),
   snap: inputBit(),
@@ -45,6 +47,7 @@ export function buildToggle() {
   const trackTop = circuit.affine([[cells.viewportHeight, 0.5]], -layout.trackHeight / 2)
   // JS: bits.every(bit => bit === 1), as relu(sum of bits - (count - 1)).
   const all = (...bits: Wire[]) => circuit.reglu([], 1, bits.map(bit => [bit, 1] as const), 1 - bits.length)
+  // JS: !bit
   const not = (bit: Wire) => circuit.affine([[bit, -1]], 1)
   // JS: x >= trackLeft && x < trackLeft + trackWidth && y >= trackTop && y < trackTop + trackHeight
   const insideTrack = (point: {x: Wire, y: Wire}) => all(
