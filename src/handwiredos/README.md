@@ -35,6 +35,7 @@ Photos is built by `buildPhotos` into the same circuit as the window manager, an
 | File | What it holds |
 | --- | --- |
 | `window-manager.ts` | The window manager's cells and builder code, the machine, and the page's render loop |
+| `boot.ts` | The page's script: mounts the window manager. Prism OS mounts it from [`src/prismos/boot.ts`](../prismos/boot.ts) instead |
 | `photo-gallery.ts` | Photos, and a machine for Photos alone, which the tests run |
 | `value-list.ts` | The list in the Monitor window, and the three locations' rows |
 | `arrangement.ts` | The page's own JavaScript: the windows' first rectangles for the viewport |

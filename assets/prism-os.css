@@ -1,7 +1,11 @@
-/* Prism OS — twilight glass skin over HandwiredOS's geometry. Sizes and hit targets stay
-   in the numeric program; this file only changes color, depth, and atmosphere. */
+/* Prism OS: twilight glass skin over HandwiredOS's geometry. Sizes and hit targets stay
+   in the numeric program; this file only changes color, depth, and atmosphere.
 
-:root {
+   The tokens are on :root.prism, which outranks site.css's :root in either order of the
+   two stylesheets: Bun's development server links a page's stylesheets in reverse, and
+   bun build keeps the page's order, see handwired-os.css. */
+
+:root.prism {
   color-scheme: dark;
 
   --paper: #0f1424;
@@ -104,16 +108,27 @@
   background: rgb(248 113 113 / 0.2);
 }
 
-#dock.prism-dock {
+/* The glass shelf under the dock's tiles. #dock itself keeps handwired-os.css's box, the
+   whole desktop, since the program places each tile in the desktop's coordinates and tests
+   presses at those places. The shelf is drawn around where the program puts the tiles:
+   three 50 px tiles 12 px apart, centered, with their middles 38 px above the bottom,
+   see dockItemWidth, dockGap and dockHeight in window-manager.ts. On a viewport too
+   narrow for 174 px of tiles, the shelf spans the viewport. */
+#dock.prism-dock::before {
+  --shelf-padding: 10px;
+  content: "";
+  position: absolute;
   left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-  width: min(420px, calc(100% - 32px));
+  bottom: calc(38px - 25px - var(--shelf-padding));
+  width: calc(min(174px, 100%) + 2 * var(--shelf-padding));
+  height: calc(50px + 2 * var(--shelf-padding));
+  translate: -50% 0;
+  border: 1px solid var(--edge);
   border-radius: 22px;
   background: rgb(12 18 34 / 0.78);
   backdrop-filter: blur(16px);
-  border: 1px solid var(--edge);
   box-shadow: 0 16px 50px rgb(0 0 0 / 0.5);
+  box-sizing: border-box;
 }
 
 #dock .dock-wire {

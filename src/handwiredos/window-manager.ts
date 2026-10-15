@@ -2490,7 +2490,3 @@ function validateWindowManagerOutput(
     }
   }
 }
-
-if (import.meta.main && typeof document !== 'undefined' && typeof window !== 'undefined') {
-  mountWindowManager(document, window)
-}

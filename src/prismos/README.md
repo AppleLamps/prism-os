@@ -33,4 +33,5 @@ bun ./assets/prism-os.html
 | `boot.ts` | Mounts the window manager with Prism's arrangement and starts the aurora canvas |
 | `arrangement.ts` | Cascade layout on top of HandwiredOS's `arrangeInitialWindows` |
 | `aurora-wallpaper.ts` | Animated background behind the weight arcs |
+| [`tests/prismos/`](../../tests/prismos) | The cascade at many viewport sizes: inside the workspace, and drawn by the program where it was written |
 | [`assets/prism-os.html`](../../assets/prism-os.html), [`assets/prism-os.css`](../../assets/prism-os.css) | Page and theme |

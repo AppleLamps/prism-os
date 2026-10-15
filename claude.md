@@ -21,6 +21,7 @@ Handwired programs are fixed lists of FP32 operations (`affine`, `reglu`, `boole
 Prism OS touches only the host layer for chrome and arrangement:
 
 - **Program + machine:** `src/handwiredos/window-manager.ts` (`createWindowManagerMachine`, `mountWindowManager`)
+- **HandwiredOS entry:** `src/handwiredos/boot.ts` mounts the window manager with its defaults. `window-manager.ts` itself only exports `mountWindowManager`, so importing it never mounts a page
 - **Prism entry:** `src/prismos/boot.ts` — calls `mountWindowManager(..., { arrange: arrangePrismWindows })` and starts the aurora canvas
 - **Prism layout:** `src/prismos/arrangement.ts` — runs Handwired’s `arrangeInitialWindows`, then shifts each window in a cascade and clamps to the workspace
 - **Prism atmosphere:** `src/prismos/aurora-wallpaper.ts` — animated canvas behind the weight arcs
@@ -38,6 +39,7 @@ bun start                    # demo site at http://127.0.0.1:3000/ — Prism at 
 bun ./assets/prism-os.html   # Prism page only
 bun run check                # typecheck + lint
 bun test tests/handwiredos   # window manager behavior (~20s)
+bun test tests/prismos       # Prism's cascade arrangement
 ```
 
 Demo site routes are listed in `scripts/demo-site-pages.ts`. The landing page is `assets/demos.html` (Prism is the featured card).
@@ -47,7 +49,7 @@ Demo site routes are listed in `scripts/demo-site-pages.ts`. The landing page is
 | Goal | Where to edit |
 | --- | --- |
 | Rename apps, default note text, dock icons | `assets/prism-os.html` |
-| Colors, glass, dock shape, aurora blend | `assets/prism-os.css` |
+| Colors, glass, dock shelf, aurora blend | `assets/prism-os.css` (tokens live on `:root.prism` so they beat `site.css` in any stylesheet order; never move `#dock` itself, the program hit-tests its tiles in desktop coordinates) |
 | Opening window positions | `src/prismos/arrangement.ts` (`cascadeStep`, clamp logic) |
 | Aurora motion / colors | `src/prismos/aurora-wallpaper.ts` |
 | Mount options (e.g. another arrangement) | `src/prismos/boot.ts`, `WindowManagerMountOptions` in `window-manager.ts` |
