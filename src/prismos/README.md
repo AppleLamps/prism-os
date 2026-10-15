@@ -60,7 +60,7 @@ From the repo root:
 
 ```sh
 bun install
-bun start    # open /prism-os/ on the demo site (default port 3000)
+bun start    # Prism OS at http://127.0.0.1:3000/ (the site's front page)
 ```
 
 Or only this page:

@@ -93,7 +93,7 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
           },
         },
         navigate: link => {
-          window.location.href = link === 'demos' ? '../' : 'https://github.com/AppleLamps/prism-os'
+          window.location.href = link === 'demos' ? 'demos/' : 'https://github.com/AppleLamps/prism-os'
         },
         slideshow,
         homeRectangles: () => {

@@ -3,5 +3,9 @@
   "installCommand": "bun install",
   "buildCommand": "bun run site:build",
   "outputDirectory": "site",
-  "trailingSlash": true
+  "trailingSlash": true,
+  "redirects": [
+    {"source": "/prism-os", "destination": "/", "permanent": true},
+    {"source": "/prism-os/", "destination": "/", "permanent": true}
+  ]
 }

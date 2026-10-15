@@ -15,7 +15,7 @@
 import {existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import path from 'node:path'
-import {repoRoot, sitePages} from './demo-site-pages.ts'
+import {demosPath, repoRoot, sitePages} from './demo-site-pages.ts'
 
 const siteFolder = path.join(repoRoot, 'site')
 // GitHub Pages serves a project's site under the repo's name.
@@ -32,7 +32,7 @@ function option(name: string): string | undefined {
 // index's first card come from.
 const textOf = (selector: string) => `[...document.querySelectorAll('${selector}')].map(element => element.textContent.trim().replace(/\\s+/g, ' ')).filter(text => text !== '').join('\\n')`
 const expectations: Record<string, {ready: string, report: string}> = {
-  'prism-os/': {
+  '': {
     ready: `/\\d/.test(document.querySelector('.monitor-counts')?.textContent ?? '')`,
     report: `[
       ...[...document.querySelectorAll('.monitor-location')].map(item => item.title.split('.')[0]),
@@ -253,7 +253,7 @@ try {
     await Bun.sleep(300)
 
     reports.set(page.path, report)
-    if (page.path === '') {
+    if (page.path === demosPath) {
       indexCounts = await evaluate<typeof indexCounts>(`[...document.querySelectorAll('a[href] [data-count]')].filter(element => element.checkVisibility()).map(element => ({
         path: element.closest('a').href.slice(${JSON.stringify(siteUrl)}.length), name: element.dataset.count, value: Number(element.textContent.replaceAll(',', '')),
       }))`)
@@ -289,7 +289,7 @@ try {
     if (screenshots !== undefined) {
       mkdirSync(screenshots, {recursive: true})
       const shot = await send<{data: string}>('Page.captureScreenshot', {format: 'png'})
-      writeFileSync(path.join(screenshots, `${page.path === '' ? 'index' : page.path.slice(0, -1)}.png`), Buffer.from(shot.data, 'base64'))
+      writeFileSync(path.join(screenshots, `${page.path === '' ? 'prism-os' : page.path.slice(0, -1)}.png`), Buffer.from(shot.data, 'base64'))
     }
 
     const requestCount = [...requestUrls.values()].filter(url => url.startsWith(siteUrl)).length

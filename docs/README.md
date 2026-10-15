@@ -26,7 +26,7 @@ The repo needs [Bun](https://bun.sh), and is tested with Bun 1.4.3.
 
 ```sh
 bun install
-bun start                                 # the demo site at http://127.0.0.1:3000/: the landing page, and the demos at /os/, /learned-gallery/ and /json-search/
+bun start                                 # the demo site at http://127.0.0.1:3000/: Prism OS, the list of demos at /demos/, and the demos at /os/, /learned-gallery/ and /json-search/
 bun run start:template                    # the template app, a toggle switch, at http://localhost:3000/
 bun run test                              # every test in tests/, template/ and lab/, in about 3 minutes
 bun test tests/runtime                    # one folder's tests, in about 2 s
