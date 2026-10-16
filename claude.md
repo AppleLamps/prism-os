@@ -101,7 +101,7 @@ The site is live, standalone, and deployed from `main`.
 
 The decision was to finish Prism OS's features before training, so the model is trained once on the final command list instead of retrained after every feature. Training costs a GPU run on Hugging Face (account **AppleLampsX**).
 
-Before training, the command list must be final: every feature people would ask for by name has a command, and `bun scripts/prismos-dataset.ts` has been run so `src/prismos/training/` matches `commands.ts`. The data today: 10,000 training sentences and about 900 eval sentences whose phrasings never appear in training, over 50 commands, weighted so every command gets its share (the rarest has about 50 training rows). About 150 eval sentences are the dev set that picks the best epoch; the reported scores leave them out. Each prompt carries all 50 declarations, about 3,300 tokens, so an epoch is about 33 million tokens. Questions about the world (weather, facts, news, recipes) are taught as `search_web` of the question; only requests Prism OS can't serve at all (jokes, poems, emails) get the decline reply.
+Before training, the command list must be final: every feature people would ask for by name has a command, and `bun scripts/prismos-dataset.ts` has been run so `src/prismos/training/` matches `commands.ts`. The data today: 10,000 training sentences and about 900 eval sentences whose phrasings never appear in training, over 50 commands, weighted so every command gets its share (the rarest has about 50 training rows). About 150 eval sentences are the dev set that picks the best epoch; the reported scores leave them out. Each prompt carries all 50 declarations, about 3,300 tokens, so an epoch is about 33 million tokens: run on `a100-large`, about 2 to 2.5 hours in all; on `a10g-small` it needs about 5 to 6 hours. Questions about the world (weather, facts, news, recipes) are taught as `search_web` of the question; only requests Prism OS can't serve at all (jokes, poems, emails) get the decline reply.
 
 The run, from `src/prismos/README.md`:
 
@@ -110,7 +110,7 @@ bun scripts/prismos-dataset.ts   # writes train.jsonl, eval.jsonl and tools.json
 bun test tests/prismos/training-data.test.ts   # the data matches the commands and the quick parser
 python3 src/prismos/training/train.py --data src/prismos/training --repo x --check-data   # the scorer, no GPU
 git push                         # the job reads the data and the script from GitHub
-hf jobs uv run --flavor a10g-small --secrets HF_TOKEN --timeout 4h \
+hf jobs uv run --flavor a100-large --secrets HF_TOKEN --timeout 4h \
   https://raw.githubusercontent.com/AppleLamps/prism-os/<commit>/src/prismos/training/train.py \
   --data https://raw.githubusercontent.com/AppleLamps/prism-os/<commit>/src/prismos/training \
   --repo AppleLampsX/prism-os-functiongemma

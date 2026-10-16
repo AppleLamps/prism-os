@@ -18,7 +18,7 @@ PyTorch model, and publishes both to the Hub.
 
 Run as a Hugging Face Job (see src/prismos/README.md):
 
-  hf jobs uv run --flavor a10g-small --secrets HF_TOKEN --timeout 4h \
+  hf jobs uv run --flavor a100-large --secrets HF_TOKEN --timeout 4h \
     https://raw.githubusercontent.com/AppleLamps/prism-os/<branch>/src/prismos/training/train.py \
     --data <raw url of src/prismos/training> --repo <user>/prism-os-functiongemma
 
