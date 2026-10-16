@@ -18,7 +18,7 @@ Prism OS is a desktop that runs in the browser. Its three main windows are run b
 | **Scope**, **Inkwell**, **Chroma** | The three program windows: the live circuit inspector, the note (saved in the browser), the photo gallery with a lightbox. Drag, resize, stack, minimize, maximize, all decided by the handwired program |
 | **Cabinet**, **Browser**, **Calculator**, **Clock**, **Terminal**, **Settings**, **About** | Prism's own apps, in glass panels beside the program, in plain JavaScript. Cabinet keeps files in the browser. Browser shows web pages in a sandboxed iframe. Clock has world clocks and a stopwatch with laps |
 | Menu bar | Laid out like a Mac's: the prism logo (opens About) and the front app's name in bold at the left (Prism OS when nothing is open), Spotlight, Control Center and the clock at the right. Nothing else |
-| **Spotlight** (⌘K or Ctrl+K) | Finds apps and settings, and runs sentences as commands, see below |
+| **Spotlight** (⌘K or Ctrl+K) | Finds apps and settings, and runs sentences as commands, see below. Its microphone turns speech into the search text (`voice.ts`) |
 | **Control Center** and Settings | Appearance (light, dark, auto), seven accents, four wallpapers (dunes, lagoon, ember, graphite), motion, weight arcs. Saved in the browser |
 
 The program is unchanged from HandwiredOS: **234 source cells, 4,646 operations, 130 layers, 9,909 weights, no training.** Those counts change only if `src/handwiredos/window-manager.ts` changes.
@@ -35,7 +35,7 @@ Handwired programs are fixed lists of FP32 operations (`affine`, `reglu`, `boole
 | Wallpaper | `src/prismos/wallpaper.ts`: animated dunes on a canvas behind the weight arcs |
 | Glass | `src/prismos/glass.ts`: the refraction at the rims of the dock, Spotlight and Control Center, and the light that follows the pointer over lit glass |
 | Shell | `src/prismos/shell.ts` with `apps.ts`, `browser.ts` and `web-address.ts`, `calculator.ts`, `terminal.ts`, `settings.ts`, `controls.ts`, `dom.ts`: panels, dock tiles, menu bar, Spotlight and Control Center |
-| Spotlight's commands | `commands.ts`, `quick-commands.ts`, `expression.ts`, `operator.ts`, `command-center.ts`, `function-calls.ts`, `model-worker.ts` |
+| Spotlight's commands | `commands.ts`, `quick-commands.ts`, `voice.ts`, `expression.ts`, `operator.ts`, `command-center.ts`, `function-calls.ts`, `model-worker.ts` |
 | Page | `assets/prism-os.html`, `assets/prism-os.css` (which builds on `site.css` and `handwired-os.css` for geometry and hit targets) |
 
 How the shell and the program share the page is explained in `src/prismos/README.md`. In short: everything the shell draws carries `data-prism-layer`, the shell's `window` listeners run before the program's and stop events that start on shell elements, and Prism's panels stack among the program's windows.
@@ -48,7 +48,7 @@ Spotlight runs what people type: "put Scope and Chroma side by side", "move Inkw
 
 A sentence goes through two readers:
 
-1. **The quick parser** (`quick-commands.ts`): patterns for the sentences people type most, two commands joined by "and" or "then", and arithmetic. Instant, nothing to download. This is what the live site uses today.
+1. **The quick parser** (`quick-commands.ts`): patterns for the sentences people type most, several commands joined by commas, "and" or "then" or run together without them as speech writes them ("close inkwell open safari and search for youtube"), and arithmetic. Instant, nothing to download. This is what the live site uses today.
 2. **The model**: FunctionGemma 270M fine-tuned on Prism OS's commands, running in a Web Worker in the browser on WebGPU (`model-worker.ts`, Transformers.js, 4-bit weights). No server, no API key, nothing leaves the browser. It handles the sentences the patterns miss. **It is off** until it's trained on the final command list. `?model=on` turns it on for one visit, for testing.
 
 Every call, from either reader, passes the validator in `commands.ts`, and the operator (`operator.ts`) runs it. Rules:
@@ -57,6 +57,7 @@ Every call, from either reader, passes the validator in `commands.ts`, and the o
 - The operator acts on the program only through its event methods (`pointerDown`, `pointerMove`, `pointerUp`, `photoNext`, `valueListKey`, ...), aimed at points read from the program's outputs. Never write source cells from outside the machine. `mountWindowManager` returns `{machine, nextFrame}` for this.
 - Prism's apps are reached only through the controls `startShell` returns, never by editing panel elements.
 - Anything hard to undo asks first (`needsConfirmation`): erasing the note, replacing it.
+- Voice (`voice.ts`) only fills Spotlight's field: what's heard runs when Enter is pressed. It listens on the device when the browser can (Chrome and Edge 139+, after a language pack the visitor agrees to download), and otherwise asks once before using the browser's online service (Google's in Chrome, Apple's in Safari), because that sends the audio off the device. Browser names (Safari, Chrome, Firefox, Edge) are aliases of Browser, so "open safari" works.
 - There is no command that navigates away from the page, and there shouldn't be one. Browser's pages stay inside its frame: the sandbox has no `allow-top-navigation`, and Browser never frames Prism OS's own origin, since a same-origin page could lift the sandbox. Only the visitor's own press on Open in New Tab opens a tab.
 
 ## Performance rules

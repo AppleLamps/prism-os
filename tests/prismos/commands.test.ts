@@ -33,7 +33,8 @@ test('the validator accepts aliases and rejects what Prism OS lacks', () => {
   assert.equal(validateCall('calculate', {expression: 'the meaning of life'}).ok, false)
   assert.deepEqual(validateCall('world_time', {city: 'NYC'}), {ok: true, command: {name: 'world_time', city: 'new york'}})
   assert.equal(validateCall('world_time', {city: 'Atlantis'}).ok, false)
-  assert.equal(validateCall('open_app', {app: 'safari'}).ok, false)
+  assert.equal(validateCall('open_app', {app: 'photoshop'}).ok, false)
+  assert.deepEqual(validateCall('open_app', {app: 'Safari'}), {ok: true, command: {name: 'open_app', app: 'browser'}})
   assert.equal(validateCall('format_disk', {}).ok, false)
   assert.equal(validateCall('side_by_side', {left: 'scope', right: 'monitor'}).ok, false)
   assert.equal(validateCall('write_note', {text: '  '}).ok, false)
@@ -149,4 +150,27 @@ test('Browser takes web addresses and searches, and leaves file names alone', ()
   assert.equal(validateCall('search_web', {query: ' '}).ok, false)
   const long = validateCall('search_web', {query: 'x'.repeat(500)})
   assert.ok(long.ok && long.command.name === 'search_web' && long.command.query.length === 200)
+})
+
+test('spoken sentences: browsers by name, three commands, addresses said aloud', () => {
+  const calls = (text: string) => quickCommands(text)?.map(describeCall) ?? null
+  assert.deepEqual(calls('open safari'), ['open_app(browser)'])
+  assert.deepEqual(calls('Close Inkwell, open Safari and search for YouTube'), ['close_app(inkwell)', 'open_app(browser)', 'search_web(youtube)'])
+  assert.deepEqual(calls('open chrome then go to wikipedia.org'), ['open_app(browser)', 'open_website(https://wikipedia.org/)'])
+  assert.deepEqual(calls('go to wikipedia dot org'), ['open_website(https://wikipedia.org/)'])
+  assert.deepEqual(calls('en dot wikipedia dot org slash wiki slash Prism'), ['open_website(https://en.wikipedia.org/wiki/Prism)'])
+  assert.deepEqual(calls('search for polka dot dresses'), ['search_web(polka dot dresses)'])
+  assert.deepEqual(calls('search for salt and pepper'), ['search_web(salt and pepper)'])
+  assert.equal(calls('open the pod bay doors'), null)
+  assert.deepEqual(calls('dark mode'), ['set_theme(dark)'])
+})
+
+test('commands said without commas run together, and nonsense still doesn\'t parse', () => {
+  const calls = (text: string) => quickCommands(text)?.map(describeCall) ?? null
+  assert.deepEqual(calls('close Inkwell open Safari and search for YouTube'), ['close_app(inkwell)', 'open_app(browser)', 'search_web(youtube)'])
+  assert.deepEqual(calls('minimize scope open the calculator'), ['minimize_app(scope)', 'open_app(calculator)'])
+  assert.deepEqual(calls('dark mode teal accent'), ['set_theme(dark)', 'set_accent(teal)'])
+  assert.deepEqual(calls('search for glass prisms'), ['search_web(glass prisms)'])
+  assert.equal(calls('dont close scope'), null)
+  assert.equal(calls('close scope the weather'), null)
 })

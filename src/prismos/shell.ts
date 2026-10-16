@@ -22,6 +22,7 @@ import type {PanelControls} from './operator.ts'
 import {accentControl, appearanceControl, sceneControl, toggleControl} from './controls.ts'
 import {button, el, icon, icons} from './dom.ts'
 import {type SettingsStore, accents, appearances, scenes} from './settings.ts'
+import {createVoice, recognitionClass, voiceLanguage, voiceQuestions, type VoiceView} from './voice.ts'
 import type {AppInfo} from './terminal.ts'
 
 // The program's windows, in the order of their dock tiles.
@@ -475,16 +476,72 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   searchInput.spellcheck = false
   searchRow.append(icon(icons.search), searchInput)
   searchRow.dataset['glassLight'] = ''
+  // Voice, see voice.ts: what's said becomes the search, as if typed. A browser that
+  // can't recognize speech shows no microphone.
+  const voiceBox = el('div', 'spotlight-confirm spotlight-voice')
+  voiceBox.hidden = true
+  const voiceText = el('p', 'spotlight-confirm-text')
+  const voiceDecline = button('prism-button', 'Cancel', 'Cancel')
+  const voiceAccept = button('prism-button spotlight-accept', 'Use it', 'Use it')
+  const voiceActions = el('div', 'spotlight-confirm-actions')
+  voiceActions.append(voiceDecline, voiceAccept)
+  voiceBox.append(voiceText, voiceActions)
+  const Recognition = recognitionClass(window)
+  const micButton = button('spotlight-mic', 'Speak')
+  micButton.append(icon(icons.microphone))
+  micButton.setAttribute('aria-pressed', 'false')
+  const placeholder = () => commands === null ? 'Spotlight Search' : 'Search, or tell Prism OS what to do'
+  const showVoice = ({state, message}: VoiceView) => {
+    const listening = state.kind === 'listening'
+    micButton.setAttribute('aria-pressed', `${listening}`)
+    micButton.setAttribute('aria-label', listening ? 'Stop listening' : 'Speak')
+    micButton.classList.toggle('is-listening', listening)
+    micButton.classList.toggle('is-busy', state.kind === 'checking' || state.kind === 'installing')
+    searchInput.placeholder = listening ? 'Listening…' : state.kind === 'installing' ? 'Downloading speech recognition…' : placeholder()
+    const question = state.kind === 'question' ? voiceQuestions[state.question] : null
+    voiceText.textContent = question?.text ?? message ?? ''
+    voiceActions.hidden = question === null
+    if (question !== null) {
+      voiceAccept.textContent = question.accept
+      voiceDecline.textContent = question.decline
+    }
+    voiceBox.hidden = question === null && message === null
+  }
+  const storage = (() => {
+    try {
+      return window.localStorage
+    } catch {
+      return null
+    }
+  })()
+  const voice = Recognition === null ? null : createVoice({
+    Recognition,
+    storage,
+    language: voiceLanguage(navigator.language),
+    onText: (text, final) => {
+      searchInput.value = text
+      selected = 0
+      renderResults()
+      if (final) searchInput.focus({preventScroll: true})
+    },
+    onChange: showVoice,
+  })
+  if (voice !== null) {
+    searchRow.append(micButton)
+    micButton.addEventListener('click', () => voice.toggle())
+    voiceAccept.addEventListener('click', () => voice.answer(true))
+    voiceDecline.addEventListener('click', () => voice.answer(false))
+  }
   const resultList = el('ul', 'spotlight-results')
   resultList.setAttribute('role', 'listbox')
   // The search floats as a capsule, and the results and replies sit in a sheet under it,
   // which the stylesheet hides while it holds nothing.
   const resultSheet = el('div', 'spotlight-sheet')
-  resultSheet.append(resultList)
+  resultSheet.append(voiceBox, resultList)
   spotlight.sheet.append(searchRow, resultSheet)
   if (commands !== null) {
     resultSheet.append(commands.element)
-    searchInput.placeholder = 'Search, or tell Prism OS what to do'
+    searchInput.placeholder = placeholder()
     searchInput.setAttribute('aria-label', 'Search or command')
   }
 
@@ -569,6 +626,9 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     resultList.hidden = query === '' && hasReplies()
   }
   searchInput.addEventListener('input', () => {
+    // Typing clears what Voice last said about itself.
+    const spoken = voice?.view()
+    if (spoken?.state.kind === 'idle' && spoken.message !== null) voice?.stop()
     selected = 0
     renderResults()
   })
@@ -620,6 +680,7 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   )
 
   function closeOverlays() {
+    voice?.stop()
     const active = document.activeElement
     if (active instanceof HTMLElement && active.closest('.prism-scrim') !== null) active.blur()
     for (const overlay of [spotlight, controlCenter]) {

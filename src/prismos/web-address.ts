@@ -19,16 +19,32 @@ export const maximumSearchText = 200
 // that ends in one is a file's name, not a site's.
 const fileEndings = new Set(['txt', 'md', 'json', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'pdf', 'html', 'htm', 'js', 'ts', 'css', 'mp3', 'mp4', 'mov', 'zip', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'rtf', 'log'])
 
+// The endings a spoken address can have: "wikipedia dot org" is wikipedia.org, and
+// "polka dot dresses" stays words to search for.
+const spokenEndings = new Set(['com', 'org', 'net', 'edu', 'gov', 'io', 'co', 'uk', 'dev', 'app', 'ai', 'tv', 'me', 'us', 'ca', 'de', 'fr', 'jp', 'au', 'info', 'nu'])
+
+// An address as speech recognition writes it, e.g. "en dot wikipedia dot org slash wiki",
+// as typed, or null when the words aren't one.
+function unspoken(text: string): string | null {
+  if (!/\s/u.test(text)) return text
+  const joined = text.replace(/\s+dot\s+/giu, '.').replace(/\s+slash\s+/giu, '/')
+  if (/\s/u.test(joined)) return null
+  const host = joined.replace(/^https?:\/\//iu, '').split(/[/?#:]/u)[0] ?? ''
+  return spokenEndings.has(host.split('.').at(-1)?.toLowerCase() ?? '') ? joined : null
+}
+
 const hostPattern = /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+([a-z]{2,24})$/u
 const localHosts = new Set(['localhost', '127.0.0.1', '[::1]'])
 
-// The https (or local http) URL for a web address as people type it, e.g. "wikipedia.org",
-// "en.wikipedia.org/wiki/Prism" or "https://example.com", or null for anything else: words
-// to search for, a file's name, or a scheme other than http and https.
+// The https (or local http) URL for a web address as people type or say it, e.g.
+// "wikipedia.org", "en.wikipedia.org/wiki/Prism", "https://example.com" or "xkcd dot com",
+// or null for anything else: words to search for, a file's name, or a scheme other than
+// http and https.
 export function webAddress(input: unknown): string | null {
   if (typeof input !== 'string') return null
-  const text = input.trim().replace(/[.,;!?]+$/u, '')
-  if (text === '' || /\s/u.test(text)) return null
+  const trimmed = input.trim().replace(/[.,;!?]+$/u, '')
+  const text = trimmed === '' ? null : unspoken(trimmed)
+  if (text === null) return null
   const hasScheme = /^[a-z][a-z0-9+.-]*:/iu.test(text) && !/^[^:/]+:\d+(?:[/?#]|$)/u.test(text)
   if (hasScheme && !/^https?:\/\//iu.test(text)) return null
   let url: URL

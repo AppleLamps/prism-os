@@ -44,7 +44,7 @@ function phrasings<T>(list: readonly T[], split: Split): readonly T[] {
 
 const appForms: Record<App, readonly string[]> = {
   cabinet: ['cabinet', 'Cabinet', 'files', 'file manager'],
-  browser: ['Browser', 'browser', 'the browser', 'the web browser', 'web browser'],
+  browser: ['Browser', 'browser', 'the browser', 'the web browser', 'web browser', 'Safari', 'safari', 'Chrome', 'chrome', 'Firefox', 'the internet'],
   scope: ['Scope', 'scope', 'the monitor', 'Monitor', 'the inspector', 'the scope window', 'scope app'],
   inkwell: ['Inkwell', 'inkwell', 'notes', 'the notes app', 'my notes', 'the note', 'Notes', 'the notepad'],
   chroma: ['Chroma', 'chroma', 'photos', 'the gallery', 'Photos', 'the photo app', 'pictures', 'the photos window'],
@@ -169,8 +169,8 @@ const sceneForms: Record<(typeof sceneNames)[number], readonly string[]> = {
 }
 // Sites people name, as typed, which the model copies into the call. Every one passes
 // webAddress, also the ones Browser can't show: the reply says so.
-const siteForms = ['wikipedia.org', 'en.wikipedia.org/wiki/Prism', 'archive.org', 'xkcd.com', 'example.com', 'www.gutenberg.org', 'https://en.wiktionary.org/wiki/glass', 'bing.com', 'github.com', 'news.ycombinator.com', 'https://www.bbc.com/news', 'nytimes.com', 'developer.mozilla.org', 'youtube.com/watch?v=dQw4w9WgXcQ', 'en.wikipedia.org/wiki/Optics', 'marginalia-search.com']
-const searchQueries = ['glass prisms', 'how rainbows form', 'best pancake recipe', 'the speed of light', 'weather in Tokyo', 'who invented the telescope', 'liquid glass design', 'neural networks explained', 'cheap flights to Lisbon', 'how to tie a bowline knot', 'Isaac Newton optics', 'sand dune formation', 'FunctionGemma', 'news today', 'chocolate chip cookies', 'the tallest mountain in Europe']
+const siteForms = ['wikipedia.org', 'en.wikipedia.org/wiki/Prism', 'archive.org', 'xkcd.com', 'example.com', 'www.gutenberg.org', 'https://en.wiktionary.org/wiki/glass', 'bing.com', 'github.com', 'news.ycombinator.com', 'https://www.bbc.com/news', 'nytimes.com', 'developer.mozilla.org', 'youtube.com/watch?v=dQw4w9WgXcQ', 'en.wikipedia.org/wiki/Optics', 'marginalia-search.com', 'wikipedia dot org', 'xkcd dot com', 'archive dot org', 'en dot wikipedia dot org slash wiki slash Light']
+const searchQueries = ['youtube', 'glass prisms', 'how rainbows form', 'best pancake recipe', 'the speed of light', 'weather in Tokyo', 'who invented the telescope', 'liquid glass design', 'neural networks explained', 'cheap flights to Lisbon', 'how to tie a bowline knot', 'Isaac Newton optics', 'sand dune formation', 'FunctionGemma', 'news today', 'chocolate chip cookies', 'the tallest mountain in Europe']
 const cityNames = Object.keys(cities).filter(city => city !== 'here')
 const titleCase = (text: string) => text.replace(/\b\w/gu, letter => letter.toUpperCase())
 
@@ -396,12 +396,25 @@ function compound(split: Split): Row {
     () => { const city = pick(cityNames); return {user: `what time is it in ${titleCase(city)}`, calls: single('world_time', {city})} },
     () => { const text = pick(noteTexts); return {user: `write ${text} in my notes`, calls: single('write_note', {mode: 'append', text})} },
     () => { const address = pick(siteForms); return {user: `go to ${address}`, calls: single('open_website', {address})} },
+    () => { const query = pick(searchQueries); return {user: `${pick(['search for', 'search the web for', 'look up', 'google'])} ${query}`, calls: single('search_web', {query})} },
   ]
   const joiners = phrasings([' and ', ', then ', ' and then ', ', and ', ' and also ', ' then ', ', also '], split)
   const first = pick(short)()
   let second = pick(short)()
   for (let tries = 0; tries < 5 && second.user === first.user; tries++) second = pick(short)()
-  return {user: `${first.user}${pick(joiners)}${second.user}`, calls: [...first.calls!, ...second.calls!]}
+  // A quarter of them are three commands, as people say them in one breath: "close
+  // inkwell, open safari and search for youtube".
+  if (random.next() < 0.25) {
+    let third = pick(short)()
+    for (let tries = 0; tries < 5 && (third.user === first.user || third.user === second.user); tries++) third = pick(short)()
+    const last = pick(phrasings([' and ', ', and ', ' and then ', ', then '], split))
+    // Speech recognition writes no commas: "close inkwell open safari and search for youtube".
+    const spoken = random.next() < 0.4
+    const user = `${first.user}${spoken ? ' ' : ', '}${second.user}${spoken ? last.replace(',', '') : last}${third.user}`
+    return {user, calls: [...first.calls!, ...second.calls!, ...third.calls!]}
+  }
+  const joiner = pick(joiners)
+  return {user: `${first.user}${random.next() < 0.15 ? ' ' : joiner}${second.user}`, calls: [...first.calls!, ...second.calls!]}
 }
 
 const capabilityReply = 'I can open, move, resize and arrange the windows and apps, open photos in Chroma, open web pages and search the web in Browser, write in your note, do arithmetic, run the stopwatch, tell the time around the world, and change the appearance, accent color and wallpaper. Just tell me what to do.'
@@ -494,6 +507,6 @@ if (import.meta.main) {
   write('eval.jsonl', heldOut.map(row => JSON.stringify(toMessages(row))).join('\n') + '\n')
   write('tools.json', JSON.stringify(toolDeclarations, null, 2) + '\n')
   const count = (rows: Row[], test: (row: Row) => boolean) => rows.filter(test).length
-  console.log(`train: ${train.length} rows, ${count(train, row => (row.calls?.length ?? 0) > 1)} with two calls, ${count(train, row => row.reply !== undefined)} replies`)
-  console.log(`eval: ${heldOut.length} rows (${evaluation.length - heldOut.length} dropped as seen in train), ${count(heldOut, row => (row.calls?.length ?? 0) > 1)} with two calls, ${count(heldOut, row => row.reply !== undefined)} replies`)
+  console.log(`train: ${train.length} rows, ${count(train, row => (row.calls?.length ?? 0) > 1)} with two calls or more (${count(train, row => (row.calls?.length ?? 0) > 2)} with three), ${count(train, row => row.reply !== undefined)} replies`)
+  console.log(`eval: ${heldOut.length} rows (${evaluation.length - heldOut.length} dropped as seen in train), ${count(heldOut, row => (row.calls?.length ?? 0) > 1)} with two calls or more (${count(heldOut, row => (row.calls?.length ?? 0) > 2)} with three), ${count(heldOut, row => row.reply !== undefined)} replies`)
 }

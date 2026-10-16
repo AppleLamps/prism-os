@@ -42,6 +42,7 @@ export const icons = {
   inkwell: '<path d="M6.5 8.5h11M6.5 12.5h11M6.5 16.5h7"/>',
   document: '<path d="M6.5 3.5h7.5l4 4v13h-11.5z"/><path d="M13.5 3.5v4.5h4.5"/>',
   chroma: '<circle cx="16" cy="8" r="2.2"/><path d="M3.5 18.5l5.5-6 4 4 3-3 4.5 5"/>',
+  microphone: '<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"/>',
   browser: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.3 3.6 5.2 3.6 8.5s-1.2 6.2-3.6 8.5c-2.4-2.3-3.6-5.2-3.6-8.5s1.2-6.2 3.6-8.5z"/>',
   back: '<path d="M14.5 6l-6 6 6 6"/>',
   forward: '<path d="M9.5 6l6 6-6 6"/>',

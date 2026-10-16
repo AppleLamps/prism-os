@@ -141,25 +141,52 @@ export function quickCommands(input: string): Command[] | null {
   const whole = single(sentence)
   if (whole !== null) return [whole]
   const parts = sentence.split(/\s*,?\s+(?:and then|then|and also|and)\s+|\s*,\s+/u).map(part => part.replace(/^(?:a|an|the) (?=\w+ (?:accent|wallpaper))/u, '').trim())
-  if (parts.length < 2) return null
   const commands: Command[] = []
   for (const part of parts) {
     const command = single(part)
-    if (command === null) return null
-    commands.push(command)
+    const run = command === null ? runTogether(part) : [command]
+    if (run === null) return null
+    commands.push(...run)
   }
-  return commands
+  return commands.length < 2 ? null : commands
+}
+
+// Speech has no commas: "close inkwell open safari" is two commands run together. Reads
+// a part as a few whole commands, each the longest that parses, e.g. "search for glass
+// prisms" and never "search for glass". Each start in the part is read once.
+const maximumRunWords = 24
+const maximumRunCommands = 5
+function runTogether(part: string): Command[] | null {
+  const words = part.split(' ')
+  if (words.length > maximumRunWords) return null
+  const readings = new Map<number, Command[] | null>()
+  const from = (start: number): Command[] | null => {
+    if (start === words.length) return []
+    const known = readings.get(start)
+    if (known !== undefined) return known
+    let reading: Command[] | null = null
+    for (let end = words.length; end > start && reading === null; end--) {
+      const command = single(words.slice(start, end).join(' '))
+      if (command === null) continue
+      const rest = from(end)
+      if (rest !== null && rest.length < maximumRunCommands) reading = [command, ...rest]
+    }
+    readings.set(start, reading)
+    return reading
+  }
+  const reading = from(0)
+  return reading !== null && reading.length > 1 ? reading : null
 }
 
 // Web addresses and searches, read before normalize(), which would drop an address's "?"
 // and lowercase a search: "go to wikipedia.org", "en.wikipedia.org/wiki/Prism", "search
 // the web for glass prisms". A word with a dot that is a file's name, e.g. "notes.txt",
-// isn't an address, see webAddress.
+// isn't an address, see webAddress, and neither are words without a spoken "dot com".
 function webCommand(input: string): Command | null {
   const text = input.replace(/[.!]+$/u, '').trim()
-  const site = /^(?:(?:go|browse|navigate|take me) to|open|visit|browse|load|pull up)\s+(?:the (?:site|website|page)\s+)?(\S+)$/iu.exec(text)
-  const address = site?.[1] ?? (/^\S+\.\S+$/u.test(text) ? text : null)
-  if (address !== null && webAddress(address) !== null) return check({name: 'open_website', address})
+  const site = /^(?:(?:go|browse|navigate|take me) to|open|visit|browse|load|pull up)\s+(?:the (?:site|website|page)\s+)?(.+)$/iu.exec(text)
+  const address = site?.[1] ?? text
+  if (webAddress(address) !== null) return check({name: 'open_website', address})
   const search = /^(?:search (?:the web|the internet|online|google|bing) for|search for|web search(?: for)?|google|bing|look up)\s+(.+)$/iu.exec(text)
   if (search !== null && !/^files?\b/iu.test(search[1]!)) return check({name: 'search_web', query: search[1]})
   return null
@@ -175,7 +202,9 @@ function single(sentence: string): Command | null {
     if (call === null || Array.isArray(call)) return null
     return check(call)
   }
-  return null
+  // A part of a longer sentence, e.g. "search for youtube" in "close inkwell, open safari
+  // and search for youtube".
+  return webCommand(sentence)
 }
 
 function check(call: Call): Command | null {

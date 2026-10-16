@@ -23,7 +23,7 @@ Spotlight (⌘K or Ctrl+K) finds apps and settings, and it also runs what you ty
 
 A sentence takes one path today, and a second one later:
 
-1. **The quick parser** (`quick-commands.ts`) reads the sentences people type most, including two commands joined by "and" or "then", and arithmetic. It runs at once, with nothing to download.
+1. **The quick parser** (`quick-commands.ts`) reads the sentences people type most, including several commands joined by commas, "and" or "then", or run together the way speech recognition writes them ("close inkwell open safari and search for youtube"), and arithmetic. It runs at once, with nothing to download.
 2. **The model**, off until it's trained on the final command list: FunctionGemma 270M, fine-tuned on Prism OS's commands, running in a worker in the browser on WebGPU (`model-worker.ts`). It takes the sentences the patterns miss. `modelEnabled` in `command-center.ts` switches it on for everyone, and `?model=on` on the page switches it on for one visit.
 
 Every call passes the validator in `commands.ts`, which accepts the names people use ("notes", "the gallery", "photo 3", "grey", "NYC") and rejects anything Prism OS lacks. The operator (`operator.ts`) runs what passes. Commands for the program's windows become the pointer and key events a hand would make, aimed at points the program itself computes: a click on the minimize button, a drag of a title bar, a release on a dock tile. So the program's rules hold for commands exactly as for a person, e.g. a window moved by a command still can't leave the workspace. Commands for Prism's apps go through the shell's own functions, the same ones their buttons call. Erasing or replacing the note asks first.
@@ -54,6 +54,18 @@ hf jobs uv run --flavor a10g-small --secrets HF_TOKEN --timeout 2h \
 ```
 
 The data has 8,000 training sentences and about 700 eval sentences whose phrasings never appear in training, so the eval score measures sentences shaped unlike anything the model saw. A first run on an earlier command list went from 22.1% (base FunctionGemma) to 78.4% on those held-out sentences, before the phrasings were widened. `train.py` fine-tunes the whole model, scores it, uploads the PyTorch weights, builds the browser file with ONNX Runtime GenAI's builder (4-bit weights in blocks of 32, fp16 activations), cuts the vocabulary projection to the last position (`last_token_logits.py`, which avoids about 2 GB of logits per prompt), checks the ONNX file's answers, and publishes to the Hub, privately unless `--public` is passed. The page can only load a public repo. `--checkpoint <repo> --skip-training` exports saved weights again without training.
+
+## Voice
+
+Spotlight's microphone (`voice.ts`, drawn by `shell.ts`) turns what's said into the search text, as if typed, with the words appearing as they're heard. Enter runs it, as for typed text. Every phrasing works the same spoken or typed: browser names mean Browser ("open safari"), spoken addresses are addresses ("go to wikipedia dot org"), and commands said in one breath without commas run in order.
+
+Where the speech is recognized decides what Voice asks:
+
+- **On the device** (Chrome and Edge 139 and later, `SpeechRecognition.available` with `processLocally`): with the language pack installed, Voice just listens and nothing leaves the computer. Without it, Voice asks before the browser downloads it (`SpeechRecognition.install`).
+- **Online** (Safari, and Chrome without on-device support): the browser sends the audio to its maker's service. Voice says so and asks once; the answer is kept under `prism-os.voice-online`.
+- **Neither** (Firefox): no microphone.
+
+Voice listens for English, the language of the commands: the visitor's English locale, else `en-US`. Recognition errors become one line under the search, e.g. a blocked microphone or no speech heard.
 
 ## Browser
 

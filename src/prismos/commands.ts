@@ -239,7 +239,8 @@ export const toolDeclarations: readonly ToolDeclaration[] = [
 // The words people use for each app, besides its name. Lowercase.
 export const appAliases: Record<App, readonly string[]> = {
   cabinet: ['cabinet', 'files', 'file manager', 'the files', 'the file manager'],
-  browser: ['browser', 'web browser', 'the browser', 'the web browser', 'internet', 'the internet', 'the web'],
+  // The browsers people know by name all mean Browser: "open safari" opens it.
+  browser: ['browser', 'web browser', 'the browser', 'the web browser', 'internet', 'the internet', 'the web', 'safari', 'chrome', 'google chrome', 'firefox', 'edge', 'microsoft edge'],
   scope: ['scope', 'monitor', 'inspector', 'the inspector', 'circuit inspector'],
   inkwell: ['inkwell', 'notes', 'note', 'the note', 'notepad', 'ink well'],
   chroma: ['chroma', 'photos', 'photo', 'gallery', 'pictures', 'the gallery', 'images'],
