@@ -44,6 +44,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 BASE = "google/functiongemma-270m-it"
 WEB_REFERENCE = "onnx-community/functiongemma-270m-it-ONNX"
+# The longest answers, three calls with an address or a search, take about 90 tokens.
+MAX_NEW_TOKENS = 160
 PHOTOS = ["Misty Lake", "Desert Light", "Pacific Edge", "Midnight City", "Forest Path", "Alpine Dawn",
           "Amalfi Morning", "North Falls", "Lavender Hour", "Concrete Curve", "Blue Lagoon", "Autumn Road"]
 
@@ -164,6 +166,27 @@ def photo_index(value):
     return key
 
 
+SPOKEN_ENDINGS = {"com", "org", "net", "edu", "gov", "io", "co", "uk", "dev", "app", "ai", "tv", "me", "us", "ca", "de", "fr", "jp", "au", "info", "nu"}
+
+
+def web_address(value):
+    """webAddress in src/prismos/web-address.ts, reduced to what decides the page: an
+    address said aloud ("wikipedia dot org") or typed with or without its scheme, "www."
+    or a final slash is the same page."""
+    text = str(value).strip().rstrip(".,;!?")
+    if re.search(r"\s", text):
+        joined = re.sub(r"\s+slash\s+", "/", re.sub(r"\s+dot\s+", ".", text, flags=re.I), flags=re.I)
+        host = re.sub(r"^https?://", "", joined, flags=re.I)
+        host = re.split(r"[/?#:]", host)[0]
+        if re.search(r"\s", joined) or host.split(".")[-1].lower() not in SPOKEN_ENDINGS:
+            return text.lower()
+        text = joined
+    text = re.sub(r"^https?://", "", text, flags=re.I)
+    host, _, rest = text.partition("/")
+    host = re.sub(r"^www\.", "", host.lower())
+    return host + ("/" + rest.rstrip("/") if rest.rstrip("/") else "")
+
+
 def canonical(calls):
     result = []
     for name, arguments in calls:
@@ -172,6 +195,10 @@ def canonical(calls):
             value = str(value).strip()
             if name == "open_photo" and key == "photo":
                 normalized[key] = photo_index(value)
+            elif name == "open_website" and key == "address":
+                normalized[key] = web_address(value)
+            elif name in ("search_web", "start_timer"):
+                normalized[key] = " ".join(value.lower().rstrip("?.!").split())
             elif name == "write_note" and key == "text":
                 normalized[key] = value.lower()
             else:
@@ -191,6 +218,8 @@ def kind(row):
     calls, reply = expected(row)
     if reply is not None:
         return "reply"
+    if len(calls) > 2:
+        return "three calls"
     return "two calls" if len(calls) > 1 else calls[0][0]
 
 
@@ -221,7 +250,7 @@ def score(rows, generate, label):
 @torch.no_grad()
 def torch_generate(messages):
     ids = torch.tensor([prompt_ids(messages)], device=device)
-    output = model.generate(ids, max_new_tokens=96, do_sample=False, eos_token_id=[1, 50, 106])
+    output = model.generate(ids, max_new_tokens=MAX_NEW_TOKENS, do_sample=False, eos_token_id=[1, 50, 106])
     return tokenizer.decode(output[0, ids.shape[1]:], skip_special_tokens=False)
 
 
@@ -404,7 +433,7 @@ def onnx_generate(messages):
     generated = []
     feed_ids = ids
     position = 0
-    for _ in range(96):
+    for _ in range(MAX_NEW_TOKENS):
         length = len(feed_ids)
         feed = {
             "input_ids": np.array([feed_ids], dtype=np.int64),

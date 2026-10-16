@@ -24,6 +24,7 @@ import {
 } from '../handwiredos/window-manager.ts'
 import {type Command, type PanelAppName, type ProgramApp, appTitle, appWindowIndex, cities, isProgramApp, panelApps, programApps, scopeViews} from './commands.ts'
 import {evaluateExpression, formatResult, prettyExpression} from './expression.ts'
+import type {BrowserAction, TimerRequest} from './apps.ts'
 import {type Settings, accents, scenes} from './settings.ts'
 import {type Framing, pageName, searchEngine} from './web-address.ts'
 
@@ -63,6 +64,12 @@ export type PanelControls = {
   // Browser, which the shell opens first, at a URL: whether the page shows or its site
   // refuses to be framed.
   browse(url: string): Framing
+  // Browser's back, forward, reload and Favorites, which the shell opens first.
+  browserNavigate(action: BrowserAction): string
+  // Clock's timer. Resolves to the reply.
+  timer(request: TimerRequest): string
+  // The app of the panel in front of everything, or null when a program window is.
+  front(): PanelAppName | null
 }
 
 export type PageEffects = {
@@ -450,6 +457,8 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
       }
       case 'next_photo':
       case 'previous_photo': {
+        // "next" and "back" alone act on the front app, as on any desktop.
+        if (command.bare === true && page.panels.front() === 'browser') return page.panels.browserNavigate(command.name === 'next_photo' ? 'forward' : 'back')
         if (page.gallery?.active()) { await bringToFront('chroma'); return page.gallery.step(command.name === 'next_photo' ? 1 : -1) }
         if (openPhoto() === -1) {
           await bringToFront('chroma')
@@ -527,6 +536,12 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
       }
       case 'stopwatch':
         return page.panels.stopwatch(command.action)
+      case 'start_timer':
+        return page.panels.timer({kind: 'start', seconds: command.seconds})
+      case 'timer':
+        return page.panels.timer({kind: command.action})
+      case 'browser_navigate':
+        return page.panels.browserNavigate(command.action)
       case 'world_time': {
         const zone = cities[command.city] ?? ''
         const now = new Date()
@@ -584,7 +599,7 @@ export const explanations: Record<Extract<Command, {name: 'explain'}>['topic'], 
   chroma: `Chroma is the photo gallery: ${photoCount} photos in a grid. Click one, or ask me to open one by name or number, and it zooms open on a spring. Arrows step through them and Escape goes back to the grid.`,
   browser: `Browser shows web pages right on the desktop, in a sandboxed frame that can never navigate Prism OS away. Type an address or words to search ${searchEngine.name}, or ask me, e.g. "go to wikipedia.org". Some sites, like Google, YouTube and GitHub, refuse to be shown inside another site; Browser offers to open those in a new tab.`,
   calculator: 'Calculator is a pocket calculator with keyboard input and repeated equals. You can also ask me for arithmetic directly, e.g. "what is 17 times 23".',
-  clock: 'Clock shows world clocks with analog faces and has a stopwatch with laps. Ask me "what time is it in Tokyo" or "start the stopwatch".',
+  clock: 'Clock shows world clocks with analog faces, a stopwatch with laps, and a timer that chimes when it ends. Ask me "what time is it in Tokyo", "start the stopwatch" or "set a timer for 5 minutes".',
   terminal: 'Terminal takes typed commands: open and close apps, set the theme, accent and wallpaper, print the program\'s stats, and a few classics like neofetch. Type help in it for the list.',
   handwired: 'Handwired turns ordinary code into a neural network: every if, comparison and spring becomes additions, multiplications and ReLU gates over floats, collected into matrix multiplications. Nothing is trained, the result is exact, and it stays differentiable.',
   command_center: 'Spotlight runs what you type. Common commands work at once, and a small language model, FunctionGemma, can run in your browser for everything else. Every command clicks and drags through the same program you use, so the program\'s rules apply to me too.',

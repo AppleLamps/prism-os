@@ -111,6 +111,21 @@ const templates = {
   world_time: ['what time is it in {city}', 'time in {city}', 'what is the time in {city}', 'current time in {city}', 'what\'s the time in {city} right now', 'tell me the time in {city}', 'is it night in {city}', 'clock for {city}', 'what time is it over in {city}', 'how late is it in {city}', '{city} time', 'local time in {city}', 'show me the time in {city}', 'what hour is it in {city}', 'time check for {city}'],
   open_website: ['go to {site}', 'open {site}', 'visit {site}', 'take me to {site}', 'browse to {site}', 'load {site}', 'open the website {site}', 'show me {site}', 'navigate to {site}', 'pull up {site}', 'open {site} in the browser', 'I want to go to {site}', 'can you load {site}', 'bring up the site {site}', 'head over to {site}', 'go to the page {site}', 'open up {site}', 'let me see {site}', 'browse {site}', 'show {site} in browser'],
   search_web: ['search the web for {query}', 'google {query}', 'look up {query}', 'search for {query}', 'search online for {query}', 'find {query} on the web', 'web search {query}', 'search the internet for {query}', 'bing {query}', 'look up {query} online', 'search {query} on the web', 'what does the web say about {query}', 'find me pages about {query}', 'run a web search for {query}', 'look for {query} online', 'search bing for {query}', 'do a search for {query}', 'search the browser for {query}', 'can you search for {query}', 'find information about {query} online'],
+  browser_navigate: {
+    back: ['go back a page', 'previous page', 'back in the browser', 'go back in the browser', 'take me back a page', 'the page before', 'back to the last page', 'browser back', 'go to the previous page', 'return to the last website'],
+    forward: ['go forward a page', 'forward in the browser', 'next page in the browser', 'browser forward', 'go to the next page', 'forward one page', 'go forward in the browser', 'take me forward a page', 'go ahead a page', 'the page after'],
+    reload: ['refresh the page', 'reload', 'reload the page', 'refresh', 'reload the website', 'refresh the browser', 'the page is stuck, reload it', 'refresh this site', 'hit refresh', 'load the page again'],
+    home: ['browser home', 'show favorites', 'go to the browser favorites', 'open favorites', 'back to favorites', 'browser start page', 'show my favorites in the browser', 'go to the start page', 'favorites please', 'take the browser home'],
+  },
+  start_timer: ['set a timer for {d}', 'start a timer for {d}', 'timer for {d}', 'set the timer to {d}', 'countdown {d}', 'count down {d}', 'remind me in {d}', 'time {d} for me', 'I need a timer for {d}', 'can you time {d}', 'put a timer on for {d}', 'alert me in {d}', 'start counting down {d}', 'let me know when {d} is up', 'timer {d}', 'set timer {d}', 'a timer for {d} please', 'begin a {d} countdown', 'set up a timer for {d}', 'ring me in {d}'],
+  timer: {
+    pause: ['pause the timer', 'pause timer', 'hold the timer', 'freeze the timer', 'stop the countdown for a moment', 'pause my timer', 'put the timer on hold', 'timer pause', 'wait, pause the timer', 'hold on, pause the countdown'],
+    resume: ['resume the timer', 'continue the timer', 'unpause the timer', 'keep the timer going', 'start the timer again', 'timer resume', 'resume my countdown', 'carry on with the timer', 'continue the countdown', 'let the timer run again'],
+    cancel: ['cancel the timer', 'stop the timer', 'turn off the timer', 'clear the timer', 'end the timer', 'kill the timer', 'never mind the timer', 'delete my timer', 'timer off', 'I do not need the timer anymore'],
+  },
+  // Questions about the world: the answer is a web search, of the question as asked.
+  weather_question: ['what is the weather in {city}', 'what\'s the weather like today', 'weather in {city}', 'is it going to rain today', 'will it rain in {city} tomorrow', 'how hot is it in {city}', 'weather forecast for {city}', 'do I need an umbrella today', 'how cold is it in {city} right now', 'what is the temperature in {city}', 'weather this weekend', 'what\'s the forecast for tomorrow', 'is it snowing in {city}', 'weather today', 'how is the weather in {city}'],
+  web_question: ['who won the game last night', 'what is the capital of france', 'give me a recipe for pancakes', 'how tall is mount everest', 'who is the president', 'what is bitcoin worth', 'translate hello to spanish', 'explain quantum physics', 'recommend a movie', 'latest news', 'what is the population of japan', 'when was the eiffel tower built', 'how far is the moon', 'what movies are playing tonight', 'how do I boil an egg', 'who wrote pride and prejudice', 'what time does the sun set today', 'how many ounces in a cup', 'what is the score of the lakers game', 'best pizza near me', 'how old is taylor swift', 'what does photosynthesis mean', 'how do you say thank you in japanese', 'when is the next full moon', 'what is the tallest building in the world'],
   world_time_here: ['what time is it', 'what is the time', 'time', 'current time', 'what\'s the time', 'tell me the time', 'what time is it now', 'clock check', 'what day is it', 'the time please'],
   set_arcs: {
     hidden: ['hide the arcs', 'hide the weight lines', 'turn off the wiring', 'remove the lines behind the windows', 'hide the weights', 'no arcs please', 'get rid of the curves on the desktop', 'turn off the weight arcs', 'clear the lines from the background', 'hide the network drawing', 'hide the wires', 'no wiring', 'remove the arcs', 'turn the arcs off', 'hide the lines on the desk'],
@@ -171,6 +186,7 @@ const sceneForms: Record<(typeof sceneNames)[number], readonly string[]> = {
 // webAddress, also the ones Browser can't show: the reply says so.
 const siteForms = ['wikipedia.org', 'en.wikipedia.org/wiki/Prism', 'archive.org', 'xkcd.com', 'example.com', 'www.gutenberg.org', 'https://en.wiktionary.org/wiki/glass', 'bing.com', 'github.com', 'news.ycombinator.com', 'https://www.bbc.com/news', 'nytimes.com', 'developer.mozilla.org', 'youtube.com/watch?v=dQw4w9WgXcQ', 'en.wikipedia.org/wiki/Optics', 'marginalia-search.com', 'wikipedia dot org', 'xkcd dot com', 'archive dot org', 'en dot wikipedia dot org slash wiki slash Light']
 const searchQueries = ['youtube', 'glass prisms', 'how rainbows form', 'best pancake recipe', 'the speed of light', 'weather in Tokyo', 'who invented the telescope', 'liquid glass design', 'neural networks explained', 'cheap flights to Lisbon', 'how to tie a bowline knot', 'Isaac Newton optics', 'sand dune formation', 'FunctionGemma', 'news today', 'chocolate chip cookies', 'the tallest mountain in Europe']
+const timerLengths = ['5 minutes', '10 minutes', '3 minutes', '1 minute', '30 seconds', '90 seconds', '45 seconds', '1 hour', '2 hours', 'half an hour', 'an hour and a half', '15 minutes', '25 minutes', '20 mins', '1 minute 30 seconds', '2.5 minutes', '1:30', 'ten minutes', 'twenty minutes', '8 min']
 const cityNames = Object.keys(cities).filter(city => city !== 'here')
 const titleCase = (text: string) => text.replace(/\b\w/gu, letter => letter.toUpperCase())
 
@@ -371,6 +387,26 @@ const commandMakers: Record<string, (split: Split) => Row> = {
     const address = pick(siteForms)
     return {user: fill(pick(phrasings(templates.open_website, split)), {site: address}), calls: single('open_website', {address})}
   },
+  browser_navigate(split) {
+    const action = pick(Object.keys(templates.browser_navigate) as (keyof typeof templates.browser_navigate)[])
+    return {user: pick(phrasings(templates.browser_navigate[action], split)), calls: single('browser_navigate', {action})}
+  },
+  timer(split) {
+    if (random.next() < 0.6) {
+      const duration = pick(timerLengths)
+      // "a 5 minute timer", as people say a length before "timer".
+      const user = random.next() < 0.2 ? `${pick(['start a', 'set a', 'give me a'])} ${duration.replace(/s$/u, '')} timer` : fill(pick(phrasings(templates.start_timer, split)), {d: duration})
+      return {user, calls: single('start_timer', {duration: user.endsWith(' timer') ? duration.replace(/s$/u, '') : duration})}
+    }
+    const action = pick(Object.keys(templates.timer) as (keyof typeof templates.timer)[])
+    return {user: pick(phrasings(templates.timer[action], split)), calls: single('timer', {action})}
+  },
+  web_question(split) {
+    const query = random.next() < 0.4
+      ? fill(pick(phrasings(templates.weather_question, split)), {city: titleCase(pick(cityNames))})
+      : pick(phrasings(templates.web_question, split))
+    return {user: query, calls: single('search_web', {query})}
+  },
   info(split) {
     if (random.next() < 0.4) return {user: pick(phrasings(templates.get_stats, split)), calls: single('get_stats')}
     const topic = pick(Object.keys(templates.explain) as (keyof typeof templates.explain)[])
@@ -397,6 +433,8 @@ function compound(split: Split): Row {
     () => { const text = pick(noteTexts); return {user: `write ${text} in my notes`, calls: single('write_note', {mode: 'append', text})} },
     () => { const address = pick(siteForms); return {user: `go to ${address}`, calls: single('open_website', {address})} },
     () => { const query = pick(searchQueries); return {user: `${pick(['search for', 'search the web for', 'look up', 'google'])} ${query}`, calls: single('search_web', {query})} },
+    () => { const duration = pick(timerLengths); return {user: `set a timer for ${duration}`, calls: single('start_timer', {duration})} },
+    () => ({user: pick(['refresh the page', 'reload the page']), calls: single('browser_navigate', {action: 'reload'})}),
   ]
   const joiners = phrasings([' and ', ', then ', ' and then ', ', and ', ' and also ', ' then ', ', also '], split)
   const first = pick(short)()
@@ -417,8 +455,8 @@ function compound(split: Split): Row {
   return {user: `${first.user}${random.next() < 0.15 ? ' ' : joiner}${second.user}`, calls: [...first.calls!, ...second.calls!]}
 }
 
-const capabilityReply = 'I can open, move, resize and arrange the windows and apps, open photos in Chroma, open web pages and search the web in Browser, write in your note, do arithmetic, run the stopwatch, tell the time around the world, and change the appearance, accent color and wallpaper. Just tell me what to do.'
-const declineReply = 'I only run Prism OS, so I can\'t answer that myself. I can search the web for it in Browser, arrange windows, open photos, write notes, do arithmetic or change the appearance.'
+const capabilityReply = 'I can open, move, resize and arrange the windows and apps, open photos in Chroma, open web pages, search the web and look things up in Browser, write in your note, do arithmetic, run the stopwatch and timers, tell the time around the world, and change the appearance, accent color and wallpaper. Just tell me what to do.'
+const declineReply = 'That\'s not something I can do. I run Prism OS: I can open apps, look things up on the web in Browser, write notes, set timers, do arithmetic or change the appearance.'
 
 const textRows: Record<string, {users: readonly string[], replies: readonly string[]}> = {
   greeting: {
@@ -438,12 +476,12 @@ const textRows: Record<string, {users: readonly string[], replies: readonly stri
     replies: ['I\'m Spotlight\'s model: a small language model running entirely in your browser. I turn what you type into Prism OS commands.'],
   },
   off_topic: {
-    users: ['what is the weather today', 'tell me a joke', 'write me a poem', 'who won the game last night', 'translate hello to spanish', 'what is the capital of france', 'give me a recipe for pancakes', 'what is the meaning of life', 'summarize the news', 'write an email to my boss', 'how tall is mount everest', 'recommend a movie', 'explain quantum physics', 'what stocks should I buy', 'help me with my homework', 'who is the president', 'tell me a story', 'what is bitcoin worth'],
+    users: ['tell me a joke', 'write me a poem', 'write an email to my boss', 'help me with my homework', 'tell me a story', 'what stocks should I buy', 'what is the meaning of life', 'sing me a song', 'draw me a picture', 'tell me something funny', 'be my friend', 'write a cover letter for me', 'make up a riddle', 'pretend to be a pirate', 'give me a pep talk'],
     replies: [declineReply],
   },
   unsupported: {
-    users: ['open microsoft word', 'delete all my files', 'install an app', 'change the wallpaper to cats', 'play some music', 'print this page', 'set an alarm for 7', 'shut down the computer', 'open photo 20', 'make the accent purple', 'add a new app', 'open a new window', 'upload a photo', 'take a screenshot', 'connect to wifi', 'send an email', 'set a timer for 5 minutes', 'make the font bigger', 'turn up the volume', 'restart prism os'],
-    replies: ['Prism OS can\'t do that yet. I can arrange its windows and apps, open its 12 photos, open web pages, write in the note, do arithmetic, run the stopwatch, tell the time, and change the appearance, accent and wallpaper.'],
+    users: ['open microsoft word', 'delete all my files', 'install an app', 'change the wallpaper to cats', 'play some music', 'print this page', 'set an alarm for 7', 'shut down the computer', 'open photo 20', 'make the accent purple', 'add a new app', 'open a new window', 'upload a photo', 'take a screenshot', 'connect to wifi', 'send an email', 'call my mom', 'make the font bigger', 'turn up the volume', 'restart prism os'],
+    replies: ['Prism OS can\'t do that yet. I can arrange its windows and apps, open its 12 photos, open web pages, set timers, write in the note, do arithmetic, run the stopwatch, tell the time, and change the appearance, accent and wallpaper.'],
   },
   ambiguous: {
     users: ['minimize it', 'close it', 'move it left', 'make it bigger', 'maximize that', 'hide that window', 'move this to the right', 'shrink it', 'close that', 'open it'],

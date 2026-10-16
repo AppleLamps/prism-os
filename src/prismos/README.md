@@ -36,8 +36,8 @@ Every call passes the validator in `commands.ts`, which accepts the names people
 | `scope_show`, `scope_list` | Scope's sidebar and list keys |
 | `write_note`, `clear_note`, `read_note` | Inkwell's note, which is saved in the browser |
 | `set_theme`, `set_accent`, `set_wallpaper`, `set_motion`, `set_arcs` | The preferences in `settings.ts`, as Control Center sets them |
-| `calculate`, `stopwatch`, `world_time` | Arithmetic with precedence (`expression.ts`), Clock's stopwatch, the time in 30 cities |
-| `open_website`, `search_web` | Browser, at an address or a Bing search, see below |
+| `calculate`, `stopwatch`, `start_timer`, `timer`, `world_time` | Arithmetic with precedence (`expression.ts`), Clock's stopwatch, Clock's timer (lengths as people say them, `durations.ts`; pause, resume, cancel), the time in 30 cities |
+| `open_website`, `search_web`, `browser_navigate` | Browser, at an address or a Bing search, and its back, forward, reload and Favorites buttons, see below. Questions about the world ("what's the weather in Tokyo") are searches. A bare "back" or "next" is `previous_photo` or `next_photo` marked `bare`, which acts on the front app: Browser's pages while Browser is in front |
 | `get_stats`, `explain` | The program's live sizes, short explanations |
 
 ### Training the model

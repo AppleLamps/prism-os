@@ -779,5 +779,18 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
       openPanel('browser', true)
       return panels.get('browser')?.instance.browse?.(url) ?? {kind: 'refused', site: 'Browser'}
     },
+    browserNavigate: action => {
+      openPanel('browser', true)
+      return panels.get('browser')?.instance.navigate?.(action) ?? 'Browser isn\'t available.'
+    },
+    // A new timer shows its countdown; pausing or canceling one leaves Clock as it is.
+    timer: request => {
+      if (request.kind === 'start') openPanel('clock', true)
+      return panelFor('clock')?.instance.timer?.(request) ?? 'Clock isn\'t available.'
+    },
+    front: () => {
+      const id = panelsInFront ? order.at(-1)?.app.id : undefined
+      return panelApps.some(app => app.id === id) ? id as PanelAppName : null
+    },
   }
 }

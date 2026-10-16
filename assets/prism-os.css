@@ -1565,7 +1565,8 @@
 .clock-tabs {
   flex: none;
   align-self: center;
-  width: 240px;
+  width: 300px;
+  max-width: 100%;
 }
 
 .clock-world {
@@ -1734,6 +1735,95 @@
 
 .clock-lap-time {
   font-variant-numeric: tabular-nums;
+}
+
+/* The timer: presets and a typed length while it's idle, then the countdown with Cancel
+   and Pause like the stopwatch's. Done, the readout blinks in the accent. */
+.clock-timer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-height: 0;
+}
+
+.clock-controls.is-single {
+  justify-content: center;
+}
+
+.clock-timer-label {
+  margin: 0;
+  color: var(--ink-3);
+  font: 400 13px/18px var(--font-sans);
+  text-align: center;
+}
+
+.clock-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.prism-desktop .clock-preset {
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--key-function);
+  box-shadow: var(--pill-lift);
+  color: var(--ink);
+  font: 500 14px/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.prism-desktop .clock-preset-start {
+  flex: none;
+  background: color-mix(in srgb, var(--start-ink) 22%, transparent);
+  color: var(--start-ink);
+}
+
+.clock-timer-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.clock-timer-input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  outline: none;
+  background: var(--segment-track);
+  box-shadow: var(--well);
+  color: var(--ink);
+  font: 400 14px/20px var(--font-sans);
+}
+
+.clock-timer-input:focus-visible,
+.prism-desktop .clock-preset:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
+.clock-timer-readout.is-done {
+  color: var(--copper);
+  animation: clock-timer-done 1s steps(2, jump-none) infinite;
+}
+
+@keyframes clock-timer-done {
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clock-timer-readout.is-done {
+    animation: none;
+  }
 }
 
 /* Terminal: always dark, like a terminal in either scheme. */

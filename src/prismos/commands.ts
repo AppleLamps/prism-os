@@ -10,6 +10,7 @@ import {fileCommandNames, validateFileCommand, type FileCommand} from './file-co
 // is a command the next training run learns. After changing anything below, run the
 // dataset script and the training job again (see src/prismos/README.md).
 import {photoNames} from '../handwiredos/photo-gallery.ts'
+import {parseDuration} from './durations.ts'
 import {evaluateExpression} from './expression.ts'
 import {type AccentName, type Appearance, type SceneName, accents, scenes} from './settings.ts'
 import {maximumSearchText, webAddress} from './web-address.ts'
@@ -52,6 +53,8 @@ export const topics = ['prism_os', 'scope', 'inkwell', 'chroma', 'browser', 'cal
 export const noteModes = ['append', 'replace'] as const
 export const slideshowActions = ['start', 'stop'] as const
 export const stopwatchActions = ['start', 'stop', 'lap', 'reset'] as const
+export const timerActions = ['pause', 'resume', 'cancel'] as const
+export const browserActions = ['back', 'forward', 'reload', 'home'] as const
 
 // The cities `world_time` knows, by the names people use, with their time zones. "here"
 // is the visitor's own zone.
@@ -101,8 +104,10 @@ export type Command = FileCommand
   | {name: 'show_desktop'}
   | {name: 'reset_layout'}
   | {name: 'open_photo', photo: number, bundled?: boolean}
-  | {name: 'next_photo'}
-  | {name: 'previous_photo'}
+  // `bare` marks "next", "back" and the like, said without naming photos: they act on
+  // the front app, so they step Browser's pages while Browser is in front.
+  | {name: 'next_photo', bare?: true}
+  | {name: 'previous_photo', bare?: true}
   | {name: 'close_photo'}
   | {name: 'slideshow', action: (typeof slideshowActions)[number]}
   | {name: 'scope_show', view: (typeof scopeViews)[number]}
@@ -117,9 +122,12 @@ export type Command = FileCommand
   | {name: 'set_arcs', visibility: (typeof arcVisibilities)[number]}
   | {name: 'calculate', expression: string}
   | {name: 'stopwatch', action: (typeof stopwatchActions)[number]}
+  | {name: 'start_timer', seconds: number}
+  | {name: 'timer', action: (typeof timerActions)[number]}
   | {name: 'world_time', city: string}
   | {name: 'open_website', url: string}
   | {name: 'search_web', query: string}
+  | {name: 'browser_navigate', action: (typeof browserActions)[number]}
   | {name: 'get_stats'}
   | {name: 'explain', topic: (typeof topics)[number]}
 
@@ -221,14 +229,23 @@ export const toolDeclarations: readonly ToolDeclaration[] = [
   tool('stopwatch', 'Use the stopwatch in Clock', {
     action: {type: 'STRING', description: 'start, stop, lap or reset', enum: stopwatchActions},
   }),
+  tool('start_timer', 'Start a countdown timer in Clock', {
+    duration: {type: 'STRING', description: 'How long, e.g. 5 minutes'},
+  }),
+  tool('timer', 'Pause, resume or cancel the timer in Clock', {
+    action: {type: 'STRING', description: 'pause, resume or cancel', enum: timerActions},
+  }),
   tool('world_time', 'Tell the time in a city', {
     city: {type: 'STRING', description: 'The city, or here'},
   }),
   tool('open_website', 'Open a web page in Browser', {
     address: {type: 'STRING', description: 'The web address, e.g. wikipedia.org'},
   }),
-  tool('search_web', 'Search the web in Browser', {
+  tool('search_web', 'Search the web in Browser, also to answer questions about the world', {
     query: {type: 'STRING', description: 'What to search for'},
+  }),
+  tool('browser_navigate', 'Go back, forward, reload, or to Favorites in Browser', {
+    action: {type: 'STRING', description: 'back, forward, reload or home', enum: browserActions},
   }),
   tool('get_stats', 'Report the live numbers of the program that runs Prism OS'),
   tool('explain', 'Explain a part of Prism OS', {
@@ -347,10 +364,11 @@ export function validateCall(name: string, args: Readonly<Record<string, unknown
       if (!isProgramApp(left) || !isProgramApp(right)) return fail('Side by side works with Scope, Inkwell and Chroma.')
       return left === right ? fail('Side by side needs two different apps.') : done({name, left, right})
     }
-    case 'show_desktop':
-    case 'reset_layout':
     case 'next_photo':
     case 'previous_photo':
+      return done(args['bare'] === true ? {name, bare: true} : {name})
+    case 'show_desktop':
+    case 'reset_layout':
     case 'close_photo':
     case 'clear_note':
     case 'read_note':
@@ -417,6 +435,18 @@ export function validateCall(name: string, args: Readonly<Record<string, unknown
     case 'stopwatch': {
       const action = oneOf(stopwatchActions, args['action'])
       return action === null ? fail('The stopwatch can start, stop, lap or reset.') : done({name, action})
+    }
+    case 'start_timer': {
+      const seconds = parseDuration(args['duration'])
+      return seconds === null ? fail('A timer can run from a second to a day, e.g. 5 minutes, 90 seconds or 1:30.') : done({name, seconds})
+    }
+    case 'timer': {
+      const action = oneOf(timerActions, args['action'], {stop: 'cancel', clear: 'cancel', continue: 'resume', unpause: 'resume'})
+      return action === null ? fail('The timer can pause, resume or cancel.') : done({name, action})
+    }
+    case 'browser_navigate': {
+      const action = oneOf(browserActions, args['action'], {refresh: 'reload', favorites: 'home', previous: 'back', next: 'forward'})
+      return action === null ? fail('Browser can go back, forward, reload or home.') : done({name, action})
     }
     case 'world_time': {
       const city = parseCity(args['city'] ?? 'here')

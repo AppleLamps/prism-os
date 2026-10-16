@@ -5,6 +5,7 @@
 // patterns don't cover. Every call passes the validator in commands.ts before the operator
 // (operator.ts) runs it, and the reply lists the calls that ran, so what was decided is
 // never hidden.
+import {describeDuration} from './durations.ts'
 import {photoNames} from '../handwiredos/photo-gallery.ts'
 import {type Command, needsConfirmation, toolDeclarations, validateCall} from './commands.ts'
 import {el, button} from './dom.ts'
@@ -24,7 +25,7 @@ const developerPrompt = 'You are a model that can do function calling with the f
 const consentKey = 'prism-os.model-consent'
 const transcriptLength = 3
 
-export const helpReply = 'Type what you want, e.g. "open cabinet", "list files in /Documents", "create document /Documents/Plan.txt", "search files for Plan", "open calculator", "go to wikipedia.org", "search the web for glass prisms", "put Scope and Chroma side by side", "move Inkwell to the top right", "open Blue Lagoon", "note: buy milk", "dark mode and a teal accent", "lagoon wallpaper", "what time is it in Tokyo", "start the stopwatch", "what is 17 times 23" or "how big is the program".'
+export const helpReply = 'Type what you want, e.g. "open cabinet", "list files in /Documents", "create document /Documents/Plan.txt", "search files for Plan", "open calculator", "go to wikipedia.org", "search the web for glass prisms", "put Scope and Chroma side by side", "move Inkwell to the top right", "open Blue Lagoon", "note: buy milk", "dark mode and a teal accent", "lagoon wallpaper", "what time is it in Tokyo", "start the stopwatch", "set a timer for 5 minutes", "what is 17 times 23" or "how big is the program".'
 
 // What Spotlight shows for a query before it runs: the commands the quick parser read, a
 // question about what Spotlight can do, a sentence for the model, or nothing.
@@ -36,6 +37,9 @@ export type Preview =
 
 export function describeCall(command: Command) {
   if (command.name === 'open_photo') return `open_photo(${photoNames[command.photo]})`
+  // "back" and "next" alone act on the front app, so they preview as what they are.
+  if ((command.name === 'next_photo' || command.name === 'previous_photo') && command.bare === true) return command.name === 'next_photo' ? 'next()' : 'back()'
+  if (command.name === 'start_timer') return `start_timer(${describeDuration(command.seconds)})`
   const {name, ...args} = command
   const values = Object.values(args).map(value => (typeof value === 'string' ? value : String(value)))
   return `${name}(${values.join(', ')})`

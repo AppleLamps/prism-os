@@ -6,6 +6,7 @@ import {cabinetApp, type Cabinet} from './cabinet.ts'
 import {type CalculatorKey, type CalculatorState, initialCalculator, keyFromKeyboard, pressKey} from './calculator.ts'
 import {accentControl, appearanceControl, sceneControl, toggleControl} from './controls.ts'
 import {button, el, icon, icons} from './dom.ts'
+import {describeDuration, formatTimer, parseDuration} from './durations.ts'
 import type {SettingsStore} from './settings.ts'
 import {type AppInfo, runCommand} from './terminal.ts'
 import type {Framing} from './web-address.ts'
@@ -22,6 +23,8 @@ export type AppContext = {
 }
 
 export type StopwatchAction = 'start' | 'stop' | 'lap' | 'reset'
+export type TimerRequest = {kind: 'start', seconds: number} | {kind: 'pause' | 'resume' | 'cancel'}
+export type BrowserAction = 'back' | 'forward' | 'reload' | 'home'
 
 export type AppInstance = {
   opened?(): void
@@ -32,9 +35,13 @@ export type AppInstance = {
   // Clock's stopwatch, for Spotlight's commands: shows the stopwatch and acts like its
   // buttons, then returns what happened.
   stopwatch?(action: StopwatchAction): string
+  // Clock's timer, for Spotlight's commands, as its buttons. Returns what happened.
+  timer?(request: TimerRequest): string
   // Browser's page, for Spotlight's commands: opens a URL as the address bar does, and
   // says whether it shows in the frame or its site refuses.
   browse?(url: string): Framing
+  // Browser's back, forward, reload and Favorites buttons. Returns what happened.
+  navigate?(action: BrowserAction): string
 }
 
 export type PanelApp = {
@@ -147,7 +154,7 @@ const clock: PanelApp = {
   width: 360,
   height: 476,
   resizable: true,
-  build(_root, body) {
+  build(_root, body, context) {
     const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone
     const cities: City[] = [
       {name: localZone.split('/').pop()?.replaceAll('_', ' ') ?? 'Local', zone: localZone},
@@ -161,11 +168,12 @@ const clock: PanelApp = {
     tabs.setAttribute('role', 'tablist')
     const worldTab = button('prism-segment', 'World Clock', 'World Clock')
     const stopwatchTab = button('prism-segment', 'Stopwatch', 'Stopwatch')
-    for (const tab of [worldTab, stopwatchTab]) {
+    const timerTab = button('prism-segment', 'Timer', 'Timer')
+    for (const tab of [worldTab, stopwatchTab, timerTab]) {
       tab.setAttribute('role', 'tab')
       tab.dataset['glassLight'] = ''
     }
-    tabs.append(worldTab, stopwatchTab)
+    tabs.append(worldTab, stopwatchTab, timerTab)
 
     const world = el('ul', 'clock-world')
     const rows = cities.map(city => {
@@ -207,7 +215,7 @@ const clock: PanelApp = {
     // frame while it runs and its tab shows. The stopwatch's time is a difference of
     // performance.now(), so it keeps counting while nothing draws it.
     let panelShown = false
-    let tab: 'world' | 'stopwatch' = 'world'
+    let tab: 'world' | 'stopwatch' | 'timer' = 'world'
     const elapsed = () => carried + (running ? performance.now() - startedAt : 0)
 
     // The laps, newest first: the lap that's running, then the finished laps. A finished
@@ -299,6 +307,14 @@ const clock: PanelApp = {
         cancelAnimationFrame(frame)
         frame = 0
       }
+      const timerTicks = panelShown && tab === 'timer' && timer.kind === 'running'
+      if (timerTicks && timerTick === 0) {
+        renderTimer()
+        timerTick = window.setInterval(renderTimer, 250)
+      } else if (!timerTicks && timerTick !== 0) {
+        window.clearInterval(timerTick)
+        timerTick = 0
+      }
     }
 
     const startOrStop = () => {
@@ -332,21 +348,165 @@ const clock: PanelApp = {
     }
     lapButton.addEventListener('click', lapOrReset)
 
-    const show = (next: 'world' | 'stopwatch') => {
+    // The timer: a countdown that ends with a chime and brings Clock to the front, also
+    // while Clock is closed or in the dock. Its end is one timeout; the readout ticks only
+    // while the Timer tab is seen. The time left is a difference of performance.now(), so
+    // a pause or a hidden tab never changes it.
+    type TimerState =
+      | {kind: 'idle'}
+      | {kind: 'running', endsAt: number, total: number}
+      | {kind: 'paused', left: number, total: number}
+      | {kind: 'done', total: number}
+    let timer: TimerState = {kind: 'idle'}
+    let timerTick = 0
+    let timerEnd = 0
+    const timerView = el('div', 'clock-timer')
+    const timerReadout = el('div', 'clock-readout clock-timer-readout', '0:00')
+    const timerLabel = el('p', 'clock-timer-label')
+    const presets = el('div', 'clock-presets')
+    for (const minutes of [1, 3, 5, 10, 15, 30]) {
+      const preset = button('clock-preset', `${minutes} minute${minutes === 1 ? '' : 's'}`, `${minutes} min`)
+      preset.dataset['glassLight'] = ''
+      preset.addEventListener('click', () => startTimer(minutes * 60))
+      presets.append(preset)
+    }
+    const timerForm = el('form', 'clock-timer-form')
+    const timerInput = el('input', 'clock-timer-input')
+    timerInput.type = 'text'
+    timerInput.autocomplete = 'off'
+    timerInput.placeholder = 'Or type a time, e.g. 4 min 30 s'
+    timerInput.setAttribute('aria-label', 'Timer length')
+    const timerSubmit = button('clock-preset clock-preset-start', 'Start timer', 'Start')
+    timerSubmit.type = 'submit'
+    timerForm.append(timerInput, timerSubmit)
+    const timerControls = el('div', 'clock-controls')
+    const timerCancel = button('clock-round clock-secondary', 'Cancel', 'Cancel')
+    const timerPause = button('clock-round clock-start', 'Pause', 'Pause')
+    timerControls.append(timerCancel, timerPause)
+    timerView.append(timerReadout, timerLabel, presets, timerForm, timerControls)
+    const writeTimerReadout = textWriter(timerReadout)
+    const timerLeft = () => timer.kind === 'running' ? Math.max(0, (timer.endsAt - performance.now()) / 1000) : timer.kind === 'paused' ? timer.left : 0
+
+    let sound: AudioContext | null = null
+    // Made at a press or a typed command, when the browser lets a page play sound.
+    const prepareSound = () => {
+      try {
+        sound ??= new AudioContext()
+        void sound.resume()
+      } catch {
+        sound = null
+      }
+    }
+    const chime = () => {
+      if (sound === null) return
+      const start = sound.currentTime
+      for (let ring = 0; ring < 3; ring++) {
+        const at = start + ring * 0.35
+        const tone = sound.createOscillator()
+        const level = sound.createGain()
+        tone.type = 'sine'
+        tone.frequency.value = 880
+        level.gain.setValueAtTime(0.0001, at)
+        level.gain.exponentialRampToValueAtTime(0.2, at + 0.02)
+        level.gain.exponentialRampToValueAtTime(0.0001, at + 0.3)
+        tone.connect(level).connect(sound.destination)
+        tone.start(at)
+        tone.stop(at + 0.32)
+      }
+    }
+
+    function renderTimer() {
+      const active = timer.kind !== 'idle'
+      timerReadout.hidden = !active
+      timerControls.hidden = !active
+      presets.hidden = active
+      timerForm.hidden = active
+      timerReadout.classList.toggle('is-done', timer.kind === 'done')
+      writeTimerReadout(formatTimer(timerLeft()))
+      timerLabel.textContent = timer.kind === 'idle' ? 'Choose how long.' : timer.kind === 'done' ? 'Time\'s up.' : `${describeDuration(timer.total)} timer${timer.kind === 'paused' ? ', paused' : ''}`
+      timerPause.hidden = timer.kind === 'done'
+      timerControls.classList.toggle('is-single', timer.kind === 'done')
+      timerPause.textContent = timer.kind === 'paused' ? 'Resume' : 'Pause'
+      timerPause.setAttribute('aria-label', timerPause.textContent)
+      timerPause.classList.toggle('clock-stop', timer.kind === 'running')
+      timerCancel.textContent = timer.kind === 'done' ? 'OK' : 'Cancel'
+      timerCancel.setAttribute('aria-label', timerCancel.textContent)
+    }
+    const finishTimer = () => {
+      timerEnd = 0
+      if (timer.kind !== 'running') return
+      timer = {kind: 'done', total: timer.total}
+      chime()
+      context.open('clock')
+      show('timer')
+      renderTimer()
+      sync()
+    }
+    const armTimer = (seconds: number) => {
+      window.clearTimeout(timerEnd)
+      timerEnd = window.setTimeout(finishTimer, seconds * 1000)
+    }
+    function startTimer(seconds: number) {
+      prepareSound()
+      timer = {kind: 'running', endsAt: performance.now() + seconds * 1000, total: seconds}
+      armTimer(seconds)
+      timerInput.value = ''
+      renderTimer()
+      sync()
+    }
+    const pauseTimer = () => {
+      if (timer.kind !== 'running') return
+      window.clearTimeout(timerEnd)
+      timer = {kind: 'paused', left: timerLeft(), total: timer.total}
+      renderTimer()
+      sync()
+    }
+    const resumeTimer = () => {
+      if (timer.kind !== 'paused') return
+      prepareSound()
+      armTimer(timer.left)
+      timer = {kind: 'running', endsAt: performance.now() + timer.left * 1000, total: timer.total}
+      renderTimer()
+      sync()
+    }
+    const cancelTimer = () => {
+      window.clearTimeout(timerEnd)
+      timer = {kind: 'idle'}
+      renderTimer()
+      sync()
+    }
+    timerForm.addEventListener('submit', event => {
+      event.preventDefault()
+      const seconds = parseDuration(timerInput.value)
+      if (seconds === null) {
+        timerLabel.textContent = 'Type a time like 5 min, 90 s or 1:30.'
+        return
+      }
+      startTimer(seconds)
+    })
+    timerPause.addEventListener('click', () => (timer.kind === 'paused' ? resumeTimer() : pauseTimer()))
+    timerCancel.addEventListener('click', cancelTimer)
+
+    const show = (next: 'world' | 'stopwatch' | 'timer') => {
       worldTab.setAttribute('aria-selected', `${next === 'world'}`)
       stopwatchTab.setAttribute('aria-selected', `${next === 'stopwatch'}`)
+      timerTab.setAttribute('aria-selected', `${next === 'timer'}`)
       world.hidden = next !== 'world'
       stopwatch.hidden = next !== 'stopwatch'
+      timerView.hidden = next !== 'timer'
       if (next === tab) return
       tab = next
       if (stopwatchShown()) renderStopwatch()
+      if (tab === 'timer') renderTimer()
       sync()
     }
     worldTab.addEventListener('click', () => show('world'))
     stopwatchTab.addEventListener('click', () => show('stopwatch'))
-    body.append(tabs, world, stopwatch)
+    timerTab.addEventListener('click', () => show('timer'))
+    body.append(tabs, world, stopwatch, timerView)
     show('world')
     renderStopwatch()
+    renderTimer()
 
     return {
       visible(shown) {
@@ -374,6 +534,27 @@ const clock: PanelApp = {
             if (running) startOrStop()
             if (elapsed() > 0) lapOrReset()
             return 'The stopwatch is back at zero.'
+        }
+      },
+      timer(request) {
+        show('timer')
+        const left = () => describeDuration(timerLeft())
+        switch (request.kind) {
+          case 'start':
+            startTimer(request.seconds)
+            return `Timer set for ${describeDuration(request.seconds)}.`
+          case 'pause':
+            if (timer.kind !== 'running') return 'No timer is running.'
+            pauseTimer()
+            return `Paused the timer with ${left()} left.`
+          case 'resume':
+            if (timer.kind !== 'paused') return timer.kind === 'running' ? `The timer is already running: ${left()} left.` : 'No timer is paused.'
+            resumeTimer()
+            return `The timer is running: ${left()} left.`
+          case 'cancel':
+            if (timer.kind === 'idle') return 'No timer is set.'
+            cancelTimer()
+            return 'Timer canceled.'
         }
       },
     }

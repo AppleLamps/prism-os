@@ -925,6 +925,49 @@
   {
     "type": "function",
     "function": {
+      "name": "start_timer",
+      "description": "Start a countdown timer in Clock",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "duration": {
+            "type": "STRING",
+            "description": "How long, e.g. 5 minutes"
+          }
+        },
+        "required": [
+          "duration"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "timer",
+      "description": "Pause, resume or cancel the timer in Clock",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "action": {
+            "type": "STRING",
+            "description": "pause, resume or cancel",
+            "enum": [
+              "pause",
+              "resume",
+              "cancel"
+            ]
+          }
+        },
+        "required": [
+          "action"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "world_time",
       "description": "Tell the time in a city",
       "parameters": {
@@ -964,7 +1007,7 @@
     "type": "function",
     "function": {
       "name": "search_web",
-      "description": "Search the web in Browser",
+      "description": "Search the web in Browser, also to answer questions about the world",
       "parameters": {
         "type": "OBJECT",
         "properties": {
@@ -975,6 +1018,31 @@
         },
         "required": [
           "query"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "browser_navigate",
+      "description": "Go back, forward, reload, or to Favorites in Browser",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "action": {
+            "type": "STRING",
+            "description": "back, forward, reload or home",
+            "enum": [
+              "back",
+              "forward",
+              "reload",
+              "home"
+            ]
+          }
+        },
+        "required": [
+          "action"
         ]
       }
     }

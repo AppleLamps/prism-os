@@ -22,7 +22,9 @@ export type WorkerAnswer =
 const transformersUrl = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1/+esm'
 // FunctionGemma's ends: <eos>, <start_function_response> and <end_of_turn>.
 const stopTokens = [1, 50, 106]
-const maximumNewTokens = 96
+// Three calls with an address or a search fit in about 90 tokens; a YouTube link's id
+// takes a token for nearly every letter.
+const maximumNewTokens = 160
 
 type Tokenizer = {
   apply_chat_template(messages: unknown[], options: Record<string, unknown>): {input_ids: {dims: number[]}}

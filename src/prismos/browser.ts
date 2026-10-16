@@ -10,7 +10,7 @@
 // The sandbox lets a page run its scripts, keep its own cookies and open links in new
 // tabs, and never lets it navigate Prism OS itself: without allow-top-navigation, nothing
 // in the frame can leave the desktop.
-import type {PanelApp} from './apps.ts'
+import type {BrowserAction, PanelApp} from './apps.ts'
 import {button, el, icon, icons} from './dom.ts'
 import {addressFor, type Framing, framingFor, pageName, searchEngine} from './web-address.ts'
 
@@ -190,17 +190,40 @@ export const browserApp: PanelApp = {
       address.value = current() ?? ''
       address.select()
     })
-    backButton.addEventListener('click', () => {
-      if (index === 0) return
-      index--
+    const step = (by: -1 | 1) => {
+      const next = index + by
+      if (next < 0 || next >= entries.length) return false
+      index = next
       show()
-    })
-    forwardButton.addEventListener('click', () => {
-      if (index === entries.length - 1) return
-      index++
-      show()
-    })
+      return true
+    }
+    backButton.addEventListener('click', () => step(-1))
+    forwardButton.addEventListener('click', () => step(1))
     reloadButton.addEventListener('click', () => void show())
+
+    // The buttons, for Spotlight's commands, with what happened in words.
+    const named = (url: string | null) => url === null ? 'Favorites' : pageName(url)
+    const navigate = (action: BrowserAction): string => {
+      switch (action) {
+        case 'back':
+          return step(-1) ? `Back to ${named(current())}.` : 'Browser has no earlier page.'
+        case 'forward':
+          return step(1) ? `Forward to ${named(current())}.` : 'Browser has no later page.'
+        case 'reload': {
+          const url = current()
+          if (url === null) return 'Favorites has nothing to reload.'
+          show()
+          return `Reloaded ${named(url)}.`
+        }
+        case 'home':
+          if (current() !== null) {
+            entries = [...entries.slice(0, index + 1), null]
+            index = entries.length - 1
+            show()
+          }
+          return 'Browser shows Favorites.'
+      }
+    }
     newTabButton.addEventListener('click', openInNewTab)
     refusedOpen.addEventListener('click', openInNewTab)
 
@@ -228,6 +251,7 @@ export const browserApp: PanelApp = {
         show()
       },
       browse: go,
+      navigate,
     }
   },
 }

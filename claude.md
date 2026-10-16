@@ -16,7 +16,7 @@ Prism OS is a desktop that runs in the browser. Its three main windows are run b
 | Part | What it is |
 | --- | --- |
 | **Scope**, **Inkwell**, **Chroma** | The three program windows: the live circuit inspector, the note (saved in the browser), the photo gallery with a lightbox. Drag, resize, stack, minimize, maximize, all decided by the handwired program |
-| **Cabinet**, **Browser**, **Calculator**, **Clock**, **Terminal**, **Settings**, **About** | Prism's own apps, in glass panels beside the program, in plain JavaScript. Cabinet keeps files in the browser. Browser shows web pages in a sandboxed iframe. Clock has world clocks and a stopwatch with laps |
+| **Cabinet**, **Browser**, **Calculator**, **Clock**, **Terminal**, **Settings**, **About** | Prism's own apps, in glass panels beside the program, in plain JavaScript. Cabinet keeps files in the browser. Browser shows web pages in a sandboxed iframe. Clock has world clocks, a stopwatch with laps, and a timer that chimes and brings Clock forward when it ends, even from the dock or closed |
 | Menu bar | Laid out like a Mac's: the prism logo (opens About) and the front app's name in bold at the left (Prism OS when nothing is open), Spotlight, Control Center and the clock at the right. Nothing else |
 | **Spotlight** (⌘K or Ctrl+K) | Finds apps and settings, and runs sentences as commands, see below. Its microphone turns speech into the search text (`voice.ts`) |
 | **Control Center** and Settings | Appearance (light, dark, auto), seven accents, four wallpapers (dunes, lagoon, ember, graphite), motion, weight arcs. Saved in the browser |
@@ -44,7 +44,7 @@ Window sizes, title bar height, dock height and hit-test geometry belong to `win
 
 ## Spotlight's commands
 
-Spotlight runs what people type: "put Scope and Chroma side by side", "move Inkwell to the top right", "open Blue Lagoon", "note: buy milk", "dark mode and an orange accent", "start the stopwatch", "what time is it in Tokyo", "what is 17 times 23", "go to wikipedia.org", "search the web for glass prisms". One word is a search, a sentence is a command. The full list of 47 commands is the table in `src/prismos/README.md`.
+Spotlight runs what people type: "put Scope and Chroma side by side", "move Inkwell to the top right", "open Blue Lagoon", "note: buy milk", "dark mode and an orange accent", "start the stopwatch", "what time is it in Tokyo", "what is 17 times 23", "go to wikipedia.org", "search the web for glass prisms", "set a timer for 5 minutes", "what's the weather in Tokyo". One word is a search, a sentence is a command. Questions about the world become web searches. "back" and "next" alone act on the front app: Browser's pages while Browser is in front, else Chroma's photos. The full list of 50 commands is the table in `src/prismos/README.md`.
 
 A sentence goes through two readers:
 
@@ -101,7 +101,7 @@ The site is live, standalone, and deployed from `main`.
 
 The decision was to finish Prism OS's features before training, so the model is trained once on the final command list instead of retrained after every feature. Training costs a GPU run on Hugging Face (account **AppleLampsX**).
 
-Before training, the command list must be final: every feature people would ask for by name has a command, and `bun scripts/prismos-dataset.ts` has been run so `src/prismos/training/` matches `commands.ts`. The data today: 8,000 training sentences and about 700 eval sentences whose phrasings never appear in training, over 47 commands.
+Before training, the command list must be final: every feature people would ask for by name has a command, and `bun scripts/prismos-dataset.ts` has been run so `src/prismos/training/` matches `commands.ts`. The data today: 8,000 training sentences and about 700 eval sentences whose phrasings never appear in training, over 50 commands. Questions about the world (weather, facts, news, recipes) are taught as `search_web` of the question; only requests Prism OS can't serve at all (jokes, poems, emails) get the decline reply.
 
 The run, from `src/prismos/README.md`:
 

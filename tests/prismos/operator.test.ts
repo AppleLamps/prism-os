@@ -44,6 +44,9 @@ function createPage(driver: MachineDriver) {
   }
   let behind = 0
   const browsed: string[] = []
+  const navigated: string[] = []
+  const timers: string[] = []
+  let front: PanelAppName | null = null
   const panels: PanelControls = {
     state: id => panel(id).state,
     zoomed: id => panel(id).zoomed,
@@ -60,6 +63,15 @@ function createPage(driver: MachineDriver) {
       panel('browser').state = 'open'
       return framingFor(url)
     },
+    browserNavigate: action => {
+      navigated.push(action)
+      return `browser ${action}`
+    },
+    timer: request => {
+      timers.push(request.kind === 'start' ? `start ${request.seconds}` : request.kind)
+      return `timer ${request.kind}`
+    },
+    front: () => front,
   }
   const page: PageEffects = {
     settings: {get: () => settings, update: change => { settings = {...settings, ...change} }},
@@ -68,7 +80,7 @@ function createPage(driver: MachineDriver) {
     slideshow: {start: () => { slideshow = true }, stop: () => { slideshow = false }, running: () => slideshow},
     homeRectangles: () => home,
   }
-  return {page, settings: () => settings, note: () => note, slideshow: () => slideshow, home, panel, behind: () => behind, browsed}
+  return {page, settings: () => settings, note: () => note, slideshow: () => slideshow, home, panel, behind: () => behind, browsed, navigated, timers, setFront: (app: PanelAppName | null) => { front = app }}
 }
 
 function command(name: string, args: Record<string, unknown> = {}): Command {
@@ -91,7 +103,7 @@ test('every declared tool validates with arguments from its own enums', () => {
   for (const declaration of toolDeclarations) {
     const args: Record<string, unknown> = {}
     for (const [key, parameter] of Object.entries(declaration.function.parameters.properties)) {
-      args[key] = parameter.enum?.[0] ?? ({photo: '3', expression: '2 + 2', city: 'tokyo', address: 'wikipedia.org'} as Record<string, string>)[key] ?? 'hello'
+      args[key] = parameter.enum?.[0] ?? ({photo: '3', expression: '2 + 2', city: 'tokyo', address: 'wikipedia.org', duration: '5 minutes'} as Record<string, string>)[key] ?? 'hello'
     }
     if (declaration.function.name === 'side_by_side') args['right'] = 'chroma'
     const result = validateCall(declaration.function.name, args)
@@ -295,4 +307,20 @@ test('web commands open Browser at the page, or say the site refuses to be shown
   assert.equal(await operator.run(command('search_web', {query: 'glass prisms'})), 'Searching Bing for "glass prisms".')
   assert.deepEqual(fake.browsed, ['https://en.wikipedia.org/wiki/Prism', 'https://github.com/AppleLamps', 'https://www.bing.com/search?q=glass%20prisms'])
   assert.match(await operator.run(command('explain', {topic: 'browser'})), /sandboxed frame/u)
+})
+
+test('the timer and Browser\'s buttons go through the shell, and a bare "back" acts on the front app', async () => {
+  const {operator, fake} = setup()
+  assert.equal(await operator.run(command('start_timer', {duration: 'an hour and a half'})), 'timer start')
+  await operator.run(command('timer', {action: 'stop'}))
+  assert.deepEqual(fake.timers, ['start 5400', 'cancel'])
+  await operator.run(command('browser_navigate', {action: 'refresh'}))
+  fake.setFront('browser')
+  assert.equal(await operator.run(command('previous_photo', {bare: true})), 'browser back')
+  assert.equal(await operator.run(command('next_photo', {bare: true})), 'browser forward')
+  assert.deepEqual(fake.navigated, ['reload', 'back', 'forward'])
+  // Naming the photos still steps Chroma, whatever is in front.
+  assert.match(await operator.run(command('next_photo')), /^Showing /u)
+  fake.setFront(null)
+  assert.match(await operator.run(command('previous_photo', {bare: true})), /^Showing /u)
 })

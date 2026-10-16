@@ -52,6 +52,11 @@ const rules: Rule[] = [
   [/^import files$/u, () => ({name: 'import_files'})],
   // Clock, first: "start the stopwatch" is the stopwatch, not "start" an app named Clock.
   [/^(start|stop|reset|lap) (?:the )?stopwatch$|^stopwatch (start|stop|reset|lap)$|^(lap)$/u, m => ({name: 'stopwatch', action: m[1] ?? m[2] ?? m[3]})],
+  // The timer: pausing and canceling first, so "cancel the timer" is never a length.
+  [/^(pause|stop|cancel|resume|continue|clear|end) (?:the |my )?timer$|^timer (pause|stop|cancel|resume)$/u, m => ({name: 'timer', action: m[1] ?? m[2]})],
+  [/^(?:set|start|make)(?: a| an| the)? timer (?:for|to) (.+)$|^(?:set|start)(?: a| an)? (.+?) timer$|^timer (?:for )?(.+)$|^(?:a |an )?(\S+(?: \S+){0,3}) timer$/u, m => ({name: 'start_timer', duration: m[1] ?? m[2] ?? m[3] ?? m[4]})],
+  // Questions about the weather are web searches.
+  [/^(?:(?:whats|what is|hows|how is) )?(?:the )?(?:weather|forecast)(?: like)?(?: (?:today|tomorrow|tonight|now|right now|this week|this weekend))?(?: (?:in|for|at) [a-z .]+?)?(?: (?:today|tomorrow|tonight|this week|this weekend))?$|^(?:will it|is it going to) (?:rain|snow)(?: [a-z ]+)?$/u, m => ({name: 'search_web', query: m[0]})],
   [/^(?:what time is it|whats the time|what is the time|time|the time|current time)(?: (?:in|at) (.+))?$|^time in (.+)$/u, m => ({name: 'world_time', city: m[1] ?? m[2] ?? 'here'})],
   // Windows and apps.
   [new RegExp(`^(?:open|show|launch|start|bring up|focus|switch to|go to|pull up) ${app}$`, 'u'), m => ({name: 'open_app', app: m[1]})],
@@ -79,8 +84,15 @@ const rules: Rule[] = [
   [/^(?:hide|turn off) (?:the )?(?:weight )?(?:arcs|wiring)$|^arcs off$/u, () => ({name: 'set_arcs', visibility: 'hidden'})],
   [/^(?:show|turn on) (?:the )?(?:weight )?(?:arcs|wiring)$|^arcs on$/u, () => ({name: 'set_arcs', visibility: 'shown'})],
   // Chroma.
-  [/^(?:next|next photo|next picture)$/u, () => ({name: 'next_photo'})],
-  [/^(?:previous|prev|back|previous photo|previous picture|last photo)$/u, () => ({name: 'previous_photo'})],
+  // Browser's buttons. "back" and "next" alone act on the front app, see the operator.
+  [/^(?:refresh|reload)(?: the)?(?: page| website| site| browser| tab)?$/u, () => ({name: 'browser_navigate', action: 'reload'})],
+  [/^(?:go )?back (?:a|one) page$|^previous page$|^(?:go )?back in (?:the )?browser$/u, () => ({name: 'browser_navigate', action: 'back'})],
+  [/^(?:go )?forward (?:a|one) page$|^(?:go )?forward in (?:the )?browser$/u, () => ({name: 'browser_navigate', action: 'forward'})],
+  [/^(?:browser home|(?:show |open )?(?:the )?(?:browser )?favorites)$/u, () => ({name: 'browser_navigate', action: 'home'})],
+  [/^(?:next|forward|go forward)$/u, () => ({name: 'next_photo', bare: true})],
+  [/^(?:previous|prev|back|go back)$/u, () => ({name: 'previous_photo', bare: true})],
+  [/^(?:next photo|next picture)$/u, () => ({name: 'next_photo'})],
+  [/^(?:previous photo|previous picture|last photo)$/u, () => ({name: 'previous_photo'})],
   [/^(?:close (?:the )?photo|back to (?:the )?grid)$/u, () => ({name: 'close_photo'})],
   [/^(?:open|show|view) (?:the )?(?:photo|picture|image) (.+)$/u, m => parsePhoto(m[1]) === null && /\.[a-z0-9]+$/iu.test(m[1]!) ? ({name: 'open_file', path: m[1]}) : ({name: 'open_photo', photo: m[1]})],
   [new RegExp(`^(?:open|show|view|show me) (?:the )?(${alternatives(photoNames.map(name => name.toLowerCase()))})(?: photo| picture)?$`, 'u'), m => ({name: 'open_photo', photo: m[1]})],
