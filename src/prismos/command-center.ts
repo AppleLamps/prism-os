@@ -7,7 +7,8 @@
 // never hidden.
 import {describeDuration} from './durations.ts'
 import {photoNames} from '../handwiredos/photo-gallery.ts'
-import {type Command, needsConfirmation, toolDeclarations, validateCall} from './commands.ts'
+import {type Command, needsConfirmation, validateCall} from './commands.ts'
+import {expandCall, modelTools} from './model-tools.ts'
 import {el, button} from './dom.ts'
 import {parseModelAnswer} from './function-calls.ts'
 import type {WorkerAnswer, WorkerRequest} from './model-worker.ts'
@@ -139,7 +140,7 @@ export function createCommandCenter(window: Window, workerUrl: string) {
     // ?model-device=wasm runs the model on the CPU instead, slowly: a way to test on a
     // machine whose GPU can't run it.
     const device = new URL(window.location.href).searchParams.get('model-device') === 'wasm' ? 'wasm' : 'webgpu'
-    const request: WorkerRequest = {kind: 'load', modelId, tools: [...toolDeclarations], developerPrompt, device}
+    const request: WorkerRequest = {kind: 'load', modelId, tools: [...modelTools], developerPrompt, device}
     worker.postMessage(request)
   }
 
@@ -225,9 +226,16 @@ export function createCommandCenter(window: Window, workerUrl: string) {
       const commands: Command[] = []
       const problems: string[] = []
       for (const call of parsed.calls) {
-        const result = validateCall(call.name, call.arguments)
-        if (result.ok) commands.push(result.command)
-        else problems.push(result.reason)
+        const expansion = expandCall(call.name, call.arguments)
+        if (!expansion.ok) {
+          problems.push(expansion.reason)
+          continue
+        }
+        for (const command of expansion.calls) {
+          const result = validateCall(command.name, command.arguments)
+          if (result.ok) commands.push(result.command)
+          else problems.push(result.reason)
+        }
       }
       if (commands.length > 0) await runCommands(commands, entry)
       if (problems.length > 0) {

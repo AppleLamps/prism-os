@@ -1,14 +1,12 @@
 import {fileCommandNames, validateFileCommand, type FileCommand} from './file-commands.ts'
-// The command center's vocabulary: every action Spotlight can take in Prism OS when a
-// sentence is typed into it, as function declarations for FunctionGemma, and the
-// validator that turns a call the model (or the quick parser) produced into a typed
-// command, or rejects it.
+// The command center's commands: every action Spotlight can take in Prism OS when a
+// sentence is typed into it, and the validator that turns a call (from the model, through
+// model-tools.ts, or from the quick parser) into a typed command, or rejects it.
 //
-// This file is the single source of truth for both sides of the model. The page sends
-// `toolDeclarations` with every request, and scripts/prismos-dataset.ts writes the
-// fine-tuning data from the same declarations, so a command added here and nowhere else
-// is a command the next training run learns. After changing anything below, run the
-// dataset script and the training job again (see src/prismos/README.md).
+// The model sees these commands grouped into fewer declarations, see model-tools.ts,
+// which also writes the fine-tuning data's calls. A command added here needs its place
+// in model-tools.ts; then run the dataset script and the training job again (see
+// src/prismos/README.md).
 import {photoNames} from '../handwiredos/photo-gallery.ts'
 import {parseDuration} from './durations.ts'
 import {evaluateExpression} from './expression.ts'
@@ -132,126 +130,6 @@ export type Command = FileCommand
   | {name: 'explain', topic: (typeof topics)[number]}
 
 export type CommandName = Command['name']
-
-type Parameter = {type: 'STRING', description: string, enum?: readonly string[]}
-export type ToolDeclaration = {
-  type: 'function'
-  function: {
-    name: CommandName
-    description: string
-    parameters: {type: 'OBJECT', properties: Record<string, Parameter>, required: string[]}
-  }
-}
-
-const appParameter: Parameter = {type: 'STRING', description: 'The app', enum: apps}
-const programAppParameter: Parameter = {type: 'STRING', description: 'The program window: scope, inkwell or chroma', enum: programApps}
-
-function tool(name: CommandName, description: string, properties: Record<string, Parameter> = {}): ToolDeclaration {
-  return {type: 'function', function: {name, description, parameters: {type: 'OBJECT', properties, required: Object.keys(properties)}}}
-}
-
-// Short descriptions on purpose: every request carries all of them, and each token of the
-// prompt is work for a 270M model in the browser.
-export const toolDeclarations: readonly ToolDeclaration[] = [
-  tool('list_files', 'List files in a Cabinet folder', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
-  tool('open_file', 'Open a file or folder by Cabinet path', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
-  tool('create_folder', 'Create a Cabinet folder', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
-  tool('create_document', 'Create an empty text document', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
-  tool('save_note_as', 'Save the current Inkwell draft to a new file', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
-  tool('duplicate_file', 'Duplicate a file or folder', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
-  tool('trash_file', 'Move a file or folder to recoverable Trash', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
-  tool('restore_file', 'Restore an item from Trash', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
-  tool('download_file', 'Download a Cabinet file', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
-  tool('delete_file', 'Permanently delete an item from Trash', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}}),
-  tool('search_files', 'Search all live files by name', {query: {type: 'STRING', description: 'Part of the file name'}}),
-  tool('rename_file', 'Rename a file or folder', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}, new_name: {type: 'STRING', description: 'New item name'}}),
-  tool('move_file', 'Move an item to a folder', {path: {type: 'STRING', description: 'Cabinet path, absolute or relative to the current folder'}, destination: {type: 'STRING', description: 'Destination folder path'}}),
-  tool('empty_trash', 'Permanently delete everything in Trash', {}),
-  tool('import_files', 'Open Cabinet so the user can press Import', {}),
-  tool('open_app', 'Open, show or bring an app to the front', {app: appParameter}),
-  tool('minimize_app', 'Minimize an app into the dock', {app: appParameter}),
-  tool('maximize_app', 'Maximize an app to fill the screen', {app: appParameter}),
-  tool('restore_app', 'Restore a maximized or minimized app to its normal size', {app: appParameter}),
-  tool('close_app', 'Close an app', {app: appParameter}),
-  tool('move_app', 'Move an app\'s window to a part of the screen', {
-    app: appParameter,
-    position: {type: 'STRING', description: 'Where to move it', enum: positions},
-  }),
-  tool('resize_app', 'Resize a program window', {
-    app: programAppParameter,
-    size: {type: 'STRING', description: 'The new size, or bigger or smaller than now', enum: sizes},
-  }),
-  tool('side_by_side', 'Put two program windows next to each other, each on half the screen', {
-    left: {type: 'STRING', description: 'The window on the left', enum: programApps},
-    right: {type: 'STRING', description: 'The window on the right', enum: programApps},
-  }),
-  tool('show_desktop', 'Minimize every window to show the desktop'),
-  tool('reset_layout', 'Put the program windows back where they opened'),
-  tool('open_photo', 'Open a photo in Chroma', {
-    photo: {type: 'STRING', description: 'The photo name, or its number from 1 to 12'},
-  }),
-  tool('next_photo', 'Show the next photo in Chroma'),
-  tool('previous_photo', 'Show the previous photo in Chroma'),
-  tool('close_photo', 'Close the open photo and go back to the grid'),
-  tool('slideshow', 'Start or stop a slideshow of the photos', {
-    action: {type: 'STRING', description: 'start or stop', enum: slideshowActions},
-  }),
-  tool('scope_show', 'Show a list in Scope, the inspector of the program', {
-    view: {type: 'STRING', description: 'Which list', enum: scopeViews},
-  }),
-  tool('scope_list', 'Move through the list in Scope', {
-    action: {type: 'STRING', description: 'How to move', enum: scopeListActions},
-  }),
-  tool('write_note', 'Write text into the note in Inkwell', {
-    text: {type: 'STRING', description: 'The text to write'},
-    mode: {type: 'STRING', description: 'append adds to the note, replace replaces it', enum: noteModes},
-  }),
-  tool('clear_note', 'Erase the note in Inkwell'),
-  tool('read_note', 'Read the note in Inkwell'),
-  tool('set_theme', 'Set light or dark appearance', {
-    theme: {type: 'STRING', description: 'light, dark, or auto to follow the device', enum: themes},
-  }),
-  tool('set_accent', 'Set the accent color', {
-    color: {type: 'STRING', description: 'The color', enum: accentNames},
-  }),
-  tool('set_wallpaper', 'Change the wallpaper scene', {
-    scene: {type: 'STRING', description: 'The scene', enum: sceneNames},
-  }),
-  tool('set_motion', 'Turn the wallpaper animation on or off', {
-    motion: {type: 'STRING', description: 'on or off', enum: onOff},
-  }),
-  tool('set_arcs', 'Show or hide the arcs of the program weights behind the windows', {
-    visibility: {type: 'STRING', description: 'shown or hidden', enum: arcVisibilities},
-  }),
-  tool('calculate', 'Do arithmetic', {
-    expression: {type: 'STRING', description: 'The arithmetic, e.g. 17 * 23'},
-  }),
-  tool('stopwatch', 'Use the stopwatch in Clock', {
-    action: {type: 'STRING', description: 'start, stop, lap or reset', enum: stopwatchActions},
-  }),
-  tool('start_timer', 'Start a countdown timer in Clock', {
-    duration: {type: 'STRING', description: 'How long, e.g. 5 minutes'},
-  }),
-  tool('timer', 'Pause, resume or cancel the timer in Clock', {
-    action: {type: 'STRING', description: 'pause, resume or cancel', enum: timerActions},
-  }),
-  tool('world_time', 'Tell the time in a city', {
-    city: {type: 'STRING', description: 'The city, or here'},
-  }),
-  tool('open_website', 'Open a web page in Browser', {
-    address: {type: 'STRING', description: 'The web address, e.g. wikipedia.org'},
-  }),
-  tool('search_web', 'Search the web in Browser, also to answer questions about the world', {
-    query: {type: 'STRING', description: 'What to search for'},
-  }),
-  tool('browser_navigate', 'Go back, forward, reload, or to Favorites in Browser', {
-    action: {type: 'STRING', description: 'back, forward, reload or home', enum: browserActions},
-  }),
-  tool('get_stats', 'Report the live numbers of the program that runs Prism OS'),
-  tool('explain', 'Explain a part of Prism OS', {
-    topic: {type: 'STRING', description: 'What to explain', enum: topics},
-  }),
-]
 
 // The words people use for each app, besides its name. Lowercase.
 export const appAliases: Record<App, readonly string[]> = {

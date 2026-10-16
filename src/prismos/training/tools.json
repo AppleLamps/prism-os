@@ -2,447 +2,24 @@
   {
     "type": "function",
     "function": {
-      "name": "list_files",
-      "description": "List files in a Cabinet folder",
+      "name": "app",
+      "description": "Open, minimize, maximize, restore, close, move or resize an app",
       "parameters": {
         "type": "OBJECT",
         "properties": {
-          "path": {
+          "action": {
             "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          }
-        },
-        "required": [
-          "path"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "open_file",
-      "description": "Open a file or folder by Cabinet path",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          }
-        },
-        "required": [
-          "path"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "create_folder",
-      "description": "Create a Cabinet folder",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          }
-        },
-        "required": [
-          "path"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "create_document",
-      "description": "Create an empty text document",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          }
-        },
-        "required": [
-          "path"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "save_note_as",
-      "description": "Save the current Inkwell draft to a new file",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          }
-        },
-        "required": [
-          "path"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "duplicate_file",
-      "description": "Duplicate a file or folder",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          }
-        },
-        "required": [
-          "path"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "trash_file",
-      "description": "Move a file or folder to recoverable Trash",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          }
-        },
-        "required": [
-          "path"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "restore_file",
-      "description": "Restore an item from Trash",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          }
-        },
-        "required": [
-          "path"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "download_file",
-      "description": "Download a Cabinet file",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          }
-        },
-        "required": [
-          "path"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "delete_file",
-      "description": "Permanently delete an item from Trash",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          }
-        },
-        "required": [
-          "path"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "search_files",
-      "description": "Search all live files by name",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "query": {
-            "type": "STRING",
-            "description": "Part of the file name"
-          }
-        },
-        "required": [
-          "query"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "rename_file",
-      "description": "Rename a file or folder",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
+            "description": "What to do",
+            "enum": [
+              "open",
+              "minimize",
+              "maximize",
+              "restore",
+              "close",
+              "move",
+              "resize"
+            ]
           },
-          "new_name": {
-            "type": "STRING",
-            "description": "New item name"
-          }
-        },
-        "required": [
-          "path",
-          "new_name"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "move_file",
-      "description": "Move an item to a folder",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "path": {
-            "type": "STRING",
-            "description": "Cabinet path, absolute or relative to the current folder"
-          },
-          "destination": {
-            "type": "STRING",
-            "description": "Destination folder path"
-          }
-        },
-        "required": [
-          "path",
-          "destination"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "empty_trash",
-      "description": "Permanently delete everything in Trash",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {},
-        "required": []
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "import_files",
-      "description": "Open Cabinet so the user can press Import",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {},
-        "required": []
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "open_app",
-      "description": "Open, show or bring an app to the front",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "app": {
-            "type": "STRING",
-            "description": "The app",
-            "enum": [
-              "scope",
-              "inkwell",
-              "chroma",
-              "cabinet",
-              "browser",
-              "calculator",
-              "clock",
-              "terminal",
-              "settings",
-              "about"
-            ]
-          }
-        },
-        "required": [
-          "app"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "minimize_app",
-      "description": "Minimize an app into the dock",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "app": {
-            "type": "STRING",
-            "description": "The app",
-            "enum": [
-              "scope",
-              "inkwell",
-              "chroma",
-              "cabinet",
-              "browser",
-              "calculator",
-              "clock",
-              "terminal",
-              "settings",
-              "about"
-            ]
-          }
-        },
-        "required": [
-          "app"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "maximize_app",
-      "description": "Maximize an app to fill the screen",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "app": {
-            "type": "STRING",
-            "description": "The app",
-            "enum": [
-              "scope",
-              "inkwell",
-              "chroma",
-              "cabinet",
-              "browser",
-              "calculator",
-              "clock",
-              "terminal",
-              "settings",
-              "about"
-            ]
-          }
-        },
-        "required": [
-          "app"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "restore_app",
-      "description": "Restore a maximized or minimized app to its normal size",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "app": {
-            "type": "STRING",
-            "description": "The app",
-            "enum": [
-              "scope",
-              "inkwell",
-              "chroma",
-              "cabinet",
-              "browser",
-              "calculator",
-              "clock",
-              "terminal",
-              "settings",
-              "about"
-            ]
-          }
-        },
-        "required": [
-          "app"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "close_app",
-      "description": "Close an app",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "app": {
-            "type": "STRING",
-            "description": "The app",
-            "enum": [
-              "scope",
-              "inkwell",
-              "chroma",
-              "cabinet",
-              "browser",
-              "calculator",
-              "clock",
-              "terminal",
-              "settings",
-              "about"
-            ]
-          }
-        },
-        "required": [
-          "app"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "move_app",
-      "description": "Move an app's window to a part of the screen",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
           "app": {
             "type": "STRING",
             "description": "The app",
@@ -471,35 +48,10 @@
               "bottom_left",
               "bottom_right"
             ]
-          }
-        },
-        "required": [
-          "app",
-          "position"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "resize_app",
-      "description": "Resize a program window",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "app": {
-            "type": "STRING",
-            "description": "The program window: scope, inkwell or chroma",
-            "enum": [
-              "scope",
-              "inkwell",
-              "chroma"
-            ]
           },
           "size": {
             "type": "STRING",
-            "description": "The new size, or bigger or smaller than now",
+            "description": "The new size, for scope, inkwell or chroma",
             "enum": [
               "small",
               "medium",
@@ -510,8 +62,8 @@
           }
         },
         "required": [
-          "app",
-          "size"
+          "action",
+          "app"
         ]
       }
     }
@@ -519,11 +71,20 @@
   {
     "type": "function",
     "function": {
-      "name": "side_by_side",
-      "description": "Put two program windows next to each other, each on half the screen",
+      "name": "layout",
+      "description": "Arrange the windows",
       "parameters": {
         "type": "OBJECT",
         "properties": {
+          "action": {
+            "type": "STRING",
+            "description": "side_by_side puts two program windows on halves of the screen, show_desktop minimizes every window, reset puts the program windows back",
+            "enum": [
+              "side_by_side",
+              "show_desktop",
+              "reset"
+            ]
+          },
           "left": {
             "type": "STRING",
             "description": "The window on the left",
@@ -544,8 +105,7 @@
           }
         },
         "required": [
-          "left",
-          "right"
+          "action"
         ]
       }
     }
@@ -553,97 +113,43 @@
   {
     "type": "function",
     "function": {
-      "name": "show_desktop",
-      "description": "Minimize every window to show the desktop",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {},
-        "required": []
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "reset_layout",
-      "description": "Put the program windows back where they opened",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {},
-        "required": []
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "open_photo",
-      "description": "Open a photo in Chroma",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "photo": {
-            "type": "STRING",
-            "description": "The photo name, or its number from 1 to 12"
-          }
-        },
-        "required": [
-          "photo"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "next_photo",
-      "description": "Show the next photo in Chroma",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {},
-        "required": []
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "previous_photo",
-      "description": "Show the previous photo in Chroma",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {},
-        "required": []
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "close_photo",
-      "description": "Close the open photo and go back to the grid",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {},
-        "required": []
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "slideshow",
-      "description": "Start or stop a slideshow of the photos",
+      "name": "files",
+      "description": "Files and folders in Cabinet",
       "parameters": {
         "type": "OBJECT",
         "properties": {
           "action": {
             "type": "STRING",
-            "description": "start or stop",
+            "description": "What to do",
             "enum": [
-              "start",
-              "stop"
+              "list",
+              "open",
+              "create_folder",
+              "create_document",
+              "save_note_as",
+              "duplicate",
+              "rename",
+              "move",
+              "trash",
+              "restore",
+              "delete",
+              "empty_trash",
+              "download",
+              "search",
+              "import"
             ]
+          },
+          "path": {
+            "type": "STRING",
+            "description": "Cabinet path, absolute or relative to the current folder"
+          },
+          "to": {
+            "type": "STRING",
+            "description": "The new name, or the folder to move it to"
+          },
+          "query": {
+            "type": "STRING",
+            "description": "Part of a file name, to search"
           }
         },
         "required": [
@@ -655,23 +161,30 @@
   {
     "type": "function",
     "function": {
-      "name": "scope_show",
-      "description": "Show a list in Scope, the inspector of the program",
+      "name": "photos",
+      "description": "Photos in Chroma",
       "parameters": {
         "type": "OBJECT",
         "properties": {
-          "view": {
+          "action": {
             "type": "STRING",
-            "description": "Which list",
+            "description": "What to do",
             "enum": [
-              "state",
-              "operations",
-              "outputs"
+              "open",
+              "next",
+              "previous",
+              "close",
+              "start_slideshow",
+              "stop_slideshow"
             ]
+          },
+          "photo": {
+            "type": "STRING",
+            "description": "The photo name, or its number from 1 to 12"
           }
         },
         "required": [
-          "view"
+          "action"
         ]
       }
     }
@@ -679,15 +192,18 @@
   {
     "type": "function",
     "function": {
-      "name": "scope_list",
-      "description": "Move through the list in Scope",
+      "name": "scope",
+      "description": "Show a list in Scope, the inspector of the program, or move through it",
       "parameters": {
         "type": "OBJECT",
         "properties": {
           "action": {
             "type": "STRING",
-            "description": "How to move",
+            "description": "The list to show, or how to move",
             "enum": [
+              "state",
+              "operations",
+              "outputs",
               "up",
               "down",
               "page_up",
@@ -706,27 +222,28 @@
   {
     "type": "function",
     "function": {
-      "name": "write_note",
-      "description": "Write text into the note in Inkwell",
+      "name": "note",
+      "description": "The note in Inkwell",
       "parameters": {
         "type": "OBJECT",
         "properties": {
+          "action": {
+            "type": "STRING",
+            "description": "append adds text, replace replaces the note, clear erases it, read reads it",
+            "enum": [
+              "append",
+              "replace",
+              "clear",
+              "read"
+            ]
+          },
           "text": {
             "type": "STRING",
             "description": "The text to write"
-          },
-          "mode": {
-            "type": "STRING",
-            "description": "append adds to the note, replace replaces it",
-            "enum": [
-              "append",
-              "replace"
-            ]
           }
         },
         "required": [
-          "text",
-          "mode"
+          "action"
         ]
       }
     }
@@ -734,62 +251,23 @@
   {
     "type": "function",
     "function": {
-      "name": "clear_note",
-      "description": "Erase the note in Inkwell",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {},
-        "required": []
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "read_note",
-      "description": "Read the note in Inkwell",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {},
-        "required": []
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "set_theme",
-      "description": "Set light or dark appearance",
+      "name": "settings",
+      "description": "Change one or more settings",
       "parameters": {
         "type": "OBJECT",
         "properties": {
           "theme": {
             "type": "STRING",
-            "description": "light, dark, or auto to follow the device",
+            "description": "Appearance, auto follows the device",
             "enum": [
               "light",
               "dark",
               "auto"
             ]
-          }
-        },
-        "required": [
-          "theme"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "set_accent",
-      "description": "Set the accent color",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "color": {
+          },
+          "accent": {
             "type": "STRING",
-            "description": "The color",
+            "description": "Accent color",
             "enum": [
               "blue",
               "teal",
@@ -799,82 +277,35 @@
               "red",
               "graphite"
             ]
-          }
-        },
-        "required": [
-          "color"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "set_wallpaper",
-      "description": "Change the wallpaper scene",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "scene": {
+          },
+          "wallpaper": {
             "type": "STRING",
-            "description": "The scene",
+            "description": "Wallpaper scene",
             "enum": [
               "dunes",
               "lagoon",
               "ember",
               "graphite"
             ]
-          }
-        },
-        "required": [
-          "scene"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "set_motion",
-      "description": "Turn the wallpaper animation on or off",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
+          },
           "motion": {
             "type": "STRING",
-            "description": "on or off",
+            "description": "Wallpaper animation",
             "enum": [
               "on",
               "off"
             ]
-          }
-        },
-        "required": [
-          "motion"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "set_arcs",
-      "description": "Show or hide the arcs of the program weights behind the windows",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "visibility": {
+          },
+          "arcs": {
             "type": "STRING",
-            "description": "shown or hidden",
+            "description": "The arcs of the program weights behind the windows",
             "enum": [
               "shown",
               "hidden"
             ]
           }
         },
-        "required": [
-          "visibility"
-        ]
+        "required": []
       }
     }
   },
@@ -900,20 +331,24 @@
   {
     "type": "function",
     "function": {
-      "name": "stopwatch",
-      "description": "Use the stopwatch in Clock",
+      "name": "timer",
+      "description": "The countdown timer in Clock",
       "parameters": {
         "type": "OBJECT",
         "properties": {
           "action": {
             "type": "STRING",
-            "description": "start, stop, lap or reset",
+            "description": "What to do",
             "enum": [
               "start",
-              "stop",
-              "lap",
-              "reset"
+              "pause",
+              "resume",
+              "cancel"
             ]
+          },
+          "duration": {
+            "type": "STRING",
+            "description": "How long, e.g. 5 minutes"
           }
         },
         "required": [
@@ -925,37 +360,19 @@
   {
     "type": "function",
     "function": {
-      "name": "start_timer",
-      "description": "Start a countdown timer in Clock",
-      "parameters": {
-        "type": "OBJECT",
-        "properties": {
-          "duration": {
-            "type": "STRING",
-            "description": "How long, e.g. 5 minutes"
-          }
-        },
-        "required": [
-          "duration"
-        ]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "timer",
-      "description": "Pause, resume or cancel the timer in Clock",
+      "name": "stopwatch",
+      "description": "The stopwatch in Clock",
       "parameters": {
         "type": "OBJECT",
         "properties": {
           "action": {
             "type": "STRING",
-            "description": "pause, resume or cancel",
+            "description": "What to do",
             "enum": [
-              "pause",
-              "resume",
-              "cancel"
+              "start",
+              "stop",
+              "lap",
+              "reset"
             ]
           }
         },
@@ -1025,14 +442,14 @@
   {
     "type": "function",
     "function": {
-      "name": "browser_navigate",
+      "name": "browser",
       "description": "Go back, forward, reload, or to Favorites in Browser",
       "parameters": {
         "type": "OBJECT",
         "properties": {
           "action": {
             "type": "STRING",
-            "description": "back, forward, reload or home",
+            "description": "What to do",
             "enum": [
               "back",
               "forward",

@@ -7,11 +7,12 @@ import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import {resolve} from 'node:path'
 import {test} from 'bun:test'
-import {toolDeclarations, validateCall} from '../../src/prismos/commands.ts'
+import {validateCall} from '../../src/prismos/commands.ts'
+import {expandCall, modelTools} from '../../src/prismos/model-tools.ts'
 import {describeCall} from '../../src/prismos/command-center.ts'
 import {quickCommands} from '../../src/prismos/quick-commands.ts'
 
-type Call = {name: string, arguments: Record<string, string>}
+type Call = {name: string, arguments: Record<string, unknown>}
 type Row = {messages: [{role: string, content: string}, {role: string, content: string}, {role: string, content?: string, tool_calls?: {function: Call}[]}]}
 
 const folder = resolve(import.meta.dir, '../../src/prismos/training')
@@ -19,15 +20,32 @@ const read = (name: string) => readFileSync(resolve(folder, name), 'utf8')
 const rows = (name: string) => read(name).trim().split('\n').map(line => JSON.parse(line) as Row)
 const train = rows('train.jsonl')
 const evaluation = rows('eval.jsonl')
-const calls = (row: Row) => row.messages[2].tool_calls?.map(call => call.function) ?? []
 const user = (row: Row) => row.messages[1].content
+// The model's grouped calls, and the commands of commands.ts they stand for.
+const grouped = (row: Row) => row.messages[2].tool_calls?.map(call => call.function) ?? []
+const calls = (row: Row) => grouped(row).flatMap(call => {
+  const expansion = expandCall(call.name, call.arguments)
+  assert.ok(expansion.ok, `${user(row)} -> ${call.name}: ${expansion.ok ? '' : expansion.reason}`)
+  return expansion.calls
+})
 
 test('the data was written from today\'s commands', () => {
-  assert.deepEqual(JSON.parse(read('tools.json')), JSON.parse(JSON.stringify(toolDeclarations)), 'run bun scripts/prismos-dataset.ts')
+  assert.deepEqual(JSON.parse(read('tools.json')), JSON.parse(JSON.stringify(modelTools)), 'run bun scripts/prismos-dataset.ts')
 })
 
 test('every call is valid, and every command is taught and tested', () => {
-  const names = toolDeclarations.map(tool => tool.function.name)
+  // Every command a declaration can name: each action of each tool, and each setting.
+  const names = [...new Set(modelTools.flatMap(tool => {
+    const {properties} = tool.function.parameters
+    const tries = tool.function.name === 'settings'
+      ? Object.entries(properties).map(([key, parameter]) => ({[key]: parameter.enum![0]}))
+      : (properties['action']?.enum ?? ['']).map(action => action === '' ? {} : {action})
+    return tries.flatMap(args => {
+      const expansion = expandCall(tool.function.name, args)
+      return expansion.ok ? expansion.calls.map(call => call.name) : []
+    })
+  }))]
+  assert.equal(names.length, 50)
   for (const [label, data, minimum] of [['train', train, 40], ['eval', evaluation, 3]] as const) {
     const counts = new Map<string, number>()
     for (const row of data) {
@@ -65,7 +83,7 @@ test('a copied argument can be copied: no sentence in capitals hides the words i
     if (text !== text.toUpperCase() || !/[A-Z]/u.test(text)) continue
     for (const call of calls(row)) {
       for (const [key, value] of Object.entries(call.arguments)) {
-        assert.ok(!copied.has(key) || !/[a-z]/u.test(value), `"${text}" is in capitals but copies "${value}"`)
+        assert.ok(!copied.has(key) || !/[a-z]/u.test(String(value)), `"${text}" is in capitals but copies "${String(value)}"`)
       }
     }
   }

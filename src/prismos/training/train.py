@@ -24,10 +24,11 @@ Check it first, locally and without a GPU:
 
   python3 src/prismos/training/train.py --data src/prismos/training --repo x --check-data
 
-How it uses the GPU. Every prompt starts with the same ~3,290 tokens, the 50 tool
-declarations, and only the last ~40 differ. So each batch runs that shared prefix once,
-copies its keys and values to every row, and runs only each row's own tokens on top:
-about a tenth of the work of running every row whole, with the same loss and gradients.
+How it uses the GPU. Every prompt starts with the same ~1,710 tokens, the 16 grouped
+tool declarations of src/prismos/model-tools.ts, and only the last ~40 differ. So each
+batch runs that shared prefix once, copies its keys and values to every row, and runs
+only each row's own tokens on top: about a twelfth of the work of running every row
+whole, with the same loss and gradients.
 Evaluation does the same and decodes up to 64 sentences at once, grouped by length so no
 row is padded. The weights stay in fp32 for AdamW and the math runs in bf16; weights
 held in bf16 round away most small updates. With every update now landing, the default
@@ -231,25 +232,46 @@ def plain_text(value):
 
 
 def canonical(calls):
+    """The model's grouped calls (src/prismos/model-tools.ts), each argument compared by
+    what it means. The page's shortcuts count as written out: text alone is a note to
+    add, a length alone starts a timer, and a settings call that changes two settings is
+    the two calls, in the order of their names."""
     result = []
     for name, arguments in calls:
+        arguments = {key: str(value).strip() for key, value in arguments.items()}
+        if name == "note" and "action" not in arguments and "text" in arguments:
+            arguments["action"] = "append"
+        if name == "timer" and "action" not in arguments and "duration" in arguments:
+            arguments["action"] = "start"
+        if name == "settings" and len(arguments) > 1:
+            result.extend(canonical([(name, {key: value}) for key, value in arguments.items()]))
+            continue
         normalized = {}
         for key, value in arguments.items():
-            value = str(value).strip()
-            if name == "open_photo" and key == "photo":
+            if name == "photos" and key == "photo":
                 normalized[key] = photo_index(value)
             elif name == "open_website" and key == "address":
                 normalized[key] = web_address(value)
             elif name == "calculate":
                 normalized[key] = math_text(value)
-            elif name == "start_timer":
+            elif name == "timer" and key == "duration":
                 normalized[key] = duration_seconds(value) or plain_text(value)
-            elif name == "search_web" or (name == "write_note" and key == "text"):
+            elif (name == "search_web" and key == "query") or (name == "note" and key == "text"):
                 normalized[key] = plain_text(value)
             else:
                 normalized[key] = value.lower().replace(" ", "_")
         result.append((name, tuple(sorted(normalized.items()))))
-    return result
+    # Settings said in one breath are the same settings in either order.
+    ordered, run = [], []
+    for call in result + [None]:
+        if call is not None and call[0] == "settings":
+            run.append(call)
+            continue
+        ordered.extend(sorted(run, key=repr))
+        run = []
+        if call is not None:
+            ordered.append(call)
+    return ordered
 
 
 def expected(row):
@@ -260,12 +282,19 @@ def expected(row):
 
 
 def kind(row):
+    """What a row asks for: a reply, several calls, or a tool and its action."""
     calls, reply = expected(row)
     if reply is not None:
         return "reply"
     if len(calls) > 2:
         return "three calls"
-    return "two calls" if len(calls) > 1 else calls[0][0]
+    if len(calls) > 1:
+        return "two calls"
+    name, arguments = calls[0]
+    if name == "settings":
+        return f"settings {next(iter(arguments))}"
+    return f"{name} {arguments['action']}" if "action" in arguments else name
+
 
 
 # ---------------------------------------------------------------------------------------
@@ -297,24 +326,31 @@ def check_data():
             if len(format_calls(calls)) / 3.5 > MAX_NEW_TOKENS - 20:
                 problems.append(f"{split}: {row['messages'][1]['content']!r} may need more than {MAX_NEW_TOKENS} tokens")
     same = [
-        ("calculate", {"expression": "17 times 23"}, {"expression": "17 * 23"}),
-        ("calculate", {"expression": "10% of 250"}, {"expression": "10% * 250"}),
-        ("calculate", {"expression": "250x0.75"}, {"expression": "250 * 0.75"}),
-        ("start_timer", {"duration": "an hour and a half"}, {"duration": "90 minutes"}),
-        ("start_timer", {"duration": "1:30"}, {"duration": "90 seconds"}),
-        ("start_timer", {"duration": "twenty five minutes"}, {"duration": "25 min"}),
-        ("search_web", {"query": "What's the weather in Tokyo"}, {"query": "whats the weather in tokyo?"}),
-        ("open_website", {"address": "wikipedia dot org"}, {"address": "https://www.wikipedia.org/"}),
-        ("write_note", {"text": "\"buy milk\"", "mode": "append"}, {"text": "Buy milk.", "mode": "append"}),
-        ("open_photo", {"photo": "Blue Lagoon"}, {"photo": "11"}),
+        ([("calculate", {"expression": "17 times 23"})], [("calculate", {"expression": "17 * 23"})]),
+        ([("calculate", {"expression": "10% of 250"})], [("calculate", {"expression": "10% * 250"})]),
+        ([("calculate", {"expression": "250x0.75"})], [("calculate", {"expression": "250 * 0.75"})]),
+        ([("timer", {"action": "start", "duration": "an hour and a half"})], [("timer", {"action": "start", "duration": "90 minutes"})]),
+        ([("timer", {"action": "start", "duration": "1:30"})], [("timer", {"duration": "90 seconds"})]),
+        ([("timer", {"action": "start", "duration": "twenty five minutes"})], [("timer", {"action": "start", "duration": "25 min"})]),
+        ([("search_web", {"query": "What's the weather in Tokyo"})], [("search_web", {"query": "whats the weather in tokyo?"})]),
+        ([("open_website", {"address": "wikipedia dot org"})], [("open_website", {"address": "https://www.wikipedia.org/"})]),
+        ([("note", {"action": "append", "text": "\"buy milk\""})], [("note", {"text": "Buy milk."})]),
+        ([("photos", {"action": "open", "photo": "Blue Lagoon"})], [("photos", {"action": "open", "photo": "11"})]),
+        ([("scope", {"action": "page down"})], [("scope", {"action": "page_down"})]),
+        ([("settings", {"theme": "dark"}), ("settings", {"accent": "teal"})], [("settings", {"accent": "teal", "theme": "dark"})]),
     ]
-    for name, a, b in same:
-        if canonical([(name, a)]) != canonical([(name, b)]):
-            problems.append(f"the scorer tells apart equal calls: {name} {a} and {b}")
-    different = [("calculate", {"expression": "17 * 23"}, {"expression": "17 + 23"}), ("start_timer", {"duration": "5 minutes"}, {"duration": "5 seconds"})]
-    for name, a, b in different:
-        if canonical([(name, a)]) == canonical([(name, b)]):
-            problems.append(f"the scorer confuses {name} {a} and {b}")
+    for a, b in same:
+        if canonical(a) != canonical(b):
+            problems.append(f"the scorer tells apart equal calls: {a} and {b}")
+    different = [
+        ([("calculate", {"expression": "17 * 23"})], [("calculate", {"expression": "17 + 23"})]),
+        ([("timer", {"action": "start", "duration": "5 minutes"})], [("timer", {"action": "start", "duration": "5 seconds"})]),
+        ([("app", {"action": "open", "app": "clock"}), ("app", {"action": "close", "app": "clock"})], [("app", {"action": "close", "app": "clock"}), ("app", {"action": "open", "app": "clock"})]),
+        ([("files", {"action": "rename", "path": "/a.txt", "to": "b.txt"})], [("files", {"action": "move", "path": "/a.txt", "to": "b.txt"})]),
+    ]
+    for a, b in different:
+        if canonical(a) == canonical(b):
+            problems.append(f"the scorer confuses {a} and {b}")
     names = {tool["function"]["name"] for tool in tools}
     seen = {name for row in train_rows for name, _ in expected(row)[0]}
     for name in sorted(names - seen):
@@ -513,7 +549,7 @@ if not args.skip_base_eval:
 # ---------------------------------------------------------------------------------------
 # Training: full fine-tune, loss on the answer tokens only. The logits are computed only
 # at those positions, since the 262,144-word vocabulary makes logits for a whole
-# 3,300-token prompt cost gigabytes.
+# 1,700-token prompt cost gigabytes.
 
 model.train()
 optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.0, betas=(0.9, 0.98), fused=device == "cuda")
@@ -646,7 +682,7 @@ helper("onnx_weights.py")["write_weights"](state, reference, str(web_file), laye
 del state
 print(f"wrote the fine-tuned weights into {WEB_REFERENCE}'s q4f16 graph", flush=True)
 # Logits for the last position only, see last_token_logits.py: the graph computes them
-# for the whole 3,300-token prompt, about 3 GB that generation never reads.
+# for the whole 1,700-token prompt, about 0.9 GB that generation never reads.
 helper("last_token_logits.py")["last_token_logits"](str(web_file))
 
 for name in ["tokenizer.json", "tokenizer_config.json", "chat_template.jinja", "config.json", "generation_config.json"]:

@@ -1,6 +1,7 @@
 // Writes the fine-tuning data for the command center's model, from the command list in
 // src/prismos/commands.ts. Each row is one exchange: what a person types, and either the
-// calls the model should make or the reply it should write. The tools aren't repeated in
+// calls the model should make or the reply it should write. Rows are made with the
+// commands of commands.ts and written as the model's grouped calls, see model-tools.ts. The tools aren't repeated in
 // every row: training/train.py reads them from tools.json and puts them in each prompt,
 // as the page does.
 //
@@ -14,7 +15,8 @@
 import {existsSync, readFileSync, mkdirSync, writeFileSync} from 'node:fs'
 import {resolve} from 'node:path'
 import {photoNames} from '../src/handwiredos/photo-gallery.ts'
-import {type App, type ProgramApp, accentNames, apps, cities, programApps, sceneNames, toolDeclarations, validateCall} from '../src/prismos/commands.ts'
+import {type App, type ProgramApp, accentNames, apps, cities, programApps, sceneNames, validateCall} from '../src/prismos/commands.ts'
+import {expandCall, groupCall, modelTools} from '../src/prismos/model-tools.ts'
 
 type Call = {name: string, arguments: Record<string, string>}
 // keepCase: the answer copies words of the sentence (a path, a note, a search), so the
@@ -570,10 +572,20 @@ function generate(split: Split, count: number) {
     for (const call of row.calls ?? []) {
       const result = validateCall(call.name, call.arguments)
       if (!result.ok) throw new Error(`generated an invalid call ${JSON.stringify(call)}: ${result.reason}`)
+      const grouped = groupCall(call)
+      const expansion = expandCall(grouped.name, grouped.arguments)
+      if (!expansion.ok || expansion.calls.length !== 1 || !sameCall(expansion.calls[0]!, call)) {
+        throw new Error(`${JSON.stringify(call)} doesn't come back from the model's ${JSON.stringify(grouped)}`)
+      }
     }
     rows.push(row)
   }
   return rows
+}
+
+function sameCall(a: {name: string, arguments: Record<string, unknown>}, b: {name: string, arguments: Record<string, unknown>}) {
+  const sorted = (args: Record<string, unknown>) => JSON.stringify(Object.entries(args).sort(([x], [y]) => x.localeCompare(y)))
+  return a.name === b.name && sorted(a.arguments) === sorted(b.arguments)
 }
 
 // The chat that the page sends, without the tools: the same developer line, the user's
@@ -582,7 +594,7 @@ export const developerPrompt = 'You are a model that can do function calling wit
 
 function toMessages(row: Row) {
   const assistant = row.calls !== undefined
-    ? {role: 'assistant', tool_calls: row.calls.map(call => ({type: 'function', function: {name: call.name, arguments: call.arguments}}))}
+    ? {role: 'assistant', tool_calls: row.calls.map(groupCall).map(call => ({type: 'function', function: call}))}
     : {role: 'assistant', content: row.reply}
   return {messages: [{role: 'developer', content: developerPrompt}, {role: 'user', content: row.user}, assistant]}
 }
@@ -601,7 +613,7 @@ if (import.meta.main) {
   const heldOut = evaluation.filter(row => !trainUsers.has(row.user.toLowerCase()))
   write('train.jsonl', train.map(row => JSON.stringify(toMessages(row))).join('\n') + '\n')
   write('eval.jsonl', heldOut.map(row => JSON.stringify(toMessages(row))).join('\n') + '\n')
-  write('tools.json', JSON.stringify(toolDeclarations, null, 2) + '\n')
+  write('tools.json', JSON.stringify(modelTools, null, 2) + '\n')
   const count = (rows: Row[], test: (row: Row) => boolean) => rows.filter(test).length
   console.log(`train: ${train.length} rows, ${count(train, row => (row.calls?.length ?? 0) > 1)} with two calls or more (${count(train, row => (row.calls?.length ?? 0) > 2)} with three), ${count(train, row => row.reply !== undefined)} replies`)
   console.log(`eval: ${heldOut.length} rows (${evaluation.length - heldOut.length} dropped as seen in train), ${count(heldOut, row => (row.calls?.length ?? 0) > 1)} with two calls or more (${count(heldOut, row => (row.calls?.length ?? 0) > 2)} with three), ${count(heldOut, row => row.reply !== undefined)} replies`)

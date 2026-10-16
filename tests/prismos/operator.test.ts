@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import {test} from 'bun:test'
 import {createWindowManagerMachine} from '../../src/handwiredos/window-manager.ts'
 import {arrangePrismWindows} from '../../src/prismos/arrangement.ts'
-import {appWindowIndex, toolDeclarations, validateCall, type Command} from '../../src/prismos/commands.ts'
+import {appWindowIndex, validateCall, type Command} from '../../src/prismos/commands.ts'
+import {expandCall, modelTools} from '../../src/prismos/model-tools.ts'
 import {createOperator, type MachineDriver, type PageEffects, type PanelControls, type PanelState, type Rectangle} from '../../src/prismos/operator.ts'
 import {defaultSettings, type Settings} from '../../src/prismos/settings.ts'
 import {framingFor} from '../../src/prismos/web-address.ts'
@@ -99,15 +100,24 @@ function setup(width?: number, height?: number) {
 const insideWorkspace = (rectangle: Rectangle, width = 1280, height = 800) =>
   rectangle.left >= 0 && rectangle.top >= 36 && rectangle.left + rectangle.width <= width && rectangle.top + rectangle.height <= height - 76
 
-test('every declared tool validates with arguments from its own enums', () => {
-  for (const declaration of toolDeclarations) {
-    const args: Record<string, unknown> = {}
-    for (const [key, parameter] of Object.entries(declaration.function.parameters.properties)) {
-      args[key] = parameter.enum?.[0] ?? ({photo: '3', expression: '2 + 2', city: 'tokyo', address: 'wikipedia.org', duration: '5 minutes'} as Record<string, string>)[key] ?? 'hello'
+test('every action of every declaration validates with arguments from its own enums', () => {
+  const samples: Record<string, string> = {photo: '3', expression: '2 + 2', city: 'tokyo', address: 'wikipedia.org', duration: '5 minutes', path: '/Documents', to: 'Archive', query: 'notes', text: 'hello'}
+  for (const declaration of modelTools) {
+    const {name, parameters} = declaration.function
+    for (const action of parameters.properties['action']?.enum ?? [undefined]) {
+      const args: Record<string, unknown> = {}
+      for (const [key, parameter] of Object.entries(parameters.properties)) {
+        args[key] = key === 'action' ? action : parameter.enum?.[0] ?? samples[key] ?? 'hello'
+      }
+      if (name === 'layout') args['right'] = 'chroma'
+      if (name === 'app' && action === 'resize') args['app'] = 'chroma'
+      const expansion = expandCall(name, args)
+      assert.ok(expansion.ok, `${name} ${String(action)}: ${expansion.ok ? '' : expansion.reason}`)
+      for (const call of expansion.calls) {
+        const result = validateCall(call.name, call.arguments)
+        assert.ok(result.ok, `${name} ${String(action)} -> ${call.name}: ${result.ok ? '' : result.reason}`)
+      }
     }
-    if (declaration.function.name === 'side_by_side') args['right'] = 'chroma'
-    const result = validateCall(declaration.function.name, args)
-    assert.ok(result.ok, `${declaration.function.name}: ${result.ok ? '' : result.reason}`)
   }
 })
 
