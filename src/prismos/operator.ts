@@ -25,6 +25,7 @@ import {
 import {type Command, type PanelAppName, type ProgramApp, appTitle, appWindowIndex, cities, isProgramApp, panelApps, programApps, scopeViews} from './commands.ts'
 import {evaluateExpression, formatResult, prettyExpression} from './expression.ts'
 import {type Settings, accents, scenes} from './settings.ts'
+import {type Framing, pageName, searchEngine} from './web-address.ts'
 
 export type Machine = ReturnType<typeof createWindowManagerMachine>
 export type Point = {x: number, y: number}
@@ -59,6 +60,9 @@ export type PanelControls = {
   sendBehind(): void
   // The stopwatch in Clock, which the shell opens first. Resolves to the reply.
   stopwatch(action: Extract<Command, {name: 'stopwatch'}>['action']): string
+  // Browser, which the shell opens first, at a URL: whether the page shows or its site
+  // refuses to be framed.
+  browse(url: string): Framing
 }
 
 export type PageEffects = {
@@ -531,6 +535,16 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
         const place = command.city === 'here' ? 'here' : `in ${command.city.replace(/\b\w/gu, letter => letter.toUpperCase())}`
         return `It's ${time} ${place}, ${day}.`
       }
+      case 'open_website': {
+        const framing = page.panels.browse(command.url)
+        const name = pageName(command.url)
+        if (framing.kind === 'frame') return `Opened ${name} in Browser.`
+        if (framing.kind === 'self') return 'That\'s Prism OS itself, which Browser doesn\'t show inside itself.'
+        return `${framing.site} doesn't let other sites show its pages, so ${name} can't open inside Prism OS. Browser's Open in New Tab button can open it.`
+      }
+      case 'search_web':
+        page.panels.browse(searchEngine.url(command.query))
+        return `Searching ${searchEngine.name} for "${command.query}".`
       case 'get_stats': {
         const s = stats()
         return `The program behind Prism OS has ${format(s.sourceCells)} source cells, ${format(s.operations)} live operations in ${format(s.layers)} layers, and ${format(s.weights)} stored weights (${format(s.kilobytes)} KB). None of them were trained: every weight was written by hand.`
@@ -564,10 +578,11 @@ export function createOperator(driver: MachineDriver, page: PageEffects) {
 export type Operator = ReturnType<typeof createOperator>
 
 export const explanations: Record<Extract<Command, {name: 'explain'}>['topic'], string> = {
-  prism_os: 'Prism OS is a small desktop in your browser. Scope, Inkwell and Chroma are windows of a handwired numeric program: a fixed neural network whose weights were written by hand instead of trained, which computes every move, click and spring. Calculator, Clock, Terminal and Settings run beside it in plain JavaScript.',
+  prism_os: 'Prism OS is a small desktop in your browser. Scope, Inkwell and Chroma are windows of a handwired numeric program: a fixed neural network whose weights were written by hand instead of trained, which computes every move, click and spring. Cabinet, Browser, Calculator, Clock, Terminal and Settings run beside it in plain JavaScript.',
   scope: 'Scope is the inspector. It lists the program that runs Prism OS: its source cells, its live operations and its outputs, each with the value from the latest frame. Its footer counts the layers and weights and charts how long each frame takes.',
   inkwell: 'Inkwell is the note: a plain text field the browser edits. The program decides where the window is and whether it has focus, and the text itself stays out of the program. Your note is saved in this browser.',
   chroma: `Chroma is the photo gallery: ${photoCount} photos in a grid. Click one, or ask me to open one by name or number, and it zooms open on a spring. Arrows step through them and Escape goes back to the grid.`,
+  browser: `Browser shows web pages right on the desktop, in a sandboxed frame that can never navigate Prism OS away. Type an address or words to search ${searchEngine.name}, or ask me, e.g. "go to wikipedia.org". Some sites, like Google, YouTube and GitHub, refuse to be shown inside another site; Browser offers to open those in a new tab.`,
   calculator: 'Calculator is a pocket calculator with keyboard input and repeated equals. You can also ask me for arithmetic directly, e.g. "what is 17 times 23".',
   clock: 'Clock shows world clocks with analog faces and has a stopwatch with laps. Ask me "what time is it in Tokyo" or "start the stopwatch".',
   terminal: 'Terminal takes typed commands: open and close apps, set the theme, accent and wallpaper, print the program\'s stats, and a few classics like neofetch. Type help in it for the list.',

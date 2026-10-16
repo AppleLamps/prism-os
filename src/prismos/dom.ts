@@ -42,5 +42,10 @@ export const icons = {
   inkwell: '<path d="M6.5 8.5h11M6.5 12.5h11M6.5 16.5h7"/>',
   document: '<path d="M6.5 3.5h7.5l4 4v13h-11.5z"/><path d="M13.5 3.5v4.5h4.5"/>',
   chroma: '<circle cx="16" cy="8" r="2.2"/><path d="M3.5 18.5l5.5-6 4 4 3-3 4.5 5"/>',
+  browser: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.3 3.6 5.2 3.6 8.5s-1.2 6.2-3.6 8.5c-2.4-2.3-3.6-5.2-3.6-8.5s1.2-6.2 3.6-8.5z"/>',
+  back: '<path d="M14.5 6l-6 6 6 6"/>',
+  forward: '<path d="M9.5 6l6 6-6 6"/>',
+  reload: '<path d="M18.5 12a6.5 6.5 0 1 1-1.9-4.6"/><path d="M17.5 4v4h-4"/>',
+  external: '<path d="M13.5 5.5H18.5v5M18.5 5.5l-7.5 7.5M16.5 14v4.5h-11v-11H10"/>',
   command: '<path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z"/>',
 } as const

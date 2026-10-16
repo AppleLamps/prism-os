@@ -12,10 +12,11 @@ import {fileCommandNames, validateFileCommand, type FileCommand} from './file-co
 import {photoNames} from '../handwiredos/photo-gallery.ts'
 import {evaluateExpression} from './expression.ts'
 import {type AccentName, type Appearance, type SceneName, accents, scenes} from './settings.ts'
+import {maximumSearchText, webAddress} from './web-address.ts'
 
 // The handwired program's three windows, and Prism's own apps in glass panels.
 export const programApps = ['scope', 'inkwell', 'chroma'] as const
-export const panelApps = ['cabinet', 'calculator', 'clock', 'terminal', 'settings', 'about'] as const
+export const panelApps = ['cabinet', 'browser', 'calculator', 'clock', 'terminal', 'settings', 'about'] as const
 export const apps = [...programApps, ...panelApps] as const
 export type ProgramApp = (typeof programApps)[number]
 export type PanelAppName = (typeof panelApps)[number]
@@ -27,6 +28,7 @@ export const isProgramApp = (app: App): app is ProgramApp => (programApps as rea
 export const appWindowIndex: Record<ProgramApp, number> = {scope: 0, inkwell: 1, chroma: 2}
 export const appTitle: Record<App, string> = {
   cabinet: 'Cabinet',
+  browser: 'Browser',
   scope: 'Scope',
   inkwell: 'Inkwell',
   chroma: 'Chroma',
@@ -46,7 +48,7 @@ export const accentNames = Object.keys(accents) as AccentName[]
 export const sceneNames = Object.keys(scenes) as SceneName[]
 export const onOff = ['on', 'off'] as const
 export const arcVisibilities = ['shown', 'hidden'] as const
-export const topics = ['prism_os', 'scope', 'inkwell', 'chroma', 'calculator', 'clock', 'terminal', 'handwired', 'command_center'] as const
+export const topics = ['prism_os', 'scope', 'inkwell', 'chroma', 'browser', 'calculator', 'clock', 'terminal', 'handwired', 'command_center'] as const
 export const noteModes = ['append', 'replace'] as const
 export const slideshowActions = ['start', 'stop'] as const
 export const stopwatchActions = ['start', 'stop', 'lap', 'reset'] as const
@@ -116,6 +118,8 @@ export type Command = FileCommand
   | {name: 'calculate', expression: string}
   | {name: 'stopwatch', action: (typeof stopwatchActions)[number]}
   | {name: 'world_time', city: string}
+  | {name: 'open_website', url: string}
+  | {name: 'search_web', query: string}
   | {name: 'get_stats'}
   | {name: 'explain', topic: (typeof topics)[number]}
 
@@ -220,6 +224,12 @@ export const toolDeclarations: readonly ToolDeclaration[] = [
   tool('world_time', 'Tell the time in a city', {
     city: {type: 'STRING', description: 'The city, or here'},
   }),
+  tool('open_website', 'Open a web page in Browser', {
+    address: {type: 'STRING', description: 'The web address, e.g. wikipedia.org'},
+  }),
+  tool('search_web', 'Search the web in Browser', {
+    query: {type: 'STRING', description: 'What to search for'},
+  }),
   tool('get_stats', 'Report the live numbers of the program that runs Prism OS'),
   tool('explain', 'Explain a part of Prism OS', {
     topic: {type: 'STRING', description: 'What to explain', enum: topics},
@@ -229,6 +239,7 @@ export const toolDeclarations: readonly ToolDeclaration[] = [
 // The words people use for each app, besides its name. Lowercase.
 export const appAliases: Record<App, readonly string[]> = {
   cabinet: ['cabinet', 'files', 'file manager', 'the files', 'the file manager'],
+  browser: ['browser', 'web browser', 'the browser', 'the web browser', 'internet', 'the internet', 'the web'],
   scope: ['scope', 'monitor', 'inspector', 'the inspector', 'circuit inspector'],
   inkwell: ['inkwell', 'notes', 'note', 'the note', 'notepad', 'ink well'],
   chroma: ['chroma', 'photos', 'photo', 'gallery', 'pictures', 'the gallery', 'images'],
@@ -409,6 +420,15 @@ export function validateCall(name: string, args: Readonly<Record<string, unknown
     case 'world_time': {
       const city = parseCity(args['city'] ?? 'here')
       return city === null ? fail(`I know the time in ${Object.keys(cities).filter(key => key !== 'here').map(key => key.replace(/\b\w/gu, letter => letter.toUpperCase())).join(', ')}.`) : done({name, city})
+    }
+    case 'open_website': {
+      const url = webAddress(args['address'])
+      return url === null ? fail('That isn\'t a web address. Try one like wikipedia.org, or ask me to search the web.') : done({name, url})
+    }
+    case 'search_web': {
+      const query = args['query']
+      if (typeof query !== 'string' || query.trim() === '') return fail('What should I search for?')
+      return done({name, query: query.trim().slice(0, maximumSearchText)})
     }
     case 'explain': {
       const topic = oneOf(topics, args['topic'])

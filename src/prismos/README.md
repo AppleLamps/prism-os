@@ -9,7 +9,7 @@
 | Look | Warm paper desk | Liquid glass windows, light and dark schemes, dune wallpaper, system-blue accent, traffic-light buttons, an app-icon dock |
 | Layout | Magazine-style tiling | Gentle **cascade** (each window offset down-right) |
 | Program windows | Monitor, Notes, Photos | **Scope** (circuit inspector), **Inkwell** (notes), **Chroma** (gallery) |
-| Prism apps | None | **Cabinet** (files), **Calculator**, **Clock** (world clocks, stopwatch), **Terminal**, **Settings**, **About**, in glass panels beside the program |
+| Prism apps | None | **Cabinet** (files), **Browser** (web pages), **Calculator**, **Clock** (world clocks, stopwatch), **Terminal**, **Settings**, **About**, in glass panels beside the program |
 | System | Links in a bar | A Mac-style menu bar (prism logo, the front app's name, clock), **Spotlight** (⌘K or Ctrl+K), **Control Center**, saved preferences: appearance, accent, four wallpapers, motion, weight arcs |
 | Program | 9,909 weights, 130 layers | Shared circuit, with runtime gallery pages; 10,163 weights and 132 layers |
 
@@ -37,6 +37,7 @@ Every call passes the validator in `commands.ts`, which accepts the names people
 | `write_note`, `clear_note`, `read_note` | Inkwell's note, which is saved in the browser |
 | `set_theme`, `set_accent`, `set_wallpaper`, `set_motion`, `set_arcs` | The preferences in `settings.ts`, as Control Center sets them |
 | `calculate`, `stopwatch`, `world_time` | Arithmetic with precedence (`expression.ts`), Clock's stopwatch, the time in 30 cities |
+| `open_website`, `search_web` | Browser, at an address or a Bing search, see below |
 | `get_stats`, `explain` | The program's live sizes, short explanations |
 
 ### Training the model
@@ -53,6 +54,16 @@ hf jobs uv run --flavor a10g-small --secrets HF_TOKEN --timeout 2h \
 ```
 
 The data has 8,000 training sentences and about 700 eval sentences whose phrasings never appear in training, so the eval score measures sentences shaped unlike anything the model saw. A first run on an earlier command list went from 22.1% (base FunctionGemma) to 78.4% on those held-out sentences, before the phrasings were widened. `train.py` fine-tunes the whole model, scores it, uploads the PyTorch weights, builds the browser file with ONNX Runtime GenAI's builder (4-bit weights in blocks of 32, fp16 activations), cuts the vocabulary projection to the last position (`last_token_logits.py`, which avoids about 2 GB of logits per prompt), checks the ONNX file's answers, and publishes to the Hub, privately unless `--public` is passed. The page can only load a public repo. `--checkpoint <repo> --skip-training` exports saved weights again without training.
+
+## Browser
+
+Browser (`browser.ts`) shows web pages in a sandboxed iframe inside a glass panel, with an address bar, back, forward, reload, Open in New Tab and a page of favorites. Open it from the dock, Spotlight ("open the browser", "go to wikipedia.org", "search the web for glass prisms") or Terminal ("open browser"). Words that aren't an address search Bing.
+
+- **Sites that refuse frames.** Many big sites send `X-Frame-Options` or a CSP `frame-ancestors` rule, and the visitor's browser then leaves the frame empty. A page can't read that from a cross-origin frame, so `web-address.ts` lists the sites known to refuse (Google, YouTube, GitHub, X, Reddit and others, each checked) and Browser shows a card with an Open in New Tab button instead. A site missing from the list shows the browser's own error page in the frame. YouTube watch links play in YouTube's embed player, and Google searches use `igu=1`, which Google allows in frames.
+- **History.** Cross-origin pages hide their addresses, so back and forward step through the pages Browser opened (address bar, favorites, Spotlight), and a link followed inside a page doesn't change the address bar. Browser moves the frame with `location.replace`, so its own navigations don't add to the desktop's history.
+- **Sandbox.** `allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox`, and never `allow-top-navigation`, so nothing in a page can navigate Prism OS away. With scripts and same-origin together, a page of Prism OS's own origin could lift the sandbox, so Browser refuses that origin. Chrome logs a warning about that pair of flags whenever a frame exists, so the frame is made the first time a page shows, never at boot.
+- **Input.** A press inside the frame never reaches the page, so the shell brings a panel to the front when the page loses the keyboard to a frame in it. While any press is held, the frame takes no pointer events, so a drag of a window or panel over it isn't swallowed.
+- **Visibility.** A minimized Browser keeps its page, which the browser stops painting while the panel is hidden. Closing Browser unloads the page and forgets its history.
 
 ## Cabinet
 

@@ -33,7 +33,7 @@ const programApps = [
 
 // Prism's tiles on each side of the program's three, so the dock stays centered.
 const dockLeft = ['cabinet', 'calculator', 'clock'] as const
-const dockRight = ['terminal', 'settings'] as const
+const dockRight = ['browser', 'terminal', 'settings'] as const
 
 // The program's geometry, see windowManagerCells in window-manager.ts.
 const systemBarHeight = 36
@@ -105,6 +105,17 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   window.addEventListener('pointercancel', guardRelease)
   window.addEventListener('contextmenu', event => {
     if (isShellTarget(event.target)) event.stopImmediatePropagation()
+  })
+  // A press inside a frame, e.g. Browser's page, never reaches this page: the page only
+  // loses the keyboard to the frame. So the panel that holds the frame comes to the front
+  // then, as a press on it would bring it.
+  window.addEventListener('blur', () => {
+    window.setTimeout(() => {
+      const active = document.activeElement
+      if (!(active instanceof HTMLIFrameElement)) return
+      const panel = [...panels.values()].find(candidate => candidate.element.contains(active))
+      if (panel !== undefined && (!panelsInFront || order.at(-1) !== panel)) focusPanel(panel)
+    })
   })
   window.addEventListener('keydown', event => {
     const command = event.metaKey || event.ctrlKey
@@ -702,6 +713,10 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     stopwatch: action => {
       openPanel('clock', true)
       return panels.get('clock')?.instance.stopwatch?.(action) ?? 'Clock isn\'t available.'
+    },
+    browse: url => {
+      openPanel('browser', true)
+      return panels.get('browser')?.instance.browse?.(url) ?? {kind: 'refused', site: 'Browser'}
     },
   }
 }

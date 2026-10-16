@@ -803,6 +803,7 @@
 .prism-app-calculator { --app-tile: linear-gradient(180deg, #55555b, #232326); --app-glyph: #ff9f0a; }
 .prism-app-clock { --app-tile: linear-gradient(180deg, #ffffff, #e6e8ec); --app-glyph: #1d1d1f; }
 .prism-app-terminal { --app-tile: linear-gradient(180deg, #44474d, #17191c); --app-glyph: #e5e5ea; }
+.prism-app-browser { --app-tile: linear-gradient(180deg, #5ad8ff 0%, #1a9bff 55%, #0a6ee0 100%); --app-glyph: #fff; }
 .prism-app-settings { --app-tile: linear-gradient(180deg, #d3d6db, #8f949c); --app-glyph: #fff; }
 .prism-app-about { --app-tile: var(--tile-scope); --app-glyph: #fff; }
 .prism-command { --app-tile: var(--copper); --app-glyph: #fff; }
@@ -962,7 +963,7 @@
 
 /* The dock's extra tiles, beside the program's, see addTile in shell.ts. A tile's left edge
    is --offset from the dock's middle, and its bottom 13 px above the desktop's, where the
-   program's tiles end. The shelf grows to hold all seven. Where the viewport is too narrow
+   program's tiles end. The shelf grows to hold all of them. Where the viewport is too narrow
    for them, they hide, and Spotlight still opens every app. */
 .prism-desktop .prism-tile {
   position: absolute;
@@ -1016,14 +1017,14 @@
 
 /* With Prism's tiles, the shelf spans every tile: shell.ts writes the tiles' span and how
    far their middle sits from the dock's, since the two sides can hold different counts. */
-@media (min-width: 520px) {
+@media (min-width: 600px) {
   .prism-desktop .prism-dock-extended .prism-dock-glass {
     width: calc(var(--tiles-span) + 2 * var(--shelf-padding));
     translate: calc(-50% + var(--tiles-shift)) 0;
   }
 }
 
-@media (max-width: 519px) {
+@media (max-width: 599px) {
   .prism-desktop .prism-tile {
     display: none;
   }
@@ -1727,6 +1728,277 @@
   color: inherit;
   caret-color: #64d2ff;
   font: inherit;
+}
+
+/* Browser: a toolbar of capsules over the page, which fills the rest of the panel. The
+   page draws its own colors, so the view behind it is plain paper while it loads. */
+.browser-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.browser-toolbar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px 8px;
+}
+
+.prism-desktop .browser-tool {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: default;
+  transition: background-color var(--quick) var(--ease);
+}
+
+.browser-tool .prism-icon {
+  width: 17px;
+  height: 17px;
+}
+
+@media (hover: hover) {
+  .prism-desktop .browser-tool:not(:disabled):hover {
+    background: var(--wash);
+  }
+}
+
+.prism-desktop .browser-tool:disabled {
+  color: var(--ink-3);
+  opacity: 0.45;
+}
+
+.prism-desktop .browser-tool:focus-visible,
+.prism-desktop .browser-favorite:focus-visible,
+.prism-desktop .browser-open:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
+.browser-address {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 32px;
+  margin: 0 4px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--segment-track);
+  box-shadow: var(--well);
+  color: var(--ink-3);
+  transition: box-shadow var(--quick) var(--ease), background-color var(--quick) var(--ease);
+}
+
+.browser-address:focus-within {
+  background: var(--segment-on);
+  box-shadow: 0 0 0 2px var(--copper-line), var(--pill-lift);
+}
+
+.browser-address .prism-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.browser-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: 400 13px/20px var(--font-sans);
+  text-overflow: ellipsis;
+}
+
+.prism-desktop .browser-input:focus-visible {
+  outline: none;
+}
+
+.browser-input::placeholder {
+  color: var(--ink-3);
+}
+
+.browser-view {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-top: 0.5px solid var(--rule);
+  background: var(--paper);
+}
+
+.browser-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+/* While a press is held anywhere, the frame lets the drag pass over it, see browser.ts. */
+.browser-held .browser-frame {
+  pointer-events: none;
+}
+
+/* A thin bar in the accent runs along the top while a page loads. */
+.browser-progress {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.browser-progress::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: 2px;
+  background: var(--copper);
+  animation: browser-loading 1.1s var(--ease) infinite;
+}
+
+@keyframes browser-loading {
+  from { translate: -100% 0; }
+  to { translate: 250% 0; }
+}
+
+.browser-start,
+.browser-refused {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 40px 32px;
+}
+
+.browser-start {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.browser-heading {
+  margin: 0;
+  color: var(--ink);
+  font: 600 17px/24px var(--font-sans);
+}
+
+.browser-favorites {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 16px 12px;
+  width: min(100%, 560px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prism-desktop .browser-favorite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--ink-2);
+  font: 500 12px/16px var(--font-sans);
+  cursor: pointer;
+  transition: background-color var(--quick) var(--ease);
+}
+
+@media (hover: hover) {
+  .prism-desktop .browser-favorite:hover {
+    background: var(--wash);
+  }
+}
+
+.browser-mark {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 23%;
+  background: var(--mark-fill);
+  color: var(--mark-ink);
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 4px 10px -4px rgb(var(--shadow-ink) / 0.35);
+  font: 600 20px/1 var(--font-sans);
+}
+
+.browser-tone-graphite { --mark-fill: linear-gradient(180deg, #ffffff, #e4e6ea); --mark-ink: #1d1d1f; }
+.browser-tone-teal { --mark-fill: linear-gradient(180deg, #5fd9cf, #1aa39a); --mark-ink: #fff; }
+.browser-tone-sand { --mark-fill: linear-gradient(180deg, #f3e3c3, #d9b98a); --mark-ink: #4a3a22; }
+.browser-tone-orange { --mark-fill: linear-gradient(180deg, #ffb35c, #f07a1a); --mark-ink: #fff; }
+.browser-tone-blue { --mark-fill: linear-gradient(180deg, #6ad4ff, #1f8fff); --mark-ink: #fff; }
+.browser-tone-green { --mark-fill: linear-gradient(180deg, #5fe08a, #1fa451); --mark-ink: #fff; }
+
+.browser-favorite-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browser-note {
+  max-width: 440px;
+  margin: 0;
+  color: var(--ink-3);
+  font: 400 12px/18px var(--font-sans);
+  text-align: center;
+}
+
+.browser-refused {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.browser-refused-mark {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 4px;
+  color: var(--ink-3);
+}
+
+.prism-desktop .browser-open {
+  margin-top: 6px;
+  padding: 5px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--copper);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 1px 3px color-mix(in srgb, var(--copper) 40%, transparent);
+  color: #fff;
+  font: 500 13px/20px var(--font-sans);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .browser-progress::before {
+    width: 100%;
+    animation: none;
+    opacity: 0.6;
+  }
 }
 
 /* Settings and About. */

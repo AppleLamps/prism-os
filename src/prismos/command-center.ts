@@ -24,7 +24,7 @@ const developerPrompt = 'You are a model that can do function calling with the f
 const consentKey = 'prism-os.model-consent'
 const transcriptLength = 3
 
-export const helpReply = 'Type what you want, e.g. "open cabinet", "list files in /Documents", "create document /Documents/Plan.txt", "search files for Plan", "open calculator", "put Scope and Chroma side by side", "move Inkwell to the top right", "open Blue Lagoon", "note: buy milk", "dark mode and a teal accent", "lagoon wallpaper", "what time is it in Tokyo", "start the stopwatch", "what is 17 times 23" or "how big is the program".'
+export const helpReply = 'Type what you want, e.g. "open cabinet", "list files in /Documents", "create document /Documents/Plan.txt", "search files for Plan", "open calculator", "go to wikipedia.org", "search the web for glass prisms", "put Scope and Chroma side by side", "move Inkwell to the top right", "open Blue Lagoon", "note: buy milk", "dark mode and a teal accent", "lagoon wallpaper", "what time is it in Tokyo", "start the stopwatch", "what is 17 times 23" or "how big is the program".'
 
 // What Spotlight shows for a query before it runs: the commands the quick parser read, a
 // question about what Spotlight can do, a sentence for the model, or nothing.

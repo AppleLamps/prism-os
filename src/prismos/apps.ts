@@ -1,12 +1,14 @@
 // Prism OS's own apps. Each one builds its view into a panel's body, see shell.ts. They run
 // in plain JavaScript beside the handwired program, which keeps running Scope, Inkwell and
 // Chroma.
+import {browserApp} from './browser.ts'
 import {cabinetApp, type Cabinet} from './cabinet.ts'
 import {type CalculatorKey, type CalculatorState, initialCalculator, keyFromKeyboard, pressKey} from './calculator.ts'
 import {accentControl, appearanceControl, sceneControl, toggleControl} from './controls.ts'
 import {button, el, icon, icons} from './dom.ts'
 import type {SettingsStore} from './settings.ts'
 import {type AppInfo, runCommand} from './terminal.ts'
+import type {Framing} from './web-address.ts'
 
 export type AppContext = {
   cabinet?: Cabinet | undefined
@@ -30,6 +32,9 @@ export type AppInstance = {
   // Clock's stopwatch, for Spotlight's commands: shows the stopwatch and acts like its
   // buttons, then returns what happened.
   stopwatch?(action: StopwatchAction): string
+  // Browser's page, for Spotlight's commands: opens a URL as the address bar does, and
+  // says whether it shows in the frame or its site refuses.
+  browse?(url: string): Framing
 }
 
 export type PanelApp = {
@@ -514,4 +519,4 @@ const about: PanelApp = {
   },
 }
 
-export const panelApps: readonly PanelApp[] = [cabinetApp, calculator, clock, terminal, settingsApp, about]
+export const panelApps: readonly PanelApp[] = [cabinetApp, browserApp, calculator, clock, terminal, settingsApp, about]

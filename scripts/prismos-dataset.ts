@@ -44,6 +44,7 @@ function phrasings<T>(list: readonly T[], split: Split): readonly T[] {
 
 const appForms: Record<App, readonly string[]> = {
   cabinet: ['cabinet', 'Cabinet', 'files', 'file manager'],
+  browser: ['Browser', 'browser', 'the browser', 'the web browser', 'web browser'],
   scope: ['Scope', 'scope', 'the monitor', 'Monitor', 'the inspector', 'the scope window', 'scope app'],
   inkwell: ['Inkwell', 'inkwell', 'notes', 'the notes app', 'my notes', 'the note', 'Notes', 'the notepad'],
   chroma: ['Chroma', 'chroma', 'photos', 'the gallery', 'Photos', 'the photo app', 'pictures', 'the photos window'],
@@ -54,7 +55,7 @@ const appForms: Record<App, readonly string[]> = {
   about: ['About', 'about', 'the about window', 'About Prism OS', 'about prism'],
 }
 // The panels that can fill the screen: Calculator and About keep their size.
-const zoomable: readonly App[] = [...programApps, 'clock', 'terminal', 'settings']
+const zoomable: readonly App[] = [...programApps, 'browser', 'clock', 'terminal', 'settings']
 const appPhrase = (app: App) => pick(appForms[app])
 
 const single = (name: string, args: Record<string, string> = {}): Call[] => [{name, arguments: args}]
@@ -108,6 +109,8 @@ const templates = {
     reset: ['reset the stopwatch', 'clear the stopwatch', 'stopwatch reset', 'zero the stopwatch', 'reset the timer', 'start the stopwatch over', 'clear the laps', 'set the stopwatch back to zero', 'wipe the stopwatch', 'reset timing'],
   },
   world_time: ['what time is it in {city}', 'time in {city}', 'what is the time in {city}', 'current time in {city}', 'what\'s the time in {city} right now', 'tell me the time in {city}', 'is it night in {city}', 'clock for {city}', 'what time is it over in {city}', 'how late is it in {city}', '{city} time', 'local time in {city}', 'show me the time in {city}', 'what hour is it in {city}', 'time check for {city}'],
+  open_website: ['go to {site}', 'open {site}', 'visit {site}', 'take me to {site}', 'browse to {site}', 'load {site}', 'open the website {site}', 'show me {site}', 'navigate to {site}', 'pull up {site}', 'open {site} in the browser', 'I want to go to {site}', 'can you load {site}', 'bring up the site {site}', 'head over to {site}', 'go to the page {site}', 'open up {site}', 'let me see {site}', 'browse {site}', 'show {site} in browser'],
+  search_web: ['search the web for {query}', 'google {query}', 'look up {query}', 'search for {query}', 'search online for {query}', 'find {query} on the web', 'web search {query}', 'search the internet for {query}', 'bing {query}', 'look up {query} online', 'search {query} on the web', 'what does the web say about {query}', 'find me pages about {query}', 'run a web search for {query}', 'look for {query} online', 'search bing for {query}', 'do a search for {query}', 'search the browser for {query}', 'can you search for {query}', 'find information about {query} online'],
   world_time_here: ['what time is it', 'what is the time', 'time', 'current time', 'what\'s the time', 'tell me the time', 'what time is it now', 'clock check', 'what day is it', 'the time please'],
   set_arcs: {
     hidden: ['hide the arcs', 'hide the weight lines', 'turn off the wiring', 'remove the lines behind the windows', 'hide the weights', 'no arcs please', 'get rid of the curves on the desktop', 'turn off the weight arcs', 'clear the lines from the background', 'hide the network drawing', 'hide the wires', 'no wiring', 'remove the arcs', 'turn the arcs off', 'hide the lines on the desk'],
@@ -124,6 +127,7 @@ const templates = {
     calculator: ['what is the calculator', 'explain the calculator', 'what does calculator do', 'tell me about calculator', 'how does the calculator work'],
     clock: ['what is the clock app', 'explain clock', 'what does the clock do', 'tell me about the clock', 'what can the clock do'],
     terminal: ['what is terminal', 'explain the terminal', 'what does the terminal do', 'what commands does terminal have', 'tell me about the terminal'],
+    browser: ['what is the browser', 'explain the browser', 'what does browser do', 'tell me about the browser', 'why won\'t some sites open in the browser'],
   },
 } as const
 
@@ -163,6 +167,10 @@ const sceneForms: Record<(typeof sceneNames)[number], readonly string[]> = {
   ember: ['ember', 'Ember'],
   graphite: ['graphite', 'Graphite'],
 }
+// Sites people name, as typed, which the model copies into the call. Every one passes
+// webAddress, also the ones Browser can't show: the reply says so.
+const siteForms = ['wikipedia.org', 'en.wikipedia.org/wiki/Prism', 'archive.org', 'xkcd.com', 'example.com', 'www.gutenberg.org', 'https://en.wiktionary.org/wiki/glass', 'bing.com', 'github.com', 'news.ycombinator.com', 'https://www.bbc.com/news', 'nytimes.com', 'developer.mozilla.org', 'youtube.com/watch?v=dQw4w9WgXcQ', 'en.wikipedia.org/wiki/Optics', 'marginalia-search.com']
+const searchQueries = ['glass prisms', 'how rainbows form', 'best pancake recipe', 'the speed of light', 'weather in Tokyo', 'who invented the telescope', 'liquid glass design', 'neural networks explained', 'cheap flights to Lisbon', 'how to tie a bowline knot', 'Isaac Newton optics', 'sand dune formation', 'FunctionGemma', 'news today', 'chocolate chip cookies', 'the tallest mountain in Europe']
 const cityNames = Object.keys(cities).filter(city => city !== 'here')
 const titleCase = (text: string) => text.replace(/\b\w/gu, letter => letter.toUpperCase())
 
@@ -355,6 +363,14 @@ const commandMakers: Record<string, (split: Split) => Row> = {
     const visibility = pick(['hidden', 'shown'] as const)
     return {user: pick(phrasings(templates.set_arcs[visibility], split)), calls: single(kind, {visibility})}
   },
+  web(split) {
+    if (random.next() < 0.45) {
+      const query = pick(searchQueries)
+      return {user: fill(pick(phrasings(templates.search_web, split)), {query}), calls: single('search_web', {query})}
+    }
+    const address = pick(siteForms)
+    return {user: fill(pick(phrasings(templates.open_website, split)), {site: address}), calls: single('open_website', {address})}
+  },
   info(split) {
     if (random.next() < 0.4) return {user: pick(phrasings(templates.get_stats, split)), calls: single('get_stats')}
     const topic = pick(Object.keys(templates.explain) as (keyof typeof templates.explain)[])
@@ -379,6 +395,7 @@ function compound(split: Split): Row {
     () => ({user: 'start the stopwatch', calls: single('stopwatch', {action: 'start'})}),
     () => { const city = pick(cityNames); return {user: `what time is it in ${titleCase(city)}`, calls: single('world_time', {city})} },
     () => { const text = pick(noteTexts); return {user: `write ${text} in my notes`, calls: single('write_note', {mode: 'append', text})} },
+    () => { const address = pick(siteForms); return {user: `go to ${address}`, calls: single('open_website', {address})} },
   ]
   const joiners = phrasings([' and ', ', then ', ' and then ', ', and ', ' and also ', ' then ', ', also '], split)
   const first = pick(short)()
@@ -387,8 +404,8 @@ function compound(split: Split): Row {
   return {user: `${first.user}${pick(joiners)}${second.user}`, calls: [...first.calls!, ...second.calls!]}
 }
 
-const capabilityReply = 'I can open, move, resize and arrange the windows and apps, open photos in Chroma, write in your note, do arithmetic, run the stopwatch, tell the time around the world, and change the appearance, accent color and wallpaper. Just tell me what to do.'
-const declineReply = 'I only run Prism OS, so I can\'t help with that. I can arrange windows, open photos, write notes, do arithmetic or change the appearance.'
+const capabilityReply = 'I can open, move, resize and arrange the windows and apps, open photos in Chroma, open web pages and search the web in Browser, write in your note, do arithmetic, run the stopwatch, tell the time around the world, and change the appearance, accent color and wallpaper. Just tell me what to do.'
+const declineReply = 'I only run Prism OS, so I can\'t answer that myself. I can search the web for it in Browser, arrange windows, open photos, write notes, do arithmetic or change the appearance.'
 
 const textRows: Record<string, {users: readonly string[], replies: readonly string[]}> = {
   greeting: {
@@ -412,12 +429,12 @@ const textRows: Record<string, {users: readonly string[], replies: readonly stri
     replies: [declineReply],
   },
   unsupported: {
-    users: ['open safari', 'delete all my files', 'install an app', 'change the wallpaper to cats', 'play some music', 'open the browser', 'set an alarm for 7', 'shut down the computer', 'open photo 20', 'make the accent purple', 'add a new app', 'open a new window', 'upload a photo', 'take a screenshot', 'connect to wifi', 'send an email', 'set a timer for 5 minutes', 'make the font bigger', 'turn up the volume', 'restart prism os'],
-    replies: ['Prism OS can\'t do that yet. I can arrange its windows and apps, open its 12 photos, write in the note, do arithmetic, run the stopwatch, tell the time, and change the appearance, accent and wallpaper.'],
+    users: ['open microsoft word', 'delete all my files', 'install an app', 'change the wallpaper to cats', 'play some music', 'print this page', 'set an alarm for 7', 'shut down the computer', 'open photo 20', 'make the accent purple', 'add a new app', 'open a new window', 'upload a photo', 'take a screenshot', 'connect to wifi', 'send an email', 'set a timer for 5 minutes', 'make the font bigger', 'turn up the volume', 'restart prism os'],
+    replies: ['Prism OS can\'t do that yet. I can arrange its windows and apps, open its 12 photos, open web pages, write in the note, do arithmetic, run the stopwatch, tell the time, and change the appearance, accent and wallpaper.'],
   },
   ambiguous: {
     users: ['minimize it', 'close it', 'move it left', 'make it bigger', 'maximize that', 'hide that window', 'move this to the right', 'shrink it', 'close that', 'open it'],
-    replies: ['Which app: Scope, Inkwell, Chroma, Calculator, Clock, Terminal or Settings?'],
+    replies: ['Which app: Scope, Inkwell, Chroma, Browser, Calculator, Clock, Terminal or Settings?'],
   },
 }
 

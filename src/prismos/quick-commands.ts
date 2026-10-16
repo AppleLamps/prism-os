@@ -6,6 +6,7 @@
 import {parsePhoto, type Command, accentNames, appAliases, apps, parseApp, parseCity, positions, sceneNames, validateCall} from './commands.ts'
 import {evaluateExpression} from './expression.ts'
 import {photoNames} from '../handwiredos/photo-gallery.ts'
+import {webAddress} from './web-address.ts'
 
 function normalize(input: string) {
   return input
@@ -94,7 +95,7 @@ const rules: Rule[] = [
   [/^(?:note|jot down|write down|take a note|add to (?:my |the )?notes?|note to self)[:,]? (.+)$/u, m => ({name: 'write_note', text: m[1], mode: 'append'})],
   // Information.
   [/^(?:stats|statistics|show (?:me )?(?:the )?stats|how big is (?:the )?program|program stats)$/u, () => ({name: 'get_stats'})],
-  [/^(?:what is|whats|explain|tell me about) (prism os|prism|this|scope|inkwell|chroma|calculator|clock|terminal|handwired|spotlight)$/u, m => {
+  [/^(?:what is|whats|explain|tell me about) (?:the )?(prism os|prism|this|scope|inkwell|chroma|browser|calculator|clock|terminal|handwired|spotlight)$/u, m => {
     const topic = {'prism os': 'prism_os', 'prism': 'prism_os', 'this': 'prism_os', 'spotlight': 'command_center'}[m[1]!] ?? m[1]
     return {name: 'explain', topic}
   }],
@@ -133,6 +134,8 @@ export function quickCommands(input: string): Command[] | null {
     const match = pattern.exec(fileInput)
     if (match) { const call = make(match); const result = validateCall(call.name, call); return result.ok ? [result.command] : null }
   }
+  const web = webCommand(fileInput)
+  if (web !== null) return [web]
   const sentence = normalize(input)
   if (sentence === '') return null
   const whole = single(sentence)
@@ -146,6 +149,20 @@ export function quickCommands(input: string): Command[] | null {
     commands.push(command)
   }
   return commands
+}
+
+// Web addresses and searches, read before normalize(), which would drop an address's "?"
+// and lowercase a search: "go to wikipedia.org", "en.wikipedia.org/wiki/Prism", "search
+// the web for glass prisms". A word with a dot that is a file's name, e.g. "notes.txt",
+// isn't an address, see webAddress.
+function webCommand(input: string): Command | null {
+  const text = input.replace(/[.!]+$/u, '').trim()
+  const site = /^(?:(?:go|browse|navigate|take me) to|open|visit|browse|load|pull up)\s+(?:the (?:site|website|page)\s+)?(\S+)$/iu.exec(text)
+  const address = site?.[1] ?? (/^\S+\.\S+$/u.test(text) ? text : null)
+  if (address !== null && webAddress(address) !== null) return check({name: 'open_website', address})
+  const search = /^(?:search (?:the web|the internet|online|google|bing) for|search for|web search(?: for)?|google|bing|look up)\s+(.+)$/iu.exec(text)
+  if (search !== null && !/^files?\b/iu.test(search[1]!)) return check({name: 'search_web', query: search[1]})
+  return null
 }
 
 function single(sentence: string): Command | null {

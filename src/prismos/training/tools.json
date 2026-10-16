@@ -296,6 +296,7 @@
               "inkwell",
               "chroma",
               "cabinet",
+              "browser",
               "calculator",
               "clock",
               "terminal",
@@ -326,6 +327,7 @@
               "inkwell",
               "chroma",
               "cabinet",
+              "browser",
               "calculator",
               "clock",
               "terminal",
@@ -356,6 +358,7 @@
               "inkwell",
               "chroma",
               "cabinet",
+              "browser",
               "calculator",
               "clock",
               "terminal",
@@ -386,6 +389,7 @@
               "inkwell",
               "chroma",
               "cabinet",
+              "browser",
               "calculator",
               "clock",
               "terminal",
@@ -416,6 +420,7 @@
               "inkwell",
               "chroma",
               "cabinet",
+              "browser",
               "calculator",
               "clock",
               "terminal",
@@ -446,6 +451,7 @@
               "inkwell",
               "chroma",
               "cabinet",
+              "browser",
               "calculator",
               "clock",
               "terminal",
@@ -938,6 +944,44 @@
   {
     "type": "function",
     "function": {
+      "name": "open_website",
+      "description": "Open a web page in Browser",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "address": {
+            "type": "STRING",
+            "description": "The web address, e.g. wikipedia.org"
+          }
+        },
+        "required": [
+          "address"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "search_web",
+      "description": "Search the web in Browser",
+      "parameters": {
+        "type": "OBJECT",
+        "properties": {
+          "query": {
+            "type": "STRING",
+            "description": "What to search for"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "get_stats",
       "description": "Report the live numbers of the program that runs Prism OS",
       "parameters": {
@@ -963,6 +1007,7 @@
               "scope",
               "inkwell",
               "chroma",
+              "browser",
               "calculator",
               "clock",
               "terminal",

@@ -5,6 +5,7 @@ import {arrangePrismWindows} from '../../src/prismos/arrangement.ts'
 import {appWindowIndex, toolDeclarations, validateCall, type Command} from '../../src/prismos/commands.ts'
 import {createOperator, type MachineDriver, type PageEffects, type PanelControls, type PanelState, type Rectangle} from '../../src/prismos/operator.ts'
 import {defaultSettings, type Settings} from '../../src/prismos/settings.ts'
+import {framingFor} from '../../src/prismos/web-address.ts'
 import type {PanelAppName} from '../../src/prismos/commands.ts'
 
 // A machine on a clock of its own: each frame is 16 ms after the last, and an event
@@ -42,6 +43,7 @@ function createPage(driver: MachineDriver) {
     return entry
   }
   let behind = 0
+  const browsed: string[] = []
   const panels: PanelControls = {
     state: id => panel(id).state,
     zoomed: id => panel(id).zoomed,
@@ -53,6 +55,11 @@ function createPage(driver: MachineDriver) {
     move: (id, position) => { panel(id).position = position },
     sendBehind: () => { behind++ },
     stopwatch: action => `stopwatch ${action}`,
+    browse: url => {
+      browsed.push(url)
+      panel('browser').state = 'open'
+      return framingFor(url)
+    },
   }
   const page: PageEffects = {
     settings: {get: () => settings, update: change => { settings = {...settings, ...change} }},
@@ -61,7 +68,7 @@ function createPage(driver: MachineDriver) {
     slideshow: {start: () => { slideshow = true }, stop: () => { slideshow = false }, running: () => slideshow},
     homeRectangles: () => home,
   }
-  return {page, settings: () => settings, note: () => note, slideshow: () => slideshow, home, panel, behind: () => behind}
+  return {page, settings: () => settings, note: () => note, slideshow: () => slideshow, home, panel, behind: () => behind, browsed}
 }
 
 function command(name: string, args: Record<string, unknown> = {}): Command {
@@ -84,7 +91,7 @@ test('every declared tool validates with arguments from its own enums', () => {
   for (const declaration of toolDeclarations) {
     const args: Record<string, unknown> = {}
     for (const [key, parameter] of Object.entries(declaration.function.parameters.properties)) {
-      args[key] = parameter.enum?.[0] ?? ({photo: '3', expression: '2 + 2', city: 'tokyo'} as Record<string, string>)[key] ?? 'hello'
+      args[key] = parameter.enum?.[0] ?? ({photo: '3', expression: '2 + 2', city: 'tokyo', address: 'wikipedia.org'} as Record<string, string>)[key] ?? 'hello'
     }
     if (declaration.function.name === 'side_by_side') args['right'] = 'chroma'
     const result = validateCall(declaration.function.name, args)
@@ -278,4 +285,14 @@ test('arithmetic, the stopwatch and world times answer in words', async () => {
   assert.equal(await operator.run(command('stopwatch', {action: 'lap'})), 'stopwatch lap')
   assert.match(await operator.run(command('world_time', {city: 'Tokyo'})), /^It's \d{1,2}:\d{2} [AP]M in Tokyo, \w+day\.$/u)
   assert.match(await operator.run(command('world_time', {city: 'here'})), /^It's .+ here, /u)
+})
+
+test('web commands open Browser at the page, or say the site refuses to be shown', async () => {
+  const {operator, fake} = setup()
+  assert.equal(await operator.run(command('open_website', {address: 'en.wikipedia.org/wiki/Prism'})), 'Opened en.wikipedia.org in Browser.')
+  assert.equal(fake.panel('browser').state, 'open')
+  assert.match(await operator.run(command('open_website', {address: 'github.com/AppleLamps'})), /^GitHub doesn't let other sites show its pages/u)
+  assert.equal(await operator.run(command('search_web', {query: 'glass prisms'})), 'Searching Bing for "glass prisms".')
+  assert.deepEqual(fake.browsed, ['https://en.wikipedia.org/wiki/Prism', 'https://github.com/AppleLamps', 'https://www.bing.com/search?q=glass%20prisms'])
+  assert.match(await operator.run(command('explain', {topic: 'browser'})), /sandboxed frame/u)
 })
