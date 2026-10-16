@@ -7,3 +7,4 @@ site/
 # Local browser acceptance artifacts.
 .playwright-cli/
 output/playwright/
+__pycache__/
