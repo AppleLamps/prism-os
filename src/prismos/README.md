@@ -46,14 +46,23 @@ Every call passes the validator in `commands.ts`, which accepts the names people
 
 ```sh
 bun scripts/prismos-dataset.ts   # writes src/prismos/training/{train,eval}.jsonl and tools.json
+bun test tests/prismos/training-data.test.ts   # the data matches the commands and the quick parser
+python3 src/prismos/training/train.py --data src/prismos/training --repo x --check-data   # the scorer, no GPU
 git push                         # the job reads the data and the script from the repo
-hf jobs uv run --flavor a10g-small --secrets HF_TOKEN --timeout 2h \
+hf jobs uv run --flavor a10g-small --secrets HF_TOKEN --timeout 4h \
   https://raw.githubusercontent.com/AppleLamps/prism-os/<commit>/src/prismos/training/train.py \
   --data https://raw.githubusercontent.com/AppleLamps/prism-os/<commit>/src/prismos/training \
   --repo AppleLampsX/prism-os-functiongemma
 ```
 
-The data has 8,000 training sentences and about 700 eval sentences whose phrasings never appear in training, so the eval score measures sentences shaped unlike anything the model saw. A first run on an earlier command list went from 22.1% (base FunctionGemma) to 78.4% on those held-out sentences, before the phrasings were widened. `train.py` fine-tunes the whole model, scores it, uploads the PyTorch weights, builds the browser file with ONNX Runtime GenAI's builder (4-bit weights in blocks of 32, fp16 activations), cuts the vocabulary projection to the last position (`last_token_logits.py`, which avoids about 2 GB of logits per prompt), checks the ONNX file's answers, and publishes to the Hub, privately unless `--public` is passed. The page can only load a public repo. `--checkpoint <repo> --skip-training` exports saved weights again without training.
+The data has 10,000 training sentences and about 900 eval sentences whose phrasings never appear in training, so the eval score measures sentences shaped unlike anything the model saw. How the data is made:
+
+- **Every command gets its share.** Each kind of row is made about as often as the commands it teaches, more for commands whose arguments vary most, so the rarest command has about 50 training rows and every command appears in eval.
+- **Arguments are copied as written.** Paths, notes, searches, addresses, timer lengths and arithmetic are the user's own words, which the validator reads; a sentence that copies words is never written in capitals.
+- **Free text ends where a command can start.** In a longer sentence, a search, a path or an address is followed by a comma or "and", never run straight into the next command, since where it ends would be a guess.
+- **The quick parser agrees.** `tests/prismos/training-data.test.ts` checks that every row the quick parser reads gets the same calls as the data, that every call validates, that eval and training never share a sentence, and that `tools.json` matches `commands.ts`.
+
+`train.py --check-data` runs without a GPU or downloads: every expected answer, written as the model writes calls, must parse and score as correct, and the scorer must accept equal calls written differently (`17 times 23` and `17 * 23`, `an hour and a half` and `90 minutes`, `wikipedia dot org` and `https://wikipedia.org/`) while telling different ones apart. During training, about 150 eval sentences are a dev set scored after each epoch; the best epoch's weights are kept, and the reported scores leave the dev sentences out. Each prompt carries all 50 declarations, about 3,300 tokens, so an epoch is about 33 million tokens: give the job `--timeout 4h`. A first run on an earlier command list went from 22.1% (base FunctionGemma) to 78.4% on those held-out sentences, before the phrasings were widened. `train.py` fine-tunes the whole model, scores it, uploads the PyTorch weights, builds the browser file with ONNX Runtime GenAI's builder (4-bit weights in blocks of 32, fp16 activations), cuts the vocabulary projection to the last position (`last_token_logits.py`, which avoids about 2 GB of logits per prompt), checks the ONNX file's answers, and publishes to the Hub, privately unless `--public` is passed. The page can only load a public repo. `--checkpoint <repo> --skip-training` exports saved weights again without training.
 
 ## Voice
 

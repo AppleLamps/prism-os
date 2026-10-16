@@ -18,11 +18,14 @@ PyTorch model, and publishes both to the Hub.
 
 Run as a Hugging Face Job (see src/prismos/README.md):
 
-  hf jobs uv run --flavor a10g-small --secrets HF_TOKEN \
+  hf jobs uv run --flavor a10g-small --secrets HF_TOKEN --timeout 4h \
     https://raw.githubusercontent.com/AppleLamps/prism-os/<branch>/src/prismos/training/train.py \
     --data <raw url of src/prismos/training> --repo <user>/prism-os-functiongemma
 
 The data comes from scripts/prismos-dataset.ts: train.jsonl, eval.jsonl and tools.json.
+Check it first, locally and without a GPU:
+
+  python3 src/prismos/training/train.py --data src/prismos/training --repo x --check-data
 """
 import argparse
 import json
@@ -36,11 +39,6 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
-
-import numpy as np
-import torch
-from huggingface_hub import HfApi, hf_hub_download
-from transformers import AutoModelForCausalLM, AutoTokenizer
 
 BASE = "google/functiongemma-270m-it"
 WEB_REFERENCE = "onnx-community/functiongemma-270m-it-ONNX"
@@ -64,11 +62,11 @@ parser.add_argument("--checkpoint", default=None, help="a Hub repo whose pytorch
 parser.add_argument("--eval-limit", type=int, default=0, help="score only this many eval rows, e.g. for a quick export test")
 parser.add_argument("--no-publish", action="store_true", help="build and check everything, publish nothing")
 parser.add_argument("--public", action="store_true", help="publish the repo as public; private by default")
+parser.add_argument("--curve-rows", type=int, default=150, help="eval rows scored after each epoch, for the learning curve and the best epoch; 0 skips")
+parser.add_argument("--check-data", action="store_true", help="check the data and the scorer, with no GPU and no downloads, and stop")
 args = parser.parse_args()
 
-torch.manual_seed(0)
 random.seed(0)
-device = "cuda" if torch.cuda.is_available() else "cpu"
 work = Path("/tmp/prism")
 work.mkdir(parents=True, exist_ok=True)
 
@@ -86,40 +84,15 @@ eval_rows = [json.loads(line) for line in fetch("eval.jsonl").splitlines() if li
 tools = json.loads(fetch("tools.json"))
 if args.eval_limit:
     eval_rows = eval_rows[: args.eval_limit]
-print(f"data: {len(train_rows)} train, {len(eval_rows)} eval, {len(tools)} tools", flush=True)
-
-tokenizer = AutoTokenizer.from_pretrained(BASE)
-start_from = {"pretrained_model_name_or_path": BASE}
-if args.checkpoint:
-    start_from = {"pretrained_model_name_or_path": args.checkpoint} if Path(args.checkpoint).exists() else {"pretrained_model_name_or_path": args.checkpoint, "subfolder": "pytorch"}
-model = AutoModelForCausalLM.from_pretrained(**start_from, dtype=torch.bfloat16, attn_implementation="eager").to(device)
-api = HfApi(token=os.environ.get("HF_TOKEN"))
-
-
-def as_ids(value):
-    if hasattr(value, "keys"):
-        value = value["input_ids"]
-    if hasattr(value, "tolist"):
-        value = value.tolist()
-    if value and isinstance(value[0], list):
-        value = value[0]
-    return list(value)
-
-
-def prompt_ids(messages):
-    return as_ids(tokenizer.apply_chat_template(messages[:2], tools=tools, add_generation_prompt=True, tokenize=True))
-
-
-def encode(row):
-    prompt = prompt_ids(row["messages"])
-    full = as_ids(tokenizer.apply_chat_template(row["messages"], tools=tools, tokenize=True))
-    assert full[: len(prompt)] == prompt, "the prompt isn't a prefix of the full chat"
-    return {"input_ids": full, "labels": [-100] * len(prompt) + full[len(prompt):]}
-
-
-example = encode(train_rows[0])
-print("prompt tokens:", sum(1 for label in example["labels"] if label == -100), flush=True)
-print("rendered example:", tokenizer.decode(example["input_ids"])[-400:], flush=True)
+# The learning curve and the choice of epoch use dev rows, every k-th eval row, which the
+# reported scores then leave out: a score never measures rows that chose the model.
+dev_rows = []
+if args.curve_rows > 0 and not args.check_data and len(eval_rows) > 2 * args.curve_rows:
+    every = len(eval_rows) // args.curve_rows
+    dev_rows = eval_rows[::every][: args.curve_rows]
+    chosen = {id(row) for row in dev_rows}
+    eval_rows = [row for row in eval_rows if id(row) not in chosen]
+print(f"data: {len(train_rows)} train, {len(eval_rows)} eval, {len(dev_rows)} dev, {len(tools)} tools", flush=True)
 
 # ---------------------------------------------------------------------------------------
 # Scoring: the same rules as src/prismos/commands.ts, reduced to what the eval needs.
@@ -187,6 +160,60 @@ def web_address(value):
     return host + ("/" + rest.rstrip("/") if rest.rstrip("/") else "")
 
 
+def math_text(value):
+    """An arithmetic expression in symbols without spaces, as evaluateExpression in
+    src/prismos/expression.ts reads it: "17 times 23", "17 * 23" and "17*23" are one."""
+    text = str(value).lower()
+    for words, symbol in [("multiplied by", "*"), ("times", "*"), ("divided by", "/"), ("over", "/"), ("plus", "+"),
+                          ("minus", "-"), ("percent of", "%*"), ("% of", "%*"), ("×", "*"), ("÷", "/")]:
+        text = text.replace(words, f" {symbol} ")
+    text = re.sub(r"(\d)\s*x\s*(?=[\d.(])", r"\1*", text)
+    return re.sub(r"\s+", "", text)
+
+
+DURATION_NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
+                    "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "fifteen": 15, "twenty": 20, "thirty": 30, "forty": 40,
+                    "fifty": 50, "sixty": 60, "ninety": 90}
+DURATION_UNITS = [(r"^(?:h|hr|hrs|hour|hours)$", 3600), (r"^(?:m|min|mins|minute|minutes)$", 60), (r"^(?:s|sec|secs|second|seconds)$", 1)]
+
+
+def duration_seconds(value):
+    """parseDuration in src/prismos/durations.ts: "5 min", "an hour and a half", "1:30"."""
+    text = re.sub(r"\s+", " ", str(value).strip().lower().rstrip(".!?").replace("-", " "))
+    text = re.sub(r"^(?:for|in) ", "", text)
+    text = re.sub(r" (?:timer|countdown)$", "", text)
+    clock = re.match(r"^(\d{1,2}):([0-5]\d)(?::([0-5]\d))?$", text)
+    if clock:
+        a, b, c = int(clock.group(1)), int(clock.group(2)), clock.group(3)
+        return a * 60 + b if c is None else a * 3600 + b * 60 + int(c)
+    if re.match(r"^\d+(?:\.\d+)?$", text):
+        return round(float(text) * 60)
+    text = re.sub(r"\bhalf an? (hour|minute)\b", r"0.5 \1", text)
+    text = re.sub(r"\b(?:an?|one) (hour|minute) and a half\b", r"1.5 \1", text)
+    text = re.sub(r"(\d)(?=[a-z])", r"\1 ", text)
+    text = re.sub(r"([a-z])(?=\d)", r"\1 ", text)
+    total, pending, any_unit = 0.0, None, False
+    for word in [w for w in re.split(r"[ ,]", text) if w and w != "and"]:
+        number = float(word) if re.match(r"^\d+(?:\.\d+)?$", word) else DURATION_NUMBERS.get(word)
+        if number is not None:
+            if pending is not None and not (pending >= 20 and pending % 10 == 0 and number < 10):
+                return None
+            pending = (pending or 0) + number
+            continue
+        unit = next((seconds for pattern, seconds in DURATION_UNITS if re.match(pattern, word)), None)
+        if unit is None or pending is None:
+            return None
+        total += pending * unit
+        pending, any_unit = None, True
+    return round(total) if any_unit and pending is None else None
+
+
+def plain_text(value):
+    """Free text compared by its words: case, quotes, apostrophes and end marks aside."""
+    text = re.sub(r"[\"“”'’]", "", str(value).lower())
+    return " ".join(re.sub(r"[?.!,;:]+$", "", text).split())
+
+
 def canonical(calls):
     result = []
     for name, arguments in calls:
@@ -197,10 +224,12 @@ def canonical(calls):
                 normalized[key] = photo_index(value)
             elif name == "open_website" and key == "address":
                 normalized[key] = web_address(value)
-            elif name in ("search_web", "start_timer"):
-                normalized[key] = " ".join(value.lower().rstrip("?.!").split())
-            elif name == "write_note" and key == "text":
-                normalized[key] = value.lower()
+            elif name == "calculate":
+                normalized[key] = math_text(value)
+            elif name == "start_timer":
+                normalized[key] = duration_seconds(value) or plain_text(value)
+            elif name == "search_web" or (name == "write_note" and key == "text"):
+                normalized[key] = plain_text(value)
             else:
                 normalized[key] = value.lower().replace(" ", "_")
         result.append((name, tuple(sorted(normalized.items()))))
@@ -223,7 +252,7 @@ def kind(row):
     return "two calls" if len(calls) > 1 else calls[0][0]
 
 
-def score(rows, generate, label):
+def score(rows, generate, label, misses=25):
     started = time.time()
     totals, correct, failures = {}, {}, []
     for row in rows:
@@ -234,7 +263,7 @@ def score(rows, generate, label):
         group = kind(row)
         totals[group] = totals.get(group, 0) + 1
         correct[group] = correct.get(group, 0) + int(ok)
-        if not ok and len(failures) < 25:
+        if not ok and len(failures) < misses:
             failures.append((row["messages"][1]["content"], calls or reply, raw[:200]))
     total = sum(totals.values())
     accuracy = sum(correct.values()) / max(total, 1)
@@ -246,6 +275,115 @@ def score(rows, generate, label):
     return {"accuracy": accuracy, "correct": sum(correct.values()), "total": total,
             "by_kind": {group: [correct[group], totals[group]] for group in totals}}
 
+
+
+# ---------------------------------------------------------------------------------------
+# --check-data: every expected answer, written as the model writes calls, must parse and
+# score as correct, and fit in MAX_NEW_TOKENS. It needs no GPU, no model and no
+# downloads, so the data and the scorer can be checked before a run is paid for:
+#
+#   python3 src/prismos/training/train.py --data src/prismos/training --repo x --check-data
+
+def format_calls(calls):
+    """FunctionGemma's call syntax, as the model writes it."""
+    return "".join("<start_function_call>call:" + name + "{" + ",".join(f"{key}:<escape>{value}<escape>" for key, value in arguments.items())
+                   + "}<end_function_call>" for name, arguments in calls)
+
+
+def check_data():
+    problems = []
+    kinds = {}
+    for split, rows in (("train", train_rows), ("eval", eval_rows)):
+        for row in rows:
+            calls, reply = expected(row)
+            kinds[kind(row)] = kinds.get(kind(row), 0) + 1
+            if reply is not None:
+                continue
+            got, text = parse_answer(format_calls(calls) + "<start_function_response>")
+            if canonical(got) != canonical(calls) or text != "":
+                problems.append(f"{split}: {row['messages'][1]['content']!r} doesn't survive the scorer: {got}")
+            # About 3.5 characters a token, and one for each special token.
+            if len(format_calls(calls)) / 3.5 > MAX_NEW_TOKENS - 20:
+                problems.append(f"{split}: {row['messages'][1]['content']!r} may need more than {MAX_NEW_TOKENS} tokens")
+    same = [
+        ("calculate", {"expression": "17 times 23"}, {"expression": "17 * 23"}),
+        ("calculate", {"expression": "10% of 250"}, {"expression": "10% * 250"}),
+        ("calculate", {"expression": "250x0.75"}, {"expression": "250 * 0.75"}),
+        ("start_timer", {"duration": "an hour and a half"}, {"duration": "90 minutes"}),
+        ("start_timer", {"duration": "1:30"}, {"duration": "90 seconds"}),
+        ("start_timer", {"duration": "twenty five minutes"}, {"duration": "25 min"}),
+        ("search_web", {"query": "What's the weather in Tokyo"}, {"query": "whats the weather in tokyo?"}),
+        ("open_website", {"address": "wikipedia dot org"}, {"address": "https://www.wikipedia.org/"}),
+        ("write_note", {"text": "\"buy milk\"", "mode": "append"}, {"text": "Buy milk.", "mode": "append"}),
+        ("open_photo", {"photo": "Blue Lagoon"}, {"photo": "11"}),
+    ]
+    for name, a, b in same:
+        if canonical([(name, a)]) != canonical([(name, b)]):
+            problems.append(f"the scorer tells apart equal calls: {name} {a} and {b}")
+    different = [("calculate", {"expression": "17 * 23"}, {"expression": "17 + 23"}), ("start_timer", {"duration": "5 minutes"}, {"duration": "5 seconds"})]
+    for name, a, b in different:
+        if canonical([(name, a)]) == canonical([(name, b)]):
+            problems.append(f"the scorer confuses {name} {a} and {b}")
+    names = {tool["function"]["name"] for tool in tools}
+    seen = {name for row in train_rows for name, _ in expected(row)[0]}
+    for name in sorted(names - seen):
+        problems.append(f"train never calls {name}")
+    eval_seen = {name for row in eval_rows for name, _ in expected(row)[0]}
+    for name in sorted(names - eval_seen):
+        problems.append(f"eval never calls {name}")
+    overlap = {row["messages"][1]["content"].lower() for row in train_rows} & {row["messages"][1]["content"].lower() for row in eval_rows}
+    if overlap:
+        problems.append(f"{len(overlap)} eval sentences also appear in train, e.g. {sorted(overlap)[:3]}")
+    print("kinds:", ", ".join(f"{name} {count}" for name, count in sorted(kinds.items(), key=lambda item: -item[1])))
+    for problem in problems[:40]:
+        print("PROBLEM", problem)
+    print(f"{len(problems)} problems in {len(train_rows)} train and {len(eval_rows)} eval rows, {len(names)} tools")
+    sys.exit(1 if problems else 0)
+
+
+if args.check_data:
+    check_data()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from huggingface_hub import HfApi, hf_hub_download  # noqa: E402
+from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: E402
+
+torch.manual_seed(0)
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+tokenizer = AutoTokenizer.from_pretrained(BASE)
+start_from = {"pretrained_model_name_or_path": BASE}
+if args.checkpoint:
+    start_from = {"pretrained_model_name_or_path": args.checkpoint} if Path(args.checkpoint).exists() else {"pretrained_model_name_or_path": args.checkpoint, "subfolder": "pytorch"}
+model = AutoModelForCausalLM.from_pretrained(**start_from, dtype=torch.bfloat16, attn_implementation="eager").to(device)
+api = HfApi(token=os.environ.get("HF_TOKEN"))
+
+
+def as_ids(value):
+    if hasattr(value, "keys"):
+        value = value["input_ids"]
+    if hasattr(value, "tolist"):
+        value = value.tolist()
+    if value and isinstance(value[0], list):
+        value = value[0]
+    return list(value)
+
+
+def prompt_ids(messages):
+    return as_ids(tokenizer.apply_chat_template(messages[:2], tools=tools, add_generation_prompt=True, tokenize=True))
+
+
+def encode(row):
+    prompt = prompt_ids(row["messages"])
+    full = as_ids(tokenizer.apply_chat_template(row["messages"], tools=tools, tokenize=True))
+    assert full[: len(prompt)] == prompt, "the prompt isn't a prefix of the full chat"
+    return {"input_ids": full, "labels": [-100] * len(prompt) + full[len(prompt):]}
+
+
+example = encode(train_rows[0])
+print("prompt tokens:", sum(1 for label in example["labels"] if label == -100), flush=True)
+print("rendered example:", tokenizer.decode(example["input_ids"])[-400:], flush=True)
 
 @torch.no_grad()
 def torch_generate(messages):
@@ -262,9 +400,14 @@ if not args.skip_base_eval:
 # ---------------------------------------------------------------------------------------
 # Training: full fine-tune, loss on the answer tokens only. The logits are computed only
 # at those positions, since the 262,144-word vocabulary makes logits for a whole
-# 1,500-token prompt cost gigabytes.
+# 3,300-token prompt cost gigabytes.
 
 encoded = [encode(row) for row in train_rows]
+lengths = [len(item["input_ids"]) for item in encoded]
+answers = [sum(1 for label in item["labels"] if label != -100) for item in encoded]
+print(f"train tokens: {sum(lengths):,} an epoch, {max(lengths)} the longest row, answers up to {max(answers)} tokens", flush=True)
+if max(answers) > MAX_NEW_TOKENS:
+    print(f"WARNING: an answer of {max(answers)} tokens is longer than MAX_NEW_TOKENS = {MAX_NEW_TOKENS}", flush=True)
 model.train()
 model.gradient_checkpointing_enable()
 optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.0, betas=(0.9, 0.98))
@@ -301,6 +444,24 @@ def micro_loss(batch):
 
 
 print(f"\ntraining: {total_steps} steps of {args.batch}, lr {args.lr}, {args.epochs} epochs", flush=True)
+curve = []
+best = {"accuracy": -1.0, "step": 0, "state": None}
+
+
+def checkpoint(step):
+    """Scores the dev rows; keeps the weights when they're the best so far."""
+    if not dev_rows:
+        return
+    model.gradient_checkpointing_disable()
+    model.eval()
+    result = score(dev_rows, torch_generate, f"dev after step {step} ({step / steps_per_epoch:.2f} epochs)", misses=5)
+    curve.append({"step": step, "epochs": round(step / steps_per_epoch, 2), "accuracy": result["accuracy"]})
+    if result["accuracy"] > best["accuracy"]:
+        best.update(accuracy=result["accuracy"], step=step, state={key: value.detach().to("cpu", copy=True) for key, value in model.state_dict().items()})
+    model.train()
+    model.gradient_checkpointing_enable()
+
+
 step = 0
 started = time.time()
 order = list(range(len(encoded)))
@@ -324,6 +485,17 @@ while step < total_steps:
         if step % 25 == 0:
             print(f"step {step}/{total_steps} loss {running:.4f} lr {learning_rate(step):.2e} {time.time() - started:.0f} s", flush=True)
         step += 1
+        if step % steps_per_epoch == 0 and step < total_steps:
+            checkpoint(step)
+
+if total_steps > 0:
+    checkpoint(total_steps)
+if best["state"] is not None and best["step"] != total_steps:
+    print(f"keeping the weights after step {best['step']}, the best on dev ({best['accuracy']:.1%})", flush=True)
+    model.load_state_dict(best["state"])
+best["state"] = None
+results["curve"] = curve
+results["best_step"] = best["step"]
 
 model.gradient_checkpointing_disable()
 model.eval()
@@ -391,7 +563,7 @@ if not same:
             print(f"  {label} differ:\n    reference {a}\n    mine      {b}", flush=True)
 
 # Logits for the last position only, see last_token_logits.py: the builder's graph
-# computes them for the whole 1,863-token prompt, about 2 GB that generation never reads.
+# computes them for the whole 3,300-token prompt, about 3 GB that generation never reads.
 helper_scope = {"__name__": "last_token_logits"}
 exec(compile(fetch("last_token_logits.py"), "last_token_logits.py", "exec"), helper_scope)
 helper_scope["last_token_logits"](str(web_dir / "onnx" / "model_q4f16.onnx"))
@@ -483,7 +655,8 @@ calls, or a short reply. It runs in the browser with Transformers.js on WebGPU
 
 ## Results on held-out phrasings
 
-Every eval sentence uses a phrasing template that never appears in training.
+Every eval sentence uses a phrasing template that never appears in training. The epoch
+kept was the best on a separate dev set of eval sentences, which these scores leave out.
 
 | Model | Correct |
 | --- | --- |

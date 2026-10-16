@@ -91,6 +91,8 @@ test('arithmetic follows precedence, reads words, and never runs code', () => {
   assert.equal(value('what is 17 times 23'), 391)
   assert.equal(value('10% of 250'), 25)
   assert.equal(value('2 squared'), 4)
+  assert.equal(value('3x4'), 12)
+  assert.equal(value('250x0.75'), 187.5)
   assert.equal(value('-3 - -3'), 0)
   assert.equal(value('1 / 0'), 'That has no number for an answer, e.g. a division by zero.')
   assert.equal(typeof value('alert(1)'), 'string')
@@ -135,7 +137,7 @@ test('Browser takes web addresses and searches, and leaves file names alone', ()
   assert.deepEqual(calls('Open en.wikipedia.org/wiki/Prism?action=history'), ['open_website(https://en.wikipedia.org/wiki/Prism?action=history)'])
   assert.deepEqual(calls('visit the site xkcd.com.'), ['open_website(https://xkcd.com/)'])
   assert.deepEqual(calls('https://example.com'), ['open_website(https://example.com/)'])
-  assert.deepEqual(calls('search the web for Glass Prisms?'), ['search_web(Glass Prisms?)'])
+  assert.deepEqual(calls('search the web for Glass Prisms?'), ['search_web(Glass Prisms)'])
   assert.deepEqual(calls('look up how rainbows form'), ['search_web(how rainbows form)'])
   assert.deepEqual(calls('open the browser'), ['open_app(browser)'])
   assert.deepEqual(calls('maximize browser'), ['maximize_app(browser)'])
@@ -155,7 +157,7 @@ test('Browser takes web addresses and searches, and leaves file names alone', ()
 test('spoken sentences: browsers by name, three commands, addresses said aloud', () => {
   const calls = (text: string) => quickCommands(text)?.map(describeCall) ?? null
   assert.deepEqual(calls('open safari'), ['open_app(browser)'])
-  assert.deepEqual(calls('Close Inkwell, open Safari and search for YouTube'), ['close_app(inkwell)', 'open_app(browser)', 'search_web(youtube)'])
+  assert.deepEqual(calls('Close Inkwell, open Safari and search for YouTube'), ['close_app(inkwell)', 'open_app(browser)', 'search_web(YouTube)'])
   assert.deepEqual(calls('open chrome then go to wikipedia.org'), ['open_app(browser)', 'open_website(https://wikipedia.org/)'])
   assert.deepEqual(calls('go to wikipedia dot org'), ['open_website(https://wikipedia.org/)'])
   assert.deepEqual(calls('en dot wikipedia dot org slash wiki slash Prism'), ['open_website(https://en.wikipedia.org/wiki/Prism)'])
@@ -167,7 +169,7 @@ test('spoken sentences: browsers by name, three commands, addresses said aloud',
 
 test('commands said without commas run together, and nonsense still doesn\'t parse', () => {
   const calls = (text: string) => quickCommands(text)?.map(describeCall) ?? null
-  assert.deepEqual(calls('close Inkwell open Safari and search for YouTube'), ['close_app(inkwell)', 'open_app(browser)', 'search_web(youtube)'])
+  assert.deepEqual(calls('close Inkwell open Safari and search for YouTube'), ['close_app(inkwell)', 'open_app(browser)', 'search_web(YouTube)'])
   assert.deepEqual(calls('minimize scope open the calculator'), ['minimize_app(scope)', 'open_app(calculator)'])
   assert.deepEqual(calls('dark mode teal accent'), ['set_theme(dark)', 'set_accent(teal)'])
   assert.deepEqual(calls('search for glass prisms'), ['search_web(glass prisms)'])

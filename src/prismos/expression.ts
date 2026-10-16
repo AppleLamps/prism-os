@@ -11,6 +11,8 @@ export function normalizeExpression(text: string): string {
     .replace(/\b(what is|what's|whats|calculate|compute|how much is|equals?|the answer to)\b/gu, ' ')
     .replace(/\bhalf of\b/gu, ' 0.5 * ')
     .replace(/\bsquared\b/gu, ' ^ 2 ')
+    // "3x4" as typed, with no space around the x.
+    .replace(/(\d)x(?=[\d.(])/gu, '$1 * ')
     .replace(/\b(multiplied by|times|x)\b/gu, ' * ')
     .replace(/\b(divided by|over)\b/gu, ' / ')
     .replace(/\bplus\b/gu, ' + ')

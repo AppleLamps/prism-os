@@ -257,7 +257,7 @@ export const toolDeclarations: readonly ToolDeclaration[] = [
 export const appAliases: Record<App, readonly string[]> = {
   cabinet: ['cabinet', 'files', 'file manager', 'the files', 'the file manager'],
   // The browsers people know by name all mean Browser: "open safari" opens it.
-  browser: ['browser', 'web browser', 'the browser', 'the web browser', 'internet', 'the internet', 'the web', 'safari', 'chrome', 'google chrome', 'firefox', 'edge', 'microsoft edge'],
+  browser: ['browser', 'web browser', 'the browser', 'the web browser', 'internet', 'the internet', 'the web', 'safari', 'chrome', 'google chrome', 'firefox', 'microsoft edge'],
   scope: ['scope', 'monitor', 'inspector', 'the inspector', 'circuit inspector'],
   inkwell: ['inkwell', 'notes', 'note', 'the note', 'notepad', 'ink well'],
   chroma: ['chroma', 'photos', 'photo', 'gallery', 'pictures', 'the gallery', 'images'],

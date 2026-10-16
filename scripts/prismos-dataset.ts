@@ -17,7 +17,13 @@ import {photoNames} from '../src/handwiredos/photo-gallery.ts'
 import {type App, type ProgramApp, accentNames, apps, cities, programApps, sceneNames, toolDeclarations, validateCall} from '../src/prismos/commands.ts'
 
 type Call = {name: string, arguments: Record<string, string>}
-type Row = {user: string, calls?: Call[], reply?: string}
+// keepCase: the answer copies words of the sentence (a path, a note, a search), so the
+// sentence is never written in capitals, which the answer couldn't follow. free: the
+// sentence ends in free text, e.g. a search, so a command after it in a longer sentence
+// needs a comma or "and" to say where the text stops.
+// asked: the sentence is a question searched as asked, so the search is the sentence as
+// dressed, without its "please" and its end mark.
+type Row = {user: string, calls?: Call[], reply?: string, keepCase?: boolean, free?: boolean, asked?: boolean}
 type Split = 'train' | 'eval'
 
 // A seeded generator, so the same command list always writes the same data.
@@ -81,8 +87,8 @@ const templates = {
   scope_list: {
     up: ['scroll up in scope', 'go up one row', 'move up in the list', 'up one', 'select the row above', 'one row up', 'previous row', 'up a row', 'move the selection up', 'the row before'],
     down: ['scroll down in scope', 'go down one row', 'move down in the list', 'down one', 'select the next row', 'one row down', 'next row', 'down a row', 'move the selection down', 'the row after'],
-    page_up: ['page up', 'scroll up a page in scope', 'go up a page', 'previous page of the list', 'one page up', 'up a whole page', 'page up in the inspector', 'back a page', 'scroll a screen up', 'jump up a page'],
-    page_down: ['page down', 'scroll down a page in scope', 'go down a page', 'next page of the list', 'one page down', 'down a whole page', 'page down in the inspector', 'forward a page', 'scroll a screen down', 'jump down a page'],
+    page_up: ['page up', 'page up in the list', 'scroll up a page in scope', 'go up a page', 'previous page of the list', 'one page up', 'up a whole page', 'page up in the inspector', 'scroll a screen up', 'jump up a page'],
+    page_down: ['page down', 'page down in the list', 'scroll down a page in scope', 'go down a page', 'next page of the list', 'one page down', 'down a whole page', 'page down in the inspector', 'scroll a screen down', 'jump down a page'],
     top: ['scroll scope to the top', 'go to the top of the list', 'jump to the first row', 'back to the top', 'top of the list', 'first row', 'scroll all the way up', 'the very first row', 'start of the list', 'go to the very top'],
     bottom: ['scroll scope to the bottom', 'go to the end of the list', 'jump to the last row', 'all the way down', 'bottom of the list', 'last row', 'scroll all the way down', 'the very last row', 'end of the list', 'go to the very bottom'],
   },
@@ -187,25 +193,51 @@ const sceneForms: Record<(typeof sceneNames)[number], readonly string[]> = {
 const siteForms = ['wikipedia.org', 'en.wikipedia.org/wiki/Prism', 'archive.org', 'xkcd.com', 'example.com', 'www.gutenberg.org', 'https://en.wiktionary.org/wiki/glass', 'bing.com', 'github.com', 'news.ycombinator.com', 'https://www.bbc.com/news', 'nytimes.com', 'developer.mozilla.org', 'youtube.com/watch?v=dQw4w9WgXcQ', 'en.wikipedia.org/wiki/Optics', 'marginalia-search.com', 'wikipedia dot org', 'xkcd dot com', 'archive dot org', 'en dot wikipedia dot org slash wiki slash Light']
 const searchQueries = ['youtube', 'glass prisms', 'how rainbows form', 'best pancake recipe', 'the speed of light', 'weather in Tokyo', 'who invented the telescope', 'liquid glass design', 'neural networks explained', 'cheap flights to Lisbon', 'how to tie a bowline knot', 'Isaac Newton optics', 'sand dune formation', 'FunctionGemma', 'news today', 'chocolate chip cookies', 'the tallest mountain in Europe']
 const timerLengths = ['5 minutes', '10 minutes', '3 minutes', '1 minute', '30 seconds', '90 seconds', '45 seconds', '1 hour', '2 hours', 'half an hour', 'an hour and a half', '15 minutes', '25 minutes', '20 mins', '1 minute 30 seconds', '2.5 minutes', '1:30', 'ten minutes', 'twenty minutes', '8 min']
+// Cabinet's files and folders as people name them: a path from the top, or a name in
+// the folder Cabinet shows. The answer copies the path as typed.
+const folders = ['Documents', 'Pictures', 'Projects', 'Music', 'Downloads', 'Work', 'Recipes', 'Travel']
+const fileNames = ['Notes.txt', 'Plan.txt', 'Beach.png', 'Ideas.md', 'Budget.csv', 'Resume.txt', 'todo.txt', 'report.md', 'cat.jpg', 'Groceries.txt', 'Trip.png', 'Draft 2.txt']
+const newFiles = ['Idea.txt', 'Letter.txt', 'Packing List.txt', 'Meeting Notes.md', 'Poem.txt', 'Recipe.txt']
+const newFolders = ['Garden', 'Taxes 2026', 'Photos', 'Archive', 'School', 'Old Stuff']
+const newNames = ['Final.txt', 'Plan v2.txt', 'Old Notes.txt', 'Summer.png', 'Budget 2026.csv', 'Draft.md']
+const fileQueries = ['Plan', 'budget', 'beach', 'notes', 'resume', 'trip', 'report', 'ideas']
+const inFolder = (name: string) => random.next() < 0.55 ? `/${pick(folders)}/${name}` : name
+const filePath = () => inFolder(pick(fileNames))
+const folderPath = () => random.next() < 0.55 ? `/${pick(folders)}` : pick(folders)
+const newFilePath = () => inFolder(pick(newFiles))
+const newFolderPath = () => inFolder(pick(newFolders))
+const cabinetTemplates = {
+  list_files: ['list files in {folder}', 'list the files in {folder}', 'show the files in {folder}', 'what files are in {folder}', 'what is in {folder}', 'list everything in {folder}', 'show me the contents of {folder}', 'list the contents of {folder}', 'which files are in {folder}', 'list {folder}'],
+  open_file: ['open file {file}', 'open {file}', 'open the file {file}', 'bring up {file}', 'open the folder {folder}', 'go to the folder {folder}', 'open {file} in cabinet', 'pull up the file {file}', 'view the file {file}', 'open folder {folder}'],
+  create_folder: ['create folder {newfolder}', 'make a folder called {newfolder}', 'new folder {newfolder}', 'create a new folder named {newfolder}', 'add a folder {newfolder}', 'make a new folder {newfolder}', 'create a directory {newfolder}', 'make folder {newfolder}', 'set up a folder called {newfolder}', 'I need a new folder {newfolder}'],
+  create_document: ['create document {newfile}', 'make a new text file {newfile}', 'create an empty file called {newfile}', 'new document {newfile}', 'make a document named {newfile}', 'start a new file {newfile}', 'create a text document {newfile}', 'add a blank file {newfile}', 'make an empty document at {newfile}', 'create file {newfile}'],
+  save_note_as: ['save my note as {newfile}', 'save the note as {newfile}', 'save inkwell as {newfile}', 'save this note to {newfile}', 'store my note in {newfile}', 'save the draft as {newfile}', 'keep a copy of my note in {newfile}', 'save the notes to {newfile}', 'save what I wrote as {newfile}', 'save my inkwell draft as {newfile}'],
+  duplicate_file: ['duplicate file {file}', 'duplicate {file}', 'make a copy of {file}', 'copy {file}', 'clone {file}', 'create a duplicate of {file}', 'make another copy of {file}', 'copy the file {file}', 'duplicate the file {file}', 'make a second copy of {file}'],
+  trash_file: ['trash file {file}', 'move {file} to the trash', 'put {file} in the trash', 'throw away {file}', 'trash {file}', 'send {file} to the trash', 'get rid of {file}', 'remove {file}', 'bin {file}', 'toss {file} in the trash'],
+  restore_file: ['restore file {file}', 'restore {file}', 'recover {file}', 'bring {file} back from the trash', 'undelete {file}', 'get {file} out of the trash', 'restore {file} from the trash', 'take {file} out of the trash', 'put {file} back where it was', 'recover {file} from the trash'],
+  download_file: ['download file {file}', 'download {file}', 'save {file} to my computer', 'export {file}', 'download a copy of {file}', 'save {file} to my device', 'get {file} onto my computer', 'download the file {file}', 'export {file} to my device', 'save a copy of {file} to my downloads'],
+  delete_file: ['delete file {file}', 'permanently delete {file}', 'delete {file} forever', 'erase {file} from the trash', 'remove {file} from the trash for good', 'permanently remove {file}', 'delete {file} permanently', 'wipe {file} from the trash', 'destroy {file} in the trash', 'purge {file} from the trash'],
+  search_files: ['search files for {q}', 'find files named {q}', 'search cabinet for {q}', 'find {q} in my files', 'look for files called {q}', 'which files have {q} in the name', 'search my files for {q}', 'find the file called {q}', 'locate {q} in cabinet', 'find files with {q} in the name'],
+  rename_file: ['rename file {file} to {newname}', 'rename {file} to {newname}', 'change the name of {file} to {newname}', 'call {file} {newname} instead', 'rename {file} as {newname}', 'give {file} the name {newname}', 'retitle {file} to {newname}', 'change {file} to be named {newname}', 'rename the file {file} to {newname}', 'name {file} {newname} from now on'],
+  move_file: ['move file {file} to {folder}', 'move {file} to {folder}', 'put {file} in {folder}', 'move {file} into the folder {folder}', 'file {file} under {folder}', 'relocate {file} to {folder}', 'drag {file} into {folder}', 'send {file} over to {folder}', 'move the file {file} into {folder}', 'shift {file} over to {folder}'],
+  empty_trash: ['empty the trash', 'empty trash', 'clear the trash', 'delete everything in the trash', 'take out the trash', 'wipe the trash', 'empty the bin', 'purge the trash', 'permanently delete everything in trash', 'clean out the trash'],
+  import_files: ['import files', 'import some files', 'add files from my computer', 'upload files to cabinet', 'bring files into cabinet', 'import photos from my device', 'add a file from my computer', 'upload a document', 'import from my computer', 'let me add files to cabinet'],
+} as const
+
 const cityNames = Object.keys(cities).filter(city => city !== 'here')
 const titleCase = (text: string) => text.replace(/\b\w/gu, letter => letter.toUpperCase())
 
-// An arithmetic question as people type it, and the expression to send: symbols or
-// words, with or without spaces.
-function arithmeticQuestion(): {phrase: string, expression: string} {
+// Arithmetic as people type it: symbols or words, with or without spaces.
+function arithmeticQuestion(): string {
   const number = () => String(pick([2, 3, 4, 5, 7, 8, 9, 12, 15, 17, 23, 25, 42, 50, 64, 99, 100, 128, 250, 365, 1024, 2.5, 0.75]))
-  const operators = [['+', 'plus', '+'], ['-', 'minus', '-'], ['*', 'times', '*'], ['/', 'divided by', '/'], ['x', 'multiplied by', '*'], ['×', 'times', '*'], ['÷', 'over', '/']] as const
-  const [symbol, word, canonical] = pick(operators)
+  const operators = [['+', 'plus'], ['-', 'minus'], ['*', 'times'], ['/', 'divided by'], ['x', 'multiplied by'], ['×', 'times'], ['÷', 'over']] as const
+  const [symbol, word] = pick(operators)
   const a = number()
   const b = number()
   const style = random.next()
-  if (style < 0.12) return {phrase: `${a}% of ${b}`, expression: `${a}% * ${b}`}
-  if (style < 0.2) {
-    const c = number()
-    return {phrase: `(${a} + ${b}) * ${c}`, expression: `(${a} + ${b}) * ${c}`}
-  }
-  const phrase = style < 0.55 ? `${a} ${word} ${b}` : style < 0.8 ? `${a} ${symbol} ${b}` : `${a}${symbol}${b}`
-  return {phrase, expression: `${a} ${canonical} ${b}`}
+  if (style < 0.12) return `${a}% of ${b}`
+  if (style < 0.2) return `(${a} + ${b}) * ${number()}`
+  return style < 0.55 ? `${a} ${word} ${b}` : style < 0.8 ? `${a} ${symbol} ${b}` : `${a}${symbol}${b}`
 }
 const ordinals = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth']
 const numberWords = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
@@ -243,7 +275,7 @@ function fill(template: string, values: Record<string, string>) {
 }
 
 // Makes a sentence look typed: capitals, a please, a trailing mark.
-function dress(sentence: string) {
+function dress(sentence: string, keepCase = false) {
   let text = sentence
   const extra = random.next()
   if (extra < 0.08) text = `please ${text}`
@@ -252,37 +284,42 @@ function dress(sentence: string) {
   else if (extra < 0.22) text = `can you ${text}`
   const r = random.next()
   if (r < 0.45) text = text.charAt(0).toUpperCase() + text.slice(1)
-  else if (r < 0.47) text = text.toUpperCase()
+  else if (r < 0.47 && !keepCase) text = text.toUpperCase()
   const mark = random.next()
   if (mark < 0.15) text += '.'
   else if (mark < 0.22) text += '!'
   return text
 }
 
+// A dressed sentence without the words and marks dress() adds around it.
+function withoutCourtesy(sentence: string) {
+  return sentence.replace(/^(?:please|hey,|can you)\s+/iu, '').replace(/\s+please(?=[.!]?$)/iu, '').replace(/[.!]+$/u, '')
+}
+
 // One command row of each kind, phrased from the split's templates.
 const commandMakers: Record<string, (split: Split) => Row> = {
   cabinet(split) {
-    const name = pick(['list_files', 'open_file', 'create_folder', 'create_document', 'save_note_as', 'duplicate_file', 'trash_file', 'restore_file', 'download_file', 'delete_file', 'search_files', 'rename_file', 'move_file', 'empty_trash', 'import_files'] as const)
-    const path = pick(['/Documents/Notes.txt', '/Documents/Plan.txt', '/Pictures/Beach.png', '/Projects/Ideas.txt'])
-    const forms: Record<string, {args: Record<string, string>, train: string, eval: string}> = {
-      list_files: {args: {path: '/Documents'}, train: 'list files in /Documents', eval: 'show the contents of /Documents'},
-      open_file: {args: {path}, train: `open file ${path}`, eval: `bring up the Cabinet file ${path}`},
-      create_folder: {args: {path: '/Documents/Projects'}, train: 'create folder /Documents/Projects', eval: 'make a new folder called Projects in Documents'},
-      create_document: {args: {path: '/Documents/Idea.txt'}, train: 'create document /Documents/Idea.txt', eval: 'make an empty text file at /Documents/Idea.txt'},
-      save_note_as: {args: {path: '/Documents/Copy.txt'}, train: 'save my note as /Documents/Copy.txt', eval: 'keep a copy of my Inkwell draft in /Documents/Copy.txt'},
-      duplicate_file: {args: {path}, train: `duplicate file ${path}`, eval: `make another copy of ${path}`},
-      trash_file: {args: {path}, train: `trash file ${path}`, eval: `put ${path} in recoverable Trash`},
-      restore_file: {args: {path}, train: `restore file ${path}`, eval: `recover ${path} from Trash`},
-      download_file: {args: {path}, train: `download file ${path}`, eval: `export ${path} to my device`},
-      delete_file: {args: {path}, train: `delete file ${path}`, eval: `permanently remove ${path} from Trash`},
-      search_files: {args: {query: 'Plan'}, train: 'search files for Plan', eval: 'find Cabinet items containing Plan in their names'},
-      rename_file: {args: {path, new_name: 'Updated.txt'}, train: `rename file ${path} to Updated.txt`, eval: `change the name of ${path} to Updated.txt`},
-      move_file: {args: {path, destination: '/Documents'}, train: `move file ${path} to /Documents`, eval: `relocate ${path} into the Documents folder`},
-      empty_trash: {args: {}, train: 'empty the trash', eval: 'erase all items in Trash permanently'},
-      import_files: {args: {}, train: 'import files', eval: 'I want to add files from my device to Cabinet'},
+    const name = pick(Object.keys(cabinetTemplates) as (keyof typeof cabinetTemplates)[])
+    const values = {file: filePath(), folder: folderPath(), newfile: newFilePath(), newfolder: newFolderPath(), newname: pick(newNames), q: pick(fileQueries)}
+    const user = fill(pick(phrasings(cabinetTemplates[name], split)), values)
+    const args: Record<string, Record<string, string>> = {
+      list_files: {path: values.folder},
+      open_file: {path: user.includes(values.file) ? values.file : values.folder},
+      create_folder: {path: values.newfolder},
+      create_document: {path: values.newfile},
+      save_note_as: {path: values.newfile},
+      duplicate_file: {path: values.file},
+      trash_file: {path: values.file},
+      restore_file: {path: values.file},
+      download_file: {path: values.file},
+      delete_file: {path: values.file},
+      search_files: {query: values.q},
+      rename_file: {path: values.file, new_name: values.newname},
+      move_file: {path: values.file, destination: values.folder},
+      empty_trash: {},
+      import_files: {},
     }
-    const form = forms[name]!
-    return {user: form[split], calls: single(name, form.args)}
+    return {user, calls: single(name, args[name]), keepCase: true, free: name === 'search_files'}
   },
   app_command(split) {
     const name = pick(['open_app', 'minimize_app', 'maximize_app', 'restore_app', 'close_app'] as const)
@@ -339,7 +376,7 @@ const commandMakers: Record<string, (split: Split) => Row> = {
   write_note(split) {
     const text = pick(noteTexts)
     const replace = random.next() < 0.3
-    return {user: fill(pick(phrasings(replace ? templates.write_note_replace : templates.write_note_append, split)), {text}), calls: single('write_note', {mode: replace ? 'replace' : 'append', text})}
+    return {user: fill(pick(phrasings(replace ? templates.write_note_replace : templates.write_note_append, split)), {text}), calls: single('write_note', {mode: replace ? 'replace' : 'append', text}), keepCase: true}
   },
   note_other(split) {
     const name = pick(['clear_note', 'read_note'] as const)
@@ -358,8 +395,9 @@ const commandMakers: Record<string, (split: Split) => Row> = {
     return {user: fill(pick(phrasings(templates.set_wallpaper, split)), {scene: pick(sceneForms[scene])}), calls: single('set_wallpaper', {scene})}
   },
   calculate(split) {
-    const {phrase, expression} = arithmeticQuestion()
-    return {user: fill(pick(phrasings(templates.calculate, split)), {expr: phrase}), calls: single('calculate', {expression})}
+    // The answer copies the arithmetic as typed, words and all: the validator reads it.
+    const phrase = arithmeticQuestion()
+    return {user: fill(pick(phrasings(templates.calculate, split)), {expr: phrase}), calls: single('calculate', {expression: phrase}), keepCase: true}
   },
   stopwatch(split) {
     const action = pick(['start', 'stop', 'lap', 'reset'] as const)
@@ -382,10 +420,10 @@ const commandMakers: Record<string, (split: Split) => Row> = {
   web(split) {
     if (random.next() < 0.45) {
       const query = pick(searchQueries)
-      return {user: fill(pick(phrasings(templates.search_web, split)), {query}), calls: single('search_web', {query})}
+      return {user: fill(pick(phrasings(templates.search_web, split)), {query}), calls: single('search_web', {query}), keepCase: true}
     }
     const address = pick(siteForms)
-    return {user: fill(pick(phrasings(templates.open_website, split)), {site: address}), calls: single('open_website', {address})}
+    return {user: fill(pick(phrasings(templates.open_website, split)), {site: address}), calls: single('open_website', {address}), keepCase: true}
   },
   browser_navigate(split) {
     const action = pick(Object.keys(templates.browser_navigate) as (keyof typeof templates.browser_navigate)[])
@@ -396,7 +434,7 @@ const commandMakers: Record<string, (split: Split) => Row> = {
       const duration = pick(timerLengths)
       // "a 5 minute timer", as people say a length before "timer".
       const user = random.next() < 0.2 ? `${pick(['start a', 'set a', 'give me a'])} ${duration.replace(/s$/u, '')} timer` : fill(pick(phrasings(templates.start_timer, split)), {d: duration})
-      return {user, calls: single('start_timer', {duration: user.endsWith(' timer') ? duration.replace(/s$/u, '') : duration})}
+      return {user, calls: single('start_timer', {duration: user.endsWith(' timer') ? duration.replace(/s$/u, '') : duration}), keepCase: true}
     }
     const action = pick(Object.keys(templates.timer) as (keyof typeof templates.timer)[])
     return {user: pick(phrasings(templates.timer[action], split)), calls: single('timer', {action})}
@@ -405,7 +443,7 @@ const commandMakers: Record<string, (split: Split) => Row> = {
     const query = random.next() < 0.4
       ? fill(pick(phrasings(templates.weather_question, split)), {city: titleCase(pick(cityNames))})
       : pick(phrasings(templates.web_question, split))
-    return {user: query, calls: single('search_web', {query})}
+    return {user: query, calls: single('search_web', {query}), keepCase: true, asked: true}
   },
   info(split) {
     if (random.next() < 0.4) return {user: pick(phrasings(templates.get_stats, split)), calls: single('get_stats')}
@@ -430,10 +468,11 @@ function compound(split: Split): Row {
     () => ({user: 'freeze the wallpaper', calls: single('set_motion', {motion: 'off'})}),
     () => ({user: 'start the stopwatch', calls: single('stopwatch', {action: 'start'})}),
     () => { const city = pick(cityNames); return {user: `what time is it in ${titleCase(city)}`, calls: single('world_time', {city})} },
-    () => { const text = pick(noteTexts); return {user: `write ${text} in my notes`, calls: single('write_note', {mode: 'append', text})} },
-    () => { const address = pick(siteForms); return {user: `go to ${address}`, calls: single('open_website', {address})} },
-    () => { const query = pick(searchQueries); return {user: `${pick(['search for', 'search the web for', 'look up', 'google'])} ${query}`, calls: single('search_web', {query})} },
-    () => { const duration = pick(timerLengths); return {user: `set a timer for ${duration}`, calls: single('start_timer', {duration})} },
+    () => { const text = pick(noteTexts); return {user: `write ${text} in my notes`, calls: single('write_note', {mode: 'append', text}), keepCase: true} },
+    () => { const address = pick(siteForms); return {user: `go to ${address}`, calls: single('open_website', {address}), keepCase: true, free: address.includes(' ')} },
+    () => { const query = pick(searchQueries); return {user: `${pick(['search for', 'search the web for', 'look up', 'google'])} ${query}`, calls: single('search_web', {query}), keepCase: true, free: true} },
+    () => { const duration = pick(timerLengths); return {user: `set a timer for ${duration}`, calls: single('start_timer', {duration}), keepCase: true, free: true} },
+    () => { const path = filePath(); return {user: `open file ${path}`, calls: single('open_file', {path}), keepCase: true, free: true} },
     () => ({user: pick(['refresh the page', 'reload the page']), calls: single('browser_navigate', {action: 'reload'})}),
   ]
   const joiners = phrasings([' and ', ', then ', ' and then ', ', and ', ' and also ', ' then ', ', also '], split)
@@ -447,12 +486,14 @@ function compound(split: Split): Row {
     for (let tries = 0; tries < 5 && (third.user === first.user || third.user === second.user); tries++) third = pick(short)()
     const last = pick(phrasings([' and ', ', and ', ' and then ', ', then '], split))
     // Speech recognition writes no commas: "close inkwell open safari and search for youtube".
+    // Free text never runs straight into the next command, or its end would be a guess.
     const spoken = random.next() < 0.4
-    const user = `${first.user}${spoken ? ' ' : ', '}${second.user}${spoken ? last.replace(',', '') : last}${third.user}`
-    return {user, calls: [...first.calls!, ...second.calls!, ...third.calls!]}
+    const firstJoin = spoken && first.free !== true ? ' ' : ', '
+    const secondJoin = spoken && second.free !== true ? last.replace(',', '') : last
+    return {user: `${first.user}${firstJoin}${second.user}${secondJoin}${third.user}`, calls: [...first.calls!, ...second.calls!, ...third.calls!], keepCase: [first, second, third].some(part => part.keepCase === true)}
   }
-  const joiner = pick(joiners)
-  return {user: `${first.user}${random.next() < 0.15 ? ' ' : joiner}${second.user}`, calls: [...first.calls!, ...second.calls!]}
+  const joiner = random.next() < 0.15 && first.free !== true ? ' ' : pick(joiners)
+  return {user: `${first.user}${joiner}${second.user}`, calls: [...first.calls!, ...second.calls!], keepCase: first.keepCase === true || second.keepCase === true}
 }
 
 const capabilityReply = 'I can open, move, resize and arrange the windows and apps, open photos in Chroma, open web pages, search the web and look things up in Browser, write in your note, do arithmetic, run the stopwatch and timers, tell the time around the world, and change the appearance, accent color and wallpaper. Just tell me what to do.'
@@ -480,12 +521,12 @@ const textRows: Record<string, {users: readonly string[], replies: readonly stri
     replies: [declineReply],
   },
   unsupported: {
-    users: ['open microsoft word', 'delete all my files', 'install an app', 'change the wallpaper to cats', 'play some music', 'print this page', 'set an alarm for 7', 'shut down the computer', 'open photo 20', 'make the accent purple', 'add a new app', 'open a new window', 'upload a photo', 'take a screenshot', 'connect to wifi', 'send an email', 'call my mom', 'make the font bigger', 'turn up the volume', 'restart prism os'],
+    users: ['open microsoft word', 'delete all my files', 'install an app', 'change the wallpaper to cats', 'play some music', 'print this page', 'set an alarm for 7', 'shut down the computer', 'open photo 20', 'make the accent purple', 'add a new app', 'open a new window', 'print a document', 'take a screenshot', 'connect to wifi', 'send an email', 'call my mom', 'make the font bigger', 'turn up the volume', 'restart prism os'],
     replies: ['Prism OS can\'t do that yet. I can arrange its windows and apps, open its 12 photos, open web pages, set timers, write in the note, do arithmetic, run the stopwatch, tell the time, and change the appearance, accent and wallpaper.'],
   },
   ambiguous: {
     users: ['minimize it', 'close it', 'move it left', 'make it bigger', 'maximize that', 'hide that window', 'move this to the right', 'shrink it', 'close that', 'open it'],
-    replies: ['Which app: Scope, Inkwell, Chroma, Browser, Calculator, Clock, Terminal or Settings?'],
+    replies: ['Which app: Scope, Inkwell, Chroma, Cabinet, Browser, Calculator, Clock, Terminal or Settings?'],
   },
 }
 
@@ -495,16 +536,33 @@ function textRow(split: Split): Row {
   return {user: pick(phrasings(users, split)), reply: pick(replies)}
 }
 
+// How often each kind of row is made: about the number of commands it teaches, more for
+// the commands whose arguments vary the most, so every command gets its share.
+const makerWeights: Partial<Record<keyof typeof commandMakers, number>> = {
+  cabinet: 12, app_command: 5, move_app: 2, layout: 2, open_photo: 2, photo_step: 3, write_note: 2, note_other: 2,
+  calculate: 2, world_time: 1.5, appearance: 2, web: 3, timer: 2.5, web_question: 2, info: 2,
+}
+const weightedMakers = Object.entries(commandMakers).map(([name, make]) => ({make, weight: (makerWeights as Record<string, number>)[name] ?? 1}))
+const totalWeight = weightedMakers.reduce((sum, maker) => sum + maker.weight, 0)
+function pickMaker() {
+  let r = random.next() * totalWeight
+  for (const maker of weightedMakers) {
+    r -= maker.weight
+    if (r < 0) return maker.make
+  }
+  return weightedMakers.at(-1)!.make
+}
+
 function generate(split: Split, count: number) {
   const rows: Row[] = []
-  const makers = Object.values(commandMakers)
   const seen = new Set<string>()
   let attempts = 0
   while (rows.length < count && attempts < count * 20) {
     attempts++
     const r = random.next()
-    const row = r < 0.76 ? pick(makers)(split) : r < 0.9 ? compound(split) : textRow(split)
-    row.user = dress(row.user)
+    const row = r < 0.76 ? pickMaker()(split) : r < 0.9 ? compound(split) : textRow(split)
+    row.user = dress(row.user, row.keepCase === true)
+    if (row.asked === true) row.calls = single('search_web', {query: withoutCourtesy(row.user)})
     // Text rows repeat by design, a few times each; other rows are kept unique.
     const key = row.user.toLowerCase()
     if (row.calls !== undefined && seen.has(key)) continue
@@ -537,8 +595,8 @@ if (import.meta.main) {
     const crlf = existsSync(path) && readFileSync(path, 'utf8').includes('\r\n')
     writeFileSync(path, crlf ? text.replaceAll('\n', '\r\n') : text)
   }
-  const train = generate('train', 8000)
-  const evaluation = generate('eval', 700)
+  const train = generate('train', 10000)
+  const evaluation = generate('eval', 900)
   const trainUsers = new Set(train.map(row => row.user.toLowerCase()))
   const heldOut = evaluation.filter(row => !trainUsers.has(row.user.toLowerCase()))
   write('train.jsonl', train.map(row => JSON.stringify(toMessages(row))).join('\n') + '\n')

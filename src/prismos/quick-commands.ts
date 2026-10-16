@@ -24,7 +24,10 @@ function normalize(input: string) {
 
 const alternatives = (words: readonly string[]) => [...words].sort((a, b) => b.length - a.length).map(word => word.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')).join('|')
 const appWords = `(${alternatives(apps.flatMap(app => [app, ...appAliases[app]]))})`
-const the = '(?:the\\s+)?'
+const the = '(?:(?:the|my)\\s+)?'
+// "note to self" before "note", so the note doesn't start with "to self".
+const runsOn = /,|\s(?:and|then|open|close|show|hide|go|search|set|start|move|make|write|minimize|maximize)\s/iu
+const notePattern = /^(?:note to self|note|jot down|write down|take a note|add to (?:my |the )?notes?)[:,]? (.+)$/iu
 const windowWord = '(?:\\s+(?:app|window))?'
 const app = `${the}${appWords}${windowWord}`
 const positionWords: Record<string, (typeof positions)[number]> = {
@@ -39,26 +42,19 @@ type Call = Record<string, unknown> & {name: string}
 type Rule = [RegExp, (match: RegExpExecArray) => Call | Call[] | null]
 
 const rules: Rule[] = [
-  [/^list files(?: in (.+))?$/u, m => ({name: 'list_files', path: m[1] ?? '.'})],
-  [/^(?:search|find) files (?:for |named )?(.+)$/u, m => ({name: 'search_files', query: m[1]})],
-  [/^open (?:file|folder) (.+)$/u, m => ({name: 'open_file', path: m[1]})],
-  [/^create folder (.+)$/u, m => ({name: 'create_folder', path: m[1]})],
-  [/^create (?:text )?document (.+)$/u, m => ({name: 'create_document', path: m[1]})],
-  [/^save (?:my |the )?note as (.+)$/u, m => ({name: 'save_note_as', path: m[1]})],
-  [/^rename file (.+) to (.+)$/u, m => ({name: 'rename_file', path: m[1], new_name: m[2]})],
-  [/^move file (.+) to (.+)$/u, m => ({name: 'move_file', path: m[1], destination: m[2]})],
-  [/^(duplicate|trash|restore|download|delete) file (.+)$/u, m => ({name: ({duplicate: 'duplicate_file', trash: 'trash_file', restore: 'restore_file', download: 'download_file', delete: 'delete_file'} as Record<string, string>)[m[1]!]!, path: m[2]})],
+  // Cabinet's commands with a path are read from the words as written, see one().
   [/^empty (?:the )?trash$/u, () => ({name: 'empty_trash'})],
   [/^import files$/u, () => ({name: 'import_files'})],
   // Clock, first: "start the stopwatch" is the stopwatch, not "start" an app named Clock.
-  [/^(start|stop|reset|lap) (?:the )?stopwatch$|^stopwatch (start|stop|reset|lap)$|^(lap)$/u, m => ({name: 'stopwatch', action: m[1] ?? m[2] ?? m[3]})],
+  [/^(start|stop|reset|lap) (?:the )?stopwatch$|^stopwatch (start|stop|reset|lap)$|^(lap)(?: time)?$/u, m => ({name: 'stopwatch', action: m[1] ?? m[2] ?? m[3]})],
   // The timer: pausing and canceling first, so "cancel the timer" is never a length.
   [/^(pause|stop|cancel|resume|continue|clear|end) (?:the |my )?timer$|^timer (pause|stop|cancel|resume)$/u, m => ({name: 'timer', action: m[1] ?? m[2]})],
   [/^(?:set|start|make)(?: a| an| the)? timer (?:for|to) (.+)$|^(?:set|start)(?: a| an)? (.+?) timer$|^timer (?:for )?(.+)$|^(?:a |an )?(\S+(?: \S+){0,3}) timer$/u, m => ({name: 'start_timer', duration: m[1] ?? m[2] ?? m[3] ?? m[4]})],
   // Questions about the weather are web searches.
-  [/^(?:(?:whats|what is|hows|how is) )?(?:the )?(?:weather|forecast)(?: like)?(?: (?:today|tomorrow|tonight|now|right now|this week|this weekend))?(?: (?:in|for|at) [a-z .]+?)?(?: (?:today|tomorrow|tonight|this week|this weekend))?$|^(?:will it|is it going to) (?:rain|snow)(?: [a-z ]+)?$/u, m => ({name: 'search_web', query: m[0]})],
+  [/^(?:(?:whats|what is|hows|how is) )?(?:the )?(?:weather(?: forecast)?|forecast)(?: like)?(?: (?:today|tomorrow|tonight|now|right now|this week|this weekend))?(?: (?:in|for|at) [a-z .]+?)?(?: (?:today|tomorrow|tonight|this week|this weekend))?$|^(?:will it|is it going to) (?:rain|snow)(?: [a-z ]+)?$/u, m => ({name: 'search_web', query: m[0]})],
   [/^(?:what time is it|whats the time|what is the time|time|the time|current time)(?: (?:in|at) (.+))?$|^time in (.+)$/u, m => ({name: 'world_time', city: m[1] ?? m[2] ?? 'here'})],
-  // Windows and apps.
+  // Windows and apps. "close the photo" is Chroma's photo, not Chroma.
+  [/^(?:(?:close|exit|leave) (?:the |this )?(?:photo|picture|image)|back to (?:the )?grid)$/u, () => ({name: 'close_photo'})],
   [new RegExp(`^(?:open|show|launch|start|bring up|focus|switch to|go to|pull up) ${app}$`, 'u'), m => ({name: 'open_app', app: m[1]})],
   [new RegExp(`^(?:minimize|minimise|hide) ${app}$`, 'u'), m => ({name: 'minimize_app', app: m[1]})],
   [new RegExp(`^(?:maximize|maximise|fullscreen|full screen|zoom) ${app}$|^(?:make ${app} (?:full screen|fill the screen))$`, 'u'), m => ({name: 'maximize_app', app: m[1] ?? m[2]})],
@@ -77,7 +73,7 @@ const rules: Rule[] = [
   // Appearance and the desk.
   [/^(?:turn on |switch to |use |enable |go |set (?:the )?(?:appearance|theme) to )?(dark|light|night|day)(?: mode| theme| appearance)?(?: on)?$/u, m => ({name: 'set_theme', theme: m[1]})],
   [/^(?:follow|use|match) (?:the |my )?(?:system|device|os)(?: theme| appearance)?$|^(?:auto|automatic) (?:mode|theme|appearance)$/u, () => ({name: 'set_theme', theme: 'auto'})],
-  [new RegExp(`^(?:make it |set (?:the )?accent(?: color)?(?: to)? |(?:change|switch) (?:the )?accent(?: color)? to |accent(?: color)? )?(${alternatives([...accentNames, 'gray', 'grey', 'turquoise', 'gold', 'amber'])})(?: accent)?$`, 'u'), m => ({name: 'set_accent', color: m[1]})],
+  [new RegExp(`^(?:make it |make the accent(?: color)? |set (?:the )?accent(?: color)?(?: to)? |(?:change|switch) (?:the )?accent(?: color)? to |accent(?: color)? )?(${alternatives([...accentNames, 'gray', 'grey', 'turquoise', 'gold', 'amber'])})(?: accent)?$`, 'u'), m => ({name: 'set_accent', color: m[1]})],
   [new RegExp(`^(?:(?:set|change|switch) (?:the )?wallpaper (?:to )?|wallpaper )(${alternatives(sceneNames)})$|^(${alternatives(sceneNames)}) (?:wallpaper|scene)$`, 'u'), m => ({name: 'set_wallpaper', scene: m[1] ?? m[2]})],
   [/^(?:stop|pause|freeze) (?:the )?(?:wallpaper|dunes|background)(?: animation| motion)?$|^(?:wallpaper )?motion off$/u, () => ({name: 'set_motion', motion: 'off'})],
   [/^(?:animate|start|resume|play) (?:the )?(?:wallpaper|dunes|background)(?: animation| motion)?$|^(?:wallpaper )?motion on$/u, () => ({name: 'set_motion', motion: 'on'})],
@@ -93,8 +89,7 @@ const rules: Rule[] = [
   [/^(?:previous|prev|back|go back)$/u, () => ({name: 'previous_photo', bare: true})],
   [/^(?:next photo|next picture)$/u, () => ({name: 'next_photo'})],
   [/^(?:previous photo|previous picture|last photo)$/u, () => ({name: 'previous_photo'})],
-  [/^(?:close (?:the )?photo|back to (?:the )?grid)$/u, () => ({name: 'close_photo'})],
-  [/^(?:open|show|view) (?:the )?(?:photo|picture|image) (.+)$/u, m => parsePhoto(m[1]) === null && /\.[a-z0-9]+$/iu.test(m[1]!) ? ({name: 'open_file', path: m[1]}) : ({name: 'open_photo', photo: m[1]})],
+  [/^(?:open|show|view) (?:the )?(?:photo|picture|image) (.+)$/u, m => parsePhoto(m[1]) === null && /\.[a-z0-9]+$/iu.test(m[1]!) ? (runsOn.test(m[1]!) ? null : {name: 'open_file', path: m[1]}) : ({name: 'open_photo', photo: m[1]})],
   [new RegExp(`^(?:open|show|view|show me) (?:the )?(${alternatives(photoNames.map(name => name.toLowerCase()))})(?: photo| picture)?$`, 'u'), m => ({name: 'open_photo', photo: m[1]})],
   [/^(?:open|show|view|show me) the (first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth) (?:photo|picture|image)$/u, m => ({name: 'open_photo', photo: m[1]})],
   [/^(?:start (?:a |the )?slideshow|slideshow|play (?:a )?slideshow)$/u, () => ({name: 'slideshow', action: 'start'})],
@@ -104,7 +99,8 @@ const rules: Rule[] = [
   // Inkwell.
   [/^(?:read (?:the |my )?notes?|what does (?:the |my )?note say|whats in (?:my|the) note)$/u, () => ({name: 'read_note'})],
   [/^(?:clear|erase|wipe) (?:the |my )?notes?$/u, () => ({name: 'clear_note'})],
-  [/^(?:note|jot down|write down|take a note|add to (?:my |the )?notes?|note to self)[:,]? (.+)$/u, m => ({name: 'write_note', text: m[1], mode: 'append'})],
+  [new RegExp(notePattern.source, 'u'), m => ({name: 'write_note', text: m[1], mode: 'append'})],
+  [/^(?:write|add|put) (.+?) (?:in|to|into) (?:my |the )?(?:notes?|inkwell)$/u, m => ({name: 'write_note', text: m[1], mode: 'append'})],
   // Information.
   [/^(?:stats|statistics|show (?:me )?(?:the )?stats|how big is (?:the )?program|program stats)$/u, () => ({name: 'get_stats'})],
   [/^(?:what is|whats|explain|tell me about) (?:the )?(prism os|prism|this|scope|inkwell|chroma|browser|calculator|clock|terminal|handwired|spotlight)$/u, m => {
@@ -123,44 +119,91 @@ function arithmetic(sentence: string): Call | null {
 }
 
 // Returns the commands for a sentence the patterns cover, or null. A sentence that isn't
-// one command may be several joined by "and" or "then", e.g. "dark mode and a teal accent",
-// when every part is one.
+// one command may be several joined by commas, "and" or "then", e.g. "dark mode and a
+// teal accent", when every part is one, or run together without them, as speech writes
+// them.
 export function quickCommands(input: string): Command[] | null {
-  const fileInput = input.trim().replace(/^(?:please |can you )/iu, '').replace(/ please$/iu, '')
-  const imageRequest = /^(?:open|show|view) (?:photo|picture|image) (.+)$/iu.exec(fileInput)
-  if (imageRequest && parsePhoto(imageRequest[1]) === null && /\.[a-z0-9]+$/iu.test(imageRequest[1]!)) {
-    const result = validateCall('open_file', {path: imageRequest[1]}); return result.ok ? [result.command] : null
+  const text = clean(input)
+  return text === '' ? null : sentence(text, 0)
+}
+
+// The words around a command that ask politely, and the marks at its end.
+function clean(text: string) {
+  return text.trim()
+    .replace(/^(?:please|pls|hey|ok|okay|can you|could you|would you)\b[,\s]*/iu, '')
+    .replace(/[\s,]*(?:\b(?:please|pls|thanks|thank you))?[.!?]*$/iu, '')
+    .trim()
+}
+
+const separators = /\s*,\s*(?:and then\s+|then\s+|and also\s+|also\s+|and\s+)?|\s+(?:and then|then|and also|and)\s+/giu
+const maximumParts = 5
+
+// The first split at a comma, "and" or "then" whose two sides both read, from the left:
+// "search for salt and pepper" stays one search, since "pepper" isn't a command, and
+// "search for glass prisms and open clock" is two commands. Free text, a search or a
+// path, ends where a command can start.
+function sentence(text: string, depth: number): Command[] | null {
+  if (depth < maximumParts) {
+    for (const match of text.matchAll(separators)) {
+      const left = text.slice(0, match.index).trim()
+      const right = text.slice(match.index + match[0].length).trim()
+      if (left === '' || right === '') continue
+      const first = part(left)
+      if (first === null) continue
+      const rest = sentence(right, depth + 1)
+      if (rest !== null) return [...first, ...rest]
+    }
   }
-  const filePatterns: [RegExp, (m: RegExpExecArray) => Record<string, unknown> & {name: string}][] = [
-    [/^open (?:file|folder) (.+)$/iu, m => ({name: 'open_file', path: m[1]})],
-    [/^list files(?: in (.+))?$/iu, m => ({name: 'list_files', path: m[1] ?? '.'})],
-    [/^(?:search|find) files (?:for |named )?(.+)$/iu, m => ({name: 'search_files', query: m[1]})],
-    [/^create folder (.+)$/iu, m => ({name: 'create_folder', path: m[1]})],
-    [/^create (?:text )?document (.+)$/iu, m => ({name: 'create_document', path: m[1]})],
-    [/^save (?:my |the )?note as (.+)$/iu, m => ({name: 'save_note_as', path: m[1]})],
-    [/^rename file (.+) to (.+)$/iu, m => ({name: 'rename_file', path: m[1], new_name: m[2]})],
-    [/^move file (.+) to (.+)$/iu, m => ({name: 'move_file', path: m[1], destination: m[2]})],
-    [/^(duplicate|trash|restore|download|delete) file (.+)$/iu, m => ({name: `${m[1]!.toLowerCase()}_file`, path: m[2]})],
-  ]
+  return part(text)
+}
+
+// One command, or several said without commas.
+function part(text: string): Command[] | null {
+  const command = one(text)
+  return command === null ? runTogether(text) : [command]
+}
+
+const filePatterns: [RegExp, (m: RegExpExecArray) => Record<string, unknown> & {name: string}][] = [
+  [/^open (?:file|folder) (?!manager\b)(.+)$/iu, m => ({name: 'open_file', path: m[1]})],
+  [/^list files(?: in (.+))?$/iu, m => ({name: 'list_files', path: m[1] ?? '.'})],
+  [/^(?:search|find) files (?:for |named |called |with )?(.+?)(?: in (?:the|their) names?)?$/iu, m => ({name: 'search_files', query: m[1]})],
+  [/^create folder (.+)$/iu, m => ({name: 'create_folder', path: m[1]})],
+  [/^create (?:text )?document (.+)$/iu, m => ({name: 'create_document', path: m[1]})],
+  [/^save (?:my |the )?note as (.+)$/iu, m => ({name: 'save_note_as', path: m[1]})],
+  [/^rename file (?!manager\b)(.+) to (.+)$/iu, m => ({name: 'rename_file', path: m[1], new_name: m[2]})],
+  [/^move file (?!manager\b)(.+) to (.+)$/iu, m => ({name: 'move_file', path: m[1], destination: m[2]})],
+  [/^(duplicate|trash|restore|download|delete) file (?!manager\b)(.+)$/iu, m => ({name: `${m[1]!.toLowerCase()}_file`, path: m[2]})],
+]
+
+// One command, read from the words as written, so a path, an address or a search keeps
+// its capitals, then from the normalized sentence.
+function one(raw: string): Command | null {
+  const text = clean(raw)
+  if (text === '') return null
+  const image = /^(?:open|show|view) (?:photo|picture|image) (.+)$/iu.exec(text)
+  if (image !== null && parsePhoto(image[1]) === null && /\.[a-z0-9]+$/iu.test(image[1]!) && !runsOn.test(image[1]!)) return valid({name: 'open_file', path: image[1]})
   for (const [pattern, make] of filePatterns) {
-    const match = pattern.exec(fileInput)
-    if (match) { const call = make(match); const result = validateCall(call.name, call); return result.ok ? [result.command] : null }
+    const match = pattern.exec(text)
+    if (match === null) continue
+    // A path that runs into "and", "then", a comma or another command's verb may hold
+    // the next command: the model's turn, since where the name ends is a guess.
+    if ((match.slice(1) as (string | undefined)[]).some(value => runsOn.test(value ?? ''))) return null
+    return valid(make(match))
   }
-  const web = webCommand(fileInput)
-  if (web !== null) return [web]
-  const sentence = normalize(input)
-  if (sentence === '') return null
-  const whole = single(sentence)
-  if (whole !== null) return [whole]
-  const parts = sentence.split(/\s*,?\s+(?:and then|then|and also|and)\s+|\s*,\s+/u).map(part => part.replace(/^(?:a|an|the) (?=\w+ (?:accent|wallpaper))/u, '').trim())
-  const commands: Command[] = []
-  for (const part of parts) {
-    const command = single(part)
-    const run = command === null ? runTogether(part) : [command]
-    if (run === null) return null
-    commands.push(...run)
-  }
-  return commands.length < 2 ? null : commands
+  const web = webCommand(text)
+  if (web !== null) return web
+  const command = single(normalize(text).replace(/^(?:a|an|the) (?=\w+ (?:accent|wallpaper))/u, ''))
+  // A question searched as asked, e.g. "What's the weather in Tokyo", and a note as written.
+  if (command?.name === 'search_web') return valid({name: 'search_web', query: text})
+  const note = command?.name === 'write_note' ? notePattern.exec(text) ?? /^(?:write|add|put) (.+?) (?:in|to|into) (?:my |the )?(?:notes?|inkwell)$/iu.exec(text) : null
+  // A note said in quotes is the words inside them.
+  return note !== null ? valid({name: 'write_note', text: note[1]!.replace(/^["“'](.+)["”']$/u, '$1'), mode: 'append'}) : command
+}
+
+
+function valid(call: Record<string, unknown> & {name: string}): Command | null {
+  const result = validateCall(call.name, call)
+  return result.ok ? result.command : null
 }
 
 // Speech has no commas: "close inkwell open safari" is two commands run together. Reads
@@ -169,7 +212,7 @@ export function quickCommands(input: string): Command[] | null {
 const maximumRunWords = 24
 const maximumRunCommands = 5
 function runTogether(part: string): Command[] | null {
-  const words = part.split(' ')
+  const words = part.split(/\s+/u)
   if (words.length > maximumRunWords) return null
   const readings = new Map<number, Command[] | null>()
   const from = (start: number): Command[] | null => {
@@ -178,8 +221,10 @@ function runTogether(part: string): Command[] | null {
     if (known !== undefined) return known
     let reading: Command[] | null = null
     for (let end = words.length; end > start && reading === null; end--) {
-      const command = single(words.slice(start, end).join(' '))
+      const command = one(words.slice(start, end).join(' '))
       if (command === null) continue
+      // A search's words run to the end, so "weather forecast for rome" is one search.
+      if (command.name === 'search_web' && end < words.length) continue
       const rest = from(end)
       if (rest !== null && rest.length < maximumRunCommands) reading = [command, ...rest]
     }
@@ -200,7 +245,9 @@ function webCommand(input: string): Command | null {
   const address = site?.[1] ?? text
   if (webAddress(address) !== null) return check({name: 'open_website', address})
   const search = /^(?:search (?:the web|the internet|online|google|bing) for|search for|web search(?: for)?|google|bing|look up)\s+(.+)$/iu.exec(text)
-  if (search !== null && !/^files?\b/iu.test(search[1]!)) return check({name: 'search_web', query: search[1]})
+  // A search that runs into "then" or a comma may hold the next command, which the split
+  // in sentence() didn't recognize: the model's turn. "salt and pepper" stays a search.
+  if (search !== null && !/^files?\b/iu.test(search[1]!) && !/,|\s(?:and then|then)\s/iu.test(search[1]!)) return check({name: 'search_web', query: search[1]!.replace(/\s+(?:online|on the (?:web|internet))$/iu, '')})
   return null
 }
 
