@@ -700,10 +700,35 @@ results["onnx_bytes"] = sum(p.stat().st_size for p in (web_dir / "onnx").iterdir
 
 import onnxruntime as ort  # noqa: E402
 
+
+
+def usable_cpus():
+    """The CPUs this job may use. A job's container can see all of the machine's CPUs
+    (96 on a100-large) while its quota allows 12, and ONNX Runtime with a thread for each
+    CPU it sees runs many times slower than with one for each CPU it may use."""
+    count = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else (os.cpu_count() or 1)
+    try:
+        quota, period = Path("/sys/fs/cgroup/cpu.max").read_text().split()
+        if quota != "max":
+            count = min(count, max(1, int(int(quota) / int(period))))
+    except (OSError, ValueError):
+        pass
+    try:
+        quota = int(Path("/sys/fs/cgroup/cpu/cpu.cfs_quota_us").read_text())
+        period = int(Path("/sys/fs/cgroup/cpu/cpu.cfs_period_us").read_text())
+        if quota > 0:
+            count = min(count, max(1, quota // period))
+    except (OSError, ValueError):
+        pass
+    return count
+
+
+cpus = usable_cpus()
 subset = eval_rows[: args.onnx_eval]
 try:
     options = ort.SessionOptions()
-    options.intra_op_num_threads = os.cpu_count() or 0
+    options.intra_op_num_threads = cpus
+    options.inter_op_num_threads = 1
     session = ort.InferenceSession(str(web_file), options, providers=["CPUExecutionProvider"])
     inputs = {i.name: i for i in session.get_inputs()}
     outputs = [o.name for o in session.get_outputs()]
@@ -720,7 +745,7 @@ try:
 
     onnx_started = time.time()
     _, prefix_past = onnx_step(prompts[0][:shared], empty, 0)
-    print(f"ONNX: the shared prefix took {time.time() - onnx_started:.0f} s on {os.cpu_count()} CPUs", flush=True)
+    print(f"ONNX: the shared prefix took {time.time() - onnx_started:.0f} s on {cpus} of the {os.cpu_count()} CPUs the machine has", flush=True)
 
     def onnx_answer(messages, whole=False):
         ids = prompt_ids(messages)
