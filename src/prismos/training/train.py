@@ -30,8 +30,9 @@ copies its keys and values to every row, and runs only each row's own tokens on 
 about a tenth of the work of running every row whole, with the same loss and gradients.
 Evaluation does the same and decodes up to 64 sentences at once, grouped by length so no
 row is padded. The weights stay in fp32 for AdamW and the math runs in bf16; weights
-held in bf16 lose most updates at a learning rate of 5e-5. The pinned versions are the
-ones this script was tested with.
+held in bf16 round away most small updates. With every update now landing, the default
+learning rate is 2e-5: on the real model, held-out loss at 5e-5 fell as fast and then
+rose sooner. The pinned versions are the ones this script was tested with.
 """
 import argparse
 import json
@@ -59,7 +60,7 @@ parser.add_argument("--data", required=True, help="URL or folder with train.json
 parser.add_argument("--repo", required=True, help="Hub repo for the result, e.g. user/prism-os-functiongemma")
 parser.add_argument("--base", default=BASE, help="the model to fine-tune, a Hub repo or a local folder")
 parser.add_argument("--epochs", type=float, default=3)
-parser.add_argument("--lr", type=float, default=5e-5)
+parser.add_argument("--lr", type=float, default=2e-5)
 parser.add_argument("--batch", type=int, default=16, help="rows per optimizer step")
 parser.add_argument("--micro", type=int, default=16, help="rows per forward pass; lower it on a GPU with less than 40 GB")
 parser.add_argument("--gen-batch", type=int, default=64, help="sentences decoded at once during evaluation")
@@ -637,8 +638,9 @@ if web_dir.exists():
     shutil.rmtree(web_dir)
 (web_dir / "onnx").mkdir(parents=True)
 web_file = web_dir / "onnx" / "model_q4f16.onnx"
-reference = hf_hub_download(WEB_REFERENCE, "onnx/model_q4f16.onnx")
-hf_hub_download(WEB_REFERENCE, "onnx/model_q4f16.onnx_data")
+# Real files, not the Hub cache's symbolic links, which onnx refuses for external data.
+reference = hf_hub_download(WEB_REFERENCE, "onnx/model_q4f16.onnx", local_dir=work / "reference")
+hf_hub_download(WEB_REFERENCE, "onnx/model_q4f16.onnx_data", local_dir=work / "reference")
 state = {key: value.float().cpu().numpy() for key, value in model.state_dict().items()}
 helper("onnx_weights.py")["write_weights"](state, reference, str(web_file), layers=model.config.num_hidden_layers)
 del state
