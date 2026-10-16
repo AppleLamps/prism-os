@@ -39,15 +39,33 @@ function createRandom(seed: number) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
   const pick = <T>(list: readonly T[]): T => list[Math.floor(next() * list.length)]!
-  return {next, pick}
+  // Starts the sequence over, so eval is the same whatever training drew before it.
+  const reseed = (value: number) => { state = value >>> 0 }
+  return {next, pick, reseed}
 }
 const random = createRandom(20261015)
 const {pick} = random
 
-// A fifth of each phrasing list is held out for eval: index 4, 9, 14 and so on.
+// A fifth of each phrasing list is held out for eval: index 4, 9, 14 and so on. A list
+// can also have phrasings for training only, see `teach`.
 function phrasings<T>(list: readonly T[], split: Split): readonly T[] {
   if (list.length < 5) return list
-  return list.filter((_, index) => (index % 5 === 4) === (split === 'eval'))
+  const own = list.filter((_, index) => (index % 5 === 4) === (split === 'eval'))
+  return split === 'train' ? [...own, ...(trainingOnly.get(list) ?? []) as T[]] : own
+}
+
+// More ways to say what a list says, for training only. Each eval run shows which ideas
+// the model misses when they come worded in a way it never saw ("arrange the windows
+// like at the start" for reset_layout); these teach the idea in other words. They never
+// reach eval, so eval keeps measuring phrasings the model never saw, and none may be one
+// of the list's held-out phrasings.
+const trainingOnly = new Map<readonly unknown[], readonly unknown[]>()
+function teach<T>(list: readonly T[], more: readonly T[]) {
+  const held = new Set(list.filter((_, index) => index % 5 === 4))
+  for (const phrasing of more) {
+    if (held.has(phrasing)) throw new Error(`"${String(phrasing)}" is held out for eval and can't be taught`)
+  }
+  trainingOnly.set(list, [...(trainingOnly.get(list) ?? []), ...more])
 }
 
 const appForms: Record<App, readonly string[]> = {
@@ -532,6 +550,36 @@ const textRows: Record<string, {users: readonly string[], replies: readonly stri
   },
 }
 
+// What the October 16 eval missed, taught in other words.
+teach(templates.timer.pause, ['pause the countdown', 'hold the countdown for a bit', 'stop the timer for a minute, I will come back to it', 'freeze the countdown for now', 'put the countdown on pause', 'pause it for a second, the timer', 'halt the timer for now', 'wait, hold the countdown', 'take a break from the timer', 'briefly pause the countdown'])
+teach(templates.reset_layout, ['put the windows back like when it first opened', 'arrange everything like it was at the beginning', 'go back to the starting layout', 'windows back to how they started', 'restore the starting arrangement', 'move every window back to its first spot', 'lay out the windows like at launch', 'the layout from the start, please', 'reset the arrangement', 'put the windows where they began'])
+teach(templates.maximize_app, ['make {app} really big, the whole screen', 'make {app} enormous, fill the screen', 'blow {app} up to full screen', 'I want {app} filling the entire screen', 'make {app} as large as the screen', 'let {app} take over the screen', 'enlarge {app} to full screen', 'huge {app}, whole screen', 'make {app} fill everything, full screen', 'full size {app} on the whole screen'])
+teach(templates.open_app, ['open {app} again', 'bring {app} back up', 're-open {app}', 'pop {app} open', 'get {app} open again', 'show {app} again'])
+teach(templates.open_photo, ['show me {photo} in chroma', 'find {photo} in the gallery', 'open {photo} in the photos app', 'put {photo} up full size', '{photo} in the gallery please', 'view {photo} large', 'open the {photo} image', 'show {photo} big', 'see {photo} in photos', 'blow up {photo}', 'show me the photo {photo}', 'I want {photo} on screen'])
+teach(templates.next_photo, ['advance to the next photo', 'move ahead one photo', 'the next picture please', 'go on to the next image', 'one photo forward', 'skip ahead a picture'])
+teach(templates.previous_photo, ['show the previous picture again', 'go back to the photo before', 'one picture back', 'the previous pic', 'return to the earlier photo', 'back up one image'])
+teach(templates.slideshow_stop, ['stop the slide show', 'enough of the slideshow', 'end the slideshow now', 'stop showing the photos one by one'])
+teach(templates.set_arcs.hidden, ['hide the weight arcs behind the windows', 'take the weights off the desktop', 'turn off the weights drawing', 'no weights in the background', 'hide those weight curves', 'make the weights go away'])
+teach(templates.set_arcs.shown, ['put the weights back on the desktop', 'draw the weights behind the windows', 'show the weight curves', 'weights on', 'bring the weight drawing back', 'let me see the weights again'])
+teach(templates.set_motion.off, ['keep the wallpaper still', 'stationary background', 'a still wallpaper please', 'stop the dunes', 'no animation on the desktop', 'wallpaper motion off', 'make the wallpaper static', 'stop moving the background'])
+teach(templates.set_motion.on, ['start the dunes again', 'resume the wallpaper animation', 'get the dunes moving', 'wallpaper motion on', 'the dunes can move again', 'keep the background moving', 'set the dunes in motion', 'resume the moving background'])
+teach(templates.set_theme.system, ['follow my device for dark mode', 'dark mode when my computer is dark', 'use whatever theme my computer uses', 'light or dark, whatever my system says', 'sync the theme with my device'])
+teach(templates.browser_navigate.home, ['return to my favorites', 'the favorites page again', 'go home in the browser', 'show the start page again', 'browser, go home', 'back to the browser start page'])
+teach(templates.browser_navigate.reload, ['load this page once more', 'reload this site', 'fetch the page again', 'refresh this page', 'load it again in the browser'])
+teach(templates.write_note_append, ['take down a note: {text}', 'quick note: {text}', 'note this: {text}', 'add a note: {text}', 'jot this down: {text}', 'new line in my notes: {text}'])
+teach(templates.write_note_replace, ['overwrite my notes with {text}', 'replace what inkwell says with {text}', 'change my whole note to {text}', 'make inkwell say only {text}', 'overwrite the notepad with {text}'])
+teach(templates.scope_list.page_up, ['previous page in scope', 'up one page in the list', 'scroll the list up a page', 'the page of rows above'])
+teach(templates.scope_list.page_down, ['the next page in scope', 'down one page in the list', 'scroll the list down a page', 'the page of rows below'])
+teach(templates.scope_list.down, ['move down a row in scope', 'the next row down', 'go one row lower'])
+teach(templates.explain.prism_os, ['what kind of desktop is this', 'what is this operating system', 'explain this desktop to me', 'what is this whole thing', 'what is this place'])
+teach(templates.explain.command_center, ['are you running in this browser', 'does the model run on my device', 'where does the AI run', 'is the model local', 'do you work offline in the browser'])
+teach(templates.get_stats, ['count the cells', 'tell me how many operations', 'operation count', 'number of operations in the program', 'count the weights'])
+teach(templates.stopwatch.reset, ['put the stopwatch back to zero', 'zero out the stopwatch', 'reset the laps and the stopwatch'])
+teach(cabinetTemplates.import_files, ['add files into cabinet', 'put files from my computer into cabinet', 'import files into cabinet', 'upload something to cabinet', 'get files into cabinet from my device', 'add my own files', 'import a picture from my computer', 'bring my files in', 'copy files from my computer into cabinet', 'load files into cabinet'])
+teach(textRows['greeting']!.users, ['good day', 'evening', 'heya', 'hi spotlight', 'hello there', 'afternoon', 'hey hey', 'good morning to you'])
+teach(textRows['off_topic']!.users, ['motivate me', 'cheer me up', 'say something nice', 'write a haiku', 'roast me', 'compliment me', 'do my taxes', 'tell me a bedtime story', 'make me laugh', 'encourage me'])
+teach(textRows['unsupported']!.users, ['reboot the computer', 'log me out', 'lock the screen', 'restart the computer', 'update prism os', 'turn off the computer', 'reboot prism os'])
+
 function textRow(split: Split): Row {
   const kind = pick(Object.keys(textRows))
   const {users, replies} = textRows[kind]!
@@ -608,6 +656,8 @@ if (import.meta.main) {
     writeFileSync(path, crlf ? text.replaceAll('\n', '\r\n') : text)
   }
   const train = generate('train', 10000)
+  // Eval draws from its own start, so new training phrasings don't change it.
+  random.reseed(20261016)
   const evaluation = generate('eval', 900)
   const trainUsers = new Set(train.map(row => row.user.toLowerCase()))
   const heldOut = evaluation.filter(row => !trainUsers.has(row.user.toLowerCase()))

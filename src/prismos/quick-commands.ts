@@ -25,9 +25,10 @@ function normalize(input: string) {
 const alternatives = (words: readonly string[]) => [...words].sort((a, b) => b.length - a.length).map(word => word.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')).join('|')
 const appWords = `(${alternatives(apps.flatMap(app => [app, ...appAliases[app]]))})`
 const the = '(?:(?:the|my)\\s+)?'
-// "note to self" before "note", so the note doesn't start with "to self".
+// "note to self" and "note this" before "note", so the note doesn't start with "to self"
+// or "this:".
 const runsOn = /,|\s(?:and|then|open|close|show|hide|go|search|set|start|move|make|write|minimize|maximize)\s/iu
-const notePattern = /^(?:note to self|note|jot down|write down|take a note|add to (?:my |the )?notes?)[:,]? (.+)$/iu
+const notePattern = /^(?:note to self|note this|note|jot down|write down|take a note|add to (?:my |the )?notes?)[:,]? (.+)$/iu
 const windowWord = '(?:\\s+(?:app|window))?'
 const app = `${the}${appWords}${windowWord}`
 const positionWords: Record<string, (typeof positions)[number]> = {
@@ -84,7 +85,7 @@ const rules: Rule[] = [
   [/^(?:refresh|reload)(?: the)?(?: page| website| site| browser| tab)?$/u, () => ({name: 'browser_navigate', action: 'reload'})],
   [/^(?:go )?back (?:a|one) page$|^previous page$|^(?:go )?back in (?:the )?browser$/u, () => ({name: 'browser_navigate', action: 'back'})],
   [/^(?:go )?forward (?:a|one) page$|^(?:go )?forward in (?:the )?browser$/u, () => ({name: 'browser_navigate', action: 'forward'})],
-  [/^(?:browser home|(?:show |open )?(?:the )?(?:browser )?favorites)$/u, () => ({name: 'browser_navigate', action: 'home'})],
+  [/^(?:browser home|(?:show |open |go to )?(?:the )?(?:browser )?favorites)$/u, () => ({name: 'browser_navigate', action: 'home'})],
   [/^(?:next|forward|go forward)$/u, () => ({name: 'next_photo', bare: true})],
   [/^(?:previous|prev|back|go back)$/u, () => ({name: 'previous_photo', bare: true})],
   [/^(?:next photo|next picture)$/u, () => ({name: 'next_photo'})],
