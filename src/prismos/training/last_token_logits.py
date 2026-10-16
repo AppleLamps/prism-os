@@ -1,9 +1,9 @@
 """Makes a decoder ONNX graph compute logits for the last position only.
 
-ONNX Runtime GenAI's builder writes graphs whose `logits` output covers every input
-position. For FunctionGemma's 262,144-word vocabulary and Prism OS's 1,863-token prompt,
-that is about 1 GB of fp16 logits, cast to 2 GB of fp32, on every first step, while
-generation only reads the last row. This inserts a Slice before the vocabulary
+The q4f16 graph that train.py writes, onnx-community/functiongemma-270m-it-ONNX's, has a
+`logits` output that covers every input position. For FunctionGemma's 262,144-word
+vocabulary and Prism OS's 3,300-token prompt, that is about 1.7 GB of fp16 logits on
+every first step, while generation only reads the last row. This inserts a Slice before the vocabulary
 projection (`/lm_head/MatMul`), so `logits` has one position and every later step is
 unchanged (it had one position already).
 

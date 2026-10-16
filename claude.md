@@ -101,7 +101,7 @@ The site is live, standalone, and deployed from `main`.
 
 The decision was to finish Prism OS's features before training, so the model is trained once on the final command list instead of retrained after every feature. Training costs a GPU run on Hugging Face (account **AppleLampsX**).
 
-Before training, the command list must be final: every feature people would ask for by name has a command, and `bun scripts/prismos-dataset.ts` has been run so `src/prismos/training/` matches `commands.ts`. The data today: 10,000 training sentences and about 900 eval sentences whose phrasings never appear in training, over 50 commands, weighted so every command gets its share (the rarest has about 50 training rows). About 150 eval sentences are the dev set that picks the best epoch; the reported scores leave them out. Each prompt carries all 50 declarations, about 3,300 tokens, so an epoch is about 33 million tokens: run on `a100-large`, about 2 to 2.5 hours in all; on `a10g-small` it needs about 5 to 6 hours. Questions about the world (weather, facts, news, recipes) are taught as `search_web` of the question; only requests Prism OS can't serve at all (jokes, poems, emails) get the decline reply.
+Before training, the command list must be final: every feature people would ask for by name has a command, and `bun scripts/prismos-dataset.ts` has been run so `src/prismos/training/` matches `commands.ts`. The data today: 10,000 training sentences and about 900 eval sentences whose phrasings never appear in training, over 50 commands, weighted so every command gets its share (the rarest has about 50 training rows). About 150 eval sentences are the dev set, scored every half epoch, that picks the best checkpoint; the reported scores leave them out. Each prompt carries all 50 declarations, about 3,300 tokens, of which 3,288 are shared by every prompt; `train.py` runs that prefix once per batch, so a run on `a100-large` should take about 30 to 45 minutes in all (an estimate, not yet measured). Questions about the world (weather, facts, news, recipes) are taught as `search_web` of the question; only requests Prism OS can't serve at all (jokes, poems, emails) get the decline reply.
 
 The run, from `src/prismos/README.md`:
 
@@ -110,13 +110,13 @@ bun scripts/prismos-dataset.ts   # writes train.jsonl, eval.jsonl and tools.json
 bun test tests/prismos/training-data.test.ts   # the data matches the commands and the quick parser
 python3 src/prismos/training/train.py --data src/prismos/training --repo x --check-data   # the scorer, no GPU
 git push                         # the job reads the data and the script from GitHub
-hf jobs uv run --flavor a100-large --secrets HF_TOKEN --timeout 4h \
+hf jobs uv run --flavor a100-large --secrets HF_TOKEN --timeout 2h \
   https://raw.githubusercontent.com/AppleLamps/prism-os/<commit>/src/prismos/training/train.py \
   --data https://raw.githubusercontent.com/AppleLamps/prism-os/<commit>/src/prismos/training \
   --repo AppleLampsX/prism-os-functiongemma
 ```
 
-`train.py` fine-tunes the whole model, scores the dev set after each epoch and keeps the best epoch's weights, scores the base and the fine-tuned model on the eval set, uploads the PyTorch weights, exports a browser model with ONNX Runtime GenAI (4-bit weights in blocks of 32, `last_token_logits.py` so a prompt doesn't produce about 2 GB of logits), checks the ONNX model's answers, and publishes to the Hub **privately**. `--checkpoint <repo> --skip-training` re-exports saved weights without training. `--public` publishes publicly.
+`train.py` fine-tunes the whole model (fp32 weights, bf16 math, the shared prefix run once per batch), scores the dev set every half epoch and keeps the best checkpoint, scores the base and the fine-tuned model on the eval set, uploads the PyTorch weights, writes the fine-tuned weights into onnx-community/functiongemma-270m-it-ONNX's q4f16 graph (`onnx_weights.py`, so the browser runs the graph it already runs; `last_token_logits.py` so a prompt doesn't produce about 1.7 GB of logits), checks the browser file's answers against PyTorch's, and publishes to the Hub **privately**. `--checkpoint <repo> --skip-training` re-exports saved weights without training. `--public` publishes publicly.
 
 The first run, on an earlier command list, went from 22.1% (base FunctionGemma) to 78.4% on the held-out eval sentences. The eval phrasings have been widened since.
 
