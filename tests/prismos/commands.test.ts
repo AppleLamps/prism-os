@@ -3,7 +3,7 @@ import {test} from 'bun:test'
 import {needsConfirmation, parsePhoto, validateCall} from '../../src/prismos/commands.ts'
 import {formatCall, parseModelAnswer} from '../../src/prismos/function-calls.ts'
 import {quickCommands} from '../../src/prismos/quick-commands.ts'
-import {describeCall, previewSentence, welcomeSuggestions} from '../../src/prismos/command-center.ts'
+import {describeCall, modelRevision, previewSentence, readConsent, welcomeSuggestions} from '../../src/prismos/command-center.ts'
 import {evaluateExpression, formatResult} from '../../src/prismos/expression.ts'
 
 test('photos parse by name, part of a name, digit, word and ordinal', () => {
@@ -206,4 +206,12 @@ test('every suggestion on Spotlight\'s welcome runs without the model', () => {
     const commands = quickCommands(sentence)
     assert.ok(commands !== null && commands.length > 0, `${sentence} needs the model`)
   }
+})
+
+test('a yes to an older model, or to one before revisions were kept, offers the update', () => {
+  assert.equal(readConsent(null, null), null)
+  assert.equal(readConsent('no', null), 'no')
+  assert.equal(readConsent('yes', modelRevision), 'yes')
+  assert.equal(readConsent('yes', null), 'update')
+  assert.equal(readConsent('yes', '7bc434f9f1cc'), 'update')
 })

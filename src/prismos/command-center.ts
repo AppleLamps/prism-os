@@ -20,8 +20,15 @@ import {isHelpQuestion, quickCommands} from './quick-commands.ts'
 // ?model=off turns it off for one visit: quick commands only, with no download offered.
 export const modelEnabled = typeof location !== 'undefined' && new URLSearchParams(location.search).get('model') !== 'off'
 export const modelId = 'AppleLampsX/prism-os-functiongemma'
+// The commit of modelId that the page loads. The browser caches the files under their
+// URLs, which hold this revision, so a new commit here is downloaded fresh instead of
+// the copy a visitor already has, and Spotlight offers it to visitors who had an older
+// one. Set it to the Hub commit that each training round publishes.
+export const modelRevision = '97ead18872a358db7d2dc3b73a811312352f0f78'
 const developerPrompt = 'You are a model that can do function calling with the following functions'
 const consentKey = 'prism-os.model-consent'
+// The revision the visitor last said yes to.
+const revisionKey = 'prism-os.model-revision'
 const transcriptLength = 3
 
 // What Spotlight's welcome offers to run, see startShell: one of each kind of thing Prism
@@ -97,6 +104,15 @@ async function gpuCanRunModel(window: Window): Promise<boolean> {
 // About what the browser downloads, the 4-bit weights and the tokenizer.
 const modelSize = '425 MB'
 
+// The visitor's answer to the offer, from what the browser kept: yes to this revision,
+// no, yes to an older one (so Spotlight offers the update), or not asked yet. A yes kept
+// before revisions were, with no revision beside it, was to an older one.
+export function readConsent(stored: string | null, storedRevision: string | null): 'yes' | 'no' | 'update' | null {
+  if (stored === 'no') return 'no'
+  if (stored === 'yes') return storedRevision === modelRevision ? 'yes' : 'update'
+  return null
+}
+
 // The part of Spotlight's sheet under the results: the last exchanges, a question that
 // waits for an answer, and, with the model on, its status.
 export function createCommandCenter(window: Window, workerUrl: string) {
@@ -121,12 +137,11 @@ export function createCommandCenter(window: Window, workerUrl: string) {
   const offer = el('section', 'spotlight-offer')
   offer.setAttribute('aria-label', 'AI model')
   const offerText = el('div', 'spotlight-offer-text')
-  offerText.append(
-    el('p', 'spotlight-offer-title', 'Download the AI model?'),
-    el('p', 'spotlight-offer-body', `Short commands work now. For anything you say your own way, Prism OS can run a small language model on this device: a one-time download of about ${modelSize}. Nothing you type leaves your browser.`),
-  )
+  const offerTitle = el('p', 'spotlight-offer-title')
+  const offerBody = el('p', 'spotlight-offer-body')
+  offerText.append(offerTitle, offerBody)
   const declineButton = button('prism-button', 'Not now', 'Not now')
-  const downloadButton = button('prism-button spotlight-accept', 'Download the model', 'Download')
+  const downloadButton = button('prism-button spotlight-accept', 'Download the model')
   const offerActions = el('div', 'spotlight-confirm-actions')
   offerActions.append(declineButton, downloadButton)
   offer.append(offerText, offerActions)
@@ -145,12 +160,11 @@ export function createCommandCenter(window: Window, workerUrl: string) {
   let nextRequest = 1
   const waiting = new Map<number, (answer: WorkerAnswer) => void>()
 
-  // The visitor's answer to the offer: yes, no, or not asked yet. A browser that can't
-  // keep it asks again on the next visit.
-  let answered: 'yes' | 'no' | null = (() => {
+  // The visitor's answer to the offer, see readConsent. A browser that can't keep it
+  // asks again on the next visit.
+  let answered = (() => {
     try {
-      const stored = window.localStorage.getItem(consentKey)
-      return stored === 'yes' || stored === 'no' ? stored : null
+      return readConsent(window.localStorage.getItem(consentKey), window.localStorage.getItem(revisionKey))
     } catch {
       return null
     }
@@ -159,6 +173,7 @@ export function createCommandCenter(window: Window, workerUrl: string) {
     answered = answer
     try {
       window.localStorage.setItem(consentKey, answer)
+      if (answer === 'yes') window.localStorage.setItem(revisionKey, modelRevision)
     } catch {
       // The answer lasts for this visit.
     }
@@ -201,7 +216,7 @@ export function createCommandCenter(window: Window, workerUrl: string) {
       modelState = {kind: 'failed', message: 'the model\'s script didn\'t load'}
       render()
     }
-    const request: WorkerRequest = {kind: 'load', modelId, tools: [...modelTools], developerPrompt, device}
+    const request: WorkerRequest = {kind: 'load', modelId, revision: modelRevision, tools: [...modelTools], developerPrompt, device}
     worker.postMessage(request)
   }
 
@@ -364,9 +379,20 @@ export function createCommandCenter(window: Window, workerUrl: string) {
     transcript.hidden = entries.length === 0
     confirmBox.hidden = pending === null
     root.classList.toggle('is-busy', busy)
-    // Unasked, the offer stands in for the status line.
-    const asking = modelEnabled && modelState.kind === 'idle' && answered === null
+    // Unasked, or with an older model on the device, the offer stands in for the status line.
+    const asking = modelEnabled && modelState.kind === 'idle' && (answered === null || answered === 'update')
     offer.hidden = !asking
+    if (answered === 'update') {
+      offerTitle.textContent = 'Update the AI model?'
+      offerBody.textContent = `Prism OS's model has been retrained and understands more of what you say. The new version is a one-time download of about ${modelSize}, and it replaces the copy on this device.`
+      downloadButton.textContent = 'Update'
+      downloadButton.setAttribute('aria-label', 'Update the model')
+    } else {
+      offerTitle.textContent = 'Download the AI model?'
+      offerBody.textContent = `Short commands work now. For anything you say your own way, Prism OS can run a small language model on this device: a one-time download of about ${modelSize}. Nothing you type leaves your browser.`
+      downloadButton.textContent = 'Download'
+      downloadButton.setAttribute('aria-label', 'Download the model')
+    }
     status.hidden = !modelEnabled || asking || modelState.kind === 'checking'
     loadButton.hidden = modelState.kind !== 'idle' && modelState.kind !== 'failed'
     loadButton.textContent = modelState.kind === 'failed' ? 'Try again' : 'Load model'

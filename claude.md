@@ -49,7 +49,7 @@ Spotlight runs what people type: "put Scope and Chroma side by side", "move Inkw
 A sentence goes through two readers:
 
 1. **The quick parser** (`quick-commands.ts`): patterns for the sentences people type most, several commands joined by commas, "and" or "then" or run together without them as speech writes them ("close inkwell open safari and search for youtube"), and arithmetic. Instant, nothing to download. This is what the live site uses today.
-2. **The model**: FunctionGemma 270M fine-tuned on Prism OS's commands, running in a Web Worker in the browser on WebGPU (`model-worker.ts`, Transformers.js, 4-bit weights). No server, no API key, nothing leaves the browser. It handles the sentences the patterns miss. It is on: Spotlight's welcome asks once whether to download it (about 425 MB) on a device that can run it, and keeps the answer under `prism-os.model-consent`. `?model=off` turns it off for one visit.
+2. **The model**: FunctionGemma 270M fine-tuned on Prism OS's commands, running in a Web Worker in the browser on WebGPU (`model-worker.ts`, Transformers.js, 4-bit weights). No server, no API key, nothing leaves the browser. It handles the sentences the patterns miss. It is on: Spotlight's welcome asks once whether to download it (about 425 MB) on a device that can run it, and keeps the answer under `prism-os.model-consent`. `?model=off` turns it off for one visit. After a training round publishes, set `modelRevision` in `command-center.ts` to the new Hub commit: the browser caches the model under URLs that hold the revision, so without that, visitors keep the old model.
 
 Every call, from either reader, passes the validator in `commands.ts`, and the operator (`operator.ts`) runs it. Rules:
 

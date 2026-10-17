@@ -9,7 +9,7 @@
 // instead of an import.
 
 export type WorkerRequest =
-  | {kind: 'load', modelId: string, tools: unknown[], developerPrompt: string, device: 'webgpu' | 'wasm'}
+  | {kind: 'load', modelId: string, revision: string, tools: unknown[], developerPrompt: string, device: 'webgpu' | 'wasm'}
   | {kind: 'ask', id: number, text: string}
 
 export type WorkerAnswer =
@@ -78,11 +78,28 @@ async function load(request: Extract<WorkerRequest, {kind: 'load'}>) {
     }
     send({kind: 'progress', loaded, total})
   }
-  tokenizer = await library.AutoTokenizer.from_pretrained(request.modelId, {progress_callback: progress})
-  model = await library.AutoModelForCausalLM.from_pretrained(request.modelId, {dtype: 'q4f16', device, progress_callback: progress})
+  const {modelId, revision} = request
+  tokenizer = await library.AutoTokenizer.from_pretrained(modelId, {revision, progress_callback: progress})
+  model = await library.AutoModelForCausalLM.from_pretrained(modelId, {revision, dtype: 'q4f16', device, progress_callback: progress})
   // A first run compiles the GPU's shaders, so the visitor's first sentence doesn't pay for it.
   await generate('hi')
   send({kind: 'ready', device})
+  await forgetOtherRevisions(modelId, revision)
+}
+
+// The browser keeps each file under its URL, which holds the revision, so an older model
+// stays on the device after a newer one loads. This frees its space, once the new one runs.
+async function forgetOtherRevisions(modelId: string, revision: string) {
+  try {
+    // Transformers.js's cache, see env.cacheKey.
+    const cache = await caches.open('transformers-cache')
+    const prefix = `https://huggingface.co/${modelId}/resolve/`
+    for (const request of await cache.keys()) {
+      if (request.url.startsWith(prefix) && !request.url.startsWith(`${prefix}${revision}/`)) await cache.delete(request)
+    }
+  } catch {
+    // A browser without the cache, or one that refuses, keeps the old files.
+  }
 }
 
 async function generate(text: string) {
