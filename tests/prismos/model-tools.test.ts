@@ -28,6 +28,15 @@ test('the model\'s shortcuts: text alone is a note to add, a length alone starts
   assert.deepEqual(expand('settings', {theme: 'dark', accent: 'teal'}), [{name: 'set_theme', arguments: {theme: 'dark'}}, {name: 'set_accent', arguments: {color: 'teal'}}])
 })
 
+test('the words the model writes for an action run as that action', () => {
+  assert.deepEqual(expand('files', {action: 'purge', path: 'a.txt'}), [{name: 'delete_file', arguments: {path: 'a.txt'}}])
+  assert.deepEqual(expand('files', {action: 'undelete', path: 'a.txt'}), [{name: 'restore_file', arguments: {path: 'a.txt'}}])
+  assert.deepEqual(expand('app', {action: 'fullscreen', app: 'chroma'}), [{name: 'maximize_app', arguments: {app: 'chroma'}}])
+  assert.deepEqual(expand('photos', {action: 'exit'}), [{name: 'close_photo', arguments: {}}])
+  // An alias only stands for an action its tool has.
+  assert.equal(expandCall('note', {action: 'erase'}).ok, false)
+})
+
 test('a call with no action Prism OS has, or no setting, is turned down', () => {
   assert.equal(expandCall('app', {action: 'delete', app: 'clock'}).ok, false)
   assert.equal(expandCall('settings', {}).ok, false)

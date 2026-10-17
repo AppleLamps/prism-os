@@ -231,6 +231,20 @@ def plain_text(value):
     return " ".join(re.sub(r"[?.!,;:]+$", "", text).split())
 
 
+# expandCall's action aliases in src/prismos/model-tools.ts: words the model writes for
+# an action, which the page runs as that action when the tool has it.
+ACTION_ALIASES = {"purge": "delete", "erase": "delete", "undelete": "restore", "recover": "restore", "export": "download",
+                  "hide": "minimize", "fullscreen": "maximize", "full_screen": "maximize", "unmaximize": "restore",
+                  "un_maximize": "restore", "exit": "close", "leave": "close"}
+TOOL_ACTIONS = {tool["function"]["name"]: tool["function"]["parameters"]["properties"].get("action", {}).get("enum", []) for tool in tools}
+
+
+def action_of(name, value):
+    key = re.sub(r"[\s-]+", "_", value.strip().lower())
+    alias = ACTION_ALIASES.get(key)
+    return alias if key not in TOOL_ACTIONS.get(name, []) and alias in TOOL_ACTIONS.get(name, []) else key
+
+
 def canonical(calls):
     """The model's grouped calls (src/prismos/model-tools.ts), each argument compared by
     what it means. The page's shortcuts count as written out: text alone is a note to
@@ -258,6 +272,8 @@ def canonical(calls):
                 normalized[key] = duration_seconds(value) or plain_text(value)
             elif (name == "search_web" and key == "query") or (name == "note" and key == "text"):
                 normalized[key] = plain_text(value)
+            elif key == "action":
+                normalized[key] = action_of(name, value)
             else:
                 normalized[key] = value.lower().replace(" ", "_")
         result.append((name, tuple(sorted(normalized.items()))))
@@ -338,6 +354,8 @@ def check_data():
         ([("photos", {"action": "open", "photo": "Blue Lagoon"})], [("photos", {"action": "open", "photo": "11"})]),
         ([("scope", {"action": "page down"})], [("scope", {"action": "page_down"})]),
         ([("settings", {"theme": "dark"}), ("settings", {"accent": "teal"})], [("settings", {"accent": "teal", "theme": "dark"})]),
+        ([("files", {"action": "delete", "path": "a.txt"})], [("files", {"action": "purge", "path": "a.txt"})]),
+        ([("app", {"action": "maximize", "app": "clock"})], [("app", {"action": "fullscreen", "app": "clock"})]),
     ]
     for a, b in same:
         if canonical(a) != canonical(b):
@@ -347,6 +365,7 @@ def check_data():
         ([("timer", {"action": "start", "duration": "5 minutes"})], [("timer", {"action": "start", "duration": "5 seconds"})]),
         ([("app", {"action": "open", "app": "clock"}), ("app", {"action": "close", "app": "clock"})], [("app", {"action": "close", "app": "clock"}), ("app", {"action": "open", "app": "clock"})]),
         ([("files", {"action": "rename", "path": "/a.txt", "to": "b.txt"})], [("files", {"action": "move", "path": "/a.txt", "to": "b.txt"})]),
+        ([("files", {"action": "restore", "path": "a.txt"})], [("files", {"action": "delete", "path": "a.txt"})]),
     ]
     for a, b in different:
         if canonical(a) == canonical(b):

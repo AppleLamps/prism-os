@@ -111,11 +111,21 @@ const appActionOf = invert(appCommands)
 
 export type Expansion = {ok: true, calls: Call[]} | {ok: false, reason: string}
 
-// The action a call names, as the declarations spell it, or null.
+// Words the model writes for an action instead of the declared one, from its eval
+// misses: "purge" for delete, "undelete" for restore. Each means only that action.
+const actionAliases: Readonly<Record<string, string>> = {
+  purge: 'delete', erase: 'delete', undelete: 'restore', recover: 'restore', export: 'download',
+  hide: 'minimize', fullscreen: 'maximize', full_screen: 'maximize', unmaximize: 'restore', un_maximize: 'restore',
+  exit: 'close', leave: 'close',
+}
+
+// The action a call names, as the declarations spell it or as an alias of it, or null.
 function actionOf<const Values extends readonly string[]>(values: Values, value: unknown): Values[number] | null {
   if (typeof value !== 'string') return null
   const key = value.trim().toLowerCase().replace(/[\s-]+/gu, '_')
-  return values.includes(key) ? key : null
+  if (values.includes(key)) return key
+  const alias = actionAliases[key]
+  return alias !== undefined && values.includes(alias) ? alias : null
 }
 
 // The commands a call of the model stands for: one, or for `settings`, one for each

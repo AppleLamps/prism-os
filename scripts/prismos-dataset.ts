@@ -580,6 +580,22 @@ teach(textRows['greeting']!.users, ['good day', 'evening', 'heya', 'hi spotlight
 teach(textRows['off_topic']!.users, ['motivate me', 'cheer me up', 'say something nice', 'write a haiku', 'roast me', 'compliment me', 'do my taxes', 'tell me a bedtime story', 'make me laugh', 'encourage me'])
 teach(textRows['unsupported']!.users, ['reboot the computer', 'log me out', 'lock the screen', 'restart the computer', 'update prism os', 'turn off the computer', 'reboot prism os'])
 
+// What the second October 16 eval missed, taught in other words.
+teach(templates.close_photo, ['back to all the photos', 'leave this picture', 'get out of this photo', 'back to the thumbnail view', 'close it and show all photos', 'go back to the photo grid', 'quit viewing the picture', 'stop looking at this one, show them all', 'out of the photo, back to the grid', 'shut the photo', 'close the photo viewer', 'return to all the pictures'])
+teach(templates.minimize_app, ['tuck {app} away in the dock', 'hide {app} please', 'hide that {app} window', 'I don\'t need {app} at the moment', 'clear {app} away', 'get {app} off my screen', 'tuck {app} down', 'stow {app} in the dock', 'put the {app} window in the dock', 'drop {app} into the dock', 'I can do without {app} for now', 'make {app} disappear into the dock'])
+teach(templates.maximize_app, ['blow {app} up', 'make {app} as large as it goes', '{app} fullscreen', 'make {app} giant, full screen', '{app} on the full screen', 'biggest possible {app}', 'make {app} take the full screen', 'fill the screen with {app}', 'maximize the {app} window', 'expand {app} all the way'])
+teach(templates.restore_app, ['exit fullscreen for {app}', 'get {app} out of fullscreen', 'make {app} a normal window again', 'unmaximise {app}', 'take the {app} window out of full screen', 'shrink {app} back from full screen', '{app} back to a window', 'leave fullscreen on {app}', 'un-maximize {app}', 'quit full screen on {app}', 'make {app} small again, out of full screen'])
+teach(cabinetTemplates.download_file, ['download a copy of the file {file}', 'save a copy of {file} to downloads', 'grab a copy of {file}', 'download {file} to my computer', 'get a copy of {file} on my device', 'put a copy of {file} in my downloads', 'download {file} please', 'copy {file} to my downloads folder', 'save {file} locally', 'keep a copy of {file} on my computer'])
+teach(cabinetTemplates.restore_file, ['undelete the file {file}', 'un-delete {file}', 'recover {file} from trash', 'bring back {file} from the trash', 'restore the deleted {file}', 'get {file} back, I trashed it by mistake', 'unerase {file}', 'pull {file} back out of the trash', 'rescue {file} from the trash', 'recover the file {file}'])
+teach(cabinetTemplates.delete_file, ['remove {file} from the trash forever', 'purge {file} from trash', 'purge {file}', 'permanently erase {file} from the trash', 'wipe {file} out of the trash for good', 'clear {file} out of the trash permanently', 'get rid of {file} in the trash for good', 'delete {file} from the trash forever', 'erase {file} for good', 'destroy {file} permanently'])
+teach(textRows['greeting']!.users, ['yo yo', 'sup?', 'what\'s up', 'mornin', 'good morning spotlight', 'hey you'])
+teach(textRows['thanks']!.users, ['love that', 'nice one', 'lovely', 'that is great', 'much appreciated', 'appreciate that', 'cool, thanks', 'beautiful'])
+teach(textRows['capabilities']!.users, ['what can I say to you', 'what can I tell you to do', 'I need some help', 'what should I ask', 'what are you able to do'])
+teach(textRows['identity']!.users, ['who built you', 'who created you', 'describe yourself', 'say something about yourself', 'who are you exactly', 'tell me who you are'])
+teach(textRows['off_topic']!.users, ['give me some encouragement', 'tell me a tale', 'tell me a funny story', 'say something funny', 'write me a story', 'hype me up', 'tell me a fairy tale', 'give me a motivational speech'])
+teach(textRows['unsupported']!.users, ['play music', 'play a song', 'join a wifi network', 'connect to the internet', 'use a purple accent', 'make it purple', 'start some music', 'turn on bluetooth'])
+teach(textRows['ambiguous']!.users, ['maximize it', 'open that', 'make that full screen', 'close this', 'minimize this', 'open this'])
+
 function textRow(split: Split): Row {
   const kind = pick(Object.keys(textRows))
   const {users, replies} = textRows[kind]!
