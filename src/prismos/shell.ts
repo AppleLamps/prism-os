@@ -16,7 +16,7 @@
 // them back in front.
 import type {Cabinet} from './cabinet.ts'
 import {type AppContext, type AppInstance, type PanelApp, panelApps} from './apps.ts'
-import {type CommandCenter, modelEnabled, previewSentence} from './command-center.ts'
+import {type CommandCenter, modelEnabled, previewSentence, welcomeSuggestions} from './command-center.ts'
 import type {PanelAppName} from './commands.ts'
 import type {PanelControls} from './operator.ts'
 import {accentControl, appearanceControl, sceneControl, toggleControl} from './controls.ts'
@@ -539,8 +539,26 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
   const resultSheet = el('div', 'spotlight-sheet')
   resultSheet.append(voiceBox, resultList)
   spotlight.sheet.append(searchRow, resultSheet)
+  // The welcome: what Spotlight shows while nothing is typed and nothing has run yet,
+  // which is how Prism OS opens. A suggestion runs as if typed.
+  const welcome = el('section', 'spotlight-welcome')
+  welcome.setAttribute('aria-label', 'Welcome')
+  const suggestions = el('ul', 'spotlight-suggestions')
+  for (const sentence of welcomeSuggestions) {
+    const item = el('li')
+    const chip = button('spotlight-suggestion', sentence, sentence)
+    chip.addEventListener('click', () => runSentence(sentence))
+    item.append(chip)
+    suggestions.append(item)
+  }
+  welcome.append(
+    el('h2', 'spotlight-welcome-title', 'Tell Prism OS what to do'),
+    el('p', 'spotlight-welcome-text', 'Type it, or press the microphone and say it. A handwired neural network moves every window here. Try one:'),
+    suggestions,
+    el('p', 'spotlight-welcome-hint', 'Esc closes this. Open it again with ⌘K or the search button in the menu bar.'),
+  )
   if (commands !== null) {
-    resultSheet.append(commands.element)
+    resultSheet.append(welcome, commands.element)
     searchInput.placeholder = placeholder()
     searchInput.setAttribute('aria-label', 'Search or command')
   }
@@ -622,8 +640,10 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     if (results.length === 0 && query !== '') {
       resultList.append(el('li', 'spotlight-empty', commands !== null && !modelEnabled ? 'No app or command matches. Try "help" for what I can do.' : 'No results'))
     }
-    // After a command ran, an empty query shows the replies instead of the default list.
-    resultList.hidden = query === '' && hasReplies()
+    // With nothing typed, the welcome shows until a command has run, and then the
+    // replies do: the default list shows only without a command center.
+    resultList.hidden = query === '' && commands !== null
+    welcome.hidden = !(query === '' && commands !== null && !hasReplies())
   }
   searchInput.addEventListener('input', () => {
     // Typing clears what Voice last said about itself.
@@ -656,7 +676,10 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     return commands !== null && commands.element.querySelector('.spotlight-entry') !== null
   }
   commands?.onRender(() => {
-    if (spotlight.open) resultList.hidden = searchInput.value.trim() === '' && hasReplies()
+    if (!spotlight.open) return
+    const empty = searchInput.value.trim() === ''
+    resultList.hidden = empty
+    welcome.hidden = !empty || hasReplies()
   })
 
   // Control Center: the quick preferences, and a way into Settings.
@@ -691,7 +714,7 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     controlButton.setAttribute('aria-expanded', 'false')
   }
 
-  function toggleSpotlight() {
+  function toggleSpotlight({focus = true} = {}) {
     const opening = !spotlight.open
     closeOverlays()
     if (!opening) return
@@ -702,7 +725,7 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     selected = 0
     renderResults()
     commands?.opened()
-    searchInput.focus({preventScroll: true})
+    if (focus) searchInput.focus({preventScroll: true})
   }
 
   const toggleControlCenter = () => {
@@ -714,7 +737,14 @@ export function startShell(store: SettingsStore, commands: CommandCenter | null 
     controlButton.setAttribute('aria-expanded', 'true')
   }
 
-  searchButton.addEventListener('click', toggleSpotlight)
+  searchButton.addEventListener('click', () => toggleSpotlight())
+  // Prism OS opens with Spotlight's welcome over a clear desk, see startInDock. A phone's
+  // keyboard would cover it, so a touch screen gets the welcome without the focus.
+  if (commands !== null) {
+    window.requestAnimationFrame(() => {
+      if (!spotlight.open) toggleSpotlight({focus: !window.matchMedia('(pointer: coarse)').matches})
+    })
+  }
   controlButton.addEventListener('click', toggleControlCenter)
 
   window.addEventListener('resize', () => {

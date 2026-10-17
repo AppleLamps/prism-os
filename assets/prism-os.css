@@ -1110,7 +1110,7 @@
   border-radius: 26px;
 }
 
-.spotlight-sheet:not(:has(.spotlight-results:not([hidden]) > li, .spotlight-entry, .spotlight-confirm:not([hidden]), .spotlight-status:not([hidden]))) {
+.spotlight-sheet:not(:has(.spotlight-results:not([hidden]) > li, .spotlight-entry, .spotlight-confirm:not([hidden]), .spotlight-status:not([hidden]), .spotlight-welcome:not([hidden]), .spotlight-offer:not([hidden]))) {
   display: none;
 }
 
@@ -2262,6 +2262,8 @@
 }
 
 .spotlight-results[hidden],
+.spotlight-welcome[hidden],
+.spotlight-offer[hidden],
 .spotlight-transcript[hidden],
 .spotlight-confirm[hidden],
 .spotlight-status[hidden],
@@ -2403,6 +2405,97 @@
   transform: scaleX(var(--progress, 0));
   transform-origin: left;
   transition: transform 200ms linear;
+}
+
+/* The welcome, how Prism OS opens: a greeting, sentences to try as pills, and how to come
+   back, see startShell. */
+.spotlight-welcome {
+  padding: 14px 14px 10px;
+}
+
+.spotlight-welcome-title {
+  margin: 0;
+  color: var(--ink);
+  font: 600 18px/24px var(--font-sans);
+}
+
+.spotlight-welcome-text {
+  margin: 4px 0 12px;
+  color: var(--ink-2);
+  font: 400 13px/19px var(--font-sans);
+}
+
+.spotlight-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prism-desktop .spotlight-suggestion {
+  padding: 6px 13px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--wash);
+  box-shadow: var(--well);
+  color: var(--ink);
+  font: 500 13px/18px var(--font-sans);
+  cursor: pointer;
+  transition: background-color 120ms var(--ease), color 120ms var(--ease);
+}
+
+@media (hover: hover) {
+  .prism-desktop .spotlight-suggestion:hover {
+    background: color-mix(in srgb, var(--copper) 88%, transparent);
+    color: #fff;
+  }
+}
+
+.prism-desktop .spotlight-suggestion:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
+.spotlight-welcome-hint {
+  margin: 12px 0 0;
+  color: var(--ink-3);
+  font: 400 12px/17px var(--font-sans);
+}
+
+/* The question about the model, asked once: a card like Spotlight's other questions. */
+.spotlight-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 14px;
+  margin: 2px 0 4px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 20px;
+  background: var(--wash);
+  box-shadow: var(--well);
+}
+
+.spotlight-offer-text {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+.spotlight-offer-text p {
+  margin: 0;
+}
+
+.spotlight-offer-title {
+  color: var(--ink);
+  font: 600 14px/20px var(--font-sans);
+}
+
+.spotlight-offer-body {
+  margin-top: 2px !important;
+  color: var(--ink-2);
+  font: 400 13px/19px var(--font-sans);
 }
 
 @media (max-width: 520px) {

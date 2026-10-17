@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import {test} from 'bun:test'
-import {createWindowManagerMachine, windowCount, windowOutputField} from '../../src/handwiredos/window-manager.ts'
+import {createWindowManagerMachine, dockOutputField, windowCount, windowOutputField} from '../../src/handwiredos/window-manager.ts'
 import {arrangeInitialWindows} from '../../src/handwiredos/arrangement.ts'
-import {arrangePrismWindows} from '../../src/prismos/arrangement.ts'
+import {arrangePrismWindows, startInDock} from '../../src/prismos/arrangement.ts'
 
 // The program's numbers, see windowManagerCells in window-manager.ts.
 const systemBarHeight = 36
@@ -86,4 +86,38 @@ test('the program draws the Prism windows where the arrangement wrote them, at r
     })
     assert.equal(values[machine.output.animationActive], 0, `${width} × ${height}: nothing animates`)
   }
+})
+
+test('Prism OS starts with every window in its place in the dock, and one click brings it back', () => {
+  const [width, height] = [1440, 900]
+  const machine = createWindowManagerMachine()
+  const rectangles = arrangePrismWindows(machine.source, machine.cells, width, height)
+  startInDock(machine.source, machine.cells)
+  let time = 16
+  let values = machine.step(width, height, time)
+  const read = (windowIndex: number, field: number) => values[machine.output.windows[windowIndex * windowOutputField.size + field]!]!
+  const dockItem = (windowIndex: number, field: number) => values[machine.output.dockItems[windowIndex * dockOutputField.size + field]!]!
+  for (let windowIndex = 0; windowIndex < windowCount; windowIndex++) {
+    assert.equal(read(windowIndex, windowOutputField.opacity), 0, `window ${windowIndex} is hidden`)
+    assert.equal(dockItem(windowIndex, dockOutputField.open), 1, `window ${windowIndex}'s dock item reads open`)
+  }
+  assert.equal(values[machine.output.animationActive], 0, 'nothing animates')
+
+  // A click on the first dock item restores its window to the rectangle it was given.
+  const x = dockItem(0, dockOutputField.left) + dockItem(0, dockOutputField.width) / 2
+  const y = dockItem(0, dockOutputField.top) + dockItem(0, dockOutputField.height) / 2
+  machine.pointerDown(x, y, time + 8)
+  machine.pointerUp(x, y, time + 8)
+  for (let frame = 0; frame < 240; frame++) {
+    time += 16
+    values = machine.step(width, height, time)
+    if (frame > 0 && values[machine.output.animationActive] === 0) break
+  }
+  assert.equal(values[machine.output.animationActive], 0, 'the restore settles')
+  assert.equal(read(0, windowOutputField.opacity), 1)
+  assert.deepEqual(
+    {left: read(0, windowOutputField.translateX), top: read(0, windowOutputField.translateY)},
+    {left: rectangles[0]!.left, top: rectangles[0]!.top},
+  )
+  for (const windowIndex of [1, 2]) assert.equal(read(windowIndex, windowOutputField.opacity), 0, `window ${windowIndex} stays in the dock`)
 })

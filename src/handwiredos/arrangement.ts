@@ -58,7 +58,9 @@ export type ArrangementCells = {
   minHeight: Wire
   titleHeight: Wire
   margin: Wire
-  windows: readonly Record<'left' | 'top' | 'width' | 'height', Wire>[]
+  // A page may also start a window minimized, see startInDock in Prism OS's
+  // arrangement.ts, so `minimized` and `present` are here too.
+  windows: readonly Record<'left' | 'top' | 'width' | 'height' | 'minimized' | 'present', Wire>[]
   springs: readonly Record<'centerX' | 'centerY' | 'width' | 'height', {destination: Wire}>[]
   photos: {gap: Wire}
 }

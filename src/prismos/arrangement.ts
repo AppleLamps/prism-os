@@ -8,6 +8,19 @@ import {
 
 const cascadeStep = 36
 
+// Prism OS opens on a clear desk: the three windows start minimized, each in its place
+// in the dock, and Spotlight greets the visitor, see startShell. A window that is
+// minimized and not present lands on its place in the dock at once, at rest, see
+// hiddenAndAbsent in buildWindowManager, so nothing moves before the visitor asks.
+// Written before the first step, with the arrangement, so it commits with the mount;
+// each window opens later at the rectangle the arrangement gave it.
+export function startInDock(source: Float32Array, cells: ArrangementCells) {
+  for (const window of cells.windows) {
+    source[window.minimized] = 1
+    source[window.present] = 0
+  }
+}
+
 // HandwiredOS's arrangement, then each window moved cascadeStep px further down and to
 // the right than the one before it. A window moves only as far as the workspace has
 // room for, i.e. the part of the viewport between the system bar and the dock, so every

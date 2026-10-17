@@ -1,6 +1,6 @@
 # Prism OS
 
-**Prism OS** is a showcase skin for the Handwired window-manager program: the same hand-built numeric circuit that runs [HandwiredOS](../handwiredos/README.md), with a macOS-style liquid glass look and a cascade of windows at startup.
+**Prism OS** is a showcase skin for the Handwired window-manager program: the same hand-built numeric circuit that runs [HandwiredOS](../handwiredos/README.md), with a macOS-style liquid glass look. It opens on a clear desk: the windows wait in the dock, at the places a cascade gives them when they open, and Spotlight greets the visitor with a few sentences to try.
 
 ## What is different
 
@@ -19,12 +19,14 @@ The program reads every press, move and key from listeners on `window`. Everythi
 
 ## Spotlight's commands
 
-Spotlight (⌘K or Ctrl+K) finds apps and settings, and it also runs what you type: "put Scope and Chroma side by side", "move Inkwell to the top right", "open Blue Lagoon", "note: buy milk", "dark mode and an orange accent", "lagoon wallpaper", "start the stopwatch", "what time is it in Tokyo", "what is 17 times 23". As you type, a sentence Spotlight can run shows as the first result with the calls it will make, e.g. `side_by_side(scope, chroma)`. Enter runs it, and Spotlight stays open with the reply and the calls that ran. One word is a search, a sentence is a command. "help" lists examples.
+Spotlight opens by itself when the page loads (without the keyboard focus on a touch screen, where the keyboard would cover it), with a welcome: what it does and eight sentences that run when pressed, each one the quick parser reads, so they work before any download. Esc closes it, and ⌘K, Ctrl+K or the menu bar's search button opens it again. The welcome shows until the first command runs; after that an empty search shows the replies.
+
+Spotlight finds apps and settings, and it also runs what you type: "put Scope and Chroma side by side", "move Inkwell to the top right", "open Blue Lagoon", "note: buy milk", "dark mode and an orange accent", "lagoon wallpaper", "start the stopwatch", "what time is it in Tokyo", "what is 17 times 23". As you type, a sentence Spotlight can run shows as the first result with the calls it will make, e.g. `side_by_side(scope, chroma)`. Enter runs it, and Spotlight stays open with the reply and the calls that ran. One word is a search, a sentence is a command. "help" lists examples.
 
 A sentence takes one path today, and a second one later:
 
 1. **The quick parser** (`quick-commands.ts`) reads the sentences people type most, including several commands joined by commas, "and" or "then", or run together the way speech recognition writes them ("close inkwell open safari and search for youtube"), and arithmetic. It runs at once, with nothing to download.
-2. **The model**, off until it's trained on the final command list: FunctionGemma 270M, fine-tuned on Prism OS's commands, running in a worker in the browser on WebGPU (`model-worker.ts`). It takes the sentences the patterns miss. `modelEnabled` in `command-center.ts` switches it on for everyone, and `?model=on` on the page switches it on for one visit.
+2. **The model**: FunctionGemma 270M, fine-tuned on Prism OS's commands, running in a worker in the browser on WebGPU (`model-worker.ts`). It takes the sentences the patterns miss. On a device whose GPU can run it (WebGPU with `shader-f16`), Spotlight's welcome asks once whether to download it, about 425 MB, and keeps the answer under `prism-os.model-consent`: Download loads it now and on later visits, Not now leaves a Load model button in Spotlight's status line. `?model=off` on the page turns it off for one visit.
 
 Every call passes the validator in `commands.ts`, which accepts the names people use ("notes", "the gallery", "photo 3", "grey", "NYC") and rejects anything Prism OS lacks. The operator (`operator.ts`) runs what passes. Commands for the program's windows become the pointer and key events a hand would make, aimed at points the program itself computes: a click on the minimize button, a drag of a title bar, a release on a dock tile. So the program's rules hold for commands exactly as for a person, e.g. a window moved by a command still can't leave the workspace. Commands for Prism's apps go through the shell's own functions, the same ones their buttons call. Erasing or replacing the note asks first.
 

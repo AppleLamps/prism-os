@@ -15,16 +15,28 @@ import type {WorkerAnswer, WorkerRequest} from './model-worker.ts'
 import type {Operator} from './operator.ts'
 import {isHelpQuestion, quickCommands} from './quick-commands.ts'
 
-// The fine-tuned model on the Hugging Face Hub, see src/prismos/training. Off until the
-// model is trained on the final command list and published as a public repo: until
-// then Spotlight runs quick commands only, with no download offered. ?model=on turns it
-// on for one visit, to try a published model; to turn it on for everyone, set this to
-// true.
-export const modelEnabled = typeof location !== 'undefined' && new URLSearchParams(location.search).get('model') === 'on'
+// The fine-tuned model on the Hugging Face Hub, see src/prismos/training. Spotlight
+// offers it on the visitor's first visit and loads it on later ones if they said yes.
+// ?model=off turns it off for one visit: quick commands only, with no download offered.
+export const modelEnabled = typeof location !== 'undefined' && new URLSearchParams(location.search).get('model') !== 'off'
 export const modelId = 'AppleLampsX/prism-os-functiongemma'
 const developerPrompt = 'You are a model that can do function calling with the following functions'
 const consentKey = 'prism-os.model-consent'
 const transcriptLength = 3
+
+// What Spotlight's welcome offers to run, see startShell: one of each kind of thing Prism
+// OS does, every one a sentence the quick parser reads, so each works before any
+// download.
+export const welcomeSuggestions = [
+  'Put Scope and Chroma side by side',
+  'Open Blue Lagoon',
+  'Write hello from Prism OS in my notes',
+  'Dark mode and a teal accent',
+  'Set a timer for 5 minutes',
+  'Go to wikipedia.org',
+  'What is 17 times 23',
+  'What time is it in Tokyo',
+] as const
 
 export const helpReply = 'Type what you want, e.g. "open cabinet", "list files in /Documents", "create document /Documents/Plan.txt", "search files for Plan", "open calculator", "go to wikipedia.org", "search the web for glass prisms", "put Scope and Chroma side by side", "move Inkwell to the top right", "open Blue Lagoon", "note: buy milk", "dark mode and a teal accent", "lagoon wallpaper", "what time is it in Tokyo", "start the stopwatch", "set a timer for 5 minutes", "what is 17 times 23" or "how big is the program".'
 
@@ -58,6 +70,7 @@ export function previewSentence(query: string): Preview {
 
 type Entry = {user: string, reply: string, calls: string[], tone: 'normal' | 'error'}
 type ModelState =
+  | {kind: 'checking'}
   | {kind: 'idle'}
   | {kind: 'loading', loaded: number, total: number}
   | {kind: 'ready'}
@@ -67,6 +80,22 @@ type ModelState =
 function megabytes(bytes: number) {
   return `${Math.round(bytes / 1_000_000)} MB`
 }
+
+// The browser's own word on whether it can run the model: WebGPU with 16-bit floats in
+// shaders, as model-worker.ts checks again before it downloads anything.
+async function gpuCanRunModel(window: Window): Promise<boolean> {
+  const gpu = (window.navigator as unknown as {gpu?: {requestAdapter(): Promise<{features: Set<string>} | null>}}).gpu
+  if (gpu === undefined) return false
+  try {
+    const adapter = await gpu.requestAdapter()
+    return adapter !== null && adapter.features.has('shader-f16')
+  } catch {
+    return false
+  }
+}
+
+// About what the browser downloads, the 4-bit weights and the tokenizer.
+const modelSize = '425 MB'
 
 // The part of Spotlight's sheet under the results: the last exchanges, a question that
 // waits for an answer, and, with the model on, its status.
@@ -87,13 +116,27 @@ export function createCommandCenter(window: Window, workerUrl: string) {
   const progress = el('span', 'spotlight-progress')
   progress.append(el('span'))
   status.append(statusText, loadButton, progress)
-  root.append(transcript, confirmBox, status)
+  // The question Spotlight asks once, on a first visit to a browser that can run the
+  // model: download it or not. The answer is kept, see consentKey.
+  const offer = el('section', 'spotlight-offer')
+  offer.setAttribute('aria-label', 'AI model')
+  const offerText = el('div', 'spotlight-offer-text')
+  offerText.append(
+    el('p', 'spotlight-offer-title', 'Download the AI model?'),
+    el('p', 'spotlight-offer-body', `Short commands work now. For anything you say your own way, Prism OS can run a small language model on this device: a one-time download of about ${modelSize}. Nothing you type leaves your browser.`),
+  )
+  const declineButton = button('prism-button', 'Not now', 'Not now')
+  const downloadButton = button('prism-button spotlight-accept', 'Download the model', 'Download')
+  const offerActions = el('div', 'spotlight-confirm-actions')
+  offerActions.append(declineButton, downloadButton)
+  offer.append(offerText, offerActions)
+  root.append(transcript, confirmBox, offer, status)
 
   let operator: Operator | null = null
   const entries: Entry[] = []
   let busy = false
   let pending: {command: Command, rest: Command[], entry: Entry} | null = null
-  let modelState: ModelState = {kind: 'idle'}
+  let modelState: ModelState = modelEnabled ? {kind: 'checking'} : {kind: 'idle'}
   let afterRender: () => void = () => {}
 
   // --- The model --------------------------------------------------------------------
@@ -102,21 +145,42 @@ export function createCommandCenter(window: Window, workerUrl: string) {
   let nextRequest = 1
   const waiting = new Map<number, (answer: WorkerAnswer) => void>()
 
-  function storedConsent() {
+  // The visitor's answer to the offer: yes, no, or not asked yet. A browser that can't
+  // keep it asks again on the next visit.
+  let answered: 'yes' | 'no' | null = (() => {
     try {
-      return window.localStorage.getItem(consentKey) === 'yes'
+      const stored = window.localStorage.getItem(consentKey)
+      return stored === 'yes' || stored === 'no' ? stored : null
     } catch {
-      return false
+      return null
     }
+  })()
+  const remember = (answer: 'yes' | 'no') => {
+    answered = answer
+    try {
+      window.localStorage.setItem(consentKey, answer)
+    } catch {
+      // The answer lasts for this visit.
+    }
+  }
+
+  // ?model-device=wasm runs the model on the CPU instead, slowly: a way to test on a
+  // machine whose GPU can't run it.
+  const device = new URL(window.location.href).searchParams.get('model-device') === 'wasm' ? 'wasm' : 'webgpu'
+  // Whether Spotlight has been opened, which a returning visitor's model waits for.
+  let opened = false
+  if (modelEnabled) {
+    void (device === 'wasm' ? Promise.resolve(true) : gpuCanRunModel(window)).then(supported => {
+      if (modelState.kind !== 'checking') return
+      modelState = supported ? {kind: 'idle'} : {kind: 'unsupported'}
+      if (supported && answered === 'yes' && opened) loadModel()
+      render()
+    })
   }
 
   function loadModel() {
     if (!modelEnabled || worker !== null) return
-    try {
-      window.localStorage.setItem(consentKey, 'yes')
-    } catch {
-      // The consent lasts for this visit.
-    }
+    remember('yes')
     modelState = {kind: 'loading', loaded: 0, total: 0}
     render()
     worker = new Worker(workerUrl)
@@ -137,9 +201,6 @@ export function createCommandCenter(window: Window, workerUrl: string) {
       modelState = {kind: 'failed', message: 'the model\'s script didn\'t load'}
       render()
     }
-    // ?model-device=wasm runs the model on the CPU instead, slowly: a way to test on a
-    // machine whose GPU can't run it.
-    const device = new URL(window.location.href).searchParams.get('model-device') === 'wasm' ? 'wasm' : 'webgpu'
     const request: WorkerRequest = {kind: 'load', modelId, tools: [...modelTools], developerPrompt, device}
     worker.postMessage(request)
   }
@@ -208,7 +269,9 @@ export function createCommandCenter(window: Window, workerUrl: string) {
           ? 'The model is still downloading. Try again in a moment.'
           : modelState.kind === 'unsupported'
             ? 'That needs the model, which this browser or GPU can\'t run.'
-            : 'That needs the model. Load it below; it downloads once and runs on this device.'
+            : modelState.kind === 'checking'
+              ? 'Spotlight is still checking whether this browser can run the model. Try again in a moment.'
+              : 'That needs the model. Load it below; it downloads once and runs on this device.'
         entry.tone = 'error'
         return
       }
@@ -283,6 +346,11 @@ export function createCommandCenter(window: Window, workerUrl: string) {
     worker = null
     loadModel()
   })
+  downloadButton.addEventListener('click', () => loadModel())
+  declineButton.addEventListener('click', () => {
+    remember('no')
+    render()
+  })
 
   // --- Drawing ----------------------------------------------------------------------
 
@@ -296,13 +364,19 @@ export function createCommandCenter(window: Window, workerUrl: string) {
     transcript.hidden = entries.length === 0
     confirmBox.hidden = pending === null
     root.classList.toggle('is-busy', busy)
-    status.hidden = !modelEnabled
+    // Unasked, the offer stands in for the status line.
+    const asking = modelEnabled && modelState.kind === 'idle' && answered === null
+    offer.hidden = !asking
+    status.hidden = !modelEnabled || asking || modelState.kind === 'checking'
     loadButton.hidden = modelState.kind !== 'idle' && modelState.kind !== 'failed'
     loadButton.textContent = modelState.kind === 'failed' ? 'Try again' : 'Load model'
     progress.hidden = modelState.kind !== 'loading'
     switch (modelState.kind) {
+      case 'checking':
+        statusText.textContent = ''
+        break
       case 'idle':
-        statusText.textContent = 'Short commands work now. Load the model for everything else: about 425 MB, downloaded once.'
+        statusText.textContent = `Short commands work now. Load the model for everything else: about ${modelSize}, downloaded once.`
         break
       case 'loading': {
         const {loaded, total} = modelState
@@ -327,9 +401,11 @@ export function createCommandCenter(window: Window, workerUrl: string) {
   return {
     element: root,
     run,
-    // Spotlight opened: with the visitor's earlier consent, the model starts loading.
+    // Spotlight opened: with the visitor's earlier yes, the model starts loading, once
+    // the browser has said it can run it.
     opened() {
-      if (modelEnabled && storedConsent()) loadModel()
+      opened = true
+      if (modelEnabled && answered === 'yes' && modelState.kind === 'idle') loadModel()
       render()
     },
     busy: () => busy,

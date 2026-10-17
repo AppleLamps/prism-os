@@ -3,7 +3,7 @@ import {test} from 'bun:test'
 import {needsConfirmation, parsePhoto, validateCall} from '../../src/prismos/commands.ts'
 import {formatCall, parseModelAnswer} from '../../src/prismos/function-calls.ts'
 import {quickCommands} from '../../src/prismos/quick-commands.ts'
-import {describeCall, previewSentence} from '../../src/prismos/command-center.ts'
+import {describeCall, previewSentence, welcomeSuggestions} from '../../src/prismos/command-center.ts'
 import {evaluateExpression, formatResult} from '../../src/prismos/expression.ts'
 
 test('photos parse by name, part of a name, digit, word and ordinal', () => {
@@ -199,4 +199,11 @@ test('the timer, Browser\'s buttons and the weather, in the words people use mos
   assert.equal(validateCall('start_timer', {duration: '3 days'}).ok, false)
   assert.deepEqual(validateCall('timer', {action: 'stop'}), {ok: true, command: {name: 'timer', action: 'cancel'}})
   assert.deepEqual(validateCall('browser_navigate', {action: 'refresh'}), {ok: true, command: {name: 'browser_navigate', action: 'reload'}})
+})
+
+test('every suggestion on Spotlight\'s welcome runs without the model', () => {
+  for (const sentence of welcomeSuggestions) {
+    const commands = quickCommands(sentence)
+    assert.ok(commands !== null && commands.length > 0, `${sentence} needs the model`)
+  }
 })

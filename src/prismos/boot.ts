@@ -2,7 +2,7 @@ import {Cabinet, message} from './cabinet.ts'
 import {CabinetGallery} from './cabinet-gallery.ts'
 import {button, el, icon, icons} from './dom.ts'
 import {mountWindowManager, quantizeViewport} from '../handwiredos/window-manager.ts'
-import {arrangePrismWindows} from './arrangement.ts'
+import {arrangePrismWindows, startInDock} from './arrangement.ts'
 import {createCommandCenter, createSlideshow} from './command-center.ts'
 import {createOperator, slideshowIntervalMs} from './operator.ts'
 import {type Settings, accents, createSettingsStore, resolveScheme} from './settings.ts'
@@ -106,7 +106,11 @@ if (typeof document !== 'undefined' && typeof window !== 'undefined') {
   const panels = startShell(store, commands, cabinet)
   startGlass(document, window)
   const manager = mountWindowManager(document, window, {
-    arrange: arrangePrismWindows,
+    arrange: (source, cells, width, height) => {
+      const rectangles = arrangePrismWindows(source, cells, width, height)
+      startInDock(source, cells)
+      return rectangles
+    },
     onFocusChange: windowIndex => panels?.programFocused(windowIndex),
   })
 

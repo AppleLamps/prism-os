@@ -49,7 +49,7 @@ Spotlight runs what people type: "put Scope and Chroma side by side", "move Inkw
 A sentence goes through two readers:
 
 1. **The quick parser** (`quick-commands.ts`): patterns for the sentences people type most, several commands joined by commas, "and" or "then" or run together without them as speech writes them ("close inkwell open safari and search for youtube"), and arithmetic. Instant, nothing to download. This is what the live site uses today.
-2. **The model**: FunctionGemma 270M fine-tuned on Prism OS's commands, running in a Web Worker in the browser on WebGPU (`model-worker.ts`, Transformers.js, 4-bit weights). No server, no API key, nothing leaves the browser. It handles the sentences the patterns miss. **It is off** until it's trained on the final command list. `?model=on` turns it on for one visit, for testing.
+2. **The model**: FunctionGemma 270M fine-tuned on Prism OS's commands, running in a Web Worker in the browser on WebGPU (`model-worker.ts`, Transformers.js, 4-bit weights). No server, no API key, nothing leaves the browser. It handles the sentences the patterns miss. It is on: Spotlight's welcome asks once whether to download it (about 425 MB) on a device that can run it, and keeps the answer under `prism-os.model-consent`. `?model=off` turns it off for one visit.
 
 Every call, from either reader, passes the validator in `commands.ts`, and the operator (`operator.ts`) runs it. Rules:
 
@@ -124,10 +124,9 @@ Earlier mistakes to avoid: whole skills held out of training (ordinal photo name
 
 ### 3. Turn the model on
 
-1. Load the private model with `?model=on` and test it against the quick parser's misses.
-2. The owner makes the Hugging Face repo public (the page can only load a public repo).
-3. Set `modelEnabled` in `src/prismos/command-center.ts` to true for everyone. Keep `?model=on` working for testing.
-4. Keep the existing guards: the model downloads only after the visitor agrees (stored under `prism-os.model-consent`), WebGPU needs the `shader-f16` feature, `?model-device=wasm` runs it slowly on the CPU for testing, and the quick parser still answers first for the common sentences.
+1. Done: `modelEnabled` in `src/prismos/command-center.ts` is on for everyone, and Spotlight's welcome asks before the download. `?model=off` turns it off for one visit.
+2. The owner makes the Hugging Face repo public. Until then the page can't load it, and Download ends in an error in Spotlight's status line.
+3. Keep the existing guards: the model downloads only after the visitor agrees (stored under `prism-os.model-consent`), WebGPU needs the `shader-f16` feature, `?model-device=wasm` runs it slowly on the CPU for testing, and the quick parser still answers first for the common sentences.
 
 ### 4. Measure before optimizing further
 
